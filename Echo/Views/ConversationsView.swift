@@ -168,7 +168,14 @@ struct ConversationsList: View {
         }
         .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search conversations")
-        .task { if usesLedger { await refresh() } }
+        // Keyed on the profile: a switch reloads the list (and the iPad sidebar, which stays up).
+        .task(id: settings.hermesProfile) { if usesLedger { await refresh() } }
+        .onChange(of: settings.hermesProfile) {
+            // The old profile's sessions must not linger while the new list loads.
+            ledger = []
+            projects = []
+            ledgerError = nil
+        }
         .refreshable { if usesLedger { await refresh() } }
         .onChange(of: query, initial: true) { filterLedger() }
         .onChange(of: ledger) { filterLedger() }

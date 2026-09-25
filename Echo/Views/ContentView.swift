@@ -102,6 +102,16 @@ struct ContentView: View {
             if let v = env["ECHO_TEST_PROFILE_KEY"], let profile = Settings.shared.profileName {
                 Keychain.write(account: Keychain.profileAccount(profile), value: v)
             }
+            // Dev hook: `-echo.switchProfile <name>` switches profile five seconds after launch, to
+            // check that open screens follow (the simulator can't tap the picker).
+            if let i = args.firstIndex(of: "-echo.switchProfile"), i + 1 < args.count {
+                let name = args[i + 1]
+                Task {
+                    try? await Task.sleep(for: .seconds(5))
+                    Settings.shared.hermesProfile = name == "default" ? "" : name
+                    conversation.reset()
+                }
+            }
             // Dev hook: `-echo.draft "text"` types a question into a focused composer (keyboard screenshot).
             if let i = args.firstIndex(of: "-echo.draft"), i + 1 < args.count {
                 draft = args[i + 1]
