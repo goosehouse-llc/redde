@@ -4,11 +4,12 @@ import Observation
 
 /// Which backend a turn is sent to.
 nonisolated enum Transport: String, CaseIterable, Identifiable, Codable {
+    // Declaration order is the order Settings and setup list them: Dashboard, API, OpenAI-compatible.
+    /// `hermes serve` desktop gateway over WebSocket: live reasoning, approvals, slash commands.
+    case hermesServe
     /// Hermes gateway sessions API — the shared ledger (Telegram, CLI, Discord, Echo), with live
     /// reasoning and tool events. Bearer key required.
     case hermesSessions
-    /// `hermes serve` desktop gateway over WebSocket: live reasoning, approvals, slash commands.
-    case hermesServe
     /// OpenAI-compatible `/v1/chat/completions` — used for the llama-swap "fast lane" straight to the model.
     case chatCompletions
 

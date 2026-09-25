@@ -59,7 +59,7 @@ Attachment bytes are stored one file per attachment under Application Support/at
 
 ### Model and reasoning effort
 
-Settings → Transport → Model opens a picker fed by the active backend: the gateway's `/api/model/options` (or hermes serve's `model.options`) grouped by provider, or llama-swap's `/v1/models` on the fast lane with loaded models flagged. Reasoning effort (default / low / medium / high) sits above it for the Hermes API and Hermes Dashboard transports. The choice is sent as `model` + `provider` + `model_options.reasoning_effort` on every sessions-API turn, and as `model` / `provider` / `reasoning_effort` when hermes serve creates a session, so on hermes serve it takes effect for new conversations.
+Settings → Connection → Model opens a picker fed by the active backend: the gateway's `/api/model/options` (or hermes serve's `model.options`) grouped by provider, or llama-swap's `/v1/models` on the fast lane with loaded models flagged. Reasoning effort (default / low / medium / high) sits above it for the Hermes API and Hermes Dashboard transports. The choice is sent as `model` + `provider` + `model_options.reasoning_effort` on every sessions-API turn, and as `model` / `provider` / `reasoning_effort` when hermes serve creates a session, so on hermes serve it takes effect for new conversations.
 
 ### Message queue
 
@@ -87,7 +87,7 @@ Facts about the gateway that shaped the client (hermes-agent 0.21.1):
 
 ## First run and configuration
 
-Shipped builds have no server baked in. On first launch a setup sheet asks which backend to use, takes the URL and credentials, and offers "Test connection", which probes the server the same way the transport does (health + key check for the Hermes API server, status + login for hermes serve, `/v1/models` for an OpenAI-compatible endpoint). The same sheet is reachable from Settings → Transport → "Set up connection…". The fast lane accepts an optional API key, so it can point at a hosted OpenAI-compatible provider as well as llama.cpp.
+Shipped builds have no server baked in. On first launch a setup sheet asks which backend to use, takes the URL and credentials, and offers "Test connection", which probes the server the same way the transport does (health + key check for the Hermes API server, status + login for hermes serve, `/v1/models` for an OpenAI-compatible endpoint). The same sheet is reachable from Settings → Connection → "Set up connection…". The fast lane accepts an optional API key, so it can point at a hosted OpenAI-compatible provider as well as llama.cpp.
 
 For personal builds, a git-ignored `Echo/Resources/LocalDefaults.json` (keys: `transport`, `gatewayURL`, `serveURL`, `serveUsername`, `fastLaneURL`, `fastLaneModel`, `kokoroURL`, `kokoroVoice`, `contextWindow`) is applied once on first launch, and the live tests read their endpoints from it. It never ships and never commits.
 
@@ -105,7 +105,7 @@ hermes serve behind Cloudflare Access instead of a tailnet: Settings → Cloudfl
 
 ## Profiles
 
-Settings → Transport → **Profile** picks which Hermes profile Redde talks to (Hermes 0.21+). The list comes from the dashboard's `GET /api/profiles`, so it needs the Dashboard login; without it a profile can be named by hand. **Default** sends nothing profile-related, so older servers behave exactly as before. Switching starts a new conversation.
+Settings → **Profile** (the first section) picks which Hermes profile Redde talks to (Hermes 0.21+). The list comes from the dashboard's `GET /api/profiles`, so it needs the Dashboard login; without it a profile can be named by hand. **Default** sends nothing profile-related, so older servers behave exactly as before. Switching starts a new conversation.
 
 - **Hermes Dashboard:** the profile rides on the calls that take one: `session.create`, `session.resume`, `session.delete`, `session.branch`, `projects.*`, `model.options`, `config.set`, `slash.exec` and `command.dispatch` over the WebSocket (params reject unknown keys, so nothing else gets it; session-bound calls such as `prompt.submit` run in their session's profile), and `?profile=` or a body `profile` on the sessions, skills, toolsets and cron REST routes (`HermesServeClient.profilePlacement`). The context and memory editors open the files under the profile's home (`path` from the profile list, else `~/.hermes/profiles/<name>`). The Kanban board is shared by every profile.
 - **Hermes API:** requests go to the gateway's `/p/<profile>/` routes, which exist only with `gateway.multiplex_profiles` on, and each profile checks its own `API_SERVER_KEY` (from its `.env`). The picker stores that key per profile in the Keychain (`gateway-api-key.<profile>`). A wrong key or an unserved profile gets its own explanation in the conversation list.

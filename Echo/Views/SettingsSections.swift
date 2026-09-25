@@ -103,6 +103,30 @@ struct AppearanceSettings: View {
     }
 }
 
+/// Which Hermes profile Redde talks to: first in Settings, since it decides whose sessions,
+/// skills and memory everything below shows. Hidden on the OpenAI-compatible connection.
+struct ProfileSettings: View {
+    @State private var settings = Settings.shared
+
+    var body: some View {
+        if settings.transport != .chatCompletions {
+            Section {
+                NavigationLink { ProfilePickerView() } label: {
+                    LabeledContent {
+                        Text(settings.profileName ?? "Default").foregroundStyle(.secondary).lineLimit(1)
+                    } label: {
+                        Label("Profile", systemImage: "person.2")
+                    }
+                }
+            } header: {
+                Text("Hermes profile")
+            } footer: {
+                Text("The agent on your Hermes server that Redde talks to. Chats, skills, tools, cron jobs and memory all follow it.")
+            }
+        }
+    }
+}
+
 struct TransportSettings: View {
     @Binding var showSetup: Bool
     @State private var settings = Settings.shared
@@ -114,16 +138,9 @@ struct TransportSettings: View {
             }
             .pickerStyle(.inline)
             .labelsHidden()
-            if settings.transport != .chatCompletions {
-                NavigationLink { ProfilePickerView() } label: {
-                    LabeledContent("Profile") {
-                        Text(settings.profileName ?? "Default").foregroundStyle(.secondary).lineLimit(1)
-                    }
-                }
-            }
             Button("Set up connection…", systemImage: "network") { showSetup = true }
         } header: {
-            Text("Transport")
+            Text("Connection")
         }
     }
 }
