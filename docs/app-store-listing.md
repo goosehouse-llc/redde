@@ -41,7 +41,6 @@ SEE THE AGENT WORK
 A FULL CLIENT, NOT JUST A MIC
 • Every conversation lives in your gateway's session ledger, so what you start on the phone continues on the desktop, Telegram, or the CLI. Search, pin, rename, fork, archive.
 • Sessions grouped by project. Scheduled jobs (cron) with delivery targets and prebuilt blueprints. The Kanban board, live.
-• Hermes profiles: switch between your agents, each with its own chats, skills, tools and memory.
 • Rich replies: Markdown, highlighted code, tables, task lists, images, Mermaid diagrams you can zoom, and math.
 • Pictures and files from the agent arrive in the chat ready to view: camera snapshots, charts, PDFs.
 • Regenerate an answer, edit and resend a question, or search a long conversation.
@@ -53,7 +52,7 @@ A FULL CLIENT, NOT JUST A MIC
 • Create and edit skills, or describe one and let Redde draft it.
 
 YOUR BACKEND, YOUR RULES
-• Connect to a Hermes gateway through the Hermes Dashboard (hermes serve, over WebSocket) or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access.
+• Connect to Hermes through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access.
 • Or skip the agent and go straight to any OpenAI-compatible endpoint: llama.cpp, llama-swap, vLLM, Ollama on your own hardware, or a hosted provider with your API key.
 • Credentials stay in the Keychain. Speech recognition runs on the phone.
 • Face ID lock, seven themes with your own accent and bubble colors, a choice of app icons and voice orbs, iPad split view, keyboard shortcuts.
