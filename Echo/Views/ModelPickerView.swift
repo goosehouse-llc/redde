@@ -200,7 +200,7 @@ struct ModelPickerView: View {
             } else if let backend = SessionBackend.available(conversation).first {
                 choices = try await backend.modelOptions()
             } else {
-                error = "Add the Hermes API key or the Hermes Dashboard login in Settings."
+                error = SessionBackend.notConfiguredMessage
                 return
             }
             error = nil

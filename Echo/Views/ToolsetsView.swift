@@ -90,7 +90,7 @@ struct ToolsView: View {
             } else if let api = conversation.ledgerAPI() {
                 toolsets = try await api.toolsets()
             } else {
-                error = "Add the Hermes API key or the Hermes Dashboard login in Settings."
+                error = SessionBackend.notConfiguredMessage
                 loading = false
                 return
             }
@@ -205,7 +205,7 @@ struct SkillsView: View {
             } else if let api = conversation.ledgerAPI() {
                 skills = try await api.skills()
             } else {
-                error = "Add the Hermes API key or the Hermes Dashboard login in Settings."
+                error = SessionBackend.notConfiguredMessage
                 loading = false
                 return
             }

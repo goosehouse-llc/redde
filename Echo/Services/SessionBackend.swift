@@ -13,6 +13,9 @@ enum SessionBackend {
         settings.transport == .hermesServe ? .serve(.shared) : conversation.ledgerAPI().map(SessionBackend.ledger)
     }
 
+    /// What to show when neither Hermes connection has credentials (`available` came back empty).
+    static let notConfiguredMessage = "Add the Hermes API key or the Hermes Dashboard login in Settings."
+
     /// Primary backend first, the other as a fallback — for features (model options) that any
     /// configured server can answer regardless of the active transport.
     static func available(_ conversation: Conversation, settings: Settings = .shared) -> [SessionBackend] {
