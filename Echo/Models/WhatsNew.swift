@@ -28,6 +28,16 @@ nonisolated enum WhatsNew {
             Item(symbol: "person.2.slash", title: "Clearer profile problems",
                  detail: "If a profile no longer exists on a server, Redde says so and takes you to pick another."),
         ]),
+        Release(version: "1.3", items: [
+            Item(symbol: "person.2", title: "Hermes profiles",
+                 detail: "Pick which profile Redde talks to, right under Name in Settings. Chats, projects, skills, tools, cron jobs and memory all follow it."),
+            Item(symbol: "key", title: "A key for each profile",
+                 detail: "On the Hermes API, each profile can have its own key, entered on the same screen. If something's wrong, Redde says how to fix it."),
+            Item(symbol: "network", title: "Clearer connections",
+                 detail: "Hermes Dashboard, Hermes API and OpenAI-compatible, now under Settings → Connection, with the Dashboard first."),
+            Item(symbol: "checkmark.seal", title: "Fixes",
+                 detail: "The Kanban column bar always shows, iPad's Chats, Cron and Kanban have room to breathe, and Settings explains locked memory files."),
+        ]),
     ]
 
     /// The app's version, e.g. "1.4".
