@@ -1,0 +1,8 @@
+# Keeps the pinned GitHub Actions (the CLA check) current. Dependabot updates the commit pin
+# and its version comment together; its pull requests skip the CLA (allowlisted).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
