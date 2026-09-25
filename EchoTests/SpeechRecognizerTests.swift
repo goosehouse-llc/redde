@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Echo
 
-/// Paloma has no microphone, so on-device STT is verified by pushing a synthesized WAV through
+/// The test machine has no microphone, so on-device STT is verified by pushing a synthesized WAV through
 /// the same converter + SpeechAnalyzer pipeline the mic tap uses.
 struct SpeechRecognizerTests {
     @Test func transcribesFixtureOnDevice() async throws {

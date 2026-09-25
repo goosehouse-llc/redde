@@ -3,7 +3,7 @@ import Testing
 @testable import Echo
 
 /// Live tests against a real tailnet. They skip cleanly when the backend isn't reachable so the
-/// suite still passes on a plane. Run from Paloma or any tailnet device.
+/// suite still passes on a plane. Run from a machine that can reach the servers.
 struct LiveTransportTests {
     private static func reachable(_ url: URL) async -> Bool {
         var request = URLRequest(url: url)

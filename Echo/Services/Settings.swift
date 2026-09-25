@@ -82,7 +82,7 @@ final class Settings {
     var openToVoiceScreen: Bool {
         didSet { defaults.set(openToVoiceScreen, forKey: Keys.openToVoiceScreen) }
     }
-    /// Speak replies with Kokoro on Paloma instead of the on-device voice.
+    /// Speak replies with a Kokoro server instead of the on-device voice.
     var useKokoro: Bool {
         didSet { defaults.set(useKokoro, forKey: Keys.useKokoro) }
     }
@@ -230,7 +230,7 @@ final class Settings {
         return URL(string: raw.hasSuffix("/") ? String(raw.dropLast()) : raw)
     }
 
-    /// Fallback when the backend doesn't report its window (the gateway doesn't). Paloma runs 131072.
+    /// Fallback when the backend doesn't report its window (the gateway doesn't). 131072 suits most local models.
     var contextWindow: Int {
         didSet { defaults.set(contextWindow, forKey: Keys.contextWindow) }
     }

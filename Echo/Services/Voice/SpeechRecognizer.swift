@@ -121,7 +121,7 @@ final class SpeechRecognizer {
     }
 
     /// Transcribes an audio file through the exact pipeline the mic uses (converter + analyzer).
-    /// Used by tests; Paloma has no microphone, so this is how STT gets verified offline.
+    /// Used by tests; the test machine has no microphone, so this is how STT gets verified offline.
     static func transcribe(fileURL: URL) async throws -> String {
         let transcriber = try await makeTranscriber()
         guard let analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber]) else {

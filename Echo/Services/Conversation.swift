@@ -333,7 +333,7 @@ final class Conversation {
                 try Task.checkCancellation()
                 flushDeltas()
                 // Serve hands MEDIA:<path> tags through verbatim, and the sessions API only
-                // inlines small images — both daemons share dchermes' filesystem, so the serve
+                // inlines small images — both daemons share the Hermes host's filesystem, so the serve
                 // file API can fetch what either transport left as a bare path. Runs before the
                 // reply is persisted, notified, and mirrored to the widget.
                 if transportKind == .hermesServe

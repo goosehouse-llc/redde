@@ -33,7 +33,7 @@ struct ModelOptionsTests {
     }
 
     /// The live gateway/serve payloads carry models as bare id strings, with the active
-    /// selection named by top-level model/provider. This is what dchermes actually sends.
+    /// selection named by top-level model/provider. This is what a real gateway sends.
     @Test func parsesStringModelLists() throws {
         let raw = #"{"model":"gemma4-26b-a4b","provider":"custom:vision","providers":[{"slug":"custom:vision","name":"vision","is_current":true,"models":["gemma4-26b-a4b","qwen3-4b"]},{"slug":"anthropic","name":"Anthropic","models":["claude-fable-5"]}]}"#
         let choices = try HermesSessionsAPI.parseModelOptions(Data(raw.utf8))

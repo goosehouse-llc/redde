@@ -110,7 +110,7 @@ struct AssistantCompletedTests {
     }
 }
 
-/// The dchermes approval bridge surfaces approval-gated tool calls on the session stream;
+/// An approval bridge on the gateway surfaces approval-gated tool calls on the session stream;
 /// the run id rides as the routing token for POST /v1/runs/{run_id}/approval.
 struct SessionsApprovalTests {
     private func ev(_ name: String, _ json: String) -> SSEEvent { SSEEvent(event: name, data: json, id: nil) }

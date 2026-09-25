@@ -1,7 +1,7 @@
 import Foundation
 
 /// OpenAI-compatible `/v1/chat/completions` streaming. Stateless: the full history is sent each
-/// turn. Earlier turns are never rewritten so Paloma's prefix cache stays warm.
+/// turn. Earlier turns are never rewritten so the server's prefix cache stays warm.
 nonisolated struct ChatCompletionsTransport: HermesTransport {
     var baseURL: URL
     var apiKey: String?

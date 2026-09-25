@@ -84,7 +84,7 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
         var args: JSONValue?
         var message: String?
         var usage: Usage?
-        // approval.request (the dchermes approval bridge)
+        // approval.request (from an approval bridge on the gateway)
         var request_id: String?
         var command: String?
         var description: String?
