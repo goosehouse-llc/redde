@@ -63,6 +63,14 @@ A Hermes agent (github.com/NousResearch/hermes-agent) or an OpenAI-compatible en
 
 Hermes is an open-source project by Nous Research. Redde is an independent client and is not affiliated with Nous Research.
 
+## What's New in 1.4 (4000)
+Several Hermes servers in one app.
+
+• Save more than one Hermes server, say Home and Office, and switch between them from Settings or the server row at the top of your conversations. Each keeps its own addresses, keys, profile and model.
+• Switching starts a fresh conversation, and your conversations, cron jobs and Kanban board follow the server you pick.
+• Your existing setup becomes your first server when you update, keys and all.
+• If the profile you picked no longer exists on the server, Redde says so and takes you to choose another.
+
 ## What's New in 1.3 (4000)
 Hermes profiles, clearer settings, and a round of fixes.
 
