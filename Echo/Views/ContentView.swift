@@ -63,72 +63,17 @@ struct ContentView: View {
             settings.applyLocalDefaultsIfPresent()
             if !settings.setupDone, !settings.isConfigured { showSetup = true }
             #if DEBUG
-            if CommandLine.arguments.contains("-echo.demo") { conversation.seedDemo() }
-            // Dev hook: `-echo.demoShort` keeps only the first exchange (tool chips + subagents up top).
-            if CommandLine.arguments.contains("-echo.demoShort") { conversation.keepFirstMessages(2) }
-            // Dev hook: `-echo.demoTwo` keeps the first two exchanges, so it ends on the kitchen reply
-            // (checklist, table) with the calendar reply's code block above: the "rich" screenshot.
-            if CommandLine.arguments.contains("-echo.demoTwo") { conversation.keepFirstMessages(4) }
-            if CommandLine.arguments.contains("-echo.demoLibrary") { conversation.seedDemoLibrary() }
-            // Dev hook: `-echo.demoProjects` needs the serve transport for the Projects section.
-            if CommandLine.arguments.contains("-echo.demoProjects") { settings.transport = .hermesServe }
-            // Dev hook: `-echo.demoLong` seeds a transcript many screens long (scroll UI tests).
-            if CommandLine.arguments.contains("-echo.demoLong") { conversation.seedLongDemo() }
-            // Dev hook: `-echo.demoHosts` replaces any personal endpoints with example hosts (screenshots).
-            if CommandLine.arguments.contains("-echo.demoHosts") {
-                let s = Settings.shared
-                s.gatewayURL = "https://redde.home.example:8642"
-                s.serveURL = "http://redde.home.example:9119"
-                s.serveUsername = "redde"
-                s.fastLaneURL = "http://llama.home.example:11500"
-                s.fastLaneModel = "qwen36-35b-a3b"
-            }
-            // Dev hook: `-echo.screen settings|sessions` opens a sheet for screenshots.
-            let args = CommandLine.arguments
-            if let i = args.firstIndex(of: "-echo.screen"), i + 1 < args.count {
-                switch args[i + 1] {
-                case "settings": showSettings = true
-                case "sessions": showConversations = true
-                case "setup": showSetup = true
-                case "profiles": showProfilePicker = true
-                default: break
-                }
-            }
-            // Dev hook: credentials for a local test server, passed as SIMCTL_CHILD_ environment
-            // variables so they never appear in launch arguments or logs.
-            let env = ProcessInfo.processInfo.environment
-            if let v = env["ECHO_TEST_SERVE_PASSWORD"] { Keychain.write(.serveDashboardPassword, value: v) }
-            if let v = env["ECHO_TEST_GATEWAY_KEY"] { Keychain.write(.gatewayAPIKey, value: v) }
-            if let v = env["ECHO_TEST_PROFILE_KEY"], let profile = Settings.shared.profileName {
-                Keychain.write(account: Keychain.profileAccount(profile), value: v)
-            }
-            // Dev hook: `-echo.switchProfile <name>` switches profile five seconds after launch, to
-            // check that open screens follow (the simulator can't tap the picker).
-            if let i = args.firstIndex(of: "-echo.switchProfile"), i + 1 < args.count {
-                let name = args[i + 1]
-                Task {
-                    try? await Task.sleep(for: .seconds(5))
-                    Settings.shared.hermesProfile = name == "default" ? "" : name
-                    conversation.reset()
-                }
-            }
-            // Dev hook: `-echo.draft "text"` types a question into a focused composer (keyboard screenshot).
-            if let i = args.firstIndex(of: "-echo.draft"), i + 1 < args.count {
-                draft = args[i + 1]
-                Task { try? await Task.sleep(for: .milliseconds(450)); composerFocused = true }
-            }
-            // Speech assets can take a while (and never arrive in the simulator); everything above
-            // must not wait on them.
-            await warmSpeechAssets()
+            applyDevHooks()
             #endif
+            // Download the speech model early so the first voice turn isn't slow. In the background:
+            // it can take a while (and never arrives in the simulator), and opening the voice
+            // screen below must not wait on it. (It sat inside the DEBUG block from 2026-09-11,
+            // so release builds skipped it.)
+            Task { await warmSpeechAssets() }
             if Settings.shared.openToVoiceScreen, router.pendingVoice == nil, !showVoice { openVoice() }
             #if DEBUG
-            // Dev hook: `-echo.voiceView` opens voice mode without listening (screenshots).
-            if CommandLine.arguments.contains("-echo.voiceView") { openVoice() }
-            // Dev hook: `-echo.autoVoice` opens voice mode and starts listening immediately.
-            if CommandLine.arguments.contains("-echo.autoVoice") {
-                await launchVoice(handsFree: false)
-            }
+            if DevHooks.has("-echo.voiceView") { openVoice() }
+            if DevHooks.has("-echo.autoVoice") { await launchVoice(handsFree: false) }
             #endif
         }
         .onOpenURL { url in
@@ -323,6 +268,25 @@ struct ContentView: View {
         }
         voiceSession.beginListening()
     }
+
+    #if DEBUG
+    /// The launch hooks that open this view's own sheets or fill its composer; the rest live in
+    /// `DevHooks` (see there for every flag).
+    private func applyDevHooks() {
+        DevHooks.applyAtLaunch(conversation: conversation, settings: settings)
+        switch DevHooks.value("-echo.screen") {
+        case "settings": showSettings = true
+        case "sessions": showConversations = true
+        case "setup": showSetup = true
+        case "profiles": showProfilePicker = true
+        default: break
+        }
+        if let text = DevHooks.value("-echo.draft") {
+            draft = text
+            Task { try? await Task.sleep(for: .milliseconds(450)); composerFocused = true }
+        }
+    }
+    #endif
 
     /// Download the on-device speech model early so the first voice turn isn't slow.
     private func warmSpeechAssets() async {

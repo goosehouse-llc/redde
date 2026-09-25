@@ -15,7 +15,7 @@ struct VoiceView: View {
     /// Dev hook: `-echo.voiceDemo` shows voice mode mid-listen — raised waveform, the Listening
     /// label, a spoken caption — for store screenshots, where the simulator has no microphone.
     #if DEBUG
-    private static let demo = CommandLine.arguments.contains("-echo.voiceDemo")
+    private static let demo = DevHooks.voiceDemo
     #else
     private static let demo = false
     #endif

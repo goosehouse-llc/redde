@@ -47,7 +47,7 @@ struct SettingsView: View {
             #if DEBUG
             // Dev hook: `-echo.settingsAnchor files` scrolls to the context and memory files (screenshots).
             .task {
-                guard CommandLine.arguments.contains("-echo.settingsAnchor") else { return }
+                guard DevHooks.settingsAnchor else { return }
                 try? await Task.sleep(for: .milliseconds(600))
                 proxy.scrollTo("agentFiles", anchor: .top)
             }

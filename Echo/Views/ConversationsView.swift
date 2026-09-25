@@ -61,8 +61,7 @@ struct ConversationsList: View {
     /// Dev hook: `-echo.section cron|kanban` opens the list on that tab (screenshots).
     private static var initialSection: Tab {
         #if DEBUG
-        let args = CommandLine.arguments
-        if let i = args.firstIndex(of: "-echo.section"), i + 1 < args.count, let tab = Tab(rawValue: args[i + 1]) { return tab }
+        if let tab = DevHooks.value("-echo.section").flatMap(Tab.init(rawValue:)) { return tab }
         #endif
         return .sessions
     }
@@ -415,7 +414,7 @@ struct ConversationsList: View {
         #if DEBUG
         // Dev hook: `-echo.demoProjects` fills the list from a fixture, so the project-folder
         // path can be driven without a gateway.
-        if CommandLine.arguments.contains("-echo.demoProjects") {
+        if DevHooks.demoProjects {
             projects = Self.demoProjects
             ledger = Self.demoProjects.flatMap { $0.lanes.flatMap(\.sessions) }
             ledgerError = nil

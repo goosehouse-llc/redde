@@ -54,7 +54,7 @@ struct AppIconSettings: View {
     @State private var failure: String?
     // Dev hook: `-echo.expandAppIcons` opens the grid (the "Make it yours" store screenshot).
     #if DEBUG
-    @State private var expanded = CommandLine.arguments.contains("-echo.expandAppIcons")
+    @State private var expanded = DevHooks.expandAppIcons
     #else
     @State private var expanded = false
     #endif

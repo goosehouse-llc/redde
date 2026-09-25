@@ -487,7 +487,7 @@ struct KanbanClient {
 #if DEBUG
 extension KanbanClient {
     /// Screenshot helper (`-echo.demoKanban`): a sample board instead of the plugin's.
-    static var isDemo: Bool { CommandLine.arguments.contains("-echo.demoKanban") }
+    static var isDemo: Bool { DevHooks.demoKanban }
 
     static func demoBoard() -> Board {
         let now = Date.now.timeIntervalSince1970
