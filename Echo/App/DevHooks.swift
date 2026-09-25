@@ -18,6 +18,7 @@ import Foundation
 /// - `-echo.draft "text"`: type a question into a focused composer (keyboard screenshots).
 /// - `-echo.voiceView`: open voice mode without listening. `-echo.voiceDemo` poses it mid-listen;
 ///   `-echo.autoVoice` opens it and starts listening.
+/// - `-echo.whatsNew`: show this version's "What's New" sheet (any other `-echo.` flag hides it).
 /// - `-echo.switchProfile <name>`: switch profile five seconds after launch.
 /// - `-echo.testServer <name> <Dashboard URL> <username>`: add a server with that name if there's
 ///   none (its password from `ECHO_TEST_SERVER_PASSWORD`). `-echo.switchServer <name>` switches to
@@ -38,6 +39,10 @@ enum DevHooks {
         guard let i = args.firstIndex(of: flag), i + 1 < args.count else { return nil }
         return args[i + 1]
     }
+
+    /// Any demo or screen flag: an App Store capture or a test, which the "What's New" sheet
+    /// must not cover (`-echo.whatsNew` shows it on purpose).
+    static var screenshotRun: Bool { args.contains { $0.hasPrefix("-echo.") } }
 
     static var demoKanban: Bool { has("-echo.demoKanban") }
     static var demoProjects: Bool { has("-echo.demoProjects") }
