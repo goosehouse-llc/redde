@@ -78,7 +78,7 @@ struct GatewayKeySettings: View {
                         saveTitle: "Save key", removeTitle: "Remove key", hasValue: $hasStoredKey,
                         onSaved: { saved.toggle() })
         } header: {
-            Text("Redde API")
+            Text("Hermes API")
         } footer: {
             Text(hasStoredKey
                 ? "A key is stored in the Keychain (this device only). It is never shown again."
@@ -107,9 +107,9 @@ struct ServeLoginSettings: View {
                 Text(stateLabel).foregroundStyle(.secondary)
             }
         } header: {
-            Text("Redde serve (desktop gateway)")
+            Text("Hermes Dashboard (WebSocket)")
         } footer: {
-            Text("The same login as the Redde dashboard. Gives live reasoning, tool approvals and slash commands over one WebSocket.")
+            Text("The same login as the Hermes Dashboard. Gives live reasoning, tool approvals and slash commands over one WebSocket.")
         }
     }
 
@@ -139,7 +139,7 @@ struct CloudflareSettings: View {
         } header: {
             Text("Cloudflare Access (optional)")
         } footer: {
-            Text("If Redde serve sits behind Cloudflare Access instead of a tailnet, create a service token in Zero Trust and paste its ID and secret. Sent as CF-Access-Client-Id / -Secret on every request and WebSocket.")
+            Text("If the Hermes Dashboard sits behind Cloudflare Access instead of a tailnet, create a service token in Zero Trust and paste its ID and secret. Sent as CF-Access-Client-Id / -Secret on every request and WebSocket.")
         }
         .task { hasSecret = Keychain.read(.cfAccessClientSecret) != nil }
     }
@@ -161,7 +161,7 @@ struct FastLaneSettings: View {
                         saveTitle: "Save key", removeTitle: "Remove key", optional: true, hasValue: $hasKey,
                         onSaved: { saved.toggle() })
         } header: {
-            Text("Fast lane (direct to inference)")
+            Text("OpenAI-compatible (direct to a model)")
         } footer: {
             Text("Any OpenAI-compatible endpoint, with no agent in between: llama.cpp, llama-swap, vLLM, Ollama, or a hosted provider. No tools or memory, lowest latency.")
         }

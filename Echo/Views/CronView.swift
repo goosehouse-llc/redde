@@ -18,7 +18,7 @@ struct CronView: View {
         List {
             if backend == nil {
                 ContentUnavailableView("No gateway configured", systemImage: "clock.badge.questionmark",
-                                       description: Text("Cron jobs live on the Redde gateway. Set up Redde serve or the Redde API server in Settings."))
+                                       description: Text("Cron jobs live on the Hermes gateway. Set up the Hermes Dashboard or the Hermes API in Settings."))
                     .listRowSeparator(.hidden)
             } else if let error {
                 ContentUnavailableView("Couldn't load jobs", systemImage: "wifi.exclamationmark", description: Text(error))

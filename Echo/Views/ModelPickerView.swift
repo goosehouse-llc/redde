@@ -61,7 +61,7 @@ struct ModelPickerView: View {
                 if isFastLane {
                     Text("On a self-hosted Qwen model, High switches extended thinking on for new turns; other levels answer without thinking. Models that don't support the switch ignore it.")
                 } else {
-                    Text("How much the model thinks before answering. Default leaves it to the gateway. Applies to new turns on the sessions API and to new sessions on Redde serve.")
+                    Text("How much the model thinks before answering. Default leaves it to the gateway. Applies to new turns on the Hermes API and to new sessions on the Hermes Dashboard.")
                 }
             }
 
@@ -200,7 +200,7 @@ struct ModelPickerView: View {
             } else if let backend = SessionBackend.available(conversation).first {
                 choices = try await backend.modelOptions()
             } else {
-                error = "Add the Redde API key or the Redde serve login in Settings."
+                error = "Add the Hermes API key or the Hermes Dashboard login in Settings."
                 return
             }
             error = nil

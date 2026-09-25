@@ -165,7 +165,7 @@ struct AgentSettings: View {
             NavigationLink { ToolsView() } label: { Label("Tools", systemImage: "wrench.and.screwdriver") }
                 .disabled(!canReachGateway)
         } footer: {
-            Text("Toolsets enabled on the gateway. Read through the Redde API key or the Redde serve login, whichever is set.")
+            Text("Toolsets enabled on the gateway. Read through the Hermes API key or the Hermes Dashboard login, whichever is set.")
         }
 
         Section {
@@ -180,7 +180,7 @@ struct AgentSettings: View {
         } header: {
             Text("Context files")
         } footer: {
-            Text(canEditFiles ? "Edited in place on the Redde host through Redde serve." : "Needs the Redde serve login below.")
+            Text(canEditFiles ? "Edited in place on the Hermes host through the Hermes Dashboard." : "Needs the Hermes Dashboard login below.")
         }
         .disabled(!canEditFiles)
 
@@ -285,7 +285,7 @@ struct MetricsSettings: View {
         } header: {
             Text("Metrics")
         } footer: {
-            Text("Used for the “ctx %” figure when the backend can't report its window. The fast lane reads it from llama.cpp automatically.")
+            Text("Used for the “ctx %” figure when the backend can't report its window. A llama.cpp server reports it automatically.")
         }
     }
 }
@@ -315,7 +315,7 @@ struct LockSettings: View {
         } footer: {
             Text(settings.requireBiometrics
                 ? "Redde locks when it's been in the background longer than this. The device passcode works as a fallback. Background Shortcuts runs aren't gated."
-                : "Gate the app behind \(AppLock.biometryName). The phone holds the Redde API key and the dashboard password.")
+                : "Gate the app behind \(AppLock.biometryName). The phone holds the Hermes API key and the dashboard password.")
         }
     }
 }

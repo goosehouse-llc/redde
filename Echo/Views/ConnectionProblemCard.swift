@@ -31,7 +31,7 @@ struct ConnectionProblemCard: View {
 
     private var title: String {
         switch kind {
-        case .login: "Sign in to Redde serve"
+        case .login: "Sign in to the Hermes Dashboard"
         case .key: "Add your gateway key"
         case .unreachable: "Can't reach your gateway"
         case .other: "Couldn't load conversations"
@@ -75,7 +75,7 @@ struct ConnectionProblemCard: View {
             HStack(spacing: 8) {
                 Button(action: retry) { Text("Try again").frame(maxWidth: .infinity) }
                 if canUseFastLane {
-                    Button { settings.transport = .chatCompletions } label: { Text("Use fast lane").frame(maxWidth: .infinity) }
+                    Button { settings.transport = .chatCompletions } label: { Text("Use the model directly").frame(maxWidth: .infinity) }
                         .accessibilityHint("Talks to the model directly, without the gateway")
                 } else if kind != .login, kind != .key {
                     Button(action: openSettings) { Text("Settings").frame(maxWidth: .infinity) }

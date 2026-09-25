@@ -119,7 +119,7 @@ struct SkillEditorView: View {
     private func draft() async {
         let viaAPI = conversation.ledgerAPI() != nil
         guard viaAPI || HermesServeClient.shared.hasCredentials else {
-            error = "Drafting needs the Redde API key or the Redde serve login in Settings."
+            error = "Drafting needs the Hermes API key or the Hermes Dashboard login in Settings."
             showDraft = false
             return
         }

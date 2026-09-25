@@ -14,7 +14,7 @@ Redde is a voice and chat client for a self-hosted AI assistant. It has no serve
 4. Type a question and tap the arrow, or tap the microphone and speak. Speech recognition runs on-device; replies are read aloud.
 5. Optional: tap the + button to attach a photo and ask about it; say "Hey Siri, ask Redde" to enter voice mode from Siri.
 
-The Settings sections for "Redde API", "Redde serve", Skills, Tools, Context files and Memory require a self-hosted Hermes gateway and are not exercisable with the review credentials; they show a clear message when no gateway is configured.
+The Settings sections for "Hermes API", "Hermes Dashboard", Skills, Tools, Context files and Memory require a self-hosted Hermes gateway and are not exercisable with the review credentials; they show a clear message when no gateway is configured.
 
 **CarPlay (voice-based conversational app, `com.apple.developer.carplay-voice-based-conversation`):**
 1. Set up the Fast lane on the phone as above, then connect the phone to CarPlay (a vehicle or the CarPlay Simulator).

@@ -32,8 +32,8 @@ struct KanbanView: View {
             // the first scroll view it found, the columns' own, which pushed them out of sight.
             Section {
                 if !available {
-                    ContentUnavailableView("Needs Redde serve", systemImage: "rectangle.split.3x1",
-                                           description: Text("The kanban board is part of the Redde dashboard. Add your Redde serve address and login in Settings."))
+                    ContentUnavailableView("Needs the Hermes Dashboard", systemImage: "rectangle.split.3x1",
+                                           description: Text("The kanban board is part of the Hermes Dashboard. Add your Hermes Dashboard address and login in Settings."))
                         .listRowSeparator(.hidden)
                 } else if let error {
                     ContentUnavailableView("Couldn't load the board", systemImage: "wifi.exclamationmark", description: Text(error))

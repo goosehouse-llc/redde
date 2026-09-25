@@ -542,7 +542,7 @@ struct ConversationsList: View {
                 Spacer(minLength: 8)
                 Text(DateGroup.rowTime(record.updatedAt)).font(.caption).foregroundStyle(.secondary)
             }
-            Text("\(record.turnCount) turn\(record.turnCount == 1 ? "" : "s") · \(record.transport == .chatCompletions ? "Fast lane" : "Redde")")
+            Text("\(record.turnCount) turn\(record.turnCount == 1 ? "" : "s") · \(record.transport == .chatCompletions ? "OpenAI-compatible" : "Hermes")")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)

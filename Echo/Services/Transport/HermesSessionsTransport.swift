@@ -37,7 +37,7 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
     static func makeInput(text: String, attachments: [Attachment]) throws -> JSONValue {
         try MultimodalInput.make(text: text, attachments: attachments, textType: "input_text",
                                  imageType: "input_image", nestedImageURL: false,
-                                 transportName: "the Redde sessions API")
+                                 transportName: "the Hermes API")
     }
 
     func stream(_ request: TurnRequest) -> AsyncThrowingStream<TurnEvent, Error> {

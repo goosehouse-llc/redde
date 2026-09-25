@@ -27,8 +27,8 @@ Three transports, switchable in Settings:
 
 | Transport | Endpoint | Auth | What you get |
 | --- | --- | --- | --- |
-| Redde sessions (default) | `https://hermes.example.ts.net:8642/api/sessions/{id}/chat/stream` | Bearer `API_SERVER_KEY` | The shared session ledger: every gateway session from Telegram, Discord, CLI and Redde, resumable from the list. Streams reasoning (`tool.progress` with `_thinking`), tool starts/results, and usage. |
-| Redde serve | `http://hermes.example.ts.net:9119/api/ws` | Dashboard username + password (cookie login, then a 30 s WebSocket ticket) | The desktop-gateway protocol Conduit uses: JSON-RPC over one WebSocket. Live `reasoning.delta`, tool events, **tool approvals**, and **slash commands** (`/help`, `/model`, custom commands via `slash.exec` / `command.dispatch`). |
+| Hermes API (default) | `https://hermes.example.ts.net:8642/api/sessions/{id}/chat/stream` | Bearer `API_SERVER_KEY` | The shared session ledger: every gateway session from Telegram, Discord, CLI and Redde, resumable from the list. Streams reasoning (`tool.progress` with `_thinking`), tool starts/results, and usage. |
+| Hermes Dashboard | `http://hermes.example.ts.net:9119/api/ws` | Dashboard username + password (cookie login, then a 30 s WebSocket ticket) | The desktop-gateway protocol Conduit uses: JSON-RPC over one WebSocket. Live `reasoning.delta`, tool events, **tool approvals**, and **slash commands** (`/help`, `/model`, custom commands via `slash.exec` / `command.dispatch`). |
 | Fast lane (direct to inference) | `http://inference.example.ts.net:11500/v1/chat/completions` | none | Straight to llama-swap / llama.cpp, no agent at all. No tools, lowest latency. Works when the gateway is down. History is sent each turn and never rewritten, so Paloma's prefix cache stays warm. |
 
 Both ledger transports write to the same `state.db` on dchermes, so a session started by voice is visible in the dashboard and in Telegram's `/sessions`, and any of theirs can be continued from Echo. Memory saves and Basic Memory writes are agent-side tools; say "remember that…" or "write this to Basic Memory" and watch the tool chip. Settings → "Tools available to Echo" lists the toolsets the API server platform has enabled, which is where to check that `memory` and the Basic Memory MCP server are reachable.
@@ -51,15 +51,15 @@ The paperclip in the composer attaches photos (Photo Library) or files (Files ap
 
 | Transport | Images | Text files | PDF / other |
 | --- | --- | --- | --- |
-| Redde sessions | `input_image` data URL parts | inlined into the prompt | refused with a message (API server has no file parts) |
-| Redde serve | `image.attach_bytes` | `file.attach` | `pdf.attach` / `file.attach`, staged on the session before `prompt.submit` |
+| Hermes API | `input_image` data URL parts | inlined into the prompt | refused with a message (API server has no file parts) |
+| Hermes Dashboard | `image.attach_bytes` | `file.attach` | `pdf.attach` / `file.attach`, staged on the session before `prompt.submit` |
 | Fast lane | OpenAI `image_url` parts (needs a vision projector loaded in llama.cpp) | inlined | refused |
 
 Attachment bytes are stored one file per attachment under Application Support/attachments (file-protected); the transcript JSON keeps only metadata, so history with photos stays fast to load. The share inbox is the one place bytes are encoded inline, because the extension's files aren't readable by the app.
 
 ### Model and reasoning effort
 
-Settings → Transport → Model opens a picker fed by the active backend: the gateway's `/api/model/options` (or hermes serve's `model.options`) grouped by provider, or llama-swap's `/v1/models` on the fast lane with loaded models flagged. Reasoning effort (default / low / medium / high) sits above it for the Redde sessions and Redde serve transports. The choice is sent as `model` + `provider` + `model_options.reasoning_effort` on every sessions-API turn, and as `model` / `provider` / `reasoning_effort` when hermes serve creates a session, so on hermes serve it takes effect for new conversations.
+Settings → Transport → Model opens a picker fed by the active backend: the gateway's `/api/model/options` (or hermes serve's `model.options`) grouped by provider, or llama-swap's `/v1/models` on the fast lane with loaded models flagged. Reasoning effort (default / low / medium / high) sits above it for the Hermes API and Hermes Dashboard transports. The choice is sent as `model` + `provider` + `model_options.reasoning_effort` on every sessions-API turn, and as `model` / `provider` / `reasoning_effort` when hermes serve creates a session, so on hermes serve it takes effect for new conversations.
 
 ### Message queue
 
@@ -73,7 +73,7 @@ Retries only run while Redde is running; a message held when iOS suspends the ap
 
 ### Steering
 
-While a Redde sessions or Redde serve turn is streaming, the composer's placeholder changes to "Steer the reply…" and typing shows an orange steer button next to Send after this reply (Stop returns when the field is empty). The text is injected into the running turn without cancelling it: `session.steer` on hermes serve, `POST /v1/runs/{run_id}/steer` on the sessions API (the run id comes from the stream's `run.started`). The note appears in the transcript as a small orange chip, and the status line reports whether the gateway queued or rejected it.
+While a Hermes API or Hermes Dashboard turn is streaming, the composer's placeholder changes to "Steer the reply…" and typing shows an orange steer button next to Send after this reply (Stop returns when the field is empty). The text is injected into the running turn without cancelling it: `session.steer` on hermes serve, `POST /v1/runs/{run_id}/steer` on the sessions API (the run id comes from the stream's `run.started`). The note appears in the transcript as a small orange chip, and the status line reports whether the gateway queued or rejected it.
 
 ### Live thinking
 
@@ -87,7 +87,7 @@ Facts about the gateway that shaped the client (hermes-agent 0.21.1):
 
 ## First run and configuration
 
-Shipped builds have no server baked in. On first launch a setup sheet asks which backend to use, takes the URL and credentials, and offers "Test connection", which probes the server the same way the transport does (health + key check for the Redde API server, status + login for hermes serve, `/v1/models` for an OpenAI-compatible endpoint). The same sheet is reachable from Settings → Transport → "Set up connection…". The fast lane accepts an optional API key, so it can point at a hosted OpenAI-compatible provider as well as llama.cpp.
+Shipped builds have no server baked in. On first launch a setup sheet asks which backend to use, takes the URL and credentials, and offers "Test connection", which probes the server the same way the transport does (health + key check for the Hermes API server, status + login for hermes serve, `/v1/models` for an OpenAI-compatible endpoint). The same sheet is reachable from Settings → Transport → "Set up connection…". The fast lane accepts an optional API key, so it can point at a hosted OpenAI-compatible provider as well as llama.cpp.
 
 For personal builds, a git-ignored `Echo/Resources/LocalDefaults.json` (keys: `transport`, `gatewayURL`, `serveURL`, `serveUsername`, `fastLaneURL`, `fastLaneModel`, `kokoroURL`, `kokoroVoice`, `contextWindow`) is applied once on first launch, and the live tests read their endpoints from it. It never ships and never commits.
 
@@ -105,19 +105,19 @@ hermes serve behind Cloudflare Access instead of a tailnet: Settings → Cloudfl
 
 ## Projects
 
-Over hermes serve, the Sessions tab starts with a **Projects** list: the gateway groups sessions by working directory and git repo (`projects.tree`), with "Home" holding everything that has no project. Tap one for its sessions, grouped by repo checkout and branch, with its own search. The flat **Recent** list follows. The Redde API server doesn't expose working directories, so that transport shows the flat list only.
+Over hermes serve, the Sessions tab starts with a **Projects** list: the gateway groups sessions by working directory and git repo (`projects.tree`), with "Home" holding everything that has no project. Tap one for its sessions, grouped by repo checkout and branch, with its own search. The flat **Recent** list follows. The Hermes API server doesn't expose working directories, so that transport shows the flat list only.
 
 ## Cron and Kanban
 
 The sessions sheet (and the iPad sidebar) has a Sessions / Cron / Kanban switcher.
 
-**Cron** lists the gateway's scheduled jobs with state, schedule and next run. Swipe to pause/resume or run now, tap for the prompt, last error and recent runs, “+” to create one. Schedules use the gateway's own grammar (“every 30m”, “weekdays at 9am”, a cron expression, “in 2h”, or an ISO time). Each job has a delivery target: Local (save on the gateway), Origin, or one of the gateway's configured platforms (listed by `/api/cron/delivery-targets` on serve; typed in on the API server). Over serve, “New → From a blueprint…” opens the gateway's blueprint catalog (morning brief, weekly review, price watch, …): fill the form and it becomes a job. Works over **hermes serve** (`/api/cron/jobs`, with run history and blueprints) or the **Redde API server** (`/api/jobs`, no run history). Jobs only fire while the gateway is running.
+**Cron** lists the gateway's scheduled jobs with state, schedule and next run. Swipe to pause/resume or run now, tap for the prompt, last error and recent runs, “+” to create one. Schedules use the gateway's own grammar (“every 30m”, “weekdays at 9am”, a cron expression, “in 2h”, or an ISO time). Each job has a delivery target: Local (save on the gateway), Origin, or one of the gateway's configured platforms (listed by `/api/cron/delivery-targets` on serve; typed in on the API server). Over serve, “New → From a blueprint…” opens the gateway's blueprint catalog (morning brief, weekly review, price watch, …): fill the form and it becomes a job. Works over **hermes serve** (`/api/cron/jobs`, with run history and blueprints) or the **Hermes API server** (`/api/jobs`, no run history). Jobs only fire while the gateway is running.
 
-**Kanban** shows the Redde dashboard's task board (a bundled plugin on hermes serve; not available through the API server). One column at a time on the phone: Triage, To do, Scheduled, Ready, Running, Blocked, Review, Done. Swipe a card forward, or pick any status from its menu; tap for details, result, comments, and “Ask Redde about this card”. New cards start in Triage unless you mark them Ready with an assignee, in which case the dispatcher picks them up. `Running` is set by the dispatcher only. Cards can be edited (title, details, priority, assignee) from the menu or the detail view; moving to Blocked or Scheduled asks for a reason, Review or Done for a summary, which the server records on the card. The board updates live over the plugin's events socket (green indicator in the toolbar) and falls back to polling when the socket can't be opened. Code in `Services/HermesAutomation.swift`, `Views/CronView.swift`, `Views/KanbanView.swift`.
+**Kanban** shows the Hermes Dashboard's task board (a bundled plugin on hermes serve; not available through the API server). One column at a time on the phone: Triage, To do, Scheduled, Ready, Running, Blocked, Review, Done. Swipe a card forward, or pick any status from its menu; tap for details, result, comments, and “Ask Redde about this card”. New cards start in Triage unless you mark them Ready with an assignee, in which case the dispatcher picks them up. `Running` is set by the dispatcher only. Cards can be edited (title, details, priority, assignee) from the menu or the detail view; moving to Blocked or Scheduled asks for a reason, Review or Done for a summary, which the server records on the card. The board updates live over the plugin's events socket (green indicator in the toolbar) and falls back to polling when the socket can't be opened. Code in `Services/HermesAutomation.swift`, `Views/CronView.swift`, `Views/KanbanView.swift`.
 
 ## Subagents
 
-When Redde delegates work (`delegate_task`), each child agent gets a row under the reply: its goal, task N of M, a live line with the tool count and the tool in use, then the duration and summary when it finishes. Over hermes serve, tap a row to open the child's own transcript: its stored history, then live reasoning, tool calls and text while it runs (the gateway mirrors the child's stream onto a lazily resumed session). From there you can steer the child with a note or stop it. Long-press a row to expand or copy the summary. Rows nest by depth. Over **hermes serve** these are driven by the gateway's `subagent.start/tool/progress/complete` events. The **Redde API server** stream does not forward subagent events, so rows there are synthesized from the delegate call's goals and show "running in the background"; the results arrive in a later turn. Drawn by `Views/SubagentRows.swift`.
+When Redde delegates work (`delegate_task`), each child agent gets a row under the reply: its goal, task N of M, a live line with the tool count and the tool in use, then the duration and summary when it finishes. Over hermes serve, tap a row to open the child's own transcript: its stored history, then live reasoning, tool calls and text while it runs (the gateway mirrors the child's stream onto a lazily resumed session). From there you can steer the child with a note or stop it. Long-press a row to expand or copy the summary. Rows nest by depth. Over **hermes serve** these are driven by the gateway's `subagent.start/tool/progress/complete` events. The **Hermes API server** stream does not forward subagent events, so rows there are synthesized from the delegate call's goals and show "running in the background"; the results arrive in a later turn. Drawn by `Views/SubagentRows.swift`.
 
 ## Markdown
 
@@ -161,7 +161,7 @@ On the voice screen, the replay button next to Hands-free speaks the last reply 
 
 ## The ctx figure
 
-The footer's `ctx` is context occupancy, not spend. On **hermes serve** it comes from the gateway's own `context_used` / `context_max` (pushed as `session.usage` during a turn and repeated on `message.complete`). On the **fast lane** it is the one call's prompt + completion tokens against the detected window. The **Redde API server** only reports the session's running totals across every API call, which is a billing number, not a context size, so the footer says `session 251k tok` there instead of a percentage. The demo conversation also updates that line.
+The footer's `ctx` is context occupancy, not spend. On **hermes serve** it comes from the gateway's own `context_used` / `context_max` (pushed as `session.usage` during a turn and repeated on `message.complete`). On the **fast lane** it is the one call's prompt + completion tokens against the detected window. The **Hermes API server** only reports the session's running totals across every API call, which is a billing number, not a context size, so the footer says `session 251k tok` there instead of a percentage. The demo conversation also updates that line.
 
 ## Streaming smoothness
 
@@ -185,7 +185,7 @@ Settings → Lock → "Require Face ID" (or Touch ID / passcode, whatever the de
 
 ## Store listing pages
 
-**Name.** The App Store listing is “Redde for Hermes” (so it surfaces when someone searches “hermes”); the home-screen label and in-app strings say “Redde”, server labels included (“Redde API server”, “Redde serve”), except the setup intro, which names Hermes as the server software; Siri also answers to “Hermes” and “Sol” (`INAlternativeAppNames`). The bundle ID stays `com.goosehouse.echo` and the Xcode targets keep their Echo names. SKU: `redde-ios` (fixed when the record was created; internal only).
+**Name.** The App Store listing is “Redde for Hermes” (so it surfaces when someone searches “hermes”); the home-screen label and in-app strings say “Redde” when they mean the assistant. The connection methods use their mainstream names: “Hermes API” (the gateway's API server), “Hermes Dashboard” (`hermes serve`) and “OpenAI-compatible” (straight to a model server); Siri also answers to “Hermes” and “Sol” (`INAlternativeAppNames`). The bundle ID stays `com.goosehouse.echo` and the Xcode targets keep their Echo names. SKU: `redde-ios` (fixed when the record was created; internal only).
 
 The privacy policy and support page are published at https://legal.goosehouse.org/redde/privacy and https://legal.goosehouse.org/redde/support (the same Cloudflare static site that hosts the Homeschool Wizard policy, from `HomeschoolWizard/legal`; deploy with `npx wrangler deploy` there). The Markdown sources live in `docs/`.
 
@@ -253,7 +253,7 @@ Echo registers two App Shortcuts, named "Ask Redde" and "Talk with Redde". "Herm
 
 Siri is the trigger only. It never hears the question: the app opens first and its own on-device recognizer listens. This is deliberate. A parameterized phrase ("ask Redde ⟨question⟩") would route the dictation through Siri's own recognizer and is unreliable for long free-form questions.
 
-**Shortcuts action.** "Ask Redde a Question" takes a text parameter and returns the reply as text, so it works inside your own shortcuts and automations ("Get clipboard → Ask Redde → Speak"), and Siri speaks the reply when a shortcut runs by voice. It runs in the background on the transport selected in Settings; on the Redde sessions and Redde serve transports the exchanges accumulate in a "Shortcuts" session in the ledger rather than the open conversation. Apple doesn't allow free-text parameters in Siri phrases, so this is a Shortcuts building block, not a "Hey Siri, ask Redde ⟨anything⟩" phrase.
+**Shortcuts action.** "Ask Redde a Question" takes a text parameter and returns the reply as text, so it works inside your own shortcuts and automations ("Get clipboard → Ask Redde → Speak"), and Siri speaks the reply when a shortcut runs by voice. It runs in the background on the transport selected in Settings; on the Hermes API and Hermes Dashboard transports the exchanges accumulate in a "Shortcuts" session in the ledger rather than the open conversation. Apple doesn't allow free-text parameters in Siri phrases, so this is a Shortcuts building block, not a "Hey Siri, ask Redde ⟨anything⟩" phrase.
 
 **Control Center, Lock Screen, Action Button.** The `EchoControls` widget extension provides two controls, "Ask Redde" and "Talk with Redde" (hands-free). Add them from Control Center's edit mode, the Lock Screen's control slots, or Settings → Action Button → Controls. A control runs in the widget extension, so its intent asks the system to open the app (`openAppWhenRun`) and leaves a request in the App Group (`Shared/LaunchFlag.swift`); the app consumes it on activation and starts listening. The `echo://listen` URL scheme remains for the Home Screen widget and Siri. Note the dev flags (`-echo.demo` and friends) exist in Debug builds only.
 
@@ -287,7 +287,7 @@ Every conversation with at least one turn is saved on the phone (JSON in Applica
 
 ### Session housekeeping
 
-In the Redde sessions list: search (title, preview, source), swipe right to pin or unpin (pinned sessions sort first), swipe left to archive or delete, and long-press for rename, pin, fork, archive, delete. Rename/pin/archive go through `PATCH /api/sessions/{id}` on either surface; fork uses `POST /api/sessions/{id}/fork` on the API server and `session.branch` on hermes serve. Archived sessions leave the list but stay in the gateway's database.
+In the Hermes API list: search (title, preview, source), swipe right to pin or unpin (pinned sessions sort first), swipe left to archive or delete, and long-press for rename, pin, fork, archive, delete. Rename/pin/archive go through `PATCH /api/sessions/{id}` on either surface; fork uses `POST /api/sessions/{id}/fork` on the API server and `session.branch` on hermes serve. Archived sessions leave the list but stay in the gateway's database.
 
 ### Usage and cost
 

@@ -19,7 +19,7 @@ nonisolated enum ConnectionTester {
     /// Hermes API server: /health, then /v1/models with the key.
     static func hermesAPI(url: URL, apiKey: String?) async -> Outcome {
         guard let (_, health) = try? await get(url.appending(path: "health"), key: nil), health == 200 else {
-            return .failed("No Redde API server answered at \(url.host() ?? url.absoluteString).")
+            return .failed("No Hermes API server answered at \(url.host() ?? url.absoluteString).")
         }
         guard let apiKey, !apiKey.isEmpty else { return .failed("Server reachable. Add the API key.") }
         guard let (_, status) = try? await get(url.appending(path: "v1/models"), key: apiKey) else {
@@ -37,22 +37,22 @@ nonisolated enum ConnectionTester {
     static func hermesServe(url: URL) async -> Outcome {
         let access = Settings.shared.accessHeaders
         guard let (data, status) = try? await get(url.appending(path: "api/status"), key: nil, headers: access) else {
-            return .failed("No Redde serve answered at \(url.host() ?? url.absoluteString).")
+            return .failed("No Hermes Dashboard answered at \(url.host() ?? url.absoluteString).")
         }
         if status == 403 || status == 302 {
             return .failed(access.isEmpty
                 ? "\(url.host() ?? "The host") is behind an access gate (HTTP \(status)). Add Cloudflare Access service-token headers below."
                 : "Cloudflare Access rejected the service token (HTTP \(status)). Check the client ID and secret.")
         }
-        guard status == 200 else { return .failed("Redde serve answered HTTP \(status).") }
+        guard status == 200 else { return .failed("Hermes Dashboard answered HTTP \(status).") }
         let json = (try? JSONDecoder().decode(JSONValue.self, from: data)) ?? .null
         let version = json["version"]?.string ?? "unknown version"
-        guard json["auth_required"]?.bool == true else { return .ok("Connected to Redde serve \(version) (no login required).") }
+        guard json["auth_required"]?.bool == true else { return .ok("Connected to Hermes Dashboard \(version) (no login required).") }
         do {
             try await HermesServeClient.shared.ensureLoggedIn()
-            return .ok("Connected to Redde serve \(version). Login accepted.")
+            return .ok("Connected to Hermes Dashboard \(version). Login accepted.")
         } catch {
-            return .failed("Redde serve \(version) reachable, but login failed: \(error.localizedDescription)")
+            return .failed("Hermes Dashboard \(version) reachable, but login failed: \(error.localizedDescription)")
         }
     }
 

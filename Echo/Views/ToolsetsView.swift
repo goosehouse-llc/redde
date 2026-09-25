@@ -32,8 +32,8 @@ struct ToolsView: View {
                     Text("Enabled · \(enabled.count)")
                 } footer: {
                     Text(canToggle
-                        ? "Switches change the toolset's platform setting in Redde's config, the same as the dashboard. The API server's own list (platform_toolsets.api_server) is separate and set in config.yaml on the Redde host."
-                        : "Anything here can be used by asking in plain words. Add the Redde serve login to toggle toolsets from here.")
+                        ? "Switches change the toolset's platform setting in Hermes's config, the same as the dashboard. The API server's own list (platform_toolsets.api_server) is separate and set in config.yaml on the Hermes host."
+                        : "Anything here can be used by asking in plain words. Add the Hermes Dashboard login to toggle toolsets from here.")
                 }
                 if !disabled.isEmpty {
                     Section("Not enabled · \(disabled.count)") {
@@ -90,7 +90,7 @@ struct ToolsView: View {
             } else if let api = conversation.ledgerAPI() {
                 toolsets = try await api.toolsets()
             } else {
-                error = "Add the Redde API key or the Redde serve login in Settings."
+                error = "Add the Hermes API key or the Hermes Dashboard login in Settings."
                 loading = false
                 return
             }
@@ -131,7 +131,7 @@ struct SkillsView: View {
                         .font(.footnote).foregroundStyle(.orange).listRowSeparator(.hidden)
                 }
                 Section {
-                    Label(canWrite ? "Switch a skill off and Redde stops loading it; edit or create with the editor." : "Add the Redde serve username and password in Settings to create, edit or toggle skills.",
+                    Label(canWrite ? "Switch a skill off and Redde stops loading it; edit or create with the editor." : "Add the Hermes Dashboard username and password in Settings to create, edit or toggle skills.",
                           systemImage: canWrite ? "sparkles" : "pencil.slash")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
@@ -205,7 +205,7 @@ struct SkillsView: View {
             } else if let api = conversation.ledgerAPI() {
                 skills = try await api.skills()
             } else {
-                error = "Add the Redde API key or the Redde serve login in Settings."
+                error = "Add the Hermes API key or the Hermes Dashboard login in Settings."
                 loading = false
                 return
             }

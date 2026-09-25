@@ -15,9 +15,9 @@ nonisolated enum Transport: String, CaseIterable, Identifiable, Codable {
     var id: String { rawValue }
     var label: String {
         switch self {
-        case .hermesSessions: "Redde sessions (shared ledger)"
-        case .hermesServe: "Redde serve (desktop gateway)"
-        case .chatCompletions: "Fast lane (direct to inference)"
+        case .hermesSessions: "Hermes API (shared sessions)"
+        case .hermesServe: "Hermes Dashboard (WebSocket)"
+        case .chatCompletions: "OpenAI-compatible (direct to a model)"
         }
     }
     /// Uses the API server (8642) with the bearer key.

@@ -67,7 +67,7 @@ nonisolated struct ChatCompletionsTransport: HermesTransport {
     static func makeContent(text: String, attachments: [Attachment]) throws -> JSONValue {
         try MultimodalInput.make(text: text, attachments: attachments, textType: "text",
                                  imageType: "image_url", nestedImageURL: true,
-                                 transportName: "the fast lane")
+                                 transportName: "the OpenAI-compatible server")
     }
 
     private struct ToolProgress: Decodable { var tool: String?; var label: String?; var status: String? }

@@ -96,7 +96,7 @@ final class HermesServeClient {
         // A reconnect loop is already working on it: wait for it rather than racing it.
         if case .reconnecting = state, reconnectTask != nil {
             if await waitForConnection(timeout: 30) { return }
-            throw TransportError.unreachable("Redde serve is unreachable")
+            throw TransportError.unreachable("Hermes Dashboard is unreachable")
         }
         // One attempt at a time: a second caller (model warm-up racing the first send) joins
         // the one in flight instead of opening a second socket over the first.
@@ -198,7 +198,7 @@ final class HermesServeClient {
         runtimeIDs = [:]
         // The request left the socket; whether the host acted on it is unknown, so this is a
         // lost stream, not a malformed reply (the conversation must not report it as one).
-        for (_, cont) in pending { cont.resume(throwing: TransportError.streamLost("the connection to Redde serve closed")) }
+        for (_, cont) in pending { cont.resume(throwing: TransportError.streamLost("the connection to Hermes Dashboard closed")) }
         pending = [:]
     }
 
@@ -221,7 +221,7 @@ final class HermesServeClient {
 
         let username = settings.serveUsername
         guard !username.isEmpty, let password = password(), !password.isEmpty else {
-            throw TransportError.malformed("Redde serve username/password not set in Settings")
+            throw TransportError.malformed("Hermes Dashboard username/password not set in Settings")
         }
         struct Body: Encodable { var provider = "basic"; var username: String; var password: String }
         var request = URLRequest(url: baseURL.appending(path: "auth/password-login"))
@@ -301,7 +301,7 @@ final class HermesServeClient {
         // that completes the handshake and then goes quiet must not hang ensureConnected() forever.
         let first = try await withThrowingTaskGroup(of: URLSessionWebSocketTask.Message.self) { group in
             group.addTask { try await task.receive() }
-            group.addTask { try await Task.sleep(for: .seconds(10)); throw TransportError.unreachable("Redde serve didn't answer the WebSocket handshake") }
+            group.addTask { try await Task.sleep(for: .seconds(10)); throw TransportError.unreachable("Hermes Dashboard didn't answer the WebSocket handshake") }
             let frame = try await group.next()!
             group.cancelAll()
             return frame
@@ -397,7 +397,7 @@ final class HermesServeClient {
     func call(_ method: String, params: JSONValue, timeout: TimeInterval = 60) async throws -> JSONValue {
         try Task.checkCancellation()
         // No socket means the request never left the phone: safe for the caller to send again.
-        guard socket != nil else { throw TransportError.unreachable("not connected to Redde serve") }
+        guard socket != nil else { throw TransportError.unreachable("not connected to Hermes Dashboard") }
         let id = "echo-\(nextID)"
         nextID += 1
         let frame = JSONValue.object(["jsonrpc": .string("2.0"), "id": .string(id),
@@ -425,7 +425,7 @@ final class HermesServeClient {
     private func send(_ frame: JSONValue, forCall id: String? = nil) {
         guard let socket, let data = try? Self.encoder.encode(frame) else {
             if let id, let cont = pending.removeValue(forKey: id) {
-                cont.resume(throwing: TransportError.unreachable("not connected to Redde serve"))
+                cont.resume(throwing: TransportError.unreachable("not connected to Hermes Dashboard"))
             }
             return
         }

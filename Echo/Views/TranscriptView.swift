@@ -355,8 +355,8 @@ struct TranscriptView: View {
 
     private var reconnectText: String? {
         switch serve.state {
-        case let .reconnecting(attempt): "Reconnecting to Redde serve… (try \(attempt))"
-        case let .failed(reason): "Redde serve: \(reason)"
+        case let .reconnecting(attempt): "Reconnecting to the Hermes Dashboard… (try \(attempt))"
+        case let .failed(reason): "Hermes Dashboard: \(reason)"
         default: nil
         }
     }

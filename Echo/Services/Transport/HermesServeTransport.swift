@@ -194,7 +194,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
                                 continuation: AsyncThrowingStream<TurnEvent, Error>.Continuation,
                                 finished: AsyncStream<Result<Void, Error>>.Continuation) async {
         guard await client.waitForConnection(timeout: 90) else {
-            finished.yield(.failure(TransportError.malformed("lost the connection to Redde serve and couldn't get it back")))
+            finished.yield(.failure(TransportError.malformed("lost the connection to Hermes Dashboard and couldn't get it back")))
             return
         }
         do {

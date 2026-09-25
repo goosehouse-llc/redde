@@ -67,7 +67,7 @@ struct SetupView: View {
                         TextField("https://your-gateway:8642", text: $settings.gatewayURL).urlFieldStyle()
                         SecureField(hasAPIKey ? "Replace stored API key" : "API key", text: $apiKey)
                     } header: {
-                        Text("Redde API server")
+                        Text("Hermes API server")
                     } footer: {
                         Text("The gateway's API server and its API_SERVER_KEY. Sessions from every platform appear in Redde.")
                     }
@@ -78,9 +78,9 @@ struct SetupView: View {
                             .textInputAutocapitalization(.never).autocorrectionDisabled()
                         SecureField(hasServePassword ? "Replace stored password" : "Dashboard password", text: $servePassword)
                     } header: {
-                        Text("Redde serve")
+                        Text("Hermes Dashboard")
                     } footer: {
-                        Text("The same login as the Redde dashboard. Adds tool approvals and slash commands.")
+                        Text("The same login as the Hermes Dashboard. Adds tool approvals and slash commands.")
                     }
                 case .chatCompletions:
                     Section {
