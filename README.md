@@ -356,6 +356,10 @@ EchoTests/                               parser/decoder unit tests, live tailnet
 - **On-device STT first** (SpeechAnalyzer, iOS 26). Whisper on Paloma is a later option if accuracy demands it.
 - **AVSpeechSynthesizer first**, Kokoro as a toggle in M3 with PCM streaming (24 kHz, 16-bit mono) into an `AVAudioPlayerNode`.
 
+## Contributing
+
+Pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md); first-time contributors sign the [CLA](CLA.md) with a one-line comment when the bot asks.
+
 ## License
 
 [FSL-1.1-MIT](LICENSE.md), the Functional Source License. You can read, use, modify and self-host Redde for any purpose except offering a competing commercial product. Each release becomes MIT on its second anniversary.
