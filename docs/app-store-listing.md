@@ -63,6 +63,16 @@ A Hermes agent (github.com/NousResearch/hermes-agent) or an OpenAI-compatible en
 
 Hermes is an open-source project by Nous Research. Redde is an independent client and is not affiliated with Nous Research.
 
+## What's New in 1.2.1 (4000)
+Profiles, clearer settings, and a round of fixes.
+
+• Hermes profiles: pick which profile Redde talks to, right under Name in Settings. Chats, projects, skills, tools, cron jobs and memory all follow it, and the conversation list refreshes when you switch.
+• On the Hermes API, each profile can have its own API key, entered on the same screen. If a key is wrong or the gateway doesn't serve that profile, Redde tells you how to fix it.
+• Clearer connection names: Hermes Dashboard, Hermes API and OpenAI-compatible, now under Settings → Connection, with the Dashboard listed first.
+• With only the Hermes API set up, Settings now explains why the context and memory files are locked, and takes you straight to adding your Dashboard login.
+• The Kanban board's column bar now shows every time, and the selected column is easier to read.
+• On iPad, Chats, Cron and Kanban get a row of their own in the sidebar instead of being cut off.
+
 ## What's New in 1.2 (4000)
 A calmer, cleaner Redde.
 
