@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024"><rect width="1024" height="1024" fill="#12142A"/>
+          <g stroke="#F6C453" stroke-width="66" stroke-linecap="round">
+            <line x1="214" y1="700" x2="214" y2="612"/>
+            <line x1="330" y1="700" x2="330" y2="520"/>
+            <line x1="446" y1="700" x2="446" y2="418"/>
+            <line x1="562" y1="700" x2="562" y2="326"/>
+            <line x1="678" y1="700" x2="678" y2="262"/>
+            <line x1="794" y1="700" x2="794" y2="356"/>
+          </g>
+          <path d="M214 700 Q 512 640 810 700" fill="none" stroke="#F6C453" stroke-width="40" stroke-linecap="round" opacity=".7"/>
+</svg>

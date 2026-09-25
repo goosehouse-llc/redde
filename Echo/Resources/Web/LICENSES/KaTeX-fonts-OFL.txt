@@ -1,0 +1,4 @@
+The KaTeX font files (KaTeX_*.woff2) are derived from Computer Modern and are distributed under the
+SIL Open Font License, Version 1.1 (https://scripts.sil.org/OFL). Copyright (c) 2013-2020 Khan Academy
+and other contributors. The fonts may be used, studied, modified and redistributed freely as long as
+they are not sold by themselves and derived versions do not use the Reserved Font Names.

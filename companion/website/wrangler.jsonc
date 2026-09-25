@@ -1,0 +1,8 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "redde-website",
+  "compatibility_date": "2026-08-01",
+  // Static promo site: serves public/ as-is. No server code, nothing collected.
+  "assets": { "directory": "./public" },
+  "routes": [{ "pattern": "redde.goosehouse.org", "custom_domain": true }]
+}

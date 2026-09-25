@@ -1,0 +1,209 @@
+<title>Echo Icon Board</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600&family=Manrope:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+  :root {
+    --bg: #F4F5FA;
+    --surface: #FFFFFF;
+    --ink: #10132B;
+    --muted: #5B6080;
+    --line: #DDE0EC;
+    --accent: #3B7DF0;
+    --home: #C9D1E4; /* simulated home-screen ground */
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1120; --surface: #171A2E; --ink: #EEF0FA; --muted: #9AA0C0; --line: #2A2E48; --accent: #6EA3FF; --home: #23273E;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1120; --surface: #171A2E; --ink: #EEF0FA; --muted: #9AA0C0; --line: #2A2E48; --accent: #6EA3FF; --home: #23273E;
+  }
+  body { background: var(--bg); color: var(--ink); font-family: Manrope, "Helvetica Neue", Arial, sans-serif; font-size: 15px; line-height: 1.55; }
+  main { max-width: 1080px; margin: 0 auto; padding: 40px 24px 64px; }
+  header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 28px; }
+  h1 { font-family: Sora, Manrope, sans-serif; font-weight: 600; font-size: 28px; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+  header p { margin: 0; color: var(--muted); max-width: 62ch; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .hero { display: flex; align-items: center; justify-content: center; background: var(--home); border-radius: 10px; padding: 22px; }
+  .icon { width: 176px; height: 176px; border-radius: 22.37%; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,.18); flex: none; }
+  .icon svg { width: 100%; height: 100%; display: block; }
+  .sizes { display: flex; align-items: flex-end; gap: 18px; background: var(--home); border-radius: 10px; padding: 14px 18px; }
+  .size { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .size .icon { box-shadow: 0 3px 10px rgba(0,0,0,.18); }
+  .size span { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .s60 { width: 60px; height: 60px; } .s40 { width: 40px; height: 40px; } .s29 { width: 29px; height: 29px; }
+  .meta { display: flex; flex-direction: column; gap: 4px; }
+  .name { font-family: Sora, Manrope, sans-serif; font-weight: 600; font-size: 17px; }
+  .name small { font-family: "JetBrains Mono", monospace; font-weight: 400; font-size: 11px; color: var(--muted); margin-left: 8px; letter-spacing: .04em; }
+  .why { color: var(--muted); margin: 0; }
+  footer { margin-top: 32px; color: var(--muted); font-size: 14px; max-width: 70ch; }
+</style>
+<main>
+  <header>
+    <h1>Echo Icon Board</h1>
+    <p>Six directions for the Home Screen icon, shown on a simulated wallpaper ground at full size and at the 60, 40 and 29 point sizes iOS actually uses. Pick one by its letter, or say what to blend.</p>
+  </header>
+
+  <div class="grid">
+
+    <!-- A: Ripple -->
+    <section class="card">
+      <div class="hero"><div class="icon">
+        <svg viewBox="0 0 1024 1024" role="img" aria-label="Ripple">
+          <defs><linearGradient id="ga" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1E2A78"/><stop offset="1" stop-color="#0B1030"/></linearGradient></defs>
+          <rect width="1024" height="1024" fill="url(#ga)"/>
+          <g fill="none" stroke="#9EC5FF" stroke-linecap="round">
+            <circle cx="352" cy="672" r="120" stroke-width="44" stroke="#FFFFFF"/>
+            <path d="M352 400 A272 272 0 0 1 624 672" stroke-width="40" opacity=".85"/>
+            <path d="M352 260 A412 412 0 0 1 764 672" stroke-width="36" opacity=".55"/>
+            <path d="M352 120 A552 552 0 0 1 904 672" stroke-width="32" opacity=".3"/>
+          </g>
+          <circle cx="352" cy="672" r="56" fill="#FFFFFF"/>
+        </svg>
+      </div></div>
+      <div class="sizes">
+        <div class="size"><div class="icon s60"><svg viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="url(#ga)"/><g fill="none" stroke="#9EC5FF" stroke-linecap="round"><circle cx="352" cy="672" r="120" stroke-width="44" stroke="#FFFFFF"/><path d="M352 400 A272 272 0 0 1 624 672" stroke-width="40" opacity=".85"/><path d="M352 260 A412 412 0 0 1 764 672" stroke-width="36" opacity=".55"/><path d="M352 120 A552 552 0 0 1 904 672" stroke-width="32" opacity=".3"/></g><circle cx="352" cy="672" r="56" fill="#FFFFFF"/></svg></div><span>60</span></div>
+        <div class="size"><div class="icon s40"><svg viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="url(#ga)"/><g fill="none" stroke="#9EC5FF" stroke-linecap="round"><circle cx="352" cy="672" r="120" stroke-width="44" stroke="#FFFFFF"/><path d="M352 400 A272 272 0 0 1 624 672" stroke-width="40" opacity=".85"/><path d="M352 260 A412 412 0 0 1 764 672" stroke-width="36" opacity=".55"/><path d="M352 120 A552 552 0 0 1 904 672" stroke-width="32" opacity=".3"/></g><circle cx="352" cy="672" r="56" fill="#FFFFFF"/></svg></div><span>40</span></div>
+        <div class="size"><div class="icon s29"><svg viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="url(#ga)"/><g fill="none" stroke="#9EC5FF" stroke-linecap="round"><circle cx="352" cy="672" r="120" stroke-width="44" stroke="#FFFFFF"/><path d="M352 400 A272 272 0 0 1 624 672" stroke-width="40" opacity=".85"/><path d="M352 260 A412 412 0 0 1 764 672" stroke-width="36" opacity=".55"/><path d="M352 120 A552 552 0 0 1 904 672" stroke-width="32" opacity=".3"/></g><circle cx="352" cy="672" r="56" fill="#FFFFFF"/></svg></div><span>29</span></div>
+      </div>
+      <div class="meta">
+        <div class="name">A · Ripple <small>#1E2A78 → #0B1030</small></div>
+        <p class="why">An echo, literally: one source, three fading returns. Off-center so it reads as motion, not a target. The night-indigo ground says "private, after hours."</p>
+      </div>
+    </section>
+
+    <!-- B: Waveform -->
+    <section class="card">
+      <div class="hero"><div class="icon">
+        <svg viewBox="0 0 1024 1024" role="img" aria-label="Waveform">
+          <defs><linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2E8BF5"/><stop offset="1" stop-color="#1C4FBF"/></linearGradient></defs>
+          <rect width="1024" height="1024" fill="url(#gb)"/>
+          <g stroke="#FFFFFF" stroke-width="72" stroke-linecap="round">
+            <line x1="256" y1="440" x2="256" y2="584"/>
+            <line x1="384" y1="336" x2="384" y2="688"/>
+            <line x1="512" y1="232" x2="512" y2="792"/>
+            <line x1="640" y1="336" x2="640" y2="688"/>
+            <line x1="768" y1="440" x2="768" y2="584"/>
+          </g>
+        </svg>
+      </div></div>
+      <div class="sizes">
+        <div class="size"><div class="icon s60"><svg viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="url(#gb)"/><g stroke="#FFFFFF" stroke-width="72" stroke-linecap="round"><line x1="256" y1="440" x2="256" y2="584"/><line x1="384" y1="336" x2="384" y2="688"/><line x1="512" y1="232" x2="512" y2="792"/><line x1="640" y1="336" x2="640" y2="688"/><line x1="768" y1="440" x2="768" y2="584"/></g></svg></div><span>60</span></div>
+        <div class="size"><div class="icon s40"><svg viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="url(#gb)"/><g stroke="#FFFFFF" stroke-width="72" stroke-linecap="round"><line x1="256" y1="440" x2="256" y2="584"/><line x1="384" y1="336" x2="384" y2="688"/><line x1="512" y1="232" x2="512" y2="792"/><line x1="640" y1="336" x2="640" y2="688"/><line x1="768" y1="440" x2="768" y2="584"/></g></svg></div><span>40</span></div>
+        <div class="size"><div class="icon s29"><svg viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="url(#gb)"/><g stroke="#FFFFFF" stroke-width="72" stroke-linecap="round"><line x1="256" y1="440" x2="256" y2="584"/><line x1="384" y1="336" x2="384" y2="688"/><line x1="512" y1="232" x2="512" y2="792"/><line x1="640" y1="336" x2="640" y2="688"/><line x1="768" y1="440" x2="768" y2="584"/></g></svg></div><span>29</span></div>
+      </div>
+      <div class="meta">
+        <div class="name">B · Waveform <small>#2E8BF5 → #1C4FBF</small></div>
+        <p class="why">The symbol the app already uses on its empty screen, so the icon and the first screen agree. Safest read at 29 points. Risk: it looks like every voice-memo app.</p>
+      </div>
+    </section>
+
+    <!-- C: Wing -->
+    <section class="card">
+      <div class="hero"><div class="icon">
+        <svg viewBox="0 0 1024 1024" role="img" aria-label="Wing">
+          <rect width="1024" height="1024" fill="#12142A"/>
+          <g stroke="#F6C453" stroke-width="66" stroke-linecap="round">
+            <line x1="214" y1="700" x2="214" y2="612"/>
+            <line x1="330" y1="700" x2="330" y2="520"/>
+            <line x1="446" y1="700" x2="446" y2="418"/>
+            <line x1="562" y1="700" x2="562" y2="326"/>
+            <line x1="678" y1="700" x2="678" y2="262"/>
+            <line x1="794" y1="700" x2="794" y2="356"/>
+          </g>
+          <path d="M214 700 Q 512 640 810 700" fill="none" stroke="#F6C453" stroke-width="40" stroke-linecap="round" opacity=".7"/>
+        </svg>
+      </div></div>
+      <div class="sizes">
+        <div class="size"><div class="icon s60"><svg viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="#12142A"/><g stroke="#F6C453" stroke-width="66" stroke-linecap="round"><line x1="214" y1="700" x2="214" y2="612"/><line x1="330" y1="700" x2="330" y2="520"/><line x1="446" y1="700" x2="446" y2="418"/><line x1="562" y1="700" x2="562" y2="326"/><line x1="678" y1="700" x2="678" y2="262"/><line x1="794" y1="700" x2="794" y2="356"/></g><path d="M214 700 Q 512 640 810 700" fill="none" stroke="#F6C453" stroke-width="40" stroke-linecap="round" opacity=".7"/></svg></div><span>60</span></div>
+        <div class="size"><div class="icon s40"><svg viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="#12142A"/><g stroke="#F6C453" stroke-width="66" stroke-linecap="round"><line x1="214" y1="700" x2="214" y2="612"/><line x1="330" y1="700" x2="330" y2="520"/><line x1="446" y1="700" x2="446" y2="418"/><line x1="562" y1="700" x2="562" y2="326"/><line x1="678" y1="700" x2="678" y2="262"/><line x1="794" y1="700" x2="794" y2="356"/></g><path d="M214 700 Q 512 640 810 700" fill="none" stroke="#F6C453" stroke-width="40" stroke-linecap="round" opacity=".7"/></svg></div><span>40</span></div>
+        <div class="size"><div class="icon s29"><svg viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="#12142A"/><g stroke="#F6C453" stroke-width="66" stroke-linecap="round"><line x1="214" y1="700" x2="214" y2="612"/><line x1="330" y1="700" x2="330" y2="520"/><line x1="446" y1="700" x2="446" y2="418"/><line x1="562" y1="700" x2="562" y2="326"/><line x1="678" y1="700" x2="678" y2="262"/><line x1="794" y1="700" x2="794" y2="356"/></g><path d="M214 700 Q 512 640 810 700" fill="none" stroke="#F6C453" stroke-width="40" stroke-linecap="round" opacity=".7"/></svg></div><span>29</span></div>
+      </div>
+      <div class="meta">
+        <div class="name">C · Wing <small>#12142A · #F6C453</small></div>
+        <p class="why">Waveform bars that rise into the silhouette of a Hermes wing. Gold on ink nods to the messenger without a caduceus cliché. The only warm option on the board.</p>
+      </div>
+    </section>
+
+    <!-- D: Bubble -->
+    <section class="card">
+      <div class="hero"><div class="icon">
+        <svg viewBox="0 0 1024 1024" role="img" aria-label="Bubble">
+          <rect width="1024" height="1024" fill="#0E9C8B"/>
+          <path d="M232 250 h560 a90 90 0 0 1 90 90 v300 a90 90 0 0 1 -90 90 h-300 l-170 130 v-130 h-90 a90 90 0 0 1 -90 -90 v-300 a90 90 0 0 1 90 -90z" fill="#FFFFFF"/>
+          <g stroke="#0E9C8B" stroke-width="44" stroke-linecap="round">
+            <line x1="376" y1="450" x2="376" y2="530"/>
+            <line x1="460" y1="400" x2="460" y2="580"/>
+            <line x1="544" y1="350" x2="544" y2="630"/>
+            <line x1="628" y1="410" x2="628" y2="570"/>
+            <line x1="712" y1="460" x2="712" y2="520"/>
+          </g>
+        </svg>
+      </div></div>
+      <div class="sizes">
+        <div class="size"><div class="icon s60"><svg viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="#0E9C8B"/><path d="M232 250 h560 a90 90 0 0 1 90 90 v300 a90 90 0 0 1 -90 90 h-300 l-170 130 v-130 h-90 a90 90 0 0 1 -90 -90 v-300 a90 90 0 0 1 90 -90z" fill="#FFFFFF"/><g stroke="#0E9C8B" stroke-width="44" stroke-linecap="round"><line x1="376" y1="450" x2="376" y2="530"/><line x1="460" y1="400" x2="460" y2="580"/><line x1="544" y1="350" x2="544" y2="630"/><line x1="628" y1="410" x2="628" y2="570"/><line x1="712" y1="460" x2="712" y2="520"/></g></svg></div><span>60</span></div>
+        <div class="size"><div class="icon s40"><svg viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="#0E9C8B"/><path d="M232 250 h560 a90 90 0 0 1 90 90 v300 a90 90 0 0 1 -90 90 h-300 l-170 130 v-130 h-90 a90 90 0 0 1 -90 -90 v-300 a90 90 0 0 1 90 -90z" fill="#FFFFFF"/><g stroke="#0E9C8B" stroke-width="44" stroke-linecap="round"><line x1="376" y1="450" x2="376" y2="530"/><line x1="460" y1="400" x2="460" y2="580"/><line x1="544" y1="350" x2="544" y2="630"/><line x1="628" y1="410" x2="628" y2="570"/><line x1="712" y1="460" x2="712" y2="520"/></g></svg></div><span>40</span></div>
+        <div class="size"><div class="icon s29"><svg viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="#0E9C8B"/><path d="M232 250 h560 a90 90 0 0 1 90 90 v300 a90 90 0 0 1 -90 90 h-300 l-170 130 v-130 h-90 a90 90 0 0 1 -90 -90 v-300 a90 90 0 0 1 90 -90z" fill="#FFFFFF"/><g stroke="#0E9C8B" stroke-width="44" stroke-linecap="round"><line x1="376" y1="450" x2="376" y2="530"/><line x1="460" y1="400" x2="460" y2="580"/><line x1="544" y1="350" x2="544" y2="630"/><line x1="628" y1="410" x2="628" y2="570"/><line x1="712" y1="460" x2="712" y2="520"/></g></svg></div><span>29</span></div>
+      </div>
+      <div class="meta">
+        <div class="name">D · Bubble <small>#0E9C8B</small></div>
+        <p class="why">A conversation, not a recording: speech bubble with the voice inside it. Flat teal, no gradient, so it sits calmly next to Messages and Telegram rather than competing with them.</p>
+      </div>
+    </section>
+
+    <!-- E: Fading E -->
+    <section class="card">
+      <div class="hero"><div class="icon">
+        <svg viewBox="0 0 1024 1024" role="img" aria-label="Fading E">
+          <rect width="1024" height="1024" fill="#F3F1EC"/>
+          <g stroke="#1B1D3A" stroke-width="96" stroke-linecap="round">
+            <line x1="220" y1="300" x2="700" y2="300"/>
+            <line x1="220" y1="512" x2="600" y2="512"/>
+            <line x1="220" y1="724" x2="700" y2="724"/>
+          </g>
+          <g stroke="#1B1D3A" stroke-width="96" stroke-linecap="round" opacity=".28">
+            <line x1="804" y1="300" x2="812" y2="300"/>
+            <line x1="704" y1="512" x2="712" y2="512"/>
+            <line x1="804" y1="724" x2="812" y2="724"/>
+          </g>
+        </svg>
+      </div></div>
+      <div class="sizes">
+        <div class="size"><div class="icon s60"><svg viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="#F3F1EC"/><g stroke="#1B1D3A" stroke-width="96" stroke-linecap="round"><line x1="220" y1="300" x2="700" y2="300"/><line x1="220" y1="512" x2="600" y2="512"/><line x1="220" y1="724" x2="700" y2="724"/></g><g stroke="#1B1D3A" stroke-width="96" stroke-linecap="round" opacity=".28"><line x1="804" y1="300" x2="812" y2="300"/><line x1="704" y1="512" x2="712" y2="512"/><line x1="804" y1="724" x2="812" y2="724"/></g></svg></div><span>60</span></div>
+        <div class="size"><div class="icon s40"><svg viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="#F3F1EC"/><g stroke="#1B1D3A" stroke-width="96" stroke-linecap="round"><line x1="220" y1="300" x2="700" y2="300"/><line x1="220" y1="512" x2="600" y2="512"/><line x1="220" y1="724" x2="700" y2="724"/></g><g stroke="#1B1D3A" stroke-width="96" stroke-linecap="round" opacity=".28"><line x1="804" y1="300" x2="812" y2="300"/><line x1="704" y1="512" x2="712" y2="512"/><line x1="804" y1="724" x2="812" y2="724"/></g></svg></div><span>40</span></div>
+        <div class="size"><div class="icon s29"><svg viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="#F3F1EC"/><g stroke="#1B1D3A" stroke-width="96" stroke-linecap="round"><line x1="220" y1="300" x2="700" y2="300"/><line x1="220" y1="512" x2="600" y2="512"/><line x1="220" y1="724" x2="700" y2="724"/></g><g stroke="#1B1D3A" stroke-width="96" stroke-linecap="round" opacity=".28"><line x1="804" y1="300" x2="812" y2="300"/><line x1="704" y1="512" x2="712" y2="512"/><line x1="804" y1="724" x2="812" y2="724"/></g></svg></div><span>29</span></div>
+      </div>
+      <div class="meta">
+        <div class="name">E · Fading E <small>#F3F1EC · #1B1D3A</small></div>
+        <p class="why">The letter E as three bars, each trailing a faint repeat: the name and the idea in one mark. Light ground, so it's the odd one out on a dark wallpaper, which is either the point or a problem.</p>
+      </div>
+    </section>
+
+    <!-- F: Caduceus wave -->
+    <section class="card">
+      <div class="hero"><div class="icon">
+        <svg viewBox="0 0 1024 1024" role="img" aria-label="Caduceus wave">
+          <defs><linearGradient id="gf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2B2F6B"/><stop offset="1" stop-color="#141633"/></linearGradient></defs>
+          <rect width="1024" height="1024" fill="url(#gf)"/>
+          <line x1="512" y1="180" x2="512" y2="844" stroke="#8FA3FF" stroke-width="40" stroke-linecap="round" opacity=".55"/>
+          <path d="M512 200 C 700 300, 324 420, 512 512 C 700 604, 324 724, 512 824" fill="none" stroke="#FFFFFF" stroke-width="64" stroke-linecap="round"/>
+          <path d="M512 200 C 324 300, 700 420, 512 512 C 324 604, 700 724, 512 824" fill="none" stroke="#FFFFFF" stroke-width="64" stroke-linecap="round" opacity=".45"/>
+          <circle cx="512" cy="180" r="58" fill="#FFFFFF"/>
+        </svg>
+      </div></div>
+      <div class="sizes">
+        <div class="size"><div class="icon s60"><svg viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="url(#gf)"/><line x1="512" y1="180" x2="512" y2="844" stroke="#8FA3FF" stroke-width="40" stroke-linecap="round" opacity=".55"/><path d="M512 200 C 700 300, 324 420, 512 512 C 700 604, 324 724, 512 824" fill="none" stroke="#FFFFFF" stroke-width="64" stroke-linecap="round"/><path d="M512 200 C 324 300, 700 420, 512 512 C 324 604, 700 724, 512 824" fill="none" stroke="#FFFFFF" stroke-width="64" stroke-linecap="round" opacity=".45"/><circle cx="512" cy="180" r="58" fill="#FFFFFF"/></svg></div><span>60</span></div>
+        <div class="size"><div class="icon s40"><svg viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="url(#gf)"/><line x1="512" y1="180" x2="512" y2="844" stroke="#8FA3FF" stroke-width="40" stroke-linecap="round" opacity=".55"/><path d="M512 200 C 700 300, 324 420, 512 512 C 700 604, 324 724, 512 824" fill="none" stroke="#FFFFFF" stroke-width="64" stroke-linecap="round"/><path d="M512 200 C 324 300, 700 420, 512 512 C 324 604, 700 724, 512 824" fill="none" stroke="#FFFFFF" stroke-width="64" stroke-linecap="round" opacity=".45"/><circle cx="512" cy="180" r="58" fill="#FFFFFF"/></svg></div><span>40</span></div>
+        <div class="size"><div class="icon s29"><svg viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="url(#gf)"/><line x1="512" y1="180" x2="512" y2="844" stroke="#8FA3FF" stroke-width="40" stroke-linecap="round" opacity=".55"/><path d="M512 200 C 700 300, 324 420, 512 512 C 700 604, 324 724, 512 824" fill="none" stroke="#FFFFFF" stroke-width="64" stroke-linecap="round"/><path d="M512 200 C 324 300, 700 420, 512 512 C 324 604, 700 724, 512 824" fill="none" stroke="#FFFFFF" stroke-width="64" stroke-linecap="round" opacity=".45"/><circle cx="512" cy="180" r="58" fill="#FFFFFF"/></svg></div><span>29</span></div>
+      </div>
+      <div class="meta">
+        <div class="name">F · Caduceus wave <small>#2B2F6B → #141633</small></div>
+        <p class="why">Two sound waves twined around a staff: Hermes's caduceus redrawn as audio. The most "Hermes" of the six, and the one that needs the most squinting at 29 points.</p>
+      </div>
+    </section>
+
+  </div>
+
+  <footer>Every mark is drawn to stay legible under the iOS icon mask and reads in both light and dark tinted-icon modes except E, which would need an inverted variant. Pick a letter and I'll render the 1024-point PNG into the asset catalog and install it.</footer>
+</main>

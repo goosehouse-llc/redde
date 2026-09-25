@@ -1,0 +1,20 @@
+{
+  // Redde push relay: hermes outbound webhooks in, APNs alerts out.
+  // Secrets (wrangler secret put): HMAC_SECRET (hermes webhook signing),
+  // REGISTER_SECRET (device registration bearer), APNS_KEY (the .p8 PEM),
+  // APNS_KEY_ID (10-char key id from the developer portal).
+  "name": "redde-push-relay",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  "kv_namespaces": [
+    { "binding": "STORE", "id": "3a6a29f515e1453daf557a23d9dc2a52" }
+  ],
+  "vars": {
+    "APNS_TEAM_ID": "579BSQT6J4",
+    "APNS_TOPIC": "com.goosehouse.echo",
+    // post_llm_call fires for every hermes platform; only these become pushes
+    // (Redde's own surfaces — Telegram etc. already notify natively).
+    "PUSH_PLATFORMS": "desktop,api_server"
+  },
+  "observability": { "enabled": true }
+}

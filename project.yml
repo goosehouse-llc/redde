@@ -1,0 +1,213 @@
+name: Echo
+options:
+  bundleIdPrefix: com.goosehouse
+  deploymentTarget:
+    iOS: "26.0"
+  xcodeVersion: "27.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+settings:
+  base:
+    DEVELOPMENT_TEAM: 579BSQT6J4
+    SWIFT_VERSION: "6.2"
+    SWIFT_STRICT_CONCURRENCY: complete
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: true
+    CODE_SIGN_STYLE: Automatic
+    MARKETING_VERSION: "1.2"
+    CURRENT_PROJECT_VERSION: "240"
+    ENABLE_USER_SCRIPT_SANDBOXING: true
+targets:
+  Echo:
+    type: application
+    platform: iOS
+    sources:
+      - path: Echo
+        excludes:
+          - Resources/Web
+      # Folder reference: keeps Web/fonts/ intact so katex.min.css can find its fonts.
+      - path: Echo/Resources/Web
+        type: folder
+        buildPhase: resources
+      - path: Shared
+    dependencies:
+      - target: EchoControls
+      - target: EchoShare
+    entitlements:
+      path: Echo/Echo.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.goosehouse.echo
+        # CarPlay: voice-based conversational apps (iOS 26.4+), enabled on the App ID.
+        com.apple.developer.carplay-voice-based-conversation: true
+        # Time-sensitive notifications, so Siri can announce Redde's alerts on AirPods.
+        com.apple.developer.usernotifications.time-sensitive: true
+        # Remote notifications from the push relay (Push Notifications is enabled on the App ID).
+        # "development" is what the source carries; the App Store export rewrites it to production.
+        aps-environment: development
+    info:
+      path: Echo/Info.plist
+      properties:
+        CFBundleDisplayName: Redde
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        # CarPlay scene. Multiple-scene support once stopped echo:// opens from widgets reaching the
+        # app; the WindowGroup now routes every external event to the existing window (EchoApp).
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+          UISceneConfigurations:
+            CPTemplateApplicationSceneSessionRoleApplication:
+              - UISceneClassName: CPTemplateApplicationScene
+                UISceneConfigurationName: CarPlay
+                UISceneDelegateClassName: $(PRODUCT_MODULE_NAME).CarPlaySceneDelegate
+        NSSupportsLiveActivities: true
+        # Bundled fonts (Terminal theme). OFL license alongside in Resources/Fonts.
+        UIAppFonts:
+          - SourceCodePro-Medium.ttf
+          - SourceCodePro-Bold.ttf
+          - Inter-Regular.ttf
+          - Inter-SemiBold.ttf
+          - Inter-Bold.ttf
+        CFBundleURLTypes:
+          - CFBundleURLName: com.goosehouse.echo
+            CFBundleURLSchemes: [echo]
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        ITSAppUsesNonExemptEncryption: false
+        NSMicrophoneUsageDescription: Redde listens so you can talk to your assistant. Audio is transcribed on this device and only your own server ever receives the text.
+        NSFaceIDUsageDescription: Redde uses Face ID to unlock the app, which holds your Hermes credentials.
+        NSLocalNetworkUsageDescription: Redde connects to the Hermes gateway or model server you configure, which is often on your local network.
+        # Lets Siri accept "Hey Siri, ask Hermes" in addition to "ask Echo".
+        INAlternativeAppNames:
+          - INAlternativeAppName: Hermes
+            INAlternativeAppNamePronunciationHint: her-meez
+          - INAlternativeAppName: Sol
+            INAlternativeAppNamePronunciationHint: sole
+        # Echo talks only to servers the user configures (self-hosted Hermes, llama.cpp, Kokoro),
+        # frequently on private networks without public certificates. Arbitrary loads are
+        # allowed for that reason; HTTPS is used whenever the configured URL provides it.
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.goosehouse.echo
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MACCATALYST: false
+        SWIFT_EMIT_LOC_STRINGS: true
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: "AppIconGraphiteBlock AppIconSteelBlock AppIconMist AppIconGraphiteBlockFlat AppIconSteelFlat AppIconMistFlat AppIconGraphiteFlat AppIconNavyBlock AppIconInk AppIconPaperNavy AppIconGold AppIconClassic"
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        SWIFT_APPROACHABLE_CONCURRENCY: true
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+      configs:
+        # The personal prefill never rides along in a Release / App Store build.
+        Release:
+          EXCLUDED_SOURCE_FILE_NAMES: LocalDefaults.json
+  EchoControls:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: EchoControls
+      - path: Shared
+    entitlements:
+      path: EchoControls/EchoControls.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.goosehouse.echo
+    info:
+      path: EchoControls/Info.plist
+      properties:
+        CFBundleDisplayName: Redde Controls
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSSupportsLiveActivities: true
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.goosehouse.echo.controls
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+        SKIP_INSTALL: true
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+  EchoShare:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: EchoShare
+      - path: Shared
+    entitlements:
+      path: EchoShare/EchoShare.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.goosehouse.echo
+    info:
+      path: EchoShare/Info.plist
+      properties:
+        CFBundleDisplayName: Redde
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsText: true
+              NSExtensionActivationSupportsWebURLWithMaxCount: 1
+              NSExtensionActivationSupportsImageWithMaxCount: 4
+              NSExtensionActivationSupportsFileWithMaxCount: 4
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.goosehouse.echo.share
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+        SKIP_INSTALL: true
+  EchoTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: EchoTests
+    dependencies:
+      - target: Echo
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.goosehouse.echo.tests
+        GENERATE_INFOPLIST_FILE: true
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+  EchoUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: EchoUITests
+    dependencies:
+      - target: Echo
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.goosehouse.echo.uitests
+        GENERATE_INFOPLIST_FILE: true
+        TEST_TARGET_NAME: Echo
+schemes:
+  Echo:
+    build:
+      targets:
+        Echo: all
+        EchoTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - EchoTests
+  EchoUITests:
+    build:
+      targets:
+        Echo: all
+        EchoUITests: [test]
+    test:
+      config: Debug
+      targets:
+        - EchoUITests
+    archive:
+      config: Release

@@ -1,0 +1,17 @@
+# Xcode
+*.xcodeproj/
+xcuserdata/
+DerivedData*/
+build/
+*.xcresult
+.DS_Store
+
+# Never commit secrets. The API key lives only in the iOS Keychain.
+*.xcconfig.local
+Secrets*.xcconfig
+
+# Personal prefill for first launch; never ship or commit.
+Echo/Resources/LocalDefaults.json
+
+# Wrangler caches and local dev state (account details, local KV)
+.wrangler/
