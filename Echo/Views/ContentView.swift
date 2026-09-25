@@ -65,7 +65,6 @@ struct ContentView: View {
         .task {
             settings.applyLocalDefaultsIfPresent()
             if !settings.setupDone, !settings.isConfigured { showSetup = true }
-            presentWhatsNewIfDue()
             #if DEBUG
             applyDevHooks()
             #endif
@@ -75,6 +74,8 @@ struct ContentView: View {
             // so release builds skipped it.)
             Task { await warmSpeechAssets() }
             if Settings.shared.openToVoiceScreen, router.pendingVoice == nil, !showVoice { openVoice() }
+            // After the voice screen may have opened: then it waits until that closes.
+            presentWhatsNewIfDue()
             #if DEBUG
             if DevHooks.has("-echo.voiceView") { openVoice() }
             if DevHooks.has("-echo.autoVoice") { await launchVoice(handsFree: false) }
@@ -91,6 +92,11 @@ struct ContentView: View {
         .onChange(of: lock.isLocked) { _, locked in
             // A Siri / control / share request that arrived while locked runs once unlocked.
             if !locked { consumeControlRequest(); handleLaunchRequest(); consumeSharedItems(); handleDraftRequest() }
+            // "What's New" held back by the lock. A moment later, so a voice request opens first.
+            if !locked { Task { try? await Task.sleep(for: .milliseconds(600)); presentWhatsNewIfDue() } }
+        }
+        .onChange(of: showVoice) { _, open in
+            if !open { Task { try? await Task.sleep(for: .milliseconds(600)); presentWhatsNewIfDue() } }
         }
         .onChange(of: conversation.id) {
             // A fresh conversation: have llama-swap load its model before the first message.
@@ -293,9 +299,10 @@ struct ContentView: View {
     #endif
 
     /// "What's New" once per version after an update. A fresh install goes through setup and
-    /// starts out current. Launches into voice mode, behind the lock or from Siri wait for an
-    /// ordinary launch rather than stacking a sheet on top.
+    /// starts out current. While the app is locked, in voice mode or answering Siri it waits, and
+    /// comes up once that's over (unlock and closing voice mode call this again).
     private func presentWhatsNewIfDue() {
+        guard whatsNew == nil else { return }
         let current = WhatsNew.currentVersion
         let isNewInstall = !settings.setupDone && !settings.isConfigured
         #if DEBUG
@@ -303,7 +310,7 @@ struct ContentView: View {
         if DevHooks.screenshotRun { return }   // App Store captures must not get a sheet on top
         #endif
         if isNewInstall { WhatsNew.markSeen(current); return }
-        guard !settings.openToVoiceScreen, !lock.isLocked, router.pendingVoice == nil else { return }
+        guard !lock.isLocked, !showVoice, router.pendingVoice == nil, !showSetup else { return }
         whatsNew = WhatsNew.pending(lastSeen: WhatsNew.lastSeen, current: current, isNewInstall: false)
         // Once shown it counts as seen, even if the app is quit before Continue.
         if whatsNew != nil { WhatsNew.markSeen(current) }
