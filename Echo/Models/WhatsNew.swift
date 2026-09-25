@@ -18,15 +18,15 @@ nonisolated enum WhatsNew {
 
     /// Newest first. Keep each to a handful of lines a person reads in ten seconds.
     static let releases: [Release] = [
-        Release(version: "1.4", items: [
-            Item(symbol: "server.rack", title: "More than one server",
-                 detail: "Save Home, Office or any other Hermes server and switch from Settings or the row above your conversations. Each keeps its own keys, profile and model."),
-            Item(symbol: "arrow.triangle.2.circlepath", title: "Everything follows",
-                 detail: "Switching starts a fresh conversation, and your chats, cron jobs and Kanban board come from the server you pick."),
-            Item(symbol: "key", title: "Your setup came along",
-                 detail: "The server you already had is now your first one, keys and all. Give it a name in Settings → Server."),
-            Item(symbol: "person.2.slash", title: "Clearer profile problems",
-                 detail: "If a profile no longer exists on a server, Redde says so and takes you to pick another."),
+        Release(version: "1.3", items: [
+            Item(symbol: "person.2", title: "Hermes profiles",
+                 detail: "Pick which profile Redde talks to, right under Name in Settings. Chats, projects, skills, tools, cron jobs and memory all follow it."),
+            Item(symbol: "key", title: "A key for each profile",
+                 detail: "On the Hermes API, each profile can have its own key, entered on the same screen. If something's wrong, Redde says how to fix it."),
+            Item(symbol: "network", title: "Clearer connections",
+                 detail: "Hermes Dashboard, Hermes API and OpenAI-compatible, now under Settings → Connection, with the Dashboard first."),
+            Item(symbol: "checkmark.seal", title: "Fixes",
+                 detail: "The Kanban column bar always shows, iPad's Chats, Cron and Kanban have room to breathe, and Settings explains locked memory files."),
         ]),
     ]
 
