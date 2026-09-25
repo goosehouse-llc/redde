@@ -358,4 +358,6 @@ EchoTests/                               parser/decoder unit tests, live tailnet
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+[FSL-1.1-MIT](LICENSE.md), the Functional Source License. You can read, use, modify and self-host Redde for any purpose except offering a competing commercial product. Each release becomes MIT on its second anniversary.
+
+The Redde name and app icons are not licensed for use in other products. Bundled third-party code keeps its own license: KaTeX and Mermaid (MIT), KaTeX fonts (OFL).
