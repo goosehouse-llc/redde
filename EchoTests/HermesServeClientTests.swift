@@ -39,11 +39,25 @@ nonisolated final class ServeStub: URLProtocol {
 
 @Suite(.serialized)
 struct HermesServeClientTests {
-    private func makeClient() -> HermesServeClient {
+    private func makeClient(profile: String = "") -> HermesServeClient {
         let settings = Settings(defaults: UserDefaults(suiteName: "serve-test-\(UUID().uuidString)")!)
         settings.serveURL = "http://serve.test:9119"
         settings.serveUsername = "redde"
+        settings.hermesProfile = profile
         return HermesServeClient(settings: settings, password: { "hunter2" }, protocolClasses: [ServeStub.self])
+    }
+
+    @Test func sessionListAsksForTheProfile() async throws {
+        ServeStub.reset()
+        nonisolated(unsafe) var urls: [String] = []
+        ServeStub.handler = { request, _ in
+            urls.append(request.url?.absoluteString ?? "")
+            return (200, Data(#"{"sessions":[]}"#.utf8))
+        }
+        defer { ServeStub.reset() }
+        let client = makeClient(profile: "work")
+        _ = try await client.listSessions(limit: 10)
+        #expect(urls.contains { $0.contains("/api/sessions?") && $0.contains("profile=work") })
     }
 
     /// Stateful stub: the session probe fails until a login has happened, like a cookie jar.

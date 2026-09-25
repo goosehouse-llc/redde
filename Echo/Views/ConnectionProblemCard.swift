@@ -10,10 +10,13 @@ struct ConnectionProblemCard: View {
     @State private var showDetails = false
     @Environment(\.theme) private var theme
 
-    private enum Kind { case login, key, unreachable, other }
+    private enum Kind { case login, key, profileKey, profileNotServed, unreachable, other }
 
     private var kind: Kind {
         let m = message.lowercased()
+        // A named profile over the Hermes API: its own key, on a gateway that multiplexes profiles.
+        if m.contains("multiplex_profiles") { return .profileNotServed }
+        if m.contains("rejected the key") { return settings.profileName == nil ? .key : .profileKey }
         if m.contains("username") || m.contains("password") || m.contains("login") || m.contains("401") { return .login }
         if m.contains("api key") || m.contains("apikey") { return .key }
         if m.contains("could not connect") || m.contains("offline") || m.contains("timed out")
@@ -23,7 +26,8 @@ struct ConnectionProblemCard: View {
 
     private var symbol: String {
         switch kind {
-        case .login, .key: "key"
+        case .login, .key, .profileKey: "key"
+        case .profileNotServed: "person.2.slash"
         case .unreachable: "wifi.slash"
         case .other: "exclamationmark.triangle"
         }
@@ -33,6 +37,8 @@ struct ConnectionProblemCard: View {
         switch kind {
         case .login: "Sign in to the Hermes Dashboard"
         case .key: "Add your gateway key"
+        case .profileKey: "Add the key for \(settings.profileName ?? "this profile")"
+        case .profileNotServed: "This profile isn't available"
         case .unreachable: "Can't reach your gateway"
         case .other: "Couldn't load conversations"
         }
@@ -42,10 +48,15 @@ struct ConnectionProblemCard: View {
         switch kind {
         case .login: "Your conversations live on the desktop gateway, and it needs your username and password before it will share them."
         case .key: "Redde needs the gateway's API key before it can read your conversations."
+        case .profileKey: "Each Hermes profile has its own API key (API_SERVER_KEY in the profile's .env). Enter it under Settings → Profile."
+        case .profileNotServed: "The gateway doesn't serve this profile over the Hermes API. Turn on gateway.multiplex_profiles in its config, or switch back to Default under Settings → Profile."
         case .unreachable: "Check that the gateway is running and that this phone is on your network or tailnet."
         case .other: "The gateway answered, but not in a way Redde understood."
         }
     }
+
+    /// The fix lives in Settings, so it gets the prominent button.
+    private var needsSettings: Bool { [.login, .key, .profileKey, .profileNotServed].contains(kind) }
 
     /// Fast lane talks to the model directly, so it works when the gateway doesn't.
     private var canUseFastLane: Bool {
@@ -65,9 +76,9 @@ struct ConnectionProblemCard: View {
                 Text(explanation).font(.subheadline).foregroundStyle(.secondary)
             }
             .accessibilityElement(children: .combine)
-            if kind == .login || kind == .key {
+            if needsSettings {
                 Button(action: openSettings) {
-                    Text(kind == .login ? "Add login" : "Add key").frame(maxWidth: .infinity)
+                    Text(kind == .login ? "Add login" : kind == .profileNotServed ? "Change profile" : "Add key").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
@@ -77,7 +88,7 @@ struct ConnectionProblemCard: View {
                 if canUseFastLane {
                     Button { settings.transport = .chatCompletions } label: { Text("Use the model directly").frame(maxWidth: .infinity) }
                         .accessibilityHint("Talks to the model directly, without the gateway")
-                } else if kind != .login, kind != .key {
+                } else if !needsSettings {
                     Button(action: openSettings) { Text("Settings").frame(maxWidth: .infinity) }
                 }
             }

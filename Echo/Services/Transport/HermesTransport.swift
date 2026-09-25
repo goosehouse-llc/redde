@@ -131,6 +131,12 @@ nonisolated enum TransportError: LocalizedError {
         switch self {
         case .badURL: "The endpoint URL is invalid."
         case .missingAPIKey: "No API key is stored. Add one in Settings."
+        case let .http(status, body) where status == 404 && body.contains("Unknown or unconfigured profile"):
+            // The Hermes API's /p/<profile>/ routes: the gateway doesn't serve that profile.
+            "This Hermes gateway doesn't serve the selected profile. Turn on gateway.multiplex_profiles in its config, or pick Default under Settings → Profile."
+        case let .http(status, body) where status == 401 && body.contains("gateway_auth_failed"):
+            // Also what a profile's /p/<profile>/ routes answer to the main key.
+            "The Hermes API rejected the key. A profile other than Default has its own key (API_SERVER_KEY in that profile's .env); enter it under Settings → Profile."
         case let .http(status, body):
             "Server returned HTTP \(status)." + (body.isEmpty ? "" : " \(body.prefix(300))")
         case let .malformed(detail): "Unexpected response: \(detail)"

@@ -175,6 +175,40 @@ final class Settings {
     var serveUsername: String {
         didSet { defaults.set(serveUsername, forKey: Keys.serveUsername) }
     }
+    /// The Hermes profile Redde talks to; empty means the server's default profile. Nothing
+    /// profile-related is sent for the default, so servers without profile support keep working.
+    var hermesProfile: String {
+        didSet { defaults.set(hermesProfile, forKey: Keys.hermesProfile) }
+    }
+    /// That profile's home directory on the server (from the dashboard's profile list), where
+    /// its context and memory files live. Empty: the default `~/.hermes`.
+    var hermesProfileHome: String {
+        didSet { defaults.set(hermesProfileHome, forKey: Keys.hermesProfileHome) }
+    }
+    /// The profile to name in requests, or nil for the default profile.
+    var profileName: String? {
+        let name = hermesProfile.trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty || name.lowercased() == "default" ? nil : name
+    }
+    /// The Hermes API key for requests: a named profile's own key when one is saved (the gateway
+    /// checks each profile's API_SERVER_KEY on its /p/<profile>/ routes), else the main key.
+    var gatewayAPIKey: String? {
+        if let profile = profileName, let key = Keychain.read(account: Keychain.profileAccount(profile)), !key.isEmpty {
+            return key
+        }
+        return Keychain.read(.gatewayAPIKey)
+    }
+
+    /// Where a file under `~/.hermes` lives for the selected profile, e.g. "SOUL.md". Uses the
+    /// home the server reported, else Hermes's layout for named profiles (`~/.hermes/profiles/<name>`).
+    func profileFilePath(_ relative: String) -> String {
+        guard let name = profileName else { return "~/.hermes/\(relative)" }
+        var home = hermesProfileHome.trimmingCharacters(in: .whitespacesAndNewlines)
+        if home.isEmpty { home = "~/.hermes/profiles/\(name)" }
+        while home.hasSuffix("/") { home.removeLast() }
+        return home + "/" + relative
+    }
+
     /// Cloudflare Access service-token id (`CF-Access-Client-Id`); the secret lives in the Keychain.
     var cfAccessClientID: String {
         didSet { defaults.set(cfAccessClientID, forKey: Keys.cfAccessClientID) }
@@ -247,6 +281,8 @@ final class Settings {
         static let pushRelayURL = "pushRelayURL"
         static let serveURL = "serveURL"
         static let serveUsername = "serveUsername"
+        static let hermesProfile = "hermesProfile"
+        static let hermesProfileHome = "hermesProfileHome"
         static let cfAccessClientID = "cfAccessClientID"
     }
 
@@ -286,6 +322,8 @@ final class Settings {
         setupDone = defaults.bool(forKey: Keys.setupDone)
         serveURL = defaults.string(forKey: Keys.serveURL) ?? Self.defaultServeURL
         serveUsername = defaults.string(forKey: Keys.serveUsername) ?? ""
+        hermesProfile = defaults.string(forKey: Keys.hermesProfile) ?? ""
+        hermesProfileHome = defaults.string(forKey: Keys.hermesProfileHome) ?? ""
         cfAccessClientID = defaults.string(forKey: Keys.cfAccessClientID) ?? ""
         let storedWindow = defaults.integer(forKey: Keys.contextWindow)
         contextWindow = storedWindow > 0 ? storedWindow : Self.defaultContextWindow
@@ -321,6 +359,8 @@ final class Settings {
         displayName = ""
         serveURL = Self.defaultServeURL
         serveUsername = ""
+        hermesProfile = ""
+        hermesProfileHome = ""
         cfAccessClientID = ""
         pushRelayURL = ""
         contextWindow = Self.defaultContextWindow
@@ -328,12 +368,17 @@ final class Settings {
         defaults.removeObject(forKey: Keys.localDefaultsApplied)
     }
 
-    var gatewayBaseURL: URL? { Self.normalizedBase(gatewayURL) }
+    /// The Hermes API base. A named profile goes through the gateway's `/p/<profile>/` routes,
+    /// which exist when the gateway multiplexes profiles (`gateway.multiplex_profiles`).
+    var gatewayBaseURL: URL? {
+        guard let base = Self.normalizedBase(gatewayURL) else { return nil }
+        return profileName.map { base.appending(path: "p/\($0)") } ?? base
+    }
 
     /// True once the selected transport has what it needs to make a request.
     var isConfigured: Bool {
         switch transport {
-        case .hermesSessions: return gatewayBaseURL != nil && Keychain.read(.gatewayAPIKey) != nil
+        case .hermesSessions: return gatewayBaseURL != nil && gatewayAPIKey != nil
         case .hermesServe: return serveBaseURL != nil && !serveUsername.isEmpty && Keychain.read(.serveDashboardPassword) != nil
         case .chatCompletions: return activeBaseURL != nil && !fastLaneModel.isEmpty
         }
@@ -377,9 +422,8 @@ final class Settings {
 
     var activeBaseURL: URL? {
         if transport == .hermesServe { return serveBaseURL }
-        let raw = (transport.usesGateway ? gatewayURL : fastLaneURL)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        return Self.normalizedBase(raw)
+        if transport.usesGateway { return gatewayBaseURL }
+        return Self.normalizedBase(fastLaneURL.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
     /// Accepts the base as providers document it: trailing slash or trailing `/v1` are dropped,

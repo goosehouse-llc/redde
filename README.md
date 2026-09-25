@@ -103,6 +103,14 @@ Turn on "Notify me in the background" under Settings → Voice (it asks for noti
 
 hermes serve behind Cloudflare Access instead of a tailnet: Settings → Cloudflare Access takes a service-token client ID and secret (secret in the Keychain). They're sent as `CF-Access-Client-Id` / `CF-Access-Client-Secret` on every dashboard request and on both WebSocket handshakes (gateway and kanban events). The connection test recognises the Access gate (HTTP 302/403) and says whether the headers are missing or rejected.
 
+## Profiles
+
+Settings → Transport → **Profile** picks which Hermes profile Redde talks to (Hermes 0.21+). The list comes from the dashboard's `GET /api/profiles`, so it needs the Dashboard login; without it a profile can be named by hand. **Default** sends nothing profile-related, so older servers behave exactly as before. Switching starts a new conversation.
+
+- **Hermes Dashboard:** the profile rides on the calls that take one: `session.create`, `session.resume`, `session.delete`, `session.branch`, `projects.*`, `model.options`, `config.set`, `slash.exec` and `command.dispatch` over the WebSocket (params reject unknown keys, so nothing else gets it; session-bound calls such as `prompt.submit` run in their session's profile), and `?profile=` or a body `profile` on the sessions, skills, toolsets and cron REST routes (`HermesServeClient.profilePlacement`). The context and memory editors open the files under the profile's home (`path` from the profile list, else `~/.hermes/profiles/<name>`). The Kanban board is shared by every profile.
+- **Hermes API:** requests go to the gateway's `/p/<profile>/` routes, which exist only with `gateway.multiplex_profiles` on, and each profile checks its own `API_SERVER_KEY` (from its `.env`). The picker stores that key per profile in the Keychain (`gateway-api-key.<profile>`). A wrong key or an unserved profile gets its own explanation in the conversation list.
+- The "Ask Redde a Question" Shortcut keeps one session per profile.
+
 ## Projects
 
 Over hermes serve, the Sessions tab starts with a **Projects** list: the gateway groups sessions by working directory and git repo (`projects.tree`), with "Home" holding everything that has no project. Tap one for its sessions, grouped by repo checkout and branch, with its own search. The flat **Recent** list follows. The Hermes API server doesn't expose working directories, so that transport shows the flat list only.

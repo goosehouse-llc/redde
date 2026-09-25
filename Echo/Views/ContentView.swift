@@ -22,6 +22,10 @@ struct ContentView: View {
     @State private var editing: Message?
     @State private var pendingAttachments: [Attachment] = []
     @FocusState private var composerFocused: Bool
+    #if DEBUG
+    /// Dev hook: `-echo.screen profiles` opens the profile picker (screenshots, live tests).
+    @State private var showProfilePicker = false
+    #endif
 
     var body: some View {
         Group {
@@ -46,6 +50,9 @@ struct ContentView: View {
         .sheet(isPresented: $showModelPicker) { NavigationStack { ModelPickerView() }.presentationDetents([.medium, .large]) }
         .sheet(isPresented: $showSetup) { SetupView() }
         .sheet(isPresented: $showConversations) { ConversationsView() }
+        #if DEBUG
+        .sheet(isPresented: $showProfilePicker) { NavigationStack { ProfilePickerView() } }
+        #endif
         .fullScreenCover(isPresented: $showVoice) {
             VoiceView(session: voiceSession, onSwitchToTyping: {
                 // Once the cover is gone, raise the keyboard in the composer.
@@ -83,8 +90,17 @@ struct ContentView: View {
                 case "settings": showSettings = true
                 case "sessions": showConversations = true
                 case "setup": showSetup = true
+                case "profiles": showProfilePicker = true
                 default: break
                 }
+            }
+            // Dev hook: credentials for a local test server, passed as SIMCTL_CHILD_ environment
+            // variables so they never appear in launch arguments or logs.
+            let env = ProcessInfo.processInfo.environment
+            if let v = env["ECHO_TEST_SERVE_PASSWORD"] { Keychain.write(.serveDashboardPassword, value: v) }
+            if let v = env["ECHO_TEST_GATEWAY_KEY"] { Keychain.write(.gatewayAPIKey, value: v) }
+            if let v = env["ECHO_TEST_PROFILE_KEY"], let profile = Settings.shared.profileName {
+                Keychain.write(account: Keychain.profileAccount(profile), value: v)
             }
             // Dev hook: `-echo.draft "text"` types a question into a focused composer (keyboard screenshot).
             if let i = args.firstIndex(of: "-echo.draft"), i + 1 < args.count {

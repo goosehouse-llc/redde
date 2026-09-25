@@ -114,6 +114,13 @@ struct TransportSettings: View {
             }
             .pickerStyle(.inline)
             .labelsHidden()
+            if settings.transport != .chatCompletions {
+                NavigationLink { ProfilePickerView() } label: {
+                    LabeledContent("Profile") {
+                        Text(settings.profileName ?? "Default").foregroundStyle(.secondary).lineLimit(1)
+                    }
+                }
+            }
             Button("Set up connection…", systemImage: "network") { showSetup = true }
         } header: {
             Text("Transport")
@@ -174,12 +181,12 @@ struct AgentSettings<Details: View>: View {
         Section {
             if !canEditFiles { filesLocked }
             NavigationLink {
-                ContextFileEditorView(title: "SOUL.md", path: "~/.hermes/SOUL.md",
+                ContextFileEditorView(title: "SOUL.md", path: Settings.shared.profileFilePath("SOUL.md"),
                                       purpose: "The agent's persona: who Redde is, how it speaks, what it values.")
             } label: { Label("SOUL.md", systemImage: "person.text.rectangle") }
             .disabled(!canEditFiles)
             NavigationLink {
-                ContextFileEditorView(title: "ENVIRONMENT.md", path: "~/.hermes/ENVIRONMENT.md",
+                ContextFileEditorView(title: "ENVIRONMENT.md", path: Settings.shared.profileFilePath("ENVIRONMENT.md"),
                                       purpose: "Standing facts about your setup: machines, services, names, conventions.")
             } label: { Label("ENVIRONMENT.md", systemImage: "server.rack") }
             .disabled(!canEditFiles)
@@ -192,11 +199,11 @@ struct AgentSettings<Details: View>: View {
 
         Section {
             NavigationLink {
-                ContextFileEditorView(title: "MEMORY.md", path: "~/.hermes/memories/MEMORY.md",
+                ContextFileEditorView(title: "MEMORY.md", path: Settings.shared.profileFilePath("memories/MEMORY.md"),
                                       purpose: "The agent's own notes: things it decided to remember across conversations. Injected into every system prompt.")
             } label: { Label("MEMORY.md", systemImage: "brain") }
             NavigationLink {
-                ContextFileEditorView(title: "USER.md", path: "~/.hermes/memories/USER.md",
+                ContextFileEditorView(title: "USER.md", path: Settings.shared.profileFilePath("memories/USER.md"),
                                       purpose: "What the agent knows about you: preferences, facts, how you like answers. Also injected into every prompt.")
             } label: { Label("USER.md", systemImage: "person.crop.circle") }
         } header: {

@@ -30,14 +30,17 @@ struct AskHermesTextIntent: AppIntent {
 @MainActor
 enum ShortcutRunner {
     private static let log = Logger(subsystem: "com.goosehouse.echo", category: "shortcut")
-    private static let sessionKey = "shortcutSessionID"
+    /// Per profile: a session belongs to the profile it was created in.
+    private static var sessionKey: String {
+        "shortcutSessionID" + (Settings.shared.profileName.map { ".\($0)" } ?? "")
+    }
 
     static func ask(_ question: String, retried: Bool = false) async throws -> String {
         let settings = Settings.shared
         let trimmed = question.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw IntentError.emptyQuestion }
         guard let url = settings.activeBaseURL else { throw IntentError.notConfigured }
-        let key = Keychain.read(.gatewayAPIKey)
+        let key = settings.gatewayAPIKey
 
         let transport: any HermesTransport
         var sessionID: String?

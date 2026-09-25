@@ -393,6 +393,23 @@ final class HermesServeClient {
 
     /// Cancelling the calling task fails the call with `CancellationError` at once; a turn that
     /// was stopped must not sit out the reply (or the timeout) of a request it no longer wants.
+    /// Methods that aren't tied to a live session and take a `profile` param (their contracts
+    /// extend SessionParams or ProfileParams). Session-bound calls such as `prompt.submit` run in
+    /// the session's own profile. Params reject unknown keys, so no other method gets one.
+    private static let profileScopedMethods: Set<String> = [
+        "session.create", "session.resume", "session.delete", "session.branch",
+        "projects.tree", "projects.project_sessions", "model.options", "config.set",
+        "slash.exec", "command.dispatch",
+    ]
+
+    /// Adds the selected profile to a profile-scoped call; the default profile sends nothing.
+    func withProfile(_ params: JSONValue, for method: String) -> JSONValue {
+        guard Self.profileScopedMethods.contains(method), let profile = settings.profileName,
+              case .object(var fields) = params, fields["profile"] == nil else { return params }
+        fields["profile"] = .string(profile)
+        return .object(fields)
+    }
+
     @discardableResult
     func call(_ method: String, params: JSONValue, timeout: TimeInterval = 60) async throws -> JSONValue {
         try Task.checkCancellation()
@@ -401,7 +418,7 @@ final class HermesServeClient {
         let id = "echo-\(nextID)"
         nextID += 1
         let frame = JSONValue.object(["jsonrpc": .string("2.0"), "id": .string(id),
-                                      "method": .string(method), "params": params])
+                                      "method": .string(method), "params": withProfile(params, for: method)])
         let timer = Task { [weak self] in
             try? await Task.sleep(for: .seconds(timeout))
             guard !Task.isCancelled, let self, let cont = pending.removeValue(forKey: id) else { return }
@@ -583,6 +600,28 @@ final class HermesServeClient {
         try await login(baseURL: baseURL)
     }
 
+    /// One Hermes profile from the dashboard's `GET /api/profiles`.
+    nonisolated struct Profile: Decodable, Identifiable, Equatable, Sendable {
+        var name: String
+        var path: String
+        var isDefault: Bool
+        var displayName: String?
+        var description: String?
+        var id: String { name }
+        var title: String { displayName?.nilIfEmpty ?? name }
+        enum CodingKeys: String, CodingKey {
+            case name, path, description
+            case isDefault = "is_default", displayName = "display_name"
+        }
+    }
+
+    /// Every profile on the server (the list the desktop app shows), default first.
+    func profiles() async throws -> [Profile] {
+        struct Envelope: Decodable { var profiles: [Profile] }
+        let list = try JSONDecoder().decode(Envelope.self, from: try await rest("GET", "api/profiles", body: nil as Data?)).profiles
+        return list.filter(\.isDefault) + list.filter { !$0.isDefault }
+    }
+
     func dashboardSkills() async throws -> [DashboardSkill] {
         let data = try await rest("GET", "api/skills", body: nil as Data?)
         if let list = try? JSONDecoder().decode([DashboardSkill].self, from: data) { return list }
@@ -685,9 +724,47 @@ final class HermesServeClient {
         return try JSONValue.parse(data)
     }
 
+    /// How a dashboard REST call names a profile: in the JSON body for the routes whose request
+    /// models carry `profile` but take no query param, as `?profile=` for the other profile-aware
+    /// routes Redde calls, not at all for the rest (files take paths; the Kanban board is shared).
+    nonisolated enum ProfilePlacement: Equatable { case none, query, body }
+
+    nonisolated static func profilePlacement(method: String, path: String) -> ProfilePlacement {
+        let route = path.split(separator: "?", maxSplits: 1).first.map(String.init) ?? path
+        switch (method, route) {
+        case ("PATCH", _) where route.hasPrefix("api/sessions/"): return .body
+        case ("POST", "api/skills"), ("PUT", "api/skills/content"): return .body
+        case (_, "api/sessions"): return method == "GET" ? .query : .none
+        default:
+            let queryRoutes = ["api/skills", "api/tools/toolsets", "api/cron/"]
+            return queryRoutes.contains { route == $0 || route.hasPrefix($0.hasSuffix("/") ? $0 : $0 + "/") } ? .query : .none
+        }
+    }
+
+    /// The path and body with the selected profile added where the route takes one.
+    nonisolated static func scoped(method: String, path: String, body: Data?, profile: String?) -> (String, Data?) {
+        guard let profile else { return (path, body) }
+        switch profilePlacement(method: method, path: path) {
+        case .none:
+            return (path, body)
+        case .query:
+            // A path that already names a profile (cron's `profile=all` list) keeps it.
+            if path.contains("profile=") { return (path, body) }
+            guard var comps = URLComponents(string: path) else { return (path, body) }
+            comps.queryItems = (comps.queryItems ?? []) + [URLQueryItem(name: "profile", value: profile)]
+            return (comps.string ?? path, body)
+        case .body:
+            guard let body, var object = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
+                  object["profile"] == nil else { return (path, body) }
+            object["profile"] = profile
+            return (path, (try? JSONSerialization.data(withJSONObject: object)) ?? body)
+        }
+    }
+
     private func rest(_ method: String, _ path: String, body: Data?, timeout: TimeInterval = 30) async throws -> Data {
         guard let baseURL else { throw TransportError.badURL }
         try await login(baseURL: baseURL)
+        let (path, body) = Self.scoped(method: method, path: path, body: body, profile: settings.profileName)
         guard let url = URL(string: path, relativeTo: baseURL.appending(path: "/"))?.absoluteURL else { throw TransportError.badURL }
         var request = URLRequest(url: url)
         request.httpMethod = method

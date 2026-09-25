@@ -627,7 +627,7 @@ final class Conversation {
 
     /// Ledger client for listing/reading sessions. Nil without a gateway URL and key.
     func ledgerAPI() -> HermesSessionsAPI? {
-        guard let url = settings.gatewayBaseURL, let key = Keychain.read(.gatewayAPIKey), !key.isEmpty else { return nil }
+        guard let url = settings.gatewayBaseURL, let key = settings.gatewayAPIKey, !key.isEmpty else { return nil }
         return HermesSessionsAPI(baseURL: url, apiKey: key)
     }
 
@@ -650,7 +650,7 @@ final class Conversation {
     private func makeTransport() -> (any HermesTransport)? {
         if let transportOverride { return transportOverride }
         guard let url = settings.activeBaseURL else { return nil }
-        let key = Keychain.read(.gatewayAPIKey)
+        let key = settings.gatewayAPIKey
         switch settings.transport {
         case .hermesSessions: return HermesSessionsTransport(baseURL: url, apiKey: key)
         case .hermesServe: return HermesServeTransport()
