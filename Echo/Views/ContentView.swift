@@ -22,6 +22,8 @@ struct ContentView: View {
     @State private var editing: Message?
     @State private var pendingAttachments: [Attachment] = []
     @FocusState private var composerFocused: Bool
+    /// The update's highlights, shown once per version.
+    @State private var whatsNew: WhatsNew.Release?
     #if DEBUG
     /// Dev hook: `-echo.screen profiles` opens the profile picker (screenshots, live tests).
     @State private var showProfilePicker = false
@@ -50,6 +52,7 @@ struct ContentView: View {
         .sheet(isPresented: $showModelPicker) { NavigationStack { ModelPickerView() }.presentationDetents([.medium, .large]) }
         .sheet(isPresented: $showSetup) { SetupView() }
         .sheet(isPresented: $showConversations) { ConversationsView() }
+        .sheet(item: $whatsNew) { WhatsNewView(release: $0) }
         #if DEBUG
         .sheet(isPresented: $showProfilePicker) { NavigationStack { ProfilePickerView() } }
         #endif
@@ -62,6 +65,7 @@ struct ContentView: View {
         .task {
             settings.applyLocalDefaultsIfPresent()
             if !settings.setupDone, !settings.isConfigured { showSetup = true }
+            presentWhatsNewIfDue()
             #if DEBUG
             applyDevHooks()
             #endif
@@ -287,6 +291,23 @@ struct ContentView: View {
         }
     }
     #endif
+
+    /// "What's New" once per version after an update. A fresh install goes through setup and
+    /// starts out current. Launches into voice mode, behind the lock or from Siri wait for an
+    /// ordinary launch rather than stacking a sheet on top.
+    private func presentWhatsNewIfDue() {
+        let current = WhatsNew.currentVersion
+        let isNewInstall = !settings.setupDone && !settings.isConfigured
+        #if DEBUG
+        if DevHooks.has("-echo.whatsNew") { whatsNew = WhatsNew.releases.first { $0.version == current } ?? WhatsNew.releases.first; return }
+        if DevHooks.screenshotRun { return }   // App Store captures must not get a sheet on top
+        #endif
+        if isNewInstall { WhatsNew.markSeen(current); return }
+        guard !settings.openToVoiceScreen, !lock.isLocked, router.pendingVoice == nil else { return }
+        whatsNew = WhatsNew.pending(lastSeen: WhatsNew.lastSeen, current: current, isNewInstall: false)
+        // Once shown it counts as seen, even if the app is quit before Continue.
+        if whatsNew != nil { WhatsNew.markSeen(current) }
+    }
 
     /// Download the on-device speech model early so the first voice turn isn't slow.
     private func warmSpeechAssets() async {

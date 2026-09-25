@@ -234,6 +234,9 @@ project.
   `CF-Access-Client-Secret` on every Dashboard request and WebSocket handshake.
 - **Transport security:** `NSAllowsArbitraryLoads` is set because users' servers often live on
   private networks without public certificates; HTTPS is used whenever the URL provides it.
+- **What's New:** after an update, the first launch shows that version's highlights once
+  (`Models/WhatsNew.swift`, one entry per version worth announcing); fresh installs, launches into
+  voice mode, behind the lock or from Siri skip it. Settings → About reopens it.
 - **First run:** no server is built in. The setup sheet takes a connection and credentials and tests
   them the way the transport will.
 
