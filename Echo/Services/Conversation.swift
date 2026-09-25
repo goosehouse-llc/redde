@@ -90,7 +90,8 @@ final class Conversation {
         self.transportOverride = transportOverride
         // Pick up where the last session left off, like Messages does. A record already in memory
         // loads now; one on disk decodes off the main actor so the first frame isn't waiting on it.
-        if let latest = store.sorted.first {
+        // Only the active server's: another server's session can't be continued from here.
+        if let latest = store.sorted.first(where: { $0.serverID == nil || $0.serverID == settings.activeServerID }) {
             if let cached = store.cachedRecord(id: latest.id) {
                 load(cached)
             } else {
@@ -616,12 +617,14 @@ final class Conversation {
         let record = ConversationRecord(
             id: id, title: title, createdAt: createdAt, updatedAt: .now,
             transport: settings.transport, serverSessionID: serverSessionID, messages: kept,
-            outbox: outbox.isEmpty ? nil : outbox)
+            outbox: outbox.isEmpty ? nil : outbox,
+            serverID: settings.transport == .chatCompletions ? nil : settings.activeServerID)
         // Unchanged content keeps its stamp: the list is ordered by updatedAt and relaunch opens
         // the newest, so merely viewing a conversation must not make it "newest".
         if let existing = store.cachedRecord(id: id),
            existing.messages == kept, existing.outbox == record.outbox,
-           existing.serverSessionID == serverSessionID, existing.transport == record.transport { return }
+           existing.serverSessionID == serverSessionID, existing.transport == record.transport,
+           existing.serverID == record.serverID { return }
         store.upsert(record)
     }
 

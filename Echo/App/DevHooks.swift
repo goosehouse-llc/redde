@@ -11,7 +11,7 @@ import Foundation
 /// - `-echo.demoProjects`: fill the conversation list's Projects from a fixture (Dashboard connection).
 /// - `-echo.demoHosts`: replace any real endpoints with example hosts.
 /// - `-echo.demoKanban`: a sample Kanban board instead of the server's.
-/// - `-echo.screen settings|sessions|setup|profiles`: open that screen at launch.
+/// - `-echo.screen settings|sessions|setup|profiles|servers`: open that screen at launch.
 /// - `-echo.section cron|kanban`: open the conversation list on that tab.
 /// - `-echo.settingsAnchor`: scroll Settings to the context and memory files.
 /// - `-echo.expandAppIcons`: open Settings' app icon grid.
@@ -19,6 +19,9 @@ import Foundation
 /// - `-echo.voiceView`: open voice mode without listening. `-echo.voiceDemo` poses it mid-listen;
 ///   `-echo.autoVoice` opens it and starts listening.
 /// - `-echo.switchProfile <name>`: switch profile five seconds after launch.
+/// - `-echo.testServer <name> <Dashboard URL> <username>`: add a server with that name if there's
+///   none (its password from `ECHO_TEST_SERVER_PASSWORD`). `-echo.switchServer <name>` switches to
+///   a server by name five seconds after launch.
 ///
 /// Environment (`SIMCTL_CHILD_<NAME>=value`, so secrets stay out of arguments and logs; an empty
 /// value deletes): `ECHO_TEST_SERVE_PASSWORD`, `ECHO_TEST_GATEWAY_KEY`, `ECHO_TEST_PROFILE_KEY`
@@ -66,6 +69,28 @@ enum DevHooks {
         if let v = env["ECHO_TEST_GATEWAY_KEY"] { Keychain.write(.gatewayAPIKey, value: v) }
         if let v = env["ECHO_TEST_PROFILE_KEY"], let profile = settings.profileName {
             Keychain.write(account: Keychain.profileAccount(profile), value: v)
+        }
+
+        if let i = args.firstIndex(of: "-echo.testServer"), i + 3 < args.count {
+            let name = args[i + 1]
+            if !settings.servers.contains(where: { $0.name == name }) {
+                let id = settings.addServer(name: name)
+                let original = settings.activeServerID
+                settings.activateServer(id)
+                settings.transport = .hermesServe
+                settings.serveURL = args[i + 2]
+                settings.serveUsername = args[i + 3]
+                if let password = env["ECHO_TEST_SERVER_PASSWORD"] { Keychain.write(.serveDashboardPassword, value: password) }
+                settings.activateServer(original)
+            }
+        }
+        if let name = value("-echo.switchServer") {
+            Task {
+                try? await Task.sleep(for: .seconds(5))
+                if let target = settings.servers.first(where: { $0.name == name || $0.title == name }) {
+                    ServerSwitcher.switchTo(target.id, conversation: conversation)
+                }
+            }
         }
 
         // The simulator can't tap the picker, so this checks that open screens follow a switch.

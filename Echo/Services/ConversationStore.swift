@@ -15,6 +15,9 @@ nonisolated struct ConversationRecord: Identifiable, Codable, Equatable, Sendabl
     var messages: [Message]
     /// Messages not yet sent (queued or waiting for a connection). Absent in older files.
     var outbox: [OutboxItem]? = nil
+    /// The Hermes server this conversation belongs to. Absent for OpenAI-compatible chats and in
+    /// files from before multi-server (which belong to the first server).
+    var serverID: UUID? = nil
 
     var turnCount: Int { messages.filter { $0.role == .user && !$0.isSteer }.count }
 }
@@ -28,8 +31,10 @@ nonisolated struct ConversationSummary: Identifiable, Codable, Equatable, Sendab
     var transport: Transport
     var serverSessionID: String?
     var turnCount: Int
+    var serverID: UUID?
 
     init(_ record: ConversationRecord) {
+        serverID = record.serverID
         id = record.id
         title = record.title
         createdAt = record.createdAt

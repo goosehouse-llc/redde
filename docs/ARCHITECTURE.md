@@ -45,6 +45,30 @@ Settings says so when it's missing. Skills can be created and edited from the ph
 (`POST /api/skills`, `PUT /api/skills/content`); "Draft with Redde" asks the agent for a SKILL.md
 and drops it into the editor for review.
 
+### Servers
+
+Redde keeps a list of Hermes servers (Settings → Server, or the server row at the top of the
+conversation list once there are two). One is active at a time.
+
+- **Working copy.** The connection fields in `Settings` (both Hermes addresses, username, Cloudflare
+  Access ID, model, provider, profile, and which Hermes connection) belong to the active server:
+  editing them updates its `HermesServer` record, and `activateServer` loads another record into
+  them, so the rest of the app reads `Settings` as before. The OpenAI-compatible connection, voice
+  and appearance are app-wide.
+- **Secrets per server.** The API key, Dashboard password, Cloudflare Access secret and per-profile
+  keys are Keychain accounts named `<account>@<server id>`; `Keychain.read(.item)` resolves the
+  active server from UserDefaults (`activeServerID`), so no read can happen before the scope is
+  known. Removing a server deletes its accounts.
+- **Switching** goes through `ServerSwitcher`: the Dashboard client drops its socket and the old
+  server's cookies first (cookies ignore ports, so two servers on one host would share one), then
+  the new server loads and a fresh conversation starts. Lists key their loading on
+  `Settings.connectionKey` (server + profile); Cron and Kanban are rebuilt.
+- **Saved conversations** carry their `serverID`; launch reopens the newest one from the active
+  server. The Shortcut keeps a session per server and profile.
+- **Upgrading** from a single-server install: the existing setup becomes the first server, and its
+  secrets move under it (`moveLegacySecretsToActiveServer`), each copied and read back before the
+  old entry is deleted.
+
 ### Profiles
 
 Settings → Profile picks the Hermes profile (Hermes 0.21+). The list comes from the dashboard's

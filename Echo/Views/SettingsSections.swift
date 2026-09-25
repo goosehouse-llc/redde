@@ -103,14 +103,22 @@ struct AppearanceSettings: View {
     }
 }
 
-/// Which Hermes profile Redde talks to: near the top of Settings, since it decides whose
-/// sessions, skills and memory everything below shows. Hidden on the OpenAI-compatible connection.
+/// Which Hermes server and profile Redde talks to: near the top of Settings, since they decide
+/// whose sessions, skills and memory everything below shows. Hidden on the OpenAI-compatible
+/// connection.
 struct ProfileSettings: View {
     @State private var settings = Settings.shared
 
     var body: some View {
         if settings.transport != .chatCompletions {
             Section {
+                NavigationLink { ServersView() } label: {
+                    LabeledContent {
+                        Text(settings.activeServer?.title ?? "").foregroundStyle(.secondary).lineLimit(1)
+                    } label: {
+                        Label("Server", systemImage: "server.rack")
+                    }
+                }
                 NavigationLink { ProfilePickerView() } label: {
                     LabeledContent {
                         Text(settings.profileName ?? "Default").foregroundStyle(.secondary).lineLimit(1)
@@ -119,9 +127,9 @@ struct ProfileSettings: View {
                     }
                 }
             } header: {
-                Text("Hermes profile")
+                Text("Hermes server")
             } footer: {
-                Text("The agent on your Hermes server that Redde talks to. Chats, skills, tools, cron jobs and memory all follow it.")
+                Text("The server and agent profile Redde talks to. Chats, skills, tools, cron jobs and memory all follow them.")
             }
         }
     }
@@ -420,8 +428,9 @@ struct ResetSettings: View {
         conversation.eraseAll()
         AttachmentFiles.deleteAll()
         WebBlockHeights.clear()
-        for item in [Keychain.Item.gatewayAPIKey, .serveDashboardPassword, .fastLaneAPIKey, .cfAccessClientSecret] {
-            Keychain.delete(item)
+        // Every server's secrets and every profile key; only the push registration secret stays.
+        for account in Keychain.allAccounts() where account != Keychain.Item.pushRegisterSecret.rawValue {
+            Keychain.delete(account: account)
         }
         WidgetSnapshot.clear()
         WidgetCenter.shared.reloadAllTimelines()

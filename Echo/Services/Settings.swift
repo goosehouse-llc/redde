@@ -36,7 +36,11 @@ nonisolated enum Transport: String, CaseIterable, Identifiable, Codable {
 /// Non-secret configuration. The API key is *never* here — see `Keychain`.
 @Observable
 final class Settings {
-    static let shared = Settings()
+    static let shared: Settings = {
+        let settings = Settings()
+        settings.moveLegacySecretsToActiveServer()
+        return settings
+    }()
 
     // Shipped defaults are empty: the app is configured on first run. Personal builds can drop a
     // git-ignored Echo/Resources/LocalDefaults.json into the bundle to prefill (see README).
@@ -45,10 +49,10 @@ final class Settings {
     nonisolated static let defaultFastLaneModel = ""
 
     var transport: Transport {
-        didSet { defaults.set(transport.rawValue, forKey: Keys.transport) }
+        didSet { defaults.set(transport.rawValue, forKey: Keys.transport); syncActiveServer() }
     }
     var gatewayURL: String {
-        didSet { defaults.set(gatewayURL, forKey: Keys.gatewayURL) }
+        didSet { defaults.set(gatewayURL, forKey: Keys.gatewayURL); syncActiveServer() }
     }
     var fastLaneURL: String {
         didSet { defaults.set(fastLaneURL, forKey: Keys.fastLaneURL) }
@@ -58,11 +62,11 @@ final class Settings {
     }
     /// Model for the Hermes transports. Empty = the gateway's default.
     var gatewayModel: String {
-        didSet { defaults.set(gatewayModel, forKey: Keys.gatewayModel) }
+        didSet { defaults.set(gatewayModel, forKey: Keys.gatewayModel); syncActiveServer() }
     }
     /// Provider slug that goes with `gatewayModel` (Hermes routes by both). Empty = default.
     var gatewayProvider: String {
-        didSet { defaults.set(gatewayProvider, forKey: Keys.gatewayProvider) }
+        didSet { defaults.set(gatewayProvider, forKey: Keys.gatewayProvider); syncActiveServer() }
     }
     /// "" (gateway default) | low | medium | high.
     var reasoningEffort: String {
@@ -171,20 +175,20 @@ final class Settings {
 
     // hermes serve (desktop gateway). Password lives in the Keychain.
     var serveURL: String {
-        didSet { defaults.set(serveURL, forKey: Keys.serveURL) }
+        didSet { defaults.set(serveURL, forKey: Keys.serveURL); syncActiveServer() }
     }
     var serveUsername: String {
-        didSet { defaults.set(serveUsername, forKey: Keys.serveUsername) }
+        didSet { defaults.set(serveUsername, forKey: Keys.serveUsername); syncActiveServer() }
     }
     /// The Hermes profile Redde talks to; empty means the server's default profile. Nothing
     /// profile-related is sent for the default, so servers without profile support keep working.
     var hermesProfile: String {
-        didSet { defaults.set(hermesProfile, forKey: Keys.hermesProfile) }
+        didSet { defaults.set(hermesProfile, forKey: Keys.hermesProfile); syncActiveServer() }
     }
     /// That profile's home directory on the server (from the dashboard's profile list), where
     /// its context and memory files live. Empty: the default `~/.hermes`.
     var hermesProfileHome: String {
-        didSet { defaults.set(hermesProfileHome, forKey: Keys.hermesProfileHome) }
+        didSet { defaults.set(hermesProfileHome, forKey: Keys.hermesProfileHome); syncActiveServer() }
     }
     /// The profile to name in requests, or nil for the default profile.
     var profileName: String? {
@@ -212,7 +216,7 @@ final class Settings {
 
     /// Cloudflare Access service-token id (`CF-Access-Client-Id`); the secret lives in the Keychain.
     var cfAccessClientID: String {
-        didSet { defaults.set(cfAccessClientID, forKey: Keys.cfAccessClientID) }
+        didSet { defaults.set(cfAccessClientID, forKey: Keys.cfAccessClientID); syncActiveServer() }
     }
 
     /// Headers Cloudflare Access expects in front of hermes serve, or empty when not configured.
@@ -285,6 +289,7 @@ final class Settings {
         static let hermesProfile = "hermesProfile"
         static let hermesProfileHome = "hermesProfileHome"
         static let cfAccessClientID = "cfAccessClientID"
+        static let hermesServers = "hermesServers"
     }
 
     init(defaults: UserDefaults = .standard) {
@@ -328,10 +333,128 @@ final class Settings {
         cfAccessClientID = defaults.string(forKey: Keys.cfAccessClientID) ?? ""
         let storedWindow = defaults.integer(forKey: Keys.contextWindow)
         contextWindow = storedWindow > 0 ? storedWindow : Self.defaultContextWindow
+
+        // Saved servers. An install from before multi-server has none: its one setup becomes
+        // the first server, and its secrets move under that server (moveLegacySecretsToActiveServer).
+        let saved = defaults.data(forKey: Keys.hermesServers)
+            .flatMap { try? JSONDecoder().decode([HermesServer].self, from: $0) } ?? []
+        let storedActive = defaults.string(forKey: Keychain.activeServerKey).flatMap(UUID.init(uuidString:))
+        if let active = saved.first(where: { $0.id == storedActive }) ?? saved.first {
+            servers = saved
+            activeServerID = active.id
+        } else {
+            // Built from the stored values: the properties can't be read before `servers` is set.
+            let stored = { (key: String) in defaults.string(forKey: key) ?? "" }
+            let storedTransport = Transport(rawValue: stored(Keys.transport)) ?? .hermesSessions
+            let first = HermesServer(id: UUID(), name: "",
+                                     transport: storedTransport == .chatCompletions ? .hermesServe : storedTransport,
+                                     gatewayURL: stored(Keys.gatewayURL), serveURL: stored(Keys.serveURL),
+                                     serveUsername: stored(Keys.serveUsername), cfAccessClientID: stored(Keys.cfAccessClientID),
+                                     gatewayModel: stored(Keys.gatewayModel), gatewayProvider: stored(Keys.gatewayProvider),
+                                     hermesProfile: stored(Keys.hermesProfile), hermesProfileHome: stored(Keys.hermesProfileHome))
+            servers = [first]
+            activeServerID = first.id
+            defaults.set(try? JSONEncoder().encode(servers), forKey: Keys.hermesServers)
+        }
+        defaults.set(activeServerID.uuidString, forKey: Keychain.activeServerKey)
     }
 
-    /// Back to first-run values. Secrets live in the Keychain and are cleared by the caller.
+    // MARK: - Servers
+
+    /// Saved Hermes servers. The connection fields above are the active server's working copy:
+    /// editing them updates its record, and switching loads another record into them.
+    private(set) var servers: [HermesServer] {
+        didSet { defaults.set(try? JSONEncoder().encode(servers), forKey: Keys.hermesServers) }
+    }
+    private(set) var activeServerID: UUID {
+        didSet { defaults.set(activeServerID.uuidString, forKey: Keychain.activeServerKey) }
+    }
+    var activeServer: HermesServer? { servers.first { $0.id == activeServerID } }
+    /// Changes whenever requests would go somewhere else: another server or another profile.
+    /// Screens that load from the server key their loading (or their identity) on it.
+    var connectionKey: String { "\(activeServerID.uuidString)|\(hermesProfile)" }
+    /// Set while a server's record is being loaded into the working copy.
+    @ObservationIgnored private var loadingServer = false
+
+    /// Copies the working copy into the active server's record.
+    private func syncActiveServer() {
+        guard !loadingServer, let i = servers.firstIndex(where: { $0.id == activeServerID }) else { return }
+        var server = servers[i]
+        server.gatewayURL = gatewayURL
+        server.serveURL = serveURL
+        server.serveUsername = serveUsername
+        server.cfAccessClientID = cfAccessClientID
+        server.gatewayModel = gatewayModel
+        server.gatewayProvider = gatewayProvider
+        server.hermesProfile = hermesProfile
+        server.hermesProfileHome = hermesProfileHome
+        // The OpenAI-compatible connection isn't a server's; the record keeps its Hermes connection.
+        if transport != .chatCompletions { server.transport = transport }
+        if server != servers[i] { servers[i] = server }
+    }
+
+    /// Makes another saved server active: its record becomes the working copy and the Keychain
+    /// scope. Callers reset connections first (`ServerSwitcher`), while the old server is current.
+    func activateServer(_ id: UUID) {
+        guard id != activeServerID, let target = servers.first(where: { $0.id == id }) else { return }
+        syncActiveServer()
+        loadingServer = true
+        defer { loadingServer = false }
+        activeServerID = id
+        gatewayURL = target.gatewayURL
+        serveURL = target.serveURL
+        serveUsername = target.serveUsername
+        cfAccessClientID = target.cfAccessClientID
+        gatewayModel = target.gatewayModel
+        gatewayProvider = target.gatewayProvider
+        hermesProfile = target.hermesProfile
+        hermesProfileHome = target.hermesProfileHome
+        transport = target.transport
+    }
+
+    /// A new, empty server (not yet active). Its connection is filled in by setup.
+    @discardableResult
+    func addServer(name: String) -> UUID {
+        let server = HermesServer(id: UUID(), name: name.trimmingCharacters(in: .whitespacesAndNewlines))
+        servers.append(server)
+        return server.id
+    }
+
+    func renameServer(_ id: UUID, to name: String) {
+        guard let i = servers.firstIndex(where: { $0.id == id }) else { return }
+        servers[i].name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Removes a server that isn't active, and its secrets. The last server can't be removed.
+    func removeServer(_ id: UUID) {
+        guard id != activeServerID, servers.count > 1 else { return }
+        servers.removeAll { $0.id == id }
+        let suffix = "@\(id.uuidString)"
+        for account in Keychain.allAccounts() where account.hasSuffix(suffix) { Keychain.delete(account: account) }
+    }
+
+    /// One-time move of pre-multi-server secrets (bare `gateway-api-key` etc.) under the active
+    /// server. Each is copied and read back before the old entry goes; safe to run every launch.
+    func moveLegacySecretsToActiveServer() {
+        let server = activeServerID.uuidString
+        let accounts = Keychain.allAccounts()
+        for item in Keychain.serverScoped where accounts.contains(item.rawValue) {
+            Keychain.move(account: item.rawValue, to: Keychain.account(item, server: server))
+        }
+        let profilePrefix = Keychain.Item.gatewayAPIKey.rawValue + "."
+        for account in accounts where account.hasPrefix(profilePrefix) && !account.contains("@") {
+            Keychain.move(account: account, to: account + "@" + server)
+        }
+    }
+
+    /// Back to first-run values, with one empty server. Secrets live in the Keychain and are
+    /// cleared by the caller.
     func reset() {
+        let fresh = HermesServer(id: UUID(), name: "")
+        loadingServer = true
+        servers = [fresh]
+        activeServerID = fresh.id
+        loadingServer = false
         transport = .hermesSessions
         gatewayURL = Self.defaultGatewayURL
         fastLaneURL = Self.defaultFastLaneURL

@@ -145,6 +145,18 @@ final class HermesServeClient {
         state = .disconnected
     }
 
+    /// Before another server becomes active: drop the link and this server's login cookies.
+    /// Cookies ignore ports, so two servers on one host would otherwise share a session cookie.
+    func resetForServerChange() {
+        let host = baseURL?.host()
+        disconnect()
+        if let host, let cookies = HTTPCookieStorage.shared.cookies {
+            for cookie in cookies where cookie.domain == host || cookie.domain == "." + host {
+                HTTPCookieStorage.shared.deleteCookie(cookie)
+            }
+        }
+    }
+
     /// Called when the app returns to the foreground: pick the link back up if we had one.
     func reconnectIfNeeded() {
         guard wantsConnection, state != .connected else { return }

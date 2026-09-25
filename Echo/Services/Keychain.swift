@@ -2,8 +2,9 @@ import Foundation
 import os
 import Security
 
-/// Minimal Keychain wrapper for the app's secrets: keys, passwords and one Hermes API key per
-/// named profile (`gateway-api-key.<profile>`).
+/// Minimal Keychain wrapper for the app's secrets. A Hermes server's secrets (its API key,
+/// Dashboard password, Cloudflare Access secret and per-profile API keys) are stored per server as
+/// `<account>@<server id>`; the rest are app-wide.
 /// Items are `WhenUnlockedThisDeviceOnly` so they never sync or migrate to another device.
 nonisolated enum Keychain {
     enum Item: String {
@@ -22,15 +23,53 @@ nonisolated enum Keychain {
     /// any reason other than "no such item" (the device is locked) is not cached.
     private static let cache = OSAllocatedUnfairLock<[String: String?]>(initialState: [:])
 
-    static func read(_ item: Item) -> String? { read(account: item.rawValue) }
-    @discardableResult
-    static func write(_ item: Item, value: String) -> Bool { write(account: item.rawValue, value: value) }
-    @discardableResult
-    static func delete(_ item: Item) -> Bool { delete(account: item.rawValue) }
+    /// Items that belong to one Hermes server.
+    static let serverScoped: Set<Item> = [.gatewayAPIKey, .serveDashboardPassword, .cfAccessClientSecret]
+    /// Where Settings records the active server. Read here directly (UserDefaults is thread-safe),
+    /// so a secret read can never happen before the scope is known.
+    static let activeServerKey = "activeServerID"
+    static var activeServerID: String? { UserDefaults.standard.string(forKey: activeServerKey) }
 
-    /// The Hermes API key for a named profile: the gateway checks each profile's own
+    /// The Keychain account for an item: per server for the server-scoped ones.
+    static func account(_ item: Item, server: String? = activeServerID) -> String {
+        guard serverScoped.contains(item), let server else { return item.rawValue }
+        return "\(item.rawValue)@\(server)"
+    }
+
+    static func read(_ item: Item) -> String? { read(account: account(item)) }
+    @discardableResult
+    static func write(_ item: Item, value: String) -> Bool { write(account: account(item), value: value) }
+    @discardableResult
+    static func delete(_ item: Item) -> Bool { delete(account: account(item)) }
+
+    /// The Hermes API key for a named profile on a server: the gateway checks each profile's own
     /// API_SERVER_KEY on its /p/<profile>/ routes.
-    static func profileAccount(_ profile: String) -> String { "\(Item.gatewayAPIKey.rawValue).\(profile)" }
+    static func profileAccount(_ profile: String, server: String? = activeServerID) -> String {
+        "\(Item.gatewayAPIKey.rawValue).\(profile)" + (server.map { "@\($0)" } ?? "")
+    }
+
+    /// Every account this app has stored (for migrations and for removing a server's secrets).
+    static func allAccounts() -> [String] {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecReturnAttributes as String: true,
+            kSecMatchLimit as String: kSecMatchLimitAll,
+        ]
+        var result: AnyObject?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+              let items = result as? [[String: Any]] else { return [] }
+        return items.compactMap { $0[kSecAttrAccount as String] as? String }
+    }
+
+    /// Moves a secret to a new account, deleting the old one only once the copy reads back.
+    @discardableResult
+    static func move(account from: String, to: String) -> Bool {
+        guard let value = read(account: from) else { return true }
+        guard read(account: to) == nil else { return delete(account: from) }   // already moved
+        guard write(account: to, value: value), read(account: to) == value else { return false }
+        return delete(account: from)
+    }
 
     static func read(account: String) -> String? {
         if let cached = cache.withLock({ $0[account] }) { return cached }

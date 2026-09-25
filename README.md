@@ -18,8 +18,8 @@ speech is recognized on the device, and credentials stay in the iOS Keychain.
   clarifying questions, sudo prompts and secrets, also answerable from a notification.
 - **Rich replies.** Markdown, highlighted code, tables, task lists, Mermaid diagrams and math,
   rendered offline with no third-party Swift dependencies.
-- **The whole agent.** The shared session ledger, projects, Hermes profiles, skills and toolsets,
-  memory and context files, cron jobs and the Kanban board.
+- **The whole agent.** The shared session ledger, projects, several servers and Hermes profiles,
+  skills and toolsets, memory and context files, cron jobs and the Kanban board.
 - **Everywhere on iOS.** Siri and Shortcuts, the Action Button, Control Center, widgets, a Live
   Activity, the share sheet, and Siri AI messaging on iOS 27 (opt-in).
 - **Private.** An offline message queue, Face ID lock, and nothing collected.

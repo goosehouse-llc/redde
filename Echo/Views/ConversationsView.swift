@@ -70,8 +70,9 @@ struct ConversationsList: View {
         Group {
             switch section {
             case .sessions: sessionsList
-            case .cron: CronView()
-            case .kanban: KanbanView()
+            // Rebuilt on a server or profile switch, so nothing (or no live socket) carries over.
+            case .cron: CronView().id(settings.connectionKey)
+            case .kanban: KanbanView().id(settings.connectionKey)
             }
         }
         .toolbar {
@@ -84,7 +85,14 @@ struct ConversationsList: View {
         // The iPad sidebar's bar also holds Select and the sidebar button, which squeezed the
         // segments to "C… C… K…"; there they get a full-width row of their own.
         .safeAreaInset(edge: .top, spacing: 0) {
-            if inSidebar { sectionPicker.padding(.horizontal, 16).padding(.bottom, 8) }
+            VStack(spacing: 8) {
+                // Which server this is, and a quick switch, once there's more than one. A row, not
+                // a toolbar button: the iPhone bar has no room left for the section switcher.
+                if settings.servers.count > 1 { serverMenu }
+                if inSidebar { sectionPicker }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, settings.servers.count > 1 || inSidebar ? 8 : 0)
         }
         .navigationTitle(section == .sessions ? "Conversations" : section.title)
         .navigationBarTitleDisplayMode(section == .sessions ? .large : .inline)
@@ -97,6 +105,27 @@ struct ConversationsList: View {
             }
             .frame(width: 0, height: 0).opacity(0).accessibilityHidden(true)
         }
+    }
+
+    /// Switch servers without going through Settings.
+    private var serverMenu: some View {
+        Menu {
+            Picker("Server", selection: Binding(
+                get: { settings.activeServerID },
+                set: { ServerSwitcher.switchTo($0, conversation: conversation) })) {
+                ForEach(settings.servers) { server in Text(server.title).tag(server.id) }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "server.rack")
+                Text(settings.activeServer?.title ?? "").lineLimit(1)
+                Image(systemName: "chevron.up.chevron.down").font(.caption2.weight(.semibold))
+            }
+            .font(.subheadline.weight(.medium))
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityLabel("Server")
+        .accessibilityValue(settings.activeServer?.title ?? "")
     }
 
     private var sectionPicker: some View {
@@ -167,10 +196,11 @@ struct ConversationsList: View {
         }
         .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search conversations")
-        // Keyed on the profile: a switch reloads the list (and the iPad sidebar, which stays up).
-        .task(id: settings.hermesProfile) { if usesLedger { await refresh() } }
-        .onChange(of: settings.hermesProfile) {
-            // The old profile's sessions must not linger while the new list loads.
+        // Keyed on the server and profile: a switch reloads the list (and the iPad sidebar,
+        // which stays up).
+        .task(id: settings.connectionKey) { if usesLedger { await refresh() } }
+        .onChange(of: settings.connectionKey) {
+            // The old server's or profile's sessions must not linger while the new list loads.
             ledger = []
             projects = []
             ledgerError = nil

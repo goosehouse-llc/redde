@@ -30,9 +30,12 @@ struct AskHermesTextIntent: AppIntent {
 @MainActor
 enum ShortcutRunner {
     private static let log = Logger(subsystem: "com.goosehouse.echo", category: "shortcut")
-    /// Per profile: a session belongs to the profile it was created in.
+    /// Per server and profile: a session belongs to where it was created. The first server keeps
+    /// the key it had before multi-server.
     private static var sessionKey: String {
-        "shortcutSessionID" + (Settings.shared.profileName.map { ".\($0)" } ?? "")
+        let settings = Settings.shared
+        let server = settings.servers.first?.id == settings.activeServerID ? "" : ".\(settings.activeServerID.uuidString)"
+        return "shortcutSessionID" + server + (settings.profileName.map { ".\($0)" } ?? "")
     }
 
     static func ask(_ question: String, retried: Bool = false) async throws -> String {
