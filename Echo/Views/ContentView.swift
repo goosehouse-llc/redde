@@ -32,7 +32,7 @@ struct ContentView: View {
                     // the sidebar. Without it the NavigationLink has nowhere to go: the row
                     // does nothing and there is no back button to escape with.
                     NavigationStack {
-                        ConversationsList()
+                        ConversationsList(inSidebar: true)
                     }
                     .navigationSplitViewColumnWidth(min: 280, ideal: 340, max: 420)
                 } detail: {

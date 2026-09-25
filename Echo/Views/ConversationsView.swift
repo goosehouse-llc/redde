@@ -22,6 +22,8 @@ private struct ProjectRoute: Hashable {
 struct ConversationsList: View {
     /// What to do after a session opens: the sheet dismisses itself; the iPad sidebar stays put.
     var onOpened: () -> Void = {}
+    /// Shown in the iPad split view's sidebar rather than the iPhone sheet.
+    var inSidebar = false
     @Environment(Conversation.self) private var conversation
     @State private var store = ConversationStore.shared
     @State private var settings = Settings.shared
@@ -74,15 +76,16 @@ struct ConversationsList: View {
             }
         }
         .toolbar {
-            // Chats, Cron and Kanban share the bar with Settings and New, so the large title
-            // below stays free.
-            ToolbarItem(placement: .principal) {
-                Picker("Section", selection: $section) {
-                    ForEach(Tab.allCases) { s in Text(s.title).tag(s) }
-                }
-                .pickerStyle(.segmented)
-                .frame(maxWidth: 230)
+            // On iPhone, Chats, Cron and Kanban share the bar with Settings and New, so the large
+            // title below stays free.
+            if !inSidebar {
+                ToolbarItem(placement: .principal) { sectionPicker.frame(maxWidth: 230) }
             }
+        }
+        // The iPad sidebar's bar also holds Select and the sidebar button, which squeezed the
+        // segments to "C… C… K…"; there they get a full-width row of their own.
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if inSidebar { sectionPicker.padding(.horizontal, 16).padding(.bottom, 8) }
         }
         .navigationTitle(section == .sessions ? "Conversations" : section.title)
         .navigationBarTitleDisplayMode(section == .sessions ? .large : .inline)
@@ -95,6 +98,13 @@ struct ConversationsList: View {
             }
             .frame(width: 0, height: 0).opacity(0).accessibilityHidden(true)
         }
+    }
+
+    private var sectionPicker: some View {
+        Picker("Section", selection: $section) {
+            ForEach(Tab.allCases) { s in Text(s.title).tag(s) }
+        }
+        .pickerStyle(.segmented)
     }
 
     private var sessionsList: some View {
