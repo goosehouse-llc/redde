@@ -19,19 +19,22 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
+            ScrollViewReader { proxy in
             Form {
                 NameSettings()
                 AppearanceSettings()
                 TransportSettings(showSetup: $showSetup)
                 ModelSettings()
-                AgentSettings(canReachGateway: hasStoredKey || hasServePassword, canEditFiles: hasServePassword)
+                AgentSettings(canReachGateway: hasStoredKey || hasServePassword, canEditFiles: hasServePassword) {
+                    ConnectionDetailsView(hasStoredKey: $hasStoredKey, hasServePassword: $hasServePassword, saved: $secretSaved)
+                }
                 Section {
                     NavigationLink {
                         ConnectionDetailsView(hasStoredKey: $hasStoredKey,
                                               hasServePassword: $hasServePassword, saved: $secretSaved)
                     } label: { Label("Connection details", systemImage: "key") }
                 } footer: {
-                    Text("URLs, keys and logins for every backend — including ones the current transport doesn't use. The serve login also unlocks file editing and agent-sent files on the sessions backend.")
+                    Text("URLs, keys and logins for every connection, including ones you aren't using right now. The Hermes Dashboard login also unlocks the context and memory files, and files the agent sends, while you chat over the Hermes API.")
                 }
                 VoiceSettings()
                 if #available(iOS 27.0, *) { SiriSettings() }
@@ -39,6 +42,15 @@ struct SettingsView: View {
                 LockSettings()
                 AboutSettings()
                 ResetSettings()
+            }
+            #if DEBUG
+            // Dev hook: `-echo.settingsAnchor files` scrolls to the context and memory files (screenshots).
+            .task {
+                guard CommandLine.arguments.contains("-echo.settingsAnchor") else { return }
+                try? await Task.sleep(for: .milliseconds(600))
+                proxy.scrollTo("agentFiles", anchor: .top)
+            }
+            #endif
             }
             .sheet(isPresented: $showSetup) { SetupView() }
             // Keychain reads once when the screen appears, not per parent render.

@@ -147,11 +147,14 @@ struct ModelSettings: View {
 }
 
 /// Skills, tools and the agent's context and memory files. All live on the gateway.
-struct AgentSettings: View {
-    /// An API key or a serve login is stored.
+struct AgentSettings<Details: View>: View {
+    /// An API key or a Dashboard login is stored.
     let canReachGateway: Bool
-    /// The file editors need the serve login specifically.
+    /// The file editors need the Dashboard login specifically: the Hermes API server has no
+    /// file endpoints (its capabilities report memory_write_api: false).
     let canEditFiles: Bool
+    /// Where the Dashboard login is entered, linked from the locked file sections.
+    @ViewBuilder let connectionDetails: () -> Details
 
     var body: some View {
         Section {
@@ -169,20 +172,23 @@ struct AgentSettings: View {
         }
 
         Section {
+            if !canEditFiles { filesLocked }
             NavigationLink {
                 ContextFileEditorView(title: "SOUL.md", path: "~/.hermes/SOUL.md",
                                       purpose: "The agent's persona: who Redde is, how it speaks, what it values.")
             } label: { Label("SOUL.md", systemImage: "person.text.rectangle") }
+            .disabled(!canEditFiles)
             NavigationLink {
                 ContextFileEditorView(title: "ENVIRONMENT.md", path: "~/.hermes/ENVIRONMENT.md",
                                       purpose: "Standing facts about your setup: machines, services, names, conventions.")
             } label: { Label("ENVIRONMENT.md", systemImage: "server.rack") }
+            .disabled(!canEditFiles)
         } header: {
             Text("Context files")
         } footer: {
-            Text(canEditFiles ? "Edited in place on the Hermes host through the Hermes Dashboard." : "Needs the Hermes Dashboard login below.")
+            if canEditFiles { Text("Edited in place on the Hermes host through the Hermes Dashboard.") }
         }
-        .disabled(!canEditFiles)
+        .id("agentFiles")
 
         Section {
             NavigationLink {
@@ -196,9 +202,27 @@ struct AgentSettings: View {
         } header: {
             Text("Memory")
         } footer: {
-            Text("The files the memory tool writes when you say “remember that…”. Edit them here to correct or prune what Redde carries into every conversation.")
+            Text(canEditFiles
+                 ? "The files the memory tool writes when you say “remember that…”. Edit them here to correct or prune what Redde carries into every conversation."
+                 : "The files the memory tool writes when you say “remember that…”. Like the context files, they need the Hermes Dashboard login.")
         }
         .disabled(!canEditFiles)
+    }
+
+    /// Why the files are greyed out with only the Hermes API set up, and the way to fix it
+    /// without switching connections.
+    private var filesLocked: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Needs the Hermes Dashboard login", systemImage: "lock")
+                .font(.subheadline.weight(.semibold))
+            Text("The Hermes API can't read or edit files on your server. Keep using it for chat, and add your Dashboard login (from hermes serve) to unlock these files and your memory.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            NavigationLink { connectionDetails() } label: {
+                Text("Add Dashboard login").font(.subheadline.weight(.medium))
+            }
+        }
+        .padding(.vertical, 4)
     }
 }
 
