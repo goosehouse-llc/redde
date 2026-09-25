@@ -21,8 +21,8 @@ struct SettingsView: View {
         NavigationStack {
             ScrollViewReader { proxy in
             Form {
-                ProfileSettings()
                 NameSettings()
+                ProfileSettings()
                 AppearanceSettings()
                 TransportSettings(showSetup: $showSetup)
                 ModelSettings()

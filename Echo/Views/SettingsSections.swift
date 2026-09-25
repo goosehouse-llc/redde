@@ -103,8 +103,8 @@ struct AppearanceSettings: View {
     }
 }
 
-/// Which Hermes profile Redde talks to: first in Settings, since it decides whose sessions,
-/// skills and memory everything below shows. Hidden on the OpenAI-compatible connection.
+/// Which Hermes profile Redde talks to: near the top of Settings, since it decides whose
+/// sessions, skills and memory everything below shows. Hidden on the OpenAI-compatible connection.
 struct ProfileSettings: View {
     @State private var settings = Settings.shared
 
