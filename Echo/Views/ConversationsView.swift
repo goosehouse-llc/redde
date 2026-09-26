@@ -121,7 +121,8 @@ struct ConversationsList: View {
     /// Full width: in the bar, next to Settings, Select and New, they were squeezed to "Kanb…".
     private var topRow: some View {
         VStack(spacing: 8) {
-            if settings.servers.count > 1 { serverMenu }
+            // Not on the OpenAI-compatible connection, which belongs to no server (as in Settings).
+            if settings.servers.count > 1, settings.transport != .chatCompletions { serverMenu }
             sectionPicker
         }
         .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 8, trailing: 16))
@@ -201,12 +202,15 @@ struct ConversationsList: View {
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search conversations")
         // Keyed on the server and profile: a switch reloads the list (and the iPad sidebar,
         // which stays up).
-        .task(id: settings.connectionKey) { if usesLedger { await refresh() } }
+        // Not while the iPhone's panel is closed: it loads when it opens (isShowing below).
+        .task(id: settings.connectionKey) { if usesLedger, isShowing { await refresh() } }
         .onChange(of: settings.connectionKey) {
             // The old server's or profile's sessions must not linger while the new list loads.
             ledger = []
             projects = []
             ledgerError = nil
+            selecting = false
+            selected = []
         }
         .refreshable { if usesLedger { await refresh() } }
         .onChange(of: isShowing) { _, showing in
@@ -447,6 +451,9 @@ struct ConversationsList: View {
     private func refresh() async {
         loading = true
         defer { loading = false }
+        // An answer from before a server or profile switch belongs to the old list: drop it.
+        let key = settings.connectionKey
+        var current: Bool { key == settings.connectionKey && !Task.isCancelled }
         #if DEBUG
         // Dev hook: `-echo.demoProjects` fills the list from a fixture, so the project-folder
         // path can be driven without a gateway.
@@ -462,18 +469,24 @@ struct ConversationsList: View {
                 ledgerError = "Add the gateway API key in Settings."
                 return
             }
-            ledger = try await backend.listSessions()
+            let sessions = try await backend.listSessions()
+            guard current else { return }
+            ledger = sessions
             if viaServe {
                 // Projects are a bonus; a failure here must not hide the flat list.
-                projects = ((try? await HermesServeClient.shared.projectTree()) ?? [])
+                let tree = ((try? await HermesServeClient.shared.projectTree()) ?? [])
                     .filter { $0.sessionCount > 0 }
                     .sorted { a, b in
                         if a.isHome != b.isHome { return a.isHome }
                         return (a.lastActive ?? .distantPast) > (b.lastActive ?? .distantPast)
                     }
+                guard current else { return }
+                projects = tree
             }
             ledgerError = nil
         } catch {
+            // A refresh cut short (tab switched, server changed) is not an error to show.
+            guard current, !(error is CancellationError), (error as? URLError)?.code != .cancelled else { return }
             ledgerError = error.localizedDescription
         }
     }

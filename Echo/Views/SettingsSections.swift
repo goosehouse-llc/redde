@@ -446,6 +446,8 @@ struct ResetSettings: View {
 
     private func eraseEverything() {
         HermesServeClient.shared.disconnect()
+        // Dashboard logins (every server's), which disconnect() leaves in the cookie store.
+        HTTPCookieStorage.shared.removeCookies(since: .distantPast)
         conversation.eraseAll()
         AttachmentFiles.deleteAll()
         WebBlockHeights.clear()

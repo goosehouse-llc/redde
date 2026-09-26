@@ -91,7 +91,10 @@ final class Conversation {
         // Pick up where the last session left off, like Messages does. A record already in memory
         // loads now; one on disk decodes off the main actor so the first frame isn't waiting on it.
         // Only the active server's: another server's session can't be continued from here.
-        if let latest = store.sorted.first(where: { $0.serverID == nil || $0.serverID == settings.activeServerID }) {
+        // OpenAI-compatible chats belong to no server; untagged Hermes chats from before
+        // multi-server belong to the first one.
+        let active = settings.activeServerID, first = settings.servers.first?.id
+        if let latest = store.sorted.first(where: { $0.transport == .chatCompletions || ($0.serverID ?? first) == active }) {
             if let cached = store.cachedRecord(id: latest.id) {
                 load(cached)
             } else {

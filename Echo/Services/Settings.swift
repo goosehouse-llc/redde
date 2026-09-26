@@ -366,17 +366,20 @@ final class Settings {
 
         // Saved servers. An install from before multi-server has none: its one setup becomes
         // the first server, and its secrets move under that server (moveLegacySecretsToActiveServer).
-        let saved = defaults.data(forKey: Keys.hermesServers)
-            .flatMap { try? JSONDecoder().decode([HermesServer].self, from: $0) } ?? []
+        let savedData = defaults.data(forKey: Keys.hermesServers)
+        let saved = savedData.flatMap { try? JSONDecoder().decode([HermesServer].self, from: $0) } ?? []
         let storedActive = defaults.string(forKey: Keychain.activeServerKey).flatMap(UUID.init(uuidString:))
         if let active = saved.first(where: { $0.id == storedActive }) ?? saved.first {
             servers = saved
             activeServerID = active.id
         } else {
+            // A list that's there but can't be read is kept aside rather than overwritten, and
+            // the active server keeps its id, so the Keychain secrets filed under it still match.
+            if let savedData { defaults.set(savedData, forKey: Keys.hermesServers + ".unreadable") }
             // Built from the stored values: the properties can't be read before `servers` is set.
             let stored = { (key: String) in defaults.string(forKey: key) ?? "" }
             let storedTransport = Transport(rawValue: stored(Keys.transport)) ?? .hermesSessions
-            let first = HermesServer(id: UUID(), name: "",
+            let first = HermesServer(id: storedActive ?? UUID(), name: "",
                                      transport: storedTransport == .chatCompletions ? .hermesServe : storedTransport,
                                      gatewayURL: stored(Keys.gatewayURL), serveURL: stored(Keys.serveURL),
                                      serveUsername: stored(Keys.serveUsername), cfAccessClientID: stored(Keys.cfAccessClientID),
@@ -387,9 +390,35 @@ final class Settings {
             defaults.set(try? JSONEncoder().encode(servers), forKey: Keys.hermesServers)
         }
         defaults.set(activeServerID.uuidString, forKey: Keychain.activeServerKey)
+        scopeShortcutSessionKeys()
     }
 
     // MARK: - Servers
+
+    /// Shortcuts keep their own session per server and profile under keys with this prefix
+    /// (`ShortcutRunner`).
+    static let shortcutSessionPrefix = "shortcutSessionID"
+
+    /// Once: the keys from before they carried a server id (`shortcutSessionID`,
+    /// `shortcutSessionID.<profile>`, with `.serve` for the Dashboard) belong to the first server.
+    private func scopeShortcutSessionKeys() {
+        let done = "shortcutSessionKeysScoped"
+        guard !defaults.bool(forKey: done), let first = servers.first?.id.uuidString else { return }
+        let prefix = Self.shortcutSessionPrefix
+        for (key, value) in defaults.dictionaryRepresentation() where key.hasPrefix(prefix) {
+            let rest = key.dropFirst(prefix.count)
+            if rest.dropFirst().prefix(36).count == 36, UUID(uuidString: String(rest.dropFirst().prefix(36))) != nil { continue }
+            defaults.set(value, forKey: prefix + ".\(first)" + rest)
+            defaults.removeObject(forKey: key)
+        }
+        defaults.set(true, forKey: done)
+    }
+
+    /// Forgets the Shortcuts sessions of one server, or of all of them.
+    private func removeShortcutSessions(server: UUID?) {
+        let prefix = Self.shortcutSessionPrefix + (server.map { ".\($0.uuidString)" } ?? "")
+        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix(prefix) { defaults.removeObject(forKey: key) }
+    }
 
     /// Saved Hermes servers. The connection fields above are the active server's working copy:
     /// editing them updates its record, and switching loads another record into them.
@@ -439,7 +468,8 @@ final class Settings {
         gatewayProvider = target.gatewayProvider
         hermesProfile = target.hermesProfile
         hermesProfileHome = target.hermesProfileHome
-        transport = target.transport
+        // The OpenAI-compatible connection isn't a server's: switching servers doesn't leave it.
+        if transport != .chatCompletions { transport = target.transport }
     }
 
     /// A new, empty server (not yet active). Its connection is filled in by setup.
@@ -461,6 +491,7 @@ final class Settings {
         servers.removeAll { $0.id == id }
         let suffix = "@\(id.uuidString)"
         for account in Keychain.allAccounts() where account.hasSuffix(suffix) { Keychain.delete(account: account) }
+        removeShortcutSessions(server: id)
     }
 
     /// One-time move of pre-multi-server secrets (bare `gateway-api-key` etc.) under the active
@@ -480,6 +511,7 @@ final class Settings {
     /// Back to first-run values, with one empty server. Secrets live in the Keychain and are
     /// cleared by the caller.
     func reset() {
+        removeShortcutSessions(server: nil)
         let fresh = HermesServer(id: UUID(), name: "")
         loadingServer = true
         servers = [fresh]

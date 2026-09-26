@@ -116,4 +116,87 @@ struct ServerTests {
         let record = try JSONDecoder().decode(ConversationRecord.self, from: Data(json.utf8))
         #expect(record.serverID == nil)
     }
+
+    /// The open conversation is saved as the old server's before the switch; saved after it, it
+    /// was stamped with the new server and reopened there, sending to the wrong server.
+    @Test func switchingSavesTheOpenConversationAsTheOldServers() async {
+        let dir = URL.temporaryDirectory.appending(path: "echo-test-\(UUID().uuidString)").appending(path: "conversations")
+        defer { try? FileManager.default.removeItem(at: dir.deletingLastPathComponent()) }
+        let store = ConversationStore(directory: dir)
+        let settings = Settings(defaults: defaults())
+        settings.transport = .hermesServe
+        let home = settings.activeServerID
+        let office = settings.addServer(name: "Office")
+        let conversation = Conversation(settings: settings, store: store)
+        conversation.load(ConversationRecord(id: UUID(), title: "t", createdAt: .now, updatedAt: .now, transport: .hermesServe,
+                                             serverSessionID: "home-session",
+                                             messages: [Message(role: .user, text: "hi"), Message(role: .assistant, text: "hello")],
+                                             serverID: home))
+        let id = conversation.id
+        ServerSwitcher.switchTo(office, conversation: conversation, settings: settings)
+        let saved = store.cachedRecord(id: id)
+        #expect(saved?.serverID == home)
+        #expect(saved?.transport == .hermesServe)
+        #expect(conversation.id != id, "a fresh conversation for the new server")
+    }
+
+    /// Chats saved before multi-server have no server; they're the first server's, not every one's.
+    @Test func untaggedChatsBelongToTheFirstServer() async {
+        let dir = URL.temporaryDirectory.appending(path: "echo-test-\(UUID().uuidString)").appending(path: "conversations")
+        defer { try? FileManager.default.removeItem(at: dir.deletingLastPathComponent()) }
+        let store = ConversationStore(directory: dir)
+        let settings = Settings(defaults: defaults())
+        let office = settings.addServer(name: "Office")
+        let legacy = ConversationRecord(id: UUID(), title: "old", createdAt: .now, updatedAt: .now, transport: .hermesServe,
+                                        serverSessionID: "home-session", messages: [Message(role: .user, text: "hi")])
+        store.upsert(legacy)
+        #expect(Conversation(settings: settings, store: store).id == legacy.id, "the first server picks it up")
+        settings.activateServer(office)
+        #expect(Conversation(settings: settings, store: store).id != legacy.id, "another server doesn't")
+    }
+
+    /// A record from another version (a field missing, or one added) still loads.
+    @Test func serversDecodeWithMissingFields() throws {
+        let json = #"[{"id":"6F9619FF-8B86-D011-B42D-00C04FC964FF","name":"Home","serveURL":"http://h.test:9119","future":1}]"#
+        let servers = try JSONDecoder().decode([HermesServer].self, from: Data(json.utf8))
+        #expect(servers.first?.serveURL == "http://h.test:9119")
+        #expect(servers.first?.transport == .hermesServe)
+    }
+
+    /// An unreadable list isn't overwritten, and the active server keeps its id, so the Keychain
+    /// secrets filed under it still match.
+    @Test func anUnreadableServerListKeepsTheActiveID() {
+        let d = defaults()
+        let id = UUID()
+        d.set(Data("not json".utf8), forKey: "hermesServers")
+        d.set(id.uuidString, forKey: Keychain.activeServerKey)
+        d.set("http://h.test:9119", forKey: "serveURL")
+        let settings = Settings(defaults: d)
+        #expect(settings.activeServerID == id)
+        #expect(settings.activeServer?.serveURL == "http://h.test:9119")
+        #expect(d.data(forKey: "hermesServers.unreadable") == Data("not json".utf8))
+    }
+
+    @Test func switchingServersKeepsTheOpenAICompatibleConnection() {
+        let settings = Settings(defaults: defaults())
+        let office = settings.addServer(name: "Office")
+        settings.transport = .chatCompletions
+        settings.activateServer(office)
+        #expect(settings.transport == .chatCompletions)
+    }
+
+    /// Shortcut sessions from before multi-server move under the first server's id, once.
+    @Test func shortcutSessionsAreScopedByServer() {
+        let d = defaults()
+        d.set("s1", forKey: "shortcutSessionID")
+        d.set("s2", forKey: "shortcutSessionID.work.serve")
+        let settings = Settings(defaults: d)
+        let first = settings.activeServerID.uuidString
+        #expect(d.string(forKey: "shortcutSessionID.\(first)") == "s1")
+        #expect(d.string(forKey: "shortcutSessionID.\(first).work.serve") == "s2")
+        #expect(d.string(forKey: "shortcutSessionID") == nil)
+        // A second launch leaves them where they are.
+        _ = Settings(defaults: d)
+        #expect(d.string(forKey: "shortcutSessionID.\(first)") == "s1")
+    }
 }
