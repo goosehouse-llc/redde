@@ -287,7 +287,11 @@ struct VoiceSettings: View {
                         .lineLimit(1)
                 }
             }
-            Toggle("Read replies in their own language", isOn: $settings.matchReplyLanguage)
+            Picker("Read replies in", selection: $settings.matchReplyLanguage) {
+                Text("Own language").tag(true)
+                Text("Listening language").tag(false)
+            }
+            .pickerStyle(.menu)
             // Applies to Kokoro and the built-in fallback voice alike.
             VStack(alignment: .leading, spacing: 2) {
                 LabeledContent("Voice speed") {
@@ -315,8 +319,9 @@ struct VoiceSettings: View {
             Text((settings.useKokoro
                 ? "Streams audio from a Kokoro-compatible TTS server and starts playing before the sentence finishes. Falls back to the on-device voice if the server is unreachable. "
                 : "Apple's on-device synthesizer. Zero network, fastest start. ")
-                + "“Read replies in their own language” picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice"
-                + (settings.useKokoro ? " (the built-in one when Kokoro has none for it). " : ". Download more voices in the iPhone's Settings → Accessibility → Read & Speak → Voices. ")
+                + (settings.useKokoro
+                    ? "“Read replies in”: Own language picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice (the built-in one when Kokoro has none for it); Listening language always uses your Kokoro voice. "
+                    : "“Read replies in”: Own language picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice; Listening language reads every reply with the listening language's voice. Download more voices in the iPhone's Settings → Accessibility → Read & Speak → Voices. ")
                 + "“Open to the voice screen” makes Redde launch into voice mode; “Listen whenever Redde opens” starts the mic as well, so “Hey Siri, open Redde” goes straight to listening. “Earpiece” plays replies through the earpiece when the phone is at your ear, like a call; turn it off for hands-free use with the phone face down. Background notifications tell you when Redde needs an approval or an answer, or when a reply finishes, while you're in another app. “Announce on AirPods” marks them time-sensitive so Siri can read them aloud through AirPods (turn on Announce Notifications for Redde in the iPhone's Settings) and so they reach you in a Focus. With AirPods in, pressing the stem on the voice screen works like tapping the mic.")
         }
     }
