@@ -131,9 +131,11 @@ struct SidePanel<Content: View, Panel: View>: View {
         }
     }
 
-    /// Dragging the dimmed content to the left takes the panel back with it.
+    /// Dragging the dimmed content to the left takes the panel back with it. Measured in screen
+    /// space: the content moves with the finger, so its own coordinates shift under the drag and
+    /// the panel shook.
     private func closeDrag(width: CGFloat) -> some Gesture {
-        DragGesture(minimumDistance: 8)
+        DragGesture(minimumDistance: 8, coordinateSpace: .global)
             .onChanged { drag = max(0, width + min(0, $0.translation.width)) }
             .onEnded { value in
                 let moved = -value.translation.width, flung = -value.predictedEndTranslation.width
