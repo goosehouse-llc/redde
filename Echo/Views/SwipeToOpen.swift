@@ -59,3 +59,115 @@ struct SwipeRightGesture: UIGestureRecognizerRepresentable {
                                shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
     }
 }
+
+/// iPhone: `content`, with `panel` sliding in from the left over it: from a swipe to the right,
+/// which it follows, or from `isOpen`. The content moves over and dims; tap it or drag it back to
+/// close. Its own view, so a swipe's every frame redraws only this, not the chat inside.
+struct SidePanel<Content: View, Panel: View>: View {
+    @Binding var isOpen: Bool
+    /// A swipe started opening it (the chat's keyboard should go).
+    var onOpening: () -> Void = {}
+    @ViewBuilder var content: Content
+    @ViewBuilder var panel: Panel
+    @Environment(\.theme) private var theme
+    /// How far out a finger has the panel, while one is on the screen.
+    @State private var drag: CGFloat?
+    /// Closed and finished sliding out: transparent, and its screens hide their navigation bars.
+    @State private var parked = true
+
+    var body: some View {
+        GeometryReader { geo in
+            let width = min(geo.size.width * 0.86, 400)
+            let shown = drag ?? (isOpen ? width : 0)
+            let progress = shown / width
+            ZStack(alignment: .leading) {
+                content
+                    .overlay {
+                        Color.black.opacity(0.3 * progress)
+                            .ignoresSafeArea()
+                            .contentShape(Rectangle())
+                            .onTapGesture { settle(open: false, from: shown, width: width, velocity: 0) }
+                            .gesture(closeDrag(width: width))
+                            .allowsHitTesting(isOpen || drag != nil)
+                            .accessibilityLabel("Close conversations")
+                            .accessibilityAddTraits(.isButton)
+                            .accessibilityHidden(!isOpen)
+                    }
+                    .offset(x: shown)
+                    .accessibilityHidden(isOpen)
+                // Built once and kept, so it slides in without first building a list.
+                panel
+                    .frame(width: width)
+                    .background(theme.background ?? Color(.systemBackground))
+                    .overlay(alignment: .trailing) { Rectangle().fill(.separator).frame(width: 0.5).ignoresSafeArea() }
+                    .offset(x: shown - width)
+                    .opacity(parked ? 0 : 1)
+                    .environment(\.sidePanelParked, parked)
+                    .allowsHitTesting(isOpen)
+                    .disabled(!isOpen && drag == nil)   // its keyboard shortcuts too
+                    .accessibilityHidden(!isOpen)
+                    .accessibilityAddTraits(.isModal)
+                    .accessibilityAction(.escape) { settle(open: false, from: shown, width: width, velocity: 0) }
+            }
+            .onChange(of: isOpen, initial: true) { _, open in
+                if open { parked = false; return }
+                // Park once the slide out is over (the button and a picked conversation close it
+                // from outside, so there's no animation to wait on here).
+                Task {
+                    try? await Task.sleep(for: .milliseconds(450))
+                    if !isOpen, drag == nil { parked = true }
+                }
+            }
+            .gesture(SwipeRightGesture(
+                isEnabled: !isOpen,
+                onChanged: { distance in
+                    if drag == nil { onOpening(); parked = false }
+                    drag = min(distance, width)
+                },
+                onEnded: { distance, velocity in
+                    let open = distance > width * 0.35 || (distance > 30 && velocity > 500)
+                    settle(open: open, from: min(max(distance, 0), width), width: width, velocity: velocity)
+                }))
+        }
+    }
+
+    /// Dragging the dimmed content to the left takes the panel back with it.
+    private func closeDrag(width: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 8)
+            .onChanged { drag = max(0, width + min(0, $0.translation.width)) }
+            .onEnded { value in
+                let moved = -value.translation.width, flung = -value.predictedEndTranslation.width
+                let open = !(moved > width * 0.35 || flung > width * 0.5)
+                settle(open: open, from: drag ?? width, width: width, velocity: value.velocity.width)
+            }
+    }
+
+    /// Finishes the move at the finger's speed (points per second, rightward positive), so the
+    /// panel carries on from the swipe instead of starting over.
+    private func settle(open: Bool, from shown: CGFloat, width: CGFloat, velocity: CGFloat) {
+        let remaining = (open ? width : 0) - shown
+        let animation: Animation
+        if abs(remaining) < 1 || velocity == 0 {
+            animation = .sidePanel
+        } else {
+            // The spring's initial velocity is in units of the whole distance left per second.
+            let relative = min(max(velocity / remaining, 0), 12)
+            animation = .interpolatingSpring(duration: 0.34, bounce: 0, initialVelocity: relative)
+        }
+        withAnimation(animation) {
+            isOpen = open
+            drag = nil
+        }
+    }
+}
+
+extension EnvironmentValues {
+    /// The side panel around this view is closed and settled. Its screens hide their navigation
+    /// bar then: UIKit's bar ignores accessibilityHidden, and VoiceOver would find it off screen.
+    @Entry var sidePanelParked = false
+}
+
+extension Animation {
+    /// The side panel opening and closing without a finger: quick, no bounce.
+    static var sidePanel: Animation { .smooth(duration: 0.32) }
+}

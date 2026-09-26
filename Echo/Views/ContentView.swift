@@ -15,8 +15,6 @@ struct ContentView: View {
     @State private var shareItem: ShareItem?
     @State private var showSetup = false
     @State private var showConversations = false
-    /// How far a swipe has pulled the conversation list in, while a finger is on the screen.
-    @State private var drawerDrag: CGFloat?
     @State private var showVoice = false
     @State private var showSearch = false
     @State private var showModelPicker = false
@@ -198,67 +196,18 @@ struct ContentView: View {
 
     // MARK: - iPhone conversation list
 
-    /// iPhone: the chat, with the conversation list in a panel that slides in from the left,
-    /// from the button in the corner or a swipe to the right that it follows. The chat moves
-    /// over and dims; tap it or drag it back to close.
+    /// iPhone: the chat, with the conversation list in a panel that slides in from the left.
     private var phoneLayout: some View {
-        GeometryReader { geo in
-            let width = min(geo.size.width * 0.86, 400)
-            let shown = drawerDrag ?? (showConversations ? width : 0)
-            ZStack(alignment: .leading) {
-                NavigationStack { transcriptScreen(showListButton: true) }
-                    .overlay {
-                        if shown > 0 {
-                            Color.black.opacity(0.3 * shown / width)
-                                .ignoresSafeArea()
-                                .contentShape(Rectangle())
-                                .onTapGesture { setDrawer(open: false) }
-                                .gesture(closeDrag(width: width))
-                                .accessibilityLabel("Close conversations")
-                                .accessibilityAddTraits(.isButton)
-                        }
-                    }
-                    .offset(x: shown)
-                    .accessibilityHidden(showConversations)
-                // Only there while showing, so it loads fresh each time, as the sheet did.
-                if shown > 0 {
-                    ConversationsView(onOpened: { setDrawer(open: false) })
-                        .frame(width: width)
-                        .background(theme.background ?? Color(.systemBackground))
-                        .overlay(alignment: .trailing) { Rectangle().fill(.separator).frame(width: 0.5).ignoresSafeArea() }
-                        .offset(x: shown - width)
-                        .accessibilityAddTraits(.isModal)
-                        .accessibilityAction(.escape) { setDrawer(open: false) }
-                }
-            }
-            .gesture(SwipeRightGesture(
-                isEnabled: !showConversations,
-                onChanged: { distance in
-                    if drawerDrag == nil { composerFocused = false }
-                    drawerDrag = min(distance, width)
-                },
-                onEnded: { distance, velocity in
-                    setDrawer(open: distance > width * 0.35 || (distance > 30 && velocity > 500))
-                }))
+        SidePanel(isOpen: $showConversations, onOpening: { composerFocused = false }) {
+            NavigationStack { transcriptScreen(showListButton: true) }
+        } panel: {
+            ConversationsView(isShowing: showConversations, onOpened: { setDrawer(open: false) })
         }
-    }
-
-    /// Dragging the dimmed chat to the left takes the list back with it.
-    private func closeDrag(width: CGFloat) -> some Gesture {
-        DragGesture(minimumDistance: 8)
-            .onChanged { drawerDrag = max(0, width + min(0, $0.translation.width)) }
-            .onEnded { value in
-                let moved = -value.translation.width, flung = -value.predictedEndTranslation.width
-                setDrawer(open: !(moved > width * 0.35 || flung > width * 0.5))
-            }
     }
 
     private func setDrawer(open: Bool) {
         if open { composerFocused = false }
-        withAnimation(.snappy(duration: 0.28)) {
-            showConversations = open
-            drawerDrag = nil
-        }
+        withAnimation(.sidePanel) { showConversations = open }
     }
 
     /// Hardware-keyboard shortcuts (iPad, Mac). Zero-size buttons still receive key equivalents,

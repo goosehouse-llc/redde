@@ -13,9 +13,12 @@ struct CronView: View {
     @State private var toast: String?
     /// Resolved once per screen and again on each refresh, not on every body pass.
     @State private var backend = CronBackend.current()
+    /// The conversation list's server and section switch, scrolling with the jobs.
+    var topRow: AnyView?
 
     var body: some View {
         List {
+            if let topRow { topRow }
             if backend == nil {
                 ContentUnavailableView("No gateway configured", systemImage: "clock.badge.questionmark",
                                        description: Text("Cron jobs live on the Hermes gateway. Set up the Hermes Dashboard or the Hermes API in Settings."))

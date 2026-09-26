@@ -25,9 +25,12 @@ struct KanbanView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     private var column: KanbanColumn? { columns.first { $0.name == selected } }
+    /// The conversation list's server and section switch, scrolling away above the column bar.
+    var topRow: AnyView?
 
     var body: some View {
         List {
+            if let topRow { topRow }
             // A pinned header, not a row above the list: the sheet's toolbar gave its top inset to
             // the first scroll view it found, the columns' own, which pushed them out of sight.
             Section {

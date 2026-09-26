@@ -5,10 +5,13 @@ import SwiftUI
 /// The iPhone's panel from the left (opening a conversation closes it). On iPad the list lives
 /// in the split view's sidebar instead.
 struct ConversationsView: View {
+    /// The panel stays built while closed, so it slides in without a hitch; this says whether
+    /// it's out.
+    var isShowing: Bool
     var onOpened: () -> Void
     var body: some View {
         NavigationStack {
-            ConversationsList(onOpened: onOpened)
+            ConversationsList(onOpened: onOpened, isShowing: isShowing)
         }
     }
 }
@@ -22,7 +25,11 @@ private struct ProjectRoute: Hashable {
 struct ConversationsList: View {
     /// What to do after a session opens: the iPhone's panel closes; the iPad sidebar stays put.
     var onOpened: () -> Void = {}
+    /// False while the iPhone's panel is closed: the Chats list refreshes when it opens again,
+    /// and the Kanban board (and its live socket) goes away until then.
+    var isShowing = true
     @Environment(Conversation.self) private var conversation
+    @Environment(\.sidePanelParked) private var panelParked
     @State private var store = ConversationStore.shared
     @State private var settings = Settings.shared
     @State private var ledger: [HermesSessionsAPI.SessionSummary] = []
@@ -69,22 +76,13 @@ struct ConversationsList: View {
             switch section {
             case .sessions: sessionsList
             // Rebuilt on a server or profile switch, so nothing (or no live socket) carries over.
-            case .cron: CronView().id(settings.connectionKey)
-            case .kanban: KanbanView().id(settings.connectionKey)
+            case .cron: CronView(topRow: AnyView(topRow)).id(settings.connectionKey)
+            case .kanban:
+                if isShowing { KanbanView(topRow: AnyView(topRow)).id(settings.connectionKey) } else { Color.clear }
             }
-        }
-        // Chats, Cron and Kanban get a full-width row of their own: in the bar, next to Settings,
-        // Select and New, the iPad sidebar and the iPhone's side panel squeezed them to "Kanb…".
-        .safeAreaInset(edge: .top, spacing: 0) {
-            VStack(spacing: 8) {
-                // Which server this is, and a quick switch, once there's more than one.
-                if settings.servers.count > 1 { serverMenu }
-                sectionPicker
-            }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 8)
         }
         .navigationTitle(section == .sessions ? "Conversations" : section.title)
+        .toolbarVisibility(panelParked ? .hidden : .automatic, for: .navigationBar)
         .navigationBarTitleDisplayMode(section == .sessions ? .large : .inline)
         .sheet(isPresented: $showSettings) { SettingsView() }
         .background {
@@ -118,6 +116,20 @@ struct ConversationsList: View {
         .accessibilityValue(settings.activeServer?.title ?? "")
     }
 
+    /// The server switch (once there's more than one) and Chats, Cron and Kanban, as the first
+    /// row of whichever list is showing: they move with it when you pull to refresh or scroll.
+    /// Full width: in the bar, next to Settings, Select and New, they were squeezed to "Kanb…".
+    private var topRow: some View {
+        VStack(spacing: 8) {
+            if settings.servers.count > 1 { serverMenu }
+            sectionPicker
+        }
+        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 8, trailing: 16))
+        .listRowSeparator(.hidden)
+        .listRowBackground(Color.clear)
+        .selectionDisabled()
+    }
+
     private var sectionPicker: some View {
         Picker("Section", selection: $section) {
             ForEach(Tab.allCases) { s in Text(s.title).tag(s) }
@@ -130,6 +142,7 @@ struct ConversationsList: View {
         // one treats a row tap as selection and swallows the NavigationLink, so project folders
         // never push on iPad.
         List(selection: selecting ? $selected : nil) {
+            topRow
             if usesLedger {
                 if viaServe, !projects.isEmpty, query.isEmpty, !selecting { projectsSection }
                 ledgerSection
@@ -196,6 +209,9 @@ struct ConversationsList: View {
             ledgerError = nil
         }
         .refreshable { if usesLedger { await refresh() } }
+        .onChange(of: isShowing) { _, showing in
+            if showing, usesLedger { Task { await refresh() } }
+        }
         .onChange(of: query, initial: true) { filterLedger() }
         .onChange(of: ledger) { filterLedger() }
         .sheet(item: $usageFor) { SessionUsageView(session: $0) }
@@ -681,6 +697,7 @@ struct ProjectSessionsView: View {
     let open: (HermesSessionsAPI.SessionSummary) async throws -> Void
     let currentID: String?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.sidePanelParked) private var panelParked
     @State private var lanes: [HermesServeClient.Project.Lane] = []
     @State private var error: String?
     @State private var loading = true
@@ -721,6 +738,7 @@ struct ProjectSessionsView: View {
         }
         .listStyle(.plain)
         .navigationTitle(project.label)
+        .toolbarVisibility(panelParked ? .hidden : .automatic, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $query, prompt: "Search in \(project.label)")
         .overlay { if loading { ProgressView() } }
