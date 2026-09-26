@@ -372,10 +372,9 @@ struct TranscriptView: View {
             .font(.system(.title, weight: .bold))
             .accessibilityElement(children: .combine)
             .accessibilityAddTraits(.isHeader)
-            if !Settings.shared.isConfigured {
-                Button("Connect to your assistant…") { showSetup = true }
-                    .buttonStyle(.borderedProminent)
-            } else if let last = pickUp {
+            // No "connect" button here: the greeting and the composer already say what to do, and
+            // setup opens on first launch and from Settings → Connection.
+            if let last = pickUp {
                 Button {
                     if let record = store.record(id: last.id) { conversation.load(record) }
                 } label: {

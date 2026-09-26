@@ -199,7 +199,8 @@ final class Conversation {
             attachments: attachments
         )
         guard let transport = makeTransport() else {
-            fail(replyID, TransportError.badURL.localizedDescription)
+            fail(replyID, settings.isConfigured ? TransportError.badURL.localizedDescription
+                                                : "No connection is set up yet. Go to Settings → Connection → Set up connection….")
             pauseQueue()
             mirrorContinuation.finish()
             return mirror
