@@ -32,6 +32,7 @@ struct ComposerView: View {
     @State private var photoSelection: [PhotosPickerItem] = []
     @State private var showFileImporter = false
     @State private var showPhotoPicker = false
+    @State private var showCamera = false
     @State private var attachmentError: String?
 
     /// The "/" menu is a hermes serve feature; other backends get the text as typed.
@@ -79,6 +80,13 @@ struct ComposerView: View {
             guard !Task.isCancelled, let (items, from) = try? await HermesServeClient.shared.completeSlash(draft) else { return }
             slashItems = Array(items.prefix(8))
             slashReplaceFrom = from
+        }
+        .fullScreenCover(isPresented: $showCamera) {
+            CameraPicker { image in
+                if let image, let att = Attachment.image(image) { pendingAttachments.append(att) }
+                showCamera = false
+            }
+            .ignoresSafeArea()
         }
         .photosPicker(isPresented: $showPhotoPicker, selection: $photoSelection, maxSelectionCount: 4, matching: .images)
         .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.item], allowsMultipleSelection: true) { result in
@@ -144,12 +152,15 @@ struct ComposerView: View {
 
     private var hasDraft: Bool { !draft.trimmingCharacters(in: .whitespaces).isEmpty || !pendingAttachments.isEmpty }
 
-    /// One rounded field (attach, the text, a mic) and one round button beside it whose job
+    /// One rounded field (attach and the text) and one round button beside it whose job
     /// follows what you're doing: hands-free voice, send, or stop.
     private var composerRow: some View {
         HStack(alignment: .bottom, spacing: 10) {
             HStack(alignment: .bottom, spacing: 2) {
                 Menu {
+                    if CameraPicker.isAvailable {
+                        Button("Camera", systemImage: "camera") { showCamera = true }
+                    }
                     Button("Photo Library", systemImage: "photo.on.rectangle") { showPhotoPicker = true }
                     Button("Files", systemImage: "folder") { showFileImporter = true }
                     if settings.transport == .hermesServe {

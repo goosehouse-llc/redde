@@ -88,6 +88,32 @@ struct DocumentPreview: UIViewControllerRepresentable {
     func updateUIViewController(_ controller: QLPreviewController, context: Context) {}
 }
 
+/// The system camera for one photo. PhotosPicker can't take pictures, so this wraps
+/// UIImagePickerController; `onCapture` gets the shot, or nothing if you cancel.
+struct CameraPicker: UIViewControllerRepresentable {
+    var onCapture: (UIImage?) -> Void
+
+    static var isAvailable: Bool { UIImagePickerController.isSourceTypeAvailable(.camera) }
+
+    final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let onCapture: (UIImage?) -> Void
+        init(onCapture: @escaping (UIImage?) -> Void) { self.onCapture = onCapture }
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            onCapture(info[.originalImage] as? UIImage)
+        }
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) { onCapture(nil) }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(onCapture: onCapture) }
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.delegate = context.coordinator
+        return picker
+    }
+    func updateUIViewController(_ picker: UIImagePickerController, context: Context) {}
+}
+
 /// One image, shown big: scaled to fit, tap for the zoomable viewer.
 /// ImageIO thumbnailing: decodes only what's needed for `maxPixel` instead of the full image.
 nonisolated enum ImageThumbnail {

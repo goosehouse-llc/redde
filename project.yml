@@ -79,6 +79,7 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         ITSAppUsesNonExemptEncryption: false
         NSMicrophoneUsageDescription: Redde listens so you can talk to your assistant. Audio is transcribed on this device and only your own server ever receives the text.
+        NSCameraUsageDescription: Redde uses the camera when you take a photo to attach to a message. The photo goes only to the server you connect to.
         NSFaceIDUsageDescription: Redde uses Face ID to unlock the app, which holds your Hermes credentials.
         NSLocalNetworkUsageDescription: Redde connects to the Hermes gateway or model server you configure, which is often on your local network.
         # Lets Siri accept "Hey Siri, ask Hermes" in addition to "ask Echo".

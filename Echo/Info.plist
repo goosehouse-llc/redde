@@ -53,6 +53,8 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Redde uses the camera when you take a photo to attach to a message. The photo goes only to the server you connect to.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Redde uses Face ID to unlock the app, which holds your Hermes credentials.</string>
 	<key>NSLocalNetworkUsageDescription</key>
