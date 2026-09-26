@@ -131,7 +131,7 @@ struct ContentView: View {
             .foregroundStyle(theme.text ?? Color.primary)
             .safeAreaInset(edge: .bottom) {
                 ComposerView(draft: $draft, pendingAttachments: $pendingAttachments, editing: $editing,
-                             focused: $composerFocused, openVoice: openVoice,
+                             focused: $composerFocused,
                              openHandsFree: { Task { await launchVoice(handsFree: settings.handsFreeByDefault) } },
                              openModelPicker: { showModelPicker = true })
                     .frame(maxWidth: 820).frame(maxWidth: .infinity)

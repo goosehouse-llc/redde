@@ -12,8 +12,6 @@ struct ComposerView: View {
     /// "Edit & resend": the message being replaced; sending truncates the transcript from it.
     @Binding var editing: Message?
     @FocusState.Binding var focused: Bool
-    /// The mic inside the field: voice mode, one question at a time.
-    let openVoice: () -> Void
     /// The round button beside the field when there's nothing to send: voice mode, listening at
     /// once, hands-free if Settings → Voice says so.
     let openHandsFree: () -> Void
@@ -175,18 +173,6 @@ struct ComposerView: View {
                     .focused($focused)
                     .onSubmit(send)
                     .submitLabel(.return)
-                if !hasDraft, !conversation.isStreaming {
-                    Button { openVoice() } label: {
-                        Image(systemName: "mic")
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 38, height: 38)
-                            .contentShape(.circle)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Voice")
-                    .accessibilityHint("Opens voice mode to ask one question")
-                }
             }
             .padding(5)
             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
