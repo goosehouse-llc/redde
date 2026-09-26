@@ -31,6 +31,8 @@ nonisolated enum WhatsNew {
                  detail: "Tap + beside the message field and choose Camera to snap a picture and send it with your message."),
             Item(symbol: "gauge.with.dots.needle.100percent", title: "More thinking",
                  detail: "Reasoning effort now goes past High to X-High and Max, for frontier models like Claude and GPT. Find it in Settings → Model."),
+            Item(symbol: "globe", title: "Talk in your language",
+                 detail: "Pick the language Redde listens for in Settings → Voice, and each reply is read by a voice for the language it's written in."),
             Item(symbol: "hourglass", title: "Long answers, better",
                  detail: "The live thinking keeps scrolling, each reply shows how long it took in total, and the screen stays on while you wait in voice mode."),
         ]),
