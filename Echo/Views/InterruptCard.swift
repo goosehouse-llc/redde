@@ -55,7 +55,7 @@ struct ClarifyCard: View {
                 }
             }
             if request.questions.count > 1 || request.questions.contains(where: \.multiSelect) || request.questions.contains(where: { $0.choices.isEmpty }) {
-                Button(action: send) { Text("Send answers").foregroundStyle(theme.userText) }
+                Button(action: send) { FilledButtonTitle(title: "Send answers") }
                     .buttonStyle(.borderedProminent)
                     .disabled(!allAnswered)
                     .font(.footnote)
@@ -99,7 +99,7 @@ struct SudoCard: View {
                 SecureField("Password", text: $password)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit(send)
-                Button(action: send) { Text("Send").foregroundStyle(theme.userText) }.buttonStyle(.borderedProminent).disabled(password.isEmpty)
+                Button(action: send) { FilledButtonTitle(title: "Send") }.buttonStyle(.borderedProminent).disabled(password.isEmpty)
                 Button("Cancel") { respond("") }.buttonStyle(.bordered)
             }
             .font(.footnote)
@@ -134,7 +134,7 @@ struct SecretCard: View {
                 SecureField("Value", text: $value)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit(send)
-                Button(action: send) { Text("Save").foregroundStyle(theme.userText) }.buttonStyle(.borderedProminent).disabled(value.isEmpty)
+                Button(action: send) { FilledButtonTitle(title: "Save") }.buttonStyle(.borderedProminent).disabled(value.isEmpty)
                 Button("Skip") { respond("") }.buttonStyle(.bordered)
             }
             .font(.footnote)
@@ -173,4 +173,13 @@ struct FlowChips: View {
             }
         }
     }
+}
+
+/// A filled button's title: the theme's text on its accent, and dimmed text while disabled, when
+/// the fill turns grey (white on grey couldn't be read, and didn't look disabled).
+struct FilledButtonTitle: View {
+    let title: String
+    @Environment(\.theme) private var theme
+    @Environment(\.isEnabled) private var isEnabled
+    var body: some View { Text(title).foregroundStyle(isEnabled ? theme.userText : Color.secondary) }
 }

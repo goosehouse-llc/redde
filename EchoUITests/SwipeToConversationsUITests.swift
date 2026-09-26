@@ -51,6 +51,19 @@ final class SwipeToConversationsUITests: XCTestCase {
         XCTAssertTrue(list.waitForNonExistence(timeout: 5), "Starting a new conversation didn't close the panel")
     }
 
+    /// A swipe too short to open the panel leaves it parked: its bar (Settings, New conversation)
+    /// must not stay reachable off screen.
+    func testShortSwipeLeavesThePanelClosed() throws {
+        let app = launch()
+        try XCTSkipIf(app.windows.firstMatch.frame.width > 600, "iPad keeps the list in the sidebar")
+        XCTAssertTrue(app.buttons["Conversations"].waitForExistence(timeout: 15), "The chat never appeared")
+        let window = app.windows.firstMatch
+        window.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.45))
+            .press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.45)),
+                   withVelocity: .slow, thenHoldForDuration: 0.2)
+        XCTAssertFalse(app.navigationBars["Conversations"].waitForExistence(timeout: 2), "A short swipe opened the list")
+    }
+
     func testVerticalScrollDoesNotOpenConversations() throws {
         let app = launch()
         try XCTSkipIf(app.windows.firstMatch.frame.width > 600, "iPad keeps the list in the sidebar")

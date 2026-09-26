@@ -15,6 +15,8 @@ struct ContentView: View {
     @State private var shareItem: ShareItem?
     @State private var showSetup = false
     @State private var showConversations = false
+    /// What's New was up when voice mode was asked for: voice wins, and it comes back after.
+    @State private var deferredWhatsNew: WhatsNew.Release?
     @State private var showVoice = false
     @State private var showSearch = false
     @State private var showModelPicker = false
@@ -228,6 +230,7 @@ struct ContentView: View {
         .frame(width: 0, height: 0)
         .opacity(0)
         .accessibilityHidden(true)
+        .disabled(showConversations)   // the chat is behind the iPhone's conversation list then
     }
 
     /// The header's first line: this conversation, or "New conversation" before the first message.
@@ -269,6 +272,7 @@ struct ContentView: View {
             // The inbox decodes off the main actor; the lock can have engaged meanwhile.
             guard let payload = await ShareInbox.takePending(), !payload.isEmpty, !lock.isLocked else { return }
             showVoice = false
+            setDrawer(open: false)   // the composer is under the conversation list
             let text = payload.draft
             if !text.isEmpty { draft = draft.isEmpty ? text : draft + "\n\n" + text }
             pendingAttachments += payload.attachments
@@ -280,6 +284,7 @@ struct ContentView: View {
     private func handleDraftRequest() {
         guard !lock.isLocked, let request = router.consumeDraftRequest() else { return }
         showVoice = false
+        setDrawer(open: false)   // the composer is under the conversation list
         if !request.text.isEmpty { draft = draft.isEmpty ? request.text : draft + "\n\n" + request.text }
         pendingAttachments += request.attachments
         composerFocused = true
@@ -303,6 +308,12 @@ struct ContentView: View {
         voiceSession.continuous = handsFree
         if !showVoice {
             startFreshForVoice()
+            if let shown = whatsNew {
+                // A cover can't present over the sheet; without this, voice silently never opened.
+                deferredWhatsNew = shown
+                whatsNew = nil
+                try? await Task.sleep(for: .milliseconds(450))
+            }
             showVoice = true
             // Let the cover present before the audio session and mic spin up.
             try? await Task.sleep(for: .milliseconds(400))
@@ -336,6 +347,12 @@ struct ContentView: View {
     /// comes up once that's over (unlock and closing voice mode call this again).
     private func presentWhatsNewIfDue() {
         guard whatsNew == nil else { return }
+        if let deferred = deferredWhatsNew {
+            guard !showVoice, !lock.isLocked else { return }
+            whatsNew = deferred
+            deferredWhatsNew = nil
+            return
+        }
         let current = WhatsNew.currentVersion
         let isNewInstall = !settings.setupDone && !settings.isConfigured
         #if DEBUG

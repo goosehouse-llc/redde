@@ -25,8 +25,8 @@ private struct ProjectRoute: Hashable {
 struct ConversationsList: View {
     /// What to do after a session opens: the iPhone's panel closes; the iPad sidebar stays put.
     var onOpened: () -> Void = {}
-    /// False while the iPhone's panel is closed: the Chats list refreshes when it opens again,
-    /// and the Kanban board (and its live socket) goes away until then.
+    /// False while the iPhone's panel is closed: Chats and Cron refresh when it opens again.
+    /// (The Kanban board and its live socket go away once the panel has slid out: `panelParked`.)
     var isShowing = true
     @Environment(Conversation.self) private var conversation
     @Environment(\.sidePanelParked) private var panelParked
@@ -76,11 +76,15 @@ struct ConversationsList: View {
             switch section {
             case .sessions: sessionsList
             // Rebuilt on a server or profile switch, so nothing (or no live socket) carries over.
-            case .cron: CronView(topRow: AnyView(topRow)).id(settings.connectionKey)
+            case .cron: CronView(topRow: AnyView(topRow), isShowing: isShowing).id(settings.connectionKey)
             case .kanban:
-                if isShowing { KanbanView(topRow: AnyView(topRow)).id(settings.connectionKey) } else { Color.clear }
+                // Gone once the panel has slid out (not as it starts to), taking its live socket along.
+                if !panelParked { KanbanView(topRow: AnyView(topRow)).id(settings.connectionKey) } else { Color.clear }
             }
         }
+        // From inside the navigation stack: hiding the whole panel doesn't reach UIKit's list,
+        // and VoiceOver could swipe into rows parked off screen.
+        .accessibilityHidden(panelParked)
         .navigationTitle(section == .sessions ? "Conversations" : section.title)
         .toolbarVisibility(panelParked ? .hidden : .automatic, for: .navigationBar)
         .navigationBarTitleDisplayMode(section == .sessions ? .large : .inline)
@@ -129,6 +133,7 @@ struct ConversationsList: View {
         .listRowSeparator(.hidden)
         .listRowBackground(Color.clear)
         .selectionDisabled()
+        .accessibilityHidden(panelParked)   // UIKit's segmented control ignores it from further out
     }
 
     private var sectionPicker: some View {

@@ -15,6 +15,8 @@ struct CronView: View {
     @State private var backend = CronBackend.current()
     /// The conversation list's server and section switch, scrolling with the jobs.
     var topRow: AnyView?
+    /// The iPhone's panel is out: it stays built while closed, so this is when to reload.
+    var isShowing = true
 
     var body: some View {
         List {
@@ -72,6 +74,7 @@ struct CronView: View {
         }
         .task { await refresh() }
         .refreshable { await refresh() }
+        .onChange(of: isShowing) { _, showing in if showing { Task { await refresh() } } }
         .sheet(isPresented: $creating) { CronJobEditor(job: nil) { await refresh() } }
         .sheet(isPresented: $browsingBlueprints) { if let backend { BlueprintBrowser(backend: backend) { await refresh() } } }
         .sheet(item: $editing) { job in CronJobEditor(job: job) { await refresh() } }

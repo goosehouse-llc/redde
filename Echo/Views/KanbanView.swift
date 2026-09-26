@@ -8,7 +8,8 @@ struct KanbanView: View {
     @State private var latestEventID = 0
     @State private var columns: [KanbanColumn] = []
     @State private var assignees: [String] = []
-    @State private var selected = "todo"
+    /// Kept across rebuilds (the board goes away while the iPhone's panel is closed).
+    @SceneStorage("kanban.column") private var selected = "todo"
     @State private var error: String?
     @State private var loading = false
     @State private var creating = false
