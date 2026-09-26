@@ -49,19 +49,16 @@ struct ModelPickerView: View {
         List {
             Section {
                 Picker("Reasoning effort", selection: $settings.reasoningEffort) {
-                    Text("Default").tag("")
-                    Text("Low").tag("low")
-                    Text("Medium").tag("medium")
-                    Text("High").tag("high")
+                    ForEach(Settings.reasoningEfforts, id: \.value) { Text($0.label).tag($0.value) }
                 }
                 .adaptiveSegmented()
             } header: {
                 Text("Reasoning effort")
             } footer: {
                 if isFastLane {
-                    Text("On a self-hosted Qwen model, High switches extended thinking on for new turns; other levels answer without thinking. Models that don't support the switch ignore it.")
+                    Text("On a self-hosted Qwen model, High or above switches extended thinking on for new turns; lower levels answer without thinking. Models that don't support the switch ignore it.")
                 } else {
-                    Text("How much the model thinks before answering. Default leaves it to the gateway. Applies to new turns on the Hermes API and to new sessions on the Hermes Dashboard.")
+                    Text("How much the model thinks before answering. Default leaves it to the gateway. X-High and Max are for frontier models such as Claude and GPT; others treat them as High or may refuse them. Applies to new turns on the Hermes API and to new sessions on the Hermes Dashboard.")
                 }
             }
 

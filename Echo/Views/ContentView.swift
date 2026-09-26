@@ -292,6 +292,7 @@ struct ContentView: View {
         case "setup": showSetup = true
         case "profiles": showProfilePicker = true
         case "servers": showServers = true
+        case "model": showModelPicker = true
         default: break
         }
         if let text = DevHooks.value("-echo.draft") {

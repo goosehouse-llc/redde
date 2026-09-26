@@ -173,7 +173,7 @@ struct ModelSettings: View {
 
     private var modelSummary: String {
         let model = settings.transport == .chatCompletions ? settings.fastLaneModel : (settings.gatewayModel.isEmpty ? "Default" : settings.gatewayModel)
-        let effort = settings.reasoningEffort.isEmpty ? "" : " · \(settings.reasoningEffort)"
+        let effort = settings.reasoningEffort.isEmpty ? "" : " · \(Settings.effortLabel(settings.reasoningEffort))"
         return model + effort
     }
 }

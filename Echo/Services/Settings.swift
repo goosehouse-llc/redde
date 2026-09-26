@@ -68,7 +68,17 @@ final class Settings {
     var gatewayProvider: String {
         didSet { defaults.set(gatewayProvider, forKey: Keys.gatewayProvider); syncActiveServer() }
     }
-    /// "" (gateway default) | low | medium | high.
+    /// The effort levels offered, lowest first; "" leaves it to the gateway. X-High and Max are
+    /// for frontier models (Claude, GPT); the values are the ones their APIs use.
+    static let reasoningEfforts: [(value: String, label: String)] = [
+        ("", "Default"), ("low", "Low"), ("medium", "Medium"), ("high", "High"), ("xhigh", "X-High"), ("max", "Max"),
+    ]
+
+    static func effortLabel(_ value: String) -> String {
+        reasoningEfforts.first { $0.value == value }?.label ?? value
+    }
+
+    /// "" (gateway default) or one of `reasoningEfforts`.
     var reasoningEffort: String {
         didSet { defaults.set(reasoningEffort, forKey: Keys.reasoningEffort) }
     }
