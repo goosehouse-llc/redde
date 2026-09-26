@@ -58,9 +58,12 @@ protocol VoiceAudioControlling: AnyObject {
     func activateForPlayback() throws
     func deactivate()
     func refreshRoute()
+    /// On while a reply is spoken: the proximity sensor may then move it to the earpiece.
+    func setEarRouting(_ on: Bool)
 }
 extension AudioSessionController: VoiceAudioControlling {}
 
 extension VoiceAudioControlling {
     func activateForPlayback() throws { try activateForVoice() }
+    func setEarRouting(_ on: Bool) {}
 }

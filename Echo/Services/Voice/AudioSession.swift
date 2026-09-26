@@ -78,7 +78,7 @@ final class AudioSessionController {
             activeMode = .voice
         }
         updateRouteFacts()
-        startProximityRouting()
+        applyEarRouting()
     }
 
     /// Replay and Read aloud: nothing records, so no voice-chat configuration — its default
@@ -125,13 +125,29 @@ final class AudioSessionController {
 
     // MARK: - Speaker vs. earpiece
 
+    /// Voice mode says when a reply is being spoken; only then does the ear matter.
+    private var earRoutingWanted = false
+
+    /// While Redde speaks: watch the proximity sensor so raising the phone moves the reply to the
+    /// earpiece. Not while listening or thinking: the sensor blanks the screen whenever anything
+    /// is near it, which blacked out the screen during a long wait for an answer.
+    func setEarRouting(_ on: Bool) {
+        earRoutingWanted = on
+        guard activeMode == .voice else { return }
+        applyEarRouting()
+    }
+
     /// CarPlay when a car is connected. Otherwise: phone at the ear → earpiece; anywhere else →
     /// speaker, like the Phone app. Headphones and Bluetooth are left alone. The sensor is only
-    /// watched when the earpiece setting is on: it also blanks the screen whenever anything is
-    /// near it, which is wrong for a phone face-down on a desk in hands-free mode.
-    private func startProximityRouting() {
-        let atEarEnabled = Settings.shared.earpieceAtEar
+    /// watched while a reply is spoken and the earpiece setting is on: it also blanks the screen
+    /// whenever anything is near it.
+    private func applyEarRouting() {
+        let atEarEnabled = earRoutingWanted && Settings.shared.earpieceAtEar
         UIDevice.current.isProximityMonitoringEnabled = atEarEnabled
+        if !atEarEnabled, let proximityObserver {
+            NotificationCenter.default.removeObserver(proximityObserver)
+            self.proximityObserver = nil
+        }
         applyOutputRoute(force: true)
         if atEarEnabled, proximityObserver == nil {
             proximityObserver = NotificationCenter.default.addObserver(

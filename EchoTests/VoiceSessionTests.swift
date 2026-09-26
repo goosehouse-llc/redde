@@ -65,6 +65,9 @@ struct VoiceSessionTests {
         }
         func deactivate() { deactivations += 1 }
         func refreshRoute() {}
+        /// Each change of the at-ear routing, in order.
+        private(set) var earRouting: [Bool] = []
+        func setEarRouting(_ on: Bool) { earRouting.append(on) }
     }
 
     // MARK: Harness
@@ -192,6 +195,24 @@ struct VoiceSessionTests {
         try await waitUntil("idle") { h.session.phase == .idle }
         #expect(h.session.lastMetrics != nil)
         #expect(h.session.lastMetrics?.endToFirstWord != nil)
+    }
+
+    /// The proximity sensor blanks the screen when covered, so it's only on while speaking,
+    /// never through listening or a long think.
+    @Test func earRoutingOnlyWhileSpeaking() async throws {
+        let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport(reply(["Hello", " there."])))
+        h.session.beginListening()
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        #expect(h.audio.earRouting.last == false)
+        h.recognizer.deliver("hi")
+        try await waitUntil("speaking") { h.session.phase == .speaking }
+        #expect(h.audio.earRouting.last == true)
+        try await waitUntil("reply ended") { h.speaker.ends >= 1 }
+        h.speaker.finishSpeaking()
+        try await waitUntil("idle") { h.session.phase == .idle }
+        #expect(h.audio.earRouting.last == false)
+        // One "on", for the one spoken reply: nothing turned it on while listening or thinking.
+        #expect(h.audio.earRouting.filter { $0 }.count == 1)
     }
 
     @Test func handsFreeRelistensAfterTheReply() async throws {

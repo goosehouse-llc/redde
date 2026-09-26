@@ -49,6 +49,8 @@ final class VoiceSession {
         didSet {
             guard phase != oldValue else { return }
             if phase != .speaking { isPaused = false }
+            // The at-ear sensor only while speaking: it blanks the screen whenever it's covered.
+            audio.setEarRouting(phase == .speaking)
             if headsetControlsOn { publishNowPlaying() }
             // Every path OUT of listening funnels through here: utterance end, tap,
             // interruption, AirPods coming out. The start cue plays in startRecognizer

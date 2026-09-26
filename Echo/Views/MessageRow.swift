@@ -174,11 +174,14 @@ struct MessageRow: View, Equatable {
     }
 
     private var reasoningText: some View {
-        Text(message.reasoning)
+        // While live, the newest part: with the start shown, a long think stopped moving once it
+        // passed the line limit. The whole trace is there under "Thought" afterwards.
+        Text(isLive ? Self.tail(of: message.reasoning, maxCharacters: 360) : message.reasoning)
             .font(.footnote)
             .foregroundStyle(.secondary)
             .textSelection(.enabled)
             .lineLimit(isLive ? 8 : nil)
+            .truncationMode(.head)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 2)
     }
@@ -266,12 +269,28 @@ struct MessageRow: View, Equatable {
         .accessibilityLabel(label)
     }
 
-    /// "0.5 s · 84 tok/s": time to the first word, and speed.
+    /// The last `maxCharacters` of `text`, starting at a word, with "…" in front when cut.
+    nonisolated static func tail(of text: String, maxCharacters: Int) -> String {
+        guard text.count > maxCharacters else { return text }
+        var cut = text.suffix(maxCharacters)
+        if let space = cut.firstIndex(where: \.isWhitespace) { cut = cut[cut.index(after: space)...] }
+        return "…" + cut
+    }
+
+    /// "3m 12s · 32 tok/s": how long the whole reply took, and speed. (It showed the time to the
+    /// first token, which for a model that thinks first is under a second on a 3-minute reply.)
     private static func compact(_ m: TurnMetrics) -> String {
         var parts: [String] = []
-        if let t = m.timeToFirstToken { parts.append(String(format: "%.1f s", t)) }
+        if let t = m.total ?? m.timeToFirstToken { parts.append(duration(t)) }
         if let tps = m.tokensPerSecond { parts.append(String(format: "%.0f tok/s", tps)) }
         return parts.isEmpty ? m.summary : parts.joined(separator: " · ")
+    }
+
+    /// "12.3 s" under a minute, "3m 12s" from there.
+    nonisolated static func duration(_ seconds: TimeInterval) -> String {
+        if seconds < 60 { return String(format: "%.1f s", seconds) }
+        let whole = Int(seconds.rounded())
+        return "\(whole / 60)m \(String(format: "%02d", whole % 60))s"
     }
 
     @ViewBuilder
