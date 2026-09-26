@@ -193,6 +193,8 @@ struct ContentView: View {
             }
             .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
             .background { keyboardShortcuts }
+            // iPhone: swipe right to open the conversation list, like the button in the corner.
+            .gesture(SwipeRightGesture { if showListButton { showConversations = true } })
     }
 
     /// Hardware-keyboard shortcuts (iPad, Mac). Zero-size buttons still receive key equivalents,
