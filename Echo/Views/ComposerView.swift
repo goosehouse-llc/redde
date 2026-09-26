@@ -158,11 +158,11 @@ struct ComposerView: View {
         HStack(alignment: .bottom, spacing: 10) {
             HStack(alignment: .bottom, spacing: 2) {
                 Menu {
+                    Button("Files", systemImage: "folder") { showFileImporter = true }
+                    Button("Photo Library", systemImage: "photo.on.rectangle") { showPhotoPicker = true }
                     if CameraPicker.isAvailable {
                         Button("Camera", systemImage: "camera") { showCamera = true }
                     }
-                    Button("Photo Library", systemImage: "photo.on.rectangle") { showPhotoPicker = true }
-                    Button("Files", systemImage: "folder") { showFileImporter = true }
                     if settings.transport == .hermesServe {
                         Divider()
                         Button("Commands", systemImage: "terminal") { draft = "/"; focused = true }
