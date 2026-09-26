@@ -2,13 +2,13 @@ import SwiftUI
 
 /// Previous sessions. With the ledger transport this is Hermes's own session list, every
 /// platform included. Tap to resume, swipe to delete.
-/// Sheet wrapper for iPhone (drag it down, or open a conversation, to leave). On iPad the list
-/// lives in the split view's sidebar instead.
+/// The iPhone's panel from the left (opening a conversation closes it). On iPad the list lives
+/// in the split view's sidebar instead.
 struct ConversationsView: View {
-    @Environment(\.dismiss) private var dismiss
+    var onOpened: () -> Void
     var body: some View {
         NavigationStack {
-            ConversationsList(onOpened: { dismiss() })
+            ConversationsList(onOpened: onOpened)
         }
     }
 }
@@ -20,10 +20,8 @@ private struct ProjectRoute: Hashable {
 }
 
 struct ConversationsList: View {
-    /// What to do after a session opens: the sheet dismisses itself; the iPad sidebar stays put.
+    /// What to do after a session opens: the iPhone's panel closes; the iPad sidebar stays put.
     var onOpened: () -> Void = {}
-    /// Shown in the iPad split view's sidebar rather than the iPhone sheet.
-    var inSidebar = false
     @Environment(Conversation.self) private var conversation
     @State private var store = ConversationStore.shared
     @State private var settings = Settings.shared
@@ -75,24 +73,16 @@ struct ConversationsList: View {
             case .kanban: KanbanView().id(settings.connectionKey)
             }
         }
-        .toolbar {
-            // On iPhone, Chats, Cron and Kanban share the bar with Settings and New, so the large
-            // title below stays free.
-            if !inSidebar {
-                ToolbarItem(placement: .principal) { sectionPicker.frame(maxWidth: 230) }
-            }
-        }
-        // The iPad sidebar's bar also holds Select and the sidebar button, which squeezed the
-        // segments to "C… C… K…"; there they get a full-width row of their own.
+        // Chats, Cron and Kanban get a full-width row of their own: in the bar, next to Settings,
+        // Select and New, the iPad sidebar and the iPhone's side panel squeezed them to "Kanb…".
         .safeAreaInset(edge: .top, spacing: 0) {
             VStack(spacing: 8) {
-                // Which server this is, and a quick switch, once there's more than one. A row, not
-                // a toolbar button: the iPhone bar has no room left for the section switcher.
+                // Which server this is, and a quick switch, once there's more than one.
                 if settings.servers.count > 1 { serverMenu }
-                if inSidebar { sectionPicker }
+                sectionPicker
             }
             .padding(.horizontal, 16)
-            .padding(.bottom, settings.servers.count > 1 || inSidebar ? 8 : 0)
+            .padding(.bottom, 8)
         }
         .navigationTitle(section == .sessions ? "Conversations" : section.title)
         .navigationBarTitleDisplayMode(section == .sessions ? .large : .inline)

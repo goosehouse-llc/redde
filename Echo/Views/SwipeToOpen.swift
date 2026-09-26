@@ -1,25 +1,40 @@
 import SwiftUI
 import UIKit
 
-/// A swipe to the right anywhere on the screen (iPhone: opens the conversation list). Only a
-/// clearly sideways swipe counts, so the transcript still scrolls; and a code block or table that
-/// can scroll back left gets the swipe instead.
+/// A swipe to the right anywhere on the screen, reported as it moves (iPhone: pulls the
+/// conversation list in from the left). Only a clearly sideways swipe counts, so the transcript
+/// still scrolls; and a code block or table that can scroll back left gets the swipe instead.
 struct SwipeRightGesture: UIGestureRecognizerRepresentable {
-    var action: () -> Void
+    var isEnabled = true
+    /// How far right the finger has moved.
+    var onChanged: (CGFloat) -> Void
+    /// Final distance and horizontal speed; (0, 0) when the swipe was cancelled.
+    var onEnded: (_ distance: CGFloat, _ velocity: CGFloat) -> Void
 
     func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator { Coordinator() }
 
     func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
         let pan = UIPanGestureRecognizer()
         pan.delegate = context.coordinator
+        pan.isEnabled = isEnabled
         return pan
     }
 
+    func updateUIGestureRecognizer(_ pan: UIPanGestureRecognizer, context: Context) {
+        pan.isEnabled = isEnabled
+    }
+
     func handleUIGestureRecognizerAction(_ pan: UIPanGestureRecognizer, context: Context) {
-        guard pan.state == .ended else { return }
-        let distance = pan.translation(in: pan.view), speed = pan.velocity(in: pan.view)
-        // Far enough, or a quick flick that's still heading right when the finger lifts.
-        if distance.x > 90 || (distance.x > 40 && speed.x > 500) { action() }
+        switch pan.state {
+        case .began, .changed:
+            onChanged(max(0, pan.translation(in: pan.view).x))
+        case .ended:
+            onEnded(pan.translation(in: pan.view).x, pan.velocity(in: pan.view).x)
+        case .cancelled, .failed:
+            onEnded(0, 0)
+        default:
+            break
+        }
     }
 
     final class Coordinator: NSObject, UIGestureRecognizerDelegate {
