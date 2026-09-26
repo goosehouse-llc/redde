@@ -29,6 +29,8 @@ nonisolated enum WhatsNew {
                  detail: "If a profile no longer exists on a server, Redde says so and takes you to pick another."),
             Item(symbol: "camera", title: "Take a photo",
                  detail: "Tap + beside the message field and choose Camera to snap a picture and send it with your message."),
+            Item(symbol: "gauge.with.dots.needle.100percent", title: "More thinking",
+                 detail: "Reasoning effort now goes past High to X-High and Max, for frontier models like Claude and GPT. Find it in Settings → Model."),
             Item(symbol: "hourglass", title: "Long answers, better",
                  detail: "The live thinking keeps scrolling, each reply shows how long it took in total, and the screen stays on while you wait in voice mode."),
         ]),
