@@ -32,6 +32,14 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
     /// Decided per reply so a Settings change takes effect on the next turn, not mid-sentence.
     private var usingKokoro = false
     private var kokoroDrained = false
+    /// Whether this reply has handed Kokoro a sentence; until then it can still switch to the
+    /// built-in voice for a language Kokoro can't speak.
+    private var sentToKokoro = false
+    /// The reply's language once it's clear ("es"), and what's been heard of it until then.
+    private var detectedLanguage: String?
+    private var heard = ""
+    /// The Kokoro server's voices, for reading a reply in another language.
+    private var kokoroVoiceIDs: (server: URL, ids: [String])?
 
     override init() {
         super.init()
@@ -68,18 +76,62 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
 
     /// Resolved once per language: speechVoices() enumerates every installed voice asset and
     /// sat on the first-audio latency path for each sentence.
-    private var cachedVoice: (language: String, voice: AVSpeechSynthesisVoice?)?
+    private var cachedVoices: [String: AVSpeechSynthesisVoice?] = [:]
 
-    var voice: AVSpeechSynthesisVoice? {
-        let lang = AVSpeechSynthesisVoice.currentLanguageCode()
-        if let cachedVoice, cachedVoice.language == lang { return cachedVoice.voice }
-        // Prefer the best installed voice for the current language.
-        let candidates = AVSpeechSynthesisVoice.speechVoices().filter { $0.language == lang }
-        let chosen = candidates.first { $0.quality == .premium }
-            ?? candidates.first { $0.quality == .enhanced }
-            ?? AVSpeechSynthesisVoice(language: lang)
-        cachedVoice = (lang, chosen)
+    /// The language Redde listens in ("en-US"); replies are read in it unless they're clearly
+    /// in another.
+    private var listeningLanguage: String {
+        let chosen = Settings.shared.speechLanguage
+        return chosen.isEmpty ? AVSpeechSynthesisVoice.currentLanguageCode() : chosen
+    }
+
+    /// The best installed voice for a base language ("es"), in the listening dialect when it's
+    /// the listening language, else the iPhone's region's. Nil leaves it to the synthesizer.
+    func voice(for language: String) -> AVSpeechSynthesisVoice? {
+        let listening = listeningLanguage
+        let key = "\(language)|\(listening)"
+        if let cached = cachedVoices[key] { return cached }
+        let preferred = SpokenLanguage.base(listening) == language
+            ? listening : "\(language)-\(Locale.current.region?.identifier ?? "")"
+        let installed = AVSpeechSynthesisVoice.speechVoices().map {
+            SpokenLanguage.AppleVoice(identifier: $0.identifier, language: $0.language, quality: $0.quality.rawValue,
+                                      novelty: $0.voiceTraits.contains(.isNoveltyVoice))
+        }
+        var chosen: AVSpeechSynthesisVoice?
+        if let pick = SpokenLanguage.appleVoice(for: language, preferred: preferred, among: installed) {
+            chosen = pick.identifier.flatMap { AVSpeechSynthesisVoice(identifier: $0) } ?? AVSpeechSynthesisVoice(language: pick.language)
+        } else if language != SpokenLanguage.base(listening) {
+            chosen = voice(for: SpokenLanguage.base(listening))   // nothing speaks it; read it as before
+        }
+        cachedVoices[key] = chosen
         return chosen
+    }
+
+    /// The reply's base language so far: what it's clearly written in, or the listening language.
+    private func replyLanguage(adding spoken: String) -> String {
+        let fallback = SpokenLanguage.base(listeningLanguage)
+        guard Settings.shared.matchReplyLanguage else { return fallback }
+        if let detectedLanguage { return detectedLanguage }
+        heard += heard.isEmpty ? spoken : " " + spoken
+        detectedLanguage = SpokenLanguage.detect(heard, hint: fallback)
+        return detectedLanguage ?? fallback
+    }
+
+    /// The Kokoro voice for `language`, or nil when the server has none for it.
+    private func kokoroVoice(for language: String) -> String? {
+        let current = Settings.shared.kokoroVoice
+        // Your pick reads your language, and anything whose language can't be told from its name.
+        if language == SpokenLanguage.base(listeningLanguage) || SpokenLanguage.kokoroLanguage(of: current) == nil {
+            return current
+        }
+        return SpokenLanguage.kokoroVoice(for: language, current: current, available: kokoroVoiceIDs?.ids ?? [])
+    }
+
+    private func loadKokoroVoices(_ server: URL) {
+        guard kokoroVoiceIDs?.server != server else { return }
+        Task {
+            if let ids = try? await KokoroPlayer.voiceIDs(baseURL: server) { kokoroVoiceIDs = (server, ids) }
+        }
     }
 
     // MARK: - Streaming input
@@ -92,8 +144,14 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         announcedStart = false
         streamEnded = false
         kokoroDrained = false
+        sentToKokoro = false
+        detectedLanguage = nil
+        heard = ""
         usingKokoro = Settings.shared.useKokoro && Settings.shared.kokoroBaseURL != nil
-        if usingKokoro { kokoro.begin(baseURL: Settings.shared.kokoroBaseURL) }
+        if usingKokoro, let server = Settings.shared.kokoroBaseURL {
+            kokoro.begin(baseURL: server)
+            if Settings.shared.matchReplyLanguage { loadKokoroVoices(server) }
+        }
     }
 
     func append(_ delta: String) {
@@ -140,11 +198,19 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
     private func enqueue(_ text: String) {
         let spoken = PlainText.spoken(text)
         guard !spoken.isEmpty else { return }
+        let language = replyLanguage(adding: spoken)
         if usingKokoro, let base = Settings.shared.kokoroBaseURL {
-            isSpeaking = true
-            kokoro.enqueue(spoken, baseURL: base, voice: Settings.shared.kokoroVoice,
-                           speed: Settings.shared.voiceSpeed)
-            return
+            let voice = kokoroVoice(for: language)
+            if voice != nil || sentToKokoro {
+                isSpeaking = true
+                sentToKokoro = true
+                kokoro.enqueue(spoken, baseURL: base, voice: voice ?? Settings.shared.kokoroVoice,
+                               speed: Settings.shared.voiceSpeed)
+                return
+            }
+            // Kokoro has no voice for this language: the built-in one reads the whole reply.
+            usingKokoro = false
+            kokoro.stop()
         }
         speakLocally(spoken)
     }
@@ -152,7 +218,7 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
     @discardableResult
     private func speakLocally(_ spoken: String) -> AVSpeechUtterance {
         let utterance = AVSpeechUtterance(string: spoken)
-        utterance.voice = voice
+        utterance.voice = voice(for: detectedLanguage ?? SpokenLanguage.base(listeningLanguage))
         utteranceEpochs[ObjectIdentifier(utterance)] = epoch
         utterance.prefersAssistiveTechnologySettings = false
         // The same speed slider as Kokoro, scaled around the system default rate.

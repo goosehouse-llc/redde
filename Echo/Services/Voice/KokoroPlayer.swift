@@ -147,6 +147,15 @@ final class KokoroPlayer {
         log.info("engine \(reason) \(Date().timeIntervalSince(t), format: .fixed(precision: 3))s")
     }
 
+    /// The server's voice ids ("af_heart", "ef_dora", …), sorted.
+    nonisolated static func voiceIDs(baseURL: URL) async throws -> [String] {
+        struct Envelope: Decodable { var voices: [Entry]; struct Entry: Decodable { var id: String } }
+        var request = URLRequest(url: baseURL.appending(path: "v1/audio/voices"))
+        request.timeoutInterval = 6
+        let (data, _) = try await URLSession.shared.data(for: request)
+        return try JSONDecoder().decode(Envelope.self, from: data).voices.map(\.id).sorted()
+    }
+
     // MARK: - Fetch
 
     /// Starts fetches for the next sentences due, up to the lookahead.

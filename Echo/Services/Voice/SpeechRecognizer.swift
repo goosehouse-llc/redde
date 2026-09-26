@@ -22,7 +22,7 @@ final class SpeechRecognizer {
             switch self {
             case .busy: "The microphone is still shutting down. Try again in a moment."
             case .permissionDenied: "Microphone access was denied. Enable it for Redde in Settings."
-            case .localeUnsupported: "On-device transcription isn't available for this language."
+            case .localeUnsupported: "On-device transcription isn't available for this language. Pick another under Settings → Voice → Listening language."
             case .assetsUnavailable: "The on-device speech model isn't installed yet."
             case .audioFormat: "Couldn't set up the microphone audio format."
             }
@@ -77,11 +77,11 @@ final class SpeechRecognizer {
         await AVAudioApplication.requestRecordPermission()
     }
 
-    /// Ensures the on-device model for the current locale is installed. Safe to call every launch.
+    /// Ensures the on-device model for the listening language is installed. Safe to call every launch.
     /// The module must belong to an analyzer before AssetInventory will talk about it
     /// ("not subscribed to transcription.en" otherwise).
     static func prepareAssets() async throws {
-        guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: .current) else {
+        guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: Settings.shared.speechLocale) else {
             throw Failure.localeUnsupported
         }
         let probe = try await Self.makeTranscriber()
@@ -104,12 +104,17 @@ final class SpeechRecognizer {
 
     /// Same module configuration the live path uses, so file-based tests exercise the real thing.
     static func makeTranscriber() async throws -> SpeechTranscriber {
-        guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: .current) else {
+        guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: Settings.shared.speechLocale) else {
             throw Failure.localeUnsupported
         }
         // Allocate the locale for this app. Without it the framework warns
         // "Cannot use modules with unallocated locales" and AssetInventory refuses downloads.
-        if await !AssetInventory.reservedLocales.contains(where: { $0.identifier(.bcp47) == locale.identifier(.bcp47) }) {
+        let reserved = await AssetInventory.reservedLocales
+        if !reserved.contains(where: { $0.identifier(.bcp47) == locale.identifier(.bcp47) }) {
+            // An app may hold only a few; after a switch of listening language, let the old go.
+            if reserved.count >= AssetInventory.maximumReservedLocales {
+                for old in reserved { await AssetInventory.release(reservedLocale: old) }
+            }
             _ = try await AssetInventory.reserve(locale: locale)
         }
         return SpeechTranscriber(

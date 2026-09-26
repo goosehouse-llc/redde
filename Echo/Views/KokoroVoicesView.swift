@@ -77,12 +77,8 @@ struct KokoroVoicesView: View {
 
     private func load() async {
         guard let base = settings.kokoroBaseURL else { error = "Set the server TTS address first."; loading = false; return }
-        struct Envelope: Decodable { var voices: [Entry]; struct Entry: Decodable { var id: String } }
-        var request = URLRequest(url: base.appending(path: "v1/audio/voices"))
-        request.timeoutInterval = 6
         do {
-            let (data, _) = try await URLSession.shared.data(for: request)
-            voices = try JSONDecoder().decode(Envelope.self, from: data).voices.map(\.id).sorted()
+            voices = try await KokoroPlayer.voiceIDs(baseURL: base)
         } catch {
             self.error = "Couldn't reach Kokoro: \(error.localizedDescription)"
         }

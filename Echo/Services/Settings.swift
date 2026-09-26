@@ -111,6 +111,16 @@ final class Settings {
     var kokoroVoice: String {
         didSet { defaults.set(kokoroVoice, forKey: Keys.kokoroVoice) }
     }
+    /// The language Redde listens for, as a locale id ("es-MX"). Empty = the iPhone's language.
+    var speechLanguage: String {
+        didSet { defaults.set(speechLanguage, forKey: Keys.speechLanguage) }
+    }
+    /// Read each reply with a voice for the language it's written in, not only `speechLanguage`.
+    var matchReplyLanguage: Bool {
+        didSet { defaults.set(matchReplyLanguage, forKey: Keys.matchReplyLanguage) }
+    }
+    /// What Redde listens for: `speechLanguage`, or the iPhone's language.
+    var speechLocale: Locale { speechLanguage.isEmpty ? .current : Locale(identifier: speechLanguage) }
     var theme: Theme {
         didSet { defaults.set(theme.rawValue, forKey: Keys.theme) }
     }
@@ -278,6 +288,8 @@ final class Settings {
         static let kokoroURL = "kokoroURL"
         static let kokoroVoice = "kokoroVoice"
         static let voiceSpeed = "voiceSpeed"
+        static let speechLanguage = "speechLanguage"
+        static let matchReplyLanguage = "matchReplyLanguage"
         static let contextWindow = "contextWindow"
         static let theme = "theme"
         static let themeColors = "themeColors"
@@ -329,6 +341,8 @@ final class Settings {
         voiceOrb = VoiceOrb(rawValue: defaults.string(forKey: Keys.voiceOrb) ?? "") ?? .waveform
         notifyInBackground = defaults.bool(forKey: Keys.notifyInBackground)
         showLiveActivity = defaults.object(forKey: Keys.showLiveActivity) as? Bool ?? true
+        speechLanguage = defaults.string(forKey: Keys.speechLanguage) ?? ""
+        matchReplyLanguage = defaults.object(forKey: Keys.matchReplyLanguage) as? Bool ?? true
         earpieceAtEar = defaults.object(forKey: Keys.earpieceAtEar) as? Bool ?? true
         announceOnAirPods = defaults.bool(forKey: Keys.announceOnAirPods)
         requireBiometrics = defaults.bool(forKey: Keys.requireBiometrics)
@@ -479,6 +493,8 @@ final class Settings {
         kokoroURL = Self.defaultKokoroURL
         kokoroVoice = Self.defaultKokoroVoice
         voiceSpeed = 1.0
+        speechLanguage = ""
+        matchReplyLanguage = true
         theme = .standard
         themeColors = [:]
         appearance = .system
