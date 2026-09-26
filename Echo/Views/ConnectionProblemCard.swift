@@ -82,7 +82,9 @@ struct ConnectionProblemCard: View {
             .accessibilityElement(children: .combine)
             if needsSettings {
                 Button(action: openSettings) {
-                    Text(kind == .login ? "Add login" : kind == .profileNotServed || kind == .profileMissing ? "Change profile" : "Add key").frame(maxWidth: .infinity)
+                    Text(kind == .login ? "Add login" : kind == .profileNotServed || kind == .profileMissing ? "Change profile" : "Add key")
+                        .foregroundStyle(theme.userText)   // readable on every theme's accent
+                        .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)

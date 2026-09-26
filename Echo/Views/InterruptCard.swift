@@ -23,6 +23,7 @@ struct InterruptCard: View {
 }
 
 struct ClarifyCard: View {
+    @Environment(\.theme) private var theme
     let request: ClarifyRequest
     let respond: ([String: String]) -> Void
     @State private var picked: [String: Set<String>] = [:]
@@ -54,7 +55,7 @@ struct ClarifyCard: View {
                 }
             }
             if request.questions.count > 1 || request.questions.contains(where: \.multiSelect) || request.questions.contains(where: { $0.choices.isEmpty }) {
-                Button("Send answers", action: send)
+                Button(action: send) { Text("Send answers").foregroundStyle(theme.userText) }
                     .buttonStyle(.borderedProminent)
                     .disabled(!allAnswered)
                     .font(.footnote)
@@ -84,6 +85,7 @@ struct ClarifyCard: View {
 }
 
 struct SudoCard: View {
+    @Environment(\.theme) private var theme
     let respond: (String) -> Void
     @State private var password = ""
 
@@ -97,7 +99,7 @@ struct SudoCard: View {
                 SecureField("Password", text: $password)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit(send)
-                Button("Send", action: send).buttonStyle(.borderedProminent).disabled(password.isEmpty)
+                Button(action: send) { Text("Send").foregroundStyle(theme.userText) }.buttonStyle(.borderedProminent).disabled(password.isEmpty)
                 Button("Cancel") { respond("") }.buttonStyle(.bordered)
             }
             .font(.footnote)
@@ -114,6 +116,7 @@ struct SudoCard: View {
 }
 
 struct SecretCard: View {
+    @Environment(\.theme) private var theme
     let request: SecretRequest
     let respond: (String) -> Void
     @State private var value = ""
@@ -131,7 +134,7 @@ struct SecretCard: View {
                 SecureField("Value", text: $value)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit(send)
-                Button("Save", action: send).buttonStyle(.borderedProminent).disabled(value.isEmpty)
+                Button(action: send) { Text("Save").foregroundStyle(theme.userText) }.buttonStyle(.borderedProminent).disabled(value.isEmpty)
                 Button("Skip") { respond("") }.buttonStyle(.bordered)
             }
             .font(.footnote)
@@ -149,6 +152,7 @@ struct SecretCard: View {
 
 /// Wrapping row of tappable choice chips.
 struct FlowChips: View {
+    @Environment(\.theme) private var theme
     let items: [String]
     let selected: Set<String>
     let tap: (String) -> Void
@@ -161,8 +165,9 @@ struct FlowChips: View {
                         .font(.footnote.weight(.medium))
                         .padding(.horizontal, 10).padding(.vertical, 6)
                         .frame(maxWidth: .infinity)
-                        .background(selected.contains(item) ? Color.accentColor : Color.primary.opacity(0.08), in: .capsule)
-                        .foregroundStyle(selected.contains(item) ? .white : .primary)
+                        .background(selected.contains(item) ? theme.accent : Color.primary.opacity(0.08), in: .capsule)
+                        // The theme's text for accent fills: white on a pale accent is unreadable.
+                        .foregroundStyle(selected.contains(item) ? theme.userText : Color.primary)
                 }
                 .buttonStyle(.plain)
             }
