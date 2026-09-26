@@ -27,6 +27,9 @@ prepare() {   # device
   xcrun simctl status_bar "$1" override --time 9:41 --batteryState charged --batteryLevel 100 \
     --cellularMode active --cellularBars 4 --wifiBars 3 --dataNetwork wifi
   xcrun simctl install "$1" "$APP"
+  # A fresh install's first launch is still setting up (the iPad sidebar showed a key prompt), so
+  # throw one away.
+  xcrun simctl launch "$1" $BUNDLE "${BASE[@]}" "${FAST[@]}" >/dev/null; sleep $WAIT
 }
 
 shot() {   # device name args...
