@@ -8,6 +8,21 @@ struct SpokenLanguageTests {
         #expect(SpokenLanguage.detect("Tomorrow you have two things on the calendar.", hint: "en") == "en")
     }
 
+    /// Chinese, Japanese and Korean are clear in a few characters.
+    @Test func detectsShortCJK() {
+        #expect(SpokenLanguage.detect("はい、わかりました。", hint: "en") == "ja")
+        #expect(SpokenLanguage.detect("好的，没问题。", hint: "en") == "zh")
+        #expect(SpokenLanguage.detect("네, 알겠습니다.", hint: "en") == "ko")
+    }
+
+    /// A foreign opener doesn't hand an English reply to another voice; leaving the listening
+    /// language takes more text.
+    @Test func aForeignOpenerIsNotEnough() {
+        #expect(SpokenLanguage.detect("Bon appétit, Dana!", hint: "en") == nil)
+        #expect(SpokenLanguage.detect("Buen provecho, Dana!", hint: "en") == nil)
+        #expect(SpokenLanguage.detect("Bon appétit, Dana! Your table is booked for eight tonight.", hint: "en") == "en")
+    }
+
     /// Too little to go on: the listening language reads it rather than a guessed voice.
     @Test func shortTextIsUndecided() {
         #expect(SpokenLanguage.detect("OK.", hint: "en") == nil)
@@ -44,6 +59,15 @@ struct SpokenLanguageTests {
         #expect(SpokenLanguage.appleVoice(for: "fr", preferred: "fr-US", among: voices)?.language == "fr-CA")
     }
 
+    /// No voice for the iPhone's region: US English, not whichever dialect sorts first.
+    @Test func homeDialectForEnglish() {
+        let english: [SpokenLanguage.AppleVoice] = [
+            .init(identifier: "au", language: "en-AU", quality: 1),
+            .init(identifier: "us", language: "en-US", quality: 1),
+        ]
+        #expect(SpokenLanguage.appleVoice(for: "en", preferred: "en-DE", among: english)?.language == "en-US")
+    }
+
     @Test func noVoiceForTheLanguage() {
         #expect(SpokenLanguage.appleVoice(for: "ja", preferred: "ja-US", among: voices) == nil)
         #expect(SpokenLanguage.appleVoice(for: "de", preferred: "de-US", among: voices) == nil)   // novelty only
@@ -60,6 +84,14 @@ struct SpokenLanguageTests {
         #expect(SpokenLanguage.kokoroVoice(for: "es", current: "am_onyx", available: kokoro) == "em_alex")
         #expect(SpokenLanguage.kokoroVoice(for: "es", current: "af_heart", available: kokoro) == "ef_dora")
         #expect(SpokenLanguage.kokoroVoice(for: "fr", current: "am_onyx", available: kokoro) == "ff_siwis")   // no male French
+    }
+
+    /// Other OpenAI-style servers' voices say nothing about their language.
+    @Test func onlyKokoroNamesCarryALanguage() {
+        #expect(SpokenLanguage.kokoroLanguage(of: "ef_dora") == "es")
+        #expect(SpokenLanguage.kokoroLanguage(of: "am_onyx(2)+bm_george(1)") == "en")
+        #expect(SpokenLanguage.kokoroLanguage(of: "echo") == nil)
+        #expect(SpokenLanguage.kokoroLanguage(of: "fable") == nil)
     }
 
     @Test func kokoroHasNoVoiceForTheLanguage() {

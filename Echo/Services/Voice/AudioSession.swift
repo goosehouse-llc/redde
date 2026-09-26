@@ -31,6 +31,13 @@ final class AudioSessionController {
 
     private var observer: NSObjectProtocol?
     private var proximityObserver: NSObjectProtocol?
+    /// Where the sensor last saw the phone. It's only watched while a reply is spoken, and it
+    /// reads "nothing near" whenever it's off or has just come on; routing on that sent every
+    /// listening chime, and the start of every reply, to the loudspeaker at the ear. Between
+    /// replies the route stays where the last real reading put it.
+    private var lastAtEar = false
+    /// Takes a reading once the sensor has had a moment to settle after coming on.
+    private var proximitySettle: Task<Void, Never>?
     private var routeObserver: NSObjectProtocol?
 
     private init() {
@@ -55,6 +62,7 @@ final class AudioSessionController {
     func activateForVoice() throws {
         let session = AVAudioSession.sharedInstance()
         if activeMode != .voice {
+            lastAtEar = false   // a new voice session starts on the speaker until the sensor says otherwise
             // No `.defaultToSpeaker`: the speaker/earpiece choice is made by the proximity sensor.
             // No mixing option either: ducked music would still play into the open microphone, so
             // other audio pauses for the voice loop and resumes on deactivate (like Siri).
@@ -144,21 +152,38 @@ final class AudioSessionController {
     private func applyEarRouting() {
         let atEarEnabled = earRoutingWanted && Settings.shared.earpieceAtEar
         UIDevice.current.isProximityMonitoringEnabled = atEarEnabled
-        if !atEarEnabled, let proximityObserver {
+        if !Settings.shared.earpieceAtEar { lastAtEar = false }
+        proximitySettle?.cancel()
+        if atEarEnabled {
+            if proximityObserver == nil {
+                proximityObserver = NotificationCenter.default.addObserver(
+                    forName: UIDevice.proximityStateDidChangeNotification, object: nil, queue: .main
+                ) { [weak self] _ in
+                    MainActor.assumeIsolated { self?.proximityChanged() }
+                }
+            }
+            // The sensor posts only on a change: a phone put down between replies reads "not
+            // near" without a notification, so look once it has settled.
+            proximitySettle = Task { [weak self] in
+                try? await Task.sleep(for: .milliseconds(300))
+                guard !Task.isCancelled, UIDevice.current.isProximityMonitoringEnabled else { return }
+                self?.proximityChanged()
+            }
+        } else if let proximityObserver {
             NotificationCenter.default.removeObserver(proximityObserver)
             self.proximityObserver = nil
         }
         applyOutputRoute(force: true)
-        if atEarEnabled, proximityObserver == nil {
-            proximityObserver = NotificationCenter.default.addObserver(
-                forName: UIDevice.proximityStateDidChangeNotification, object: nil, queue: .main
-            ) { [weak self] _ in
-                MainActor.assumeIsolated { self?.applyOutputRoute(force: true) }
-            }
-        }
+    }
+
+    private func proximityChanged() {
+        lastAtEar = UIDevice.current.proximityState
+        applyOutputRoute(force: true)
     }
 
     private func stopProximityRouting() {
+        proximitySettle?.cancel()
+        lastAtEar = false
         UIDevice.current.isProximityMonitoringEnabled = false
         if let proximityObserver { NotificationCenter.default.removeObserver(proximityObserver) }
         proximityObserver = nil
@@ -214,7 +239,7 @@ final class AudioSessionController {
             $0.portType == .builtInSpeaker || $0.portType == .builtInReceiver
         }
         guard builtInOnly else { return } // headphones / Bluetooth: don't fight the user
-        let atEar = Settings.shared.earpieceAtEar && UIDevice.current.proximityState
+        let atEar = Settings.shared.earpieceAtEar && lastAtEar
         let onSpeaker = session.currentRoute.outputs.contains { $0.portType == .builtInSpeaker }
         guard force || onSpeaker == atEar else { return }
         do {

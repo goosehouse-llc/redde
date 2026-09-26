@@ -80,11 +80,12 @@ final class SpeechRecognizer {
     /// Ensures the on-device model for the listening language is installed. Safe to call every launch.
     /// The module must belong to an analyzer before AssetInventory will talk about it
     /// ("not subscribed to transcription.en" otherwise).
-    static func prepareAssets() async throws {
-        guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: Settings.shared.speechLocale) else {
+    /// `chosen` is read once by the caller, so a language picked meanwhile can't mix into this one.
+    static func prepareAssets(for chosen: Locale = Settings.shared.speechLocale) async throws {
+        guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: chosen) else {
             throw Failure.localeUnsupported
         }
-        let probe = try await Self.makeTranscriber()
+        let probe = try await Self.makeTranscriber(for: chosen)
         let installed = await SpeechTranscriber.installedLocales
         if installed.contains(where: { $0.identifier(.bcp47) == locale.identifier(.bcp47) }) { return }
         // The module must stay attached to an analyzer while AssetInventory is asked about it;
@@ -103,17 +104,20 @@ final class SpeechRecognizer {
     // MARK: - Shared setup
 
     /// Same module configuration the live path uses, so file-based tests exercise the real thing.
-    static func makeTranscriber() async throws -> SpeechTranscriber {
-        guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: Settings.shared.speechLocale) else {
+    static func makeTranscriber(for chosen: Locale = Settings.shared.speechLocale) async throws -> SpeechTranscriber {
+        guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: chosen) else {
             throw Failure.localeUnsupported
         }
         // Allocate the locale for this app. Without it the framework warns
         // "Cannot use modules with unallocated locales" and AssetInventory refuses downloads.
         let reserved = await AssetInventory.reservedLocales
         if !reserved.contains(where: { $0.identifier(.bcp47) == locale.identifier(.bcp47) }) {
-            // An app may hold only a few; after a switch of listening language, let the old go.
-            if reserved.count >= AssetInventory.maximumReservedLocales {
-                for old in reserved { await AssetInventory.release(reservedLocale: old) }
+            // An app may hold only a few: after switching listening languages, let the oldest go,
+            // only as many as needed.
+            var held = reserved.count
+            for old in reserved where held >= AssetInventory.maximumReservedLocales {
+                if await AssetInventory.release(reservedLocale: old) { held -= 1 }
+                else { log.warning("couldn't release speech locale \(old.identifier)") }
             }
             _ = try await AssetInventory.reserve(locale: locale)
         }

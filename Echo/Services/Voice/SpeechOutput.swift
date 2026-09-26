@@ -39,10 +39,20 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
     private var detectedLanguage: String?
     private var heard = ""
     /// The Kokoro server's voices, for reading a reply in another language.
-    private var kokoroVoiceIDs: (server: URL, ids: [String])?
+    private var kokoroVoiceIDs: (server: URL, ids: [String], at: Date)?
+    private var kokoroVoicesLoading = false
+    private var voicesObserver: NSObjectProtocol?
 
     override init() {
         super.init()
+        // A voice downloaded in the iPhone's Settings while Redde runs is used from the next reply.
+        voicesObserver = NotificationCenter.default.addObserver(
+            forName: AVSpeechSynthesizer.availableVoicesDidChangeNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.cachedVoices = [:] }
+        }
+        // Ready before the first reply, so it isn't read by the wrong voice while the list loads.
+        if Settings.shared.useKokoro, let server = Settings.shared.kokoroBaseURL { loadKokoroVoices(server) }
         synthesizer.delegate = self
         // Mixing with the session we already configured; don't let the synthesizer flip categories.
         synthesizer.usesApplicationAudioSession = true
@@ -114,23 +124,29 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         if let detectedLanguage { return detectedLanguage }
         heard += heard.isEmpty ? spoken : " " + spoken
         detectedLanguage = SpokenLanguage.detect(heard, hint: fallback)
+            ?? (heard.count > SpokenLanguage.detectionLimit ? fallback : nil)   // long and still unclear: stop
         return detectedLanguage ?? fallback
     }
 
     /// The Kokoro voice for `language`, or nil when the server has none for it.
     private func kokoroVoice(for language: String) -> String? {
         let current = Settings.shared.kokoroVoice
-        // Your pick reads your language, and anything whose language can't be told from its name.
-        if language == SpokenLanguage.base(listeningLanguage) || SpokenLanguage.kokoroLanguage(of: current) == nil {
-            return current
-        }
+        // Your pick until the reply's language is clear (and always with "Listening language",
+        // which never detects), or when its name doesn't say what it speaks. After that, a voice
+        // for that language: yours if it is one, so listening in Spanish with an English voice
+        // still gets a Spanish one.
+        if detectedLanguage == nil || SpokenLanguage.kokoroLanguage(of: current) == nil { return current }
         return SpokenLanguage.kokoroVoice(for: language, current: current, available: kokoroVoiceIDs?.ids ?? [])
     }
 
+    /// Fetched once per server, again after ten minutes (voices added on the server).
     private func loadKokoroVoices(_ server: URL) {
-        guard kokoroVoiceIDs?.server != server else { return }
+        if let loaded = kokoroVoiceIDs, loaded.server == server, Date.now.timeIntervalSince(loaded.at) < 600 { return }
+        guard !kokoroVoicesLoading else { return }
+        kokoroVoicesLoading = true
         Task {
-            if let ids = try? await KokoroPlayer.voiceIDs(baseURL: server) { kokoroVoiceIDs = (server, ids) }
+            defer { kokoroVoicesLoading = false }
+            if let ids = try? await KokoroPlayer.voiceIDs(baseURL: server) { kokoroVoiceIDs = (server, ids, .now) }
         }
     }
 

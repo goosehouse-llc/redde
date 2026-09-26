@@ -252,9 +252,12 @@ struct ContentView: View {
 
     /// Settings → Voice → "New conversation in voice mode": every way into voice mode starts one,
     /// before the screen appears so the old conversation doesn't flash up. Not while a reply is
-    /// still coming or a message waits to send, and not when this one is empty anyway.
+    /// still coming or a message waits to send, and not when this one is empty anyway. At a cold
+    /// launch (Siri, the Action button) the last conversation may still be loading from disk: it
+    /// counts, and the reset drops the load.
     private func startFreshForVoice() {
-        guard settings.newConversationForVoice, !showVoice, !conversation.messages.isEmpty,
+        guard settings.newConversationForVoice, !showVoice,
+              !conversation.messages.isEmpty || conversation.initialLoad != nil,
               !conversation.isStreaming, conversation.outbox.isEmpty else { return }
         conversation.reset()
     }

@@ -8,6 +8,8 @@ struct SpeechLanguageView: View {
     @State private var locales: [Locale] = []
     @State private var installed: Set<String> = []
     @State private var status: Status = .idle
+    /// The download for the latest pick; a new pick cancels it, so only the latest shows.
+    @State private var preparing: Task<Void, Never>?
 
     private enum Status: Equatable { case idle, downloading, failed(String) }
 
@@ -35,7 +37,9 @@ struct SpeechLanguageView: View {
         Button {
             guard settings.speechLanguage != id else { return }
             settings.speechLanguage = id
-            Task { await prepare() }
+            preparing?.cancel()
+            let chosen = settings.speechLocale
+            preparing = Task { await prepare(chosen) }
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
@@ -69,13 +73,15 @@ struct SpeechLanguageView: View {
         locales = supported.sorted { Self.name($0.identifier(.bcp47)) < Self.name($1.identifier(.bcp47)) }
     }
 
-    private func prepare() async {
+    private func prepare(_ chosen: Locale) async {
         status = .downloading
         do {
-            try await SpeechRecognizer.prepareAssets()
+            try await SpeechRecognizer.prepareAssets(for: chosen)
+            guard !Task.isCancelled else { return }
             status = .idle
             installed = Set(await SpeechTranscriber.installedLocales.map { $0.identifier(.bcp47) })
         } catch {
+            guard !Task.isCancelled else { return }
             status = .failed(error.localizedDescription)
         }
     }
