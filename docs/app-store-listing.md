@@ -70,6 +70,7 @@ Several Hermes servers in one app.
 • Switching starts a fresh conversation, and your conversations, cron jobs and Kanban board follow the server you pick.
 • Your existing setup becomes your first server when you update, keys and all.
 • If the profile you picked no longer exists on the server, Redde says so and takes you to choose another.
+• Take a photo right from the message field: tap + and choose Camera.
 • Long answers: the live thinking keeps scrolling, each reply shows how long it took in total, and the screen no longer goes dark while you wait in voice mode.
 
 ## What's New in 1.3 (4000)
