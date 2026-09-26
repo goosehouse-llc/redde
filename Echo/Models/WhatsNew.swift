@@ -33,6 +33,8 @@ nonisolated enum WhatsNew {
                  detail: "Reasoning effort now goes past High to X-High and Max, for frontier models like Claude and GPT. Find it in Settings → Model."),
             Item(symbol: "globe", title: "Talk in your language",
                  detail: "Pick the language Redde listens for in Settings → Voice, and each reply is read by a voice for the language it's written in."),
+            Item(symbol: "plus.bubble", title: "Fresh start for voice",
+                 detail: "Turn on New conversation in voice mode in Settings → Voice, and every time you open voice mode it starts a new conversation."),
             Item(symbol: "hourglass", title: "Long answers, better",
                  detail: "The live thinking keeps scrolling, each reply shows how long it took in total, and the screen stays on while you wait in voice mode."),
         ]),
