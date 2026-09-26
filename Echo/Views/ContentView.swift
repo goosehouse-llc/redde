@@ -246,7 +246,17 @@ struct ContentView: View {
     /// Voice mode as you'd open it by hand: Hands-free follows Settings → Voice.
     private func openVoice() {
         voiceSession.continuous = settings.handsFreeByDefault
+        startFreshForVoice()
         showVoice = true
+    }
+
+    /// Settings → Voice → "New conversation in voice mode": every way into voice mode starts one,
+    /// before the screen appears so the old conversation doesn't flash up. Not while a reply is
+    /// still coming or a message waits to send, and not when this one is empty anyway.
+    private func startFreshForVoice() {
+        guard settings.newConversationForVoice, !showVoice, !conversation.messages.isEmpty,
+              !conversation.isStreaming, conversation.outbox.isEmpty else { return }
+        conversation.reset()
     }
 
     /// Items handed over by the share extension become the draft and pending attachments.
@@ -289,6 +299,7 @@ struct ContentView: View {
     private func launchVoice(handsFree: Bool) async {
         voiceSession.continuous = handsFree
         if !showVoice {
+            startFreshForVoice()
             showVoice = true
             // Let the cover present before the audio session and mic spin up.
             try? await Task.sleep(for: .milliseconds(400))

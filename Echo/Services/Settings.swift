@@ -92,6 +92,10 @@ final class Settings {
     var handsFreeByDefault: Bool {
         didSet { defaults.set(handsFreeByDefault, forKey: Keys.handsFreeByDefault) }
     }
+    /// Opening voice mode starts a new conversation (unless the current one is empty or busy).
+    var newConversationForVoice: Bool {
+        didSet { defaults.set(newConversationForVoice, forKey: Keys.newConversationForVoice) }
+    }
     /// Launch straight into the voice screen (without listening unless `listenOnOpen`).
     var openToVoiceScreen: Bool {
         didSet { defaults.set(openToVoiceScreen, forKey: Keys.openToVoiceScreen) }
@@ -284,6 +288,7 @@ final class Settings {
         static let listenOnOpen = "listenOnOpen"
         static let openToVoiceScreen = "openToVoiceScreen"
         static let handsFreeByDefault = "handsFreeByDefault"
+        static let newConversationForVoice = "newConversationForVoice"
         static let useKokoro = "useKokoro"
         static let kokoroURL = "kokoroURL"
         static let kokoroVoice = "kokoroVoice"
@@ -327,6 +332,7 @@ final class Settings {
         listenOnOpen = defaults.bool(forKey: Keys.listenOnOpen)
         openToVoiceScreen = defaults.bool(forKey: Keys.openToVoiceScreen)
         handsFreeByDefault = defaults.bool(forKey: Keys.handsFreeByDefault)
+        newConversationForVoice = defaults.bool(forKey: Keys.newConversationForVoice)
         useKokoro = defaults.bool(forKey: Keys.useKokoro)
         kokoroURL = defaults.string(forKey: Keys.kokoroURL) ?? Self.defaultKokoroURL
         kokoroVoice = defaults.string(forKey: Keys.kokoroVoice) ?? Self.defaultKokoroVoice
@@ -489,6 +495,7 @@ final class Settings {
         listenOnOpen = false
         openToVoiceScreen = false
         handsFreeByDefault = false
+        newConversationForVoice = false
         useKokoro = false
         kokoroURL = Self.defaultKokoroURL
         kokoroVoice = Self.defaultKokoroVoice
