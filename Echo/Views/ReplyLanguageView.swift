@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Settings → Model → Reply language: Automatic, or one language every reply comes in.
+/// Settings → Voice → Reply language: Automatic, or one language every reply comes in.
 struct ReplyLanguageView: View {
     @State private var settings = Settings.shared
     @State private var query = ""
@@ -18,7 +18,7 @@ struct ReplyLanguageView: View {
                 Section {
                     row(code: "", title: "Automatic", detail: "The language you write or speak in")
                 } footer: {
-                    Text("Asks the agent to answer in this language, whatever language you write or speak in. On the Hermes Dashboard it's added to each message as a note, “(Reply in …)”, which other apps show; Redde hides it. For voice mode, pick a matching Listening language and voice under Voice.")
+                    Text("Asks the agent to answer in this language, whatever language you write or speak in. On the Hermes Dashboard it's added to each message as a note, “(Reply in …)”, which other apps show; Redde hides it. For voice mode, pick a matching Listening language too.")
                 }
             }
             Section("Languages") {

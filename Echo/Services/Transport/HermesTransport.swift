@@ -105,7 +105,7 @@ nonisolated struct TurnRequest: Sendable {
     var reasoningEffort: String?
     var instructions: String?
     var attachments: [Attachment] = []
-    /// Settings → Model → Reply language (an ISO code); nil lets the model choose. Each
+    /// Settings → Voice → Reply language (an ISO code); nil lets the model choose. Each
     /// transport asks for it in its own way (`ReplyLanguage`).
     var replyLanguage: String? = nil
 }

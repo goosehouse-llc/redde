@@ -32,7 +32,7 @@ nonisolated enum WhatsNew {
             Item(symbol: "gauge.with.dots.needle.100percent", title: "More thinking",
                  detail: "Reasoning effort now goes past High to X-High and Max, for frontier models like Claude and GPT. Find it in Settings → Model."),
             Item(symbol: "globe", title: "Your language",
-                 detail: "Pick a Reply language in Settings → Model and the language Redde listens for in Settings → Voice. Each reply is read by a voice for the language it's written in."),
+                 detail: "Pick a Reply language and the language Redde listens for in Settings → Voice. Each reply is read by a voice for the language it's written in."),
             Item(symbol: "plus.bubble", title: "Fresh start for voice",
                  detail: "Turn on New conversation in voice mode in Settings → Voice, and every time you open voice mode it starts a new conversation."),
             Item(symbol: "hourglass", title: "Long answers, better",

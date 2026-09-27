@@ -1,6 +1,6 @@
 import Foundation
 
-/// Settings → Model → Reply language: ask the agent to answer in one language, whatever the user
+/// Settings → Voice → Reply language: ask the agent to answer in one language, whatever the user
 /// writes or speaks in. Empty is Automatic: nothing is sent, and the model answers in whatever
 /// language it's addressed in.
 nonisolated enum ReplyLanguage {
