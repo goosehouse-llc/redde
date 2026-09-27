@@ -214,6 +214,10 @@ nonisolated struct HermesSessionsAPI: Sendable {
         }
     }
 
+    /// One stored message. Decoded leniently, field by field: the gateway returns its database
+    /// rows nearly as-is, and one field of an unexpected type (the row `id` is a number, and
+    /// Redde read it as text) failed the whole transcript with "The data couldn't be read
+    /// because it isn't in the correct format".
     struct StoredMessage: Decodable, Sendable {
         var id: String?
         var role: String
@@ -224,6 +228,25 @@ nonisolated struct HermesSessionsAPI: Sendable {
         var display_kind: String?
         var tool_calls: [ToolCall]?
         var tool_name: String?
+
+        private enum CodingKeys: String, CodingKey {
+            case id, role, content, timestamp, reasoning, reasoning_content, display_kind, tool_calls, tool_name
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            id = (try? c.decodeIfPresent(String.self, forKey: .id))
+                ?? (try? c.decodeIfPresent(Int.self, forKey: .id)).flatMap { $0.map(String.init) }
+            role = (try? c.decodeIfPresent(String.self, forKey: .role)) ?? ""
+            content = try? c.decodeIfPresent(Content.self, forKey: .content)
+            timestamp = (try? c.decodeIfPresent(Double.self, forKey: .timestamp))
+                ?? (try? c.decodeIfPresent(String.self, forKey: .timestamp)).flatMap { $0.flatMap(Double.init) }
+            reasoning = try? c.decodeIfPresent(String.self, forKey: .reasoning)
+            reasoning_content = try? c.decodeIfPresent(String.self, forKey: .reasoning_content)
+            display_kind = try? c.decodeIfPresent(String.self, forKey: .display_kind)
+            tool_calls = try? c.decodeIfPresent([ToolCall].self, forKey: .tool_calls)
+            tool_name = try? c.decodeIfPresent(String.self, forKey: .tool_name)
+        }
 
         struct ToolCall: Decodable, Sendable {
             var function: Function?

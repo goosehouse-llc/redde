@@ -42,9 +42,12 @@ extension Conversation {
                 message.tools = (row.tool_calls ?? []).compactMap { call in
                     call.function?.name.map { ToolActivity(name: $0, preview: nil, status: .completed) }
                 }
-                // Tool-call-only assistant rows fold into the next assistant text.
-                if message.text.isEmpty, !message.tools.isEmpty, let last = out.indices.last, out[last].role == .assistant, out[last].text.isEmpty {
+                // Tool-call-only assistant rows fold into the next assistant text: one bubble with
+                // its tool chips, as it looked live, not a chips-only bubble and then the answer.
+                if let last = out.indices.last, out[last].role == .assistant, out[last].text.isEmpty, !out[last].tools.isEmpty {
                     out[last].tools += message.tools
+                    out[last].text = message.text
+                    if !message.reasoning.isEmpty { out[last].reasoning += (out[last].reasoning.isEmpty ? "" : "\n\n") + message.reasoning }
                 } else if !message.text.isEmpty || !message.tools.isEmpty {
                     out.append(message)
                 }
