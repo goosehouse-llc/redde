@@ -261,6 +261,10 @@ struct AgentSettings<Details: View>: View {
 struct VoiceSettings: View {
     @State private var settings = Settings.shared
 
+    private var listeningLanguageName: String {
+        SpeechLanguageView.name(settings.speechLanguage.isEmpty ? Locale.current.identifier(.bcp47) : settings.speechLanguage)
+    }
+
     var body: some View {
         Section {
             Picker("Voice", selection: $settings.useKokoro) {
@@ -287,9 +291,9 @@ struct VoiceSettings: View {
                         .lineLimit(1)
                 }
             }
-            Picker("Read replies in", selection: $settings.matchReplyLanguage) {
-                Text("Reply's language").tag(true)
-                Text("Listening language").tag(false)
+            Picker("Voice for replies", selection: $settings.matchReplyLanguage) {
+                Text("Match each reply").tag(true)
+                Text(settings.useKokoro ? "Always your Kokoro voice" : "Always \(listeningLanguageName)").tag(false)
             }
             .pickerStyle(.menu)
             // Applies to Kokoro and the built-in fallback voice alike.
@@ -321,8 +325,8 @@ struct VoiceSettings: View {
                 ? "Streams audio from a Kokoro-compatible TTS server and starts playing before the sentence finishes. Falls back to the on-device voice if the server is unreachable. "
                 : "Apple's on-device synthesizer. Zero network, fastest start. ")
                 + (settings.useKokoro
-                    ? "“Read replies in”: Reply's language picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice (the built-in one when Kokoro has none for it); Listening language always uses your Kokoro voice. "
-                    : "“Read replies in”: Reply's language picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice; Listening language reads every reply with the listening language's voice. Download more voices in the iPhone's Settings → Accessibility → Read & Speak → Voices. ")
+                    ? "“Voice for replies”: Match each reply picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice (the built-in one when Kokoro has none for it). "
+                    : "“Voice for replies”: Match each reply picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice. Download more voices in the iPhone's Settings → Accessibility → Read & Speak → Voices. ")
                 + "“New conversation in voice mode” starts a fresh conversation each time voice mode opens, from the button, Siri, the Action button or at launch; the one you were in stays in your list. "
                 + "“Open to the voice screen” makes Redde launch into voice mode; “Listen whenever Redde opens” starts the mic as well, so “Hey Siri, open Redde” goes straight to listening. “Earpiece” plays replies through the earpiece when the phone is at your ear, like a call; turn it off for hands-free use with the phone face down. Background notifications tell you when Redde needs an approval or an answer, or when a reply finishes, while you're in another app. “Announce on AirPods” marks them time-sensitive so Siri can read them aloud through AirPods (turn on Announce Notifications for Redde in the iPhone's Settings) and so they reach you in a Focus. With AirPods in, pressing the stem on the voice screen works like tapping the mic.")
         }

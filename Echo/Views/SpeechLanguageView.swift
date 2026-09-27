@@ -59,7 +59,7 @@ struct SpeechLanguageView: View {
     @ViewBuilder private var statusText: some View {
         switch status {
         case .idle:
-            Text("Speak in this language in voice mode. Transcription stays on this iPhone. With “Read replies in” set to Listening language, replies are read in this language too.")
+            Text("Speak in this language in voice mode. Transcription stays on this iPhone. With “Voice for replies” set to Always this language, every reply is read in it too.")
         case .downloading:
             Label("Downloading the speech model…", systemImage: "arrow.down.circle")
         case let .failed(message):
