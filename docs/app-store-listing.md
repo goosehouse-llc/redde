@@ -73,7 +73,7 @@ More than one server, your own language, and a quicker way around.
 • A fresh start for voice. Turn on New conversation in voice mode, and opening voice mode from the app, Siri or the Action button starts a new conversation.
 • More thinking. Reasoning effort now goes past High to X-High and Max, for frontier models such as Claude and GPT.
 • Long answers, better. The live thinking keeps scrolling, each reply shows how long it took in total, and the screen stays on while you wait in voice mode.
-• Fixes. Clearer messages when a profile is gone from a server, readable buttons in every theme, a tidier message field, and many smaller fixes.
+• Fixes. Chats opened over the Hermes API load again, clearer messages when a profile is gone from a server, readable buttons in every theme, a tidier message field, and many smaller fixes.
 
 ## What's New in 1.3 (4000)
 Hermes profiles, clearer settings, and a round of fixes.
