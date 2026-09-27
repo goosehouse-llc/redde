@@ -128,8 +128,10 @@ nonisolated struct HermesServeTransport: HermesTransport {
                     for att in request.attachments {
                         try await Self.attach(att, runtime: runtime, client: client)
                     }
+                    // prompt.submit takes no instructions: a reply language rides on the message.
+                    let text = request.userText + (request.replyLanguage.map(ReplyLanguage.note) ?? "")
                     let submit = try await client.call("prompt.submit", params: .object([
-                        "session_id": .string(runtime), "text": .string(request.userText)]))
+                        "session_id": .string(runtime), "text": .string(text)]))
                     if submit["status"]?.string == "queued" { continuation.yield(.status("queued behind a running turn…")) }
 
                     for await outcome in finished.stream {

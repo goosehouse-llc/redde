@@ -49,8 +49,9 @@ nonisolated struct ChatCompletionsTransport: HermesTransport {
         let (baseURL, apiKey) = (baseURL, apiKey)
         return StreamingHTTP.run(decode: Self.decode) {
             var messages: [Body.Msg] = []
-            if let instructions = request.instructions?.nilIfEmpty {
-                messages.append(.init(role: "system", content: .string(instructions)))
+            let system = [request.instructions?.nilIfEmpty, request.replyLanguage.map(ReplyLanguage.instruction)].compactMap { $0 }
+            if !system.isEmpty {
+                messages.append(.init(role: "system", content: .string(system.joined(separator: "\n\n"))))
             }
             messages += request.history.map { .init(role: $0.role.rawValue, content: .string($0.text)) }
             messages.append(.init(role: "user", content: try Self.makeContent(text: request.userText, attachments: request.attachments)))

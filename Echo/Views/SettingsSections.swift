@@ -153,7 +153,7 @@ struct TransportSettings: View {
     }
 }
 
-/// The model and reasoning effort, per transport.
+/// The model and reasoning effort, per transport, and the language replies come in.
 struct ModelSettings: View {
     @State private var settings = Settings.shared
 
@@ -164,6 +164,14 @@ struct ModelSettings: View {
             } label: {
                 LabeledContent("Model") {
                     Text(modelSummary).foregroundStyle(.secondary).lineLimit(1)
+                }
+            }
+            NavigationLink {
+                ReplyLanguageView()
+            } label: {
+                LabeledContent("Reply language") {
+                    Text(settings.replyLanguage.isEmpty ? "Automatic" : ReplyLanguage.displayName(settings.replyLanguage))
+                        .foregroundStyle(.secondary).lineLimit(1)
                 }
             }
         } header: {

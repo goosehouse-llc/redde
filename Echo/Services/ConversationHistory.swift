@@ -11,6 +11,7 @@ extension Conversation {
             let text = row["text"]?.string ?? row["content"]?.displayText ?? ""
             switch row["role"]?.string {
             case "user":
+                let text = ReplyLanguage.stripNote(text)   // the Dashboard's reply-language note
                 if !text.isEmpty { out.append(Message(role: .user, text: text, createdAt: when)) }
             case "assistant":
                 var m = Message(role: .assistant, text: text, createdAt: when)
@@ -32,7 +33,7 @@ extension Conversation {
             let when = row.timestamp.map { Date(timeIntervalSince1970: $0) } ?? .now
             switch row.role {
             case "user":
-                let text = row.content?.text ?? ""
+                let text = ReplyLanguage.stripNote(row.content?.text ?? "")   // a Dashboard turn's note
                 guard !text.isEmpty else { continue }
                 out.append(Message(role: .user, text: text, createdAt: when))
             case "assistant":

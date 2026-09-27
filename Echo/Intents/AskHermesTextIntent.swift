@@ -62,7 +62,7 @@ enum ShortcutRunner {
         let request = TurnRequest(userText: trimmed, history: [], sessionID: sessionID,
                                   model: settings.transport == .chatCompletions ? settings.fastLaneModel : settings.gatewayModel.nilIfEmpty,
                                   provider: settings.gatewayProvider.nilIfEmpty, reasoningEffort: settings.reasoningEffort.nilIfEmpty,
-                                  instructions: nil)
+                                  instructions: nil, replyLanguage: settings.replyLanguage.nilIfEmpty)
         var text = ""
         do {
             for try await event in transport.stream(request) {

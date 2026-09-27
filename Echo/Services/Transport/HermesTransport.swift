@@ -101,10 +101,13 @@ nonisolated struct TurnRequest: Sendable {
     var sessionID: String?
     var model: String?
     var provider: String?
-    /// "" or nil = gateway default; low | medium | high.
+    /// "" or nil = gateway default; low … max.
     var reasoningEffort: String?
     var instructions: String?
     var attachments: [Attachment] = []
+    /// Settings → Model → Reply language (an ISO code); nil lets the model choose. Each
+    /// transport asks for it in its own way (`ReplyLanguage`).
+    var replyLanguage: String? = nil
 }
 
 /// One selectable model as the gateway lists it.

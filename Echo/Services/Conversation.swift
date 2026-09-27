@@ -199,7 +199,8 @@ final class Conversation {
             provider: settings.transport == .chatCompletions ? nil : settings.gatewayProvider.nilIfEmpty,
             reasoningEffort: settings.reasoningEffort.nilIfEmpty,
             instructions: nil,
-            attachments: attachments
+            attachments: attachments,
+            replyLanguage: settings.replyLanguage.nilIfEmpty
         )
         guard let transport = makeTransport() else {
             fail(replyID, settings.isConfigured ? TransportError.badURL.localizedDescription

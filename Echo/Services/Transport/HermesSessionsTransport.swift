@@ -53,7 +53,9 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
                 url: baseURL.appending(path: "api/sessions/\(sessionID)/chat/stream"),
                 apiKey: apiKey, body: Body(
                     input: try Self.makeInput(text: request.userText, attachments: request.attachments),
-                    instructions: Self.clientHint,
+                    instructions: ([Self.clientHint] + [request.instructions?.nilIfEmpty,
+                                   request.replyLanguage.map(ReplyLanguage.instruction)].compactMap { $0 })
+                        .joined(separator: "\n\n"),
                     model: request.model, provider: request.provider,
                     model_options: request.reasoningEffort.map { .init(reasoning_effort: $0) }))
         }

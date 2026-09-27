@@ -78,6 +78,11 @@ final class Settings {
         reasoningEfforts.first { $0.value == value }?.label ?? value
     }
 
+    /// Ask the agent to answer in this language (an ISO code). Empty = Automatic.
+    var replyLanguage: String {
+        didSet { defaults.set(replyLanguage, forKey: Keys.replyLanguage) }
+    }
+
     /// "" (gateway default) or one of `reasoningEfforts`.
     var reasoningEffort: String {
         didSet { defaults.set(reasoningEffort, forKey: Keys.reasoningEffort) }
@@ -285,6 +290,7 @@ final class Settings {
         static let gatewayModel = "gatewayModel"
         static let gatewayProvider = "gatewayProvider"
         static let reasoningEffort = "reasoningEffort"
+        static let replyLanguage = "replyLanguage"
         static let listenOnOpen = "listenOnOpen"
         static let openToVoiceScreen = "openToVoiceScreen"
         static let handsFreeByDefault = "handsFreeByDefault"
@@ -329,6 +335,7 @@ final class Settings {
         pushRelayURL = defaults.string(forKey: Keys.pushRelayURL) ?? ""
         gatewayProvider = defaults.string(forKey: Keys.gatewayProvider) ?? ""
         reasoningEffort = defaults.string(forKey: Keys.reasoningEffort) ?? ""
+        replyLanguage = defaults.string(forKey: Keys.replyLanguage) ?? ""
         listenOnOpen = defaults.bool(forKey: Keys.listenOnOpen)
         openToVoiceScreen = defaults.bool(forKey: Keys.openToVoiceScreen)
         handsFreeByDefault = defaults.bool(forKey: Keys.handsFreeByDefault)
@@ -524,6 +531,7 @@ final class Settings {
         gatewayModel = ""
         gatewayProvider = ""
         reasoningEffort = ""
+        replyLanguage = ""
         listenOnOpen = false
         openToVoiceScreen = false
         handsFreeByDefault = false
