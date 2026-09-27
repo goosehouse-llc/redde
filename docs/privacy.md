@@ -4,7 +4,7 @@ title: Redde Privacy Policy
 
 # Redde Privacy Policy
 
-**Effective date:** September 10, 2026
+**Effective date:** September 27, 2026
 **Publisher:** Goosehouse LLC
 
 Redde is a voice and chat client for an AI assistant that you run yourself. This policy explains what the app does with your information. The short version: Redde collects nothing, and the only place your data goes is the server you configure.
@@ -43,9 +43,10 @@ On iOS 27 and later you can turn on "Let Siri use Redde" in Settings. With it on
 
 You can delete conversations and attachments inside the app, remove credentials in Settings, or delete all data by deleting the app.
 
-## Photos, files, microphone, and Face ID
+## Photos, camera, files, microphone, and Face ID
 
 - Redde uses the system photo picker and file picker, which give the app access only to the items you select.
+- The camera is used only when you choose Camera from the + menu. The photo you take becomes an attachment in your message: it is kept with that conversation like any attachment and sent only to your server, and it is not saved to your photo library.
 - The microphone is used only while you are actively speaking to the app, with the on-screen indicator, and only for on-device transcription.
 - If you enable the app lock, Face ID or Touch ID is evaluated by iOS. Redde never receives biometric data.
 

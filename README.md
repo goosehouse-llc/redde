@@ -14,6 +14,8 @@ speech is recognized on the device, and credentials stay in the iOS Keychain.
 
 - **Voice first.** On-device speech recognition, replies spoken by the built-in voice or your own
   Kokoro server, hands-free mode, barge-in, AirPods and CarPlay.
+- **Your language.** Listen in any language on-device transcription supports, hear each reply in a
+  voice for the language it's written in, and ask the agent to always answer in one language.
 - **Watch it work.** Streaming reasoning, tool calls, subagents, and cards for approvals,
   clarifying questions, sudo prompts and secrets, also answerable from a notification.
 - **Rich replies.** Markdown, highlighted code, tables, task lists, Mermaid diagrams and math,
@@ -21,7 +23,7 @@ speech is recognized on the device, and credentials stay in the iOS Keychain.
 - **The whole agent.** The shared session ledger, projects, several servers and Hermes profiles,
   skills and toolsets, memory and context files, cron jobs and the Kanban board.
 - **Everywhere on iOS.** Siri and Shortcuts, the Action Button, Control Center, widgets, a Live
-  Activity, the share sheet, and Siri AI messaging on iOS 27 (opt-in).
+  Activity, the share sheet, the camera, and Siri AI messaging on iOS 27 (opt-in).
 - **Private.** An offline message queue, Face ID lock, and nothing collected.
 
 ## Requirements

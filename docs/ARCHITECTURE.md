@@ -59,12 +59,19 @@ conversation list once there are two). One is active at a time.
   keys are Keychain accounts named `<account>@<server id>`; `Keychain.read(.item)` resolves the
   active server from UserDefaults (`activeServerID`), so no read can happen before the scope is
   known. Removing a server deletes its accounts.
-- **Switching** goes through `ServerSwitcher`: the Dashboard client drops its socket and the old
-  server's cookies first (cookies ignore ports, so two servers on one host would share one), then
-  the new server loads and a fresh conversation starts. Lists key their loading on
-  `Settings.connectionKey` (server + profile); Cron and Kanban are rebuilt.
+- **Switching** goes through `ServerSwitcher`, in one order: while Settings still describes the old
+  server, the open conversation is saved (stamped with that server) and the Dashboard client drops
+  its socket and the old server's cookies (cookies ignore ports, so two servers on one host would
+  share one); then the new server loads. Lists key their loading on `Settings.connectionKey`
+  (server + profile) and drop any answer that arrives after a switch; Cron and Kanban are rebuilt.
+  The OpenAI-compatible connection belongs to no server, so switching servers doesn't leave it.
 - **Saved conversations** carry their `serverID`; launch reopens the newest one from the active
-  server. The Shortcut keeps a session per server and profile.
+  server. Untagged Hermes chats from before multi-server belong to the first server. The Shortcut
+  keeps a session per server id and profile (`shortcutSessionID.<server>[.<profile>]`), cleared
+  when its server is removed or everything is erased.
+- **Records decode field by field** (`HermesServer.init(from:)`), so a list written by another
+  version still loads. A list that can't be read at all is kept aside (`hermesServers.unreadable`)
+  and the active server keeps its id, so the Keychain secrets filed under it still match.
 - **Upgrading** from a single-server install: the existing setup becomes the first server, and its
   secrets move under it (`moveLegacySecretsToActiveServer`), each copied and read back before the
   old entry is deleted.
@@ -87,6 +94,15 @@ reloads the conversation list.
   stores that key per profile in the Keychain (`gateway-api-key.<profile>`). A rejected key or an
   unserved profile gets its own explanation in the conversation list.
 - The "Ask Redde a Question" Shortcut keeps one session per profile.
+
+### Reply language
+
+Settings → Voice → Reply language asks the agent to answer in one language (`Models/ReplyLanguage.swift`;
+Automatic sends nothing). Each connection carries it differently: the Hermes API in the turn's
+`instructions` (appended to the gateway's system prompt, next to Redde's client hint), the
+OpenAI-compatible connection as a system message. The Dashboard's `prompt.submit` takes no
+instructions, so a short note, "(Reply in Dutch (Nederlands).)", rides on the message; other
+clients show it, and Redde strips it when history loads.
 
 ### Dashboard reconnects
 
@@ -143,7 +159,9 @@ built from the delegate call's goals. `Views/SubagentRows.swift`.
 
 ### Attachments and sharing
 
-The composer attaches photos (downscaled to 1600 px JPEG) and files (up to 8 MB):
+The composer's + menu attaches files (up to 8 MB), photos from the library, or a photo taken with
+the camera (`CameraPicker`, a `UIImagePickerController` in a full-screen cover; hidden where there's
+no camera). Images are downscaled to 1600 px JPEG:
 
 | Connection | Images | Text files | PDF / other |
 | --- | --- | --- | --- |
@@ -157,12 +175,28 @@ keep metadata only. The share extension (`EchoShare`) writes to the App Group
 
 ### Session list and housekeeping
 
+On iPhone the list is a panel from the left (`SidePanel` in `Views/SwipeToOpen.swift`): a swipe to
+the right anywhere on the chat pulls it out and it follows the finger (a UIKit pan that only starts
+on a clearly sideways swipe, and gives way to a horizontal scroller that can scroll back, or to text
+being edited or selected); tap the dimmed chat or drag it back to close. The panel stays built
+between opens so it slides in without building a list, and "parks" once it has slid out: no width,
+since UIKit's list, bar and segmented control inside ignore `accessibilityHidden` and VoiceOver
+found them off screen. Parked, it hides its bar, drops the Kanban board (and its live socket), and
+loads nothing; Chats and Cron refresh when it opens. On iPad the list is the split view's sidebar.
+In both, the server switch and Chats / Cron / Kanban are the first row of each list, so they move
+with pull-to-refresh.
+
 On the Dashboard the list starts with **Projects** (`projects.tree`), grouped by working directory
 and repo. Search, pin, rename, fork, archive and delete go through `PATCH /api/sessions/{id}`, fork
 through `POST /api/sessions/{id}/fork` (API) or `session.branch` (Dashboard). Rows show token totals
 and the gateway's cost estimate; long-press for the full usage breakdown. Any conversation exports
 as Markdown. Local (OpenAI-compatible) conversations are saved on the phone as JSON with complete
 file protection.
+
+History from the Hermes API (`/api/sessions/{id}/messages`) is the gateway's database rows nearly
+as-is, so `StoredMessage` decodes each field on its own: row ids are numbers, and one field of an
+unexpected type once failed every transcript with "The data couldn't be read". A tool-call row folds
+into the answer that follows it, as it looked live.
 
 ### Cron and Kanban
 
@@ -192,8 +226,11 @@ only reports session totals, shown as `session N tok`.
 
 ## Voice
 
-Tap the mic for voice mode. One button; the phase decides what a tap does (listen, stop, cancel,
-barge in). A turn ends after about a second of silence; hands-free reopens the mic after each reply.
+The waveform button beside the message field opens voice mode (or the Action Button, Siri, Control
+Center, or launch with "Open to the voice screen"). One button on the voice screen; the phase
+decides what a tap does (listen, stop, cancel, barge in). "New conversation in voice mode" starts a
+fresh conversation each time the voice screen opens, before it appears, and also while the last
+conversation is still loading at a cold launch. A turn ends after about a second of silence; hands-free reopens the mic after each reply.
 "Stop listening", "that's all", "goodbye" or "thanks" on its own ends the loop and is never sent.
 
 Each turn's footer shows where the time went: end of speech → first spoken word (the number that
@@ -204,6 +241,22 @@ Replies are spoken sentence by sentence while they stream, by AVSpeechSynthesize
 `AVAudioPlayerNode`, fetched ahead and played in order, with the built-in voice as the fallback. The
 replay button speaks the last reply again without a new turn. The speech model is downloaded in the
 background at launch.
+
+**Languages.** Settings → Voice → Listening language picks what `SpeechTranscriber` listens for
+(default: the iPhone's language); picking one reserves and downloads its model, releasing the
+oldest reserved language only when the app's limit is reached. "Voice for replies: Match each reply"
+detects each reply's language on-device (`SpokenLanguage`, NaturalLanguage) from its first
+sentences: leaving the listening language takes 40+ characters at 90% confidence (short Chinese,
+Japanese and Korean pass sooner), and after 400 characters it gives up. The best installed Apple
+voice for that language reads it (the listening dialect, else the region's, else a home dialect
+such as en-US or pt-BR); on Kokoro, a voice in that language of the same gender, or the Apple voice
+for the whole reply when Kokoro has none (Dutch, German, …). Only Kokoro's `<lang><f|m>_` ids carry
+a language. "Always <listening language>" reads everything in one voice.
+
+**Earpiece.** The proximity sensor is watched only while a reply is spoken (it blanks the screen
+whenever anything is near), and it reads "not near" whenever it's off or has just come on. So the
+route follows the last real reading between replies, and a settle check after it comes on catches a
+phone put down meanwhile.
 
 **AirPods.** Full-bandwidth Bluetooth recording when the headset supports it; voice processing off
 on headphones (on for the speaker and CarPlay). While the voice screen is open Redde is the Now
@@ -250,6 +303,9 @@ project.
 
 - **Themes:** seven (Messages, Paper, Slate, Terminal, Amber CRT, Hermes, Code), each with light and
   dark faces and the user's own accent and bubble colours. 13 app icons and 25 voice orbs.
+- **Model:** per-connection model and reasoning effort (Default, Low, Medium, High, and X-High /
+  Max for frontier models; on a self-hosted Qwen, High or above turns thinking on).
+- **iPhone:** the session list is a side panel (see Session list).
 - **iPad:** the session list is a `NavigationSplitView` sidebar; keyboard shortcuts (⌘N, ⌘K, ⌘1–3,
   ⌘L, ⌘↩, ⌘., ⌘⇧V, ⌘E, ⌘,; space and Esc on the voice screen).
 - **App lock:** Face ID / Touch ID / passcode with a grace period; Siri, control and share requests
@@ -268,7 +324,8 @@ project.
 
 - The App Store listing copy lives in `docs/app-store-listing.md`; the privacy policy and support
   page sources in `docs/`.
-- `scripts/bump-build.sh` sets the build number; the version and build are in `project.yml`.
+- `scripts/bump-build.sh` adds one to the build number (not the commit count: the public history
+  restarted below builds already uploaded); the version and build are in `project.yml`.
 - `design/screenshots/capture.sh` and `compose.py` regenerate the App Store screenshots
   ([README](../design/screenshots/README.md)).
 - Always install on devices with a clean build: incremental builds have shipped without the Siri
