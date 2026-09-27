@@ -64,17 +64,16 @@ A Hermes agent (github.com/NousResearch/hermes-agent) or an OpenAI-compatible en
 Hermes is an open-source project by Nous Research. Redde is an independent client and is not affiliated with Nous Research.
 
 ## What's New in 1.4 (4000)
-Several Hermes servers in one app.
+More than one server, your own language, and a quicker way around.
 
-• Save more than one Hermes server, say Home and Office, and switch between them from Settings or the server row at the top of your conversations. Each keeps its own addresses, keys, profile and model.
-• Switching starts a fresh conversation, and your conversations, cron jobs and Kanban board follow the server you pick.
-• Your existing setup becomes your first server when you update, keys and all.
-• If the profile you picked no longer exists on the server, Redde says so and takes you to choose another.
-• Take a photo right from the message field: tap + and choose Camera.
-• Reasoning effort now goes past High to X-High and Max, for frontier models such as Claude and GPT.
-• Your language, in Settings → Voice: pick a Reply language and Redde asks your assistant to answer in it, whatever language you write or speak in. Pick the language Redde listens for, and each reply is read by a voice for the language it's written in, Apple's or Kokoro's.
-• New conversation in voice mode, in Settings → Voice: every time you open voice mode, from the app, Siri or the Action button, it starts a new conversation.
-• Long answers: the live thinking keeps scrolling, each reply shows how long it took in total, and the screen no longer goes dark while you wait in voice mode.
+• More than one Hermes server. Save Home, Office or any other server and switch from Settings or the row at the top of your conversations. Each keeps its own addresses, keys, profile and model, and your chats, cron jobs and Kanban board follow the server you pick. The setup you have now becomes your first server, keys and all.
+• Your language. Pick a Reply language and Redde asks your assistant to answer in it, whatever language you write or speak in. Pick the language Redde listens for, and each reply is read by a voice for the language it's written in. Both are in Settings → Voice.
+• Swipe to your conversations. On iPhone, swipe right on a chat and your conversation list slides in from the left.
+• Take a photo. Tap + beside the message field and choose Camera.
+• A fresh start for voice. Turn on New conversation in voice mode, and opening voice mode from the app, Siri or the Action button starts a new conversation.
+• More thinking. Reasoning effort now goes past High to X-High and Max, for frontier models such as Claude and GPT.
+• Long answers, better. The live thinking keeps scrolling, each reply shows how long it took in total, and the screen stays on while you wait in voice mode.
+• Fixes. Clearer messages when a profile is gone from a server, readable buttons in every theme, a tidier message field, and many smaller fixes.
 
 ## What's New in 1.3 (4000)
 Hermes profiles, clearer settings, and a round of fixes.
