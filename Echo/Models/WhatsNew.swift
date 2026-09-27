@@ -27,6 +27,8 @@ nonisolated enum WhatsNew {
                  detail: "The server you already had is now your first one, keys and all. Give it a name in Settings → Server."),
             Item(symbol: "person.2.slash", title: "Clearer profile problems",
                  detail: "If a profile no longer exists on a server, Redde says so and takes you to pick another."),
+            Item(symbol: "hand.draw", title: "Swipe to your conversations",
+                 detail: "On iPhone, swipe right on a chat and your conversation list slides in from the left. Tap the chat or drag it back to close."),
             Item(symbol: "camera", title: "Take a photo",
                  detail: "Tap + beside the message field and choose Camera to snap a picture and send it with your message."),
             Item(symbol: "gauge.with.dots.needle.100percent", title: "More thinking",
