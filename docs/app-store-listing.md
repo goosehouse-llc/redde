@@ -73,6 +73,7 @@ Several Hermes servers in one app.
 • Take a photo right from the message field: tap + and choose Camera.
 • Reasoning effort now goes past High to X-High and Max, for frontier models such as Claude and GPT.
 • Voice mode in more languages: pick the language Redde listens for in Settings → Voice, and each reply is read by a voice for the language it's written in, Apple's or Kokoro's.
+• Reply language, in Settings → Model: Redde asks your assistant to answer in the language you pick, whatever language you write or speak in.
 • New conversation in voice mode, in Settings → Voice: every time you open voice mode, from the app, Siri or the Action button, it starts a new conversation.
 • Long answers: the live thinking keeps scrolling, each reply shows how long it took in total, and the screen no longer goes dark while you wait in voice mode.
 
