@@ -238,7 +238,7 @@ struct ContentView: View {
         SidePanel(isOpen: $showConversations, onOpening: { composerFocused = false }) {
             NavigationStack { transcriptScreen(showListButton: true) }
         } panel: {
-            ConversationsView(onOpened: { setDrawer(open: false) })
+            ConversationsView(isShowing: showConversations, onOpened: { setDrawer(open: false) })
         }
     }
 

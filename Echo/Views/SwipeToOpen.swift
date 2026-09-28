@@ -75,6 +75,10 @@ struct SidePanel<Content: View, Panel: View>: View {
     @Environment(\.theme) private var theme
     /// How far out a finger has the panel, while one is on the screen.
     @State private var drag: CGFloat?
+    /// Closed and finished sliding out: transparent, and its screens hide their navigation bars.
+    @State private var parked = true
+    /// Bumped on every open and close; a park scheduled for an older one is dropped.
+    @State private var parkGeneration = 0
     /// Whether this swipe has gone far enough to count, and `onOpening` was called.
     @State private var opening = false
 
@@ -103,22 +107,30 @@ struct SidePanel<Content: View, Panel: View>: View {
                     .accessibilityAction { settle(open: false, from: shown, width: width, velocity: 0) }
                     .accessibilityHidden(!isOpen)
                 }
-                // Only there while open or under a finger: closed, it slides out and is gone, so
-                // nothing of it is left for VoiceOver, keyboard shortcuts or live updates.
-                if isOpen || drag != nil {
-                    panel
-                        .frame(width: width)
-                        .background(theme.background ?? Color(.systemBackground))
-                        .overlay(alignment: .trailing) { Rectangle().fill(.separator).frame(width: 0.5).ignoresSafeArea() }
-                        .offset(x: drag.map { $0 - width } ?? 0)
-                        .transition(.move(edge: .leading))
-                        .accessibilityAddTraits(.isModal)
-                        .accessibilityAction(.escape) { settle(open: false, from: shown, width: width, velocity: 0) }
-                }
+                // Built once and kept, so it slides in without first building a list.
+                panel
+                    // Parked, no width: nothing is laid out, so nothing is left for VoiceOver to
+                    // find. UIKit's lists and bars inside ignore accessibilityHidden and opacity.
+                    .frame(width: parked ? 0 : width)
+                    .clipped()
+                    .background(theme.background ?? Color(.systemBackground))
+                    .overlay(alignment: .trailing) { Rectangle().fill(.separator).frame(width: 0.5).ignoresSafeArea() }
+                    .offset(x: shown - width)
+                    .opacity(parked ? 0 : 1)
+                    .environment(\.sidePanelParked, parked)
+                    .allowsHitTesting(isOpen)
+                    .disabled(!isOpen && drag == nil)   // its keyboard shortcuts too
+                    .accessibilityHidden(!isOpen)
+                    .accessibilityAddTraits(.isModal)
+                    .accessibilityAction(.escape) { settle(open: false, from: shown, width: width, velocity: 0) }
+            }
+            .onChange(of: isOpen, initial: true) { _, open in
+                if open { parkGeneration += 1; parked = false } else { parkWhenSettled() }
             }
             .gesture(SwipeRightGesture(
                 isEnabled: !isOpen,
                 onChanged: { distance in
+                    if drag == nil { parkGeneration += 1; parked = false }
                     // Only a real swipe takes the chat's keyboard away, not a nudge.
                     if !opening, distance > 24 { opening = true; onOpening() }
                     drag = min(distance, width)
@@ -160,7 +172,27 @@ struct SidePanel<Content: View, Panel: View>: View {
             isOpen = open
             drag = nil
         }
+        // A swipe that didn't open it leaves isOpen false, so onChange never parks it.
+        if !open { parkWhenSettled() }
     }
+
+    /// Parks the panel once it has slid out, unless it opened (or was pulled) again meanwhile.
+    /// The button and a picked conversation close it from outside, so there's no animation
+    /// completion to wait on.
+    private func parkWhenSettled() {
+        parkGeneration += 1
+        let generation = parkGeneration
+        Task {
+            try? await Task.sleep(for: .milliseconds(450))
+            if generation == parkGeneration, !isOpen, drag == nil { parked = true }
+        }
+    }
+}
+
+extension EnvironmentValues {
+    /// The side panel around this view is closed and settled. Its screens hide their navigation
+    /// bar then: UIKit's bar ignores accessibilityHidden, and VoiceOver would find it off screen.
+    @Entry var sidePanelParked = false
 }
 
 extension Animation {
