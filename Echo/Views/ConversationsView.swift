@@ -5,13 +5,10 @@ import SwiftUI
 /// The iPhone's panel from the left (opening a conversation closes it). On iPad the list lives
 /// in the split view's sidebar instead.
 struct ConversationsView: View {
-    /// The panel stays built while closed, so it slides in without a hitch; this says whether
-    /// it's out.
-    var isShowing: Bool
     var onOpened: () -> Void
     var body: some View {
         NavigationStack {
-            ConversationsList(onOpened: onOpened, isShowing: isShowing)
+            ConversationsList(onOpened: onOpened)
         }
     }
 }
@@ -25,14 +22,12 @@ private struct ProjectRoute: Hashable {
 struct ConversationsList: View {
     /// What to do after a session opens: the iPhone's panel closes; the iPad sidebar stays put.
     var onOpened: () -> Void = {}
-    /// False while the iPhone's panel is closed: Chats and Cron refresh when it opens again.
-    /// (The Kanban board and its live socket go away once the panel has slid out: `panelParked`.)
-    var isShowing = true
     @Environment(Conversation.self) private var conversation
-    @Environment(\.sidePanelParked) private var panelParked
     @State private var store = ConversationStore.shared
     @State private var settings = Settings.shared
-    @State private var ledger: [HermesSessionsAPI.SessionSummary] = []
+    /// Starts from the last list fetched for this server and profile, so the iPhone's panel (built
+    /// each time it opens) shows its chats at once while `refresh` brings them up to date.
+    @State private var ledger: [HermesSessionsAPI.SessionSummary] = Self.cache[Settings.shared.connectionKey]?.ledger ?? []
     @State private var ledgerError: String?
     @State private var loading = false
     @State private var opening: String?
@@ -40,7 +35,9 @@ struct ConversationsList: View {
     @State private var renaming: HermesSessionsAPI.SessionSummary?
     @State private var renameText = ""
     @State private var usageFor: HermesSessionsAPI.SessionSummary?
-    @State private var projects: [HermesServeClient.Project] = []
+    @State private var projects: [HermesServeClient.Project] = Self.cache[Settings.shared.connectionKey]?.projects ?? []
+    /// The last list per server and profile, for this launch.
+    private static var cache: [String: (ledger: [HermesSessionsAPI.SessionSummary], projects: [HermesServeClient.Project])] = [:]
     @AppStorage("sessions.showProjects") private var showProjects = true
     @State private var shareItem: ShareItem?
     @State private var selecting = false
@@ -80,17 +77,11 @@ struct ConversationsList: View {
             switch wideDetail ? .sessions : section {
             case .sessions: sessionsList
             // Rebuilt on a server or profile switch, so nothing (or no live socket) carries over.
-            case .cron: CronView(topRow: AnyView(topRow), isShowing: isShowing).id(settings.connectionKey)
-            case .kanban:
-                // Gone once the panel has slid out (not as it starts to), taking its live socket along.
-                if !panelParked { KanbanView(topRow: AnyView(topRow)).id(settings.connectionKey) } else { Color.clear }
+            case .cron: CronView(topRow: AnyView(topRow)).id(settings.connectionKey)
+            case .kanban: KanbanView(topRow: AnyView(topRow)).id(settings.connectionKey)
             }
         }
-        // From inside the navigation stack: hiding the whole panel doesn't reach UIKit's list,
-        // and VoiceOver could swipe into rows parked off screen.
-        .accessibilityHidden(panelParked)
         .navigationTitle(section == .sessions || wideDetail ? "Conversations" : section.title)
-        .toolbarVisibility(panelParked ? .hidden : .automatic, for: .navigationBar)
         .navigationBarTitleDisplayMode(section == .sessions || wideDetail ? .large : .inline)
         #if DEBUG
         // Dev hook: `-echo.section cron|kanban` opens on that tab (screenshots).
@@ -141,7 +132,6 @@ struct ConversationsList: View {
         .listRowSeparator(.hidden)
         .listRowBackground(Color.clear)
         .selectionDisabled()
-        .accessibilityHidden(panelParked)   // UIKit's segmented control ignores it from further out
     }
 
     private var sectionPicker: some View {
@@ -215,8 +205,7 @@ struct ConversationsList: View {
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search conversations")
         // Keyed on the server and profile: a switch reloads the list (and the iPad sidebar,
         // which stays up).
-        // Not while the iPhone's panel is closed: it loads when it opens (isShowing below).
-        .task(id: settings.connectionKey) { if usesLedger, isShowing { await refresh() } }
+        .task(id: settings.connectionKey) { if usesLedger { await refresh() } }
         .onChange(of: settings.connectionKey) {
             // The old server's or profile's sessions must not linger while the new list loads.
             ledger = []
@@ -226,9 +215,6 @@ struct ConversationsList: View {
             selected = []
         }
         .refreshable { if usesLedger { await refresh() } }
-        .onChange(of: isShowing) { _, showing in
-            if showing, usesLedger { Task { await refresh() } }
-        }
         .onChange(of: query, initial: true) { filterLedger() }
         .onChange(of: ledger) { filterLedger() }
         .sheet(item: $usageFor) { SessionUsageView(session: $0) }
@@ -485,6 +471,7 @@ struct ConversationsList: View {
             let sessions = try await backend.listSessions()
             guard current else { return }
             ledger = sessions
+            Self.cache[key] = (sessions, projects)
             if viaServe {
                 // Projects are a bonus; a failure here must not hide the flat list.
                 let tree = ((try? await HermesServeClient.shared.projectTree()) ?? [])
@@ -495,6 +482,7 @@ struct ConversationsList: View {
                     }
                 guard current else { return }
                 projects = tree
+                Self.cache[key] = (ledger, tree)
             }
             ledgerError = nil
         } catch {
@@ -723,7 +711,6 @@ struct ProjectSessionsView: View {
     let open: (HermesSessionsAPI.SessionSummary) async throws -> Void
     let currentID: String?
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.sidePanelParked) private var panelParked
     @State private var lanes: [HermesServeClient.Project.Lane] = []
     @State private var error: String?
     @State private var loading = true
@@ -764,7 +751,6 @@ struct ProjectSessionsView: View {
         }
         .listStyle(.plain)
         .navigationTitle(project.label)
-        .toolbarVisibility(panelParked ? .hidden : .automatic, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $query, prompt: "Search in \(project.label)")
         .overlay { if loading { ProgressView() } }
