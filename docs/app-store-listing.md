@@ -70,6 +70,7 @@ Tips, room on iPad, and a choice of where Redde opens.
 • Room for your board. On iPad, pick Kanban or Cron in the sidebar and it fills the screen beside it, and Redde reopens where you left off.
 • Choose where Redde opens: your last conversation, the conversation list or voice mode, in Settings → Voice. The conversation list also remembers whether you were on Chats, Cron or Kanban.
 • Louder replies. Spoken replies play at full volume on the speaker, and keep playing when you raise the phone to your ear.
+• Long local replies. Replies from a model you run yourself (llama.cpp and other OpenAI-compatible servers) are no longer cut off after 10 minutes, and if the phone locks mid-reply, Redde tells you why it stopped.
 • Rate Redde. A link to the App Store review page, in Settings → About.
 
 ## What's New in 1.4 (4000)

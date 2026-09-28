@@ -32,6 +32,8 @@ nonisolated enum WhatsNew {
                  detail: "Your last conversation, the conversation list or voice mode, in Settings → Voice. The list also remembers Chats, Cron or Kanban."),
             Item(symbol: "speaker.wave.2", title: "Louder replies",
                  detail: "Spoken replies play at full volume on the speaker, and keep playing when you raise the phone to your ear."),
+            Item(symbol: "desktopcomputer", title: "Long local replies",
+                 detail: "Replies from your own model can now take as long as they need, and if the phone locks mid-reply, Redde tells you why it stopped."),
         ]),
         Release(version: "1.4", items: [
             Item(symbol: "server.rack", title: "More than one server",
