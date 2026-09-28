@@ -77,8 +77,12 @@ struct SidePanel<Content: View, Panel: View>: View {
     @State private var drag: CGFloat?
     /// Closed and finished sliding out: transparent, and its screens hide their navigation bars.
     @State private var parked = true
-    /// Bumped on every open and close; a park scheduled for an older one is dropped.
+    /// Bumped on every open and close; a park due from an older one is dropped.
     @State private var parkGeneration = 0
+    /// `settle` is closing it, and will park it when its own animation finishes.
+    @State private var settlingClose = false
+    /// Animated only to learn when a close from outside has finished (see `onChange(of: isOpen)`).
+    @State private var closeTick = 0
     /// Whether this swipe has gone far enough to count, and `onOpening` was called.
     @State private var opening = false
 
@@ -125,7 +129,14 @@ struct SidePanel<Content: View, Panel: View>: View {
                     .accessibilityAction(.escape) { settle(open: false, from: shown, width: width, velocity: 0) }
             }
             .onChange(of: isOpen, initial: true) { _, open in
-                if open { parkGeneration += 1; parked = false } else { parkWhenSettled() }
+                if open { parkGeneration += 1; parked = false; return }
+                if settlingClose { settlingClose = false; return }   // settle parks it
+                parkGeneration += 1
+                // Closed from outside (the button, a picked conversation) with the shared
+                // `.sidePanel` animation, which this view can't attach to: run the same curve on a
+                // tick and park when it completes.
+                let generation = parkGeneration
+                withAnimation(.sidePanel) { closeTick &+= 1 } completion: { park(generation) }
             }
             .gesture(SwipeRightGesture(
                 isEnabled: !isOpen,
@@ -168,24 +179,24 @@ struct SidePanel<Content: View, Panel: View>: View {
             animation = .interpolatingSpring(duration: 0.34, bounce: 0, initialVelocity: relative)
         }
         opening = false
+        // Closing it here: park it when this animation is done. (A swipe that didn't open it
+        // leaves isOpen false, so onChange wouldn't.)
+        if !open {
+            if isOpen { settlingClose = true }
+            parkGeneration += 1
+        }
+        let generation = parkGeneration
         withAnimation(animation) {
             isOpen = open
             drag = nil
+        } completion: {
+            if !open { park(generation) }
         }
-        // A swipe that didn't open it leaves isOpen false, so onChange never parks it.
-        if !open { parkWhenSettled() }
     }
 
     /// Parks the panel once it has slid out, unless it opened (or was pulled) again meanwhile.
-    /// The button and a picked conversation close it from outside, so there's no animation
-    /// completion to wait on.
-    private func parkWhenSettled() {
-        parkGeneration += 1
-        let generation = parkGeneration
-        Task {
-            try? await Task.sleep(for: .milliseconds(450))
-            if generation == parkGeneration, !isOpen, drag == nil { parked = true }
-        }
+    private func park(_ generation: Int) {
+        if generation == parkGeneration, !isOpen, drag == nil { parked = true }
     }
 }
 
