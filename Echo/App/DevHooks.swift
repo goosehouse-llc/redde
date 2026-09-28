@@ -8,6 +8,7 @@ import Foundation
 /// - `-echo.demo`: seed the demo conversation. `-echo.demoShort` keeps its first exchange,
 ///   `-echo.demoTwo` its first two (ending on the checklist and table), `-echo.demoLong` seeds a
 ///   transcript many screens long, `-echo.demoLibrary` adds a few local conversations.
+///   `-echo.demoStream` plays the first exchange live, thinking and all (the promo video).
 /// - `-echo.demoProjects`: fill the conversation list's Projects from a fixture (Dashboard connection).
 /// - `-echo.demoHosts`: replace any real endpoints with example hosts.
 /// - `-echo.demoKanban`: a sample Kanban board instead of the server's.
@@ -62,6 +63,7 @@ enum DevHooks {
         // The Projects section only shows on the Dashboard connection.
         if demoProjects { settings.transport = .hermesServe }
         if has("-echo.demoLong") { conversation.seedLongDemo() }
+        if has("-echo.demoStream") { conversation.streamDemo() }
         if has("-echo.demoHosts") {
             settings.gatewayURL = "https://redde.home.example:8642"
             settings.serveURL = "http://redde.home.example:9119"

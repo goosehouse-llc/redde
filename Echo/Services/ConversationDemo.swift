@@ -91,6 +91,48 @@ extension Conversation {
         WidgetCenter.shared.reloadTimelines(ofKind: "com.goosehouse.echo.lastreply")
     }
 
+    /// Promo video (`-echo.demoStream`): the demo's first exchange played live: the question,
+    /// then the thinking, the tool calls and the answer streaming in, as a real turn would.
+    func streamDemo() {
+        seedDemo()
+        guard messages.count >= 2 else { return }
+        let question = messages[0], full = messages[1]
+        mutateMessagesForDemo { $0 = [question] }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.8))
+            var reply = Message(role: .assistant, text: "")
+            let id = reply.id
+            mutateMessagesForDemo { $0.append(reply) }
+            @MainActor func update(_ change: (inout Message) -> Void) {
+                change(&reply)
+                mutateMessagesForDemo { if let i = $0.firstIndex(where: { $0.id == id }) { $0[i] = reply } }
+            }
+            let started = Date.now
+            for word in full.reasoning.split(separator: " ") {
+                update { $0.reasoning += ($0.reasoning.isEmpty ? "" : " ") + word }
+                try? await Task.sleep(for: .milliseconds(12))
+            }
+            for tool in full.tools {
+                try? await Task.sleep(for: .milliseconds(260))
+                update { $0.tools.append(tool) }
+            }
+            try? await Task.sleep(for: .milliseconds(300))
+            let first = Date.now
+            // Word by word, keeping the line breaks and code fence intact.
+            var rest = Substring(full.text)
+            while !rest.isEmpty {
+                let end = rest.firstIndex(where: { $0 == " " || $0 == "\n" }).map { rest.index(after: $0) } ?? rest.endIndex
+                update { $0.text += rest[..<end] }
+                rest = rest[end...]
+                try? await Task.sleep(for: .milliseconds(34))
+            }
+            update {
+                $0.metrics = TurnMetrics(sentAt: started, firstTokenAt: first, completedAt: .now,
+                                         characters: full.text.count, usage: full.metrics?.usage, contextWindow: 131_072)
+            }
+        }
+    }
+
     /// Screenshot helper: trims the seeded demo to its first messages.
     func keepFirstMessages(_ n: Int) { mutateMessagesForDemo { $0 = Array($0.prefix(n)) } }
 

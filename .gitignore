@@ -15,3 +15,7 @@ Echo/Resources/LocalDefaults.json
 
 # Wrangler caches and local dev state (account details, local KV)
 .wrangler/
+
+# App Store preview renders (rebuild with design/video)
+design/video/*.mp4
+design/video/*.mov

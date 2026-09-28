@@ -270,6 +270,13 @@ private struct OrbFace: View {
     let phaseColor: Color
     let demo: Bool
 
+    /// The `-echo.voiceDemo` pose: a level that moves like speech (two beating waves, never
+    /// quite silent), so screenshots and the promo video show a live waveform.
+    static func demoLevel() -> Float {
+        let t = Date.now.timeIntervalSinceReferenceDate
+        return Float(0.3 + 0.45 * abs(sin(t * 5.1) * sin(t * 1.7 + 0.8)))
+    }
+
     var body: some View {
         let listening = phase == .listening
         let level = demo ? 0.6 : CGFloat(session.recognizer.level)
@@ -291,7 +298,7 @@ private struct OrbFace: View {
                 .overlay {
                     if orb.hasLiveWaveform {
                         LiveWaveform(phase: phase,
-                                     level: { demo ? 0.55 : session.phase == .speaking ? session.output.meterLevel : session.recognizer.meterLevel },
+                                     level: { demo ? Self.demoLevel() : session.phase == .speaking ? session.output.meterLevel : session.recognizer.meterLevel },
                                      color: orb.waveColor)
                             .offset(orb.waveOffset)
                     }
