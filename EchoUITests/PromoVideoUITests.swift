@@ -26,18 +26,20 @@ final class PromoVideoUITests: XCTestCase {
 
     /// Answers with substance: read up through the checklist, table, diagram and math.
     func testRichAnswers() throws {
-        let app = try launch(["-echo.demo", "-theme", "claudeCode", "-appearance", "dark"])
-        XCTAssertTrue(app.buttons["Conversations"].waitForExistence(timeout: 20))
+        let app = try launch(["-echo.demo", "-echo.demoLibrary", "-theme", "claudeCode", "-appearance", "dark"])
+        XCTAssertTrue(app.staticTexts["Where are we on the kitchen project?"].waitForExistence(timeout: 20))
+        // On iPad the transcript is the right-hand column, beside the sidebar.
+        let x: CGFloat = app.windows.firstMatch.frame.width > 600 ? 0.66 : 0.5
         // Diagrams and math draw when they first scroll into view: pass over them all once, then
         // start the take from the top of the transcript.
-        for _ in 0..<4 { drag(app, from: CGVector(dx: 0.5, dy: 0.8), to: CGVector(dx: 0.5, dy: 0.2), velocity: .fast); hold(0.8) }
+        for _ in 0..<4 { drag(app, from: CGVector(dx: x, dy: 0.8), to: CGVector(dx: x, dy: 0.2), velocity: .fast); hold(0.8) }
         hold(1.5)
-        for _ in 0..<5 { drag(app, from: CGVector(dx: 0.5, dy: 0.25), to: CGVector(dx: 0.5, dy: 0.85), velocity: .fast) }
+        for _ in 0..<5 { drag(app, from: CGVector(dx: x, dy: 0.25), to: CGVector(dx: x, dy: 0.85), velocity: .fast) }
         hold(1.5)
         mark("start")
         hold(0.8)
         for _ in 0..<3 {
-            drag(app, from: CGVector(dx: 0.5, dy: 0.78), to: CGVector(dx: 0.5, dy: 0.38), velocity: 250)
+            drag(app, from: CGVector(dx: x, dy: 0.78), to: CGVector(dx: x, dy: 0.38), velocity: 250)
             hold(0.5)
         }
         hold(0.8)

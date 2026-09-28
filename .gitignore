@@ -19,3 +19,5 @@ Echo/Resources/LocalDefaults.json
 # App Store preview renders (rebuild with design/video)
 design/video/*.mp4
 design/video/*.mov
+design/video/*.png
+design/video/*.log
