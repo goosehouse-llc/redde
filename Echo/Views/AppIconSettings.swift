@@ -1,7 +1,8 @@
 import SwiftUI
 import UIKit
 
-/// The Home Screen icons Redde ships. `AppIcon` (Graphite) is the primary; the rest are alternates listed in
+/// The Home Screen icons Redde ships. `AppIconGraphiteFlat` (Matte Graphite) is the primary; the rest,
+/// the glass Graphite (`AppIcon`) included, are alternates listed in
 /// ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES. Each has a small copy under IconPreviews/ because
 /// app icon sets can't be loaded as images. Glass orbs first, then their matte partners and the
 /// matte-only colors, then Classic.
@@ -22,8 +23,11 @@ enum AppIconChoice: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// The primary icon: what a fresh install shows, and what nil puts back.
+    static let primary = AppIconChoice.graphiteFlat
+
     /// The name `setAlternateIconName` takes: nil puts the primary icon back.
-    var alternateName: String? { self == .graphite ? nil : rawValue }
+    var alternateName: String? { self == Self.primary ? nil : rawValue }
 
     var label: String {
         switch self {
@@ -44,7 +48,9 @@ enum AppIconChoice: String, CaseIterable, Identifiable {
     }
 
     static var current: AppIconChoice {
-        UIApplication.shared.alternateIconName.flatMap(AppIconChoice.init(rawValue:)) ?? .graphite
+        // Someone who picked Matte Graphite before it became the primary still has that name set;
+        // it maps to the same choice.
+        UIApplication.shared.alternateIconName.flatMap(AppIconChoice.init(rawValue:)) ?? primary
     }
 }
 
