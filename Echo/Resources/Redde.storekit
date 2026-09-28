@@ -9,42 +9,42 @@
       "localizations": [
         {
           "description": "A one-time tip. Thank you!",
-          "displayName": "Coffee",
+          "displayName": "A coffee",
           "locale": "en_US"
         }
       ],
-      "productID": "com.goosehouse.echo.tip.coffee",
-      "referenceName": "Tip: Coffee",
+      "productID": "com.goosehouse.echo.tip.one",
+      "referenceName": "Tip: A coffee",
       "type": "Consumable"
     },
     {
-      "displayPrice": "5.99",
+      "displayPrice": "8.99",
       "familyShareable": false,
       "internalID": "6810901002",
       "localizations": [
         {
           "description": "A one-time tip. Thank you!",
-          "displayName": "Coffee and a pastry",
+          "displayName": "Three coffees",
           "locale": "en_US"
         }
       ],
-      "productID": "com.goosehouse.echo.tip.pastry",
-      "referenceName": "Tip: Coffee and a pastry",
+      "productID": "com.goosehouse.echo.tip.three",
+      "referenceName": "Tip: Three coffees",
       "type": "Consumable"
     },
     {
-      "displayPrice": "9.99",
+      "displayPrice": "14.99",
       "familyShareable": false,
       "internalID": "6810901003",
       "localizations": [
         {
           "description": "A one-time tip. Thank you!",
-          "displayName": "Lunch",
+          "displayName": "Five coffees",
           "locale": "en_US"
         }
       ],
-      "productID": "com.goosehouse.echo.tip.lunch",
-      "referenceName": "Tip: Lunch",
+      "productID": "com.goosehouse.echo.tip.five",
+      "referenceName": "Tip: Five coffees",
       "type": "Consumable"
     }
   ],
