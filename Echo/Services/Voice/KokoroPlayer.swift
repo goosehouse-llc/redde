@@ -30,7 +30,10 @@ final class KokoroPlayer {
     /// Playback parked on an empty queue; `enqueue`, `finish` and `stop` wake it.
     private var wake: CheckedContinuation<Void, Never>?
     private var warmTask: Task<Void, Never>?
-    private var pendingBuffers = 0
+    /// Scheduled but not yet played, oldest first. Kept so a route change, which drops whatever
+    /// the engine had queued, can put it back.
+    private var unplayed: [AVAudioPCMBuffer] = []
+    private var pendingBuffers: Int { unplayed.count }
     private var announcedFirst = false
     private var finished = false
     /// Held by the Pause button: buffers still arriving are scheduled but must not restart play.
@@ -77,18 +80,18 @@ final class KokoroPlayer {
 
     /// A route change (the phone raised to the ear or lowered, headphones) stops the engine and
     /// drops what was queued on it, completion callbacks and all. Without this the reply went
-    /// silent and never finished ("speaking", no sound). Carry on with what's still coming.
+    /// silent and never finished ("speaking", no sound). Put back what hadn't played (the chunk
+    /// that was cut off starts over, ~100 ms) and carry on with what's still coming.
     private func engineReconfigured() {
         guard pendingBuffers > 0 || playbackTask != nil else { return }
-        log.info("engine reconfigured mid-reply; restarting")
+        let remaining = unplayed
+        log.info("engine reconfigured mid-reply; restarting with \(remaining.count) buffers")
         bufferEpoch += 1
-        pendingBuffers = 0
-        if playbackTask != nil {
-            startEngine(reason: "after route change")
-            if !paused { player.play() }
-        } else if finished {
-            onDrained?()
-        }
+        unplayed = []
+        player.stop()
+        startEngine(reason: "after route change")
+        remaining.forEach(schedule)
+        if remaining.isEmpty, playbackTask == nil, finished { onDrained?() }
     }
 
     // Standard float mono at 24 kHz always exists; the fallback is only to keep the initializer total.
@@ -148,7 +151,7 @@ final class KokoroPlayer {
         playbackTask?.cancel()
         playbackTask = nil
         wakePlayback()
-        pendingBuffers = 0
+        unplayed = []
         paused = false
         player.stop()
     }
@@ -334,7 +337,7 @@ final class KokoroPlayer {
     private func schedule(_ buffer: AVAudioPCMBuffer) {
         startEngine(reason: "cold start")
         guard engine.isRunning else { return }
-        pendingBuffers += 1
+        unplayed.append(buffer)
         let gen = generation, epoch = bufferEpoch
         player.scheduleBuffer(buffer, completionCallbackType: .dataPlayedBack) { [weak self] _ in
             Task { @MainActor in self?.bufferPlayed(generation: gen, epoch: epoch) }
@@ -348,7 +351,11 @@ final class KokoroPlayer {
 
     private func bufferPlayed(generation gen: Int, epoch: Int) {
         guard gen == generation, epoch == bufferEpoch else { return }
-        pendingBuffers = max(pendingBuffers - 1, 0)
+        // A route change stops the engine and reports everything queued as played before its
+        // configuration-change notice arrives. Those buffers never played: keep them, so
+        // `engineReconfigured` can put them back instead of the reply ending here.
+        guard engine.isRunning else { return }
+        if !unplayed.isEmpty { unplayed.removeFirst() }
         if pendingBuffers == 0, playbackTask == nil, finished { onDrained?() }
     }
 }

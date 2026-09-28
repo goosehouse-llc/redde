@@ -365,6 +365,14 @@ final class SpeechRecognizer {
         state = .finalizing
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
+        // Echo cancellation off while the mic is closed: left on, iOS treats the app as in a call
+        // and the reply plays at a level the volume buttons don't fully control (still loud at
+        // zero). start() turns it back on for the next utterance.
+        if engine.inputNode.isVoiceProcessingEnabled {
+            do { try engine.inputNode.setVoiceProcessingEnabled(false) } catch { log.error("voice processing off failed: \(error.localizedDescription)") }
+            // Toggling the voice-processing unit puts the output back on the earpiece.
+            AudioSessionController.shared.refreshRoute()
+        }
         tap?.flush()   // the last few frames still staged for the analyzer
         inputContinuation?.finish()
         inputContinuation = nil
