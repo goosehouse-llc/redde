@@ -9,6 +9,8 @@ nonisolated enum WhatsNew {
         var detail: String
         /// Only on iPhone: an iPad has no such thing (its list is a sidebar).
         var phoneOnly = false
+        /// Only on iPad.
+        var padOnly = false
         var id: String { title }
     }
 
@@ -20,6 +22,17 @@ nonisolated enum WhatsNew {
 
     /// Newest first. Keep each to a handful of lines a person reads in ten seconds.
     static let releases: [Release] = [
+        Release(version: "1.4.1", items: [
+            Item(symbol: "heart", title: "Feed the goose",
+                 detail: "Settings → About → Support Redde: leave a tip, a coffee, a snack or a dinner. It unlocks nothing; it keeps Redde going."),
+            Item(symbol: "rectangle.split.3x1", title: "Room for your board",
+                 detail: "Pick Kanban or Cron in the sidebar and it fills the screen beside it. Redde reopens where you left off.",
+                 padOnly: true),
+            Item(symbol: "arrow.up.forward.app", title: "Choose where Redde opens",
+                 detail: "Your last conversation, the conversation list or voice mode, in Settings → Voice. The list also remembers Chats, Cron or Kanban."),
+            Item(symbol: "speaker.wave.2", title: "Louder replies",
+                 detail: "Spoken replies play at full volume on the speaker, and keep playing when you raise the phone to your ear."),
+        ]),
         Release(version: "1.4", items: [
             Item(symbol: "server.rack", title: "More than one server",
                  detail: "Save Home, Office or any other Hermes server and switch from Settings or the row above your conversations. Each keeps its own keys, profile and model."),

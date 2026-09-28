@@ -63,6 +63,15 @@ A Hermes agent (github.com/NousResearch/hermes-agent) or an OpenAI-compatible en
 
 Hermes is an open-source project by Nous Research. Redde is an independent client and is not affiliated with Nous Research.
 
+## What's New in 1.4.1 (4000)
+Tips, room on iPad, and a choice of where Redde opens.
+
+• Feed the goose. Settings → About → Support Redde lets you leave a one-time tip: a coffee, a snack or a dinner. It unlocks nothing; every feature is already yours.
+• Room for your board. On iPad, pick Kanban or Cron in the sidebar and it fills the screen beside it, and Redde reopens where you left off.
+• Choose where Redde opens: your last conversation, the conversation list or voice mode, in Settings → Voice. The conversation list also remembers whether you were on Chats, Cron or Kanban.
+• Louder replies. Spoken replies play at full volume on the speaker, and keep playing when you raise the phone to your ear.
+• Rate Redde. A link to the App Store review page, in Settings → About.
+
 ## What's New in 1.4 (4000)
 More than one server, your own language, and a quicker way around.
 

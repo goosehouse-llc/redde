@@ -20,7 +20,10 @@ struct WhatsNewView: View {
                 }
                 .padding(.top, 40)
 
-                ForEach(release.items.filter { !$0.phoneOnly || UIDevice.current.userInterfaceIdiom == .phone }) { item in
+                ForEach(release.items.filter { item in
+                    let idiom = UIDevice.current.userInterfaceIdiom
+                    return (!item.phoneOnly || idiom == .phone) && (!item.padOnly || idiom == .pad)
+                }) { item in
                     HStack(alignment: .top, spacing: 16) {
                         Image(systemName: item.symbol)
                             .font(.title2)
