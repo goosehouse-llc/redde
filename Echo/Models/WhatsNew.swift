@@ -65,7 +65,12 @@ nonisolated enum WhatsNew {
     static func pending(lastSeen: String?, current: String, isNewInstall: Bool) -> Release? {
         guard !isNewInstall else { return nil }
         if let lastSeen, compare(lastSeen, current) != .orderedAscending { return nil }
-        return releases.first { $0.version == current }
+        // The newest entry not seen yet, up to this version: a point release without its own
+        // entry (1.4.1) still shows 1.4's to someone coming from 1.3, and nothing to someone on 1.4.
+        return releases.first { release in
+            compare(release.version, current) != .orderedDescending
+                && lastSeen.map { compare(release.version, $0) == .orderedDescending } ?? true
+        }
     }
 
     /// Numeric, component by component: "1.10" is newer than "1.9".

@@ -21,6 +21,12 @@ struct WhatsNewTests {
         #expect(WhatsNew.pending(lastSeen: "99.0", current: latest, isNewInstall: false) == nil)
     }
 
+    /// A point release with no entry of its own shows the last one the person hasn't seen.
+    @Test func pointReleasesShowTheUnseenHighlights() {
+        #expect(WhatsNew.pending(lastSeen: "1.3", current: "1.4.1", isNewInstall: false)?.version == "1.4")
+        #expect(WhatsNew.pending(lastSeen: "1.4", current: "1.4.1", isNewInstall: false) == nil)
+    }
+
     @Test func versionsWithoutHighlightsShowNothing() {
         #expect(WhatsNew.pending(lastSeen: "1.0", current: "1.0.1", isNewInstall: false) == nil)
     }

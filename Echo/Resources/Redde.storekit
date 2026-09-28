@@ -1,0 +1,62 @@
+{
+  "identifier": "D2A5C1B0",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "2.99",
+      "familyShareable": false,
+      "internalID": "6810901001",
+      "localizations": [
+        {
+          "description": "A one-time tip. Thank you!",
+          "displayName": "Coffee",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.goosehouse.echo.tip.coffee",
+      "referenceName": "Tip: Coffee",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "5.99",
+      "familyShareable": false,
+      "internalID": "6810901002",
+      "localizations": [
+        {
+          "description": "A one-time tip. Thank you!",
+          "displayName": "Coffee and a pastry",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.goosehouse.echo.tip.pastry",
+      "referenceName": "Tip: Coffee and a pastry",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "9.99",
+      "familyShareable": false,
+      "internalID": "6810901003",
+      "localizations": [
+        {
+          "description": "A one-time tip. Thank you!",
+          "displayName": "Lunch",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.goosehouse.echo.tip.lunch",
+      "referenceName": "Tip: Lunch",
+      "type": "Consumable"
+    }
+  ],
+  "settings": {
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_storefront": "USA",
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 3,
+    "minor": 0
+  }
+}

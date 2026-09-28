@@ -11,13 +11,14 @@ import Foundation
 /// - `-echo.demoProjects`: fill the conversation list's Projects from a fixture (Dashboard connection).
 /// - `-echo.demoHosts`: replace any real endpoints with example hosts.
 /// - `-echo.demoKanban`: a sample Kanban board instead of the server's.
-/// - `-echo.screen settings|sessions|setup|profiles|servers|model`: open that screen at launch.
+/// - `-echo.screen settings|sessions|setup|profiles|servers|model|tips`: open that screen at launch.
 /// - `-echo.section cron|kanban`: open the conversation list on that tab.
 /// - `-echo.settingsAnchor`: scroll Settings to the context and memory files.
 /// - `-echo.expandAppIcons`: open Settings' app icon grid.
 /// - `-echo.draft "text"`: type a question into a focused composer (keyboard screenshots).
 /// - `-echo.voiceView`: open voice mode without listening. `-echo.voiceDemo` poses it mid-listen;
 ///   `-echo.autoVoice` opens it and starts listening.
+/// - `-echo.demoTips`: sample tips on Settings → About → Support Redde (App Review screenshot).
 /// - `-echo.whatsNew`: show this version's "What's New" sheet (any other `-echo.` flag hides it).
 /// - `-echo.switchProfile <name>`: switch profile five seconds after launch.
 /// - `-echo.testServer <name> <Dashboard URL> <username>`: add a server with that name if there's

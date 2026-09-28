@@ -13,8 +13,8 @@ settings:
     SWIFT_STRICT_CONCURRENCY: complete
     SWIFT_TREAT_WARNINGS_AS_ERRORS: true
     CODE_SIGN_STYLE: Automatic
-    MARKETING_VERSION: "1.4"
-    CURRENT_PROJECT_VERSION: "247"
+    MARKETING_VERSION: "1.4.1"
+    CURRENT_PROJECT_VERSION: "248"
     ENABLE_USER_SCRIPT_SANDBOXING: true
 targets:
   Echo:
@@ -24,6 +24,7 @@ targets:
       - path: Echo
         excludes:
           - Resources/Web
+          - Resources/Redde.storekit   # the scheme's local test store only; not shipped
       # Folder reference: keeps Web/fonts/ intact so katex.min.css can find its fonts.
       - path: Echo/Resources/Web
         type: folder
@@ -197,6 +198,8 @@ schemes:
         EchoTests: [test]
     run:
       config: Debug
+      # Tips work in the simulator and debug builds before the products exist in App Store Connect.
+      storeKitConfiguration: Echo/Resources/Redde.storekit
     test:
       config: Debug
       targets:

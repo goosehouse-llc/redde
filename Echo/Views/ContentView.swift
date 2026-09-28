@@ -29,6 +29,7 @@ struct ContentView: View {
     #if DEBUG
     /// Dev hook: `-echo.screen profiles` opens the profile picker (screenshots, live tests).
     @State private var showProfilePicker = false
+    @State private var showTips = false
     @State private var showServers = false
     #endif
 
@@ -57,6 +58,7 @@ struct ContentView: View {
         .sheet(item: $whatsNew) { WhatsNewView(release: $0) }
         #if DEBUG
         .sheet(isPresented: $showProfilePicker) { NavigationStack { ProfilePickerView() } }
+        .sheet(isPresented: $showTips) { NavigationStack { TipJarView() } }
         .sheet(isPresented: $showServers) { NavigationStack { ServersView() } }
         #endif
         .fullScreenCover(isPresented: $showVoice) {
@@ -333,6 +335,7 @@ struct ContentView: View {
         case "profiles": showProfilePicker = true
         case "servers": showServers = true
         case "model": showModelPicker = true
+        case "tips": showTips = true
         default: break
         }
         if let text = DevHooks.value("-echo.draft") {

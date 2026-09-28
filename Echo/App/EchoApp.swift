@@ -14,6 +14,7 @@ struct EchoApp: App {
         VoiceSession.current = voice
         Conversation.current = conversation   // Siri AI's intents send through it
         Notifier.shared.attach(conversation: conversation)   // the delegate must exist before launch finishes
+        TipJar.shared.start()   // finish tips that completed while the app wasn't looking
     }
 
     @State private var settings = Settings.shared
