@@ -145,7 +145,9 @@ struct ConversationsList: View {
     }
 
     private var sectionPicker: some View {
-        Picker("Section", selection: $section) {
+        // Through its own binding, not `$section`: with the stored one, the first tap after the
+        // panel opened blinked and didn't switch (seen on device, never in the simulator).
+        Picker("Section", selection: Binding(get: { section }, set: { section = $0 })) {
             ForEach(Tab.allCases) { s in Text(s.title).tag(s) }
         }
         .pickerStyle(.segmented)
