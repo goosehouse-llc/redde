@@ -9,8 +9,7 @@ import os
 final class TipJar {
     static let shared = TipJar()
 
-    /// A coffee, a snack, a dinner: priced like one, three and five coffees on
-    /// buymeacoffee.com/goosehouse. Smallest first; the IDs match App Store Connect and `Redde.storekit`.
+    /// A coffee, a snack, a dinner. Smallest first; the IDs match App Store Connect and `Redde.storekit`.
     static let productIDs = ["com.goosehouse.echo.tip.coffee", "com.goosehouse.echo.tip.snack", "com.goosehouse.echo.tip.dinner"]
 
     enum State: Equatable { case loading, ready, unavailable, purchasing(String), thanked }
@@ -48,7 +47,7 @@ final class TipJar {
         #if DEBUG
         // Dev hook for the App Review screenshot: sample tips, no StoreKit.
         if DevHooks.has("-echo.demoTips") {
-            options = zip(Self.productIDs, [("A coffee", "$2.99"), ("A snack", "$8.99"), ("A dinner", "$14.99")])
+            options = zip(Self.productIDs, [("A coffee", "$2.99"), ("A snack", "$4.99"), ("A dinner", "$9.99")])
                 .map { Option(id: $0, name: $1.0, price: $1.1) }
             state = .ready
             return
