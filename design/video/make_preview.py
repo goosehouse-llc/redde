@@ -130,8 +130,8 @@ def main():
     run(['ffmpeg', '-v', 'error', '-y', *inputs,
          '-f', 'lavfi', '-t', f'{total:.3f}', '-i', 'anullsrc=channel_layout=stereo:sample_rate=44100',
          '-filter_complex', ';'.join(chain), '-map', last, '-map', f'{len(segs)}:a',
-         '-c:v', 'libx264', '-profile:v', 'high', '-level', '4.2', '-pix_fmt', 'yuv420p', '-r', '30',
-         '-b:v', '12M', '-maxrate', '14M', '-bufsize', '20M',
+         '-c:v', 'libx264', '-profile:v', 'high', '-level', '4.0', '-pix_fmt', 'yuv420p', '-r', '30',
+         '-b:v', '10M', '-maxrate', '11M', '-bufsize', '20M', '-g', '30',   # Apple: High 4.0, 10–12 Mbps
          '-c:a', 'aac', '-b:a', '256k', '-ar', '44100', '-ac', '2', '-shortest', '-movflags', '+faststart', out])
     print(f'{out}  {total:.2f}s')
 
