@@ -81,6 +81,11 @@ struct ContentView: View {
             // so release builds skipped it.)
             Task { await warmSpeechAssets() }
             if Settings.shared.openToVoiceScreen, router.pendingVoice == nil, !showVoice { openVoice() }
+            // "When Redde opens: Conversations": the iPhone's panel starts out, on its last tab. (On
+            // iPad the list is always beside the chat.) A Siri or control request still wins.
+            if settings.launchScreen == .conversations, sizeClass != .regular, router.pendingVoice == nil, !showVoice {
+                showConversations = true
+            }
             // After the voice screen may have opened: then it waits until that closes.
             presentWhatsNewIfDue()
             #if DEBUG

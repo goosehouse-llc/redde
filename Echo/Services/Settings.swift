@@ -101,10 +101,14 @@ final class Settings {
     var newConversationForVoice: Bool {
         didSet { defaults.set(newConversationForVoice, forKey: Keys.newConversationForVoice) }
     }
-    /// Launch straight into the voice screen (without listening unless `listenOnOpen`).
-    var openToVoiceScreen: Bool {
-        didSet { defaults.set(openToVoiceScreen, forKey: Keys.openToVoiceScreen) }
+    /// What Redde shows when it starts: the last conversation, the conversation list (iPhone's
+    /// panel, open on its last tab), or the voice screen (listening only with `listenOnOpen`).
+    enum LaunchScreen: String, CaseIterable, Sendable { case conversation, conversations, voice }
+    var launchScreen: LaunchScreen {
+        didSet { defaults.set(launchScreen.rawValue, forKey: Keys.launchScreen) }
     }
+    /// Launch straight into the voice screen. (Once its own switch; now one of `launchScreen`.)
+    var openToVoiceScreen: Bool { launchScreen == .voice }
     /// Speak replies with a Kokoro server instead of the on-device voice.
     var useKokoro: Bool {
         didSet { defaults.set(useKokoro, forKey: Keys.useKokoro) }
@@ -292,7 +296,8 @@ final class Settings {
         static let reasoningEffort = "reasoningEffort"
         static let replyLanguage = "replyLanguage"
         static let listenOnOpen = "listenOnOpen"
-        static let openToVoiceScreen = "openToVoiceScreen"
+        static let openToVoiceScreen = "openToVoiceScreen"   // before launchScreen; read once to carry it over
+        static let launchScreen = "launchScreen"
         static let handsFreeByDefault = "handsFreeByDefault"
         static let newConversationForVoice = "newConversationForVoice"
         static let useKokoro = "useKokoro"
@@ -337,7 +342,8 @@ final class Settings {
         reasoningEffort = defaults.string(forKey: Keys.reasoningEffort) ?? ""
         replyLanguage = defaults.string(forKey: Keys.replyLanguage) ?? ""
         listenOnOpen = defaults.bool(forKey: Keys.listenOnOpen)
-        openToVoiceScreen = defaults.bool(forKey: Keys.openToVoiceScreen)
+        launchScreen = defaults.string(forKey: Keys.launchScreen).flatMap(LaunchScreen.init(rawValue:))
+            ?? (defaults.bool(forKey: Keys.openToVoiceScreen) ? .voice : .conversation)
         handsFreeByDefault = defaults.bool(forKey: Keys.handsFreeByDefault)
         newConversationForVoice = defaults.bool(forKey: Keys.newConversationForVoice)
         useKokoro = defaults.bool(forKey: Keys.useKokoro)
@@ -533,7 +539,7 @@ final class Settings {
         reasoningEffort = ""
         replyLanguage = ""
         listenOnOpen = false
-        openToVoiceScreen = false
+        launchScreen = .conversation
         handsFreeByDefault = false
         newConversationForVoice = false
         useKokoro = false
