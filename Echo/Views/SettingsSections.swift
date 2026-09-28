@@ -417,10 +417,10 @@ struct AboutSettings: View {
         }
 
         Section {
+            NavigationLink { TipJarView() } label: { Label("Support Redde", systemImage: "heart") }
             if let release = WhatsNew.releases.first(where: { $0.version == WhatsNew.currentVersion }) ?? WhatsNew.releases.first {
                 NavigationLink("What's New in Redde") { WhatsNewView(release: release) }
             }
-            NavigationLink { TipJarView() } label: { Label("Support Redde", systemImage: "heart") }
             NavigationLink("Acknowledgements") { AcknowledgementsView() }
             Button {
                 UIPasteboard.general.string = SettingsView.versionLine
