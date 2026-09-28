@@ -230,6 +230,23 @@
     .band { padding: 40px 20px; }
     .term-body { padding: 16px; font-size: .78rem; }
   }
+
+  /* Feed the Goose: tips via Buy Me a Coffee */
+  .feed { padding-top: 90px; }
+  .feed .kicker { display: block; }
+  .feed .card2 { margin-top: 18px; display: flex; align-items: center; gap: 28px; padding: 28px 32px;
+    border: 1px solid rgba(232,176,75,.35); border-radius: 22px; background: rgba(200,214,240,.04); }
+  .feed .goose { width: 84px; flex: none; animation: waddle 1.1s steps(2) infinite; }
+  .feed .goose svg { display: block; width: 100%; height: auto; }
+  @keyframes waddle { 0% { transform: translateY(0) rotate(-3deg); } 100% { transform: translateY(-3px) rotate(3deg); } }
+  .feed h3 { font-size: 1.35rem; color: var(--ink); }
+  .feed p { color: var(--dim); margin-top: 4px; }
+  .feed .coffee { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 8px;
+    background: var(--gold); color: var(--navy); font-weight: 700; text-decoration: none;
+    padding: 12px 20px; border-radius: 999px; transition: transform .2s ease, filter .2s ease; }
+  .feed .coffee:hover { transform: translateY(-1px); filter: brightness(1.08); }
+  @media (max-width: 640px) { .feed .card2 { flex-wrap: wrap; } .feed .coffee { margin-left: 0; } }
+  @media (prefers-reduced-motion: reduce) { .feed .goose { animation: none; } }
 </style>
 </head>
 <body>
@@ -466,6 +483,18 @@
     <p>The App&nbsp;Store privacy label says <strong>“Data Not Collected”</strong> because that is
     what happens. Every request goes only to the server you set up, speech is recognized on your
     device, and your credentials never leave the iOS Keychain.</p>
+  </div>
+</section>
+
+<section class="feed wrap" id="support">
+  <span class="kicker">## support</span>
+  <div class="card2">
+    <div class="goose" aria-hidden="true"><svg viewBox="0 0 13 14" shape-rendering="crispEdges"><rect x="7" y="0" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="8" y="0" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="9" y="0" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="6" y="1" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="7" y="1" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="8" y="1" width="1.02" height="1.02" fill="#14304A"/><rect x="9" y="1" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="10" y="1" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="6" y="2" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="7" y="2" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="8" y="2" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="9" y="2" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="10" y="2" width="1.02" height="1.02" fill="#F28C28"/><rect x="11" y="2" width="1.02" height="1.02" fill="#F28C28"/><rect x="12" y="2" width="1.02" height="1.02" fill="#F28C28"/><rect x="7" y="3" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="8" y="3" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="9" y="3" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="7" y="4" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="8" y="4" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="7" y="5" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="8" y="5" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="6" y="6" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="7" y="6" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="8" y="6" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="0" y="7" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="5" y="7" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="6" y="7" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="7" y="7" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="8" y="7" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="0" y="8" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="1" y="8" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="2" y="8" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="3" y="8" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="4" y="8" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="5" y="8" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="6" y="8" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="7" y="8" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="8" y="8" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="9" y="8" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="0" y="9" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="1" y="9" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="2" y="9" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="3" y="9" width="1.02" height="1.02" fill="#CBE6F7"/><rect x="4" y="9" width="1.02" height="1.02" fill="#CBE6F7"/><rect x="5" y="9" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="6" y="9" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="7" y="9" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="8" y="9" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="9" y="9" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="1" y="10" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="2" y="10" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="3" y="10" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="4" y="10" width="1.02" height="1.02" fill="#CBE6F7"/><rect x="5" y="10" width="1.02" height="1.02" fill="#CBE6F7"/><rect x="6" y="10" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="7" y="10" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="8" y="10" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="2" y="11" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="3" y="11" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="4" y="11" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="5" y="11" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="6" y="11" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="7" y="11" width="1.02" height="1.02" fill="#FAFDFF"/><rect x="3" y="12" width="1.02" height="1.02" fill="#F28C28"/><rect x="6" y="12" width="1.02" height="1.02" fill="#F28C28"/><rect x="2" y="13" width="1.02" height="1.02" fill="#F28C28"/><rect x="3" y="13" width="1.02" height="1.02" fill="#F28C28"/><rect x="5" y="13" width="1.02" height="1.02" fill="#F28C28"/><rect x="6" y="13" width="1.02" height="1.02" fill="#F28C28"/></svg></div>
+    <div>
+      <h3>Feed the Goose</h3>
+      <p>Redde is free, with no ads and no subscription. If it’s earned a place on your phone, you can buy the goose a coffee.</p>
+    </div>
+    <a class="coffee" href="https://buymeacoffee.com/goosehouse">☕ Feed the Goose</a>
   </div>
 </section>
 
