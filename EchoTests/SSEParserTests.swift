@@ -46,7 +46,7 @@ struct SSEParserTests {
     /// The progress flag only goes to self-hosted endpoints; OpenAI rejects unknown arguments.
     @Test func progressFlagOnlyForSelfHostedEndpoints() {
         for host in ["http://localhost:8080", "http://192.168.1.5:8080", "http://100.101.102.103:11500",
-                     "https://llm.tailnet-name.ts.net", "http://10.0.0.2", "http://172.20.0.1"] {
+                     "https://llm.tailnet-name.ts.net", "http://10.0.0.2", "http://172.20.0.1", "http://mbp:8080"] {
             #expect(ChatCompletionsTransport.isSelfHosted(URL(string: host)!), "\(host) should count as self-hosted")
         }
         for host in ["https://api.openai.com", "https://openrouter.ai", "https://172.15.0.1", "https://100.128.0.1"] {

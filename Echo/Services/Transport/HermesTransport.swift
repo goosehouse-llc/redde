@@ -280,6 +280,15 @@ nonisolated enum StreamingHTTP {
         return URLSession(configuration: config)
     }()
 
+    /// Direct OpenAI-compatible servers: a local model with a long thread can think for well
+    /// past ten minutes, so the whole-request cap is an hour. The idle limit stays at two
+    /// minutes (llama.cpp streams prefill progress, and a dead host should still fail fast).
+    static let longSession: URLSession = {
+        let config = session.configuration
+        config.timeoutIntervalForResource = 3600
+        return URLSession(configuration: config)
+    }()
+
     static func makeRequest(url: URL, apiKey: String?, body: some Encodable) throws -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -300,6 +309,7 @@ nonisolated enum StreamingHTTP {
     /// turns one SSE event into zero or more `TurnEvent`s and returns `true` when the stream is
     /// logically complete.
     static func run(
+        session: URLSession = session,
         decode: @escaping @Sendable (SSEEvent) throws -> (events: [TurnEvent], finished: Bool),
         makeRequest: @escaping @Sendable () throws -> URLRequest
     ) -> AsyncThrowingStream<TurnEvent, Error> {

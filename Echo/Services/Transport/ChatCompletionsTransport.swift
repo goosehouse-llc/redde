@@ -35,6 +35,7 @@ nonisolated struct ChatCompletionsTransport: HermesTransport {
     /// name), where the llama.cpp progress extension is safe to request.
     static func isSelfHosted(_ url: URL) -> Bool {
         guard let host = url.host()?.lowercased() else { return false }
+        if !host.contains(".") && !host.contains(":") { return true }   // single-label: MagicDNS or a LAN name
         if host == "localhost" || host.hasSuffix(".local") || host.hasSuffix(".ts.net")
             || host.hasSuffix(".internal") || host.hasSuffix(".lan") || host.hasSuffix(".home.arpa") { return true }
         let parts = host.split(separator: ".").compactMap { Int($0) }
@@ -47,7 +48,7 @@ nonisolated struct ChatCompletionsTransport: HermesTransport {
 
     func stream(_ request: TurnRequest) -> AsyncThrowingStream<TurnEvent, Error> {
         let (baseURL, apiKey) = (baseURL, apiKey)
-        return StreamingHTTP.run(decode: Self.decode) {
+        return StreamingHTTP.run(session: StreamingHTTP.longSession, decode: Self.decode) {
             var messages: [Body.Msg] = []
             let system = [request.instructions?.nilIfEmpty, request.replyLanguage.map(ReplyLanguage.instruction)].compactMap { $0 }
             if !system.isEmpty {

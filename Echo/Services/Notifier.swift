@@ -304,10 +304,14 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
 final class BackgroundTurn {
     static let shared = BackgroundTurn()
     private var task: UIBackgroundTaskIdentifier = .invalid
+    /// iOS ran out the window during this turn: the app was suspended and its connection dropped.
+    private(set) var expired = false
 
     func begin() {
         guard task == .invalid else { return }
+        expired = false
         task = UIApplication.shared.beginBackgroundTask(withName: "redde.turn") { [weak self] in
+            self?.expired = true
             self?.end()
         }
     }

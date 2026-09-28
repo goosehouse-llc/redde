@@ -380,6 +380,8 @@ final class Conversation {
                     // Never reached the server: hold the message instead of reporting a failure.
                     hold(userID: userID, replyID: replyID, queuedAt: heldSince ?? .now)
                     outcome = .held
+                } else if transportKind == .chatCompletions, BackgroundTurn.shared.expired, NetworkFailure.isConnectivity(error) {
+                    fail(replyID, Self.backgroundCutoff)
                 } else {
                     fail(replyID, error.localizedDescription)
                 }
@@ -403,6 +405,9 @@ final class Conversation {
     }
 
     private enum TurnOutcome { case completed, cancelled, failed, held }
+
+    /// A direct (stateless) connection dropped because iOS suspended the app mid-reply.
+    static let backgroundCutoff = "Stopped when Redde went to the background. iOS gives an app about 30 seconds there, so keep Redde open (or the screen awake) for long replies."
 
     // MARK: - Outbox
 
