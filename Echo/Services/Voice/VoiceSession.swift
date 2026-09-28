@@ -49,6 +49,8 @@ final class VoiceSession {
         didSet {
             guard phase != oldValue else { return }
             if phase != .speaking { isPaused = false }
+            // Voice-chat mode (and its call-volume buttons) only while the mic is open.
+            audio.setReplying(phase == .thinking || phase == .speaking)
             // The at-ear sensor only while speaking: it blanks the screen whenever it's covered.
             audio.setEarRouting(phase == .speaking)
             if headsetControlsOn { publishNowPlaying() }

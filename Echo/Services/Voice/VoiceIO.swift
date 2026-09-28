@@ -60,10 +60,14 @@ protocol VoiceAudioControlling: AnyObject {
     func refreshRoute()
     /// On while a reply is spoken: the proximity sensor may then move it to the earpiece.
     func setEarRouting(_ on: Bool)
+    /// On while Redde thinks or speaks (no microphone): the session leaves voice-chat mode, so the
+    /// volume buttons set the volume the reply plays at.
+    func setReplying(_ on: Bool)
 }
 extension AudioSessionController: VoiceAudioControlling {}
 
 extension VoiceAudioControlling {
     func activateForPlayback() throws { try activateForVoice() }
     func setEarRouting(_ on: Bool) {}
+    func setReplying(_ on: Bool) {}
 }

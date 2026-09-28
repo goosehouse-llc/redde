@@ -68,6 +68,9 @@ struct VoiceSessionTests {
         /// Each change of the at-ear routing, in order.
         private(set) var earRouting: [Bool] = []
         func setEarRouting(_ on: Bool) { earRouting.append(on) }
+        /// Each change of the reply (not voice-chat) mode, in order.
+        private(set) var replying: [Bool] = []
+        func setReplying(_ on: Bool) { replying.append(on) }
     }
 
     // MARK: Harness
@@ -199,6 +202,22 @@ struct VoiceSessionTests {
 
     /// The proximity sensor blanks the screen when covered, so it's only on while speaking,
     /// never through listening or a long think.
+    /// Voice-chat mode (call-volume buttons) only while the mic is open: thinking and speaking run
+    /// in the default mode, where the volume buttons reach the reply.
+    @Test func replyModeWhileThinkingAndSpeaking() async throws {
+        let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport(reply(["Hello", " there."])))
+        h.session.beginListening()
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        #expect(h.audio.replying.last == false)
+        h.recognizer.deliver("hi")
+        try await waitUntil("speaking") { h.session.phase == .speaking }
+        #expect(h.audio.replying.last == true)
+        try await waitUntil("reply ended") { h.speaker.ends >= 1 }
+        h.speaker.finishSpeaking()
+        try await waitUntil("idle") { h.session.phase == .idle }
+        #expect(h.audio.replying.last == false)
+    }
+
     @Test func earRoutingOnlyWhileSpeaking() async throws {
         let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport(reply(["Hello", " there."])))
         h.session.beginListening()

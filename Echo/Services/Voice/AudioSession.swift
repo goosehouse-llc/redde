@@ -28,6 +28,9 @@ final class AudioSessionController {
     /// and by an interruption, after which the system needs the activation again.
     private enum Mode { case voice, playback }
     private var activeMode: Mode?
+    /// The mode chosen for listening: voice chat (echo cancellation), or default on a headset that
+    /// records at full bandwidth. Replies play in `.default` (see `setReplying`).
+    private var listeningMode: AVAudioSession.Mode = .voiceChat
 
     private var observer: NSObjectProtocol?
     private var proximityObserver: NSObjectProtocol?
@@ -83,6 +86,7 @@ final class AudioSessionController {
             // instead of in ~100 ms lumps. A request, not a promise; the route may round it up.
             try? session.setPreferredIOBufferDuration(0.005)
             try session.setActive(true, options: [])
+            listeningMode = session.mode
             activeMode = .voice
         }
         updateRouteFacts()
@@ -129,6 +133,23 @@ final class AudioSessionController {
             // .isBusy here means an audio engine is still running; other apps stay ducked until it stops.
             log.error("deactivate failed: \(error.localizedDescription)")
         }
+    }
+
+    /// While Redde thinks and speaks nothing records, so the session leaves voice-chat mode. In it
+    /// the volume buttons set the call volume, which the reply (its own audio engine) doesn't play
+    /// at: they did nothing until a Replay. Back to the listening mode before the mic opens again.
+    func setReplying(_ on: Bool) {
+        guard activeMode == .voice else { return }
+        let session = AVAudioSession.sharedInstance()
+        let target: AVAudioSession.Mode = on ? .default : listeningMode
+        guard session.mode != target else { return }
+        do {
+            try session.setMode(target)
+            log.info("mode → \(target.rawValue, privacy: .public)")
+        } catch {
+            log.error("mode change failed: \(error.localizedDescription)")
+        }
+        applyOutputRoute(force: true)   // a mode change can put the output back on the receiver
     }
 
     // MARK: - Speaker vs. earpiece
