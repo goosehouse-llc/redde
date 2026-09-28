@@ -22,43 +22,31 @@ nonisolated enum WhatsNew {
 
     /// Newest first. Keep each to a handful of lines a person reads in ten seconds.
     static let releases: [Release] = [
-        Release(version: "1.4.1", items: [
-            Item(symbol: "heart", title: "Feed the goose",
-                 detail: "Settings → About → Support Redde: leave a tip, a coffee, a snack or a dinner. It unlocks nothing; it keeps Redde going."),
+        Release(version: "1.4", items: [
+            Item(symbol: "server.rack", title: "More than one server",
+                 detail: "Save Home, Office or any other Hermes server and switch from Settings or the row above your conversations. Chats, cron jobs and Kanban follow the server you pick, and your setup is already the first one."),
+            Item(symbol: "globe", title: "Your language",
+                 detail: "Pick a Reply language and the language Redde listens for in Settings → Voice. Each reply is read by a voice for the language it's written in."),
+            Item(symbol: "hand.draw", title: "Swipe to your conversations",
+                 detail: "Swipe right on a chat and your conversation list slides in from the left. Tap the chat or drag it back to close.",
+                 phoneOnly: true),
             Item(symbol: "rectangle.split.3x1", title: "Room for your board",
                  detail: "Pick Kanban or Cron in the sidebar and it fills the screen beside it. Redde reopens where you left off.",
                  padOnly: true),
             Item(symbol: "arrow.up.forward.app", title: "Choose where Redde opens",
-                 detail: "Your last conversation, the conversation list or voice mode, in Settings → Voice. The list also remembers Chats, Cron or Kanban."),
-            Item(symbol: "speaker.wave.2", title: "Louder replies",
-                 detail: "Spoken replies play at full volume on the speaker, and keep playing when you raise the phone to your ear."),
-            Item(symbol: "desktopcomputer", title: "Long local replies",
-                 detail: "Replies from your own model can now take as long as they need, and if the phone locks mid-reply, Redde tells you why it stopped."),
-            Item(symbol: "checkmark.seal", title: "Fixes",
-                 detail: "The volume buttons control spoken replies, Kokoro keeps talking when you switch to headphones, the conversation list slides in and out more smoothly, and more."),
-        ]),
-        Release(version: "1.4", items: [
-            Item(symbol: "server.rack", title: "More than one server",
-                 detail: "Save Home, Office or any other Hermes server and switch from Settings or the row above your conversations. Each keeps its own keys, profile and model."),
-            Item(symbol: "arrow.triangle.2.circlepath", title: "Everything follows",
-                 detail: "Switching starts a fresh conversation, and your chats, cron jobs and Kanban board come from the server you pick."),
-            Item(symbol: "key", title: "Your setup came along",
-                 detail: "The server you already had is now your first one, keys and all. Give it a name in Settings → Server."),
-            Item(symbol: "person.2.slash", title: "Clearer profile problems",
-                 detail: "If a profile no longer exists on a server, Redde says so and takes you to pick another."),
-            Item(symbol: "hand.draw", title: "Swipe to your conversations",
-                 detail: "Swipe right on a chat and your conversation list slides in from the left. Tap the chat or drag it back to close.",
-                 phoneOnly: true),
+                 detail: "Your last conversation, the conversation list or voice mode, in Settings → Voice. Voice mode can also start a new conversation every time."),
             Item(symbol: "camera", title: "Take a photo",
                  detail: "Tap + beside the message field and choose Camera to snap a picture and send it with your message."),
             Item(symbol: "gauge.with.dots.needle.100percent", title: "More thinking",
                  detail: "Reasoning effort now goes past High to X-High and Max, for frontier models like Claude and GPT. Find it in Settings → Model."),
-            Item(symbol: "globe", title: "Your language",
-                 detail: "Pick a Reply language and the language Redde listens for in Settings → Voice. Each reply is read by a voice for the language it's written in."),
-            Item(symbol: "plus.bubble", title: "Fresh start for voice",
-                 detail: "Turn on New conversation in voice mode in Settings → Voice, and every time you open voice mode it starts a new conversation."),
+            Item(symbol: "speaker.wave.2", title: "Louder replies",
+                 detail: "Spoken replies play at full volume on the speaker, follow the volume buttons, and move to the earpiece when you raise the phone to your ear."),
             Item(symbol: "hourglass", title: "Long answers, better",
-                 detail: "The live thinking keeps scrolling, each reply shows how long it took in total, and the screen stays on while you wait in voice mode."),
+                 detail: "The live thinking keeps scrolling, each reply shows how long it took, and replies from your own model can take as long as they need."),
+            Item(symbol: "heart", title: "Feed the goose",
+                 detail: "Settings → About → Support Redde: leave a tip, a coffee, a snack or a dinner. It unlocks nothing; it keeps Redde going."),
+            Item(symbol: "checkmark.seal", title: "Fixes",
+                 detail: "Chats opened over the Hermes API load again, Redde says so when a profile is gone from a server, and Kokoro keeps talking when you switch to headphones."),
         ]),
         Release(version: "1.3", items: [
             Item(symbol: "person.2", title: "Hermes profiles",
@@ -83,7 +71,7 @@ nonisolated enum WhatsNew {
         guard !isNewInstall else { return nil }
         if let lastSeen, compare(lastSeen, current) != .orderedAscending { return nil }
         // The newest entry not seen yet, up to this version: a point release without its own
-        // entry (1.4.1) still shows 1.4's to someone coming from 1.3, and nothing to someone on 1.4.
+        // entry (1.4) still shows 1.4's to someone coming from 1.3, and nothing to someone on 1.4.
         return releases.first { release in
             compare(release.version, current) != .orderedDescending
                 && lastSeen.map { compare(release.version, $0) == .orderedDescending } ?? true
