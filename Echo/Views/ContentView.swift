@@ -1,3 +1,4 @@
+import StoreKit
 import SwiftUI
 import os
 
@@ -9,6 +10,7 @@ struct ContentView: View {
     @State private var router = LaunchRouter.shared
     @State private var lock = AppLock.shared
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.requestReview) private var requestReview
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var draft = ""
     @State private var showSettings = false
@@ -102,6 +104,9 @@ struct ContentView: View {
         }
         .onChange(of: showVoice) { _, open in
             if !open { Task { try? await Task.sleep(for: .milliseconds(600)); presentWhatsNewIfDue() } }
+        }
+        .onChange(of: conversation.isStreaming) { was, now in
+            if was, !now { replyFinished() }
         }
         .onChange(of: conversation.id) {
             // A fresh conversation: have llama-swap load its model before the first message.
@@ -265,6 +270,27 @@ struct ContentView: View {
               !conversation.messages.isEmpty || conversation.initialLoad != nil,
               !conversation.isStreaming, conversation.outbox.isEmpty else { return }
         conversation.reset()
+    }
+
+    /// A reply came back whole: count it toward the rating prompt, and ask a moment later if it's
+    /// due (see `ReviewPrompt`), but only with nothing else on screen and no reply running.
+    private func replyFinished() {
+        guard let last = conversation.messages.last, last.role == .assistant, last.error == nil,
+              !last.text.isEmpty else { return }
+        let prompt = ReviewPrompt()
+        prompt.recordReply()
+        #if DEBUG
+        if DevHooks.screenshotRun { return }
+        #endif
+        let version = WhatsNew.currentVersion
+        guard prompt.isDue(version: version) else { return }
+        Task {
+            try? await Task.sleep(for: .seconds(2.5))
+            guard !showVoice, !showConversations, !showSettings, !showSetup, !showModelPicker, whatsNew == nil,
+                  !lock.isLocked, !conversation.isStreaming, scenePhase == .active else { return }
+            prompt.markAsked(version: version)
+            requestReview()
+        }
     }
 
     /// Items handed over by the share extension become the draft and pending attachments.
