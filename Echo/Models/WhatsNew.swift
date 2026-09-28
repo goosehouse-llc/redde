@@ -34,6 +34,8 @@ nonisolated enum WhatsNew {
                  detail: "Spoken replies play at full volume on the speaker, and keep playing when you raise the phone to your ear."),
             Item(symbol: "desktopcomputer", title: "Long local replies",
                  detail: "Replies from your own model can now take as long as they need, and if the phone locks mid-reply, Redde tells you why it stopped."),
+            Item(symbol: "checkmark.seal", title: "Fixes",
+                 detail: "The volume buttons control spoken replies, Kokoro keeps talking when you switch to headphones, the conversation list slides in and out more smoothly, and more."),
         ]),
         Release(version: "1.4", items: [
             Item(symbol: "server.rack", title: "More than one server",

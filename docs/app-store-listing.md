@@ -72,6 +72,7 @@ Tips, room on iPad, and a choice of where Redde opens.
 • Louder replies. Spoken replies play at full volume on the speaker, and keep playing when you raise the phone to your ear.
 • Long local replies. Replies from a model you run yourself (llama.cpp and other OpenAI-compatible servers) are no longer cut off after 10 minutes, and if the phone locks mid-reply, Redde tells you why it stopped.
 • Rate Redde. A link to the App Store review page, in Settings → About.
+• Fixes. The volume buttons control spoken replies, Kokoro keeps talking when you switch to headphones or a car, the conversation list slides in and out more smoothly on iPhone, and other small fixes.
 
 ## What's New in 1.4 (4000)
 More than one server, your own language, and a quicker way around.
