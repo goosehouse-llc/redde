@@ -227,6 +227,12 @@ final class SpeechRecognizer {
         if input.isVoiceProcessingEnabled != wantsEchoCancellation {
             do { try input.setVoiceProcessingEnabled(wantsEchoCancellation) } catch { log.error("voice processing toggle failed: \(error.localizedDescription)") }
         }
+        if input.isVoiceProcessingEnabled {
+            // Voice processing ducks all other audio by default, and the reply is other audio (Kokoro's
+            // engine, the built-in voice): it played so quietly on the speaker it sounded like the earpiece.
+            input.voiceProcessingOtherAudioDuckingConfiguration =
+                AVAudioVoiceProcessingOtherAudioDuckingConfiguration(enableAdvancedDucking: false, duckingLevel: .min)
+        }
         let micFormat = input.outputFormat(forBus: 0)
         guard let converter = AVAudioConverter(from: micFormat, to: analyzerFormat),
               let tap = TapProcessor(converter: converter, targetFormat: analyzerFormat, continuation: continuation) else {

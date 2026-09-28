@@ -36,6 +36,9 @@ final class KokoroPlayer {
     /// Held by the Pause button: buffers still arriving are scheduled but must not restart play.
     private var paused = false
     private var generation = 0
+    /// Bumped when a route change drops the queued audio: callbacks from before it are stale.
+    private var bufferEpoch = 0
+    private var configurationObserver: NSObjectProtocol?
     /// When a request last completed; a fresh connection needs no warm-up probe.
     private var lastRequestAt: Date?
     /// Sentences fetched ahead of the one playing. More only compete with it for the server's
@@ -65,6 +68,27 @@ final class KokoroPlayer {
         engine.attach(player)
         engine.connect(player, to: engine.mainMixerNode, format: format)
         meter.install(on: engine.mainMixerNode)
+        configurationObserver = NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.engineReconfigured() }
+        }
+    }
+
+    /// A route change (the phone raised to the ear or lowered, headphones) stops the engine and
+    /// drops what was queued on it, completion callbacks and all. Without this the reply went
+    /// silent and never finished ("speaking", no sound). Carry on with what's still coming.
+    private func engineReconfigured() {
+        guard pendingBuffers > 0 || playbackTask != nil else { return }
+        log.info("engine reconfigured mid-reply; restarting")
+        bufferEpoch += 1
+        pendingBuffers = 0
+        if playbackTask != nil {
+            startEngine(reason: "after route change")
+            if !paused { player.play() }
+        } else if finished {
+            onDrained?()
+        }
     }
 
     // Standard float mono at 24 kHz always exists; the fallback is only to keep the initializer total.
@@ -311,9 +335,9 @@ final class KokoroPlayer {
         startEngine(reason: "cold start")
         guard engine.isRunning else { return }
         pendingBuffers += 1
-        let gen = generation
+        let gen = generation, epoch = bufferEpoch
         player.scheduleBuffer(buffer, completionCallbackType: .dataPlayedBack) { [weak self] _ in
-            Task { @MainActor in self?.bufferPlayed(generation: gen) }
+            Task { @MainActor in self?.bufferPlayed(generation: gen, epoch: epoch) }
         }
         if !paused, !player.isPlaying { player.play() }
         if !announcedFirst {
@@ -322,8 +346,8 @@ final class KokoroPlayer {
         }
     }
 
-    private func bufferPlayed(generation gen: Int) {
-        guard gen == generation else { return }
+    private func bufferPlayed(generation gen: Int, epoch: Int) {
+        guard gen == generation, epoch == bufferEpoch else { return }
         pendingBuffers = max(pendingBuffers - 1, 0)
         if pendingBuffers == 0, playbackTask == nil, finished { onDrained?() }
     }
