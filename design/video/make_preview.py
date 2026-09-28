@@ -56,7 +56,7 @@ def mask():
 
 def end_card():
     im = background(); d = ImageDraw.Draw(im)
-    icon = Image.open(f'{REDDE}/Echo/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png').convert('RGB').resize((300, 300), Image.LANCZOS)
+    icon = Image.open(f'{REDDE}/Echo/Resources/Assets.xcassets/AppIconGraphiteFlat.appiconset/AppIcon-1024.png').convert('RGB').resize((300, 300), Image.LANCZOS)
     m = Image.new('L', (300, 300), 0); ImageDraw.Draw(m).rounded_rectangle((0, 0, 299, 299), 68, fill=255)
     top = (H - 1920) // 2 + (140 if IPAD else 0)   # the same card, centred on the taller or shorter frame
     im.paste(icon, ((W - 300) // 2, top + 560), m)
