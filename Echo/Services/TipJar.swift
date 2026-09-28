@@ -9,9 +9,9 @@ import os
 final class TipJar {
     static let shared = TipJar()
 
-    /// One, three and five coffees, like buymeacoffee.com/goosehouse. Smallest first; the IDs
-    /// match App Store Connect and `Redde.storekit`.
-    static let productIDs = ["com.goosehouse.echo.tip.one", "com.goosehouse.echo.tip.three", "com.goosehouse.echo.tip.five"]
+    /// A coffee, a snack, a dinner: priced like one, three and five coffees on
+    /// buymeacoffee.com/goosehouse. Smallest first; the IDs match App Store Connect and `Redde.storekit`.
+    static let productIDs = ["com.goosehouse.echo.tip.coffee", "com.goosehouse.echo.tip.snack", "com.goosehouse.echo.tip.dinner"]
 
     enum State: Equatable { case loading, ready, unavailable, purchasing(String), thanked }
 
@@ -48,7 +48,7 @@ final class TipJar {
         #if DEBUG
         // Dev hook for the App Review screenshot: sample tips, no StoreKit.
         if DevHooks.has("-echo.demoTips") {
-            options = zip(Self.productIDs, [("A coffee", "$2.99"), ("Three coffees", "$8.99"), ("Five coffees", "$14.99")])
+            options = zip(Self.productIDs, [("A coffee", "$2.99"), ("A snack", "$8.99"), ("A dinner", "$14.99")])
                 .map { Option(id: $0, name: $1.0, price: $1.1) }
             state = .ready
             return
@@ -95,8 +95,8 @@ final class TipJar {
     static func symbol(for id: String) -> String {
         switch id {
         case productIDs[0]: "cup.and.saucer"
-        case productIDs[1]: "mug"
-        default: "cup.and.heat.waves"
+        case productIDs[1]: "takeoutbag.and.cup.and.straw"
+        default: "fork.knife"
         }
     }
 }

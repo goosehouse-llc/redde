@@ -13,7 +13,7 @@
           "locale": "en_US"
         }
       ],
-      "productID": "com.goosehouse.echo.tip.one",
+      "productID": "com.goosehouse.echo.tip.coffee",
       "referenceName": "Tip: A coffee",
       "type": "Consumable"
     },
@@ -24,12 +24,12 @@
       "localizations": [
         {
           "description": "A one-time tip. Thank you!",
-          "displayName": "Three coffees",
+          "displayName": "A snack",
           "locale": "en_US"
         }
       ],
-      "productID": "com.goosehouse.echo.tip.three",
-      "referenceName": "Tip: Three coffees",
+      "productID": "com.goosehouse.echo.tip.snack",
+      "referenceName": "Tip: A snack",
       "type": "Consumable"
     },
     {
@@ -39,12 +39,12 @@
       "localizations": [
         {
           "description": "A one-time tip. Thank you!",
-          "displayName": "Five coffees",
+          "displayName": "A dinner",
           "locale": "en_US"
         }
       ],
-      "productID": "com.goosehouse.echo.tip.five",
-      "referenceName": "Tip: Five coffees",
+      "productID": "com.goosehouse.echo.tip.dinner",
+      "referenceName": "Tip: A dinner",
       "type": "Consumable"
     }
   ],
