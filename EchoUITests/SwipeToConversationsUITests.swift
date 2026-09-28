@@ -7,7 +7,7 @@ final class SwipeToConversationsUITests: XCTestCase {
     private func launch() -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demo", "-setupDone", "YES", "-openToVoiceScreen", "NO", "-listenOnOpen", "NO",
+        app.launchArguments = ["-echo.demo", "-conversations.section", "sessions", "-setupDone", "YES", "-openToVoiceScreen", "NO", "-listenOnOpen", "NO",
                                "-requireBiometrics", "NO", "-transport", "chatCompletions"]
         app.launch()
         return app

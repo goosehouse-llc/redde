@@ -9,7 +9,7 @@ final class PromoVideoUITests: XCTestCase {
         try XCTSkipUnless(ProcessInfo.processInfo.environment["PROMO_VIDEO"] == "1", "Promo video shots run on request")
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-setupDone", "YES", "-openToVoiceScreen", "NO", "-listenOnOpen", "NO", "-requireBiometrics", "NO",
+        app.launchArguments = ["-conversations.section", "sessions", "-setupDone", "YES", "-openToVoiceScreen", "NO", "-listenOnOpen", "NO", "-requireBiometrics", "NO",
                                "-echo.demoHosts", "-transport", "chatCompletions"] + extra
         app.launch()
         return app

@@ -44,11 +44,11 @@ struct ContentView: View {
                     // the sidebar. Without it the NavigationLink has nowhere to go: the row
                     // does nothing and there is no back button to escape with.
                     NavigationStack {
-                        ConversationsList()
+                        ConversationsList(wideDetail: true)
                     }
                     .navigationSplitViewColumnWidth(min: 280, ideal: 340, max: 420)
                 } detail: {
-                    transcriptScreen(showListButton: false)
+                    padDetail
                 }
             } else {
                 phoneLayout
@@ -107,6 +107,10 @@ struct ContentView: View {
         }
         .onChange(of: conversation.isStreaming) { was, now in
             if was, !now { replyFinished() }
+            // A reply started (Ask Redde about a card, Siri, a share): show the chat it lands in.
+            if now, !was {
+                if sizeClass == .regular { section = .sessions } else if showConversations { setDrawer(open: false) }
+            }
         }
         .onChange(of: conversation.id) {
             // A fresh conversation: have llama-swap load its model before the first message.
@@ -201,6 +205,25 @@ struct ContentView: View {
             }
             .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
             .background { keyboardShortcuts }
+    }
+
+    // MARK: - iPad detail pane
+
+    /// What the sidebar's Chats / Cron / Kanban switcher picked: the chat, or the cron jobs or
+    /// Kanban board at full width (a board wants the room). Kept across launches.
+    @AppStorage(ConversationsList.sectionKey) private var section: ConversationsList.Tab = .sessions
+
+    @ViewBuilder private var padDetail: some View {
+        switch section {
+        case .sessions:
+            transcriptScreen(showListButton: false)
+        case .cron:
+            NavigationStack { CronView().navigationTitle("Cron").navigationBarTitleDisplayMode(.inline) }
+                .id(settings.connectionKey)
+        case .kanban:
+            NavigationStack { KanbanView().navigationTitle("Kanban").navigationBarTitleDisplayMode(.inline) }
+                .id(settings.connectionKey)
+        }
     }
 
     // MARK: - iPhone conversation list

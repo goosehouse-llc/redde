@@ -9,7 +9,7 @@ final class TranscriptJumpUITests: XCTestCase {
         continueAfterFailure = false
         let app = XCUIApplication()
         // Launch arguments land in UserDefaults' argument domain: skip setup, stay on the transcript.
-        app.launchArguments = ["-echo.demoLong", "-setupDone", "YES", "-openToVoiceScreen", "NO",
+        app.launchArguments = ["-echo.demoLong", "-conversations.section", "sessions", "-setupDone", "YES", "-openToVoiceScreen", "NO",
                                "-listenOnOpen", "NO", "-requireBiometrics", "NO"]
         app.launch()
         XCTAssertTrue(app.staticTexts["End of the long demo."].waitForExistence(timeout: 15), "The long demo didn't open at its end")

@@ -8,10 +8,17 @@ final class ProjectFolderUITests: XCTestCase {
     private func launch() -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoProjects", "-setupDone", "YES", "-openToVoiceScreen", "NO",
+        app.launchArguments = ["-echo.demoProjects", "-conversations.section", "sessions", "-setupDone", "YES", "-openToVoiceScreen", "NO",
                                "-listenOnOpen", "NO", "-requireBiometrics", "NO"]
         app.launch()
         return app
+    }
+
+    // The folder list is the iPad sidebar's; the iPhone's panel is covered by SwipeToConversationsUITests.
+    override func setUpWithError() throws {
+        try MainActor.assumeIsolated {
+            try XCTSkipIf(UIDevice.current.userInterfaceIdiom == .phone, "The project sidebar is iPad-only")
+        }
     }
 
     func testProjectFolderOpensAndSessionRowResponds() {

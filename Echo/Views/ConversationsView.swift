@@ -61,19 +61,23 @@ struct ConversationsList: View {
         var title: String { switch self { case .sessions: "Chats"; case .cron: "Cron"; case .kanban: "Kanban" } }
         var icon: String { switch self { case .sessions: "bubble.left.and.bubble.right"; case .cron: "clock"; case .kanban: "rectangle.split.3x1" } }
     }
-    @State private var section: Tab = Self.initialSection
+    /// Chats, Cron or Kanban: kept across launches, and shared with the iPad's detail pane.
+    @AppStorage(Self.sectionKey) private var section: Tab = .sessions
+    static let sectionKey = "conversations.section"
 
-    /// Dev hook: `-echo.section cron|kanban` opens the list on that tab (screenshots).
-    private static var initialSection: Tab {
-        #if DEBUG
-        if let tab = DevHooks.value("-echo.section").flatMap(Tab.init(rawValue:)) { return tab }
-        #endif
-        return .sessions
+    /// On iPad the list stays in the sidebar and the switcher picks what the wide pane beside it
+    /// shows: the chat, the cron jobs or the Kanban board (ContentView). Here it's always the chats.
+    var wideDetail = false
+
+    /// A conversation opened (or a new one started): on iPad, the chat takes the wide pane again.
+    private func opened() {
+        if wideDetail { section = .sessions }
+        onOpened()
     }
 
     var body: some View {
         Group {
-            switch section {
+            switch wideDetail ? .sessions : section {
             case .sessions: sessionsList
             // Rebuilt on a server or profile switch, so nothing (or no live socket) carries over.
             case .cron: CronView(topRow: AnyView(topRow), isShowing: isShowing).id(settings.connectionKey)
@@ -85,9 +89,13 @@ struct ConversationsList: View {
         // From inside the navigation stack: hiding the whole panel doesn't reach UIKit's list,
         // and VoiceOver could swipe into rows parked off screen.
         .accessibilityHidden(panelParked)
-        .navigationTitle(section == .sessions ? "Conversations" : section.title)
+        .navigationTitle(section == .sessions || wideDetail ? "Conversations" : section.title)
         .toolbarVisibility(panelParked ? .hidden : .automatic, for: .navigationBar)
-        .navigationBarTitleDisplayMode(section == .sessions ? .large : .inline)
+        .navigationBarTitleDisplayMode(section == .sessions || wideDetail ? .large : .inline)
+        #if DEBUG
+        // Dev hook: `-echo.section cron|kanban` opens on that tab (screenshots).
+        .onAppear { if let tab = DevHooks.value("-echo.section").flatMap(Tab.init(rawValue:)) { section = tab } }
+        #endif
         .sheet(isPresented: $showSettings) { SettingsView() }
         .background {
             Group {
@@ -183,7 +191,7 @@ struct ConversationsList: View {
                     }
                     Button("New conversation", systemImage: "square.and.pencil") {
                         conversation.reset()
-                        onOpened()
+                        opened()
                     }
                 }
             }
@@ -533,7 +541,7 @@ struct ConversationsList: View {
         housekeeping(session) {
             if let forked = try await SessionBackend.current(conversation)?.fork(session.id, title: title) {
                 try await conversation.loadLedgerSession(forked)
-                onOpened()
+                opened()
             }
         }
     }
@@ -553,7 +561,7 @@ struct ConversationsList: View {
         } else {
             try await conversation.loadLedgerSession(session)
         }
-        onOpened()
+        opened()
     }
 
     private func open(_ session: HermesSessionsAPI.SessionSummary) {
@@ -582,7 +590,7 @@ struct ConversationsList: View {
             Button {
                 if selecting { return }
                 if let full = store.record(id: record.id) { conversation.load(full) }
-                onOpened()
+                opened()
             } label: {
                 localRow(record)
             }
