@@ -21,7 +21,7 @@ The Settings sections for "Hermes API", "Hermes Dashboard", Skills, Tools, Conte
 2. Open Redde on the CarPlay home screen. It shows two rows: **Ask Redde** (one question) and **Talk with Redde** (hands-free conversation, ended by saying "that's all").
 3. Tap **Ask Redde** and speak a question. The voice-control card shows Listening, Thinking and Speaking; the answer is spoken through the car's speakers and no reply text is shown. When it finishes, the card closes back onto the two rows.
 
-**In-app purchases (tips):** Settings → About → Support Redde offers three optional one-time tips (consumables: A coffee, A snack, A dinner). They unlock nothing: every feature works without them, and the screen says so. There are no subscriptions and no paywall.
+**In-app purchases (tips):** Settings → About → Support Redde offers three optional one-time tips (consumables: A coffee, A snack, A dinner), submitted for review together with this version. They unlock nothing: every feature works without them, and the screen says so. There are no subscriptions and no paywall. If the products haven't been approved yet when you look, the screen shows "Tips aren't available right now" instead of the three tips; that is the app's designed fallback, not an error.
 
 **App Transport Security:** the app allows plain-HTTP connections (`NSAllowsArbitraryLoads`) because users' self-hosted servers on private networks typically have no public TLS certificate. HTTPS is used whenever the configured address provides it. The review endpoint above is HTTPS.
 

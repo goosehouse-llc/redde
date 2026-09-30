@@ -29,7 +29,7 @@ struct TipJarView: View {
                 Section { ProgressView().frame(maxWidth: .infinity) }
             case .unavailable:
                 Section {
-                    Label("Tips aren't available right now. Check your connection and try again later.", systemImage: "exclamationmark.triangle")
+                    Label("Tips aren't available right now. Nothing's wrong on your side; every feature is already yours.", systemImage: "heart")
                         .foregroundStyle(.secondary)
                 }
             case .thanked:
