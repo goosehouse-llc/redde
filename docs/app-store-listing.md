@@ -9,7 +9,7 @@ Redde for Hermes
 Talk, chat and run your agent
 
 ## Promotional text (170, editable without a new build)
-New: reasoning effort that reaches every model, and a None level for straight answers. Talk to your own agent at home, at your desk or in the car.
+New: spoken prefixes that add text or switch the model, and reasoning effort that reaches every model. Talk to your own agent at home, at your desk or in the car.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name)
 voice,assistant,ai,agent,carplay,self-hosted,llm,ollama,llama,chat,siri,shortcuts,private,openai
@@ -63,8 +63,8 @@ A Hermes agent (github.com/NousResearch/hermes-agent) or an OpenAI-compatible en
 
 Hermes is an open-source project by Nous Research. Redde is an independent client and is not affiliated with Nous Research.
 
-## What's New in 1.4.1 (4000)
-Reasoning effort that reaches every model, spoken prefixes, and AirPods replies that stay in your AirPods.
+## What's New in 1.5 (4000)
+Spoken prefixes that add text or switch the model, reasoning effort that reaches every model, and AirPods replies that stay in your AirPods.
 
 • Reasoning effort, everywhere. The level you pick in Settings → Model now applies to whatever model you talk to, and to the conversation you have open, not only to new ones. Type /reasoning high in a Hermes Dashboard chat and it changes that conversation too.
 • None. A new level that asks the model to skip thinking and answer straight away. New installs start there. Some models and servers decide that for themselves.
