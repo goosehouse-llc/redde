@@ -16,19 +16,29 @@ nonisolated struct ChatCompletionsTransport: HermesTransport {
         /// llama.cpp: stream `prompt_progress` chunks during prefill. Only sent to self-hosted
         /// endpoints — OpenAI rejects requests carrying unrecognized arguments.
         var return_progress: Bool?
-        /// llama.cpp: per-request chat-template switches. Used to turn a local Qwen's
-        /// extended thinking on when the reasoning effort asks for it; the server default
-        /// keeps it off. Self-hosted endpoints only, like return_progress.
-        var chat_template_kwargs: [String: Bool]?
+        /// The picked reasoning level, as the OpenAI-compatible field. Sent whenever a level is
+        /// picked, to every endpoint: cloud reasoning models and local servers that grade effort
+        /// honour it, the rest ignore it. Not sent for None: most cloud models reject the word,
+        /// and locally the template switch below already turns thinking off.
+        var reasoning_effort: String?
+        /// llama.cpp: per-request chat-template switches, so a picked level reaches templates
+        /// that read it (`enable_thinking` for Qwen, `reasoning_effort` for gpt-oss and others).
+        /// Self-hosted endpoints only, like return_progress: OpenAI rejects unknown arguments.
+        var chat_template_kwargs: [String: JSONValue]?
     }
 
-    /// High-or-above effort on a self-hosted Qwen turns extended thinking on; anything
-    /// else leaves the server's thinking-off default. Mirrors the hermes-side mapping.
-    static func thinkingKwargs(model: String?, effort: String?, baseURL: URL) -> [String: Bool]? {
-        guard isSelfHosted(baseURL),
-              (model ?? "").lowercased().contains("qwen"),
-              ["high", "xhigh", "max"].contains((effort ?? "").lowercased()) else { return nil }
-        return ["enable_thinking": true]
+    /// The level as it goes on the wire in `reasoning_effort`: nil for Default and None.
+    static func wireEffort(_ effort: String?) -> String? {
+        guard let effort = effort?.nilIfEmpty?.lowercased(), effort != "none" else { return nil }
+        return effort
+    }
+
+    /// Template switches for a picked level on a self-hosted endpoint, whatever the model: any
+    /// level turns thinking on where the template has a switch, None turns it off, and the
+    /// level itself goes to templates that grade it. Default leaves the server's settings alone.
+    static func thinkingKwargs(effort: String?, baseURL: URL) -> [String: JSONValue]? {
+        guard isSelfHosted(baseURL), let effort = effort?.nilIfEmpty?.lowercased() else { return nil }
+        return ["enable_thinking": .bool(effort != "none"), "reasoning_effort": .string(effort)]
     }
 
     /// Whether the endpoint looks self-hosted (localhost, LAN, tailnet, or a private-looking
@@ -59,7 +69,8 @@ nonisolated struct ChatCompletionsTransport: HermesTransport {
             let model = request.model?.nilIfEmpty ?? Settings.defaultFastLaneModel
             let body = Body(model: model, messages: messages,
                             return_progress: Self.isSelfHosted(baseURL) ? true : nil,
-                            chat_template_kwargs: Self.thinkingKwargs(model: model, effort: request.reasoningEffort, baseURL: baseURL))
+                            reasoning_effort: Self.wireEffort(request.reasoningEffort),
+                            chat_template_kwargs: Self.thinkingKwargs(effort: request.reasoningEffort, baseURL: baseURL))
             return try StreamingHTTP.makeRequest(url: baseURL.appending(path: "v1/chat/completions"), apiKey: apiKey, body: body)
         }
     }

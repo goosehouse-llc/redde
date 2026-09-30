@@ -48,19 +48,22 @@ struct ModelPickerView: View {
     var body: some View {
         List {
             Section {
+                // A menu, not segments: seven levels don't share a phone-width row without
+                // truncating "Default" and "Medium" to "…".
                 Picker("Reasoning effort", selection: $settings.reasoningEffort) {
                     ForEach(Settings.reasoningEfforts, id: \.value) { Text($0.label).tag($0.value) }
                 }
-                .adaptiveSegmented()
+                .pickerStyle(.menu)
             } header: {
                 Text("Reasoning effort")
             } footer: {
                 if isFastLane {
-                    Text("On a self-hosted Qwen model, High or above switches extended thinking on for new turns; lower levels answer without thinking. Models that don't support the switch ignore it.")
+                    Text("How much the model thinks before answering. None turns thinking off for new turns. Any other level turns it on and is passed to the model as its effort; models that don't grade effort treat every level the same. Default leaves it to the server.")
                 } else {
-                    Text("How much the model thinks before answering. Default leaves it to the gateway. X-High and Max are for frontier models such as Claude and GPT; others treat them as High or may refuse them. Applies to new turns on the Hermes API and to new sessions on the Hermes Dashboard.")
+                    Text("How much the model thinks before answering. None turns reasoning off. X-High and Max are for frontier models such as Claude and GPT; others treat them as High or may refuse them. Applies to this conversation and to new ones. Default leaves it to the gateway, and leaves the open conversation at the level it has.")
                 }
             }
+            .onChange(of: settings.reasoningEffort) { _, effort in applyEffortToOpenConversation(effort) }
 
             Section {
                 Button { select(nil) } label: {
@@ -177,13 +180,32 @@ struct ModelPickerView: View {
                     guard let api = conversation.ledgerAPI() else { return }
                     try await api.lockSessionModel(id: sid, model: target.model, provider: target.provider)
                 case .hermesServe:
-                    let (runtime, _) = try await HermesServeClient.shared.openSession(stored: sid)
-                    try await HermesServeClient.shared.setSessionModel(runtimeSession: runtime, model: target.model)
+                    try await HermesServeClient.shared.withLiveSession(stored: sid) { runtime in
+                        try await HermesServeClient.shared.setSessionModel(runtimeSession: runtime, model: target.model)
+                    }
                 case .chatCompletions:
                     break
                 }
             } catch {
                 self.error = "Couldn't switch this conversation: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    /// A serve session keeps its own reasoning level once set, so a picker change re-pins the
+    /// open conversation too (`config.set key=reasoning`, session-scoped). The Hermes API sends
+    /// the level with every turn and needs nothing here. "Default" is skipped: the host has no
+    /// "back to whatever config.yaml says" for a live session, only levels, so the open
+    /// conversation stays where it is and new ones pick up the gateway default.
+    private func applyEffortToOpenConversation(_ effort: String) {
+        guard !effort.isEmpty, settings.transport == .hermesServe, let sid = conversation.serverSessionID else { return }
+        Task {
+            do {
+                try await HermesServeClient.shared.withLiveSession(stored: sid) { runtime in
+                    try await HermesServeClient.shared.setSessionReasoning(runtimeSession: runtime, effort: effort)
+                }
+            } catch {
+                self.error = "Couldn't change this conversation's reasoning effort: \(error.localizedDescription)"
             }
         }
     }

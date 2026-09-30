@@ -303,8 +303,14 @@ project.
 
 - **Themes:** seven (Messages, Paper, Slate, Terminal, Amber CRT, Hermes, Code), each with light and
   dark faces and the user's own accent and bubble colours. 13 app icons and 25 voice orbs.
-- **Model:** per-connection model and reasoning effort (Default, Low, Medium, High, and X-High /
-  Max for frontier models; on a self-hosted Qwen, High or above turns thinking on).
+- **Model:** per-connection model and reasoning effort (Default, None, Low, Medium, High, and
+  X-High / Max for frontier models; None on a fresh install). The level follows the phone, not the
+  session: it goes with every fast-lane and Hermes API turn, with every new Dashboard session,
+  and is re-pinned through `config.set key=reasoning` when a Dashboard session is resumed or the
+  picker changes. A typed `/reasoning <level>` takes the same route, since `slash.exec` only
+  changes the host's slash worker. On the fast lane any level turns thinking on and travels as
+  `reasoning_effort` (top-level, and as a chat-template kwarg on self-hosted endpoints); None
+  turns thinking off through the kwarg alone.
 - **iPhone:** the session list is a side panel (see Session list).
 - **iPad:** the session list is a `NavigationSplitView` sidebar; keyboard shortcuts (⌘N, ⌘K, ⌘1–3,
   ⌘L, ⌘↩, ⌘., ⌘⇧V, ⌘E, ⌘,; space and Esc on the voice screen).

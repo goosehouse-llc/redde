@@ -82,6 +82,9 @@ final class HermesServeClient {
     private var listeners: [UUID: (Event) -> Void] = [:]
     /// stored session id → runtime session id, valid for this connection.
     private var runtimeIDs: [String: String] = [:]
+    /// Reasoning level last pinned on each runtime session over this connection, so a turn
+    /// doesn't re-send `config.set` every time (see `openSession`).
+    private var pinnedEfforts: [String: String] = [:]
 
     private var baseURL: URL? { settings.serveBaseURL }
 
@@ -208,6 +211,7 @@ final class HermesServeClient {
         pingTask?.cancel(); pingTask = nil
         socket?.cancel(with: .normalClosure, reason: nil); socket = nil
         runtimeIDs = [:]
+        pinnedEfforts = [:]
         // The request left the socket; whether the host acted on it is unknown, so this is a
         // lost stream, not a malformed reply (the conversation must not report it as one).
         for (_, cont) in pending { cont.resume(throwing: TransportError.streamLost("the connection to Hermes Dashboard closed")) }
@@ -484,11 +488,23 @@ final class HermesServeClient {
     /// Returns (runtime id, stored id).
     func openSession(stored: String?, model: String? = nil, provider: String? = nil, reasoningEffort: String? = nil)
         async throws -> (runtime: String, stored: String) {
-        if let stored, let runtime = runtimeIDs[stored] { return (runtime, stored) }
         if let stored {
-            let result = try await call("session.resume", params: .object(["session_id": .string(stored), "omit_messages": .bool(true)]))
-            guard let runtime = result["session_id"]?.string else { throw TransportError.malformed("resume: no session id") }
-            runtimeIDs[stored] = runtime
+            let runtime: String
+            if let cached = runtimeIDs[stored] {
+                runtime = cached
+            } else {
+                let result = try await call("session.resume", params: .object(["session_id": .string(stored), "omit_messages": .bool(true)]))
+                guard let id = result["session_id"]?.string else { throw TransportError.malformed("resume: no session id") }
+                runtimeIDs[stored] = id
+                runtime = id
+            }
+            // A resumed session runs at the level that chat last used, not the phone's pick. The
+            // level is a phone setting and follows the user into every session they open, so the
+            // first turn on a session this connection hasn't pinned yet re-pins it. A failure (an
+            // old host, a level this model refuses) must not block the turn.
+            if let reasoningEffort, !reasoningEffort.isEmpty, pinnedEfforts[runtime] != reasoningEffort {
+                try? await setSessionReasoning(runtimeSession: runtime, effort: reasoningEffort)
+            }
             return (runtime, stored)
         }
         // "desktop", not "mobile": the source picks the platform hint in the agent's system
@@ -506,6 +522,7 @@ final class HermesServeClient {
         guard let runtime = result["session_id"]?.string else { throw TransportError.malformed("create: no session id") }
         let storedID = result["stored_session_id"]?.string ?? runtime
         runtimeIDs[storedID] = runtime
+        if let reasoningEffort, !reasoningEffort.isEmpty { pinnedEfforts[runtime] = reasoningEffort }
         return (runtime, storedID)
     }
 
@@ -706,6 +723,32 @@ final class HermesServeClient {
             "session_id": .string(runtimeSession), "key": .string("model"), "value": .string(model)]))
         if result["confirm_required"]?.bool == true {
             throw TransportError.malformed(result["confirm_message"]?.string ?? "The backend wants confirmation for this model.")
+        }
+    }
+
+    /// Set a live session's reasoning effort (`config.set key=reasoning`). Session-scoped: no
+    /// `scope`, so this never touches config.yaml; the live agent picks the level up on its next
+    /// turn. Levels are the ones `Settings.reasoningEfforts` offers (the host also takes
+    /// `minimal`, `ultra` and `none`); anything else is rejected with 4002.
+    func setSessionReasoning(runtimeSession: String, effort: String) async throws {
+        _ = try await call("config.set", params: .object([
+            "session_id": .string(runtimeSession), "key": .string("reasoning"), "value": .string(effort)]))
+        pinnedEfforts[runtimeSession] = effort
+    }
+
+    /// Runs a session-scoped call against a stored session's runtime id, resuming once if the
+    /// host no longer holds that id (4001: the runtime was reaped or the host restarted since
+    /// it was cached). Without the retry, a stale id fails a model or reasoning switch, and on
+    /// hosts older than the 4001 guard `config.set` fell through to a global config.yaml write.
+    func withLiveSession<T: Sendable>(stored: String, _ body: (String) async throws -> T) async throws -> T {
+        let (runtime, _) = try await openSession(stored: stored)
+        do {
+            return try await body(runtime)
+        } catch let error as RPCError where error.code == 4001 {
+            pinnedEfforts[runtimeIDs[stored] ?? ""] = nil
+            runtimeIDs[stored] = nil
+            let (fresh, _) = try await openSession(stored: stored)
+            return try await body(fresh)
         }
     }
 

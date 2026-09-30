@@ -242,10 +242,30 @@ nonisolated struct HermesServeTransport: HermesTransport {
         }
     }
 
+    /// The level a typed `/reasoning <level>` asks for, or nil when the command is something
+    /// else: no argument, a display word (`show`, `hide`, `full`, `clamp`), `--global`, or a level
+    /// the host wouldn't accept. Case-insensitive; extra words after the level are ignored.
+    nonisolated static func reasoningLevel(inSlash body: String) -> String? {
+        let words = body.split(whereSeparator: \.isWhitespace).map { $0.lowercased() }
+        guard words.first == "reasoning", words.count > 1, !words.contains("--global") else { return nil }
+        let levels: Set<String> = ["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"]
+        return levels.contains(words[1]) ? words[1] : nil
+    }
+
     /// `/help`, `/model`, custom user commands… `slash.exec` first; 4018 means "use dispatch".
     @MainActor
     private static func runSlash(_ text: String, runtime: String, client: HermesServeClient) async throws -> [TurnEvent] {
         let body = String(text.dropFirst())
+        // `/reasoning <level>` goes to `config.set`: `slash.exec` mirrors /model, /fast and a few
+        // others into the live agent but not /reasoning, so through it the level only changes
+        // the host's slash worker and the conversation keeps thinking as before. show/hide/full/
+        // clamp and --global stay on `slash.exec`. The picker follows, so the next new session
+        // starts at the same level instead of snapping back.
+        if let level = reasoningLevel(inSlash: body) {
+            try await client.setSessionReasoning(runtimeSession: runtime, effort: level)
+            if Settings.reasoningEfforts.contains(where: { $0.value == level }) { Settings.shared.reasoningEffort = level }
+            return [.textDelta("Reasoning effort for this conversation: \(Settings.effortLabel(level))")]
+        }
         do {
             let result = try await client.call("slash.exec", params: .object(["session_id": .string(runtime), "command": .string(body)]))
             let output = result["output"]?.displayText ?? ""

@@ -54,17 +54,21 @@ struct SSEParserTests {
         }
     }
 
-    /// High effort on a self-hosted Qwen turns thinking on; anything else leaves the
-    /// server default (off) alone, and nothing extra ever goes to a cloud endpoint.
-    @Test func thinkingSwitchOnlyForHighEffortLocalQwen() {
+    /// Any picked level reaches a self-hosted endpoint, whatever the model: thinking on, and
+    /// the level itself for templates that grade it. Default sends nothing, and template
+    /// switches never go to a cloud endpoint.
+    @Test func everyLevelReachesALocalModel() {
         let local = URL(string: "http://100.101.102.103:11500")!
         let cloud = URL(string: "https://api.openai.com")!
-        #expect(ChatCompletionsTransport.thinkingKwargs(model: "qwen36-35b-a3b", effort: "high", baseURL: local) == ["enable_thinking": true])
-        #expect(ChatCompletionsTransport.thinkingKwargs(model: "Qwen3-8B", effort: "max", baseURL: local) == ["enable_thinking": true])
-        #expect(ChatCompletionsTransport.thinkingKwargs(model: "qwen36-35b-a3b", effort: nil, baseURL: local) == nil)
-        #expect(ChatCompletionsTransport.thinkingKwargs(model: "qwen36-35b-a3b", effort: "medium", baseURL: local) == nil)
-        #expect(ChatCompletionsTransport.thinkingKwargs(model: "gemma4-26b-a4b", effort: "high", baseURL: local) == nil)
-        #expect(ChatCompletionsTransport.thinkingKwargs(model: "qwen36-35b-a3b", effort: "high", baseURL: cloud) == nil)
+        for level in ["low", "medium", "high", "xhigh", "max"] {
+            #expect(ChatCompletionsTransport.thinkingKwargs(effort: level, baseURL: local)
+                    == ["enable_thinking": .bool(true), "reasoning_effort": .string(level)])
+        }
+        #expect(ChatCompletionsTransport.thinkingKwargs(effort: "High", baseURL: local)?["reasoning_effort"] == .string("high"))
+        #expect(ChatCompletionsTransport.thinkingKwargs(effort: "none", baseURL: local)?["enable_thinking"] == .bool(false))
+        #expect(ChatCompletionsTransport.thinkingKwargs(effort: nil, baseURL: local) == nil)
+        #expect(ChatCompletionsTransport.thinkingKwargs(effort: "", baseURL: local) == nil)
+        #expect(ChatCompletionsTransport.thinkingKwargs(effort: "high", baseURL: cloud) == nil)
     }
 }
 

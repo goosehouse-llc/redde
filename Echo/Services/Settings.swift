@@ -68,10 +68,12 @@ final class Settings {
     var gatewayProvider: String {
         didSet { defaults.set(gatewayProvider, forKey: Keys.gatewayProvider); syncActiveServer() }
     }
-    /// The effort levels offered, lowest first; "" leaves it to the gateway. X-High and Max are
-    /// for frontier models (Claude, GPT); the values are the ones their APIs use.
+    /// The effort levels offered, lowest first; "" leaves it to the gateway, "none" turns
+    /// reasoning off. X-High and Max are for frontier models (Claude, GPT); the values are the
+    /// ones their APIs use.
     static let reasoningEfforts: [(value: String, label: String)] = [
-        ("", "Default"), ("low", "Low"), ("medium", "Medium"), ("high", "High"), ("xhigh", "X-High"), ("max", "Max"),
+        ("", "Default"), ("none", "None"), ("low", "Low"), ("medium", "Medium"), ("high", "High"),
+        ("xhigh", "X-High"), ("max", "Max"),
     ]
 
     static func effortLabel(_ value: String) -> String {
@@ -82,6 +84,10 @@ final class Settings {
     var replyLanguage: String {
         didSet { defaults.set(replyLanguage, forKey: Keys.replyLanguage) }
     }
+
+    /// Fresh installs start with reasoning off: a phone wants quick answers, and the gateway's
+    /// own default is often tuned for a desk.
+    static let defaultReasoningEffort = "none"
 
     /// "" (gateway default) or one of `reasoningEfforts`.
     var reasoningEffort: String {
@@ -339,7 +345,7 @@ final class Settings {
         gatewayModel = defaults.string(forKey: Keys.gatewayModel) ?? ""
         pushRelayURL = defaults.string(forKey: Keys.pushRelayURL) ?? ""
         gatewayProvider = defaults.string(forKey: Keys.gatewayProvider) ?? ""
-        reasoningEffort = defaults.string(forKey: Keys.reasoningEffort) ?? ""
+        reasoningEffort = defaults.string(forKey: Keys.reasoningEffort) ?? Self.defaultReasoningEffort
         replyLanguage = defaults.string(forKey: Keys.replyLanguage) ?? ""
         listenOnOpen = defaults.bool(forKey: Keys.listenOnOpen)
         launchScreen = defaults.string(forKey: Keys.launchScreen).flatMap(LaunchScreen.init(rawValue:))
@@ -536,7 +542,7 @@ final class Settings {
         fastLaneModel = Self.defaultFastLaneModel
         gatewayModel = ""
         gatewayProvider = ""
-        reasoningEffort = ""
+        reasoningEffort = Self.defaultReasoningEffort
         replyLanguage = ""
         listenOnOpen = false
         launchScreen = .conversation
