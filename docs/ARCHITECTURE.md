@@ -253,6 +253,17 @@ such as en-US or pt-BR); on Kokoro, a voice in that language of the same gender,
 for the whole reply when Kokoro has none (Dutch, German, …). Only Kokoro's `<lang><f|m>_` ids carry
 a language. "Always <listening language>" reads everything in one voice.
 
+**Spoken prefixes.** Settings → Voice → Spoken prefixes (`Services/Voice/VoiceRouting.swift`,
+`Views/SpokenPrefixesView.swift`; rules JSON in `Settings.spokenPrefixes`, off by default). A rule
+is a word, aliases, an optional text prefix and an optional model. `VoiceRouting.route` matches a
+leading word (a "hey / ok" lead-in and trailing punctuation allowed), strips it, puts the prefix in
+front, and names the model; the first matching rule wins. It runs in exactly two places: the final
+endpointed utterance in `VoiceSession.handleUtterance` and Siri's message intent. The composer,
+including dictation into it, is never touched. A model switch goes through
+`Conversation.switchModel`: the setting moves and an open hermes session is re-pinned
+(`pinOpenSessionModel`, shared with the model picker), so it's sticky. When rules exist the
+recogniser gets the words as `AnalysisContext` contextual strings.
+
 **Earpiece.** The proximity sensor is watched only while a reply is spoken (it blanks the screen
 whenever anything is near), and it reads "not near" whenever it's off or has just come on. So the
 route follows the last real reading between replies, and a settle check after it comes on catches a

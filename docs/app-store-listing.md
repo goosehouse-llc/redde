@@ -29,6 +29,7 @@ TALK, DON'T TYPE
 • On iOS 27, Siri can message your agent in your own words and read the reply back (opt-in).
 • A voice orb that moves with your voice and Redde's. Pause, replay, or have any reply read aloud.
 • Hold the phone to your ear to hear replies like a call.
+• Spoken prefixes: start with a word of your choice ("Claude, …") and Redde adds a text prefix, switches the conversation to a model you pick, or both. Voice and Siri only; typed messages are never changed.
 • Use "Ask Redde a Question" in Shortcuts to get the answer back as text for your own automations.
 
 SEE THE AGENT WORK

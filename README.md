@@ -16,6 +16,8 @@ speech is recognized on the device, and credentials stay in the iOS Keychain.
   Kokoro server, hands-free mode, barge-in, AirPods and CarPlay.
 - **Your language.** Listen in any language on-device transcription supports, hear each reply in a
   voice for the language it's written in, and ask the agent to always answer in one language.
+- **Spoken prefixes.** Start a spoken message with a word of your choice and Redde adds a text
+  prefix, switches the conversation to a model you pick, or both. Voice and Siri only.
 - **Watch it work.** Streaming reasoning, tool calls, subagents, and cards for approvals,
   clarifying questions, sudo prompts and secrets, also answerable from a notification.
 - **Rich replies.** Markdown, highlighted code, tables, task lists, Mermaid diagrams and math,
