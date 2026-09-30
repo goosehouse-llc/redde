@@ -170,22 +170,10 @@ struct ModelPickerView: View {
     /// `config.set`. "Gateway default" re-pins to the option the backend marks current — a
     /// pin can't be cleared, only moved.
     private func applyToOpenConversation(_ choice: ModelChoice?) {
-        guard let sid = conversation.serverSessionID,
-              let target = choice ?? choices.first(where: \.isCurrent) else { return }
-        let transport = settings.transport
+        guard let target = choice ?? choices.first(where: \.isCurrent) else { return }
         Task {
             do {
-                switch transport {
-                case .hermesSessions:
-                    guard let api = conversation.ledgerAPI() else { return }
-                    try await api.lockSessionModel(id: sid, model: target.model, provider: target.provider)
-                case .hermesServe:
-                    try await HermesServeClient.shared.withLiveSession(stored: sid) { runtime in
-                        try await HermesServeClient.shared.setSessionModel(runtimeSession: runtime, model: target.model)
-                    }
-                case .chatCompletions:
-                    break
-                }
+                try await conversation.pinOpenSessionModel(target.model, provider: target.provider)
             } catch {
                 self.error = "Couldn't switch this conversation: \(error.localizedDescription)"
             }
@@ -210,18 +198,22 @@ struct ModelPickerView: View {
         }
     }
 
+    /// The active backend's models: llama-swap's on the fast lane, the gateway's otherwise.
+    static func loadChoices(conversation: Conversation, settings: Settings) async throws -> [ModelChoice] {
+        if settings.transport == .chatCompletions {
+            return try await fastLaneModels(base: settings.activeBaseURL)
+        }
+        guard let backend = SessionBackend.available(conversation).first else {
+            throw TransportError.unreachable(SessionBackend.notConfiguredMessage)
+        }
+        return try await backend.modelOptions()
+    }
+
     private func load() async {
         loading = true
         defer { loading = false }
         do {
-            if isFastLane {
-                choices = try await Self.fastLaneModels(base: settings.activeBaseURL)
-            } else if let backend = SessionBackend.available(conversation).first {
-                choices = try await backend.modelOptions()
-            } else {
-                error = SessionBackend.notConfiguredMessage
-                return
-            }
+            choices = try await Self.loadChoices(conversation: conversation, settings: settings)
             error = nil
             if !collapsedSeeded {
                 collapsedSeeded = true
