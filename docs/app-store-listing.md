@@ -65,10 +65,10 @@ Hermes is an open-source project by Nous Research; Redde is an independent clien
 ## What's New in 1.5 (4000)
 Spoken prefixes that add text or switch the model, reasoning effort that reaches every model, and AirPods replies that stay in your AirPods.
 
+• Spoken prefixes. Start a spoken message with a word of your choice ("Claude, …") and Redde swaps it for a text prefix, switches the conversation to a model you pick, or both, in voice mode and through Siri. Off until you add one, in Settings → Voice. Typed messages are never changed.
 • Reasoning effort, everywhere. The level you pick in Settings → Model now applies to whatever model you talk to, and to the conversation you have open, not only to new ones. Type /reasoning high in a Hermes Dashboard chat and it changes that conversation too.
 • None. A new level that asks the model to skip thinking and answer straight away. New installs start there. Some models and servers decide that for themselves.
 • Replies through your AirPods. A question asked through AirPods sometimes got its answer from the phone's speaker. It stays in your ears now.
-• Spoken prefixes. Start a spoken message with a word of your choice ("Claude, …") and Redde swaps it for a text prefix, switches the conversation to a model you pick, or both, in voice mode and through Siri. Off until you add one, in Settings → Voice. Typed messages are never changed.
 • A menu for effort. Seven levels no longer squeeze into one row.
 
 ## What's New in 1.4 (4000)

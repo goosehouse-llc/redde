@@ -23,14 +23,14 @@ nonisolated enum WhatsNew {
     /// Newest first. Keep each to a handful of lines a person reads in ten seconds.
     static let releases: [Release] = [
         Release(version: "1.5", items: [
+            Item(symbol: "text.insert", title: "Spoken prefixes",
+                 detail: "Start a spoken message with a word of your choice and Redde swaps it for a text prefix, switches the conversation to a model you pick, or both. Off until you add one, in Settings → Voice. Typed messages are never changed."),
             Item(symbol: "gauge.with.dots.needle.33percent", title: "Reasoning effort, everywhere",
                  detail: "The level in Settings → Model now reaches whatever model you talk to, and the conversation you have open, not only new ones. Type /reasoning in a Hermes Dashboard chat to change just that one."),
             Item(symbol: "brain", title: "None",
                  detail: "A new level that asks the model to skip thinking and answer straight away. Some models and servers decide that for themselves."),
             Item(symbol: "airpods", title: "Replies stay in your AirPods",
                  detail: "A question asked through AirPods sometimes got its answer from the phone's speaker. Not any more."),
-            Item(symbol: "text.insert", title: "Spoken prefixes",
-                 detail: "Start a spoken message with a word of your choice and Redde swaps it for a text prefix, switches the conversation to a model you pick, or both. Off until you add one, in Settings → Voice. Typed messages are never changed."),
         ]),
         Release(version: "1.4", items: [
             Item(symbol: "server.rack", title: "More than one server",
