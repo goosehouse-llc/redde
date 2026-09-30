@@ -29,6 +29,8 @@ nonisolated enum WhatsNew {
                  detail: "A new level that asks the model to skip thinking and answer straight away. Some models and servers decide that for themselves."),
             Item(symbol: "airpods", title: "Replies stay in your AirPods",
                  detail: "A question asked through AirPods sometimes got its answer from the phone's speaker. Not any more."),
+            Item(symbol: "text.insert", title: "Spoken prefixes",
+                 detail: "Start a spoken message with a word of your choice and Redde swaps it for a text prefix before sending. Off until you add one, in Settings → Voice. Typed messages are never changed."),
         ]),
         Release(version: "1.4", items: [
             Item(symbol: "server.rack", title: "More than one server",
