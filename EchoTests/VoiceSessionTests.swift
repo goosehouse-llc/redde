@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import Testing
 @testable import Echo
@@ -386,5 +387,20 @@ struct VoiceSessionTests {
         h.speaker.finishSpeaking()
         try await waitUntil("idle again") { h.session.phase == .idle }
         #expect(h.conversation.messages.count == sentTurns, "replay is not a turn")
+    }
+}
+
+/// Speaker-vs-earpiece routing must go by what's connected, not by the route of the moment.
+struct HeadsetRoutingTests {
+    @Test func bluetoothAndWiredHeadsetsCount() {
+        #expect(AudioSessionController.headsetConnected(inputPorts: [.builtInMic, .bluetoothHFP]))
+        #expect(AudioSessionController.headsetConnected(inputPorts: [.builtInMic, .bluetoothLE]))
+        #expect(AudioSessionController.headsetConnected(inputPorts: [.headsetMic]))
+    }
+
+    @Test func thePhoneAloneDoesNot() {
+        #expect(!AudioSessionController.headsetConnected(inputPorts: [.builtInMic]))
+        #expect(!AudioSessionController.headsetConnected(inputPorts: []))
+        #expect(!AudioSessionController.headsetConnected(inputPorts: [.builtInMic, .carAudio]))
     }
 }

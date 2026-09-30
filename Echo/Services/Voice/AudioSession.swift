@@ -108,6 +108,13 @@ final class AudioSessionController {
         updateRouteFacts()
     }
 
+    /// A headset with a microphone is connected: Bluetooth (HFP, or LE Audio), or wired. A car is
+    /// handled before this is asked. Wired headphones without a mic list no input, but they
+    /// don't renegotiate either, so the route itself is trustworthy for them.
+    nonisolated static func headsetConnected(inputPorts: [AVAudioSession.Port]) -> Bool {
+        inputPorts.contains { [.bluetoothHFP, .bluetoothLE, .headsetMic].contains($0) }
+    }
+
     /// A Bluetooth headset input that can record at full bandwidth is available.
     private static func headsetSupportsHighQualityRecording(_ session: AVAudioSession) -> Bool {
         (session.availableInputs ?? []).contains { port in
@@ -259,7 +266,19 @@ final class AudioSessionController {
         let builtInOnly = session.currentRoute.outputs.allSatisfy {
             $0.portType == .builtInSpeaker || $0.portType == .builtInReceiver
         }
-        guard builtInOnly else { return } // headphones / Bluetooth: don't fight the user
+        // Headphones / Bluetooth: don't fight the user. Judged by what's connected, not by the
+        // route of the moment: a mode switch (setReplying) makes a Bluetooth headset renegotiate
+        // its link, and for that moment the route reads as the built-in receiver. Forcing the
+        // speaker then stuck — an override outlives the gap and every later route change
+        // re-asserted it — so a reply asked through AirPods came out of the phone.
+        if Self.headsetConnected(inputPorts: (session.availableInputs ?? []).map(\.portType)) {
+            if builtInOnly, session.currentRoute.outputs.contains(where: { $0.portType == .builtInSpeaker }) {
+                try? session.overrideOutputAudioPort(.none)
+                log.info("headset connected; speaker override cleared")
+            }
+            return
+        }
+        guard builtInOnly else { return }
         let atEar = Settings.shared.earpieceAtEar && lastAtEar
         let onSpeaker = session.currentRoute.outputs.contains { $0.portType == .builtInSpeaker }
         guard force || onSpeaker == atEar else { return }
