@@ -43,7 +43,7 @@ A FULL CLIENT, NOT JUST A MIC
 • Sessions grouped by project. Scheduled jobs with delivery targets and blueprints. The Kanban board, live.
 • Rich replies: Markdown, highlighted code, tables, task lists, images, zoomable Mermaid diagrams, and math.
 • Pictures and files from the agent arrive ready to view: snapshots, charts, PDFs.
-• Regenerate, edit and resend, or search a long conversation.
+• Regenerate, edit and resend, or search a long chat.
 • Attach photos and files; export chats as Markdown.
 • Share to Redde from any app: text, links, photos or files land in the composer.
 • Widgets show the last answer or start listening; the Action Button can open Redde listening.
