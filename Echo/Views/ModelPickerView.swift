@@ -58,9 +58,9 @@ struct ModelPickerView: View {
                 Text("Reasoning effort")
             } footer: {
                 if isFastLane {
-                    Text("How much the model thinks before answering. None turns thinking off for new turns. Any other level turns it on and is passed to the model as its effort; models that don't grade effort treat every level the same. Default leaves it to the server.")
+                    Text("How much the model thinks before answering. None asks the model not to think; any other level asks it to, and is passed on as its effort. Models that don't grade effort treat every level the same, and a server that fixes thinking on or off has the last word. Default leaves it to the server.")
                 } else {
-                    Text("How much the model thinks before answering. None turns reasoning off. X-High and Max are for frontier models such as Claude and GPT; others treat them as High or may refuse them. Applies to this conversation and to new ones. Default leaves it to the gateway, and leaves the open conversation at the level it has.")
+                    Text("How much the model thinks before answering. None asks the model not to think; some models and servers decide that themselves. X-High and Max are for frontier models such as Claude and GPT; others treat them as High or may refuse them. Applies to this conversation and to new ones. Default leaves it to the gateway, and leaves the open conversation at the level it has.")
                 }
             }
             .onChange(of: settings.reasoningEffort) { _, effort in applyEffortToOpenConversation(effort) }
