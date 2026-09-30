@@ -140,6 +140,11 @@ final class Settings {
     }
     /// What Redde listens for: `speechLanguage`, or the iPhone's language.
     var speechLocale: Locale { speechLanguage.isEmpty ? .current : Locale(identifier: speechLanguage) }
+    /// Spoken prefixes: a leading word in a voice or Siri message ("Claude, …") becomes a text
+    /// prefix ("C ") before sending. Empty by default, and typed text is never touched.
+    var spokenPrefixes: [SpokenPrefix] {
+        didSet { defaults.set(try? JSONEncoder().encode(spokenPrefixes), forKey: Keys.spokenPrefixes) }
+    }
     var theme: Theme {
         didSet { defaults.set(theme.rawValue, forKey: Keys.theme) }
     }
@@ -312,6 +317,7 @@ final class Settings {
         static let voiceSpeed = "voiceSpeed"
         static let speechLanguage = "speechLanguage"
         static let matchReplyLanguage = "matchReplyLanguage"
+        static let spokenPrefixes = "spokenPrefixes"
         static let contextWindow = "contextWindow"
         static let theme = "theme"
         static let themeColors = "themeColors"
@@ -362,6 +368,8 @@ final class Settings {
         theme = Theme(rawValue: defaults.string(forKey: Keys.theme) ?? "") ?? .standard
         themeColors = defaults.data(forKey: Keys.themeColors)
             .flatMap { try? JSONDecoder().decode([String: ThemeColors].self, from: $0) } ?? [:]
+        spokenPrefixes = defaults.data(forKey: Keys.spokenPrefixes)
+            .flatMap { try? JSONDecoder().decode([SpokenPrefix].self, from: $0) } ?? []
         appearance = Appearance(rawValue: defaults.string(forKey: Keys.appearance) ?? "") ?? .system
         voiceOrb = VoiceOrb(rawValue: defaults.string(forKey: Keys.voiceOrb) ?? "") ?? .waveform
         notifyInBackground = defaults.bool(forKey: Keys.notifyInBackground)
@@ -554,6 +562,7 @@ final class Settings {
         voiceSpeed = 1.0
         speechLanguage = ""
         matchReplyLanguage = true
+        spokenPrefixes = []
         theme = .standard
         themeColors = [:]
         appearance = .system

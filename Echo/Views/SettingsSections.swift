@@ -299,6 +299,14 @@ struct VoiceSettings: View {
                         .lineLimit(1)
                 }
             }
+            NavigationLink {
+                SpokenPrefixesView()
+            } label: {
+                LabeledContent("Spoken prefixes") {
+                    Text(settings.spokenPrefixes.isEmpty ? "Off" : "\(settings.spokenPrefixes.count)")
+                        .lineLimit(1)
+                }
+            }
             Picker("Voice for replies", selection: $settings.matchReplyLanguage) {
                 Text("Match each reply").tag(true)
                 Text(settings.useKokoro ? "Always your Kokoro voice" : "Always \(listeningLanguageName)").tag(false)

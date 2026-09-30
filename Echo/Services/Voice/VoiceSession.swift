@@ -360,8 +360,11 @@ final class VoiceSession {
         activeTool = nil
         metrics.requestSentAt = .now
         output.beginReply()
-        let events = conversation.send(text)
-        SiriHooks.donateSend(text)
+        // Spoken prefixes: a leading "Claude, …" becomes its text prefix. Only here, on the final
+        // endpointed utterance; the composer's text is the user's own.
+        let outgoing = VoiceRouting.routed(text, rules: Settings.shared.spokenPrefixes) ?? text
+        let events = conversation.send(outgoing)
+        SiriHooks.donateSend(outgoing)
         replySerial += 1
         let serial = replySerial
         replyTask = Task { [weak self] in

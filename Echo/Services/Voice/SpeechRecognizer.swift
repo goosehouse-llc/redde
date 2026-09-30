@@ -129,6 +129,17 @@ final class SpeechRecognizer {
         )
     }
 
+    /// Tells the analyzer the spoken-prefix words, so "Claude" is heard as Claude rather than
+    /// "cloud". Nothing when no prefixes are set up; a context the analyzer can't take is ignored,
+    /// so this can never break transcription.
+    private static func applySpokenPrefixHints(to analyzer: SpeechAnalyzer) async {
+        let rules = Settings.shared.spokenPrefixes
+        guard !rules.isEmpty else { return }
+        let context = AnalysisContext()
+        context.contextualStrings[.general] = VoiceRouting.contextualStrings(for: rules)
+        try? await analyzer.setContext(context)
+    }
+
     /// Transcribes an audio file through the exact pipeline the mic uses (converter + analyzer).
     /// Used by tests; the test machine has no microphone, so this is how STT gets verified offline.
     static func transcribe(fileURL: URL) async throws -> String {
@@ -137,6 +148,7 @@ final class SpeechRecognizer {
             throw Failure.assetsUnavailable
         }
         let analyzer = SpeechAnalyzer(modules: [transcriber])
+        await applySpokenPrefixHints(to: analyzer)
         let file = try AVAudioFile(forReading: fileURL)
         guard let converter = AVAudioConverter(from: file.processingFormat, to: analyzerFormat) else {
             throw Failure.audioFormat
@@ -212,6 +224,7 @@ final class SpeechRecognizer {
         }
         try stillPreparing()
         let analyzer = SpeechAnalyzer(modules: [transcriber])
+        await Self.applySpokenPrefixHints(to: analyzer)
         self.transcriber = transcriber
         self.analyzer = analyzer
 
