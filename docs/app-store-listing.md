@@ -9,7 +9,7 @@ Redde for Hermes
 Talk, chat and run your agent
 
 ## Promotional text (170, editable without a new build)
-New: more than one Hermes server, answers in your language, and a swipe to your conversations. Talk to your own agent at home, at your desk or in the car.
+New: reasoning effort that reaches every model, and a None level for straight answers. Talk to your own agent at home, at your desk or in the car.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name)
 voice,assistant,ai,agent,carplay,self-hosted,llm,ollama,llama,chat,siri,shortcuts,private,openai
