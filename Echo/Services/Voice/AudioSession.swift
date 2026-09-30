@@ -21,6 +21,12 @@ final class AudioSessionController {
     /// The voice session is on headphones or a Bluetooth headset (not the phone, not a car). Echo
     /// cancellation isn't needed there, and turning it off keeps the mic's full quality.
     private(set) var onHeadphones = false
+    /// A headset has been on the route at some point in this voice session. While it's set the
+    /// speaker is never forced: a Bluetooth link renegotiating (a mode change, the recogniser's
+    /// engine stopping) reads as the phone alone for a moment, on the route AND in the available
+    /// inputs, and a speaker override taken then sticks. Cleared when the system reports the
+    /// device gone (`.oldDeviceUnavailable`) or the session ends.
+    private var headsetSeen = false
 
     /// Which configuration is active, if any. Every `setCategory` and `setActive` posts a route
     /// change that re-runs the routing logic; in hands-free each turn would pay for all of them,
@@ -66,6 +72,7 @@ final class AudioSessionController {
         let session = AVAudioSession.sharedInstance()
         if activeMode != .voice {
             lastAtEar = false   // a new voice session starts on the speaker until the sensor says otherwise
+            headsetSeen = false
             // No `.defaultToSpeaker`: the speaker/earpiece choice is made by the proximity sensor.
             // No mixing option either: ducked music would still play into the open microphone, so
             // other audio pauses for the voice loop and resumes on deactivate (like Siri).
@@ -127,13 +134,15 @@ final class AudioSessionController {
         let route = AVAudioSession.sharedInstance().currentRoute
         let headphonePorts: Set<AVAudioSession.Port> = [.headphones, .bluetoothA2DP, .bluetoothHFP, .bluetoothLE]
         onHeadphones = !route.outputs.isEmpty && route.outputs.allSatisfy { headphonePorts.contains($0.portType) }
+        if onHeadphones, activeMode == .voice { headsetSeen = true }
         let highQualityHeadsetMic = route.inputs.contains { $0.bluetoothMicrophoneExtension?.highQualityRecording.isEnabled == true }
-        log.info("route: headphones=\(self.onHeadphones) hqHeadsetMic=\(highQualityHeadsetMic) out=\(route.outputs.map(\.portType.rawValue).joined(separator: ","), privacy: .public) in=\(route.inputs.map(\.portType.rawValue).joined(separator: ","), privacy: .public)")
+        log.notice("route: headphones=\(self.onHeadphones) hqHeadsetMic=\(highQualityHeadsetMic) out=\(route.outputs.map(\.portType.rawValue).joined(separator: ","), privacy: .public) in=\(route.inputs.map(\.portType.rawValue).joined(separator: ","), privacy: .public)")
     }
 
     func deactivate() {
         stopProximityRouting()
         activeMode = nil
+        headsetSeen = false
         do {
             try AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
         } catch {
@@ -145,14 +154,17 @@ final class AudioSessionController {
     /// While Redde thinks and speaks nothing records, so the session leaves voice-chat mode. In it
     /// the volume buttons set the call volume, which the reply (its own audio engine) doesn't play
     /// at: they did nothing until a Replay. Back to the listening mode before the mic opens again.
+    /// Not on a headset: the buttons already drive it in either mode, and the switch makes a
+    /// Bluetooth link renegotiate (HFP to A2DP and back), which is where a reply asked through
+    /// AirPods ended up on the phone.
     func setReplying(_ on: Bool) {
-        guard activeMode == .voice else { return }
+        guard activeMode == .voice, !headsetSeen else { return }
         let session = AVAudioSession.sharedInstance()
         let target: AVAudioSession.Mode = on ? .default : listeningMode
         guard session.mode != target else { return }
         do {
             try session.setMode(target)
-            log.info("mode → \(target.rawValue, privacy: .public)")
+            log.notice("mode → \(target.rawValue, privacy: .public)")
         } catch {
             log.error("mode change failed: \(error.localizedDescription)")
         }
@@ -227,7 +239,8 @@ final class AudioSessionController {
         case .categoryChange:
             return
         case .oldDeviceUnavailable:
-            log.info("output device went away; pausing rather than re-routing")
+            log.notice("output device went away; pausing rather than re-routing")
+            headsetSeen = false
             onOutputDeviceLost?()
             return
         default:
@@ -254,7 +267,7 @@ final class AudioSessionController {
                 try session.overrideOutputAudioPort(.none)
                 if session.preferredInput?.uid != carInput.uid {
                     try session.setPreferredInput(carInput)
-                    log.info("output → CarPlay")
+                    log.notice("output → CarPlay")
                 }
             } catch {
                 log.error("CarPlay routing failed: \(error.localizedDescription)")
@@ -266,15 +279,16 @@ final class AudioSessionController {
         let builtInOnly = session.currentRoute.outputs.allSatisfy {
             $0.portType == .builtInSpeaker || $0.portType == .builtInReceiver
         }
-        // Headphones / Bluetooth: don't fight the user. Judged by what's connected, not by the
-        // route of the moment: a mode switch (setReplying) makes a Bluetooth headset renegotiate
-        // its link, and for that moment the route reads as the built-in receiver. Forcing the
-        // speaker then stuck — an override outlives the gap and every later route change
-        // re-asserted it — so a reply asked through AirPods came out of the phone.
-        if Self.headsetConnected(inputPorts: (session.availableInputs ?? []).map(\.portType)) {
+        // Headphones / Bluetooth: don't fight the user. Judged by the session's memory of a
+        // headset and by what's connected, not by the route of the moment: while a Bluetooth link
+        // renegotiates, the route and even the available inputs read as the phone alone (seen in
+        // the log: mode → Default, then "output → speaker", then a Speaker route). A speaker
+        // override taken in that gap outlives it and every later route change re-asserts it, so a
+        // reply asked through AirPods came out of the phone.
+        if headsetSeen || Self.headsetConnected(inputPorts: (session.availableInputs ?? []).map(\.portType)) {
             if builtInOnly, session.currentRoute.outputs.contains(where: { $0.portType == .builtInSpeaker }) {
                 try? session.overrideOutputAudioPort(.none)
-                log.info("headset connected; speaker override cleared")
+                log.notice("headset connected; speaker override cleared")
             }
             return
         }
@@ -284,7 +298,7 @@ final class AudioSessionController {
         guard force || onSpeaker == atEar else { return }
         do {
             try session.overrideOutputAudioPort(atEar ? .none : .speaker)
-            log.info("output → \(atEar ? "earpiece" : "speaker")")
+            log.notice("output → \(atEar ? "earpiece" : "speaker")")
         } catch {
             log.error("output override failed: \(error.localizedDescription)")
         }
@@ -294,12 +308,12 @@ final class AudioSessionController {
         guard let raw, let type = AVAudioSession.InterruptionType(rawValue: raw) else { return }
         switch type {
         case .began:
-            log.info("audio session interrupted")
+            log.notice("audio session interrupted")
             activeMode = nil
             onInterruption?()
         case .ended:
             let shouldResume = AVAudioSession.InterruptionOptions(rawValue: rawOptions).contains(.shouldResume)
-            log.info("audio session interruption ended, shouldResume=\(shouldResume)")
+            log.notice("audio session interruption ended, shouldResume=\(shouldResume)")
             onInterruptionEnded?(shouldResume)
         @unknown default:
             break

@@ -308,7 +308,7 @@ final class SpeechRecognizer {
                 }
                 if (heardSomething && stableFor > silenceTimeout && quietFor > silenceTimeout * 0.6)
                     || ranFor > maxUtterance {
-                    log.info("endpoint: stable \(stableFor, format: .fixed(precision: 2))s quiet \(quietFor, format: .fixed(precision: 2))s floor \(noiseFloor, format: .fixed(precision: 2))")
+                    log.notice("endpoint: stable \(stableFor, format: .fixed(precision: 2))s quiet \(quietFor, format: .fixed(precision: 2))s floor \(noiseFloor, format: .fixed(precision: 2))")
                     let text = await finish()
                     onEnd(text)
                     return
