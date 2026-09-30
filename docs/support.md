@@ -10,6 +10,7 @@ Redde is a voice and chat client for a self-hosted AI assistant.
 - **Siri:** say "Hey Siri, ask Redde". For a custom phrase, create a Shortcut containing Redde's "Ask Redde" action and name it whatever you want to say.
 - **CarPlay:** connect your iPhone to CarPlay and open Redde on the car's screen. Tap "Ask Redde" for one question or "Talk with Redde" for a hands-free conversation. If Redde isn't on the car's screen, turn it on in Settings → General → CarPlay → your car.
 - **Models:** tap the model name under the conversation title (or type /model) to switch models mid-conversation. The choice sticks for that conversation.
+- **Spoken prefixes:** start a voice or Siri message with a word of your choice and Redde can drop a text prefix in front, switch the conversation to a model you chose, or both. Say "Opus, review this diff" and the conversation moves to Opus before the message goes. The switch sticks until you pick another model. Set it up in Settings → Voice → Spoken prefixes: the word, the ways it tends to be misheard, the prefix, and the model from your server's list. Off until you add a rule, spoken messages only; anything you type stays exactly as typed.
 - **Voice tones:** a rising tone means the mic is open; a falling tone means it stopped listening. They follow the volume rocker, not the silent switch.
 - **Privacy:** see the [privacy policy](privacy.html). Nothing is collected; data goes only to the server you configure.
 - **Questions or problems:** email hello@goosehouse.org, or open an issue on the project's GitHub repository.

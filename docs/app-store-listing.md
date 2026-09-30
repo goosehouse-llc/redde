@@ -16,53 +16,51 @@ voice,assistant,ai,agent,carplay,self-hosted,llm,ollama,llama,chat,siri,shortcut
 
 ## Description (4000)
 
-Redde is a complete iPhone and iPad client for Hermes, the open-source AI agent. Talk to it or type, watch it think and use tools, approve what it wants to run, and manage everything it does: sessions, projects, profiles, scheduled jobs, and the Kanban board. It also talks straight to any OpenAI-compatible model server, local or hosted, when you just want a fast answer.
+Redde is a complete iPhone and iPad client for Hermes, the open-source AI agent. Talk to it or type, watch it think and use tools, approve what it wants to run, and manage everything it does: sessions, projects, profiles, scheduled jobs, and the Kanban board. It also talks straight to any OpenAI-compatible model server when you just want a fast answer.
 
 You bring the backend. Redde has no account, no analytics, and no cloud of its own; every request goes only to the server you configured.
 
 TALK, DON'T TYPE
 • Tap the mic, ask, hear the answer. Speech recognition runs on your iPhone; the reply is spoken back with the built-in voice or your own Kokoro server.
 • Hands-free mode keeps the conversation going until you say "that's all".
-• Interrupt Redde mid-answer: tap the mic to cut in, or type while it's still replying to steer where it goes.
-• In CarPlay, ask through the car's microphone and hear the answer through its speakers. Nothing to read while you drive.
-• "Hey Siri, ask Redde…" works from the Lock Screen and with AirPods. A Control Center button and Lock Screen widget open Redde listening.
+• Interrupt mid-answer: tap the mic to cut in, or type to steer the reply.
+• In CarPlay, ask through the car's mic and hear the answer through its speakers.
+• "Hey Siri, ask Redde…" works from the Lock Screen and AirPods. A Control Center button and Lock Screen widget open Redde listening.
 • On iOS 27, Siri can message your agent in your own words and read the reply back (opt-in).
 • A voice orb that moves with your voice and Redde's. Pause, replay, or have any reply read aloud.
-• Hold the phone to your ear to hear replies like a call.
-• Spoken prefixes: start with a word of your choice ("Claude, …") and Redde adds a text prefix, switches the conversation to a model you pick, or both. Voice and Siri only; typed messages are never changed.
-• Use "Ask Redde a Question" in Shortcuts to get the answer back as text for your own automations.
+• "Ask Redde a Question" in Shortcuts returns the answer as text for your automations.
+
+SPOKEN PREFIXES
+Start a voice or Siri message with a word of your choice and Redde does what the word says: drops a text prefix in front, switches the conversation to a model you chose, or both. Say "Opus, review this diff" and the conversation moves to Opus before the message goes. The switch sticks for the follow-ups. Set it up once in Settings → Voice: the word, the ways it tends to be misheard, the prefix, the model. Off until you add a rule, spoken messages only, and anything you type stays exactly as typed.
 
 SEE THE AGENT WORK
-• Watch reasoning as it streams, with tool calls shown as they happen.
-• Approve or deny a risky command from a notification, and answer the agent's questions without opening the app.
-• Answer a sudo prompt or supply a missing secret from your phone.
-• Delegated subagents appear as their own rows; tap one to follow its transcript live, steer it, or stop it.
-• A Live Activity shows progress.
+• Watch reasoning as it streams, with tool calls as they happen and a Live Activity for progress.
+• Approve or deny a risky command, answer the agent's questions, a sudo prompt or a missing secret, all from a notification.
+• Subagents get their own rows; tap one to follow its transcript, steer it, or stop it.
 
 A FULL CLIENT, NOT JUST A MIC
-• Every conversation lives in your gateway's session ledger, so what you start on the phone continues on the desktop, Telegram, or the CLI. Search, pin, rename, fork, archive.
-• Sessions grouped by project. Scheduled jobs (cron) with delivery targets and prebuilt blueprints. The Kanban board, live.
-• Rich replies: Markdown, highlighted code, tables, task lists, images, Mermaid diagrams you can zoom, and math.
-• Pictures and files from the agent arrive in the chat ready to view: camera snapshots, charts, PDFs.
-• Regenerate an answer, edit and resend a question, or search a long conversation.
-• Attach photos and files; export conversations as Markdown.
-• Share to Redde from any app: text, links, photos or files land in the composer, ready to send.
-• Home Screen widgets show the last answer or start listening; the Action Button can open Redde listening.
+• Every conversation lives in your gateway's session ledger: start on the phone, continue on the desktop, Telegram or the CLI. Search, pin, rename, fork, archive.
+• Sessions grouped by project. Scheduled jobs with delivery targets and blueprints. The Kanban board, live.
+• Rich replies: Markdown, highlighted code, tables, task lists, images, zoomable Mermaid diagrams, and math.
+• Pictures and files from the agent arrive ready to view: snapshots, charts, PDFs.
+• Regenerate, edit and resend, or search a long conversation.
+• Attach photos and files; export chats as Markdown.
+• Share to Redde from any app: text, links, photos or files land in the composer.
+• Widgets show the last answer or start listening; the Action Button can open Redde listening.
 • Switch models mid-conversation from the chat header or with /model.
-• Skills and tool sets, on or off. Edit the agent's memory and context files in place.
-• Create and edit skills, or describe one and let Redde draft it.
+• Skills and tool sets, on or off. Edit the agent's memory and context files in place, and create skills or let Redde draft one.
 
 YOUR BACKEND, YOUR RULES
 • Connect to Hermes through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access.
-• Or skip the agent and go straight to any OpenAI-compatible endpoint: llama.cpp, llama-swap, vLLM, Ollama on your own hardware, or a hosted provider with your API key.
+• Or go straight to any OpenAI-compatible endpoint: llama.cpp, llama-swap, vLLM, Ollama on your hardware, or a hosted provider with your key.
 • Credentials stay in the Keychain. Speech recognition runs on the phone.
-• Face ID lock, seven themes with your own accent and bubble colors, a choice of app icons and voice orbs, iPad split view, keyboard shortcuts.
-• No account. No analytics. No tracking. The privacy label says "Data Not Collected" because that is what happens.
+• Face ID lock, seven themes with your own colors, app icons and voice orbs, iPad split view, keyboard shortcuts.
+• No account, no analytics, no tracking. The privacy label says "Data Not Collected" because that is what happens.
 
 REQUIRES
-A Hermes agent (github.com/NousResearch/hermes-agent) or an OpenAI-compatible endpoint, self-hosted or from a provider. Redde does not include a model or a hosted service.
+A Hermes agent (github.com/NousResearch/hermes-agent) or an OpenAI-compatible endpoint. Redde includes no model or hosted service.
 
-Hermes is an open-source project by Nous Research. Redde is an independent client and is not affiliated with Nous Research.
+Hermes is an open-source project by Nous Research; Redde is an independent client, not affiliated with Nous Research.
 
 ## What's New in 1.5 (4000)
 Spoken prefixes that add text or switch the model, reasoning effort that reaches every model, and AirPods replies that stay in your AirPods.
