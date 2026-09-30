@@ -1,6 +1,6 @@
 import Foundation
 
-/// The highlights shown once after an update ("What's New in Redde 1.4"). One entry per
+/// The highlights shown once after an update ("What's New in Redde 1.4.1"). One entry per
 /// version that has something worth showing; a version without an entry shows nothing.
 nonisolated enum WhatsNew {
     struct Item: Identifiable, Equatable, Sendable {
@@ -22,6 +22,14 @@ nonisolated enum WhatsNew {
 
     /// Newest first. Keep each to a handful of lines a person reads in ten seconds.
     static let releases: [Release] = [
+        Release(version: "1.4.1", items: [
+            Item(symbol: "gauge.with.dots.needle.33percent", title: "Reasoning effort, everywhere",
+                 detail: "The level in Settings → Model now reaches whatever model you talk to, and the conversation you have open, not only new ones. Type /reasoning in a Hermes Dashboard chat to change just that one."),
+            Item(symbol: "brain", title: "None",
+                 detail: "A new level that asks the model to skip thinking and answer straight away. Some models and servers decide that for themselves."),
+            Item(symbol: "airpods", title: "Replies stay in your AirPods",
+                 detail: "A question asked through AirPods sometimes got its answer from the phone's speaker. Not any more."),
+        ]),
         Release(version: "1.4", items: [
             Item(symbol: "server.rack", title: "More than one server",
                  detail: "Save Home, Office or any other Hermes server and switch from Settings or the row above your conversations. Chats, cron jobs and Kanban follow the server you pick, and your setup is already the first one."),
