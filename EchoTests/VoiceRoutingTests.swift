@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import Echo
 
@@ -60,5 +61,41 @@ struct VoiceRoutingTests {
     @Test func contextualStringsAreTheWords() {
         let blank = SpokenPrefix(word: "", prefix: "Z ")
         #expect(VoiceRouting.contextualStrings(for: [claude, blank]) == ["Claude"])
+    }
+
+    // MARK: Model routing
+
+    private let opus = SpokenPrefix(word: "Opus", prefix: "", model: "claude-opus-5-5", provider: "anthropic")
+
+    @Test func aRuleWithAModelStripsTheWordAndNamesTheModel() {
+        let route = VoiceRouting.route("Opus, review the diff", rules: [opus])
+        #expect(route == VoiceRouting.Route(text: "review the diff", model: "claude-opus-5-5", provider: "anthropic"))
+    }
+
+    @Test func aRuleWithPrefixAndModelDoesBoth() {
+        let both = SpokenPrefix(word: "Claude", prefix: "C ", model: "claude-opus-5-5", provider: "anthropic")
+        let route = VoiceRouting.route("Claude, hello", rules: [both])
+        #expect(route?.text == "C hello")
+        #expect(route?.model == "claude-opus-5-5")
+    }
+
+    @Test func aTextOnlyRuleNamesNoModel() {
+        let route = VoiceRouting.route("Claude, hello", rules: [claude])
+        #expect(route?.model == nil)
+        #expect(route?.provider == nil)
+    }
+
+    @Test func anEmptyModelCountsAsNone() {
+        let blank = SpokenPrefix(word: "Claude", prefix: "", model: "", provider: "anthropic")
+        #expect(VoiceRouting.route("Claude, hello", rules: [blank]) == nil)
+        #expect(!blank.isActive)
+        #expect(opus.isActive)
+    }
+
+    @Test func rulesSavedWithoutAModelStillDecode() throws {
+        let json = Data(#"[{"id":"6B1B7E63-0C1C-4E5C-9F0E-2A1C4D5E6F70","word":"Claude","aliases":["Klaud"],"prefix":"C "}]"#.utf8)
+        let rules = try JSONDecoder().decode([SpokenPrefix].self, from: json)
+        #expect(rules.first?.model == nil)
+        #expect(VoiceRouting.routed("Klaud, hi", rules: rules) == "C hi")
     }
 }

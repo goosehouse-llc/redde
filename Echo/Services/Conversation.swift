@@ -639,6 +639,40 @@ final class Conversation {
     }
 
     /// Ledger client for listing/reading sessions. Nil without a gateway URL and key.
+    // MARK: - Model switching
+
+    /// Re-pins the open conversation's model on the backend. Both hermes backends pin a
+    /// conversation's model once it has one, so a change must move the pin: the Hermes API via
+    /// the model-lock route, the Dashboard via `config.set` (session-scoped). Nothing to do on
+    /// the fast lane, where the model goes on every request, or before a session exists.
+    func pinOpenSessionModel(_ model: String, provider: String?) async throws {
+        guard let sid = serverSessionID else { return }
+        switch settings.transport {
+        case .hermesSessions:
+            guard let api = ledgerAPI() else { return }
+            try await api.lockSessionModel(id: sid, model: model, provider: provider)
+        case .hermesServe:
+            try await HermesServeClient.shared.withLiveSession(stored: sid) { runtime in
+                try await HermesServeClient.shared.setSessionModel(runtimeSession: runtime, model: model)
+            }
+        case .chatCompletions:
+            break
+        }
+    }
+
+    /// Switches to a model the way the picker does: the setting changes, so new conversations
+    /// and every later fast-lane turn use it, and the open conversation is re-pinned. Sticky:
+    /// it stays until the picker or another switch moves it. Used by spoken prefixes.
+    func switchModel(_ model: String, provider: String?) async throws {
+        if settings.transport == .chatCompletions {
+            settings.fastLaneModel = model
+            return
+        }
+        settings.gatewayModel = model
+        settings.gatewayProvider = provider ?? ""
+        try await pinOpenSessionModel(model, provider: provider)
+    }
+
     func ledgerAPI() -> HermesSessionsAPI? {
         guard let url = settings.gatewayBaseURL, let key = settings.gatewayAPIKey, !key.isEmpty else { return nil }
         return HermesSessionsAPI(baseURL: url, apiKey: key)

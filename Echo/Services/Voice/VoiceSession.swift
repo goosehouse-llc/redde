@@ -360,9 +360,17 @@ final class VoiceSession {
         activeTool = nil
         metrics.requestSentAt = .now
         output.beginReply()
-        // Spoken prefixes: a leading "Claude, …" becomes its text prefix. Only here, on the final
-        // endpointed utterance; the composer's text is the user's own.
-        let outgoing = VoiceRouting.routed(text, rules: Settings.shared.spokenPrefixes) ?? text
+        // Spoken prefixes: a leading "Claude, …" becomes its text prefix, and a rule that names a
+        // model moves the conversation there first (sticky). Only here, on the final endpointed
+        // utterance; the composer's text is the user's own. A failed switch still sends: the
+        // message is what the person said, the model is a preference.
+        let route = VoiceRouting.route(text, rules: Settings.shared.spokenPrefixes)
+        let outgoing = route?.text ?? text
+        if let model = route?.model {
+            do { try await conversation.switchModel(model, provider: route?.provider) } catch {
+                log.error("spoken prefix: model switch to \(model, privacy: .public) failed: \(error.localizedDescription)")
+            }
+        }
         let events = conversation.send(outgoing)
         SiriHooks.donateSend(outgoing)
         replySerial += 1
