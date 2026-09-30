@@ -234,7 +234,8 @@ enum SiriTurn {
         Notifier.shared.holdsReplies = true
         defer { Notifier.shared.holdsReplies = false }
 
-        let events = live.send(text, attachments: attachments)
+        // Spoken, so a leading prefix word ("Claude, …") becomes its text prefix; typed text never comes through here.
+        let events = live.send(VoiceRouting.routed(text, rules: Settings.shared.spokenPrefixes) ?? text, attachments: attachments)
         if live.lastSendWasHeld { return Outcome(sent: [], reply: .queued) }
         guard live.messages.count >= before + 2 else { return Outcome(sent: [], reply: .failed("Nothing was sent.")) }
         let question = live.messages[before]
