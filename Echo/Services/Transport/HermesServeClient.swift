@@ -716,14 +716,25 @@ final class HermesServeClient {
         }
     }
 
-    /// Switch a live session's model (`config.set key=model`). A bare model name resolves
-    /// within the current provider's catalog; the swap is deferred if a turn is streaming.
-    func setSessionModel(runtimeSession: String, model: String) async throws {
+    /// Switch a live session's model (`config.set key=model`); the swap is deferred if a turn is
+    /// streaming. The value is a `/model` line, so the provider goes along as `--provider`.
+    func setSessionModel(runtimeSession: String, model: String, provider: String? = nil) async throws {
         let result = try await call("config.set", params: .object([
-            "session_id": .string(runtimeSession), "key": .string("model"), "value": .string(model)]))
+            "session_id": .string(runtimeSession), "key": .string("model"),
+            "value": .string(Self.modelSwitchValue(model: model, provider: provider))]))
         if result["confirm_required"]?.bool == true {
             throw TransportError.malformed(result["confirm_message"]?.string ?? "The backend wants confirmation for this model.")
         }
+    }
+
+    /// The `/model` line for a live switch. Naming the provider matters: a session on a named
+    /// custom endpoint reports its provider as the bare "custom", and a bare model name is
+    /// re-resolved under that — which has no endpoint of its own, so the host falls through to
+    /// OpenRouter with no key and the turn dies with "401 Missing Authentication header". With
+    /// `--provider` the host looks the endpoint up by name; the switch stays session-scoped.
+    nonisolated static func modelSwitchValue(model: String, provider: String?) -> String {
+        guard let provider, !provider.isEmpty, !provider.contains(where: \.isWhitespace) else { return model }
+        return "\(model) --provider \(provider)"
     }
 
     /// Set a live session's reasoning effort (`config.set key=reasoning`). Session-scoped: no

@@ -653,7 +653,7 @@ final class Conversation {
             try await api.lockSessionModel(id: sid, model: model, provider: provider)
         case .hermesServe:
             try await HermesServeClient.shared.withLiveSession(stored: sid) { runtime in
-                try await HermesServeClient.shared.setSessionModel(runtimeSession: runtime, model: model)
+                try await HermesServeClient.shared.setSessionModel(runtimeSession: runtime, model: model, provider: provider)
             }
         case .chatCompletions:
             break
@@ -668,9 +668,40 @@ final class Conversation {
             settings.fastLaneModel = model
             return
         }
+        let provider = Self.liveProvider(for: model, saved: provider, in: await listedModels())
         settings.gatewayModel = model
         settings.gatewayProvider = provider ?? ""
         try await pinOpenSessionModel(model, provider: provider)
+    }
+
+    /// The provider to send with `model`. A saved slug can outlive its provider: a spoken prefix
+    /// keeps the one it was made with, and the host may since have renamed or removed it, or the
+    /// rule was made under another profile or server. Hermes fails the whole turn on a provider
+    /// it doesn't know ("Unknown provider"), so the backend's current list decides: the saved one
+    /// while it still lists the model, else a provider that does (a named endpoint before the
+    /// bare "custom" bucket, which has no endpoint of its own), else the saved one if it is still
+    /// there (hidden models serve by name), else the host's current provider. Nothing changes
+    /// when the list couldn't be read.
+    nonisolated static func liveProvider(for model: String, saved: String?, in choices: [ModelChoice]) -> String? {
+        guard let saved, !saved.isEmpty, !choices.isEmpty else { return saved }
+        let serving = choices.filter { $0.model == model }
+        if serving.contains(where: { $0.provider == saved }) { return saved }
+        if let other = serving.first(where: { $0.provider != "custom" }) ?? serving.first { return other.provider }
+        if choices.contains(where: { $0.provider == saved }) { return saved }
+        return choices.first(where: \.isCurrent)?.provider
+    }
+
+    /// What the backend lists right now, or nothing when it can't say within a few seconds: a
+    /// spoken turn waits on this, and a slow list must not hold it up.
+    private func listedModels() async -> [ModelChoice] {
+        guard let backend = SessionBackend.available(self, settings: settings).first else { return [] }
+        return await withTaskGroup(of: [ModelChoice]?.self) { group in
+            group.addTask { try? await backend.modelOptions() }
+            group.addTask { try? await Task.sleep(for: .seconds(3)); return nil }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first ?? []
+        }
     }
 
     func ledgerAPI() -> HermesSessionsAPI? {
