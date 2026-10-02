@@ -12,6 +12,12 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
         var instructions: String?
         var model: String?
         var provider: String?
+        /// Sent with a picked model. Without it the gateway treats `model`/`provider` as a
+        /// one-off: once the session has a stored model it runs that model on the *default*
+        /// provider, so a model from any other provider or endpoint is sent to the wrong place
+        /// (and Hermes before 0.21.4 fails the turn with "No LLM provider configured"). With it
+        /// the gateway resolves the named provider every turn and pins the session to it.
+        var require_model_lock: Bool?
         var model_options: ModelOptions?
         struct ModelOptions: Encodable { var reasoning_effort: String? }
     }
@@ -57,6 +63,7 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
                                    request.replyLanguage.map(ReplyLanguage.instruction)].compactMap { $0 })
                         .joined(separator: "\n\n"),
                     model: request.model, provider: request.provider,
+                    require_model_lock: request.model?.nilIfEmpty == nil ? nil : true,
                     model_options: request.reasoningEffort.map { .init(reasoning_effort: $0) }))
         }
     }
@@ -145,12 +152,27 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
             }
             return (events, false)
         case "error":
+            // Not a failure: the reply above is whole and already stored. "done" ends the turn.
+            if let message = env.message, isLockBucketMismatch(message) { return ([], false) }
             throw TransportError.malformed(env.message ?? "run failed")
         case "done":
             return ([], true)
         default:
             return ([], false)
         }
+    }
+}
+
+extension HermesSessionsTransport {
+    /// Hermes before 0.21.4 ends a locked turn on a user-defined endpoint with "confirmed model
+    /// lock runtime mismatch: expected provider=custom:name model=m; actual provider=custom
+    /// model=m": its post-run check compares the endpoint's name with the bare "custom" bucket
+    /// every such endpoint runs under. The turn itself ran on the right endpoint and model. Any
+    /// other mismatch (another model, another provider) is real.
+    nonisolated static func isLockBucketMismatch(_ message: String) -> Bool {
+        let pattern = /lock runtime mismatch: expected provider=(\S+) model=(\S+); actual provider=(\S+) model=(\S+)/
+        guard let match = message.firstMatch(of: pattern) else { return false }
+        return match.output.2 == match.output.4 && match.output.3 == "custom" && match.output.1 != "custom"
     }
 }
 
@@ -320,21 +342,13 @@ nonisolated struct HermesSessionsAPI: Sendable {
         }
     }
 
-    /// Pin an open session to a model (`POST /api/sessions/{id}/model`). Once a session has a
-    /// stored model, per-turn model fields are ignored, so this is the only way to switch
-    /// mid-conversation.
+    /// Pin an open session to a model (`POST /api/sessions/{id}/model`). The provider goes as the
+    /// gateway lists it: the bare "custom" bucket names no endpoint, and a lock on it fails the
+    /// turn. Each later turn repeats the pick with `require_model_lock` (see the chat body).
     func lockSessionModel(id: String, model: String, provider: String?) async throws {
         var body: [String: JSONValue] = ["model": .string(model)]
-        if let provider = Self.lockProvider(provider) { body["provider"] = .string(provider) }
+        if let provider = provider?.nilIfEmpty { body["provider"] = .string(provider) }
         _ = try await requestJSON("POST", "api/sessions/\(id)/model", body: .object(body))
-    }
-
-    /// The lock's post-run check compares the agent's *normalized* provider, which is the bare
-    /// bucket for named custom endpoints — locking "custom:endpoint" fails that check even
-    /// though the right model ran, so send "custom".
-    static func lockProvider(_ provider: String?) -> String? {
-        guard let provider, !provider.isEmpty else { return nil }
-        return provider.hasPrefix("custom:") ? "custom" : provider
     }
 
     /// Answer a pending tool approval on a run. `choice` is once | session | always | deny.

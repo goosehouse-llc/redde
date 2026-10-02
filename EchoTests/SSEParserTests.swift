@@ -133,13 +133,23 @@ struct SessionsApprovalTests {
         #expect(try HermesSessionsTransport.decode(ev("approval.request", #"{"command":"x"}"#)).events.isEmpty)
     }
 
-    /// The model lock's post-run check compares the agent's normalized provider — bare "custom"
-    /// for named custom endpoints — so the qualified slug must be sent as the bucket.
-    @Test func lockProviderNormalizesCustomEndpoints() {
-        #expect(HermesSessionsAPI.lockProvider("custom:gemma-4-26b-a4b-vision") == "custom")
-        #expect(HermesSessionsAPI.lockProvider("custom") == "custom")
-        #expect(HermesSessionsAPI.lockProvider("nous") == "nous")
-        #expect(HermesSessionsAPI.lockProvider("") == nil)
-        #expect(HermesSessionsAPI.lockProvider(nil) == nil)
+    /// Hermes before 0.21.4 fails a locked turn on a named endpoint after the reply, comparing
+    /// the endpoint's name with the bare bucket it runs under. Only that is forgiven.
+    @Test func theOldLockCheckOnANamedEndpointIsNotAFailure() throws {
+        let named = "confirmed model lock runtime mismatch: expected provider=custom:my-local model=beta; actual provider=custom model=beta"
+        let keyed = "confirmed model lock runtime mismatch: expected provider=local model=beta; actual provider=custom model=beta"
+        #expect(HermesSessionsTransport.isLockBucketMismatch(named))
+        #expect(HermesSessionsTransport.isLockBucketMismatch(keyed))
+        let result = try HermesSessionsTransport.decode(ev("error", #"{"message":"\#(named)"}"#))
+        #expect(result.events.isEmpty && !result.finished)
+    }
+
+    @Test func aRealLockMismatchStillFails() {
+        let otherModel = "confirmed model lock runtime mismatch: expected provider=custom:my-local model=beta; actual provider=custom model=alpha"
+        let otherProvider = "confirmed model lock runtime mismatch: expected provider=anthropic model=claude-opus-5-5; actual provider=openrouter model=claude-opus-5-5"
+        #expect(!HermesSessionsTransport.isLockBucketMismatch(otherModel))
+        #expect(!HermesSessionsTransport.isLockBucketMismatch(otherProvider))
+        #expect(!HermesSessionsTransport.isLockBucketMismatch("No LLM provider configured."))
+        #expect(throws: (any Error).self) { try HermesSessionsTransport.decode(ev("error", #"{"message":"\#(otherModel)"}"#)) }
     }
 }

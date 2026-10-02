@@ -85,8 +85,33 @@ struct ModelSwitchTests {
         #expect(Conversation.liveProvider(for: "qwen3-4b", saved: "custom:local", in: choices) == "custom:local")
     }
 
-    @Test func nothingChangesWithoutAListOrAProvider() {
+    @Test func nothingChangesWithoutAList() {
         #expect(Conversation.liveProvider(for: "qwen36-splash", saved: "custom:gone", in: []) == "custom:gone")
-        #expect(Conversation.liveProvider(for: "qwen36-splash", saved: nil, in: [choice("custom:local", "qwen36-splash")]) == nil)
+        #expect(Conversation.liveProvider(for: "qwen36-splash", saved: nil, in: []) == nil)
+    }
+
+    /// A pick with no provider (a rule made on the fast lane) would go to the default endpoint,
+    /// which may not serve the model: the provider that lists it takes it.
+    @Test func aPickWithoutAProviderFindsOne() {
+        var current = choice("custom:box-a", "alpha")
+        current.isCurrent = true
+        let choices = [current, choice("custom:box-b", "gamma")]
+        #expect(Conversation.liveProvider(for: "gamma", saved: nil, in: choices) == "custom:box-b")
+        #expect(Conversation.liveProvider(for: "gamma", saved: "", in: choices) == "custom:box-b")
+        #expect(Conversation.liveProvider(for: "unlisted", saved: nil, in: choices) == "custom:box-a")
+    }
+
+    /// A leftover `providers: custom:` block lists models under a bare "custom" row that has no
+    /// endpoint; picked, it fails with "Unknown provider 'custom:custom'". A host whose only
+    /// endpoint *is* the bare bucket marks it current, and keeps it.
+    @Test func theBareBucketYieldsToANamedEndpointUnlessItIsCurrent() {
+        var named = choice("custom:my-local", "alpha")
+        named.isCurrent = true
+        #expect(Conversation.liveProvider(for: "alpha", saved: "custom", in: [choice("custom", "alpha"), named]) == "custom:my-local")
+        var bare = choice("custom", "alpha")
+        bare.isCurrent = true
+        #expect(Conversation.liveProvider(for: "alpha", saved: "custom", in: [bare, choice("custom", "beta")]) == "custom")
+        #expect(Conversation.liveProvider(for: "beta", saved: "custom", in: [bare, choice("custom", "beta")]) == "custom")
+        #expect(Conversation.liveProvider(for: "alpha", saved: "custom", in: [choice("custom", "alpha")]) == "custom")
     }
 }

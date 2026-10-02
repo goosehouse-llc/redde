@@ -264,6 +264,19 @@ including dictation into it, is never touched. A model switch goes through
 (`pinOpenSessionModel`, shared with the model picker), so it's sticky. When rules exist the
 recogniser gets the words as `AnalysisContext` contextual strings.
 
+**Model and provider.** A pick is a model plus the provider slug the host listed it under, and the
+slug is only a memory of that list. Before it is used for a new conversation or a switch,
+`Conversation.liveProvider` checks it against the host's current list (`model.options`, three
+seconds at most): a provider that is gone follows the model to one that lists it, a named endpoint
+is preferred over the bare `custom` bucket, and a pick without a provider gets one. How it is sent
+differs by connection. The Dashboard takes it at `session.create`, and a live switch is a `/model`
+line with `--provider` (`HermesServeClient.modelSwitchValue`); a bare model name there is
+re-resolved under the session's `custom` bucket and can leave the endpoint. The Hermes API takes
+`model`, `provider` and `require_model_lock` on every turn: without the lock the gateway runs the
+session's stored model on its *default* provider. Hermes before 0.21.4 ends such a turn with a
+"lock runtime mismatch" between the endpoint's name and its `custom` bucket after the reply is
+complete and stored; `HermesSessionsTransport.isLockBucketMismatch` lets that one through.
+
 **Earpiece.** The proximity sensor is watched only while a reply is spoken (it blanks the screen
 whenever anything is near), and it reads "not near" whenever it's off or has just come on. So the
 route follows the last real reading between replies, and a settle check after it comes on catches a

@@ -232,6 +232,15 @@ final class Conversation {
                 return fallbackWindow
             }
             do {
+                // A new conversation takes its model and provider at create, from a pick that
+                // may be older than the host's current providers; later turns are pinned.
+                if transportKind.hasLedger, request.sessionID == nil, let model = request.model?.nilIfEmpty {
+                    let provider = Self.liveProvider(for: model, saved: request.provider, in: await listedModels())
+                    if provider != request.provider {
+                        request.provider = provider
+                        if settings.gatewayModel == model { settings.gatewayProvider = provider ?? "" }
+                    }
+                }
                 // Ledger transport: the session row must exist before the first turn.
                 if transportKind == .hermesSessions, request.sessionID == nil {
                     guard let api = ledgerAPI() else { throw TransportError.missingAPIKey }
@@ -674,20 +683,30 @@ final class Conversation {
         try await pinOpenSessionModel(model, provider: provider)
     }
 
-    /// The provider to send with `model`. A saved slug can outlive its provider: a spoken prefix
-    /// keeps the one it was made with, and the host may since have renamed or removed it, or the
-    /// rule was made under another profile or server. Hermes fails the whole turn on a provider
-    /// it doesn't know ("Unknown provider"), so the backend's current list decides: the saved one
-    /// while it still lists the model, else a provider that does (a named endpoint before the
-    /// bare "custom" bucket, which has no endpoint of its own), else the saved one if it is still
-    /// there (hidden models serve by name), else the host's current provider. Nothing changes
-    /// when the list couldn't be read.
+    /// The provider to send with `model`, checked against what the backend lists right now. A
+    /// saved slug is only a memory of a past list: the host may have renamed or removed that
+    /// provider, the pick may come from another profile or server, or there is none (a rule made
+    /// on the fast lane). Hermes fails the whole turn on a provider it doesn't know, and a model
+    /// sent without one goes to the default endpoint, which may not serve it. So:
+    /// - the saved provider stays while it still lists the model — except the bare "custom"
+    ///   bucket when it isn't the host's current provider and a named endpoint lists the model
+    ///   too: that row is a config leftover with no endpoint behind it ("Unknown provider
+    ///   'custom:custom'");
+    /// - else a provider that lists the model, a named endpoint first;
+    /// - else the saved one if it is still there (hidden models serve by name);
+    /// - else the host's current provider.
+    /// Nothing changes when the list couldn't be read.
     nonisolated static func liveProvider(for model: String, saved: String?, in choices: [ModelChoice]) -> String? {
-        guard let saved, !saved.isEmpty, !choices.isEmpty else { return saved }
+        guard !choices.isEmpty else { return saved }
+        let saved = saved?.nilIfEmpty
         let serving = choices.filter { $0.model == model }
-        if serving.contains(where: { $0.provider == saved }) { return saved }
-        if let other = serving.first(where: { $0.provider != "custom" }) ?? serving.first { return other.provider }
-        if choices.contains(where: { $0.provider == saved }) { return saved }
+        let named = serving.first { $0.provider != "custom" }
+        if let saved, serving.contains(where: { $0.provider == saved }) {
+            let bareLeftover = saved == "custom" && !choices.contains { $0.provider == "custom" && $0.isCurrent }
+            return bareLeftover ? named?.provider ?? saved : saved
+        }
+        if let other = named ?? serving.first { return other.provider }
+        if let saved, choices.contains(where: { $0.provider == saved }) { return saved }
         return choices.first(where: \.isCurrent)?.provider
     }
 
