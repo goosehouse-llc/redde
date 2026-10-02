@@ -68,6 +68,13 @@ struct ContentView: View {
                 // Once the cover is gone, raise the keyboard in the composer.
                 Task { try? await Task.sleep(for: .milliseconds(450)); composerFocused = true }
             })
+            // Handed over by hand: on a Mac (the iPad app running there) a full-screen cover
+            // doesn't inherit the presenter's environment, and voice mode crashed on opening with
+            // "No Observable object of type Conversation found". Sheets do inherit it.
+            .environment(conversation)
+            .environment(voiceSession)
+            .environment(\.theme, theme)
+            .tint(theme.accent)
         }
         .task {
             settings.applyLocalDefaultsIfPresent()
