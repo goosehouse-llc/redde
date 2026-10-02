@@ -356,6 +356,10 @@ project.
   page sources in `docs/`.
 - `scripts/bump-build.sh` adds one to the build number (not the commit count: the public history
   restarted below builds already uploaded); the version and build are in `project.yml`.
+- `scripts/hermes-lab/lab.sh run` checks that a picked model reaches its endpoint on unmodified
+  Hermes releases, over both connections and five provider setups
+  ([README](../scripts/hermes-lab/README.md)). Run it after touching how models or providers are
+  sent, and when Hermes ships a release.
 - `design/screenshots/capture.sh` and `compose.py` regenerate the App Store screenshots
   ([README](../design/screenshots/README.md)).
 - Always install on devices with a clean build: incremental builds have shipped without the Siri

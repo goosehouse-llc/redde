@@ -1,0 +1,17 @@
+model:
+  default: alpha
+  provider: custom:my-local
+providers:
+  custom:
+    model: alpha
+    models:
+      alpha:
+        supports_vision: true
+custom_providers:
+  - name: My Local
+    base_url: http://127.0.0.1:18801/v1
+    api_key: sk-stub
+    model: alpha
+    api_mode: chat_completions
+    models:
+      alpha: {}

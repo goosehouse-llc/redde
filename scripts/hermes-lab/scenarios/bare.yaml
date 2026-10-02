@@ -1,0 +1,5 @@
+model:
+  default: alpha
+  provider: custom
+  base_url: http://127.0.0.1:18801/v1
+  api_key: sk-stub

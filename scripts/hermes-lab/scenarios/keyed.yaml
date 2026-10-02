@@ -1,0 +1,12 @@
+model:
+  default: alpha
+  provider: local
+providers:
+  local:
+    name: Local Box
+    api: http://127.0.0.1:18801/v1
+    api_key: sk-stub
+    default_model: alpha
+    models:
+      alpha: {}
+      beta: {}
