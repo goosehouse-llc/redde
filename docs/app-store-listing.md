@@ -70,6 +70,9 @@ Spoken prefixes that add text or switch the model, reasoning effort that reaches
 • None. A new level that asks the model to skip thinking and answer straight away. New installs start there. Some models and servers decide that for themselves.
 • Replies through your AirPods. A question asked through AirPods sometimes got its answer from the phone's speaker. It stays in your ears now.
 • A menu for effort. Seven levels no longer squeeze into one row.
+• Lighter on the battery. Waiting for a reply and watching a model think take far less work, most of all in a long conversation.
+• The model you pick is the model you get. On the Hermes API, a model from a second endpoint or provider now reaches it, and a provider your server has renamed or removed no longer stops the conversation.
+• On a Mac. Opening voice mode no longer closes the app.
 
 ## What's New in 1.4 (4000)
 More than one server, your own language, a quicker way around, and better voice replies.
