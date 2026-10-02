@@ -189,13 +189,13 @@ struct ContentView: View {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Menu {
                         Button("Find in conversation", systemImage: "magnifyingglass") { withAnimation { showSearch.toggle() } }
-                            .disabled(conversation.messages.isEmpty)
+                            .disabled(!conversation.hasMessages)
                         Button("Export as Markdown", systemImage: "square.and.arrow.up") {
                             if let url = try? TranscriptExporter.file(title: conversation.title, messages: conversation.messages) {
                                 shareItem = ShareItem(url: url)
                             }
                         }
-                        .disabled(conversation.messages.isEmpty)
+                        .disabled(!conversation.hasMessages)
                         Divider()
                         Button("Settings", systemImage: "gearshape") { showSettings = true }
                     } label: {
@@ -204,7 +204,7 @@ struct ContentView: View {
                     Button("New conversation", systemImage: "square.and.pencil") {
                         conversation.reset()
                     }
-                    .disabled(conversation.messages.isEmpty)
+                    .disabled(!conversation.hasMessages)
                     .keyboardShortcut("n", modifiers: .command)
                 }
             }
@@ -255,12 +255,12 @@ struct ContentView: View {
             Button("Voice mode") { openVoice() }.keyboardShortcut("v", modifiers: [.command, .shift])
             Button("Focus composer") { composerFocused = true }.keyboardShortcut("l", modifiers: .command)
             Button("Find in conversation") { withAnimation { showSearch.toggle() } }.keyboardShortcut("f", modifiers: .command)
-                .disabled(conversation.messages.isEmpty)
+                .disabled(!conversation.hasMessages)
             Button("Stop reply") { conversation.cancel() }.keyboardShortcut(".", modifiers: .command).disabled(!conversation.isStreaming)
             Button("Export as Markdown") {
                 if let url = try? TranscriptExporter.file(title: conversation.title, messages: conversation.messages) { shareItem = ShareItem(url: url) }
             }
-            .keyboardShortcut("e", modifiers: .command).disabled(conversation.messages.isEmpty)
+            .keyboardShortcut("e", modifiers: .command).disabled(!conversation.hasMessages)
         }
         .frame(width: 0, height: 0)
         .opacity(0)
@@ -270,7 +270,7 @@ struct ContentView: View {
 
     /// The header's first line: this conversation, or "New conversation" before the first message.
     private var headerTitle: String {
-        conversation.messages.isEmpty && conversation.outbox.isEmpty ? "New conversation" : conversation.title
+        !conversation.hasMessages && conversation.outbox.isEmpty ? "New conversation" : conversation.title
     }
 
     /// What the title chip shows: the picked model, or the backend's default.

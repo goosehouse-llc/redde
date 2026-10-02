@@ -73,6 +73,47 @@ struct ConversationLifecycleTests {
         ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "lifecycle-\(UUID().uuidString)"))
     }
 
+    // MARK: - Header values and update cadence
+
+    /// The header reads `title` and `hasMessages`, not the messages array, so a streaming reply
+    /// doesn't re-render it. They have to follow the array all the same.
+    @Test func theHeaderValuesFollowTheMessages() async throws {
+        let c = makeConversation(ScriptedTransport([.reasoningDelta("hm"), .textDelta("hello"), .done]))
+        #expect(c.title == "New conversation" && !c.hasMessages)
+        for await _ in c.send("Plan the weekend hike") {}
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(c.title == "Plan the weekend hike" && c.hasMessages)
+        #expect(c.messages.last?.text == "hello" && c.messages.last?.reasoning == "hm")
+        c.reset()
+        #expect(c.title == "New conversation" && !c.hasMessages)
+    }
+
+    @Test func aHeldMessageNamesTheConversation() async throws {
+        let c = makeConversation(SequencedTransport([.init(events: [], error: Self.offline)]))
+        for await _ in c.send("are you there?") {}
+        try await Task.sleep(for: .milliseconds(150))
+        #expect(c.title == "are you there?" && !c.hasMessages)
+    }
+
+    /// Thinking is applied five times a second, reply text twenty. Text that arrives while a
+    /// thinking update is waiting must not sit out the slower interval.
+    @Test func replyTextDoesNotWaitForTheThinkingCadence() async throws {
+        let c = makeConversation(ScriptedTransport([.reasoningDelta("considering"), .textDelta("hello")], hang: true))
+        _ = c.send("hi")
+        try await Task.sleep(for: .milliseconds(150))   // thinking alone would land at ~220 ms
+        #expect(c.messages.last?.text == "hello")
+        #expect(c.messages.last?.reasoning == "considering")
+        c.cancel()
+    }
+
+    @Test func thinkingAloneStillArrives() async throws {
+        let c = makeConversation(ScriptedTransport([.reasoningDelta("considering")], hang: true))
+        _ = c.send("hi")
+        try await Task.sleep(for: .milliseconds(450))
+        #expect(c.messages.last?.reasoning == "considering")
+        c.cancel()
+    }
+
     // MARK: - Offline queue
 
     @Test func unreachableServerHoldsTheMessageInsteadOfFailing() async throws {

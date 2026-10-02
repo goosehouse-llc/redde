@@ -218,9 +218,27 @@ mermaid.js and KaTeX in a sealed, self-sizing WebView (`Views/WebBlocks.swift`, 
 they work offline. Parser `Models/MarkdownBlocks.swift`, renderer `Views/MarkdownView.swift`,
 highlighter `Services/SyntaxHighlighter.swift`.
 
-Streaming text is buffered and applied about 20 times a second (flushed around tool events,
-interrupts and the end of a turn). The transcript renders the newest 60 messages, with a button for
-earlier ones. The footer's `ctx` is context occupancy: from the Dashboard's `context_used` /
+Streaming text is buffered and applied about 20 times a second, thinking on its own 5 times
+(flushed around tool events, interrupts and the end of a turn). The transcript renders the newest 60
+messages, with a button for earlier ones, and lays all of them out, so what a screen update costs
+grows with the conversation. Three rules keep a streaming reply cheap:
+
+- Nothing outside the transcript reads `Conversation.messages` in a view body. Every update
+  rewrites that array, and the header doing so rebuilt the navigation toolbar, the conversation
+  list and the composer each time. The header reads `title` and `hasMessages`, which the
+  conversation keeps as their own observed values.
+- Nothing in a row animates through SwiftUI while a reply runs. Each animated frame walks the
+  whole page's view tree; the waiting waveform, at 30 frames a second, took a third of a core in a
+  long conversation. It is a `UIView` whose bars Core Animation moves (`WaveformBarsView`).
+- A mid-stream update costs about the same whether it adds one token or twenty, so the cadence
+  is the lever.
+
+Measured in the simulator with a 32-exchange conversation (about 340,000 characters): a silent wait
+went from 35% of a core to 3%, streamed thinking from 55% to 20%. Reply text is still about 37%, and
+that conversation holds 1.4 GB; both come from laying out the whole page, which is the next thing
+to bound.
+
+The footer's `ctx` is context occupancy: from the Dashboard's `context_used` /
 `context_max`, or one call's tokens against the window on OpenAI-compatible servers; the Hermes API
 only reports session totals, shown as `session N tok`.
 

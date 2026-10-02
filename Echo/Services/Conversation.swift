@@ -12,7 +12,7 @@ final class Conversation {
 
     private(set) var id = UUID()
     private(set) var createdAt = Date.now
-    private(set) var messages: [Message] = []
+    private(set) var messages: [Message] = [] { didSet { refreshHeader() } }
     private(set) var isStreaming = false
     private(set) var statusLine: String?
     private(set) var lastError: String?
@@ -62,7 +62,7 @@ final class Conversation {
 
     /// Messages not sent yet, oldest first: queued behind a streaming reply, or held while the
     /// server can't be reached. Only the first one is ever sent; the rest wait their turn.
-    private(set) var outbox: [OutboxItem] = []
+    private(set) var outbox: [OutboxItem] = [] { didSet { refreshHeader() } }
     /// The last `send` didn't go out now (queued or held offline). The voice loop reads this to
     /// say so instead of waiting for a reply that isn't coming.
     private(set) var lastSendWasHeld = false
@@ -137,9 +137,21 @@ final class Conversation {
     /// Test seam: how many messages the store holds for this conversation.
     var persistedMessageCountForTesting: Int { store.record(id: id)?.messages.count ?? 0 }
 
-    var title: String {
+    /// What the screen around the transcript shows of `messages`, held as values of their own. A
+    /// streaming reply rewrites `messages` many times a second, and a view that reads the array
+    /// in its body is re-rendered every time: the header did, which rebuilt the navigation
+    /// toolbar, the conversation list and the composer on every update. These two change only
+    /// when the first message or the emptiness does, so reading them costs nothing while a
+    /// reply streams.
+    private(set) var title = "New conversation"
+    private(set) var hasMessages = false
+
+    private func refreshHeader() {
         let first = (messages.first { $0.role == .user && !$0.isSteer } ?? outbox.first?.message).map { $0.text.isEmpty ? "\($0.attachments.count) attachment\($0.attachments.count == 1 ? "" : "s")" : $0.text } ?? "New conversation"
-        return String(first.prefix(60))
+        let title = String(first.prefix(60))
+        // Assigning an equal value would still notify every observer.
+        if title != self.title { self.title = title }
+        if hasMessages == messages.isEmpty { hasMessages = !messages.isEmpty }
     }
 
     // MARK: - Actions
@@ -848,7 +860,14 @@ final class Conversation {
     // MARK: - Delta coalescing
     //
     // Models emit a token every few milliseconds; applying each one re-renders the transcript
-    // (Markdown parse, highlighting, scroll). Buffer them and apply at ~20 fps instead.
+    // (Markdown parse, highlighting, scroll). Buffer them and apply at ~20 fps instead. Thinking
+    // alone goes at 5: it is a few grey lines that scroll by, a model can think for minutes, and
+    // every update costs the same as one of reply text.
+
+    private static let textFlushInterval: Duration = .milliseconds(50)
+    private static let reasoningFlushInterval: Duration = .milliseconds(200)
+    /// The waiting flush was scheduled for thinking only.
+    private var flushIsSlow = false
 
     private var pendingText = ""
     private var pendingReasoning = ""
@@ -867,9 +886,13 @@ final class Conversation {
         if pendingFor != id { flushDeltas(); pendingFor = id }
         pendingText += text
         pendingReasoning += reasoning
+        let slow = pendingText.isEmpty
+        // Reply text doesn't wait out a flush that was scheduled for thinking.
+        if flushIsSlow, !slow { flushTask?.cancel(); flushTask = nil }
         guard flushTask == nil else { return }
+        flushIsSlow = slow
         flushTask = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(50))
+            try? await Task.sleep(for: slow ? Self.reasoningFlushInterval : Self.textFlushInterval)
             guard !Task.isCancelled else { return }
             self?.flushTask = nil
             self?.flushDeltas()
