@@ -79,6 +79,16 @@ targets:
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
         ITSAppUsesNonExemptEncryption: false
+        # A reply the person started keeps streaming after the phone locks (BackgroundTurn): an
+        # iOS 26 continued-processing task, one identifier per turn under this wildcard.
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.goosehouse.echo.turn.*
+        # `audio`: a voice conversation goes on when Redde isn't in front — the car screen switched
+        # to navigation, the phone locked in a pocket — so listening and the spoken reply aren't
+        # cut off with the foreground. Without it iOS stops the microphone and silences playback.
+        UIBackgroundModes:
+          - audio
+          - processing
         NSMicrophoneUsageDescription: Redde listens so you can talk to your assistant. Audio is transcribed on this device and only your own server ever receives the text.
         NSCameraUsageDescription: Redde uses the camera when you take a photo to attach to a message. The photo goes only to the server you connect to.
         NSFaceIDUsageDescription: Redde uses Face ID to unlock the app, which holds your Hermes credentials.

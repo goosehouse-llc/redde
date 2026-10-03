@@ -298,31 +298,6 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     }
 }
 
-/// Keeps the process alive after backgrounding while a turn is streaming, so the reply can
-/// finish and a notification can be posted. iOS grants a bounded window (typically ~30 s).
-@MainActor
-final class BackgroundTurn {
-    static let shared = BackgroundTurn()
-    private var task: UIBackgroundTaskIdentifier = .invalid
-    /// iOS ran out the window during this turn: the app was suspended and its connection dropped.
-    private(set) var expired = false
-
-    func begin() {
-        guard task == .invalid else { return }
-        expired = false
-        task = UIApplication.shared.beginBackgroundTask(withName: "redde.turn") { [weak self] in
-            self?.expired = true
-            self?.end()
-        }
-    }
-
-    func end() {
-        guard task != .invalid else { return }
-        UIApplication.shared.endBackgroundTask(task)
-        task = .invalid
-    }
-}
-
 /// Catches the APNs registration callbacks; everything else stays SwiftUI.
 final class PushDelegate: NSObject, UIApplicationDelegate {
     private let log = Logger(subsystem: "com.goosehouse.echo", category: "notify")

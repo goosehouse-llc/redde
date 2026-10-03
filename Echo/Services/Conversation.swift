@@ -224,7 +224,7 @@ final class Conversation {
 
         isStreaming = true
         TurnActivity.shared.start(question: trimmed)
-        BackgroundTurn.shared.begin()
+        BackgroundTurn.shared.begin(question: trimmed)
         turnSerial += 1
         let myTurn = turnSerial
         let transportKind = settings.transport
@@ -413,7 +413,7 @@ final class Conversation {
                 clearStatus()
                 isStreaming = false
                 currentRunID = nil
-                BackgroundTurn.shared.end()
+                BackgroundTurn.shared.end(success: outcome == .completed)
                 switch outcome {
                 case .completed: retryAttempt = 0; retryOutbox()
                 case .held: scheduleRetry()

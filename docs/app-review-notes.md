@@ -23,6 +23,10 @@ The Settings sections for "Hermes API", "Hermes Dashboard", Skills, Tools, Conte
 
 **In-app purchases (tips):** Settings → About → Support Redde offers three optional one-time tips (consumables: A coffee, A snack, A dinner), submitted for review together with this version. They unlock nothing: every feature works without them, and the screen says so. There are no subscriptions and no paywall. If the products haven't been approved yet when you look, the screen shows "Tips aren't available right now" instead of the three tips; that is the app's designed fallback, not an error.
 
+**Background audio (`UIBackgroundModes: audio`):** a voice conversation continues when Redde leaves the foreground: in CarPlay when the driver switches the car screen to navigation while asking or being answered, and on the phone when it locks mid-conversation. Redde only records while the user has started listening (the orb, "Ask Redde", "Talk with Redde", Siri or a control), shows as the Now Playing app while it does, and stops when the user ends the conversation. No audio is recorded or played that the user did not start.
+
+**Background processing (`UIBackgroundModes: processing`):** used only for `BGContinuedProcessingTaskRequest`. When the user sends a message and locks the phone or leaves the app, the reply they asked for keeps streaming from their server instead of being cut off after about 30 seconds; iOS shows its progress activity with a stop button for the length of that reply. Nothing is scheduled for later and nothing runs that the user did not start. To see it: send a question that takes a while, press the side button, and unlock after a minute; the reply is complete.
+
 **App Transport Security:** the app allows plain-HTTP connections (`NSAllowsArbitraryLoads`) because users' self-hosted servers on private networks typically have no public TLS certificate. HTTPS is used whenever the configured address provides it. The review endpoint above is HTTPS.
 
 **Privacy policy:** https://legal.goosehouse.org/redde/privacy

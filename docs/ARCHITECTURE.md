@@ -305,6 +305,20 @@ on headphones (on for the speaker and CarPlay). While the voice screen is open R
 Playing app, so a stem press or play-pause does what the mic does. Removing the headset stops
 speaking. "Announce on AirPods" makes alerts time-sensitive so Siri can read them.
 
+**Replies that outlast the screen.** A reply started in the app keeps streaming after the phone
+locks or the app is left (`Services/BackgroundTurn.swift`). Each such turn is submitted as an iOS
+26 continued-processing task (`BGContinuedProcessingTaskRequest`, one identifier per turn under
+`com.goosehouse.echo.turn.*`, background mode `processing`): iOS shows its own activity with a
+progress bar and a stop button, and the process keeps its network connection. A reply has no known
+length and iOS expires a task whose progress stalls, so the bar creeps toward the end and only gets
+there with the turn. iOS can refuse the task or end it early, a turn started from the background
+(Siri, a notification button) can't have one, and neither can the simulator or a Mac; then the
+older 30-second background task is all there is. When the time is taken back the turn is not
+cancelled: on a Hermes connection the agent keeps working and the Dashboard picks the reply up on
+return, while a direct model connection reports that it was stopped. Measured on an iPhone on
+iOS 27 with a 100-second reply and the app in the background: complete with the task, suspended
+after 33 seconds without it.
+
 **Background notifications.** Settings → Voice → "Notify me in the background": approvals,
 questions, sudo and secret requests, finished replies and failures, as local notifications with
 Approve / Deny and reply actions. A push relay (`companion/push-relay`) can deliver them when the app
@@ -339,7 +353,10 @@ CarPlay owns layout and type. Declaring the scene enables multiple scenes, so th
 external events to the existing window (`handlesExternalEvents` in `EchoApp`); re-check the Action
 Button, Control Center and widget paths on a device after changes here.
 `scripts/carplay-simulator.sh` previews the car screens in a separate, git-ignored simulator
-project.
+project. The `audio` background mode keeps a conversation going when the car screen switches to
+navigation (or the phone locks): without it iOS cuts the microphone and silences the reply as soon
+as Redde leaves the foreground, and the continued-processing task (above) only covers the wait in
+between. Untested in a car as of 2026-10-02.
 
 ## App and settings
 

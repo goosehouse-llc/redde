@@ -210,3 +210,26 @@ struct NotifierTests {
         #expect(conversation.pendingInterrupt != nil)
     }
 }
+
+/// The system activity for a reply that runs on after the phone locks needs a progress value,
+/// and iOS expires a task whose progress stops moving. A reply has no known length.
+struct BackgroundTurnTests {
+    @Test func progressKeepsMovingAndNeverFinishesOnItsOwn() {
+        #expect(BackgroundTurn.progress(after: 0) == 0)
+        #expect(BackgroundTurn.progress(after: -5) == 0)
+        var last: Int64 = -1
+        for second in stride(from: 0.0, through: 3 * 3600, by: 1) {
+            let value = BackgroundTurn.progress(after: second)
+            #expect(value > last, "progress stalled at \(second) s")
+            #expect(value < BackgroundTurn.progressTotal)
+            last = value
+        }
+        #expect(BackgroundTurn.progress(after: 60) == BackgroundTurn.progressTotal / 3)
+    }
+
+    @Test func turnIdentifiersFitTheInfoPlistWildcard() {
+        let permitted = Bundle.main.object(forInfoDictionaryKey: "BGTaskSchedulerPermittedIdentifiers") as? [String] ?? []
+        #expect(permitted.contains(BackgroundTurn.identifierPrefix + "*"))
+        #expect(BackgroundTurn.identifierPrefix.hasPrefix(Bundle.main.bundleIdentifier ?? "?"))
+    }
+}
