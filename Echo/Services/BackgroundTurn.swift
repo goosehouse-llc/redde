@@ -32,8 +32,6 @@ final class BackgroundTurn {
 
     /// iOS started this turn's continued-processing task.
     var isContinuing: Bool { continued != nil }
-    /// Why the last request wasn't taken, if it wasn't.
-    private(set) var refusal: String?
 
     func begin(question: String = "") {
         if task == .invalid {
@@ -77,9 +75,7 @@ final class BackgroundTurn {
         guard continuedID == nil, !ProcessInfo.processInfo.isiOSAppOnMac,
               UIApplication.shared.applicationState != .background else { return }
         let id = Self.identifierPrefix + UUID().uuidString
-        refusal = nil
         guard Self.register(id) else {
-            refusal = "registration refused"
             log.info("continued task: registration refused")
             return
         }
@@ -94,13 +90,17 @@ final class BackgroundTurn {
             continuedID = id
             startedAt = .now
         } catch {
-            refusal = "\(error)"
             log.info("continued task not accepted: \(error.localizedDescription, privacy: .public)")
         }
     }
 
     /// The launch and expiration handlers are called off the main actor's executor by the
     /// scheduler; closures written in main-actor code would trap there, so both are formed here.
+    ///
+    /// One registration per turn, under a fresh identifier: iOS kills an app that registers the
+    /// same identifier twice, and it keeps every registration for the life of the process. That
+    /// is a few hundred bytes a turn. Registering the wildcard itself once may work instead; it
+    /// hasn't been tried.
     nonisolated private static func register(_ id: String) -> Bool {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: id, using: .main) { task in
             guard let task = task as? BGContinuedProcessingTask else {
