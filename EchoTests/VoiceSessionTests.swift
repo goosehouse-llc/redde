@@ -167,6 +167,24 @@ struct VoiceSessionTests {
         #expect(h.cues.cues == [.listening, .stopped])
     }
 
+    /// Listening survives the background now, so a locked phone must not keep the mic open —
+    /// unless the person is hands-free or on the car's screen.
+    @Test func lockingThePhoneStopsAnOpenMicUnlessHandsFreeOrInTheCar() async throws {
+        let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport([]))
+        h.session.beginListening()
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        h.session.leftForeground(carPlayConnected: true)
+        #expect(h.session.phase == .listening)
+        h.session.continuous = true
+        h.session.leftForeground(carPlayConnected: false)
+        #expect(h.session.phase == .listening)
+        h.session.continuous = false
+        h.session.leftForeground(carPlayConnected: false)
+        #expect(h.session.phase == .idle)
+        #expect(h.recognizer.cancels == 1)
+        #expect(h.cues.cues == [.listening, .stopped])
+    }
+
     // MARK: Stop phrase
 
     @Test func stopPhraseAcknowledgesAndEndsHandsFree() async throws {

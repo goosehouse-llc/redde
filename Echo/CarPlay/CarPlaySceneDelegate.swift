@@ -15,6 +15,11 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     private var session: VoiceSession? { VoiceSession.current }
 
+    /// The car is connected, whether or not Redde is on its screen right now.
+    static var isConnected: Bool {
+        UIApplication.shared.connectedScenes.contains { $0 is CPTemplateApplicationScene }
+    }
+
     nonisolated func templateApplicationScene(_ scene: CPTemplateApplicationScene, didConnect interfaceController: CPInterfaceController) {
         Task { @MainActor in
             controller = interfaceController

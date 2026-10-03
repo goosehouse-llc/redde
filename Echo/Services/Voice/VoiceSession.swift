@@ -228,6 +228,17 @@ final class VoiceSession {
         Task { await startRecognizer() }
     }
 
+    /// The phone locked, or Redde was left for another app, while the mic was open. Listening
+    /// now survives the background (the `audio` background mode), so a mic left open on a locked
+    /// phone would stay open for good. Unless the person is in a hands-free conversation or on
+    /// the car's screen, stop listening and go idle. A reply being thought about or spoken is
+    /// left alone: that is what the background modes are for.
+    func leftForeground(carPlayConnected: Bool) {
+        guard phase == .listening, !continuous, !carPlayConnected else { return }
+        log.info("left the foreground while listening: stopping")
+        cancel()
+    }
+
     /// Tap again while listening: end the utterance now.
     func endListening() {
         guard phase == .listening else { return }

@@ -356,7 +356,10 @@ Button, Control Center and widget paths on a device after changes here.
 project. The `audio` background mode keeps a conversation going when the car screen switches to
 navigation (or the phone locks): without it iOS cuts the microphone and silences the reply as soon
 as Redde leaves the foreground, and the continued-processing task (above) only covers the wait in
-between. Untested in a car as of 2026-10-02.
+between. Untested in a car as of 2026-10-02. The flip side: a mic left open on a locked phone
+would now stay open, so when every scene goes to the background while listening, the session
+stops (`VoiceSession.leftForeground`) unless hands-free is on or the car is connected
+(`CarPlaySceneDelegate.isConnected`). A reply being thought about or spoken is never stopped there.
 
 ## App and settings
 

@@ -56,6 +56,8 @@ struct EchoApp: App {
                 case .background:
                     lock.appWillResignActive()
                     ConversationStore.shared.saveNow()   // don't leave a debounced write for a suspended process
+                    // Every scene is in the background now, the car's included if there is one.
+                    voiceSession.leftForeground(carPlayConnected: CarPlaySceneDelegate.isConnected)
                 case .active: lock.appDidBecomeActive()
                 @unknown default: break
                 }
