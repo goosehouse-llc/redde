@@ -27,6 +27,8 @@ The Settings sections for "Hermes API", "Hermes Dashboard", Skills, Tools, Conte
 
 **Background processing (`UIBackgroundModes: processing`):** used only for `BGContinuedProcessingTaskRequest`. When the user sends a message and locks the phone or leaves the app, the reply they asked for keeps streaming from their server instead of being cut off after about 30 seconds; iOS shows its progress activity with a stop button for the length of that reply. Nothing is scheduled for later and nothing runs that the user did not start. To see it: send a question that takes a while, press the side button, and unlock after a minute; the reply is complete.
 
+**Calendar access (`NSCalendarsFullAccessUsageDescription`):** when a message the user is typing mentions a day ("tomorrow at 9"), a chip "Calendar · <day>" appears above the field. Only if the user taps it does Redde ask for calendar access and read that one day's events, which are attached to that message as a text file for the assistant; the user sees the attachment and can remove it before sending. Nothing is read without a tap, and declining the permission just hides the chip. To see it: type "What do I have tomorrow at 9?" and tap the chip.
+
 **App Transport Security:** the app allows plain-HTTP connections (`NSAllowsArbitraryLoads`) because users' self-hosted servers on private networks typically have no public TLS certificate. HTTPS is used whenever the configured address provides it. The review endpoint above is HTTPS.
 
 **Privacy policy:** https://legal.goosehouse.org/redde/privacy

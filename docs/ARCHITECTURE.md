@@ -195,6 +195,25 @@ on the voice screen: approvals (once / session / always / deny), clarifying ques
 straight to the gateway terminal, never stored) and secrets (saved on the gateway under the named
 env var).
 
+### Follow-ups and context chips
+
+Two kinds of suggestion around the composer, both optional:
+
+- **Follow-up questions** (Settings → Voice, off by default): once a reply finishes, three things
+  the user might ask next appear as chips above the field and send on tap (`FollowUpChips`,
+  `Conversation.followUps`). They are written by the OpenAI-compatible connection's model in one
+  plain, non-streaming completion (`Services/FollowUps.swift`), whatever connection the
+  conversation is on: the agent's own session can't be asked without the question landing in the
+  transcript. So the setting needs that address; without it the toggle is disabled. Cleared by
+  the next send, a cancel, or opening another conversation.
+- **Context chips** (`Services/ComposerContext.swift`): what the draft mentions that the phone can
+  attach. A day ("tomorrow at 9", "Oct 24", found by `NSDataDetector`) offers "Calendar · Sun,
+  Oct 4"; tapping reads that day's events with EventKit (full-access permission, asked on the
+  first tap) and attaches them as a text file, which inlines into the prompt on the API and the
+  fast lane and goes up as a file on the Dashboard. A file name from a recent conversation's
+  attachments offers "Attach plan.md". Chips can be dismissed for the draft; nothing is read until
+  tapped.
+
 ### Subagents
 
 Each child agent from `delegate_task` gets a row under the reply: goal, task N of M, live tool line,
@@ -204,7 +223,9 @@ built from the delegate call's goals. `Views/SubagentRows.swift`.
 
 ### Attachments and sharing
 
-The composer's + menu attaches files (up to 8 MB), photos from the library, or a photo taken with
+The composer's round button follows what you're doing (the app's waveform, still, for voice; send;
+stop; steer and queue during a reply) and springs between those; the field gets a faint accent
+ring while there is something to send. The + menu attaches files (up to 8 MB), photos from the library, or a photo taken with
 the camera (`CameraPicker`, a `UIImagePickerController` in a full-screen cover; hidden where there's
 no camera). Images are downscaled to 1600 px JPEG:
 

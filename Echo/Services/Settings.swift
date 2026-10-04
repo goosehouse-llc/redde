@@ -184,6 +184,10 @@ final class Settings: ServeEndpoint {
     var showLiveActivity: Bool {
         didSet { defaults.set(showLiveActivity, forKey: Keys.showLiveActivity) }
     }
+    /// Three follow-up questions under each reply, written by the OpenAI-compatible model.
+    var suggestFollowUps: Bool {
+        didSet { defaults.set(suggestFollowUps, forKey: Keys.suggestFollowUps) }
+    }
     /// Route replies to the earpiece when the proximity sensor says the phone is at your ear.
     /// Redde's background alerts are time-sensitive, so Siri can read them on AirPods (Announce
     /// Notifications) and they can break through a Focus.
@@ -330,6 +334,7 @@ final class Settings: ServeEndpoint {
         static let orbLight = "orbLight"
         static let notifyInBackground = "notifyInBackground"
         static let showLiveActivity = "showLiveActivity"
+        static let suggestFollowUps = "suggestFollowUps"
         static let earpieceAtEar = "earpieceAtEar"
         static let announceOnAirPods = "announceOnAirPods"
         static let requireBiometrics = "requireBiometrics"
@@ -381,6 +386,7 @@ final class Settings: ServeEndpoint {
         orbLight = OrbLight(rawValue: defaults.string(forKey: Keys.orbLight) ?? "") ?? .nebula
         notifyInBackground = defaults.bool(forKey: Keys.notifyInBackground)
         showLiveActivity = defaults.object(forKey: Keys.showLiveActivity) as? Bool ?? true
+        suggestFollowUps = defaults.bool(forKey: Keys.suggestFollowUps)
         speechLanguage = defaults.string(forKey: Keys.speechLanguage) ?? ""
         matchReplyLanguage = defaults.object(forKey: Keys.matchReplyLanguage) as? Bool ?? true
         earpieceAtEar = defaults.object(forKey: Keys.earpieceAtEar) as? Bool ?? true

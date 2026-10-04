@@ -66,6 +66,10 @@ final class Conversation {
     /// The last `send` didn't go out now (queued or held offline). The voice loop reads this to
     /// say so instead of waiting for a reply that isn't coming.
     private(set) var lastSendWasHeld = false
+    /// Follow-up questions for the last reply (`FollowUps`), when the setting is on and the
+    /// fast lane answered; cleared by the next send.
+    private(set) var followUps: [String] = []
+    private var followUpTask: Task<Void, Never>?
     private var retryTask: Task<Void, Never>?
     private var retryAttempt = 0
     private var connectivityToken: UUID?
@@ -136,6 +140,10 @@ final class Conversation {
     /// Seeding seam: the demo library writes canned records straight into the store.
     var storeForDemo: ConversationStore { store }
     #endif
+    /// The composer's context chips look through recent conversations' attachments.
+    var storeForContext: ConversationStore { store }
+    #if DEBUG
+    #endif
 
     /// Test seam: how many messages the store holds for this conversation.
     var persistedMessageCountForTesting: Int { store.record(id: id)?.messages.count ?? 0 }
@@ -196,6 +204,7 @@ final class Conversation {
         let (mirror, mirrorContinuation) = AsyncStream.makeStream(of: TurnEvent.self)
         lastSendWasHeld = false
         lastError = nil
+        clearFollowUps()
         // Only the fast lane sends history; the ledger transports keep theirs on the server.
         let history = settings.transport == .chatCompletions ? messages.filter { $0.error == nil } : []
         var userMessage = outgoing
@@ -394,6 +403,7 @@ final class Conversation {
                                        messageEntityID: SiriID.message(self.id, replyID))
                 persist()
                 outcome = .completed
+                suggestFollowUps(question: trimmed, replyID: replyID, reply: replyText)
             } catch is CancellationError {
                 windowTask.cancel()
                 flushDeltas()
@@ -540,6 +550,7 @@ final class Conversation {
         let wasStreaming = isStreaming
         streamTask?.cancel()
         streamTask = nil
+        clearFollowUps()
         flushDeltas()
         isStreaming = false
         clearStatus()
@@ -1033,6 +1044,27 @@ final class Conversation {
         let fits = stored.filter { $0.role == .assistant && $0.tools.map(\.name) == names }
         let text = local.text.trimmingCharacters(in: .whitespacesAndNewlines)
         return (fits.last { $0.text.trimmingCharacters(in: .whitespacesAndNewlines) == text } ?? fits.last)?.tools
+    }
+
+    // MARK: Follow-ups
+
+    func clearFollowUps() {
+        followUpTask?.cancel()
+        followUpTask = nil
+        followUps = []
+    }
+
+    /// Ask the fast-lane model for follow-ups to a finished reply; shown only while that reply
+    /// is still the last message.
+    private func suggestFollowUps(question: String, replyID: UUID, reply: String) {
+        guard settings.suggestFollowUps, !reply.isEmpty, let base = Settings.normalizedBase(settings.fastLaneURL),
+              !settings.fastLaneModel.isEmpty else { return }
+        let (model, key) = (settings.fastLaneModel, Keychain.read(.fastLaneAPIKey))
+        followUpTask = Task { [weak self] in
+            let suggestions = await FollowUps.suggest(question: question, reply: reply, baseURL: base, apiKey: key, model: model)
+            guard let self, !Task.isCancelled, messages.last?.id == replyID, !isStreaming else { return }
+            followUps = suggestions
+        }
     }
 
     private func fail(_ id: UUID, _ description: String) {

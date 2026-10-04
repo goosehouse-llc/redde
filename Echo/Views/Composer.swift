@@ -6,16 +6,24 @@ struct ComposerButton: View {
     let label: String
     let tint: Color
     let size: CGFloat
+    /// The app's own waveform in its resting shape, still, instead of a symbol (the Talk button).
+    var waveform = false
     let action: () -> Void
     @Environment(\.theme) private var theme
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: size * 0.42, weight: .semibold))
-                .foregroundStyle(theme.userText)
-                .frame(width: size, height: size)
-                .contentShape(Circle())
+            Group {
+                if waveform {
+                    WaveformPulse(color: theme.userText, height: size * 0.56, spacing: 2.5, shape: [0.38, 0.66, 1.0, 0.66, 0.38], still: true)
+                } else {
+                    Image(systemName: symbol)
+                        .font(.system(size: size * 0.42, weight: .semibold))
+                        .foregroundStyle(theme.userText)
+                }
+            }
+            .frame(width: size, height: size)
+            .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .glassEffect(.regular.tint(tint).interactive(), in: .circle)
@@ -34,39 +42,48 @@ struct WaveformPulse: View {
     var color: Color
     var barCount = 5
     var height: CGFloat = 20
+    /// Gap between the bars.
+    var spacing: CGFloat = 4
+    /// Each bar's resting height as a share of `height`; the icon's shape by default.
+    var shape = WaveformBarsView.iconShape
+    /// Hold the resting shape; also what Reduce Motion gets.
+    var still = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        Bars(color: UIColor(color), barCount: barCount, height: height, still: reduceMotion)
-            .frame(width: WaveformBarsView.width(barCount: barCount), height: height)
+        Bars(color: UIColor(color), barCount: barCount, height: height, spacing: spacing, shape: shape, still: still || reduceMotion)
+            .frame(width: WaveformBarsView.width(barCount: barCount, spacing: spacing), height: height)
     }
 
     private struct Bars: UIViewRepresentable {
         var color: UIColor
         var barCount: Int
         var height: CGFloat
+        var spacing: CGFloat
+        var shape: [CGFloat]
         var still: Bool
 
         func makeUIView(context: Context) -> WaveformBarsView { WaveformBarsView() }
 
         func updateUIView(_ view: WaveformBarsView, context: Context) {
-            view.configure(color: color, barCount: barCount, height: height, still: still)
+            view.configure(color: color, barCount: barCount, height: height, spacing: spacing, shape: shape, still: still)
         }
     }
 }
 
 final class WaveformBarsView: UIView {
     private static let barWidth: CGFloat = 4
-    private static let spacing: CGFloat = 4
     /// Resting shape mirrors the icon (tall middle); each bar breathes down to 35% of it.
-    private static let rest: [CGFloat] = [0.45, 0.75, 1.0, 0.75, 0.45]
+    static let iconShape: [CGFloat] = [0.45, 0.75, 1.0, 0.75, 0.45]
     private static let animationKey = "breathe"
 
-    static func width(barCount: Int) -> CGFloat { max(0, CGFloat(barCount) * (barWidth + spacing) - spacing) }
+    static func width(barCount: Int, spacing: CGFloat) -> CGFloat { max(0, CGFloat(barCount) * (barWidth + spacing) - spacing) }
 
     private var bars: [CALayer] = []
     private var color = UIColor.tintColor
     private var barHeight: CGFloat = 20
+    private var spacing: CGFloat = 4
+    private var rest = WaveformBarsView.iconShape
     private var still = false
 
     override init(frame: CGRect) {
@@ -78,10 +95,12 @@ final class WaveformBarsView: UIView {
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("not used from a nib") }
 
-    func configure(color: UIColor, barCount: Int, height: CGFloat, still: Bool) {
-        let changed = barCount != bars.count || height != barHeight || still != self.still
+    func configure(color: UIColor, barCount: Int, height: CGFloat, spacing: CGFloat, shape: [CGFloat], still: Bool) {
+        let changed = barCount != bars.count || height != barHeight || spacing != self.spacing || shape != rest || still != self.still
         self.color = color
         barHeight = height
+        self.spacing = spacing
+        rest = shape.isEmpty ? Self.iconShape : shape
         self.still = still
         if barCount != bars.count {
             bars.forEach { $0.removeFromSuperlayer() }
@@ -101,7 +120,7 @@ final class WaveformBarsView: UIView {
         bars.forEach { $0.backgroundColor = resolved }
     }
 
-    private func restHeight(_ index: Int) -> CGFloat { barHeight * Self.rest[index % Self.rest.count] }
+    private func restHeight(_ index: Int) -> CGFloat { barHeight * rest[index % rest.count] }
 
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -109,7 +128,7 @@ final class WaveformBarsView: UIView {
         CATransaction.setDisableActions(true)
         for (i, bar) in bars.enumerated() {
             bar.bounds = CGRect(x: 0, y: 0, width: Self.barWidth, height: restHeight(i))
-            bar.position = CGPoint(x: CGFloat(i) * (Self.barWidth + Self.spacing) + Self.barWidth / 2, y: bounds.midY)
+            bar.position = CGPoint(x: CGFloat(i) * (Self.barWidth + spacing) + Self.barWidth / 2, y: bounds.midY)
         }
         CATransaction.commit()
         animate()

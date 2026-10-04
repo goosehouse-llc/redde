@@ -158,10 +158,14 @@ struct ContentView: View {
             .background(theme.background ?? Color(.systemBackground))
             .foregroundStyle(theme.text ?? Color.primary)
             .safeAreaInset(edge: .bottom) {
-                ComposerView(draft: $draft, pendingAttachments: $pendingAttachments, editing: $editing,
-                             focused: $composerFocused,
-                             openHandsFree: { Task { await launchVoice(handsFree: settings.handsFreeByDefault) } },
-                             openModelPicker: { showModelPicker = true })
+                VStack(spacing: 0) {
+                    FollowUpChips()
+                    ComposerView(draft: $draft, pendingAttachments: $pendingAttachments, editing: $editing,
+                                 focused: $composerFocused,
+                                 openHandsFree: { Task { await launchVoice(handsFree: settings.handsFreeByDefault) } },
+                                 openModelPicker: { showModelPicker = true })
+                }
+                    .animation(.snappy(duration: 0.3), value: conversation.followUps)
                     .frame(maxWidth: 820).frame(maxWidth: .infinity)
                     // Solid themes have no glass field to hide the transcript scrolling past the composer.
                     .background(theme.usesGlass ? AnyShapeStyle(.clear) : AnyShapeStyle(theme.background ?? Color(.systemBackground)))
