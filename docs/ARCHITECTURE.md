@@ -361,6 +361,35 @@ would now stay open, so when every scene goes to the background while listening,
 stops (`VoiceSession.leftForeground`) unless hands-free is on or the car is connected
 (`CarPlaySceneDelegate.isConnected`). A reply being thought about or spoken is never stopped there.
 
+## Apple Watch
+
+A watchOS app (`Watch/`, target `EchoWatch`, embedded in the iPhone app) for one thing: ask a
+question by dictation, read the answer, hear it read aloud. It talks to Hermes itself. The phone
+hands over a `WatchConnection` (`Shared/WatchSync.swift`) as WatchConnectivity application
+context: the Hermes API with the profile path and key when the phone has it, else the fast lane,
+never the Dashboard (a WebSocket login has no watch form). The phone pushes on launch, when it
+comes to the front, when Settings or Setup close and on a server switch (`Services/WatchLink.swift`);
+the watch asks for a copy when it has none (`Watch/PhoneLink.swift`). The key goes into the
+watch's Keychain, the rest into its defaults.
+
+Questions go through the same transport files as the phone — `HermesTransport`,
+`HermesSessionsTransport`, `ChatCompletionsTransport`, `SSEParser`, `JSONValue`, `Message` — listed
+one by one in `project.yml`, since the rest of the app assumes iOS. On the Hermes API the watch
+keeps one session of its own ("Apple Watch · date"), made on the first question and remade if the
+gateway deletes it; on the fast lane it keeps the last six exchanges as history. The agent is told
+the reply will be read aloud and to keep it short and plain. Replies are spoken with Kokoro when
+the phone uses it (one WAV per reply from the phone's server), else the system voice
+(`AVSpeechSynthesizer`, in the reply language when one is set). On Bluetooth headphones the
+reply plays on after the wrist goes down (`audio` background mode, long-form audio policy); on
+the speaker it plays while the app is on screen, which is all watchOS allows. An approval or a question
+from the agent shows as "waiting on your iPhone"; the phone's notifications reach the wrist on
+their own. `Watch/AskReddeIntent.swift` is the Ask Redde App Shortcut: a Siri phrase on the
+watch, and what the Ultra's Action button runs (Settings › Action Button › Shortcut); it opens
+the app and starts dictation once the screen is up. Debug launch arguments for the simulator, which can neither dictate nor receive the
+phone's handover: `-echo.connection <hermesAPI|fastLane> <url> <key>` and `-echo.ask "text"`.
+Paired simulators don't treat a watch app installed with `simctl` as the phone's companion, so
+the handover itself is tested on a real watch.
+
 ## App and settings
 
 - **Themes:** seven (Messages, Paper, Slate, Terminal, Amber CRT, Hermes, Code), each with light and

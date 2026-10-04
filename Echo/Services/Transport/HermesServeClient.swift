@@ -2,12 +2,14 @@ import Foundation
 import Observation
 import os
 
-/// A tool approval the agent is waiting on (hermes serve only).
-nonisolated struct ApprovalRequest: Identifiable, Equatable, Sendable, Codable {
-    var id: String            // request_id
-    var command: String
-    var description: String?
-    var choices: [String]     // once | session | always | deny
+/// Where a Dashboard client connects and as whom. The phone's `Settings` is one; the watch
+/// builds one from the connection the phone hands over.
+@MainActor
+protocol ServeEndpoint: AnyObject {
+    var serveBaseURL: URL? { get }
+    var serveUsername: String { get }
+    var profileName: String? { get }
+    var accessHeaders: [String: String] { get }
 }
 
 /// JSON-RPC 2.0 over WebSocket to `hermes serve` (the desktop gateway). One shared connection.
@@ -17,7 +19,9 @@ nonisolated struct ApprovalRequest: Identifiable, Equatable, Sendable, Codable {
 /// REST calls ride on the same cookie jar.
 @Observable
 final class HermesServeClient {
-    static let shared = HermesServeClient()
+    #if !os(watchOS)
+    static let shared = HermesServeClient(settings: Settings.shared)
+    #endif
 
     enum State: Equatable { case disconnected, connecting, connected, reconnecting(attempt: Int), failed(String) }
     private(set) var state: State = .disconnected
@@ -33,12 +37,12 @@ final class HermesServeClient {
     /// handshake inherits them from the configuration.
     private var session: URLSession
     private var appliedHeaders: [String: String] = [:]
-    private let settings: Settings
+    private let settings: any ServeEndpoint
     private let password: () -> String?
     /// Tests install a stub URLProtocol here; production leaves it empty.
     private let protocolClasses: [AnyClass]
 
-    init(settings: Settings = .shared,
+    init(settings: any ServeEndpoint,
          password: @escaping () -> String? = { Keychain.read(.serveDashboardPassword) },
          protocolClasses: [AnyClass] = []) {
         self.settings = settings

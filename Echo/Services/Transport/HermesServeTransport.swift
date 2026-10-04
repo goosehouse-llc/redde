@@ -5,6 +5,14 @@ import Foundation
 /// If the socket drops mid-turn, waits for the client to reconnect, re-attaches to the session,
 /// and either keeps streaming (turn still running) or backfills the reply from history.
 nonisolated struct HermesServeTransport: HermesTransport {
+    /// The phone's one shared client, or the watch's own.
+    let client: HermesServeClient
+
+    init(client: HermesServeClient) { self.client = client }
+    #if !os(watchOS)
+    @MainActor init() { client = .shared }
+    #endif
+
     /// Mutable per-turn state shared between the event listener and the driver.
     @MainActor
     private final class TurnState {
@@ -21,7 +29,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
     func stream(_ request: TurnRequest) -> AsyncThrowingStream<TurnEvent, Error> {
         AsyncThrowingStream { continuation in
             let task = Task { @MainActor in
-                let client = HermesServeClient.shared
+                let client = self.client
                 var listener: UUID?
                 var state: TurnState?
                 defer {
@@ -263,8 +271,12 @@ nonisolated struct HermesServeTransport: HermesTransport {
         // starts at the same level instead of snapping back.
         if let level = reasoningLevel(inSlash: body) {
             try await client.setSessionReasoning(runtimeSession: runtime, effort: level)
+            #if os(watchOS)
+            return [.textDelta("Reasoning effort for this conversation: \(level)")]
+            #else
             if Settings.reasoningEfforts.contains(where: { $0.value == level }) { Settings.shared.reasoningEffort = level }
             return [.textDelta("Reasoning effort for this conversation: \(Settings.effortLabel(level))")]
+            #endif
         }
         do {
             let result = try await client.call("slash.exec", params: .object(["session_id": .string(runtime), "command": .string(body)]))

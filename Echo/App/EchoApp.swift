@@ -43,6 +43,7 @@ struct EchoApp: App {
             .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
             .onAppear {
                 lock.appDidLaunch()
+                WatchLink.shared.activate()
                 Settings.shared.applyLateLocalDefaults()
                 // Daemon round trips (notification categories, Siri phrases) wait for the first frame.
                 Notifier.shared.registerCategories()
@@ -58,7 +59,9 @@ struct EchoApp: App {
                     ConversationStore.shared.saveNow()   // don't leave a debounced write for a suspended process
                     // Every scene is in the background now, the car's included if there is one.
                     voiceSession.leftForeground(carPlayConnected: CarPlaySceneDelegate.isConnected)
-                case .active: lock.appDidBecomeActive()
+                case .active:
+                    lock.appDidBecomeActive()
+                    WatchLink.shared.push()   // settings may have changed since the watch last heard
                 @unknown default: break
                 }
             }

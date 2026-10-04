@@ -91,6 +91,7 @@ nonisolated struct Attachment: Identifiable, Codable, Equatable, Sendable {
 
     // MARK: - Builders
 
+    #if !os(watchOS)   // no camera or paste on the wrist, and watchOS has no UIGraphicsImageRenderer
     /// For callers that already hold a decoded bitmap (camera, paste). Files and shared photos
     /// go through `image(fileURL:)`, which never decodes the full-size image.
     static func image(_ image: UIImage, filename: String = "photo.jpg") -> Attachment? {
@@ -101,6 +102,7 @@ nonisolated struct Attachment: Identifiable, Codable, Equatable, Sendable {
         guard let jpeg = scaled.jpegData(compressionQuality: 0.88) else { return nil }
         return Attachment(kind: .image, filename: filename, mimeType: "image/jpeg", data: jpeg)
     }
+    #endif
 
     /// Downsamples an image file through ImageIO: a 48 MP photo never becomes a 190 MB bitmap,
     /// which matters inside the share extension's memory limit.

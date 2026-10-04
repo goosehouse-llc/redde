@@ -374,6 +374,14 @@ nonisolated extension Bundle {
 }
 
 
+/// A tool approval the agent is waiting on (hermes serve only).
+nonisolated struct ApprovalRequest: Identifiable, Equatable, Sendable, Codable {
+    var id: String            // request_id
+    var command: String
+    var description: String?
+    var choices: [String]     // once | session | always | deny
+}
+
 /// One clarifying question from the agent's `clarify` tool.
 nonisolated struct ClarifyQuestion: Identifiable, Equatable, Sendable, Codable {
     var id: String          // qid ("" for the single-question form)

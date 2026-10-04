@@ -35,7 +35,7 @@ nonisolated enum Transport: String, CaseIterable, Identifiable, Codable {
 
 /// Non-secret configuration. The API key is *never* here — see `Keychain`.
 @Observable
-final class Settings {
+final class Settings: ServeEndpoint {
     static let shared: Settings = {
         let settings = Settings()
         settings.moveLegacySecretsToActiveServer()

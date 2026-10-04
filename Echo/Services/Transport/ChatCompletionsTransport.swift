@@ -66,7 +66,7 @@ nonisolated struct ChatCompletionsTransport: HermesTransport {
             }
             messages += request.history.map { .init(role: $0.role.rawValue, content: .string($0.text)) }
             messages.append(.init(role: "user", content: try Self.makeContent(text: request.userText, attachments: request.attachments)))
-            let model = request.model?.nilIfEmpty ?? Settings.defaultFastLaneModel
+            let model = request.model?.nilIfEmpty ?? ""   // no pick: the server's default
             let body = Body(model: model, messages: messages,
                             return_progress: Self.isSelfHosted(baseURL) ? true : nil,
                             reasoning_effort: Self.wireEffort(request.reasoningEffort),

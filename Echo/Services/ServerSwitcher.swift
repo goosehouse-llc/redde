@@ -10,5 +10,6 @@ enum ServerSwitcher {
         conversation.reset()   // saves the open conversation as the old server's, then starts fresh
         HermesServeClient.shared.resetForServerChange()
         settings.activateServer(id)
+        WatchLink.shared.push()
     }
 }

@@ -3,6 +3,7 @@ options:
   bundleIdPrefix: com.goosehouse
   deploymentTarget:
     iOS: "26.0"
+    watchOS: "26.0"
   xcodeVersion: "27.0"
   createIntermediateGroups: true
   generateEmptyDirectories: true
@@ -33,6 +34,7 @@ targets:
     dependencies:
       - target: EchoControls
       - target: EchoShare
+      - target: EchoWatch
     entitlements:
       path: Echo/Echo.entitlements
       properties:
@@ -120,6 +122,51 @@ targets:
         # The personal prefill never rides along in a Release / App Store build.
         Release:
           EXCLUDED_SOURCE_FILE_NAMES: LocalDefaults.json
+  # The Apple Watch app. It talks to Hermes itself, with the connection the phone hands over
+  # (Shared/WatchSync.swift), through the same transport code as the phone: those files are
+  # listed one by one, since the rest of the app assumes iOS.
+  EchoWatch:
+    type: application
+    platform: watchOS
+    sources:
+      - path: Watch
+      - path: Shared/WatchSync.swift
+      - path: Shared/Attachment.swift
+      - path: Shared/PlainText.swift
+      - path: Shared/ReplyMedia.swift
+      - path: Echo/Services/Keychain.swift
+      - path: Echo/Models/Message.swift
+      - path: Echo/Models/ReplyLanguage.swift
+      - path: Echo/Services/Transport/HermesTransport.swift
+      - path: Echo/Services/Transport/HermesSessionsTransport.swift
+      - path: Echo/Services/Transport/HermesServeClient.swift
+      - path: Echo/Services/Transport/HermesServeTransport.swift
+      - path: Echo/Services/Transport/ChatCompletionsTransport.swift
+      - path: Echo/Services/Transport/SSEParser.swift
+      - path: Echo/Services/Transport/JSONValue.swift
+    info:
+      path: Watch/Info.plist
+      properties:
+        CFBundleDisplayName: Redde
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        WKApplication: true
+        WKCompanionAppBundleIdentifier: com.goosehouse.echo
+        # Setup comes from the phone once; after that the watch asks Hermes on its own.
+        WKRunsIndependentlyOfCompanionApp: true
+        # A spoken reply keeps playing after the wrist goes down (Speaker).
+        WKBackgroundModes:
+          - audio
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.goosehouse.echo.watchkitapp
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+        SWIFT_APPROACHABLE_CONCURRENCY: true
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        SKIP_INSTALL: true
   EchoControls:
     type: app-extension
     platform: iOS

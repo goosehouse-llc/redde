@@ -200,3 +200,52 @@ struct ServerTests {
         #expect(d.string(forKey: "shortcutSessionID.\(first)") == "s1")
     }
 }
+
+/// What the phone hands the watch (`Shared/WatchSync.swift`, `Services/WatchLink.swift`).
+@MainActor
+struct WatchSyncTests {
+    @Test func aConnectionSurvivesTheTripAsContext() {
+        let sent = WatchConnection(kind: .hermesAPI, url: "https://hermes.example:8642/p/sol", apiKey: "k", model: "qwen", provider: "custom:x",
+                                   reasoningEffort: "high", replyLanguage: "fr", agentName: "Sol")
+        #expect(WatchConnection.from(context: sent.asContext()) == sent)
+        #expect(WatchConnection.from(context: [:]) == nil)
+    }
+
+    @Test func thePhoneOffersTheFastLaneWhenThatIsAllItHas() {
+        let settings = Settings(defaults: UserDefaults(suiteName: "watch-\(UUID().uuidString)")!)
+        settings.transport = .chatCompletions
+        settings.fastLaneURL = "http://llama.home.example:11500/v1"
+        settings.fastLaneModel = "qwen3-4b"
+        settings.displayName = "Sol"
+        let connection = WatchLink.connection(settings)
+        #expect(connection?.kind == .fastLane)
+        #expect(connection?.url == "http://llama.home.example:11500")
+        #expect(connection?.model == "qwen3-4b")
+        #expect(connection?.agentName == "Sol")
+    }
+
+    @Test func thePhoneOnTheDashboardHandsTheDashboardOver() {
+        let settings = Settings(defaults: UserDefaults(suiteName: "watch-\(UUID().uuidString)")!)
+        settings.transport = .hermesServe
+        settings.serveURL = "https://hermes.example:9119/"
+        settings.serveUsername = "sam"
+        settings.hermesProfile = "work"
+        settings.fastLaneURL = "http://llama.home.example:11500/v1"
+        let connection = WatchLink.connection(settings, dashboardPassword: { "pw" })
+        #expect(connection?.kind == .dashboard)
+        #expect(connection?.url == "https://hermes.example:9119")
+        #expect(connection?.apiKey == "pw")
+        #expect(connection?.username == "sam")
+        #expect(connection?.profile == "work")
+        #expect(connection?.accessHeaders == nil)
+        // No password saved: the Dashboard is out, and the phone falls back to what it has.
+        #expect(WatchLink.connection(settings, dashboardPassword: { nil })?.kind == .fastLane)
+    }
+
+    @Test func nothingConfiguredMeansNoConnection() {
+        let settings = Settings(defaults: UserDefaults(suiteName: "watch-\(UUID().uuidString)")!)
+        settings.transport = .chatCompletions
+        settings.fastLaneURL = ""
+        #expect(WatchLink.connection(settings, dashboardPassword: { nil }) == nil)
+    }
+}
