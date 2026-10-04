@@ -18,6 +18,9 @@ nonisolated struct ConversationRecord: Identifiable, Codable, Equatable, Sendabl
     /// The Hermes server this conversation belongs to. Absent for OpenAI-compatible chats and in
     /// files from before multi-server (which belong to the first server).
     var serverID: UUID? = nil
+    /// The name the conversation was given (`Conversation.name`); `title` is that, or else the
+    /// first question. Absent in older files and for conversations never named.
+    var name: String? = nil
 
     var turnCount: Int { messages.filter { $0.role == .user && !$0.isSteer }.count }
 }

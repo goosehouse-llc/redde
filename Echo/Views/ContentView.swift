@@ -15,6 +15,10 @@ struct ContentView: View {
     @State private var draft = ""
     @State private var showSettings = false
     @State private var shareItem: ShareItem?
+    /// Rename, from the header's menu.
+    @State private var showRename = false
+    @State private var renameText = ""
+    @State private var renameError: String?
     @State private var showSetup = false
     @State private var showConversations = false
     /// What's New was up when voice mode was asked for: voice wins, and it comes back after.
@@ -170,9 +174,9 @@ struct ContentView: View {
                 ToolbarItem(placement: .principal) {
                     Button { showModelPicker = true } label: {
                         VStack(spacing: 1) {
-                            Text(headerTitle)
+                            TypedTitle(title: headerTitle, conversationID: conversation.id,
+                                       isPlaceholder: !conversation.hasMessages && conversation.outbox.isEmpty)
                                 .font(.headline)
-                                .lineLimit(1)
                                 .foregroundStyle(theme.text ?? Color.primary)
                             HStack(spacing: 3) {
                                 Text("\(settings.headerTitle) · \(modelChipLabel)").font(.caption).lineLimit(1)
@@ -197,6 +201,11 @@ struct ContentView: View {
                     Menu {
                         Button("Find in conversation", systemImage: "magnifyingglass") { withAnimation { showSearch.toggle() } }
                             .disabled(!conversation.hasMessages)
+                        Button("Rename", systemImage: "pencil") {
+                            renameText = conversation.name ?? conversation.title
+                            showRename = true
+                        }
+                        .disabled(!conversation.hasMessages)
                         Button("Export as Markdown", systemImage: "square.and.arrow.up") {
                             if let url = try? TranscriptExporter.file(title: conversation.title, messages: conversation.messages) {
                                 shareItem = ShareItem(url: url)
@@ -216,6 +225,21 @@ struct ContentView: View {
                 }
             }
             .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
+            .alert("Rename conversation", isPresented: $showRename) {
+                TextField("Name", text: $renameText)
+                    // Return on the keyboard saves, like the button.
+                    .onSubmit { showRename = false; saveRename() }
+                Button("Save") { saveRename() }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text(conversation.serverSessionID == nil ? "Leave it empty to go back to the first question."
+                                                         : "The session is renamed on your server too.")
+            }
+            .alert("Couldn't rename", isPresented: Binding(get: { renameError != nil }, set: { if !$0 { renameError = nil } })) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(renameError ?? "")
+            }
             .background { keyboardShortcuts }
     }
 
@@ -276,6 +300,13 @@ struct ContentView: View {
     }
 
     /// The header's first line: this conversation, or "New conversation" before the first message.
+    private func saveRename() {
+        let name = renameText
+        Task {
+            do { try await conversation.rename(to: name) } catch { renameError = error.localizedDescription }
+        }
+    }
+
     private var headerTitle: String {
         !conversation.hasMessages && conversation.outbox.isEmpty ? "New conversation" : conversation.title
     }

@@ -487,6 +487,7 @@ struct ConversationsList: View {
             let sessions = try await backend.listSessions()
             guard current else { return }
             ledger = sessions
+            conversation.noteServerTitles(sessions)
             if viaServe {
                 // Projects are a bonus; a failure here must not hide the flat list.
                 let tree = ((try? await HermesServeClient.shared.projectTree()) ?? [])

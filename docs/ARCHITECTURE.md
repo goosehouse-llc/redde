@@ -121,6 +121,20 @@ streaming or backfills the missing tail of the reply from history.
 
 ## Conversations and messages
 
+A conversation is titled by its first question (60 characters), or by its name once it has one
+(`Conversation.name`, saved in the record). When a new one gets its title, the header's "New
+conversation" lifts away and the title types itself in behind a caret (`Views/TypedTitle.swift`);
+opening another conversation just shows its title, and so does Reduce Motion.
+
+A name comes from Rename in the header's ••• menu (Save, or Return on the keyboard), which for a
+gateway session renames it on the gateway first so the list, the Dashboard and the header agree
+(titles there must be unique, so the gateway can refuse; the alert says why). It also comes from
+the gateway: a session opened from the list brings its title, and the open session's title is
+read again whenever the list loads (`noteServerTitles`), which picks up a rename made in the list
+or the Dashboard and the title Hermes gives a session by itself. The title Redde gives a new API
+session, the question and a timestamp, is not a name (`Conversation.name(fromServerTitle:)`). An
+empty name takes a conversation kept on the phone back to its first question.
+
 ### Message queue
 
 Nothing is lost to a bad connection, and you don't have to wait for a reply to ask the next thing.

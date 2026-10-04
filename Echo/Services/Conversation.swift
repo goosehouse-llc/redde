@@ -124,6 +124,7 @@ final class Conversation {
         self.id = id
         self.createdAt = createdAt
         self.serverSessionID = serverSessionID
+        self.name = nil   // a new conversation: not the name of the one it replaces
         self.messages = messages
     }
 
@@ -147,10 +148,13 @@ final class Conversation {
     /// reply streams.
     private(set) var title = "New conversation"
     private(set) var hasMessages = false
+    /// The name this conversation was given: by Rename, or on the gateway (a session renamed in
+    /// the Dashboard, or titled by Hermes). Without one the title is the first question.
+    private(set) var name: String? { didSet { refreshHeader() } }
 
     private func refreshHeader() {
         let first = (messages.first { $0.role == .user && !$0.isSteer } ?? outbox.first?.message).map { $0.text.isEmpty ? "\($0.attachments.count) attachment\($0.attachments.count == 1 ? "" : "s")" : $0.text } ?? "New conversation"
-        let title = String(first.prefix(60))
+        let title = name ?? String(first.prefix(60))
         // Assigning an equal value would still notify every observer.
         if title != self.title { self.title = title }
         if hasMessages == messages.isEmpty { hasMessages = !messages.isEmpty }
@@ -612,7 +616,7 @@ final class Conversation {
         cancel()
         persist()
         become(id: record.id, createdAt: record.createdAt, messages: record.messages,
-               outbox: record.outbox ?? [], serverSessionID: record.serverSessionID)
+               outbox: record.outbox ?? [], serverSessionID: record.serverSessionID, name: record.name)
         // A held message from an earlier launch goes out if it can.
         retryAttempt = 0
         if outbox.first?.state == .waitingForConnection { scheduleRetry() }
@@ -633,10 +637,11 @@ final class Conversation {
     private var identity = 0
 
     private func become(id: UUID = UUID(), createdAt: Date = .now, messages: [Message] = [],
-                        outbox: [OutboxItem] = [], serverSessionID: String? = nil) {
+                        outbox: [OutboxItem] = [], serverSessionID: String? = nil, name: String? = nil) {
         identity += 1
         self.id = id
         self.createdAt = createdAt
+        self.name = name
         self.messages = messages
         self.outbox = outbox
         self.serverSessionID = serverSessionID
@@ -654,13 +659,14 @@ final class Conversation {
             id: id, title: title, createdAt: createdAt, updatedAt: .now,
             transport: settings.transport, serverSessionID: serverSessionID, messages: kept,
             outbox: outbox.isEmpty ? nil : outbox,
-            serverID: settings.transport == .chatCompletions ? nil : settings.activeServerID)
+            serverID: settings.transport == .chatCompletions ? nil : settings.activeServerID,
+            name: name)
         // Unchanged content keeps its stamp: the list is ordered by updatedAt and relaunch opens
         // the newest, so merely viewing a conversation must not make it "newest".
         if let existing = store.cachedRecord(id: id),
            existing.messages == kept, existing.outbox == record.outbox,
            existing.serverSessionID == serverSessionID, existing.transport == record.transport,
-           existing.serverID == record.serverID { return }
+           existing.serverID == record.serverID, existing.name == name { return }
         store.upsert(record)
     }
 
@@ -743,6 +749,47 @@ final class Conversation {
     func ledgerAPI() -> HermesSessionsAPI? {
         guard let url = settings.gatewayBaseURL, let key = settings.gatewayAPIKey, !key.isEmpty else { return nil }
         return HermesSessionsAPI(baseURL: url, apiKey: key)
+    }
+
+    // MARK: Name
+
+    /// Names the conversation. A gateway session is renamed on the gateway first, so the list,
+    /// the Dashboard and the header agree; titles there must be unique, so it can refuse. An
+    /// empty name takes a local conversation back to its first question (a gateway session
+    /// keeps the title it has).
+    func rename(to newName: String) async throws {
+        let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let sessionID = serverSessionID {
+            guard !trimmed.isEmpty else { return }
+            guard let backend = SessionBackend.current(self, settings: settings) else {
+                throw TransportError.malformed(SessionBackend.notConfiguredMessage)
+            }
+            try await backend.rename(sessionID, to: trimmed)
+        }
+        setName(trimmed.isEmpty ? nil : trimmed)
+    }
+
+    /// The gateway's list of sessions, just loaded: the open session's title there, when it is a
+    /// name, is this conversation's name. That picks up a rename made in the list or the
+    /// Dashboard, and the title Hermes gives a session by itself.
+    func noteServerTitles(_ sessions: [HermesSessionsAPI.SessionSummary]) {
+        guard let sessionID = serverSessionID, let session = sessions.first(where: { $0.id == sessionID }) else { return }
+        setName(Self.name(fromServerTitle: session.title, firstQuestion: messages.first { $0.role == .user && !$0.isSteer }?.text))
+    }
+
+    private func setName(_ new: String?) {
+        guard new != name else { return }
+        name = new
+        persist()
+    }
+
+    /// A gateway title as a conversation's name: nil when there is none, and nil for the title
+    /// Redde itself gives a new session (`sessionTitle(from:)`: the start of the first question,
+    /// " · ", a timestamp), which says nothing the question doesn't.
+    nonisolated static func name(fromServerTitle title: String?, firstQuestion: String?) -> String? {
+        guard let title = title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return nil }
+        if let firstQuestion, title.hasPrefix(firstQuestion.prefix(48) + " · ") { return nil }
+        return title
     }
 
     private static func sessionTitle(from text: String) -> String {
@@ -852,7 +899,8 @@ final class Conversation {
         persist()
         let existing = store.summaries.first { $0.serverSessionID == summary.id }
         become(id: existing?.id ?? UUID(), createdAt: existing?.createdAt ?? summary.lastActiveDate ?? .now,
-               messages: new, serverSessionID: summary.id)
+               messages: new, serverSessionID: summary.id,
+               name: Self.name(fromServerTitle: summary.title, firstQuestion: new.first { $0.role == .user && !$0.isSteer }?.text))
         persist()
     }
 
