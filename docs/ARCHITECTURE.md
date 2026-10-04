@@ -251,6 +251,40 @@ fresh conversation each time the voice screen opens, before it appears, and also
 conversation is still loading at a cold launch. A turn ends after about a second of silence; hands-free reopens the mic after each reply.
 "Stop listening", "that's all", "goodbye" or "thanks" on its own ends the loop and is never sent.
 
+The orb (`Views/VoiceView.swift`, `OrbFace`) is the picked orb's picture with three things drawn
+on and around it:
+
+- **The bars** (`LiveWaveform`): a KITT-style box that follows the mic or the reply's level,
+  polled per frame. At rest they are a row of 6 pt dashes with one small crest running across
+  them every five seconds.
+- **The light** under the bars, masked by the orb's own silhouette (a bubble's tail included) and
+  picked under Settings → Appearance → Orb light (`OrbLight`): **Nebula**, three patches in the
+  phase colour and hues beside it on their own rhythms, the whole turning with its hue drifting
+  (`DriftingBlobs`); **Aurora**, three ribbons sweeping across like a curtain (`AuroraLight`);
+  **Core**, a pulsing nucleus with sparks orbiting and motes rising (`CoreLight`). The light is
+  the mood and the bars are the signal, so it is held moderate and eases off toward the middle of
+  the face (a smooth radial mask, about half strength at the centre to full at the rim; a deeper
+  cut read as a ring round a hole, not an orb), with colour kept deep rather than pale and a soft
+  dark edge on the bars. It is a little brighter and swells with the voice while live, and moves
+  faster while the model thinks. Animated offsets, scales and rotations only.
+- **Rings** outside the face: one in the phase colour while something is happening, with a bright
+  arc chasing round it while thinking (`ThinkingArc`), and ripples widening out while listening
+  and speaking, one faint one every few seconds at rest (`Halos`).
+
+Every orb has live bars; the still ones were removed, and a saved still choice falls back to
+Softer Glass. **Dark Glass** is the one orb drawn in code rather than from a picture (`GlassOrb`,
+with `GlassNebula`, `GlassAurora` and `GlassCore`): a 190 pt dark face whose shade goes with the
+light, a faint rim at the edge, and the light at full strength, blended normally and unmasked,
+built to the three examples on the design canvas point for pixel. The canvas drew it listening,
+in the accent blue; thinking and speaking turn the palette by the hue between that blue and the
+phase colour, and at rest the light is dimmed. Outside the face it wears the same ring and
+ripples as the picture orbs, scaled to its size. Its picker picture comes from
+`design/icons/orbs/darkGlass.swift`.
+
+The state word pushes up and out between LISTENING, THINKING and SPEAKING, in the phase colour,
+and while listening each new word of the caption rises in on its own (`RisingCaption`, a centred
+`Layout`). All of it is still under Reduce Motion.
+
 Each turn's footer shows where the time went: end of speech → first spoken word (the number that
 matters), recognizer finalize, time to first token, first token → audio, and total model time.
 
@@ -393,7 +427,7 @@ the handover itself is tested on a real watch.
 ## App and settings
 
 - **Themes:** seven (Messages, Paper, Slate, Terminal, Amber CRT, Hermes, Code), each with light and
-  dark faces and the user's own accent and bubble colours. 13 app icons and 25 voice orbs.
+  dark faces and the user's own accent and bubble colours. 13 app icons and 12 voice orbs with three lights inside.
 - **Model:** per-connection model and reasoning effort (Default, None, Low, Medium, High, and
   X-High / Max for frontier models; None on a fresh install). The level follows the phone, not the
   session: it goes with every fast-lane and Hermes API turn, with every new Dashboard session,

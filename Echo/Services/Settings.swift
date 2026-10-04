@@ -170,6 +170,10 @@ final class Settings: ServeEndpoint {
     var voiceOrb: VoiceOrb {
         didSet { defaults.set(voiceOrb.rawValue, forKey: Keys.voiceOrb) }
     }
+    /// What moves inside the orb's face in voice mode.
+    var orbLight: OrbLight {
+        didSet { defaults.set(orbLight.rawValue, forKey: Keys.orbLight) }
+    }
     /// What the app renders in: the appearance choice, nil meaning follow the system.
     var effectiveColorScheme: ColorScheme? { appearance.colorScheme }
     /// Local notifications for approvals / replies / failures while the app is in the background.
@@ -323,6 +327,7 @@ final class Settings: ServeEndpoint {
         static let themeColors = "themeColors"
         static let appearance = "appearance"
         static let voiceOrb = "voiceOrb"
+        static let orbLight = "orbLight"
         static let notifyInBackground = "notifyInBackground"
         static let showLiveActivity = "showLiveActivity"
         static let earpieceAtEar = "earpieceAtEar"
@@ -371,7 +376,9 @@ final class Settings: ServeEndpoint {
         spokenPrefixes = defaults.data(forKey: Keys.spokenPrefixes)
             .flatMap { try? JSONDecoder().decode([SpokenPrefix].self, from: $0) } ?? []
         appearance = Appearance(rawValue: defaults.string(forKey: Keys.appearance) ?? "") ?? .system
+        // A still orb picked in an earlier version falls back to the default; they are gone.
         voiceOrb = VoiceOrb(rawValue: defaults.string(forKey: Keys.voiceOrb) ?? "") ?? .waveform
+        orbLight = OrbLight(rawValue: defaults.string(forKey: Keys.orbLight) ?? "") ?? .nebula
         notifyInBackground = defaults.bool(forKey: Keys.notifyInBackground)
         showLiveActivity = defaults.object(forKey: Keys.showLiveActivity) as? Bool ?? true
         speechLanguage = defaults.string(forKey: Keys.speechLanguage) ?? ""
@@ -567,6 +574,7 @@ final class Settings: ServeEndpoint {
         themeColors = [:]
         appearance = .system
         voiceOrb = .waveform
+        orbLight = .nebula
         notifyInBackground = false
         showLiveActivity = true
         earpieceAtEar = true
