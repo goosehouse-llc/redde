@@ -17,6 +17,8 @@ import Foundation
 /// - `-echo.settingsAnchor`: scroll Settings to the context and memory files.
 /// - `-echo.expandAppIcons`: open Settings' app icon grid.
 /// - `-echo.draft "text"`: type a question into a focused composer (keyboard screenshots).
+/// - `-echo.ask "text"`: send a question at launch (the lab, screenshots of a live reply).
+///   `-echo.fresh` starts on a new conversation first.
 /// - `-echo.voiceView`: open voice mode without listening. `-echo.voiceDemo` poses it mid-listen;
 ///   `-echo.autoVoice` opens it and starts listening.
 /// - `-echo.demoTips`: sample tips on Settings → About → Support Redde (App Review screenshot).

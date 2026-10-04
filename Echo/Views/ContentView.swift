@@ -403,6 +403,10 @@ struct ContentView: View {
             draft = text
             Task { try? await Task.sleep(for: .milliseconds(450)); composerFocused = true }
         }
+        if DevHooks.has("-echo.fresh") { conversation.reset() }
+        if let text = DevHooks.value("-echo.ask") {
+            Task { try? await Task.sleep(for: .milliseconds(800)); conversation.send(text) }
+        }
     }
     #endif
 

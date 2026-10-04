@@ -125,7 +125,7 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
             if env.tool_name == "_thinking", let delta = env.delta { return ([.reasoningDelta(delta)], false) }
             return ([], false)
         case "tool.started":
-            var events: [TurnEvent] = [.toolStarted(name: env.tool_name ?? "tool", preview: env.preview)]
+            var events: [TurnEvent] = [.toolStarted(name: env.tool_name ?? "tool", preview: env.preview, args: ToolActivity.detail(env.args))]
             if env.tool_name == "delegate_task" { events += delegatedGoals(env.args, runID: env.run_id).map { .subagent($0) } }
             return (events, false)
         case "tool.completed":
@@ -272,7 +272,8 @@ nonisolated struct HermesSessionsAPI: Sendable {
 
         struct ToolCall: Decodable, Sendable {
             var function: Function?
-            struct Function: Decodable, Sendable { var name: String? }
+            /// `arguments` is JSON, usually as a string.
+            struct Function: Decodable, Sendable { var name: String?; var arguments: JSONValue? }
         }
         /// Content may be a string or an array of parts.
         enum Content: Decodable, Sendable {

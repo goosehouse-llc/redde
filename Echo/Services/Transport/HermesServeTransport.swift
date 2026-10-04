@@ -78,10 +78,15 @@ nonisolated struct HermesServeTransport: HermesTransport {
                         case "reasoning.delta", "reasoning.available":
                             if let t = p["text"]?.string { continuation.yield(.reasoningDelta(t)) }
                         case "tool.start":
-                            continuation.yield(.toolStarted(name: p["name"]?.string ?? "tool", preview: p["context"]?.string))
+                            continuation.yield(.toolStarted(name: p["name"]?.string ?? "tool", preview: p["context"]?.string,
+                                                            args: ToolActivity.detail(p["args"])))
                         case "tool.complete":
                             let failed = p["error"] != nil && !(p["error"]?.isNull ?? true)
-                            continuation.yield(.toolFinished(name: p["name"]?.string ?? "", failed: failed))
+                            // The whole result rides on the event (`result_text` is the host's own
+                            // rendering of it, sent in verbose mode).
+                            let output = ToolActivity.detail(p["result_text"]?.string) ?? ToolActivity.detail(p["result"])
+                                ?? ToolActivity.detail(p["error"])
+                            continuation.yield(.toolFinished(name: p["name"]?.string ?? "", failed: failed, output: output))
                         case "subagent.start", "subagent.tool", "subagent.progress", "subagent.complete":
                             if let update = Self.parseSubagent(event.type, p) { continuation.yield(.subagent(update)) }
                         case "approval.request":

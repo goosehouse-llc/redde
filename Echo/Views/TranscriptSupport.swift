@@ -3,16 +3,20 @@ import SwiftUI
 /// Plain, fully selectable copy of a reply, for grabbing a sentence rather than the whole thing.
 struct SelectableTextSheet: View {
     let text: String
+    var title = "Select text"
+    /// For a tool's input and output, which are data, not prose.
+    var monospaced = false
     @Environment(\.dismiss) private var dismiss
     var body: some View {
         NavigationStack {
             ScrollView {
                 Text(text)
+                    .font(monospaced ? .footnote.monospaced() : .body)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
             }
-            .navigationTitle("Select text")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }

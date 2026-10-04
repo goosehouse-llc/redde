@@ -405,7 +405,7 @@ final class VoiceSession {
                     metrics.usage = usage
                 case .reasoningDelta:
                     if metrics.firstTokenAt == nil { metrics.firstTokenAt = .now }
-                case let .toolStarted(name, _):
+                case let .toolStarted(name, _, _):
                     activeTool = name
                 case .toolFinished:
                     activeTool = nil

@@ -18,10 +18,12 @@ nonisolated enum TurnEvent: Sendable, Equatable {
     case usage(TokenUsage)
     /// A fragment of the model's reasoning ("thinking"), streamed live where the backend allows.
     case reasoningDelta(String)
-    /// The agent started a tool call.
-    case toolStarted(name: String, preview: String?)
-    /// A tool call ended. `name` may be empty when the backend doesn't repeat it.
-    case toolFinished(name: String, failed: Bool)
+    /// The agent started a tool call. `args` is what it was called with, as text, where the
+    /// backend sends it.
+    case toolStarted(name: String, preview: String?, args: String? = nil)
+    /// A tool call ended. `name` may be empty when the backend doesn't repeat it. `output` is
+    /// what it returned, as text: the Dashboard sends it, the Hermes API's stream does not.
+    case toolFinished(name: String, failed: Bool, output: String? = nil)
     /// A delegated child agent started, called a tool, or finished.
     case subagent(SubagentUpdate)
     /// Server-side session id (Hermes ledger) this turn belongs to.
@@ -43,6 +45,51 @@ nonisolated struct ToolActivity: Identifiable, Equatable, Sendable, Codable {
     var name: String
     var preview: String?
     var status: Status
+    /// When the call started and ended, for the card's total. Absent on older saved replies.
+    var startedAt: Date?
+    var endedAt: Date?
+    /// What the tool was called with and what it returned, as text for the step's detail, each
+    /// cut to `detailCap` characters: a file read or a web page would bloat the transcript.
+    /// Absent where the backend didn't send them (`Conversation.loadToolDetails` can fetch them).
+    var args: String?
+    var output: String?
+
+    static let detailCap = 12_000
+
+    /// Text for a step's detail: trimmed, nil when empty, cut at the cap with a note of how
+    /// much is missing.
+    static func detail(_ text: String?) -> String? {
+        guard let text = text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return nil }
+        guard text.count > detailCap else { return text }
+        return text.prefix(detailCap) + "\n… (\(text.count - detailCap) more characters)"
+    }
+
+    /// A JSON value as that text. A string stays itself; an object becomes a line per field with
+    /// text fields in full, so a terminal's `{"output": "…", "exit_code": 0}` reads as its
+    /// output and not as one escaped line; anything else is compact JSON.
+    static func detail(_ value: JSONValue?) -> String? {
+        guard let value, !value.isNull else { return nil }
+        switch value {
+        case let .string(text):
+            return detail(text)
+        case let .object(fields):
+            guard !fields.isEmpty else { return nil }
+            return detail(fields.sorted { $0.key < $1.key }.map { key, field in
+                guard let text = field.string else { return "\(key): \(field.displayText)" }
+                return text.contains("\n") ? "\(key):\n\(text)" : "\(key): \(text)"
+            }.joined(separator: "\n"))
+        default:
+            return detail(value.displayText)
+        }
+    }
+
+    /// The same for JSON that arrives as text (a stored call's `arguments`): parsed when it
+    /// parses, else shown as it came.
+    static func detail(json text: String?) -> String? {
+        guard let text, !text.isEmpty else { return nil }
+        guard let value = try? JSONValue.parse(Data(text.utf8)) else { return detail(text) }
+        return detail(value)
+    }
 }
 
 /// One delegated child agent, as seen from the parent turn. hermes serve streams these live;

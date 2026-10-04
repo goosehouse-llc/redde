@@ -12,6 +12,10 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
     var error: String?
     /// The model's reasoning, when the backend streams it.
     var reasoning: String = ""
+    /// When the reasoning started arriving and when it stopped (the first text, or the end of
+    /// the turn), for "Thought for 6 s".
+    var reasoningStartedAt: Date?
+    var reasoningEndedAt: Date?
     var tools: [ToolActivity] = []
     /// Delegated child agents spawned during this reply.
     var subagents: [SubagentActivity] = []
@@ -26,7 +30,9 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
         self.createdAt = createdAt
     }
 
-    private enum CodingKeys: String, CodingKey { case id, role, text, createdAt, metrics, error, reasoning, tools, subagents, attachments, isSteer }
+    private enum CodingKeys: String, CodingKey {
+        case id, role, text, createdAt, metrics, error, reasoning, reasoningStartedAt, reasoningEndedAt, tools, subagents, attachments, isSteer
+    }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -37,6 +43,8 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
         metrics = try c.decodeIfPresent(TurnMetrics.self, forKey: .metrics)
         error = try c.decodeIfPresent(String.self, forKey: .error)
         reasoning = try c.decodeIfPresent(String.self, forKey: .reasoning) ?? ""
+        reasoningStartedAt = try c.decodeIfPresent(Date.self, forKey: .reasoningStartedAt)
+        reasoningEndedAt = try c.decodeIfPresent(Date.self, forKey: .reasoningEndedAt)
         tools = try c.decodeIfPresent([ToolActivity].self, forKey: .tools) ?? []
         subagents = try c.decodeIfPresent([SubagentActivity].self, forKey: .subagents) ?? []
         attachments = try c.decodeIfPresent([Attachment].self, forKey: .attachments) ?? []

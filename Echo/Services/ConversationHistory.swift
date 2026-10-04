@@ -19,7 +19,9 @@ extension Conversation {
                 if !m.text.isEmpty || !m.reasoning.isEmpty { out.append(m) }
             case "tool":
                 if let name = row["name"]?.string, let last = out.indices.last, out[last].role == .assistant {
-                    out[last].tools.append(ToolActivity(name: name, preview: row["context"]?.string, status: .completed))
+                    // The row carries the call; its result only for the edit tools.
+                    out[last].tools.append(ToolActivity(name: name, preview: row["context"]?.string, status: .completed,
+                                                        args: ToolActivity.detail(row["args"]), output: ToolActivity.detail(row["content"])))
                 }
             default: continue
             }
@@ -40,7 +42,11 @@ extension Conversation {
                 var message = Message(role: .assistant, text: row.content?.text ?? "", createdAt: when)
                 message.reasoning = row.reasoning ?? row.reasoning_content ?? ""
                 message.tools = (row.tool_calls ?? []).compactMap { call in
-                    call.function?.name.map { ToolActivity(name: $0, preview: nil, status: .completed) }
+                    call.function?.name.map {
+                        let arguments = call.function?.arguments
+                        return ToolActivity(name: $0, preview: nil, status: .completed,
+                                            args: arguments?.string.map { ToolActivity.detail(json: $0) } ?? ToolActivity.detail(arguments))
+                    }
                 }
                 // Tool-call-only assistant rows fold into the next assistant text: one bubble with
                 // its tool chips, as it looked live, not a chips-only bubble and then the answer.
@@ -51,8 +57,15 @@ extension Conversation {
                 } else if !message.text.isEmpty || !message.tools.isEmpty {
                     out.append(message)
                 }
+            case "tool":
+                // A tool's result isn't a bubble; it belongs to the call that asked for it, the
+                // first one in the reply above still without a result (they come back in order).
+                guard let last = out.indices.last, out[last].role == .assistant,
+                      let i = out[last].tools.firstIndex(where: { $0.output == nil && (row.tool_name == nil || $0.name == row.tool_name) })
+                        ?? out[last].tools.firstIndex(where: { $0.output == nil }) else { continue }
+                out[last].tools[i].output = ToolActivity.detail(row.content?.text)
             default:
-                continue // tool results / system rows aren't transcript bubbles
+                continue // system rows aren't transcript bubbles
             }
         }
         // Drop trailing tool-only assistant rows that never produced text (interrupted runs).

@@ -145,10 +145,41 @@ API (the run id comes from `run.started`).
 
 ### Live thinking and interrupts
 
-Replies show a "Thinking" section that streams reasoning and folds away when the reply lands, plus
-tool chips. When the agent pauses a Dashboard turn, a card appears in the transcript and on the voice
-screen: approvals (once / session / always / deny), clarifying questions, sudo (sent straight to the
-gateway terminal, never stored) and secrets (saved on the gateway under the named env var).
+While the model thinks, the reply shows "Thinking" with a light passing over it (`ShimmerText`)
+and the tail of the reasoning under a rule; when the reply lands it folds to "Thought for 6 s"
+(the message keeps `reasoningStartedAt`/`reasoningEndedAt`; older replies say "Thought") and
+unfolds on tap. The speaker line's "is working · 7 s" shimmers the same way for the whole turn.
+Tool calls are one card (`MessageRow.workCard`): WORKING in the accent, a step per tool whose
+spinner becomes a check that draws itself (`StepMark`), then DONE with the count and the total
+(`ToolActivity.startedAt`/`endedAt`). The card stays open until the reply starts writing, then
+folds to its header; saved replies show it folded as "Used".
+
+A step opens onto what the tool was called with and what it returned (`ToolActivity.args` and
+`output`, text cut to 12,000 characters each; `MessageRow.stepDetail`), with Copy and the whole
+text in a sheet. Where that comes from depends on the connection:
+
+| | The call | The result |
+| --- | --- | --- |
+| Dashboard, live | `tool.start` → `args` | `tool.complete` → `result` (or `result_text`) |
+| Dashboard, reopened | the history row's `args` | only for the edit tools (`content`) |
+| Hermes API, live | `tool.started` → `args` | not on the stream: `tool.completed` names the tool and nothing else |
+| Hermes API, reopened | the assistant row's `tool_calls[].function.arguments` | the `tool` row after it |
+
+So a step opened without its result asks for it once (`Conversation.loadToolDetails`): the
+stored transcript, `GET /api/sessions/{id}/messages`, mapped by `mapStored` and matched to the
+reply by its tools and text. That needs the Hermes API's address and key and a server session; a
+Dashboard conversation can use it too, since both write one ledger. Without them the step says no
+output was kept.
+
+A reply's actions (copy, read aloud, regenerate, more, and the timings) sit under every finished
+reply. Copy turns into a check for a moment, ticks, and says "Copied" in the transcript's toast
+(`Toaster`, an object in the environment rather than a closure: a closure there would invalidate
+every row on each update).
+
+When the agent pauses a Dashboard turn, a card appears in the transcript and
+on the voice screen: approvals (once / session / always / deny), clarifying questions, sudo (sent
+straight to the gateway terminal, never stored) and secrets (saved on the gateway under the named
+env var).
 
 ### Subagents
 

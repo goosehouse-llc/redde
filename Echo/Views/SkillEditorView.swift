@@ -151,7 +151,7 @@ struct SkillEditorView: View {
                 case let .textDelta(delta):
                     text += delta
                     draftProgress = "\(text.count) characters…"
-                case let .toolStarted(tool, _):
+                case let .toolStarted(tool, _, _):
                     draftProgress = "using \(tool)…"
                 default: break
                 }

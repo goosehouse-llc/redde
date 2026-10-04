@@ -38,6 +38,16 @@ extension View {
     }
 }
 
+/// A screen's toast, within reach of the views inside it: a row in a list can't host one itself.
+/// The screen keeps one, shows its `text` with `.toast`, and puts it in the environment; a view
+/// that only calls `show` takes no dependency on it, so a toast redraws nothing but itself.
+@Observable
+final class Toaster {
+    var text: String?
+
+    func show(_ text: String) { self.text = text }
+}
+
 extension Date {
     /// "2 hours ago", "in 5 minutes": the one relative-date rendering used across the app, with
     /// direction preserved (SwiftUI's `.relative` style drops it).

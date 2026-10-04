@@ -34,6 +34,8 @@ struct TranscriptView: View {
     @State private var store = ConversationStore.shared
     /// The reply the speaker button is reading, so only its button turns into Stop.
     @State private var readingID: UUID?
+    /// "Copied", from a row.
+    @State private var toaster = Toaster()
     /// The pick-up card's line: the last thing you sent in that conversation.
     @State private var pickUpLine: String?
 
@@ -213,6 +215,8 @@ struct TranscriptView: View {
             }
             .environment(\.lazyWebBlocks, true)
             .overlay(alignment: .bottomTrailing) { jumpButton(proxy) }
+            .toast($toaster.text, duration: .seconds(1.6))
+            .environment(toaster)
             .animation(.easeOut(duration: 0.2), value: following)
             .safeAreaInset(edge: .top, spacing: 0) { reconnectBanner }
             .safeAreaInset(edge: .top, spacing: 0) { if showSearch { searchBar(proxy) } }
@@ -255,6 +259,14 @@ struct TranscriptView: View {
         }
     }
 
+    /// For a reply with tools, where the gateway's stored transcript can be asked: the fetch a
+    /// step runs when it is opened without its result.
+    private func toolDetailsLoader(for message: Message) -> (@MainActor @Sendable () async -> Void)? {
+        guard message.role == .assistant, !message.tools.isEmpty, conversation.canLoadToolDetails else { return nil }
+        let (conversation, id) = (conversation, message.id)
+        return { await conversation.loadToolDetails(for: id) }
+    }
+
     @ViewBuilder
     private func messageCell(_ message: Message) -> some View {
         if let day = dayLabels[message.id] {
@@ -273,6 +285,7 @@ struct TranscriptView: View {
                        ? { @MainActor @Sendable in onEdit(message) } : nil,
                    onReadAloud: message.role == .assistant
                        ? { @MainActor @Sendable in readAloud(message) } : nil,
+                   onLoadToolDetails: toolDetailsLoader(for: message),
                    isReading: reading,
                    highlight: highlight(for: message.id))
             .equatable()

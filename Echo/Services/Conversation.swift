@@ -129,6 +129,8 @@ final class Conversation {
 
     /// Seeding seam: demo builders edit messages through this, not the private setter.
     func mutateMessagesForDemo(_ body: (inout [Message]) -> Void) { body(&messages) }
+    /// Seeding seam: the played demo turn shows as live, the way a real one does.
+    func setStreamingForDemo(_ on: Bool) { isStreaming = on }
 
     /// Seeding seam: the demo library writes canned records straight into the store.
     var storeForDemo: ConversationStore { store }
@@ -299,17 +301,19 @@ final class Conversation {
                         // Reasoning tokens count toward the reply, so the decode clock starts here too.
                         markFirstToken(replyID)
                         buffer(reasoning: delta, for: replyID)
-                    case let .toolStarted(name, preview):
+                    case let .toolStarted(name, preview, args):
                         flushDeltas()
                         clearStatus()
                         TurnActivity.shared.tool(name)
-                        update(replyID) { $0.tools.append(ToolActivity(name: name, preview: preview, status: .running)) }
-                    case let .toolFinished(name, failed):
+                        update(replyID) { $0.tools.append(ToolActivity(name: name, preview: preview, status: .running, startedAt: .now, args: args)) }
+                    case let .toolFinished(name, failed, output):
                         interruptResolvedElsewhere()
                         update(replyID) { message in
                             // Match by name when given, else the most recent running tool.
                             if let i = message.tools.lastIndex(where: { $0.status == .running && (name.isEmpty || $0.name == name) }) {
                                 message.tools[i].status = failed ? .failed : .completed
+                                message.tools[i].endedAt = .now
+                                if let output { message.tools[i].output = output }
                             }
                         }
                     case let .subagent(u):
@@ -374,6 +378,7 @@ final class Conversation {
                     message.metrics?.completedAt = .now
                     message.metrics?.characters = message.text.count
                     message.metrics?.contextWindow = window
+                    if message.reasoningStartedAt != nil, message.reasoningEndedAt == nil { message.reasoningEndedAt = .now }
                 }
                 let replyText = messages.last { $0.id == replyID }?.text ?? ""
                 TurnActivity.shared.finish(reply: replyText)
@@ -942,8 +947,44 @@ final class Conversation {
         update(id) { message in
             message.text += text
             message.reasoning += reasoning
+            if !reasoning.isEmpty, message.reasoningStartedAt == nil { message.reasoningStartedAt = .now }
+            if !text.isEmpty, message.reasoningStartedAt != nil, message.reasoningEndedAt == nil { message.reasoningEndedAt = .now }
             if let usage { message.metrics?.usage = usage }
         }
+    }
+
+    // MARK: Tool details
+
+    /// Whether `loadToolDetails` has anything to ask: a server session and the Hermes API.
+    var canLoadToolDetails: Bool {
+        serverSessionID != nil && settings.gatewayBaseURL != nil && !(settings.gatewayAPIKey ?? "").isEmpty
+    }
+
+    /// Fills in what a reply's tools were called with and what they returned, from the gateway's
+    /// stored transcript. The Hermes API's stream names a finished tool without its result, and
+    /// a reopened session's rows leave results out; the stored messages have them. A Dashboard
+    /// conversation can use this too when the Hermes API is set up: both write one ledger.
+    func loadToolDetails(for id: UUID) async {
+        guard let sessionID = serverSessionID, let base = settings.gatewayBaseURL, let key = settings.gatewayAPIKey, !key.isEmpty,
+              let local = messages.first(where: { $0.id == id }), !local.tools.isEmpty,
+              let stored = try? await HermesSessionsAPI(baseURL: base, apiKey: key).messages(sessionID: sessionID),
+              let found = Self.storedTools(for: local, in: Self.mapStored(stored)) else { return }
+        update(id) { message in
+            for (i, tool) in found.enumerated() where i < message.tools.count {
+                if message.tools[i].args == nil { message.tools[i].args = tool.args }
+                if message.tools[i].output == nil { message.tools[i].output = tool.output }
+            }
+        }
+        persist()
+    }
+
+    /// The tools of the stored reply that is `local`: the same tools in the same order, and the
+    /// same text when several fit (else the newest of them).
+    nonisolated static func storedTools(for local: Message, in stored: [Message]) -> [ToolActivity]? {
+        let names = local.tools.map(\.name)
+        let fits = stored.filter { $0.role == .assistant && $0.tools.map(\.name) == names }
+        let text = local.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return (fits.last { $0.text.trimmingCharacters(in: .whitespacesAndNewlines) == text } ?? fits.last)?.tools
     }
 
     private func fail(_ id: UUID, _ description: String) {

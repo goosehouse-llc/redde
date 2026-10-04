@@ -28,8 +28,12 @@ extension Conversation {
             SubagentActivity(id: "demo-2", goal: "Draft a reminder message for Dana about lunch", taskIndex: 1, taskCount: 2,
                              status: .running, toolCount: 1, lastTool: "write_file"),
         ]
-        reply.tools = [ToolActivity(name: "calendar", preview: "list events for tomorrow", status: .completed),
-                       ToolActivity(name: "reminders", preview: "create reminder", status: .completed)]
+        reply.tools = [ToolActivity(name: "calendar", preview: "list events for tomorrow", status: .completed,
+                                    args: "date: tomorrow",
+                                    output: "09:30–09:45  Standup\n12:15–13:15  Lunch with Dana"),
+                       ToolActivity(name: "reminders", preview: "create reminder", status: .completed,
+                                    args: "title: Call the vet\nat: 16:00",
+                                    output: "created: true\nid: 4F2A")]
         reply.metrics = TurnMetrics(sentAt: .now.addingTimeInterval(-3.1), firstTokenAt: .now.addingTimeInterval(-2.4),
                                     completedAt: .now, characters: reply.text.count,
                                     usage: TokenUsage(input: 2140, output: 96, cached: nil, contextUsed: 2236), contextWindow: 131_072)
@@ -103,18 +107,26 @@ extension Conversation {
             var reply = Message(role: .assistant, text: "")
             let id = reply.id
             mutateMessagesForDemo { $0.append(reply) }
+            setStreamingForDemo(true)
+            defer { setStreamingForDemo(false) }
             @MainActor func update(_ change: (inout Message) -> Void) {
                 change(&reply)
                 mutateMessagesForDemo { if let i = $0.firstIndex(where: { $0.id == id }) { $0[i] = reply } }
             }
             let started = Date.now
+            update { $0.reasoningStartedAt = .now }
             for word in full.reasoning.split(separator: " ") {
                 update { $0.reasoning += ($0.reasoning.isEmpty ? "" : " ") + word }
                 try? await Task.sleep(for: .milliseconds(12))
             }
-            for tool in full.tools {
+            update { $0.reasoningEndedAt = .now }
+            for var tool in full.tools {
                 try? await Task.sleep(for: .milliseconds(260))
+                tool.status = .running
+                tool.startedAt = .now
                 update { $0.tools.append(tool) }
+                try? await Task.sleep(for: .milliseconds(900))
+                update { if let i = $0.tools.firstIndex(where: { $0.id == tool.id }) { $0.tools[i].status = .completed; $0.tools[i].endedAt = .now } }
             }
             try? await Task.sleep(for: .milliseconds(300))
             let first = Date.now

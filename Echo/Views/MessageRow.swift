@@ -9,6 +9,9 @@ struct MessageRow: View, Equatable {
     /// Transcript screen: the speaker button under a reply. `isReading` is true while this
     /// reply is the one being spoken, and turns the button into Stop.
     var onReadAloud: (@MainActor @Sendable () -> Void)? = nil
+    /// Transcript screen: fetches what this reply's tools were called with and returned, for a
+    /// step opened without them (`Conversation.loadToolDetails`).
+    var onLoadToolDetails: (@MainActor @Sendable () async -> Void)? = nil
     var isReading = false
     /// The copy / read / retry row under a finished reply. Voice mode hides it.
     var showActions = true
@@ -22,6 +25,7 @@ struct MessageRow: View, Equatable {
             && a.isReading == b.isReading && a.showActions == b.showActions
             && (a.onRegenerate == nil) == (b.onRegenerate == nil) && (a.onEdit == nil) == (b.onEdit == nil)
             && (a.onReadAloud == nil) == (b.onReadAloud == nil)
+            && (a.onLoadToolDetails == nil) == (b.onLoadToolDetails == nil)
     }
     /// An image-only message renders just its attachments — no empty text bubble.
     private var hasTextBubble: Bool { !(message.text.isEmpty && !message.attachments.isEmpty) }
@@ -38,15 +42,26 @@ struct MessageRow: View, Equatable {
     @Environment(\.theme) private var theme
     @State private var settings = Settings.shared
     @State private var showThinking = false
+    @State private var showSteps = false
     @State private var selecting = false
     @State private var fullMetrics = false
+    /// Just copied: the button shows a check. `copyCount` drives the haptic.
+    @State private var copied = false
+    @State private var copyCount = 0
+    /// The tool step that is open, and the fetch of its details where they weren't sent.
+    @State private var openStep: UUID?
+    @State private var loadingDetails = false
+    @State private var triedDetails = false
+    @State private var fullDetail: ToolDetail?
+    /// The transcript's toast; absent in voice mode, which has no actions to announce.
+    @Environment(Toaster.self) private var toaster: Toaster?
 
     var body: some View {
         VStack(alignment: message.role == .user && !promptStyled ? .trailing : .leading, spacing: 8) {
             if message.role == .assistant, theme.promptPrefix == nil { speakerLine }
             if message.role == .assistant { workRow }
             if message.role == .assistant, !message.reasoning.isEmpty, isLive || showThinking { reasoningText }
-            if isLive, message.role == .assistant, !message.tools.isEmpty, message.text.isEmpty { liveSteps }
+            if message.role == .assistant, !message.tools.isEmpty { workCard }
             if !message.subagents.isEmpty { SubagentRows(subagents: message.subagents) }
             if !message.attachments.isEmpty { AttachmentGallery(attachments: message.attachments) }
             if isLive, message.text.isEmpty {
@@ -100,6 +115,20 @@ struct MessageRow: View, Equatable {
         .frame(maxWidth: .infinity, alignment: message.role == .user && !promptStyled ? .trailing : .leading)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(message.role == .user ? (message.isSteer ? "Your steer" : "You") : settings.headerTitle)
+        .sensoryFeedback(.success, trigger: copyCount)
+        .sheet(item: $fullDetail) { SelectableTextSheet(text: $0.text, title: $0.title, monospaced: true) }
+    }
+
+    /// Copies, ticks, turns the copy button into a check for a moment and says so in a toast.
+    private func copy(_ text: String) {
+        UIPasteboard.general.string = text
+        copyCount += 1
+        toaster?.show("Copied")
+        withAnimation(.snappy(duration: 0.2)) { copied = true }
+        Task {
+            try? await Task.sleep(for: .seconds(1.6))
+            withAnimation(.snappy(duration: 0.2)) { copied = false }
+        }
     }
 
     // MARK: - Reply parts
@@ -109,10 +138,10 @@ struct MessageRow: View, Equatable {
         HStack(spacing: 6) {
             Text(settings.headerTitle).font(.subheadline.weight(.semibold))
             if isLive {
+                // The one place that shimmers while the reply is being worked on.
                 TimelineView(.periodic(from: message.createdAt, by: 1)) { context in
-                    Text("is working · \(Self.elapsed(from: message.createdAt, to: context.date))")
+                    ShimmerText(text: "is working · \(Self.elapsed(from: message.createdAt, to: context.date))")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
                         .monospacedDigit()
                 }
             }
@@ -126,50 +155,51 @@ struct MessageRow: View, Equatable {
         return s < 60 ? "\(s) s" : "\(s / 60) min \(s % 60) s"
     }
 
-    /// Thinking and the tools the reply used, as small tags; tapping Thinking opens it.
+    /// The thinking row; tapping it opens the reasoning.
     @ViewBuilder
     private var workRow: some View {
         let hasThinking = !message.reasoning.isEmpty
-        let showTools = !message.tools.isEmpty && !(isLive && message.text.isEmpty)
-        if hasThinking || showTools {
+        if hasThinking {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
                     if hasThinking {
                         Button {
-                            withAnimation(.easeOut(duration: 0.2)) { showThinking.toggle() }
+                            withAnimation(.snappy(duration: 0.3)) { showThinking.toggle() }
                         } label: {
                             HStack(spacing: 6) {
-                                SparkShape().fill(.secondary).frame(width: 10, height: 10)
-                                Text(isLive && message.text.isEmpty ? "Thinking…" : "Thought")
-                                if !isLive {
-                                    Image(systemName: "chevron.right")
-                                        .font(.caption2.weight(.semibold))
-                                        .rotationEffect(.degrees(showThinking ? 90 : 0))
-                                }
+                                Image(systemName: "chevron.right")
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                    .rotationEffect(.degrees(showThinking || isLive ? 90 : 0))
+                                thinkingLabel
                             }
-                            .modifier(WorkChip())
+                            .font(.subheadline.weight(.medium))
+                            .padding(.vertical, 6)
+                            .padding(.trailing, 6)
+                            .contentShape(.rect)
                         }
                         .buttonStyle(.plain)
                         .disabled(isLive)
-                        .symbolEffect(.pulse, isActive: isLive && message.text.isEmpty)
                         .accessibilityLabel(showThinking ? "Hide thinking" : "Show thinking")
-                    }
-                    if showTools {
-                        ForEach(message.tools) { tool in
-                            HStack(spacing: 5) {
-                                Image(systemName: "wrench.adjustable")
-                                Text(tool.name)
-                                statusIcon(tool.status)
-                            }
-                            .modifier(WorkChip())
-                            .help(tool.preview ?? tool.name)
-                            .accessibilityElement(children: .ignore)
-                            .accessibilityLabel("Tool \(tool.name), \(tool.status.rawValue)")
-                        }
                     }
                 }
                 .padding(.horizontal, 1)
             }
+        }
+    }
+
+    /// "Thinking" with a light sweeping across it while the model thinks (the speaker line
+    /// counts the seconds), "Thought for 6 s" after. Replies saved before the times were kept
+    /// just say "Thought".
+    @ViewBuilder
+    private var thinkingLabel: some View {
+        if isLive, message.text.isEmpty {
+            ShimmerText(text: "Thinking")
+        } else if let started = message.reasoningStartedAt, let ended = message.reasoningEndedAt {
+            // A think under a second still took a moment; "0 s" would read as nothing.
+            Text("Thought for \(Self.elapsed(from: started, to: max(ended, started.addingTimeInterval(1))))").foregroundStyle(.secondary)
+        } else {
+            Text("Thought").foregroundStyle(.secondary)
         }
     }
 
@@ -183,56 +213,181 @@ struct MessageRow: View, Equatable {
             .lineLimit(isLive ? 8 : nil)
             .truncationMode(.head)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 2)
+            .padding(.leading, 12)
+            .overlay(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 1).fill(.quaternary).frame(width: 2)
+            }
+            .padding(.leading, 6)
+            .clipped()
+            .transition(.opacity.combined(with: .move(edge: .top)))
     }
 
-    /// While a reply is working and hasn't started writing: each tool as a step, done or running.
-    private var liveSteps: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ForEach(message.tools) { tool in
-                HStack(alignment: .center, spacing: 12) {
-                    Group {
-                        switch tool.status {
-                        case .running: ProgressView().controlSize(.small)
-                        case .completed:
-                            Image(systemName: "checkmark").font(.caption.weight(.bold)).foregroundStyle(.green)
-                                .frame(width: 20, height: 20).background(.green.opacity(0.16), in: .circle)
-                        case .failed:
-                            Image(systemName: "xmark").font(.caption.weight(.bold)).foregroundStyle(.red)
-                                .frame(width: 20, height: 20).background(.red.opacity(0.16), in: .circle)
+    /// The tools the reply used, as one card: a header that goes from Working to Done with the
+    /// count and the total time, and a step per tool. Open
+    /// while the agent works and hasn't started writing; folded to the header after, and on tap.
+    private var workCard: some View {
+        let tools = message.tools
+        let finished = tools.filter { $0.status != .running }.count
+        let working = isLive && finished < tools.count
+        let open = (isLive && message.text.isEmpty) || showSteps
+        return VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(.snappy(duration: 0.3)) { showSteps.toggle() }
+            } label: {
+                HStack(spacing: 8) {
+                    Text(working ? "Working" : isLive ? "Done" : "Used")
+                        .foregroundStyle(working ? AnyShapeStyle(theme.accent) : isLive ? AnyShapeStyle(.green) : AnyShapeStyle(.secondary))
+                        .textCase(.uppercase)
+                    Spacer()
+                    Text(Self.toolsSummary(tools, working: working))
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(open ? 90 : 0))
+                }
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 14).padding(.vertical, 10)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(open ? "Hide tool steps" : "Show tool steps")
+            if open {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(tools) { tool in
+                        // A step opens onto what it was called with and what came back, when
+                        // there is something to show or somewhere to fetch it from.
+                        let canOpen = tool.args != nil || tool.output != nil || onLoadToolDetails != nil
+                        let isOpen = openStep == tool.id
+                        VStack(alignment: .leading, spacing: 0) {
+                            Button { toggleStep(tool) } label: {
+                                HStack(alignment: .center, spacing: 12) {
+                                    StepMark(status: tool.status, animated: isLive)
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text(tool.name).font(.subheadline)
+                                            .foregroundStyle(tool.status == .running ? .primary : .secondary)
+                                        if let preview = tool.preview, !preview.isEmpty {
+                                            Text(preview).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                        }
+                                    }
+                                    Spacer(minLength: 0)
+                                    if canOpen {
+                                        Image(systemName: "chevron.right")
+                                            .font(.caption2.weight(.semibold))
+                                            .foregroundStyle(.tertiary)
+                                            .rotationEffect(.degrees(isOpen ? 90 : 0))
+                                    }
+                                }
+                                .padding(.horizontal, 14).padding(.vertical, 8)
+                                .contentShape(.rect)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(!canOpen)
+                            .accessibilityLabel("Tool \(tool.name), \(tool.status.rawValue)")
+                            .accessibilityHint(canOpen ? (isOpen ? "Hides what it returned" : "Shows what it returned") : "")
+                            if isOpen { stepDetail(tool) }
                         }
-                    }
-                    .frame(width: 20, height: 20)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(tool.name).font(.subheadline)
-                            .foregroundStyle(tool.status == .running ? .primary : .secondary)
-                        if let preview = tool.preview, !preview.isEmpty {
-                            Text(preview).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                        }
+                        .transition(.move(edge: .leading).combined(with: .opacity))
                     }
                 }
-                .padding(.horizontal, 14).padding(.vertical, 10)
-                .accessibilityElement(children: .combine)
+                .padding(.bottom, 6)
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(theme.surface ?? Color(.secondarySystemBackground), in: .rect(cornerRadius: 14))
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.quaternary))
+        .clipShape(.rect(cornerRadius: 14))
+        .animation(.snappy(duration: 0.3), value: tools.count)
+        .animation(.snappy(duration: 0.3), value: open)
+        .animation(.snappy(duration: 0.3), value: openStep)
+        .animation(.easeOut(duration: 0.3), value: isLive)
     }
 
-    @ViewBuilder
-    private func statusIcon(_ status: ToolActivity.Status) -> some View {
-        switch status {
-        case .running: Image(systemName: "circle.dotted").symbolEffect(.pulse).foregroundStyle(.orange)
-        case .completed: Image(systemName: "checkmark").foregroundStyle(.green)
-        case .failed: Image(systemName: "xmark").foregroundStyle(.red)
+    private func toggleStep(_ tool: ToolActivity) {
+        openStep = openStep == tool.id ? nil : tool.id
+        // Opened without its result: ask once for the whole reply's.
+        guard openStep == tool.id, tool.output == nil, tool.status != .running, !triedDetails, let onLoadToolDetails else { return }
+        loadingDetails = true
+        Task {
+            await onLoadToolDetails()
+            loadingDetails = false
+            triedDetails = true
         }
+    }
+
+    /// A step, opened: what the tool was called with, what it gave back, and the way to the
+    /// whole text.
+    private func stepDetail(_ tool: ToolActivity) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let args = tool.args { detailBlock("Input", args, lines: 6) }
+            if let output = tool.output {
+                detailBlock("Output", output, lines: 12)
+            } else if tool.status == .running {
+                Text("Still running.").font(.caption).foregroundStyle(.secondary)
+            } else if loadingDetails {
+                HStack(spacing: 6) {
+                    ProgressView().controlSize(.mini)
+                    Text("Fetching the output…")
+                }
+                .font(.caption).foregroundStyle(.secondary)
+            } else {
+                Text("No output was kept for this step.").font(.caption).foregroundStyle(.secondary)
+            }
+            if tool.args != nil || tool.output != nil {
+                HStack(spacing: 18) {
+                    Button("Copy") { copy(tool.output ?? tool.args ?? "") }
+                        .accessibilityLabel("Copy \(tool.output != nil ? "output" : "input")")
+                    Button(tool.output != nil ? "Open full output" : "Open in full") { fullDetail = ToolDetail(tool) }
+                }
+                .font(.caption.weight(.medium))
+                .foregroundStyle(theme.accent)
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.leading, 46).padding(.trailing, 14).padding(.bottom, 10)
+        .transition(.opacity.combined(with: .move(edge: .top)))
+    }
+
+    private func detailBlock(_ label: String, _ text: String, lines: Int) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(label).font(.caption2.weight(.semibold)).foregroundStyle(.secondary).textCase(.uppercase)
+            Text(Self.head(of: text, lines: lines))
+                .font(.caption.monospaced())
+                .foregroundStyle(theme.text ?? Color.primary)
+                .lineLimit(lines)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 10).padding(.vertical, 8)
+                .background(theme.background ?? Color(.systemBackground), in: .rect(cornerRadius: 10))
+        }
+    }
+
+    /// The first lines of a step's text, so a long output costs the layout no more than shows.
+    nonisolated static func head(of text: String, lines: Int) -> String {
+        let first = text.split(separator: "\n", maxSplits: lines, omittingEmptySubsequences: false).prefix(lines)
+        return String(first.joined(separator: "\n").prefix(lines * 160))
+    }
+
+    /// "3 tools", then "3 tools · 4.2 s" once they are all done and were timed.
+    private static func toolsSummary(_ tools: [ToolActivity], working: Bool) -> String {
+        let count = tools.count == 1 ? "1 tool" : "\(tools.count) tools"
+        guard !working, let start = tools.compactMap(\.startedAt).min(), let end = tools.compactMap(\.endedAt).max(), end > start else { return count }
+        let seconds = end.timeIntervalSince(start)
+        return seconds < 10 ? count + String(format: " · %.1f s", seconds) : count + " · \(Int(seconds)) s"
     }
 
     /// Copy, read aloud, retry, more; then how fast it came back.
     private var actionRow: some View {
         HStack(spacing: 2) {
-            actionButton("Copy", "doc.on.doc") { UIPasteboard.general.string = message.text }
+            Button { copy(message.text) } label: {
+                Image(systemName: copied ? "checkmark" : "doc.on.doc")
+                    .foregroundStyle(copied ? AnyShapeStyle(.green) : AnyShapeStyle(.secondary))
+                    .contentTransition(.symbolEffect(.replace))
+                    .frame(width: 32, height: 32).contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(copied ? "Copied" : "Copy reply")
             if let onReadAloud {
                 actionButton(isReading ? "Stop reading" : "Read aloud",
                              isReading ? "stop.fill" : "speaker.wave.2", action: onReadAloud)
@@ -295,9 +450,9 @@ struct MessageRow: View, Equatable {
 
     @ViewBuilder
     private var replyMenu: some View {
-        Button("Copy reply", systemImage: "doc.on.doc") { UIPasteboard.general.string = message.text }
+        Button("Copy reply", systemImage: "doc.on.doc") { copy(message.text) }
         if !message.reasoning.isEmpty {
-            Button("Copy thinking", systemImage: "brain") { UIPasteboard.general.string = message.reasoning }
+            Button("Copy thinking", systemImage: "brain") { copy(message.reasoning) }
         }
         ShareLink(item: message.text) { Label("Share…", systemImage: "square.and.arrow.up") }
         Button("Select text", systemImage: "text.cursor") { selecting = true }
@@ -336,15 +491,95 @@ struct MessageRow: View, Equatable {
     }
 }
 
-/// The small outlined tag for Thinking and each tool.
-private struct WorkChip: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .font(.caption.weight(.medium))
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 10).padding(.vertical, 6)
-            .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(.quaternary))
-            .contentShape(.rect)
+/// Secondary text with a band of light passing over it, left to right, while something is in
+/// progress. Still text under Reduce Motion.
+struct ShimmerText: View {
+    let text: String
+    /// The resting colour; the band that sweeps over it is brighter.
+    var base: Color = .secondary
+    @State private var phase: CGFloat = -1
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Text(text)
+            .foregroundStyle(base)
+            .overlay {
+                if !reduceMotion {
+                    GeometryReader { geo in
+                        // The band is the text colour that contrasts with the background on
+                        // every theme: a white one vanished into a light page.
+                        LinearGradient(stops: [.init(color: .clear, location: 0),
+                                               .init(color: .primary, location: 0.5),
+                                               .init(color: .clear, location: 1)],
+                                       startPoint: .leading, endPoint: .trailing)
+                            .frame(width: geo.size.width * 0.6)
+                            .offset(x: phase * geo.size.width)
+                    }
+                    .mask(Text(text))
+                    .onAppear {
+                        withAnimation(.linear(duration: 1.8).repeatForever(autoreverses: false)) { phase = 1.2 }
+                    }
+                }
+            }
+    }
+}
+
+/// A step's whole text, for the sheet.
+private struct ToolDetail: Identifiable {
+    let id = UUID()
+    let title: String
+    let text: String
+
+    init(_ tool: ToolActivity) {
+        title = tool.name
+        text = [tool.args.map { "INPUT\n\n" + $0 }, tool.output.map { "OUTPUT\n\n" + $0 }]
+            .compactMap { $0 }.joined(separator: "\n\n\n")
+    }
+}
+
+/// A tool step's state: a spinner while it runs, then a check that draws itself (or a cross).
+/// `animated` is off for a saved reply, where the marks just sit finished.
+private struct StepMark: View {
+    let status: ToolActivity.Status
+    var animated: Bool
+    @State private var drawn: CGFloat = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        ZStack {
+            switch status {
+            case .running:
+                ProgressView().controlSize(.small)
+            case .completed:
+                Circle().fill(.green.opacity(0.16))
+                CheckShape()
+                    .trim(from: 0, to: drawn)
+                    .stroke(.green, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                    .padding(5)
+            case .failed:
+                Image(systemName: "xmark").font(.caption.weight(.bold)).foregroundStyle(.red)
+                    .frame(width: 20, height: 20).background(.red.opacity(0.16), in: .circle)
+            }
+        }
+        .frame(width: 20, height: 20)
+        .onChange(of: status, initial: true) { _, status in
+            guard status == .completed else { drawn = 0; return }
+            if animated, !reduceMotion {
+                withAnimation(.easeOut(duration: 0.4).delay(0.05)) { drawn = 1 }
+            } else {
+                drawn = 1
+            }
+        }
+    }
+}
+
+nonisolated private struct CheckShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: rect.minX + rect.width * 0.08, y: rect.midY + rect.height * 0.05))
+        p.addLine(to: CGPoint(x: rect.minX + rect.width * 0.4, y: rect.maxY - rect.height * 0.12))
+        p.addLine(to: CGPoint(x: rect.maxX - rect.width * 0.05, y: rect.minY + rect.height * 0.18))
+        return p
     }
 }
 
