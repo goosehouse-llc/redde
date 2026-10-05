@@ -24,6 +24,8 @@ speech is recognized on the device, and credentials stay in the iOS Keychain.
   rendered offline with no third-party Swift dependencies.
 - **The whole agent.** The shared session ledger, projects, several servers and Hermes profiles,
   skills and toolsets, memory and context files, cron jobs and the Kanban board.
+- **Set up by code.** Scan a QR code or open a `redde://connect` link and the connection fills
+  itself in. A device that is set up can show the code for the next one.
 - **Everywhere on iOS.** Siri and Shortcuts, the Action Button, Control Center, widgets, a Live
   Activity, the share sheet, the camera, and Siri AI messaging on iOS 27 (opt-in).
 - **Private.** An offline message queue, Face ID lock, and nothing collected.
@@ -42,6 +44,39 @@ speech is recognized on the device, and credentials stay in the iOS Keychain.
 Profiles need Hermes 0.21 or later. Over the Hermes API a named profile also needs
 `gateway.multiplex_profiles` and that profile's own `API_SERVER_KEY`.
 
+## Setup codes
+
+Instead of typing an address and a key on the phone, hand Redde a setup code: a link, or a QR code
+of it.
+
+```sh
+scripts/setup-code.py --name Home --dashboard http://hermes.home.example:9119 --user redde
+```
+
+The script asks for the password without showing it and prints the link, plus its QR code when
+[`qrencode`](https://fukuchi.org/works/qrencode/) is installed. In Redde's setup screen choose
+**Scan a setup code** or **Paste a setup link**; the iPhone Camera opens the code too. Redde shows
+what the code sets and where it points, and saves nothing until you agree. It never overwrites a
+server that is already set up: the code is added beside it.
+
+Once one device is set up, Settings › Connection › **Set up another device** shows its code.
+Passwords and keys are left out until you ask for them, which takes Face ID or the passcode.
+
+The link is `redde://connect?` followed by any of these, percent-encoded:
+
+| Parameter | Meaning |
+| --- | --- |
+| `name` | What the server is called in Redde |
+| `dashboard`, `user`, `password` | Hermes Dashboard address and login |
+| `api`, `key` | Hermes API server address and `API_SERVER_KEY` |
+| `profile`, `profile-key` | A Hermes profile, and its own API key if it has one |
+| `access-id`, `access-secret` | A Cloudflare Access service token |
+| `model-url`, `model-key`, `model` | An OpenAI-compatible endpoint |
+| `use` | `dashboard`, `api` or `model`: which connection Redde talks to (default: the first in the code) |
+
+A code with a password in it is as good as the password. Show it to your own devices, not in a
+screenshot or a chat.
+
 ## Building
 
 Requires Xcode 27 and [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
@@ -52,8 +87,8 @@ xcodegen generate
 open Echo.xcodeproj
 ```
 
-The code name is Echo: targets, folders, the bundle ID (`com.goosehouse.echo`) and the `echo://` URL
-scheme keep it; everything a user sees says Redde.
+The code name is Echo: targets, folders, the bundle ID (`com.goosehouse.echo`) and the app's own
+`echo://` links keep it; everything a user sees says Redde, setup links (`redde://connect`) included.
 
 To prefill your own servers in development builds, add a git-ignored
 `Echo/Resources/LocalDefaults.json` with any of `transport`, `gatewayURL`, `serveURL`,
@@ -80,6 +115,7 @@ Debug builds accept launch flags for demos and screenshots, all listed in
 | `EchoControls/`, `EchoShare/` | Widget and controls extension; share extension |
 | `EchoTests/`, `EchoUITests/` | Tests |
 | `companion/` | The website, the push-notification relay Worker, and a calendar MCP server for Hermes |
+| `scripts/` | Setup codes, the build-number bump, the CarPlay simulator, and the Hermes lab for testing against stock gateways |
 | `design/` | App Store screenshots and the scripts that make them, icon sources |
 | `docs/` | [Architecture](docs/ARCHITECTURE.md), privacy policy, support page, App Store listing |
 

@@ -62,6 +62,26 @@ nonisolated enum Keychain {
         return items.compactMap { $0[kSecAttrAccount as String] as? String }
     }
 
+    /// Whether any stored account ends with `suffix` (a server's secrets end with `@<its id>`).
+    /// Nil when the Keychain couldn't be read, which is not the same as "none".
+    static func hasAccount(endingWith suffix: String) -> Bool? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecReturnAttributes as String: true,
+            kSecMatchLimit as String: kSecMatchLimitAll,
+        ]
+        var result: AnyObject?
+        switch SecItemCopyMatching(query as CFDictionary, &result) {
+        case errSecSuccess:
+            return (result as? [[String: Any]] ?? []).contains { ($0[kSecAttrAccount as String] as? String)?.hasSuffix(suffix) == true }
+        case errSecItemNotFound:
+            return false
+        default:
+            return nil
+        }
+    }
+
     /// Moves a secret to a new account, deleting the old one only once the copy reads back.
     @discardableResult
     static func move(account from: String, to: String) -> Bool {

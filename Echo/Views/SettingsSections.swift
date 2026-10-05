@@ -138,6 +138,9 @@ struct ProfileSettings: View {
 struct TransportSettings: View {
     @Binding var showSetup: Bool
     @State private var settings = Settings.shared
+    /// The server whose setup code is showing (the active one; its code carries the
+    /// OpenAI-compatible endpoint too, so this is here for every connection).
+    @State private var sharing: HermesServer?
 
     var body: some View {
         Section {
@@ -147,6 +150,8 @@ struct TransportSettings: View {
             .pickerStyle(.inline)
             .labelsHidden()
             Button("Set up connection…", systemImage: "network") { showSetup = true }
+            Button("Set up another device…", systemImage: "qrcode") { sharing = settings.activeServer }
+                .sheet(item: $sharing) { SetupCodeView(server: $0) }
         } header: {
             Text("Connection")
         }

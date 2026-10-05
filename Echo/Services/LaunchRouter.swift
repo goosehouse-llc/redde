@@ -41,4 +41,16 @@ final class LaunchRouter {
         defer { pendingDraft = nil }
         return pendingDraft
     }
+
+    /// A `redde://connect` setup link that was opened: shown for confirmation, never applied here.
+    private(set) var pendingSetupCode: SetupCodeOffer?
+
+    func requestSetup(_ offer: SetupCodeOffer) {
+        pendingSetupCode = offer
+    }
+
+    func consumeSetupCode() -> SetupCodeOffer? {
+        defer { pendingSetupCode = nil }
+        return pendingSetupCode
+    }
 }

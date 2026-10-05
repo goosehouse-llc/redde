@@ -15,6 +15,12 @@ struct SetupView: View {
     @State private var hasFastLaneKey = false
     @State private var testing = false
     @State private var outcome: ConnectionTester.Outcome?
+    /// A setup code: the scanner, the code it read (held until the scanner has closed), the
+    /// confirmation, and what was wrong with a pasted link.
+    @State private var showScanner = false
+    @State private var scanned: SetupCodeOffer?
+    @State private var offer: SetupCodeOffer?
+    @State private var pasteProblem: String?
     var onDone: () -> Void = {}
 
     var body: some View {
@@ -50,6 +56,28 @@ struct SetupView: View {
                                      detail: "Your voice is recognized on this device, not in the cloud.")
                     }
                     .padding(.vertical, 6)
+                }
+
+                Section {
+                    if SetupCodeScanner.isSupported {
+                        Button("Scan a setup code", systemImage: "qrcode.viewfinder") { showScanner = true }
+                    }
+                    LabeledContent {
+                        PasteButton(payloadType: String.self) { paste($0) }
+                            .labelStyle(.titleOnly)
+                            .buttonBorderShape(.capsule)
+                    } label: {
+                        Label("Paste a setup link", systemImage: "link")
+                    }
+                    if let pasteProblem {
+                        Label(pasteProblem, systemImage: "xmark.octagon.fill")
+                            .foregroundStyle(.red)
+                            .font(.footnote)
+                    }
+                } header: {
+                    Text("Have a setup code?")
+                } footer: {
+                    Text("A setup code fills in everything below. Make one on a device that is already set up: Settings › Connection › Set up another device.")
                 }
 
                 Section("How does Redde reach it?") {
@@ -125,13 +153,44 @@ struct SetupView: View {
                 }
             }
             .interactiveDismissDisabled()
-            .task {
-                // Re-running setup from Settings: a stored secret counts as filled in.
-                hasAPIKey = Keychain.read(.gatewayAPIKey) != nil
-                hasServePassword = Keychain.read(.serveDashboardPassword) != nil
-                hasFastLaneKey = Keychain.read(.fastLaneAPIKey) != nil
+            .task { readStoredSecrets() }
+            // One sheet at a time: the confirmation waits for the scanner to close.
+            .sheet(isPresented: $showScanner, onDismiss: { offer = scanned; scanned = nil }) {
+                SetupCodeScanner { scanned = $0 }
+            }
+            .sheet(item: $offer) { offer in
+                SetupCodeSheet(offer: offer, offersEditing: false) { codeFinished($0) }
             }
         }
+    }
+
+    /// Re-running setup from Settings: a stored secret counts as filled in.
+    private func readStoredSecrets() {
+        hasAPIKey = Keychain.read(.gatewayAPIKey) != nil
+        hasServePassword = Keychain.read(.serveDashboardPassword) != nil
+        hasFastLaneKey = Keychain.read(.fastLaneAPIKey) != nil
+    }
+
+    private func paste(_ strings: [String]) {
+        guard let found = strings.lazy.compactMap({ SetupCodeOffer(text: $0) }).first else {
+            pasteProblem = "That isn't a Redde setup link."
+            return
+        }
+        pasteProblem = nil
+        offer = found
+    }
+
+    /// A code was saved from here: with a working connection setup is over; otherwise the form
+    /// shows what the code filled in, to be corrected.
+    private func codeFinished(_ result: SetupCodeSheet.Finish) {
+        guard case .saved(let connected) = result else { return }
+        // Anything typed before the code belongs to no server now.
+        apiKey = ""
+        servePassword = ""
+        fastLaneKey = ""
+        readStoredSecrets()
+        outcome = nil
+        if connected { finish() }
     }
 
     private var fieldsFilled: Bool {

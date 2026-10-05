@@ -20,6 +20,8 @@ struct ContentView: View {
     @State private var renameText = ""
     @State private var renameError: String?
     @State private var showSetup = false
+    /// A setup link that was opened, up for confirmation.
+    @State private var setupCode: SetupCodeOffer?
     @State private var showConversations = false
     /// What's New was up when voice mode was asked for: voice wins, and it comes back after.
     @State private var deferredWhatsNew: WhatsNew.Release?
@@ -61,6 +63,10 @@ struct ContentView: View {
         .sheet(isPresented: $showSettings, onDismiss: { WatchLink.shared.push() }) { SettingsView() }
         .sheet(isPresented: $showModelPicker) { NavigationStack { ModelPickerView() }.presentationDetents([.medium, .large]) }
         .sheet(isPresented: $showSetup, onDismiss: { WatchLink.shared.push() }) { SetupView() }
+        .sheet(item: $setupCode, onDismiss: {
+            // A first run the code didn't finish goes back to setup.
+            if !settings.setupDone, !settings.isConfigured { showSetup = true }
+        }) { SetupCodeSheet(offer: $0) }
         .sheet(item: $whatsNew) { WhatsNewView(release: $0) }
         #if DEBUG
         .sheet(isPresented: $showProfilePicker) { NavigationStack { ProfilePickerView() } }
@@ -82,7 +88,8 @@ struct ContentView: View {
         }
         .task {
             settings.applyLocalDefaultsIfPresent()
-            if !settings.setupDone, !settings.isConfigured { showSetup = true }
+            // Opened by a setup link: its confirmation is the setup.
+            if !settings.setupDone, !settings.isConfigured, setupCode == nil, router.pendingSetupCode == nil { showSetup = true }
             #if DEBUG
             applyDevHooks()
             #endif
@@ -108,13 +115,16 @@ struct ContentView: View {
             // Control Center / Lock Screen controls open the app through echo://listen.
             if let handsFree = EchoURL.parseListen(url) { router.requestVoice(handsFree: handsFree) }
             if url.scheme == EchoURL.scheme, url.host == "share" { consumeSharedItems() }
+            // redde://connect, from the Camera or a link: a setup code to confirm.
+            if let offer = SetupCodeOffer(url: url) { router.requestSetup(offer) }
         }
-        .onAppear { consumeControlRequest(); handleLaunchRequest(); handleDraftRequest() }
+        .onAppear { consumeControlRequest(); handleLaunchRequest(); handleDraftRequest(); handleSetupCode() }
         .onChange(of: router.pendingVoice) { handleLaunchRequest() }
         .onChange(of: router.pendingDraft) { handleDraftRequest() }
+        .onChange(of: router.pendingSetupCode) { handleSetupCode() }
         .onChange(of: lock.isLocked) { _, locked in
             // A Siri / control / share request that arrived while locked runs once unlocked.
-            if !locked { consumeControlRequest(); handleLaunchRequest(); consumeSharedItems(); handleDraftRequest() }
+            if !locked { consumeControlRequest(); handleLaunchRequest(); consumeSharedItems(); handleDraftRequest(); handleSetupCode() }
             // "What's New" held back by the lock. A moment later, so a voice request opens first.
             if !locked { Task { try? await Task.sleep(for: .milliseconds(600)); presentWhatsNewIfDue() } }
         }
@@ -388,6 +398,28 @@ struct ContentView: View {
         composerFocused = true
     }
 
+    /// A setup link was opened: its confirmation comes up over the conversation, so whatever
+    /// sheet is up makes way first (a second sheet can't present over one). Nothing is saved
+    /// until the person agrees there.
+    private func handleSetupCode() {
+        guard !lock.isLocked, let offer = router.consumeSetupCode() else { return }
+        let covered = showSetup || showSettings || showModelPicker || whatsNew != nil || showVoice || setupCode != nil
+        guard covered else {
+            setupCode = offer
+            return
+        }
+        showSetup = false
+        showSettings = false
+        showModelPicker = false
+        whatsNew = nil
+        showVoice = false
+        setupCode = nil
+        Task {
+            try? await Task.sleep(for: .milliseconds(600))
+            setupCode = offer
+        }
+    }
+
     /// Siri / Action Button entry: open voice mode and start listening at once.
     /// A control (Action Button, Control Center, Lock Screen) asked for voice via the App Group.
     private func consumeControlRequest() {
@@ -437,6 +469,9 @@ struct ContentView: View {
         if let text = DevHooks.value("-echo.draft") {
             draft = text
             Task { try? await Task.sleep(for: .milliseconds(450)); composerFocused = true }
+        }
+        if let link = DevHooks.value("-echo.setupCode"), let url = URL(string: link), let offer = SetupCodeOffer(url: url) {
+            router.requestSetup(offer)
         }
         if DevHooks.has("-echo.fresh") { conversation.reset() }
         if let text = DevHooks.value("-echo.ask") {

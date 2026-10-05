@@ -8,6 +8,8 @@ struct ServersView: View {
     @State private var showSetup = false
     @State private var naming: Naming?
     @State private var nameText = ""
+    /// The server whose setup code is showing.
+    @State private var sharing: HermesServer?
 
     /// The name prompt is for a new server or for renaming one.
     private enum Naming: Identifiable {
@@ -25,6 +27,7 @@ struct ServersView: View {
                         .accessibilityAddTraits(active ? .isSelected : [])
                         .contextMenu {
                             Button("Rename", systemImage: "pencil") { beginNaming(.rename(server.id), current: server.name) }
+                            Button("Show setup code", systemImage: "qrcode") { sharing = server }
                         }
                         .swipeActions {
                             if !active {
@@ -33,16 +36,20 @@ struct ServersView: View {
                         }
                 }
             } footer: {
-                Text("Tap a server to switch to it; that starts a new conversation. Touch and hold to rename, swipe to remove one you're not using. Each server keeps its own addresses, keys, profile and model.")
+                Text("Tap a server to switch to it; that starts a new conversation. Touch and hold to rename or to show its setup code for another device, swipe to remove one you're not using. Each server keeps its own addresses, keys, profile and model.")
             }
 
             Section {
                 Button("Edit connection…", systemImage: "network") { showSetup = true }
                 Button("Add server…", systemImage: "plus") { beginNaming(.new, current: "") }
+            } footer: {
+                Text("A new server can be filled in from a setup code: scan or paste one on its setup screen.")
             }
+
         }
         .navigationTitle("Servers")
         .sheet(isPresented: $showSetup) { SetupView() }
+        .sheet(item: $sharing) { SetupCodeView(server: $0) }
         .alert(naming.map { if case .new = $0 { "New server" } else { "Rename server" } } ?? "",
                isPresented: Binding(get: { naming != nil }, set: { if !$0 { naming = nil } })) {
             TextField("Name, e.g. Home or Office", text: $nameText)

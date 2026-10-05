@@ -46,9 +46,9 @@ You can delete conversations and attachments inside the app, remove credentials 
 ## Photos, camera, files, microphone, and Face ID
 
 - Redde uses the system photo picker and file picker, which give the app access only to the items you select.
-- The camera is used only when you choose Camera from the + menu. The photo you take becomes an attachment in your message: it is kept with that conversation like any attachment and sent only to your server, and it is not saved to your photo library.
+- The camera is used only when you choose Camera from the + menu or Scan a setup code in setup. A photo you take becomes an attachment in your message: it is kept with that conversation like any attachment and sent only to your server, and it is not saved to your photo library. Scanning a setup code reads the QR code on the device; no picture is kept or sent.
 - The microphone is used only while you are actively speaking to the app, with the on-screen indicator, and only for on-device transcription.
-- If you enable the app lock, Face ID or Touch ID is evaluated by iOS. Redde never receives biometric data.
+- If you enable the app lock, or ask for your passwords to be included in a setup code for another device, Face ID or Touch ID is evaluated by iOS. Redde never receives biometric data.
 
 ## Live Activities and Controls
 

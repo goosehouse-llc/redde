@@ -30,6 +30,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>echo</string>
+				<string>redde</string>
 			</array>
 		</dict>
 	</array>
@@ -60,7 +61,7 @@
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Redde can show your next event when you start a conversation, and attach a day's events to a message for your assistant. Events are sent only when you tap, and only to your own server.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Redde uses the camera when you take a photo to attach to a message. The photo goes only to the server you connect to.</string>
+	<string>Redde uses the camera when you take a photo to attach to a message, and to scan a setup code. A photo goes only to the server you connect to.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Redde uses Face ID to unlock the app, which holds your Hermes credentials.</string>
 	<key>NSLocalNetworkUsageDescription</key>

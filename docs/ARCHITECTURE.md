@@ -76,6 +76,43 @@ conversation list once there are two). One is active at a time.
   secrets move under it (`moveLegacySecretsToActiveServer`), each copied and read back before the
   old entry is deleted.
 
+### Setup codes
+
+A connection can arrive as a link, `redde://connect?…`, or as a QR code of it (`SetupCode`; the
+parameters are in the README). There are three ways in: the link is opened (the Camera, a tap),
+scanned in Setup (`SetupCodeScanner`, VisionKit's `DataScannerViewController`, hidden where the
+device can't scan), or pasted there (a `PasteButton`, so no clipboard prompt). All three end in
+`SetupCodeSheet`.
+
+- **A link is untrusted input.** Nothing is applied on arrival: the sheet shows every address in
+  full and which one the app will talk to, and saves on the button. An address must be http or
+  https with a host and no user name in it ("http://my-server@elsewhere" reads like the wrong
+  host); a code from a newer format version is refused whole.
+- **A code is only ever combined with secrets it brought itself** (`SetupCodeInstaller`). It fills
+  in the active server only when nothing at all is stored for that one in the Keychain, so it has
+  never connected (a first run, a server just added); every field is replaced, so nothing typed
+  there earlier is mixed in. Otherwise it becomes a new server and the app switches to it through
+  `ServerSwitcher`. The OpenAI-compatible endpoint is the app's, not a server's, so a code replaces
+  it, and when the address changes the old key is deleted unless the code carries one: a link must
+  not be able to point a saved key at another host.
+- **Then it is tested** (`ConnectionTester.current`) and the sheet says how that went. A server
+  that was added and doesn't answer can be taken back out: `install` returns a receipt and
+  `remove` restores the server, connection and endpoint from before.
+- **A link opened from outside** goes through `LaunchRouter`, like a Siri request: it waits for
+  the app lock, and whatever sheet is up (first-run setup included) closes first, because a second
+  sheet can't present over one. A first run the code didn't finish goes back to setup.
+- **Making one.** `SetupCode(server:settings:secrets:)` builds a server's code, shown as a QR code
+  (`QRCode`, Core Image) by Settings → Connection → Set up another device for the active server,
+  and from a server's touch-and-hold menu for the others. The OpenAI-compatible endpoint goes
+  along when there is one. Secrets are left out until asked for, behind device authentication, as
+  showing a saved password is anywhere on iOS; a link copied with secrets leaves the clipboard
+  after two minutes. `scripts/setup-code.py` makes a code on the server, for the first device.
+- **The scheme.** Setup links use `redde`, which people see; `echo` stays for the app's own links.
+  A custom scheme can be claimed by another app, which is one more reason to scan from inside
+  Redde. A universal link (`https://redde.goosehouse.org/connect#…`, secrets in the fragment)
+  would close that and also be tappable in Messages and Mail; it needs the Associated Domains
+  entitlement and a file on the website, and isn't built.
+
 ### Profiles
 
 Settings → Profile picks the Hermes profile (Hermes 0.21+). The list comes from the dashboard's

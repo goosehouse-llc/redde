@@ -27,6 +27,8 @@ import Foundation
 /// - `-echo.demoTips`: sample tips on Settings → About → Support Redde (App Review screenshot).
 /// - `-echo.whatsNew`: show this version's "What's New" sheet (any other `-echo.` flag hides it).
 /// - `-echo.switchProfile <name>`: switch profile five seconds after launch.
+/// - `-echo.setupCode <redde://connect link>`: open that setup link at launch, as if it had been
+///   scanned (the simulator has no camera).
 /// - `-echo.testServer <name> <Dashboard URL> <username>`: add a server with that name if there's
 ///   none (its password from `ECHO_TEST_SERVER_PASSWORD`). `-echo.switchServer <name>` switches to
 ///   a server by name five seconds after launch.
