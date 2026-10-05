@@ -43,12 +43,45 @@ struct SetupCodeTests {
     }
 
     @Test func otherLinksArentSetupLinks() throws {
-        for link in ["echo://listen", "echo://connect?api=http://a.test", "redde://listen", "https://redde.goosehouse.org/connect?api=http://a.test"] {
+        let others = ["echo://listen", "echo://connect?api=http://a.test", "redde://listen",
+                      // The page itself, the site's other pages, and look-alikes of the web form.
+                      "https://redde.goosehouse.org/connect", "https://redde.goosehouse.org/connect/", "https://redde.goosehouse.org/#api=http://a.test",
+                      "https://redde.goosehouse.org/connected#api=http://a.test", "http://redde.goosehouse.org/connect#api=http://a.test",
+                      "https://redde.goosehouse.org.evil.test/connect#api=http://a.test", "https://evil.test/connect#api=http://a.test",
+                      "https://redde.goosehouse.org:8443/connect#api=http://a.test"]
+        for link in others {
             #expect(try read(link) == nil, "\(link)")
             #expect(SetupCodeOffer(url: URL(string: link)!) == nil)
         }
         // The scheme and the word after it in any case.
         #expect(try read("REDDE://Connect?api=http://a.test")?.apiURL == "http://a.test")
+    }
+
+    /// The web form carries the same parameters after a "#", where a browser keeps them to itself.
+    @Test func theWebFormReadsTheSame() throws {
+        let parameters = "name=Home&dashboard=http://hermes.home.test:9119&user=redde&password=p%26w%2B1&api=https://hermes.home.test:8642&key=k&use=api"
+        let app = try #require(try read("redde://connect?" + parameters))
+        #expect(try read("https://redde.goosehouse.org/connect#" + parameters) == app)
+        #expect(try read("HTTPS://Redde.Goosehouse.org/connect/#" + parameters) == app)
+        #expect(app.dashboardPassword == "p&w+1")
+        // What is handed out is the web form, and it reads back as the same code.
+        #expect(app.webURL.absoluteString.hasPrefix("https://redde.goosehouse.org/connect#name=Home&"))
+        #expect(app.webURL.query() == nil, "nothing may ride in the part of the address a server sees")
+        #expect(try SetupCode.read(app.webURL) == app)
+        // Parameters after a "?" went to the server; they aren't read, and the link says why not.
+        #expect(throws: SetupCode.ParseError.noAddress) { try read("https://redde.goosehouse.org/connect?" + parameters) }
+        #expect(try read("https://redde.goosehouse.org/connect?api=http://evil.test#" + parameters) == app)
+    }
+
+    /// Escapes that aren't escapes ("%zz", a cut-off UTF-8 sequence) and a name with no value:
+    /// whatever Foundation makes of them, reading goes on and the rest of the code is right.
+    @Test func aBadlyEscapedValueDoesntSpoilTheRest() throws {
+        for prefix in ["redde://connect?", "https://redde.goosehouse.org/connect#"] {
+            let code = try #require(try read(prefix + "key=%zz&name=%E0%A4%A&user&api=http://a.test&profile=work"))
+            #expect(code.apiURL == "http://a.test")
+            #expect(code.profile == "work")
+            #expect(code.dashboardUser == "")
+        }
     }
 
     @Test func refusesWhatItCantUse() {
@@ -97,26 +130,30 @@ struct SetupCodeTests {
         code.apiURL = "https://hermes.home.test:8642"
         code.apiKey = "sk-AbC/+==&x"
         code.use = .hermesServe
-        let link = code.url.absoluteString
-        #expect(!link.contains("+"), "a plus sign must be escaped: other readers take it for a space")
-        #expect(!link.contains(" "))
-        #expect(try read(link) == code)
+        for link in [code.url.absoluteString, code.webURL.absoluteString] {
+            #expect(!link.contains("+"), "a plus sign must be escaped: other readers take it for a space")
+            #expect(!link.contains(" "))
+            #expect(try read(link) == code)
+        }
         #expect(try SetupCode.read(code.withoutSecrets.url)?.hasSecrets == false)
     }
 
-    /// The output of `scripts/setup-code.py` for these values (Python escapes more than
-    /// URLComponents does; both must read the same).
+    /// The output of `scripts/setup-code.py` for these values, in both forms (Python escapes more
+    /// than URLComponents does; all of it must read the same).
     @Test func aLinkMadeByTheScriptReads() throws {
-        let code = try #require(try read("redde://connect?name=Sol%27s%20house%20%26%20caf%C3%A9&dashboard=http%3A%2F%2Fhermes.home.test%3A9119"
+        let parameters = "name=Sol%27s%20house%20%26%20caf%C3%A9&dashboard=http%3A%2F%2Fhermes.home.test%3A9119"
             + "&user=redde%2Bphone%40home&password=p%26ss%3Dw%2Brd%20%231%25%20%2F%3F%C3%A9&api=https%3A%2F%2Fhermes.home.test%3A8642"
-            + "&key=sk-AbC%2F%2B%3D%3D%26x&use=dashboard"))
-        #expect(code.name == "Sol's house & café")
-        #expect(code.dashboardURL == "http://hermes.home.test:9119")
-        #expect(code.dashboardUser == "redde+phone@home")
-        #expect(code.dashboardPassword == "p&ss=w+rd #1% /?é")
-        #expect(code.apiURL == "https://hermes.home.test:8642")
-        #expect(code.apiKey == "sk-AbC/+==&x")
-        #expect(code.transport == .hermesServe)
+            + "&key=sk-AbC%2F%2B%3D%3D%26x&use=dashboard"
+        for link in ["https://redde.goosehouse.org/connect#" + parameters, "redde://connect?" + parameters] {
+            let code = try #require(try read(link))
+            #expect(code.name == "Sol's house & café")
+            #expect(code.dashboardURL == "http://hermes.home.test:9119")
+            #expect(code.dashboardUser == "redde+phone@home")
+            #expect(code.dashboardPassword == "p&ss=w+rd #1% /?é")
+            #expect(code.apiURL == "https://hermes.home.test:8642")
+            #expect(code.apiKey == "sk-AbC/+==&x")
+            #expect(code.transport == .hermesServe)
+        }
     }
 
     @Test func findsTheLinkInText() throws {
@@ -125,8 +162,24 @@ struct SetupCodeTests {
         #expect(SetupCode.link(in: "Here you go:\n\(link)\nSee you")?.absoluteString == link)
         #expect(SetupCode.link(in: "<\(link)>")?.absoluteString == link)
         #expect(SetupCode.link(in: "https://example.com/?q=redde") == nil)
+        let web = "https://redde.goosehouse.org/connect#api=http://a.test&key=k"
+        #expect(SetupCode.link(in: "Scan this or tap: \(web)\n")?.absoluteString == web)
+        #expect(SetupCode.link(in: "See https://redde.goosehouse.org/connect for how") == nil)   // the page, not a code
         #expect(SetupCodeOffer(text: "nothing here") == nil)
         #expect(try SetupCodeOffer(text: "  \(link)  ")?.result.get().apiKey == "k")
+    }
+
+    /// A universal link can reach the app twice at once (as a URL and as a browsing activity).
+    @Test func aLinkDeliveredTwiceIsOfferedOnce() throws {
+        let router = LaunchRouter()
+        let url = URL(string: "https://redde.goosehouse.org/connect#api=http://a.test&key=k")!
+        router.requestSetup(try #require(SetupCodeOffer(url: url)))
+        #expect(router.consumeSetupCode() != nil)
+        router.requestSetup(try #require(SetupCodeOffer(url: url)))
+        #expect(router.consumeSetupCode() == nil)
+        // Another link straight after is its own offer.
+        router.requestSetup(try #require(SetupCodeOffer(url: URL(string: "redde://connect?api=http://b.test")!)))
+        #expect(router.consumeSetupCode() != nil)
     }
 
     // MARK: - Saving one
@@ -380,7 +433,7 @@ struct SetupCodeTests {
         code.dashboardPassword = String(repeating: "pässwörd-", count: 8)
         code.apiURL = "https://hermes.home.test:8642"
         code.apiKey = String(repeating: "k", count: 64)
-        let link = code.url.absoluteString
+        let link = code.webURL.absoluteString
         let picture = try #require(QRCode.image(for: link)?.cgImage)
         // Scaled up as the screen shows it, on a white margin.
         let scale = 8, margin = 32

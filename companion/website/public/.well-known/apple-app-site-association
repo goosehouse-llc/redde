@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["579BSQT6J4.com.goosehouse.echo"],
+        "components": [
+          { "/": "/connect", "comment": "Setup links. The connection is in the fragment, which never reaches this server." },
+          { "/": "/connect/" }
+        ]
+      }
+    ]
+  }
+}

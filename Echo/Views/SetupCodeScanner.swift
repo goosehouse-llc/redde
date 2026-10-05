@@ -2,7 +2,7 @@ import AVFoundation
 import SwiftUI
 import VisionKit
 
-/// The camera, looking for a Redde setup code (a QR code of a `redde://connect` link). It hands
+/// The camera, looking for a Redde setup code (a QR code of a setup link, in either form). It hands
 /// the first one it reads to `onCode` and closes; any other QR code gets a line saying so.
 struct SetupCodeScanner: View {
     var onCode: (SetupCodeOffer) -> Void

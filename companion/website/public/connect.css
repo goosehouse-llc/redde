@@ -1,0 +1,37 @@
+/* The setup-link page, in the site's palette. A file of its own so the page can forbid inline
+   styles and scripts (see _headers). */
+:root {
+  --navy: #0c1230; --navy2: #182450; --mist: #c8d6f0; --gold: #e8b04b;
+  --blue: #1e6fd9; --ink: #eef2fb; --dim: #8fa0c4; --line: rgba(200,214,240,.14);
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; color: var(--ink); background: var(--navy); line-height: 1.6;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+a { color: var(--mist); }
+a:hover { color: var(--gold); }
+.topline { height: 4px; background: linear-gradient(90deg, var(--gold), var(--blue)); }
+main { max-width: 560px; margin: 0 auto; padding: 28px 24px 64px; }
+.brand { display: inline-flex; align-items: center; gap: 12px; color: var(--ink); text-decoration: none; margin-bottom: 36px; }
+.brand img { border-radius: 11px; }
+.brand span { font-size: 1.3rem; font-weight: 800; letter-spacing: .01em; }
+[hidden] { display: none; }
+h1 { font-size: clamp(2rem, 7vw, 2.6rem); font-weight: 800; line-height: 1.08; letter-spacing: -.02em; margin: 0 0 16px; }
+.lede { color: var(--mist); margin: 0 0 16px; font-size: 1.05rem; }
+dl { margin: 24px 0; padding: 4px 18px; background: var(--navy2); border: 1px solid var(--line); border-radius: 16px; }
+dl div { padding: 12px 0; border-bottom: 1px solid var(--line); }
+dl div:last-child { border-bottom: 0; }
+dt { font-size: .78rem; font-family: var(--mono); color: var(--gold); letter-spacing: .06em; text-transform: uppercase; }
+dd { margin: 2px 0 0; font-family: var(--mono); font-size: .95rem; overflow-wrap: anywhere; }
+dd small { display: block; font-family: inherit; color: var(--dim); font-size: .8rem; }
+.primary, .secondary {
+  display: block; text-align: center; text-decoration: none; font-weight: 700;
+  border-radius: 14px; padding: 14px 18px; margin: 12px 0;
+}
+.primary { background: var(--gold); color: #0b0b0c; }
+.primary:hover { color: #0b0b0c; filter: brightness(1.06); }
+.secondary { border: 1px solid rgba(232,176,75,.5); color: var(--gold); }
+.fine { color: var(--dim); font-size: .85rem; margin: 18px 0 0; }
+code { font-family: var(--mono); color: var(--mist); }

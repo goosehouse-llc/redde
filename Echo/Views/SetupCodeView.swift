@@ -82,7 +82,7 @@ struct SetupCodeView: View {
 
     private func render() {
         code = SetupCode(server: server, settings: settings, secrets: withSecrets)
-        picture = code.transport == nil ? nil : QRCode.image(for: code.url.absoluteString)
+        picture = code.transport == nil ? nil : QRCode.image(for: code.webURL.absoluteString)
     }
 
     private func setSecrets(_ on: Bool) {
@@ -101,7 +101,7 @@ struct SetupCodeView: View {
     private func copy() {
         // A link with passwords in it doesn't stay on the clipboard.
         let expiry = Date.now.addingTimeInterval(withSecrets ? 120 : 3_600)
-        UIPasteboard.general.setItems([[UTType.utf8PlainText.identifier: code.url.absoluteString]], options: [.expirationDate: expiry])
+        UIPasteboard.general.setItems([[UTType.utf8PlainText.identifier: code.webURL.absoluteString]], options: [.expirationDate: expiry])
         toast = withSecrets ? "Link copied for two minutes" : "Link copied"
     }
 

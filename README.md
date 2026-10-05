@@ -24,8 +24,8 @@ speech is recognized on the device, and credentials stay in the iOS Keychain.
   rendered offline with no third-party Swift dependencies.
 - **The whole agent.** The shared session ledger, projects, several servers and Hermes profiles,
   skills and toolsets, memory and context files, cron jobs and the Kanban board.
-- **Set up by code.** Scan a QR code or open a `redde://connect` link and the connection fills
-  itself in. A device that is set up can show the code for the next one.
+- **Set up by code.** Scan a QR code or open a setup link and the connection fills itself in. A
+  device that is set up can show the code for the next one.
 - **Everywhere on iOS.** Siri and Shortcuts, the Action Button, Control Center, widgets, a Live
   Activity, the share sheet, the camera, and Siri AI messaging on iOS 27 (opt-in).
 - **Private.** An offline message queue, Face ID lock, and nothing collected.
@@ -55,14 +55,15 @@ scripts/setup-code.py --name Home --dashboard http://hermes.home.example:9119 --
 
 The script asks for the password without showing it and prints the link, plus its QR code when
 [`qrencode`](https://fukuchi.org/works/qrencode/) is installed. In Redde's setup screen choose
-**Scan a setup code** or **Paste a setup link**; the iPhone Camera opens the code too. Redde shows
-what the code sets and where it points, and saves nothing until you agree. It never overwrites a
-server that is already set up: the code is added beside it.
+**Scan a setup code** or **Paste a setup link**; the iPhone Camera opens the code too, and so does
+tapping the link in Messages or Mail. Redde shows what the code sets and where it points, and
+saves nothing until you agree. It never overwrites a server that is already set up: the code is
+added beside it.
 
 Once one device is set up, Settings › Connection › **Set up another device** shows its code.
 Passwords and keys are left out until you ask for them, which takes Face ID or the passcode.
 
-The link is `redde://connect?` followed by any of these, percent-encoded:
+The link is `https://redde.goosehouse.org/connect#` followed by any of these, percent-encoded:
 
 | Parameter | Meaning |
 | --- | --- |
@@ -73,6 +74,13 @@ The link is `redde://connect?` followed by any of these, percent-encoded:
 | `access-id`, `access-secret` | A Cloudflare Access service token |
 | `model-url`, `model-key`, `model` | An OpenAI-compatible endpoint |
 | `use` | `dashboard`, `api` or `model`: which connection Redde talks to (default: the first in the code) |
+
+It is a web address so that iOS opens it in Redde wherever it is tapped (a universal link, which
+no other app can claim), and so that a device without the app gets a page saying what to do. The
+connection comes after the `#`, the part of an address a browser never sends, so the site doesn't
+see it; the page is a static file ([`companion/website`](companion/website)) whose script only
+hands the link to the app. To involve no website at all, use the app's own form, with the same
+parameters after `redde://connect?` (`scripts/setup-code.py --app-link`).
 
 A code with a password in it is as good as the password. Show it to your own devices, not in a
 screenshot or a chat.

@@ -42,10 +42,14 @@ final class LaunchRouter {
         return pendingDraft
     }
 
-    /// A `redde://connect` setup link that was opened: shown for confirmation, never applied here.
+    /// A setup link that was opened: shown for confirmation, never applied here.
     private(set) var pendingSetupCode: SetupCodeOffer?
+    @ObservationIgnored private var lastSetupRequest: (result: Result<SetupCode, SetupCode.ParseError>, at: Date)?
 
     func requestSetup(_ offer: SetupCodeOffer) {
+        // A universal link can be delivered twice, as a URL and as a web-browsing activity.
+        if let last = lastSetupRequest, last.result == offer.result, Date.now.timeIntervalSince(last.at) < 2 { return }
+        lastSetupRequest = (offer.result, .now)
         pendingSetupCode = offer
     }
 

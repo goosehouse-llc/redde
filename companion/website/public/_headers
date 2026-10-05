@@ -1,0 +1,11 @@
+# Apple fetches this without an extension and wants JSON.
+/.well-known/apple-app-site-association
+  Content-Type: application/json
+
+# The setup-link page. A link's connection is in its fragment, which the browser keeps to itself;
+# the policy below also stops the page's own script from sending anything anywhere.
+/connect
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Referrer-Policy: no-referrer
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: noindex

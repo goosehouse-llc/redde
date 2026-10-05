@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Set up Redde</title>
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0c1230">
+<link rel="icon" type="image/png" href="/assets/icon.png">
+<link rel="stylesheet" href="/connect.css">
+</head>
+<body>
+<div class="topline"></div>
+<main>
+  <a class="brand" href="/"><img src="/assets/icon.png" alt="" width="44" height="44"><span>Redde</span></a>
+
+  <!-- A link that carries a connection (connect.js fills this in and shows it). -->
+  <section id="code" hidden>
+    <h1>Set up Redde</h1>
+    <p class="lede">This link carries a connection to a server. On an iPhone or iPad with Redde
+    installed it opens the app; you are seeing this page because the app isn't installed here, or
+    the link was opened in the browser.</p>
+    <dl id="summary"></dl>
+    <a class="primary" id="open" href="redde://connect">Open in Redde</a>
+    <a class="secondary" href="https://apps.apple.com/app/id6810900557">Get Redde on the App Store</a>
+    <p class="fine">Redde shows you what the link sets and saves nothing until you agree. Only use
+    a setup link from someone you trust.</p>
+    <p class="fine">Nothing in the link was sent to this site. Everything after the <code>#</code>
+    stays in your browser; this page is a static file that reads it here, only to hand it to the
+    app, and it has been taken out of the address bar.</p>
+  </section>
+
+  <!-- The page on its own. -->
+  <section id="bare">
+    <h1>Setup links</h1>
+    <p class="lede">A Redde setup link carries a server's connection, so nobody has to type an
+    address and a key on a phone. Opened on an iPhone or iPad with Redde installed, it opens the
+    app, which shows what the link sets and saves nothing until you agree.</p>
+    <p class="lede">Make one in Redde under Settings › Connection › Set up another device, or on
+    your server with the
+    <a href="https://github.com/goosehouse-llc/redde#setup-codes">setup-code script</a>.</p>
+    <a class="secondary" href="https://apps.apple.com/app/id6810900557">Get Redde on the App Store</a>
+    <noscript><p class="fine">This page needs JavaScript to read a setup link. Nothing is sent
+    anywhere: the script only hands the link to the app.</p></noscript>
+  </section>
+</main>
+<script src="/connect.js"></script>
+</body>
+</html>

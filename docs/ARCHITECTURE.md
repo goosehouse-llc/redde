@@ -78,11 +78,11 @@ conversation list once there are two). One is active at a time.
 
 ### Setup codes
 
-A connection can arrive as a link, `redde://connect?…`, or as a QR code of it (`SetupCode`; the
-parameters are in the README). There are three ways in: the link is opened (the Camera, a tap),
-scanned in Setup (`SetupCodeScanner`, VisionKit's `DataScannerViewController`, hidden where the
-device can't scan), or pasted there (a `PasteButton`, so no clipboard prompt). All three end in
-`SetupCodeSheet`.
+A connection can arrive as a link, `https://redde.goosehouse.org/connect#…` or
+`redde://connect?…`, or as a QR code of it (`SetupCode`; the parameters are in the README). There
+are three ways in: the link is opened (the Camera, a tap), scanned in Setup (`SetupCodeScanner`,
+VisionKit's `DataScannerViewController`, hidden where the device can't scan), or pasted there (a
+`PasteButton`, so no clipboard prompt). All three end in `SetupCodeSheet`.
 
 - **A link is untrusted input.** Nothing is applied on arrival: the sheet shows every address in
   full and which one the app will talk to, and saves on the button. An address must be http or
@@ -107,11 +107,19 @@ device can't scan), or pasted there (a `PasteButton`, so no clipboard prompt). A
   along when there is one. Secrets are left out until asked for, behind device authentication, as
   showing a saved password is anywhere on iOS; a link copied with secrets leaves the clipboard
   after two minutes. `scripts/setup-code.py` makes a code on the server, for the first device.
-- **The scheme.** Setup links use `redde`, which people see; `echo` stays for the app's own links.
-  A custom scheme can be claimed by another app, which is one more reason to scan from inside
-  Redde. A universal link (`https://redde.goosehouse.org/connect#…`, secrets in the fragment)
-  would close that and also be tappable in Messages and Mail; it needs the Associated Domains
-  entitlement and a file on the website, and isn't built.
+- **Two forms of the link.** What the app hands out is the web form, a universal link: the app
+  claims `applinks:redde.goosehouse.org` (Associated Domains) and the site names the app for
+  `/connect` in `.well-known/apple-app-site-association`, so iOS opens the link in Redde wherever
+  it is tapped and no other app can take it. The parameters ride in the fragment, which a browser
+  never sends, so the site doesn't see a connection; only the fragment is read, and parameters
+  after a `?` are refused. Where the app isn't installed, the page
+  (`companion/website/public/connect.*`) shows what the link carries, offers the App Store, and
+  hands the same parameters to the app's own form, `redde://connect?…`: a link tapped on its own
+  page never opens an app, so that form is the page's way in, and it is also the form that
+  involves no website. The page takes the fragment out of the address bar at once, renders it as
+  text only, and is served with a content security policy that allows no connections. Both forms
+  arrive through `onOpenURL` (or as a web-browsing activity); `LaunchRouter` drops the second of
+  a pair. `echo` stays the scheme for the app's own links.
 
 ### Profiles
 

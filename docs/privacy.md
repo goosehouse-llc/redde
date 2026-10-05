@@ -50,6 +50,10 @@ You can delete conversations and attachments inside the app, remove credentials 
 - The microphone is used only while you are actively speaking to the app, with the on-screen indicator, and only for on-device transcription.
 - If you enable the app lock, or ask for your passwords to be included in a setup code for another device, Face ID or Touch ID is evaluated by iOS. Redde never receives biometric data.
 
+## Setup links
+
+A setup link (`https://redde.goosehouse.org/connect#…`) carries a server's connection in the part of the address after the `#`. Browsers do not send that part to a website, so it never reaches redde.goosehouse.org. With Redde installed, iOS opens the link in the app without loading the page at all. Without it, the page reads the link on your device only to show what it carries and hand it to the app; it sends nothing anywhere and collects nothing.
+
 ## Live Activities and Controls
 
 Redde can show the progress of a reply in a Live Activity on the Lock Screen and in the Dynamic Island, and offers Control Center buttons. These display information already on your device and send nothing anywhere.

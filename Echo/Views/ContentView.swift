@@ -115,8 +115,13 @@ struct ContentView: View {
             // Control Center / Lock Screen controls open the app through echo://listen.
             if let handsFree = EchoURL.parseListen(url) { router.requestVoice(handsFree: handsFree) }
             if url.scheme == EchoURL.scheme, url.host == "share" { consumeSharedItems() }
-            // redde://connect, from the Camera or a link: a setup code to confirm.
+            // A setup link (redde.goosehouse.org/connect#… or redde://connect), from the Camera
+            // or a tap: a setup code to confirm.
             if let offer = SetupCodeOffer(url: url) { router.requestSetup(offer) }
+        }
+        .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
+            // The web form is a universal link, which can arrive this way as well.
+            if let url = activity.webpageURL, let offer = SetupCodeOffer(url: url) { router.requestSetup(offer) }
         }
         .onAppear { consumeControlRequest(); handleLaunchRequest(); handleDraftRequest(); handleSetupCode() }
         .onChange(of: router.pendingVoice) { handleLaunchRequest() }

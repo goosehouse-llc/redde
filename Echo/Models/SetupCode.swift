@@ -1,9 +1,16 @@
 import Foundation
 
 /// A connection handed over as a link, or as a QR code of that link, so nobody has to type an
-/// address and a key on a phone keyboard:
+/// address and a key on a phone keyboard. The link comes in two forms with the same parameters:
 ///
+///     https://redde.goosehouse.org/connect#name=Home&dashboard=http://hermes.home.example:9119&user=redde&password=…
 ///     redde://connect?name=Home&dashboard=http://hermes.home.example:9119&user=redde&password=…
+///
+/// The first is a universal link: iOS opens it in the app, no other app can claim it, it is
+/// tappable wherever a web address is, and where the app isn't installed the page there says what
+/// to do. The connection rides after the "#", the part of an address a browser never sends, so
+/// the site doesn't see it. The second is the app's own scheme: what that page's button opens,
+/// and a link that involves no website at all.
 ///
 /// Every parameter is optional, but a code has to carry at least one address:
 ///
@@ -38,6 +45,10 @@ nonisolated struct SetupCode: Equatable, Sendable {
 
     static let scheme = "redde"
     static let host = "connect"
+    /// Where the web form of the link lives (`applinks:` in the app's Associated Domains, and
+    /// `.well-known/apple-app-site-association` on the site, name it too).
+    static let webHost = "redde.goosehouse.org"
+    static let webPath = "/connect"
     static let version = 1
     /// Longer than any real code, short enough to fit a QR code a phone can read off a screen.
     static let maximumLength = 2_500
@@ -64,19 +75,34 @@ nonisolated struct SetupCode: Equatable, Sendable {
     init() {}
 
     /// Whether `url` is a setup link at all; the rest of the app's links aren't.
-    static func isSetupLink(_ url: URL) -> Bool {
-        url.scheme?.lowercased() == scheme && url.host()?.lowercased() == host
+    static func isSetupLink(_ url: URL) -> Bool { parameters(of: url) != nil }
+
+    /// A setup link's parameters, still percent-encoded: the query of an app link, the fragment
+    /// of a web link. Nil when `url` isn't a setup link; a bare link to the page is just the page.
+    private static func parameters(of url: URL) -> String? {
+        let scheme = url.scheme?.lowercased(), host = url.host()?.lowercased()
+        if scheme == Self.scheme, host == Self.host { return url.query(percentEncoded: true) ?? "" }
+        guard scheme == "https", host == webHost, url.port == nil,
+              url.path() == webPath || url.path() == webPath + "/" else { return nil }
+        let fragment = url.fragment(percentEncoded: true) ?? ""
+        // Parameters after a "?" would have gone to the server: they are not read, and the
+        // link is answered with "no address" instead of silence.
+        if fragment.isEmpty, (url.query(percentEncoded: true) ?? "").isEmpty { return nil }
+        return fragment
     }
 
     /// Reads a setup link. Nil when `url` isn't one; throws when it is one that can't be used.
     static func read(_ url: URL) throws(ParseError) -> SetupCode? {
-        guard isSetupLink(url) else { return nil }
+        guard let parameters = parameters(of: url) else { return nil }
         guard url.absoluteString.utf8.count <= maximumLength else { throw .tooLong }
         var fields: [String: String] = [:]
-        for item in URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? [] {
-            let value = (item.value ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        // Split by hand: a "+" is a plus sign here, and a badly escaped value is dropped, not fatal.
+        for pair in parameters.split(separator: "&") {
+            let parts = pair.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
+            guard let name = String(parts[0]).removingPercentEncoding?.lowercased(), parts.count == 2,
+                  let value = String(parts[1]).removingPercentEncoding?.trimmingCharacters(in: .whitespacesAndNewlines) else { continue }
             // The first of a repeated parameter counts, as it does for the person reading the link.
-            if !value.isEmpty, fields[item.name.lowercased()] == nil { fields[item.name.lowercased()] = value }
+            if !value.isEmpty, fields[name] == nil { fields[name] = value }
         }
         if let version = fields["v"], (Int(version) ?? .max) > Self.version { throw .newerVersion }
 
@@ -116,15 +142,29 @@ nonisolated struct SetupCode: Equatable, Sendable {
         return url.absoluteString
     }
 
-    /// The first setup link in a piece of text: what a QR code holds, or what was pasted.
+    /// The first setup link in a piece of text, in either form: what a QR code holds, or what
+    /// was pasted.
     static func link(in text: String) -> URL? {
-        guard let start = text.range(of: "\(scheme)://\(host)", options: .caseInsensitive) else { return nil }
-        let rest = text[start.lowerBound...]
+        let starts = ["\(scheme)://\(host)", "https://\(webHost)\(webPath)"]
+            .compactMap { text.range(of: $0, options: .caseInsensitive)?.lowerBound }
+        guard let start = starts.min() else { return nil }
+        let rest = text[start...]
         let end = rest.firstIndex { $0.isWhitespace || $0 == "<" || $0 == ">" || $0 == "\"" } ?? rest.endIndex
-        return URL(string: String(rest[..<end]))
+        guard let url = URL(string: String(rest[..<end])), isSetupLink(url) else { return nil }
+        return url
     }
 
-    /// The link for this code.
+    /// The link to hand out: the web form (see the top of the file for why).
+    var webURL: URL {
+        var components = URLComponents()
+        components.scheme = "https"
+        components.host = Self.webHost
+        components.path = Self.webPath
+        components.percentEncodedFragment = url.query(percentEncoded: true)
+        return components.url!
+    }
+
+    /// The link in the app's own scheme.
     var url: URL {
         var items: [URLQueryItem] = []
         func add(_ name: String, _ value: String) {

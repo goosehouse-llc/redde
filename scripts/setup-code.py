@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Makes a Redde setup code for your server: a redde://connect link, and its QR code in the
-terminal when qrencode is installed. Scan the code from Redde's setup screen (or with the Camera),
-or paste the link there, and the connection is filled in.
+"""Makes a Redde setup code for your server: a setup link, and its QR code in the terminal when
+qrencode is installed. Scan the code from Redde's setup screen (or with the Camera), or open or
+paste the link, and the connection is filled in.
 
     scripts/setup-code.py --name Home --dashboard http://hermes.home.example:9119 --user redde
     scripts/setup-code.py --api https://hermes.home.example:8642 --profile work
@@ -11,6 +11,10 @@ Passwords and keys are asked for without being shown, so they stay out of your s
 run unattended, set them in the environment instead: REDDE_PASSWORD (Dashboard), REDDE_KEY (Hermes
 API), REDDE_PROFILE_KEY, REDDE_ACCESS_SECRET (Cloudflare Access), REDDE_MODEL_KEY. With
 --no-secrets they are left out and typed on the phone.
+
+The link is a web address, https://redde.goosehouse.org/connect#…, which iOS opens in Redde. The
+connection comes after the "#", the part of an address that is never sent to a server, so the site
+doesn't see it. With --app-link the link is redde://connect?… instead and involves no website.
 
 The link and the QR code hold whatever secrets you gave: treat them like the passwords themselves.
 """
@@ -53,6 +57,7 @@ def main():
     parser.add_argument("--model", default="", help="model name at that endpoint")
     parser.add_argument("--use", choices=["dashboard", "api", "model"], help="which connection Redde talks to (default: the first given)")
     parser.add_argument("--no-secrets", action="store_true", help="leave passwords and keys out")
+    parser.add_argument("--app-link", action="store_true", help="print a redde://connect link instead of the web address")
     args = parser.parse_args()
     if not (args.dashboard or args.api or args.model_url):
         parser.error("give at least one of --dashboard, --api or --model-url")
@@ -75,7 +80,8 @@ def main():
         ("use", args.use or ""),
     ]
     # quote, not quote_plus: Redde reads "+" as a plus sign, not as a space.
-    link = "redde://connect?" + "&".join(f"{name}={quote(value, safe='')}" for name, value in fields if value)
+    parameters = "&".join(f"{name}={quote(value, safe='')}" for name, value in fields if value)
+    link = ("redde://connect?" if args.app_link else "https://redde.goosehouse.org/connect#") + parameters
 
     if shutil.which("qrencode") and sys.stderr.isatty():
         subprocess.run(["qrencode", "-t", "ANSIUTF8", "-m", "2", "-o", "-", link], stdout=sys.stderr, check=False)

@@ -44,6 +44,10 @@ targets:
         com.apple.developer.carplay-voice-based-conversation: true
         # Time-sensitive notifications, so Siri can announce Redde's alerts on AirPods.
         com.apple.developer.usernotifications.time-sensitive: true
+        # Setup links, https://redde.goosehouse.org/connect#…, open in the app (universal links).
+        # The site names this app in .well-known/apple-app-site-association (companion/website).
+        com.apple.developer.associated-domains:
+          - applinks:redde.goosehouse.org
         # Remote notifications from the push relay (Push Notifications is enabled on the App ID).
         # "development" is what the source carries; the App Store export rewrites it to production.
         aps-environment: development
