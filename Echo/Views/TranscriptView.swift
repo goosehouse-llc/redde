@@ -36,8 +36,6 @@ struct TranscriptView: View {
     @State private var readingID: UUID?
     /// "Copied", from a row.
     @State private var toaster = Toaster()
-    /// The pick-up card's line: the last thing you sent in that conversation.
-    @State private var pickUpLine: String?
 
     /// "Today" / "Yesterday" / a date where the day changes between messages. Computed once per
     /// message-count change rather than by searching the array from every row.
@@ -129,7 +127,7 @@ struct TranscriptView: View {
                 // pixel-stable. If a session pages in enough history to feel heavy, cap
                 // visibleCount rather than reintroducing laziness here.
                 VStack(alignment: .leading, spacing: 14) {
-                    if conversation.messages.isEmpty, conversation.outbox.isEmpty { emptyState }
+                    if conversation.messages.isEmpty, conversation.outbox.isEmpty { StartScreen() }
                     if hiddenCount > 0 {
                         Button {
                             let anchor = visibleMessages.first?.id
@@ -371,70 +369,6 @@ struct TranscriptView: View {
         case let .reconnecting(attempt): "Reconnecting to the Hermes Dashboard… (try \(attempt))"
         case let .failed(reason): "Hermes Dashboard: \(reason)"
         default: nil
-        }
-    }
-
-    /// A new conversation: a greeting at the top, and a way back into the last one.
-    private var emptyState: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(Self.greeting(for: .now))
-                Text("What should \(Settings.shared.headerTitle) look into?")
-                    .foregroundStyle(.secondary)
-            }
-            .font(.system(.title, weight: .bold))
-            .accessibilityElement(children: .combine)
-            .accessibilityAddTraits(.isHeader)
-            // No "connect" button here: the greeting and the composer already say what to do, and
-            // setup opens on first launch and from Settings → Connection.
-            if let last = pickUp {
-                Button {
-                    if let record = store.record(id: last.id) { conversation.load(record) }
-                } label: {
-                    HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("Pick up where you left off")
-                                .font(.caption.weight(.semibold))
-                                .textCase(.uppercase)
-                                .foregroundStyle(.secondary)
-                            Text(pickUpLine ?? last.title)
-                                .font(.body)
-                                .lineLimit(1)
-                                .truncationMode(.tail)
-                        }
-                        Spacer(minLength: 0)
-                        Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
-                    }
-                    .padding(14)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(theme.surface ?? Color(.secondarySystemBackground), in: .rect(cornerRadius: 16))
-                    .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .accessibilityHint("Opens your most recent conversation")
-                .task(id: last.id) {
-                    // One line: the newest thing you sent there, newlines folded into spaces.
-                    // Decoded off the main actor: it can be a long session the reader never opens.
-                    let sent = await store.loadRecord(id: last.id)?.messages.last { $0.role == .user && !$0.text.isEmpty }?.text
-                    pickUpLine = sent?.split(whereSeparator: \.isNewline).joined(separator: " ")
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.top, 36)
-    }
-
-    /// The most recent other conversation on this phone, if there is one.
-    private var pickUp: ConversationSummary? {
-        store.sorted.first { $0.id != conversation.id && $0.turnCount > 0 }
-    }
-
-    private static func greeting(for date: Date) -> String {
-        switch Calendar.current.component(.hour, from: date) {
-        case 5..<12: "Good morning."
-        case 12..<17: "Good afternoon."
-        case 17..<22: "Good evening."
-        default: "Hello."
         }
     }
 }

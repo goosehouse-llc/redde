@@ -84,6 +84,29 @@ nonisolated enum ComposerContext {
 
     // MARK: Calendar
 
+    enum CalendarAccess: Sendable { case granted, notAsked, refused }
+
+    /// Where calendar access stands, without asking for it.
+    static var calendarAccess: CalendarAccess {
+        switch EKEventStore.authorizationStatus(for: .event) {
+        case .fullAccess: .granted
+        case .notDetermined: .notAsked
+        default: .refused
+        }
+    }
+
+    /// Today's and tomorrow's events, for the start screen's card. Empty without access; this
+    /// never asks.
+    static func eventsTodayAndTomorrow(now: Date = .now) -> [StartCards.Event] {
+        guard calendarAccess == .granted else { return [] }
+        let calendar = Calendar.current, store = EKEventStore()
+        let start = calendar.startOfDay(for: now)
+        guard let end = calendar.date(byAdding: .day, value: 2, to: start) else { return [] }
+        return store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: nil)).map {
+            StartCards.Event(title: $0.title ?? "(untitled)", start: $0.startDate, end: $0.endDate, allDay: $0.isAllDay)
+        }
+    }
+
     /// That day's events as a text attachment, asking for calendar access the first time.
     /// Nil when access is refused.
     static func calendarAttachment(for day: Date) async -> Attachment? {

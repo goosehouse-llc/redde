@@ -58,7 +58,7 @@
 		<true/>
 	</dict>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>When you mention a day in a message, Redde can attach that day's calendar events for your assistant. Only the days you tap are read, and only your own server receives them.</string>
+	<string>Redde can show your next event when you start a conversation, and attach a day's events to a message for your assistant. Events are sent only when you tap, and only to your own server.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Redde uses the camera when you take a photo to attach to a message. The photo goes only to the server you connect to.</string>
 	<key>NSFaceIDUsageDescription</key>

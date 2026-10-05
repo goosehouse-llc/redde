@@ -135,6 +135,21 @@ or the Dashboard and the title Hermes gives a session by itself. The title Redde
 session, the question and a timestamp, is not a name (`Conversation.name(fromServerTitle:)`). An
 empty name takes a conversation kept on the phone back to its first question.
 
+### Start screen
+
+An empty conversation shows the app's mark, a greeting for the time of day, and up to three cards,
+each one tap (`Views/StartScreen.swift`, `Services/StartCards.swift`). The pieces come in one after
+another.
+
+- **Calendar:** once Redde has calendar access, the next event today or tomorrow, read on the
+  phone; tapping asks about that day with its events attached. Before access was ever asked, the
+  card offers "What's on my calendar today?" and the tap asks for it. Refused, there is no card.
+  The screen never asks on its own.
+- **Continue:** the most recent other conversation on the phone.
+- **Home:** when the gateway's toolsets include Home Assistant, switched on and set up. Asked of
+  the gateway once per connection, and never on the OpenAI-compatible connection, which has no
+  tools.
+
 ### Message queue
 
 Nothing is lost to a bad connection, and you don't have to wait for a reply to ask the next thing.
