@@ -401,6 +401,21 @@ the conversation held 1.4 GB until the page was sized by what it holds (the firs
   the two don't cross. One move of offset, scale and opacity on one row, decided by the message
   being under a second and a half old, so a conversation that loads doesn't move. A message
   held behind a running reply arrives in the queue the same way.
+- **A picture or a diagram opens out of its thumbnail** and closes back into it: the system's
+  zoom transition (`matchedTransitionSource` on the thumbnail, `navigationTransition(.zoom)` on
+  the full-screen cover), in `AttachmentGallery`, `MarkdownImage` and `MermaidBlock`. It brings
+  the drag-down and pinch to close with it.
+- **A conversation opens out of its row or its card** (`OpeningCover`). The iPhone's list is a
+  side panel and the start screen's "Continue" card swaps the transcript in place, so there is
+  no pushed page or sheet for the system's zoom to attach to. A surface grows from the row (from
+  where it was tapped: rows aren't measured, a list scrolls) or from the card until it covers
+  what is behind, keeping the title where it was; then the panel closes, or the conversation
+  loads, underneath, and the surface clears as the conversation comes forward. It is a cover and
+  not a mask on the chat: a mask draws the screen off screen for as long as it is on, and taking
+  one on and off rebuilds the screen under it. The growth runs on a curve with an end, not a
+  spring, whose completion comes well after it looks finished and left a blank screen waiting.
+  `-echo.slowMotion <factor>` stretches it for a look. Under Reduce Motion the panel slides away
+  and the conversation simply appears.
 
 The footer's `ctx` is context occupancy: from the Dashboard's `context_used` /
 `context_max`, or one call's tokens against the window on OpenAI-compatible servers; the Hermes API

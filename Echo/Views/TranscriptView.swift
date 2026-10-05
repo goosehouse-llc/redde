@@ -39,6 +39,8 @@ struct TranscriptView: View {
     @State private var readingID: UUID?
     /// "Copied", from a row.
     @State private var toaster = Toaster()
+    /// The start screen's "Continue" card opening into its conversation.
+    @State private var cardOpening: OpeningCover.Opening?
 
     /// "Today" / "Yesterday" / a date where the day changes between messages. Computed once per
     /// message-count change rather than by searching the array from every row.
@@ -137,7 +139,12 @@ struct TranscriptView: View {
                 // pixel-stable. If a session pages in enough history to feel heavy, shrink
                 // the page rather than reintroducing laziness here.
                 VStack(alignment: .leading, spacing: 14) {
-                    if conversation.messages.isEmpty, conversation.outbox.isEmpty { StartScreen() }
+                    if conversation.messages.isEmpty, conversation.outbox.isEmpty {
+                        StartScreen(openFromCard: { card, title, load in
+                            // The card's words sit past its symbol: 16 in, 26 of symbol, 12 between.
+                            OpeningCover.run($cardOpening, from: card, title: title, titleInset: 54, swap: load)
+                        })
+                    }
                     if hiddenCount > 0 {
                         // One more page of what comes before.
                         let earlier = page.earlierCount(in: conversation.messages)
@@ -225,7 +232,16 @@ struct TranscriptView: View {
                 }
             }
             .environment(\.lazyWebBlocks, true)
+            // A conversation opening out of the start screen's card comes forward as the cover clears.
+            .scaleEffect(cardOpening?.contentScale ?? 1)
             .overlay(alignment: .bottomTrailing) { jumpButton(proxy) }
+            .overlay {
+                // Under the header and the composer, over the whole transcript.
+                if let cardOpening {
+                    OpeningCover(opening: cardOpening, from: theme.surface ?? Color(.secondarySystemBackground),
+                                 to: theme.background ?? Color(.systemBackground), text: theme.text ?? .primary)
+                }
+            }
             .toast($toaster.text, duration: .seconds(1.6))
             .environment(toaster)
             .animation(.easeOut(duration: 0.2), value: following)

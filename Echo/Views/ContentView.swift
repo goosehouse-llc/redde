@@ -23,6 +23,9 @@ struct ContentView: View {
     /// A setup link that was opened, up for confirmation.
     @State private var setupCode: SetupCodeOffer?
     @State private var showConversations = false
+    /// iPhone: where the row of the conversation just opened was tapped (see `SidePanel`).
+    @State private var openingFromRow: CGPoint?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// What's New was up when voice mode was asked for: voice wins, and it comes back after.
     @State private var deferredWhatsNew: WhatsNew.Release?
     @State private var showVoice = false
@@ -285,10 +288,21 @@ struct ContentView: View {
 
     /// iPhone: the chat, with the conversation list in a panel that slides in from the left.
     private var phoneLayout: some View {
-        SidePanel(isOpen: $showConversations, onOpening: { composerFocused = false }) {
+        SidePanel(isOpen: $showConversations, openingFrom: $openingFromRow, openingTitle: headerTitle,
+                  onOpening: { composerFocused = false }) {
             NavigationStack { transcriptScreen(showListButton: true) }
         } panel: {
-            ConversationsView(isShowing: showConversations, onOpened: { setDrawer(open: false) })
+            ConversationsView(isShowing: showConversations, onOpened: { conversationOpened() })
+        }
+    }
+
+    /// A conversation was opened from the list (or a new one started there). Picked from a row,
+    /// it opens out of that row; otherwise, and under Reduce Motion, the list slides away.
+    private func conversationOpened() {
+        if showConversations, !reduceMotion, let tap = ConversationTap.take() {
+            openingFromRow = tap
+        } else {
+            setDrawer(open: false)
         }
     }
 

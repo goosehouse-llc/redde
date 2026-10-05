@@ -30,21 +30,25 @@ struct AttachmentStrip: View {
 }
 
 /// Attachments shown with a message. A lone image displays as a photo bubble, like a received
-/// picture message; several show as tiles. Images open full screen on tap.
+/// picture message; several show as tiles. Images open full screen on tap, out of the thumbnail
+/// that was tapped and back into it.
 struct AttachmentGallery: View {
     let attachments: [Attachment]
     @State private var viewing: Attachment?
     @State private var previewingDoc: Attachment?
+    @Namespace private var zoom
 
     var body: some View {
         Group {
             if attachments.count == 1, attachments[0].kind == .image {
                 PhotoBubble(attachment: attachments[0]) { viewing = attachments[0] }
+                    .matchedTransitionSource(id: attachments[0].id, in: zoom) { $0.clipShape(.rect(cornerRadius: 14)) }
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(attachments) { att in
                             AttachmentTile(attachment: att, size: 120)
+                                .matchedTransitionSource(id: att.id, in: zoom) { $0.clipShape(.rect(cornerRadius: 12)) }
                                 .onTapGesture {
                                     if att.kind == .image { viewing = att } else { previewingDoc = att }
                                 }
@@ -56,6 +60,7 @@ struct AttachmentGallery: View {
         .fullScreenCover(item: $viewing) { att in
             if let image = UIImage(data: att.data) {
                 ZoomableImage(image: image, caption: att.filename)
+                    .navigationTransition(.zoom(sourceID: att.id, in: zoom))
             }
         }
         .sheet(item: $previewingDoc) { DocumentPreview(attachment: $0).ignoresSafeArea() }

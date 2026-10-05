@@ -68,6 +68,12 @@ struct SwipeRightGesture: UIGestureRecognizerRepresentable {
 /// close. Its own view, so a swipe's every frame redraws only this, not the chat inside.
 struct SidePanel<Content: View, Panel: View>: View {
     @Binding var isOpen: Bool
+    /// A conversation was picked in the panel: where its row was tapped, in screen coordinates.
+    /// The panel then doesn't slide away: the conversation opens out of the row (`OpeningCover`)
+    /// and the panel closes underneath. Set it instead of clearing `isOpen`.
+    @Binding var openingFrom: CGPoint?
+    /// What that conversation is called, shown on the surface that opens.
+    var openingTitle = ""
     /// A swipe started opening it (the chat's keyboard should go).
     var onOpening: () -> Void = {}
     @ViewBuilder var content: Content
@@ -85,6 +91,8 @@ struct SidePanel<Content: View, Panel: View>: View {
     @State private var closeTick = 0
     /// Whether this swipe has gone far enough to count, and `onOpening` was called.
     @State private var opening = false
+    /// A conversation opening out of its row.
+    @State private var cover: OpeningCover.Opening?
 
     var body: some View {
         GeometryReader { geo in
@@ -93,6 +101,8 @@ struct SidePanel<Content: View, Panel: View>: View {
             let progress = shown / width
             ZStack(alignment: .leading) {
                 content
+                    // A conversation opening out of its row comes forward as the cover clears.
+                    .scaleEffect(cover?.contentScale ?? 1)
                     .offset(x: shown)
                     .accessibilityHidden(isOpen)
                 // Its own layer, not inside the content: hidden with it, VoiceOver couldn't reach it.
@@ -127,6 +137,22 @@ struct SidePanel<Content: View, Panel: View>: View {
                     .accessibilityHidden(!isOpen)
                     .accessibilityAddTraits(.isModal)
                     .accessibilityAction(.escape) { settle(open: false, from: shown, width: width, velocity: 0) }
+                if let cover {
+                    OpeningCover(opening: cover, from: theme.surface ?? Color(.secondarySystemBackground),
+                                 to: theme.background ?? Color(.systemBackground), text: theme.text ?? .primary)
+                }
+            }
+            .onChange(of: openingFrom) { _, tap in
+                guard let tap else { return }
+                openingFrom = nil
+                guard isOpen, cover == nil else { return }
+                // The row, near enough: as wide as the panel's rows, around where it was touched.
+                let left = geo.frame(in: .global).minX
+                let row = CGRect(x: left + 12, y: tap.y - 32, width: width - 24, height: 64)
+                OpeningCover.run($cover, from: row, title: openingTitle) {
+                    // Covered: the panel goes at once, with nothing to see of it.
+                    withTransaction(Transaction(animation: nil)) { isOpen = false }
+                }
             }
             .onChange(of: isOpen, initial: true) { _, open in
                 if open { parkGeneration += 1; parked = false; return }

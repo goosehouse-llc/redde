@@ -305,6 +305,8 @@ struct MermaidBlock: View {
     /// first height report would otherwise shift the page under a finger scrolling back.
     @State private var nearViewport: Bool
     @Environment(\.lazyWebBlocks) private var lazy
+    /// The full-screen viewer opens out of the block and closes back into it.
+    @Namespace private var zoom
 
     init(source: String) {
         self.source = source
@@ -447,11 +449,13 @@ struct MermaidBlock: View {
             }
         }
         .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 10))
+        .matchedTransitionSource(id: "diagram", in: zoom) { $0.clipShape(.rect(cornerRadius: 10)) }
         .modifier(StableColorScheme(drawn: $drawnScheme))
         .onChange(of: pageKey, initial: true) { html = page(zoomable: false) }
         .onScrollVisibilityChange(threshold: 0.01) { if $0 { nearViewport = true } }
         .fullScreenCover(isPresented: $expanded) {
             DiagramViewer(html: page(zoomable: true), source: source)
+                .navigationTransition(.zoom(sourceID: "diagram", in: zoom))
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Mermaid diagram")

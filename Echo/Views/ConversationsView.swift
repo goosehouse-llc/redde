@@ -398,6 +398,7 @@ struct ConversationsList: View {
     private func ledgerButton(_ session: HermesSessionsAPI.SessionSummary) -> some View {
         Button { if !selecting { open(session) } } label: { ledgerRow(session) }
             .buttonStyle(.plain)
+            .opensConversation()
             .tag(session.id)
             .listRowBackground(session.id == conversation.serverSessionID ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
             .disabled(opening != nil)
@@ -598,6 +599,7 @@ struct ConversationsList: View {
                 localRow(record)
             }
             .buttonStyle(.plain)
+            .opensConversation()
             .tag(record.id.uuidString)
             .listRowBackground(record.id == conversation.id ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
             .contextMenu {
@@ -751,6 +753,7 @@ struct ProjectSessionsView: View {
                         ForEach(rows) { session in
                             Button { openRow(session) } label: { row(session) }
                                 .buttonStyle(.plain)
+                                .opensConversation()
                                 .disabled(opening != nil)
                                 .listRowBackground(session.id == currentID ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
                         }

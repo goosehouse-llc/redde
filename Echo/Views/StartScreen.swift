@@ -26,6 +26,12 @@ struct StartScreen: View {
     /// How many of the pieces have come in.
     @State private var shown = 0
     @State private var pulse = false
+    /// Where the "Continue" card is on screen, for its conversation to open out of.
+    @State private var continueFrame = CGRect.zero
+
+    /// Opens the last conversation out of its card: given the card's frame and the load to run
+    /// once it is covered. Without it (and under Reduce Motion) the conversation just appears.
+    var openFromCard: ((_ card: CGRect, _ title: String, _ load: @escaping @MainActor () -> Void) -> Void)?
 
     /// Whether the agent has Home Assistant, per connection: asked of the gateway once.
     private static var homeByConnection: [String: Bool] = [:]
@@ -55,7 +61,13 @@ struct StartScreen: View {
         if let last = store.sorted.first(where: { $0.id != conversation.id && $0.turnCount > 0 }) {
             cards.append(Card(id: "continue", symbol: "bubble.left.and.text.bubble.right", title: "Continue: \(last.title)",
                               subtitle: last.updatedAt.relativeLabel, hint: "Opens your most recent conversation") {
-                if let record = store.record(id: last.id) { conversation.load(record) }
+                guard let record = store.record(id: last.id) else { return }
+                let (conversation, frame) = (conversation, continueFrame)
+                if let openFromCard, !reduceMotion, frame != .zero {
+                    openFromCard(frame, "Continue: \(last.title)") { conversation.load(record) }
+                } else {
+                    conversation.load(record)
+                }
             })
         }
         if home {
@@ -157,6 +169,12 @@ struct StartScreen: View {
         .buttonStyle(.plain)
         .disabled(busy != nil)
         .accessibilityHint(card.hint)
+        .background {
+            // Only the one card that opens something is measured.
+            if card.id == "continue" {
+                Color.clear.onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { continueFrame = $0 }
+            }
+        }
     }
 
     // MARK: Actions

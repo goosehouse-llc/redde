@@ -135,6 +135,8 @@ struct MarkdownImage: View {
     private var isRemote: Bool { !url.hasPrefix("data:") }
     private static let maxBytes = 8 * 1024 * 1024
     private struct LoadKey: Equatable { let url: String; let wantsRemote: Bool }
+    /// The viewer opens out of the picture and closes back into it.
+    @Namespace private var zoom
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -162,6 +164,7 @@ struct MarkdownImage: View {
             .frame(maxWidth: .infinity, maxHeight: 320, alignment: .leading)
             .clipShape(.rect(cornerRadius: 10))
             .contentShape(.rect)
+            .matchedTransitionSource(id: "image", in: zoom) { $0.clipShape(.rect(cornerRadius: 10)) }
             .onTapGesture { if loaded != nil { showViewer = true } }
             .contextMenu {
                 Button("Copy image link", systemImage: "link") { UIPasteboard.general.string = url }
@@ -181,7 +184,10 @@ struct MarkdownImage: View {
             loaded = await Task.detached(priority: .utility) { ImageThumbnail.decode(bytes, maxPixel: 1600) }.value
         }
         .fullScreenCover(isPresented: $showViewer) {
-            if let loaded { ZoomableImage(image: loaded, caption: alt) }
+            if let loaded {
+                ZoomableImage(image: loaded, caption: alt)
+                    .navigationTransition(.zoom(sourceID: "image", in: zoom))
+            }
         }
     }
 }
