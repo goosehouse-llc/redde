@@ -391,9 +391,16 @@ streaming reply cheap:
   is the lever.
 
 Measured in the simulator with a 32-exchange conversation (about 340,000 characters): a silent wait
-went from 35% of a core to 3%, streamed thinking from 55% to 20%. Reply text is still about 37%, and
-that conversation holds 1.4 GB; both come from laying out the whole page, which is the next thing
-to bound.
+went from 35% of a core to 3%, streamed thinking from 55% to 20%. Reply text stayed about 37% and
+the conversation held 1.4 GB until the page was sized by what it holds (the first rule above).
+
+### Arrivals and openings
+
+- **A message you send rises out of the composer** (`MessageArrival`): its row starts below its
+  place, behind the field, and comes up into it, and the reply's waiting row holds back a beat so
+  the two don't cross. One move of offset, scale and opacity on one row, decided by the message
+  being under a second and a half old, so a conversation that loads doesn't move. A message
+  held behind a running reply arrives in the queue the same way.
 
 The footer's `ctx` is context occupancy: from the Dashboard's `context_used` /
 `context_max`, or one call's tokens against the window on OpenAI-compatible servers; the Hermes API

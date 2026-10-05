@@ -172,7 +172,8 @@ struct TranscriptView: View {
                                          onSend: { conversation.sendQueuedNow(item.id) },
                                          onEdit: { if let m = conversation.removeQueued(item.id) { onEditQueued(m) } },
                                          onDelete: { conversation.removeQueued(item.id) })
-                            .transition(.opacity)
+                            // A message held behind the reply rises out of the composer too.
+                            .transition(.asymmetric(insertion: Self.queuedArrival, removal: .opacity))
                             .id(item.rowID)
                     }
                     Color.clear.frame(height: 1).id("bottom")
@@ -274,6 +275,9 @@ struct TranscriptView: View {
         }
     }
 
+    private static let queuedArrival: AnyTransition = .offset(y: 70).combined(with: .opacity)
+        .animation(.spring(duration: 0.44, bounce: 0.2))
+
     /// For a reply with tools, where the gateway's stored transcript can be asked: the fetch a
     /// step runs when it is opened without its result.
     private func toolDetailsLoader(for message: Message) -> (@MainActor @Sendable () async -> Void)? {
@@ -304,6 +308,8 @@ struct TranscriptView: View {
                    isReading: reading,
                    highlight: highlight(for: message.id))
             .equatable()
+            // Just sent: it rises out of the composer (and the reply's row waits a beat for it).
+            .modifier(MessageArrival(kind: MessageArrival.kind(for: message, isLive: live), leading: theme.promptPrefix != nil))
             .siriMessage(conversationID: conversation.id, messageID: message.id)
             .id(message.id)
     }
