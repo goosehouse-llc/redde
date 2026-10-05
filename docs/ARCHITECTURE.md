@@ -180,14 +180,18 @@ a dot after the last one, so words come up rather than appear in blocks (`Stream
 `TextRenderer` on the last block's text; in a list, on the item being written). When the reply
 finishes, that edge fades into plain text and the actions fade in.
 
-While the model thinks, the reply shows "Thinking" with a light passing over it (`ShimmerText`)
-and the tail of the reasoning under a rule; when the reply lands it folds to "Thought for 6 s"
-(the message keeps `reasoningStartedAt`/`reasoningEndedAt`; older replies say "Thought") and
-unfolds on tap. The speaker line's "is working · 7 s" shimmers the same way for the whole turn.
-Tool calls are one card (`MessageRow.workCard`): WORKING in the accent, a step per tool whose
-spinner becomes a check that draws itself (`StepMark`), then DONE with the count and the total
-(`ToolActivity.startedAt`/`endedAt`). The card stays open until the reply starts writing, then
-folds to its header; saved replies show it folded as "Used".
+What went into a reply sits above it as a pair of folds in one style (`MessageRow.foldHeader`,
+`FoldBody`): a chevron and a quiet line, opening onto its content behind a rule down the left.
+
+- **Thinking:** while the model thinks, "Thinking" with a light passing over it (`ShimmerText`)
+  and the tail of the reasoning underneath; when the reply lands it folds to "Thought for 6 s"
+  (the message keeps `reasoningStartedAt`/`reasoningEndedAt`; older replies say "Thought") and
+  opens onto all of it. The speaker line's "is working · 7 s" shimmers the same way for the whole
+  turn.
+- **Tools:** "Working · 2 tools" while they run, with a step per tool whose spinner becomes a
+  check that draws itself (`StepMark`); then "Used 2 tools · 2.1 s", from
+  `ToolActivity.startedAt`/`endedAt`. Open until the reply starts writing, folded after; saved
+  replies show it folded.
 
 A step opens onto what the tool was called with and what it returned (`ToolActivity.args` and
 `output`, text cut to 12,000 characters each; `MessageRow.stepDetail`), with Copy and the whole

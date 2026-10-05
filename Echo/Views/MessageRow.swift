@@ -59,9 +59,13 @@ struct MessageRow: View, Equatable {
     var body: some View {
         VStack(alignment: message.role == .user && !promptStyled ? .trailing : .leading, spacing: 8) {
             if message.role == .assistant, theme.promptPrefix == nil { speakerLine }
-            if message.role == .assistant { workRow }
-            if message.role == .assistant, !message.reasoning.isEmpty, isLive || showThinking { reasoningText }
-            if message.role == .assistant, !message.tools.isEmpty { workCard }
+            if message.role == .assistant, !message.reasoning.isEmpty || !message.tools.isEmpty {
+                // What went into the reply, as a pair of folds in one style.
+                VStack(alignment: .leading, spacing: 0) {
+                    if !message.reasoning.isEmpty { thinkingFold }
+                    if !message.tools.isEmpty { stepsFold }
+                }
+            }
             if !message.subagents.isEmpty { SubagentRows(subagents: message.subagents) }
             if !message.attachments.isEmpty { AttachmentGallery(attachments: message.attachments) }
             if isLive, message.text.isEmpty {
@@ -159,36 +163,39 @@ struct MessageRow: View, Equatable {
         return s < 60 ? "\(s) s" : "\(s / 60) min \(s % 60) s"
     }
 
-    /// The thinking row; tapping it opens the reasoning.
-    @ViewBuilder
-    private var workRow: some View {
-        let hasThinking = !message.reasoning.isEmpty
-        if hasThinking {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    if hasThinking {
-                        Button {
-                            withAnimation(.snappy(duration: 0.3)) { showThinking.toggle() }
-                        } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "chevron.right")
-                                    .font(.caption2.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                                    .rotationEffect(.degrees(showThinking || isLive ? 90 : 0))
-                                thinkingLabel
-                            }
-                            .font(.subheadline.weight(.medium))
-                            .padding(.vertical, 6)
-                            .padding(.trailing, 6)
-                            .contentShape(.rect)
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(isLive)
-                        .accessibilityLabel(showThinking ? "Hide thinking" : "Show thinking")
-                    }
-                }
-                .padding(.horizontal, 1)
+    // MARK: - Folds
+
+    /// The line a reply's thinking and its tool steps each fold to: a chevron and a quiet label.
+    /// One style for both, so the two read as a pair.
+    private func foldHeader(open: Bool, hint: String, action: @escaping () -> Void, @ViewBuilder label: () -> some View) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.semibold))
+                    .rotationEffect(.degrees(open ? 90 : 0))
+                label()
             }
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(.secondary)
+            .padding(.vertical, 6)
+            .padding(.trailing, 6)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(hint)
+    }
+
+    /// The reply's thinking: "Thinking" while it happens, with the newest of it underneath, then
+    /// "Thought for 6 s", which opens onto all of it.
+    private var thinkingFold: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            foldHeader(open: showThinking || isLive, hint: showThinking ? "Hide thinking" : "Show thinking") {
+                withAnimation(.snappy(duration: 0.3)) { showThinking.toggle() }
+            } label: {
+                thinkingLabel
+            }
+            .disabled(isLive)
+            if isLive || showThinking { reasoningText }
         }
     }
 
@@ -201,9 +208,9 @@ struct MessageRow: View, Equatable {
             ShimmerText(text: "Thinking")
         } else if let started = message.reasoningStartedAt, let ended = message.reasoningEndedAt {
             // A think under a second still took a moment; "0 s" would read as nothing.
-            Text("Thought for \(Self.elapsed(from: started, to: max(ended, started.addingTimeInterval(1))))").foregroundStyle(.secondary)
+            Text("Thought for \(Self.elapsed(from: started, to: max(ended, started.addingTimeInterval(1))))")
         } else {
-            Text("Thought").foregroundStyle(.secondary)
+            Text("Thought")
         }
     }
 
@@ -216,47 +223,23 @@ struct MessageRow: View, Equatable {
             .textSelection(.enabled)
             .lineLimit(isLive ? 8 : nil)
             .truncationMode(.head)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.leading, 12)
-            .overlay(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 1).fill(.quaternary).frame(width: 2)
-            }
-            .padding(.leading, 6)
-            .clipped()
-            .transition(.opacity.combined(with: .move(edge: .top)))
+            .modifier(FoldBody())
     }
 
-    /// The tools the reply used, as one card: a header that goes from Working to Done with the
-    /// count and the total time, and a step per tool. Open
-    /// while the agent works and hasn't started writing; folded to the header after, and on tap.
-    private var workCard: some View {
+    /// The tools the reply used, folded the same way: "Working · 2 tools" while they run, with a
+    /// step for each underneath, then "Used 2 tools · 2.1 s". Open while the agent works and
+    /// hasn't started writing; folded after, and on tap.
+    private var stepsFold: some View {
         let tools = message.tools
-        let finished = tools.filter { $0.status != .running }.count
-        let working = isLive && finished < tools.count
+        let working = isLive && tools.contains { $0.status == .running }
         let open = (isLive && message.text.isEmpty) || showSteps
-        return VStack(alignment: .leading, spacing: 0) {
-            Button {
+        return VStack(alignment: .leading, spacing: 2) {
+            foldHeader(open: open, hint: open ? "Hide tool steps" : "Show tool steps") {
                 withAnimation(.snappy(duration: 0.3)) { showSteps.toggle() }
             } label: {
-                HStack(spacing: 8) {
-                    Text(working ? "Working" : isLive ? "Done" : "Used")
-                        .foregroundStyle(working ? AnyShapeStyle(theme.accent) : isLive ? AnyShapeStyle(.green) : AnyShapeStyle(.secondary))
-                        .textCase(.uppercase)
-                    Spacer()
-                    Text(Self.toolsSummary(tools, working: working))
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                    Image(systemName: "chevron.right")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .rotationEffect(.degrees(open ? 90 : 0))
-                }
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 14).padding(.vertical, 10)
-                .contentShape(.rect)
+                Text(working ? "Working · \(Self.toolsSummary(tools, working: true))" : "Used \(Self.toolsSummary(tools, working: false))")
+                    .monospacedDigit()
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(open ? "Hide tool steps" : "Show tool steps")
             if open {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(tools) { tool in
@@ -283,7 +266,7 @@ struct MessageRow: View, Equatable {
                                             .rotationEffect(.degrees(isOpen ? 90 : 0))
                                     }
                                 }
-                                .padding(.horizontal, 14).padding(.vertical, 8)
+                                .padding(.vertical, 7)
                                 .contentShape(.rect)
                             }
                             .buttonStyle(.plain)
@@ -295,18 +278,12 @@ struct MessageRow: View, Equatable {
                         .transition(.move(edge: .leading).combined(with: .opacity))
                     }
                 }
-                .padding(.bottom, 6)
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                .modifier(FoldBody())
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(theme.surface ?? Color(.secondarySystemBackground), in: .rect(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.quaternary))
-        .clipShape(.rect(cornerRadius: 14))
         .animation(.snappy(duration: 0.3), value: tools.count)
         .animation(.snappy(duration: 0.3), value: open)
         .animation(.snappy(duration: 0.3), value: openStep)
-        .animation(.easeOut(duration: 0.3), value: isLive)
     }
 
     private func toggleStep(_ tool: ToolActivity) {
@@ -350,7 +327,7 @@ struct MessageRow: View, Equatable {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.leading, 46).padding(.trailing, 14).padding(.bottom, 10)
+        .padding(.leading, 32).padding(.bottom, 8)
         .transition(.opacity.combined(with: .move(edge: .top)))
     }
 
@@ -363,7 +340,7 @@ struct MessageRow: View, Equatable {
                 .lineLimit(lines)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 10).padding(.vertical, 8)
-                .background(theme.background ?? Color(.systemBackground), in: .rect(cornerRadius: 10))
+                .background(theme.surface ?? Color(.secondarySystemBackground), in: .rect(cornerRadius: 10))
         }
     }
 
@@ -525,6 +502,22 @@ struct ShimmerText: View {
                     }
                 }
             }
+    }
+}
+
+/// What a fold opens onto: set in from a rule down its left side, the same for the thinking and
+/// for the tool steps.
+private struct FoldBody: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.leading, 12)
+            .overlay(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 1).fill(.quaternary).frame(width: 2)
+            }
+            .padding(.leading, 6)
+            .clipped()
+            .transition(.opacity.combined(with: .move(edge: .top)))
     }
 }
 
