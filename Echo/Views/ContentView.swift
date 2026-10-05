@@ -23,6 +23,9 @@ struct ContentView: View {
     /// A setup link that was opened, up for confirmation.
     @State private var setupCode: SetupCodeOffer?
     @State private var showConversations = false
+    /// Something is being dragged over the chat, and what couldn't be taken from the last drop.
+    @State private var dropTargeted = false
+    @State private var dropProblem: String?
     /// iPhone: where the row of the conversation just opened was tapped (see `SidePanel`).
     @State private var openingFromRow: CGPoint?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -188,6 +191,14 @@ struct ContentView: View {
                     // Solid themes have no glass field to hide the transcript scrolling past the composer.
                     .background(theme.usesGlass ? AnyShapeStyle(.clear) : AnyShapeStyle(theme.background ?? Color(.systemBackground)))
             }
+            // Pictures, files, links and text dropped anywhere on the chat go to the composer.
+            .onDrop(of: DroppedItems.types, isTargeted: $dropTargeted) { providers in
+                Task { await takeDrop(providers) }
+                return true
+            }
+            .overlay { if dropTargeted || previewsDropHint { dropHint } }
+            .animation(.easeOut(duration: 0.15), value: dropTargeted)
+            .toast($dropProblem, bottomPadding: 90, duration: .seconds(4))
             .navigationTitle(headerTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -263,6 +274,43 @@ struct ContentView: View {
                 Text(renameError ?? "")
             }
             .background { keyboardShortcuts }
+    }
+
+    /// `-echo.dropHint` shows the drop outline without a drag (the simulator can't make one).
+    private var previewsDropHint: Bool {
+        #if DEBUG
+        DevHooks.has("-echo.dropHint")
+        #else
+        false
+        #endif
+    }
+
+    /// While something is dragged over the chat: an outline, and what letting go will do.
+    private var dropHint: some View {
+        RoundedRectangle(cornerRadius: 22, style: .continuous)
+            .strokeBorder(theme.accent, style: StrokeStyle(lineWidth: 2, dash: [9, 7]))
+            .background(theme.accent.opacity(0.08), in: .rect(cornerRadius: 22))
+            .overlay {
+                Label("Drop to attach", systemImage: "paperclip")
+                    .font(.headline)
+                    .padding(.horizontal, 18).padding(.vertical, 12)
+                    .background(.regularMaterial, in: .capsule)
+            }
+            .padding(10)
+            .allowsHitTesting(false)
+            .transition(.opacity)
+            .accessibilityHidden(true)
+    }
+
+    /// A drop on the chat: pictures and files join what is waiting to be sent, links and text
+    /// go on the end of the draft.
+    private func takeDrop(_ providers: [NSItemProvider]) async {
+        let dropped = await DroppedItems.load(providers)
+        pendingAttachments += dropped.attachments
+        let text = dropped.text.joined(separator: "\n")
+        if !text.isEmpty { draft = draft.isEmpty ? text : draft + "\n" + text }
+        dropProblem = dropped.problems.first
+        if !dropped.attachments.isEmpty || !text.isEmpty { composerFocused = true }
     }
 
     // MARK: - iPad detail pane

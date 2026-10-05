@@ -27,6 +27,7 @@ import Foundation
 /// - `-echo.demoTips`: sample tips on Settings → About → Support Redde (App Review screenshot).
 /// - `-echo.whatsNew`: show this version's "What's New" sheet (any other `-echo.` flag hides it).
 /// - `-echo.switchProfile <name>`: switch profile five seconds after launch.
+/// - `-echo.dropHint`: show the outline a drag over the chat brings up, without a drag.
 /// - `-echo.slowMotion <factor>`: stretch a conversation opening out of its row or card
 ///   (`OpeningCover`) by that much, to look at it a frame at a time.
 /// - `-echo.setupCode <setup link, either form>`: open that setup link at launch, as if it had been

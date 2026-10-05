@@ -309,6 +309,14 @@ Bytes are stored one file per attachment under Application Support (file-protect
 keep metadata only. The share extension (`EchoShare`) writes to the App Group
 (`group.com.goosehouse.echo`); the app turns shared items into a draft on its next foreground.
 
+A drop anywhere on the chat goes to the composer too (`DroppedItems`, the drop target on
+`ContentView.transcriptScreen`): pictures and files join what is waiting to be sent, a link or a
+dragged selection goes on the end of the draft. A text file out of Files and a sentence out of a
+web page can register the same types; what tells them apart is whether a file stands behind the
+item, so one is attached and the other typed. The providers' callbacks come on queues of their
+own and are made in nonisolated helpers for that reason. `-echo.dropHint` shows the outline a
+drag brings up, since the simulator can't drag between apps.
+
 ### Session list and housekeeping
 
 On iPhone the list is a panel from the left (`SidePanel` in `Views/SwipeToOpen.swift`): a swipe to
