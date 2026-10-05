@@ -58,4 +58,76 @@ struct TranscriptPageTests {
         #expect(TranscriptPage.count(messages.dropLast(shown), budget: 30_000) == 4)
         #expect(TranscriptPage.count(messages.dropLast(messages.count), budget: 30_000) == 0)
     }
+
+    // MARK: - The window
+
+    /// The bug this guards against: with the page kept as a length from the end, a message added
+    /// at the end pushed the oldest rows off the top until the page was resized, and the
+    /// transcript tore them down and built them again on every send.
+    @Test func addingAMessageLeavesTheRowsAboveInPlace() {
+        var messages = thread(2, replyLength: 200)
+        var window = TranscriptPage.Window()
+        window.settle(messages, budget: 30_000)
+        #expect(window.hiddenCount(in: messages, budget: 30_000) == 0)
+        // Sent: the question and the reply's empty row are there before the page is settled again.
+        messages += [Message(role: .user, text: "And then?"), Message(role: .assistant, text: "")]
+        #expect(window.hiddenCount(in: messages, budget: 30_000) == 0, "the first rows must still be on the page")
+        window.settle(messages, budget: 30_000)
+        #expect(window.hiddenCount(in: messages, budget: 30_000) == 0)
+    }
+
+    @Test func aFullPageSlidesOnlyWhenItIsSettled() {
+        // 10,000-character replies: two exchanges fit.
+        var messages = thread(6, replyLength: 10_000)
+        var window = TranscriptPage.Window()
+        window.settle(messages, budget: 30_000)
+        #expect(window.hiddenCount(in: messages, budget: 30_000) == 8)
+        messages += thread(1, replyLength: 10_000)
+        #expect(window.hiddenCount(in: messages, budget: 30_000) == 8, "nothing moves until the page is settled")
+        window.settle(messages, budget: 30_000)
+        #expect(window.hiddenCount(in: messages, budget: 30_000) == 10)
+    }
+
+    @Test func earlierMessagesTheReaderLoadedStayUntilTheySendAgain() {
+        var messages = thread(6, replyLength: 10_000)
+        var window = TranscriptPage.Window()
+        window.settle(messages, budget: 30_000)
+        #expect(window.earlierCount(in: messages, budget: 30_000) == 4)
+        window.showEarlier(messages, budget: 30_000)
+        #expect(window.hiddenCount(in: messages, budget: 30_000) == 4)
+        // A reply arrives while they read: the page keeps what they loaded.
+        messages += thread(1, replyLength: 10_000)
+        window.settle(messages, budget: 30_000)
+        #expect(window.hiddenCount(in: messages, budget: 30_000) == 4)
+        // They send: back to the newest page.
+        window.settle(messages, release: true, budget: 30_000)
+        #expect(window.hiddenCount(in: messages, budget: 30_000) == 10)
+    }
+
+    @Test func aSearchBringsItsMatchOntoThePage() {
+        let messages = thread(6, replyLength: 10_000)
+        var window = TranscriptPage.Window()
+        window.settle(messages, budget: 30_000)
+        window.reveal(5, in: messages, budget: 30_000)
+        #expect(window.hiddenCount(in: messages, budget: 30_000) == 3)
+        // One already on the page changes nothing.
+        window.reveal(10, in: messages, budget: 30_000)
+        #expect(window.hiddenCount(in: messages, budget: 30_000) == 3)
+    }
+
+    /// Messages can go as well as come (a reply regenerated, a message edited and resent).
+    @Test func theWindowNeverStartsPastTheEnd() {
+        var window = TranscriptPage.Window()
+        window.settle(thread(6, replyLength: 10_000), budget: 30_000)
+        let fewer = thread(2, replyLength: 10_000)
+        #expect(window.hiddenCount(in: fewer, budget: 30_000) == 4)
+        #expect(window.earlierCount(in: thread(1, replyLength: 100), budget: 30_000) >= 1)
+    }
+
+    @Test func nothingEarlierMeansNothingToShow() {
+        let messages = thread(2, replyLength: 100)
+        var window = TranscriptPage.Window()
+        window.settle(messages, budget: 30_000)
+        #expect(window.earlierCount(in: messages, budget: 30_000) == 0)
+    }
 }

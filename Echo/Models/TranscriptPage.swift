@@ -51,3 +51,50 @@ nonisolated enum TranscriptPage {
         return count
     }
 }
+
+extension TranscriptPage {
+    /// Which messages the transcript shows: everything from where the page starts.
+    ///
+    /// Kept as how many messages come before the page, not as how long the page is. A message
+    /// added at the end then leaves every row above it in place. Counted from the end, the page
+    /// shrank from the top for the one pass before it was resized: the oldest rows were dropped
+    /// and built again on every send and every reply, and lost what they held (an open fold, a
+    /// loaded picture, a drawn diagram).
+    struct Window: Equatable, Sendable {
+        /// Messages before the page; nil until it is first settled.
+        private(set) var hidden: Int?
+        /// The reader loaded earlier messages, or a search took them there: the page starts where
+        /// they put it until they send again or open another conversation.
+        private(set) var held = false
+
+        func hiddenCount(in messages: [Message], budget: Int = TranscriptPage.budget) -> Int {
+            min(hidden ?? messages.count - TranscriptPage.count(messages, budget: budget), messages.count)
+        }
+
+        /// Sizes the page for the conversation as it is now. A page the reader is holding stays
+        /// as it is; `release` lets go of what they loaded.
+        mutating func settle(_ messages: [Message], release: Bool = false, budget: Int = TranscriptPage.budget) {
+            if release { held = false }
+            guard !held else { return }
+            hidden = messages.count - TranscriptPage.count(messages, budget: budget)
+        }
+
+        /// How many messages one more page of what comes before would add.
+        func earlierCount(in messages: [Message], budget: Int = TranscriptPage.budget) -> Int {
+            let before = hiddenCount(in: messages, budget: budget)
+            return before == 0 ? 0 : max(1, TranscriptPage.count(messages.prefix(before), budget: budget))
+        }
+
+        mutating func showEarlier(_ messages: [Message], budget: Int = TranscriptPage.budget) {
+            hidden = hiddenCount(in: messages, budget: budget) - earlierCount(in: messages, budget: budget)
+            held = true
+        }
+
+        /// Brings the message at `index` onto the page, with a little before it.
+        mutating func reveal(_ index: Int, in messages: [Message], budget: Int = TranscriptPage.budget) {
+            guard index < hiddenCount(in: messages, budget: budget) else { return }
+            hidden = max(0, index - 2)
+            held = true
+        }
+    }
+}

@@ -17,15 +17,12 @@ struct TranscriptView: View {
     /// Long sessions render only the newest page (`TranscriptPage`: sized by how much it holds);
     /// earlier messages load on demand. The page is settled when messages are added or the
     /// conversation changes, never while a reply streams: a page that shrank as the reply grew
-    /// would pull messages off the top under the reader.
-    @State private var pageCount: Int?
-    /// The reader asked for earlier messages, or a search took them there: the page keeps what
-    /// they loaded until they send again or open another conversation.
-    @State private var paged = false
-    private var visibleCount: Int { pageCount ?? TranscriptPage.count(conversation.messages) }
+    /// would pull messages off the top under the reader. It is kept as where it starts, so a
+    /// message added at the end never disturbs the rows above (`TranscriptPage.Window`).
+    @State private var page = TranscriptPage.Window()
 
-    private var hiddenCount: Int { max(0, conversation.messages.count - visibleCount) }
-    private var visibleMessages: ArraySlice<Message> { conversation.messages.suffix(visibleCount) }
+    private var hiddenCount: Int { page.hiddenCount(in: conversation.messages) }
+    private var visibleMessages: ArraySlice<Message> { conversation.messages.dropFirst(hiddenCount) }
     /// Following = the transcript tracks new text. A scroll gesture stops it and shows the
     /// arrow; tapping the arrow (or scrolling back to the end) resumes it.
     @State private var following = true
@@ -79,8 +76,7 @@ struct TranscriptView: View {
     /// Sizes the page for the conversation as it is now. `reset` also lets go of earlier messages
     /// the reader had loaded.
     private func settlePage(reset: Bool = false) {
-        if reset { paged = false }
-        pageCount = TranscriptPage.count(conversation.messages)
+        page.settle(conversation.messages, release: reset)
     }
 
     /// Moves to a match, paging in earlier messages if it's above the visible window.
@@ -89,10 +85,9 @@ struct TranscriptView: View {
         guard !list.isEmpty else { return }
         matchIndex = ((index % list.count) + list.count) % list.count
         let id = list[matchIndex]
-        if let position = conversation.messages.firstIndex(where: { $0.id == id }), position < hiddenCount {
+        if let position = conversation.messages.firstIndex(where: { $0.id == id }) {
             // From a little before the match to the end.
-            pageCount = conversation.messages.count - position + 2
-            paged = true
+            page.reveal(position, in: conversation.messages)
         }
         following = false
         Task { withAnimation { proxy.scrollTo(id, anchor: .center) } }
@@ -137,19 +132,18 @@ struct TranscriptView: View {
                 // Deliberately NOT lazy: a lazy stack materializes rows above the viewport at
                 // their real heights as you scroll back, and every materialization shifts the
                 // content under your finger — the page-sized jumps that kept happening. Pagination
-                // (visibleCount) already bounds the row count, and MessageRow is Equatable, so
+                // (`page`) already bounds the row count, and MessageRow is Equatable, so
                 // laying the whole page out upfront is affordable and makes backward scrolling
-                // pixel-stable. If a session pages in enough history to feel heavy, cap
-                // visibleCount rather than reintroducing laziness here.
+                // pixel-stable. If a session pages in enough history to feel heavy, shrink
+                // the page rather than reintroducing laziness here.
                 VStack(alignment: .leading, spacing: 14) {
                     if conversation.messages.isEmpty, conversation.outbox.isEmpty { StartScreen() }
                     if hiddenCount > 0 {
                         // One more page of what comes before.
-                        let earlier = max(1, TranscriptPage.count(conversation.messages.dropLast(visibleCount)))
+                        let earlier = page.earlierCount(in: conversation.messages)
                         Button {
                             let anchor = visibleMessages.first?.id
-                            pageCount = visibleCount + earlier
-                            paged = true
+                            page.showEarlier(conversation.messages)
                             if let anchor { Task { proxy.scrollTo(anchor, anchor: .top) } }
                         } label: {
                             Label("Show earlier messages (\(hiddenCount))", systemImage: "arrow.up.circle")
@@ -246,9 +240,9 @@ struct TranscriptView: View {
             // Opening the screen, or loading a session's history: start at the newest message.
             .onAppear { scrollToBottom(proxy, force: true) }
             .onChange(of: conversation.id) { settlePage(reset: true); following = true; recomputeDayLabels(); recomputeMatches(); scrollToBottom(proxy, force: true) }
-            .onChange(of: conversation.messages.count, initial: true) { old, new in
+            .onChange(of: conversation.messages.count, initial: true) {
                 // Earlier messages the reader loaded stay; otherwise the page is sized afresh.
-                if paged, let pageCount { self.pageCount = pageCount + max(0, new - old) } else { settlePage() }
+                settlePage()
                 recomputeDayLabels(); recomputeMatches(); scrollToBottom(proxy)
             }
             // Sending your own message (send, steer, or send-now on a held message) jumps to the

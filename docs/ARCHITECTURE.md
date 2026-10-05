@@ -367,9 +367,13 @@ streaming reply cheap:
   long replies came to over a gigabyte. The page is settled when a message is added or the
   conversation changes, never while a reply streams (it would pull messages off the top under
   the reader), and it opens on a question, not on a reply cut from its question. Earlier pages
-  the reader loaded stay until they send again. Measured on a thread of 32 turns of ~10,000
-  character replies (simulator, optimized build, `-echo.demoHeavy`): memory 1,140 MB → 125 MB,
-  a streaming reply 93% → 28% of a core, opening the thread 15 s → 8 s of CPU.
+  the reader loaded stay until they send again. The page is kept as where it starts, not as how
+  long it is (`TranscriptPage.Window`): counted from the end, a message added at the end pushed
+  the oldest rows off the top for the one pass before the page was resized, and they were torn
+  down and built again on every send, losing an open fold or a drawn diagram. Measured on a
+  thread of 32 turns of ~10,000 character replies (simulator, optimized build,
+  `-echo.demoHeavy`): memory 1,140 MB → 125 MB, a streaming reply 93% → 28% of a core, opening
+  the thread 15 s → 8 s of CPU.
 
 - Nothing outside the transcript reads `Conversation.messages` in a view body. Every update
   rewrites that array, and the header doing so rebuilt the navigation toolbar, the conversation
