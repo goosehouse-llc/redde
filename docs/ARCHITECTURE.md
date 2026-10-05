@@ -159,6 +159,12 @@ API (the run id comes from `run.started`).
 
 ### Live thinking and interrupts
 
+While a reply is being made, a dot pulses beside the agent's name (`LiveMark`). As its text
+arrives, the newest characters are drawn faint, a little low and, at the very end, blurred, with
+a dot after the last one, so words come up rather than appear in blocks (`StreamingTail`, a
+`TextRenderer` on the last block's text; in a list, on the item being written). When the reply
+finishes, that edge fades into plain text and the actions fade in.
+
 While the model thinks, the reply shows "Thinking" with a light passing over it (`ShimmerText`)
 and the tail of the reasoning under a rule; when the reply lands it folds to "Thought for 6 s"
 (the message keeps `reasoningStartedAt`/`reasoningEndedAt`; older replies say "Thought") and
@@ -295,7 +301,12 @@ grows with the conversation. Three rules keep a streaming reply cheap:
   conversation keeps as their own observed values.
 - Nothing in a row animates through SwiftUI while a reply runs. Each animated frame walks the
   whole page's view tree; the waiting waveform, at 30 frames a second, took a third of a core in a
-  long conversation. It is a `UIView` whose bars Core Animation moves (`WaveformBarsView`).
+  long conversation. It is a `UIView` whose bars Core Animation moves (`WaveformBarsView`). What
+  else moves in a live row is either scale, opacity or offset, which the render server animates
+  (the shimmer, the mark beside the name), or is drawn rather than animated: the streaming edge
+  is redrawn with each flush, which redraws the paragraph anyway, and nothing runs in between.
+  Measured, a streaming reply costs the same with the edge and the mark as without (about 20% of
+  a core in a short thread and 43% in a long one, on the simulator, either way).
 - A mid-stream update costs about the same whether it adds one token or twenty, so the cadence
   is the lever.
 

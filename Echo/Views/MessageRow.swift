@@ -110,8 +110,11 @@ struct MessageRow: View, Equatable {
             }
             if showActions, message.role == .assistant, !isLive, message.error == nil, !message.text.isEmpty {
                 actionRow
+                    .transition(.opacity)
             }
         }
+        // The reply finishing: its actions fade in, and the streaming edge fades into plain text.
+        .animation(.easeOut(duration: 0.3), value: isLive)
         .frame(maxWidth: .infinity, alignment: message.role == .user && !promptStyled ? .trailing : .leading)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(message.role == .user ? (message.isSteer ? "Your steer" : "You") : settings.headerTitle)
@@ -136,6 +139,7 @@ struct MessageRow: View, Equatable {
     /// Who is talking, and while the reply runs, for how long.
     private var speakerLine: some View {
         HStack(spacing: 6) {
+            if isLive { LiveMark(color: theme.accent) }
             Text(settings.headerTitle).font(.subheadline.weight(.semibold))
             if isLive {
                 // The one place that shimmers while the reply is being worked on.

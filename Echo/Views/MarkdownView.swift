@@ -57,12 +57,14 @@ struct MarkdownBlockView: View, Equatable {
         case let .heading(level, text):
             inline(text)
                 .font(headingFont(level))
+                .streamingTail(trailing, dot: theme.accent)
                 .padding(.top, level <= 2 ? 4 : 2)
         case let .paragraph(text):
             inline(text).font(theme.messageFont)
+                .streamingTail(trailing, dot: theme.accent)
         case let .list(items):
             VStack(alignment: .leading, spacing: 4) {
-                ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         if let checked = item.checked {
                             Image(systemName: checked ? "checkmark.square.fill" : "square")
@@ -78,6 +80,8 @@ struct MarkdownBlockView: View, Equatable {
                         inline(item.text).font(theme.messageFont)
                             .strikethrough(item.checked == true, color: .secondary)
                             .foregroundStyle(item.checked == true ? .secondary : .primary)
+                            // Only the item being written has the streaming edge.
+                            .streamingTail(trailing && index == items.count - 1, dot: theme.accent)
                     }
                     .padding(.leading, CGFloat(item.indent) * 16)
                 }
