@@ -310,9 +310,21 @@ they work offline. Parser `Models/MarkdownBlocks.swift`, renderer `Views/Markdow
 highlighter `Services/SyntaxHighlighter.swift`.
 
 Streaming text is buffered and applied about 20 times a second, thinking on its own 5 times
-(flushed around tool events, interrupts and the end of a turn). The transcript renders the newest 60
-messages, with a button for earlier ones, and lays all of them out, so what a screen update costs
-grows with the conversation. Three rules keep a streaming reply cheap:
+(flushed around tool events, interrupts and the end of a turn). The transcript is a plain stack,
+not a lazy one (a lazy one moves the page under a reader scrolling back), so everything in its
+page is laid out and kept, and what a screen update costs grows with the page. Four rules keep a
+streaming reply cheap:
+
+- The page is sized by how much it holds, not by a number of messages (`Models/TranscriptPage`):
+  the newest messages that fit about 30,000 characters, roughly ten screens, never fewer than
+  four and never more than sixty, with "Show earlier messages" bringing in the page before.
+  Each screen-height of laid-out transcript holds about a screen of bitmap, so a page of sixty
+  long replies came to over a gigabyte. The page is settled when a message is added or the
+  conversation changes, never while a reply streams (it would pull messages off the top under
+  the reader), and it opens on a question, not on a reply cut from its question. Earlier pages
+  the reader loaded stay until they send again. Measured on a thread of 32 turns of ~10,000
+  character replies (simulator, optimized build, `-echo.demoHeavy`): memory 1,140 MB → 125 MB,
+  a streaming reply 93% → 28% of a core, opening the thread 15 s → 8 s of CPU.
 
 - Nothing outside the transcript reads `Conversation.messages` in a view body. Every update
   rewrites that array, and the header doing so rebuilt the navigation toolbar, the conversation

@@ -145,6 +145,41 @@ extension Conversation {
         }
     }
 
+    /// Measuring aid (`-echo.demoHeavy [turns]`, 32 by default): a thread of long replies, about
+    /// ten thousand characters each, like a long session with a model that writes at length.
+    func seedHeavyDemo(turns: Int) {
+        cancel()
+        let section = """
+        ## Sequencing the work
+
+        The countertop crew can't template until the cabinets are set, so everything hangs on that \
+        delivery. The supplier confirmed the **18th**, two days ahead of the date, which leaves room \
+        for one slip but not two. If the truck is late, the template moves to the following week \
+        and the install with it.
+
+        - Demo comes first, with the plumber capping the lines the same afternoon
+        - Rough-in for the island and the under-cabinet lights follows
+        - Nothing closes up until the inspection passes
+        - Drywall and paint go in while the room is empty
+
+        ```bash
+        hermes remind --at 16:00 "confirm the cabinet delivery window"
+        ```
+
+        After that the cabinets go in and get levelled, and only then is there something to \
+        measure against. Stone takes about ten days from template to install.
+
+
+        """
+        let reply = String(repeating: section, count: 12)   // ≈ 10,000 characters
+        var all: [Message] = []
+        for turn in 1 ... max(1, turns) {
+            all.append(Message(role: .user, text: "Turn \(turn): walk me through the sequence again, in full."))
+            all.append(Message(role: .assistant, text: reply))
+        }
+        replaceForDemo(messages: all)
+    }
+
     /// Screenshot helper: trims the seeded demo to its first messages.
     func keepFirstMessages(_ n: Int) { mutateMessagesForDemo { $0 = Array($0.prefix(n)) } }
 

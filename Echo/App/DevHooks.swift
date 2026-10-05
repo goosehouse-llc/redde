@@ -9,6 +9,9 @@ import Foundation
 ///   `-echo.demoTwo` its first two (ending on the checklist and table), `-echo.demoLong` seeds a
 ///   transcript many screens long, `-echo.demoLibrary` adds a few local conversations.
 ///   `-echo.demoStream` plays the first exchange live, thinking and all (the promo video).
+/// - `-echo.demoHeavy [turns]`: a thread of long replies (32 turns of about 10,000 characters by
+///   default), for measuring. `-echo.pageBudget <characters>` overrides how much of a thread the
+///   transcript lays out (`TranscriptPage`); 0 lifts the limit.
 /// - `-echo.demoProjects`: fill the conversation list's Projects from a fixture (Dashboard connection).
 /// - `-echo.demoHosts`: replace any real endpoints with example hosts.
 /// - `-echo.demoKanban`: a sample Kanban board instead of the server's.
@@ -65,6 +68,7 @@ enum DevHooks {
         // The Projects section only shows on the Dashboard connection.
         if demoProjects { settings.transport = .hermesServe }
         if has("-echo.demoLong") { conversation.seedLongDemo() }
+        if has("-echo.demoHeavy") { conversation.seedHeavyDemo(turns: value("-echo.demoHeavy").flatMap(Int.init) ?? 32) }
         if has("-echo.demoStream") { conversation.streamDemo() }
         if has("-echo.demoHosts") {
             settings.gatewayURL = "https://redde.home.example:8642"
