@@ -235,6 +235,7 @@ struct TranscriptView: View {
                 }
             }
             .environment(\.lazyWebBlocks, true)
+            .environment(\.asksAboutSelection, true)
             // A conversation opening out of the start screen's card comes forward as the cover clears.
             .scaleEffect(cardOpening?.contentScale ?? 1)
             .overlay(alignment: .bottom) { jumpButton(proxy) }

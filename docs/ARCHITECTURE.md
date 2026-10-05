@@ -317,6 +317,12 @@ item, so one is attached and the other typed. The providers' callbacks come on q
 own and are made in nonisolated helpers for that reason. `-echo.dropHint` shows the outline a
 drag brings up, since the simulator can't drag between apps.
 
+"Select text" in a reply's menu opens a plain copy of it that selects by the word
+(`SelectableTextSheet`, a `UITextView`: SwiftUI's selectable `Text` has no say in the selection's
+menu). In the transcript that menu starts with "Ask about this", which closes the sheet and puts
+the selection in the composer as a Markdown quote with room for the question (`Quote`), through
+the same hand-over Siri's "draft a message" uses (`LaunchRouter.requestDraft`).
+
 ### Session list and housekeeping
 
 On iPhone the list is a panel from the left (`SidePanel` in `Views/SwipeToOpen.swift`): a swipe to

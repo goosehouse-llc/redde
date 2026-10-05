@@ -47,4 +47,31 @@ final class ReplyActionsUITests: XCTestCase {
         app.buttons["Open full output"].tap()
         XCTAssertTrue(app.navigationBars["calendar"].waitForExistence(timeout: 3), "The full output didn't open")
     }
+
+    /// Select part of a reply and "Ask about this": it lands in the composer as a quote.
+    func testAskingAboutASelectionQuotesItInTheComposer() {
+        let app = launchDemo()
+        let reply = text(app, containing: "I've added a reminder")
+        XCTAssertTrue(reply.waitForExistence(timeout: 15), "The demo reply didn't appear")
+        reply.press(forDuration: 1.0)
+        let select = app.buttons["Select text"]
+        XCTAssertTrue(select.waitForExistence(timeout: 5), "No Select text in the reply's menu")
+        select.tap()
+        XCTAssertTrue(app.navigationBars["Select text"].waitForExistence(timeout: 5), "The selectable copy didn't open")
+
+        // A long press picks the word under the finger and brings up the selection's menu.
+        let page = app.textViews.containing(NSPredicate(format: "value CONTAINS %@", "I've added a reminder")).firstMatch
+        XCTAssertTrue(page.waitForExistence(timeout: 5), "No selectable text in the sheet")
+        page.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.12)).press(forDuration: 1.0)
+        let ask = app.menuItems["Ask about this"].exists ? app.menuItems["Ask about this"] : app.buttons["Ask about this"]
+        XCTAssertTrue(ask.waitForExistence(timeout: 5), "The selection's menu doesn't offer Ask about this")
+        ask.tap()
+
+        XCTAssertTrue(app.navigationBars["Select text"].waitForNonExistence(timeout: 5), "The sheet stayed up")
+        let composer = app.textFields.firstMatch.exists ? app.textFields.firstMatch : app.textViews.firstMatch
+        let quoted = NSPredicate(format: "value BEGINSWITH %@", "> ")
+        expectation(for: quoted, evaluatedWith: composer)
+        waitForExpectations(timeout: 5)
+    }
 }
+
