@@ -394,6 +394,11 @@ Measured in the simulator with a 32-exchange conversation (about 340,000 charact
 went from 35% of a core to 3%, streamed thinking from 55% to 20%. Reply text stayed about 37% and
 the conversation held 1.4 GB until the page was sized by what it holds (the first rule above).
 
+"Jump to latest" is a pill over the bottom of the transcript once the reader has scrolled away
+from the end, with a dot when something new has come in below since: a reply still being
+written (the dot pulses, opacity only), more of one, or another message. `TranscriptView` notes
+how much conversation there was when `following` went off and compares.
+
 ### Arrivals and openings
 
 - **A message you send rises out of the composer** (`MessageArrival`): its row starts below its

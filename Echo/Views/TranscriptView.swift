@@ -33,6 +33,9 @@ struct TranscriptView: View {
     @State private var pastEnd = false
     /// Keeps the jump arrow's scroll going until the newest message is actually on screen.
     @State private var jumpTask: Task<Void, Never>?
+    /// How much conversation there was when the reader scrolled away: messages, and the length of
+    /// the last one.
+    @State private var leftAt: (messages: Int, lastLength: Int)?
     @State private var serve = HermesServeClient.shared
     @State private var store = ConversationStore.shared
     /// The reply the speaker button is reading, so only its button turns into Stop.
@@ -234,7 +237,11 @@ struct TranscriptView: View {
             .environment(\.lazyWebBlocks, true)
             // A conversation opening out of the start screen's card comes forward as the cover clears.
             .scaleEffect(cardOpening?.contentScale ?? 1)
-            .overlay(alignment: .bottomTrailing) { jumpButton(proxy) }
+            .overlay(alignment: .bottom) { jumpButton(proxy) }
+            // What was there when the reader scrolled away, to know when something new has come.
+            .onChange(of: following) { _, following in
+                leftAt = following ? nil : (conversation.messages.count, conversation.messages.last?.text.utf8.count ?? 0)
+            }
             .overlay {
                 // Under the header and the composer, over the whole transcript.
                 if let cardOpening {
@@ -343,20 +350,38 @@ struct TranscriptView: View {
         voiceSession.readAloud(message.text)
     }
 
+    /// Something has come in below since the reader scrolled away: a reply still being written,
+    /// more of it, or another message.
+    private var hasNewBelow: Bool {
+        guard let leftAt else { return conversation.isStreaming }
+        return conversation.isStreaming || conversation.messages.count > leftAt.messages
+            || (conversation.messages.last?.text.utf8.count ?? 0) > leftAt.lastLength
+    }
+
+    /// "Jump to latest", once the reader has scrolled away from the end: a pill over the bottom of
+    /// the transcript, with a dot when something new is waiting there.
     @ViewBuilder
     private func jumpButton(_ proxy: ScrollViewProxy) -> some View {
         if !following, !conversation.messages.isEmpty {
             Button {
                 jumpToEnd(proxy)
             } label: {
-                Image(systemName: conversation.isStreaming ? "arrow.down.to.line" : "arrow.down")
-                    .font(.callout.weight(.semibold))
-                    .padding(10)
+                HStack(spacing: 7) {
+                    Image(systemName: "arrow.down")
+                        .font(.footnote.weight(.bold))
+                        .foregroundStyle(theme.accent)
+                    Text("Jump to latest")
+                        .font(.subheadline.weight(.semibold))
+                    if hasNewBelow { NewBelowDot(color: theme.accent, live: conversation.isStreaming) }
+                }
+                .padding(.horizontal, 4).padding(.vertical, 3)
             }
             .buttonStyle(.glass)
-            .padding(.trailing, 16).padding(.bottom, 10)
-            .transition(.scale.combined(with: .opacity))
+            .buttonBorderShape(.capsule)
+            .padding(.bottom, 10)
+            .transition(.offset(y: 12).combined(with: .scale(scale: 0.9)).combined(with: .opacity))
             .accessibilityLabel(conversation.isStreaming ? "Jump to the live reply" : "Jump to the newest message")
+            .accessibilityValue(hasNewBelow && !conversation.isStreaming ? "New messages below" : "")
         }
     }
 
@@ -409,5 +434,26 @@ struct TranscriptView: View {
         case let .failed(reason): "Hermes Dashboard: \(reason)"
         default: nil
         }
+    }
+}
+
+/// The dot on "Jump to latest": something new is below. It pulses while a reply is still being
+/// written (opacity only, which the render server animates) and holds still once it is all there.
+private struct NewBelowDot: View {
+    let color: Color
+    let live: Bool
+    @State private var dim = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Circle()
+            .fill(color)
+            .frame(width: 8, height: 8)
+            .opacity(live && dim ? 0.25 : 1)
+            .onChange(of: live, initial: true) { _, live in
+                guard live, !reduceMotion else { dim = false; return }
+                withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) { dim = true }
+            }
+            .accessibilityHidden(true)
     }
 }
