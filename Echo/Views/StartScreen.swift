@@ -107,8 +107,11 @@ struct StartScreen: View {
             .animation(.easeOut(duration: 0.35), value: cards.map(\.id))
         }
         .frame(maxWidth: .infinity)
-        // In the middle of the screen, not at the top of an empty page.
-        .containerRelativeFrame(.vertical, alignment: .center) { height, _ in max(0, height - 60) }
+        // Above the middle of the screen: a third of the spare room over it, two thirds under.
+        // Dead centre it sat low, between the title and a message field at the bottom.
+        .containerRelativeFrame(.vertical, alignment: Alignment(horizontal: .center, vertical: .upperThird)) { height, _ in
+            max(0, height - 60)
+        }
         .task {
             upcoming = StartCards.upcoming(ComposerContext.eventsTodayAndTomorrow(), now: .now)
             // One piece every 90 ms; all at once under Reduce Motion.
@@ -216,6 +219,15 @@ struct StartScreen: View {
         default: "Hello."
         }
     }
+}
+
+private extension VerticalAlignment {
+    /// A third of the way down. Aligning on it leaves a third of the room a frame has to spare
+    /// above its content and two thirds below, whatever the content's height.
+    nonisolated enum UpperThird: AlignmentID {
+        static func defaultValue(in context: ViewDimensions) -> CGFloat { context.height / 3 }
+    }
+    static let upperThird = VerticalAlignment(UpperThird.self)
 }
 
 /// A piece of the start screen coming in: up a little and out of nothing, when its turn comes.

@@ -184,7 +184,8 @@ empty name takes a conversation kept on the phone back to its first question.
 
 An empty conversation shows the app's mark, a greeting for the time of day, and up to three cards,
 each one tap (`Views/StartScreen.swift`, `Services/StartCards.swift`). The pieces come in one after
-another.
+another. They sit above the middle of the screen, a third of the spare room over them and two
+thirds under: dead centre read as low, with the title above and the message field at the bottom.
 
 - **Calendar:** once Redde has calendar access, the next event today or tomorrow, read on the
   phone; tapping asks about that day with its events attached. Before access was ever asked, the
