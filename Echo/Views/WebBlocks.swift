@@ -348,7 +348,7 @@ struct MermaidBlock: View {
     private var themeVariables: String {
         let dark = (drawnScheme ?? colorScheme) == .dark
         let accent = UIColor(theme.accent)
-        let ground = UIColor(theme.background ?? Color(.systemBackground))
+        let ground = UIColor(theme.pageColor)
         func hex(_ c: UIColor) -> String {
             var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
             c.getRed(&r, green: &g, blue: &b, alpha: &a)

@@ -8,8 +8,7 @@ final class TranscriptPageUITests: XCTestCase {
         continueAfterFailure = false
         let app = XCUIApplication()
         // Six turns of ~10,000-character replies: the page holds the last two.
-        app.launchArguments = ["-echo.demoHeavy", "6", "-conversations.section", "sessions", "-setupDone", "YES", "-openToVoiceScreen", "NO",
-                               "-listenOnOpen", "NO", "-requireBiometrics", "NO"]
+        app.launchArguments = ["-echo.demoHeavy", "6"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
         app.launch()
         // In the transcript itself: the header shows the first question too, as the title.
         let transcript = app.scrollViews.firstMatch

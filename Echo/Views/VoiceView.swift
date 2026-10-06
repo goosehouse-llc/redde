@@ -52,8 +52,8 @@ struct VoiceView: View {
                 .padding(.bottom, 12)
         }
         .padding(.horizontal)
-        .background(theme.background ?? Color(.systemBackground))
-        .foregroundStyle(theme.text ?? Color.primary)
+        .background(theme.pageColor)
+        .foregroundStyle(theme.textColor)
         .onAppear { session.attachHeadsetControls() }
         .onDisappear { session.detachHeadsetControls(); session.cancel() }
     }
@@ -225,7 +225,7 @@ struct VoiceView: View {
             Image(systemName: symbol)
                 .font(.title3.weight(.medium))
                 .frame(width: 60, height: 60)
-                .background(theme.surface ?? Color(.secondarySystemBackground), in: .circle)
+                .background(theme.surfaceColor, in: .circle)
                 .overlay(Circle().strokeBorder(.quaternary))
         }
         .buttonStyle(.plain)

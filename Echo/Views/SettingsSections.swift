@@ -524,10 +524,10 @@ struct ThemeSwatch: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             RoundedRectangle(cornerRadius: 8)
-                .fill(theme.background ?? Color(.systemBackground))
+                .fill(theme.pageColor)
                 .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.quaternary))
             VStack(alignment: .leading, spacing: 4) {
-                Capsule().fill(theme.surface ?? Color(.secondarySystemBackground)).frame(width: 26, height: 8)
+                Capsule().fill(theme.surfaceColor).frame(width: 26, height: 8)
                 Capsule().fill(theme.userBubble).frame(width: 20, height: 8)
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }

@@ -80,7 +80,7 @@ struct MessageRow: View, Equatable {
                     .padding(.horizontal, flatReply ? 2 : 14)
                     .padding(.vertical, flatReply ? 0 : theme.bubbleVerticalPadding)
                     .background(flatReply ? AnyShapeStyle(.clear) : bubble, in: .rect(cornerRadius: theme.bubbleRadius))
-                    .foregroundStyle(theme.text ?? Color.primary)
+                    .foregroundStyle(theme.textColor)
                     .contextMenu { replyMenu }
                     .overlay(highlightRing)
                     .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
@@ -108,7 +108,7 @@ struct MessageRow: View, Equatable {
                     .padding(.horizontal, 14)
                     .padding(.vertical, theme.bubbleVerticalPadding)
                     .background(bubble, in: .rect(cornerRadius: theme.bubbleRadius))
-                    .foregroundStyle(message.role == .user ? theme.userBubbleText : (theme.text ?? Color.primary))
+                    .foregroundStyle(message.role == .user ? theme.userBubbleText : theme.textColor)
                     .overlay(highlightRing)
                     .contextMenu { userMenu }
             }
@@ -336,11 +336,11 @@ struct MessageRow: View, Equatable {
             Text(label).font(.caption2.weight(.semibold)).foregroundStyle(.secondary).textCase(.uppercase)
             Text(Self.head(of: text, lines: lines))
                 .font(.caption.monospaced())
-                .foregroundStyle(theme.text ?? Color.primary)
+                .foregroundStyle(theme.textColor)
                 .lineLimit(lines)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 10).padding(.vertical, 8)
-                .background(theme.surface ?? Color(.secondarySystemBackground), in: .rect(cornerRadius: 10))
+                .background(theme.surfaceColor, in: .rect(cornerRadius: 10))
         }
     }
 

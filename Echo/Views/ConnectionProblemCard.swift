@@ -113,7 +113,7 @@ struct ConnectionProblemCard: View {
         }
         .padding(20)
         .frame(maxWidth: 520, alignment: .leading)
-        .background(theme.surface ?? Color(.secondarySystemBackground), in: .rect(cornerRadius: 20))
+        .background(theme.surfaceColor, in: .rect(cornerRadius: 20))
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
     }

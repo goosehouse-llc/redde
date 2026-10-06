@@ -7,19 +7,15 @@ final class ReplyActionsUITests: XCTestCase {
     private func launchDemo() -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demo", "-echo.demoShort", "-conversations.section", "sessions", "-setupDone", "YES", "-openToVoiceScreen", "NO",
-                               "-listenOnOpen", "NO", "-requireBiometrics", "NO"]
+        app.launchArguments = ["-echo.demo", "-echo.demoShort"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
         app.launch()
         return app
     }
 
-    private func text(_ app: XCUIApplication, containing fragment: String) -> XCUIElement {
-        app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", fragment)).firstMatch
-    }
 
     func testCopySaysSo() {
         let app = launchDemo()
-        XCTAssertTrue(text(app, containing: "I've added a reminder").waitForExistence(timeout: 15), "The demo reply didn't appear")
+        XCTAssertTrue(app.text(containing: "I've added a reminder").waitForExistence(timeout: 15), "The demo reply didn't appear")
         // The actions sit under a finished reply without being asked for.
         XCTAssertTrue(app.buttons["Regenerate"].waitForExistence(timeout: 3), "No actions under the reply")
 
@@ -39,9 +35,9 @@ final class ReplyActionsUITests: XCTestCase {
 
         let step = app.buttons["Tool calendar, completed"]
         XCTAssertTrue(step.waitForExistence(timeout: 3), "The card didn't open onto its steps")
-        XCTAssertFalse(text(app, containing: "Standup").exists, "A step's output is showing before it is opened")
+        XCTAssertFalse(app.text(containing: "Standup").exists, "A step's output is showing before it is opened")
         step.tap()
-        XCTAssertTrue(text(app, containing: "Standup").waitForExistence(timeout: 3), "The step didn't open onto its output")
+        XCTAssertTrue(app.text(containing: "Standup").waitForExistence(timeout: 3), "The step didn't open onto its output")
         XCTAssertTrue(app.buttons["Open full output"].exists)
 
         app.buttons["Open full output"].tap()
@@ -51,7 +47,7 @@ final class ReplyActionsUITests: XCTestCase {
     /// Select part of a reply and "Ask about this": it lands in the composer as a quote.
     func testAskingAboutASelectionQuotesItInTheComposer() {
         let app = launchDemo()
-        let reply = text(app, containing: "I've added a reminder")
+        let reply = app.text(containing: "I've added a reminder")
         XCTAssertTrue(reply.waitForExistence(timeout: 15), "The demo reply didn't appear")
         reply.press(forDuration: 1.0)
         let select = app.buttons["Select text"]

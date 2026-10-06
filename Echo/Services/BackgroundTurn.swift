@@ -30,9 +30,6 @@ final class BackgroundTurn {
     private var ticker: Task<Void, Never>?
     private var startedAt = Date.now
 
-    /// iOS started this turn's continued-processing task.
-    var isContinuing: Bool { continued != nil }
-
     func begin(question: String = "") {
         if task == .invalid {
             expired = false

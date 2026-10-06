@@ -158,7 +158,7 @@ struct ComposerView: View {
                 if item.id != slashItems.last?.id { Divider().padding(.leading, 38) }
             }
         }
-        .background(theme.surface ?? Color(.secondarySystemBackground), in: .rect(cornerRadius: 14))
+        .background(theme.surfaceColor, in: .rect(cornerRadius: 14))
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.quaternary))
         .transition(.move(edge: .bottom).combined(with: .opacity))
         .accessibilityLabel("Command suggestions")
@@ -317,7 +317,7 @@ struct ComposerView: View {
             if !contextSuggestions.isEmpty || !attachedContext.isEmpty { contextChips }
             }
             .padding(5)
-            .background(theme.usesGlass ? AnyShapeStyle(.clear) : AnyShapeStyle(theme.surface ?? Color(.secondarySystemBackground)),
+            .background(theme.usesGlass ? AnyShapeStyle(.clear) : AnyShapeStyle(theme.surfaceColor),
                         in: .rect(cornerRadius: buttonSize / 2))
             .glassEffect(theme.usesGlass ? .regular : .identity, in: .rect(cornerRadius: buttonSize / 2))
             // A faint ring in the accent while there is something to send.

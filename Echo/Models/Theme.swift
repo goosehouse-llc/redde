@@ -272,6 +272,12 @@ extension ThemeStyle {
     var assistantBubble: Color? { palette.flatReplies ? background : surface }
     var userText: Color { palette.userText }
     var text: Color? { palette.text }
+    /// The page, a raised surface and the text as colours to draw with. A theme may leave any of
+    /// the three to the system (nil above, for the places that want the system's own material);
+    /// these fall back to the system's colour, so a view doesn't spell the fallback out each time.
+    var pageColor: Color { background ?? Color(.systemBackground) }
+    var surfaceColor: Color { surface ?? Color(.secondarySystemBackground) }
+    var textColor: Color { text ?? .primary }
     var linkColor: Color { palette.linkColor ?? accent }
     var checkboxColor: Color { palette.checkboxColor ?? accent }
     var quoteBarColor: Color { palette.quoteBarColor ?? accent.opacity(0.6) }

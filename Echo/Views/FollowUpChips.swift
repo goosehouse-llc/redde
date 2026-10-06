@@ -22,7 +22,7 @@ struct FollowUpChips: View {
                                     .font(.subheadline)
                                     .lineLimit(1)
                                     .padding(.horizontal, 14).padding(.vertical, 8)
-                                    .background(theme.surface ?? Color(.secondarySystemBackground), in: .capsule)
+                                    .background(theme.surfaceColor, in: .capsule)
                                     .overlay(Capsule().strokeBorder(.quaternary))
                             }
                             .buttonStyle(.plain)

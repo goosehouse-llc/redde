@@ -111,6 +111,8 @@ xcodebuild -project Echo.xcodeproj -scheme Echo -destination 'platform=iOS Simul
 
 Unit tests cover streaming and parsing, the transports, markdown, voice, profiles and automation.
 Live tests run against the servers in `LocalDefaults.json` when they're reachable and skip otherwise.
+The UI tests have a scheme of their own, `-scheme EchoUITests`; they drive the app in the simulator
+on built-in demo conversations and need no server.
 Debug builds accept launch flags for demos and screenshots, all listed in
 [`Echo/App/DevHooks.swift`](Echo/App/DevHooks.swift).
 

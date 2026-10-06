@@ -127,7 +127,7 @@ struct SidePanel<Content: View, Panel: View>: View {
                     // find. UIKit's lists and bars inside ignore accessibilityHidden and opacity.
                     .frame(width: parked ? 0 : width)
                     .clipped()
-                    .background(theme.background ?? Color(.systemBackground))
+                    .background(theme.pageColor)
                     .overlay(alignment: .trailing) { Rectangle().fill(.separator).frame(width: 0.5).ignoresSafeArea() }
                     .offset(x: shown - width)
                     .opacity(parked ? 0 : 1)
@@ -138,8 +138,7 @@ struct SidePanel<Content: View, Panel: View>: View {
                     .accessibilityAddTraits(.isModal)
                     .accessibilityAction(.escape) { settle(open: false, from: shown, width: width, velocity: 0) }
                 if let cover {
-                    OpeningCover(opening: cover, from: theme.surface ?? Color(.secondarySystemBackground),
-                                 to: theme.background ?? Color(.systemBackground), text: theme.text ?? .primary)
+                    OpeningCover(opening: cover, from: theme.surfaceColor, to: theme.pageColor, text: theme.textColor)
                 }
             }
             .onChange(of: openingFrom) { _, tap in

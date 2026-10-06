@@ -31,7 +31,7 @@ struct TranscriptView: View {
     /// The visible bottom edge is below the end of the content: blank space after the last
     /// message, left behind when rows shrink after a jump.
     @State private var pastEnd = false
-    /// Keeps the jump arrow's scroll going until the newest message is actually on screen.
+    /// Keeps the jump to the end going until the newest message is actually on screen.
     @State private var jumpTask: Task<Void, Never>?
     /// How much conversation there was when the reader scrolled away: messages, and the length of
     /// the last one.
@@ -98,7 +98,7 @@ struct TranscriptView: View {
         Task { withAnimation { proxy.scrollTo(id, anchor: .center) } }
     }
 
-    /// The jump arrow. Mid-fling only an unanimated jump stops the momentum. Rows that finish
+    /// "Jump to latest". Mid-fling only an unanimated jump stops the momentum. Rows that finish
     /// loading async content (images, diagrams) can still grow after the jump and leave it
     /// short, so keep jumping until the end is on screen (or the reader touches the list again).
     private func jumpToEnd(_ proxy: ScrollViewProxy) {
@@ -210,7 +210,7 @@ struct TranscriptView: View {
                 atBottom = isAtBottom
                 // Drifting back to the end by hand counts as catching up, but only at rest:
                 // mid-fling the content height can still shift (async images/diagrams) and
-                // briefly read as "at the end", which hid the jump arrow while it was being
+                // briefly read as "at the end", which hid "Jump to latest" while it was being
                 // reached for.
                 if isAtBottom, !following, scrollPhase == .idle { following = true }
             }
@@ -246,8 +246,7 @@ struct TranscriptView: View {
             .overlay {
                 // Under the header and the composer, over the whole transcript.
                 if let cardOpening {
-                    OpeningCover(opening: cardOpening, from: theme.surface ?? Color(.secondarySystemBackground),
-                                 to: theme.background ?? Color(.systemBackground), text: theme.text ?? .primary)
+                    OpeningCover(opening: cardOpening, from: theme.surfaceColor, to: theme.pageColor, text: theme.textColor)
                 }
             }
             .toast($toaster.text, duration: .seconds(1.6))

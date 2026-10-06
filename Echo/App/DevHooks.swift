@@ -41,6 +41,9 @@ import Foundation
 /// (the selected profile's Hermes API key).
 ///
 /// Settings can also be set for one launch with their UserDefaults keys, e.g. `-transport hermesServe`.
+///
+/// The watch app has a few of its own (`-echo.connection`, `-echo.ask`, `-echo.preview`), described
+/// where they are read, in `Watch/EchoWatchApp.swift`.
 enum DevHooks {
     private static let args = CommandLine.arguments
 

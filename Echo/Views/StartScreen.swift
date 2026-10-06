@@ -163,7 +163,7 @@ struct StartScreen: View {
             }
             .padding(.horizontal, 16).padding(.vertical, 14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(theme.surface ?? Color(.secondarySystemBackground), in: .rect(cornerRadius: 16))
+            .background(theme.surfaceColor, in: .rect(cornerRadius: 16))
             .contentShape(.rect)
         }
         .buttonStyle(.plain)

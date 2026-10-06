@@ -309,8 +309,8 @@ Bytes are stored one file per attachment under Application Support (file-protect
 keep metadata only. The share extension (`EchoShare`) writes to the App Group
 (`group.com.goosehouse.echo`); the app turns shared items into a draft on its next foreground.
 
-A drop anywhere on the chat goes to the composer too (`DroppedItems`, the drop target on
-`ContentView.transcriptScreen`): pictures and files join what is waiting to be sent, a link or a
+A drop anywhere on the chat goes to the composer too (`DroppedItems` sorts it, `ChatDropTarget`
+is the modifier on the chat): pictures and files join what is waiting to be sent, a link or a
 dragged selection goes on the end of the draft. A text file out of Files and a sentence out of a
 web page can register the same types; what tells them apart is whether a file stands behind the
 item, so one is attached and the other typed. The providers' callbacks come on queues of their
