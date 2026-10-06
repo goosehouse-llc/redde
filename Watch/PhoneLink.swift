@@ -21,11 +21,21 @@ final class PhoneLink: NSObject, WCSessionDelegate {
     func requestSync() {
         let session = WCSession.default
         guard session.activationState == .activated, session.isReachable else { return }
-        session.sendMessage([WatchConnection.syncRequest: true], replyHandler: { [weak self] reply in
+        Self.ask(session, for: self)
+    }
+
+    /// WatchConnectivity calls both handlers on a queue of its own. Written in `requestSync`
+    /// they would be the main actor's, and the runtime traps the moment one is entered from
+    /// anywhere else: the app died when the request failed (seen in the simulator), and the
+    /// answer's handler was made the same way. So they are made here, outside the main actor,
+    /// and hop onto it for what they do.
+    private nonisolated static func ask(_ session: WCSession, for link: PhoneLink) {
+        session.sendMessage([WatchConnection.syncRequest: true], replyHandler: { reply in
             let connection = WatchConnection.from(context: reply)
-            Task { @MainActor in self?.store?.apply(connection) }
-        }, errorHandler: { [weak self] error in
-            Task { @MainActor in self?.log.error("sync request failed: \(error.localizedDescription, privacy: .public)") }
+            Task { @MainActor in link.store?.apply(connection) }
+        }, errorHandler: { error in
+            let message = error.localizedDescription
+            Task { @MainActor in link.log.error("sync request failed: \(message, privacy: .public)") }
         })
     }
 
