@@ -1,8 +1,9 @@
 #!/usr/bin/python3
 """Builds the App Store preview (886×1920, 30 fps, H.264, silent stereo AAC) from the recorded clips.
 
-A title page; then each feature as a shot: a navy background with a caption on top and the app
-footage beneath it, rounded; then a closing page that lists the feature set. Shots cross-fade.
+A title page; then a new conversation, blank, and each feature as a shot: a navy background with
+a caption on top and the app footage beneath it, rounded; then a closing page that lists the
+feature set. Shots cross-fade.
 The two pages are drawn frame by frame (the title's waveform moves, the list arrives a line at
 a time). Apple takes 15 to 30 seconds: the script stops if the cut runs longer.
 
@@ -150,36 +151,38 @@ def page_segment(name, page, seconds):
     return out, seconds
 
 # (clip, start, end, background, hold_last_frame_until). Two shots in a row with the same background
-# read as one: the swipe and then the board, the start screen arriving and then its card opening.
+# read as one: the swipe and then the board.
+#
+# The first two are one take: a new conversation on the start screen, then the question sent
+# from it and answered live. The second starts FADE before the first ends, so under the
+# cross-fade the footage runs straight on and only the caption changes.
 SHOTS = [
-    ('c1-stream', 5.3, 10.6, 'agent', None),
+    ('c1-stream', 4.4, 6.75, 'start', None),
+    ('c1-stream', 6.4, 13.3, 'agent', None),
     ('c2-voice', 5.1, 8.1, 'voice', None),
     ('c3-rich', 40.4, 44.4, 'rich', None),
     ('c4-kanban', 16.9, 19.2, 'workspace', None),
     ('c4b-kanban', 5.0, 5.7, 'workspace', 2.0),
-    ('c6-start', 19.9, 22.0, 'start', None),
-    ('c6-start', 23.6, 25.6, 'start', None),
     ('c7-code', 19.2, 22.6, 'setup', None),
     ('c5-yours', 16.6, 19.4, 'yours', None),
 ]
 if IPAD:
     SHOTS = [
-        ('ipad-c1-stream', 4.9, 10.6, 'agent', None),
+        ('ipad-c1-stream', 4.7, 6.95, 'start', None),
+        ('ipad-c1-stream', 6.6, 13.65, 'agent', None),
         ('ipad-c2-voice', 6.5, 9.5, 'voice', None),
         ('ipad-c3-rich', 49.4, 53.6, 'rich', None),
         ('ipad-c4-kanban', 5.45, 5.55, 'workspace', 3.2),
-        ('ipad-c6-start', 16.7, 18.8, 'start', None),
-        ('ipad-c6-start', 21.1, 23.1, 'start', None),
         ('ipad-c7-code', 24.05, 27.45, 'setup', None),
         ('ipad-c5-yours', 17.7, 20.5, 'yours', None),
     ]
 CAPTIONS = {
+    'start': ('A place to start', 'Your day and your last chat, one tap away'),
     'agent': ('Your AI agent, on your iPad' if IPAD else 'Your AI agent, in your pocket', 'Watch it think, use tools and answer live'),
     'voice': ('Just talk', f'Hands-free voice, recognized on your {"iPad" if IPAD else "iPhone"}'),
     'rich': ('Answers with substance', 'Code, checklists and tables, rendered right'),
     'workspace': ('Every chat, job and board', 'Chats, cron and Kanban beside every conversation' if IPAD
                   else 'Swipe right for your whole workspace'),
-    'start': ('A place to start', 'Your day and your last chat, one tap away'),
     'setup': ('Set up by QR code', 'Scan it, and your server fills itself in'),
     'yours': ('Make it yours', 'Seven themes, your colors, 13 app icons'),
 }

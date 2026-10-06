@@ -8,7 +8,8 @@ import Foundation
 /// - `-echo.demo`: seed the demo conversation. `-echo.demoShort` keeps its first exchange,
 ///   `-echo.demoTwo` its first two (ending on the checklist and table), `-echo.demoLong` seeds a
 ///   transcript many screens long, `-echo.demoLibrary` adds a few local conversations.
-///   `-echo.demoStream` plays the first exchange live, thinking and all (the promo video).
+///   `-echo.demoStream [seconds]` plays the first exchange live, thinking and all (the promo
+///   video); with a number, from an empty conversation, the question sent after that long.
 /// - `-echo.demoHeavy [turns]`: a thread of long replies (32 turns of about 10,000 characters by
 ///   default), for measuring. `-echo.pageBudget <characters>` overrides how much of a thread the
 ///   transcript lays out (`TranscriptPage`); 0 lifts the limit.
@@ -77,7 +78,7 @@ enum DevHooks {
         if demoProjects { settings.transport = .hermesServe }
         if has("-echo.demoLong") { conversation.seedLongDemo() }
         if has("-echo.demoHeavy") { conversation.seedHeavyDemo(turns: value("-echo.demoHeavy").flatMap(Int.init) ?? 32) }
-        if has("-echo.demoStream") { conversation.streamDemo() }
+        if has("-echo.demoStream") { conversation.streamDemo(askingAfter: value("-echo.demoStream").flatMap(Double.init)) }
         if has("-echo.demoHosts") {
             settings.gatewayURL = "https://redde.home.example:8642"
             settings.serveURL = "http://redde.home.example:9119"

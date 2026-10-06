@@ -97,12 +97,20 @@ extension Conversation {
 
     /// Promo video (`-echo.demoStream`): the demo's first exchange played live: the question,
     /// then the thinking, the tool calls and the answer streaming in, as a real turn would.
-    func streamDemo() {
+    /// With a number of seconds, the conversation starts empty, on the start screen, and the
+    /// question is sent after that long: it rises out of the message field as a sent one does.
+    func streamDemo(askingAfter delay: Double? = nil) {
         seedDemo()
         guard messages.count >= 2 else { return }
-        let question = messages[0], full = messages[1]
-        mutateMessagesForDemo { $0 = [question] }
+        var question = messages[0]
+        let full = messages[1]
+        mutateMessagesForDemo { $0 = delay == nil ? [question] : [] }
         Task { @MainActor in
+            if let delay {
+                try? await Task.sleep(for: .seconds(delay))
+                question.createdAt = .now   // just sent, so it arrives (`MessageArrival`)
+                mutateMessagesForDemo { $0 = [question] }
+            }
             try? await Task.sleep(for: .seconds(0.8))
             var reply = Message(role: .assistant, text: "")
             let id = reply.id

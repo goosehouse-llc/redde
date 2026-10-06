@@ -62,24 +62,6 @@ final class PromoVideoUITests: XCTestCase {
         mark("end")
     }
 
-    /// A place to start: a new conversation greets, and the one just left opens out of its card.
-    /// The short conversation: reopened, a diagram is drawn a moment late and would show empty.
-    func testAPlaceToStart() throws {
-        let app = try launch(["-echo.demo", "-echo.demoShort", "-echo.demoLibrary", "-theme", "claudeCode", "-appearance", "dark"])
-        let new = app.navigationBars.buttons["New conversation"].firstMatch
-        XCTAssertTrue(new.waitForExistence(timeout: 20))
-        hold(2.5)
-        mark("start")
-        hold(0.6)
-        new.tap()
-        let card = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Continue:")).firstMatch
-        XCTAssertTrue(card.waitForExistence(timeout: 5))
-        hold(1.8)
-        card.tap()
-        hold(2.2)
-        mark("end")
-    }
-
     /// Set up by code: Settings shows this connection as a QR code for another device to scan.
     func testSetUpByCode() throws {
         let app = try launch(["-echo.demo", "-echo.screen", "settings", "-theme", "claudeCode", "-appearance", "dark"])
