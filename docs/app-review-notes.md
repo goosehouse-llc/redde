@@ -1,43 +1,47 @@
 **App Store name:** Redde for Hermes · **Display name:** Redde · **Bundle ID:** com.goosehouse.echo · **SKU:** redde-ios (fixed when the record was created; internal only)
 
-# App Review notes (paste into App Store Connect → App Review Information → Notes)
+# App Review notes
 
+Paste the block below into App Store Connect → App Review Information → Notes. The field takes plain text, 4,000 characters at most; this is 3,735 with the placeholder and about 3,794 with a key in its place. Replace `<<REVIEW KEY>>` first. Keep it under the limit when adding to it: the notes for 1.6 ran to 6,600 before they were cut.
+
+```text
 Redde is a voice and chat client for a self-hosted AI assistant. It has no server of its own and collects no data; everything goes to the server the user configures.
 
-**To test:**
-1. Open the app. On the "Set up Redde" sheet choose **OpenAI-compatible (direct to a model)**.
-2. Enter:
-   - URL: `https://openrouter.ai/api/v1`
-   - API key: `<<REVIEW KEY>>`
-   - Model name: `google/gemma-3-27b-it`
-3. Tap **Test connection** (it should report "Connected"), then **Done**.
-4. Type a question and tap the arrow, or tap the microphone and speak. Speech recognition runs on-device; replies are read aloud.
-5. Optional: tap the + button to attach a photo and ask about it; say "Hey Siri, ask Redde" to enter voice mode from Siri.
+TO TEST
+1. On the "Set up Redde" sheet choose "OpenAI-compatible (direct to a model)".
+2. Enter URL https://openrouter.ai/api/v1, API key <<REVIEW KEY>>, model name google/gemma-3-27b-it.
+3. Tap Test connection (it reports "Connected"), then Done.
+4. Type a question and tap the arrow, or tap the microphone and speak. Speech is recognized on the device; replies are read aloud.
+5. Optional: + attaches a photo to ask about; "Hey Siri, ask Redde" starts voice mode.
 
-The Settings sections for "Hermes API", "Hermes Dashboard", Skills, Tools, Context files and Memory require a self-hosted Hermes gateway and are not exercisable with the review credentials; they show a clear message when no gateway is configured.
+The Hermes connections and the Skills, Tools, Context files and Memory screens need a self-hosted Hermes server; they say so when none is configured.
 
-**CarPlay (voice-based conversational app, `com.apple.developer.carplay-voice-based-conversation`):**
-1. Set up the Fast lane on the phone as above, then connect the phone to CarPlay (a vehicle or the CarPlay Simulator).
-2. Open Redde on the CarPlay home screen. It shows two rows: **Ask Redde** (one question) and **Talk with Redde** (hands-free conversation, ended by saying "that's all").
-3. Tap **Ask Redde** and speak a question. The voice-control card shows Listening, Thinking and Speaking; the answer is spoken through the car's speakers and no reply text is shown. When it finishes, the card closes back onto the two rows.
+CARPLAY (voice-based conversational app entitlement)
+Set up the phone as above and connect it to CarPlay or the CarPlay Simulator. Redde shows two rows: Ask Redde (one question) and Talk with Redde (hands-free, ended by saying "that's all"). Tap Ask Redde and speak: the card shows Listening, Thinking and Speaking, and the answer is spoken through the car's speakers. No reply text is shown.
 
-**In-app purchases (tips):** Settings → About → Support Redde offers three optional one-time tips (consumables: A coffee, A snack, A dinner), submitted for review together with this version. They unlock nothing: every feature works without them, and the screen says so. There are no subscriptions and no paywall. If the products haven't been approved yet when you look, the screen shows "Tips aren't available right now" instead of the three tips; that is the app's designed fallback, not an error.
+APPLE WATCH (new in 1.6)
+Set up the iPhone as above, then open Redde on the paired watch. Tap Ask and dictate a question; the reply is shown and read aloud. The watch gets its connection from the iPhone app and then talks to the server itself. If it asks for the iPhone to be set up first, open the iPhone app once.
+Background audio in the watch app: with Bluetooth headphones connected, a reply being read keeps playing after the wrist is lowered and stops when it ends. On the watch's speaker it plays only while the app is on screen. The watch app records nothing; questions use the system's dictation.
 
-**Background audio (`UIBackgroundModes: audio`):** a voice conversation continues when Redde leaves the foreground: in CarPlay when the driver switches the car screen to navigation while asking or being answered, and on the phone when it locks mid-conversation. Redde only records while the user has started listening (the orb, "Ask Redde", "Talk with Redde", Siri or a control), shows as the Now Playing app while it does, and stops when the user ends the conversation. No audio is recorded or played that the user did not start.
+IN-APP PURCHASES
+Settings > About > Support Redde offers three optional one-time tips (consumables), submitted with this version. They unlock nothing; there are no subscriptions. Until they are approved the screen says "Tips aren't available right now", by design.
 
-**Background processing (`UIBackgroundModes: processing`):** used only for `BGContinuedProcessingTaskRequest`. When the user sends a message and locks the phone or leaves the app, the reply they asked for keeps streaming from their server instead of being cut off after about 30 seconds; iOS shows its progress activity with a stop button for the length of that reply. Nothing is scheduled for later and nothing runs that the user did not start. To see it: send a question that takes a while, press the side button, and unlock after a minute; the reply is complete.
+BACKGROUND MODES (iPhone)
+Audio: a voice conversation the user started continues when Redde leaves the foreground: in CarPlay when the driver switches to navigation, and on the phone when it locks. Redde records only while the user has started listening and stops when the conversation ends.
+Processing: used only for BGContinuedProcessingTaskRequest. When the user sends a message and locks the phone, that reply keeps streaming instead of being cut off after about 30 seconds; iOS shows its progress activity with a stop button. Nothing is scheduled for later.
 
-**Calendar access (`NSCalendarsFullAccessUsageDescription`):** asked for only when the user taps for it, in one of two places: the "What's on my calendar today?" card on an empty conversation, or the "Calendar · <day>" chip that appears in the message field when what is being typed mentions a day ("tomorrow at 9"). The tap reads that one day's events and attaches them to the message as a text file for the assistant. From the chip, the user sees the attachment and can remove it before sending; from the card, the question is sent with it. Once access has been granted, an empty conversation also shows the next event today or tomorrow on that card: it is read and shown on the device, and nothing is sent until the card is tapped. Declining removes the card and the chip and nothing else. To see it: start a new conversation and tap the calendar card, or type "What do I have tomorrow at 9?" and tap the chip.
+PERMISSIONS
+Calendar: asked for only when the user taps the "What's on my calendar today?" card on a new conversation, or the Calendar chip shown in the message field when the text mentions a day. The tap reads that one day's events and attaches them to the message. Once granted, the card shows the next event; it is read on the device and nothing is sent until the card is tapped.
+Camera: started by the user in two places: Camera in the + menu, to attach a photo, and "Scan a setup code" on the setup sheet (new in 1.6), which reads a QR code holding a server's address. No picture is kept or sent.
 
-**Apple Watch app (new in 1.6):** set up the iPhone as above, then open Redde on the paired watch. It shows "Ask Redde": tap **Ask**, dictate a question, and the reply is shown and read aloud. The watch gets its connection from the iPhone app and then talks to the configured server itself; with the review endpoint above it works on any network. If the watch says to set up Redde on the iPhone first, open the iPhone app once so it can hand the connection over.
+ASSOCIATED DOMAINS (applinks:redde.goosehouse.org, new in 1.6)
+A setup link, https://redde.goosehouse.org/connect#..., opens the app on a sheet that shows what the link would set. Nothing is saved until the user confirms. The details follow the # and are not sent to the website.
 
-**Apple Watch background audio (`UIBackgroundModes: audio` in the watch app, new in 1.6):** the watch reads the reply to a question aloud. With Bluetooth headphones connected to the watch, the reply is played under the long-form audio policy, so it keeps playing after the wrist is lowered and stops when the reply ends. Through the watch's own speaker it plays only while the app is on screen. Nothing is played that the user did not ask for, and the watch app records nothing itself: a question is dictated on the system's dictation sheet. To see it: connect AirPods to the watch, ask a question, and lower your wrist while the answer is being read.
+APP TRANSPORT SECURITY
+Plain HTTP is allowed (NSAllowsArbitraryLoads) because self-hosted servers on private networks usually have no public TLS certificate. HTTPS is used whenever the address provides it; the review endpoint is HTTPS.
+```
 
-**Camera (`NSCameraUsageDescription`):** used in two places, both started by the user: Camera in the + menu, to take a photo to attach, and **Scan a setup code** on the setup sheet (new in 1.6), which reads a QR code holding a server's address. The code is read on the device; no picture is kept or sent.
-
-**Associated Domains (`applinks:redde.goosehouse.org`, new in 1.6):** a setup link, `https://redde.goosehouse.org/connect#…`, opens the app on a sheet that shows what the link would set. Nothing is saved until the user confirms. The connection details are in the part of the address after the `#`, which is not sent to the website. To see it, open this link on the device instead of typing the three values in step 2 (same values): `https://redde.goosehouse.org/connect#name=Review&model-url=https%3A%2F%2Fopenrouter.ai%2Fapi&model-key=<<REVIEW KEY>>&model=google%2Fgemma-3-27b-it&use=model`
-
-**App Transport Security:** the app allows plain-HTTP connections (`NSAllowsArbitraryLoads`) because users' self-hosted servers on private networks typically have no public TLS certificate. HTTPS is used whenever the configured address provides it. The review endpoint above is HTTPS.
+Not part of the notes; these have fields of their own in App Store Connect.
 
 **Privacy policy:** https://legal.goosehouse.org/redde/privacy
 **Support:** https://legal.goosehouse.org/redde/support
