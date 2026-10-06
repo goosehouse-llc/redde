@@ -59,16 +59,16 @@ phone = [
   ('ph-voice',    '02-voice',    'Just talk.',                   'An orb that moves with your voice. On-device speech, hands-free if you like.', (24, 32, 46), WHITE, MIST),
   ('ph-work',     '03-work',     'Watch it think and work.',     'Live reasoning, tool calls, and subagents you can steer.', PAPER, INK, SAND),
   ('ph-diagram',  '04-rich',     'Answers with substance.',      'Code, tables, diagrams and math, rendered on the spot.', CHAR, BONE, ASH),
-  ('ph-settings', '05-backend',  'Your backend, your rules.',    'Hermes gateway, tailnet or Cloudflare Access, or any OpenAI-compatible model.', BLUE, WHITE, MIST),
-  ('ph-chat',     '06-light',    'Make it yours.',               'Seven themes, your own colors, 13 app icons and 25 voice orbs. Face ID lock included.', (236, 238, 243), INK, SAND),
+  ('ph-settings', '05-backend',  'Your backend, your rules.',    'Hermes, or any OpenAI-compatible model server. A setup code fills in the address and keys for you.', BLUE, WHITE, MIST),
+  ('ph-chat',     '06-light',    'Make it yours.',               'Seven themes, your own colors, 13 app icons and 12 voice orbs. Face ID lock included.', (236, 238, 243), INK, SAND),
 ]
 pad = [
   ('pad-default-dark', '01-ipad',      'Built for iPad.',              'Sessions, scheduled jobs and the Kanban board beside the conversation.', BLUE, WHITE, MIST),
   ('pad-voice',        '02-ipad-voice','Just talk.',                   'An orb that moves with your voice. On-device speech, spoken replies, hands-free if you like.', (24, 32, 46), WHITE, MIST),
   ('pad-work',         '03-ipad-work', 'Watch it think and work.',     'Live reasoning, tool calls, and subagents you can steer.', PAPER, INK, SAND),
   ('pad-dark',         '04-ipad-rich', 'Answers with substance.',      'Code, tables, diagrams and math, rendered on the spot.', CHAR, BONE, ASH),
-  ('pad-settings',     '05-ipad-backend', 'Your backend, your rules.', 'Hermes gateway, tailnet or Cloudflare Access, or any OpenAI-compatible model.', BLUE, WHITE, MIST),
-  ('pad-split',        '06-ipad-light','Make it yours.',               'Seven themes, your own colors, 13 app icons and 25 voice orbs.', (236, 238, 243), INK, SAND),
+  ('pad-settings',     '05-ipad-backend', 'Your backend, your rules.', 'Hermes, or any OpenAI-compatible model server. A setup code fills in the address and keys for you.', BLUE, WHITE, MIST),
+  ('pad-split',        '06-ipad-light','Make it yours.',               'Seven themes, your own colors, 13 app icons and 12 voice orbs.', (236, 238, 243), INK, SAND),
 ]
 for src, name, h, s, bg, fg, sfg in phone: compose(f'{SHOTS}/{src}.png', f'{OUT}/iphone-6.9/{name}.png', h, s, bg, fg, sfg, False)
 for src, name, h, s, bg, fg, sfg in pad:   compose(f'{SHOTS}/{src}.png', f'{OUT}/ipad-13/{name}.png',   h, s, bg, fg, sfg, True)

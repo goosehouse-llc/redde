@@ -3,13 +3,13 @@
 #
 #   design/screenshots/capture.sh <raw-shots-dir>
 #
-# Builds the Debug app, then launches it on the iPhone 17 Pro Max (6.9") and iPad Pro 13-inch
+# Builds the Debug app, then launches it on the iPhone 18 Pro Max (6.9") and iPad Pro 13-inch
 # simulators with the dev flags for each slot and a 9:41 status bar. Example endpoints only.
 set -euo pipefail
 cd "${0:A:h}/../.."
 RAW="${1:?raw shots dir}"; mkdir -p "$RAW"
 BUNDLE=com.goosehouse.echo
-PHONE="${PHONE:-iPhone 17 Pro Max}"   # a UDID works too
+PHONE="${PHONE:-iPhone 18 Pro Max}"   # a UDID works too
 PAD="${PAD:-iPad Pro 13-inch (M5)}"   # pass a UDID when two simulators share the name
 WAIT=9   # diagrams and math finish drawing
 
@@ -18,6 +18,8 @@ xcodebuild -project Echo.xcodeproj -scheme Echo -destination "generic/platform=i
 APP=DerivedData/Build/Products/Debug-iphonesimulator/Echo.app
 
 BASE=(-setupDone YES -openToVoiceScreen NO -listenOnOpen NO -requireBiometrics NO -echo.demoHosts)
+# iPad: the sidebar on Chats and the chat in the wide pane, whatever was last picked there.
+CHATS=(-conversations.section sessions)
 FAST=(-transport chatCompletions)      # chat shots: fast-lane footer metrics
 LEDGER=(-transport hermesSessions)     # setup shots: the gateway option selected
 
@@ -28,8 +30,9 @@ prepare() {   # device
     --cellularMode active --cellularBars 4 --wifiBars 3 --dataNetwork wifi
   xcrun simctl install "$1" "$APP"
   # A fresh install's first launch is still setting up (the iPad sidebar showed a key prompt), so
-  # throw one away.
-  xcrun simctl launch "$1" $BUNDLE "${BASE[@]}" "${FAST[@]}" >/dev/null; sleep $WAIT
+  # throw one away. With the demo conversation, so its diagram and math have been drawn once:
+  # drawn for the first time they arrive late, and the shot caught the transcript short of its end.
+  xcrun simctl launch "$1" $BUNDLE "${BASE[@]}" "${FAST[@]}" -echo.demo >/dev/null; sleep $WAIT
 }
 
 shot() {   # device name args...
@@ -46,7 +49,7 @@ shot "$PHONE" ph-chat-dark -echo.demo -theme standard -appearance dark "${FAST[@
 # Pano left half: the Hermes theme, gold on near-black.
 shot "$PHONE" ph-chat-hermes -echo.demo -theme githubDark -appearance dark "${FAST[@]}"
 # Voice mode mid-listen (-echo.voiceDemo): the simulator has no mic, so the waveform is posed.
-shot "$PHONE" ph-voice     -echo.demo -echo.voiceView -echo.voiceDemo -voiceOrb waveform -theme slate -appearance dark "${FAST[@]}"
+shot "$PHONE" ph-voice     -echo.demo -echo.voiceView -echo.voiceDemo -voiceOrb darkGlass -theme slate -appearance dark "${FAST[@]}"
 # Work slot: two exchanges, so the frame is full and a subagent row stays in view under the header.
 shot "$PHONE" ph-work      -echo.demo -echo.demoTwo -theme paper -appearance light "${FAST[@]}"
 # Rich ends on the kitchen reply (code, checklist, table); the panorama already shows the diagram.
@@ -63,13 +66,13 @@ shot "$PHONE" ph-type      -echo.demo -echo.demoTwo -echo.draft "Push the counte
 "${KB[@]}" AutomaticMinimizationEnabled -bool true; "${KB[@]}" HardwareKeyboardLastSeen -bool true
 
 prepare "$PAD"
-shot "$PAD" pad-default-dark -echo.demo -echo.demoLibrary -theme standard -appearance dark "${FAST[@]}"
+shot "$PAD" pad-default-dark -echo.demo -echo.demoLibrary -theme standard -appearance dark "${FAST[@]}" "${CHATS[@]}"
 # Pano left half: the Hermes theme, gold on near-black.
-shot "$PAD" pad-hermes       -echo.demo -echo.demoLibrary -theme githubDark -appearance dark "${FAST[@]}"
-shot "$PAD" pad-voice        -echo.demo -echo.voiceView -echo.voiceDemo -voiceOrb waveform -theme slate -appearance dark "${FAST[@]}"
+shot "$PAD" pad-hermes       -echo.demo -echo.demoLibrary -theme githubDark -appearance dark "${FAST[@]}" "${CHATS[@]}"
+shot "$PAD" pad-voice        -echo.demo -echo.voiceView -echo.voiceDemo -voiceOrb darkGlass -theme slate -appearance dark "${FAST[@]}" "${CHATS[@]}"
 # Same as the phone work slot: one exchange left most of the detail pane empty.
-shot "$PAD" pad-work         -echo.demo -echo.demoTwo -echo.demoLibrary -theme paper -appearance light "${FAST[@]}"
-shot "$PAD" pad-dark         -echo.demo -echo.demoTwo -echo.demoLibrary -theme claudeCode -appearance dark "${FAST[@]}"
+shot "$PAD" pad-work         -echo.demo -echo.demoTwo -echo.demoLibrary -theme paper -appearance light "${FAST[@]}" "${CHATS[@]}"
+shot "$PAD" pad-dark         -echo.demo -echo.demoTwo -echo.demoLibrary -theme claudeCode -appearance dark "${FAST[@]}" "${CHATS[@]}"
 # iPad keeps the fast lane here: with the gateway selected the sidebar tries the example host and shows an error.
-shot "$PAD" pad-settings     -echo.demo -echo.demoLibrary -echo.screen setup -theme standard -appearance light "${FAST[@]}"
-shot "$PAD" pad-split        -echo.demo -echo.demoLibrary -echo.screen settings -echo.expandAppIcons -theme standard -appearance light "${FAST[@]}"
+shot "$PAD" pad-settings     -echo.demo -echo.demoLibrary -echo.screen setup -theme standard -appearance light "${FAST[@]}" "${CHATS[@]}"
+shot "$PAD" pad-split        -echo.demo -echo.demoLibrary -echo.screen settings -echo.expandAppIcons -theme standard -appearance light "${FAST[@]}" "${CHATS[@]}"
