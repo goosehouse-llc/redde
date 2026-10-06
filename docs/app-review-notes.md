@@ -5,7 +5,7 @@
 Redde is a voice and chat client for a self-hosted AI assistant. It has no server of its own and collects no data; everything goes to the server the user configures.
 
 **To test:**
-1. Open the app. On the "Set up Redde" sheet choose **Fast lane (direct to inference)**.
+1. Open the app. On the "Set up Redde" sheet choose **OpenAI-compatible (direct to a model)**.
 2. Enter:
    - URL: `https://openrouter.ai/api/v1`
    - API key: `<<REVIEW KEY>>`
@@ -28,6 +28,12 @@ The Settings sections for "Hermes API", "Hermes Dashboard", Skills, Tools, Conte
 **Background processing (`UIBackgroundModes: processing`):** used only for `BGContinuedProcessingTaskRequest`. When the user sends a message and locks the phone or leaves the app, the reply they asked for keeps streaming from their server instead of being cut off after about 30 seconds; iOS shows its progress activity with a stop button for the length of that reply. Nothing is scheduled for later and nothing runs that the user did not start. To see it: send a question that takes a while, press the side button, and unlock after a minute; the reply is complete.
 
 **Calendar access (`NSCalendarsFullAccessUsageDescription`):** asked for only when the user taps for it, in one of two places: the "What's on my calendar today?" card on an empty conversation, or the "Calendar · <day>" chip that appears in the message field when what is being typed mentions a day ("tomorrow at 9"). The tap reads that one day's events and attaches them to the message as a text file for the assistant. From the chip, the user sees the attachment and can remove it before sending; from the card, the question is sent with it. Once access has been granted, an empty conversation also shows the next event today or tomorrow on that card: it is read and shown on the device, and nothing is sent until the card is tapped. Declining removes the card and the chip and nothing else. To see it: start a new conversation and tap the calendar card, or type "What do I have tomorrow at 9?" and tap the chip.
+
+**Apple Watch app (new in 1.6):** set up the iPhone as above, then open Redde on the paired watch. It shows "Ask Redde": tap **Ask**, dictate a question, and the reply is shown and read aloud. The watch gets its connection from the iPhone app and then talks to the configured server itself; with the review endpoint above it works on any network. If the watch says to set up Redde on the iPhone first, open the iPhone app once so it can hand the connection over.
+
+**Camera (`NSCameraUsageDescription`):** used in two places, both started by the user: Camera in the + menu, to take a photo to attach, and **Scan a setup code** on the setup sheet (new in 1.6), which reads a QR code holding a server's address. The code is read on the device; no picture is kept or sent.
+
+**Associated Domains (`applinks:redde.goosehouse.org`, new in 1.6):** a setup link, `https://redde.goosehouse.org/connect#…`, opens the app on a sheet that shows what the link would set. Nothing is saved until the user confirms. The connection details are in the part of the address after the `#`, which is not sent to the website. To see it, open this link on the device instead of typing the three values in step 2 (same values): `https://redde.goosehouse.org/connect#name=Review&model-url=https%3A%2F%2Fopenrouter.ai%2Fapi&model-key=<<REVIEW KEY>>&model=google%2Fgemma-3-27b-it&use=model`
 
 **App Transport Security:** the app allows plain-HTTP connections (`NSAllowsArbitraryLoads`) because users' self-hosted servers on private networks typically have no public TLS certificate. HTTPS is used whenever the configured address provides it. The review endpoint above is HTTPS.
 

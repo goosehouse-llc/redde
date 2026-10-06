@@ -1,6 +1,6 @@
 import Foundation
 
-/// The highlights shown once after an update ("What's New in Redde 1.5"). One entry per
+/// The highlights shown once after an update ("What's New in Redde 1.6"). One entry per
 /// version that has something worth showing; a version without an entry shows nothing.
 nonisolated enum WhatsNew {
     struct Item: Identifiable, Equatable, Sendable {
@@ -22,6 +22,20 @@ nonisolated enum WhatsNew {
 
     /// Newest first. Keep each to a handful of lines a person reads in ten seconds.
     static let releases: [Release] = [
+        Release(version: "1.6", items: [
+            Item(symbol: "applewatch", title: "On your wrist",
+                 detail: "Redde for Apple Watch: raise your wrist, tap Ask and say it. The answer is shown and read aloud. The watch needs a server address it can reach on its own, such as your home Wi-Fi."),
+            Item(symbol: "qrcode.viewfinder", title: "Set up by code",
+                 detail: "Scan a setup code and a server fills itself in. Settings → Connection → Set up another device shows the code for your iPad or a second phone."),
+            Item(symbol: "lock.iphone", title: "A reply keeps going",
+                 detail: "Lock the phone or switch apps, and the reply you asked for carries on to the end."),
+            Item(symbol: "sparkles", title: "A place to start",
+                 detail: "A new conversation opens with what's next on your calendar and the conversation you just left, one tap each."),
+            Item(symbol: "quote.bubble", title: "Ask about part of a reply",
+                 detail: "Choose Select text on a reply, select a sentence and tap Ask about this. It lands in your message as a quote."),
+            Item(symbol: "bolt", title: "Long conversations, lighter",
+                 detail: "A long thread takes a fraction of the memory it did and stays smooth while a reply streams."),
+        ]),
         Release(version: "1.5", items: [
             Item(symbol: "text.insert", title: "Spoken prefixes",
                  detail: "Start a spoken message with a word of your choice and Redde swaps it for a text prefix, switches the conversation to a model you pick, or both. Off until you add one, in Settings → Voice. Typed messages are never changed."),

@@ -9,14 +9,14 @@ Redde for Hermes
 Talk, chat and run your agent
 
 ## Promotional text (170, editable without a new build)
-New: spoken prefixes that add text or switch the model, and reasoning effort that reaches every model. Talk to your own agent at home, at your desk or in the car.
+New: Redde on Apple Watch, setup by QR code, and replies that carry on when the phone locks. Talk to your own agent at home, at your desk or in the car.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name)
-voice,assistant,ai,agent,carplay,self-hosted,llm,ollama,llama,chat,siri,shortcuts,private,openai
+voice,assistant,ai,agent,carplay,self-hosted,llm,ollama,llama,watch,siri,shortcuts,private,openai
 
 ## Description (4000)
 
-Redde is a complete iPhone and iPad client for Hermes, the open-source AI agent. Talk to it or type, watch it think and use tools, approve what it wants to run, and manage everything it does: sessions, projects, profiles, scheduled jobs, and the Kanban board. It also talks straight to any OpenAI-compatible model server when you just want a fast answer.
+Redde is a complete iPhone and iPad client for Hermes, the open-source AI agent, with CarPlay and an Apple Watch app. Talk to it or type, watch it think and use tools, approve what it wants to run, and manage everything it does: sessions, projects, profiles, scheduled jobs, and the Kanban board. It also talks straight to any OpenAI-compatible model server when you just want a fast answer.
 
 You bring the backend. Redde has no account, no analytics, and no cloud of its own; every request goes only to the server you configured.
 
@@ -24,17 +24,16 @@ TALK, DON'T TYPE
 • Tap the mic, ask, hear the answer. Speech recognition runs on your iPhone; the reply is spoken back with the built-in voice or your own Kokoro server.
 • Hands-free mode keeps the conversation going until you say "that's all".
 • Interrupt mid-answer: tap the mic to cut in, or type to steer the reply.
-• In CarPlay, ask through the car's mic and hear the answer through its speakers.
+• In CarPlay, ask through the car's mic and hear the answer through its speakers. On Apple Watch, raise your wrist and ask.
 • "Hey Siri, ask Redde…" works from the Lock Screen and AirPods. A Control Center button and Lock Screen widget open Redde listening.
 • On iOS 27, Siri can message your agent in your own words and read the reply back (opt-in).
 • A voice orb that moves with your voice and Redde's. Pause, replay, or have any reply read aloud.
+• Spoken prefixes: start with a word you chose and Redde adds a text prefix or switches model. "Opus, review this diff" moves the chat to Opus.
 • "Ask Redde a Question" in Shortcuts returns the answer as text for your automations.
 
-SPOKEN PREFIXES
-Start a voice or Siri message with a word of your choice and Redde does what the word says: drops a text prefix in front, switches the conversation to a model you chose, or both. Say "Opus, review this diff" and the conversation moves to Opus before the message goes. The switch sticks for the follow-ups. Set it up once in Settings → Voice: the word, the ways it tends to be misheard, the prefix, the model. Off until you add a rule, spoken messages only, and anything you type stays exactly as typed.
-
 SEE THE AGENT WORK
-• Watch reasoning as it streams, with tool calls as they happen and a Live Activity for progress.
+• Watch reasoning as it streams, with tool calls as they happen and a Live Activity for progress. Open a step to see what it returned.
+• Lock the phone or switch apps and the reply carries on.
 • Approve or deny a risky command, answer the agent's questions, a sudo prompt or a missing secret, all from a notification.
 • Subagents get their own rows; tap one to follow its transcript, steer it, or stop it.
 
@@ -43,17 +42,18 @@ A FULL CLIENT, NOT JUST A MIC
 • Sessions grouped by project. Scheduled jobs with delivery targets and blueprints. The Kanban board, live.
 • Rich replies: Markdown, highlighted code, tables, task lists, images, zoomable Mermaid diagrams, and math.
 • Pictures and files from the agent arrive ready to view: snapshots, charts, PDFs.
-• Regenerate, edit and resend, or search a long chat.
-• Attach photos and files; export chats as Markdown.
-• Share to Redde from any app: text, links, photos or files land in the composer.
+• Select part of a reply and ask about it. Regenerate, edit and resend, or search a long chat.
+• Attach photos and files, or drop them onto the chat. Mention a day and attach its calendar in one tap.
+• Share to Redde from any app: text, links, photos or files land in the composer. Export chats as Markdown.
 • Widgets show the last answer or start listening; the Action Button can open Redde listening.
 • Switch models mid-conversation from the chat header or with /model.
 • Skills and tool sets, on or off. Edit the agent's memory and context files in place, and create skills or let Redde draft one.
 
 YOUR BACKEND, YOUR RULES
-• Connect to Hermes through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access.
+• Connect to Hermes through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access. Save several servers.
 • Or go straight to any OpenAI-compatible endpoint: llama.cpp, llama-swap, vLLM, Ollama on your hardware, or a hosted provider with your key.
-• Credentials stay in the Keychain. Speech recognition runs on the phone.
+• Set up by scanning a QR code or opening a link, and pass it on to your other devices.
+• Credentials stay in the Keychain.
 • Face ID lock, seven themes with your own colors, app icons and voice orbs, iPad split view, keyboard shortcuts.
 • No account, no analytics, no tracking. The privacy label says "Data Not Collected" because that is what happens.
 
@@ -61,6 +61,33 @@ REQUIRES
 A Hermes agent (github.com/NousResearch/hermes-agent) or an OpenAI-compatible endpoint. Redde includes no model or hosted service.
 
 Hermes is an open-source project by Nous Research; Redde is an independent client, not affiliated with Nous Research.
+
+## What's New in 1.6 (4000)
+Redde comes to Apple Watch, sets itself up from a QR code, and keeps a reply going after the phone locks.
+
+• Apple Watch. Raise your wrist, tap Ask and say it. The answer is shown and read aloud, through the watch or your AirPods, and Ask Redde can go on the Action button. The watch takes its connection from your iPhone and then talks to your server itself, so it needs an address it can reach: your home Wi-Fi or a public address, not one that only works through a VPN on the phone, such as Tailscale.
+• Set up by code. Scan a QR code, or open or paste a setup link, and the server's address and login fill themselves in. Redde shows what the code sets and saves nothing until you agree. To add an iPad or a second phone, open Settings → Connection → Set up another device and scan what it shows; passwords stay out of the code until you ask for them with Face ID.
+• A reply keeps going. Lock the phone or switch apps and the reply you asked for carries on to the end.
+• A place to start. A new conversation opens with a greeting and things to tap: what's next on your calendar, the conversation you just left, and what's on at home if your agent has Home Assistant.
+• Ask about part of a reply. Choose Select text on a reply, select a sentence and tap Ask about this. It lands in your message as a quote.
+• Follow-up questions. Turn on Suggest follow-up questions in Settings → Voice and three next questions appear after each reply, one tap to ask. Your OpenAI-compatible model writes them, so that connection has to be set up.
+• The day's calendar, one tap away. Mention a day in your message and Redde offers that day's events to attach. Nothing is attached until you tap.
+• Drop it in. Drag pictures, files, links or text onto a chat.
+• Name your conversations. Rename, in the menu at the top of a chat.
+• See what a tool did. Thinking and tool steps fold away under each reply; open a step to see what it was asked and what it returned.
+• Long conversations, lighter. A long thread takes a fraction of the memory it did and stays smooth while a reply streams.
+• Voice mode keeps the screen on while it listens and while it reads a reply.
+• A livelier orb. Light moves inside the voice orb in three styles, Nebula, Aurora and Core, and there is a new Dark Glass orb. Settings → Voice orb.
+• Small motions. Your message rises out of the field when you send it, pictures and diagrams open out of their thumbnails, a conversation opens out of its row, and Jump to latest shows a dot when something new is below.
+• Fixes. The Live Activity no longer looks busy after a reply was cut off: it says the reply was interrupted, and clears when you open Redde. An open mic closes when the phone locks, unless you are hands-free or in the car.
+
+## Before submitting 1.6
+Written ahead of the release, so unlike the rest of this page not all of it has been seen on a device yet. To check first:
+- Scanning a setup code with the camera (the simulator has none), and a setup link tapped in Messages on a phone.
+- Dragging a picture or a file onto a chat from another app.
+- The screen staying on in voice mode (the simulator never locks).
+- Rename and a tool step's output against a real Hermes server; the calendar and Home cards with real data.
+- The Apple Watch app as built for the App Store, and its screenshots: App Store Connect asks for watch screenshots once a build carries a watch app.
 
 ## What's New in 1.5 (4000)
 Spoken prefixes that add text or switch the model, reasoning effort that reaches every model, and AirPods replies that stay in your AirPods.
