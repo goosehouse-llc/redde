@@ -2,7 +2,7 @@
 # record.sh <name> <seconds> <launch args...>   records a plain launch
 # record.sh --test <name> <TestName>           records a PromoVideoUITests test, prints its marks
 set -u
-S=${SIM:-"iPhone 17 Pro Max"}   # a UDID works too
+S=${SIM:-"iPhone 18 Pro Max"}   # a UDID works too
 V=${0:A:h}
 cd "$V/../.."
 now() { /usr/bin/python3 -c 'import time; print(time.time())'; }

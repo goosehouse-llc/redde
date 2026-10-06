@@ -62,6 +62,39 @@ final class PromoVideoUITests: XCTestCase {
         mark("end")
     }
 
+    /// A place to start: a new conversation greets, and the one just left opens out of its card.
+    /// The short conversation: reopened, a diagram is drawn a moment late and would show empty.
+    func testAPlaceToStart() throws {
+        let app = try launch(["-echo.demo", "-echo.demoShort", "-echo.demoLibrary", "-theme", "claudeCode", "-appearance", "dark"])
+        let new = app.navigationBars.buttons["New conversation"].firstMatch
+        XCTAssertTrue(new.waitForExistence(timeout: 20))
+        hold(2.5)
+        mark("start")
+        hold(0.6)
+        new.tap()
+        let card = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Continue:")).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 5))
+        hold(1.8)
+        card.tap()
+        hold(2.2)
+        mark("end")
+    }
+
+    /// Set up by code: Settings shows this connection as a QR code for another device to scan.
+    func testSetUpByCode() throws {
+        let app = try launch(["-echo.demo", "-echo.screen", "settings", "-theme", "claudeCode", "-appearance", "dark"])
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20))
+        let button = app.buttons["Set up another device…"].firstMatch
+        for _ in 0 ..< 6 where !button.isHittable { app.swipeUp(velocity: .slow) }
+        hold(1.5)
+        mark("start")
+        hold(0.8)
+        button.tap()
+        XCTAssertTrue(app.images["setup-code"].waitForExistence(timeout: 5))
+        hold(3)
+        mark("end")
+    }
+
     /// Make it yours: Settings with the app icons open, scrolled gently.
     func testMakeItYours() throws {
         let app = try launch(["-echo.demo", "-echo.screen", "settings", "-echo.expandAppIcons", "-theme", "standard", "-appearance", "light"])
@@ -69,7 +102,9 @@ final class PromoVideoUITests: XCTestCase {
         hold(2)
         mark("start")
         hold(1.2)
-        drag(app, from: CGVector(dx: 0.5, dy: 0.75), to: CGVector(dx: 0.5, dy: 0.5), velocity: 180)
+        // On iPad Settings is a sheet in the middle of the screen: a drag from lower down starts outside it.
+        let wide = app.windows.firstMatch.frame.width > 600
+        drag(app, from: CGVector(dx: 0.5, dy: wide ? 0.62 : 0.75), to: CGVector(dx: 0.5, dy: wide ? 0.42 : 0.5), velocity: 180)
         hold(2)
         mark("end")
     }
