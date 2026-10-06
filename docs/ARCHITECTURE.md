@@ -532,6 +532,12 @@ whenever anything is near), and it reads "not near" whenever it's off or has jus
 route follows the last real reading between replies, and a settle check after it comes on catches a
 phone put down meanwhile.
 
+**The screen.** Auto-lock is held off while the mic is open and while a reply is spoken, so the
+phone doesn't lock on a conversation, and through the wait for the reply in between for up to two
+minutes (`VoiceSession.updateScreenAwake`). Past that, a paused reply, an error and idle give it
+back: the reply carries on with the phone locked, and a screen held on through a ten-minute task
+is a flat battery. Reading a reply aloud from the transcript counts as speaking.
+
 **AirPods.** Full-bandwidth Bluetooth recording when the headset supports it; voice processing off
 on headphones (on for the speaker and CarPlay). While the voice screen is open Redde is the Now
 Playing app, so a stem press or play-pause does what the mic does. Removing the headset stops

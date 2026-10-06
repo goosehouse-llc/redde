@@ -82,6 +82,12 @@ struct VoiceSessionTests {
         func record(_ cue: VoiceSession.Earcon) { cues.append(cue) }
     }
 
+    /// Each time the session held auto-lock off (true) or gave it back (false), in order.
+    @MainActor final class AwakeLog {
+        private(set) var changes: [Bool] = []
+        func record(_ on: Bool) { changes.append(on) }
+    }
+
     struct Harness {
         let session: VoiceSession
         let conversation: Conversation
@@ -89,6 +95,7 @@ struct VoiceSessionTests {
         let speaker = FakeSpeaker()
         let audio = FakeAudio()
         let cues = CueLog()
+        let awake = AwakeLog()
 
         init(transport: any HermesTransport) {
             let suite = UserDefaults(suiteName: "voice-\(UUID().uuidString)")!
@@ -99,9 +106,10 @@ struct VoiceSessionTests {
             let store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "voice-\(UUID().uuidString)"))
             conversation = Conversation(settings: settings, store: store, transportOverride: transport)
             conversation.retryDelays = [30]
-            let cues = cues
+            let (cues, awake) = (cues, awake)
             session = VoiceSession(conversation: conversation, recognizer: recognizer, output: speaker,
-                                   audio: audio, requestPermissions: { true }, earcon: { cues.record($0) })
+                                   audio: audio, requestPermissions: { true }, earcon: { cues.record($0) },
+                                   keepAwake: { awake.record($0) })
         }
     }
 
@@ -388,6 +396,73 @@ struct VoiceSessionTests {
     }
 
     // MARK: Replay
+
+    // MARK: The screen
+
+    /// Auto-lock is held off from the mic opening until the reply has been spoken, in one
+    /// stretch, and given back when the turn is over.
+    @Test func theScreenStaysOnThroughAVoiceTurnAndIsGivenBackAfter() async throws {
+        let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport(reply(["Hello", " there."])))
+        #expect(h.awake.changes.isEmpty)
+        h.session.beginListening()
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        #expect(h.awake.changes == [true])
+        h.recognizer.deliver("hi")
+        try await waitUntil("speaking") { h.session.phase == .speaking }
+        #expect(h.awake.changes == [true], "held across listening, thinking and speaking without letting go")
+        try await waitUntil("reply ended") { h.speaker.ends >= 1 }
+        h.speaker.finishSpeaking()
+        try await waitUntil("idle") { h.session.phase == .idle }
+        #expect(h.awake.changes == [true, false])
+    }
+
+    @Test func aMicThatIsClosedGivesAutoLockBack() async throws {
+        let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport([]))
+        h.session.beginListening()
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        h.session.cancel()
+        #expect(h.session.phase == .idle)
+        #expect(h.awake.changes == [true, false])
+    }
+
+    /// A reply read from the transcript's speaker button, or replayed, counts as speaking; a
+    /// paused one doesn't.
+    @Test func readingAloudHoldsTheScreenAndAPauseLetsGo() async throws {
+        let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport([]))
+        h.session.readAloud("A long answer, read out.")
+        #expect(h.session.phase == .speaking)
+        #expect(h.awake.changes == [true])
+        h.session.pauseSpeaking()
+        #expect(h.awake.changes == [true, false])
+        h.session.resumeSpeaking()
+        #expect(h.awake.changes == [true, false, true])
+        h.speaker.finishSpeaking()
+        try await waitUntil("idle") { h.session.phase == .idle }
+        #expect(h.awake.changes == [true, false, true, false])
+    }
+
+    /// Waiting on a long task doesn't hold the screen on for ever: the reply carries on with the
+    /// phone locked.
+    @Test func aLongWaitForTheReplyLetsThePhoneLock() async throws {
+        let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport([], hang: true))
+        h.session.awakeWhileThinking = .milliseconds(120)
+        h.session.beginListening()
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        h.recognizer.deliver("do the long thing")
+        try await waitUntil("thinking") { h.session.phase == .thinking }
+        #expect(h.awake.changes == [true])
+        try await waitUntil("let go") { h.awake.changes == [true, false] }
+        #expect(h.session.phase == .thinking, "the turn itself is untouched")
+        h.session.cancel()
+    }
+
+    @Test func aMicThatCouldntOpenGivesAutoLockBack() async throws {
+        let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport([]))
+        h.recognizer.startError = SpeechRecognizer.Failure.assetsUnavailable
+        h.session.beginListening()
+        try await waitUntil("error") { if case .error = h.session.phase { true } else { false } }
+        #expect(h.awake.changes == [true, false])
+    }
 
     @Test func replaySpeaksTheLastReplyWithoutANewTurn() async throws {
         let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport(reply(["The answer."])))

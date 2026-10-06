@@ -3,6 +3,7 @@ import AVFoundation
 import Foundation
 import Observation
 import os
+import UIKit
 
 /// Plays the bundled listening tones through the app's audio session: on the active
 /// `.playAndRecord` voice session they ignore the ring/silent switch, like Siri's cues —
@@ -54,6 +55,7 @@ final class VoiceSession {
             // The at-ear sensor only while speaking: it blanks the screen whenever it's covered.
             audio.setEarRouting(phase == .speaking)
             if headsetControlsOn { publishNowPlaying() }
+            updateScreenAwake()
             // Every path OUT of listening funnels through here: utterance end, tap,
             // interruption, AirPods coming out. The start cue plays in startRecognizer
             // instead — at phase-set time the audio session isn't active or routed yet,
@@ -76,6 +78,13 @@ final class VoiceSession {
     private let requestPermissions: () async -> Bool
     /// Injectable so tests observe the cues instead of playing sounds.
     private let earcon: (Earcon) -> Void
+    /// Holds auto-lock off (true) or lets it be (false). Injectable so tests see it asked for.
+    private let keepAwake: (Bool) -> Void
+    private var screenAwake = false
+    private var awakeTimeout: Task<Void, Never>?
+    /// How long a wait for the reply holds the screen on. Past it the phone may lock: the reply
+    /// carries on regardless, and a screen held on through a ten-minute task is a flat battery.
+    var awakeWhileThinking: Duration = .seconds(120)
     private let log = Logger(subsystem: "com.goosehouse.echo", category: "voice")
     private var metrics = VoiceMetrics()
     private var replyTask: Task<Void, Never>?
@@ -84,7 +93,9 @@ final class VoiceSession {
     private var acknowledging = false
     private var replaying = false
     /// The reply is held by the voice screen's Pause button; still `.speaking`.
-    private(set) var isPaused = false
+    private(set) var isPaused = false {
+        didSet { if isPaused != oldValue { updateScreenAwake() } }
+    }
     private var replayResumesHandsFree = true
 
     /// The last thing Hermes said, if any; what Replay speaks.
@@ -121,13 +132,15 @@ final class VoiceSession {
          output: any VoiceSpeaking = SpeechOutput(),
          audio: any VoiceAudioControlling = AudioSessionController.shared,
          requestPermissions: @escaping () async -> Bool = { await SpeechRecognizer.requestPermissions() },
-         earcon: @escaping (Earcon) -> Void = { EarconPlayer.shared.play($0) }) {
+         earcon: @escaping (Earcon) -> Void = { EarconPlayer.shared.play($0) },
+         keepAwake: @escaping (Bool) -> Void = { UIApplication.shared.isIdleTimerDisabled = $0 }) {
         self.conversation = conversation
         self.recognizer = recognizer
         self.output = output
         self.audio = audio
         self.requestPermissions = requestPermissions
         self.earcon = earcon
+        self.keepAwake = keepAwake
         output.onFirstSpeech = { [weak self] in
             self?.metrics.firstSpokenAt = .now
             // Starting playback (Kokoro's engine, or the synthesizer) can put the output back on
@@ -246,6 +259,34 @@ final class VoiceSession {
             let text = await recognizer.stop()
             await handleUtterance(text)
         }
+    }
+
+    /// The screen stays on while the mic is open and while a reply is being spoken, so auto-lock
+    /// doesn't cut a conversation off, and through the wait for the reply in between, up to a
+    /// point. A paused reply, an error and idle give auto-lock back.
+    private func updateScreenAwake() {
+        awakeTimeout?.cancel()
+        awakeTimeout = nil
+        let wanted: Bool
+        switch phase {
+        case .listening: wanted = true
+        case .speaking: wanted = !isPaused
+        case .thinking:
+            wanted = true
+            awakeTimeout = Task { [weak self, awakeWhileThinking] in
+                try? await Task.sleep(for: awakeWhileThinking)
+                guard let self, !Task.isCancelled, phase == .thinking else { return }
+                setScreenAwake(false)
+            }
+        case .idle, .error: wanted = false
+        }
+        setScreenAwake(wanted)
+    }
+
+    private func setScreenAwake(_ on: Bool) {
+        guard on != screenAwake else { return }
+        screenAwake = on
+        keepAwake(on)
     }
 
     /// The voice screen's Pause / Play while a reply is being read.
