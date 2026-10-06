@@ -164,14 +164,14 @@ SHOTS = [
 ]
 if IPAD:
     SHOTS = [
-        ('ipad-c1-stream', 4.6, 10.3, 'agent', None),
-        ('ipad-c2-voice', 3.6, 6.6, 'voice', None),
-        ('ipad-c3-rich', 40.4, 44.6, 'rich', None),
-        ('ipad-c4-kanban', 3.6, 6.8, 'workspace', None),
-        ('ipad-c6-start', 11.9, 14.0, 'start', None),
-        ('ipad-c6-start', 15.6, 17.6, 'start', None),
-        ('ipad-c7-code', 19.2, 22.6, 'setup', None),
-        ('ipad-c5-yours', 12.8, 15.6, 'yours', None),
+        ('ipad-c1-stream', 4.9, 10.6, 'agent', None),
+        ('ipad-c2-voice', 6.5, 9.5, 'voice', None),
+        ('ipad-c3-rich', 49.4, 53.6, 'rich', None),
+        ('ipad-c4-kanban', 5.45, 5.55, 'workspace', 3.2),
+        ('ipad-c6-start', 16.7, 18.8, 'start', None),
+        ('ipad-c6-start', 21.1, 23.1, 'start', None),
+        ('ipad-c7-code', 24.05, 27.45, 'setup', None),
+        ('ipad-c5-yours', 17.7, 20.5, 'yours', None),
     ]
 CAPTIONS = {
     'agent': ('Your AI agent, on your iPad' if IPAD else 'Your AI agent, in your pocket', 'Watch it think, use tools and answer live'),

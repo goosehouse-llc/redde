@@ -35,5 +35,6 @@ first launch shows a key prompt), `ipad-c2-voice`, `--test ipad-c3-rich testRich
 `ipad-c4-kanban` (plain launch with `-echo.demo -echo.demoLibrary -echo.demoKanban -echo.section
 kanban`; the sidebar shows it), `--test ipad-c5-yours testMakeItYours`, `--test ipad-c6-start
 testAPlaceToStart`, `--test ipad-c7-code testSetUpByCode`; then `/usr/bin/python3 make_preview.py
-ipad`. The 1.6 cut was recorded on iPadOS 26.3, as the screenshots were (see
-`../screenshots/README.md`: in that build iPadOS 27 squeezed the sidebar's title).
+ipad`. The 1.6 cut was recorded on iPadOS 27. A plain launch on the iPad can take five seconds
+or more to show the app: give `ipad-c2-voice` 14 seconds, and hold the board in `ipad-c4-kanban`
+with the fifth value in `SHOTS` (its take ends as soon as the board is up).

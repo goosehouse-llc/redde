@@ -2,6 +2,7 @@
 # Capture the raw simulator shots that compose.py and pano.py turn into App Store screenshots.
 #
 #   design/screenshots/capture.sh <raw-shots-dir>
+#   ONLY=pad design/screenshots/capture.sh <raw-shots-dir>   (or ONLY=phone)
 #
 # Builds the Debug app, then launches it on the iPhone 18 Pro Max (6.9") and iPad Pro 13-inch
 # simulators with the dev flags for each slot and a 9:41 status bar. Example endpoints only.
@@ -44,6 +45,8 @@ shot() {   # device name args...
   echo "$name"
 }
 
+# ONLY=phone or ONLY=pad retakes one device's shots into a folder that has the other's.
+if [[ "${ONLY:-}" != pad ]]; then
 prepare "$PHONE"
 shot "$PHONE" ph-chat-dark -echo.demo -theme standard -appearance dark "${FAST[@]}"
 # Pano left half: the Hermes theme, gold on near-black.
@@ -64,7 +67,9 @@ KB=(xcrun simctl spawn "$PHONE" defaults write com.apple.keyboard.preferences)
 "${KB[@]}" AutomaticMinimizationEnabled -bool false; "${KB[@]}" HardwareKeyboardLastSeen -bool false
 shot "$PHONE" ph-type      -echo.demo -echo.demoTwo -echo.draft "Push the countertop crew to the 24th and draft a note to the contractor" -theme claudeCode -appearance dark "${FAST[@]}"
 "${KB[@]}" AutomaticMinimizationEnabled -bool true; "${KB[@]}" HardwareKeyboardLastSeen -bool true
+fi
 
+if [[ "${ONLY:-}" != phone ]]; then
 prepare "$PAD"
 shot "$PAD" pad-default-dark -echo.demo -echo.demoLibrary -theme standard -appearance dark "${FAST[@]}" "${CHATS[@]}"
 # Pano left half: the Hermes theme, gold on near-black.
@@ -76,3 +81,4 @@ shot "$PAD" pad-dark         -echo.demo -echo.demoTwo -echo.demoLibrary -theme c
 # iPad keeps the fast lane here: with the gateway selected the sidebar tries the example host and shows an error.
 shot "$PAD" pad-settings     -echo.demo -echo.demoLibrary -echo.screen setup -theme standard -appearance light "${FAST[@]}" "${CHATS[@]}"
 shot "$PAD" pad-split        -echo.demo -echo.demoLibrary -echo.screen settings -echo.expandAppIcons -theme standard -appearance light "${FAST[@]}" "${CHATS[@]}"
+fi
