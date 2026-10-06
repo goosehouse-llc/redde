@@ -7,7 +7,7 @@ import os
 /// speaker.
 ///
 /// On headphones the reply keeps playing after the wrist goes down: the app declares the `audio`
-/// background mode (`WKBackgroundModes` in Info.plist) and plays under the long-form audio
+/// background mode (`UIBackgroundModes` in Info.plist) and plays under the long-form audio
 /// policy, the only one watchOS keeps alive for an app that left the screen. That policy plays
 /// to Bluetooth alone, so it is used only when headphones are connected; the speaker plays under
 /// the default policy, which lasts while the app is on screen. The session is released when the

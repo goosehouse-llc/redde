@@ -25,12 +25,12 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
-	<key>WKApplication</key>
-	<true/>
-	<key>WKBackgroundModes</key>
+	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
 	</array>
+	<key>WKApplication</key>
+	<true/>
 	<key>WKCompanionAppBundleIdentifier</key>
 	<string>com.goosehouse.echo</string>
 	<key>WKRunsIndependentlyOfCompanionApp</key>

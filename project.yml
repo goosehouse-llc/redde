@@ -15,7 +15,7 @@ settings:
     SWIFT_TREAT_WARNINGS_AS_ERRORS: true
     CODE_SIGN_STYLE: Automatic
     MARKETING_VERSION: "1.6"
-    CURRENT_PROJECT_VERSION: "257"
+    CURRENT_PROJECT_VERSION: "258"
     ENABLE_USER_SCRIPT_SANDBOXING: true
 targets:
   Echo:
@@ -161,8 +161,10 @@ targets:
         WKCompanionAppBundleIdentifier: com.goosehouse.echo
         # Setup comes from the phone once; after that the watch asks Hermes on its own.
         WKRunsIndependentlyOfCompanionApp: true
-        # A spoken reply keeps playing after the wrist goes down (Speaker).
-        WKBackgroundModes:
+        # A spoken reply keeps playing after the wrist goes down (Speaker). UIBackgroundModes, as
+        # on iOS: WKBackgroundModes is for workout and extended runtime sessions, and App Store
+        # Connect rejects a bundle that lists `audio` there.
+        UIBackgroundModes:
           - audio
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
