@@ -22,9 +22,13 @@ final class WatchStore {
     private static let connectionKey = "watch.connection"
     private static let sessionKey = "watch.session"
     private static let keyAccount = "watch-api-key"
+    /// Where an earlier build kept the Dashboard's Access headers; cleared at launch.
     private static let headersAccount = "watch-access-headers"
 
     private(set) var connection: WatchConnection?
+    /// The phone has an agent but only by the Dashboard, which the watch can't use (see
+    /// `WatchConnection`): the screen asks for the Hermes API instead of for a setup.
+    private(set) var needsAPI = false
     private(set) var question = ""
     private(set) var reply = ""
     private(set) var status: Status = .idle
@@ -39,17 +43,21 @@ final class WatchStore {
 
     let speaker = Speaker()
     private var asker: WatchAsker?
-    /// The Dashboard's WebSocket client, kept across questions; dropped with the connection.
-    private var serveClient: HermesServeClient?
 
     init() {
         if let data = defaults.data(forKey: Self.connectionKey), var saved = try? JSONDecoder().decode(WatchConnection.self, from: data) {
-            saved.apiKey = Keychain.read(account: Self.keyAccount) ?? ""
-            if let json = Keychain.read(account: Self.headersAccount) {
-                saved.accessHeaders = try? JSONDecoder().decode([String: String].self, from: Data(json.utf8))
+            if saved.kind == .dashboard {
+                // Stored by a build that still tried the Dashboard: gone, until the phone sends
+                // what it has now.
+                defaults.removeObject(forKey: Self.connectionKey)
+                _ = Keychain.delete(account: Self.keyAccount)
+                needsAPI = true
+            } else {
+                saved.apiKey = Keychain.read(account: Self.keyAccount) ?? ""
+                connection = saved
             }
-            connection = saved
         }
+        _ = Keychain.delete(account: Self.headersAccount)
         sessionID = defaults.string(forKey: Self.sessionKey)
         speaker.onFinished = { [weak self] in
             if self?.status == .speaking { self?.status = .idle }
@@ -58,42 +66,25 @@ final class WatchStore {
 
     var agentName: String { connection?.agentName ?? "Redde" }
 
-    /// A new connection from the phone. The secrets (key or password, Access headers) go to the
-    /// Keychain, the rest to defaults; a different server starts a fresh session.
-    func apply(_ new: WatchConnection?) {
+    /// A new connection from the phone, or word that it has none the watch can use. The key goes
+    /// to the Keychain, the rest to defaults; a different server starts a fresh session.
+    func apply(_ offered: WatchConnection?, needsAPI: Bool = false) {
+        // A phone still on an earlier build may offer the Dashboard: the same as having nothing usable.
+        let new = offered?.kind == .dashboard ? nil : offered
+        self.needsAPI = new == nil && (needsAPI || offered?.kind == .dashboard)
         guard new != connection else { return }
         if new?.url != connection?.url || new?.kind != connection?.kind { sessionID = nil; history = [] }
         connection = new
-        serveClient?.disconnect()
-        serveClient = nil
         if let new {
             var stored = new
             stored.apiKey = ""
-            stored.accessHeaders = nil
             defaults.set(try? JSONEncoder().encode(stored), forKey: Self.connectionKey)
             _ = Keychain.write(account: Self.keyAccount, value: new.apiKey)
-            if let headers = new.accessHeaders, let json = try? JSONEncoder().encode(headers) {
-                _ = Keychain.write(account: Self.headersAccount, value: String(decoding: json, as: UTF8.self))
-            } else {
-                _ = Keychain.delete(account: Self.headersAccount)
-            }
         } else {
             defaults.removeObject(forKey: Self.connectionKey)
             _ = Keychain.delete(account: Self.keyAccount)
-            _ = Keychain.delete(account: Self.headersAccount)
         }
         log.info("connection: \(new.map { "\($0.kind.rawValue) \($0.url)" } ?? "none", privacy: .public)")
-    }
-
-    /// The Dashboard client for the current connection, made on first use.
-    func dashboardClient() -> HermesServeClient? {
-        guard let connection, connection.kind == .dashboard else { return nil }
-        if let serveClient { return serveClient }
-        let endpoint = WatchServeEndpoint(connection)
-        let password = connection.apiKey
-        let client = HermesServeClient(settings: endpoint, password: { password })
-        serveClient = client
-        return client
     }
 
     func requestDictation() {
@@ -172,20 +163,5 @@ final class WatchStore {
             Speaker.Kokoro(url: $0, voice: connection?.kokoroVoice ?? "", speed: connection?.voiceSpeed ?? 1)
         }
         speaker.speak(PlainText.spoken(text), language: connection?.replyLanguage ?? "", title: question, kokoro: kokoro)
-    }
-}
-
-/// The Dashboard client's view of a handed-over connection.
-final class WatchServeEndpoint: ServeEndpoint {
-    let serveBaseURL: URL?
-    let serveUsername: String
-    let profileName: String?
-    let accessHeaders: [String: String]
-
-    init(_ connection: WatchConnection) {
-        serveBaseURL = URL(string: connection.url)
-        serveUsername = connection.username ?? ""
-        profileName = connection.profile
-        accessHeaders = connection.accessHeaders ?? [:]
     }
 }

@@ -80,9 +80,11 @@ struct GatewayKeySettings: View {
         } header: {
             Text("Hermes API")
         } footer: {
+            // The watch is handed this connection whatever the phone itself uses: it can't open
+            // the Dashboard's WebSocket (`WatchLink.connection`).
             Text(hasStoredKey
-                ? "A key is stored in the Keychain (this device only). It is never shown again."
-                : "Paste the scoped API_SERVER_KEY. It is stored in the iOS Keychain only.")
+                ? "A key is stored in the Keychain. It is never shown again. Redde on Apple Watch asks through this connection and keeps its own copy of the key."
+                : "Paste the scoped API_SERVER_KEY. It is stored in the Keychain only. Redde on Apple Watch needs this connection: it can't use the Dashboard.")
         }
     }
 }

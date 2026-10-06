@@ -58,20 +58,13 @@ final class WatchAsker {
             request.instructions = Self.watchHint
             transport = ChatCompletionsTransport(baseURL: base, apiKey: connection.apiKey.nilIfEmpty)
         case .dashboard:
-            guard let client = store.dashboardClient() else { throw TransportError.badURL }
-            // prompt.submit takes no instructions: the hint rides on the message.
-            request.userText = text + "\n\n(" + Self.watchHint + ")"
-            request.sessionID = store.sessionID
-            transport = HermesServeTransport(client: client)
+            // Never kept (`WatchStore.apply`): the Dashboard is a WebSocket, which a watch can't open.
+            throw TransportError.badURL
         }
         do {
             try await stream(transport, request)
         } catch let TransportError.http(status, _) where status == 404 && connection.kind == .hermesAPI && store.sessionID != nil {
             // The watch's session was deleted on the gateway: start another and ask again.
-            store.sessionID = nil
-            try await run(text)
-        } catch is HermesServeClient.RPCError where connection.kind == .dashboard && store.sessionID != nil {
-            // Same on the Dashboard: a stored session it can't resume.
             store.sessionID = nil
             try await run(text)
         }

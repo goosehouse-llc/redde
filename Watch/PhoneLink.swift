@@ -31,8 +31,8 @@ final class PhoneLink: NSObject, WCSessionDelegate {
     /// and hop onto it for what they do.
     private nonisolated static func ask(_ session: WCSession, for link: PhoneLink) {
         session.sendMessage([WatchConnection.syncRequest: true], replyHandler: { reply in
-            let connection = WatchConnection.from(context: reply)
-            Task { @MainActor in link.store?.apply(connection) }
+            let connection = WatchConnection.from(context: reply), needsAPI = WatchConnection.needsAPI(context: reply)
+            Task { @MainActor in link.store?.apply(connection, needsAPI: needsAPI) }
         }, errorHandler: { error in
             let message = error.localizedDescription
             Task { @MainActor in link.log.error("sync request failed: \(message, privacy: .public)") }
@@ -41,16 +41,17 @@ final class PhoneLink: NSObject, WCSessionDelegate {
 
     nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: (any Error)?) {
         // Whatever the phone sent last is already here; a missing one is asked for.
-        let connection = WatchConnection.from(context: session.receivedApplicationContext)
+        let context = session.receivedApplicationContext
+        let connection = WatchConnection.from(context: context), needsAPI = WatchConnection.needsAPI(context: context)
         Task { @MainActor in
-            if let connection { self.store?.apply(connection) }
+            if connection != nil || needsAPI { self.store?.apply(connection, needsAPI: needsAPI) }
             if self.store?.connection == nil { self.requestSync() }
         }
     }
 
     nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
-        let connection = WatchConnection.from(context: applicationContext)
-        Task { @MainActor in self.store?.apply(connection) }
+        let connection = WatchConnection.from(context: applicationContext), needsAPI = WatchConnection.needsAPI(context: applicationContext)
+        Task { @MainActor in self.store?.apply(connection, needsAPI: needsAPI) }
     }
 }
 

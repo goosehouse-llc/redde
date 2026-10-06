@@ -146,8 +146,6 @@ targets:
       - path: Echo/Models/ReplyLanguage.swift
       - path: Echo/Services/Transport/HermesTransport.swift
       - path: Echo/Services/Transport/HermesSessionsTransport.swift
-      - path: Echo/Services/Transport/HermesServeClient.swift
-      - path: Echo/Services/Transport/HermesServeTransport.swift
       - path: Echo/Services/Transport/ChatCompletionsTransport.swift
       - path: Echo/Services/Transport/SSEParser.swift
       - path: Echo/Services/Transport/JSONValue.swift

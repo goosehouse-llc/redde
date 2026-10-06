@@ -616,13 +616,22 @@ stops (`VoiceSession.leftForeground`) unless hands-free is on or the car is conn
 ## Apple Watch
 
 A watchOS app (`Watch/`, target `EchoWatch`, embedded in the iPhone app) for one thing: ask a
-question by dictation, read the answer, hear it read aloud. It talks to Hermes itself. The phone
-hands over a `WatchConnection` (`Shared/WatchSync.swift`) as WatchConnectivity application
-context: the Hermes API with the profile path and key when the phone has it, else the fast lane,
-never the Dashboard (a WebSocket login has no watch form). The phone pushes on launch, when it
-comes to the front, when Settings or Setup close and on a server switch (`Services/WatchLink.swift`);
-the watch asks for a copy when it has none (`Watch/PhoneLink.swift`). The key goes into the
-watch's Keychain, the rest into its defaults.
+question by dictation, read the answer, hear it read aloud. It talks to Hermes itself, over plain
+HTTP: the Hermes API or the fast lane. The phone hands over a `WatchConnection`
+(`Shared/WatchSync.swift`) as WatchConnectivity application context. A phone on the fast lane
+hands that over; a phone on either Hermes connection hands over the Hermes API, with the profile
+path and key, which is the same agent; whichever of the two isn't set up, the other stands in.
+
+Never the Dashboard. It runs over a WebSocket, and watchOS keeps "low-level networking",
+WebSockets included, from an ordinary app: only an app streaming audio or on a call gets it
+(Apple's TN3135). The simulator allows it all the same, so the Dashboard worked there and failed
+on a wrist, and for a while the phone did hand it over. A phone with nothing but the Dashboard
+now sends a notice in place of a connection, and the watch asks for the Hermes API to be added
+(Settings › Connection details) instead of saying the phone isn't set up.
+
+The phone pushes on launch, when it comes to the front, when Settings or Setup close and on a
+server switch (`Services/WatchLink.swift`); the watch asks for a copy when it has none
+(`Watch/PhoneLink.swift`). The key goes into the watch's Keychain, the rest into its defaults.
 
 Questions go through the same transport files as the phone — `HermesTransport`,
 `HermesSessionsTransport`, `ChatCompletionsTransport`, `SSEParser`, `JSONValue`, `Message` — listed

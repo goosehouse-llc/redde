@@ -73,7 +73,7 @@ The words in both sit inside the "art safe area" of Apple's templates. Use Previ
 ## What's New in 1.6 (4000)
 Redde comes to Apple Watch, sets itself up from a QR code, and keeps a reply going after the phone locks.
 
-• Apple Watch. Raise your wrist, tap Ask and say it. The answer is shown and read aloud, through the watch or your AirPods, and Ask Redde can go on the Action button. The watch takes its connection from your iPhone and then talks to your server itself, so it needs an address it can reach: your home Wi-Fi or a public address, not one that only works through a VPN on the phone, such as Tailscale.
+• Apple Watch. Raise your wrist, tap Ask and say it. The answer is shown and read aloud, through the watch or your AirPods, and Ask Redde can go on the Action button. The watch takes its connection from your iPhone and asks through the Hermes API or your OpenAI-compatible endpoint. If your phone uses the Hermes Dashboard, save the Hermes API address and key as well, in Settings → Connection details: the watch can't use the Dashboard.
 • Set up by code. Scan a QR code, or open or paste a setup link, and the server's address and login fill themselves in. Redde shows what the code sets and saves nothing until you agree. To add an iPad or a second phone, open Settings → Connection → Set up another device and scan what it shows; passwords stay out of the code until you ask for them with Face ID.
 • A reply keeps going. Lock the phone or switch apps and the reply you asked for carries on to the end.
 • A place to start. A new conversation opens with a greeting and things to tap: what's next on your calendar, the conversation you just left, and what's on at home if your agent has Home Assistant.
@@ -95,7 +95,7 @@ Written ahead of the release, so unlike the rest of this page not all of it has 
 - Dragging a picture or a file onto a chat from another app.
 - The screen staying on in voice mode (the simulator never locks).
 - Rename and a tool step's output against a real Hermes server; the calendar and Home cards with real data.
-- The Apple Watch app as built for the App Store, and its screenshots: App Store Connect asks for watch screenshots once a build carries a watch app.
+- The Apple Watch app on a real watch, asking through the Hermes API (the watch simulator allows connections a watch refuses, which is how the Dashboard route went untested). Its screenshots are in `design/screenshots/watch/`.
 
 ## What's New in 1.5 (4000)
 Spoken prefixes that add text or switch the model, reasoning effort that reaches every model, and AirPods replies that stay in your AirPods.

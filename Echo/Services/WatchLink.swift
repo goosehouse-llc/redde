@@ -19,25 +19,15 @@ final class WatchLink: NSObject, WCSessionDelegate {
         session.activate()
     }
 
-    /// The connection the watch should use: the one the phone talks through, when it is set up,
-    /// else the agent by whichever route is (Dashboard, Hermes API), else the fast lane, else
-    /// nothing (the watch then says to set up the phone first).
-    static func connection(_ settings: Settings = .shared,
-                           dashboardPassword: () -> String? = { Keychain.read(.serveDashboardPassword) }) -> WatchConnection? {
-        let dashboard: WatchConnection? = {
-            guard let base = settings.serveBaseURL, !settings.serveUsername.isEmpty,
-                  let password = dashboardPassword(), !password.isEmpty else { return nil }
-            var c = WatchConnection(kind: .dashboard, url: base.absoluteString, apiKey: password,
-                                    model: settings.gatewayModel, provider: settings.gatewayProvider,
-                                    reasoningEffort: settings.reasoningEffort, replyLanguage: settings.replyLanguage,
-                                    agentName: settings.headerTitle)
-            c.username = settings.serveUsername
-            c.profile = settings.profileName
-            c.accessHeaders = settings.accessHeaders.isEmpty ? nil : settings.accessHeaders
-            return c
-        }()
+    /// The connection the watch should use: plain HTTP only, so the Hermes API or the fast lane,
+    /// never the Dashboard (see `WatchConnection`). A phone on the fast lane hands that over; a
+    /// phone on either Hermes connection hands over the Hermes API, which is the same agent.
+    /// Whichever of the two isn't set up, the other stands in; neither, and there is nothing
+    /// (the watch then says what to do on the phone).
+    static func connection(_ settings: Settings = .shared, gatewayKey: (() -> String?)? = nil) -> WatchConnection? {
+        let key: String? = if let gatewayKey { gatewayKey() } else { settings.gatewayAPIKey }
         let api: WatchConnection? = {
-            guard let base = settings.gatewayBaseURL, let key = settings.gatewayAPIKey, !key.isEmpty else { return nil }
+            guard let base = settings.gatewayBaseURL, let key, !key.isEmpty else { return nil }
             return WatchConnection(kind: .hermesAPI, url: base.absoluteString, apiKey: key,
                                    model: settings.gatewayModel, provider: settings.gatewayProvider,
                                    reasoningEffort: settings.reasoningEffort, replyLanguage: settings.replyLanguage,
@@ -49,12 +39,7 @@ final class WatchLink: NSObject, WCSessionDelegate {
                             reasoningEffort: settings.reasoningEffort, replyLanguage: settings.replyLanguage,
                             agentName: settings.headerTitle)
         }
-        let own: WatchConnection? = switch settings.transport {
-        case .hermesServe: dashboard
-        case .hermesSessions: api
-        case .chatCompletions: fastLane
-        }
-        guard var connection = own ?? api ?? dashboard ?? fastLane else { return nil }
+        guard var connection = settings.transport == .chatCompletions ? fastLane ?? api : api ?? fastLane else { return nil }
         if settings.useKokoro, let kokoro = settings.kokoroBaseURL {
             connection.kokoroURL = kokoro.absoluteString
             connection.kokoroVoice = settings.kokoroVoice
@@ -63,11 +48,22 @@ final class WatchLink: NSObject, WCSessionDelegate {
         return connection
     }
 
-    /// Send the current connection over; an empty context tells the watch there is none.
+    /// The phone has an agent, but by the Dashboard alone: nothing the watch can use. The watch
+    /// is told so, and asks for the Hermes API instead of saying the phone isn't set up.
+    static func needsAPI(_ settings: Settings = .shared, gatewayKey: (() -> String?)? = nil,
+                         dashboardPassword: () -> String? = { Keychain.read(.serveDashboardPassword) }) -> Bool {
+        guard connection(settings, gatewayKey: gatewayKey) == nil else { return false }
+        guard settings.serveBaseURL != nil, !settings.serveUsername.isEmpty, let password = dashboardPassword() else { return false }
+        return !password.isEmpty
+    }
+
+    /// Send the current connection over, or why there is none; an empty context is a phone that
+    /// isn't set up at all.
     func push() {
         guard let session, session.activationState == .activated, session.isPaired, session.isWatchAppInstalled else { return }
         do {
-            try session.updateApplicationContext(Self.connection()?.asContext() ?? [:])
+            let context = Self.connection()?.asContext() ?? (Self.needsAPI() ? [WatchConnection.needsAPIKey: true] : [:])
+            try session.updateApplicationContext(context)
         } catch {
             log.error("watch context not sent: \(error.localizedDescription, privacy: .public)")
         }
@@ -94,8 +90,10 @@ final class WatchLink: NSObject, WCSessionDelegate {
     /// happens to land. The settings live on the main actor; the reply handler is called here.
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any], replyHandler: @escaping ([String: Any]) -> Void) {
         guard message[WatchConnection.syncRequest] != nil else { return replyHandler([:]) }
-        // Encoded on the main actor (Data crosses threads; a [String: Any] can't), unpacked here.
-        let encoded: Data? = DispatchQueue.main.sync { MainActor.assumeIsolated { Self.connection().flatMap { try? JSONEncoder().encode($0) } } }
-        replyHandler(encoded.map { [WatchConnection.contextKey: $0] } ?? [:])
+        // Worked out on the main actor (Data and Bool cross threads; a [String: Any] can't), packed here.
+        let (encoded, needsAPI): (Data?, Bool) = DispatchQueue.main.sync {
+            MainActor.assumeIsolated { (Self.connection().flatMap { try? JSONEncoder().encode($0) }, Self.needsAPI()) }
+        }
+        replyHandler(encoded.map { [WatchConnection.contextKey: $0] } ?? (needsAPI ? [WatchConnection.needsAPIKey: true] : [:]))
     }
 }

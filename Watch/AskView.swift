@@ -62,9 +62,8 @@ struct AskView: View {
 
     private var connectionLabel: String {
         switch store.connection?.kind {
-        case .dashboard: "Hermes Dashboard"
         case .hermesAPI: "Hermes API"
-        case .fastLane, nil: "Fast lane · no tools"
+        case .fastLane, .dashboard, nil: "Fast lane · no tools"
         }
     }
 
@@ -158,7 +157,10 @@ struct AskView: View {
                 Image(systemName: "iphone.and.arrow.forward")
                     .font(.title2)
                     .foregroundStyle(.secondary)
-                Text("Set up Redde on your iPhone first. The watch gets its connection from there.")
+                // The phone is set up, but only for the Dashboard, which a watch can't use.
+                Text(store.needsAPI
+                     ? "The watch asks through the Hermes API. Add its address and key on your iPhone: Settings › Connection details."
+                     : "Set up Redde on your iPhone first. The watch gets its connection from there.")
                     .font(.footnote)
                     .multilineTextAlignment(.center)
                 Button("Try again") { PhoneLink.shared.requestSync() }

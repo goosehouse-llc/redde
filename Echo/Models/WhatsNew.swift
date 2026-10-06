@@ -24,7 +24,7 @@ nonisolated enum WhatsNew {
     static let releases: [Release] = [
         Release(version: "1.6", items: [
             Item(symbol: "applewatch", title: "On your wrist",
-                 detail: "Redde for Apple Watch: raise your wrist, tap Ask and say it. The answer is shown and read aloud. The watch needs a server address it can reach on its own, such as your home Wi-Fi."),
+                 detail: "Redde for Apple Watch: raise your wrist, tap Ask and say it. The answer is shown and read aloud. It asks through the Hermes API or your OpenAI-compatible endpoint: on the Dashboard, save the API address and key too, in Settings → Connection details."),
             Item(symbol: "qrcode.viewfinder", title: "Set up by code",
                  detail: "Scan a setup code and a server fills itself in. Settings → Connection → Set up another device shows the code for your iPad or a second phone."),
             Item(symbol: "lock.iphone", title: "A reply keeps going",
