@@ -571,6 +571,16 @@ the reply as text. The `EchoControls` extension provides Control Center, Lock Sc
 controls (via an App Group launch flag), Home Screen widgets (Last reply, Ask Redde) and the Live
 Activity (`Services/TurnActivity.swift`).
 
+A Live Activity outlives the app, so one for a reply that never finished would sit on the Lock
+Screen and in the Dynamic Island looking busy for hours when the app crashes, is closed or is
+suspended mid-reply: nothing is left to end it. Every update therefore carries a stale date two
+minutes off, and a heartbeat re-sends the state every 45 seconds while the reply runs, so a long
+quiet tool doesn't go stale under a live app. Once updates stop, the system marks the activity
+stale and its views show "Reply interrupted" with no pulse and no clock (the wording lives with
+`EchoTurnAttributes`, where the app's tests can reach it). Two minutes is as soon as the system
+acts; asked for less, it still waited that long. The next launch ends whatever an earlier run
+left (`TurnActivity.clearStrays`).
+
 ### Siri AI (iOS 27, opt-in)
 
 With "Let Siri use Redde" on, Redde adopts the iOS 27 App Schemas in the Messages domain: the agent

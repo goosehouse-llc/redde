@@ -15,6 +15,7 @@ struct EchoApp: App {
         Conversation.current = conversation   // Siri AI's intents send through it
         Notifier.shared.attach(conversation: conversation)   // the delegate must exist before launch finishes
         TipJar.shared.start()   // finish tips that completed while the app wasn't looking
+        TurnActivity.shared.clearStrays()   // a reply's Live Activity left by a run that crashed or was closed
     }
 
     @State private var settings = Settings.shared

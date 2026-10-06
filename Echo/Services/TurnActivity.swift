@@ -4,6 +4,12 @@ import os
 
 /// Drives the Live Activity for the turn in flight. Updates are throttled so a fast token
 /// stream doesn't hammer ActivityKit; the final state lingers so a glance later still shows it.
+///
+/// An activity outlives the app: if the app crashes, is closed or is suspended mid-reply, nothing
+/// is left to end it, and it would sit in the Dynamic Island looking busy for hours. So every
+/// update carries a stale date a little way off and a heartbeat keeps pushing it out while the
+/// reply runs; once the app stops, the system marks the activity stale and it shows as
+/// interrupted. The next launch clears whatever an earlier run left behind.
 @MainActor
 final class TurnActivity {
     static let shared = TurnActivity()
@@ -13,24 +19,34 @@ final class TurnActivity {
     private var flushTask: Task<Void, Never>?
     private var lastFlush = Date.distantPast
     private var preview = ""
+    /// The state last sent, for the heartbeat to send again with a later stale date.
+    private var lastState: EchoTurnAttributes.ContentState?
+    private var heartbeat: Task<Void, Never>?
 
     private var enabled: Bool {
         Settings.shared.showLiveActivity && ActivityAuthorizationInfo().areActivitiesEnabled
     }
 
-    func start(question: String) {
-        end(final: nil)
-        // A crash mid-turn leaves the old banner on the Lock Screen for hours; clear strays first.
-        for stray in Activity<EchoTurnAttributes>.activities {
+    /// Ends activities this object isn't driving: left by a run of the app that crashed or was
+    /// closed mid-reply. Called at launch, when nothing can be in flight, and before each turn.
+    func clearStrays() {
+        for stray in Activity<EchoTurnAttributes>.activities where stray.id != activity?.id {
             nonisolated(unsafe) let stray = stray   // see `flush`
             Task { await stray.end(nil, dismissalPolicy: .immediate) }
         }
+    }
+
+    func start(question: String) {
+        end(final: nil)
+        clearStrays()
         guard enabled else { return }
         preview = ""
         let attributes = EchoTurnAttributes(question: String(question.prefix(120)))
         let state = EchoTurnAttributes.ContentState(phase: .thinking, detail: "", startedAt: .now)
         do {
-            activity = try Activity.request(attributes: attributes, content: .init(state: state, staleDate: nil), pushType: nil)
+            activity = try Activity.request(attributes: attributes, content: content(state), pushType: nil)
+            lastState = state
+            startHeartbeat()
         } catch {
             log.info("live activity unavailable: \(error.localizedDescription)")
         }
@@ -56,6 +72,24 @@ final class TurnActivity {
     // MARK: - Internals
 
     private var startedAt: Date { activity?.content.state.startedAt ?? .now }
+
+    /// A live state, good until a little after the next heartbeat is due.
+    private func content(_ state: EchoTurnAttributes.ContentState) -> ActivityContent<EchoTurnAttributes.ContentState> {
+        .init(state: state, staleDate: .now.addingTimeInterval(EchoTurnAttributes.staleAfter))
+    }
+
+    /// Sends the current state again every so often, so a long quiet stretch (a slow tool, a
+    /// model thinking) doesn't go stale while the app is alive and listening.
+    private func startHeartbeat() {
+        heartbeat?.cancel()
+        heartbeat = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(EchoTurnAttributes.refreshEvery))
+                guard let self, !Task.isCancelled, activity != nil, let lastState else { return }
+                if Date.now.timeIntervalSince(lastFlush) >= EchoTurnAttributes.refreshEvery - 1 { flush(pending ?? lastState) }
+            }
+        }
+    }
 
     private func push(_ phase: EchoTurnAttributes.ContentState.Phase, _ detail: String) {
         guard let activity else { return }
@@ -87,16 +121,21 @@ final class TurnActivity {
         nonisolated(unsafe) let activity = current
         pending = nil
         lastFlush = .now
+        lastState = state
+        let content = content(state)
         let previous = updateChain
         updateChain = Task {
             await previous?.value
-            await activity.update(.init(state: state, staleDate: nil))
+            await activity.update(content)
         }
     }
 
     private func end(final: EchoTurnAttributes.ContentState?) {
         flushTask?.cancel()
         flushTask = nil
+        heartbeat?.cancel()
+        heartbeat = nil
+        lastState = nil
         pending = nil
         guard let current = activity else { return }
         nonisolated(unsafe) let activity = current

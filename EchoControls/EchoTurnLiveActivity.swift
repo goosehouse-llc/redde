@@ -2,7 +2,9 @@ import ActivityKit
 import SwiftUI
 import WidgetKit
 
-/// Lock Screen banner + Dynamic Island for a turn in flight.
+/// Lock Screen banner + Dynamic Island for a turn in flight. When the system marks the activity
+/// stale (the app stopped updating it: a crash, the app closed, a suspension mid-reply), a reply
+/// that was still running is shown as interrupted, with no pulse and no running clock.
 struct EchoTurnLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: EchoTurnAttributes.self) { context in
@@ -10,109 +12,88 @@ struct EchoTurnLiveActivity: Widget {
                 .activityBackgroundTint(Color(red: 0.114, green: 0.400, blue: 0.851).opacity(0.18))
                 .activitySystemActionForegroundColor(.primary)
         } dynamicIsland: { context in
-            DynamicIsland {
+            let state = context.state, stale = context.isStale
+            let running = state.isLive && !stale
+            return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Image(systemName: symbol(context.state.phase))
+                    Image(systemName: state.symbol(stale: stale))
                         .font(.title2)
-                        .foregroundStyle(tint(context.state.phase))
-                        .symbolEffect(.pulse, isActive: context.state.phase != .done && context.state.phase != .failed)
+                        .foregroundStyle(tint(state, stale: stale))
+                        .symbolEffect(.pulse, isActive: running)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text(context.state.startedAt, style: .timer)
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                        .frame(width: 44, alignment: .trailing)
+                    if running {
+                        Text(state.startedAt, style: .timer)
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                            .frame(width: 44, alignment: .trailing)
+                    }
                 }
                 DynamicIslandExpandedRegion(.center) {
-                    Text(title(context.state))
+                    Text(state.title(stale: stale))
                         .font(.subheadline.weight(.semibold))
                         .lineLimit(1)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    Text(context.state.phase == .thinking ? context.attributes.question : context.state.detail)
+                    Text(state.detailLine(stale: stale, question: context.attributes.question))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .lineLimit(3)
                 }
             } compactLeading: {
-                Image(systemName: symbol(context.state.phase))
-                    .foregroundStyle(tint(context.state.phase))
-                    .symbolEffect(.pulse, isActive: context.state.phase != .done && context.state.phase != .failed)
+                Image(systemName: state.symbol(stale: stale))
+                    .foregroundStyle(tint(state, stale: stale))
+                    .symbolEffect(.pulse, isActive: running)
             } compactTrailing: {
-                Text(compact(context.state))
+                Text(state.compact(stale: stale))
                     .font(.caption2)
                     .lineLimit(1)
                     .frame(maxWidth: 60)
             } minimal: {
-                Image(systemName: symbol(context.state.phase)).foregroundStyle(tint(context.state.phase))
+                Image(systemName: state.symbol(stale: stale)).foregroundStyle(tint(state, stale: stale))
             }
             .widgetURL(URL(string: "echo://open"))
         }
     }
 
     private func banner(_ context: ActivityViewContext<EchoTurnAttributes>) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: symbol(context.state.phase))
+        let state = context.state, stale = context.isStale
+        let running = state.isLive && !stale
+        return HStack(alignment: .top, spacing: 12) {
+            Image(systemName: state.symbol(stale: stale))
                 .font(.title2)
-                .foregroundStyle(tint(context.state.phase))
+                .foregroundStyle(tint(state, stale: stale))
                 .frame(width: 32)
-                .symbolEffect(.pulse, isActive: context.state.phase != .done && context.state.phase != .failed)
+                .symbolEffect(.pulse, isActive: running)
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text(title(context.state)).font(.subheadline.weight(.semibold))
+                    Text(state.title(stale: stale)).font(.subheadline.weight(.semibold))
                     Spacer()
-                    if context.state.phase != .done && context.state.phase != .failed {
-                        Text(context.state.startedAt, style: .timer)
+                    if running {
+                        Text(state.startedAt, style: .timer)
                             .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                             .frame(width: 44, alignment: .trailing)
                     }
                 }
                 Text(context.attributes.question)
                     .font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                if !context.state.detail.isEmpty, context.state.phase != .thinking {
-                    Text(context.state.detail).font(.footnote).lineLimit(3)
+                if stale, state.isLive {
+                    Text(state.detailLine(stale: true, question: "")).font(.footnote).lineLimit(2)
+                } else if !state.detail.isEmpty, state.phase != .thinking {
+                    Text(state.detail).font(.footnote).lineLimit(3)
                 }
             }
         }
         .padding(14)
     }
 
-    private func title(_ state: EchoTurnAttributes.ContentState) -> String {
+    private func tint(_ state: EchoTurnAttributes.ContentState, stale: Bool) -> Color {
+        if stale, state.isLive { return .secondary }
         switch state.phase {
-        case .thinking: "Redde is thinking"
-        case .tool: "Using \(state.detail)"
-        case .replying: "Redde is replying"
-        case .done: "Redde replied"
-        case .failed: "Redde couldn't reply"
-        }
-    }
-
-    private func compact(_ state: EchoTurnAttributes.ContentState) -> String {
-        switch state.phase {
-        case .thinking: "thinking"
-        case .tool: state.detail
-        case .replying: "replying"
-        case .done: "done"
-        case .failed: "failed"
-        }
-    }
-
-    private func symbol(_ phase: EchoTurnAttributes.ContentState.Phase) -> String {
-        switch phase {
-        case .thinking: "brain"
-        case .tool: "gearshape.2"
-        case .replying: "waveform"
-        case .done: "checkmark.circle.fill"
-        case .failed: "exclamationmark.triangle.fill"
-        }
-    }
-
-    private func tint(_ phase: EchoTurnAttributes.ContentState.Phase) -> Color {
-        switch phase {
-        case .thinking, .replying: Color(red: 0.180, green: 0.545, blue: 0.961)
-        case .tool: .orange
-        case .done: .green
-        case .failed: .red
+        case .thinking, .replying: return Color(red: 0.180, green: 0.545, blue: 0.961)
+        case .tool: return .orange
+        case .done: return .green
+        case .failed: return .red
         }
     }
 }
