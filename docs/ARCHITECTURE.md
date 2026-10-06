@@ -399,6 +399,10 @@ streaming reply cheap:
   else moves in a live row is either scale, opacity or offset, which the render server animates
   (the shimmer, the mark beside the name), or is drawn rather than animated: the streaming edge
   is redrawn with each flush, which redraws the paragraph anyway, and nothing runs in between.
+  The one exception is the edge settling: when no text has come for 0.7 s (the model has turned
+  to a tool or to thinking) the faint, blurred last word comes up to full strength over a quarter
+  of a second, once, so it isn't left unreadable for the length of the pause. The dot stays, and
+  the edge is back with the next text.
   Measured, a streaming reply costs the same with the edge and the mark as without (about 20% of
   a core in a short thread and 43% in a long one, on the simulator, either way).
 - A mid-stream update costs about the same whether it adds one token or twenty, so the cadence

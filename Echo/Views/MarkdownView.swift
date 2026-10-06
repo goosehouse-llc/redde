@@ -57,11 +57,11 @@ struct MarkdownBlockView: View, Equatable {
         case let .heading(level, text):
             inline(text)
                 .font(headingFont(level))
-                .streamingTail(trailing, dot: theme.accent)
+                .streamingTail(trailing, dot: theme.accent, revision: text.utf8.count)
                 .padding(.top, level <= 2 ? 4 : 2)
         case let .paragraph(text):
             inline(text).font(theme.messageFont)
-                .streamingTail(trailing, dot: theme.accent)
+                .streamingTail(trailing, dot: theme.accent, revision: text.utf8.count)
         case let .list(items):
             VStack(alignment: .leading, spacing: 4) {
                 ForEach(Array(items.enumerated()), id: \.offset) { index, item in
@@ -81,7 +81,7 @@ struct MarkdownBlockView: View, Equatable {
                             .strikethrough(item.checked == true, color: .secondary)
                             .foregroundStyle(item.checked == true ? .secondary : .primary)
                             // Only the item being written has the streaming edge.
-                            .streamingTail(trailing && index == items.count - 1, dot: theme.accent)
+                            .streamingTail(trailing && index == items.count - 1, dot: theme.accent, revision: item.text.utf8.count)
                     }
                     .padding(.leading, CGFloat(item.indent) * 16)
                 }

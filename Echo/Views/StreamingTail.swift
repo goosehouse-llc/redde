@@ -8,13 +8,34 @@ import SwiftUI
 /// simply sits further along each time; nothing runs between chunks. A running animation here
 /// would cost a frame's pass through the whole transcript sixty times a second for as long as
 /// the reply streams (see "Rendering" in docs/ARCHITECTURE.md).
+///
+/// With one exception. When text stops arriving for a moment (the model has gone off to think
+/// or to use a tool), the edge would leave the last word faint and blurred for as long as the
+/// pause lasts, which can be minutes. So after a short quiet the edge comes up to full strength
+/// (`settle`), over a quarter of a second, once; the dot stays, since the reply isn't over, and
+/// the edge is back with the next chunk.
 struct StreamingTail: TextRenderer {
     /// The dot after the last character.
     var dot: Color
+    /// 0 while text is arriving; 1 once it has been quiet and every glyph is at full strength.
+    var settle: Double = 0
+
+    var animatableData: Double {
+        get { settle }
+        set { settle = newValue }
+    }
 
     /// How many of the newest glyphs are still coming up, and how many of those are blurred.
-    private static let length = 18
+    static let length = 18
     private static let blurred = 5
+
+    /// How far a glyph has come up, 0 (just landed) to 1 (as the rest of the text): by how far
+    /// it is from the end, and by how far the whole edge has settled.
+    static func strength(fromEnd remaining: Int, settle: Double) -> Double {
+        guard remaining < length else { return 1 }
+        let arrived = Double(remaining + 1) / Double(length + 1)
+        return arrived + (1 - arrived) * min(max(settle, 0), 1)
+    }
 
     /// Room for the dot past the end of a full line.
     var displayPadding: EdgeInsets { EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 14) }
@@ -25,22 +46,24 @@ struct StreamingTail: TextRenderer {
         var last: CGRect?
         for line in layout {
             let count = line.reduce(0) { $0 + $1.count }
-            // A line the edge hasn't reached is drawn whole, as the system would.
-            if remaining - count >= Self.length {
+            // A line the edge hasn't reached, or any line once the edge has settled, is drawn
+            // whole, as the system would.
+            if remaining - count >= Self.length || settle >= 1 {
                 context.draw(line)
                 remaining -= count
+                if let glyph = line.last?.last { last = glyph.typographicBounds.rect }
                 continue
             }
             for run in line {
                 for glyph in run {
                     remaining -= 1
                     last = glyph.typographicBounds.rect
-                    guard remaining < Self.length else { context.draw(glyph); continue }
-                    let settled = Double(remaining + 1) / Double(Self.length + 1)   // 0 newest … 1 settled
+                    let strength = Self.strength(fromEnd: remaining, settle: settle)
+                    guard strength < 1 else { context.draw(glyph); continue }
                     var soft = context
-                    soft.opacity = 0.12 + 0.88 * settled
-                    soft.translateBy(x: 0, y: (1 - settled) * 3)
-                    if remaining < Self.blurred { soft.addFilter(.blur(radius: (1 - settled) * 2)) }
+                    soft.opacity = 0.12 + 0.88 * strength
+                    soft.translateBy(x: 0, y: (1 - strength) * 3)
+                    if remaining < Self.blurred { soft.addFilter(.blur(radius: (1 - strength) * 2)) }
                     soft.draw(glyph)
                 }
             }
@@ -54,20 +77,34 @@ struct StreamingTail: TextRenderer {
 
 extension View {
     /// The streaming edge on the text of a reply's last block while it arrives; plain text
-    /// otherwise, and under Reduce Motion.
-    func streamingTail(_ active: Bool, dot: Color) -> some View {
-        modifier(StreamingTailModifier(active: active, dot: dot))
+    /// otherwise, and under Reduce Motion. `revision` is anything that changes when the text
+    /// does (its length): the edge settles once that has stood still for a moment.
+    func streamingTail(_ active: Bool, dot: Color, revision: Int) -> some View {
+        modifier(StreamingTailModifier(active: active, dot: dot, revision: revision))
     }
 }
 
 private struct StreamingTailModifier: ViewModifier {
     let active: Bool
     let dot: Color
+    let revision: Int
+    /// The text as it was when it had been quiet long enough to settle. New text is a new
+    /// revision, so the edge is back with it and no state has to be reset.
+    @State private var settledAt: Int?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// How long without new text before the edge settles. Longer than the gap between the
+    /// words of a slow model, so the edge doesn't come and go with each one.
+    static let quiet: Duration = .milliseconds(700)
 
     func body(content: Content) -> some View {
         if active, !reduceMotion {
-            content.textRenderer(StreamingTail(dot: dot))
+            content.textRenderer(StreamingTail(dot: dot, settle: settledAt == revision ? 1 : 0))
+                .task(id: revision) {
+                    try? await Task.sleep(for: Self.quiet)
+                    guard !Task.isCancelled else { return }
+                    withAnimation(.easeOut(duration: 0.25)) { settledAt = revision }
+                }
         } else {
             content
         }
