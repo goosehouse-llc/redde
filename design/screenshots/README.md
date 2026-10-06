@@ -4,7 +4,7 @@
 
 Regenerate: `design/screenshots/capture.sh <raw-shots-dir>` builds the Debug app and captures every raw shot on the iPhone 18 Pro Max and iPad Pro 13-inch simulators with the dev flags (`-echo.demo`, `-echo.demoShort`, `-echo.demoTwo`, `-echo.demoLibrary`, `-echo.voiceView`, `-echo.voiceDemo` (voice mode posed mid-listen), `-echo.expandAppIcons` (Settings' App icon grid open), `-voiceOrb <name>`, `-echo.screen settings|sessions|setup`, `-echo.demoHosts` (example endpoints, never personal ones), `-theme <standard|paper|slate|terminal|amber|githubDark|claudeCode>`, `-transport chatCompletions`, `-setupDone YES`) and a 9:41 status bar; then run `/usr/bin/python3 compose.py <raw-shots-dir> design/screenshots` (the system Python has Pillow).
 
-The set for 1.6 was taken on 2026-10-06 with `PHONE=<iPhone 18 Pro Max, iOS 27>` and `PAD=<iPad Pro 13-inch (M5), iPadOS 26.3>` (UDIDs: two iPads share the name). The iPad is on the older system on purpose: on iPadOS 27 the sidebar's large title is drawn in the bar, where four buttons squeeze "Conversations" to "Conversa…".
+The set for 1.6 was taken on 2026-10-06 with `PHONE=<iPhone 18 Pro Max, iOS 27>` and `PAD=<iPad Pro 13-inch (M5), iPadOS 26.3>` (UDIDs: two iPads share the name). The iPad is on the older system because, in the build these show, iPadOS 27 drew the sidebar's title in the bar, where four buttons squeezed "Conversations" to "Conversa…". The sidebar is titled "Chats" there since, so the next set can be taken on iPadOS 27.
 
 ## Two-slot panorama
 

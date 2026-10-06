@@ -69,6 +69,16 @@ struct ConversationsList: View {
     /// shows: the chat, the cron jobs or the Kanban board (ContentView). Here it's always the chats.
     var wideDetail = false
 
+    /// The bar's title. "Conversations" over the chats; Cron and Kanban name themselves.
+    /// On iPad from iPadOS 27 the sidebar's title is no longer drawn large under the bar but in
+    /// it, beside four buttons, where "Conversations" was cut to "Conversa…". There it is
+    /// "Chats": what the sidebar lists, whichever section the wide pane shows. And nothing while
+    /// selecting, when Cancel and Deselect all need the room.
+    private var listTitle: String {
+        if #available(iOS 27.0, *), wideDetail { return selecting ? "" : "Chats" }
+        return section == .sessions || wideDetail ? "Conversations" : section.title
+    }
+
     /// A conversation opened (or a new one started): on iPad, the chat takes the wide pane again.
     private func opened() {
         if wideDetail { section = .sessions }
@@ -89,7 +99,7 @@ struct ConversationsList: View {
         // From inside the navigation stack: hiding the whole panel doesn't reach UIKit's list,
         // and VoiceOver could swipe into rows parked off screen.
         .accessibilityHidden(panelParked)
-        .navigationTitle(section == .sessions || wideDetail ? "Conversations" : section.title)
+        .navigationTitle(listTitle)
         .toolbarVisibility(panelParked ? .hidden : .automatic, for: .navigationBar)
         .navigationBarTitleDisplayMode(section == .sessions || wideDetail ? .large : .inline)
         #if DEBUG

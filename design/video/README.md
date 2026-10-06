@@ -36,4 +36,4 @@ first launch shows a key prompt), `ipad-c2-voice`, `--test ipad-c3-rich testRich
 kanban`; the sidebar shows it), `--test ipad-c5-yours testMakeItYours`, `--test ipad-c6-start
 testAPlaceToStart`, `--test ipad-c7-code testSetUpByCode`; then `/usr/bin/python3 make_preview.py
 ipad`. The 1.6 cut was recorded on iPadOS 26.3, as the screenshots were (see
-`../screenshots/README.md`: iPadOS 27 squeezes the sidebar's title).
+`../screenshots/README.md`: in that build iPadOS 27 squeezed the sidebar's title).
