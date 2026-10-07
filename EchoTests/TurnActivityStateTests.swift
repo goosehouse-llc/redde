@@ -38,6 +38,47 @@ struct TurnActivityStateTests {
         #expect(state(.failed).symbol(stale: true) == "exclamationmark.triangle.fill")
     }
 
+    // MARK: A command waiting for a yes or no
+
+    private func waiting(_ phase: EchoTurnAttributes.ContentState.Phase = .tool) -> EchoTurnAttributes.ContentState {
+        var state = state(phase, "terminal")
+        state.approval = .init(id: "req1", command: "rm -rf build", approve: "once", deny: "deny")
+        return state
+    }
+
+    @Test func aCommandWaitingForAnAnswerTakesOverTheActivity() {
+        let state = waiting()
+        #expect(state.pendingApproval(stale: false)?.id == "req1")
+        #expect(state.title(stale: false) == "Needs your approval")
+        #expect(state.compact(stale: false) == "approve?")
+        #expect(state.symbol(stale: false) == "hand.raised.fill")
+        #expect(state.detailLine(stale: false, question: "Clean up?") == "rm -rf build")
+    }
+
+    /// The buttons run in the app. Once it has stopped updating the activity there is nobody to
+    /// take the answer, so a stale activity shows the interruption and no buttons.
+    @Test func aStaleActivityOffersNoButtons() {
+        let state = waiting()
+        #expect(state.pendingApproval(stale: true) == nil)
+        #expect(state.title(stale: true) == "Reply interrupted")
+        #expect(waiting(.done).pendingApproval(stale: false) == nil, "a finished reply has nothing left to approve")
+    }
+
+    /// An activity started by an earlier build has no approval in its state.
+    @Test func aStateWithoutAnApprovalStillDecodes() throws {
+        let old = #"{"phase":"tool","detail":"terminal","startedAt":0}"#
+        let state = try JSONDecoder().decode(EchoTurnAttributes.ContentState.self, from: Data(old.utf8))
+        #expect(state.approval == nil)
+        #expect(state.title(stale: false) == "Using terminal")
+    }
+
+    @Test func buttonsNeedBothAYesAndANo() {
+        #expect(ApprovalRequest(id: "a", command: "x", description: nil, choices: ["once", "session", "always", "deny"]).yesNo?.approve == "once")
+        #expect(ApprovalRequest(id: "a", command: "x", description: nil, choices: ["session", "deny"]).yesNo?.approve == "session")
+        #expect(ApprovalRequest(id: "a", command: "x", description: nil, choices: ["once"]).yesNo == nil)
+        #expect(ApprovalRequest(id: "a", command: "x", description: nil, choices: ["deny"]).yesNo == nil)
+    }
+
     /// The app refreshes a live activity more than twice within the time it takes to go stale,
     /// so one missed refresh doesn't make a running reply look interrupted.
     @Test func theHeartbeatOutpacesTheStaleDate() {

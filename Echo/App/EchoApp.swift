@@ -14,8 +14,13 @@ struct EchoApp: App {
         VoiceSession.current = voice
         Conversation.current = conversation   // Siri AI's intents send through it
         Notifier.shared.attach(conversation: conversation)   // the delegate must exist before launch finishes
+        // Approve and Deny on the Live Activity run here, in the app, and answer the same way.
+        ApprovalAnswer.deliver = { Notifier.shared.answerApproval(requestID: $0, choice: $1) }
         TipJar.shared.start()   // finish tips that completed while the app wasn't looking
         TurnActivity.shared.clearStrays()   // a reply's Live Activity left by a run that crashed or was closed
+        // Before any scene: the watch can wake the app in the background with a question to
+        // run for it, and no window ever appears then to do this from.
+        WatchLink.shared.activate()
     }
 
     @State private var settings = Settings.shared
@@ -44,7 +49,6 @@ struct EchoApp: App {
             .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
             .onAppear {
                 lock.appDidLaunch()
-                WatchLink.shared.activate()
                 Settings.shared.applyLateLocalDefaults()
                 // Daemon round trips (notification categories, Siri phrases) wait for the first frame.
                 Notifier.shared.registerCategories()

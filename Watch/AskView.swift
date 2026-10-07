@@ -22,7 +22,9 @@ struct AskView: View {
                 if store.connection != nil {
                     // The crown sets the volume, not the scroll: the control keeps crown focus.
                     ToolbarItem(placement: .topBarTrailing) { VolumeControl().frame(width: 36, height: 36) }
-                    if !store.question.isEmpty {
+                    // Not while the agent is waiting on the wrist: the bar would sit on the
+                    // answer's buttons, and a new question would walk away from this one.
+                    if !store.question.isEmpty, !store.isWaitingOnWrist {
                         ToolbarItem(placement: .bottomBar) { askButton }
                     }
                 }
@@ -63,6 +65,7 @@ struct AskView: View {
     private var connectionLabel: String {
         switch store.connection?.kind {
         case .hermesAPI: "Hermes API"
+        case .phone: "Through your iPhone"
         case .fastLane, .dashboard, nil: "Fast lane · no tools"
         }
     }
@@ -127,6 +130,32 @@ struct AskView: View {
                 .accessibilityLabel("Stop")
             }
             .font(.footnote)
+        case let .approval(approval):
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Run this?", systemImage: "hand.raised.fill")
+                    .foregroundStyle(.orange)
+                Text(approval.command)
+                    .font(.caption2.monospaced())
+                    .lineLimit(5)
+                HStack {
+                    Button("Deny", role: .destructive) { store.answer(approval, approve: false) }
+                    Button("Approve") { store.answer(approval, approve: true) }
+                        .tint(.green)
+                }
+                .buttonStyle(.bordered)
+            }
+            .font(.footnote)
+        case let .question(question):
+            VStack(alignment: .leading, spacing: 8) {
+                Label(question.text, systemImage: "questionmark.bubble.fill")
+                    .foregroundStyle(.orange)
+                ForEach(question.choices, id: \.self) { choice in
+                    Button(choice) { store.answer(question, with: choice) }
+                }
+                Button("Answer", systemImage: "mic.fill") { dictateAnswer(to: question) }
+            }
+            .buttonStyle(.bordered)
+            .font(.footnote)
         case let .waitingOnPhone(what):
             Label(what, systemImage: "iphone")
                 .font(.footnote)
@@ -157,10 +186,7 @@ struct AskView: View {
                 Image(systemName: "iphone.and.arrow.forward")
                     .font(.title2)
                     .foregroundStyle(.secondary)
-                // The phone is set up, but only for the Dashboard, which a watch can't use.
-                Text(store.needsAPI
-                     ? "The watch asks through the Hermes API. Add its address and key on your iPhone: Settings › Connection details."
-                     : "Set up Redde on your iPhone first. The watch gets its connection from there.")
+                Text("Set up Redde on your iPhone first. The watch gets its connection from there.")
                     .font(.footnote)
                     .multilineTextAlignment(.center)
                 Button("Try again") { PhoneLink.shared.requestSync() }
@@ -187,6 +213,14 @@ struct AskView: View {
         let store = store
         WKApplication.shared().rootInterfaceController?.presentTextInputController(withSuggestions: nil, allowedInputMode: .plain) { results in
             if let text = results?.first as? String { store.ask(text) }
+        }
+    }
+
+    /// The same, for the answer to something the agent asked.
+    private func dictateAnswer(to question: WatchRelay.Question) {
+        let store = store
+        WKApplication.shared().rootInterfaceController?.presentTextInputController(withSuggestions: nil, allowedInputMode: .plain) { results in
+            if let text = results?.first as? String { store.answer(question, with: text) }
         }
     }
 }

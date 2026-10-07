@@ -222,15 +222,15 @@ struct WatchSyncTests {
         settings.fastLaneURL = "http://llama.home.example:11500/v1"
         settings.fastLaneModel = "qwen3-4b"
         settings.displayName = "Sol"
-        let connection = WatchLink.connection(settings, gatewayKey: { nil })
+        let connection = WatchLink.connection(settings, gatewayKey: { nil }, dashboardPassword: { nil })
         #expect(connection?.kind == .fastLane)
         #expect(connection?.url == "http://llama.home.example:11500")
         #expect(connection?.model == "qwen3-4b")
         #expect(connection?.agentName == "Sol")
     }
 
-    /// The Dashboard is a WebSocket, which a watch can't open: the same agent goes over by the
-    /// Hermes API instead, profile and all.
+    /// The Dashboard is a WebSocket, which a watch can't open. With the Hermes API set up too,
+    /// the same agent goes over by that, profile and all: the watch can then ask on its own.
     @Test func thePhoneOnTheDashboardHandsOverTheHermesAPI() {
         let settings = phone(.hermesServe)
         settings.serveURL = "https://hermes.example:9119/"
@@ -238,50 +238,51 @@ struct WatchSyncTests {
         settings.gatewayURL = "https://hermes.example:8642/"
         settings.hermesProfile = "work"
         settings.fastLaneURL = "http://llama.home.example:11500/v1"
-        let connection = WatchLink.connection(settings, gatewayKey: { "k" })
+        let connection = WatchLink.connection(settings, gatewayKey: { "k" }, dashboardPassword: { "pw" })
         #expect(connection?.kind == .hermesAPI)
         #expect(connection?.url == "https://hermes.example:8642/p/work")
         #expect(connection?.apiKey == "k")
-        #expect(!WatchLink.needsAPI(settings, gatewayKey: { "k" }, dashboardPassword: { "pw" }))
     }
 
-    @Test func withoutAnAPIKeyTheFastLaneStandsInAndTheDashboardNeverDoes() {
+    /// With the Dashboard alone, the phone asks for the watch. Nothing of the Dashboard crosses:
+    /// no address, no password.
+    @Test func aPhoneWithOnlyTheDashboardAsksForTheWatch() {
         let settings = phone(.hermesServe)
         settings.serveURL = "https://hermes.example:9119/"
         settings.serveUsername = "sam"
         settings.gatewayURL = "https://hermes.example:8642/"
         settings.fastLaneURL = "http://llama.home.example:11500/v1"
-        #expect(WatchLink.connection(settings, gatewayKey: { nil })?.kind == .fastLane)
-        #expect(!WatchLink.needsAPI(settings, gatewayKey: { nil }, dashboardPassword: { "pw" }))
-        // The Dashboard alone: nothing to hand over, and the watch is told what is missing.
-        settings.fastLaneURL = ""
-        #expect(WatchLink.connection(settings, gatewayKey: { nil }) == nil)
-        #expect(WatchLink.needsAPI(settings, gatewayKey: { nil }, dashboardPassword: { "pw" }))
-        // No Dashboard login either: the phone simply isn't set up.
-        #expect(!WatchLink.needsAPI(settings, gatewayKey: { nil }, dashboardPassword: { nil }))
+        settings.displayName = "Sol"
+        let connection = WatchLink.connection(settings, gatewayKey: { nil }, dashboardPassword: { "pw" })
+        #expect(connection?.kind == .phone, "the agent through the phone, before a bare model")
+        #expect(connection?.url == "")
+        #expect(connection?.apiKey == "")
+        #expect(connection?.agentName == "Sol")
+        // No Dashboard password saved: the phone can't ask either, and the fast lane stands in.
+        #expect(WatchLink.connection(settings, gatewayKey: { nil }, dashboardPassword: { nil })?.kind == .fastLane)
     }
 
     @Test func eachPhoneConnectionHandsOverItsOwnWhenTheWatchCanUseIt() {
         let settings = phone(.hermesSessions)
         settings.gatewayURL = "https://hermes.example:8642"
         settings.fastLaneURL = "http://llama.home.example:11500/v1"
-        #expect(WatchLink.connection(settings, gatewayKey: { "k" })?.kind == .hermesAPI)
+        #expect(WatchLink.connection(settings, gatewayKey: { "k" }, dashboardPassword: { nil })?.kind == .hermesAPI)
         settings.transport = .chatCompletions
-        #expect(WatchLink.connection(settings, gatewayKey: { "k" })?.kind == .fastLane)
+        #expect(WatchLink.connection(settings, gatewayKey: { "k" }, dashboardPassword: { nil })?.kind == .fastLane)
     }
 
-    @Test func theNoticeCrossesInPlaceOfAConnection() {
-        #expect(WatchConnection.needsAPI(context: [WatchConnection.needsAPIKey: true]))
-        #expect(!WatchConnection.needsAPI(context: [:]))
-        // A copy from an earlier build, with fields this one no longer has, still reads.
+    /// A copy from an earlier build, with a kind and fields this one no longer uses, still reads
+    /// (and is then dropped by the watch); the new kind makes the trip.
+    @Test func olderAndNewerCopiesBothRead() {
         let old = #"{"kind":"dashboard","url":"http://h:9119","apiKey":"pw","model":"","provider":"","reasoningEffort":"","replyLanguage":"","agentName":"Redde","username":"sam","accessHeaders":{"a":"b"}}"#
         #expect(WatchConnection.from(context: [WatchConnection.contextKey: Data(old.utf8)])?.kind == .dashboard)
+        let viaPhone = WatchConnection(kind: .phone, url: "", apiKey: "", model: "", provider: "", reasoningEffort: "", replyLanguage: "", agentName: "Sol")
+        #expect(WatchConnection.from(context: viaPhone.asContext()) == viaPhone)
     }
 
     @Test func nothingConfiguredMeansNoConnection() {
         let settings = phone(.chatCompletions)
         settings.fastLaneURL = ""
-        #expect(WatchLink.connection(settings, gatewayKey: { nil }) == nil)
-        #expect(!WatchLink.needsAPI(settings, gatewayKey: { nil }, dashboardPassword: { nil }))
+        #expect(WatchLink.connection(settings, gatewayKey: { nil }, dashboardPassword: { nil }) == nil)
     }
 }

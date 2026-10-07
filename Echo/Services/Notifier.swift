@@ -76,6 +76,11 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     nonisolated private static let clarifyTextCategory = "redde.clarify.text"
     nonisolated private static let clarifyChoicePrefix = "redde.clarify.choice."
     nonisolated private static let replyAction = "redde.reply"
+    /// A finished reply's banner: it can be answered where it is.
+    nonisolated static let repliedCategory = "redde.replied"
+    nonisolated private static let followUpAction = "redde.followup"
+    /// userInfo key on a reply banner: the conversation it came from.
+    nonisolated static let conversationKey = "conversation"
 
     /// Take the delegate and register categories so Approve/Deny work from the banner.
     func install(conversation: Conversation) {
@@ -97,7 +102,13 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let category = UNNotificationCategory(identifier: Self.approvalCategory, actions: [approve, deny], intentIdentifiers: [])
         let reply = UNTextInputNotificationAction(identifier: Self.replyAction, title: "Reply", options: [], textInputButtonTitle: "Send", textInputPlaceholder: "Your answer")
         let clarifyText = UNNotificationCategory(identifier: Self.clarifyTextCategory, actions: [reply], intentIdentifiers: [])
-        fixedCategories = [category, clarifyText]
+        // A finished reply takes the next message from its banner. With the app's own lock on,
+        // only once the device is unlocked: the lock shouldn't have a letterbox.
+        let followUp = UNTextInputNotificationAction(identifier: Self.followUpAction, title: "Reply",
+                                                     options: settings.requireBiometrics ? [.authenticationRequired] : [],
+                                                     textInputButtonTitle: "Send", textInputPlaceholder: "Message")
+        let replied = UNNotificationCategory(identifier: Self.repliedCategory, actions: [followUp], intentIdentifiers: [])
+        fixedCategories = [category, clarifyText, replied]
         center.setNotificationCategories(fixedCategories)
     }
 
@@ -148,17 +159,22 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let questionID = info["questionID"] as? String
         let approve = info["approve"] as? String
         let deny = info["deny"] as? String
+        let conversationID = info[Self.conversationKey] as? String
         let userText = (response as? UNTextInputNotificationResponse)?.userText
         await MainActor.run {
             self.route(action: action, requestID: requestID, questionID: questionID,
-                       approve: approve, deny: deny, userText: userText)
+                       approve: approve, deny: deny, userText: userText, conversationID: conversationID)
         }
     }
 
     /// Testable core of the banner-action callback: maps the action and the notification's
     /// userInfo fields onto the pending interrupt. A plain tap (no requestID) just opens the app.
     func route(action: String, requestID: String?, questionID: String?,
-               approve: String?, deny: String?, userText: String?) {
+               approve: String?, deny: String?, userText: String?, conversationID: String? = nil) {
+        if action == Self.followUpAction {
+            if let userText { followUp(userText, conversationID: conversationID) }
+            return
+        }
         let choice = action == Self.approveAction ? approve : action == Self.denyAction ? deny : nil
         let answer: String? = if let userText {
             userText
@@ -184,7 +200,25 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         conversation.respond(clarify: [questionID: answer])
     }
 
-    private func answerApproval(requestID: String, choice: String) {
+    /// A message typed on a finished reply's banner: the next one in that conversation. The
+    /// banner is cleared whenever the app comes forward, so the conversation it names is nearly
+    /// always the one still open; if another has been opened since (Siri can), the banner's is
+    /// brought back first, unless that would cut off a reply in progress.
+    private func followUp(_ text: String, conversationID: String?) {
+        guard let conversation else { return }
+        if let id = conversationID.flatMap(UUID.init(uuidString:)), id != conversation.id {
+            guard !conversation.isStreaming, let record = conversation.storeForContext.record(id: id) else {
+                log.notice("reply typed on a banner whose conversation can't be reopened; not sent")
+                return
+            }
+            conversation.load(record)
+        }
+        conversation.send(text)
+    }
+
+    /// Answers the approval that is waiting, if it is still that one: from the banner's buttons
+    /// and from the Live Activity's (`ApprovalAnswer`).
+    func answerApproval(requestID: String, choice: String) {
         guard let conversation,
               let pending = conversation.pendingInterrupt,
               case let .approval(request) = pending.interrupt, request.id == requestID else {

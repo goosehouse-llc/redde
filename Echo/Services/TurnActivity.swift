@@ -22,6 +22,8 @@ final class TurnActivity {
     /// The state last sent, for the heartbeat to send again with a later stale date.
     private var lastState: EchoTurnAttributes.ContentState?
     private var heartbeat: Task<Void, Never>?
+    /// The command waiting for an answer, carried on every update until it is settled.
+    private var approval: EchoTurnAttributes.ContentState.Approval?
 
     private var enabled: Bool {
         Settings.shared.showLiveActivity && ActivityAuthorizationInfo().areActivitiesEnabled
@@ -53,6 +55,29 @@ final class TurnActivity {
     }
 
     func tool(_ name: String) { push(.tool, name) }
+
+    /// A command is waiting for a yes or no: the activity shows it with Approve and Deny
+    /// (`ApproveRequestIntent`, `DenyRequestIntent`). Only when the request offers both.
+    func needsApproval(_ request: ApprovalRequest) {
+        guard activity != nil, let choices = request.yesNo else { return }
+        approval = .init(id: request.id, command: String(request.command.prefix(160)),
+                         approve: choices.approve, deny: choices.deny)
+        refresh()
+    }
+
+    /// Answered, expired or cancelled: back to what the turn is doing.
+    func approvalSettled() {
+        guard approval != nil else { return }
+        approval = nil
+        refresh()
+    }
+
+    /// The latest state again, at once, with the approval as it now stands.
+    private func refresh() {
+        guard var state = pending ?? lastState else { return }
+        state.approval = approval
+        flush(state)
+    }
 
     func replyDelta(_ delta: String) {
         // The banner shows 160 characters; past that the preview is fixed, so stop growing it.
@@ -93,7 +118,8 @@ final class TurnActivity {
 
     private func push(_ phase: EchoTurnAttributes.ContentState.Phase, _ detail: String) {
         guard let activity else { return }
-        let state = EchoTurnAttributes.ContentState(phase: phase, detail: detail, startedAt: activity.content.state.startedAt)
+        var state = EchoTurnAttributes.ContentState(phase: phase, detail: detail, startedAt: activity.content.state.startedAt)
+        state.approval = approval
         if Date.now.timeIntervalSince(lastFlush) > 1 {
             flush(state)
         } else {
@@ -137,6 +163,7 @@ final class TurnActivity {
         heartbeat = nil
         lastState = nil
         pending = nil
+        approval = nil
         guard let current = activity else { return }
         nonisolated(unsafe) let activity = current
         self.activity = nil

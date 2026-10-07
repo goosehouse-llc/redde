@@ -29,6 +29,8 @@ import Foundation
 /// - `-echo.whatsNew`: show this version's "What's New" sheet (any other `-echo.` flag hides it).
 /// - `-echo.switchProfile <name>`: switch profile five seconds after launch.
 /// - `-echo.dropHint`: show the outline a drag over the chat brings up, without a drag.
+/// - `-echo.demoApproval`: a Live Activity with a command waiting for a yes or no, to look at
+///   its buttons on the Lock Screen; the activity then shows which one was pressed.
 /// - `-echo.slowMotion <factor>`: stretch a conversation opening out of its row or card
 ///   (`OpeningCover`) by that much, to look at it a frame at a time.
 /// - `-echo.setupCode <setup link, either form>`: open that setup link at launch, as if it had been
@@ -78,6 +80,15 @@ enum DevHooks {
         if demoProjects { settings.transport = .hermesServe }
         if has("-echo.demoLong") { conversation.seedLongDemo() }
         if has("-echo.demoHeavy") { conversation.seedHeavyDemo(turns: value("-echo.demoHeavy").flatMap(Int.init) ?? 32) }
+        if has("-echo.demoApproval") {
+            TurnActivity.shared.start(question: "Clear out the old build folders")
+            TurnActivity.shared.tool("terminal")
+            TurnActivity.shared.needsApproval(ApprovalRequest(id: "demo", command: "rm -rf ~/builds/2025-*", description: nil,
+                                                              choices: ["once", "session", "always", "deny"]))
+            ApprovalAnswer.deliver = { _, choice in
+                TurnActivity.shared.finish(reply: choice == "deny" ? "Denied. Nothing was removed." : "Approved (\(choice)).")
+            }
+        }
         if has("-echo.demoStream") { conversation.streamDemo(askingAfter: value("-echo.demoStream").flatMap(Double.init)) }
         if has("-echo.demoHosts") {
             settings.gatewayURL = "https://redde.home.example:8642"

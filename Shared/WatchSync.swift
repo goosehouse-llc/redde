@@ -8,11 +8,15 @@ import Foundation
 /// The watch speaks plain HTTP: the Hermes API or the fast lane. The Dashboard runs over a
 /// WebSocket, and watchOS keeps that from an ordinary app (it is "low-level networking", allowed
 /// only while streaming audio or on a call; the simulator allows it, a watch doesn't). So the
-/// phone never offers the Dashboard. A phone on it hands over the same agent by the Hermes API,
-/// and one with nothing but the Dashboard says so (`needsAPIKey`), for the watch to say what to add.
+/// phone never offers the Dashboard itself. A phone on it hands over the same agent by the
+/// Hermes API, and one with nothing but the Dashboard offers to ask for the watch (`.phone`,
+/// see `WatchRelay`).
 nonisolated struct WatchConnection: Codable, Equatable, Sendable {
     enum Kind: String, Codable, Sendable {
         case hermesAPI, fastLane
+        /// The watch asks through the iPhone, which reaches its agent by the Dashboard. No
+        /// address or key crosses: `url` and `apiKey` are empty.
+        case phone
         /// No longer offered. Still read, so the copy an earlier build stored on the watch is
         /// recognised and dropped instead of being tried.
         case dashboard
@@ -37,11 +41,15 @@ nonisolated struct WatchConnection: Codable, Equatable, Sendable {
 
     /// The application-context key the connection travels under.
     static let contextKey = "connection"
-    /// Sent in place of a connection: the phone reaches its agent by the Dashboard alone, which
-    /// the watch can't use.
-    static let needsAPIKey = "needsAPI"
     /// A message from the watch: send the connection now, in the reply.
     static let syncRequest = "sync"
+
+    /// Replies are read aloud on a watch, so the agent is told to keep them short and plain.
+    static let spokenHint = """
+        The user is on an Apple Watch and will hear your reply read aloud. Answer in a few plain \
+        sentences, no Markdown, lists, tables or code; if a longer answer is needed, give the \
+        gist and say the rest is on their phone.
+        """
 
     /// Property-list form for WatchConnectivity (JSON inside a Data value).
     func asContext() -> [String: Any] {
@@ -52,9 +60,5 @@ nonisolated struct WatchConnection: Codable, Equatable, Sendable {
     static func from(context: [String: Any]) -> WatchConnection? {
         guard let data = context[contextKey] as? Data else { return nil }
         return try? JSONDecoder().decode(WatchConnection.self, from: data)
-    }
-
-    static func needsAPI(context: [String: Any]) -> Bool {
-        context[needsAPIKey] as? Bool == true
     }
 }

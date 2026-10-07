@@ -12,7 +12,11 @@ final class WatchStore {
 
     enum Status: Equatable {
         case idle, thinking, speaking
-        /// The agent is waiting on the phone (an approval, a question).
+        /// A command is waiting for a yes or no, which the wrist can give.
+        case approval(WatchRelay.Approval)
+        /// The agent asked something the wrist can answer.
+        case question(WatchRelay.Question)
+        /// The agent is waiting for something only the phone can give.
         case waitingOnPhone(String)
         case failed(String)
     }
@@ -26,9 +30,6 @@ final class WatchStore {
     private static let headersAccount = "watch-access-headers"
 
     private(set) var connection: WatchConnection?
-    /// The phone has an agent but only by the Dashboard, which the watch can't use (see
-    /// `WatchConnection`): the screen asks for the Hermes API instead of for a setup.
-    private(set) var needsAPI = false
     private(set) var question = ""
     private(set) var reply = ""
     private(set) var status: Status = .idle
@@ -51,7 +52,6 @@ final class WatchStore {
                 // what it has now.
                 defaults.removeObject(forKey: Self.connectionKey)
                 _ = Keychain.delete(account: Self.keyAccount)
-                needsAPI = true
             } else {
                 saved.apiKey = Keychain.read(account: Self.keyAccount) ?? ""
                 connection = saved
@@ -66,12 +66,19 @@ final class WatchStore {
 
     var agentName: String { connection?.agentName ?? "Redde" }
 
-    /// A new connection from the phone, or word that it has none the watch can use. The key goes
-    /// to the Keychain, the rest to defaults; a different server starts a fresh session.
-    func apply(_ offered: WatchConnection?, needsAPI: Bool = false) {
+    /// The agent has stopped for an answer the watch can give.
+    var isWaitingOnWrist: Bool {
+        switch status {
+        case .approval, .question: true
+        default: false
+        }
+    }
+
+    /// A new connection from the phone. The key goes to the Keychain, the rest to defaults; a
+    /// different server starts a fresh session.
+    func apply(_ offered: WatchConnection?) {
         // A phone still on an earlier build may offer the Dashboard: the same as having nothing usable.
         let new = offered?.kind == .dashboard ? nil : offered
-        self.needsAPI = new == nil && (needsAPI || offered?.kind == .dashboard)
         guard new != connection else { return }
         if new?.url != connection?.url || new?.kind != connection?.kind { sessionID = nil; history = [] }
         connection = new
@@ -121,8 +128,38 @@ final class WatchStore {
     // Called by WatchAsker.
 
     func append(_ delta: String) { reply += delta }
-    func replace(_ text: String) { reply = text }
+    func replace(_ text: String) { if reply != text { reply = text } }
     func waiting(_ what: String) { status = .waitingOnPhone(what) }
+    func working() { if status != .thinking { status = .thinking } }
+
+    func needsApproval(_ approval: WatchRelay.Approval) {
+        guard status != .approval(approval) else { return }
+        status = .approval(approval)
+        WKInterfaceDevice.current().play(.notification)
+    }
+
+    func asked(_ question: WatchRelay.Question) {
+        guard status != .question(question) else { return }
+        status = .question(question)
+        WKInterfaceDevice.current().play(.notification)
+    }
+
+    // The wrist's answers.
+
+    func answer(_ approval: WatchRelay.Approval, approve: Bool) {
+        status = .thinking
+        asker?.answer(approval, choice: approve ? approval.approve : approval.deny)
+    }
+
+    func answer(_ question: WatchRelay.Question, with text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        status = .thinking
+        asker?.answer(question, text: trimmed)
+    }
+
+    /// The phone's own delivery of a relayed turn it finished (`PhoneLink`).
+    func relayDelivered(_ snapshot: WatchRelay.Snapshot) { asker?.relayDelivered(snapshot) }
 
     func finished(error: String?) {
         if let error {
@@ -151,6 +188,8 @@ final class WatchStore {
         case "thinking": reply = ""; status = .thinking
         case "speaking": status = .speaking
         case "waiting": reply = ""; status = .waitingOnPhone("Waiting on your iPhone")
+        case "approval": reply = ""; status = .approval(.init(id: "p", command: "rm -rf ~/builds/2025-*", approve: "once", deny: "deny"))
+        case "question": reply = ""; status = .question(.init(id: "q", text: "Which calendar should I add it to?", choices: ["Home", "Work"]))
         case "failed": reply = ""; status = .failed("Could not reach the server")
         default: status = .idle
         }

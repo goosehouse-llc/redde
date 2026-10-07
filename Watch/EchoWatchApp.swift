@@ -19,7 +19,7 @@ struct EchoWatchApp: App {
                 // Simulator hooks. `-echo.connection <hermesAPI|fastLane> <url> <key>` stands in
                 // for the phone (paired simulators don't hand the connection over); `-echo.ask
                 // "text"` asks at launch, since the simulator can't dictate; `-echo.preview
-                // <idle|thinking|speaking|waiting|failed>` shows an exchange in that state.
+                // <idle|thinking|speaking|waiting|approval|question|failed>` shows an exchange in that state.
                 .task {
                     let args = CommandLine.arguments
                     if let p = args.firstIndex(of: "-echo.preview") { return store.preview(p + 1 < args.count ? args[p + 1] : "") }

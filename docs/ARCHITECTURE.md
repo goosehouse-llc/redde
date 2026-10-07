@@ -569,8 +569,9 @@ after 33 seconds without it.
 
 **Background notifications.** Settings → Voice → "Notify me in the background": approvals,
 questions, sudo and secret requests, finished replies and failures, as local notifications with
-Approve / Deny and reply actions. A push relay (`companion/push-relay`) can deliver them when the app
-isn't running.
+Approve / Deny and reply actions. A finished reply's banner takes the next message too: Reply
+sends it into the conversation the banner came from (behind an unlock when the app's own lock
+is on). A push relay (`companion/push-relay`) can deliver them when the app isn't running.
 
 ## Siri, Shortcuts and controls
 
@@ -590,6 +591,14 @@ stale and its views show "Reply interrupted" with no pulse and no clock (the wor
 `EchoTurnAttributes`, where the app's tests can reach it). Two minutes is as soon as the system
 acts; asked for less, it still waited that long. The next launch ends whatever an earlier run
 left (`TurnActivity.clearStrays`).
+
+A command waiting for a yes or no takes the activity over: "Needs your approval", the command,
+and Deny and Approve, on the Lock Screen and in the expanded island. The buttons are Live
+Activity intents (`Shared/ApprovalIntents.swift`), which the system runs in the app's process,
+so the answer goes to the conversation that is waiting, by the same door as the notification's
+buttons. Approve asks for the device to be unlocked; Deny doesn't. A stale activity shows no
+buttons: the app that would carry the answer has stopped. `-echo.demoApproval` puts one up to
+look at.
 
 ### Siri AI (iOS 27, opt-in)
 
@@ -628,12 +637,23 @@ HTTP: the Hermes API or the fast lane. The phone hands over a `WatchConnection`
 hands that over; a phone on either Hermes connection hands over the Hermes API, with the profile
 path and key, which is the same agent; whichever of the two isn't set up, the other stands in.
 
-Never the Dashboard. It runs over a WebSocket, and watchOS keeps "low-level networking",
+Never the Dashboard itself. It runs over a WebSocket, and watchOS keeps "low-level networking",
 WebSockets included, from an ordinary app: only an app streaming audio or on a call gets it
 (Apple's TN3135). The simulator allows it all the same, so the Dashboard worked there and failed
-on a wrist, and for a while the phone did hand it over. A phone with nothing but the Dashboard
-now sends a notice in place of a connection, and the watch asks for the Hermes API to be added
-(Settings › Connection details) instead of saying the phone isn't set up.
+on a wrist, and for a while the phone did hand it over.
+
+A phone with nothing but the Dashboard asks for the watch instead (`WatchConnection.Kind.phone`,
+`Shared/WatchRelay.swift`). The watch sends its question to the phone over WatchConnectivity; the
+phone runs the turn on the Dashboard, in a session of the watch's own (`Services/WatchRelayHost.swift`),
+and the watch follows it by asking every second and a half for where it has got to
+(`WatchRelayClient`). Each answer is the turn whole, so a lost one costs nothing, and each
+question is a message that wakes the phone's app, which is what keeps it running in the
+background; a background task covers the gaps. The phone also queues the finished reply
+(`transferUserInfo`) for a watch that stopped asking. Its limits: the phone has to be in reach,
+and a phone that was restarted while locked can't read the Dashboard password until it is
+unlocked once (the session cookie usually spares it the need). The order of preference for a
+phone on a Hermes connection is the Hermes API, since the watch can then ask with the phone out
+of reach, then through the phone, then the fast lane.
 
 The phone pushes on launch, when it comes to the front, when Settings or Setup close and on a
 server switch (`Services/WatchLink.swift`); the watch asks for a copy when it has none
@@ -648,12 +668,16 @@ the reply will be read aloud and to keep it short and plain. Replies are spoken 
 the phone uses it (one WAV per reply from the phone's server), else the system voice
 (`AVSpeechSynthesizer`, in the reply language when one is set). On Bluetooth headphones the
 reply plays on after the wrist goes down (`audio` background mode, long-form audio policy); on
-the speaker it plays while the app is on screen, which is all watchOS allows. An approval or a question
-from the agent shows as "waiting on your iPhone"; the phone's notifications reach the wrist on
-their own. `Watch/AskReddeIntent.swift` is the Ask Redde App Shortcut: a Siri phrase on the
+the speaker it plays while the app is on screen, which is all watchOS allows. A command the agent
+wants a yes or no for is answered on the wrist, Approve or Deny, on either road (over the Hermes
+API directly, or through the phone); a single question from the agent is answered there too when
+the phone is asking (its choices as buttons, or dictated). A password is not for the wrist: the
+watch says to open the conversation on the phone. The phone's own notifications reach the wrist
+on their own. `Watch/AskReddeIntent.swift` is the Ask Redde App Shortcut: a Siri phrase on the
 watch, and what the Ultra's Action button runs (Settings › Action Button › Shortcut); it opens
 the app and starts dictation once the screen is up. Debug launch arguments for the simulator, which can neither dictate nor receive the
-phone's handover: `-echo.connection <hermesAPI|fastLane> <url> <key>` and `-echo.ask "text"`.
+phone's handover: `-echo.connection <hermesAPI|fastLane|phone> <url> <key>`, `-echo.ask "text"` and
+`-echo.preview <state>` (among them `approval` and `question`).
 Paired simulators don't treat a watch app installed with `simctl` as the phone's companion, so
 the handover itself is tested on a real watch.
 

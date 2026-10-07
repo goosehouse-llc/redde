@@ -138,6 +138,7 @@ targets:
     sources:
       - path: Watch
       - path: Shared/WatchSync.swift
+      - path: Shared/WatchRelay.swift
       - path: Shared/Attachment.swift
       - path: Shared/PlainText.swift
       - path: Shared/ReplyMedia.swift

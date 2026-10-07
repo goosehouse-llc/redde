@@ -411,6 +411,8 @@ struct LockSettings: View {
                     if on { Task { settings.requireBiometrics = await AppLock.shared.enable() } }
                     else { settings.requireBiometrics = false }
                 }))
+            // The banner's Reply action follows the lock: registered again when it changes.
+            .onChange(of: settings.requireBiometrics) { Notifier.shared.registerCategories() }
             if settings.requireBiometrics {
                 Picker("Lock after", selection: $settings.lockGraceSeconds) {
                     Text("Immediately").tag(0.0)

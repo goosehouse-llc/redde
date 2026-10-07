@@ -119,6 +119,7 @@ struct ServerRequestTests {
         // A request may send an empty list and say what is allowed instead.
         let narrow = HermesServeTransport.parseApproval(try json(#"{"request_id":"r","command":"x","choices":[],"allow_session":true,"allow_permanent":false}"#))
         #expect(narrow.choices == ["once", "session", "deny"])
+        #expect(narrow.yesNo?.approve == "once" && narrow.yesNo?.deny == "deny", "an empty list would leave the card with no buttons")
         let once = HermesServeTransport.parseApproval(try json(#"{"request_id":"r","command":"x","choices":[],"allow_session":false,"allow_permanent":false}"#))
         #expect(once.choices == ["once", "deny"])
     }

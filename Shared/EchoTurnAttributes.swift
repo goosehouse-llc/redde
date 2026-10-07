@@ -10,6 +10,17 @@ nonisolated struct EchoTurnAttributes: ActivityAttributes {
         /// Tool name while `.tool`; reply preview while `.replying` / `.done`; error text if `.failed`.
         var detail: String
         var startedAt: Date
+        /// A command waiting for a yes or no. While set the activity shows it, with Approve and
+        /// Deny, whatever the phase underneath. Optional, so a state an older build wrote decodes.
+        var approval: Approval?
+
+        struct Approval: Codable, Hashable {
+            var id: String
+            var command: String
+            /// What the two buttons answer with, as the request named its choices.
+            var approve: String
+            var deny: String
+        }
     }
 
     /// The question, trimmed for the banner.
@@ -30,11 +41,16 @@ extension EchoTurnAttributes.ContentState {
     /// Still being worked on, as far as this state says.
     var isLive: Bool { phase != .done && phase != .failed }
 
+    /// The command to show with its buttons. Not on a stale activity: the app that would carry
+    /// the answer has stopped, so a yes there would go nowhere.
+    func pendingApproval(stale: Bool) -> Approval? { stale || !isLive ? nil : approval }
+
     /// The words and symbol for the banner and the Dynamic Island. `stale` is the system's word
     /// that updates stopped coming: a reply that was live then is shown as interrupted, not as
     /// still thinking with the clock running.
     func title(stale: Bool) -> String {
         if stale, isLive { return "Reply interrupted" }
+        if pendingApproval(stale: stale) != nil { return "Needs your approval" }
         switch phase {
         case .thinking: return "Redde is thinking"
         case .tool: return "Using \(detail)"
@@ -46,6 +62,7 @@ extension EchoTurnAttributes.ContentState {
 
     func compact(stale: Bool) -> String {
         if stale, isLive { return "stopped" }
+        if pendingApproval(stale: stale) != nil { return "approve?" }
         switch phase {
         case .thinking: return "thinking"
         case .tool: return detail
@@ -57,6 +74,7 @@ extension EchoTurnAttributes.ContentState {
 
     func symbol(stale: Bool) -> String {
         if stale, isLive { return "pause.circle.fill" }
+        if pendingApproval(stale: stale) != nil { return "hand.raised.fill" }
         switch phase {
         case .thinking: return "brain"
         case .tool: return "gearshape.2"
@@ -69,6 +87,7 @@ extension EchoTurnAttributes.ContentState {
     /// The line under the title: what the reply was doing, or what to do about one that stopped.
     func detailLine(stale: Bool, question: String) -> String {
         if stale, isLive { return "Open Redde to see where it got to." }
+        if let approval = pendingApproval(stale: stale) { return approval.command }
         return phase == .thinking ? question : detail
     }
 }

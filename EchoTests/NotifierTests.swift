@@ -201,6 +201,71 @@ struct NotifierTests {
         #expect(conversation.pendingInterrupt != nil, "a banner for a different request must not answer this one")
     }
 
+    // MARK: Replying from a finished reply's banner
+
+    private func idleConversation() -> Conversation {
+        let settings = Settings(defaults: UserDefaults(suiteName: "notifier-conv-\(UUID().uuidString)")!)
+        settings.transport = .chatCompletions
+        settings.fastLaneURL = "http://example.invalid:11500"
+        settings.fastLaneModel = "test"
+        let store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "n-\(UUID().uuidString)"))
+        return Conversation(settings: settings, store: store,
+                            transportOverride: ConversationLifecycleTests.ScriptedTransport([.textDelta("Done."), .done]))
+    }
+
+    @Test func aFinishedReplysBannerNamesItsConversationAndOffersAReply() {
+        let h = Harness()
+        h.notifier.registerCategories()
+        h.notifier.notify(.replied, title: "Redde replied", body: "All set.",
+                          category: Notifier.repliedCategory, userInfo: [Notifier.conversationKey: "abc"])
+        let request = try! #require(h.center.added.first)
+        #expect(request.content.categoryIdentifier == "redde.replied")
+        #expect(request.content.userInfo["conversation"] as? String == "abc")
+        #expect(request.identifier == "redde.replied", "still one reply banner at a time")
+        let action = h.center.categories.first { $0.identifier == "redde.replied" }?.actions.first
+        #expect(action is UNTextInputNotificationAction)
+        #expect(action?.options.contains(.authenticationRequired) == false)
+    }
+
+    /// With the app's own lock on, a reply from the Lock Screen would be a way round it.
+    @Test func replyingFromTheBannerNeedsAnUnlockWhenTheAppIsLocked() {
+        let h = Harness()
+        h.settings.requireBiometrics = true
+        h.notifier.registerCategories()
+        let action = h.center.categories.first { $0.identifier == "redde.replied" }?.actions.first
+        #expect(action?.options.contains(.authenticationRequired) == true)
+    }
+
+    @Test func aReplyTypedOnTheBannerIsTheNextMessage() {
+        let h = Harness()
+        let conversation = idleConversation()
+        h.notifier.install(conversation: conversation)
+        h.notifier.route(action: "redde.followup", requestID: nil, questionID: nil, approve: nil, deny: nil,
+                         userText: "And tomorrow?", conversationID: conversation.id.uuidString)
+        #expect(conversation.messages.contains { $0.role == .user && $0.text == "And tomorrow?" })
+    }
+
+    /// The banner's conversation was deleted since: the reply doesn't land in whichever is open.
+    @Test func aReplyForAConversationThatIsGoneIsNotSentIntoAnother() {
+        let h = Harness()
+        let conversation = idleConversation()
+        h.notifier.install(conversation: conversation)
+        h.notifier.route(action: "redde.followup", requestID: nil, questionID: nil, approve: nil, deny: nil,
+                         userText: "And tomorrow?", conversationID: UUID().uuidString)
+        #expect(conversation.messages.isEmpty)
+    }
+
+    /// The Live Activity's Approve button answers through the same door as the banner's.
+    @Test func theLiveActivitysAnswerSettlesThePendingApproval() async throws {
+        let h = Harness()
+        let (conversation, id) = try await pendingApprovalConversation()
+        h.notifier.install(conversation: conversation)
+        h.notifier.answerApproval(requestID: "some-old-request", choice: "once")
+        #expect(conversation.pendingInterrupt != nil)
+        h.notifier.answerApproval(requestID: id, choice: "deny")
+        #expect(conversation.pendingInterrupt == nil)
+    }
+
     @Test func plainTapRoutesNowhere() async throws {
         let h = Harness()
         let (conversation, _) = try await pendingApprovalConversation()

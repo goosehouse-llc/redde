@@ -77,7 +77,10 @@ final class Conversation {
     var retryDelays: [Double] = [5, 15, 30, 60]
 
     /// Whatever the gateway is waiting on you for (hermes serve).
-    private(set) var pendingInterrupt: (interrupt: Interrupt, runtimeSession: String)?
+    private(set) var pendingInterrupt: (interrupt: Interrupt, runtimeSession: String)? {
+        // However it went (answered, expired, cancelled), the Live Activity stops asking.
+        didSet { if oldValue != nil, pendingInterrupt == nil { TurnActivity.shared.approvalSettled() } }
+    }
 
     private let settings: Settings
     private let store: ConversationStore
@@ -362,6 +365,7 @@ final class Conversation {
                         statusLine = "waiting for you"
                         if case let .approval(request) = interrupt {
                             Notifier.shared.notifyApproval(request)
+                            TurnActivity.shared.needsApproval(request)
                         } else if case let .clarify(request) = interrupt {
                             Notifier.shared.notifyClarify(request)
                         } else {
@@ -400,6 +404,7 @@ final class Conversation {
                     WidgetCenter.shared.reloadTimelines(ofKind: "com.goosehouse.echo.lastreply")
                 }
                 Notifier.shared.notify(.replied, title: "Redde replied", body: PlainText.display(replyText),   // autoclosure: only stripped when a banner will post
+                                       category: Notifier.repliedCategory, userInfo: [Notifier.conversationKey: self.id.uuidString],
                                        messageEntityID: SiriID.message(self.id, replyID))
                 persist()
                 outcome = .completed

@@ -185,7 +185,7 @@ struct HermesLabApprovalTests {
             var ok = false
             do {
                 let outcome = try await Self.timed { try await Self.turn(client, answer: answer) }
-                ok = outcome.asked?.command.contains("rm -rf") == true && outcome.reply == expected
+                ok = outcome.asked?.command.contains("rm -rf") == true && outcome.asked?.yesNo != nil && outcome.reply == expected
                 detail = "asked \(outcome.asked?.command ?? "nothing") \(outcome.asked?.choices ?? []), reply \(outcome.reply)"
             } catch {
                 detail = String(error.localizedDescription.prefix(160))

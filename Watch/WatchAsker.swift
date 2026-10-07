@@ -3,13 +3,21 @@ import os
 
 /// One question's trip to Hermes and back, through the same transports the phone uses. The
 /// Hermes API keeps the watch's questions in one session of their own; the fast lane gets the
-/// store's short history, since it keeps none.
+/// store's short history, since it keeps none. A phone that has only the Dashboard is asked to
+/// ask instead (`WatchRelay`).
+///
+/// A command the agent wants a yes or no for is answered here, on either road: over the Hermes
+/// API directly, or through the phone.
 @MainActor
 final class WatchAsker {
     private let connection: WatchConnection
     private unowned let store: WatchStore
     private let log = Logger(subsystem: "com.goosehouse.echo.watch", category: "ask")
     private var task: Task<Void, Never>?
+    /// The question's trip through the phone, when that is the road.
+    private var relay: WatchRelayClient?
+    /// Hermes API: the run that is waiting on an approval.
+    private var waitingRun: String?
 
     init(connection: WatchConnection, store: WatchStore) {
         self.connection = connection
@@ -33,9 +41,45 @@ final class WatchAsker {
     func cancel() {
         task?.cancel()
         task = nil
+        relay?.stop()
+    }
+
+    /// The wrist's yes or no to the command that is waiting.
+    func answer(_ approval: WatchRelay.Approval, choice: String) {
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                if let relay {
+                    try await relay.approve(requestID: approval.id, choice: choice)
+                } else if let run = waitingRun, let base = URL(string: connection.url) {
+                    try await HermesSessionsAPI(baseURL: base, apiKey: connection.apiKey)
+                        .respondApproval(runID: run, requestID: approval.id, choice: choice)
+                }
+            } catch {
+                failed(error)
+            }
+        }
+    }
+
+    /// The wrist's answer to the agent's question (asked through the phone).
+    func answer(_ question: WatchRelay.Question, text: String) {
+        Task { [weak self] in
+            guard let self, let relay else { return }
+            do { try await relay.answer(requestID: question.id, text: text) } catch { failed(error) }
+        }
+    }
+
+    func relayDelivered(_ snapshot: WatchRelay.Snapshot) { relay?.deliver(snapshot) }
+
+    /// An answer that couldn't be sent ends the question, with the reason.
+    private func failed(_ error: Error) {
+        log.error("answer failed: \(error.localizedDescription, privacy: .public)")
+        task?.cancel()
+        store.finished(error: error.localizedDescription)
     }
 
     private func run(_ text: String) async throws {
+        if connection.kind == .phone { return try await askThroughPhone(text) }
         guard let base = URL(string: connection.url) else { throw TransportError.badURL }
         let transport: any HermesTransport
         var request = TurnRequest(userText: text, history: [], sessionID: nil,
@@ -51,14 +95,15 @@ final class WatchAsker {
                                                               reasoningEffort: request.reasoningEffort).id
             }
             request.sessionID = store.sessionID
-            request.instructions = Self.watchHint
+            request.instructions = WatchConnection.spokenHint
             transport = HermesSessionsTransport(baseURL: base, apiKey: connection.apiKey)
         case .fastLane:
             request.history = store.history
-            request.instructions = Self.watchHint
+            request.instructions = WatchConnection.spokenHint
             transport = ChatCompletionsTransport(baseURL: base, apiKey: connection.apiKey.nilIfEmpty)
-        case .dashboard:
-            // Never kept (`WatchStore.apply`): the Dashboard is a WebSocket, which a watch can't open.
+        case .dashboard, .phone:
+            // The Dashboard is never kept (`WatchStore.apply`): it is a WebSocket, which a watch
+            // can't open. Through the phone is handled above.
             throw TransportError.badURL
         }
         do {
@@ -75,24 +120,41 @@ final class WatchAsker {
             try Task.checkCancellation()
             switch event {
             case let .sessionID(id): store.sessionID = id
-            case let .textDelta(delta): store.append(delta)
+            case let .textDelta(delta): store.working(); store.append(delta)
             case let .textFinal(text): store.replace(text)
-            case let .interrupt(interrupt, _):
+            case let .interrupt(interrupt, runtime):
                 switch interrupt {
-                case let .approval(r): store.waiting("Approval needed on your iPhone: \(r.command)")
+                case let .approval(r):
+                    if let choices = r.yesNo {
+                        waitingRun = runtime
+                        store.needsApproval(.init(id: r.id, command: r.command, approve: choices.approve, deny: choices.deny))
+                    } else {
+                        store.waiting("Approval needed on your iPhone: \(r.command)")
+                    }
                 case let .clarify(r): store.waiting(r.questions.first?.question ?? "A question is waiting on your iPhone.")
                 case .sudo: store.waiting("Your iPhone is asking for the sudo password.")
                 case let .secret(r): store.waiting("Your iPhone is asking for \(r.envVar).")
                 }
+            case .interruptExpired: store.working()
             default: break
             }
         }
     }
 
-    /// Replies are read aloud on a watch, so the agent is told to keep them short and plain.
-    private static let watchHint = """
-        The user is on an Apple Watch and will hear your reply read aloud. Answer in a few plain \
-        sentences, no Markdown, lists, tables or code; if a longer answer is needed, give the \
-        gist and say the rest is on their phone.
-        """
+    /// The phone has only the Dashboard, which a watch can't use: it runs the question, and the
+    /// watch follows it by asking how far it has got.
+    private func askThroughPhone(_ text: String) async throws {
+        let relay = WatchRelayClient(send: { try await PhoneLink.shared.relay($0) })
+        self.relay = relay
+        let store = store
+        _ = try await relay.ask(text) { snapshot in
+            store.replace(snapshot.text)
+            switch snapshot.state {
+            case .working, .done, .failed: store.working()
+            case .approval: if let approval = snapshot.approval { store.needsApproval(approval) }
+            case .question: if let question = snapshot.question { store.asked(question) }
+            case .waiting: store.waiting(snapshot.note ?? "Something is waiting on your iPhone.")
+            }
+        }
+    }
 }

@@ -429,6 +429,16 @@ nonisolated struct ApprovalRequest: Identifiable, Equatable, Sendable, Codable {
     var choices: [String]     // once | session | always | deny
 }
 
+extension ApprovalRequest {
+    /// The two answers a pair of buttons can give: run it this once, or don't. Nil when the
+    /// request doesn't offer both; then only the full card in the app can answer it.
+    var yesNo: (approve: String, deny: String)? {
+        guard choices.contains("deny"),
+              let approve = choices.contains("once") ? "once" : choices.first(where: { $0 != "deny" }) else { return nil }
+        return (approve, "deny")
+    }
+}
+
 /// One clarifying question from the agent's `clarify` tool.
 nonisolated struct ClarifyQuestion: Identifiable, Equatable, Sendable, Codable {
     var id: String          // qid ("" for the single-question form)
