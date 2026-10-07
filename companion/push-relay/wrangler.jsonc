@@ -7,6 +7,10 @@
   "name": "redde-push-relay",
   "main": "src/index.js",
   "compatibility_date": "2026-09-01",
+  // Where every copy of the app and the plugin look for it (PushService.defaultRelay,
+  // core.DEFAULT_RELAY). The workers.dev address stays too: the household webhooks post there.
+  "workers_dev": true,
+  "routes": [{ "pattern": "redde-push.goosehouse.org", "custom_domain": true }],
   "kv_namespaces": [
     { "binding": "STORE", "id": "3a6a29f515e1453daf557a23d9dc2a52" }
   ],
