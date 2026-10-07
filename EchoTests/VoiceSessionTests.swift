@@ -193,6 +193,24 @@ struct VoiceSessionTests {
         #expect(h.cues.cues == [.listening, .stopped])
     }
 
+    // MARK: Mute
+
+    @Test func muteHoldsTheMicShutUntilItIsOpenedAgain() async throws {
+        let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport([]))
+        h.session.mute()
+        #expect(!h.session.isMuted, "nothing to mute while idle")
+        h.session.beginListening()
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        h.session.mute()
+        #expect(h.session.isMuted)
+        #expect(h.session.phase == .idle)
+        #expect(h.cues.cues == [.listening, .stopped])
+        // The mic by any other route (the phone's button, a headset press) is an unmute.
+        h.session.primaryAction()
+        try await waitUntil("listening again") { h.recognizer.starts == 2 }
+        #expect(!h.session.isMuted)
+    }
+
     // MARK: Stop phrase
 
     @Test func stopPhraseAcknowledgesAndEndsHandsFree() async throws {

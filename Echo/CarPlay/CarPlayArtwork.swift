@@ -13,8 +13,9 @@ enum CarPlayArtwork {
     static let mist = UIColor(red: 0.863, green: 0.890, blue: 0.933, alpha: 1)             // #DCE3EE
     static let gold = UIColor(red: 0xE8 / 255.0, green: 0xB0 / 255.0, blue: 0x4B / 255.0, alpha: 1)
 
-    enum Row { case ask, talk }
-    enum VoiceState: String, CaseIterable { case listening, thinking, speaking, idle, error, phone }
+    enum Row: CaseIterable { case ask, talk, newChat, chats }
+    /// The voice card's states. Five, the most a voice-control template takes.
+    enum VoiceState: String, CaseIterable { case listening, thinking, speaking, muted, phone }
 
     /// Bar heights in the spark's profile, as fractions of the tallest (voice mode's weights).
     private static let sparkProfile: [CGFloat] = [0.13, 0.27, 0.51, 1.0, 0.51, 0.27, 0.13]
@@ -34,6 +35,16 @@ enum CarPlayArtwork {
                 // A conversation: your voice running into the spark that answers.
                 bars(ctx, centreX: 34 * u, centreY: 50 * u, heights: [18, 32, 48, 28].map { $0 * u }, gap: 10 * u, width: 6.5 * u, colour: mist)
                 spark(ctx, centre: CGPoint(x: 72 * u, y: 50 * u), radius: 17 * u, colour: gold)
+            case .newChat:
+                // A fresh start: the spark, about to be asked something.
+                spark(ctx, centre: CGPoint(x: 50 * u, y: 50 * u), radius: 26 * u, colour: gold)
+            case .chats:
+                // The list of conversations: a spark heading each line.
+                for (i, length) in [44.0, 34.0, 40.0].enumerated() {
+                    let y = (30 + CGFloat(i) * 20) * u
+                    spark(ctx, centre: CGPoint(x: 24 * u, y: y), radius: 6.5 * u, colour: gold)
+                    line(ctx, from: CGPoint(x: 38 * u, y: y), to: CGPoint(x: (38 + length) * u, y: y), width: 6.5 * u, colour: mist)
+                }
             }
         }
     }
@@ -54,14 +65,11 @@ enum CarPlayArtwork {
                 // Redde's voice: the same bars in gold.
                 bars(ctx, centreX: 50 * u, centreY: 50 * u, heights: profile(tallest: 52, rest: 8, count: 7).map { $0 * u },
                      gap: 8.5 * u, width: 5.5 * u, colour: gold)
-            case .idle:
-                ctx.setLineCap(.round); ctx.setLineJoin(.round); ctx.setLineWidth(8 * u); mist.setStroke()
-                ctx.move(to: CGPoint(x: 34 * u, y: 51 * u)); ctx.addLine(to: CGPoint(x: 45 * u, y: 62 * u)); ctx.addLine(to: CGPoint(x: 67 * u, y: 39 * u))
-                ctx.strokePath()
-            case .error:
-                ctx.setLineCap(.round); ctx.setLineWidth(8 * u); gold.setStroke()
-                ctx.move(to: CGPoint(x: 50 * u, y: 32 * u)); ctx.addLine(to: CGPoint(x: 50 * u, y: 56 * u)); ctx.strokePath()
-                mist.setFill(); ctx.fillEllipse(in: CGRect(x: 45 * u, y: 64 * u, width: 10 * u, height: 10 * u))
+            case .muted:
+                // Nobody is being heard: the bars at rest, struck through.
+                bars(ctx, centreX: 50 * u, centreY: 50 * u, heights: profile(tallest: 8, rest: 8, count: 7).map { $0 * u },
+                     gap: 8.5 * u, width: 5.5 * u, colour: mist)
+                line(ctx, from: CGPoint(x: 30 * u, y: 70 * u), to: CGPoint(x: 70 * u, y: 30 * u), width: 6 * u, colour: gold)
             case .phone:
                 // The agent is waiting for an approval that only the phone can give: a phone outline.
                 ctx.setLineJoin(.round); ctx.setLineWidth(6 * u); mist.setStroke()
@@ -119,6 +127,14 @@ enum CarPlayArtwork {
             ctx.move(to: CGPoint(x: x, y: centreY - h / 2 + width / 2))
             ctx.addLine(to: CGPoint(x: x, y: centreY + h / 2 - width / 2))
         }
+        ctx.strokePath()
+        ctx.restoreGState()
+    }
+
+    private static func line(_ ctx: CGContext, from: CGPoint, to: CGPoint, width: CGFloat, colour: UIColor) {
+        ctx.saveGState()
+        ctx.setLineCap(.round); ctx.setLineWidth(width); colour.setStroke()
+        ctx.move(to: from); ctx.addLine(to: to)
         ctx.strokePath()
         ctx.restoreGState()
     }

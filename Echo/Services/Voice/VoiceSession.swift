@@ -69,6 +69,9 @@ final class VoiceSession {
     private(set) var lastMetrics: VoiceMetrics?
     /// When true, the mic reopens automatically after each reply (hands-free mode, M2).
     var continuous = false
+    /// The mic is held shut in the middle of a conversation (the car screen's Mute): the session
+    /// is idle but not over. `unmute()`, or the mic by any other route, listens again.
+    private(set) var isMuted = false
 
     let recognizer: any VoiceRecognizing
     let output: any VoiceSpeaking
@@ -231,6 +234,7 @@ final class VoiceSession {
     func beginListening() {
         replaying = false
         guard phase == .idle || phase == .speaking || isErrored else { return }
+        isMuted = false
         output.stop()
         replyTask?.cancel()
         // Barge-in: stop the server turn too, or it keeps streaming (and billing) unheard.
@@ -250,6 +254,21 @@ final class VoiceSession {
         guard phase == .listening, !continuous, !carPlayConnected else { return }
         log.info("left the foreground while listening: stopping")
         cancel()
+    }
+
+    /// Shut the mic without ending the conversation, so nothing said in the car is taken for a
+    /// question. Only while listening; hands-free stays as it was for when the mic comes back.
+    func mute() {
+        guard phase == .listening else { return }
+        recognizer.cancel()
+        isMuted = true
+        phase = .idle
+        releaseAudioAfterCue()   // the car's own audio comes back while Redde isn't listening
+    }
+
+    func unmute() {
+        guard isMuted else { return }
+        beginListening()
     }
 
     /// Tap again while listening: end the utterance now.
@@ -311,6 +330,7 @@ final class VoiceSession {
 
     func cancel() {
         replaying = false
+        isMuted = false
         // Only a turn this session started is ours to cancel: leaving the voice screen while a
         // typed reply streams must not kill it.
         let ownsTurn = replyTask != nil

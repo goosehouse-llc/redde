@@ -629,8 +629,16 @@ tests in `EchoTests/SiriSchemaTests.swift`.
 
 ## CarPlay
 
-A CarPlay scene in the voice-based conversational category (iOS 26.4+): **Ask Redde** and **Talk
-with Redde** rows, then a voice-control card (Listening, Thinking, Speaking, Done). Replies are
+A CarPlay scene in the voice-based conversational category (iOS 26.4+). Four rows: **Ask Redde**
+and **Talk with Redde** carry on the conversation the phone has open, **New Chat** starts another,
+and **Recent Chats** pushes a list of the phone's conversations to pick one from
+(`CarPlay/CarPlayChats.swift`: the phone's list in its order, as names and times; a session nobody
+named is "Untitled chat", never the preview of its last message). New Chat and a picked chat
+listen in the mode Settings → Voice gives the phone's voice button. Each row ends on a
+voice-control card (Listening, Thinking, Speaking, Muted, Needs your phone) with **Mute** and
+**End** on it: Mute shuts the mic and keeps the conversation (`VoiceSession.mute`, which also
+gives the car its audio back), End stops whatever Redde is doing. A voice-control template takes
+five states and no more, so a finished reply closes the card and a failure is an alert. Replies are
 spoken only. The brand lives in artwork drawn in code (`CarPlay/CarPlayArtwork.swift`), since
 CarPlay owns layout and type. Declaring the scene enables multiple scenes, so the WindowGroup routes
 external events to the existing window (`handlesExternalEvents` in `EchoApp`); re-check the Action
@@ -639,7 +647,9 @@ Button, Control Center and widget paths on a device after changes here.
 project. The `audio` background mode keeps a conversation going when the car screen switches to
 navigation (or the phone locks): without it iOS cuts the microphone and silences the reply as soon
 as Redde leaves the foreground, and the continued-processing task (above) only covers the wait in
-between. Untested in a car as of 2026-10-02. The flip side: a mic left open on a locked phone
+between. Untested in a car as of 2026-10-02; the chat list, New Chat and the card's buttons
+(2026-10-07) are pressed by `EchoTests/CarPlayTests.swift` and have not been on a car's screen,
+real or simulated. The flip side: a mic left open on a locked phone
 would now stay open, so when every scene goes to the background while listening, the session
 stops (`VoiceSession.leftForeground`) unless hands-free is on or the car is connected
 (`CarPlaySceneDelegate.isConnected`). A reply being thought about or spoken is never stopped there.

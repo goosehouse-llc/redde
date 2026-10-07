@@ -7,8 +7,7 @@ import UIKit
 @MainActor
 struct CarPlayArtworkTests {
     @Test func rendersRowIconsAndVoiceStates() throws {
-        let rows: [(String, UIImage)] = [("row-ask", CarPlayArtwork.rowIcon(.ask, size: CGSize(width: 44, height: 44))),
-                                         ("row-talk", CarPlayArtwork.rowIcon(.talk, size: CGSize(width: 44, height: 44)))]
+        let rows = CarPlayArtwork.Row.allCases.map { ("row-\($0)", CarPlayArtwork.rowIcon($0, size: CGSize(width: 44, height: 44))) }
         let states = CarPlayArtwork.VoiceState.allCases.map { ("voice-\($0.rawValue)", CarPlayArtwork.voiceStateImage($0)) }
         for (_, image) in rows { #expect(image.size == CGSize(width: 44, height: 44)); #expect(image.scale == 3) }
         for (_, image) in states { #expect(image.size == CGSize(width: 160, height: 160)) }
