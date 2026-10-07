@@ -86,6 +86,9 @@ final class HermesServeClient {
     private var listeners: [UUID: (Event) -> Void] = [:]
     /// stored session id → runtime session id, valid for this connection.
     private var runtimeIDs: [String: String] = [:]
+    /// Questions the Dashboard has put to this client and is waiting on: frame id → what was
+    /// asked. See `prompt(method:id:params:)`.
+    private var openRequests: [String: (id: JSONValue, method: String)] = [:]
     /// Reasoning level last pinned on each runtime session over this connection, so a turn
     /// doesn't re-send `config.set` every time (see `openSession`).
     private var pinnedEfforts: [String: String] = [:]
@@ -130,6 +133,11 @@ final class HermesServeClient {
             let ticket = try await authenticate()
             try await openSocket(baseURL: baseURL, ticket: ticket)
             try Task.checkCancellation()   // disconnect() while the handshake ran: don't keep the link
+            // Once per connection: this client answers the Dashboard's own requests (approvals,
+            // questions, passwords). Hermes 0.21.5 withholds them from a client that hasn't said
+            // so, and withdraws the approval on the spot; an older host doesn't know the method.
+            _ = try? await call("client.capabilities", params: .object(["server_requests": .bool(true)]), timeout: 15)
+            try Task.checkCancellation()
             state = .connected
         } catch {
             // A cancelled attempt was disconnect()'s doing: it already tore down and set the
@@ -216,6 +224,7 @@ final class HermesServeClient {
         socket?.cancel(with: .normalClosure, reason: nil); socket = nil
         runtimeIDs = [:]
         pinnedEfforts = [:]
+        openRequests = [:]   // the host sends the ones still waiting again when a session is resumed
         // The request left the socket; whether the host acted on it is unknown, so this is a
         // lost stream, not a malformed reply (the conversation must not report it as one).
         for (_, cont) in pending { cont.resume(throwing: TransportError.streamLost("the connection to Hermes Dashboard closed")) }
@@ -389,15 +398,68 @@ final class HermesServeClient {
             return
         }
         if json["method"]?.string == "event", let params = json["params"] {
-            let event: Event = (params["type"]?.string ?? "", params["session_id"]?.string, params["payload"] ?? .null)
+            var event: Event = (params["type"]?.string ?? "", params["session_id"]?.string, params["payload"] ?? .null)
+            // A question the host has stopped waiting on (answered elsewhere, timed out, the turn
+            // was stopped): the card goes, as with the older `<kind>.expire` notification.
+            if event.type == "request.cancel", let key = Self.key(event.payload["id"]), let open = openRequests.removeValue(forKey: key) {
+                event = ("\(open.method).expire", event.sessionID, .object(["request_id": .string(key)]))
+            }
             for l in listeners.values { l(event) }
             return
         }
-        // Host request we can't serve (terminal, file dialogs): decline politely.
-        if let id = json["id"], json["method"] != nil {
-            let reply = JSONValue.object(["jsonrpc": .string("2.0"), "id": id,
-                                          "error": .object(["code": .number(-32601), "message": .string("Method not supported on Redde")])])
-            send(reply)
+        guard let id = json["id"], let method = json["method"]?.string else { return }
+        if let key = Self.key(id), let event = Self.prompt(method: method, id: key, params: json["params"] ?? .null) {
+            openRequests[key] = (id, method)
+            for l in listeners.values { l(event) }
+        } else {
+            // Host request we can't serve (terminal, file dialogs): decline politely.
+            send(.object(["jsonrpc": .string("2.0"), "id": id,
+                          "error": .object(["code": .number(-32601), "message": .string("Method not supported on Redde")])]))
+        }
+    }
+
+    // MARK: - Questions from the host
+
+    /// The questions the Dashboard asks of its client that Redde can put to a person.
+    nonisolated static let promptMethods: Set<String> = ["approval", "clarify", "sudo", "secret"]
+
+    /// A JSON-RPC id as a dictionary key (Hermes uses strings, `srq-…`; a number is allowed).
+    nonisolated static func key(_ id: JSONValue?) -> String? {
+        id?.string ?? id?.int.map(String.init)
+    }
+
+    /// Hermes 0.21.3 and later ask for an approval, an answer, the sudo password or a secret as
+    /// a JSON-RPC *request* to the client, answered by the response frame with the same id.
+    /// Hermes 0.21.0 sent a `<kind>.request` notification, answered by a `<kind>.respond` call.
+    /// A client that only knows the old way never sees the question, and the command is
+    /// refused. Both forms carry the same fields, so the request is handed to listeners as the
+    /// notification, its frame id standing in as `request_id`, and one path draws the card. The
+    /// answer goes back the way the question came (`answer`).
+    nonisolated static func prompt(method: String, id: String, params: JSONValue) -> Event? {
+        guard promptMethods.contains(method) else { return nil }
+        var payload = params.object ?? [:]
+        payload["request_id"] = .string(id)
+        return ("\(method).request", params["session_id"]?.string, .object(payload))
+    }
+
+    /// Answers a question that came as a request, with the response frame it is waiting for.
+    /// False when it didn't come that way (an older host): the caller answers by method call.
+    private func answer(_ requestID: String, _ result: [String: JSONValue]) -> Bool {
+        guard let open = openRequests.removeValue(forKey: requestID) else { return false }
+        send(.object(["jsonrpc": .string("2.0"), "id": open.id, "result": .object(result)]))
+        return true
+    }
+
+    /// Questions still waiting from before this connection, as a `session.resume` result lists
+    /// them: put to listeners again, under the session's id as resumed, so a card lost with the
+    /// socket comes back.
+    func replayOpenRequests(in resumed: JSONValue) {
+        for request in resumed["open_requests"]?.array ?? [] {
+            guard let id = request["id"], let key = Self.key(id), openRequests[key] == nil, let method = request["method"]?.string,
+                  var event = Self.prompt(method: method, id: key, params: request["params"] ?? .null) else { continue }
+            event.sessionID = resumed["session_id"]?.string ?? event.sessionID
+            openRequests[key] = (id, method)
+            for l in listeners.values { l(event) }
         }
     }
 
@@ -888,24 +950,41 @@ final class HermesServeClient {
         return HermesSessionsAPI.parseModelOptions(result)
     }
 
+    // Each answer goes back the way its question came: the response frame for a request
+    // (Hermes 0.21.3 and later), the `<kind>.respond` call for a notification (0.21.0).
+
     func respondApproval(runtimeSession: String, requestID: String, choice: String) async throws {
+        if answer(requestID, ["choice": .string(choice)]) { return }
         try await call("approval.respond", params: .object(["session_id": .string(runtimeSession),
                                                              "request_id": .string(requestID), "choice": .string(choice)]))
     }
 
     /// Single-question clarify: `answer`. Batched: one call per `question_id`.
-    func respondClarify(runtimeSession: String, requestID: String, questionID: String?, answer: String) async throws {
-        var params: [String: JSONValue] = ["session_id": .string(runtimeSession), "request_id": .string(requestID), "answer": .string(answer)]
+    func respondClarify(runtimeSession: String, requestID: String, questionID: String?, answer text: String) async throws {
+        if openRequests[requestID] != nil {
+            guard let questionID, !questionID.isEmpty else {
+                _ = answer(requestID, ["answer": .string(text)])
+                return
+            }
+            // A batch is answered a question at a time; the last one settles the request.
+            let result = try await call("clarify.lock", params: .object(["request_id": .string(requestID),
+                                                                         "question_id": .string(questionID), "answer": .string(text)]))
+            if result["remaining"]?.array?.isEmpty ?? true { openRequests[requestID] = nil }
+            return
+        }
+        var params: [String: JSONValue] = ["session_id": .string(runtimeSession), "request_id": .string(requestID), "answer": .string(text)]
         if let questionID, !questionID.isEmpty { params["question_id"] = .string(questionID) }
         try await call("clarify.respond", params: .object(params))
     }
 
     func respondSudo(runtimeSession: String, requestID: String, password: String) async throws {
+        if answer(requestID, ["value": .string(password)]) { return }
         try await call("sudo.respond", params: .object(["session_id": .string(runtimeSession), "request_id": .string(requestID), "password": .string(password)]))
     }
 
     /// Empty value = skip; the gateway records the secret as not provided.
     func respondSecret(runtimeSession: String, requestID: String, value: String) async throws {
+        if answer(requestID, ["value": .string(value)]) { return }
         try await call("secret.respond", params: .object(["session_id": .string(runtimeSession), "request_id": .string(requestID), "value": .string(value)]))
     }
 

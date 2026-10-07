@@ -90,12 +90,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
                         case "subagent.start", "subagent.tool", "subagent.progress", "subagent.complete":
                             if let update = Self.parseSubagent(event.type, p) { continuation.yield(.subagent(update)) }
                         case "approval.request":
-                            let req = ApprovalRequest(
-                                id: p["request_id"]?.string ?? "",
-                                command: p["command"]?.string ?? "",
-                                description: p["description"]?.string,
-                                choices: p["choices"]?.array?.compactMap(\.string) ?? ["once", "session", "always", "deny"])
-                            continuation.yield(.interrupt(.approval(req), runtimeSession: turn.runtime))
+                            continuation.yield(.interrupt(.approval(Self.parseApproval(p)), runtimeSession: turn.runtime))
                         case "clarify.request":
                             continuation.yield(.interrupt(.clarify(Self.parseClarify(p)), runtimeSession: turn.runtime))
                         case "sudo.request":
@@ -188,6 +183,20 @@ nonisolated struct HermesServeTransport: HermesTransport {
                               model: p["model"]?.string, phase: phase)
     }
 
+    /// The choices are listed when the host lists them; a request that sends none says with two
+    /// flags whether "this session" and "always" are on offer.
+    nonisolated static func parseApproval(_ p: JSONValue) -> ApprovalRequest {
+        var choices = p["choices"]?.array?.compactMap(\.string) ?? []
+        if choices.isEmpty {
+            choices = ["once"]
+            if p["allow_session"]?.bool ?? true { choices.append("session") }
+            if p["allow_permanent"]?.bool ?? true { choices.append("always") }
+            choices.append("deny")
+        }
+        return ApprovalRequest(id: p["request_id"]?.string ?? "", command: p["command"]?.string ?? "",
+                               description: p["description"]?.string, choices: choices)
+    }
+
     nonisolated static func parseClarify(_ p: JSONValue) -> ClarifyRequest {
         let id = p["request_id"]?.string ?? ""
         if let batch = p["questions"]?.array, !batch.isEmpty {
@@ -218,6 +227,8 @@ nonisolated struct HermesServeTransport: HermesTransport {
             turn.runtime = runtime
             turn.recovering = false
             continuation.yield(.status("reconnected"))
+            // A question the host asked while the socket was down, or still waits on.
+            client.replayOpenRequests(in: info)
             if info["running"]?.bool == true {
                 return // still generating; events now arrive under the new runtime id
             }

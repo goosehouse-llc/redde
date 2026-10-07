@@ -1,13 +1,14 @@
 # Hermes lab
 
-A regression check for one thing: when someone picks a model in Redde, does the turn reach the
-endpoint that serves it, on Hermes as it ships? It exists because a personal Hermes with local
-patches hid two bugs that every other server had.
+A regression check against Hermes as it ships, for two things a personal Hermes hid (local
+patches, an older release): when someone picks a model in Redde, does the turn reach the endpoint
+that serves it? And when the agent wants to run a command it has to ask about, is the app asked?
 
 ```
 scripts/hermes-lab/lab.sh run            # Hermes 0.21.0, 0.21.3 and 0.21.5, five provider setups
 scripts/hermes-lab/lab.sh run --app      # also runs EchoTests/HermesLabTests against each lab
 scripts/hermes-lab/lab.sh run v2026.9.24 # one release; any tag of NousResearch/hermes-agent
+scripts/hermes-lab/lab.sh approvals      # the app's Dashboard client is asked before a command runs
 scripts/hermes-lab/lab.sh up v2026.9.24 two   # leave one lab running to poke at; `down` stops it
 ```
 
@@ -36,6 +37,21 @@ It mirrors `Conversation.liveProvider`, `HermesServeClient.modelSwitchValue` and
 `HermesSessionsTransport`; change those and this together. `--app` runs the real Hermes API
 transport (`EchoTests/HermesLabTests`) in the simulator, which shares the Mac's loopback; that test
 skips when no lab is up, so the normal suite is unaffected.
+
+## Approvals
+
+`approvals` runs the `approval` scenario on each release: approvals set to ask a person, and a
+Dashboard with a public address, so it asks for a login (`lab` / `labpass-labpass`) and the app
+signs in as it does on a real server. A message containing "danger" makes the stub call the
+terminal tool with `rm -rf` on a folder it has just made, and it answers the tool's result with
+`[gone]` or `[kept]` by looking for the folder. `EchoTests/HermesLabApprovalTests` sends that
+message through the app's own client and answers the card, once with yes and once with no.
+
+The Dashboard changed how it asks. Hermes 0.21.0 sends an `approval.request` notification,
+answered by an `approval.respond` call. Hermes 0.21.3 sends a JSON-RPC request to the client,
+answered by the response frame with the same id, and 0.21.5 sends it only to a client that has
+said `client.capabilities {server_requests: true}`; for any other, the command is refused at once. The
+same goes for the agent's questions, the sudo password and secrets (`HermesServeClient.prompt`).
 
 Not covered: cloud providers (no keys here), and a conversation with no model picked on Hermes
 0.21.3 or older over the Hermes API, which fails from the second turn on the server's side.

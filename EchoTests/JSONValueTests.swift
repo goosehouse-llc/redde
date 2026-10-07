@@ -71,3 +71,55 @@ struct ClarifyParseTests {
         #expect(b.isBatch && b.questions.map(\.id) == ["q1", "q2"] && b.questions[1].multiSelect)
     }
 }
+
+/// What the Dashboard asks of its client. From Hermes 0.21.3 it comes as a JSON-RPC request, not
+/// the notification it was, and has to draw the same card.
+struct ServerRequestTests {
+    private func json(_ text: String) throws -> JSONValue {
+        try JSONDecoder().decode(JSONValue.self, from: Data(text.utf8))
+    }
+
+    @Test func anApprovalRequestBecomesTheNotificationItReplaced() throws {
+        let params = try json(#"{"session_id":"rt-1","command":"rm -rf build","description":"recursive delete","choices":["once","session","always","deny"]}"#)
+        let event = try #require(HermesServeClient.prompt(method: "approval", id: "srq-0a1b", params: params))
+        #expect(event.type == "approval.request")
+        #expect(event.sessionID == "rt-1")
+        let request = HermesServeTransport.parseApproval(event.payload)
+        #expect(request.id == "srq-0a1b", "the frame's id is what the answer goes back under")
+        #expect(request.command == "rm -rf build" && request.description == "recursive delete")
+        #expect(request.choices == ["once", "session", "always", "deny"])
+    }
+
+    @Test func aQuestionAPasswordAndASecretAreAskedTheSameWay() throws {
+        let clarify = try #require(HermesServeClient.prompt(method: "clarify", id: "srq-1", params: try json(#"{"session_id":"rt","question":"Which?","choices":["a","b"]}"#)))
+        #expect(clarify.type == "clarify.request")
+        let question = HermesServeTransport.parseClarify(clarify.payload)
+        #expect(question.id == "srq-1" && !question.isBatch && question.questions[0].choices == ["a", "b"])
+        #expect(HermesServeClient.prompt(method: "sudo", id: "srq-2", params: try json(#"{"session_id":"rt"}"#))?.type == "sudo.request")
+        let secret = try #require(HermesServeClient.prompt(method: "secret", id: "srq-3", params: try json(#"{"session_id":"rt","env_var":"API_KEY","prompt":"Paste it"}"#)))
+        #expect(secret.type == "secret.request" && secret.payload["env_var"]?.string == "API_KEY" && secret.payload["request_id"]?.string == "srq-3")
+    }
+
+    @Test func whatThePhoneCannotServeIsStillDeclined() throws {
+        for method in ["terminal.read", "file.pick", "mcp.setup", "event"] {
+            #expect(HermesServeClient.prompt(method: method, id: "srq-9", params: .object([:])) == nil, "\(method)")
+        }
+    }
+
+    @Test func aRequestIDMayBeAStringOrANumber() throws {
+        #expect(HermesServeClient.key(.string("srq-7")) == "srq-7")
+        #expect(HermesServeClient.key(.number(12)) == "12")
+        #expect(HermesServeClient.key(nil) == nil && HermesServeClient.key(.null) == nil)
+    }
+
+    @Test func choicesComeFromTheListOrFromWhatIsAllowed() throws {
+        // The notification of old listed them, or left the key out.
+        #expect(HermesServeTransport.parseApproval(try json(#"{"request_id":"r","command":"x"}"#)).choices == ["once", "session", "always", "deny"])
+        #expect(HermesServeTransport.parseApproval(try json(#"{"request_id":"r","command":"x","choices":["once","deny"]}"#)).choices == ["once", "deny"])
+        // A request may send an empty list and say what is allowed instead.
+        let narrow = HermesServeTransport.parseApproval(try json(#"{"request_id":"r","command":"x","choices":[],"allow_session":true,"allow_permanent":false}"#))
+        #expect(narrow.choices == ["once", "session", "deny"])
+        let once = HermesServeTransport.parseApproval(try json(#"{"request_id":"r","command":"x","choices":[],"allow_session":false,"allow_permanent":false}"#))
+        #expect(once.choices == ["once", "deny"])
+    }
+}

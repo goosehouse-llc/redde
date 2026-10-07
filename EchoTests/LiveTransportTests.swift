@@ -115,3 +115,83 @@ struct HermesLabTests {
         }
     }
 }
+
+/// The app's Dashboard client against the lab's `approval` scenario (`scripts/hermes-lab/lab.sh
+/// approvals`): an unmodified Hermes whose Dashboard asks for a login, and a model that calls a
+/// command Hermes asks before running. From Hermes 0.21.3 the question reaches the client a
+/// different way, and from 0.21.5 only a client that says it can answer; a personal Hermes on an
+/// older release hid that the app was never asked. Skips when that lab isn't up.
+struct HermesLabApprovalTests {
+    private static let dashboard = URL(string: "http://127.0.0.1:19119")!
+
+    private struct Outcome {
+        var asked: ApprovalRequest?
+        var reply = ""
+    }
+
+    /// One turn the stub answers with `rm -rf` on its target folder. The reply is "[gone]" when
+    /// the command ran and "[kept]" when it didn't: the stub looks.
+    private static func turn(_ client: HermesServeClient, answer: String) async throws -> Outcome {
+        var outcome = Outcome()
+        let request = TurnRequest(userText: "Do the danger thing.", history: [], sessionID: nil, model: nil, instructions: nil)
+        for try await event in HermesServeTransport(client: client).stream(request) {
+            switch event {
+            case let .textDelta(delta): outcome.reply += delta
+            case let .textFinal(text): outcome.reply = text
+            case let .interrupt(.approval(approval), runtime):
+                outcome.asked = approval
+                try await client.respondApproval(runtimeSession: runtime, requestID: approval.id, choice: answer)
+            default: break
+            }
+        }
+        // The reply after a tool call opens a new paragraph.
+        outcome.reply = outcome.reply.trimmingCharacters(in: .whitespacesAndNewlines)
+        return outcome
+    }
+
+    /// A turn nobody was asked about would wait on the host; a minute is plenty for a stub.
+    private static func timed(_ work: @escaping @Sendable () async throws -> Outcome) async throws -> Outcome {
+        try await withThrowingTaskGroup(of: Outcome.self) { group in
+            group.addTask { try await work() }
+            group.addTask {
+                try await Task.sleep(for: .seconds(60))
+                throw TransportError.malformed("the turn did not finish in a minute")
+            }
+            defer { group.cancelAll() }
+            return try await group.next() ?? Outcome()
+        }
+    }
+
+    @Test func theDashboardAsksBeforeACommandRuns() async throws {
+        var probe = URLRequest(url: Self.dashboard.appending(path: "api/status"))
+        probe.timeoutInterval = 2
+        guard (try? await URLSession.shared.data(for: probe)) != nil else {
+            print("LAB SKIP: no Hermes lab on 127.0.0.1:19119 (scripts/hermes-lab/lab.sh up <tag> approval)")
+            return
+        }
+        let settings = Settings(defaults: UserDefaults(suiteName: "lab-approval-\(UUID().uuidString)")!)
+        settings.serveURL = Self.dashboard.absoluteString
+        settings.serveUsername = "lab"
+        let client = HermesServeClient(settings: settings, password: { "labpass-labpass" })
+        do {
+            try await client.ensureConnected()
+        } catch {
+            print("LAB SKIP: the lab's Dashboard has no login for the app (scripts/hermes-lab/lab.sh up <tag> approval): \(error.localizedDescription.prefix(80))")
+            return
+        }
+        defer { client.disconnect() }
+        for (answer, expected) in [("once", "[gone]"), ("deny", "[kept]")] {
+            var detail = ""
+            var ok = false
+            do {
+                let outcome = try await Self.timed { try await Self.turn(client, answer: answer) }
+                ok = outcome.asked?.command.contains("rm -rf") == true && outcome.reply == expected
+                detail = "asked \(outcome.asked?.command ?? "nothing") \(outcome.asked?.choices ?? []), reply \(outcome.reply)"
+            } catch {
+                detail = String(error.localizedDescription.prefix(160))
+            }
+            print("  \(ok ? "PASS" : "FAIL")  a command the agent wants to run is asked about; \"\(answer)\" \(expected == "[gone]" ? "runs it" : "stops it") \(ok ? "" : detail)")
+            #expect(ok)
+        }
+    }
+}

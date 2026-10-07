@@ -5,6 +5,7 @@
 #
 #   scripts/hermes-lab/lab.sh run [tag ...]        every scenario on each release (default: DEFAULT_TAGS below)
 #   scripts/hermes-lab/lab.sh run --app [tag ...]  the same, plus the app's own transport code (EchoTests)
+#   scripts/hermes-lab/lab.sh approvals [tag ...]  the app's Dashboard client asked before a command runs
 #   scripts/hermes-lab/lab.sh up <tag> <scenario>  leave one lab running (API :18642, Dashboard :19119)
 #   scripts/hermes-lab/lab.sh down
 #
@@ -19,6 +20,7 @@ DEFAULT_TAGS=(v2026.8.31 v2026.9.14 v2026.9.24)   # Hermes 0.21.0, 0.21.3, 0.21.
 SCENARIOS=(named two bare keyed leftover)
 SIMULATOR="${REDDE_LAB_SIMULATOR:-iPhone 17 Pro}"
 export LAB_HITS="$LAB_HOME/hits.jsonl"
+export LAB_TARGET="$LAB_HOME/redde-lab-target"   # what the stub's "danger" command deletes
 
 install() {
   local tag="$1" dir="$LAB_HOME/hermes-$1"
@@ -38,7 +40,7 @@ down() {
 
 up() {
   local tag="$1" scenario="$2" hermes="$LAB_HOME/hermes-$1/.venv/bin/hermes"
-  [[ -f "$HERE/scenarios/$scenario.yaml" ]] || { echo "no scenario '$scenario' (have: $SCENARIOS)"; exit 2; }
+  [[ -f "$HERE/scenarios/$scenario.yaml" ]] || { echo "no scenario '$scenario' (have: $SCENARIOS approval)"; exit 2; }
   install "$tag"
   down
   rm -rf "$LAB_HOME"/run-*(N) 2>/dev/null || true
@@ -47,6 +49,9 @@ up() {
   export HERMES_HOME="$run/.hermes"
   cp "$HERE/scenarios/$scenario.yaml" "$HERMES_HOME/config.yaml"
   print -l "API_SERVER_ENABLED=true" "API_SERVER_KEY=labkey-labkey-labkey" "API_SERVER_PORT=18642" "API_SERVER_HOST=127.0.0.1" > "$HERMES_HOME/.env"
+  # The Dashboard's login, for the one scenario that turns it on.
+  [[ "$scenario" == approval ]] && print -l "HERMES_DASHBOARD_BASIC_AUTH_USERNAME=lab" "HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=labpass-labpass" \
+    "HERMES_DASHBOARD_BASIC_AUTH_SECRET=0123456789abcdef0123456789abcdef0123456789abcdef" >> "$HERMES_HOME/.env"
   : > "$LAB_HITS"
   # No real keys may leak in: the point is to see where an unkeyed fallback goes.
   unset OPENROUTER_API_KEY OPENAI_API_KEY ANTHROPIC_API_KEY HERMES_INFERENCE_PROVIDER 2>/dev/null || true
@@ -75,7 +80,7 @@ app_prepare() {
   APP_DEVICE=$(xcrun simctl list devices available | grep -F "$SIMULATOR (" | head -1 | grep -oE '[0-9A-F]{8}(-[0-9A-F]{4}){3}-[0-9A-F]{12}' || true)
   [[ -n "$APP_DEVICE" ]] || { echo "no simulator named '$SIMULATOR' (set REDDE_LAB_SIMULATOR)"; return 1; }
   XCODE_ARGS=(-project Echo.xcodeproj -scheme Echo -destination "platform=iOS Simulator,id=$APP_DEVICE"
-              -derivedDataPath DerivedData -only-testing:EchoTests/HermesLabTests)
+              -derivedDataPath DerivedData -only-testing:EchoTests/${1:-HermesLabTests})
   xcrun simctl bootstatus "$APP_DEVICE" -b > /dev/null 2>&1 || true
   echo "building EchoTests for the app check …"
   (cd "$REPO" && xcodebuild build-for-testing $XCODE_ARGS 2>&1 | grep -E ": error: |BUILD FAILED" || true)
@@ -90,7 +95,7 @@ app_check() {
     [[ "$out" == *"  PASS"* || "$out" == *"  FAIL"* || "$out" == *"LAB SKIP"* ]] && break
     sleep 8
   done
-  echo "App transport (EchoTests/HermesLabTests)"
+  echo "App transport (${XCODE_ARGS[-1]#-only-testing:})"
   echo "$out" | grep -E "^  (PASS|FAIL)|LAB SKIP" || echo "  the test host never launched"
   [[ "$out" == *"TEST EXECUTE SUCCEEDED"* && "$out" == *"  PASS"* && "$out" != *"  FAIL"* ]]
 }
@@ -113,10 +118,27 @@ run() {
   echo "\nAll checks passed."
 }
 
+# From Hermes 0.21.3 the Dashboard asks its client for an approval in a different way, and from
+# 0.21.5 only a client that says it can answer. The app's own client, signed in as on a real
+# server, has to be asked on every release, and its yes and its no both have to count.
+approvals() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  app_prepare HermesLabApprovalTests || exit 1
+  for tag in $tags; do
+    echo "===== Hermes $tag / approval"
+    if ! up "$tag" approval; then failed+=("$tag (lab)"); continue; fi
+    app_check || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
 mkdir -p "$LAB_HOME"
 case "${1:-}" in
   run) shift; run "$@" ;;
+  approvals) shift; approvals "$@" ;;
   up) up "$2" "$3" && echo "lab up: Hermes $2 / $3 — API http://127.0.0.1:18642 (key labkey-labkey-labkey), Dashboard http://127.0.0.1:19119" ;;
   down) down ;;
-  *) sed -n '2,13p' "$0"; exit 2 ;;
+  *) sed -n '2,14p' "$0"; exit 2 ;;
 esac

@@ -264,7 +264,12 @@ every row on each update).
 When the agent pauses a Dashboard turn, a card appears in the transcript and
 on the voice screen: approvals (once / session / always / deny), clarifying questions, sudo (sent
 straight to the gateway terminal, never stored) and secrets (saved on the gateway under the named
-env var).
+env var). Hermes asks in one of two ways, and the client speaks both (`HermesServeClient.prompt`):
+0.21.0 sends a `<kind>.request` notification answered by a `<kind>.respond` call; 0.21.3 and later
+send a JSON-RPC request to the client, answered by the response frame with its id, and from
+0.21.5 only to a client that has said `client.capabilities {server_requests: true}`. A client that
+doesn't say so is never asked and the command is refused, which is what Redde 1.5 and 1.6 (259) do
+on those releases. `scripts/hermes-lab/lab.sh approvals` checks every release.
 
 ### Follow-ups and context chips
 
