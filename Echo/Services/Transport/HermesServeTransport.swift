@@ -44,6 +44,13 @@ nonisolated struct HermesServeTransport: HermesTransport {
                     let turn = TurnState(runtime: runtime, stored: stored)
                     state = turn
                     continuation.yield(.sessionID(stored))
+                    #if !os(watchOS)
+                    // A paired Hermes notifies this phone about the conversations it takes part in.
+                    if client === HermesServeClient.shared {
+                        PushService.shared.follow(stored: stored, runtime: runtime, client: client,
+                                                  server: Settings.shared.activeServerID.uuidString)
+                    }
+                    #endif
 
                     if request.userText.hasPrefix("/") {
                         for event in try await Self.runSlash(request.userText, runtime: runtime, client: client) {

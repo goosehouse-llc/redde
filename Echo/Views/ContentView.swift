@@ -22,6 +22,7 @@ struct ContentView: View {
     @State private var showSetup = false
     /// A setup link that was opened, up for confirmation.
     @State private var setupCode: SetupCodeOffer?
+    @State private var pushOffer: PushOffer?
     @State private var showConversations = false
     /// iPhone: where the row of the conversation just opened was tapped (see `SidePanel`).
     @State private var openingFromRow: CGPoint?
@@ -40,6 +41,8 @@ struct ContentView: View {
     #if DEBUG
     /// Dev hook: `-echo.screen profiles` opens the profile picker (screenshots, live tests).
     @State private var showProfilePicker = false
+    /// Dev hook: `-echo.screen push` opens the pairings for notifications (UI tests, the lab).
+    @State private var showPush = false
     @State private var showTips = false
     @State private var showServers = false
     #endif
@@ -70,11 +73,13 @@ struct ContentView: View {
             // A first run the code didn't finish goes back to setup.
             if !settings.setupDone, !settings.isConfigured { showSetup = true }
         }) { SetupCodeSheet(offer: $0) }
+        .sheet(item: $pushOffer) { PushPairingSheet(offer: $0) }
         .sheet(item: $whatsNew) { WhatsNewView(release: $0) }
         #if DEBUG
         .sheet(isPresented: $showProfilePicker) { NavigationStack { ProfilePickerView() } }
         .sheet(isPresented: $showTips) { NavigationStack { TipJarView() } }
         .sheet(isPresented: $showServers) { NavigationStack { ServersView() } }
+        .sheet(isPresented: $showPush) { NavigationStack { PushSettingsView() } }
         #endif
         .fullScreenCover(isPresented: $showVoice) {
             VoiceView(session: voiceSession, onSwitchToTyping: {
@@ -120,19 +125,25 @@ struct ContentView: View {
             if url.scheme == EchoURL.scheme, url.host == "share" { consumeSharedItems() }
             // A setup link (redde.goosehouse.org/connect#… or redde://connect), from the Camera
             // or a tap: a setup code to confirm.
-            if let offer = SetupCodeOffer(url: url) { router.requestSetup(offer) }
+            // The same address carries a pairing link for notifications (`hermes redde-push pair`).
+            if let offer = PushOffer(url: url) { router.requestPushPairing(offer) }
+            else if let offer = SetupCodeOffer(url: url) { router.requestSetup(offer) }
         }
         .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
             // The web form is a universal link, which can arrive this way as well.
-            if let url = activity.webpageURL, let offer = SetupCodeOffer(url: url) { router.requestSetup(offer) }
+            guard let url = activity.webpageURL else { return }
+            if let offer = PushOffer(url: url) { router.requestPushPairing(offer) }
+            else if let offer = SetupCodeOffer(url: url) { router.requestSetup(offer) }
         }
-        .onAppear { consumeControlRequest(); handleLaunchRequest(); handleDraftRequest(); handleSetupCode() }
+        .onAppear { consumeControlRequest(); handleLaunchRequest(); handleDraftRequest(); handleSetupCode(); handlePushRequests() }
         .onChange(of: router.pendingVoice) { handleLaunchRequest() }
         .onChange(of: router.pendingDraft) { handleDraftRequest() }
         .onChange(of: router.pendingSetupCode) { handleSetupCode() }
+        .onChange(of: router.pendingPushOffer) { handlePushRequests() }
+        .onChange(of: router.pendingSession) { handlePushRequests() }
         .onChange(of: lock.isLocked) { _, locked in
             // A Siri / control / share request that arrived while locked runs once unlocked.
-            if !locked { consumeControlRequest(); handleLaunchRequest(); consumeSharedItems(); handleDraftRequest(); handleSetupCode() }
+            if !locked { consumeControlRequest(); handleLaunchRequest(); consumeSharedItems(); handleDraftRequest(); handleSetupCode(); handlePushRequests() }
             // "What's New" held back by the lock. A moment later, so a voice request opens first.
             if !locked { Task { try? await Task.sleep(for: .milliseconds(600)); presentWhatsNewIfDue() } }
         }
@@ -419,6 +430,30 @@ struct ContentView: View {
         composerFocused = true
     }
 
+    /// From a paired Hermes's notifications: a pairing link that was opened, confirmed in a sheet
+    /// of its own (over the conversation, so other sheets make way as for a setup code), and a
+    /// tapped notification's conversation, fetched from the server and shown.
+    private func handlePushRequests() {
+        guard !lock.isLocked else { return }
+        if let offer = router.consumePushOffer() {
+            let covered = showSetup || showSettings || showModelPicker || whatsNew != nil || showVoice || setupCode != nil
+            showSetup = false
+            showSettings = false
+            showModelPicker = false
+            whatsNew = nil
+            Task {
+                if covered { try? await Task.sleep(for: .milliseconds(600)) }
+                pushOffer = offer
+            }
+        }
+        if let session = router.consumeSession(), conversation.serverSessionID != session, !conversation.isStreaming {
+            if sizeClass != .regular, showConversations { setDrawer(open: false) }
+            // A conversation on another server than the one the app is on can't be fetched: the
+            // app then stays where it was.
+            Task { try? await conversation.open(serverSession: session) }
+        }
+    }
+
     /// A setup link was opened: its confirmation comes up over the conversation, so whatever
     /// sheet is up makes way first (a second sheet can't present over one). Nothing is saved
     /// until the person agrees there.
@@ -485,6 +520,7 @@ struct ContentView: View {
         case "servers": showServers = true
         case "model": showModelPicker = true
         case "tips": showTips = true
+        case "push": showPush = true
         default: break
         }
         if let text = DevHooks.value("-echo.draft") {
@@ -493,6 +529,9 @@ struct ContentView: View {
         }
         if let link = DevHooks.value("-echo.setupCode"), let url = URL(string: link), let offer = SetupCodeOffer(url: url) {
             router.requestSetup(offer)
+        }
+        if let link = DevHooks.value("-echo.pushLink"), let url = URL(string: link), let offer = PushOffer(url: url) {
+            router.requestPushPairing(offer)
         }
         if DevHooks.has("-echo.fresh") { conversation.reset() }
         if let text = DevHooks.value("-echo.ask") {

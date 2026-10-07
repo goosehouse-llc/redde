@@ -16,7 +16,9 @@ import Foundation
 /// - `-echo.demoProjects`: fill the conversation list's Projects from a fixture (Dashboard connection).
 /// - `-echo.demoHosts`: replace any real endpoints with example hosts.
 /// - `-echo.demoKanban`: a sample Kanban board instead of the server's.
-/// - `-echo.screen settings|sessions|setup|profiles|servers|model|tips`: open that screen at launch.
+/// - `-echo.screen settings|sessions|setup|profiles|servers|model|tips|push`: open that screen at launch.
+/// - `-echo.pushLink <link>`: open a pairing link for notifications, as the Camera would.
+///   `-push.relay <url>` points the app at another push relay (the lab's, on this Mac).
 /// - `-echo.section cron|kanban`: open the conversation list on that tab.
 /// - `-echo.settingsAnchor`: scroll Settings to the context and memory files.
 /// - `-echo.expandAppIcons`: open Settings' app icon grid.

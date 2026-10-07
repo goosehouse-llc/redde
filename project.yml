@@ -34,6 +34,7 @@ targets:
     dependencies:
       - target: EchoControls
       - target: EchoShare
+      - target: EchoPush
       - target: EchoWatch
     entitlements:
       path: Echo/Echo.entitlements
@@ -231,6 +232,36 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.goosehouse.echo.share
         SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+        SKIP_INSTALL: true
+  # Opens the sealed notifications a paired Hermes sends through the push relay (Shared/PushSeal).
+  # Only what that takes is compiled in: an extension that runs for every notification stays small.
+  EchoPush:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: EchoPush
+      - path: Shared/PushSeal.swift
+      - path: Shared/PlainText.swift
+      - path: Shared/ReplyMedia.swift
+      - path: Shared/Attachment.swift
+    entitlements:
+      path: EchoPush/EchoPush.entitlements
+      properties:
+        # The pairings' Keychain item is shared through the app group.
+        com.apple.security.application-groups:
+          - group.com.goosehouse.echo
+    info:
+      path: EchoPush/Info.plist
+      properties:
+        CFBundleDisplayName: Redde
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.usernotifications.service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationService
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.goosehouse.echo.push
         SKIP_INSTALL: true
   EchoTests:
     type: bundle.unit-test

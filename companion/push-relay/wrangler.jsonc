@@ -1,8 +1,9 @@
 {
-  // Redde push relay: hermes outbound webhooks in, APNs alerts out.
-  // Secrets (wrangler secret put): HMAC_SECRET (hermes webhook signing),
-  // REGISTER_SECRET (device registration bearer), APNS_KEY (the .p8 PEM),
-  // APNS_KEY_ID (10-char key id from the developer portal).
+  // Redde push relay: sealed notes from a paired Hermes in, APNs notifications out (/v1), and
+  // the older household routes, hermes outbound webhooks in, APNs alerts out. See README.md.
+  // Secrets (wrangler secret put): APNS_KEY (the .p8 PEM), APNS_KEY_ID (10-char key id from
+  // the developer portal); for the household routes HMAC_SECRET (hermes webhook signing) and
+  // REGISTER_SECRET (device registration bearer).
   "name": "redde-push-relay",
   "main": "src/index.js",
   "compatibility_date": "2026-09-01",
@@ -16,5 +17,9 @@
     // (Redde's own surfaces — Telegram etc. already notify natively).
     "PUSH_PLATFORMS": "desktop,api_server"
   },
+  // What one pairing may send: two notes a second, sustained, is far more than an agent writes.
+  "ratelimits": [
+    { "name": "PUSH_LIMIT", "namespace_id": "1001", "simple": { "limit": 120, "period": 60 } }
+  ],
   "observability": { "enabled": true }
 }

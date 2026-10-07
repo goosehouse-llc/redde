@@ -8,6 +8,28 @@ struct SetupCodeScanner: View {
     var onCode: (SetupCodeOffer) -> Void
 
     /// Whether this device can scan at all (not the simulator, not the iPad app on a Mac).
+    static var isSupported: Bool { CodeScanner.isSupported }
+
+    var body: some View {
+        CodeScanner(title: "Scan a setup code", prompt: "Point the camera at a Redde setup code.",
+                    wrong: "That isn't a Redde setup code.",
+                    denied: "Allow the camera for Redde in Settings to scan a setup code, or paste the setup link instead.") { text in
+            guard let offer = SetupCodeOffer(text: text) else { return false }
+            onCode(offer)
+            return true
+        }
+    }
+}
+
+/// The camera, looking for one kind of QR code: `accept` is shown each code read and says whether
+/// it was the kind wanted. The first that is closes the scanner; any other gets `wrong`.
+struct CodeScanner: View {
+    var title: LocalizedStringKey
+    var prompt: LocalizedStringKey
+    var wrong: LocalizedStringKey
+    var denied: LocalizedStringKey
+    var accept: (String) -> Bool
+
     static var isSupported: Bool { DataScannerViewController.isSupported }
 
     private enum Access { case asking, allowed, denied }
@@ -29,7 +51,7 @@ struct SetupCodeScanner: View {
                         .ignoresSafeArea()
                     VStack {
                         Spacer()
-                        Text(wrongCode ? "That isn't a Redde setup code." : "Point the camera at a Redde setup code.")
+                        Text(wrongCode ? wrong : prompt)
                             .font(.callout.weight(.medium))
                             .padding(.horizontal, 16)
                             .padding(.vertical, 10)
@@ -40,7 +62,7 @@ struct SetupCodeScanner: View {
                     ContentUnavailableView {
                         Label("No camera access", systemImage: "camera.fill")
                     } description: {
-                        Text("Allow the camera for Redde in Settings to scan a setup code, or paste the setup link instead.")
+                        Text(denied)
                     } actions: {
                         Button("Open Settings") {
                             if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
@@ -49,7 +71,7 @@ struct SetupCodeScanner: View {
                     .foregroundStyle(.white)
                 }
             }
-            .navigationTitle("Scan a setup code")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
@@ -60,12 +82,11 @@ struct SetupCodeScanner: View {
     }
 
     private func read(_ text: String) {
-        guard let offer = SetupCodeOffer(text: text) else {
+        guard accept(text) else {
             wrongCode = true
             return
         }
         UINotificationFeedbackGenerator().notificationOccurred(.success)
-        onCode(offer)
         dismiss()
     }
 

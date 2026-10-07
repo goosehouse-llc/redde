@@ -5,8 +5,9 @@ import UserNotifications
 import os
 
 /// Local notifications for things that happen while Redde isn't in front: the agent waiting
-/// on you, a reply landing, a turn failing. No push server; these fire only while the app is
-/// still running in the background, which `BackgroundTurn` extends for the length of a turn.
+/// on you, a reply landing, a turn failing. These fire only while the app is still running in
+/// the background, which `BackgroundTurn` extends for the length of a turn. After that a paired
+/// Hermes sends them itself (`PushService`); taps and replies on those are routed here too.
 /// The slice of UNUserNotificationCenter that Notifier uses — a seam so tests observe
 /// requests and categories instead of talking to the system center (which would demand
 /// real authorization from the test host).
@@ -24,10 +25,11 @@ protocol NotificationCentering: AnyObject {
 extension UNUserNotificationCenter: NotificationCentering {
     func delivered() async -> [Notifier.DeliveredBanner] {
         await deliveredNotifications().map {
-            // The push relay stamps a top-level "session" key into its payloads; local
-            // banners never set one, so its presence marks a remote relay push.
+            // A notification that came through a push relay carries a top-level "session" key
+            // (the notification extension writes it, as the household relay does); local banners
+            // never set one, so its presence marks a remote push.
             Notifier.DeliveredBanner(id: $0.request.identifier,
-                                     isRelayPush: $0.request.content.userInfo["session"] != nil,
+                                     isRelayPush: $0.request.content.userInfo[PushNote.sessionKey] != nil,
                                      date: $0.date)
         }
     }
@@ -108,7 +110,12 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
                                                      options: settings.requireBiometrics ? [.authenticationRequired] : [],
                                                      textInputButtonTitle: "Send", textInputPlaceholder: "Message")
         let replied = UNNotificationCategory(identifier: Self.repliedCategory, actions: [followUp], intentIdentifiers: [])
-        fixedCategories = [category, clarifyText, replied]
+        // The same for a reply that came as a push, always behind an unlock: the app is started
+        // for it, and can't read its saved passwords while the phone is locked.
+        let pushedFollowUp = UNTextInputNotificationAction(identifier: Self.followUpAction, title: "Reply", options: [.authenticationRequired],
+                                                           textInputButtonTitle: "Send", textInputPlaceholder: "Message")
+        let pushed = UNNotificationCategory(identifier: PushNote.repliedCategory, actions: [pushedFollowUp], intentIdentifiers: [])
+        fixedCategories = [category, clarifyText, replied, pushed]
         center.setNotificationCategories(fixedCategories)
     }
 
@@ -160,19 +167,65 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let approve = info["approve"] as? String
         let deny = info["deny"] as? String
         let conversationID = info[Self.conversationKey] as? String
+        let sessionID = info[PushNote.sessionKey] as? String
         let userText = (response as? UNTextInputNotificationResponse)?.userText
         await MainActor.run {
             self.route(action: action, requestID: requestID, questionID: questionID,
-                       approve: approve, deny: deny, userText: userText, conversationID: conversationID)
+                       approve: approve, deny: deny, userText: userText, conversationID: conversationID, sessionID: sessionID)
         }
+    }
+
+    /// A notification arriving while Redde is in front. The app's own are only posted from the
+    /// background, so this is one a paired Hermes sent: shown unless it is about the conversation
+    /// on screen, which already shows it.
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+        let info = notification.request.content.userInfo
+        let kind = info[PushNote.kindKey] as? String
+        let sessionID = info[PushNote.sessionKey] as? String
+        let sealed = info[PushNote.sealedKey] as? String
+        return await MainActor.run {
+            if kind == nil, let sealed { return self.presentUnopened(sealed) }
+            return self.presentation(pushKind: kind, sessionID: sessionID)
+        }
+    }
+
+    /// A note from a paired Hermes that reached the app still sealed: the notification extension
+    /// didn't open it (it couldn't read the key, or this is a simulator, where a simulated push
+    /// skips extensions). In front, the app can: it opens the note and shows a banner of its own
+    /// in place of the one that says nothing. One it can't open either is shown as it came.
+    func presentUnopened(_ sealed: String, vault: () -> [PushPairing] = { PushVault.load() },
+                         confirm: (PushPairing, String?) -> Void = { PushVault.confirm($0, host: $1) }) -> UNNotificationPresentationOptions {
+        guard let (note, pairing) = PushSeal.note(from: sealed, pairings: vault()) else { return [.banner, .list, .sound] }
+        confirm(pairing, note.n)
+        let content = UNMutableNotificationContent()
+        content.sound = .default
+        guard note.fill(content) else { return [.banner, .list, .sound] }
+        guard !presentation(pushKind: note.k, sessionID: note.s).isEmpty else { return [] }
+        center.add(UNNotificationRequest(identifier: "redde.push.\(UUID().uuidString)", content: content, trigger: nil)) { [weak self] error in
+            if let error { Task { @MainActor in self?.log.error("notify failed: \(error.localizedDescription)") } }
+        }
+        return []
+    }
+
+    func presentation(pushKind kind: String?, sessionID: String?) -> UNNotificationPresentationOptions {
+        guard let kind else { return [] }
+        PushService.shared.reload()   // the first note from a pairing confirms it
+        if let sessionID, sessionID == conversation?.serverSessionID, PushNote.Kind(rawValue: kind) != .paired { return [] }
+        return [.banner, .list, .sound]
     }
 
     /// Testable core of the banner-action callback: maps the action and the notification's
     /// userInfo fields onto the pending interrupt. A plain tap (no requestID) just opens the app.
     func route(action: String, requestID: String?, questionID: String?,
-               approve: String?, deny: String?, userText: String?, conversationID: String? = nil) {
+               approve: String?, deny: String?, userText: String?, conversationID: String? = nil, sessionID: String? = nil) {
         if action == Self.followUpAction {
-            if let userText { followUp(userText, conversationID: conversationID) }
+            guard let userText else { return }
+            if let sessionID { followUp(userText, sessionID: sessionID) } else { followUp(userText, conversationID: conversationID) }
+            return
+        }
+        // A tap on a notification a paired Hermes sent: open the conversation it is about.
+        if action == UNNotificationDefaultActionIdentifier, let sessionID {
+            LaunchRouter.shared.requestSession(sessionID)
             return
         }
         let choice = action == Self.approveAction ? approve : action == Self.denyAction ? deny : nil
@@ -214,6 +267,27 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
             conversation.load(record)
         }
         conversation.send(text)
+    }
+
+    /// A message typed on a pushed reply's banner. The app may have been started for this, with
+    /// nothing open: the conversation is fetched from the server first.
+    private func followUp(_ text: String, sessionID: String) {
+        guard let conversation else { return }
+        BackgroundTurn.shared.begin()
+        Task {
+            do {
+                if conversation.serverSessionID != sessionID {
+                    guard !conversation.isStreaming else {
+                        log.notice("reply typed on a pushed banner while another reply streams; not sent")
+                        return
+                    }
+                    try await conversation.open(serverSession: sessionID)
+                }
+                conversation.send(text)
+            } catch {
+                log.error("reply typed on a pushed banner couldn't open its conversation: \(error.localizedDescription)")
+            }
+        }
     }
 
     /// Answers the approval that is waiting, if it is still that one: from the banner's buttons
@@ -339,10 +413,13 @@ final class PushDelegate: NSObject, UIApplicationDelegate {
     nonisolated func application(_ application: UIApplication,
                                  didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         Task.detached { await Notifier.uploadDeviceToken(deviceToken) }
+        Task { @MainActor in PushService.shared.received(token: deviceToken) }
     }
 
     nonisolated func application(_ application: UIApplication,
                                  didFailToRegisterForRemoteNotificationsWithError error: Error) {
         log.error("push registration failed: \(error.localizedDescription)")
+        let reason = error.localizedDescription
+        Task { @MainActor in PushService.shared.failedToRegister(PushError.noToken(reason)) }
     }
 }

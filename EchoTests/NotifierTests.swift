@@ -274,6 +274,54 @@ struct NotifierTests {
                          approve: nil, deny: nil, userText: nil)
         #expect(conversation.pendingInterrupt != nil)
     }
+
+    // MARK: Notifications a paired Hermes sent
+
+    @Test func aPushedReplyCanBeAnsweredOnlyOnceThePhoneIsUnlocked() {
+        let h = Harness()
+        h.notifier.registerCategories()
+        let pushed = try! #require(h.center.categories.first { $0.identifier == PushNote.repliedCategory })
+        #expect(pushed.actions.map(\.title) == ["Reply"])
+        #expect(pushed.actions[0].options.contains(.authenticationRequired),
+                "the app is started for it and can't read its passwords while the phone is locked")
+        let local = try! #require(h.center.categories.first { $0.identifier == Notifier.repliedCategory })
+        #expect(!local.actions[0].options.contains(.authenticationRequired))
+    }
+
+    @Test func tappingAPushedNotificationAsksForItsConversation() {
+        let h = Harness()
+        _ = LaunchRouter.shared.consumeSession()
+        h.notifier.route(action: UNNotificationDefaultActionIdentifier, requestID: nil, questionID: nil,
+                         approve: nil, deny: nil, userText: nil, sessionID: "20261006_101500_ab12cd")
+        #expect(LaunchRouter.shared.consumeSession() == "20261006_101500_ab12cd")
+        // A tap on one of the app's own banners just opens the app.
+        h.notifier.route(action: UNNotificationDefaultActionIdentifier, requestID: nil, questionID: nil,
+                         approve: nil, deny: nil, userText: nil)
+        #expect(LaunchRouter.shared.consumeSession() == nil)
+    }
+
+    @Test func aPushArrivingInFrontShowsUnlessItsConversationIsOnScreen() {
+        let h = Harness(appActive: true)
+        let conversation = Conversation(settings: h.settings,
+                                        store: ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "n-\(UUID().uuidString)")))
+        conversation.replaceForDemo(serverSessionID: "open-session", messages: [])
+        h.notifier.attach(conversation: conversation)
+        #expect(h.notifier.presentation(pushKind: "reply", sessionID: "open-session") == [])
+        #expect(h.notifier.presentation(pushKind: "approval", sessionID: "open-session") == [])
+        #expect(h.notifier.presentation(pushKind: "reply", sessionID: "another").contains(.banner))
+        #expect(h.notifier.presentation(pushKind: "paired", sessionID: nil).contains(.banner))
+        #expect(h.notifier.presentation(pushKind: "test", sessionID: nil).contains(.banner))
+        #expect(h.notifier.presentation(pushKind: nil, sessionID: nil) == [], "not from a paired Hermes: as before")
+    }
+
+    @Test func aLocalBannerStillSweepsThePushedTwinOfTheSameEvent() async throws {
+        let h = Harness()
+        h.center.deliveredList = [.init(id: "pushed", isRelayPush: true, date: .now), .init(id: "older", isRelayPush: true, date: .now.addingTimeInterval(-120)),
+                                  .init(id: "local", isRelayPush: false, date: .now)]
+        h.notifier.notify(.replied, title: "Redde", body: "Done.")
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(h.center.removedIDs == ["pushed"])
+    }
 }
 
 /// The system activity for a reply that runs on after the phone locks needs a progress value,

@@ -79,7 +79,7 @@ nonisolated struct SetupCode: Equatable, Sendable {
 
     /// A setup link's parameters, still percent-encoded: the query of an app link, the fragment
     /// of a web link. Nil when `url` isn't a setup link; a bare link to the page is just the page.
-    private static func parameters(of url: URL) -> String? {
+    static func parameters(of url: URL) -> String? {
         let scheme = url.scheme?.lowercased(), host = url.host()?.lowercased()
         if scheme == Self.scheme, host == Self.host { return url.query(percentEncoded: true) ?? "" }
         guard scheme == "https", host == webHost, url.port == nil,
@@ -104,6 +104,9 @@ nonisolated struct SetupCode: Equatable, Sendable {
             // The first of a repeated parameter counts, as it does for the person reading the link.
             if !value.isEmpty, fields[name] == nil { fields[name] = value }
         }
+        // A pairing link for notifications rides on the same address (`PushOffer`); it sets up
+        // no connection.
+        if fields[PushOffer.parameter] != nil { return nil }
         if let version = fields["v"], (Int(version) ?? .max) > Self.version { throw .newerVersion }
 
         var code = SetupCode()

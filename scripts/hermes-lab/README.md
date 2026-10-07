@@ -1,14 +1,17 @@
 # Hermes lab
 
-A regression check against Hermes as it ships, for two things a personal Hermes hid (local
-patches, an older release): when someone picks a model in Redde, does the turn reach the endpoint
-that serves it? And when the agent wants to run a command it has to ask about, is the app asked?
+A regression check against Hermes as it ships. Two of its questions are ones a personal Hermes hid
+(local patches, an older release): when someone picks a model in Redde, does the turn reach the
+endpoint that serves it? When the agent wants to run a command it has to ask about, is the app
+asked? The third is whether the push plugin works inside each release.
 
 ```
 scripts/hermes-lab/lab.sh run            # Hermes 0.21.0, 0.21.3 and 0.21.5, five provider setups
 scripts/hermes-lab/lab.sh run --app      # also runs EchoTests/HermesLabTests against each lab
 scripts/hermes-lab/lab.sh run v2026.9.24 # one release; any tag of NousResearch/hermes-agent
 scripts/hermes-lab/lab.sh approvals      # the app's Dashboard client is asked before a command runs
+scripts/hermes-lab/lab.sh push           # the push plugin: pairing, and notes for replies and approvals
+scripts/hermes-lab/lab.sh push --app     # and the app in a simulator pairs with each release
 scripts/hermes-lab/lab.sh up v2026.9.24 two   # leave one lab running to poke at; `down` stops it
 ```
 
@@ -52,6 +55,22 @@ answered by an `approval.respond` call. Hermes 0.21.3 sends a JSON-RPC request t
 answered by the response frame with the same id, and 0.21.5 sends it only to a client that has
 said `client.capabilities {server_requests: true}`; for any other, the command is refused at once. The
 same goes for the agent's questions, the sudo password and secrets (`HermesServeClient.prompt`).
+
+## Push
+
+`push` runs the `push` scenario: the plugin from `companion/hermes-plugin/redde-push` copied into
+the lab's Hermes home, the relay's own code under Node (`companion/push-relay/test/local.mjs`), and
+`fake_apns.py` in place of Apple, which writes down every notification it is handed.
+`push_check.py` plays the phone: it registers with the relay, answers the link that
+`hermes redde-push pair` prints, and opens what arrives. A reply over the Hermes API has to reach
+it; over the Dashboard, only once the conversation is followed, and then an approval too; and
+nothing "Apple" was handed may contain a word of it.
+
+`--app` then does the pairing with the real app (`EchoUITests/PushPairingUITests`): the app opens
+the link, pairs, and has to show the next reply's text in a notification. The simulator is the one
+named by `REDDE_LAB_SIMULATOR` (a name or an id). It gets notifications as simulated pushes, which
+skip the app's notification extension; the app opens them itself while it is in front. The
+extension opening one with the app closed takes a real push and a phone. Needs Node 20 or later.
 
 Not covered: cloud providers (no keys here), and a conversation with no model picked on Hermes
 0.21.3 or older over the Hermes API, which fails from the second turn on the server's side.

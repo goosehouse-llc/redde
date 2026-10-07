@@ -6,6 +6,8 @@
 #   scripts/hermes-lab/lab.sh run [tag ...]        every scenario on each release (default: DEFAULT_TAGS below)
 #   scripts/hermes-lab/lab.sh run --app [tag ...]  the same, plus the app's own transport code (EchoTests)
 #   scripts/hermes-lab/lab.sh approvals [tag ...]  the app's Dashboard client asked before a command runs
+#   scripts/hermes-lab/lab.sh push [tag ...]       the push plugin: pairing, and notes for replies and approvals
+#   scripts/hermes-lab/lab.sh push --app [tag ...] the same, then the app in a simulator pairs and reads a notification
 #   scripts/hermes-lab/lab.sh up <tag> <scenario>  leave one lab running (API :18642, Dashboard :19119)
 #   scripts/hermes-lab/lab.sh down
 #
@@ -21,6 +23,7 @@ SCENARIOS=(named two bare keyed leftover)
 SIMULATOR="${REDDE_LAB_SIMULATOR:-iPhone 17 Pro}"
 export LAB_HITS="$LAB_HOME/hits.jsonl"
 export LAB_TARGET="$LAB_HOME/redde-lab-target"   # what the stub's "danger" command deletes
+export LAB_APNS="$LAB_HOME/apns.jsonl"           # what the push scenario's stand-in for Apple received
 
 install() {
   local tag="$1" dir="$LAB_HOME/hermes-$1"
@@ -40,7 +43,7 @@ down() {
 
 up() {
   local tag="$1" scenario="$2" hermes="$LAB_HOME/hermes-$1/.venv/bin/hermes"
-  [[ -f "$HERE/scenarios/$scenario.yaml" ]] || { echo "no scenario '$scenario' (have: $SCENARIOS approval)"; exit 2; }
+  [[ -f "$HERE/scenarios/$scenario.yaml" ]] || { echo "no scenario '$scenario' (have: $SCENARIOS approval push)"; exit 2; }
   install "$tag"
   down
   rm -rf "$LAB_HOME"/run-*(N) 2>/dev/null || true
@@ -53,11 +56,22 @@ up() {
   [[ "$scenario" == approval ]] && print -l "HERMES_DASHBOARD_BASIC_AUTH_USERNAME=lab" "HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=labpass-labpass" \
     "HERMES_DASHBOARD_BASIC_AUTH_SECRET=0123456789abcdef0123456789abcdef0123456789abcdef" >> "$HERMES_HOME/.env"
   : > "$LAB_HITS"
+  : > "$LAB_APNS"
+  # The push scenario: the plugin from this repository, the relay on this machine (the Worker's
+  # own code under Node) and a stand-in for Apple that records what it is sent.
+  if [[ "$scenario" == push ]]; then
+    mkdir -p "$HERMES_HOME/plugins"
+    cp -R "$REPO/companion/hermes-plugin/redde-push" "$HERMES_HOME/plugins/redde-push"
+  fi
   # No real keys may leak in: the point is to see where an unkeyed fallback goes.
   unset OPENROUTER_API_KEY OPENAI_API_KEY ANTHROPIC_API_KEY HERMES_INFERENCE_PROVIDER 2>/dev/null || true
   (cd "$run"
    nohup python3 "$HERE/stub_llm.py" 18801 A alpha,beta > stubA.log 2>&1 & echo $! > "$LAB_HOME/pids"
    nohup python3 "$HERE/stub_llm.py" 18802 B gamma > stubB.log 2>&1 & echo $! >> "$LAB_HOME/pids"
+   if [[ "$scenario" == push ]]; then
+     nohup python3 "$HERE/fake_apns.py" 18990 > apns.log 2>&1 & echo $! >> "$LAB_HOME/pids"
+     nohup node "$REPO/companion/push-relay/test/local.mjs" 18980 http://127.0.0.1:18990 > relay.log 2>&1 & echo $! >> "$LAB_HOME/pids"
+   fi
    nohup "$hermes" serve --host 127.0.0.1 --port 19119 --skip-build > serve.log 2>&1 & echo $! >> "$LAB_HOME/pids"
    nohup "$hermes" gateway run > gateway.log 2>&1 & echo $! >> "$LAB_HOME/pids")
   local serve=000 api=000
@@ -75,13 +89,18 @@ APP_DEVICE=""
 XCODE_ARGS=()
 
 # Once per run: pick the simulator, boot it, and build the test bundle.
-app_prepare() {
-  # A name can match several simulators (one per runtime); xcodebuild wants exactly one.
-  APP_DEVICE=$(xcrun simctl list devices available | grep -F "$SIMULATOR (" | head -1 | grep -oE '[0-9A-F]{8}(-[0-9A-F]{4}){3}-[0-9A-F]{12}' || true)
+pick_simulator() {
+  # A name can match several simulators (one per runtime); xcodebuild wants exactly one. A
+  # simulator's own id (REDDE_LAB_SIMULATOR=<udid>) says which without doubt.
+  APP_DEVICE=$(xcrun simctl list devices available | grep -F -e "$SIMULATOR (" -e "($SIMULATOR)" | head -1 | grep -oE '[0-9A-F]{8}(-[0-9A-F]{4}){3}-[0-9A-F]{12}' || true)
   [[ -n "$APP_DEVICE" ]] || { echo "no simulator named '$SIMULATOR' (set REDDE_LAB_SIMULATOR)"; return 1; }
+  xcrun simctl bootstatus "$APP_DEVICE" -b > /dev/null 2>&1 || true
+}
+
+app_prepare() {
+  pick_simulator || return 1
   XCODE_ARGS=(-project Echo.xcodeproj -scheme Echo -destination "platform=iOS Simulator,id=$APP_DEVICE"
               -derivedDataPath DerivedData -only-testing:EchoTests/${1:-HermesLabTests})
-  xcrun simctl bootstatus "$APP_DEVICE" -b > /dev/null 2>&1 || true
   echo "building EchoTests for the app check …"
   (cd "$REPO" && xcodebuild build-for-testing $XCODE_ARGS 2>&1 | grep -E ": error: |BUILD FAILED" || true)
 }
@@ -134,11 +153,83 @@ approvals() {
   echo "\nAll checks passed."
 }
 
+# One turn over the lab's Hermes API, whose reply the push plugin announces.
+api_turn() {
+  local auth="Authorization: Bearer labkey-labkey-labkey" json="Content-Type: application/json" id
+  # (A title may be used once.)
+  id=$(curl -s -X POST http://127.0.0.1:18642/api/sessions -H "$auth" -H "$json" -d "{\"title\":\"Lab notification $(uuidgen)\"}" | python3 -c 'import json,sys; print(json.load(sys.stdin)["session"]["id"])')
+  curl -s -o /dev/null --max-time 60 -X POST "http://127.0.0.1:18642/api/sessions/$id/chat/stream" -H "$auth" -H "$json" -d '{"input":"hi"}'
+}
+
+# The path with the real app: it opens a pairing link from the running lab's Hermes and pairs
+# through the lab's relay; then Hermes replies, and the notification has to show the reply's text,
+# which only someone holding the key agreed in the pairing can have read. The stand-in for Apple
+# hands each notification to the simulator ($LAB_SIMULATOR, set before the lab came up) as a
+# simulated push. That skips the app's notification extension, so what this proves is the app's
+# half of the pairing and of the sealing; the extension opening a note while the app is closed
+# takes a real push from Apple, on a phone.
+push_app_check() {
+  local hermes="$LAB_HOME/hermes-$1/.venv/bin/hermes" printed="$LAB_HOME/pair.out" link="" out=""
+  : > "$printed"
+  "$hermes" redde-push pair --relay http://127.0.0.1:18980 --wait 300 > "$printed" 2>&1 &
+  local pairing=$!
+  for _ in {1..40}; do
+    link=$(grep -oE 'https://redde.goosehouse.org/connect#push=[^[:space:]]+' "$printed" | head -1 || true)
+    [[ -n "$link" ]] && break
+    sleep 1
+  done
+  echo "App, end to end (EchoUITests/PushPairingUITests)"
+  [[ -n "$link" ]] || { echo "  FAIL  the plugin printed no pairing link"; kill $pairing 2>/dev/null; return 1; }
+  link="redde://connect?${link#*#}"   # the app's own scheme: no website involved
+  # Once the app is paired (the plugin's first note has reached "Apple"), Hermes replies a few
+  # times, a while apart: the test waits for one of them.
+  ( local before=$(wc -l < "$LAB_APNS")
+    for _ in {1..200}; do (( $(wc -l < "$LAB_APNS") > before )) && break; sleep 1; done
+    for _ in 1 2 3 4 5; do sleep 10; api_turn; done ) &
+  local turns=$!
+  out=$(cd "$REPO" && TEST_RUNNER_PUSH_LINK="$link" perl -e 'alarm 480; exec @ARGV' xcodebuild test-without-building \
+        -project Echo.xcodeproj -scheme EchoUITests -destination "platform=iOS Simulator,id=$APP_DEVICE" -derivedDataPath DerivedData \
+        -only-testing:EchoUITests/PushPairingUITests/testPairingWithTheLabsHermesThenANotification 2>&1 || true)
+  kill $turns $pairing 2>/dev/null || true
+  if [[ "$out" == *"TEST EXECUTE SUCCEEDED"* && "$out" != *"skipped"* ]]; then
+    echo "  PASS  the app pairs with this Hermes and reads the notification for its next reply"
+    return 0
+  fi
+  echo "  FAIL  the app pairs with this Hermes and reads the notification for its next reply"
+  echo "$out" | grep -E "error: |XCTAssert|failed -" | head -6
+  return 1
+}
+
+# The push plugin inside each release: a stand-in phone pairs through the relay, then replies and
+# approvals over both connections have to reach it, sealed.
+push() {
+  local with_app=0
+  [[ "${1:-}" == "--app" ]] && { with_app=1; shift; }
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  if (( with_app )); then
+    pick_simulator || exit 1
+    export LAB_SIMULATOR="$APP_DEVICE"
+    echo "building EchoUITests for the app check …"
+    (cd "$REPO" && xcodebuild build-for-testing -project Echo.xcodeproj -scheme EchoUITests -destination "platform=iOS Simulator,id=$APP_DEVICE" \
+       -derivedDataPath DerivedData 2>&1 | grep -E ": error: |BUILD FAILED" || true)
+  fi
+  for tag in $tags; do
+    echo "===== Hermes $tag / push"
+    if ! up "$tag" push; then failed+=("$tag (lab)"); continue; fi
+    "$LAB_HOME/hermes-$tag/.venv/bin/python" "$HERE/push_check.py" "$LAB_HOME/hermes-$tag/.venv/bin/hermes" || failed+=("$tag")
+    if (( with_app )); then push_app_check "$tag" || failed+=("$tag (app)"); fi
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
 mkdir -p "$LAB_HOME"
 case "${1:-}" in
   run) shift; run "$@" ;;
   approvals) shift; approvals "$@" ;;
+  push) shift; push "$@" ;;
   up) up "$2" "$3" && echo "lab up: Hermes $2 / $3 — API http://127.0.0.1:18642 (key labkey-labkey-labkey), Dashboard http://127.0.0.1:19119" ;;
   down) down ;;
-  *) sed -n '2,14p' "$0"; exit 2 ;;
+  *) sed -n '2,16p' "$0"; exit 2 ;;
 esac

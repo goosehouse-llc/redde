@@ -908,6 +908,18 @@ final class Conversation {
         adopt(serverSession: summary, messages: Self.messages(fromServeRows: rows))
     }
 
+    /// Opens the conversation a Hermes session id names, from the server the app is on: what a
+    /// tapped notification from a paired Hermes asks for. The transcript comes from the server,
+    /// since the reply being announced arrived while the app wasn't running.
+    func open(serverSession id: String) async throws {
+        let summary = HermesSessionsAPI.SessionSummary(id: id)
+        switch settings.transport {
+        case .hermesServe: try await loadServeSession(summary)
+        case .hermesSessions: try await loadLedgerSession(summary)
+        case .chatCompletions: throw TransportError.malformed("that conversation is on a Hermes connection")
+        }
+    }
+
     /// Switches this conversation to a gateway session: keeps (or mints) the matching local
     /// record, swaps in its transcript, and persists. Shared by both ledger transports.
     private func adopt(serverSession summary: HermesSessionsAPI.SessionSummary, messages new: [Message]) {

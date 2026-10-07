@@ -57,4 +57,32 @@ final class LaunchRouter {
         defer { pendingSetupCode = nil }
         return pendingSetupCode
     }
+
+    /// A pairing link for notifications that was opened (`PushOffer`): confirmed before anything
+    /// is sent anywhere.
+    private(set) var pendingPushOffer: PushOffer?
+    @ObservationIgnored private var lastPushOffer: (offer: PushOffer, at: Date)?
+
+    func requestPushPairing(_ offer: PushOffer) {
+        // A universal link can be delivered twice, as a URL and as a web-browsing activity.
+        if let last = lastPushOffer, last.offer == offer, Date.now.timeIntervalSince(last.at) < 2 { return }
+        lastPushOffer = (offer, .now)
+        pendingPushOffer = offer
+    }
+
+    func consumePushOffer() -> PushOffer? {
+        defer { pendingPushOffer = nil }
+        return pendingPushOffer
+    }
+
+    /// A notification from a paired Hermes was tapped: open the conversation with this Hermes
+    /// session id.
+    private(set) var pendingSession: String?
+
+    func requestSession(_ id: String) { pendingSession = id }
+
+    func consumeSession() -> String? {
+        defer { pendingSession = nil }
+        return pendingSession
+    }
 }

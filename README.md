@@ -124,7 +124,7 @@ Debug builds accept launch flags for demos and screenshots, all listed in
 | `Shared/` | Code shared with the extensions (attachments, widget snapshots, controls) |
 | `EchoControls/`, `EchoShare/` | Widget and controls extension; share extension |
 | `EchoTests/`, `EchoUITests/` | Tests |
-| `companion/` | The website, the push-notification relay Worker, and a calendar MCP server for Hermes |
+| `companion/` | The website, the push-notification relay Worker and the Hermes plugin that feeds it, and a calendar MCP server for Hermes |
 | `scripts/` | Setup codes, the build-number bump, the CarPlay simulator, and the Hermes lab for testing against stock gateways |
 | `design/` | App Store screenshots and the scripts that make them, icon sources |
 | `docs/` | [Architecture](docs/ARCHITECTURE.md), privacy policy, support page, App Store listing |

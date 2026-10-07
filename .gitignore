@@ -21,3 +21,6 @@ design/video/*.mp4
 design/video/*.mov
 design/video/*.png
 design/video/*.log
+
+# Python caches from the Hermes plugin and the lab scripts
+__pycache__/

@@ -571,7 +571,15 @@ after 33 seconds without it.
 questions, sudo and secret requests, finished replies and failures, as local notifications with
 Approve / Deny and reply actions. A finished reply's banner takes the next message too: Reply
 sends it into the conversation the banner came from (behind an unlock when the app's own lock
-is on). A push relay (`companion/push-relay`) can deliver them when the app isn't running.
+is on).
+
+**When Redde is closed.** Those stop when iOS closes the app. From then on a paired Hermes sends
+them itself (Settings → Voice → "Notify when Redde is closed"): a plugin there seals a short note
+with a key only it and the phone hold, a relay passes it to Apple unread, and the `EchoPush`
+notification extension opens it (`Shared/PushSeal.swift`, `PushService`). Pairing is a QR code from
+`hermes redde-push pair`. A tap opens the conversation, fetched from the server; Reply on a
+reply's banner sends into it, behind an unlock. [docs/push.md](push.md) has the design, the wire
+formats and what has to happen before it ships.
 
 ## Siri, Shortcuts and controls
 

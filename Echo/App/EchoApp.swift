@@ -53,6 +53,7 @@ struct EchoApp: App {
                 // Daemon round trips (notification categories, Siri phrases) wait for the first frame.
                 Notifier.shared.registerCategories()
                 Notifier.shared.registerForPush()
+                PushService.shared.refreshAtLaunch()
                 EchoShortcuts.updateAppShortcutParameters()
                 SiriHooks.appLaunched()
             }
