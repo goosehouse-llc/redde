@@ -146,8 +146,21 @@ async def dashboard(phone):
     await dash.ws.close()
 
 
+def scan():
+    """Hermes scans a plugin before installing it, and refuses one from GitHub that it finds
+    anything in: an address written as numbers, a path that climbs out of the folder."""
+    try:
+        from tools.skills_guard import scan_skill
+    except Exception as error:
+        return f"no scanner in this Hermes ({error})", []
+    result = scan_skill(PLUGIN, source="community")
+    return result.verdict, [f"{f.category} {f.file}:{f.line}" for f in result.findings]
+
+
 def main():
     print("Push plugin (companion/hermes-plugin/redde-push)")
+    verdict, findings = scan()
+    report(not findings, "Hermes's install scan finds nothing in the plugin", f"{verdict}: {findings}")
     phone = Phone()
     output = pair(phone)
     report("Paired with Lab phone" in output, "a phone pairs through the relay with `hermes redde-push pair`", output[-300:])

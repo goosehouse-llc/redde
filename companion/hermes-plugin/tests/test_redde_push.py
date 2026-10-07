@@ -1,5 +1,8 @@
-"""python -m unittest discover -s companion/hermes-plugin/redde-push/tests  (needs `cryptography`,
-which Hermes's own Python has)."""
+"""python -m unittest discover -s companion/hermes-plugin/tests  (needs `cryptography`, which
+Hermes's own Python has).
+
+Beside the plugin, not inside it: what is in the plugin's folder is what `hermes plugins install`
+copies and scans, and the loopback addresses these tests use trip the scan."""
 import base64
 import importlib.util
 import json
@@ -13,7 +16,7 @@ from pathlib import Path
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
-HERE = Path(__file__).resolve().parent.parent
+HERE = Path(__file__).resolve().parent.parent / "redde-push"
 spec = importlib.util.spec_from_file_location("redde_push", HERE / "__init__.py", submodule_search_locations=[str(HERE)])
 plugin = importlib.util.module_from_spec(spec)
 sys.modules["redde_push"] = plugin

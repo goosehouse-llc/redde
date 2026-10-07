@@ -117,7 +117,7 @@ two notes belong together.
 
 ```
 node --test companion/push-relay/test/relay.test.mjs
-python -m unittest discover -s companion/hermes-plugin/redde-push/tests   # needs `cryptography`
+python -m unittest discover -s companion/hermes-plugin/tests   # needs `cryptography`
 scripts/hermes-lab/lab.sh push           # the plugin inside Hermes 0.21.0, 0.21.3 and 0.21.5
 scripts/hermes-lab/lab.sh push --app     # and the app in a simulator pairing with each
 ```

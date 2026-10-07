@@ -5,7 +5,8 @@ agent finishes a reply or waits for your approval, also when Redde isn't running
 
 What a notification says is encrypted here, on your Hermes, with a key that only this plugin and
 your phone hold. It travels through a relay run by Goosehouse and through Apple's push service;
-both carry it without being able to read it. [docs/push.md](../../../docs/push.md) has the design.
+both carry it without being able to read it. The design is in
+[docs/push.md](https://github.com/goosehouse-llc/redde/blob/main/docs/push.md).
 
 ## Set up
 
@@ -61,7 +62,7 @@ is drawn by `qr.py` here.
 
 ## Tests
 
-```
-python -m unittest discover -s tests          # with Hermes's own Python
-../../../scripts/hermes-lab/lab.sh push       # inside unmodified Hermes releases
-```
+In the Redde repository, beside this folder: `companion/hermes-plugin/tests` (unit tests, run
+with Hermes's own Python) and `scripts/hermes-lab/lab.sh push`, which runs the plugin inside
+unmodified Hermes releases. They are kept out of this folder because everything in it is copied,
+and scanned, when the plugin is installed.
