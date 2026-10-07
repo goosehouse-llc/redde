@@ -14,14 +14,21 @@ both carry it without being able to read it. The design is in
 hermes plugins install goosehouse-llc/redde/companion/hermes-plugin/redde-push --enable
 ```
 
-Restart Hermes (`hermes gateway restart`, and `hermes serve` if you run the Dashboard), then:
+Restart Hermes (`hermes gateway restart`, and `hermes serve` if you run the Dashboard).
+
+**If Redde is connected through the Dashboard**, that is all there is to do here. In Redde:
+Settings › Voice › Notify when Redde is closed › Pair with your server. A notification on the
+phone confirms the pairing.
+
+**Otherwise** (Redde on the Hermes API, or a phone that isn't signed in to this Hermes), pair
+with a code:
 
 ```
 hermes redde-push pair
 ```
 
 It shows a QR code and a link, and waits. In Redde: Settings › Voice › Notify when Redde is
-closed › Scan the code it shows. A notification on the phone confirms the pairing.
+closed › Pair with a code. A notification on the phone confirms the pairing.
 
 Run the command as the user Hermes runs as, without `-p`: the pairing is kept in that Hermes home
 and read by the gateway and the Dashboard from there.

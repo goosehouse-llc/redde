@@ -50,9 +50,19 @@ nonisolated enum PushError: LocalizedError, Equatable {
     case otherRelay(String)
     case relay(String)
     case unreachable
+    /// Pairing over the Dashboard: the plugin isn't on that Hermes, is an older one that pairs
+    /// only by code, couldn't be asked, or turned the answer down.
+    case noPlugin
+    case oldPlugin
+    case noDashboard(String)
+    case refused(String)
 
     var errorDescription: String? {
         switch self {
+        case .noPlugin: "The Redde plugin isn't on this Hermes yet. Install it there (the command is on the screen behind this one), restart Hermes, then pair again."
+        case .oldPlugin: "The Redde plugin on this Hermes is an older one that pairs only by code. Update it there by running the install command again with --force, restart Hermes, then pair again."
+        case .noDashboard(let reason): "Couldn't ask your Hermes over the Dashboard: \(reason)"
+        case .refused(let reason): "Your Hermes didn't take the pairing: \(reason). Try again."
         case .notAllowed: "Notifications are off for Redde. Turn them on in the iPhone's Settings › Notifications › Redde, then pair again."
         case .noToken(let reason): "This iPhone couldn't register for notifications: \(reason)"
         case .otherRelay(let host): "That Hermes is set to send through another relay (\(host)), which this copy of Redde doesn't use."
@@ -249,36 +259,92 @@ final class PushService {
 
     // MARK: - Pairing
 
-    /// Answers a pairing offer: registers this phone at the relay under a fresh secret, and
-    /// leaves there, for the plugin, this phone's public key and the registration sealed to the
-    /// key the two now share. The pairing is kept at once and counts as confirmed when the
-    /// plugin's first note opens (`waitUntilConfirmed`).
+    /// Answers a pairing offer read off a code: registers this phone at the relay under a fresh
+    /// secret, and leaves there, for the plugin, this phone's public key and the registration
+    /// sealed to the key the two now share. The pairing is kept at once and counts as confirmed
+    /// when the plugin's first note opens (`waitUntilConfirmed`).
     @discardableResult
     func pair(_ offer: PushOffer) async throws -> PushPairing {
-        if let asked = offer.relay, asked != relayURL {
-            throw PushError.otherRelay(URL(string: asked)?.host() ?? asked)
+        guard await allowed() else { throw PushError.notAllowed }
+        return try await pair(offered: offer.publicKey, relayAsked: offer.relay) { answer, relay, id, sendKey in
+            try await relay.leave(answer: answer, at: PushSeal.rendezvous(offered: offer.publicKey), id: id, sendKey: sendKey)
+            return nil
+        }
+    }
+
+    /// Runs `/redde-push <arguments>` on a Hermes and returns what the plugin says.
+    typealias PluginCommand = (String) async throws -> String
+
+    /// The plugin's command over a Dashboard connection. It needs no session of its own.
+    static func command(over client: HermesServeClient) -> PluginCommand {
+        { arguments in
+            do {
+                try await client.ensureConnected()
+                let reply = try await client.call("command.dispatch", params: .object(["name": .string("redde-push"), "arg": .string(arguments)]), timeout: 30)
+                return reply["output"]?.string ?? ""
+            } catch let error as HermesServeClient.RPCError where error.code == 4018 {
+                throw PushError.noPlugin   // "not a plugin command": nothing by that name on this Hermes
+            } catch {
+                throw PushError.noDashboard(error.localizedDescription)
+            }
+        }
+    }
+
+    /// Pairs with the Hermes the app is signed in to, with no code to scan: the plugin's offer
+    /// is asked for over the Dashboard connection and this phone's answer handed back the same
+    /// way. The key agreement is the one the code carries; here the connection that already
+    /// carries every conversation carries its two halves, and the relay sees neither.
+    ///
+    /// The plugin opens the answer before it says "paired", so it has the key by then: the
+    /// pairing counts at once (`accepted`). Whether its notes reach this phone is still worth
+    /// seeing (`waitUntilConfirmed`).
+    @discardableResult
+    func pairDirectly(through plugin: PluginCommand = PushService.command(over: .shared)) async throws -> PushPairing {
+        guard await allowed() else { throw PushError.notAllowed }
+        let words = try await plugin("offer").split(separator: " ").map(String.init)
+        guard words.count == 4, words[0] == "redde-push", words[1] == "offer",
+              let offered = PushSeal.data(base64URL: words[2]), offered.count == 32 else { throw PushError.oldPlugin }
+        return try await pair(offered: offered, relayAsked: Settings.normalizedBase(words[3])?.absoluteString ?? words[3]) { answer, _, _, _ in
+            let reply = try await plugin("accept \(words[2]) \(answer.pub) \(answer.box)")
+            guard reply.hasPrefix("redde-push paired") else {
+                throw PushError.refused(reply.hasPrefix("redde-push refused: ") ? String(reply.dropFirst("redde-push refused: ".count)) : "an unexpected reply")
+            }
+            return String(reply.dropFirst("redde-push paired".count)).trimmingCharacters(in: .whitespaces)
+        }
+    }
+
+    /// What both ways of pairing share: this phone registers at the relay under a fresh secret
+    /// and makes its answer; `deliver` gets the answer to the plugin, and returns the machine's
+    /// name when the plugin has confirmed in so many words.
+    private func pair(offered: Data, relayAsked: String?,
+                      deliver: (_ answer: (pub: String, box: String), _ relay: PushRelay, _ id: String, _ sendKey: String) async throws -> String?) async throws -> PushPairing {
+        if let relayAsked, relayAsked != relayURL {
+            throw PushError.otherRelay(URL(string: relayAsked)?.host() ?? relayAsked)
         }
         guard let base = URL(string: relayURL) else { throw PushError.unreachable }
-        guard await allowed() else { throw PushError.notAllowed }
         let token = try await currentToken()
         let relay = PushRelay(base: base, session: session)
         var bytes = [UInt8](repeating: 0, count: 32)
         guard SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes) == errSecSuccess else { throw PushError.relay("no randomness") }
         let sendKey = PushSeal.base64URL(Data(bytes))
         let id = try await relay.register(token: token, environment: Self.environment, sendKey: sendKey)
-        let answer: (pub: String, box: String, noteKey: Data)
+        var pairing: PushPairing
         do {
-            answer = try PushSeal.answer(to: offer.publicKey, deviceID: id, sendKey: sendKey, name: UIDevice.current.name)
-            try await relay.leave(answer: (answer.pub, answer.box), at: PushSeal.rendezvous(offered: offer.publicKey), id: id, sendKey: sendKey)
+            let answer = try PushSeal.answer(to: offered, deviceID: id, sendKey: sendKey, name: UIDevice.current.name)
+            let host = try await deliver((answer.pub, answer.box), relay, id, sendKey)
+            pairing = PushPairing(id: id, sendKey: sendKey, key: answer.noteKey, relay: relayURL)
+            if let host {
+                pairing.host = host
+                pairing.accepted = true
+            }
         } catch {
             try? await relay.remove(id: id, sendKey: sendKey)   // nothing was paired: leave nothing behind
             throw (error as? PushError) ?? PushError.relay("that isn't a pairing code Redde can use")
         }
-        let pairing = PushPairing(id: id, sendKey: sendKey, key: answer.noteKey, relay: relayURL)
-        // Pairing again with the same Hermes makes a new registration; an unconfirmed leftover
-        // from an attempt that never finished goes.
-        let stale = pairings.filter { !$0.confirmed }
-        guard vault.save(pairings.filter(\.confirmed) + [pairing]) else {
+        // Pairing again with the same Hermes makes a new registration; a leftover from an
+        // attempt that never finished goes.
+        let stale = pairings.filter { !$0.isPaired }
+        guard vault.save(pairings.filter(\.isPaired) + [pairing]) else {
             try? await relay.remove(id: id, sendKey: sendKey)
             throw PushError.relay("the pairing couldn't be saved on this iPhone")
         }
@@ -316,9 +382,9 @@ final class PushService {
     // MARK: - Which conversations notify
 
     /// The plugin command that has this phone follow a conversation, or nil when there is nothing
-    /// to say: no confirmed pairing, said already, or a server known not to listen.
+    /// to say: no pairing the plugin has, said already, or a server known not to listen.
     func followCommand(stored session: String, server: String) -> String? {
-        let ids = pairings.filter(\.confirmed).map(\.id)
+        let ids = pairings.filter(\.isPaired).map(\.id)
         guard !ids.isEmpty, !session.isEmpty, !deaf.contains(server), followed.insert("\(server)|\(session)").inserted else { return nil }
         return "watch \(session) \(ids.joined(separator: ","))"
     }

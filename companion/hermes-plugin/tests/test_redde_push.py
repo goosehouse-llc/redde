@@ -291,7 +291,7 @@ class HookTests(unittest.TestCase):
         return [self.phone.read(p["payload"]) for p in self.relay.pushes]
 
     def test_the_app_follows_a_dashboard_conversation_and_hears_its_reply_and_approval(self):
-        self.assertEqual(plugin._slash("status"), "redde-push paired 1")
+        self.assertEqual(plugin._slash("status"), "redde-push status 1")
         # A conversation the app starts over the Dashboard runs on the platform "desktop".
         plugin._remember_platform(session_id="20261006_1", platform="desktop", model="alpha")
         plugin._on_reply(session_id="20261006_1", assistant_response="Not yet followed.", platform="desktop")
@@ -312,6 +312,47 @@ class HookTests(unittest.TestCase):
         notes = self.sent()
         self.assertEqual([(n["k"], n["s"]) for n in notes], [("approval", "api_9")])
         self.assertNotIn("h", notes[0], "nobody follows it, so the Dashboard can't answer for it: no buttons")
+
+    def test_an_app_on_the_dashboard_pairs_without_a_code(self):
+        words = plugin._slash("offer").split()
+        self.assertEqual(words[:2], ["redde-push", "offer"])
+        offered, relay = words[2], words[3]
+        self.assertEqual(relay, core.DEFAULT_RELAY, "the app is told which relay this Hermes uses")
+        phone = Phone("#push=" + offered, device_id="dev-onetap-0001", send="tap-key", name="Tapped phone")
+        # (This phone is registered at the test's relay, so that is where its first note has to go.)
+        plugin._offers._open[offered][0].relay = self.relay.url
+        reply = plugin._slash(f"accept {offered} {phone.answer['pub']} {phone.answer['box']}")
+        self.assertEqual(reply, f"redde-push paired {core.host_name()}")
+        paired = [d for d in plugin._store.devices if d["id"] == "dev-onetap-0001"]
+        self.assertEqual(len(paired), 1)
+        self.assertEqual((paired[0]["send"], paired[0]["name"], core.unb64u(paired[0]["key"])), ("tap-key", "Tapped phone", phone.note_key))
+        for _ in range(100):                                   # its first note goes out behind the reply
+            if any(p["path"].endswith("dev-onetap-0001/push") for p in self.relay.pushes):
+                break
+            import time; time.sleep(0.05)
+        sent = [p for p in self.relay.pushes if p["path"].endswith("dev-onetap-0001/push")]
+        self.assertEqual(len(sent), 1)
+        self.assertEqual(phone.read(sent[0]["payload"])["k"], "paired")
+        self.assertEqual(sent[0]["bearer"], "Bearer tap-key")
+        # An offer is answered once.
+        self.assertEqual(plugin._slash(f"accept {offered} {phone.answer['pub']} {phone.answer['box']}"), "redde-push refused: that offer has expired")
+
+    def test_an_answer_to_another_offer_or_a_stale_one_pairs_nothing(self):
+        before = len(plugin._store.devices)
+        first, second = plugin._slash("offer").split()[2], plugin._slash("offer").split()[2]
+        stranger = Phone("#push=" + second)
+        self.assertEqual(plugin._slash(f"accept {first} {stranger.answer['pub']} {stranger.answer['box']}"),
+                         "redde-push refused: that answer isn't to this offer")
+        self.assertEqual(plugin._slash("accept nothing-offered AAAA AAAA"), "redde-push refused: that offer has expired")
+        offered = plugin._slash("offer").split()[2]
+        made = plugin._offers._open[offered]
+        plugin._offers._open[offered] = (made[0], made[1] - core.Offers.LIFETIME - 1)   # ten minutes on
+        phone = Phone("#push=" + offered)
+        self.assertEqual(plugin._slash(f"accept {offered} {phone.answer['pub']} {phone.answer['box']}"), "redde-push refused: that offer has expired")
+        self.assertEqual(len(plugin._store.devices), before)
+        for _ in range(core.Offers.LIMIT + 5):                  # offers nobody answers don't pile up
+            plugin._slash("offer")
+        self.assertLessEqual(len(plugin._offers._open), core.Offers.LIMIT)
 
     def test_an_empty_reply_and_a_hook_called_oddly_send_nothing_and_raise_nothing(self):
         plugin._on_reply(session_id="api_9", assistant_response="   ", platform="api_server")

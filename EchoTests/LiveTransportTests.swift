@@ -163,11 +163,11 @@ struct HermesLabApprovalTests {
     }
 
     /// A client signed in to the lab's Dashboard; nil, with the reason printed, when that lab isn't up.
-    private static func client() async -> HermesServeClient? {
+    static func client() async -> HermesServeClient? {
         var probe = URLRequest(url: dashboard.appending(path: "api/status"))
         probe.timeoutInterval = 2
         guard (try? await URLSession.shared.data(for: probe)) != nil else {
-            print("LAB SKIP: no Hermes lab on 127.0.0.1:19119 (scripts/hermes-lab/lab.sh up <tag> approval)")
+            print("LAB SKIP: no Hermes lab on 127.0.0.1:19119 (scripts/hermes-lab/lab.sh up <tag> approval, or push)")
             return nil
         }
         let settings = Settings(defaults: UserDefaults(suiteName: "lab-approval-\(UUID().uuidString)")!)
@@ -183,7 +183,7 @@ struct HermesLabApprovalTests {
         return client
     }
 
-    private static func report(_ ok: Bool, _ what: String, _ detail: String = "") {
+    static func report(_ ok: Bool, _ what: String, _ detail: String = "") {
         print("  \(ok ? "PASS" : "FAIL")  \(what) \(ok ? "" : detail)")
         #expect(ok, "\(what): \(detail)")
     }
@@ -290,5 +290,45 @@ struct HermesLabApprovalTests {
             }
             Self.report(ok, "\(approve ? "Approve" : "Deny") from a notification \(approve ? "runs" : "stops") the command it was shown for, and no other", detail)
         }
+    }
+}
+
+/// The app pairing with the push plugin over the lab's Dashboard (`scripts/hermes-lab/lab.sh push
+/// --app`): the app's own client and push service, an unmodified Hermes with the plugin from
+/// this repository, and the relay's code on this machine. Skips when that lab isn't up.
+struct HermesLabPushTests {
+    private final class Vault { var pairings: [PushPairing] = [] }
+
+    @Test func theAppPairsWithThePluginInOneStep() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        let plugin = PushService.command(over: client)
+        let vault = Vault()
+        let defaults = UserDefaults(suiteName: "lab-push-\(UUID().uuidString)")!
+        defaults.set("http://127.0.0.1:18980", forKey: "push.relay")
+        // A push address of the right shape: the lab's stand-in for Apple takes any.
+        let token = Data((0 ..< 32).map { _ in UInt8.random(in: 0 ... 255) })
+        nonisolated(unsafe) weak var made: PushService?
+        let service = PushService(defaults: defaults, session: .shared, vault: ({ vault.pairings }, { vault.pairings = $0; return true }),
+                                  askForToken: { Task { @MainActor in made?.received(token: token) } }, allowed: { true })
+        made = service
+        func paired() async throws -> Int { Int(try await plugin("status").split(separator: " ").last ?? "") ?? -1 }
+
+        var detail = ""
+        var ok = false
+        do {
+            let before = try await paired()
+            let pairing = try await service.pairDirectly(through: plugin)
+            let after = try await paired()
+            ok = pairing.accepted == true && !pairing.host.isEmpty && after == before + 1 && vault.pairings == [pairing]
+            detail = "accepted \(String(describing: pairing.accepted)), host \(pairing.host), the plugin had \(before) phones and has \(after)"
+            await service.unpair(pairing)
+        } catch PushError.noPlugin {
+            print("LAB SKIP: this lab's Hermes has no push plugin (scripts/hermes-lab/lab.sh up <tag> push)")
+            return
+        } catch {
+            detail = String(error.localizedDescription.prefix(200))
+        }
+        HermesLabApprovalTests.report(ok, "the app pairs with the plugin over the Dashboard in one step", detail)
     }
 }

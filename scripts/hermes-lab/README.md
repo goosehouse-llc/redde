@@ -67,10 +67,14 @@ the lab's Hermes home, the relay's own code under Node (`companion/push-relay/te
 `push_check.py` plays the phone: it registers with the relay, answers the link that
 `hermes redde-push pair` prints, and opens what arrives. A reply over the Hermes API has to reach
 it; over the Dashboard, only once the conversation is followed, and then an approval too; and
-nothing "Apple" was handed may contain a word of it.
+nothing "Apple" was handed may contain a word of it. A second stand-in phone pairs with no code,
+over the Dashboard, the way an app signed in to it does. The Dashboard has a login here, as in
+the approval scenario.
 
-`--app` then does the pairing with the real app (`EchoUITests/PushPairingUITests`): the app opens
-the link, pairs, and has to show the next reply's text in a notification. The simulator is the one
+`--app` then does both pairings with the app's own code. `EchoTests/HermesLabPushTests` signs the
+app's Dashboard client in and pairs through the app's push service in one step. And
+`EchoUITests/PushPairingUITests` drives the app itself: it opens the link, pairs, and has to show
+the next reply's text in a notification. The simulator is the one
 named by `REDDE_LAB_SIMULATOR` (a name or an id). It gets notifications as simulated pushes, which
 skip the app's notification extension; the app opens them itself while it is in front. The
 extension opening one with the app closed takes a real push and a phone. Needs Node 20 or later.

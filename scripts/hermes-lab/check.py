@@ -86,9 +86,23 @@ class Dashboard:
     async def connect(cls):
         import websockets
         # Loopback serve has no login: the socket takes the session token from the root page.
-        page = urllib.request.urlopen(f"http://{SERVE}/", timeout=10).read().decode()
-        token = re.search(r'__HERMES_SESSION_TOKEN__="([^"]+)"', page).group(1)
-        return cls(await websockets.connect(f"ws://{SERVE}/api/ws?token={token}", max_size=None))
+        try:
+            page = urllib.request.urlopen(f"http://{SERVE}/", timeout=10).read().decode()
+        except urllib.error.HTTPError:
+            page = ""
+        token = re.search(r'__HERMES_SESSION_TOKEN__="([^"]+)"', page)
+        if token:
+            return cls(await websockets.connect(f"ws://{SERVE}/api/ws?token={token.group(1)}", max_size=None))
+        # A Dashboard with a login (the approval and push scenarios): sign in the way the app
+        # does, with the user lab.sh set, and open the socket with a ticket.
+        import http.cookiejar
+        opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+        def post(path, body):
+            request = urllib.request.Request(f"http://{SERVE}{path}", data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
+            return opener.open(request, timeout=10).read().decode()
+        post("/auth/password-login", {"provider": "basic", "username": "lab", "password": "labpass-labpass"})
+        ticket = json.loads(post("/api/auth/ws-ticket", {}))["ticket"]
+        return cls(await websockets.connect(f"ws://{SERVE}/api/ws?ticket={ticket}", max_size=None))
 
     async def _read(self):
         try:

@@ -61,14 +61,19 @@ class Phone:
         self.id = made["id"]
         self.key = None
 
-    def answer(self, link):
-        offered = core.unb64u(re.search(r"#push=([A-Za-z0-9_-]+)", link).group(1))
+    def answer_directly(self, offered_text, name="Lab phone"):
+        """This phone's half of the key agreement, for an offer: its public key and its box."""
+        offered = core.unb64u(offered_text)
         private = X25519PrivateKey.generate()
         public = private.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
         self.key, box_key = core.derive(private.exchange(X25519PublicKey.from_public_bytes(offered)), offered, public)
-        inside = json.dumps({"id": self.id, "send": self.send, "name": "Lab phone"}).encode()
-        http("PUT", f"{RELAY}/v1/pairings/{core.rendezvous(offered)}",
-             {"pub": core.b64u(public), "box": core.b64u(core.seal(box_key, inside, b"redde-push pairing"))},
+        inside = json.dumps({"id": self.id, "send": self.send, "name": name}).encode()
+        self.pub, self.box = core.b64u(public), core.b64u(core.seal(box_key, inside, b"redde-push pairing"))
+        return offered
+
+    def answer(self, link):
+        offered = self.answer_directly(re.search(r"#push=([A-Za-z0-9_-]+)", link).group(1))
+        http("PUT", f"{RELAY}/v1/pairings/{core.rendezvous(offered)}", {"pub": self.pub, "box": self.box},
              {"Authorization": f"Bearer {self.send}", "X-Redde-Device": self.id})
 
     def notes(self):
@@ -94,6 +99,11 @@ class Phone:
 
 def hermes(*args, timeout=90):
     return subprocess.run([HERMES, "redde-push", *args], capture_output=True, text=True, timeout=timeout).stdout
+
+
+def store_ids():
+    """The ids of the phones the plugin has, as `hermes redde-push list` shows them."""
+    return [line.split()[-3] for line in hermes("list").splitlines() if " paired " in line]
 
 
 def pair(phone):
@@ -152,6 +162,19 @@ async def dashboard(phone):
     waiting = (await dash.call("session.resume", {"session_id": stored, "omit_messages": True})).get("pending_approval") or {}
     report(bool(made) and made.get("h") == core.digest(waiting.get("command", "")) != core.digest(""),
            "Dashboard: the note names the waiting command by its digest", f"note {made and made.get('h')} for {waiting.get('command')!r}")
+
+    # Pairing with no code, as an app signed in to this Dashboard does it: the plugin's offer and
+    # the phone's answer cross on this connection, and no session is needed for it.
+    tapped = Phone()
+    offer = (await dash.call("command.dispatch", {"name": "redde-push", "arg": "offer"})).get("output", "")
+    words = offer.split()
+    report(words[:2] == ["redde-push", "offer"] and words[3:] == [RELAY], "Dashboard: the plugin makes an app its offer, and says which relay it uses", offer)
+    tapped.answer_directly(words[2])
+    accepted = (await dash.call("command.dispatch", {"name": "redde-push", "arg": f"accept {words[2]} {tapped.pub} {tapped.box}"})).get("output", "")
+    made = await asyncio.to_thread(tapped.wait_for, "paired", None, 15)
+    report(accepted.startswith("redde-push paired ") and bool(made), "Dashboard: an app pairs in one step, and its first note arrives", f"{accepted!r} {made}")
+    again = (await dash.call("command.dispatch", {"name": "redde-push", "arg": f"accept {words[2]} {tapped.pub} {tapped.box}"})).get("output", "")
+    report(again.startswith("redde-push refused"), "Dashboard: an offer is answered once", again)
     await dash.ws.close()
 
 
@@ -195,7 +218,8 @@ def main():
 
     said = hermes("test")
     report(bool(phone.wait_for("test", seconds=10)), "`hermes redde-push test` sends a test note", said)
-    hermes("remove", "Lab phone")
+    for device in store_ids():         # the one paired by code and the one paired over the Dashboard
+        hermes("remove", device)
     time.sleep(3)                      # what was already on its way lands
     before = len(phone.notes())
     api_turn("hi")

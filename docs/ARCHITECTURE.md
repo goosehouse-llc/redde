@@ -576,8 +576,8 @@ is on).
 **When Redde is closed.** Those stop when iOS closes the app. From then on a paired Hermes sends
 them itself (Settings → Voice → "Notify when Redde is closed"): a plugin there seals a short note
 with a key only it and the phone hold, a relay passes it to Apple unread, and the `EchoPush`
-notification extension opens it (`Shared/PushSeal.swift`, `PushService`). Pairing is a QR code from
-`hermes redde-push pair`. A tap opens the conversation, fetched from the server; Reply on a
+notification extension opens it (`Shared/PushSeal.swift`, `PushService`). Pairing is one tap for
+an app signed in to that Hermes's Dashboard, and otherwise a QR code from `hermes redde-push pair`. A tap opens the conversation, fetched from the server; Reply on a
 reply's banner sends into it, and Approve and Deny on an approval's answer it, all behind an
 unlock. [docs/push.md](push.md) has the design, the wire formats and what has to happen before it
 ships.

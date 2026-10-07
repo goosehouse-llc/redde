@@ -7,8 +7,9 @@ approval. See README.md here, and `core.py` for how a note is sealed and sent.
     hermes redde-push remove <name>
     hermes redde-push notify mine|all
 
-The app itself uses one slash command, `/redde-push watch <session> <device,...>`, to say which
-conversations it has taken part in; only those notify (and every turn over the Hermes API).
+The app itself uses the slash command `/redde-push`, over the Dashboard: `watch <session>
+<device,...>` says which conversations it has taken part in (only those notify, and every turn
+over the Hermes API), and `offer` then `accept <offer> <key> <box>` pair it without a code.
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ import atexit
 import logging
 import os
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -26,6 +28,7 @@ log = logging.getLogger("redde_push")
 
 _store: core.Store | None = None
 _pusher: core.Pusher | None = None
+_offers = core.Offers()
 #: session id -> the platform its turns run on ("desktop" or "tui" for the Dashboard, "api_server",
 #: "cli", a messaging platform). The approval hook isn't told, so the turn's earlier hooks remember.
 _platforms: dict[str, str] = {}
@@ -90,14 +93,38 @@ def _on_reply(session_id: str = "", assistant_response: str = "", platform: str 
 
 # ---- /redde-push, for the app ------------------------------------------------------------------
 
+def _relay() -> str:
+    return os.environ.get("REDDE_PUSH_RELAY") or core.DEFAULT_RELAY
+
+
 def _slash(raw_args: str = "") -> str:
+    """What the app says to the plugin. Every reply starts with "redde-push " and a word the app
+    reads: watching, status, offer, paired, refused."""
     words = (raw_args or "").split()
-    store, _ = _state()
+    store, pusher = _state()
     if len(words) == 3 and words[0] == "watch":
         following = store.watch(words[1], [w for w in words[2].split(",") if w])
         return f"redde-push watching {len(following)}"
-    if words[:1] == ["status"]:
-        return f"redde-push paired {len(store.devices)}"
+    if words == ["status"]:
+        return f"redde-push status {len(store.devices)}"
+    if words == ["offer"]:
+        # Pairing without a code, for an app already signed in to this Dashboard: the same key
+        # agreement as `hermes redde-push pair`, with this connection carrying the two halves.
+        offer = _offers.make(_relay())
+        return f"redde-push offer {core.b64u(offer.public)} {offer.relay}"
+    if len(words) == 4 and words[0] == "accept":
+        offer = _offers.take(words[1])
+        if offer is None:
+            return "redde-push refused: that offer has expired"
+        try:
+            device = offer.accept({"pub": words[2], "box": words[3]})
+        except ValueError:
+            return "redde-push refused: that answer isn't to this offer"
+        store.add(device)
+        # The first note, which the phone takes as proof that notes reach it. Not sent from here:
+        # the app is waiting on this reply.
+        threading.Thread(target=pusher.send, args=([device], core.note("paired")), name="redde-push-paired", daemon=True).start()
+        return f"redde-push paired {core.host_name()}"
     return "redde-push: this command is for the Redde app. In a terminal: hermes redde-push pair"
 
 
@@ -106,7 +133,7 @@ def _slash(raw_args: str = "") -> str:
 def _cli_setup(parser) -> None:
     actions = parser.add_subparsers(dest="action")
     pair = actions.add_parser("pair", help="pair an iPhone: shows a QR code for Redde to scan")
-    pair.add_argument("--relay", default=os.environ.get("REDDE_PUSH_RELAY") or core.DEFAULT_RELAY, help="the push relay to use")
+    pair.add_argument("--relay", default=_relay(), help="the push relay to use")
     pair.add_argument("--wait", type=int, default=600, help="seconds to wait for the phone")
     actions.add_parser("list", help="the paired phones")
     actions.add_parser("test", help="send each paired phone a test notification")

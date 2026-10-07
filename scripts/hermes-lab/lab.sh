@@ -7,7 +7,7 @@
 #   scripts/hermes-lab/lab.sh run --app [tag ...]  the same, plus the app's own transport code (EchoTests)
 #   scripts/hermes-lab/lab.sh approvals [tag ...]  the app's Dashboard client asked before a command runs
 #   scripts/hermes-lab/lab.sh push [tag ...]       the push plugin: pairing, and notes for replies and approvals
-#   scripts/hermes-lab/lab.sh push --app [tag ...] the same, then the app in a simulator pairs and reads a notification
+#   scripts/hermes-lab/lab.sh push --app [tag ...] the same, then the app pairs both ways and reads a notification
 #   scripts/hermes-lab/lab.sh up <tag> <scenario>  leave one lab running (API :18642, Dashboard :19119)
 #   scripts/hermes-lab/lab.sh down
 #
@@ -52,8 +52,8 @@ up() {
   export HERMES_HOME="$run/.hermes"
   cp "$HERE/scenarios/$scenario.yaml" "$HERMES_HOME/config.yaml"
   print -l "API_SERVER_ENABLED=true" "API_SERVER_KEY=labkey-labkey-labkey" "API_SERVER_PORT=18642" "API_SERVER_HOST=127.0.0.1" > "$HERMES_HOME/.env"
-  # The Dashboard's login, for the one scenario that turns it on.
-  [[ "$scenario" == approval ]] && print -l "HERMES_DASHBOARD_BASIC_AUTH_USERNAME=lab" "HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=labpass-labpass" \
+  # The Dashboard's login, for the scenarios that turn it on.
+  [[ "$scenario" == approval || "$scenario" == push ]] && print -l "HERMES_DASHBOARD_BASIC_AUTH_USERNAME=lab" "HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=labpass-labpass" \
     "HERMES_DASHBOARD_BASIC_AUTH_SECRET=0123456789abcdef0123456789abcdef0123456789abcdef" >> "$HERMES_HOME/.env"
   : > "$LAB_HITS"
   : > "$LAB_APNS"
@@ -62,6 +62,9 @@ up() {
   if [[ "$scenario" == push ]]; then
     mkdir -p "$HERMES_HOME/plugins"
     cp -R "$REPO/companion/hermes-plugin/redde-push" "$HERMES_HOME/plugins/redde-push"
+    export REDDE_PUSH_RELAY=http://127.0.0.1:18980   # the relay the plugin offers an app that pairs over the Dashboard
+  else
+    unset REDDE_PUSH_RELAY 2>/dev/null || true
   fi
   # No real keys may leak in: the point is to see where an unkeyed fallback goes.
   unset OPENROUTER_API_KEY OPENAI_API_KEY ANTHROPIC_API_KEY HERMES_INFERENCE_PROVIDER 2>/dev/null || true
@@ -207,7 +210,7 @@ push() {
   [[ "${1:-}" == "--app" ]] && { with_app=1; shift; }
   local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
   if (( with_app )); then
-    pick_simulator || exit 1
+    app_prepare HermesLabPushTests || exit 1   # (the app's own client and push service against the plugin)
     export LAB_SIMULATOR="$APP_DEVICE"
     echo "building EchoUITests for the app check …"
     (cd "$REPO" && xcodebuild build-for-testing -project Echo.xcodeproj -scheme EchoUITests -destination "platform=iOS Simulator,id=$APP_DEVICE" \
@@ -217,7 +220,10 @@ push() {
     echo "===== Hermes $tag / push"
     if ! up "$tag" push; then failed+=("$tag (lab)"); continue; fi
     "$LAB_HOME/hermes-$tag/.venv/bin/python" "$HERE/push_check.py" "$LAB_HOME/hermes-$tag/.venv/bin/hermes" || failed+=("$tag")
-    if (( with_app )); then push_app_check "$tag" || failed+=("$tag (app)"); fi
+    if (( with_app )); then
+      app_check || failed+=("$tag (app, one step)")
+      push_app_check "$tag" || failed+=("$tag (app, by code)")
+    fi
   done
   down
   if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi

@@ -16,3 +16,7 @@ approvals:
 # The Redde push plugin (companion/hermes-plugin/redde-push), which lab.sh copies in.
 plugins:
   enabled: [redde-push]
+# A public address makes the Dashboard ask for a login, as it does anywhere but loopback: the app
+# pairs with the plugin over a Dashboard it is signed in to (lab.sh sets the user and password).
+dashboard:
+  public_url: http://redde-lab.test:19119

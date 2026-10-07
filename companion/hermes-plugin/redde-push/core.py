@@ -11,6 +11,9 @@ both sides derive the same secret (X25519, HKDF-SHA256). The relay sees two publ
 it can't open. Anyone who could swap the QR code on your terminal could pair their own phone; the
 relay can't.
 
+An app already signed in to this Hermes's Dashboard can pair without the code: it asks for the
+offer and hands back its answer over that connection (`Offers`), and the relay carries neither.
+
 Nothing here imports Hermes, so it can be tested alone. `__init__.py` wires it to the hooks.
 """
 
@@ -110,6 +113,34 @@ class Offer:
             raise ValueError("that answer isn't to this pairing code") from error
         device.update(key=b64u(note_key), relay=self.relay, paired_at=int(time.time()))
         return device
+
+
+class Offers:
+    """Offers made to an app over the Dashboard and not answered yet. They live in the memory of
+    the process that made them, a few minutes at most: the app answers within seconds."""
+
+    LIFETIME = 600
+    LIMIT = 20
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._open: dict[str, tuple[Offer, float]] = {}
+
+    def make(self, relay: str) -> Offer:
+        offer = Offer(relay)
+        with self._lock:
+            now = time.time()
+            self._open = {k: v for k, v in self._open.items() if now - v[1] < self.LIFETIME}
+            while len(self._open) >= self.LIMIT:
+                self._open.pop(next(iter(self._open)))
+            self._open[b64u(offer.public)] = (offer, now)
+        return offer
+
+    def take(self, offered: str) -> Offer | None:
+        """The offer with this public key, once: an answer is accepted or refused, not retried."""
+        with self._lock:
+            found = self._open.pop(offered, None)
+        return found[0] if found and time.time() - found[1] < self.LIFETIME else None
 
 
 # ---- What is kept ---------------------------------------------------------------------------
@@ -225,6 +256,11 @@ class Store:
 
 # ---- Notes ------------------------------------------------------------------------------------
 
+def host_name() -> str:
+    """This machine's short name, which the phone lists the pairing under."""
+    return clipped(socket.gethostname().split(".")[0], 40) or "Hermes"
+
+
 def clipped(text: str, limit: int, lines: bool = False) -> str:
     """`text` cut to `limit` characters; on one line unless `lines`."""
     text = str(text or "").strip() if lines else " ".join(str(text or "").split())
@@ -243,7 +279,7 @@ def note(kind: str, session: str = "", body: str = "", title: str = "", detail: 
     notification (one in a conversation it follows): the command's digest, so its answer goes to
     that command and no other. Short keys: every byte is sealed and base64-encoded into a
     notification Apple caps at 4 KB."""
-    made = {"v": 1, "k": kind, "at": int(time.time()), "n": clipped(socket.gethostname().split(".")[0], 40)}
+    made = {"v": 1, "k": kind, "at": int(time.time()), "n": host_name()}
     if kind == "approval" and answerable and session:
         made["h"] = digest(body)   # of the whole command, however much of it fits in `b`
     for key, value, limit in (("s", session, 120), ("t", title, 80), ("d", detail, 200)):

@@ -38,8 +38,8 @@ The key is agreed between the plugin and the phone; the relay only carries the t
    its public key as a link, `https://redde.goosehouse.org/connect#push=<key>`, and as a QR code
    of that link. The key sits after the `#`, which a browser never sends; with Redde installed,
    iOS opens the link in the app without loading the page.
-2. In Redde: Settings › Voice › Notify when Redde is closed › scan the code (or paste the link,
-   or open it). The app asks before doing anything. Then it asks iOS for a push token, makes its
+2. In Redde: Settings › Voice › Notify when Redde is closed › Pair with a code › scan it (or
+   paste the link, or open it). The app asks before doing anything. Then it asks iOS for a push token, makes its
    own key pair, registers the token at the relay under a fresh random secret (the relay is sent
    the secret's hash), and leaves its answer at the relay: its public key, and its relay id and
    secret sealed for the plugin.
@@ -52,6 +52,28 @@ The answer waits at the relay in a slot named by a hash of the plugin's public k
 by a registered phone, read once, gone after ten minutes. What makes the pairing trustworthy is
 where the link was read: the person's own terminal. Someone who could replace the QR code there
 could pair their own phone; the relay could not, since it never sees a private key.
+
+### With one tap, over the Dashboard
+
+An app that is signed in to that Hermes's Dashboard needs no code and no terminal, once the
+plugin is installed. "Pair with <server>" does the same key agreement over the connection the
+app already has (`PushService.pairDirectly`):
+
+1. The app asks the plugin for an offer: `command.dispatch redde-push "offer"`. The plugin makes
+   a key pair, keeps it in memory for ten minutes at most, and answers
+   `redde-push offer <public key> <the relay it uses>`.
+2. The app registers its push token at the relay, as before, and hands its answer straight back:
+   `command.dispatch redde-push "accept <offered key> <its public key> <the box>"`.
+3. The plugin opens the box, stores the phone, answers `redde-push paired <machine name>`, and
+   sends its first note. An offer is answered once.
+
+The relay carries neither half this way; it only learns the phone's push address. The two halves
+cross on the Dashboard connection, which already carries every conversation: whoever could
+tamper with it could read those too. The plugin's "paired" means it opened the box, so it holds
+the key, and the app counts the pairing from then (`PushPairing.accepted`), before any note has
+arrived; if none does within forty seconds, the app says the Hermes may not be able to reach the
+relay. Over the Hermes API there is no such channel, and the code is how to pair. A plugin from
+before this answers "offer" with its usage line, which the app reads as "update the plugin".
 
 ## Which conversations notify
 
@@ -154,7 +176,8 @@ scripts/hermes-lab/lab.sh push --app     # and the app in a simulator pairing wi
 
 `EchoTests/PushTests.swift` checks the app against values the plugin's code produced, so the two
 ends can't drift apart unnoticed. The lab runs the relay's own code under Node with a stand-in for
-Apple. `scripts/hermes-lab/lab.sh approvals` covers answering: the app's own Dashboard client joins a turn
+Apple. `lab.sh push` also pairs a stand-in phone over the Dashboard, and `--app` does it with the app's
+own client and push service (`EchoTests/HermesLabPushTests`). `scripts/hermes-lab/lab.sh approvals` covers answering: the app's own Dashboard client joins a turn
 left waiting and answers its card, and answers by session and digest the way the notification's
 buttons do, on each release. Two things no simulator shows: the extension opening a note while
 the app is closed, and a tap on the notification's own buttons. Both take a real notification

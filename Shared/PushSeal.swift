@@ -63,6 +63,13 @@ nonisolated struct PushPairing: Codable, Equatable, Identifiable, Sendable {
     var pairedAt = Date(timeIntervalSince1970: Date.now.timeIntervalSince1970.rounded())
     /// A note has arrived and opened: the plugin took the answer and derived the same key.
     var confirmed = false
+    /// The plugin said so itself, when the pairing was made over the Dashboard: it opened the
+    /// answer, so it has the key, whether or not a note has got through yet. Optional so a
+    /// pairing saved before this existed still reads.
+    var accepted: Bool?
+
+    /// The plugin has this phone: by its own word, or by a note that proves it.
+    var isPaired: Bool { confirmed || accepted == true }
 }
 
 nonisolated enum PushSeal {

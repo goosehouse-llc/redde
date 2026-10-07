@@ -350,7 +350,7 @@ struct VoiceSettings: View {
             Toggle("Announce on AirPods", isOn: $settings.announceOnAirPods)
                 .disabled(!settings.notifyInBackground)
             NavigationLink { PushSettingsView() } label: {
-                LabeledContent("Notify when Redde is closed", value: PushService.shared.pairings.contains(where: \.confirmed) ? "On" : "Off")
+                LabeledContent("Notify when Redde is closed", value: PushService.shared.pairings.contains(where: \.isPaired) ? "On" : "Off")
             }
         } header: {
             Text("Voice")

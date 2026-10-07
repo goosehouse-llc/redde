@@ -353,6 +353,109 @@ struct PushServiceTests {
         #expect(box.pairings.isEmpty)
     }
 
+    // MARK: Pairing over the Dashboard, with no code
+
+    /// The plugin's end of it, done here with the plugin's fixed key: what `/redde-push offer`
+    /// and `/redde-push accept …` answer, and what they were asked.
+    private final class Plugin {
+        var asked: [String] = []
+        var relay = "https://relay.test"
+        var offer: String?            // what "offer" answers, when not the usual
+        var refusal: String?          // what "accept" answers, when not "paired"
+        var failure: PushError?
+        /// The registration the phone sealed for the plugin, once it has been opened.
+        var opened: [String: String]?
+        var noteKey: Data?
+
+        var command: PushService.PluginCommand {
+            { [self] arguments in
+                asked.append(arguments.split(separator: " ").first.map(String.init) ?? "")
+                if let failure { throw failure }
+                let words = arguments.split(separator: " ").map(String.init)
+                if words == ["offer"] { return offer ?? "redde-push offer \(PushSeal.base64URL(Vector.offered)) \(relay)" }
+                guard words.count == 4, words[0] == "accept", words[1] == PushSeal.base64URL(Vector.offered),
+                      let theirs = PushSeal.data(base64URL: words[2]), let box = PushSeal.data(base64URL: words[3]) else {
+                    return "redde-push: this command is for the Redde app."
+                }
+                if let refusal { return refusal }
+                let shared = try Vector.pluginKey.sharedSecretFromKeyAgreement(with: .init(rawRepresentation: theirs))
+                let keys = PushSeal.keys(shared: shared, offered: Vector.offered, answered: theirs)
+                let inside = try PushSeal.open(box, key: keys.box, aad: PushSeal.pairingAAD)
+                opened = try JSONSerialization.jsonObject(with: inside) as? [String: String]
+                noteKey = keys.note
+                return "redde-push paired studio"
+            }
+        }
+    }
+
+    @Test func oneTapPairsOverTheDashboardAndTheRelayCarriesNeitherHalf() async throws {
+        relayThatRegisters()
+        defer { RelayStub.reset() }
+        let box = Box()
+        let service = service(box)
+        let plugin = Plugin()
+        let pairing = try await service.pairDirectly(through: plugin.command)
+
+        #expect(plugin.asked == ["offer", "accept"])
+        #expect(RelayStub.calls.map { "\($0.method) \($0.path)" } == ["POST /v1/devices"],
+                "the phone registers its address; the answer goes to the plugin directly, not through the relay")
+        #expect(plugin.opened?["id"] == "relay-id-0123456789" && plugin.opened?["send"] == pairing.sendKey)
+        #expect(plugin.noteKey == pairing.key, "both ends will seal notes with the same key")
+        #expect(pairing.host == "studio" && pairing.accepted == true && !pairing.confirmed && pairing.isPaired)
+        #expect(box.pairings == [pairing])
+        // The plugin has the phone, so its conversations are followed at once, before any note.
+        #expect(service.followCommand(stored: "20261007_1", server: "A") == "watch 20261007_1 relay-id-0123456789")
+    }
+
+    @Test func oneTapSaysWhatIsMissingOnTheHermesAndLeavesNothingBehind() async {
+        relayThatRegisters()
+        defer { RelayStub.reset() }
+        let missing = Plugin()
+        missing.failure = .noPlugin
+        await #expect(throws: PushError.noPlugin) { try await service(Box()).pairDirectly(through: missing.command) }
+
+        let old = Plugin()   // a plugin from before this: it knows no "offer"
+        old.offer = "redde-push: this command is for the Redde app. In a terminal: hermes redde-push pair"
+        await #expect(throws: PushError.oldPlugin) { try await service(Box()).pairDirectly(through: old.command) }
+
+        let elsewhere = Plugin()
+        elsewhere.relay = "https://other.example"
+        await #expect(throws: PushError.otherRelay("other.example")) { try await service(Box()).pairDirectly(through: elsewhere.command) }
+        #expect(elsewhere.asked == ["offer"], "no answer is made for a relay this app doesn't use")
+
+        let silenced = Plugin()
+        await #expect(throws: PushError.notAllowed) { try await service(Box(), allowed: false).pairDirectly(through: silenced.command) }
+        #expect(silenced.asked.isEmpty, "with notifications off the Hermes isn't even asked")
+        #expect(RelayStub.calls.isEmpty, "and in none of these did the phone register anywhere")
+    }
+
+    @Test func anAnswerTheHermesTurnsDownIsTakenBackFromTheRelay() async {
+        relayThatRegisters()
+        defer { RelayStub.reset() }
+        let plugin = Plugin()
+        plugin.refusal = "redde-push refused: that offer has expired"
+        let box = Box()
+        await #expect(throws: PushError.refused("that offer has expired")) { try await service(box).pairDirectly(through: plugin.command) }
+        #expect(RelayStub.calls.map(\.method) == ["POST", "DELETE"])
+        #expect(box.pairings.isEmpty)
+    }
+
+    @Test func pairingAgainKeepsWhatThePluginHasAndDropsWhatNeverFinished() async throws {
+        relayThatRegisters()
+        defer { RelayStub.reset() }
+        let box = Box()
+        var accepted = Vector.pairing
+        accepted.id = "accepted"
+        accepted.accepted = true
+        var pending = Vector.pairing
+        pending.id = "pending"
+        box.pairings = [accepted, pending]
+        let service = service(box)
+        let pairing = try await service.pairDirectly(through: Plugin().command)
+        #expect(box.pairings.map(\.id) == ["accepted", pairing.id])
+        #expect(RelayStub.calls.contains { $0.method == "DELETE" && $0.path == "/v1/devices/pending" })
+    }
+
     @Test func removingAPairingRemovesItAtTheRelayToo() async throws {
         relayThatRegisters()
         defer { RelayStub.reset() }

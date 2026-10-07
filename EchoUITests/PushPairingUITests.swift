@@ -54,6 +54,9 @@ final class PushPairingUITests: XCTestCase {
         try XCTSkipIf(app.text(containing: "Paired ").exists, "This simulator is paired with a Hermes already")
         XCTAssertTrue(app.text(containing: "Not paired with a Hermes yet.").exists)
         XCTAssertTrue(app.text(containing: "hermes plugins install goosehouse-llc/redde/companion/hermes-plugin/redde-push").exists)
+        // Signed in to a Dashboard, the app offers to pair in one tap and folds the code away.
+        let byCode = app.buttons["Pair with a code instead"]
+        if byCode.exists { byCode.tap() }
         XCTAssertTrue(app.text(containing: "hermes redde-push pair").exists)
         XCTAssertTrue(app.buttons["Paste the pairing link"].exists)
         XCTAssertTrue(app.text(containing: "neither can read it").exists, "The footer says who can read a notification")
