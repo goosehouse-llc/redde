@@ -24,11 +24,55 @@ struct VoiceSessionTests {
             if let startError { throw startError }
             starts += 1
             self.onEnd = onEnd
+            mic = .listening
         }
         func stop() async -> String { pendingUtterance }
-        func cancel() { cancels += 1 }
-        /// Speech ended on its own.
-        func deliver(_ text: String) { onEnd?(text) }
+        func cancel() { cancels += 1; mic = .closed; heard = nil; watching = nil }
+        /// Speech ended on its own: the recogniser closes the mic, then says what it heard.
+        func deliver(_ text: String) { mic = .closed; onEnd?(text) }
+
+        // The mic behind a reply.
+        enum Mic: Equatable { case closed, held, listening }
+        private(set) var mic = Mic.closed
+        private(set) var heldStarts = 0
+        /// Whether what was kept while held went to the recogniser, per `beginTranscribing`.
+        private(set) var heldAudioUsed: [Bool] = []
+        private(set) var watching: BargeInDetector?
+        private var heard: (() -> Void)?
+
+        func startHeld(onEnd: @escaping (String) -> Void) async throws {
+            if let startError { throw startError }
+            heldStarts += 1
+            self.onEnd = onEnd
+            mic = .held
+        }
+        func watchForVoice(_ detector: BargeInDetector?, heard: (() -> Void)?) {
+            watching = detector
+            self.heard = heard
+        }
+        /// Whether a pause would end the utterance now (false while only transcribing).
+        private(set) var endsOnSilence = false
+        func beginTranscribing(withHeldAudio: Bool, endsOnSilence: Bool) {
+            guard mic == .held else { return }
+            heldAudioUsed.append(withHeldAudio)
+            mic = .listening
+            watching = nil
+            self.endsOnSilence = endsOnSilence
+        }
+        func endOnSilence() {
+            guard mic == .listening else { return }
+            endsOnSilence = true
+        }
+        func holdAgain() {
+            guard mic == .listening else { return }
+            mic = .held
+            transcript = ""
+            endsOnSilence = false
+        }
+        /// The level says someone is talking over the reply.
+        func raiseVoice() { heard?() }
+        /// The recogniser makes out words.
+        func hear(_ words: String) { transcript = words }
     }
 
     final class FakeSpeaker: VoiceSpeaking {
@@ -39,6 +83,10 @@ struct VoiceSessionTests {
         private(set) var ends = 0
         private(set) var stops = 0
         private(set) var released = 0
+        private(set) var pauses = 0
+        private(set) var resumes = 0
+        func pause() { pauses += 1 }
+        func resume() { resumes += 1 }
 
         func beginReply() { begins += 1 }
         func append(_ delta: String) {
@@ -59,6 +107,7 @@ struct VoiceSessionTests {
         private(set) var activations = 0
         private(set) var deactivations = 0
         var activationError: Error?
+        var route = VoiceRoute.speaker
 
         func activateForVoice() throws {
             if let activationError { throw activationError }
@@ -97,7 +146,7 @@ struct VoiceSessionTests {
         let cues = CueLog()
         let awake = AwakeLog()
 
-        init(transport: any HermesTransport) {
+        init(transport: any HermesTransport, talkOver: Settings.TalkOver = .off, interruption: Settings.Interruption = .speech) {
             let suite = UserDefaults(suiteName: "voice-\(UUID().uuidString)")!
             let settings = Settings(defaults: suite)
             settings.transport = .chatCompletions
@@ -109,7 +158,7 @@ struct VoiceSessionTests {
             let (cues, awake) = (cues, awake)
             session = VoiceSession(conversation: conversation, recognizer: recognizer, output: speaker,
                                    audio: audio, requestPermissions: { true }, earcon: { cues.record($0) },
-                                   keepAwake: { awake.record($0) })
+                                   keepAwake: { awake.record($0) }, talkOver: { talkOver }, interruption: { interruption })
         }
     }
 
@@ -209,6 +258,205 @@ struct VoiceSessionTests {
         h.session.primaryAction()
         try await waitUntil("listening again") { h.recognizer.starts == 2 }
         #expect(!h.session.isMuted)
+    }
+
+    // MARK: Talking over a reply
+
+    /// A turn asked and being answered, on headphones unless said otherwise. `hang`: the reply
+    /// is still coming from the server.
+    private func replying(talkOver: Settings.TalkOver = .headphones, route: VoiceRoute = .headphones, handsFree: Bool = false,
+                          hang: Bool = true, interruption: Settings.Interruption = .speech) async throws -> Harness {
+        let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport([.textDelta("A long answer. "), .textDelta("It goes on.")], hang: hang),
+                        talkOver: talkOver, interruption: interruption)
+        h.audio.route = route
+        h.session.continuous = handsFree
+        h.session.beginListening()
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        h.recognizer.deliver("tell me everything")
+        try await waitUntil("speaking") { h.session.phase == .speaking && h.speaker.spoken.count == 2 }
+        return h
+    }
+
+    @Test func aReplyOnHeadphonesKeepsTheMicOpenButTranscribesNothing() async throws {
+        let h = try await replying()
+        try await waitUntil("the mic behind the reply") { h.recognizer.mic == .held }
+        #expect(h.recognizer.heldStarts == 1)
+        try await waitUntil("the watch for a voice") { h.recognizer.watching == .headset }
+        #expect(h.recognizer.heldAudioUsed.isEmpty, "nothing reaches the recogniser while Redde speaks")
+        #expect(!h.audio.replying.contains(true), "the session stays as it is for listening")
+    }
+
+    @Test(arguments: [(Settings.TalkOver.off, VoiceRoute.headphones), (.headphones, .speaker), (.everywhere, .car), (.headphones, .car)])
+    func theMicStaysShutWhereTalkingOverIsNotOn(talkOver: Settings.TalkOver, route: VoiceRoute) async throws {
+        let h = try await replying(talkOver: talkOver, route: route)
+        try await Task.sleep(for: .milliseconds(60))
+        #expect(h.recognizer.heldStarts == 0)
+        #expect(h.recognizer.mic == .closed)
+        #expect(h.audio.replying.last == true, "the reply plays at full volume, as before")
+    }
+
+    @Test func theSpeakerTakesTheSettingAndListensThroughEchoCancellation() async throws {
+        let h = try await replying(talkOver: .everywhere, route: .speaker)
+        try await waitUntil("the watch for a voice") { h.recognizer.watching == .echoCancelled }
+        #expect(!h.audio.replying.contains(true), "voice-chat mode stays on: that is what cancels the echo")
+    }
+
+    @Test func wordsOverTheReplyStopItAndBecomeTheNextTurn() async throws {
+        let h = try await replying()
+        try await waitUntil("the watch for a voice") { h.recognizer.watching != nil }
+        h.recognizer.raiseVoice()
+        #expect(h.speaker.pauses == 1, "the reply is held while the recogniser listens")
+        #expect(h.recognizer.heldAudioUsed == [true], "with the second before, so the first word isn't lost")
+        #expect(h.session.phase == .speaking, "not an interruption until it is words")
+        #expect(!h.recognizer.endsOnSilence, "a pause while that is found out must not end the listening")
+
+        h.recognizer.hear("wait")
+        try await waitUntil("the interruption") { h.session.phase == .listening }
+        #expect(h.speaker.stops >= 1)
+        #expect(!h.conversation.isStreaming, "the turn on the server stops too")
+        #expect(h.recognizer.starts == 1, "the mic that heard it is the one listening")
+        #expect(h.recognizer.mic == .listening)
+        #expect(h.recognizer.endsOnSilence, "now it is an utterance, and a pause ends it")
+        #expect(h.session.liveTranscript == "wait")
+
+        h.recognizer.deliver("wait, I meant the other one")
+        try await waitUntil("the next turn") { h.conversation.messages.contains { $0.role == .user && $0.text == "wait, I meant the other one" } }
+    }
+
+    @Test func aNoiseHoldsTheReplyAndThenItCarriesOn() async throws {
+        let h = try await replying()
+        h.session.confirmWindow = .milliseconds(150)
+        try await waitUntil("the watch for a voice") { h.recognizer.watching != nil }
+        let stops = h.speaker.stops
+        h.recognizer.raiseVoice()
+        #expect(h.speaker.pauses == 1)
+        try await waitUntil("the reply carrying on") { h.speaker.resumes == 1 }
+        #expect(h.session.phase == .speaking)
+        #expect(h.recognizer.mic == .held, "back to waiting, with nothing transcribed")
+        #expect(h.recognizer.watching != nil, "and watching again")
+        #expect(h.conversation.isStreaming, "the turn was never touched")
+        #expect(h.speaker.stops == stops, "and neither was the reply")
+    }
+
+    @Test func aListenersOkayDoesNotStopTheReplyButOkayStopDoes() async throws {
+        let h = try await replying()
+        h.session.confirmWindow = .milliseconds(250)
+        try await waitUntil("the watch for a voice") { h.recognizer.watching != nil }
+        h.recognizer.raiseVoice()
+        h.recognizer.hear("Okay")
+        try await waitUntil("the reply carrying on") { h.speaker.resumes == 1 }
+        #expect(h.session.phase == .speaking)
+        #expect(h.conversation.isStreaming)
+
+        try await waitUntil("watching again") { h.recognizer.watching != nil }
+        h.recognizer.raiseVoice()
+        h.recognizer.hear("Okay")
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(h.session.phase == .speaking, "\"okay\" alone waits to see what follows")
+        h.recognizer.hear("Okay, stop")
+        try await waitUntil("the interruption") { h.session.phase == .listening }
+        #expect(!h.conversation.isStreaming)
+    }
+
+    @Test func handsFreeListensOnTheOpenMicWhenTheReplyEnds() async throws {
+        let h = try await replying(handsFree: true, hang: false)
+        try await waitUntil("the mic behind the reply") { h.recognizer.mic == .held }
+        try await waitUntil("the reply streamed") { !h.conversation.isStreaming }
+        h.speaker.finishSpeaking()
+        try await waitUntil("listening again") { h.session.phase == .listening }
+        #expect(h.recognizer.starts == 1, "no second opening of the mic")
+        #expect(h.recognizer.heldAudioUsed == [false], "nothing from while Redde spoke is transcribed")
+        #expect(h.recognizer.endsOnSilence)
+        #expect(h.cues.cues.last == .listening)
+    }
+
+    // "Only stop"
+
+    @Test func withOnlyStopTheReplyPlaysOnThroughWhateverIsSaid() async throws {
+        let h = try await replying(interruption: .stopWord)
+        h.session.stopWordQuiet = .milliseconds(200)
+        try await waitUntil("the watch for a voice") { h.recognizer.watching != nil }
+        let stops = h.speaker.stops
+        h.recognizer.raiseVoice()
+        #expect(h.speaker.pauses == 0, "the reply is not held")
+        #expect(h.recognizer.mic == .listening, "the recogniser listens for the word")
+        #expect(!h.recognizer.endsOnSilence)
+        h.recognizer.hear("so I told him we should go on Thursday")
+        try await Task.sleep(for: .milliseconds(100))
+        h.recognizer.hear("so I told him we should go on Thursday, and don't stop for coffee")
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(h.session.phase == .speaking)
+        #expect(h.speaker.stops == stops, "nothing said stopped it, not even \"don't stop\"")
+        #expect(h.conversation.isStreaming)
+        // The talking ends: back to waiting for a voice, with no start of the reply to sit out.
+        try await waitUntil("the level watch again") { h.recognizer.mic == .held && h.recognizer.watching != nil }
+        #expect(h.recognizer.watching?.settle == 0)
+        #expect(h.session.phase == .speaking)
+    }
+
+    @Test func withOnlyStopTheWordEndsTheReplyAndTheConversation() async throws {
+        let h = try await replying(handsFree: true, interruption: .stopWord)
+        try await waitUntil("the watch for a voice") { h.recognizer.watching != nil }
+        h.recognizer.raiseVoice()
+        h.recognizer.hear("okay that's enough")
+        try await Task.sleep(for: .milliseconds(120))
+        #expect(h.session.phase == .speaking)
+        h.recognizer.hear("okay that's enough, stop")
+        try await waitUntil("the reply ending") { h.speaker.spoken.last == "Okay." }
+        #expect(!h.conversation.isStreaming, "the turn on the server stops too")
+        #expect(h.recognizer.mic == .closed)
+        #expect(!h.session.continuous, "stop means stop: hands-free ends with it")
+        #expect(!h.conversation.messages.contains { $0.role == .user && $0.text.contains("enough") }, "what was said is no message")
+        h.speaker.finishSpeaking()
+        try await waitUntil("idle") { h.session.phase == .idle }
+        #expect(h.recognizer.starts == 1, "and nothing listens afterwards")
+    }
+
+    @Test func withOnlyStopHandsFreeStillListensAfterAReplyThatRanItsCourse() async throws {
+        let h = try await replying(handsFree: true, hang: false, interruption: .stopWord)
+        try await waitUntil("the watch for a voice") { h.recognizer.watching != nil }
+        h.recognizer.raiseVoice()
+        h.recognizer.hear("people talking")   // still transcribing when the reply ends
+        try await waitUntil("the reply streamed") { !h.conversation.isStreaming }
+        h.speaker.finishSpeaking()
+        try await waitUntil("listening again") { h.session.phase == .listening }
+        #expect(h.recognizer.mic == .listening)
+        #expect(h.recognizer.endsOnSilence)
+        #expect(h.recognizer.transcript.isEmpty, "the background talk is not the start of the next message")
+        #expect(h.session.liveTranscript.isEmpty)
+    }
+
+    @Test func oneQuestionClosesTheMicWhenTheReplyEnds() async throws {
+        let h = try await replying(hang: false)
+        try await waitUntil("the mic behind the reply") { h.recognizer.mic == .held }
+        try await waitUntil("the reply streamed") { !h.conversation.isStreaming }
+        h.speaker.finishSpeaking()
+        try await waitUntil("idle") { h.session.phase == .idle }
+        #expect(h.recognizer.mic == .closed)
+        #expect(h.recognizer.watching == nil)
+    }
+
+    @Test func tappingTheMicStillCutsInAndAPausedReplyIsNotWatched() async throws {
+        let h = try await replying()
+        try await waitUntil("the watch for a voice") { h.recognizer.watching != nil }
+        h.session.pauseSpeaking()
+        #expect(h.recognizer.watching == nil, "nothing to talk over while it is paused")
+        h.session.resumeSpeaking()
+        #expect(h.recognizer.watching != nil)
+
+        h.session.beginListening()
+        try await waitUntil("listening afresh") { h.recognizer.starts == 2 }
+        #expect(h.session.phase == .listening)
+        #expect(h.recognizer.mic == .listening)
+        #expect(h.recognizer.watching == nil)
+    }
+
+    @Test func headphonesComingOutCloseTheMicBehindTheReply() async throws {
+        let h = try await replying()
+        try await waitUntil("the mic behind the reply") { h.recognizer.mic == .held }
+        h.audio.onOutputDeviceLost?()
+        #expect(h.session.phase == .idle)
+        #expect(h.recognizer.mic == .closed)
     }
 
     // MARK: Stop phrase

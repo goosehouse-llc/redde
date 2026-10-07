@@ -29,7 +29,7 @@ struct CarPlayTests {
             conversation = Conversation(settings: settings, store: store,
                                         transportOverride: ConversationLifecycleTests.ScriptedTransport([.textDelta("Hello."), .done]))
             session = VoiceSession(conversation: conversation, recognizer: recognizer, output: speaker, audio: audio,
-                                   requestPermissions: { true }, earcon: { _ in }, keepAwake: { _ in })
+                                   requestPermissions: { true }, earcon: { _ in }, keepAwake: { _ in }, talkOver: { .off }, interruption: { .speech })
             delegate.sessionOverride = session
             delegate.conversationOverride = conversation
             delegate.settings = settings

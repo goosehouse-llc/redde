@@ -326,6 +326,19 @@ struct VoiceSettings: View {
                     .accessibilityLabel("Voice speed")
             }
             Toggle("Start voice mode in hands-free", isOn: $settings.handsFreeByDefault)
+            Picker("Talk over replies", selection: $settings.talkOver) {
+                Text("Off").tag(Settings.TalkOver.off)
+                Text("With headphones").tag(Settings.TalkOver.headphones)
+                Text("Headphones and speaker").tag(Settings.TalkOver.everywhere)
+            }
+            .pickerStyle(.menu)
+            if settings.talkOver != .off {
+                Picker("Interrupt with", selection: $settings.interruption) {
+                    Text("Anything you say").tag(Settings.Interruption.speech)
+                    Text("Only “stop”").tag(Settings.Interruption.stopWord)
+                }
+                .pickerStyle(.menu)
+            }
             Toggle("New conversation in voice mode", isOn: $settings.newConversationForVoice)
             Picker("When Redde opens", selection: $settings.launchScreen) {
                 Text("Last conversation").tag(Settings.LaunchScreen.conversation)
@@ -361,6 +374,7 @@ struct VoiceSettings: View {
                 + (settings.useKokoro
                     ? "“Voice for replies”: Match each reply picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice (the built-in one when Kokoro has none for it). "
                     : "“Voice for replies”: Match each reply picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice. Download more voices in the iPhone's Settings → Accessibility → Read & Speak → Voices. ")
+                + "“Talk over replies” lets you interrupt a spoken reply by speaking: the reply stops and what you say is your next message. With headphones it costs nothing. On the phone's speaker Redde has to cancel its own echo for as long as it speaks, so replies play at call volume, quieter than usual; that is why the speaker is a separate choice. Not in the car. “Interrupt with” says what counts: anything you say, or only the word “stop”, for when other people are talking nearby. With “Only “stop””, the reply plays on through whatever else is said, and “stop” ends it. "
                 + "“New conversation in voice mode” starts a fresh conversation each time voice mode opens, from the button, Siri, the Action button or at launch; the one you were in stays in your list. "
                 + "“Suggest follow-up questions” shows three things you might ask next under each reply, written by the model on your OpenAI-compatible connection (it needs that address set, whichever connection the conversation uses). "
                 + "“When Redde opens” picks where it starts: your last conversation, the conversation list, or voice mode; “Listen whenever Redde opens” starts the mic as well, so “Hey Siri, open Redde” goes straight to listening. “Earpiece” plays replies through the earpiece when the phone is at your ear, like a call; turn it off for hands-free use with the phone face down. Background notifications tell you when Redde needs an approval or an answer, or when a reply finishes, while you're in another app; they stop when iOS closes Redde, and “Notify when Redde is closed” has your Hermes send them from then on. “Announce on AirPods” marks them time-sensitive so Siri can read them aloud through AirPods (turn on Announce Notifications for Redde in the iPhone's Settings) and so they reach you in a Focus. With AirPods in, pressing the stem on the voice screen works like tapping the mic.")

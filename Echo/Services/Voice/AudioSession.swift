@@ -68,6 +68,14 @@ final class AudioSessionController {
         }
     }
 
+    /// What the voice session is playing through right now.
+    var route: VoiceRoute {
+        let session = AVAudioSession.sharedInstance()
+        let car = session.currentRoute.outputs.contains { $0.portType == .carAudio }
+            || (session.availableInputs ?? []).contains { $0.portType == .carAudio }
+        return car ? .car : onHeadphones ? .headphones : .speaker
+    }
+
     func activateForVoice() throws {
         let session = AVAudioSession.sharedInstance()
         if activeMode != .voice {

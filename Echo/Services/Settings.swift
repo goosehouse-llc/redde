@@ -103,6 +103,21 @@ final class Settings: ServeEndpoint {
     var handsFreeByDefault: Bool {
         didSet { defaults.set(handsFreeByDefault, forKey: Keys.handsFreeByDefault) }
     }
+    /// Whether a spoken reply can be interrupted by talking over it (`VoiceSession`). With
+    /// headphones nothing of the reply reaches the microphone, so that is on from the start. On
+    /// the phone's speaker the echo has to be cancelled for as long as Redde speaks, which plays
+    /// the reply at call volume: that is a choice.
+    enum TalkOver: String, CaseIterable, Sendable { case off, headphones, everywhere }
+    var talkOver: TalkOver {
+        didSet { defaults.set(talkOver.rawValue, forKey: Keys.talkOver) }
+    }
+    /// What it takes to interrupt a reply that can be talked over: anything said, or the word
+    /// "stop" alone. With the second, whatever else is said near the microphone, a room full of
+    /// people included, the reply goes on.
+    enum Interruption: String, CaseIterable, Sendable { case speech, stopWord }
+    var interruption: Interruption {
+        didSet { defaults.set(interruption.rawValue, forKey: Keys.interruption) }
+    }
     /// Opening voice mode starts a new conversation (unless the current one is empty or busy).
     var newConversationForVoice: Bool {
         didSet { defaults.set(newConversationForVoice, forKey: Keys.newConversationForVoice) }
@@ -329,6 +344,8 @@ final class Settings: ServeEndpoint {
         static let launchScreen = "launchScreen"
         static let handsFreeByDefault = "handsFreeByDefault"
         static let newConversationForVoice = "newConversationForVoice"
+        static let talkOver = "talkOver"
+        static let interruption = "interruption"
         static let useKokoro = "useKokoro"
         static let kokoroURL = "kokoroURL"
         static let kokoroVoice = "kokoroVoice"
@@ -378,6 +395,8 @@ final class Settings: ServeEndpoint {
             ?? (defaults.bool(forKey: Keys.openToVoiceScreen) ? .voice : .conversation)
         handsFreeByDefault = defaults.bool(forKey: Keys.handsFreeByDefault)
         newConversationForVoice = defaults.bool(forKey: Keys.newConversationForVoice)
+        talkOver = defaults.string(forKey: Keys.talkOver).flatMap(TalkOver.init(rawValue:)) ?? .headphones
+        interruption = defaults.string(forKey: Keys.interruption).flatMap(Interruption.init(rawValue:)) ?? .speech
         useKokoro = defaults.bool(forKey: Keys.useKokoro)
         kokoroURL = defaults.string(forKey: Keys.kokoroURL) ?? Self.defaultKokoroURL
         kokoroVoice = defaults.string(forKey: Keys.kokoroVoice) ?? Self.defaultKokoroVoice
@@ -579,6 +598,8 @@ final class Settings: ServeEndpoint {
         launchScreen = .conversation
         handsFreeByDefault = false
         newConversationForVoice = false
+        talkOver = .headphones
+        interruption = .speech
         useKokoro = false
         kokoroURL = Self.defaultKokoroURL
         kokoroVoice = Self.defaultKokoroVoice

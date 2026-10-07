@@ -10,7 +10,8 @@ import os
 /// because the API doesn't provide it: we watch mic level and the volatile transcript.
 @Observable
 final class SpeechRecognizer {
-    enum State: Equatable { case idle, preparing, listening, finalizing }
+    /// `holding`: the microphone is open and nothing is transcribed yet (see `startHeld`).
+    enum State: Equatable { case idle, preparing, holding, listening, finalizing }
     enum Failure: LocalizedError {
         case permissionDenied
         case localeUnsupported
@@ -154,7 +155,7 @@ final class SpeechRecognizer {
             throw Failure.audioFormat
         }
         let (inputSequence, continuation) = AsyncStream.makeStream(of: AnalyzerInput.self)
-        guard let tap = TapProcessor(converter: converter, targetFormat: analyzerFormat, continuation: continuation) else {
+        guard let tap = TapProcessor(converter: converter, targetFormat: analyzerFormat, continuation: continuation, onVoice: {}) else {
             throw Failure.audioFormat
         }
 
@@ -184,21 +185,86 @@ final class SpeechRecognizer {
     /// `onEnd` fires once with the final text when the utterance ends (silence, cap, or `stop()`).
     /// Throws `CancellationError` if `cancel()` (or another `start()`) came in during setup.
     func start(onEnd: @escaping (String) -> Void) async throws {
+        try await start(held: false, onEnd: onEnd)
+    }
+
+    /// Opens the microphone without transcribing: for a reply that can be talked over. Nothing
+    /// reaches the recogniser while Redde's own voice is in the air; the last second of audio is
+    /// kept instead, and `watchForVoice` says when someone starts talking. `beginTranscribing`
+    /// then listens as `start` does, and `onEnd` fires as it does there.
+    func startHeld(onEnd: @escaping (String) -> Void) async throws {
+        try await start(held: true, onEnd: onEnd)
+    }
+
+    private func start(held: Bool, onEnd: @escaping (String) -> Void) async throws {
         // A cancel() may still be finalizing; wait for it rather than silently doing nothing.
         if let pending = finalizeTask { _ = await pending.value }
         // A cancelled start() may still be inside analyzer.start with its tap on the bus: wait for
         // it to unwind, or this one installs a second tap (an ObjC exception) or gets torn down
         // by the old one's cleanup.
         if let pending = setupTask { _ = try? await pending.value }
-        let task = Task { [self] in try await begin(onEnd: onEnd) }
+        let task = Task { [self] in try await begin(held: held, onEnd: onEnd) }
         setupTask = task
         defer { if setupTask == task { setupTask = nil } }
         try await task.value
     }
 
     private var setupTask: Task<Void, any Error>?
+    /// Who to tell when the utterance ends, and when a voice is heard over a reply.
+    private var onEnd: ((String) -> Void)?
+    private var onVoice: (() -> Void)?
 
-    private func begin(onEnd: @escaping (String) -> Void) async throws {
+    /// Held → listening. With `withHeldAudio` the recogniser first gets the second of audio from
+    /// before this call, so the words that set it off aren't lost; without it (a reply that ended
+    /// by itself) it starts from now. `endsOnSilence`: the utterance ends by itself after a pause,
+    /// as with `start`. Without it the recogniser only transcribes, for as long as it is left to:
+    /// while it is being found out whether a voice over a reply is words, a pause must not end
+    /// anything.
+    func beginTranscribing(withHeldAudio: Bool, endsOnSilence: Bool) {
+        guard state == .holding, let tap else { return }
+        tap.watch(nil)
+        tap.release(withHeldAudio: withHeldAudio)
+        lastVoiceAt = nil
+        lastTextChangeAt = nil
+        startedAt = .now
+        state = .listening
+        if endsOnSilence { startEndpointing(tap) }
+    }
+
+    /// Transcribing without an end → an utterance like any other, ended by a pause from here on.
+    func endOnSilence() {
+        guard state == .listening, endpointTask == nil, let tap else { return }
+        startedAt = .now
+        startEndpointing(tap)
+    }
+
+    /// Listening → held again: what set it off wasn't words.
+    func holdAgain() {
+        guard state == .listening, let tap else { return }
+        endpointTask?.cancel()
+        endpointTask = nil
+        tap.hold()
+        state = .holding
+        // Whatever it made of that noise belongs to no utterance.
+        finalizedText = ""
+        volatileText = ""
+        transcript = ""
+    }
+
+    /// While held: `heard` is called, once, when the level says someone has started talking.
+    /// Nil stops watching.
+    func watchForVoice(_ detector: BargeInDetector?, heard: (() -> Void)?) {
+        onVoice = heard
+        tap?.watch(detector)
+    }
+
+    /// The tap's word that the level rose, from the audio thread by way of the main actor.
+    fileprivate func voiceHeard() {
+        guard state == .holding else { return }
+        onVoice?()
+    }
+
+    private func begin(held: Bool, onEnd: @escaping (String) -> Void) async throws {
         guard state == .idle else { throw Failure.busy }
         state = .preparing
         generation += 1
@@ -248,10 +314,12 @@ final class SpeechRecognizer {
         }
         let micFormat = input.outputFormat(forBus: 0)
         guard let converter = AVAudioConverter(from: micFormat, to: analyzerFormat),
-              let tap = TapProcessor(converter: converter, targetFormat: analyzerFormat, continuation: continuation) else {
+              let tap = TapProcessor(converter: converter, targetFormat: analyzerFormat, continuation: continuation,
+                                     onVoice: TapProcessor.report(to: self)) else {
             abandon(); throw Failure.audioFormat
         }
         self.tap = tap
+        if held { tap.hold() }   // before any audio flows: nothing of a reply may reach the analyzer
         tap.install(on: input, format: micFormat)
 
         resultsTask = Task { [weak self] in
@@ -259,6 +327,13 @@ final class SpeechRecognizer {
                 for try await result in transcriber.results {
                     guard let self else { return }
                     let text = String(result.text.characters)
+                    // Held again after a false alarm: whatever the recogniser still makes of that
+                    // noise belongs to no utterance.
+                    if state == .holding {
+                        finalizedText = ""; volatileText = ""
+                        if !transcript.isEmpty { transcript = "" }
+                        continue
+                    }
                     if result.isFinal {
                         finalizedText += text
                         volatileText = ""
@@ -292,10 +367,18 @@ final class SpeechRecognizer {
             abandon()
             throw error
         }
-        startedAt = .now
-        state = .listening
-        log.info("listening (mic \(micFormat.sampleRate)Hz → analyzer \(analyzerFormat.sampleRate)Hz \(analyzerFormat.commonFormat == .pcmFormatInt16 ? "int16" : "float"))")
+        self.onEnd = onEnd
+        log.info("\(held ? "holding" : "listening") (mic \(micFormat.sampleRate)Hz → analyzer \(analyzerFormat.sampleRate)Hz \(analyzerFormat.commonFormat == .pcmFormatInt16 ? "int16" : "float"))")
+        if held {
+            state = .holding
+        } else {
+            startedAt = .now
+            state = .listening
+            startEndpointing(tap)
+        }
+    }
 
+    private func startEndpointing(_ tap: TapProcessor) {
         endpointTask = Task { [weak self] in
             // Endpointing: the transcript going stable is the primary signal; the level check only
             // has to confirm the room is no louder than its own noise floor. An absolute threshold
@@ -322,8 +405,9 @@ final class SpeechRecognizer {
                 if (heardSomething && stableFor > silenceTimeout && quietFor > silenceTimeout * 0.6)
                     || ranFor > maxUtterance {
                     log.notice("endpoint: stable \(stableFor, format: .fixed(precision: 2))s quiet \(quietFor, format: .fixed(precision: 2))s floor \(noiseFloor, format: .fixed(precision: 2))")
+                    let onEnd = onEnd
                     let text = await finish()
-                    onEnd(text)
+                    onEnd?(text)
                     return
                 }
             }
@@ -344,7 +428,7 @@ final class SpeechRecognizer {
         endpointTask = nil
         switch state {
         case .preparing: state = .idle   // start() sees the generation change and unwinds
-        case .listening: _ = startFinalize()
+        case .listening, .holding: _ = startFinalize()
         case .idle, .finalizing: break
         }
     }
@@ -357,7 +441,7 @@ final class SpeechRecognizer {
             state = .idle
             return ""
         }
-        guard state == .listening || finalizeTask != nil else {
+        guard state == .listening || state == .holding || finalizeTask != nil else {
             return transcript.trimmingCharacters(in: .whitespacesAndNewlines)
         }
         return await startFinalize().value
@@ -401,6 +485,8 @@ final class SpeechRecognizer {
         analyzer = nil
         transcriber = nil
         tap = nil
+        onEnd = nil
+        onVoice = nil
         level = 0
         state = .idle
         return transcript.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -424,6 +510,14 @@ nonisolated private final class TapProcessor: @unchecked Sendable {
     private let staged: AVAudioPCMBuffer
     private let stageLock = OSAllocatedUnfairLock(initialState: ())
     private let yieldFrames: AVAudioFrameCount
+    /// While held, the analyzer gets nothing: the newest `heldSeconds` of audio wait in `kept`
+    /// (under `stageLock`, like `staged`), for `release` to send first or drop.
+    private let kept: AVAudioPCMBuffer
+    private var holding = false
+    private static let heldSeconds = 1.0
+    /// Watches the level for a voice while a reply plays; nil when nobody asked.
+    private let watch = OSAllocatedUnfairLock<BargeInDetector?>(initialState: nil)
+    private let onVoice: @Sendable () -> Void
     /// Largest hardware buffer a tap may deliver; a longer one falls back to a one-off allocation.
     private static let maxInputFrames: AVAudioFrameCount = 4096
 
@@ -440,17 +534,55 @@ nonisolated private final class TapProcessor: @unchecked Sendable {
         }
     }
 
-    init?(converter: AVAudioConverter, targetFormat: AVAudioFormat, continuation: AsyncStream<AnalyzerInput>.Continuation) {
+    init?(converter: AVAudioConverter, targetFormat: AVAudioFormat, continuation: AsyncStream<AnalyzerInput>.Continuation,
+          onVoice: @escaping @Sendable () -> Void) {
         self.converter = converter
         self.targetFormat = targetFormat
         self.continuation = continuation
+        self.onVoice = onVoice
         let ratio = targetFormat.sampleRate / converter.inputFormat.sampleRate
         let perCallback = AVAudioFrameCount(Double(Self.maxInputFrames) * ratio) + 32
         yieldFrames = AVAudioFrameCount(targetFormat.sampleRate / 10)
         guard let scratch = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: perCallback),
-              let staged = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: yieldFrames + perCallback) else { return nil }
+              let staged = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: yieldFrames + perCallback),
+              let kept = AVAudioPCMBuffer(pcmFormat: targetFormat,
+                                          frameCapacity: AVAudioFrameCount(targetFormat.sampleRate * Self.heldSeconds) + perCallback) else { return nil }
         self.scratch = scratch
         self.staged = staged
+        self.kept = kept
+    }
+
+    /// The closure the audio thread calls when a voice is heard. Made here, off the main actor:
+    /// one written in the recogniser would carry its isolation onto the audio thread and trap.
+    static func report(to recognizer: SpeechRecognizer) -> @Sendable () -> Void {
+        { [weak recognizer] in Task { @MainActor in recognizer?.voiceHeard() } }
+    }
+
+    /// Stop feeding the analyzer and keep the newest audio instead.
+    func hold() {
+        stageLock.withLock {
+            if staged.frameLength > 0 { handOff() }
+            kept.frameLength = 0
+            holding = true
+        }
+    }
+
+    /// Feed the analyzer again, first what was kept if `withHeldAudio`.
+    func release(withHeldAudio: Bool) {
+        stageLock.withLock {
+            if withHeldAudio, kept.frameLength > 0, let buffer = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: kept.frameLength) {
+                Self.copy(kept.frameLength, from: kept, to: buffer, at: 0)
+                buffer.frameLength = kept.frameLength
+                continuation.yield(AnalyzerInput(buffer: buffer))
+            }
+            kept.frameLength = 0
+            holding = false
+        }
+    }
+
+    /// Start (or with nil, stop) watching the level for a voice.
+    func watch(_ detector: BargeInDetector?) {
+        watch.withLock { $0 = detector }
     }
 
     func process(_ buffer: AVAudioPCMBuffer) {
@@ -476,8 +608,33 @@ nonisolated private final class TapProcessor: @unchecked Sendable {
         }
         guard error == nil, out.frameLength > 0 else { return }
         stageLock.withLock {
+            if holding { keep(out); return }
             append(out)
             if staged.frameLength >= yieldFrames { handOff() }
+        }
+    }
+
+    /// Adds to the held audio, letting the oldest go once there is more than `heldSeconds` of it.
+    private func keep(_ out: AVAudioPCMBuffer) {
+        let limit = AVAudioFrameCount(targetFormat.sampleRate * Self.heldSeconds)
+        let n = min(out.frameLength, kept.frameCapacity)
+        if kept.frameLength + n > limit, kept.frameLength > 0 {
+            let drop = min(kept.frameLength, kept.frameLength + n - limit)
+            Self.shift(kept, by: drop)
+            kept.frameLength -= drop
+        }
+        guard kept.frameLength + n <= kept.frameCapacity else { return }
+        Self.copy(n, from: out, to: kept, at: kept.frameLength)
+        kept.frameLength += n
+    }
+
+    /// Moves a buffer's frames `drop` places towards its start.
+    private static func shift(_ buffer: AVAudioPCMBuffer, by drop: AVAudioFrameCount) {
+        let bytesPerFrame = Int(buffer.format.streamDescription.pointee.mBytesPerFrame)
+        let remaining = Int(buffer.frameLength - drop) * bytesPerFrame
+        for channel in UnsafeMutableAudioBufferListPointer(buffer.mutableAudioBufferList) {
+            guard let data = channel.mData, remaining > 0 else { continue }
+            memmove(data, data + Int(drop) * bytesPerFrame, remaining)
         }
     }
 
@@ -519,6 +676,15 @@ nonisolated private final class TapProcessor: @unchecked Sendable {
         vDSP_rmsqv(data, 1, &rms, vDSP_Length(buffer.frameLength))
         // Map roughly -50dB…0dB onto 0…1 and smooth.
         let db = 20 * log10(max(rms, 1e-6))
+        // A reply is playing and someone may talk over it: the detector hears this buffer, and
+        // says so once. It is taken out before the call, so a second buffer can't say it again.
+        let voice = watch.withLock { detector -> Bool in
+            guard var watching = detector else { return false }
+            let heard = watching.feed(decibels: db, seconds: Double(buffer.frameLength) / buffer.format.sampleRate)
+            detector = heard ? nil : watching
+            return heard
+        }
+        if voice { onVoice() }
         let normalized = min(max((db + 50) / 50, 0), 1)
         // Same smoothing as when buffers were 4096 frames: keep 0.7 of the old value per 4096 frames.
         let keep = pow(0.7, Float(buffer.frameLength) / 4096)

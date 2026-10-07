@@ -16,6 +16,19 @@ protocol VoiceRecognizing: AnyObject {
     /// Ends the utterance now and returns what was heard.
     func stop() async -> String
     func cancel()
+
+    // Talking over a reply: the microphone open behind it, hearing levels and no words.
+    /// Opens the microphone without transcribing; `onEnd` is for once it is listening.
+    func startHeld(onEnd: @escaping (String) -> Void) async throws
+    /// While held: `heard` is called once when the level says someone has started talking.
+    func watchForVoice(_ detector: BargeInDetector?, heard: (() -> Void)?)
+    /// Held → transcribing, with the second of audio from before the call if `withHeldAudio`.
+    /// `endsOnSilence`: a pause ends the utterance, as with `start`; without it nothing does.
+    func beginTranscribing(withHeldAudio: Bool, endsOnSilence: Bool)
+    /// Transcribing with no end → an utterance that a pause ends.
+    func endOnSilence()
+    /// Transcribing → held again, what was heard forgotten: it wasn't words, or not the one waited for.
+    func holdAgain()
 }
 extension SpeechRecognizer: VoiceRecognizing {}
 
@@ -47,9 +60,14 @@ extension VoiceSpeaking {
     func resume() {}
 }
 
+/// What a reply plays through, as far as talking over it goes: the phone's own speaker (or
+/// earpiece) needs the echo cancelled, a headset doesn't, and a car is left alone.
+nonisolated enum VoiceRoute: Sendable { case speaker, headphones, car }
+
 /// The audio-session side (AudioSessionController in production).
 @MainActor
 protocol VoiceAudioControlling: AnyObject {
+    var route: VoiceRoute { get }
     var onInterruption: (() -> Void)? { get set }
     var onInterruptionEnded: ((Bool) -> Void)? { get set }
     var onOutputDeviceLost: (() -> Void)? { get set }
@@ -67,6 +85,7 @@ protocol VoiceAudioControlling: AnyObject {
 extension AudioSessionController: VoiceAudioControlling {}
 
 extension VoiceAudioControlling {
+    var route: VoiceRoute { .speaker }
     func activateForPlayback() throws { try activateForVoice() }
     func setEarRouting(_ on: Bool) {}
     func setReplying(_ on: Bool) {}

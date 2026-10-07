@@ -50,8 +50,9 @@ final class VoiceSession {
         didSet {
             guard phase != oldValue else { return }
             if phase != .speaking { isPaused = false }
-            // Voice-chat mode (and its call-volume buttons) only while the mic is open.
-            audio.setReplying(phase == .thinking || phase == .speaking)
+            // Voice-chat mode (and its call-volume buttons) only while the mic is open, which it
+            // stays behind a reply that can be talked over.
+            audio.setReplying((phase == .thinking || phase == .speaking) && !micStaysOpen)
             // The at-ear sensor only while speaking: it blanks the screen whenever it's covered.
             audio.setEarRouting(phase == .speaking)
             if headsetControlsOn { publishNowPlaying() }
@@ -61,6 +62,8 @@ final class VoiceSession {
             // instead — at phase-set time the audio session isn't active or routed yet,
             // which made the tone land on the earpiece or the silent-switch session.
             if oldValue == .listening { earcon(.stopped) }
+            watchIfSpeaking()
+            if phase == .idle || isErrored { stopMonitor() }
         }
     }
     private var headsetControlsOn = false
@@ -83,6 +86,9 @@ final class VoiceSession {
     private let earcon: (Earcon) -> Void
     /// Holds auto-lock off (true) or lets it be (false). Injectable so tests see it asked for.
     private let keepAwake: (Bool) -> Void
+    /// Settings → Voice → Talk over replies, and what it takes. Injectable so tests choose.
+    private let talkOver: () -> Settings.TalkOver
+    private let interruption: () -> Settings.Interruption
     private var screenAwake = false
     private var awakeTimeout: Task<Void, Never>?
     /// How long a wait for the reply holds the screen on. Past it the phone may lock: the reply
@@ -97,7 +103,7 @@ final class VoiceSession {
     private var replaying = false
     /// The reply is held by the voice screen's Pause button; still `.speaking`.
     private(set) var isPaused = false {
-        didSet { if isPaused != oldValue { updateScreenAwake() } }
+        didSet { if isPaused != oldValue { updateScreenAwake(); watchIfSpeaking() } }
     }
     private var replayResumesHandsFree = true
 
@@ -136,7 +142,11 @@ final class VoiceSession {
          audio: any VoiceAudioControlling = AudioSessionController.shared,
          requestPermissions: @escaping () async -> Bool = { await SpeechRecognizer.requestPermissions() },
          earcon: @escaping (Earcon) -> Void = { EarconPlayer.shared.play($0) },
-         keepAwake: @escaping (Bool) -> Void = { UIApplication.shared.isIdleTimerDisabled = $0 }) {
+         keepAwake: @escaping (Bool) -> Void = { UIApplication.shared.isIdleTimerDisabled = $0 },
+         talkOver: @escaping () -> Settings.TalkOver = { Settings.shared.talkOver },
+         interruption: @escaping () -> Settings.Interruption = { Settings.shared.interruption }) {
+        self.talkOver = talkOver
+        self.interruption = interruption
         self.conversation = conversation
         self.recognizer = recognizer
         self.output = output
@@ -146,6 +156,8 @@ final class VoiceSession {
         self.keepAwake = keepAwake
         output.onFirstSpeech = { [weak self] in
             self?.metrics.firstSpokenAt = .now
+            // The sound starts now: the watch for a voice over it starts its count from here.
+            self?.watchIfSpeaking()
             // Starting playback (Kokoro's engine, or the synthesizer) can put the output back on
             // the earpiece, and that route change isn't one we re-route on. Re-assert speaker vs.
             // earpiece the moment sound starts; Replay, which speaks right after activating, went
@@ -174,6 +186,8 @@ final class VoiceSession {
         }
         audio.onOutputDeviceLost = { [weak self] in
             guard let self else { return }
+            // A mic opened behind the reply was set up for the device that just left.
+            stopMonitor()
             switch phase {
             case .speaking:
                 // Stop mirroring the stream too: the next delta would otherwise restart the
@@ -235,6 +249,7 @@ final class VoiceSession {
         replaying = false
         guard phase == .idle || phase == .speaking || isErrored else { return }
         isMuted = false
+        stopMonitor()   // the mic behind a reply closes; listening opens it afresh
         output.stop()
         replyTask?.cancel()
         // Barge-in: stop the server turn too, or it keeps streaming (and billing) unheard.
@@ -251,7 +266,10 @@ final class VoiceSession {
     /// the car's screen, stop listening and go idle. A reply being thought about or spoken is
     /// left alone: that is what the background modes are for.
     func leftForeground(carPlayConnected: Bool) {
-        guard phase == .listening, !continuous, !carPlayConnected else { return }
+        guard !continuous, !carPlayConnected else { return }
+        // The same goes for the mic behind a reply: the reply plays on, and can't be talked over.
+        if phase == .thinking || phase == .speaking { stopMonitor() }
+        guard phase == .listening else { return }
         log.info("left the foreground while listening: stopping")
         cancel()
     }
@@ -331,6 +349,7 @@ final class VoiceSession {
     func cancel() {
         replaying = false
         isMuted = false
+        stopMonitor()
         // Only a turn this session started is ours to cancel: leaving the voice screen while a
         // typed reply streams must not kill it.
         let ownsTurn = replyTask != nil
@@ -428,6 +447,7 @@ final class VoiceSession {
         }
         await conversation.initialLoad?.value   // cold launch: the latest transcript may still be decoding
         guard phase == .listening else { return }
+        micStaysOpen = canBeTalkedOver()
         phase = .thinking
         activeTool = nil
         metrics.requestSentAt = .now
@@ -445,6 +465,7 @@ final class VoiceSession {
         }
         let events = conversation.send(outgoing)
         SiriHooks.donateSend(outgoing)
+        if micStaysOpen { startMonitor() }
         replySerial += 1
         let serial = replySerial
         replyTask = Task { [weak self] in
@@ -523,12 +544,221 @@ final class VoiceSession {
         metrics.speechDoneAt = .now
         lastMetrics = metrics
         log.info("turn: \(self.metrics.summary)")
+        if monitoring, continuous {
+            // Hands-free, and the mic is already open behind the reply: listen on it, rather
+            // than close it and open it again. Nothing kept from while Redde spoke is used.
+            handOverMic()
+            metrics = VoiceMetrics()
+            phase = .listening
+            liveTranscript = ""
+            recognizer.holdAgain()   // (it may be transcribing, waiting for "stop": that is over)
+            recognizer.beginTranscribing(withHeldAudio: false, endsOnSilence: true)
+            earcon(.listening)
+            metrics.listenStartedAt = .now
+            observeTranscript()
+            return
+        }
         phase = .idle
         if continuous {
             beginListening()
         } else {
             output.releaseAudio(); audio.deactivate()
         }
+    }
+
+    // MARK: - Talking over a reply
+
+    /// This turn's reply can be talked over: the mic stays open behind it, in the listening
+    /// configuration (on the speaker that means voice-chat mode, at call volume).
+    private var micStaysOpen = false
+    /// The mic is open behind the reply (`recognizer.startHeld`).
+    private var monitoring = false
+    private var monitorTask: Task<Void, Never>?
+    private var monitorSerial = 0
+    /// A voice was heard and the reply is held while the recogniser finds out whether it was words.
+    private var confirmTask: Task<Void, Never>?
+    /// How long the recogniser has to come up with words before the reply carries on. It starts
+    /// a second back, so this is time to recognise what was said, not time to say it.
+    var confirmWindow: Duration = .seconds(1.5)
+
+    /// Whether talking over a reply applies to what this turn plays through (Settings → Voice).
+    /// Never in a car: its audio and its own echo handling are untested ground.
+    private func canBeTalkedOver() -> Bool {
+        switch (talkOver(), audio.route) {
+        case (.off, _), (_, .car), (.headphones, .speaker): false
+        case (_, .headphones), (.everywhere, .speaker): true
+        }
+    }
+
+    /// Opens the mic behind the reply that is on its way. The recogniser is given nothing yet: it
+    /// must not hear Redde's own voice (see `BargeInDetector`).
+    private func startMonitor() {
+        monitorSerial += 1
+        let serial = monitorSerial
+        monitorTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await recognizer.startHeld { [weak self] text in
+                    Task { await self?.handleUtterance(text) }
+                }
+            } catch {
+                guard monitorSerial == serial else { return }
+                if !(error is CancellationError) { log.error("couldn't keep the mic open behind the reply: \(error.localizedDescription)") }
+                // The reply plays as one that can't be talked over.
+                monitorTask = nil
+                micStaysOpen = false
+                audio.setReplying(phase == .thinking || phase == .speaking)
+                return
+            }
+            guard monitorSerial == serial else { return }   // stopped meanwhile; `stopMonitor` closed the mic
+            monitorTask = nil
+            guard phase == .thinking || phase == .speaking else { recognizer.cancel(); return }
+            audio.refreshRoute()   // the engine's voice-processing unit just reset the output
+            monitoring = true
+            watchIfSpeaking()
+        }
+    }
+
+    /// Closes the mic behind a reply, however far opening it had got.
+    private func stopMonitor() {
+        guard micStaysOpen || monitoring || monitorTask != nil else { return }
+        handOverMic()
+        recognizer.cancel()
+    }
+
+    /// The mic behind the reply stops being that: closed by the caller, or kept as the listening mic.
+    private func handOverMic() {
+        monitorSerial += 1
+        monitorTask = nil
+        confirmTask?.cancel()
+        confirmTask = nil
+        monitoring = false
+        micStaysOpen = false
+        recognizer.watchForVoice(nil, heard: nil)
+    }
+
+    /// Watch for a voice exactly while a reply is being spoken: not while it is paused, not over
+    /// the "Okay." after a stop phrase, and not while a voice is already being looked into.
+    /// `midReply`: the reply never stopped playing, so there is no start of it to wait out.
+    private func watchIfSpeaking(midReply: Bool = false) {
+        guard monitoring, confirmTask == nil else { return }
+        if phase == .speaking, !isPaused, !acknowledging {
+            var detector = audio.route == .headphones ? BargeInDetector.headset : .echoCancelled
+            if midReply { detector.settle = 0; detector.rearm() }
+            recognizer.watchForVoice(detector) { [weak self] in self?.voiceOverReply() }
+        } else {
+            recognizer.watchForVoice(nil, heard: nil)
+        }
+    }
+
+    /// Something is being said over the reply. What happens next is Settings → Voice →
+    /// Interrupt with.
+    private func voiceOverReply() {
+        guard monitoring, phase == .speaking, confirmTask == nil else { return }
+        if interruption() == .stopWord { listenForStop() } else { holdToHearWords() }
+    }
+
+    /// How long nothing new has to be heard before the wait for "stop" goes back to a level watch.
+    var stopWordQuiet: Duration = .seconds(2.5)
+
+    /// "Only stop": the reply plays on, whoever is talking, and the recogniser listens for one
+    /// word. It hears what the microphone hears while Redde speaks, which is what went wrong
+    /// when any word counted; here whatever else it writes down is ignored, and it listens only
+    /// while a voice is actually there. "Stop" ends the reply and the conversation, like the stop
+    /// phrase between turns.
+    private func listenForStop() {
+        log.info("a voice over the reply: listening for \"stop\"")
+        recognizer.beginTranscribing(withHeldAudio: true, endsOnSilence: false)
+        confirmTask = Task { [weak self, stopWordQuiet] in
+            let clock = ContinuousClock()
+            var heard = ""
+            var changedAt = clock.now
+            while true {
+                try? await Task.sleep(for: .milliseconds(80))
+                guard let self, !Task.isCancelled else { return }
+                let now = recognizer.transcript
+                if StopWord.heard(in: now) {
+                    confirmTask = nil
+                    stoppedByWord()
+                    return
+                }
+                if now != heard { heard = now; changedAt = clock.now }
+                if clock.now - changedAt > stopWordQuiet {
+                    // The talking is over and the word wasn't in it: back to watching the level.
+                    confirmTask = nil
+                    recognizer.holdAgain()
+                    watchIfSpeaking(midReply: true)
+                    return
+                }
+            }
+        }
+    }
+
+    /// "Stop" was said over the reply: it ends, the turn with it, and so does hands-free, with
+    /// the same "Okay." as a stop phrase between turns.
+    private func stoppedByWord() {
+        log.info("\"stop\" over the reply")
+        stopMonitor()
+        replyTask?.cancel()
+        replyTask = nil
+        if conversation.isStreaming { conversation.cancel() }
+        continuous = false
+        acknowledging = true
+        output.beginReply()   // (drops what was left of the reply)
+        output.append("Okay.")
+        output.endReply()
+    }
+
+    /// "Anything you say": hold the reply and let the recogniser listen, starting a second back,
+    /// to a room Redde is no longer talking in. Words within the window make it an interruption;
+    /// none, or only a listener's "mm-hm" or "okay", and the reply carries on.
+    private func holdToHearWords() {
+        log.info("a voice over the reply: holding it to hear whether it is words")
+        output.pause()
+        recognizer.beginTranscribing(withHeldAudio: true, endsOnSilence: false)
+        confirmTask = Task { [weak self, confirmWindow] in
+            let clock = ContinuousClock()
+            let deadline = clock.now + confirmWindow
+            while clock.now < deadline {
+                try? await Task.sleep(for: .milliseconds(80))
+                guard let self, !Task.isCancelled else { return }
+                // ("Okay" may yet become "okay, stop": a listener's noise waits out the window.)
+                if !recognizer.transcript.isEmpty, !Backchannel.isOnly(recognizer.transcript) {
+                    confirmTask = nil
+                    interrupted()
+                    return
+                }
+            }
+            guard let self, !Task.isCancelled else { return }
+            confirmTask = nil
+            carryOn()
+        }
+    }
+
+    /// It was words: the reply ends here, as if the mic had been tapped, and what is being said
+    /// is the next turn. The recogniser is already listening to it.
+    private func interrupted() {
+        log.info("talked over: the reply stops")
+        handOverMic()
+        recognizer.endOnSilence()   // an utterance like any other from here: a pause ends it
+        output.stop()
+        replyTask?.cancel()
+        replyTask = nil
+        if conversation.isStreaming { conversation.cancel() }
+        metrics = VoiceMetrics()
+        metrics.listenStartedAt = .now
+        phase = .listening
+        liveTranscript = recognizer.transcript
+        observeTranscript()
+    }
+
+    /// It wasn't words (a cough, a door): the mic goes back to waiting and the reply carries on.
+    private func carryOn() {
+        guard monitoring, phase == .speaking else { return }
+        log.info("no words: the reply carries on")
+        recognizer.holdAgain()
+        if !isPaused { output.resume() }
+        watchIfSpeaking()
     }
 
     private var isErrored: Bool {

@@ -580,6 +580,48 @@ minutes (`VoiceSession.updateScreenAwake`). Past that, a paused reply, an error 
 back: the reply carries on with the phone locked, and a screen held on through a ten-minute task
 is a flat battery. Reading a reply aloud from the transcript counts as speaking.
 
+**Talking over a reply** (Settings → Voice → Talk over replies: off, with headphones (the
+default), or headphones and speaker). A reply can be interrupted by speaking, not only by tapping
+the mic. It was tried twice in September 2026 by letting the recogniser listen while Redde spoke
+(echo-cancelled, then with Redde's own words filtered out), and both times the recogniser wrote
+something down and Redde interrupted itself. So now the recogniser never hears a reply:
+
+1. When a turn starts, the mic opens behind the reply in a held state
+   (`SpeechRecognizer.startHeld`): the engine runs, the analyzer is ready, and the audio goes
+   nowhere but a one-second buffer.
+2. While the reply is spoken, only the level is watched (`BargeInDetector`, fed from the tap on
+   the audio thread): loud enough for where the microphone is, for about a sixth of a second,
+   and not in the first 1.2 s after the sound starts or resumes.
+3. A voice holds the reply (`output.pause()`), and only then does the recogniser listen, starting
+   with the buffered second so the first word isn't lost, to a room Redde is no longer talking
+   in. Words within a second and a half make it an interruption: the reply and the turn on the
+   server stop, as with a tap, and what is being said is the next message. No words, or only a
+   listener's "mm-hm" or "okay" (`Backchannel`), and the mic goes back to held and the reply
+   carries on.
+4. A reply that ends by itself in hands-free goes straight to listening on the mic that is
+   already open, with none of the buffered audio.
+
+**Interrupt with: only "stop"** (the same screen; "Anything you say" is the default). For a room
+where other people are talking: step 3 changes. A voice does not hold the reply. The recogniser
+starts transcribing while the reply plays on, and only one thing in what it writes down matters:
+the word "stop" (`StopWord`: a word of its own, and not "don't stop"). That ends the reply, the
+turn and hands-free, with the same "Okay." as a stop phrase between turns, and nothing that was
+said becomes a message. When the talking has been over for two and a half seconds the mic goes
+back to held. Here the recogniser does listen while Redde speaks, which is what failed when any
+word counted; with one word that counts, what else it makes of the room is thrown away. On the
+speaker, at 75% volume, it transcribed a person talking and none of a reply that said "stop" a
+dozen times over them; on headphones the reply isn't in the microphone at all.
+
+On the phone's speaker this needs the system's echo cancellation for as long as Redde speaks, so
+the session stays in voice-chat mode instead of switching to `.default` for the reply
+(`AudioSessionController.setReplying`), and the reply plays at call volume; that is why the
+speaker is a separate choice, off by default. On headphones nothing of the reply reaches the
+microphone and no echo cancellation is used; the mic staying open keeps a Bluetooth headset in
+its call profile while Redde speaks. Never in the car, whose audio and own echo handling are
+untested. What it was measured on, and the numbers behind the thresholds, are in
+`BargeInDetector.swift` (an iPhone 15 Pro Max, speaker and AirPods, Kokoro and the built-in
+voice, 2026-10-07). Not tried: the earpiece, other phones, a reply several minutes long.
+
 **AirPods.** Full-bandwidth Bluetooth recording when the headset supports it; voice processing off
 on headphones (on for the speaker and CarPlay). While the voice screen is open Redde is the Now
 Playing app, so a stem press or play-pause does what the mic does. Removing the headset stops
