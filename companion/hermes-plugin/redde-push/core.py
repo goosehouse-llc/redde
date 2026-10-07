@@ -202,6 +202,13 @@ class Store:
             self._write("watch.json", {"sessions": sessions})
             return mine
 
+    def follows(self, session: str) -> bool:
+        """Whether a phone follows this conversation. It can only have said so over the Dashboard,
+        which is also what can answer for the conversation: an approval there can be answered
+        from the phone's notification."""
+        with self._lock:
+            return bool(session) and bool(self._sessions().get(session))
+
     def targets(self, session: str, platform: str) -> list[dict]:
         """The phones a note about this conversation goes to: the ones following it, and every
         paired phone for a turn that came in over the Hermes API (whose only client here is the
@@ -224,12 +231,21 @@ def clipped(text: str, limit: int, lines: bool = False) -> str:
     return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
 
 
-def note(kind: str, session: str = "", body: str = "", title: str = "", detail: str = "") -> dict:
+def digest(command: str) -> str:
+    """What stands for a command in a note: sixteen hex digits of its SHA-256."""
+    return hashlib.sha256(str(command or "").encode()).hexdigest()[:16]
+
+
+def note(kind: str, session: str = "", body: str = "", title: str = "", detail: str = "", answerable: bool = False) -> dict:
     """What the phone is told. `k`: reply, approval, paired or test. `s`: the Hermes session.
     `b`: the reply's opening or the command. `t`: the conversation's title. `d`: why the command
-    needs approval. `n`: this machine's name. Short keys: every byte is sealed and base64-encoded
-    into a notification Apple caps at 4 KB."""
+    needs approval. `n`: this machine's name. `h`, on an approval the phone can answer from the
+    notification (one in a conversation it follows): the command's digest, so its answer goes to
+    that command and no other. Short keys: every byte is sealed and base64-encoded into a
+    notification Apple caps at 4 KB."""
     made = {"v": 1, "k": kind, "at": int(time.time()), "n": clipped(socket.gethostname().split(".")[0], 40)}
+    if kind == "approval" and answerable and session:
+        made["h"] = digest(body)   # of the whole command, however much of it fits in `b`
     for key, value, limit in (("s", session, 120), ("t", title, 80), ("d", detail, 200)):
         if value:
             made[key] = clipped(value, limit)
@@ -308,7 +324,7 @@ class Pusher:
         if not devices:
             return 0
         try:
-            self._queue.put_nowait((devices, kind, session, body, detail))
+            self._queue.put_nowait((devices, kind, session, body, detail, self.store.follows(session)))
         except queue.Full:
             log.warning("redde-push: too many notes waiting; one dropped")
             return 0
@@ -321,7 +337,7 @@ class Pusher:
     def _run(self) -> None:
         while True:
             try:
-                devices, kind, session, body, detail = self._queue.get(timeout=30)
+                devices, kind, session, body, detail, answerable = self._queue.get(timeout=30)
             except queue.Empty:
                 return
             try:
@@ -330,7 +346,7 @@ class Pusher:
                     title = self.title_of(session) or ""
                 except Exception:
                     pass
-                self.send(devices, note(kind, session, body, title, detail))
+                self.send(devices, note(kind, session, body, title, detail, answerable))
             finally:
                 self._queue.task_done()
 

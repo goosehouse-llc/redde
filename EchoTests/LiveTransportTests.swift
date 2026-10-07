@@ -162,23 +162,34 @@ struct HermesLabApprovalTests {
         }
     }
 
-    @Test func theDashboardAsksBeforeACommandRuns() async throws {
-        var probe = URLRequest(url: Self.dashboard.appending(path: "api/status"))
+    /// A client signed in to the lab's Dashboard; nil, with the reason printed, when that lab isn't up.
+    private static func client() async -> HermesServeClient? {
+        var probe = URLRequest(url: dashboard.appending(path: "api/status"))
         probe.timeoutInterval = 2
         guard (try? await URLSession.shared.data(for: probe)) != nil else {
             print("LAB SKIP: no Hermes lab on 127.0.0.1:19119 (scripts/hermes-lab/lab.sh up <tag> approval)")
-            return
+            return nil
         }
         let settings = Settings(defaults: UserDefaults(suiteName: "lab-approval-\(UUID().uuidString)")!)
-        settings.serveURL = Self.dashboard.absoluteString
+        settings.serveURL = dashboard.absoluteString
         settings.serveUsername = "lab"
         let client = HermesServeClient(settings: settings, password: { "labpass-labpass" })
         do {
             try await client.ensureConnected()
         } catch {
             print("LAB SKIP: the lab's Dashboard has no login for the app (scripts/hermes-lab/lab.sh up <tag> approval): \(error.localizedDescription.prefix(80))")
-            return
+            return nil
         }
+        return client
+    }
+
+    private static func report(_ ok: Bool, _ what: String, _ detail: String = "") {
+        print("  \(ok ? "PASS" : "FAIL")  \(what) \(ok ? "" : detail)")
+        #expect(ok, "\(what): \(detail)")
+    }
+
+    @Test func theDashboardAsksBeforeACommandRuns() async throws {
+        guard let client = await Self.client() else { return }
         defer { client.disconnect() }
         for (answer, expected) in [("once", "[gone]"), ("deny", "[kept]")] {
             var detail = ""
@@ -190,8 +201,94 @@ struct HermesLabApprovalTests {
             } catch {
                 detail = String(error.localizedDescription.prefix(160))
             }
-            print("  \(ok ? "PASS" : "FAIL")  a command the agent wants to run is asked about; \"\(answer)\" \(expected == "[gone]" ? "runs it" : "stops it") \(ok ? "" : detail)")
-            #expect(ok)
+            Self.report(ok, "a command the agent wants to run is asked about; \"\(answer)\" \(expected == "[gone]" ? "runs it" : "stops it")", detail)
+        }
+    }
+
+    /// Starts the turn that asks about `rm -rf`, and goes away before the agent gets to it, as the
+    /// app does when iOS closes it. The agent then asks nobody, and waits. Returns the session.
+    private static func leaveATurnWaiting() async throws -> String? {
+        guard let first = await client() else { return nil }
+        let (runtime, stored) = try await first.openSession(stored: nil)
+        try await first.call("prompt.submit", params: .object(["session_id": .string(runtime), "text": .string("Do the danger thing.")]))
+        first.disconnect()
+        try await Task.sleep(for: .seconds(4))
+        return stored
+    }
+
+    /// The reply the host has recorded for a session, once there is one.
+    private static func recordedReply(_ client: HermesServeClient, stored: String) async throws -> String {
+        for _ in 0 ..< 40 {
+            let messages = Conversation.messages(fromServeRows: try await client.history(stored: stored))
+            if let last = messages.last, last.role == .assistant, !last.text.isEmpty {
+                return last.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            try await Task.sleep(for: .milliseconds(500))
+        }
+        return ""
+    }
+
+    /// The app was closed while the agent worked, and comes back: the turn is joined where it
+    /// stands, the approval it waits on is put again, and the answer counts.
+    @Test func aTurnLeftWaitingIsJoinedAndItsQuestionAnswered() async throws {
+        guard let stored = try await Self.leaveATurnWaiting(), let client = await Self.client() else { return }
+        defer { client.disconnect() }
+        var detail = ""
+        var ok = false
+        do {
+            let outcome = try await Self.timed {
+                guard let joined = try await HermesServeTransport(client: client).rejoin(stored: stored) else {
+                    throw TransportError.malformed("the host says nothing is under way")
+                }
+                var outcome = Outcome()
+                for try await event in joined.events {
+                    switch event {
+                    case let .textDelta(delta): outcome.reply += delta
+                    case let .textFinal(text): outcome.reply = text
+                    case let .interrupt(.approval(approval), runtime):
+                        outcome.asked = approval
+                        try await client.respondApproval(runtimeSession: runtime, requestID: approval.id, choice: "once")
+                    default: break
+                    }
+                }
+                let recorded = try await joined.transcript()
+                outcome.reply = outcome.reply.trimmingCharacters(in: .whitespacesAndNewlines)
+                    + " | question: \(joined.question) | recorded: \(recorded.last?.text.trimmingCharacters(in: .whitespacesAndNewlines) ?? "")"
+                return outcome
+            }
+            ok = outcome.asked?.command.contains("rm -rf") == true
+                && outcome.reply == "[gone] | question: Do the danger thing. | recorded: [gone]"
+            detail = "asked \(outcome.asked?.command ?? "nothing"), \(outcome.reply)"
+        } catch {
+            detail = String(error.localizedDescription.prefix(160))
+        }
+        Self.report(ok, "a turn left waiting on an approval is joined by the app when it returns, and its answer counts", detail)
+
+        // Over: there is nothing to join.
+        let finished = try await HermesServeTransport(client: client).rejoin(stored: stored) == nil
+        Self.report(finished, "a session whose turn has ended has nothing to join")
+    }
+
+    /// Approve or Deny on a notification: no card, only the session and the command's digest.
+    @Test func anAnswerFromANotificationReachesTheCommandItWasFor() async throws {
+        for (approve, expected) in [(false, "[kept]"), (true, "[gone]")] {
+            guard let stored = try await Self.leaveATurnWaiting(), let client = await Self.client() else { return }
+            defer { client.disconnect() }
+            var detail = ""
+            var ok = false
+            do {
+                let waiting = try await client.resume(stored: stored, withMessages: false)
+                let command = waiting["pending_approval"]?["command"]?.string ?? ""
+                let other = try await client.answerWaitingApproval(stored: stored, digest: PushNote.digest(of: "some other command"), approve: true)
+                let answered = try await client.answerWaitingApproval(stored: stored, digest: PushNote.digest(of: command), approve: approve)
+                let reply = try await Self.recordedReply(client, stored: stored)
+                let after = try await client.answerWaitingApproval(stored: stored, digest: PushNote.digest(of: command), approve: true)
+                ok = command.contains("rm -rf") && other == .anotherCommand && answered == .answered && reply == expected && after == .nothingWaiting
+                detail = "command \(command), another command's answer \(other), this one's \(answered), reply \(reply), afterwards \(after)"
+            } catch {
+                detail = String(error.localizedDescription.prefix(160))
+            }
+            Self.report(ok, "\(approve ? "Approve" : "Deny") from a notification \(approve ? "runs" : "stops") the command it was shown for, and no other", detail)
         }
     }
 }

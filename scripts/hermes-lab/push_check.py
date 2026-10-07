@@ -117,6 +117,10 @@ def api_turn(text):
 async def dashboard(phone):
     from check import Dashboard
     dash = await Dashboard.connect()
+    try:   # as the app does; without it Hermes 0.21.5 withdraws an approval the moment it is asked
+        await dash.call("client.capabilities", {"server_requests": True})
+    except RuntimeError:
+        pass   # an older Hermes doesn't know the method, and needs no telling
     create = {"source": "desktop", "close_on_disconnect": False}
 
     async def turn(text):
@@ -143,6 +147,11 @@ async def dashboard(phone):
     await say(runtime, "Do the danger thing.")
     made = await asyncio.to_thread(phone.wait_for, "approval", stored)
     report(bool(made) and "rm -rf" in made.get("b", "") and bool(made.get("d")), "Dashboard: an approval the agent waits on reaches the phone", made)
+    # Approve and Deny on the notification answer by session and by the command's digest: the note's
+    # has to be of the command the Dashboard tells a client is waiting.
+    waiting = (await dash.call("session.resume", {"session_id": stored, "omit_messages": True})).get("pending_approval") or {}
+    report(bool(made) and made.get("h") == core.digest(waiting.get("command", "")) != core.digest(""),
+           "Dashboard: the note names the waiting command by its digest", f"note {made and made.get('h')} for {waiting.get('command')!r}")
     await dash.ws.close()
 
 

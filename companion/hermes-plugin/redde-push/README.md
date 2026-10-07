@@ -40,7 +40,9 @@ and read by the gateway and the Dashboard from there.
 ## What is sent, and when
 
 - **A reply finished**: the conversation's title and the reply's first 500 characters.
-- **A command waits for approval**: the command and why it was stopped.
+- **A command waits for approval**: the command and why it was stopped. For a turn over the
+  Dashboard the notification has Approve and Deny, and opening the conversation brings back its
+  card; Hermes waits five minutes for an answer by default (`approvals.timeout`).
 
 Both only for conversations your phone has taken part in: over the Dashboard the app tells the
 plugin which those are, and over the Hermes API every turn counts. A session at the terminal or in
@@ -57,7 +59,9 @@ nothing is paired.
 
 ## Requirements
 
-Hermes 0.21.0 or later. `cryptography`, which Hermes already depends on. Nothing else: the QR code
+Hermes 0.21.0 or later; 0.21.3 or later is the one to have. On 0.21.0 the Dashboard stops a turn
+twenty seconds after the app disconnects, so little is left to notify about; setting
+`dashboard.ws_orphan_reap_grace_s: 0` in `config.yaml` turns that off. `cryptography`, which Hermes already depends on. Nothing else: the QR code
 is drawn by `qr.py` here.
 
 ## Tests

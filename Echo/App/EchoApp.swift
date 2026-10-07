@@ -68,6 +68,9 @@ struct EchoApp: App {
                 case .active:
                     lock.appDidBecomeActive()
                     WatchLink.shared.push()   // settings may have changed since the watch last heard
+                    // The app may have been closed while the agent worked: a conversation left
+                    // without its reply fetches it, or picks the turn up where it stands.
+                    Task { await conversation.catchUp() }
                 @unknown default: break
                 }
             }

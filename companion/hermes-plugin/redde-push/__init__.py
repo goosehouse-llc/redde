@@ -26,8 +26,8 @@ log = logging.getLogger("redde_push")
 
 _store: core.Store | None = None
 _pusher: core.Pusher | None = None
-#: session id -> the platform its turns run on ("tui" for the Dashboard, "api_server", "cli", a
-#: messaging platform). The approval hook isn't told, so the turn's earlier hooks remember.
+#: session id -> the platform its turns run on ("desktop" or "tui" for the Dashboard, "api_server",
+#: "cli", a messaging platform). The approval hook isn't told, so the turn's earlier hooks remember.
 _platforms: dict[str, str] = {}
 
 

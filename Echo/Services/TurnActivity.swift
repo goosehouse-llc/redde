@@ -94,6 +94,9 @@ final class TurnActivity {
         end(final: .init(phase: .failed, detail: String(message.prefix(160)), startedAt: startedAt))
     }
 
+    /// The turn goes on, but not here: the activity goes without a last word.
+    func leave() { end(final: nil) }
+
     // MARK: - Internals
 
     private var startedAt: Date { activity?.content.state.startedAt ?? .now }

@@ -163,7 +163,7 @@ struct NotifierTests {
 
     /// A conversation whose transport raises an approval and then hangs, so the interrupt
     /// stays pending while the banner action arrives.
-    private func pendingApprovalConversation() async throws -> (Conversation, String) {
+    private func pendingApprovalConversation(session: String? = nil) async throws -> (Conversation, String) {
         let suite = UserDefaults(suiteName: "notifier-conv-\(UUID().uuidString)")!
         let settings = Settings(defaults: suite)
         settings.transport = .chatCompletions
@@ -174,6 +174,7 @@ struct NotifierTests {
             [.interrupt(.approval(approval), runtimeSession: "run1")], hang: true)
         let store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "n-\(UUID().uuidString)"))
         let conversation = Conversation(settings: settings, store: store, transportOverride: transport)
+        if let session { conversation.replaceForDemo(serverSessionID: session, messages: []) }
         conversation.send("do it")
         let deadline = Date().addingTimeInterval(3)
         while conversation.pendingInterrupt == nil {
@@ -312,6 +313,92 @@ struct NotifierTests {
         #expect(h.notifier.presentation(pushKind: "paired", sessionID: nil).contains(.banner))
         #expect(h.notifier.presentation(pushKind: "test", sessionID: nil).contains(.banner))
         #expect(h.notifier.presentation(pushKind: nil, sessionID: nil) == [], "not from a paired Hermes: as before")
+    }
+
+    // MARK: Approve and Deny on a pushed approval
+
+    @Test func aPushedApprovalIsAnsweredOnlyOnceThePhoneIsUnlocked() {
+        let h = Harness()
+        h.notifier.registerCategories()
+        let pushed = try! #require(h.center.categories.first { $0.identifier == PushNote.approvalCategory })
+        #expect(pushed.actions.map(\.title) == ["Approve", "Deny"])
+        #expect(pushed.actions.allSatisfy { $0.options.contains(.authenticationRequired) },
+                "the app may be started for either, and can't sign in while the phone is locked")
+        #expect(pushed.actions[1].options.contains(.destructive))
+    }
+
+    /// What the notifier asked the Dashboard, in place of the Dashboard.
+    final class Answers {
+        var asked: [String] = []
+        var outcome: Result<HermesServeClient.WaitingApproval, Error> = .success(.answered)
+    }
+
+    private func answering(_ h: Harness, _ answers: Answers) {
+        h.notifier.answerWaiting = { session, digest, approve in
+            answers.asked.append("\(session) \(digest) \(approve ? "approve" : "deny")")
+            return try answers.outcome.get()
+        }
+    }
+
+    @Test func approveOnAPushedApprovalAnswersThatSessionAndThatCommand() async {
+        let h = Harness()
+        let answers = Answers()
+        answering(h, answers)
+        let approve = h.notifier.route(action: "redde.approve", requestID: nil, questionID: nil, approve: nil, deny: nil, userText: nil,
+                                       sessionID: "20261007_1", approvalDigest: "17f69ae2697b61fd")
+        await approve?.value
+        let deny = h.notifier.route(action: "redde.deny", requestID: nil, questionID: nil, approve: nil, deny: nil, userText: nil,
+                                    sessionID: "20261007_2", approvalDigest: "d20c97f7d0825f2f")
+        await deny?.value
+        #expect(answers.asked == ["20261007_1 17f69ae2697b61fd approve", "20261007_2 d20c97f7d0825f2f deny"])
+        #expect(h.center.added.isEmpty, "answered: nothing more to say")
+        #expect(approve != nil, "the app is kept running until the answer is given")
+    }
+
+    @Test func anAnswerThatCouldNotBeGivenSaysSo() async throws {
+        for (outcome, words) in [(Result<HermesServeClient.WaitingApproval, Error>.success(.nothingWaiting), "no longer waiting"),
+                                 (.success(.anotherCommand), "Another command"),
+                                 (.failure(TransportError.unreachable("Hermes Dashboard is unreachable")), "couldn't reach your Hermes")] {
+            let h = Harness()
+            let answers = Answers()
+            answers.outcome = outcome
+            answering(h, answers)
+            await h.notifier.route(action: "redde.approve", requestID: nil, questionID: nil, approve: nil, deny: nil, userText: nil,
+                                   sessionID: "20261007_1", approvalDigest: "17f69ae2697b61fd")?.value
+            let said = try #require(h.center.added.first)
+            #expect(said.content.title == "The approval wasn't answered")
+            #expect(said.content.body.contains(words), "\(said.content.body)")
+            #expect(said.content.userInfo[PushNote.sessionKey] as? String == "20261007_1", "a tap opens the conversation")
+        }
+    }
+
+    @Test func aPushedApprovalTheAppStillHasACardForIsAnsweredThere() async throws {
+        let h = Harness()
+        let answers = Answers()
+        answering(h, answers)
+        let (conversation, _) = try await pendingApprovalConversation(session: "20261007_1")
+        h.notifier.install(conversation: conversation)
+        // Another command's notification doesn't answer this card.
+        await h.notifier.route(action: "redde.approve", requestID: nil, questionID: nil, approve: nil, deny: nil, userText: nil,
+                               sessionID: "20261007_1", approvalDigest: PushNote.digest(of: "something else"))?.value
+        #expect(conversation.pendingInterrupt != nil)
+        #expect(answers.asked.count == 1, "it went to the Dashboard, which says what is waiting")
+
+        let work = h.notifier.route(action: "redde.approve", requestID: nil, questionID: nil, approve: nil, deny: nil, userText: nil,
+                                    sessionID: "20261007_1", approvalDigest: PushNote.digest(of: "restart"))
+        #expect(work == nil && conversation.pendingInterrupt == nil, "the card was answered")
+        #expect(answers.asked.count == 1)
+    }
+
+    @Test func approveWithoutASessionOrADigestDoesNothing() {
+        let h = Harness()
+        let answers = Answers()
+        answering(h, answers)
+        #expect(h.notifier.route(action: "redde.approve", requestID: nil, questionID: nil, approve: nil, deny: nil, userText: nil,
+                                 sessionID: "20261007_1") == nil)
+        #expect(h.notifier.route(action: "redde.approve", requestID: nil, questionID: nil, approve: nil, deny: nil, userText: nil,
+                                 approvalDigest: "17f69ae2697b61fd") == nil)
+        #expect(answers.asked.isEmpty)
     }
 
     @Test func aLocalBannerStillSweepsThePushedTwinOfTheSameEvent() async throws {

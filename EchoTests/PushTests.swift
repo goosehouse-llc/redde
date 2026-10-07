@@ -132,8 +132,27 @@ struct PushNoteContentTests {
         #expect(shown.title == "Redde needs your approval")
         #expect(shown.subtitle == "Cleanup")
         #expect(shown.body == "recursive delete\nrm -rf build")
-        #expect(shown.categoryIdentifier.isEmpty, "no Approve and Deny on a pushed approval yet")
+        #expect(shown.categoryIdentifier.isEmpty, "no buttons on one that can't be answered from here (a turn over the Hermes API)")
         #expect(shown.userInfo[PushNote.sessionKey] as? String == "20261006_1")
+        #expect(shown.userInfo[PushNote.approvalKey] == nil)
+    }
+
+    @Test func anApprovalThatCanBeAnsweredGetsApproveAndDeny() {
+        let shown = content(PushNote(k: "approval", s: "20261006_1", b: "rm -rf build", d: "recursive delete", h: "17f69ae2697b61fd"))
+        #expect(shown.categoryIdentifier == PushNote.approvalCategory)
+        #expect(shown.userInfo[PushNote.approvalKey] as? String == "17f69ae2697b61fd")
+        #expect(shown.userInfo[PushNote.sessionKey] as? String == "20261006_1")
+        // Without a session there is nothing to answer through.
+        #expect(content(PushNote(k: "approval", b: "rm -rf build", h: "17f69ae2697b61fd")).categoryIdentifier.isEmpty)
+        // A reply never takes the buttons, whatever it carries.
+        #expect(content(PushNote(k: "reply", s: "s", b: "Done.", h: "17f69ae2697b61fd")).categoryIdentifier == PushNote.repliedCategory)
+    }
+
+    /// The plugin's `core.digest` gives these for the same commands.
+    @Test func aCommandsDigestIsThePlugins() {
+        #expect(PushNote.digest(of: "rm -rf build") == "17f69ae2697b61fd")
+        #expect(PushNote.digest(of: "git push --force origin main") == "d20c97f7d0825f2f")
+        #expect(PushNote.digest(of: "echo \"héllo\" && rm -rf ~/tmp") == "3d490b0dae41032b")
     }
 
     @Test func pairingAndTestNotesNameTheMachine() {

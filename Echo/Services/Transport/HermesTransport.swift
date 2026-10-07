@@ -222,6 +222,28 @@ nonisolated enum NetworkFailure {
 
 nonisolated protocol HermesTransport: Sendable {
     func stream(_ request: TurnRequest) -> AsyncThrowingStream<TurnEvent, Error>
+    /// The turn under way in a stored session on the host, when the app isn't following it: it
+    /// was closed while the agent worked, or the turn was started somewhere else. Nil when
+    /// nothing is running or waiting there. Only the Dashboard keeps a turn that can be joined.
+    func rejoin(stored: String) async throws -> RejoinedTurn?
+}
+
+extension HermesTransport {
+    func rejoin(stored: String) async throws -> RejoinedTurn? { nil }
+}
+
+/// A turn the app joins part-way (`HermesTransport.rejoin`).
+nonisolated struct RejoinedTurn: Sendable {
+    /// What was asked, when the host says.
+    var question: String
+    /// The turn from here on. It opens with what the reply says so far and with whatever the
+    /// agent is waiting on a person for. Ending it stops listening, not the turn.
+    var events: AsyncThrowingStream<TurnEvent, Error>
+    /// Stops the turn on the host.
+    var stop: @Sendable () -> Void
+    /// The conversation as the host has it, for once the turn has ended: what happened before
+    /// the app joined is there and not in `events`.
+    var transcript: @Sendable () async throws -> [Message]
 }
 
 /// Shared plumbing: build a request, open the byte stream, surface non-2xx bodies as errors,

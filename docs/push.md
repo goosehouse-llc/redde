@@ -67,6 +67,35 @@ Approvals notify when a person is asked (`pre_approval_request` with a surface o
 `smart`). Over the Hermes API a stock Hermes doesn't hold a command for a person at all; the agent
 is told it needs approval and says so in its reply.
 
+## Answering an approval
+
+A Dashboard turn that stops for an approval waits for it with nobody connected, five minutes by
+default (`approvals.timeout`). There are two ways back to it.
+
+**Approve and Deny on the notification.** An approval note for a conversation the phone follows
+(so a Dashboard one) carries `h`, sixteen hex digits of the SHA-256 of the command. The buttons start the app in the background
+(after an unlock: it may have to sign in). It resumes the session, which tells it what the session
+is waiting on, and answers only if that is still the command the notification showed
+(`HermesServeClient.answerWaitingApproval`). Otherwise, or if the Dashboard can't be reached, a
+second notification says the approval wasn't answered; silence would read as done. A note for a
+conversation no phone follows has no `h` and no buttons: the Dashboard has no hand in a turn over
+the Hermes API or at a terminal.
+
+**The card, on opening the conversation.** Opening a Dashboard conversation, from the notification
+or the list, resumes its session; if a turn is under way there, the app joins it
+(`HermesServeTransport.rejoin`, `Conversation.rejoinIfWaiting`): the reply so far, what follows,
+and the card for whatever the agent is waiting on. Opened from the Home Screen instead, the app
+shows the conversation it was closed in, whose question was saved when it was sent; a
+conversation that ends on an unanswered question is fetched again and joined the same way
+(`Conversation.catchUp`). Leaving a conversation whose turn was only joined leaves the turn
+running; Stop stops it.
+
+How the host says what is waiting depends on the release. 0.21.3 and later list it under
+`open_requests`, answered by a response frame; 0.21.0 gives `pending_approval`, answered by
+`approval.respond`. And 0.21.0 has a rule of its own: the Dashboard stops a turn twenty seconds
+after its last client disconnects (`dashboard.ws_orphan_reap_grace_s`, where 0 means never), so
+there a turn seldom outlives the app at all. 0.21.3 and later let it run.
+
 Twice the same thing: while the app is still alive in the background it posts its own banner,
 and the pushed one for the same event is removed (`Notifier.sweepRelayDuplicates`).
 
@@ -109,7 +138,8 @@ opens only for the pairing it was sealed to. Inside:
 ```
 
 `k` is `reply`, `approval`, `paired` or `test`. A kind the app doesn't know leaves the relay's
-words in place. The plugin also sends an `apns-collapse-id`, a hash over the key, the kind and the
+words in place. An approval that can be answered from the notification also has `h`, the first
+sixteen hex digits of `SHA-256(command)`. The plugin also sends an `apns-collapse-id`, a hash over the key, the kind and the
 session, so a later note about the same thing replaces the earlier one; the relay learns only that
 two notes belong together.
 
@@ -124,8 +154,11 @@ scripts/hermes-lab/lab.sh push --app     # and the app in a simulator pairing wi
 
 `EchoTests/PushTests.swift` checks the app against values the plugin's code produced, so the two
 ends can't drift apart unnoticed. The lab runs the relay's own code under Node with a stand-in for
-Apple. One thing no simulator shows: the extension opening a note while the app is closed. That
-takes a real notification from Apple, so a phone and the deployed relay.
+Apple. `scripts/hermes-lab/lab.sh approvals` covers answering: the app's own Dashboard client joins a turn
+left waiting and answers its card, and answers by session and digest the way the notification's
+buttons do, on each release. Two things no simulator shows: the extension opening a note while
+the app is closed, and a tap on the notification's own buttons. Both take a real notification
+from Apple, so a phone and the deployed relay.
 
 ## Before this ships
 
@@ -142,17 +175,14 @@ takes a real notification from Apple, so a phone and the deployed relay.
 - **A new bundle id**, `com.goosehouse.echo.push`, for the extension: an App ID with the app
   group, which Xcode's automatic signing creates on the first archive.
 - **On a phone**: pair with a real Hermes; lock the phone and close the app; a reply and an
-  approval each arrive with their text; tapping one opens its conversation; Reply on a reply's
-  banner sends into it.
+  approval each arrive with their text; tapping one opens its conversation, the approval's with
+  its card; Approve and Deny on the approval answer it; Reply on a reply's banner sends into it.
 
 ## Not done
 
-- Answering an approval that arrived as a notification once the app has been closed. It has no
-  Approve and Deny buttons, and tapping it opens the conversation's transcript without the card:
-  the app doesn't attach to a turn it didn't start in this run. Until that is built, such an
-  approval is answered from another client, or times out. (While the app is still alive in the
-  background, its own banner has the buttons, as before.)
-- Clarifying questions, sudo and secret prompts don't notify.
+- Clarifying questions, sudo and secret prompts don't notify. (On Hermes 0.21.3 and later their
+  cards should come back on opening the conversation, by the same list an approval's does; only
+  approvals were tried.)
 - A note the extension couldn't open (the phone not yet unlocked since a restart) stays as the
   relay's words; the app doesn't go back and open it.
 - A tapped notification opens its conversation on the server the app is on. One from another of

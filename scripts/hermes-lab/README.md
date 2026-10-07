@@ -48,7 +48,10 @@ Dashboard with a public address, so it asks for a login (`lab` / `labpass-labpas
 signs in as it does on a real server. A message containing "danger" makes the stub call the
 terminal tool with `rm -rf` on a folder it has just made, and it answers the tool's result with
 `[gone]` or `[kept]` by looking for the folder. `EchoTests/HermesLabApprovalTests` sends that
-message through the app's own client and answers the card, once with yes and once with no.
+message through the app's own client and answers the card, once with yes and once with no. Then it
+does what a closed app has to: a client starts the turn and disconnects, a second one joins the
+turn where it waits and answers its card, and a third answers without a card, by session and by
+the command's digest, as Approve and Deny on a notification do.
 
 The Dashboard changed how it asks. Hermes 0.21.0 sends an `approval.request` notification,
 answered by an `approval.respond` call. Hermes 0.21.3 sends a JSON-RPC request to the client,

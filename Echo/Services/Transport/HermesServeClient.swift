@@ -452,15 +452,63 @@ final class HermesServeClient {
 
     /// Questions still waiting from before this connection, as a `session.resume` result lists
     /// them: put to listeners again, under the session's id as resumed, so a card lost with the
-    /// socket comes back.
-    func replayOpenRequests(in resumed: JSONValue) {
-        for request in resumed["open_requests"]?.array ?? [] {
+    /// socket comes back. Returns how many the session is waiting on.
+    ///
+    /// Hermes 0.21.0 has no such list, but says which approval is pending; that one is put the
+    /// way that release asks (and is answered by `approval.respond`, having no frame to answer).
+    @discardableResult
+    func replayOpenRequests(in resumed: JSONValue) -> Int {
+        let session = resumed["session_id"]?.string
+        let open = resumed["open_requests"]?.array ?? []
+        for request in open {
             guard let id = request["id"], let key = Self.key(id), openRequests[key] == nil, let method = request["method"]?.string,
                   var event = Self.prompt(method: method, id: key, params: request["params"] ?? .null) else { continue }
-            event.sessionID = resumed["session_id"]?.string ?? event.sessionID
+            event.sessionID = session ?? event.sessionID
             openRequests[key] = (id, method)
             for l in listeners.values { l(event) }
         }
+        if open.isEmpty, let pending = resumed["pending_approval"], pending["request_id"]?.string != nil {
+            for l in listeners.values { l(("approval.request", session, pending)) }
+            return 1
+        }
+        return open.count
+    }
+
+    /// What became of an answer given without the card: from a notification's buttons.
+    enum WaitingApproval: Equatable, Sendable {
+        case answered
+        /// Nothing is waiting any more: answered elsewhere, timed out, or the turn was stopped.
+        case nothingWaiting
+        /// A command is waiting, but not the one the person was shown.
+        case anotherCommand
+    }
+
+    /// Answers the approval a stored session is waiting on, for a client that wasn't there when
+    /// it was asked: the app, started in the background by a notification's Approve or Deny.
+    /// `digest` is of the command the notification showed (`PushNote.digest`); a yes or no meant
+    /// for one command is never given to another.
+    func answerWaitingApproval(stored: String, digest: String, approve: Bool) async throws -> WaitingApproval {
+        try await ensureConnected()
+        let resumed = try await call("session.resume", params: .object(["session_id": .string(stored), "omit_messages": .bool(true)]))
+        guard let runtime = resumed["session_id"]?.string else { throw TransportError.malformed("resume gave no session id") }
+        runtimeIDs[stored] = runtime
+        func choice(_ request: ApprovalRequest) -> String { (approve ? request.yesNo?.approve : request.yesNo?.deny) ?? (approve ? "once" : "deny") }
+        if let waiting = resumed["open_requests"]?.array?.first(where: { $0["method"]?.string == "approval" }), let id = waiting["id"] {
+            let request = HermesServeTransport.parseApproval(waiting["params"] ?? .null)
+            guard PushNote.digest(of: request.command) == digest else { return .anotherCommand }
+            if let key = Self.key(id) { openRequests[key] = nil }
+            send(.object(["jsonrpc": .string("2.0"), "id": id, "result": .object(["choice": .string(choice(request))])]))
+            return .answered
+        }
+        // Hermes 0.21.0: no list of open requests; the pending approval is answered by call.
+        if let pending = resumed["pending_approval"], let requestID = pending["request_id"]?.string {
+            let request = HermesServeTransport.parseApproval(pending)
+            guard PushNote.digest(of: request.command) == digest else { return .anotherCommand }
+            try await call("approval.respond", params: .object(["session_id": .string(runtime), "request_id": .string(requestID),
+                                                                 "choice": .string(choice(request))]))
+            return .answered
+        }
+        return .nothingWaiting
     }
 
     // MARK: - RPC

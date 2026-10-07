@@ -282,100 +282,7 @@ final class Conversation {
                 }
                 for try await event in transport.stream(request) {
                     mirrorContinuation.yield(event)
-                    switch event {
-                    case let .textDelta(delta):
-                        clearStatus()
-                        interruptResolvedElsewhere()
-                        TurnActivity.shared.replyDelta(delta)
-                        markFirstToken(replyID)
-                        buffer(text: delta, for: replyID)
-                    case let .textFinal(text):
-                        // Drop the buffered deltas rather than flushing them: this text replaces
-                        // them, and appending first would duplicate the whole reply.
-                        clearStatus()
-                        markFirstToken(replyID)
-                        discardPendingText(for: replyID)
-                        // Inline data-URL images become photo attachments, like a received MMS.
-                        let (clean, images) = InlineImages.extract(from: text)
-                        update(replyID) { $0.text = clean; $0.attachments = images }
-                    case let .status(status):
-                        statusLine = status
-                    case let .prefill(processed, total, cached):
-                        // Only worth surfacing when the prompt is big enough to take real time;
-                        // a short prompt would just flash "100%". Cleared by the first token.
-                        if total - cached >= 512 {
-                            statusLine = "Processing prompt… \(min(100, processed * 100 / total))%"
-                        }
-                    case let .usage(usage):
-                        // hermes serve ticks this every few hundred ms; it rides the next flush.
-                        // Retarget the buffer first: with pendingUsage set, the flush that
-                        // retargeting triggers would write this tick onto the previous reply.
-                        buffer(for: replyID)
-                        pendingUsage = usage
-                    case let .reasoningDelta(delta):
-                        clearStatus()
-                        // Reasoning tokens count toward the reply, so the decode clock starts here too.
-                        markFirstToken(replyID)
-                        buffer(reasoning: delta, for: replyID)
-                    case let .toolStarted(name, preview, args):
-                        flushDeltas()
-                        clearStatus()
-                        TurnActivity.shared.tool(name)
-                        update(replyID) { $0.tools.append(ToolActivity(name: name, preview: preview, status: .running, startedAt: .now, args: args)) }
-                    case let .toolFinished(name, failed, output):
-                        interruptResolvedElsewhere()
-                        update(replyID) { message in
-                            // Match by name when given, else the most recent running tool.
-                            if let i = message.tools.lastIndex(where: { $0.status == .running && (name.isEmpty || $0.name == name) }) {
-                                message.tools[i].status = failed ? .failed : .completed
-                                message.tools[i].endedAt = .now
-                                if let output { message.tools[i].output = output }
-                            }
-                        }
-                    case let .subagent(u):
-                        clearStatus()
-                        if case .started = u.phase { TurnActivity.shared.tool("delegating") }
-                        update(replyID) { message in
-                            var row = message.subagents.first { $0.id == u.id }
-                                ?? SubagentActivity(id: u.id, goal: u.goal, taskIndex: u.taskIndex, taskCount: u.taskCount, depth: u.depth)
-                            if !u.goal.isEmpty { row.goal = u.goal }
-                            if let n = u.toolCount { row.toolCount = n }
-                            if let s = u.childSessionID { row.childSessionID = s }
-                            if let m = u.model { row.model = m }
-                            switch u.phase {
-                            case .started: row.status = .running
-                            case let .tool(name): row.lastTool = name; row.status = .running
-                            case let .progress(text): row.lastTool = text.isEmpty ? row.lastTool : text
-                            case .dispatched: if row.status == .running { row.status = .dispatched }
-                            case let .completed(ok, summary, duration):
-                                row.status = ok ? .completed : .failed
-                                row.summary = summary
-                                row.durationSeconds = duration
-                            }
-                            if let i = message.subagents.firstIndex(where: { $0.id == u.id }) { message.subagents[i] = row }
-                            else { message.subagents.append(row) }
-                        }
-                    case let .sessionID(id):
-                        serverSessionID = id
-                    case let .runID(id):
-                        currentRunID = id
-                    case let .interrupt(interrupt, runtime):
-                        flushDeltas()
-                        pendingInterrupt = (interrupt, runtime)
-                        statusLine = "waiting for you"
-                        if case let .approval(request) = interrupt {
-                            Notifier.shared.notifyApproval(request)
-                            TurnActivity.shared.needsApproval(request)
-                        } else if case let .clarify(request) = interrupt {
-                            Notifier.shared.notifyClarify(request)
-                        } else {
-                            Notifier.shared.notify(.interrupt, title: Self.interruptTitle(interrupt), body: Self.interruptBody(interrupt))
-                        }
-                    case let .interruptExpired(id):
-                        if pendingInterrupt?.interrupt.id == id { pendingInterrupt = nil; statusLine = "request expired" }
-                    case .done:
-                        break
-                    }
+                    apply(event, to: replyID)
                 }
                 // An AsyncThrowingStream ends quietly on cancellation; don't report that as a reply.
                 try Task.checkCancellation()
@@ -447,6 +354,217 @@ final class Conversation {
             mirrorContinuation.finish()
         }
         return mirror
+    }
+
+    /// One event of a turn, written into its reply.
+    private func apply(_ event: TurnEvent, to replyID: UUID) {
+        switch event {
+        case let .textDelta(delta):
+            clearStatus()
+            interruptResolvedElsewhere()
+            TurnActivity.shared.replyDelta(delta)
+            markFirstToken(replyID)
+            buffer(text: delta, for: replyID)
+        case let .textFinal(text):
+            // Drop the buffered deltas rather than flushing them: this text replaces
+            // them, and appending first would duplicate the whole reply.
+            clearStatus()
+            markFirstToken(replyID)
+            discardPendingText(for: replyID)
+            // Inline data-URL images become photo attachments, like a received MMS.
+            let (clean, images) = InlineImages.extract(from: text)
+            update(replyID) { $0.text = clean; $0.attachments = images }
+        case let .status(status):
+            statusLine = status
+        case let .prefill(processed, total, cached):
+            // Only worth surfacing when the prompt is big enough to take real time;
+            // a short prompt would just flash "100%". Cleared by the first token.
+            if total - cached >= 512 {
+                statusLine = "Processing prompt… \(min(100, processed * 100 / total))%"
+            }
+        case let .usage(usage):
+            // hermes serve ticks this every few hundred ms; it rides the next flush.
+            // Retarget the buffer first: with pendingUsage set, the flush that
+            // retargeting triggers would write this tick onto the previous reply.
+            buffer(for: replyID)
+            pendingUsage = usage
+        case let .reasoningDelta(delta):
+            clearStatus()
+            // Reasoning tokens count toward the reply, so the decode clock starts here too.
+            markFirstToken(replyID)
+            buffer(reasoning: delta, for: replyID)
+        case let .toolStarted(name, preview, args):
+            flushDeltas()
+            clearStatus()
+            TurnActivity.shared.tool(name)
+            update(replyID) { $0.tools.append(ToolActivity(name: name, preview: preview, status: .running, startedAt: .now, args: args)) }
+        case let .toolFinished(name, failed, output):
+            interruptResolvedElsewhere()
+            update(replyID) { message in
+                // Match by name when given, else the most recent running tool.
+                if let i = message.tools.lastIndex(where: { $0.status == .running && (name.isEmpty || $0.name == name) }) {
+                    message.tools[i].status = failed ? .failed : .completed
+                    message.tools[i].endedAt = .now
+                    if let output { message.tools[i].output = output }
+                }
+            }
+        case let .subagent(u):
+            clearStatus()
+            if case .started = u.phase { TurnActivity.shared.tool("delegating") }
+            update(replyID) { message in
+                var row = message.subagents.first { $0.id == u.id }
+                    ?? SubagentActivity(id: u.id, goal: u.goal, taskIndex: u.taskIndex, taskCount: u.taskCount, depth: u.depth)
+                if !u.goal.isEmpty { row.goal = u.goal }
+                if let n = u.toolCount { row.toolCount = n }
+                if let s = u.childSessionID { row.childSessionID = s }
+                if let m = u.model { row.model = m }
+                switch u.phase {
+                case .started: row.status = .running
+                case let .tool(name): row.lastTool = name; row.status = .running
+                case let .progress(text): row.lastTool = text.isEmpty ? row.lastTool : text
+                case .dispatched: if row.status == .running { row.status = .dispatched }
+                case let .completed(ok, summary, duration):
+                    row.status = ok ? .completed : .failed
+                    row.summary = summary
+                    row.durationSeconds = duration
+                }
+                if let i = message.subagents.firstIndex(where: { $0.id == u.id }) { message.subagents[i] = row }
+                else { message.subagents.append(row) }
+            }
+        case let .sessionID(id):
+            serverSessionID = id
+            // Saved as soon as the host has a session for it, not only with the reply: if the app
+            // doesn't live to see the reply, it can find its way back to it (`catchUp`).
+            if questionSavedFor != replyID {
+                questionSavedFor = replyID
+                persist()
+            }
+        case let .runID(id):
+            currentRunID = id
+        case let .interrupt(interrupt, runtime):
+            flushDeltas()
+            pendingInterrupt = (interrupt, runtime)
+            statusLine = "waiting for you"
+            if case let .approval(request) = interrupt {
+                Notifier.shared.notifyApproval(request)
+                TurnActivity.shared.needsApproval(request)
+            } else if case let .clarify(request) = interrupt {
+                Notifier.shared.notifyClarify(request)
+            } else {
+                Notifier.shared.notify(.interrupt, title: Self.interruptTitle(interrupt), body: Self.interruptBody(interrupt))
+            }
+        case let .interruptExpired(id):
+            if pendingInterrupt?.interrupt.id == id { pendingInterrupt = nil; statusLine = "request expired" }
+        case .done:
+            break
+        }
+    }
+
+    // MARK: - A turn already under way
+
+    /// How to stop the turn on screen when it is one the app joined and didn't start; nil otherwise.
+    private var joinedStop: (@Sendable () -> Void)?
+    /// The reply whose question has been saved already (see `.sessionID` in `apply`).
+    private var questionSavedFor: UUID?
+
+    /// Looks whether the open Dashboard conversation has a turn under way on the host that this
+    /// run of the app isn't following: the app was closed while the agent worked, or the turn was
+    /// started from somewhere else. If so the reply is followed from here on, and whatever the
+    /// agent is waiting on a person for gets its card back. That is how an approval announced by
+    /// a notification can be answered after the app was closed.
+    func rejoinIfWaiting() async {
+        guard settings.transport == .hermesServe, !isStreaming, let stored = serverSessionID, let transport = makeTransport() else { return }
+        let identity = identity
+        guard let joined = try? await transport.rejoin(stored: stored) else { return }
+        // Another conversation was opened, or a message sent, while the host answered: let go.
+        guard self.identity == identity, !isStreaming, serverSessionID == stored else { return }
+        follow(joined, stored: stored)
+    }
+
+    /// The transcript ends with a question of the person's own and nothing after it, and nothing
+    /// is being sent: the state a conversation is in when the app didn't live to see the reply.
+    var endsUnanswered: Bool {
+        guard !isStreaming, outbox.isEmpty, let last = messages.last else { return false }
+        return last.role == .user && !last.isSteer
+    }
+
+    /// When the app comes forward. A Hermes conversation whose last question has no answer here
+    /// was cut off, usually by iOS closing the app while the agent worked. The host has gone on
+    /// without it: the conversation is fetched again, with the reply if there is one by now, and
+    /// on the Dashboard the turn is joined if it is still under way or waiting for an answer.
+    func catchUp() async {
+        await initialLoad?.value   // at launch the conversation may still be coming off the disk
+        guard settings.transport.hasLedger, endsUnanswered, let stored = serverSessionID else { return }
+        try? await open(serverSession: stored)
+    }
+
+    private func follow(_ joined: RejoinedTurn, stored: String) {
+        lastError = nil
+        clearFollowUps()
+        let reply = Message(role: .assistant, text: "")
+        messages.append(reply)
+        let replyID = reply.id
+        isStreaming = true
+        joinedStop = joined.stop
+        TurnActivity.shared.start(question: joined.question)
+        BackgroundTurn.shared.begin(question: joined.question)
+        turnSerial += 1
+        let myTurn = turnSerial
+        streamTask = Task { [weak self] in
+            guard let self else { return }
+            var completed = false
+            do {
+                for try await event in joined.events { apply(event, to: replyID) }
+                try Task.checkCancellation()
+                flushDeltas()
+                await settle(replyID, stored: stored, transcript: joined.transcript)
+                try Task.checkCancellation()
+                await resolveServeMedia(replyID)
+                try Task.checkCancellation()
+                let replyText = messages.last { $0.id == replyID }?.text ?? ""
+                TurnActivity.shared.finish(reply: replyText)
+                Notifier.shared.notify(.replied, title: "Redde replied", body: PlainText.display(replyText),
+                                       category: Notifier.repliedCategory, userInfo: [Notifier.conversationKey: self.id.uuidString],
+                                       messageEntityID: SiriID.message(self.id, replyID))
+                persist()
+                completed = true
+            } catch is CancellationError {
+                flushDeltas()
+                if replyIsBlank(replyID) { messages.removeAll { $0.id == replyID } }
+                persist()
+            } catch {
+                if myTurn != turnSerial {
+                    update(replyID) { $0.error = error.localizedDescription }
+                } else if replyIsBlank(replyID) {
+                    // Nothing of it was seen, and nothing here was asked: no failure to report.
+                    messages.removeAll { $0.id == replyID }
+                    TurnActivity.shared.leave()
+                } else {
+                    fail(replyID, error.localizedDescription)
+                }
+            }
+            if myTurn == turnSerial {
+                clearStatus()
+                isStreaming = false
+                joinedStop = nil
+                BackgroundTurn.shared.end(success: completed)
+                if completed { retryAttempt = 0; retryOutbox() }
+            }
+        }
+    }
+
+    /// A joined turn has ended: what the host recorded fills in what the events couldn't say,
+    /// because it happened before the app joined. The reply's text when the record has more of
+    /// it, its tool calls and its reasoning when none were heard. What was heard is never taken
+    /// away, and a record that can't be fetched changes nothing.
+    private func settle(_ replyID: UUID, stored: String, transcript: @Sendable () async throws -> [Message]) async {
+        guard let recorded = try? await transcript(), serverSessionID == stored,
+              let last = recorded.last, last.role == .assistant else { return }
+        update(replyID) { reply in
+            if last.text.count > reply.text.count { reply.text = last.text }
+            if reply.tools.isEmpty { reply.tools = last.tools }
+            if reply.reasoning.isEmpty { reply.reasoning = last.reasoning }
+        }
     }
 
     private enum TurnOutcome { case completed, cancelled, failed, held }
@@ -551,8 +669,14 @@ final class Conversation {
         }
     }
 
-    func cancel() {
+    /// Stops the turn. `leaving`: the conversation is being left, not stopped; a turn the app only
+    /// joined (`rejoinIfWaiting`) then goes on on the host, where someone else may be waiting for
+    /// it. One the app started is stopped either way, as it always was.
+    func cancel(leaving: Bool = false) {
         let wasStreaming = isStreaming
+        let joined = joinedStop
+        joinedStop = nil
+        if !leaving { joined?() }
         streamTask?.cancel()
         streamTask = nil
         clearFollowUps()
@@ -563,7 +687,7 @@ final class Conversation {
         // Only a real Stop pauses the queue; regenerate/load/reset while idle must keep a
         // scheduled retry alive and a queued message queued.
         if wasStreaming {
-            TurnActivity.shared.fail("Cancelled")
+            if joined != nil, leaving { TurnActivity.shared.leave() } else { TurnActivity.shared.fail("Cancelled") }
             pauseQueue()
         }
     }
@@ -622,14 +746,14 @@ final class Conversation {
 
     /// Start a fresh conversation; the current one stays in the list if it has any turns.
     func reset() {
-        cancel()
+        cancel(leaving: true)
         persist()
         become()
     }
 
     /// Switch to a saved conversation. Streaming, if any, is cancelled.
     func load(_ record: ConversationRecord) {
-        cancel()
+        cancel(leaving: true)
         persist()
         become(id: record.id, createdAt: record.createdAt, messages: record.messages,
                outbox: record.outbox ?? [], serverSessionID: record.serverSessionID, name: record.name)
@@ -639,7 +763,7 @@ final class Conversation {
     }
 
     func delete(id recordID: UUID) {
-        if recordID == id { cancel() }   // a running turn would otherwise re-persist it
+        if recordID == id { cancel(leaving: true) }   // a running turn would otherwise re-persist it
         store.delete(id: recordID)
         if recordID == id { become() }
     }
@@ -906,6 +1030,8 @@ final class Conversation {
     func loadServeSession(_ summary: HermesSessionsAPI.SessionSummary) async throws {
         let rows = try await HermesServeClient.shared.history(stored: summary.id)
         adopt(serverSession: summary, messages: Self.messages(fromServeRows: rows))
+        // The agent may still be at work in it, or waiting for an answer.
+        await rejoinIfWaiting()
     }
 
     /// Opens the conversation a Hermes session id names, from the server the app is on: what a
@@ -923,7 +1049,7 @@ final class Conversation {
     /// Switches this conversation to a gateway session: keeps (or mints) the matching local
     /// record, swaps in its transcript, and persists. Shared by both ledger transports.
     private func adopt(serverSession summary: HermesSessionsAPI.SessionSummary, messages new: [Message]) {
-        cancel()
+        cancel(leaving: true)
         persist()
         let existing = store.summaries.first { $0.serverSessionID == summary.id }
         become(id: existing?.id ?? UUID(), createdAt: existing?.createdAt ?? summary.lastActiveDate ?? .now,

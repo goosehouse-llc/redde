@@ -148,6 +148,19 @@ class NoteTests(unittest.TestCase):
         emoji = core.note("reply", "s", "🎉" * 5000)
         self.assertLessEqual(len(core.sealed(self.device, emoji)), 3600)
 
+    def test_an_approval_the_phone_can_answer_names_its_command_by_digest(self):
+        long = "rm -rf " + "a/very/long/path/" * 60
+        made = core.note("approval", "20261007_1", long, detail="recursive delete", answerable=True)
+        self.assertEqual(made["h"], core.digest(long), "of the whole command, though only its start fits")
+        self.assertTrue(made["b"].endswith("…"))
+        self.assertRegex(made["h"], r"^[0-9a-f]{16}$")
+        # The app's `PushNote.digest` gives the same for these (EchoTests/PushTests.swift).
+        self.assertEqual(core.digest("rm -rf build"), "17f69ae2697b61fd")
+        self.assertEqual(core.digest('echo "héllo" && rm -rf ~/tmp'), "3d490b0dae41032b")
+        self.assertNotIn("h", core.note("approval", "api_1", "rm -rf build"), "not when it can't be answered from the notification")
+        self.assertNotIn("h", core.note("approval", "", "rm -rf build", answerable=True))
+        self.assertNotIn("h", core.note("reply", "20261007_1", "Done.", answerable=True))
+
     def test_notes_about_the_same_thing_share_a_collapse_id_that_says_nothing(self):
         first = core.collapse_id(self.device, core.note("reply", "s1", "one"))
         self.assertEqual(first, core.collapse_id(self.device, core.note("reply", "s1", "two")))
@@ -188,6 +201,8 @@ class StoreTests(unittest.TestCase):
         self.assertEqual([d["id"] for d in self.store.targets("s1", "tui")], ["device-a", "device-b"])
         self.assertEqual(self.store.watch("s3", ["a-stranger"]), [])
         self.assertEqual(self.store.targets("s3", "tui"), [])
+        self.assertTrue(self.store.follows("s1"))
+        self.assertFalse(self.store.follows("s2") or self.store.follows("s3") or self.store.follows(""))
 
     def test_a_turn_over_the_hermes_api_notifies_every_phone(self):
         self.store.add(self.a)
@@ -277,22 +292,26 @@ class HookTests(unittest.TestCase):
 
     def test_the_app_follows_a_dashboard_conversation_and_hears_its_reply_and_approval(self):
         self.assertEqual(plugin._slash("status"), "redde-push paired 1")
-        plugin._remember_platform(session_id="20261006_1", platform="tui", model="alpha")
-        plugin._on_reply(session_id="20261006_1", assistant_response="Not yet followed.", platform="tui")
+        # A conversation the app starts over the Dashboard runs on the platform "desktop".
+        plugin._remember_platform(session_id="20261006_1", platform="desktop", model="alpha")
+        plugin._on_reply(session_id="20261006_1", assistant_response="Not yet followed.", platform="desktop")
         self.assertEqual(self.sent(), [])
         self.assertEqual(plugin._slash("watch 20261006_1 dev-1234567890abcdef,someone-else"), "redde-push watching 1")
         plugin._on_approval(command="rm -rf build", description="recursive delete", session_id="20261006_1", surface="smart")
         self.assertEqual(self.sent(), [], "a model is asked first; nobody is waiting on a person yet")
         plugin._on_approval(command="rm -rf build", description="recursive delete", session_id="20261006_1", surface="gateway", turn_id="t")
-        plugin._on_reply(session_id="20261006_1", assistant_response="Removed the build folder.", platform="tui", conversation_history=[])
+        plugin._on_reply(session_id="20261006_1", assistant_response="Removed the build folder.", platform="desktop", conversation_history=[])
         notes = self.sent()
         self.assertEqual([(n["k"], n["b"]) for n in notes], [("approval", "rm -rf build"), ("reply", "Removed the build folder.")])
         self.assertEqual(notes[0]["d"], "recursive delete")
+        self.assertEqual(notes[0]["h"], "17f69ae2697b61fd", "an approval in a followed conversation can be answered from the notification")
 
     def test_an_api_turn_s_approval_notifies_though_the_hook_isn_t_told_the_platform(self):
         plugin._remember_platform(session_id="api_9", platform="api_server")
         plugin._on_approval(command="git push --force", description="force push", session_key="api_9", session_id="api_9", surface="gateway")
-        self.assertEqual([(n["k"], n["s"]) for n in self.sent()], [("approval", "api_9")])
+        notes = self.sent()
+        self.assertEqual([(n["k"], n["s"]) for n in notes], [("approval", "api_9")])
+        self.assertNotIn("h", notes[0], "nobody follows it, so the Dashboard can't answer for it: no buttons")
 
     def test_an_empty_reply_and_a_hook_called_oddly_send_nothing_and_raise_nothing(self):
         plugin._on_reply(session_id="api_9", assistant_response="   ", platform="api_server")

@@ -38,6 +38,10 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
     /// The name of the machine Hermes runs on.
     var n: String?
     var at: Double?
+    /// On an approval that can be answered from the notification: `digest(of:)` the command, so
+    /// the answer is given to that command and no other. Absent when it can't be (a turn the
+    /// Dashboard has no hand in: over the Hermes API, or at a terminal).
+    var h: String?
 
     /// Nil for a kind a newer plugin sends and this build doesn't know.
     var kind: Kind? { Kind(rawValue: k) }
@@ -191,10 +195,14 @@ nonisolated extension PushNote {
     /// The category of a reply that arrived as a push: its Reply button waits for an unlock,
     /// because the app is started for it and its saved passwords can't be read while locked.
     static let repliedCategory = "redde.replied.push"
+    /// The category of an approval that arrived as a push and can be answered from it: Approve
+    /// and Deny, which start the app in the background to answer (`Notifier.answerPushedApproval`).
+    static let approvalCategory = "redde.approval.push"
     /// `userInfo` keys on a notification that came this way. `session` is also how the app tells
-    /// one from a banner it posted itself.
+    /// one from a banner it posted itself. `approval` is the note's `h`.
     static let sessionKey = "session"
     static let kindKey = "kind"
+    static let approvalKey = "approval"
     /// The sealed note, as the relay hands it to Apple. Gone once the note has been opened.
     static let sealedKey = "e"
 
@@ -215,6 +223,7 @@ nonisolated extension PushNote {
             if let t, !t.isEmpty { content.subtitle = t }
             content.body = [d, b].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n")
             content.threadIdentifier = "redde.turn"
+            if let h, !h.isEmpty, let s, !s.isEmpty { content.categoryIdentifier = Self.approvalCategory }
         case .paired:
             content.title = host.map { "Paired with \($0)" } ?? "Paired"
             content.body = "Redde will tell you here when this Hermes finishes a reply or needs an approval."
@@ -225,7 +234,14 @@ nonisolated extension PushNote {
         if content.body.isEmpty { content.body = "Open Redde to see it." }
         var info: [AnyHashable: Any] = [Self.kindKey: k]
         if let s, !s.isEmpty { info[Self.sessionKey] = s }
+        if kind == .approval, let h, !h.isEmpty { info[Self.approvalKey] = h }
         content.userInfo = info
         return true
+    }
+
+    /// What stands for a command in a note: sixteen hex digits of its SHA-256. The plugin's
+    /// `core.digest` is the same.
+    static func digest(of command: String) -> String {
+        PushSeal.hex(SHA256.hash(data: Data(command.utf8)).prefix(8))
     }
 }

@@ -23,6 +23,9 @@ nonisolated struct HermesServeTransport: HermesTransport {
         /// The reconnect wait after a drop; cancelled with the turn so a stopped turn doesn't
         /// poll for 90 s and then pull the whole transcript into a finished continuation.
         var recoverTask: Task<Void, Never>?
+        /// Non-nil while a turn is being joined and its session's id isn't known yet: the events
+        /// that arrive meanwhile.
+        var early: [HermesServeClient.Event]?
         init(runtime: String, stored: String) { self.runtime = runtime; self.stored = stored }
     }
 
@@ -62,82 +65,8 @@ nonisolated struct HermesServeTransport: HermesTransport {
                     }
 
                     let finished = AsyncStream<Result<Void, Error>>.makeStream()
-                    listener = client.addListener { event in
-                        let p = event.payload
-                        switch event.type {
-                        case "connection.lost":
-                            guard !turn.recovering else { return }
-                            turn.recovering = true
-                            continuation.yield(.status("connection lost, reconnecting…"))
-                            turn.recoverTask = Task { @MainActor in
-                                await Self.recover(turn, client: client, continuation: continuation, finished: finished.continuation)
-                            }
-                            return
-                        case "connection.restored":
-                            return
-                        default:
-                            break
-                        }
-                        guard event.sessionID == turn.runtime else { return }
-                        switch event.type {
-                        case "message.delta":
-                            if let t = p["text"]?.string, !t.isEmpty { turn.streamed += t; continuation.yield(.textDelta(t)) }
-                        case "reasoning.delta", "reasoning.available":
-                            if let t = p["text"]?.string { continuation.yield(.reasoningDelta(t)) }
-                        case "tool.start":
-                            continuation.yield(.toolStarted(name: p["name"]?.string ?? "tool", preview: p["context"]?.string,
-                                                            args: ToolActivity.detail(p["args"])))
-                        case "tool.complete":
-                            let failed = p["error"] != nil && !(p["error"]?.isNull ?? true)
-                            // The whole result rides on the event (`result_text` is the host's own
-                            // rendering of it, sent in verbose mode).
-                            let output = ToolActivity.detail(p["result_text"]?.string) ?? ToolActivity.detail(p["result"])
-                                ?? ToolActivity.detail(p["error"])
-                            continuation.yield(.toolFinished(name: p["name"]?.string ?? "", failed: failed, output: output))
-                        case "subagent.start", "subagent.tool", "subagent.progress", "subagent.complete":
-                            if let update = Self.parseSubagent(event.type, p) { continuation.yield(.subagent(update)) }
-                        case "approval.request":
-                            continuation.yield(.interrupt(.approval(Self.parseApproval(p)), runtimeSession: turn.runtime))
-                        case "clarify.request":
-                            continuation.yield(.interrupt(.clarify(Self.parseClarify(p)), runtimeSession: turn.runtime))
-                        case "sudo.request":
-                            continuation.yield(.interrupt(.sudo(id: p["request_id"]?.string ?? ""), runtimeSession: turn.runtime))
-                        case "secret.request":
-                            let req = SecretRequest(id: p["request_id"]?.string ?? "", prompt: p["prompt"]?.string ?? "",
-                                                    envVar: p["env_var"]?.string ?? "")
-                            continuation.yield(.interrupt(.secret(req), runtimeSession: turn.runtime))
-                        case "approval.expire", "clarify.expire", "sudo.expire", "secret.expire":
-                            continuation.yield(.interruptExpired(id: p["request_id"]?.string ?? ""))
-                        case "status.update":
-                            if let t = p["text"]?.string { continuation.yield(.status(t)) }
-                        case "message.complete":
-                            // The turn's terminal event: final text (if nothing streamed), the
-                            // authoritative usage, and the status.
-                            if turn.streamed.isEmpty, let t = p["text"]?.string, !t.isEmpty { turn.streamed = t; continuation.yield(.textDelta(t)) }
-                            if let u = p["usage"], let input = (u["input"] ?? u["prompt"])?.int {
-                                continuation.yield(.usage(TokenUsage(input: input, output: (u["output"] ?? u["completion"])?.int ?? 0, cached: nil,
-                                                                     contextUsed: u["context_used"]?.int, contextMax: u["context_max"]?.int)))
-                            }
-                            if p["status"]?.string == "error" {
-                                finished.continuation.yield(.failure(TransportError.malformed(p["error"]?.string ?? p["text"]?.string ?? "run failed")))
-                            } else {
-                                finished.continuation.yield(.success(()))
-                            }
-                        case "session.usage":
-                            // A periodic tick from the gateway while the turn runs (context occupancy
-                            // for the footer). It says nothing about whether the turn is over.
-                            if let u = p["usage"], let used = u["context_used"]?.int, let max = u["context_max"]?.int, max > 0 {
-                                continuation.yield(.usage(TokenUsage(input: (u["input"] ?? u["prompt"])?.int ?? 0,
-                                                                     output: (u["output"] ?? u["completion"])?.int ?? 0, cached: nil,
-                                                                     contextUsed: used, contextMax: max)))
-                            }
-                        case "session.info":
-                            if p["running"]?.bool == false { finished.continuation.yield(.success(())) }
-                        case "error":
-                            finished.continuation.yield(.failure(TransportError.malformed(p["message"]?.string ?? "gateway error")))
-                        default:
-                            break
-                        }
+                    listener = client.addListener {
+                        Self.hear($0, turn: turn, client: client, continuation: continuation, finished: finished.continuation)
                     }
 
                     for att in request.attachments {
@@ -167,6 +96,165 @@ nonisolated struct HermesServeTransport: HermesTransport {
             }
             continuation.onTermination = { _ in task.cancel() }
         }
+    }
+
+    /// One event from the host, for the turn being followed: what it means for the reply goes to
+    /// `continuation`, and the turn's end to `finished`.
+    @MainActor
+    private static func hear(_ event: HermesServeClient.Event, turn: TurnState, client: HermesServeClient,
+                             continuation: AsyncThrowingStream<TurnEvent, Error>.Continuation,
+                             finished: AsyncStream<Result<Void, Error>>.Continuation) {
+        // A turn being joined doesn't know its session's id until the host has answered; what
+        // arrives meanwhile is kept and heard then.
+        if turn.early != nil {
+            turn.early?.append(event)
+            return
+        }
+        let p = event.payload
+        switch event.type {
+        case "connection.lost":
+            guard !turn.recovering else { return }
+            turn.recovering = true
+            continuation.yield(.status("connection lost, reconnecting…"))
+            turn.recoverTask = Task { @MainActor in
+                await Self.recover(turn, client: client, continuation: continuation, finished: finished)
+            }
+            return
+        case "connection.restored":
+            return
+        default:
+            break
+        }
+        guard event.sessionID == turn.runtime else { return }
+        switch event.type {
+        case "message.delta":
+            if let t = p["text"]?.string, !t.isEmpty { turn.streamed += t; continuation.yield(.textDelta(t)) }
+        case "reasoning.delta", "reasoning.available":
+            if let t = p["text"]?.string { continuation.yield(.reasoningDelta(t)) }
+        case "tool.start":
+            continuation.yield(.toolStarted(name: p["name"]?.string ?? "tool", preview: p["context"]?.string,
+                                            args: ToolActivity.detail(p["args"])))
+        case "tool.complete":
+            let failed = p["error"] != nil && !(p["error"]?.isNull ?? true)
+            // The whole result rides on the event (`result_text` is the host's own
+            // rendering of it, sent in verbose mode).
+            let output = ToolActivity.detail(p["result_text"]?.string) ?? ToolActivity.detail(p["result"])
+                ?? ToolActivity.detail(p["error"])
+            continuation.yield(.toolFinished(name: p["name"]?.string ?? "", failed: failed, output: output))
+        case "subagent.start", "subagent.tool", "subagent.progress", "subagent.complete":
+            if let update = Self.parseSubagent(event.type, p) { continuation.yield(.subagent(update)) }
+        case "approval.request":
+            continuation.yield(.interrupt(.approval(Self.parseApproval(p)), runtimeSession: turn.runtime))
+        case "clarify.request":
+            continuation.yield(.interrupt(.clarify(Self.parseClarify(p)), runtimeSession: turn.runtime))
+        case "sudo.request":
+            continuation.yield(.interrupt(.sudo(id: p["request_id"]?.string ?? ""), runtimeSession: turn.runtime))
+        case "secret.request":
+            let req = SecretRequest(id: p["request_id"]?.string ?? "", prompt: p["prompt"]?.string ?? "",
+                                    envVar: p["env_var"]?.string ?? "")
+            continuation.yield(.interrupt(.secret(req), runtimeSession: turn.runtime))
+        case "approval.expire", "clarify.expire", "sudo.expire", "secret.expire":
+            continuation.yield(.interruptExpired(id: p["request_id"]?.string ?? ""))
+        case "status.update":
+            if let t = p["text"]?.string { continuation.yield(.status(t)) }
+        case "message.complete":
+            // The turn's terminal event: final text (if nothing streamed), the
+            // authoritative usage, and the status.
+            if turn.streamed.isEmpty, let t = p["text"]?.string, !t.isEmpty { turn.streamed = t; continuation.yield(.textDelta(t)) }
+            if let u = p["usage"], let input = (u["input"] ?? u["prompt"])?.int {
+                continuation.yield(.usage(TokenUsage(input: input, output: (u["output"] ?? u["completion"])?.int ?? 0, cached: nil,
+                                                     contextUsed: u["context_used"]?.int, contextMax: u["context_max"]?.int)))
+            }
+            if p["status"]?.string == "error" {
+                finished.yield(.failure(TransportError.malformed(p["error"]?.string ?? p["text"]?.string ?? "run failed")))
+            } else {
+                finished.yield(.success(()))
+            }
+        case "session.usage":
+            // A periodic tick from the gateway while the turn runs (context occupancy
+            // for the footer). It says nothing about whether the turn is over.
+            if let u = p["usage"], let used = u["context_used"]?.int, let max = u["context_max"]?.int, max > 0 {
+                continuation.yield(.usage(TokenUsage(input: (u["input"] ?? u["prompt"])?.int ?? 0,
+                                                     output: (u["output"] ?? u["completion"])?.int ?? 0, cached: nil,
+                                                     contextUsed: used, contextMax: max)))
+            }
+        case "session.info":
+            if p["running"]?.bool == false { finished.yield(.success(())) }
+        case "error":
+            finished.yield(.failure(TransportError.malformed(p["message"]?.string ?? "gateway error")))
+        default:
+            break
+        }
+    }
+
+    /// Joins the turn under way in a stored session: one this run of the app didn't start, or
+    /// lost track of when it was closed. Resuming the session attaches this client to it, and the
+    /// host says where the turn stands: whether it is running, what the reply says so far, and
+    /// what it is waiting on a person for, which is put to the listener like a new question.
+    @MainActor
+    func rejoin(stored: String) async throws -> RejoinedTurn? {
+        let client = self.client
+        try await client.ensureConnected()
+        let turn = TurnState(runtime: "", stored: stored)
+        turn.early = []
+        let (events, continuation) = AsyncThrowingStream<TurnEvent, Error>.makeStream()
+        let finished = AsyncStream<Result<Void, Error>>.makeStream()
+        let listener = client.addListener {
+            Self.hear($0, turn: turn, client: client, continuation: continuation, finished: finished.continuation)
+        }
+        let info: JSONValue
+        do {
+            info = try await client.resume(stored: stored, withMessages: false)
+            guard let runtime = info["session_id"]?.string else { throw TransportError.malformed("resume gave no session id") }
+            turn.runtime = runtime
+        } catch {
+            client.removeListener(listener)
+            continuation.finish()
+            throw error
+        }
+        // From here on events are heard as they come; first the ones that came during the call.
+        let early = turn.early ?? []
+        turn.early = nil
+        let waiting = client.replayOpenRequests(in: info)
+        guard info["running"]?.bool == true || waiting > 0 else {
+            client.removeListener(listener)
+            continuation.finish()
+            return nil
+        }
+        if let soFar = info["inflight"]?["assistant"]?.string, !soFar.isEmpty {
+            turn.streamed = soFar
+            continuation.yield(.textDelta(soFar))
+        }
+        for event in early { Self.hear(event, turn: turn, client: client, continuation: continuation, finished: finished.continuation) }
+        #if !os(watchOS)
+        if client === HermesServeClient.shared {
+            PushService.shared.follow(stored: stored, runtime: turn.runtime, client: client, server: Settings.shared.activeServerID.uuidString)
+        }
+        #endif
+
+        let task = Task { @MainActor in
+            defer {
+                client.removeListener(listener)
+                turn.recoverTask?.cancel()
+            }
+            do {
+                for await outcome in finished.stream {
+                    if case let .failure(error) = outcome { throw error }
+                    break
+                }
+                try Task.checkCancellation()
+                continuation.yield(.done)
+                continuation.finish()
+            } catch is CancellationError {
+                continuation.finish()   // no longer listened to; the turn goes on
+            } catch {
+                continuation.finish(throwing: error)
+            }
+        }
+        continuation.onTermination = { _ in task.cancel() }
+        return RejoinedTurn(question: info["inflight"]?["user"]?.string ?? "", events: events,
+                            stop: { Task { @MainActor in client.interrupt(runtimeSession: turn.runtime) } },
+                            transcript: { Conversation.messages(fromServeRows: try await client.history(stored: stored)) })
     }
 
     /// Single form `{question, choices, multi_select?}` or batch `{questions: [{qid, …}]}`.

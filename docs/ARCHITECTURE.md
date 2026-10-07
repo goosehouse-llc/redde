@@ -578,8 +578,16 @@ them itself (Settings → Voice → "Notify when Redde is closed"): a plugin the
 with a key only it and the phone hold, a relay passes it to Apple unread, and the `EchoPush`
 notification extension opens it (`Shared/PushSeal.swift`, `PushService`). Pairing is a QR code from
 `hermes redde-push pair`. A tap opens the conversation, fetched from the server; Reply on a
-reply's banner sends into it, behind an unlock. [docs/push.md](push.md) has the design, the wire
-formats and what has to happen before it ships.
+reply's banner sends into it, and Approve and Deny on an approval's answer it, all behind an
+unlock. [docs/push.md](push.md) has the design, the wire formats and what has to happen before it
+ships.
+
+**A turn the app didn't see the end of.** A question is saved when the host has a session for it,
+not only with its reply, so an app that iOS closed mid-turn comes back to the right conversation.
+When it comes forward, a Hermes conversation that ends on an unanswered question is fetched again
+(`Conversation.catchUp`). On the Dashboard, opening a conversation whose turn is still under way
+joins it (`HermesTransport.rejoin`): the reply so far, what follows, and the card for whatever
+the agent is waiting on. Stop stops a joined turn; leaving the conversation only stops listening.
 
 ## Siri, Shortcuts and controls
 

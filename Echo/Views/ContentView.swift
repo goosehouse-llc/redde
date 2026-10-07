@@ -446,8 +446,10 @@ struct ContentView: View {
                 pushOffer = offer
             }
         }
-        if let session = router.consumeSession(), conversation.serverSessionID != session, !conversation.isStreaming {
+        if let session = router.consumeSession(), !conversation.isStreaming {
             if sizeClass != .regular, showConversations { setDrawer(open: false) }
+            // Also when it is the conversation already on screen: what is here may be from before
+            // the app was closed, without the reply or the question the notification is about.
             // A conversation on another server than the one the app is on can't be fetched: the
             // app then stays where it was.
             Task { try? await conversation.open(serverSession: session) }

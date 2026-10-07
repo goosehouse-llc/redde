@@ -115,7 +115,12 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let pushedFollowUp = UNTextInputNotificationAction(identifier: Self.followUpAction, title: "Reply", options: [.authenticationRequired],
                                                            textInputButtonTitle: "Send", textInputPlaceholder: "Message")
         let pushed = UNNotificationCategory(identifier: PushNote.repliedCategory, actions: [pushedFollowUp], intentIdentifiers: [])
-        fixedCategories = [category, clarifyText, replied, pushed]
+        // An approval a paired Hermes announced. Deny waits for an unlock too: either answer may
+        // have to sign in to the Dashboard first.
+        let pushedApprove = UNNotificationAction(identifier: Self.approveAction, title: "Approve", options: [.authenticationRequired])
+        let pushedDeny = UNNotificationAction(identifier: Self.denyAction, title: "Deny", options: [.destructive, .authenticationRequired])
+        let pushedApproval = UNNotificationCategory(identifier: PushNote.approvalCategory, actions: [pushedApprove, pushedDeny], intentIdentifiers: [])
+        fixedCategories = [category, clarifyText, replied, pushed, pushedApproval]
         center.setNotificationCategories(fixedCategories)
     }
 
@@ -168,11 +173,14 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let deny = info["deny"] as? String
         let conversationID = info[Self.conversationKey] as? String
         let sessionID = info[PushNote.sessionKey] as? String
+        let digest = info[PushNote.approvalKey] as? String
         let userText = (response as? UNTextInputNotificationResponse)?.userText
-        await MainActor.run {
-            self.route(action: action, requestID: requestID, questionID: questionID,
-                       approve: approve, deny: deny, userText: userText, conversationID: conversationID, sessionID: sessionID)
+        let work = await MainActor.run {
+            self.route(action: action, requestID: requestID, questionID: questionID, approve: approve, deny: deny,
+                       userText: userText, conversationID: conversationID, sessionID: sessionID, approvalDigest: digest)
         }
+        // The app may have been started just for this: iOS keeps it running until this returns.
+        await work?.value
     }
 
     /// A notification arriving while Redde is in front. The app's own are only posted from the
@@ -216,17 +224,24 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
 
     /// Testable core of the banner-action callback: maps the action and the notification's
     /// userInfo fields onto the pending interrupt. A plain tap (no requestID) just opens the app.
+    /// Returns the work an answer started, when it goes on after this returns.
+    @discardableResult
     func route(action: String, requestID: String?, questionID: String?,
-               approve: String?, deny: String?, userText: String?, conversationID: String? = nil, sessionID: String? = nil) {
+               approve: String?, deny: String?, userText: String?, conversationID: String? = nil, sessionID: String? = nil,
+               approvalDigest: String? = nil) -> Task<Void, Never>? {
         if action == Self.followUpAction {
-            guard let userText else { return }
+            guard let userText else { return nil }
             if let sessionID { followUp(userText, sessionID: sessionID) } else { followUp(userText, conversationID: conversationID) }
-            return
+            return nil
         }
         // A tap on a notification a paired Hermes sent: open the conversation it is about.
         if action == UNNotificationDefaultActionIdentifier, let sessionID {
             LaunchRouter.shared.requestSession(sessionID)
-            return
+            return nil
+        }
+        // Approve or Deny on an approval a paired Hermes announced.
+        if let sessionID, let approvalDigest, action == Self.approveAction || action == Self.denyAction {
+            return answerPushedApproval(sessionID: sessionID, digest: approvalDigest, approve: action == Self.approveAction)
         }
         let choice = action == Self.approveAction ? approve : action == Self.denyAction ? deny : nil
         let answer: String? = if let userText {
@@ -234,11 +249,57 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         } else if action.hasPrefix(Self.replyAction + ".") {
             String(action.dropFirst(Self.replyAction.count + 1))
         } else { nil }
-        guard let requestID else { return }
+        guard let requestID else { return nil }
         if let choice {
             answerApproval(requestID: requestID, choice: choice)
         } else if let answer, let questionID {
             answerClarify(requestID: requestID, questionID: questionID, answer: answer)
+        }
+        return nil
+    }
+
+    /// How an approval is answered when there is no card for it: by the Dashboard, for a session
+    /// and a command. Tests put a stand-in here.
+    var answerWaiting: (_ session: String, _ digest: String, _ approve: Bool) async throws -> HermesServeClient.WaitingApproval = {
+        try await HermesServeClient.shared.answerWaitingApproval(stored: $0, digest: $1, approve: $2)
+    }
+
+    /// Approve or Deny on a notification a paired Hermes sent. If the app is still following that
+    /// turn, its card is answered. Otherwise the app was closed since (it may have been started
+    /// for this): it signs in to the Dashboard and answers the approval that session is waiting
+    /// on, provided it is still for the command the notification showed. An answer that couldn't
+    /// be given says so in a notification of its own; silence would read as done.
+    @discardableResult
+    func answerPushedApproval(sessionID: String, digest: String, approve: Bool) -> Task<Void, Never>? {
+        if let conversation, conversation.serverSessionID == sessionID, let pending = conversation.pendingInterrupt,
+           case let .approval(request) = pending.interrupt, PushNote.digest(of: request.command) == digest,
+           let choice = approve ? request.yesNo?.approve : request.yesNo?.deny {
+            BackgroundTurn.shared.begin()
+            conversation.respond(approval: choice)
+            return nil
+        }
+        let background = UIApplication.shared.beginBackgroundTask(withName: "pushed-approval")
+        return Task {
+            defer { UIApplication.shared.endBackgroundTask(background) }
+            let problem: String?
+            do {
+                problem = switch try await answerWaiting(sessionID, digest, approve) {
+                case .answered: nil
+                case .nothingWaiting: "That approval is no longer waiting. It was answered somewhere else, or it timed out."
+                case .anotherCommand: "Another command is waiting for approval now. Open Redde to see it."
+                }
+            } catch {
+                problem = "Redde couldn't reach your Hermes to \(approve ? "approve" : "deny") the command. Open Redde to answer. (\(error.localizedDescription))"
+            }
+            guard let problem else { return }
+            log.notice("pushed approval not answered: \(problem, privacy: .public)")
+            let content = UNMutableNotificationContent()
+            content.title = "The approval wasn't answered"
+            content.body = problem
+            content.sound = .default
+            // Opens the conversation when tapped, like the notification it follows.
+            content.userInfo = [PushNote.sessionKey: sessionID, PushNote.kindKey: PushNote.Kind.approval.rawValue]
+            center.add(UNNotificationRequest(identifier: "redde.unanswered.\(sessionID)", content: content, trigger: nil), withCompletionHandler: nil)
         }
     }
 
