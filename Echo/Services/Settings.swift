@@ -611,7 +611,9 @@ final class Settings: ServeEndpoint {
     var isConfigured: Bool {
         switch transport {
         case .hermesSessions: return gatewayBaseURL != nil && gatewayAPIKey != nil
-        case .hermesServe: return serveBaseURL != nil && !serveUsername.isEmpty && Keychain.read(.serveDashboardPassword) != nil
+        case .hermesServe:
+            return serveBaseURL != nil && (DashboardSignIn.tokens(for: serveBaseURL, in: .keychain) != nil
+                || (!serveUsername.isEmpty && Keychain.read(.serveDashboardPassword) != nil))
         case .chatCompletions: return activeBaseURL != nil && !fastLaneModel.isEmpty
         }
     }

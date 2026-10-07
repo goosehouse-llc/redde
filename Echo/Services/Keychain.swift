@@ -3,13 +3,15 @@ import os
 import Security
 
 /// Minimal Keychain wrapper for the app's secrets. A Hermes server's secrets (its API key,
-/// Dashboard password, Cloudflare Access secret and per-profile API keys) are stored per server as
+/// Dashboard password or sign-in, Cloudflare Access secret and per-profile API keys) are stored per server as
 /// `<account>@<server id>`; the rest are app-wide.
 /// Items are `WhenUnlockedThisDeviceOnly` so they never sync or migrate to another device.
 nonisolated enum Keychain {
     enum Item: String {
         case gatewayAPIKey = "gateway-api-key"
         case serveDashboardPassword = "serve-dashboard-password"
+        /// The tokens of a browser sign-in to the Dashboard (`DashboardTokens`, as JSON).
+        case serveSignIn = "serve-sign-in"
         case fastLaneAPIKey = "fast-lane-api-key"
         case cfAccessClientSecret = "cf-access-client-secret"
         case pushRegisterSecret = "push-register-secret"
@@ -24,7 +26,7 @@ nonisolated enum Keychain {
     private static let cache = OSAllocatedUnfairLock<[String: String?]>(initialState: [:])
 
     /// Items that belong to one Hermes server.
-    static let serverScoped: Set<Item> = [.gatewayAPIKey, .serveDashboardPassword, .cfAccessClientSecret]
+    static let serverScoped: Set<Item> = [.gatewayAPIKey, .serveDashboardPassword, .serveSignIn, .cfAccessClientSecret]
     /// Where Settings records the active server. Read here directly (UserDefaults is thread-safe),
     /// so a secret read can never happen before the scope is known.
     static let activeServerKey = "activeServerID"

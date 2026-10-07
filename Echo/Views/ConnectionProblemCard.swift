@@ -19,7 +19,7 @@ struct ConnectionProblemCard: View {
         // The Dashboard's answer for a profile that was deleted or never existed on this server.
         if m.contains("profile '"), m.contains("does not exist") { return .profileMissing }
         if m.contains("rejected the key") { return settings.profileName == nil ? .key : .profileKey }
-        if m.contains("username") || m.contains("password") || m.contains("login") || m.contains("401") { return .login }
+        if m.contains("username") || m.contains("password") || m.contains("login") || m.contains("sign-in") || m.contains("401") { return .login }
         if m.contains("api key") || m.contains("apikey") { return .key }
         if m.contains("could not connect") || m.contains("offline") || m.contains("timed out")
             || m.contains("network") || m.contains("not be found") || m.contains("refused") { return .unreachable }
@@ -49,7 +49,7 @@ struct ConnectionProblemCard: View {
 
     private var explanation: String {
         switch kind {
-        case .login: "Your conversations live on the desktop gateway, and it needs your username and password before it will share them."
+        case .login: "Your conversations live on the desktop gateway, and it needs you to sign in before it will share them."
         case .key: "Redde needs the gateway's API key before it can read your conversations."
         case .profileKey: "Each Hermes profile has its own API key (API_SERVER_KEY in the profile's .env). Enter it under Settings → Profile."
         case .profileMissing: "This server has no profile by that name; it may have been renamed or deleted. Pick another under Settings → Profile."

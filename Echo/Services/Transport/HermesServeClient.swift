@@ -16,7 +16,9 @@ protocol ServeEndpoint: AnyObject {
 ///
 /// Auth (remote bind, basic provider): `POST /auth/password-login` sets session cookies,
 /// `POST /api/auth/ws-ticket` mints a 30 s single-use ticket, then `ws://…/api/ws?ticket=`.
-/// REST calls ride on the same cookie jar.
+/// REST calls ride on the same cookie jar. A Dashboard that signs people in some other way
+/// (Google or another OIDC provider) has no password to send: there the person signs in through
+/// a browser (`signIn`, `DashboardSignIn`) and every request carries the bearer token instead.
 @Observable
 final class HermesServeClient {
     #if !os(watchOS)
@@ -39,14 +41,18 @@ final class HermesServeClient {
     private var appliedHeaders: [String: String] = [:]
     private let settings: any ServeEndpoint
     private let password: () -> String?
+    /// The tokens of a browser sign-in, when there is one; they then stand in for the password.
+    private let tokenStore: DashboardTokenStore
     /// Tests install a stub URLProtocol here; production leaves it empty.
     private let protocolClasses: [AnyClass]
 
     init(settings: any ServeEndpoint,
          password: @escaping () -> String? = { Keychain.read(.serveDashboardPassword) },
+         tokens: DashboardTokenStore = .keychain,
          protocolClasses: [AnyClass] = []) {
         self.settings = settings
         self.password = password
+        self.tokenStore = tokens
         self.protocolClasses = protocolClasses
         session = Self.makeSession(headers: [:], protocolClasses: protocolClasses)
     }
@@ -164,6 +170,9 @@ final class HermesServeClient {
     /// Cookies ignore ports, so two servers on one host would otherwise share a session cookie.
     func resetForServerChange() {
         let host = baseURL?.host()
+        // A refresh still in flight belongs to the server being left: its answer must not be
+        // filed under the next one.
+        refreshTask?.cancel(); refreshTask = nil
         disconnect()
         if let host, let cookies = HTTPCookieStorage.shared.cookies {
             for cookie in cookies where cookie.domain == host || cookie.domain == "." + host {
@@ -238,6 +247,11 @@ final class HermesServeClient {
 
     private func login(baseURL: URL) async throws {
         syncAccessHeaders()
+        if let tokens = signInTokens() {
+            // A browser sign-in: the token is the login. Trade it in when it is about to lapse.
+            if tokens.expires(within: 60) { try await refreshTokens(baseURL: baseURL, spent: tokens.accessToken) }
+            return
+        }
         if let at = authenticatedAt, Date.now.timeIntervalSince(at) < authTTL { return }
         // Cookie may still be live from an earlier session: cheap probe before a real login.
         guard var comps = URLComponents(url: baseURL.appending(path: "api/sessions"), resolvingAgainstBaseURL: false) else { throw TransportError.badURL }
@@ -278,14 +292,7 @@ final class HermesServeClient {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = Data("{}".utf8)
-        var (data, response) = try await session.data(for: request)
-        if (response as? HTTPURLResponse)?.statusCode == 401, authenticatedAt != nil {
-            // The cookie the TTL vouched for is dead (gateway restart, password change): log in
-            // again and retry once, as rest() does, instead of trusting it for the rest of the TTL.
-            authenticatedAt = nil
-            try await login(baseURL: baseURL)
-            (data, response) = try await session.data(for: request)
-        }
+        let (data, response) = try await send(request, baseURL: baseURL)
         guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else {
             throw TransportError.http(status: (response as? HTTPURLResponse)?.statusCode ?? 0, body: "ws-ticket")
         }
@@ -293,6 +300,119 @@ final class HermesServeClient {
             throw TransportError.malformed("no ws ticket")
         }
         return ticket
+    }
+
+    /// One round trip with whatever proves the login: the cookie jar, or a browser sign-in's
+    /// bearer token. A 401 gets one fresh proof and one more try: the cookie the TTL vouched for
+    /// is dead (gateway restart, password change), or the access token lapsed early.
+    private func send(_ request: URLRequest, baseURL: URL) async throws -> (Data, URLResponse) {
+        func authorized(_ token: String?) -> URLRequest {
+            guard let token else { return request }
+            var request = request
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            return request
+        }
+        let used = signInTokens()?.accessToken
+        let first = try await session.data(for: authorized(used))
+        guard (first.1 as? HTTPURLResponse)?.statusCode == 401 else { return first }
+        if let used {
+            try await refreshTokens(baseURL: baseURL, spent: used)
+        } else if authenticatedAt != nil {
+            authenticatedAt = nil
+            try await login(baseURL: baseURL)
+        } else {
+            return first
+        }
+        return try await session.data(for: authorized(signInTokens()?.accessToken))
+    }
+
+    // MARK: - Browser sign-in
+
+    private var refreshTask: Task<Void, Error>?
+
+    /// The browser sign-in for the Dashboard at the address in Settings. A token goes only to
+    /// the server that issued it: one made at another address stays stored and unsent.
+    private func signInTokens() -> DashboardTokens? {
+        DashboardSignIn.tokens(for: baseURL, in: tokenStore)
+    }
+
+    /// Trades the refresh token for a new pair, once however many requests ask: a refresh token
+    /// is good for one use, and an identity provider that sees it twice ends the session.
+    /// `spent` is the access token the caller found wanting; when the stored one is already
+    /// another, someone refreshed meanwhile and there is nothing left to do. A refresh token the
+    /// server no longer takes signs the phone out: only the person can sign in again.
+    private func refreshTokens(baseURL: URL, spent: String) async throws {
+        if let refreshTask { return try await refreshTask.value }
+        guard let current = signInTokens() else { throw DashboardSignIn.Failure.expired }
+        guard current.accessToken == spent else { return }
+        let task = Task { [self] in
+            defer { refreshTask = nil }
+            do {
+                let fresh = try await DashboardSignIn.refresh(current, baseURL: baseURL, session: session)
+                try Task.checkCancellation()   // the server changed meanwhile (resetForServerChange)
+                tokenStore.write(fresh)
+            } catch DashboardSignIn.Failure.expired {
+                tokenStore.write(nil)
+                log.info("hermes serve sign-in expired")
+                throw DashboardSignIn.Failure.expired
+            }
+        }
+        refreshTask = task
+        try await task.value
+    }
+
+    /// True when this server is signed in to through a browser, not with a password.
+    var isSignedIn: Bool { signInTokens() != nil }
+
+    /// Signs in through a browser (see `DashboardSignIn`). `browser` shows the address and
+    /// returns when the browser is done with it; it throws when the person closes it instead.
+    /// The code comes back to a listener on this phone, never through `browser`.
+    func signIn(browser: @escaping @MainActor @Sendable (URL) async throws -> Void) async throws {
+        guard let baseURL else { throw TransportError.badURL }
+        syncAccessHeaders()
+        let offer = try await DashboardSignIn.offer(baseURL: baseURL, session: session)
+        guard offer.loginRequired else {
+            throw DashboardSignIn.Failure.notOffered("This Hermes Dashboard doesn't ask for a login.")
+        }
+        guard offer.browserSignIn else {
+            throw DashboardSignIn.Failure.notOffered("This Hermes Dashboard doesn't offer browser sign-in. It needs Hermes 0.21 or later.")
+        }
+        let verifier = DashboardSignIn.verifier(), state = DashboardSignIn.verifier()
+        let callback = try await LoopbackCallback.start(state: state, done: DashboardSignIn.doneURL)
+        defer { callback.stop() }
+        guard let url = DashboardSignIn.authorizeURL(baseURL: baseURL, challenge: DashboardSignIn.challenge(for: verifier),
+                                                     redirectURI: callback.redirectURI, state: state) else { throw TransportError.badURL }
+        let code = try await withThrowingTaskGroup(of: String?.self) { group in
+            group.addTask { try await callback.code() }
+            group.addTask {
+                try await browser(url)
+                // The browser is done. The code is usually here by now; a slow last hop gets a moment.
+                try await Task.sleep(for: .seconds(3))
+                return nil
+            }
+            defer { group.cancelAll() }
+            guard let first = try await group.next(), let code = first else { throw DashboardSignIn.Failure.noCode }
+            return code
+        }
+        var tokens = try await DashboardSignIn.exchange(code: code, verifier: verifier, baseURL: baseURL, session: session)
+        tokens.origin = DashboardSignIn.origin(of: baseURL)
+        // The sign-in replaces whatever login the link was made with.
+        disconnect()
+        tokenStore.write(tokens)
+        log.info("hermes serve signed in through the browser (provider \(tokens.provider, privacy: .public))")
+    }
+
+    /// Forgets the browser sign-in on this phone. A saved password, if there is one, is the login again.
+    func signOut() {
+        refreshTask?.cancel(); refreshTask = nil
+        tokenStore.write(nil)
+        disconnect()
+    }
+
+    /// Who the Dashboard says is signed in (`GET api/auth/me`), for Settings.
+    func signedInName() async throws -> String {
+        let me = try JSONValue.parse(try await rest("GET", "api/auth/me", body: nil as Data?))
+        return me["display_name"]?.string?.nilIfEmpty ?? me["email"]?.string?.nilIfEmpty ?? me["user_id"]?.string ?? ""
     }
 
     /// Opens a WebSocket to a dashboard plugin path (e.g. `api/plugins/kanban/events`) after
@@ -737,7 +857,7 @@ final class HermesServeClient {
         var id: String { name }
     }
 
-    /// Logs in (cookies) without opening the WebSocket; enough for REST.
+    /// Logs in (cookies, or a fresh enough token) without opening the WebSocket; enough for REST.
     func ensureLoggedIn() async throws {
         guard let baseURL else { throw TransportError.badURL }
         try await login(baseURL: baseURL)
@@ -785,9 +905,9 @@ final class HermesServeClient {
         _ = try await rest("PUT", "api/tools/toolsets/\(name)", body: try JSONEncoder().encode(Body(enabled: enabled)))
     }
 
-    /// True when a dashboard login is configured (username + stored password).
+    /// True when a dashboard login is configured: a browser sign-in, or a username and stored password.
     var hasCredentials: Bool {
-        !settings.serveUsername.isEmpty && password() != nil
+        isSignedIn || (!settings.serveUsername.isEmpty && password() != nil)
     }
 
     func skillContent(name: String) async throws -> String {
@@ -953,13 +1073,7 @@ final class HermesServeClient {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = body
         }
-        var (data, response) = try await session.data(for: request)
-        if (response as? HTTPURLResponse)?.statusCode == 401, authenticatedAt != nil {
-            // Cookie expired under us: log in again and retry this one call.
-            authenticatedAt = nil
-            try await login(baseURL: baseURL)
-            (data, response) = try await session.data(for: request)
-        }
+        let (data, response) = try await send(request, baseURL: baseURL)
         guard let http = response as? HTTPURLResponse else { throw TransportError.malformed("not HTTP") }
         guard (200 ..< 300).contains(http.statusCode) else {
             struct Detail: Decodable { var detail: String? }

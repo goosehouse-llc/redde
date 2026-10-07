@@ -12,6 +12,8 @@ struct SetupView: View {
     @State private var fastLaneKey = ""
     @State private var hasAPIKey = false
     @State private var hasServePassword = false
+    /// Signed in to the Dashboard through a browser: no username or password needed.
+    @State private var signedIn = false
     @State private var hasFastLaneKey = false
     @State private var testing = false
     @State private var outcome: ConnectionTester.Outcome?
@@ -102,13 +104,22 @@ struct SetupView: View {
                 case .hermesServe:
                     Section {
                         TextField("http://your-redde:9119", text: $settings.serveURL).urlFieldStyle()
-                        TextField("Dashboard username", text: $settings.serveUsername)
-                            .textInputAutocapitalization(.never).autocorrectionDisabled()
-                        SecureField(hasServePassword ? "Replace stored password" : "Dashboard password", text: $servePassword)
+                            .onChange(of: settings.serveURL) { signedIn = HermesServeClient.shared.isSignedIn }
+                        if signedIn {
+                            Label("Signed in through a browser", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                        } else {
+                            TextField("Dashboard username", text: $settings.serveUsername)
+                                .textInputAutocapitalization(.never).autocorrectionDisabled()
+                            SecureField(hasServePassword ? "Replace stored password" : "Dashboard password", text: $servePassword)
+                            BrowserSignInButton {
+                                signedIn = true
+                                Task { await test() }
+                            }
+                        }
                     } header: {
                         Text("Hermes Dashboard")
                     } footer: {
-                        Text("The same login as the Hermes Dashboard. Adds tool approvals and slash commands.")
+                        Text("The same login as the Hermes Dashboard: its username and password, or Sign in with a browser where it uses Google or another provider. Adds tool approvals and slash commands.")
                     }
                 case .chatCompletions:
                     Section {
@@ -168,6 +179,7 @@ struct SetupView: View {
     private func readStoredSecrets() {
         hasAPIKey = Keychain.read(.gatewayAPIKey) != nil
         hasServePassword = Keychain.read(.serveDashboardPassword) != nil
+        signedIn = HermesServeClient.shared.isSignedIn
         hasFastLaneKey = Keychain.read(.fastLaneAPIKey) != nil
     }
 
@@ -196,7 +208,8 @@ struct SetupView: View {
     private var fieldsFilled: Bool {
         switch settings.transport {
         case .hermesSessions: settings.gatewayBaseURL != nil && (!apiKey.isEmpty || hasAPIKey)
-        case .hermesServe: settings.serveBaseURL != nil && !settings.serveUsername.isEmpty && (!servePassword.isEmpty || hasServePassword)
+        case .hermesServe:
+            settings.serveBaseURL != nil && (signedIn || (!settings.serveUsername.isEmpty && (!servePassword.isEmpty || hasServePassword)))
         case .chatCompletions: settings.activeBaseURL != nil
         }
     }

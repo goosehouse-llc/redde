@@ -37,12 +37,15 @@ speech is recognized on the device, and credentials stay in the iOS Keychain.
 
 | Connection | Server | Best for |
 | --- | --- | --- |
-| **Hermes Dashboard** | `hermes serve` (port 9119), dashboard username and password | Everything: live reasoning, approvals, slash commands, projects, Kanban, file editing |
+| **Hermes Dashboard** | `hermes serve` (port 9119), dashboard username and password, or a browser sign-in | Everything: live reasoning, approvals, slash commands, projects, Kanban, file editing |
 | **Hermes API** | The Hermes gateway's API server (port 8642), `API_SERVER_KEY` | The shared session ledger with a single key |
 | **OpenAI-compatible** | llama.cpp, llama-swap, vLLM, Ollama or a hosted provider | Talking straight to a model, with no agent |
 
 Profiles need Hermes 0.21 or later. Over the Hermes API a named profile also needs
 `gateway.multiplex_profiles` and that profile's own `API_SERVER_KEY`.
+
+A Dashboard that signs you in with Google or another identity provider has no password to type:
+tap **Sign in with a browser** (Hermes 0.21 or later).
 
 ## Setup codes
 

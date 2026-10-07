@@ -10,6 +10,7 @@ scripts/hermes-lab/lab.sh run            # Hermes 0.21.0, 0.21.3 and 0.21.5, fiv
 scripts/hermes-lab/lab.sh run --app      # also runs EchoTests/HermesLabTests against each lab
 scripts/hermes-lab/lab.sh run v2026.9.24 # one release; any tag of NousResearch/hermes-agent
 scripts/hermes-lab/lab.sh approvals      # the app's Dashboard client is asked before a command runs
+scripts/hermes-lab/lab.sh signin         # the app's Dashboard client signs in through a browser
 scripts/hermes-lab/lab.sh push           # the push plugin: pairing, and notes for replies and approvals
 scripts/hermes-lab/lab.sh push --app     # and the app in a simulator pairs with each release
 scripts/hermes-lab/lab.sh up v2026.9.24 two   # leave one lab running to poke at; `down` stops it
@@ -58,6 +59,18 @@ answered by an `approval.respond` call. Hermes 0.21.3 sends a JSON-RPC request t
 answered by the response frame with the same id, and 0.21.5 sends it only to a client that has
 said `client.capabilities {server_requests: true}`; for any other, the command is refused at once. The
 same goes for the agent's questions, the sudo password and secrets (`HermesServeClient.prompt`).
+
+## Sign-in
+
+`signin` runs the `approval` scenario again, for its Dashboard login, and signs the app's client in
+the way a Dashboard with Google or another identity provider needs: through a browser, by the
+Dashboard's native sign-in routes (`/auth/native/authorize`, `/token`, `/refresh`), with no
+password in the app. `EchoTests/HermesLabSignInTests` stands in for the person: it opens the
+address the app would hand the browser, logs in on the Dashboard's page, and follows the way back
+to the app's loopback listener. Then the app's tokens have to work for a REST call and for the
+WebSocket's ticket, a token the Dashboard refuses has to be refreshed and the call retried, and a
+refresh token it no longer takes has to end in "sign in again". The lab's login is a password, so
+what a real identity provider adds (its own pages, in the browser) is not covered.
 
 ## Push
 

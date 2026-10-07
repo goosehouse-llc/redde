@@ -57,7 +57,7 @@ struct SettingsView: View {
             // Keychain reads once when the screen appears, not per parent render.
             .task {
                 hasStoredKey = Keychain.read(.gatewayAPIKey) != nil
-                hasServePassword = Keychain.read(.serveDashboardPassword) != nil
+                hasServePassword = Keychain.read(.serveDashboardPassword) != nil || HermesServeClient.shared.isSignedIn
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)

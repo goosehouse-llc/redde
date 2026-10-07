@@ -173,7 +173,7 @@ struct HermesLabApprovalTests {
         let settings = Settings(defaults: UserDefaults(suiteName: "lab-approval-\(UUID().uuidString)")!)
         settings.serveURL = dashboard.absoluteString
         settings.serveUsername = "lab"
-        let client = HermesServeClient(settings: settings, password: { "labpass-labpass" })
+        let client = HermesServeClient(settings: settings, password: { "labpass-labpass" }, tokens: HermesServeClientTests.TokenBox().store)
         do {
             try await client.ensureConnected()
         } catch {
@@ -290,6 +290,81 @@ struct HermesLabApprovalTests {
             }
             Self.report(ok, "\(approve ? "Approve" : "Deny") from a notification \(approve ? "runs" : "stops") the command it was shown for, and no other", detail)
         }
+    }
+}
+
+/// Signing in through a browser, against the same lab (`scripts/hermes-lab/lab.sh signin`): the
+/// Dashboard's own native sign-in routes, with this test standing in for the person in the
+/// browser. The lab's login is a username and a password, so the browser's part is the Dashboard's
+/// login page; with Google or another provider only that part differs, and it never involves the
+/// app. What is checked is the app's half: the code comes back to the phone, buys tokens, and the
+/// tokens work for REST, for the WebSocket, and across a refresh. Skips when no lab is up.
+struct HermesLabSignInTests {
+    private static let dashboard = URL(string: "http://127.0.0.1:19119")!
+
+    /// What a person does in the browser: open the address, type the login, and be sent back.
+    private static func browser(_ authorize: URL) async throws {
+        // A browser of its own: the Dashboard's sign-in cookie lives here, never in the app.
+        let web = URLSession(configuration: .ephemeral)
+        _ = try await web.data(from: authorize)   // lands on the login page, with the pending sign-in in a cookie
+        var login = URLRequest(url: dashboard.appending(path: "auth/password-login"))
+        login.httpMethod = "POST"
+        login.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        login.httpBody = Data(#"{"provider":"basic","username":"lab","password":"labpass-labpass"}"#.utf8)
+        let (data, _) = try await web.data(for: login)
+        guard let next = try JSONValue.parse(data)["next"]?.string, let back = URL(string: next) else {
+            throw TransportError.malformed("the login page gave no way back: \(String(decoding: data.prefix(120), as: UTF8.self))")
+        }
+        _ = try await NoRedirectSession.shared.data(from: back)   // the loopback address on this "phone"
+    }
+
+    @Test func theAppSignsInThroughABrowserAndStaysSignedIn() async throws {
+        var probe = URLRequest(url: Self.dashboard.appending(path: "api/status"))
+        probe.timeoutInterval = 2
+        guard let (status, _) = try? await URLSession.shared.data(for: probe),
+              (try? JSONValue.parse(status))?["auth_required"]?.bool == true else {
+            print("LAB SKIP: no Hermes lab with a Dashboard login on 127.0.0.1:19119 (scripts/hermes-lab/lab.sh up <tag> approval)")
+            return
+        }
+        func report(_ ok: Bool, _ what: String, _ detail: String = "") { HermesLabApprovalTests.report(ok, what, detail) }
+        let settings = Settings(defaults: UserDefaults(suiteName: "lab-signin-\(UUID().uuidString)")!)
+        settings.serveURL = Self.dashboard.absoluteString
+        let box = HermesServeClientTests.TokenBox()
+        // No username, no password: the browser sign-in is the only login this client has.
+        let client = HermesServeClient(settings: settings, password: { nil }, tokens: box.store)
+        defer { client.disconnect() }
+
+        do {
+            try await client.signIn { try await Self.browser($0) }
+        } catch {
+            report(false, "the app signs in through a browser", error.localizedDescription)
+            return
+        }
+        report(box.current?.accessToken.isEmpty == false, "the app signs in through a browser", "no tokens came back")
+
+        let name = (try? await client.signedInName()) ?? ""
+        report(name == "lab", "the Dashboard knows who signed in", "it said \"\(name)\"")
+        var connected = true
+        do { try await client.ensureConnected() } catch { connected = false }
+        report(connected, "the WebSocket opens on a ticket bought with the token")
+        let listed = (try? await client.listSessions(limit: 1)) != nil
+        report(listed, "the token is taken for the session list")
+
+        // The access token lapses (here: is swapped for one the Dashboard refuses). The next
+        // call trades the refresh token for a new pair and goes through.
+        if var lapsed = box.current {
+            lapsed.accessToken = "lapsed"
+            box.store.write(lapsed)
+        }
+        let afterRefresh = (try? await client.listSessions(limit: 1)) != nil
+        report(afterRefresh && box.current?.accessToken != "lapsed", "a lapsed token is refreshed and the call retried",
+               "token now \(box.current?.accessToken.prefix(8) ?? "nil")")
+
+        // A refresh token the Dashboard no longer takes: the phone is signed out and says so.
+        box.store.write(DashboardTokens(accessToken: "lapsed", refreshToken: "spent", provider: "basic"))
+        var said = ""
+        do { _ = try await client.listSessions(limit: 1) } catch { said = error.localizedDescription }
+        report(box.current == nil && said.contains("Sign in again"), "a spent sign-in ends with \"sign in again\"", "it said \"\(said)\"")
     }
 }
 

@@ -29,7 +29,8 @@ final class WatchLink: NSObject, WCSessionDelegate {
     /// phone out of reach, else through the phone. Whatever isn't set up, the next stands in;
     /// nothing at all, and the watch says to set up the phone.
     static func connection(_ settings: Settings = .shared, gatewayKey: (() -> String?)? = nil,
-                           dashboardPassword: () -> String? = { Keychain.read(.serveDashboardPassword) }) -> WatchConnection? {
+                           dashboardPassword: () -> String? = { Keychain.read(.serveDashboardPassword) },
+                           dashboardSignedIn: (() -> Bool)? = nil) -> WatchConnection? {
         func made(_ kind: WatchConnection.Kind, url: String = "", key: String = "", model: String, provider: String = "") -> WatchConnection {
             WatchConnection(kind: kind, url: url, apiKey: key, model: model, provider: provider,
                             reasoningEffort: settings.reasoningEffort, replyLanguage: settings.replyLanguage,
@@ -41,8 +42,9 @@ final class WatchLink: NSObject, WCSessionDelegate {
             return made(.hermesAPI, url: base.absoluteString, key: key, model: settings.gatewayModel, provider: settings.gatewayProvider)
         }()
         let viaPhone: WatchConnection? = {
-            guard settings.serveBaseURL != nil, !settings.serveUsername.isEmpty,
-                  let password = dashboardPassword(), !password.isEmpty else { return nil }
+            let password = dashboardPassword() ?? ""
+            let signedIn = dashboardSignedIn?() ?? (DashboardSignIn.tokens(for: settings.serveBaseURL, in: .keychain) != nil)
+            guard settings.serveBaseURL != nil, signedIn || (!settings.serveUsername.isEmpty && !password.isEmpty) else { return nil }
             return made(.phone, model: settings.gatewayModel, provider: settings.gatewayProvider)
         }()
         let fastLane: WatchConnection? = Settings.normalizedBase(settings.fastLaneURL).map { base in

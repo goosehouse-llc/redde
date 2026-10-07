@@ -222,7 +222,7 @@ struct WatchSyncTests {
         settings.fastLaneURL = "http://llama.home.example:11500/v1"
         settings.fastLaneModel = "qwen3-4b"
         settings.displayName = "Sol"
-        let connection = WatchLink.connection(settings, gatewayKey: { nil }, dashboardPassword: { nil })
+        let connection = WatchLink.connection(settings, gatewayKey: { nil }, dashboardPassword: { nil }, dashboardSignedIn: { false })
         #expect(connection?.kind == .fastLane)
         #expect(connection?.url == "http://llama.home.example:11500")
         #expect(connection?.model == "qwen3-4b")
@@ -238,7 +238,7 @@ struct WatchSyncTests {
         settings.gatewayURL = "https://hermes.example:8642/"
         settings.hermesProfile = "work"
         settings.fastLaneURL = "http://llama.home.example:11500/v1"
-        let connection = WatchLink.connection(settings, gatewayKey: { "k" }, dashboardPassword: { "pw" })
+        let connection = WatchLink.connection(settings, gatewayKey: { "k" }, dashboardPassword: { "pw" }, dashboardSignedIn: { false })
         #expect(connection?.kind == .hermesAPI)
         #expect(connection?.url == "https://hermes.example:8642/p/work")
         #expect(connection?.apiKey == "k")
@@ -253,22 +253,22 @@ struct WatchSyncTests {
         settings.gatewayURL = "https://hermes.example:8642/"
         settings.fastLaneURL = "http://llama.home.example:11500/v1"
         settings.displayName = "Sol"
-        let connection = WatchLink.connection(settings, gatewayKey: { nil }, dashboardPassword: { "pw" })
+        let connection = WatchLink.connection(settings, gatewayKey: { nil }, dashboardPassword: { "pw" }, dashboardSignedIn: { false })
         #expect(connection?.kind == .phone, "the agent through the phone, before a bare model")
         #expect(connection?.url == "")
         #expect(connection?.apiKey == "")
         #expect(connection?.agentName == "Sol")
         // No Dashboard password saved: the phone can't ask either, and the fast lane stands in.
-        #expect(WatchLink.connection(settings, gatewayKey: { nil }, dashboardPassword: { nil })?.kind == .fastLane)
+        #expect(WatchLink.connection(settings, gatewayKey: { nil }, dashboardPassword: { nil }, dashboardSignedIn: { false })?.kind == .fastLane)
     }
 
     @Test func eachPhoneConnectionHandsOverItsOwnWhenTheWatchCanUseIt() {
         let settings = phone(.hermesSessions)
         settings.gatewayURL = "https://hermes.example:8642"
         settings.fastLaneURL = "http://llama.home.example:11500/v1"
-        #expect(WatchLink.connection(settings, gatewayKey: { "k" }, dashboardPassword: { nil })?.kind == .hermesAPI)
+        #expect(WatchLink.connection(settings, gatewayKey: { "k" }, dashboardPassword: { nil }, dashboardSignedIn: { false })?.kind == .hermesAPI)
         settings.transport = .chatCompletions
-        #expect(WatchLink.connection(settings, gatewayKey: { "k" }, dashboardPassword: { nil })?.kind == .fastLane)
+        #expect(WatchLink.connection(settings, gatewayKey: { "k" }, dashboardPassword: { nil }, dashboardSignedIn: { false })?.kind == .fastLane)
     }
 
     /// A copy from an earlier build, with a kind and fields this one no longer uses, still reads
@@ -283,6 +283,6 @@ struct WatchSyncTests {
     @Test func nothingConfiguredMeansNoConnection() {
         let settings = phone(.chatCompletions)
         settings.fastLaneURL = ""
-        #expect(WatchLink.connection(settings, gatewayKey: { nil }, dashboardPassword: { nil }) == nil)
+        #expect(WatchLink.connection(settings, gatewayKey: { nil }, dashboardPassword: { nil }, dashboardSignedIn: { false }) == nil)
     }
 }

@@ -20,7 +20,7 @@ Three, chosen under Settings → Connection:
 
 | Connection | Endpoint | Auth | What you get |
 | --- | --- | --- | --- |
-| Hermes Dashboard | `hermes serve`, `ws://…:9119/api/ws` | Dashboard username + password (cookie login, then a 30 s WebSocket ticket) | The desktop-gateway protocol: JSON-RPC over one WebSocket. Live `reasoning.delta`, tool events, approvals, and slash commands (`slash.exec` / `command.dispatch`) |
+| Hermes Dashboard | `hermes serve`, `ws://…:9119/api/ws` | Dashboard username + password (cookie login), or a browser sign-in (bearer tokens); then a 30 s WebSocket ticket | The desktop-gateway protocol: JSON-RPC over one WebSocket. Live `reasoning.delta`, tool events, approvals, and slash commands (`slash.exec` / `command.dispatch`) |
 | Hermes API | The gateway's API server, `https://…:8642/api/sessions/{id}/chat/stream` | Bearer `API_SERVER_KEY` | The shared session ledger: every gateway session from Telegram, Discord, the CLI and Redde, resumable from the list. Streams reasoning (`tool.progress` with `_thinking`), tool starts and results, and usage |
 | OpenAI-compatible | `…/v1/chat/completions` (llama.cpp, llama-swap, vLLM, Ollama, a provider) | Optional API key | Straight to a model, no agent: no tools, lowest latency, works when the gateway is down. History is sent each turn and never rewritten, so a llama.cpp prefix cache stays warm |
 
@@ -29,6 +29,38 @@ dashboard and in Telegram's `/sessions`, and any of theirs can be continued here
 other writes are agent-side tools: say "remember that…" and watch the tool chip.
 
 Screens ask `SessionBackend` for the current backend instead of branching on the connection.
+
+### Signing in to the Dashboard through a browser
+
+A Dashboard that signs people in with Google or another identity provider (Hermes's `self_hosted`
+OIDC plugin, Nous Portal) has no password to give the app. There the person taps **Sign in with a
+browser** (Settings → Connection details, and first-run setup), and the app does OAuth for native
+apps (RFC 8252) with PKCE against the Dashboard's own routes, which Hermes has had since 0.21 and
+announces in `/api/status` as `auth_flows: native_pkce` (`Services/DashboardSignIn.swift`):
+
+1. A listener opens on the phone's loopback interface, on a port the system picks
+   (`LoopbackCallback`). Hermes takes no other kind of return address: `http://127.0.0.1:<port>/…`
+   only, so a custom URL scheme can't stand in.
+2. A system sign-in sheet (`ASWebAuthenticationSession`) opens
+   `/auth/native/authorize?code_challenge=…&redirect_uri=http://127.0.0.1:<port>/callback&state=…`.
+   The Dashboard hands the browser on to whatever it signs people in with; with a password login
+   that is its own `/login` page. The app sees none of it.
+3. The Dashboard sends the browser to the loopback address with a one-time code. The listener
+   answers only the request that carries this sign-in's `state`, takes the code, and redirects to
+   `redde-signin://done`, which closes the sheet.
+4. `POST /auth/native/token` with the code and the PKCE verifier (which never left the app) returns
+   an access token, a refresh token and `expires_at`. They go into the Keychain, per server
+   (`serve-sign-in@<server id>`).
+
+From then on `HermesServeClient` sends `Authorization: Bearer` with every REST request and when it
+buys a WebSocket ticket, and never logs in with a password while tokens are stored. A token within
+a minute of lapsing is traded in first (`/auth/native/refresh`), and so is one the server answers
+with 401. A refresh token is good for one use, so however many requests ask at once share one
+refresh, and the pair that comes back replaces the stored one. A refresh the server refuses
+signs the phone out ("sign in again"); one that fails because the identity provider is down
+changes nothing. Tokens aren't put in setup codes and aren't handed to the watch: another device
+signs in itself. `scripts/hermes-lab/lab.sh signin` runs the whole exchange against each Hermes
+release, with a test standing in for the person in the browser.
 
 ### Skills, tools, context files
 
@@ -55,8 +87,8 @@ conversation list once there are two). One is active at a time.
   editing them updates its `HermesServer` record, and `activateServer` loads another record into
   them, so the rest of the app reads `Settings` as before. The OpenAI-compatible connection, voice
   and appearance are app-wide.
-- **Secrets per server.** The API key, Dashboard password, Cloudflare Access secret and per-profile
-  keys are Keychain accounts named `<account>@<server id>`; `Keychain.read(.item)` resolves the
+- **Secrets per server.** The API key, Dashboard password or sign-in, Cloudflare Access secret and
+  per-profile keys are Keychain accounts named `<account>@<server id>`; `Keychain.read(.item)` resolves the
   active server from UserDefaults (`activeServerID`), so no read can happen before the scope is
   known. Removing a server deletes its accounts.
 - **Switching** goes through `ServerSwitcher`, in one order: while Settings still describes the old

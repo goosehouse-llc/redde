@@ -1,3 +1,4 @@
+import AuthenticationServices
 import SwiftUI
 
 /// All backend URLs, keys and logins on one subscreen, off the main settings page. Entry for
@@ -90,29 +91,54 @@ struct GatewayKeySettings: View {
 }
 
 struct ServeLoginSettings: View {
+    /// A Dashboard login is stored: a password, or a browser sign-in.
     @Binding var hasServePassword: Bool
     @Binding var saved: Bool
     @State private var settings = Settings.shared
     @State private var serve = HermesServeClient.shared
+    @State private var signedIn = false
+    @State private var signedInName = ""
 
     var body: some View {
         Section {
             TextField("http://your-redde:9119", text: $settings.serveURL)
                 .urlFieldStyle()
-            TextField("Dashboard username", text: $settings.serveUsername)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-            SecretField(item: .serveDashboardPassword, prompt: "Dashboard password", replacePrompt: "Replace stored password",
-                        saveTitle: "Save password", hasValue: $hasServePassword,
-                        onSaved: { saved.toggle(); serve.disconnect() }, onRemoved: { serve.disconnect() })
+            if signedIn {
+                LabeledContent("Signed in") {
+                    Text(signedInName.isEmpty ? "through a browser" : signedInName).foregroundStyle(.secondary)
+                }
+                Button("Sign out", role: .destructive) {
+                    serve.signOut()
+                    readSignIn()
+                    hasServePassword = Keychain.read(.serveDashboardPassword) != nil
+                }
+            } else {
+                TextField("Dashboard username", text: $settings.serveUsername)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                SecretField(item: .serveDashboardPassword, prompt: "Dashboard password", replacePrompt: "Replace stored password",
+                            saveTitle: "Save password", hasValue: $hasServePassword,
+                            onSaved: { saved.toggle(); serve.disconnect() }, onRemoved: { serve.disconnect() })
+                BrowserSignInButton { readSignIn(); hasServePassword = true; saved.toggle() }
+            }
             LabeledContent("Connection") {
                 Text(stateLabel).foregroundStyle(.secondary)
             }
         } header: {
             Text("Hermes Dashboard (WebSocket)")
         } footer: {
-            Text("The same login as the Hermes Dashboard. Gives live reasoning, tool approvals and slash commands over one WebSocket.")
+            Text("The same login as the Hermes Dashboard: its username and password, or, where it signs you in with Google or another provider, Sign in with a browser. Gives live reasoning, tool approvals and slash commands over one WebSocket.")
         }
+        // Keyed on the server and its address: another one has its own sign-in, and a sign-in
+        // isn't used at an address it wasn't made at.
+        .task(id: settings.connectionKey + settings.serveURL) { readSignIn() }
+    }
+
+    private func readSignIn() {
+        signedIn = serve.isSignedIn
+        signedInName = ""
+        guard signedIn else { return }
+        Task { signedInName = (try? await serve.signedInName()) ?? "" }
     }
 
     private var stateLabel: String {
@@ -122,6 +148,56 @@ struct ServeLoginSettings: View {
         case .connected: "connected"
         case let .reconnecting(attempt): "reconnecting (try \(attempt))…"
         case let .failed(reason): "failed: \(reason)"
+        }
+    }
+}
+
+/// "Sign in with a browser": for a Dashboard that signs people in with Google or another identity
+/// provider and so has no password to type here (`HermesServeClient.signIn`). The page opens in a
+/// system sign-in sheet, where the browser's saved logins and passkeys work.
+struct BrowserSignInButton: View {
+    var onSignedIn: () -> Void
+    @State private var settings = Settings.shared
+    @State private var working = false
+    @State private var problem: String?
+    @Environment(\.webAuthenticationSession) private var webAuthenticationSession
+
+    var body: some View {
+        Button {
+            Task { await signIn() }
+        } label: {
+            HStack {
+                Text(working ? "Signing in…" : "Sign in with a browser")
+                Spacer()
+                if working { ProgressView() }
+            }
+        }
+        .disabled(working || settings.serveBaseURL == nil)
+        if let problem {
+            Label(problem, systemImage: "xmark.octagon.fill")
+                .foregroundStyle(.red)
+                .font(.footnote)
+        }
+    }
+
+    private func signIn() async {
+        working = true
+        problem = nil
+        defer { working = false }
+        // The first page load carries the server's own headers (Cloudflare Access lets a service
+        // token through on that one and remembers it with a cookie).
+        let headers = settings.accessHeaders
+        do {
+            try await HermesServeClient.shared.signIn { url in
+                _ = try await webAuthenticationSession.authenticate(
+                    using: url, callback: .customScheme(DashboardSignIn.doneScheme), additionalHeaderFields: headers)
+            }
+            onSignedIn()
+        } catch let error as ASWebAuthenticationSessionError where error.code == .canceledLogin {
+            // Closed by hand: nothing to report.
+        } catch is CancellationError {
+        } catch {
+            problem = error.localizedDescription
         }
     }
 }
