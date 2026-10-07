@@ -81,37 +81,35 @@ struct StartScreen: View {
 
     var body: some View {
         let cards = cards
-        VStack(spacing: 24) {
-            mark.modifier(Arriving(index: 0, shown: shown))
-            VStack(spacing: 6) {
-                Text(Self.greeting(for: .now))
-                    .font(.system(.title, weight: .bold))
-                    .modifier(Arriving(index: 1, shown: shown))
-                Text("What should \(settings.headerTitle) look into?")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .modifier(Arriving(index: 2, shown: shown))
-            }
-            .multilineTextAlignment(.center)
-            .accessibilityElement(children: .combine)
-            .accessibilityAddTraits(.isHeader)
-            // No "connect" button here: the greeting and the composer already say what to do, and
-            // setup opens on first launch and from Settings → Connection.
-            VStack(spacing: 10) {
-                ForEach(Array(cards.enumerated()), id: \.element.id) { index, card in
-                    cardView(card)
-                        .modifier(Arriving(index: 3 + index, shown: shown))
-                        .transition(.opacity.combined(with: .offset(y: 10)))
+        AboveMiddle(lift: Self.windowHeight * 0.06) {
+            VStack(spacing: 24) {
+                mark.modifier(Arriving(index: 0, shown: shown))
+                VStack(spacing: 6) {
+                    Text(Self.greeting(for: .now))
+                        .font(.system(.title, weight: .bold))
+                        .modifier(Arriving(index: 1, shown: shown))
+                    Text("What should \(settings.headerTitle) look into?")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .modifier(Arriving(index: 2, shown: shown))
                 }
+                .multilineTextAlignment(.center)
+                .accessibilityElement(children: .combine)
+                .accessibilityAddTraits(.isHeader)
+                // No "connect" button here: the greeting and the composer already say what to do, and
+                // setup opens on first launch and from Settings → Connection.
+                VStack(spacing: 10) {
+                    ForEach(Array(cards.enumerated()), id: \.element.id) { index, card in
+                        cardView(card)
+                            .modifier(Arriving(index: 3 + index, shown: shown))
+                            .transition(.opacity.combined(with: .offset(y: 10)))
+                    }
+                }
+                .animation(.easeOut(duration: 0.35), value: cards.map(\.id))
             }
-            .animation(.easeOut(duration: 0.35), value: cards.map(\.id))
+            .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity)
-        // Above the middle of the screen: a third of the spare room over it, two thirds under.
-        // Dead centre it sat low, between the title and a message field at the bottom.
-        .containerRelativeFrame(.vertical, alignment: Alignment(horizontal: .center, vertical: .upperThird)) { height, _ in
-            max(0, height - 60)
-        }
+        .containerRelativeFrame(.vertical) { height, _ in max(0, height - 60) }
         .task {
             upcoming = StartCards.upcoming(ComposerContext.eventsTodayAndTomorrow(), now: .now)
             // One piece every 90 ms; all at once under Reduce Motion.
@@ -121,6 +119,12 @@ struct StartScreen: View {
             }
         }
         .task(id: settings.connectionKey) { await findHome() }
+    }
+
+    /// The height of the app's window: what "6% higher" is 6% of, to the eye. The room the start
+    /// screen is laid out in is shorter, by the title bar and the message field.
+    private static var windowHeight: CGFloat {
+        UIApplication.shared.connectedScenes.lazy.compactMap { ($0 as? UIWindowScene)?.keyWindow?.bounds.height }.first ?? 0
     }
 
     // MARK: Pieces
@@ -221,13 +225,25 @@ struct StartScreen: View {
     }
 }
 
-private extension VerticalAlignment {
-    /// A third of the way down. Aligning on it leaves a third of the room a frame has to spare
-    /// above its content and two thirds below, whatever the content's height.
-    nonisolated enum UpperThird: AlignmentID {
-        static func defaultValue(in context: ViewDimensions) -> CGFloat { context.height / 3 }
+/// Where the start screen sits in the room it is given: well above the middle. A third of the
+/// spare room would go over it and two thirds under; it sits higher than that again by `lift`
+/// points. Dead centre it sat low, between the title and a message field at the bottom. Content
+/// with no room to spare starts at the top and runs on below.
+private nonisolated struct AboveMiddle: Layout {
+    var lift: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let content = subviews.first?.sizeThatFits(ProposedViewSize(width: proposal.width, height: nil)) ?? .zero
+        return CGSize(width: proposal.width ?? content.width, height: max(proposal.height ?? content.height, content.height))
     }
-    static let upperThird = VerticalAlignment(UpperThird.self)
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard let content = subviews.first else { return }
+        let size = content.sizeThatFits(ProposedViewSize(width: bounds.width, height: nil))
+        let top = max(0, (bounds.height - size.height) / 3 - lift)
+        content.place(at: CGPoint(x: bounds.midX, y: bounds.minY + top), anchor: .top,
+                      proposal: ProposedViewSize(width: bounds.width, height: size.height))
+    }
 }
 
 /// A piece of the start screen coming in: up a little and out of nothing, when its turn comes.
