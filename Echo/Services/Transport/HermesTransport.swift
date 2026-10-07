@@ -358,9 +358,12 @@ nonisolated enum StreamingHTTP {
         return URLSession(configuration: config)
     }()
 
-    static func makeRequest(url: URL, apiKey: String?, body: some Encodable) throws -> URLRequest {
+    /// `headers` are the person's own, for a reverse proxy in front of the server; the request's
+    /// own fields are set after them and win.
+    static func makeRequest(url: URL, apiKey: String?, headers: [String: String] = [:], body: some Encodable) throws -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        for (name, value) in headers { request.setValue(value, forHTTPHeaderField: name) }
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
         if let apiKey, !apiKey.isEmpty {

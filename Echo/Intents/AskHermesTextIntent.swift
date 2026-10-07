@@ -50,8 +50,9 @@ enum ShortcutRunner {
         switch settings.transport {
         case .hermesSessions:
             guard let key, !key.isEmpty else { throw IntentError.notConfigured }
-            transport = HermesSessionsTransport(baseURL: url, apiKey: key)
-            sessionID = try await ledgerSession(api: HermesSessionsAPI(baseURL: url, apiKey: key))
+            let headers = settings.customHeaderFields
+            transport = HermesSessionsTransport(baseURL: url, apiKey: key, headers: headers)
+            sessionID = try await ledgerSession(api: HermesSessionsAPI(baseURL: url, apiKey: key, headers: headers))
         case .hermesServe:
             transport = HermesServeTransport()
             sessionID = UserDefaults.standard.string(forKey: sessionKey + ".serve")

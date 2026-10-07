@@ -139,7 +139,7 @@ enum CronBackend {
         let settings = Settings.shared
         if settings.transport == .hermesServe, HermesServeClient.shared.hasCredentials { return .serve }
         if let url = settings.gatewayBaseURL, let key = settings.gatewayAPIKey, !key.isEmpty {
-            return .apiServer(HermesSessionsAPI(baseURL: url, apiKey: key))
+            return .apiServer(HermesSessionsAPI(baseURL: url, apiKey: key, headers: settings.customHeaderFields))
         }
         if HermesServeClient.shared.hasCredentials, settings.serveBaseURL != nil { return .serve }
         return nil

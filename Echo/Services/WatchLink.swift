@@ -30,7 +30,8 @@ final class WatchLink: NSObject, WCSessionDelegate {
     /// nothing at all, and the watch says to set up the phone.
     static func connection(_ settings: Settings = .shared, gatewayKey: (() -> String?)? = nil,
                            dashboardPassword: () -> String? = { Keychain.read(.serveDashboardPassword) },
-                           dashboardSignedIn: (() -> Bool)? = nil) -> WatchConnection? {
+                           dashboardSignedIn: (() -> Bool)? = nil,
+                           customHeaders: (() -> [String: String])? = nil) -> WatchConnection? {
         func made(_ kind: WatchConnection.Kind, url: String = "", key: String = "", model: String, provider: String = "") -> WatchConnection {
             WatchConnection(kind: kind, url: url, apiKey: key, model: model, provider: provider,
                             reasoningEffort: settings.reasoningEffort, replyLanguage: settings.replyLanguage,
@@ -39,7 +40,10 @@ final class WatchLink: NSObject, WCSessionDelegate {
         let key: String? = if let gatewayKey { gatewayKey() } else { settings.gatewayAPIKey }
         let api: WatchConnection? = {
             guard let base = settings.gatewayBaseURL, let key, !key.isEmpty else { return nil }
-            return made(.hermesAPI, url: base.absoluteString, key: key, model: settings.gatewayModel, provider: settings.gatewayProvider)
+            var connection = made(.hermesAPI, url: base.absoluteString, key: key, model: settings.gatewayModel, provider: settings.gatewayProvider)
+            let headers = customHeaders?() ?? settings.customHeaderFields
+            if !headers.isEmpty { connection.headers = headers }
+            return connection
         }()
         let viaPhone: WatchConnection? = {
             let password = dashboardPassword() ?? ""

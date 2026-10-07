@@ -28,6 +28,8 @@ final class WatchStore {
     private static let keyAccount = "watch-api-key"
     /// Where an earlier build kept the Dashboard's Access headers; cleared at launch.
     private static let headersAccount = "watch-access-headers"
+    /// The person's own headers for a server behind a reverse proxy: as secret as the key.
+    private static let customHeadersAccount = "watch-custom-headers"
 
     private(set) var connection: WatchConnection?
     private(set) var question = ""
@@ -52,8 +54,11 @@ final class WatchStore {
                 // what it has now.
                 defaults.removeObject(forKey: Self.connectionKey)
                 _ = Keychain.delete(account: Self.keyAccount)
+                _ = Keychain.delete(account: Self.customHeadersAccount)
             } else {
                 saved.apiKey = Keychain.read(account: Self.keyAccount) ?? ""
+                saved.headers = Keychain.read(account: Self.customHeadersAccount)
+                    .flatMap { try? JSONDecoder().decode([String: String].self, from: Data($0.utf8)) }
                 connection = saved
             }
         }
@@ -74,8 +79,8 @@ final class WatchStore {
         }
     }
 
-    /// A new connection from the phone. The key goes to the Keychain, the rest to defaults; a
-    /// different server starts a fresh session.
+    /// A new connection from the phone. The key and the server's own headers go to the Keychain,
+    /// the rest to defaults; a different server starts a fresh session.
     func apply(_ offered: WatchConnection?) {
         // A phone still on an earlier build may offer the Dashboard: the same as having nothing usable.
         let new = offered?.kind == .dashboard ? nil : offered
@@ -85,11 +90,16 @@ final class WatchStore {
         if let new {
             var stored = new
             stored.apiKey = ""
+            stored.headers = nil
             defaults.set(try? JSONEncoder().encode(stored), forKey: Self.connectionKey)
             _ = Keychain.write(account: Self.keyAccount, value: new.apiKey)
+            // (Writing an empty value removes the entry.)
+            let headers = new.headers.flatMap { $0.isEmpty ? nil : try? JSONEncoder().encode($0) }
+            _ = Keychain.write(account: Self.customHeadersAccount, value: headers.map { String(decoding: $0, as: UTF8.self) } ?? "")
         } else {
             defaults.removeObject(forKey: Self.connectionKey)
             _ = Keychain.delete(account: Self.keyAccount)
+            _ = Keychain.delete(account: Self.customHeadersAccount)
         }
         log.info("connection: \(new.map { "\($0.kind.rawValue) \($0.url)" } ?? "none", privacy: .public)")
     }

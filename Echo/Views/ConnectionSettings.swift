@@ -16,6 +16,7 @@ struct ConnectionDetailsView: View {
             GatewayKeySettings(hasStoredKey: $hasStoredKey, saved: $saved)
             ServeLoginSettings(hasServePassword: $hasServePassword, saved: $saved)
             CloudflareSettings()
+            CustomHeadersSettings()
             FastLaneSettings(saved: $saved)
         }
         .navigationTitle("Connection details")
@@ -220,6 +221,67 @@ struct CloudflareSettings: View {
             Text("If the Hermes Dashboard sits behind Cloudflare Access instead of a tailnet, create a service token in Zero Trust and paste its ID and secret. Sent as CF-Access-Client-Id / -Secret on every request and WebSocket.")
         }
         .task { hasSecret = Keychain.read(.cfAccessClientSecret) != nil }
+    }
+}
+
+/// The person's own headers for a server behind a reverse proxy that asks for one (`CustomHeader`).
+/// A value is a secret: it is typed once and never shown again, like a key.
+struct CustomHeadersSettings: View {
+    @State private var settings = Settings.shared
+    @State private var headers: [CustomHeader] = []
+    @State private var name = ""
+    @State private var value = ""
+    @State private var problem: String?
+
+    var body: some View {
+        Section {
+            ForEach(headers) { header in
+                HStack {
+                    Text(header.name)
+                    Spacer()
+                    Button("Remove", role: .destructive) { save(headers.filter { $0.id != header.id }) }
+                        .buttonStyle(.borderless)
+                        .font(.callout)
+                }
+            }
+            TextField("Header name", text: $name)
+                .textInputAutocapitalization(.never).autocorrectionDisabled()
+            SecureField("Value", text: $value)
+                .onSubmit(add)
+            if !name.isEmpty || !value.isEmpty {
+                Button("Add header", action: add)
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || value.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .font(.callout)
+            }
+            if let problem {
+                Label(problem, systemImage: "xmark.octagon.fill")
+                    .foregroundStyle(.red)
+                    .font(.footnote)
+            }
+        } header: {
+            Text("Custom headers (optional)")
+        } footer: {
+            Text("If a reverse proxy in front of your Hermes server asks for a header of its own, add it here. It is sent with every request to this server's Dashboard and Hermes API, the WebSocket and Apple Watch included, and kept in the Keychain. Redde's own headers, such as the API key, take precedence.")
+        }
+        // Keyed on the server: each has its own.
+        .task(id: settings.activeServerID) { headers = settings.customHeaders }
+    }
+
+    private func add() {
+        let new = CustomHeader(name: name, value: value)
+        problem = CustomHeader.problem(withName: new.name) ?? (new.value.isEmpty ? "Give the header a value." : nil)
+        guard problem == nil else { return }
+        save(CustomHeader.adding(new, to: headers))
+        name = ""
+        value = ""
+    }
+
+    private func save(_ new: [CustomHeader]) {
+        settings.customHeaders = new
+        headers = settings.customHeaders
+        // The next request rebuilds the Dashboard link with them, and the watch hears of them.
+        HermesServeClient.shared.disconnect()
+        WatchLink.shared.push()
     }
 }
 

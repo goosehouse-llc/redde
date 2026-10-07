@@ -14,6 +14,8 @@ nonisolated enum Keychain {
         case serveSignIn = "serve-sign-in"
         case fastLaneAPIKey = "fast-lane-api-key"
         case cfAccessClientSecret = "cf-access-client-secret"
+        /// The person's own headers for a server behind a reverse proxy (`CustomHeader`, as JSON).
+        case customHeaders = "custom-headers"
         case pushRegisterSecret = "push-register-secret"
     }
 
@@ -26,7 +28,7 @@ nonisolated enum Keychain {
     private static let cache = OSAllocatedUnfairLock<[String: String?]>(initialState: [:])
 
     /// Items that belong to one Hermes server.
-    static let serverScoped: Set<Item> = [.gatewayAPIKey, .serveDashboardPassword, .serveSignIn, .cfAccessClientSecret]
+    static let serverScoped: Set<Item> = [.gatewayAPIKey, .serveDashboardPassword, .serveSignIn, .cfAccessClientSecret, .customHeaders]
     /// Where Settings records the active server. Read here directly (UserDefaults is thread-safe),
     /// so a secret read can never happen before the scope is known.
     static let activeServerKey = "activeServerID"

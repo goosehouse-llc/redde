@@ -17,12 +17,12 @@ nonisolated enum ConnectionTester {
     }
 
     /// Hermes API server: /health, then /v1/models with the key.
-    static func hermesAPI(url: URL, apiKey: String?) async -> Outcome {
-        guard let (_, health) = try? await get(url.appending(path: "health"), key: nil), health == 200 else {
+    static func hermesAPI(url: URL, apiKey: String?, headers: [String: String] = [:]) async -> Outcome {
+        guard let (_, health) = try? await get(url.appending(path: "health"), key: nil, headers: headers), health == 200 else {
             return .failed("No Hermes API server answered at \(url.host() ?? url.absoluteString).")
         }
         guard let apiKey, !apiKey.isEmpty else { return .failed("Server reachable. Add the API key.") }
-        guard let (_, status) = try? await get(url.appending(path: "v1/models"), key: apiKey) else {
+        guard let (_, status) = try? await get(url.appending(path: "v1/models"), key: apiKey, headers: headers) else {
             return .failed("Server reachable, but the key check didn't complete.")
         }
         switch status {
@@ -41,8 +41,8 @@ nonisolated enum ConnectionTester {
         }
         if status == 403 || status == 302 {
             return .failed(access.isEmpty
-                ? "\(url.host() ?? "The host") is behind an access gate (HTTP \(status)). Add Cloudflare Access service-token headers below."
-                : "Cloudflare Access rejected the service token (HTTP \(status)). Check the client ID and secret.")
+                ? "\(url.host() ?? "The host") is behind an access gate (HTTP \(status)). Add its headers under Settings → Connection details: a Cloudflare Access service token, or the proxy's own."
+                : "The access gate in front of \(url.host() ?? "the host") turned the request away (HTTP \(status)). Check the Cloudflare Access client ID and secret, or the custom headers.")
         }
         guard status == 200 else { return .failed("Hermes Dashboard answered HTTP \(status).") }
         let json = (try? JSONDecoder().decode(JSONValue.self, from: data)) ?? .null
@@ -74,8 +74,8 @@ nonisolated enum ConnectionTester {
     private static func get(_ url: URL, key: String?, headers: [String: String] = [:]) async throws -> (Data, Int) {
         var request = URLRequest(url: url)
         request.timeoutInterval = 8
-        if let key, !key.isEmpty { request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization") }
         for (k, v) in headers { request.setValue(v, forHTTPHeaderField: k) }
+        if let key, !key.isEmpty { request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization") }
         // Don't follow the Access login redirect; the status is the diagnosis.
         let (data, response) = try await NoRedirectSession.shared.data(for: request)
         return (data, (response as? HTTPURLResponse)?.statusCode ?? 0)

@@ -6,6 +6,8 @@ import Foundation
 nonisolated struct HermesSessionsTransport: HermesTransport {
     var baseURL: URL
     var apiKey: String?
+    /// The person's own headers for this server (a reverse proxy's), sent with each request.
+    var headers: [String: String] = [:]
 
     private struct Body: Encodable {
         var input: JSONValue
@@ -53,11 +55,11 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
         guard let sessionID = request.sessionID, !sessionID.isEmpty else {
             return AsyncThrowingStream { $0.finish(throwing: TransportError.malformed("no session id")) }
         }
-        let baseURL = baseURL
+        let baseURL = baseURL, headers = headers
         return StreamingHTTP.run(decode: Self.decode) {
             try StreamingHTTP.makeRequest(
                 url: baseURL.appending(path: "api/sessions/\(sessionID)/chat/stream"),
-                apiKey: apiKey, body: Body(
+                apiKey: apiKey, headers: headers, body: Body(
                     input: try Self.makeInput(text: request.userText, attachments: request.attachments),
                     instructions: ([Self.clientHint] + [request.instructions?.nilIfEmpty,
                                    request.replyLanguage.map(ReplyLanguage.instruction)].compactMap { $0 })
@@ -180,6 +182,8 @@ extension HermesSessionsTransport {
 nonisolated struct HermesSessionsAPI: Sendable {
     var baseURL: URL
     var apiKey: String
+    /// The person's own headers for this server (a reverse proxy's), sent with each request.
+    var headers: [String: String] = [:]
 
     struct SessionSummary: Decodable, Identifiable, Sendable, Equatable {
         var id: String
@@ -443,6 +447,7 @@ nonisolated struct HermesSessionsAPI: Sendable {
         guard let url = comps.url else { throw TransportError.badURL }
         var request = URLRequest(url: url)
         request.httpMethod = method
+        for (name, value) in headers { request.setValue(value, forHTTPHeaderField: name) }
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = timeout
         if let body {

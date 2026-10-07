@@ -35,8 +35,8 @@ final class HermesServeClient {
     typealias Event = (type: String, sessionID: String?, payload: JSONValue)
 
     private let log = Logger(subsystem: "com.goosehouse.echo", category: "serve")
-    /// Rebuilt when the Cloudflare Access headers change; every request and WebSocket
-    /// handshake inherits them from the configuration.
+    /// Rebuilt when the server's own headers change (Cloudflare Access's, a reverse proxy's);
+    /// every request and WebSocket handshake inherits them from the configuration.
     private var session: URLSession
     private var appliedHeaders: [String: String] = [:]
     private let settings: any ServeEndpoint
@@ -69,7 +69,7 @@ final class HermesServeClient {
         return URLSession(configuration: config)
     }
 
-    /// Apply the current Access headers; drops the socket and cookies if they changed.
+    /// Apply the server's current headers; drops the socket and cookies if they changed.
     private func syncAccessHeaders() {
         let wanted = settings.accessHeaders
         guard wanted != appliedHeaders else { return }
@@ -79,7 +79,7 @@ final class HermesServeClient {
         socket = nil
         session.invalidateAndCancel()
         session = Self.makeSession(headers: wanted, protocolClasses: protocolClasses)
-        log.info("hermes serve session rebuilt (\(wanted.isEmpty ? "no" : "with") Cloudflare Access headers)")
+        log.info("hermes serve session rebuilt (\(wanted.count) header\(wanted.count == 1 ? "" : "s") of the server's own)")
     }
     /// Frame ceiling for every WebSocket we open. A stored transcript arrives in one frame.
     private static let maxFrameBytes = 64 * 1024 * 1024

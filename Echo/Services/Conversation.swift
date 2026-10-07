@@ -888,7 +888,7 @@ final class Conversation {
 
     func ledgerAPI() -> HermesSessionsAPI? {
         guard let url = settings.gatewayBaseURL, let key = settings.gatewayAPIKey, !key.isEmpty else { return nil }
-        return HermesSessionsAPI(baseURL: url, apiKey: key)
+        return HermesSessionsAPI(baseURL: url, apiKey: key, headers: settings.customHeaderFields)
     }
 
     // MARK: Name
@@ -953,7 +953,7 @@ final class Conversation {
         guard let url = settings.activeBaseURL else { return nil }
         let key = settings.gatewayAPIKey
         switch settings.transport {
-        case .hermesSessions: return HermesSessionsTransport(baseURL: url, apiKey: key)
+        case .hermesSessions: return HermesSessionsTransport(baseURL: url, apiKey: key, headers: settings.customHeaderFields)
         case .hermesServe: return HermesServeTransport()
         case .chatCompletions: return ChatCompletionsTransport(baseURL: url, apiKey: Keychain.read(.fastLaneAPIKey))
         }
@@ -1169,7 +1169,7 @@ final class Conversation {
     func loadToolDetails(for id: UUID) async {
         guard let sessionID = serverSessionID, let base = settings.gatewayBaseURL, let key = settings.gatewayAPIKey, !key.isEmpty,
               let local = messages.first(where: { $0.id == id }), !local.tools.isEmpty,
-              let stored = try? await HermesSessionsAPI(baseURL: base, apiKey: key).messages(sessionID: sessionID),
+              let stored = try? await HermesSessionsAPI(baseURL: base, apiKey: key, headers: settings.customHeaderFields).messages(sessionID: sessionID),
               let found = Self.storedTools(for: local, in: Self.mapStored(stored)) else { return }
         update(id) { message in
             for (i, tool) in found.enumerated() where i < message.tools.count {

@@ -277,8 +277,18 @@ final class Settings: ServeEndpoint {
         guard !id.isEmpty, let secret, !secret.isEmpty else { return [:] }
         return ["CF-Access-Client-Id": id, "CF-Access-Client-Secret": secret]
     }
+    /// The person's own headers for this server (`CustomHeader`): what a reverse proxy in front of
+    /// it asks for. Names and values both live in the Keychain, per server.
+    var customHeaders: [CustomHeader] {
+        get { CustomHeader.decode(Keychain.read(.customHeaders)) }
+        set { Keychain.write(.customHeaders, value: CustomHeader.encode(newValue)) }
+    }
+    /// The same as request fields: what every request to the Hermes API carries besides its key.
+    var customHeaderFields: [String: String] { CustomHeader.fields(customHeaders) }
+    /// What every request to the Dashboard carries besides its login: the person's own headers
+    /// and Cloudflare Access's service token.
     var accessHeaders: [String: String] {
-        Self.cloudflareAccessHeaders(clientID: cfAccessClientID, secret: Keychain.read(.cfAccessClientSecret))
+        customHeaderFields.merging(Self.cloudflareAccessHeaders(clientID: cfAccessClientID, secret: Keychain.read(.cfAccessClientSecret))) { _, access in access }
     }
     nonisolated static let defaultServeURL = ""
     var serveBaseURL: URL? {

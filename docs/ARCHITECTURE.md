@@ -87,8 +87,8 @@ conversation list once there are two). One is active at a time.
   editing them updates its `HermesServer` record, and `activateServer` loads another record into
   them, so the rest of the app reads `Settings` as before. The OpenAI-compatible connection, voice
   and appearance are app-wide.
-- **Secrets per server.** The API key, Dashboard password or sign-in, Cloudflare Access secret and
-  per-profile keys are Keychain accounts named `<account>@<server id>`; `Keychain.read(.item)` resolves the
+- **Secrets per server.** The API key, Dashboard password or sign-in, Cloudflare Access secret,
+  custom headers and per-profile keys are Keychain accounts named `<account>@<server id>`; `Keychain.read(.item)` resolves the
   active server from UserDefaults (`activeServerID`), so no read can happen before the scope is
   known. Removing a server deletes its accounts.
 - **Switching** goes through `ServerSwitcher`, in one order: while Settings still describes the old
@@ -758,6 +758,12 @@ the handover itself is tested on a real watch.
   wait until unlocked; background Shortcuts runs are protected by the Keychain instead.
 - **Cloudflare Access:** a service-token ID and secret sent as `CF-Access-Client-Id` /
   `CF-Access-Client-Secret` on every Dashboard request and WebSocket handshake.
+- **Custom headers:** for a reverse proxy that asks for a header of its own (`Models/CustomHeader.swift`,
+  Settings → Connection details). Per server, names and values both in the Keychain. They ride on
+  every Dashboard request and WebSocket handshake (the client's `URLSession` carries them, with
+  the Cloudflare pair) and on every Hermes API request, the watch's included (`WatchConnection.headers`,
+  kept in the watch's Keychain). A header the app sets itself (the API key's `Authorization`) wins.
+  Not in setup codes yet, and not sent to the OpenAI-compatible endpoint or the speech server.
 - **Transport security:** `NSAllowsArbitraryLoads` is set because users' servers often live on
   private networks without public certificates; HTTPS is used whenever the URL provides it.
 - **What's New:** after an update, the first launch shows that version's highlights once

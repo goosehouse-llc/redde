@@ -187,7 +187,7 @@ extension ConnectionTester {
         switch settings.transport {
         case .hermesSessions:
             guard let url = settings.gatewayBaseURL else { return .failed("The Hermes API address isn't a valid URL.") }
-            return await hermesAPI(url: url, apiKey: settings.gatewayAPIKey)
+            return await hermesAPI(url: url, apiKey: settings.gatewayAPIKey, headers: settings.customHeaderFields)
         case .hermesServe:
             guard let url = settings.serveBaseURL else { return .failed("The Dashboard address isn't a valid URL.") }
             return await hermesServe(url: url)

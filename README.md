@@ -45,7 +45,9 @@ Profiles need Hermes 0.21 or later. Over the Hermes API a named profile also nee
 `gateway.multiplex_profiles` and that profile's own `API_SERVER_KEY`.
 
 A Dashboard that signs you in with Google or another identity provider has no password to type:
-tap **Sign in with a browser** (Hermes 0.21 or later).
+tap **Sign in with a browser** (Hermes 0.21 or later). A server behind a reverse proxy that asks
+for a header of its own takes it under Settings → Connection details → Custom headers, next to
+the Cloudflare Access service token.
 
 ## Setup codes
 

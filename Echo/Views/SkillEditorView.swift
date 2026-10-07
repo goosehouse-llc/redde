@@ -141,7 +141,7 @@ struct SkillEditorView: View {
             if let api = conversation.ledgerAPI(), let key = Settings.shared.gatewayAPIKey, let base = Settings.shared.gatewayBaseURL {
                 let session = try await api.createSession(title: "Skill draft: \(skillName) · \(Date.now.formatted(date: .abbreviated, time: .shortened))")
                 sessionID = session.id
-                transport = HermesSessionsTransport(baseURL: base, apiKey: key)
+                transport = HermesSessionsTransport(baseURL: base, apiKey: key, headers: Settings.shared.customHeaderFields)
             } else {
                 transport = HermesServeTransport()   // creates its own session
             }

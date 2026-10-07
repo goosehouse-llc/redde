@@ -52,7 +52,7 @@ final class WatchAsker {
                 if let relay {
                     try await relay.approve(requestID: approval.id, choice: choice)
                 } else if let run = waitingRun, let base = URL(string: connection.url) {
-                    try await HermesSessionsAPI(baseURL: base, apiKey: connection.apiKey)
+                    try await HermesSessionsAPI(baseURL: base, apiKey: connection.apiKey, headers: connection.headers ?? [:])
                         .respondApproval(runID: run, requestID: approval.id, choice: choice)
                 }
             } catch {
@@ -88,7 +88,7 @@ final class WatchAsker {
                                   replyLanguage: connection.replyLanguage.nilIfEmpty)
         switch connection.kind {
         case .hermesAPI:
-            let api = HermesSessionsAPI(baseURL: base, apiKey: connection.apiKey)
+            let api = HermesSessionsAPI(baseURL: base, apiKey: connection.apiKey, headers: connection.headers ?? [:])
             if store.sessionID == nil {
                 let title = "Apple Watch · \(Date.now.formatted(date: .abbreviated, time: .omitted))"
                 store.sessionID = try await api.createSession(title: title, model: request.model, provider: request.provider,
@@ -96,7 +96,7 @@ final class WatchAsker {
             }
             request.sessionID = store.sessionID
             request.instructions = WatchConnection.spokenHint
-            transport = HermesSessionsTransport(baseURL: base, apiKey: connection.apiKey)
+            transport = HermesSessionsTransport(baseURL: base, apiKey: connection.apiKey, headers: connection.headers ?? [:])
         case .fastLane:
             request.history = store.history
             request.instructions = WatchConnection.spokenHint

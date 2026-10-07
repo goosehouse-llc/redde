@@ -38,6 +38,9 @@ nonisolated struct WatchConnection: Codable, Equatable, Sendable {
     var kokoroURL: String?
     var kokoroVoice: String?
     var voiceSpeed: Double?
+    /// The person's own headers for a server behind a reverse proxy, sent with each Hermes API
+    /// request. Optional like the rest: an older copy has none.
+    var headers: [String: String]?
 
     /// The application-context key the connection travels under.
     static let contextKey = "connection"
