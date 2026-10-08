@@ -22,7 +22,8 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
         case reply
         /// A command waits for a yes or no (`b` is the command, `d` why it was stopped).
         case approval
-        /// The agent asked the person something (`b` is the question, `d` its choices).
+        /// The agent asked the person something (`b` is the question, `d` its choices on a line,
+        /// `c` the choices one by one when it can be answered from the notification).
         case question
         /// A command waits for the sudo password (`b` is the command, when Hermes says which).
         case sudo
@@ -53,8 +54,11 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
     var at: Double?
     /// On an approval that can be answered from the notification: `digest(of:)` the command, so
     /// the answer is given to that command and no other. Absent when it can't be (a turn the
-    /// Dashboard has no hand in: over the Hermes API, or at a terminal).
+    /// Dashboard has no hand in: over the Hermes API, or at a terminal). On a question that can
+    /// be answered from it: the same of the question's text.
     var h: String?
+    /// A question's choices, to make buttons of. Absent for one answered in words.
+    var c: [String]?
 
     /// Nil for a kind a newer plugin sends and this build doesn't know.
     var kind: Kind? { Kind(rawValue: k) }
@@ -268,11 +272,18 @@ nonisolated extension PushNote {
     /// The category of an approval that arrived as a push and can be answered from it: Approve
     /// and Deny, which start the app in the background to answer (`Notifier.answerPushedApproval`).
     static let approvalCategory = "redde.approval.push"
+    /// The category of a question that arrived as a push and can be answered from it: a Reply
+    /// field, behind an unlock like the rest. A question with choices gets a category of its own
+    /// (`choiceCategory`), named after this one, with the choices as buttons beside the field.
+    static let questionCategory = "redde.question.push"
+    /// Reply, on a question's notification: typed, or with a choice's words after a dot.
+    static let replyAction = "redde.reply"
     /// `userInfo` keys on a notification that came this way. `session` is also how the app tells
-    /// one from a banner it posted itself. `approval` is the note's `h`.
+    /// one from a banner it posted itself. `approval` and `question` are the note's `h`.
     static let sessionKey = "session"
     static let kindKey = "kind"
     static let approvalKey = "approval"
+    static let questionKey = "question"
     /// The sealed note, as the relay hands it to Apple. Gone once the note has been opened.
     static let sealedKey = "e"
 
@@ -306,6 +317,7 @@ nonisolated extension PushNote {
             content.body = [b, d].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n")
             if content.body.isEmpty, kind == .sudo { content.body = "Open Redde to enter it." }
             content.threadIdentifier = "redde.turn"
+            if kind == .question, let h, !h.isEmpty, let s, !s.isEmpty { content.categoryIdentifier = Self.questionCategory }
         case .task:
             content.title = "A task finished"
             if let t, !t.isEmpty { content.subtitle = t }
@@ -323,8 +335,30 @@ nonisolated extension PushNote {
         var info: [AnyHashable: Any] = [Self.kindKey: k]
         if let s, !s.isEmpty { info[Self.sessionKey] = s }
         if kind == .approval, let h, !h.isEmpty { info[Self.approvalKey] = h }
+        if kind == .question, let h, !h.isEmpty { info[Self.questionKey] = h }
         content.userInfo = info
         return true
+    }
+
+    /// A category for this question alone: its choices as buttons (as many as a notification
+    /// shows, four), then the Reply field. Each button's action carries its choice's words, so
+    /// the app needs nothing else to know what was answered. Nil for a question that can't be
+    /// answered from the notification, or has no choices.
+    ///
+    /// Categories are registered ahead of time, by the app, and a question's choices are only
+    /// known when it arrives; so the notification extension registers this one as the note
+    /// comes in (`NotificationService`).
+    var choiceCategory: UNNotificationCategory? {
+        guard kind == .question, let h, !h.isEmpty, let s, !s.isEmpty else { return nil }
+        let choices = (c ?? []).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }.prefix(4)
+        guard !choices.isEmpty else { return nil }
+        let buttons = choices.map {
+            UNNotificationAction(identifier: Self.replyAction + "." + $0, title: $0, options: [.authenticationRequired])
+        }
+        let reply = UNTextInputNotificationAction(identifier: Self.replyAction, title: "Reply", options: [.authenticationRequired],
+                                                  textInputButtonTitle: "Send", textInputPlaceholder: "Your answer")
+        return UNNotificationCategory(identifier: Self.questionCategory + "." + Self.digest(of: choices.joined(separator: "\u{1F}")),
+                                      actions: buttons + [reply], intentIdentifiers: [])
     }
 
     /// What stands for a command in a note: sixteen hex digits of its SHA-256. The plugin's

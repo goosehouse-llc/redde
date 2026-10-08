@@ -410,6 +410,100 @@ struct NotifierTests {
         #expect(answers.asked.count == 1)
     }
 
+    // MARK: An answer on a pushed question
+
+    final class Replies {
+        var given: [String] = []
+        var outcome: Result<HermesServeClient.WaitingQuestion, Error> = .success(.answered)
+    }
+
+    private func replying(_ h: Harness, _ replies: Replies) {
+        h.notifier.answerWaitingQuestion = { session, digest, answer in
+            replies.given.append("\(session) \(digest) \(answer)")
+            return try replies.outcome.get()
+        }
+    }
+
+    @Test func aPushedQuestionTakesATypedAnswerOnceThePhoneIsUnlocked() {
+        let h = Harness()
+        h.notifier.registerCategories()
+        let pushed = try! #require(h.center.categories.first { $0.identifier == PushNote.questionCategory })
+        #expect(pushed.actions.map(\.title) == ["Reply"])
+        #expect(pushed.actions[0] is UNTextInputNotificationAction && pushed.actions[0].options.contains(.authenticationRequired))
+        #expect(pushed.actions[0].identifier == PushNote.replyAction)
+    }
+
+    @Test func anAnswerOnAPushedQuestionGoesToThatSessionAndThatQuestion() async {
+        let h = Harness()
+        let replies = Replies()
+        replying(h, replies)
+        // Typed into the notification's Reply field.
+        let typed = h.notifier.route(action: PushNote.replyAction, requestID: nil, questionID: nil, approve: nil, deny: nil, userText: " release ",
+                                     sessionID: "20261007_1", questionDigest: "54e912433ad05e6b")
+        await typed?.value
+        // Or one of its choices, tapped: the button's action carries the choice's words.
+        let picked = h.notifier.route(action: PushNote.replyAction + ".main (the default)", requestID: nil, questionID: nil, approve: nil, deny: nil,
+                                      userText: nil, sessionID: "20261007_2", questionDigest: "0123456789abcdef")
+        await picked?.value
+        #expect(replies.given == ["20261007_1 54e912433ad05e6b release", "20261007_2 0123456789abcdef main (the default)"])
+        #expect(h.center.added.isEmpty, "answered: nothing more to say")
+        #expect(typed != nil, "the app is kept running until the answer is given")
+        // An empty answer is none, and a tap on the notification itself still only opens the conversation.
+        #expect(h.notifier.route(action: PushNote.replyAction, requestID: nil, questionID: nil, approve: nil, deny: nil, userText: "  ",
+                                 sessionID: "20261007_1", questionDigest: "54e912433ad05e6b") == nil)
+        _ = h.notifier.route(action: UNNotificationDefaultActionIdentifier, requestID: nil, questionID: nil, approve: nil, deny: nil, userText: nil,
+                             sessionID: "20261007_1", questionDigest: "54e912433ad05e6b")
+        #expect(replies.given.count == 2)
+        #expect(LaunchRouter.shared.consumeSession() == "20261007_1")
+    }
+
+    @Test func anAnswerThatCouldNotBeDeliveredSaysSo() async throws {
+        for (outcome, words) in [(Result<HermesServeClient.WaitingQuestion, Error>.success(.nothingWaiting), "no longer waiting"),
+                                 (.success(.anotherQuestion), "Something else is being asked"),
+                                 (.failure(TransportError.unreachable("Hermes Dashboard is unreachable")), "couldn't reach your Hermes")] {
+            let h = Harness()
+            let replies = Replies()
+            replies.outcome = outcome
+            replying(h, replies)
+            await h.notifier.route(action: PushNote.replyAction, requestID: nil, questionID: nil, approve: nil, deny: nil, userText: "release",
+                                   sessionID: "20261007_1", questionDigest: "54e912433ad05e6b")?.value
+            let said = try #require(h.center.added.first)
+            #expect(said.content.title == "Your answer wasn't given")
+            #expect(said.content.body.contains(words), "\(said.content.body)")
+            #expect(said.content.userInfo[PushNote.sessionKey] as? String == "20261007_1", "a tap opens the conversation")
+        }
+    }
+
+    @Test func aPushedQuestionTheAppStillHasACardForIsAnsweredThere() async throws {
+        let h = Harness()
+        let replies = Replies()
+        replying(h, replies)
+        let suite = UserDefaults(suiteName: "notifier-question-\(UUID().uuidString)")!
+        let settings = Settings(defaults: suite)
+        settings.transport = .chatCompletions
+        settings.fastLaneURL = "http://example.invalid:11500"
+        settings.fastLaneModel = "test"
+        let asked = ClarifyRequest(id: "srq-1", questions: [ClarifyQuestion(id: "q0", question: "Which branch should I deploy?", choices: ["main", "release"], multiSelect: false)], isBatch: true)
+        let transport = ConversationLifecycleTests.ScriptedTransport([.interrupt(.clarify(asked), runtimeSession: "run1")], hang: true)
+        let conversation = Conversation(settings: settings, store: ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "n-\(UUID().uuidString)")),
+                                        transportOverride: transport)
+        conversation.replaceForDemo(serverSessionID: "20261007_1", messages: [])
+        conversation.send("deploy it")
+        for _ in 0 ..< 300 where conversation.pendingInterrupt == nil { try await Task.sleep(for: .milliseconds(10)) }
+        h.notifier.install(conversation: conversation)
+
+        // An answer to some other question doesn't settle this card.
+        await h.notifier.route(action: PushNote.replyAction, requestID: nil, questionID: nil, approve: nil, deny: nil, userText: "yes",
+                               sessionID: "20261007_1", questionDigest: PushNote.digest(of: "Go ahead?"))?.value
+        #expect(conversation.pendingInterrupt != nil)
+        #expect(replies.given.count == 1, "it went to the Dashboard, which says what is waiting")
+
+        let work = h.notifier.route(action: PushNote.replyAction + ".release", requestID: nil, questionID: nil, approve: nil, deny: nil, userText: nil,
+                                    sessionID: "20261007_1", questionDigest: PushNote.digest(of: "Which branch should I deploy?"))
+        #expect(work == nil && conversation.pendingInterrupt == nil, "the card was answered")
+        #expect(replies.given.count == 1)
+    }
+
     @Test func approveWithoutASessionOrADigestDoesNothing() {
         let h = Harness()
         let answers = Answers()

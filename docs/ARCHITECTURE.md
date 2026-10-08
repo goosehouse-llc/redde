@@ -710,7 +710,8 @@ with a key only it and the phone hold, a relay passes it to Apple unread, and th
 notification extension opens it (`Shared/PushSeal.swift`, `PushService`). Pairing is one tap for
 an app signed in to that Hermes's Dashboard, and otherwise a QR code from `hermes redde-push pair`. A tap opens the conversation, fetched from the server; Reply on a
 reply's banner sends into it, and Approve and Deny on an approval's answer it, all behind an
-unlock. It announces a finished reply, an approval, a question, a sudo password or a secret being
+unlock; a question's takes the answer, typed or by a button for each of its choices. It announces a
+finished reply, an approval, a question, a sudo password or a secret being
 asked for, a turn that ended without a reply, and a handed-off task coming back; Hermes has a
 plugin hook for only the first two, and how the rest are told is in [docs/push.md](push.md), with
 the design, the wire formats and what has to happen before it ships.

@@ -175,6 +175,37 @@ struct PushNoteContentTests {
         #expect(content(PushNote(k: "question", s: "s", b: "Go ahead?")).body == "Go ahead?")
     }
 
+    @Test func aQuestionThatCanBeAnsweredFromItsNotificationSaysWhichQuestion() {
+        let shown = content(PushNote(k: "question", s: "20261007_1", b: "Which branch should I deploy?", d: "main · release",
+                                     h: "54e912433ad05e6b", c: ["main", "release"]))
+        #expect(shown.categoryIdentifier == PushNote.questionCategory, "a Reply field, whatever else")
+        #expect(shown.userInfo[PushNote.questionKey] as? String == "54e912433ad05e6b")
+        #expect(shown.userInfo[PushNote.approvalKey] == nil)
+        // The plugin's `core.digest` of the question is what `h` holds.
+        #expect(PushNote.digest(of: "Which branch should I deploy?") == "54e912433ad05e6b")
+        // Without a session there is nothing to answer through.
+        #expect(content(PushNote(k: "question", b: "Which?", h: "54e912433ad05e6b")).categoryIdentifier.isEmpty)
+    }
+
+    @Test func aQuestionsChoicesBecomeButtonsOfItsOwn() throws {
+        let note = PushNote(k: "question", s: "20261007_1", b: "Which branch should I deploy?", h: "54e912433ad05e6b", c: ["main", " release ", ""])
+        let category = try #require(note.choiceCategory)
+        #expect(category.identifier.hasPrefix(PushNote.questionCategory + "."))
+        #expect(category.actions.map(\.title) == ["main", "release", "Reply"])
+        #expect(category.actions.map(\.identifier) == ["redde.reply.main", "redde.reply.release", "redde.reply"], "a button's action carries its choice's words")
+        #expect(category.actions.allSatisfy { $0.options.contains(.authenticationRequired) })
+        #expect(category.actions.last is UNTextInputNotificationAction, "and the answer can still be typed")
+        // The same choices, the same category; other choices, another.
+        #expect(PushNote(k: "question", s: "s", b: "Other?", h: "x", c: ["main", "release"]).choiceCategory?.identifier == category.identifier)
+        #expect(PushNote(k: "question", s: "s", b: "Other?", h: "x", c: ["yes", "no"]).choiceCategory?.identifier != category.identifier)
+        // As many buttons as a notification shows.
+        #expect(PushNote(k: "question", s: "s", b: "Which?", h: "x", c: ["a", "b", "c", "d", "e", "f"]).choiceCategory?.actions.count == 5)
+        // None without choices, or for a question that can't be answered from here, or for anything else.
+        #expect(PushNote(k: "question", s: "s", b: "What name?", h: "x").choiceCategory == nil)
+        #expect(PushNote(k: "question", s: "s", b: "Which?", c: ["a", "b"]).choiceCategory == nil)
+        #expect(PushNote(k: "approval", s: "s", b: "rm -rf build", h: "x", c: ["a"]).choiceCategory == nil)
+    }
+
     @Test func aPasswordOrASecretBeingAskedForSaysWhatFor() {
         let sudo = content(PushNote(k: "sudo", s: "20261007_1", t: "Updates", b: "sudo apt-get upgrade"))
         #expect(sudo.title == "Redde needs a sudo password" && sudo.subtitle == "Updates" && sudo.body == "sudo apt-get upgrade")

@@ -10,7 +10,8 @@ whether the command really ran.
 A few more, for the push plugin's check, each only while it is the last thing said (so the turn
 that follows in the same conversation is an ordinary one):
 
-    lab:question   the model asks the person a question (the clarify tool, two choices)
+    lab:question   the model asks the person a question (the clarify tool, two choices), and
+                   answers what it is told with "[answered: <the answer>]"
     lab:delegate   it hands a small task to a subagent (delegate_task)
     lab:sudo       it runs `sudo true`, which wants a password
     lab:secret     it opens the skill "lab-secret", which wants a secret
@@ -96,6 +97,13 @@ class Handler(BaseHTTPRequestHandler):
                 text = "[file seen]" if "lab-file-token" in just_said or "lab-clip.mp4" in just_said else "[file missing]"
             if messages[-1].get("role") == "tool":
                 text = "[kept]" if os.path.isdir(TARGET) else "[gone]"
+                # A question's answer comes back as the tool's result: say what it was.
+                try:
+                    answers = json.loads(said(messages[-1])).get("responses") or []
+                    if answers:
+                        text = f"[answered: {answers[0].get('user_response', '')}]"
+                except (ValueError, AttributeError):
+                    pass
             elif "danger" in asked and "terminal" in offered:
                 os.makedirs(TARGET, exist_ok=True)
                 planned = ("terminal", {"command": f"rm -rf {TARGET}"})

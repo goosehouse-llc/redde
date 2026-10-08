@@ -77,7 +77,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     nonisolated private static let denyAction = "redde.deny"
     nonisolated private static let clarifyTextCategory = "redde.clarify.text"
     nonisolated private static let clarifyChoicePrefix = "redde.clarify.choice."
-    nonisolated private static let replyAction = "redde.reply"
+    nonisolated private static let replyAction = PushNote.replyAction
     /// A finished reply's banner: it can be answered where it is.
     nonisolated static let repliedCategory = "redde.replied"
     nonisolated private static let followUpAction = "redde.followup"
@@ -120,7 +120,13 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let pushedApprove = UNNotificationAction(identifier: Self.approveAction, title: "Approve", options: [.authenticationRequired])
         let pushedDeny = UNNotificationAction(identifier: Self.denyAction, title: "Deny", options: [.destructive, .authenticationRequired])
         let pushedApproval = UNNotificationCategory(identifier: PushNote.approvalCategory, actions: [pushedApprove, pushedDeny], intentIdentifiers: [])
-        fixedCategories = [category, clarifyText, replied, pushed, pushedApproval]
+        // A question a paired Hermes announced, answered in words. One with choices arrives
+        // under a category of its own that the notification extension registers on the spot
+        // (`PushNote.choiceCategory`); this one is what it falls back on.
+        let pushedAnswer = UNTextInputNotificationAction(identifier: Self.replyAction, title: "Reply", options: [.authenticationRequired],
+                                                         textInputButtonTitle: "Send", textInputPlaceholder: "Your answer")
+        let pushedQuestion = UNNotificationCategory(identifier: PushNote.questionCategory, actions: [pushedAnswer], intentIdentifiers: [])
+        fixedCategories = [category, clarifyText, replied, pushed, pushedApproval, pushedQuestion]
         center.setNotificationCategories(fixedCategories)
     }
 
@@ -174,10 +180,12 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let conversationID = info[Self.conversationKey] as? String
         let sessionID = info[PushNote.sessionKey] as? String
         let digest = info[PushNote.approvalKey] as? String
+        let asked = info[PushNote.questionKey] as? String
         let userText = (response as? UNTextInputNotificationResponse)?.userText
         let work = await MainActor.run {
             self.route(action: action, requestID: requestID, questionID: questionID, approve: approve, deny: deny,
-                       userText: userText, conversationID: conversationID, sessionID: sessionID, approvalDigest: digest)
+                       userText: userText, conversationID: conversationID, sessionID: sessionID, approvalDigest: digest,
+                       questionDigest: asked)
         }
         // The app may have been started just for this: iOS keeps it running until this returns.
         await work?.value
@@ -233,7 +241,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     @discardableResult
     func route(action: String, requestID: String?, questionID: String?,
                approve: String?, deny: String?, userText: String?, conversationID: String? = nil, sessionID: String? = nil,
-               approvalDigest: String? = nil) -> Task<Void, Never>? {
+               approvalDigest: String? = nil, questionDigest: String? = nil) -> Task<Void, Never>? {
         if action == Self.followUpAction {
             guard let userText else { return nil }
             if let sessionID { followUp(userText, sessionID: sessionID) } else { followUp(userText, conversationID: conversationID) }
@@ -254,6 +262,10 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         } else if action.hasPrefix(Self.replyAction + ".") {
             String(action.dropFirst(Self.replyAction.count + 1))
         } else { nil }
+        // An answer, typed or picked, on a question a paired Hermes announced.
+        if let sessionID, let questionDigest, let answer {
+            return answerPushedQuestion(sessionID: sessionID, digest: questionDigest, answer: answer)
+        }
         guard let requestID else { return nil }
         if let choice {
             answerApproval(requestID: requestID, choice: choice)
@@ -304,6 +316,50 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
             content.sound = sound
             // Opens the conversation when tapped, like the notification it follows.
             content.userInfo = [PushNote.sessionKey: sessionID, PushNote.kindKey: PushNote.Kind.approval.rawValue]
+            center.add(UNNotificationRequest(identifier: "redde.unanswered.\(sessionID)", content: content, trigger: nil), withCompletionHandler: nil)
+        }
+    }
+
+    /// How a question is answered when there is no card for it. Tests put a stand-in here.
+    var answerWaitingQuestion: (_ session: String, _ digest: String, _ answer: String) async throws -> HermesServeClient.WaitingQuestion = {
+        try await HermesServeClient.shared.answerWaitingQuestion(stored: $0, digest: $1, answer: $2)
+    }
+
+    /// An answer given on a question's notification, the way `answerPushedApproval` gives a yes
+    /// or a no: to the card if the app still has it, otherwise to the question that session is
+    /// waiting on, provided it is still the one the notification asked. An empty answer is none.
+    @discardableResult
+    func answerPushedQuestion(sessionID: String, digest: String, answer: String) -> Task<Void, Never>? {
+        let answer = answer.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !answer.isEmpty else { return nil }
+        if let conversation, conversation.serverSessionID == sessionID, let pending = conversation.pendingInterrupt,
+           case let .clarify(request) = pending.interrupt, request.questions.count == 1, let question = request.questions.first,
+           PushNote.digest(of: question.question) == digest {
+            BackgroundTurn.shared.begin()
+            conversation.respond(clarify: [question.id: answer])
+            return nil
+        }
+        let background = UIApplication.shared.beginBackgroundTask(withName: "pushed-answer")
+        return Task {
+            defer { UIApplication.shared.endBackgroundTask(background) }
+            let problem: String?
+            do {
+                problem = switch try await answerWaitingQuestion(sessionID, digest, answer) {
+                case .answered: nil
+                case .nothingWaiting: "That question is no longer waiting. It was answered somewhere else, or it timed out."
+                case .anotherQuestion: "Something else is being asked now. Open Redde to see it."
+                }
+            } catch {
+                problem = "Redde couldn't reach your Hermes to give your answer. Open Redde to answer. (\(error.localizedDescription))"
+            }
+            guard let problem else { return }
+            log.notice("pushed answer not given: \(problem, privacy: .public)")
+            let content = UNMutableNotificationContent()
+            content.title = "Your answer wasn't given"
+            content.body = problem
+            content.sound = sound
+            // Opens the conversation when tapped, like the notification it follows.
+            content.userInfo = [PushNote.sessionKey: sessionID, PushNote.kindKey: PushNote.Kind.question.rawValue]
             center.add(UNNotificationRequest(identifier: "redde.unanswered.\(sessionID)", content: content, trigger: nil), withCompletionHandler: nil)
         }
     }

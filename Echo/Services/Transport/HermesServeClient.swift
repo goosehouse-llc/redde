@@ -631,6 +631,42 @@ final class HermesServeClient {
         return .nothingWaiting
     }
 
+    /// What became of an answer to a question given without the card.
+    enum WaitingQuestion: Equatable, Sendable {
+        case answered
+        /// No question is waiting any more: answered elsewhere, timed out, or the turn stopped.
+        /// Also what a Hermes that keeps no list of what it waits on (0.21.0) always gives.
+        case nothingWaiting
+        /// Something is being asked, but not what the person was shown: another question, or
+        /// several at once.
+        case anotherQuestion
+    }
+
+    /// Answers the question a stored session is waiting on, for a client that wasn't there when
+    /// it was asked: the app, started in the background by a reply on the notification. `digest`
+    /// is of the question the notification showed (`PushNote.digest`); an answer meant for one
+    /// question is never given to another.
+    func answerWaitingQuestion(stored: String, digest: String, answer: String) async throws -> WaitingQuestion {
+        try await ensureConnected()
+        let resumed = try await call("session.resume", params: .object(["session_id": .string(stored), "omit_messages": .bool(true)]))
+        guard let runtime = resumed["session_id"]?.string else { throw TransportError.malformed("resume gave no session id") }
+        runtimeIDs[stored] = runtime
+        guard let waiting = resumed["open_requests"]?.array?.first(where: { $0["method"]?.string == "clarify" }),
+              let id = waiting["id"], let key = Self.key(id) else { return .nothingWaiting }
+        let request = HermesServeTransport.parseClarify(waiting["params"] ?? .null)
+        guard request.questions.count == 1, let question = request.questions.first,
+              PushNote.digest(of: question.question) == digest else { return .anotherQuestion }
+        if question.id.isEmpty {
+            openRequests[key] = nil
+            send(.object(["jsonrpc": .string("2.0"), "id": id, "result": .object(["answer": .string(answer)])]))
+        } else {
+            // Asked as a list of one: answered a question at a time, and the last answer settles it.
+            try await call("clarify.lock", params: .object(["request_id": .string(key), "question_id": .string(question.id), "answer": .string(answer)]))
+            openRequests[key] = nil
+        }
+        return .answered
+    }
+
     // MARK: - RPC
 
     nonisolated struct RPCError: LocalizedError, Sendable {

@@ -55,7 +55,9 @@ turn where it waits and answers its card, and a third answers without a card, by
 the command's digest, as Approve and Deny on a notification do. The same joining is done for a
 turn left waiting on a question, on the sudo password and on a secret (the stub's `lab:question`,
 `lab:sudo` and `lab:secret`, below); Hermes 0.21.0 doesn't list those for a returning client,
-which the test says and doesn't count against it. And a message is sent with a file attached,
+which the test says and doesn't count against it. A question is also answered the way a reply
+on its notification is, by session and by the question's digest, and the stub says back what
+it was told (`[answered: release]`). And a message is sent with a file attached,
 a text file and then a video: the Dashboard only stores such a file, and the agent hears of it
 when the message names it. The stub answers a message with `lab:file` in it `[file seen]` when
 the file's text, or the name of one that can't be read as text, reached the model.

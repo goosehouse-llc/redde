@@ -177,9 +177,12 @@ def _on_answer(session_id: str = "", platform: str = "", assistant_message=None,
         store, pusher = _state()
         for name, arguments in calls:
             if name == "clarify":
-                asked, choices = core.question(arguments)
+                asked, listed, choices = core.question(arguments)
                 if asked:
-                    pusher.submit("question", session_id, platform, body=asked, detail=choices)
+                    # Answered from the notification only where the app can ask Hermes what it
+                    # is waiting on, and so answer that very question (0.21.3 and later).
+                    pusher.submit("question", session_id, platform, body=asked, detail=listed,
+                                  choices=choices if _lists_what_it_waits_on() else None)
         if platform in DASHBOARD and store.targets(session_id, platform):
             waiting.watch(session_id)
     except Exception:
@@ -248,6 +251,12 @@ def _tasks_came_back(session: str, tasks: list[tuple[str, str]]) -> None:
     """Tasks came back and Hermes started no turn to say so (`core.Turns`): their own words go."""
     summary, about = core.task_report(tasks)
     _state()[1].submit("task", session, _platforms.get(session, ""), body=summary or "The task has finished.", detail=about, now=_leaving)
+
+
+def _lists_what_it_waits_on() -> bool:
+    """Whether this is a Dashboard that keeps a list of the questions it has put to a client
+    (Hermes 0.21.3 and later): what `_peek` reads, and what a client is handed when it resumes."""
+    return "tui_gateway.server_requests" in sys.modules
 
 
 def _peek() -> list[tuple[str, str, str, dict]]:

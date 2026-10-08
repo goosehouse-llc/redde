@@ -327,6 +327,33 @@ struct HermesLabApprovalTests {
         }
     }
 
+    /// A reply on a question's notification: no card, only the session, the question's digest and
+    /// the answer. It reaches that question and no other, and the agent hears it.
+    @Test func anAnswerFromANotificationReachesTheQuestionItWasFor() async throws {
+        guard let stored = try await Self.leaveATurnWaiting(saying: "lab:question please"), let client = await Self.client() else { return }
+        defer { client.disconnect() }
+        let waiting = try await client.resume(stored: stored, withMessages: false)
+        guard waiting["open_requests"]?.array != nil else {
+            print("  ----  this Hermes keeps no list of what a turn waits on (0.21.0): a question can't be answered from its notification")
+            _ = try? await client.call("session.interrupt", params: .object(["session_id": .string(waiting["session_id"]?.string ?? "")]))
+            return
+        }
+        var detail = ""
+        var ok = false
+        do {
+            let asked = PushNote.digest(of: "Which branch should I deploy?")
+            let other = try await client.answerWaitingQuestion(stored: stored, digest: PushNote.digest(of: "Something else?"), answer: "main")
+            let answered = try await client.answerWaitingQuestion(stored: stored, digest: asked, answer: "release")
+            let reply = try await Self.recordedReply(client, stored: stored)
+            let after = try await client.answerWaitingQuestion(stored: stored, digest: asked, answer: "main")
+            ok = other == .anotherQuestion && answered == .answered && reply == "[answered: release]" && after == .nothingWaiting
+            detail = "another question's answer \(other), this one's \(answered), reply \(reply), afterwards \(after)"
+        } catch {
+            detail = String(error.localizedDescription.prefix(160))
+        }
+        Self.report(ok, "an answer from a notification reaches the question it was shown for, and no other", detail)
+    }
+
     /// A file that isn't a picture or a PDF is only put in the session's workspace by the
     /// Dashboard; the agent hears of it when the message names it, by the reference the
     /// Dashboard answers with. The stub says whether the file's text (or, for one that can't

@@ -179,7 +179,22 @@ class NoteTests(unittest.TestCase):
     def test_a_note_about_someone_being_waited_on_carries_what_is_asked(self):
         made = core.note("question", "20261007_1", "Which branch should I deploy?", title="Release", detail="main · release")
         self.assertEqual((made["k"], made["b"], made["d"], made["t"]), ("question", "Which branch should I deploy?", "main · release", "Release"))
-        self.assertNotIn("h", core.note("question", "20261007_1", "Which?", answerable=True), "only an approval is answered by digest")
+        self.assertNotIn("h", made)
+        # One the phone can answer from the notification names the question by its digest, the
+        # way an approval names its command, and brings the choices as buttons to make.
+        answerable = core.note("question", "20261007_1", "Which branch should I deploy?", detail="main · release", answerable=True, choices=["main", "release"])
+        self.assertEqual((answerable["h"], answerable["c"]), (core.digest("Which branch should I deploy?"), ["main", "release"]))
+        # The app's `PushNote.digest` gives the same for this (EchoTests/PushTests.swift).
+        self.assertEqual(answerable["h"], "54e912433ad05e6b")
+        open_question = core.note("question", "20261007_1", "What should it be called?", answerable=True, choices=[])
+        self.assertIn("h", open_question)
+        self.assertNotIn("c", open_question, "no choices: a typed answer")
+        self.assertEqual(len(core.note("question", "s", "Which?", answerable=True, choices=list("abcdefg"))["c"]), 4, "as many as a notification has buttons for")
+        for unanswerable in (core.note("question", "20261007_1", "Which?", answerable=True),                      # several questions, or a Hermes that keeps no list
+                             core.note("question", "20261007_1", "Which?", choices=["a"]),                      # nobody follows it
+                             core.note("question", "", "Which?", answerable=True, choices=["a"])):
+            self.assertNotIn("h", unanswerable)
+            self.assertNotIn("c", unanswerable)
         self.assertNotIn("b", core.note("sudo", "20261007_1"), "Hermes 0.21.3 doesn't say which command")
         self.assertEqual(self.phone.read(core.sealed(self.device, made)), made)
         # Apple keeps a note about as long as Hermes waits for the answer.
@@ -318,16 +333,19 @@ class ReadingTests(unittest.TestCase):
     def test_a_question_and_its_choices(self):
         ask = core.question
         self.assertEqual(ask({"questions": [{"question": "Which branch should I deploy?", "choices": ["main", "release"]}]}),
-                         ("Which branch should I deploy?", "main · release"))
-        self.assertEqual(ask({"question": "Go ahead?"}), ("Go ahead?", ""), "the older form, one question at the top")
-        self.assertEqual(ask({"question": "Go ahead?", "choices": [{"label": "Yes"}, {"label": "No"}]}), ("Go ahead?", "Yes · No"))
-        self.assertEqual(ask({"questions": [{"question": "One?"}, {"question": "Two?"}, {"question": "Three?"}]}), ("One?", "and 2 more questions"))
-        self.assertEqual(ask({"questions": [{"question": "One?"}, {"question": "Two?"}]}), ("One?", "and 1 more question"))
+                         ("Which branch should I deploy?", "main · release", ["main", "release"]))
+        self.assertEqual(ask({"question": "Go ahead?"}), ("Go ahead?", "", []), "the older form, one question at the top")
+        self.assertEqual(ask({"question": "Go ahead?", "choices": [{"label": "Yes"}, {"label": "No"}]}), ("Go ahead?", "Yes · No", ["Yes", "No"]))
+        # Several questions, or one where several choices may be ticked: one answer can't settle
+        # those, so there is no list of choices to answer from.
+        self.assertEqual(ask({"questions": [{"question": "One?"}, {"question": "Two?"}, {"question": "Three?"}]}), ("One?", "and 2 more questions", None))
+        self.assertEqual(ask({"questions": [{"question": "One?"}, {"question": "Two?"}]}), ("One?", "and 1 more question", None))
+        self.assertEqual(ask({"questions": [{"question": "Which?", "choices": ["a", "b"], "multi_select": True}]}), ("Which?", "a · b", None))
         # Calls Hermes turns down without asking anyone: nothing to announce.
-        self.assertEqual(ask({}), ("", ""))
-        self.assertEqual(ask({"questions": [{"question": "  "}]}), ("", ""))
-        self.assertEqual(ask({"questions": [{"question": f"q{i}"} for i in range(6)]}), ("", ""))
-        self.assertEqual(ask({"questions": "which?"}), ("", ""))
+        self.assertEqual(ask({}), ("", "", None))
+        self.assertEqual(ask({"questions": [{"question": "  "}]}), ("", "", None))
+        self.assertEqual(ask({"questions": [{"question": f"q{i}"} for i in range(6)]}), ("", "", None))
+        self.assertEqual(ask({"questions": "which?"}), ("", "", None))
 
     def test_why_a_request_failed_in_the_provider_s_words(self):
         said = {"type": "AuthenticationError", "message": "Error code: 401 - {'error': {'message': 'Incorrect API key provided.', 'type': 'invalid_request_error', 'code': 'invalid_api_key'}}"}
@@ -641,11 +659,21 @@ class HookTests(unittest.TestCase):
         plugin._on_answer(session_id="20261007_1", platform="desktop", turn_id="t1", finish_reason="tool_calls", assistant_message=answer)
         notes = self.sent()
         self.assertEqual([(n["k"], n["s"], n["b"], n["d"]) for n in notes], [("question", "20261007_1", "Which branch should I deploy?", "main · release")])
+        self.assertNotIn("h", notes[0], "this Hermes keeps no list of what it waits on (0.21.0): the answer couldn't be delivered")
+        # On one that does (0.21.3 and later) the same question can be answered from the notification.
+        sys.modules["tui_gateway.server_requests"] = type(sys)("tui_gateway.server_requests")
+        self.addCleanup(lambda: sys.modules.pop("tui_gateway.server_requests", None))
+        plugin._on_answer(session_id="20261007_1", platform="desktop", turn_id="t1", finish_reason="tool_calls", assistant_message=answer)
+        again = self.sent()[1]
+        self.assertEqual((again["h"], again["c"]), (core.digest("Which branch should I deploy?"), ["main", "release"]))
+        several = Answer(("clarify", {"questions": [{"question": "One?"}, {"question": "Two?"}]}))
+        plugin._on_answer(session_id="20261007_1", platform="desktop", assistant_message=several)
+        self.assertNotIn("h", self.sent()[2], "several questions take the card")
         # A call Hermes will turn down asks nobody anything; nor does a subagent's, which has nobody to ask.
         plugin._on_answer(session_id="20261007_1", platform="desktop", assistant_message=Answer(("clarify", {"questions": []})))
         plugin._on_answer(session_id="child_1", platform="subagent", assistant_message=Answer(("clarify", {"question": "Sure?"})))
         plugin._on_answer(session_id="20261007_1", platform="desktop", assistant_message=Answer(content="No question here."))
-        self.assertEqual(len(self.sent()), 1)
+        self.assertEqual(len(self.sent()), 3)
 
     def test_a_question_in_a_conversation_nobody_follows_stays_at_the_desk(self):
         plugin._on_answer(session_id="desk_1", platform="tui", assistant_message=Answer(("clarify", {"question": "Sure?"})))

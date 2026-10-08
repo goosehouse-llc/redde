@@ -170,6 +170,25 @@ second notification says the approval wasn't answered; silence would read as don
 conversation no phone follows has no `h` and no buttons: the Dashboard has no hand in a turn over
 the Hermes API or at a terminal.
 
+**An answer on a question's notification.** A question note in a conversation the phone follows,
+on a Hermes that lists what it waits on (0.21.3 and later), carries `h` too, of the question's
+text, and `c`, its choices. The notification has a Reply field, and the choices as buttons. An
+answer starts the app in the background, as for an approval: it resumes the session and answers
+only if the session is still waiting on that one question (`HermesServeClient.answerWaitingQuestion`),
+and says so in a second notification if it couldn't. Several questions asked at once, or one
+where several choices may be ticked, have no `h`: those take the card.
+
+The buttons need a notification category, categories are registered ahead of time, and a
+question's choices are only known when it arrives. So the app registers one with the Reply field
+alone (`PushNote.questionCategory`), and the notification extension adds one for the question at
+hand as its note comes in (`PushNote.choiceCategory`, `NotificationService.registered`): the
+app's categories plus this one, then asks for the list again before letting the notification
+through, since the answer only comes back once the new set is in place. If the app's own
+category isn't in the list it reads, or the new one doesn't show up in it, the note keeps the
+app's category and its Reply field. The app sets its categories afresh at launch, which drops the
+extension's; a question's notification still on screen then keeps its text and opens the
+conversation, without its buttons.
+
 **The card, on opening the conversation.** Opening a Dashboard conversation, from the notification
 or the list, resumes its session; if a turn is under way there, the app joins it
 (`HermesServeTransport.rejoin`, `Conversation.rejoinIfWaiting`): the reply so far, what follows,
@@ -230,7 +249,7 @@ opens only for the pairing it was sealed to. Inside:
 `k` is `reply`, `task`, `approval`, `question`, `sudo`, `secret`, `failed`, `paired` or `test`;
 what `b` and `d` hold for each is listed at `core.note`. A kind the app doesn't know leaves the
 relay's words in place. An approval that can be answered from the notification also has `h`, the first
-sixteen hex digits of `SHA-256(command)`. The plugin also sends an `apns-collapse-id`, a hash over the key, the kind and the
+sixteen hex digits of `SHA-256(command)`; a question that can has `h` of its text, and `c`, a list of up to four choices. The plugin also sends an `apns-collapse-id`, a hash over the key, the kind and the
 session, so a later note about the same thing replaces the earlier one; the relay learns only that
 two notes belong together. `reply`, `task` and `failed` count as one kind for this: however a turn
 ended, the latest word on it stands.
@@ -275,14 +294,16 @@ from Apple, so a phone and the deployed relay.
 - **On a phone**: pair with a real Hermes; lock the phone and close the app; a reply and an
   approval each arrive with their text; tapping one opens its conversation, the approval's with
   its card; Approve and Deny on the approval answer it; Reply on a reply's banner sends into it.
-  The same for a question (its card comes back), and for a turn that fails with the app closed.
+  The same for a question (its card comes back; Reply and its choice buttons answer it), and for a
+  turn that fails with the app closed.
   With Notification sound off, a pushed note arrives silent. And a turn that fails while the app
   is still running in the background alerts once, not again when the plugin's note follows.
 
 ## Not done
 
-- A question, a password or a secret can't be answered from the notification, only by opening the
-  conversation. On Hermes 0.21.0 their cards don't come back there either.
+- A password or a secret can't be given from the notification, only by opening the conversation;
+  nor can several questions asked at once. On Hermes 0.21.0 no question can, and the cards
+  don't come back on opening the conversation either.
 - Kanban tasks and cron jobs announce nothing of their own: the plugin doesn't listen for
   Kanban's hooks (they fire in each worker's own process), and Hermes has none for cron.
 - Hermes's other prompts have no note: unlocking a password manager, an MCP server's setup.

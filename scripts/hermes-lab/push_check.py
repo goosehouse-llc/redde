@@ -204,14 +204,19 @@ async def dashboard(phone):
     # The agent asks the person something.
     runtime, stored = await followed("lab:question please")
     made = await asyncio.to_thread(phone.wait_for, "question", stored)
-    report(bool(made) and made.get("b") == "Which branch should I deploy?" and made.get("d") == "main · release" and "h" not in made,
+    report(bool(made) and made.get("b") == "Which branch should I deploy?" and made.get("d") == "main · release",
            "Dashboard: a question the agent asks reaches the phone, with its choices", made)
     waiting = await waiting_on(stored)
     lists = waiting is not None
     if lists:
         report(waiting == ["clarify"], "Dashboard: and waits to be answered by whoever opens the conversation", waiting)
+        # Answered from the notification, the answer goes by session and by the question's digest,
+        # and the choices are the buttons.
+        report(bool(made) and made.get("h") == core.digest("Which branch should I deploy?") and made.get("c") == ["main", "release"],
+               "Dashboard: the note names the question by its digest and brings its choices", made)
     else:
         print("  ----  this Hermes keeps no list of what it waits on (0.21.0): no card on opening, and sudo and secret go unannounced")
+        report(bool(made) and "h" not in made and "c" not in made, "Dashboard: a question there isn't offered an answer from the notification", made)
     await dash.call("session.interrupt", {"session_id": runtime})
 
     # A command wants the sudo password. (Not where sudo asks for none: then there is no prompt.)

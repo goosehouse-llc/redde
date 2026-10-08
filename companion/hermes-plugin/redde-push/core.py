@@ -284,25 +284,32 @@ PASSWORD = "su" + "do"
 TTL = {"approval": 600, "question": 600, "secret": 300, PASSWORD: 180}
 
 
-def note(kind: str, session: str = "", body: str = "", title: str = "", detail: str = "", answerable: bool = False) -> dict:
+def note(kind: str, session: str = "", body: str = "", title: str = "", detail: str = "", answerable: bool = False,
+         choices: list | None = None) -> dict:
     """What the phone is told. `k`: what happened (below). `s`: the Hermes session. `t`: the
     conversation's title. `n`: this machine's name. `b` and `d` by kind:
 
         reply      the reply's opening
         task       the same, for a reply nobody asked for just now: a task handed off came back
         approval   the command; `d`: why it needs approval
-        question   the question; `d`: its choices
+        question   the question; `d`: its choices on a line, `c`: the same as a list
         sudo       the command that wants the password, when Hermes says which
         secret     what is asked for; `d`: the variable it is for
         failed     why the turn ended without a reply
         paired, test
 
-    `h`, on an approval the phone can answer from the notification (one in a conversation it
-    follows): the command's digest, so its answer goes to that command and no other. Short keys:
-    every byte is sealed and base64-encoded into a notification Apple caps at 4 KB."""
+    `h`, on an approval or a question the phone can answer from the notification (one in a
+    conversation it follows): the digest of the command, or of the question, so the answer goes
+    to that one and no other. A question has it only when `choices` is given (a list, empty for
+    a question with none): one question, on a Hermes that can be asked what it is waiting on.
+    Short keys: every byte is sealed and base64-encoded into a notification Apple caps at 4 KB."""
     made = {"v": 1, "k": kind, "at": int(time.time()), "n": host_name()}
     if kind == "approval" and answerable and session:
         made["h"] = digest(body)   # of the whole command, however much of it fits in `b`
+    if kind == "question" and answerable and session and choices is not None:
+        made["h"] = digest(body)
+        if choices:
+            made["c"] = [clipped(choice, 60) for choice in choices[:4]]   # as many as a notification has buttons for
     for key, value, limit in (("s", session, 120), ("t", title, 80), ("d", detail, 200)):
         if value:
             made[key] = clipped(value, limit)
@@ -378,17 +385,18 @@ class Pusher:
         self._thread: threading.Thread | None = None
         self._lock = threading.Lock()
 
-    def submit(self, kind: str, session: str, platform: str, body: str = "", detail: str = "", now: bool = False) -> int:
+    def submit(self, kind: str, session: str, platform: str, body: str = "", detail: str = "", now: bool = False,
+               choices: list | None = None) -> int:
         """Queues a note for the phones that should hear about this conversation; how many.
         `now` sends it before returning, once: for a process on its way out, which can start no
-        thread and has no time for a second try."""
+        thread and has no time for a second try. `choices`: see `note`."""
         devices = self.store.targets(session, platform)
         if not devices:
             return 0
         if now:
-            return self.send(devices, note(kind, session, body, self._title(session), detail, self.store.follows(session)), tries=1)
+            return self.send(devices, note(kind, session, body, self._title(session), detail, self.store.follows(session), choices), tries=1)
         try:
-            self._queue.put_nowait((devices, kind, session, body, detail, self.store.follows(session)))
+            self._queue.put_nowait((devices, kind, session, body, detail, self.store.follows(session), choices))
         except queue.Full:
             log.warning("redde-push: too many notes waiting; one dropped")
             return 0
@@ -401,11 +409,11 @@ class Pusher:
     def _run(self) -> None:
         while True:
             try:
-                devices, kind, session, body, detail, answerable = self._queue.get(timeout=30)
+                devices, kind, session, body, detail, answerable, choices = self._queue.get(timeout=30)
             except queue.Empty:
                 return
             try:
-                self.send(devices, note(kind, session, body, self._title(session), detail, answerable))
+                self.send(devices, note(kind, session, body, self._title(session), detail, answerable, choices))
             finally:
                 self._queue.task_done()
 
@@ -466,23 +474,26 @@ def tool_calls(message) -> list[tuple[str, dict]]:
     return found
 
 
-def question(arguments: dict) -> tuple[str, str]:
-    """What a call to Hermes's clarify tool asks, for a note: the question, and its choices on
-    one line. Of several questions, the first, and how many more. ("", "") for a call Hermes
-    will turn down: nothing asked, or more than it takes."""
+def question(arguments: dict) -> tuple[str, str, list | None]:
+    """What a call to Hermes's clarify tool asks, for a note: the question, its choices on one
+    line, and the choices as a list. Of several questions, the first and how many more, and no
+    list (None): one answer from a notification can't settle several. ("", "", None) for a call
+    Hermes will turn down: nothing asked, or more than it takes."""
     asked = arguments.get("questions")
     if not isinstance(asked, list) or not asked:   # the older form: one question, at the top
         asked = [arguments] if arguments.get("question") else []
     asked = [q for q in asked if isinstance(q, dict) and str(q.get("question") or "").strip()]
     if not asked or len(asked) > 5:
-        return "", ""
+        return "", "", None
     first = asked[0]
     if len(asked) > 1:
         more = len(asked) - 1
-        return str(first["question"]), f"and {more} more question{'s' if more != 1 else ''}"
+        return str(first["question"]), f"and {more} more question{'s' if more != 1 else ''}", None
     choices = first.get("choices") if isinstance(first.get("choices"), list) else []
     labels = [str(_get(c, "label") or _get(c, "value") or "") if isinstance(c, dict) else str(c) for c in choices]
-    return str(first["question"]), " · ".join(label for label in labels if label.strip())
+    labels = [label for label in labels if label.strip()]
+    # Several may be ticked: that takes the card, not one tap.
+    return str(first["question"]), " · ".join(labels), None if first.get("multi_select") else labels
 
 
 #: The provider's own words inside what Hermes reports: {'error': {'message': '…', …}}.

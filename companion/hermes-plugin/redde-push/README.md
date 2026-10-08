@@ -50,8 +50,9 @@ and read by the gateway and the Dashboard from there.
 - **A command waits for approval**: the command and why it was stopped. For a turn over the
   Dashboard the notification has Approve and Deny, and opening the conversation brings back its
   card; Hermes waits five minutes for an answer by default (`approvals.timeout`).
-- **The agent asks you a question**: the question and its choices. Opening the conversation brings
-  back its card (Hermes 0.21.3 and later).
+- **The agent asks you a question**: the question and its choices. On Hermes 0.21.3 and later
+  the notification takes your answer, typed or by a choice's button, and opening the conversation
+  brings back its card.
 - **A command run as root waits for your password, or a skill for a secret**: which command, or
   what is asked for. Hermes waits two minutes for a password and five for a secret. Over the
   Dashboard, on Hermes 0.21.3 and later; see below.
