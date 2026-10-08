@@ -18,6 +18,11 @@ that follows in the same conversation is an ordinary one):
     lab:refused    the endpoint answers 401: a failure Hermes doesn't retry
     lab:outage     the endpoint answers 500 every time: one it retries, then gives up on
     lab:hiccup     the endpoint answers 500 twice, then as usual: one it retries and gets past
+    lab:todo       it writes a task list of three with the to-do tool (`todo_list`, or `todo` as
+                   Hermes 0.21.0 calls it): the first in progress, two waiting
+    lab:tick       it merges into that list: the first done, the second in progress
+    lab:badtick    it merges an item that names no words, which Hermes 0.21.3 and later turn
+                   down without running the tool (0.21.0 takes it)
 
 And one for attachments: a message with "lab:file" in it is answered "[file seen]" when what
 reached the model also holds "lab-file-token" (a text file's contents, as Hermes inlines them)
@@ -34,8 +39,18 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 PORT, NAME, MODELS = int(sys.argv[1]), sys.argv[2], sys.argv[3].split(",")
 HITS = os.environ["LAB_HITS"]
 TARGET = os.environ.get("LAB_TARGET", "")
-#: What a message makes the model call: the tool and its arguments.
+#: The to-do tool's name from Hermes 0.21.3, and before: the stub calls whichever it is offered.
+TODO = ("todo_list", "todo")
+#: What a message makes the model call: the tool (or the names it may go by) and its arguments.
 CALLS = {
+    "lab:todo": (TODO, {"todos": [{"id": "1", "content": "Export the posts", "status": "in_progress"},
+                                   {"id": "2", "content": "Import them", "status": "pending"},
+                                   {"id": "3", "content": "Check the feed", "status": "pending"}]}),
+    # (Every item with its words: from 0.21.3 Hermes turns a call down whose items leave any out.)
+    "lab:tick": (TODO, {"todos": [{"id": "1", "content": "Export the posts", "status": "completed"},
+                                   {"id": "2", "content": "Import them", "status": "in_progress"}], "merge": True}),
+    # One Hermes 0.21.3 and later refuse without running the tool: an item with no words.
+    "lab:badtick": (TODO, {"todos": [{"id": "2", "status": "completed"}], "merge": True}),
     "lab:question": ("clarify", {"questions": [{"question": "Which branch should I deploy?", "choices": ["main", "release"]}]}),
     "lab:delegate": ("delegate_task", {"goal": "Say hello."}),
     "lab:sudo": ("terminal", {"command": "sudo true"}),
@@ -92,7 +107,19 @@ class Handler(BaseHTTPRequestHandler):
                 failure = FAILURES["lab:outage"]
             if failure:
                 return self._json(*failure)
-            planned = next((plan for word, plan in CALLS.items() if word in just_said and plan[0] in offered), None)
+            planned = None
+            for word, (names, arguments) in CALLS.items():
+                if word not in just_said:
+                    continue
+                names = (names,) if isinstance(names, str) else names
+                name = next((n for n in names if n in offered), None)
+                if name:
+                    planned = (name, arguments)
+                elif names is TODO and "tool_call" in offered:
+                    # From Hermes 0.21.3 most tools are not offered outright: the model finds
+                    # them and calls them through `tool_call`, by name.
+                    planned = ("tool_call", {"calls": [{"name": names[0], "arguments": arguments}]})
+                break
             if "lab:file" in just_said:
                 text = "[file seen]" if "lab-file-token" in just_said or "lab-clip.mp4" in just_said else "[file missing]"
             if messages[-1].get("role") == "tool":

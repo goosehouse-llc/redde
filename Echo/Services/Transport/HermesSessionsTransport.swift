@@ -85,6 +85,10 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
         }
     }
 
+    /// The name a finished call is matched to its step by. A `tool_call` that came without the
+    /// arguments that say which tool it was matches the step still running, whatever its name.
+    private static func finished(_ name: String) -> String { name == "tool_call" ? "" : name }
+
     private struct Envelope: Decodable {
         var session_id: String?
         var run_id: String?
@@ -127,18 +131,21 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
             if env.tool_name == "_thinking", let delta = env.delta { return ([.reasoningDelta(delta)], false) }
             return ([], false)
         case "tool.started":
-            var events: [TurnEvent] = [.toolStarted(name: env.tool_name ?? "tool", preview: env.preview, args: ToolActivity.detail(env.args))]
-            if env.tool_name == "delegate_task" { events += delegatedGoals(env.args, runID: env.run_id).map { .subagent($0) } }
+            // A tool reached through `tool_call` is named as itself, as the Dashboard names it.
+            let call = ToolActivity.unwrapped(name: env.tool_name ?? "tool", args: env.args)
+            var events: [TurnEvent] = [.toolStarted(name: call.name, preview: env.preview, args: ToolActivity.detail(call.args))]
+            if call.name == "delegate_task" { events += delegatedGoals(call.args, runID: env.run_id).map { .subagent($0) } }
             return (events, false)
         case "tool.completed":
-            var events: [TurnEvent] = [.toolFinished(name: env.tool_name ?? "", failed: false)]
-            if env.tool_name == "delegate_task" {
+            let call = ToolActivity.unwrapped(name: env.tool_name ?? "", args: env.args)
+            var events: [TurnEvent] = [.toolFinished(name: Self.finished(call.name), failed: false)]
+            if call.name == "delegate_task" {
                 // The API server drops subagent.* events; results land in a later turn. Mark as dispatched.
-                events += delegatedGoals(env.args, runID: env.run_id).map { var u = $0; u.phase = .dispatched; return .subagent(u) }
+                events += delegatedGoals(call.args, runID: env.run_id).map { var u = $0; u.phase = .dispatched; return .subagent(u) }
             }
             return (events, false)
         case "tool.failed":
-            return ([.toolFinished(name: env.tool_name ?? "", failed: true)], false)
+            return ([.toolFinished(name: Self.finished(ToolActivity.unwrapped(name: env.tool_name ?? "", args: env.args).name), failed: true)], false)
         case "approval.request":
             // The gateway pauses the run on an approval-gated tool call; answered via
             // POST /v1/runs/{run_id}/approval, so the run id rides as the routing token.
@@ -325,6 +332,12 @@ nonisolated struct HermesSessionsAPI: Sendable {
     func messages(sessionID: String) async throws -> [StoredMessage] {
         try await get(ListEnvelope<StoredMessage>.self, "api/sessions/\(sessionID)/messages",
                       query: [.init(name: "order", value: "oldest"), .init(name: "limit", value: "500")]).data
+    }
+
+    /// The newest stored messages of a session, oldest first: the end of its transcript.
+    func newestMessages(sessionID: String, limit: Int) async throws -> [StoredMessage] {
+        try await get(ListEnvelope<StoredMessage>.self, "api/sessions/\(sessionID)/messages",
+                      query: [.init(name: "order", value: "latest"), .init(name: "limit", value: String(limit))]).data
     }
 
     func createSession(title: String?, model: String? = nil, provider: String? = nil, reasoningEffort: String? = nil) async throws -> SessionSummary {

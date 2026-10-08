@@ -33,6 +33,8 @@ and can't read them ([docs/push.md](docs/push.md)).
   skills and toolsets, memory and context files, cron jobs and the Kanban board.
 - **Each conversation its own way.** On the Dashboard: fast mode and "run commands without
   asking" for one conversation, in the model menu, and Move to Project in the chat list.
+- **The agent's plan.** When Hermes keeps a task list for a long job, the reply shows it as a
+  checklist: what is done, what it is on, what is left.
 - **The server too.** What the gateway is connected to, its MCP servers with a switch and a test
   for each, its logs, and restarting or updating Hermes, from Settings → Gateway.
 - **Set up by code.** Scan a QR code or open a setup link and the connection fills itself in. A

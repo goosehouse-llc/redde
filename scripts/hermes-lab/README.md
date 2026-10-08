@@ -13,6 +13,7 @@ scripts/hermes-lab/lab.sh approvals      # the app's Dashboard client is asked b
 scripts/hermes-lab/lab.sh signin         # the app's Dashboard client signs in through a browser
 scripts/hermes-lab/lab.sh admin          # Settings → Gateway: status, MCP servers, logs, a restart
 scripts/hermes-lab/lab.sh controls       # one conversation's switches (run without asking, fast mode), and a move to a project
+scripts/hermes-lab/lab.sh todos          # the agent's task list as a reply's checklist, on both connections, live and reopened
 scripts/hermes-lab/lab.sh push           # the push plugin: pairing, and a note for everything it announces
 scripts/hermes-lab/lab.sh push --app     # and the app in a simulator pairs with each release
 scripts/hermes-lab/lab.sh up v2026.9.24 two   # leave one lab running to poke at; `down` stops it
@@ -91,6 +92,21 @@ and a second conversation has to be asked throughout. Fast mode is switched on a
 refused, since the stub's model has none; a real one would take an OpenAI, Anthropic or xAI
 model. Then the conversation is moved to a folder made for the test, has to show up under that
 project, and a folder that doesn't exist has to be refused.
+
+## The agent's task list
+
+`todos` runs `EchoTests/HermesLabTodoTests` on the `approval` scenario. The stub model writes a
+three-item list (`lab:todo`), ticks it by a merge in the next turn (`lab:tick`), then sends a
+merge whose item has no words (`lab:badtick`), which 0.21.3 and later turn down without running
+the tool. Where the to-do tool isn't offered to the model outright, the stub reaches it through
+`tool_call`, as a real model does there. The checks: over the Dashboard, a conversation of the
+app's own shows the list after each turn, and has it back, with its steps, when the session is
+read again; over the Hermes API, the list is read from the calls as they stream, then from the
+tool's own answer when the turn is over, and both replies have the same list when read back.
+
+Two things print as notes (`----`) and not as failures, because they are how that Hermes is:
+0.21.3 and later turn the wordless merge down, and their API starts each turn on an empty list,
+so the merge there leaves two items where the Dashboard has three.
 
 ## Gateway administration
 

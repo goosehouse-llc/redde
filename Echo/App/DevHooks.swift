@@ -19,6 +19,7 @@ import Foundation
 /// - `-echo.demoKanban`: a sample Kanban board instead of the server's.
 /// - `-echo.demoGateway`: Settings → Gateway on sample data, with no server (and the row unlocked).
 /// - `-echo.demoChatControls`: the model menu's "This conversation" switches on sample data.
+/// - `-echo.demoTodos`: a conversation in which the agent keeps a task list (the checklist under a reply).
 /// - `-echo.screen settings|sessions|setup|profiles|servers|model|tips|push`: open that screen at launch.
 /// - `-echo.pushLink <link>`: open a pairing link for notifications, as the Camera would.
 ///   `-push.relay <url>` points the app at another push relay (the lab's, on this Mac).
@@ -90,6 +91,7 @@ enum DevHooks {
         // The Projects section only shows on the Dashboard connection.
         if demoProjects { settings.transport = .hermesServe }
         if has("-echo.demoLong") { conversation.seedLongDemo() }
+        if has("-echo.demoTodos") { conversation.seedTodoDemo() }
         if has("-echo.demoHeavy") { conversation.seedHeavyDemo(turns: value("-echo.demoHeavy").flatMap(Int.init) ?? 32) }
         if has("-echo.demoApproval") {
             TurnActivity.shared.start(question: "Clear out the old build folders")

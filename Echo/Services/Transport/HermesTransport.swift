@@ -24,6 +24,9 @@ nonisolated enum TurnEvent: Sendable, Equatable {
     /// A tool call ended. `name` may be empty when the backend doesn't repeat it. `output` is
     /// what it returned, as text: the Dashboard sends it, the Hermes API's stream does not.
     case toolFinished(name: String, failed: Bool, output: String? = nil)
+    /// The agent's task list, whole, as the host has it now (the Dashboard says so after every
+    /// change the to-do tool makes).
+    case todos([TodoItem])
     /// A delegated child agent started, called a tool, or finished.
     case subagent(SubagentUpdate)
     /// Server-side session id (Hermes ledger) this turn belongs to.
@@ -83,6 +86,16 @@ nonisolated struct ToolActivity: Identifiable, Equatable, Sendable, Codable {
         }
     }
 
+    /// The call as the person should see it. From Hermes 0.21.3 a model reaches most tools
+    /// through `tool_call`, which names the tool and carries its arguments; the Dashboard's live
+    /// events name the tool itself, and so does this, for a transcript read back and for the
+    /// Hermes API's stream. A `tool_call` that makes several calls at once stays as it is.
+    static func unwrapped(name: String, args: JSONValue?) -> (name: String, args: JSONValue?) {
+        guard name == "tool_call", let calls = args?["calls"]?.array, calls.count == 1,
+              let inner = calls[0]["name"]?.string, !inner.isEmpty else { return (name, args) }
+        return (inner, calls[0]["arguments"])
+    }
+
     /// The same for JSON that arrives as text (a stored call's `arguments`): parsed when it
     /// parses, else shown as it came.
     static func detail(json text: String?) -> String? {
@@ -90,6 +103,18 @@ nonisolated struct ToolActivity: Identifiable, Equatable, Sendable, Codable {
         guard let value = try? JSONValue.parse(Data(text.utf8)) else { return detail(text) }
         return detail(value)
     }
+}
+
+/// One item of the agent's own task list: Hermes's to-do tool, `todo_list` (`todo` before 0.21.3).
+nonisolated struct TodoItem: Identifiable, Equatable, Sendable, Codable {
+    enum Status: String, Codable, Sendable {
+        case pending, inProgress = "in_progress", completed, cancelled
+    }
+    var id: String
+    var content: String
+    var status: Status
+    /// The item this one is a subtask of.
+    var parent: String?
 }
 
 /// One delegated child agent, as seen from the parent turn. hermes serve streams these live;

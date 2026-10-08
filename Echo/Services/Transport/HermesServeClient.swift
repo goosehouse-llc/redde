@@ -98,6 +98,9 @@ final class HermesServeClient {
     /// Reasoning level last pinned on each runtime session over this connection, so a turn
     /// doesn't re-send `config.set` every time (see `openSession`).
     private var pinnedEfforts: [String: String] = [:]
+    /// The agent's task list as the host had it when a session's history was last fetched, by
+    /// stored session id (`todo_state` on a resume): what a replayed transcript is set against.
+    @ObservationIgnored private(set) var hostTodos: [String: [TodoItem]] = [:]
 
     private var baseURL: URL? { settings.serveBaseURL }
 
@@ -820,6 +823,7 @@ final class HermesServeClient {
                                     params: .object(["session_id": .string(stored), "omit_messages": .bool(false)]),
                                     timeout: 180)
         if let runtime = result["session_id"]?.string { runtimeIDs[stored] = runtime }
+        hostTodos[stored] = TodoList.list(result["todo_state"])
         return result["messages"]?.array ?? []
     }
 

@@ -377,6 +377,44 @@ then duration and summary. On the Dashboard, tap a row for the child's own trans
 stop it (`subagent.*` events). The API stream doesn't forward subagent events, so rows there are
 built from the delegate call's goals. `Views/SubagentRows.swift`.
 
+### The agent's task list
+
+Hermes's to-do tool (`todo_list`; `todo` before 0.21.3) is the agent's own plan for a long job.
+A reply that touched it shows the list as a checklist under its steps (`Views/TodoChecklist.swift`):
+done, in progress, still to do, dropped, subtasks indented, "2 of 5 done". Each reply keeps the
+list as it left it (`Message.todos`), so scrolling back shows how the plan went.
+
+Hermes keeps the list; the app only reads it, from whichever source the connection has
+(`Models/TodoList.swift`):
+
+- **Dashboard, live.** The host says what the whole list is after every change (`todo.updated`,
+  in 0.21.0, 0.21.3 and 0.21.5 alike), and that is taken as it comes (`TurnEvent.todos`).
+- **Hermes API, live.** The stream names a finished call with what it wrote and without the
+  tool's answer. A call that replaces the list names all of it; one that merges names what
+  changed, and is applied to the list before it the way Hermes's own store does. When the turn is
+  over the transcript's end is read once for the answer itself (`answeredTodos`), which then is
+  the list.
+- **A transcript read back**, from either connection or from disk: the calls are replayed in
+  order (`TodoList.resolve`), each by its answer where the row kept one. On the Dashboard the
+  newest list is then set against the host's own (`todo_state` in `session.resume`).
+
+Things about Hermes this had to allow for, all measured in the lab:
+
+- From 0.21.3 the model reaches most tools through `tool_call`, which names the tool and carries
+  its arguments. Live events name the inner tool; stored transcripts keep `tool_call`. Steps are
+  unwrapped to the tool they called everywhere (`ToolActivity.unwrapped`), not only for the list.
+- `tool_call` checks arguments and turns a call down without running the tool (a merge whose item
+  has no `content`, for one). The answer says "NOT invoked", and such a call changes nothing.
+- The Dashboard's history lists a tool row before the reply's row when the model called a tool
+  without saying anything first; those rows are held and given to the reply that follows.
+- Over the Hermes API, 0.21.3 and 0.21.5 start each turn on an empty list: the agent is built
+  anew for every message, and what should restore its list from history still looks for a call
+  named `todo`. A merge in a later turn therefore leaves only the items it named, and that is
+  what the tool answers and what the app shows. The Dashboard keeps its agent, and the list.
+
+`scripts/hermes-lab/lab.sh todos` checks all of it with the app's own client on the three
+releases. `-echo.demoTodos` seeds a conversation with a list for `EchoUITests/TodoChecklistUITests`.
+
 ### Attachments and sharing
 
 The composer's round button follows what you're doing (the app's waveform, still, for voice; send;

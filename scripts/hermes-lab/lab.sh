@@ -9,6 +9,7 @@
 #   scripts/hermes-lab/lab.sh signin [tag ...]     the app's Dashboard client signs in through a browser
 #   scripts/hermes-lab/lab.sh admin [tag ...]      the Gateway screen's routes: status, MCP servers, logs, a restart
 #   scripts/hermes-lab/lab.sh controls [tag ...]   a conversation's own switches (run without asking, fast mode) and a move to a project
+#   scripts/hermes-lab/lab.sh todos [tag ...]      the agent's task list as a checklist, live and reopened, on both Hermes connections
 #   scripts/hermes-lab/lab.sh push [tag ...]       the push plugin: pairing, and a note for everything it announces
 #   scripts/hermes-lab/lab.sh push --app [tag ...] the same, then the app pairs both ways and reads a notification
 #   scripts/hermes-lab/lab.sh up <tag> <scenario>  leave one lab running (API :18642, Dashboard :19119)
@@ -144,6 +145,21 @@ app_check() {
   echo "App transport (${XCODE_ARGS[-1]#-only-testing:})"
   echo "$out" | grep -E "^  (PASS|FAIL|----)|LAB SKIP" || echo "  the test host never launched"
   [[ "$out" == *"TEST EXECUTE SUCCEEDED"* && "$out" == *"  PASS"* && "$out" != *"  FAIL"* ]]
+}
+
+# The agent's task list: the stub writes one with Hermes's to-do tool and merges into it, and the
+# app has to have the list after each, live and from the stored transcript, on both connections.
+todos() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  app_prepare HermesLabTodoTests || exit 1
+  for tag in $tags; do
+    echo "===== Hermes $tag / approval"
+    if ! up "$tag" approval; then failed+=("$tag (lab)"); continue; fi
+    app_check || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
 }
 
 # A conversation's own switches, with the app's own client: running commands without asking (the
@@ -310,6 +326,7 @@ case "${1:-}" in
   signin) shift; signin "$@" ;;
   admin) shift; admin "$@" ;;
   controls) shift; controls "$@" ;;
+  todos) shift; todos "$@" ;;
   push) shift; push "$@" ;;
   up) up "$2" "$3" && echo "lab up: Hermes $2 / $3 — API http://127.0.0.1:18642 (key labkey-labkey-labkey), Dashboard http://127.0.0.1:19119" ;;
   down) down ;;

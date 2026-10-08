@@ -488,6 +488,134 @@ struct HermesLabSignInTests {
     }
 }
 
+/// The agent's task list against the lab (`scripts/hermes-lab/lab.sh todos`): the stub model
+/// writes a list of three with Hermes's to-do tool, merges two changes into it, and then tries a
+/// merge that Hermes 0.21.3 and later turn down. The app has to have the list as it stands after
+/// each, from what really comes down each connection: live over the Dashboard (the host says the
+/// list), live over the Hermes API (the calls alone), and from the stored transcript of each when
+/// the conversation is opened again.
+struct HermesLabTodoTests {
+    private static let api = URL(string: "http://127.0.0.1:18642")!
+    private static let key = "labkey-labkey-labkey"
+
+    private static func says(_ list: [TodoItem]?) -> String {
+        list.map { $0.map { "\($0.id)=\($0.status.rawValue)" }.joined(separator: " ") } ?? "no list"
+    }
+
+    private static let written: [TodoItem.Status] = [.inProgress, .pending, .pending]
+    private static let ticked: [TodoItem.Status] = [.completed, .inProgress, .pending]
+    /// The merge on a Hermes API that forgot the list: only the two items it named.
+    private static let tickedAlone: [TodoItem.Status] = [.completed, .inProgress]
+    /// Where Hermes takes the third call (0.21.0), the second item is done as well.
+    private static let tickedAgain: [TodoItem.Status] = [.completed, .completed, .pending]
+
+    @Test func theChecklistFollowsTheAgentsListOnBothConnections() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        func report(_ ok: Bool, _ what: String, _ detail: String = "") { HermesLabApprovalTests.report(ok, what, detail) }
+
+        // The Dashboard, through a conversation of the app's own.
+        let settings = Settings(defaults: UserDefaults(suiteName: "lab-todo-\(UUID().uuidString)")!)
+        settings.transport = .hermesServe   // the later turns have to go into the first one's session
+        let conversation = Conversation(settings: settings, store: ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "lab-todo-\(UUID().uuidString)")),
+                                        transportOverride: HermesServeTransport(client: client))
+        // Each turn goes out a moment after the one before ends. Hermes 0.21.3 and later say the
+        // session has settled some 75 ms after a reply's last message, which the next turn is
+        // already listening for by then: about one run in three here, and it once ended that
+        // turn with nothing in it.
+        func turn(_ text: String) async throws -> Message? {
+            _ = conversation.send(text)
+            for _ in 0 ..< 600 where conversation.isStreaming { try await Task.sleep(for: .milliseconds(100)) }
+            return conversation.messages.last
+        }
+        let first = try await turn("lab:todo")
+        guard first?.todos != nil || first?.tools.contains(where: { TodoList.isTool($0.name) }) == true else {
+            print("  ----  this Hermes gave the model no way to its to-do tool; nothing to draw")
+            return
+        }
+        report(first?.todos?.map(\.status) == Self.written && first?.todos?.first?.content == "Export the posts",
+               "Dashboard, live: a list the agent writes is the reply's checklist", "\(Self.says(first?.todos)), steps \(first?.tools.map(\.name) ?? [])")
+        let second = try await turn("lab:tick")
+        report(second?.todos?.map(\.status) == Self.ticked && second?.todos?.map(\.content) == ["Export the posts", "Import them", "Check the feed"],
+               "Dashboard, live: a merge in the next turn ticks the same list",
+               "\(Self.says(second?.todos)), steps \(second?.tools.map { "\($0.name):\($0.status)" } ?? []), text \(second?.text.prefix(80) ?? ""), error \(second?.error ?? "none")")
+        let third = try await turn("lab:badtick")
+        let refused = third?.todos == nil
+        if refused { print("  ----  this Hermes turns down a merge whose item has no words, without running the tool (0.21.3 and later)") }
+        report(refused || third?.todos?.map(\.status) == Self.tickedAgain, "Dashboard, live: a call Hermes turns down changes nothing; one it takes ticks",
+               Self.says(third?.todos))
+        let final = refused ? Self.ticked : Self.tickedAgain
+
+        // Opened again from the server's own transcript, set against what the host says the list is.
+        if let stored = conversation.serverSessionID {
+            var reread = Conversation.messages(fromServeRows: try await client.history(stored: stored))
+            TodoList.resolve(&reread)
+            TodoList.reconcile(&reread, with: client.hostTodos[stored])
+            let lists = reread.compactMap(\.todos)
+            report(lists.count >= 2 && lists.first?.map(\.status) == Self.written && lists.last?.map(\.status) == final,
+                   "Dashboard, reopened: the replies have their checklists back, the last as the host has it", lists.map(Self.says).joined(separator: " | "))
+            report(reread.filter { $0.role == .assistant }.allSatisfy { !$0.tools.isEmpty }, "Dashboard, reopened: each reply has its tool steps again",
+                   "\(reread.map { "\($0.role.rawValue):\($0.tools.map(\.name))" })")
+        } else {
+            report(false, "Dashboard, reopened: the replies have their checklists back", "the conversation has no session on the server")
+        }
+
+        // The Hermes API: the stream names a finished call without its result.
+        var probe = URLRequest(url: Self.api.appending(path: "health"))
+        probe.timeoutInterval = 2
+        guard (try? await URLSession.shared.data(for: probe)) != nil else {
+            print("  ----  no Hermes API on 127.0.0.1:18642; only the Dashboard was checked")
+            return
+        }
+        let ledger = HermesSessionsAPI(baseURL: Self.api, apiKey: Self.key)
+        let transport = HermesSessionsTransport(baseURL: Self.api, apiKey: Self.key)
+        // As the app asks: the model by its full name, every turn.
+        let choices = (try? await ledger.modelOptions()) ?? []
+        let model = choices.first { $0.model == "alpha" }
+        let provider = model.flatMap { Conversation.liveProvider(for: $0.model, saved: $0.provider, in: choices) }
+        let session = try await ledger.createSession(title: "lab todo \(UUID().uuidString.prefix(8))", model: model?.model, provider: provider)
+        var list: [TodoItem] = []
+        var names: Set<String> = []
+        var forgets = false
+        for (text, expected, what) in [("lab:todo", Self.written, "a list the agent writes is read from the call"), ("lab:tick", Self.ticked, "a merge ticks the same list")] {
+            let request = TurnRequest(userText: text, history: [], sessionID: session.id, model: model?.model, provider: provider, instructions: nil)
+            var running: [ToolActivity] = []
+            do {
+                for try await event in transport.stream(request) {
+                    if case let .toolStarted(name, preview, args) = event {
+                        names.insert(name)
+                        running.append(ToolActivity(name: name, preview: preview, status: .running, args: args))
+                    }
+                    if case let .toolFinished(name, failed, output) = event, let i = running.lastIndex(where: { name.isEmpty || $0.name == name }) {
+                        var done = running.remove(at: i)
+                        done.status = failed ? .failed : .completed
+                        done.output = output
+                        if let next = TodoList.after(step: done, previous: list) { list = next }
+                    }
+                }
+            } catch {
+                report(false, "Hermes API, live: \(what)", String(error.localizedDescription.prefix(160)))
+                continue
+            }
+            report(list.map(\.status) == expected, "Hermes API, live: \(what)", "\(Self.says(list)), steps \(names.sorted())")
+            // As a conversation does once the turn is over: the tool's own answer is the list.
+            let answered = await ledger.answeredTodos(sessionID: session.id)
+            if let answered, answered != list {
+                forgets = answered.map(\.status) == Self.tickedAlone
+                if forgets { print("  ----  this Hermes API starts each turn on an empty list (0.21.3 and later), so the merge left two items; the app shows the tool's answer") }
+                list = answered
+            }
+            report(answered != nil && (list.map(\.status) == expected || forgets), "Hermes API, after the turn: the tool's own answer is the checklist", Self.says(answered))
+        }
+        report(!names.contains("tool_call"), "Hermes API, live: a step is named for the tool, not for the way it was reached", "\(names.sorted())")
+        var stored = Conversation.mapStored(try await ledger.messages(sessionID: session.id))
+        TodoList.resolve(&stored)
+        let lists = stored.compactMap(\.todos)
+        report(lists.count == 2 && lists.first?.map(\.status) == Self.written && lists.last == list,
+               "Hermes API, reopened: both replies have the checklist they had live", lists.map(Self.says).joined(separator: " | "))
+    }
+}
+
 /// A conversation's own switches and a move to a project, against the lab
 /// (`scripts/hermes-lab/lab.sh controls`, the `approval` scenario): the app's client on an
 /// unmodified Hermes. Auto-approve is checked by what it is for: the stub's "danger" turn wants to

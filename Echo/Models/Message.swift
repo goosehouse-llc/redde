@@ -17,6 +17,8 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
     var reasoningStartedAt: Date?
     var reasoningEndedAt: Date?
     var tools: [ToolActivity] = []
+    /// The agent's own task list as this reply left it, when the reply changed it (`TodoList`).
+    var todos: [TodoItem]?
     /// Delegated child agents spawned during this reply.
     var subagents: [SubagentActivity] = []
     var attachments: [Attachment] = []
@@ -31,7 +33,7 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, role, text, createdAt, metrics, error, reasoning, reasoningStartedAt, reasoningEndedAt, tools, subagents, attachments, isSteer
+        case id, role, text, createdAt, metrics, error, reasoning, reasoningStartedAt, reasoningEndedAt, tools, todos, subagents, attachments, isSteer
     }
 
     init(from decoder: Decoder) throws {
@@ -46,6 +48,7 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
         reasoningStartedAt = try c.decodeIfPresent(Date.self, forKey: .reasoningStartedAt)
         reasoningEndedAt = try c.decodeIfPresent(Date.self, forKey: .reasoningEndedAt)
         tools = try c.decodeIfPresent([ToolActivity].self, forKey: .tools) ?? []
+        todos = try c.decodeIfPresent([TodoItem].self, forKey: .todos)
         subagents = try c.decodeIfPresent([SubagentActivity].self, forKey: .subagents) ?? []
         attachments = try c.decodeIfPresent([Attachment].self, forKey: .attachments) ?? []
         isSteer = try c.decodeIfPresent(Bool.self, forKey: .isSteer) ?? false

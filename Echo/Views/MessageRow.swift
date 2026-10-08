@@ -66,6 +66,10 @@ struct MessageRow: View, Equatable {
                     if !message.tools.isEmpty { stepsFold }
                 }
             }
+            // The agent's own task list, as this reply left it.
+            if message.role == .assistant, let todos = message.todos, !todos.isEmpty {
+                TodoChecklist(items: todos, isLive: isLive)
+            }
             if !message.subagents.isEmpty { SubagentRows(subagents: message.subagents) }
             if !message.attachments.isEmpty { AttachmentGallery(attachments: message.attachments) }
             if isLive, message.text.isEmpty {

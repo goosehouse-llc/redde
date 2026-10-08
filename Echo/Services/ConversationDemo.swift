@@ -207,6 +207,34 @@ extension Conversation {
         mutateMessagesForDemo { $0.append(Message(role: .user, text: "End of the long demo.")) }
     }
 
+    /// Dev hook (`-echo.demoTodos`): two replies in which the agent keeps a task list, written the
+    /// way a transcript holds it: the first call names the whole list, the next ones only what
+    /// changed, and the checklist is read back out of those steps.
+    func seedTodoDemo() {
+        cancel()
+        var first = Message(role: .assistant, text: "I'll move the blog in five steps. The export is done and the import is running now.")
+        first.tools = [
+            ToolActivity(name: "todo_list", preview: "5 tasks", status: .completed, args: """
+            merge: false
+            todos: [{"id":"1","content":"Export the posts from the old site","status":"in_progress"},{"id":"2","content":"Import them into the new one","status":"pending"},{"id":"3","content":"Fix the image links","status":"pending"},{"id":"3a","content":"Cover images","status":"pending","parent":"3"},{"id":"3b","content":"Inline images","status":"pending","parent":"3"},{"id":"4","content":"Redirect the old addresses","status":"pending"},{"id":"5","content":"Check the feed in a reader","status":"pending"}]
+            """),
+            ToolActivity(name: "terminal", preview: "wp export --dir=./export", status: .completed, args: "command: wp export --dir=./export", output: "Success: 214 posts exported."),
+            ToolActivity(name: "todo_list", preview: "2 updates", status: .completed, args: """
+            merge: true
+            todos: [{"id":"1","status":"completed"},{"id":"2","status":"in_progress"}]
+            """),
+        ]
+        var second = Message(role: .assistant, text: "Imported, and the cover images are fixed. The old site has no redirect plugin, so I've dropped that step; say if you want redirects done at the server instead.")
+        second.tools = [
+            ToolActivity(name: "todo_list", preview: "4 updates", status: .completed, args: """
+            merge: true
+            todos: [{"id":"2","status":"completed"},{"id":"3","status":"in_progress"},{"id":"3a","status":"completed"},{"id":"4","status":"cancelled"}]
+            """),
+        ]
+        replaceForDemo(messages: [Message(role: .user, text: "Move the blog to the new site."), first,
+                                  Message(role: .user, text: "Carry on."), second])
+    }
+
     /// Screenshot helper (`-echo.demoLibrary`): a few local conversations so the list isn't empty.
     /// `savedFrom`: as this iPhone's copies of conversations on that Hermes server instead
     /// (`-echo.demoSaved`), which is what the list falls back to when the server can't be reached.

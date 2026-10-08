@@ -6,22 +6,35 @@ import Foundation
 extension Conversation {
     nonisolated static func messages(fromServeRows rows: [JSONValue]) -> [Message] {
         var out: [Message] = []
+        /// Tool rows that came before the reply they belong to.
+        var waiting: [ToolActivity] = []
         for row in rows where row["display_kind"]?.string != "hidden" {
             let when = row["timestamp"]?.number.map { Date(timeIntervalSince1970: $0) } ?? .now
             let text = row["text"]?.string ?? row["content"]?.displayText ?? ""
             switch row["role"]?.string {
             case "user":
+                waiting = []   // the tools of a turn that never got its reply
                 let text = ReplyLanguage.stripNote(text)   // the Dashboard's reply-language note
                 if !text.isEmpty { out.append(Message(role: .user, text: text, createdAt: when)) }
             case "assistant":
                 var m = Message(role: .assistant, text: text, createdAt: when)
                 m.reasoning = row["reasoning"]?.string ?? ""
-                if !m.text.isEmpty || !m.reasoning.isEmpty { out.append(m) }
+                guard !m.text.isEmpty || !m.reasoning.isEmpty else { continue }
+                m.tools = waiting
+                waiting = []
+                out.append(m)
             case "tool":
-                if let name = row["name"]?.string, let last = out.indices.last, out[last].role == .assistant {
-                    // The row carries the call; its result only for the edit tools.
-                    out[last].tools.append(ToolActivity(name: name, preview: row["context"]?.string, status: .completed,
-                                                        args: ToolActivity.detail(row["args"]), output: ToolActivity.detail(row["content"])))
+                guard let name = row["name"]?.string else { continue }
+                // The row carries the call; its result only for the edit tools.
+                let call = ToolActivity.unwrapped(name: name, args: row["args"])
+                let tool = ToolActivity(name: call.name, preview: row["context"]?.string?.nilIfEmpty, status: .completed,
+                                        args: ToolActivity.detail(call.args), output: ToolActivity.detail(row["content"]))
+                if let last = out.indices.last, out[last].role == .assistant {
+                    out[last].tools.append(tool)
+                } else {
+                    // A model that calls a tool without a word first: the host lists the call
+                    // before the reply, and it belongs to that reply as it did while it ran.
+                    waiting.append(tool)
                 }
             default: continue
             }
@@ -43,9 +56,11 @@ extension Conversation {
                 message.reasoning = row.reasoning ?? row.reasoning_content ?? ""
                 message.tools = (row.tool_calls ?? []).compactMap { call in
                     call.function?.name.map {
-                        let arguments = call.function?.arguments
-                        return ToolActivity(name: $0, preview: nil, status: .completed,
-                                            args: arguments?.string.map { ToolActivity.detail(json: $0) } ?? ToolActivity.detail(arguments))
+                        // Stored arguments are JSON, usually as text.
+                        let stored = call.function?.arguments
+                        let arguments = stored?.string.flatMap { try? JSONValue.parse(Data($0.utf8)) } ?? stored
+                        let inner = ToolActivity.unwrapped(name: $0, args: arguments)
+                        return ToolActivity(name: inner.name, preview: nil, status: .completed, args: ToolActivity.detail(inner.args))
                     }
                 }
                 // Tool-call-only assistant rows fold into the next assistant text: one bubble with
@@ -70,5 +85,15 @@ extension Conversation {
         }
         // Drop trailing tool-only assistant rows that never produced text (interrupted runs).
         return out.filter { !($0.role == .assistant && $0.text.isEmpty && $0.tools.isEmpty) }
+    }
+}
+
+extension HermesSessionsAPI {
+    /// The agent's task list as the newest reply's last to-do call answered it, read from the
+    /// end of the transcript: the turn stream names such a call without its answer. Nil when
+    /// that reply has no to-do call with an answer that can be read.
+    func answeredTodos(sessionID: String) async -> [TodoItem]? {
+        guard let rows = try? await newestMessages(sessionID: sessionID, limit: 60) else { return nil }
+        return Conversation.mapStored(rows).last { $0.role == .assistant }.flatMap { TodoList.answered(by: $0.tools) }
     }
 }

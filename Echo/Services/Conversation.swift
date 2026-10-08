@@ -132,6 +132,8 @@ final class Conversation {
         self.createdAt = createdAt
         self.serverSessionID = serverSessionID
         self.name = nil   // a new conversation: not the name of the one it replaces
+        var messages = messages
+        TodoList.resolve(&messages)
         self.messages = messages
     }
 
@@ -301,6 +303,10 @@ final class Conversation {
                     await resolveServeMedia(replyID)
                     try Task.checkCancellation()   // Stop during the fetch must not finish the turn
                 }
+                if transportKind == .hermesSessions {
+                    await settleTodos(replyID)
+                    try Task.checkCancellation()
+                }
                 let window = await windowTask.value
                 try Task.checkCancellation()
                 update(replyID) { message in
@@ -405,14 +411,23 @@ final class Conversation {
             update(replyID) { $0.tools.append(ToolActivity(name: name, preview: preview, status: .running, startedAt: .now, args: args)) }
         case let .toolFinished(name, failed, output):
             interruptResolvedElsewhere()
+            var finished: ToolActivity?
             update(replyID) { message in
                 // Match by name when given, else the most recent running tool.
                 if let i = message.tools.lastIndex(where: { $0.status == .running && (name.isEmpty || $0.name == name) }) {
                     message.tools[i].status = failed ? .failed : .completed
                     message.tools[i].endedAt = .now
                     if let output { message.tools[i].output = output }
+                    finished = message.tools[i]
                 }
             }
+            // The agent's to-do tool: what a finished call wrote, applied to the list so far, is
+            // the list now. (The Dashboard says the list itself right after: `.todos`.)
+            if let finished, let list = TodoList.after(step: finished, previous: TodoList.latest(in: messages)) {
+                update(replyID) { $0.todos = list }
+            }
+        case let .todos(list):
+            update(replyID) { $0.todos = list }
         case let .subagent(u):
             clearStatus()
             if case .started = u.phase { TurnActivity.shared.tool("delegating") }
@@ -789,6 +804,10 @@ final class Conversation {
         self.id = id
         self.createdAt = createdAt
         self.name = name
+        // A transcript read from disk or from the server names the agent's to-do calls as steps;
+        // each gets its task list here, so a reply can show it as a checklist.
+        var messages = messages
+        TodoList.resolve(&messages)
         self.messages = messages
         self.outbox = outbox
         self.serverSessionID = serverSessionID
@@ -1036,7 +1055,12 @@ final class Conversation {
     /// Resume a stored `hermes serve` session: history via `session.resume`.
     func loadServeSession(_ summary: HermesSessionsAPI.SessionSummary) async throws {
         let rows = try await HermesServeClient.shared.history(stored: summary.id)
-        adopt(serverSession: summary, messages: Self.messages(fromServeRows: rows))
+        var messages = Self.messages(fromServeRows: rows)
+        // The agent's task list: replayed from the transcript's to-do calls, then set against
+        // what the host says the list is now.
+        TodoList.resolve(&messages)
+        TodoList.reconcile(&messages, with: HermesServeClient.shared.hostTodos[summary.id])
+        adopt(serverSession: summary, messages: messages)
         // The agent may still be at work in it, or waiting for an answer.
         await rejoinIfWaiting()
     }
@@ -1111,6 +1135,17 @@ final class Conversation {
             self?.flushTask = nil
             self?.flushDeltas()
         }
+    }
+
+    /// Over the Hermes API a reply's task list is worked out from what its to-do calls wrote,
+    /// since that stream gives no answers. The transcript has them, and the tool's own answer is
+    /// the list: Hermes 0.21.3 and 0.21.5 start a later turn there on an empty list, so a merge
+    /// leaves fewer items than the calls replayed would. Asked only after a reply that touched
+    /// the list.
+    private func settleTodos(_ id: UUID) async {
+        guard let session = serverSessionID, messages.last(where: { $0.id == id })?.todos != nil,
+              let answered = await ledgerAPI()?.answeredTodos(sessionID: session) else { return }
+        update(id) { if $0.todos != answered { $0.todos = answered } }
     }
 
     /// A reply that delivers a file carries a bare server path (`MEDIA:` tag, markdown image,
