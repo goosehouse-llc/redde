@@ -103,6 +103,27 @@ struct AppearanceSettings: View {
     }
 }
 
+/// How the message field behaves.
+struct ComposerSettings: View {
+    @State private var settings = Settings.shared
+
+    var body: some View {
+        Section {
+            Picker("Return key", selection: $settings.returnSends) {
+                Text("New line").tag(false)
+                Text("Sends").tag(true)
+            }
+            .pickerStyle(.menu)
+        } header: {
+            Text("Writing")
+        } footer: {
+            Text(settings.returnSends
+                ? "Return sends the message. On a keyboard, Shift-Return starts a new line; for a long message, the field's editor button opens a page where Return always does."
+                : "Return starts a new line, and the Send button sends. On a keyboard, ⌘Return sends.")
+        }
+    }
+}
+
 /// Which Hermes server and profile Redde talks to: near the top of Settings, since they decide
 /// whose sessions, skills and memory everything below shows. Hidden on the OpenAI-compatible
 /// connection.

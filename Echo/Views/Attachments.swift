@@ -200,7 +200,7 @@ struct AttachmentTile: View {
             }
         } else {
             HStack(spacing: 6) {
-                Image(systemName: attachment.kind == .pdf ? "doc.richtext" : "doc.text")
+                Image(systemName: attachment.kind == .pdf ? "doc.richtext" : attachment.isVideo ? "film" : "doc.text")
                 VStack(alignment: .leading, spacing: 1) {
                     Text(attachment.filename).font(.caption.weight(.medium)).lineLimit(1)
                     Text(attachment.sizeLabel).font(.caption2).foregroundStyle(.secondary)

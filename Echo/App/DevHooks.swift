@@ -23,6 +23,7 @@ import Foundation
 /// - `-echo.settingsAnchor`: scroll Settings to the context and memory files.
 /// - `-echo.expandAppIcons`: open Settings' app icon grid.
 /// - `-echo.draft "text"`: type a question into a focused composer (keyboard screenshots).
+///   `-echo.clearDrafts` forgets every conversation's unsent draft first (UI tests).
 /// - `-echo.ask "text"`: send a question at launch (the lab, screenshots of a live reply).
 ///   `-echo.fresh` starts on a new conversation first.
 /// - `-echo.voiceView`: open voice mode without listening. `-echo.voiceDemo` poses it mid-listen;
@@ -79,6 +80,7 @@ enum DevHooks {
         if has("-echo.demoShort") { conversation.keepFirstMessages(2) }
         if has("-echo.demoTwo") { conversation.keepFirstMessages(4) }
         if has("-echo.demoLibrary") { conversation.seedDemoLibrary() }
+        if has("-echo.clearDrafts") { Drafts.shared.removeAll() }
         // The Projects section only shows on the Dashboard connection.
         if demoProjects { settings.transport = .hermesServe }
         if has("-echo.demoLong") { conversation.seedLongDemo() }

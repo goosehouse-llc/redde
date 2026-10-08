@@ -504,7 +504,7 @@ nonisolated enum MultimodalInput {
             case .text:
                 if let add = att.promptAddendum { prose += "\n\n" + add }
             case .pdf, .other:
-                throw AttachmentError.unsupported(att.kind == .pdf ? "PDF" : "File", transport: transportName)
+                throw AttachmentError.unsupported(att.kind == .pdf ? "PDF" : att.isVideo ? "Video" : "File", transport: transportName)
             }
         }
         if !prose.isEmpty { parts.insert(.object(["type": .string(textType), "text": .string(prose)]), at: 0) }

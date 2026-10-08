@@ -18,8 +18,19 @@ struct ComposerView: View {
     let openModelPicker: () -> Void
 
     @Environment(Conversation.self) private var conversation
+    @Environment(VoiceSession.self) private var voiceSession
     @Environment(\.theme) private var theme
     @State private var settings = Settings.shared
+    /// The microphone in the field: speech into the draft, nothing sent.
+    @State private var dictation = Dictation()
+    /// The draft as it stood when dictation began; what is heard is added to this.
+    @State private var dictationBase: String?
+    /// The draft on a page of its own.
+    @State private var showEditor = false
+    /// A video being made small enough to send.
+    @State private var preparingVideo = false
+    /// Shift-Return on a keyboard while Return is set to send: this one line break is meant.
+    @State private var lineBreakMeant = false
 
     /// Slash-command menu (hermes serve): what the gateway offers for the current "/…" draft.
     @State private var slashItems: [HermesServeClient.SlashCompletion] = []
@@ -73,12 +84,51 @@ struct ComposerView: View {
                 }
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
+            if preparingVideo {
+                HStack(spacing: 6) {
+                    ProgressView().controlSize(.mini)
+                    Text("Preparing the video…")
+                }
+                .font(.caption).foregroundStyle(.secondary)
+            }
             if let attachmentError {
                 Text(attachmentError).font(.caption).foregroundStyle(.red)
             }
             composerRow
         }
-        .onChange(of: draft) { _, draft in refreshContext(draft) }
+        .onChange(of: draft) { old, new in
+            refreshContext(new)
+            returnTyped(from: old, to: new)
+        }
+        // A picture on the clipboard pastes into the field as an attachment (`ComposerPaste`).
+        .onChange(of: focused, initial: true) { _, isFocused in
+            ComposerPaste.shared.deliver = !isFocused ? nil : { attachments, problems in
+                pendingAttachments += attachments
+                if let problem = problems.first { attachmentError = problem }
+            }
+            guard isFocused else { return }
+            Task {
+                try? await Task.sleep(for: .milliseconds(80))   // the field is first responder a moment after the focus says so
+                ComposerPaste.shared.teachFocusedField()
+            }
+        }
+        .onChange(of: dictation.heard) { _, heard in
+            if let base = dictationBase { draft = Dictation.joined(base, heard) }
+        }
+        .onChange(of: dictation.phase) { _, phase in
+            guard phase == .idle, let base = dictationBase else { return }
+            draft = Dictation.joined(base, dictation.heard)
+            dictationBase = nil
+        }
+        .onChange(of: dictation.problem) { _, problem in
+            if let problem { attachmentError = problem }
+        }
+        .onDisappear { stopDictating() }
+        .sensoryFeedback(.selection, trigger: dictation.isActive)
+        .sheet(isPresented: $showEditor) {
+            ComposerEditor(draft: $draft, sendLabel: conversation.isStreaming ? "Send after this reply" : "Send", send: send)
+                .tint(theme.accent)
+        }
         .onChange(of: pendingAttachments.count) {
             contextAttached = contextAttached.filter { id in pendingAttachments.contains { $0.id == id } }
             refreshContext(draft)
@@ -108,13 +158,17 @@ struct ComposerView: View {
             }
             .ignoresSafeArea()
         }
-        .photosPicker(isPresented: $showPhotoPicker, selection: $photoSelection, maxSelectionCount: 4, matching: .images)
+        .photosPicker(isPresented: $showPhotoPicker, selection: $photoSelection, maxSelectionCount: 4, matching: .any(of: [.images, .videos]))
         .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.item], allowsMultipleSelection: true) { result in
             switch result {
             case let .success(urls):
                 for url in urls {
-                    do { pendingAttachments.append(try Attachment.file(url: url)) }
-                    catch { attachmentError = error.localizedDescription }
+                    if Attachment.isVideo(url) {
+                        attachVideo(at: url, named: url.lastPathComponent)
+                    } else {
+                        do { pendingAttachments.append(try Attachment.file(url: url)) }
+                        catch { attachmentError = error.localizedDescription }
+                    }
                 }
             case let .failure(error):
                 attachmentError = error.localizedDescription
@@ -124,8 +178,14 @@ struct ComposerView: View {
             guard !items.isEmpty else { return }
             Task {
                 for item in items {
-                    if let data = try? await item.loadTransferable(type: Data.self), let image = UIImage(data: data),
-                       let att = Attachment.image(image) {
+                    if item.supportedContentTypes.contains(where: { $0.conforms(to: .movie) }) {
+                        guard let picked = try? await item.loadTransferable(type: PickedVideo.self) else {
+                            attachmentError = "That video couldn't be read."
+                            continue
+                        }
+                        await attachVideo(picked.url, named: "video." + picked.url.pathExtension, removing: true)
+                    } else if let data = try? await item.loadTransferable(type: Data.self), let image = UIImage(data: data),
+                              let att = Attachment.image(image) {
                         pendingAttachments.append(att)
                     }
                 }
@@ -133,6 +193,66 @@ struct ComposerView: View {
             }
         }
     }
+
+    /// A video goes in as it is when it fits, and smaller when it doesn't; that can take a while.
+    private func attachVideo(_ url: URL, named name: String, removing: Bool = false) async {
+        preparingVideo = true
+        defer { preparingVideo = false }
+        do {
+            pendingAttachments.append(try await Attachment.video(fileURL: url, filename: name))
+        } catch {
+            attachmentError = error.localizedDescription
+        }
+        if removing { try? FileManager.default.removeItem(at: url) }
+    }
+
+    private func attachVideo(at url: URL, named name: String) {
+        Task { await attachVideo(url, named: name) }
+    }
+
+    // MARK: Return, and the keyboard
+
+    /// A draft that grew by exactly one line break: Return was pressed. (A paste or a deletion
+    /// changes it some other way.)
+    nonisolated static func isReturn(from old: String, to new: String) -> Bool {
+        guard new.utf16.count == old.utf16.count + 1 else { return false }
+        let shared = new.commonPrefix(with: old)
+        let rest = new.dropFirst(shared.count)
+        return rest.first == "\n" && rest.dropFirst() == old.dropFirst(shared.count)
+    }
+
+    /// Settings → Return key sends: the line break Return just typed comes out again and the
+    /// message goes, unless it was Shift-Return or there is nothing to send yet.
+    private func returnTyped(from old: String, to new: String) {
+        guard settings.returnSends, Self.isReturn(from: old, to: new) else { return }
+        if lineBreakMeant {
+            lineBreakMeant = false
+            return
+        }
+        draft = old
+        if hasDraft { send() }
+    }
+
+    // MARK: Dictation
+
+    private func toggleDictation() {
+        if dictation.isActive {
+            dictation.stop()
+        } else {
+            attachmentError = nil
+            dictationBase = draft
+            dictation.start()
+        }
+    }
+
+    /// Ends dictation where it stands; what it heard so far is in the draft already.
+    private func stopDictating() {
+        dictationBase = nil
+        dictation.cancel()
+    }
+
+    /// Long enough that a page of its own helps.
+    private var draftIsLong: Bool { draft.count > 160 || draft.filter { $0 == "\n" }.count >= 3 }
 
     /// Commands, skills and bundles the gateway offers for the draft. Tap one to fill it in;
     /// commands that take an argument end with a space so you keep typing.
@@ -301,14 +421,47 @@ struct ComposerView: View {
                 }
                 .accessibilityLabel("Add")
                 .accessibilityHint("Add a photo or file to your message")
-                TextField(conversation.canSteer ? "Steer the reply…" : "Ask \(settings.headerTitle)", text: $draft, axis: .vertical)
+                TextField(dictation.isActive ? "Listening…" : conversation.canSteer ? "Steer the reply…" : "Ask \(settings.headerTitle)",
+                          text: $draft, axis: .vertical)
                     .lineLimit(1 ... 5)
                     .textFieldStyle(.plain)
                     .padding(.vertical, 9)
                     .focused($focused)
                     .onSubmit(send)
-                    .submitLabel(.return)
+                    .submitLabel(settings.returnSends ? .send : .return)
+                    // A keyboard's Return, with Return set to send: sends, and Shift-Return is the line break.
+                    .onKeyPress(.return, phases: .down) { press in
+                        guard settings.returnSends else { return .ignored }
+                        if press.modifiers.contains(.shift) {
+                            lineBreakMeant = true
+                            return .ignored
+                        }
+                        if hasDraft { send() }
+                        return .handled
+                    }
+                if draftIsLong {
+                    Button("Open the editor", systemImage: "arrow.up.left.and.arrow.down.right") { showEditor = true }
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 30, height: 38)
+                        .contentShape(.rect)
+                        .buttonStyle(.plain)
+                        .accessibilityHint("Shows the message on a page of its own")
+                        .transition(.opacity)
+                }
+                Button(dictation.isActive ? "Stop dictating" : "Dictate", systemImage: dictation.isActive ? "waveform" : "mic") {
+                    toggleDictation()
+                }
+                .font(.body.weight(.medium))
+                .symbolEffect(.variableColor.iterative, isActive: dictation.phase == .listening)
+                .foregroundStyle(dictation.isActive ? AnyShapeStyle(.red) : AnyShapeStyle(.secondary))
+                .frame(width: 34, height: 38)
+                .contentShape(.rect)
+                .buttonStyle(.plain)
+                .disabled(voiceSession.mightBeBusy)
+                .accessibilityHint(dictation.isActive ? "Ends dictation; what was said stays in the message" : "Speak your message; it is written here, not sent")
             }
+            .animation(.easeOut(duration: 0.2), value: draftIsLong)
             .onGeometryChange(for: CGFloat.self) { $0.size.height + 10 } action: { height in
                 // Only trust the measurement while the draft is a single line.
                 if !draft.contains("\n"), height < singleLineCap { buttonSize = height }
@@ -393,6 +546,8 @@ struct ComposerView: View {
     }
 
     private func send() {
+        stopDictating()
+        guard hasDraft else { return }   // Return, set to send, on an empty field
         // Bare /model opens the picker; with an argument it stays a serve slash command.
         if draft.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "/model" {
             draft = ""

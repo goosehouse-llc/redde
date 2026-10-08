@@ -741,6 +741,7 @@ final class Conversation {
     func eraseAll() {
         cancel()
         store.deleteAll()
+        if store === ConversationStore.shared { Drafts.shared.removeAll() }
         become()
     }
 
@@ -765,6 +766,7 @@ final class Conversation {
     func delete(id recordID: UUID) {
         if recordID == id { cancel(leaving: true) }   // a running turn would otherwise re-persist it
         store.delete(id: recordID)
+        if store === ConversationStore.shared { Drafts.shared.forget(recordID.uuidString) }
         if recordID == id { become() }
     }
 

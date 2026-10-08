@@ -24,6 +24,7 @@ struct SettingsView: View {
                 NameSettings()
                 ProfileSettings()
                 AppearanceSettings()
+                ComposerSettings()
                 TransportSettings(showSetup: $showSetup)
                 ModelSettings()
                 AgentSettings(canReachGateway: hasStoredKey || hasServePassword, canEditFiles: hasServePassword) {

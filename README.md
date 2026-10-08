@@ -22,6 +22,9 @@ speech is recognized on the device, and credentials stay in the iOS Keychain.
   clarifying questions, sudo prompts and secrets, also answerable from a notification.
 - **Rich replies.** Markdown, highlighted code, tables, task lists, Mermaid diagrams and math,
   rendered offline with no third-party Swift dependencies.
+- **Write it your way.** A draft for each conversation, pictures pasted or dropped in, files and
+  video, dictation into the message field, a page of its own for a long message, and a Return
+  key that sends if you want it to.
 - **The whole agent.** The shared session ledger, projects, several servers and Hermes profiles,
   skills and toolsets, memory and context files, cron jobs and the Kanban board.
 - **Set up by code.** Scan a QR code or open a setup link and the connection fills itself in. A

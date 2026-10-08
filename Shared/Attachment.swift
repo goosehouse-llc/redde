@@ -76,6 +76,8 @@ nonisolated struct Attachment: Identifiable, Codable, Equatable, Sendable {
     static let maxFileBytes = 8 * 1024 * 1024
 
     var dataURL: String { "data:\(mimeType);base64,\(data.base64EncodedString())" }
+    /// A video is a file like any other to the server (`.other`); the app only shows it as one.
+    var isVideo: Bool { mimeType.hasPrefix("video/") }
     var sizeLabel: String { ByteCountFormatter.string(fromByteCount: Int64(byteCount), countStyle: .file) }
 
     /// Text-like files can be inlined into the prompt on transports that don't take files.
@@ -164,11 +166,14 @@ nonisolated struct Attachment: Identifiable, Codable, Equatable, Sendable {
 nonisolated enum AttachmentError: LocalizedError {
     case tooLarge(String)
     case unsupported(String, transport: String)
+    /// A video that is over the limit even at the smallest size it can be re-encoded to.
+    case videoTooLong(String)
 
     var errorDescription: String? {
         switch self {
         case let .tooLarge(name): "\(name) is over the 8 MB attachment limit."
         case let .unsupported(kind, transport): "\(kind) attachments aren't supported on \(transport). Switch to the Hermes Dashboard in Settings."
+        case let .videoTooLong(name): "\(name) is too long to attach: even at low quality it is over the 8 MB limit. Trim it in Photos first."
         }
     }
 }

@@ -209,6 +209,11 @@ final class Settings: ServeEndpoint {
     var announceOnAirPods: Bool {
         didSet { defaults.set(announceOnAirPods, forKey: Keys.announceOnAirPods) }
     }
+    /// Return in the composer sends the message; off, it starts a new line, and the Send button
+    /// (or ⌘Return) sends. With it on, Shift-Return on a keyboard starts the new line.
+    var returnSends: Bool {
+        didSet { defaults.set(returnSends, forKey: Keys.returnSends) }
+    }
     /// Whether Redde's notifications make a sound. Kept in the app group as well: the
     /// notification extension decides for the ones a paired Hermes sends (`NotificationSound`).
     var notificationSound: Bool {
@@ -373,6 +378,7 @@ final class Settings: ServeEndpoint {
         static let earpieceAtEar = "earpieceAtEar"
         static let announceOnAirPods = "announceOnAirPods"
         static let notificationSound = "notificationSound"
+        static let returnSends = "returnSends"
         static let requireBiometrics = "requireBiometrics"
         static let siriAIEnabled = "siriAIEnabled"
         static let lockGraceSeconds = "lockGraceSeconds"
@@ -430,6 +436,7 @@ final class Settings: ServeEndpoint {
         earpieceAtEar = defaults.object(forKey: Keys.earpieceAtEar) as? Bool ?? true
         announceOnAirPods = defaults.bool(forKey: Keys.announceOnAirPods)
         notificationSound = defaults.object(forKey: Keys.notificationSound) as? Bool ?? true
+        returnSends = defaults.bool(forKey: Keys.returnSends)
         requireBiometrics = defaults.bool(forKey: Keys.requireBiometrics)
         siriAIEnabled = defaults.bool(forKey: Keys.siriAIEnabled)
         lockGraceSeconds = defaults.object(forKey: Keys.lockGraceSeconds) as? Double ?? 60
@@ -627,6 +634,7 @@ final class Settings: ServeEndpoint {
         earpieceAtEar = true
         announceOnAirPods = false
         notificationSound = true
+        returnSends = false
         requireBiometrics = false
         siriAIEnabled = false
         lockGraceSeconds = 60

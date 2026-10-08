@@ -13,6 +13,12 @@ struct ContentView: View {
     @Environment(\.requestReview) private var requestReview
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var draft = ""
+    /// Whose draft that is (`Drafts.key`), and the conversation it was read for: each chat keeps
+    /// its own, and a new one's stays with it when its first message makes it a chat.
+    @State private var draftKey = Drafts.newConversation
+    @State private var draftConversation: UUID?
+    /// What the composer held when "Edit & resend" took it over; it comes back when that ends.
+    @State private var draftBeforeEditing: (text: String, attachments: [Attachment])?
     @State private var showSettings = false
     @State private var shareItem: ShareItem?
     /// Rename, from the header's menu.
@@ -162,6 +168,17 @@ struct ContentView: View {
             if conversation.messages.isEmpty { ModelWarmer.warm(conversation) }
             editing = nil
             ReadState.markConversationRead(conversation.id)   // on screen = read, for Siri
+        }
+        // Each conversation's draft: kept as it is typed, swapped when another one opens.
+        .onChange(of: Drafts.key(for: conversation), initial: true) { _, key in bindDraft(to: key) }
+        .onChange(of: draft) { if editing == nil { Drafts.shared.set(text: draft, for: draftKey) } }
+        .onChange(of: pendingAttachments) { if editing == nil { Drafts.shared.set(attachments: pendingAttachments, for: draftKey) } }
+        .onChange(of: editing?.id) { _, now in
+            // Edit & resend is over, sent or cancelled: back to what was being written before it.
+            guard now == nil, let before = draftBeforeEditing else { return }
+            draftBeforeEditing = nil
+            draft = before.text
+            pendingAttachments = before.attachments
         }
         .onChange(of: settings.setupDone) { _, done in
             // "Erase everything" in Settings: back to first run once its sheet is gone.
@@ -514,6 +531,10 @@ struct ContentView: View {
     /// `DevHooks` (see there for every flag).
     private func applyDevHooks() {
         DevHooks.applyAtLaunch(conversation: conversation, settings: settings)
+        if DevHooks.has("-echo.clearDrafts") {
+            draft = ""
+            pendingAttachments = []
+        }
         switch DevHooks.value("-echo.screen") {
         case "settings": showSettings = true
         case "sessions": showConversations = true
@@ -571,6 +592,37 @@ struct ContentView: View {
         try? await SpeechRecognizer().prepareAssets()
     }
 
+    /// The composer now belongs to the conversation `key` names: its draft comes in, and the one
+    /// that was there stays behind under its own conversation.
+    private func bindDraft(to key: String) {
+        let drafts = Drafts.shared
+        if draftConversation == conversation.id, draftKey == Drafts.newConversation, key != draftKey {
+            // The same conversation, now with its first message: what is typed stays with it.
+            drafts.forget(draftKey)
+            drafts.set(text: draft, for: key)
+            drafts.set(attachments: pendingAttachments, for: key)
+        } else if draftConversation != nil {
+            // Another conversation. (Not what an edit put in the field: what was there before it.)
+            let leaving = draftBeforeEditing ?? (draft, pendingAttachments)
+            draftBeforeEditing = nil
+            // (A conversation that was just deleted takes its draft with it.)
+            if draftKey == Drafts.newConversation || conversation.storeForContext.summaries.contains(where: { $0.id.uuidString == draftKey }) {
+                drafts.set(text: leaving.text, for: draftKey)
+                drafts.set(attachments: leaving.attachments, for: draftKey)
+            } else {
+                drafts.forget(draftKey)
+            }
+            draft = drafts.text(for: key)
+            pendingAttachments = drafts.attachments(for: key)
+        } else {
+            // Launch: whatever arrived before this (a share, a dev hook) goes in front of the draft.
+            let saved = drafts.text(for: key)
+            if !saved.isEmpty { draft = draft.isEmpty ? saved : draft + "\n\n" + saved }
+        }
+        draftKey = key
+        draftConversation = conversation.id
+    }
+
     /// A message that hadn't been sent comes back into the composer to be changed and sent again.
     private func editQueued(_ message: Message) {
         editing = nil
@@ -581,6 +633,7 @@ struct ContentView: View {
 
     /// Loads a sent message back into the composer; nothing changes until it is sent again.
     private func beginEditing(_ message: Message) {
+        if editing == nil { draftBeforeEditing = (draft, pendingAttachments) }
         editing = message
         draft = message.text
         pendingAttachments = message.attachments

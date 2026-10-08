@@ -333,11 +333,11 @@ built from the delegate call's goals. `Views/SubagentRows.swift`.
 
 The composer's round button follows what you're doing (the app's waveform, still, for voice; send;
 stop; steer and queue during a reply) and springs between those; the field gets a faint accent
-ring while there is something to send. The + menu attaches files (up to 8 MB), photos from the library, or a photo taken with
+ring while there is something to send. The + menu attaches files (up to 8 MB), photos and videos from the library, or a photo taken with
 the camera (`CameraPicker`, a `UIImagePickerController` in a full-screen cover; hidden where there's
-no camera). Images are downscaled to 1600 px JPEG:
+no camera). Images are downscaled to 2560 px JPEG:
 
-| Connection | Images | Text files | PDF / other |
+| Connection | Images | Text files | PDF / video / other |
 | --- | --- | --- | --- |
 | Hermes Dashboard | `image.attach_bytes` | `file.attach` | `pdf.attach` / `file.attach` |
 | Hermes API | `input_image` data URL parts | inlined into the prompt | refused (no file parts) |
@@ -349,6 +349,10 @@ file only if the message names it, so the references are added to what is submit
 (`HermesServeTransport.prompt`). Hermes then inlines a text file where the reference stands and
 names any other by path and type. Until 2026-10-07 the reference was dropped and such files
 never reached the agent; `lab.sh approvals` now attaches one of each kind on every release.
+
+A video (from Photos or Files) is a file like any other to the server; the app shows it with a
+film icon and plays it in Quick Look. One over the 8 MB limit is re-encoded, at medium quality
+and then at low, and refused only if it is still too big (`Attachment.video`).
 
 Bytes are stored one file per attachment under Application Support (file-protected); transcripts
 keep metadata only. The share extension (`EchoShare`) writes to the App Group
@@ -367,6 +371,35 @@ drag brings up, since the simulator can't drag between apps.
 menu). In the transcript that menu starts with "Ask about this", which closes the sheet and puts
 the selection in the composer as a Markdown quote with room for the question (`Quote`), through
 the same hand-over Siri's "draft a message" uses (`LaunchRouter.requestDraft`).
+
+### Writing a message
+
+- **A draft per conversation** (`Services/Drafts.swift`). What is typed and not sent stays with
+  its conversation, and its text is on disk (`drafts.json`, protected like the transcripts), so
+  it is there after the app has been closed. `ContentView.bindDraft` swaps the composer's text
+  when another conversation opens. A conversation with nothing said has no lasting identity, so
+  every new one shares one draft, which stays with it when its first message makes it a chat.
+  Attachments waiting in a draft are kept for the run only: their bytes belong to no transcript
+  yet. "Edit & resend" borrows the field and gives back what was there. Erase everything
+  removes the drafts too.
+- **Return** (Settings → Writing). SwiftUI's multi-line field always starts a new line on
+  Return. Set to send, the composer takes a draft that grew by exactly one line break for a
+  Return (`ComposerView.isReturn`), takes the break out and sends; on a keyboard Return sends
+  and Shift-Return is the line break (`onKeyPress`).
+- **A page of its own.** Past 160 characters or three line breaks a button in the field opens
+  the draft in `ComposerEditor`, a `TextEditor` on a sheet, where Return is always a new line.
+- **Dictation** (`Services/Voice/Dictation.swift`). The microphone in the field writes what is
+  said into the draft and sends nothing: voice mode's recogniser, on the device and in the same
+  language, with more patience for pauses (2.2 s) and one stretch of speech per tap. It takes
+  the audio session the way voice mode does and gives it back when it stops.
+- **Pasting a picture** (`ComposerPaste`). The field's text view turns Paste down when the
+  clipboard holds no text. No public setting changes that (a paste configuration is ignored,
+  and the window and application above it are SwiftUI's own), so the one text view behind the
+  composer is given a subclass of its class at run time that overrides `canPerformAction` and
+  `paste` and passes everything else through, as key-value observing does. With the composer
+  focused and a picture and no text on the clipboard, Paste attaches the picture. If the field
+  is ever backed by something else, nothing is changed and pasting is what it was;
+  `EchoUITests/ComposerUITests` pastes one on every run.
 
 ### Session list and housekeeping
 
