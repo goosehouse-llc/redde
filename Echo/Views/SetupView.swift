@@ -53,7 +53,7 @@ struct SetupView: View {
                         SetupFeature(symbol: "server.rack", title: "Your own server",
                                      detail: "Works with Hermes, the open-source agent you run on your own machine, or any OpenAI-compatible model server.")
                         SetupFeature(symbol: "lock.shield", title: "Private by design",
-                                     detail: "Nothing is sent anywhere except the server you enter below.")
+                                     detail: "Your conversations go only to the server you enter below.")
                         SetupFeature(symbol: "waveform", title: "Speech stays on device",
                                      detail: "Your voice is recognized on this device, not in the cloud.")
                     }

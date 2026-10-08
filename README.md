@@ -7,8 +7,10 @@ sessions, projects, skills, cron jobs and Kanban board from your phone.
 
 [App Store](https://apps.apple.com/app/id6810900557) · [Website](https://redde.goosehouse.org)
 
-No account, no analytics, no cloud of its own: every request goes only to the server you set up,
-speech is recognized on the device, and credentials stay in the iOS Keychain.
+No account and no analytics: your conversations go only to the server you set up, speech is
+recognized on the device, and credentials stay in the iOS Keychain. The one service Goosehouse
+runs is an optional relay for notifications when the app is closed, which carries them encrypted
+and can't read them ([docs/push.md](docs/push.md)).
 
 ## Features
 
@@ -19,7 +21,8 @@ speech is recognized on the device, and credentials stay in the iOS Keychain.
 - **Spoken prefixes.** Start a spoken message with a word of your choice and Redde adds a text
   prefix, switches the conversation to a model you pick, or both. Voice and Siri only.
 - **Watch it work.** Streaming reasoning, tool calls, subagents, and cards for approvals,
-  clarifying questions, sudo prompts and secrets, also answerable from a notification.
+  clarifying questions, sudo prompts and secrets, also answerable from a notification. A paired
+  Hermes sends those notifications when the app is closed too, encrypted end to end.
 - **Rich replies.** Markdown, highlighted code, tables, task lists, Mermaid diagrams and math,
   rendered offline with no third-party Swift dependencies, at a text size of the conversation's
   own, with a ring that shows how full the model's context is.
@@ -33,7 +36,7 @@ speech is recognized on the device, and credentials stay in the iOS Keychain.
 - **Everywhere on iOS.** Siri and Shortcuts, the Action Button, Control Center, widgets, a Live
   Activity, the share sheet, the camera, and Siri AI messaging on iOS 27 (opt-in).
 - **Private.** An offline message queue, the conversations you have opened still readable with
-  no connection, Face ID lock, and nothing collected.
+  no connection, Face ID lock, and no account, analytics or tracking.
 
 ## Requirements
 

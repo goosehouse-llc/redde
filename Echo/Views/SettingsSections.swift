@@ -482,7 +482,7 @@ struct AboutSettings: View {
 
     var body: some View {
         Section("Privacy invariant") {
-            Text("On-device speech recognition and synthesis. No analytics. Every request goes only to the servers you configured. The one exception is opt-in: with “Let Siri use Redde” on, Apple Intelligence handles what you say to Siri.")
+            Text("On-device speech recognition and synthesis. No analytics. Every request goes only to the servers you configured. The two exceptions are opt-in: with “Let Siri use Redde” on, Apple Intelligence handles what you say to Siri, and with a Hermes paired under “Notify when Redde is closed”, its notifications pass through Goosehouse's relay, encrypted.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }

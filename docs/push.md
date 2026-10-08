@@ -279,16 +279,15 @@ from Apple, so a phone and the deployed relay.
 
 ## Before this ships
 
-- **The relay has to be deployed with the new routes**, reachable at the address in
-  `PushService.defaultRelay` and `core.DEFAULT_RELAY` (`https://redde-push.goosehouse.org` as
-  written; one constant each). See `companion/push-relay/README.md`.
-- **The privacy policy changes.** Today it says Redde adds no intermediary and Goosehouse receives
-  nothing. With a pairing, Goosehouse's relay receives the phone's push token and encrypted
-  notifications, and Apple delivers them. That is opt-in and unreadable in transit, but it is no
-  longer nothing; `docs/privacy.md` and the App Store privacy answers need to say so.
-- **Export compliance.** The app now encrypts and decrypts with CryptoKit (AES-GCM, X25519, HKDF)
-  beyond HTTPS. `ITSAppUsesNonExemptEncryption` is `false`; whether that still holds is worth a
-  look before upload.
+- **The relay** is deployed with these routes (2026-10-07), at the address in
+  `PushService.defaultRelay` and `core.DEFAULT_RELAY`, `https://redde-push.goosehouse.org`. See
+  `companion/push-relay/README.md`.
+- **The privacy policy** says what the relay holds (`docs/privacy.md`, "Notifications when Redde
+  is closed"). Still to do by hand: the policy published where the App Store links to it. The App
+  Privacy answer stays "Data Not Collected" (`docs/app-store-listing.md`, "App Privacy").
+- **Export compliance.** The app encrypts and decrypts with CryptoKit (AES-GCM, X25519, HKDF)
+  beyond HTTPS. `ITSAppUsesNonExemptEncryption` stays `false`, since all of it is the operating
+  system's own; the reasoning is in `docs/app-store-listing.md`, "Export compliance".
 - **A new bundle id**, `com.goosehouse.echo.push`, for the extension: an App ID with the app
   group, which Xcode's automatic signing creates on the first archive.
 - **On a phone**: pair with a real Hermes; lock the phone and close the app; a reply and an

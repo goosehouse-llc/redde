@@ -1,6 +1,6 @@
 import Foundation
 
-/// The highlights shown once after an update ("What's New in Redde 1.6"). One entry per
+/// The highlights shown once after an update ("What's New in Redde 1.7"). One entry per
 /// version that has something worth showing; a version without an entry shows nothing.
 nonisolated enum WhatsNew {
     struct Item: Identifiable, Equatable, Sendable {
@@ -22,6 +22,22 @@ nonisolated enum WhatsNew {
 
     /// Newest first. Keep each to a handful of lines a person reads in ten seconds.
     static let releases: [Release] = [
+        Release(version: "1.7", items: [
+            Item(symbol: "bell.badge", title: "Notified when Redde is closed",
+                 detail: "Pair your Hermes in Settings → Voice → Notify when Redde is closed, and it tells this iPhone when a reply is ready or the agent waits for you. Approve, deny or answer from the notification. It takes a small plugin on your Hermes; the screen shows the command."),
+            Item(symbol: "waveform.badge.mic", title: "Talk over a reply",
+                 detail: "Start speaking while Redde is answering and it stops to listen. On with headphones; Settings → Voice → Talk over replies adds the speaker, or makes it only the word “stop”."),
+            Item(symbol: "car", title: "More in the car",
+                 detail: "CarPlay gains New Chat and Recent Chats, and Mute and End on the voice card."),
+            Item(symbol: "square.and.pencil", title: "A better place to write",
+                 detail: "Each conversation keeps its own draft. Dictate into the message field, paste a picture, attach a video, open a long message on a page of its own, and have Return send if you like."),
+            Item(symbol: "textformat.size", title: "Easier reading",
+                 detail: "A text size for conversations in Settings → Appearance, a ring in the header that shows how full the model's context is, and conversations you can read when your server can't be reached."),
+            Item(symbol: "person.badge.key", title: "Sign in with a browser",
+                 detail: "A Dashboard that signs you in with Google or another provider works now, and a server behind a reverse proxy can be sent the header it asks for. Both in Settings → Connection details."),
+            Item(symbol: "checkmark.seal", title: "Fixes",
+                 detail: "On Hermes 0.21.3 and later, approvals and the agent's questions reach you again over the Dashboard, and a file attached there reaches the agent."),
+        ]),
         Release(version: "1.6", items: [
             Item(symbol: "applewatch", title: "On your wrist",
                  detail: "Redde for Apple Watch: raise your wrist, tap Ask and say it. The answer is shown and read aloud. It asks through the Hermes API or your OpenAI-compatible endpoint: on the Dashboard, save the API address and key too, in Settings → Connection details."),
