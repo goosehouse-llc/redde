@@ -1,5 +1,6 @@
 #if DEBUG
 import Foundation
+import WidgetKit
 
 /// Debug-only launch hooks for screenshots, demos and live tests; none of this exists in release
 /// builds. Every flag the app reads is listed here, and only here.
@@ -20,6 +21,9 @@ import Foundation
 /// - `-echo.demoGateway`: Settings → Gateway on sample data, with no server (and the row unlocked).
 /// - `-echo.demoChatControls`: the model menu's "This conversation" switches on sample data.
 /// - `-echo.demoTodos`: a conversation in which the agent keeps a task list (the checklist under a reply).
+/// - `-echo.demoWidgets`: fill the "Needs you" and Context widgets with sample data (two requests
+///   that wait, a context about two thirds full), to look at them on the Home Screen.
+///   `-echo.demoWidgets clear` empties them again.
 /// - `-echo.screen settings|sessions|setup|profiles|servers|model|tips|push`: open that screen at launch.
 /// - `-echo.pushLink <link>`: open a pairing link for notifications, as the Camera would.
 ///   `-push.relay <url>` points the app at another push relay (the lab's, on this Mac).
@@ -92,6 +96,19 @@ enum DevHooks {
         if demoProjects { settings.transport = .hermesServe }
         if has("-echo.demoLong") { conversation.seedLongDemo() }
         if has("-echo.demoTodos") { conversation.seedTodoDemo() }
+        if has("-echo.demoWidgets") {
+            NeedsYou.clear()
+            ContextReading.clear()
+            if value("-echo.demoWidgets") != "clear" {
+                StatusWidgets.waiting(WaitingRequest(id: "demo-1", kind: .approval, title: "Clear out the old builds", text: "rm -rf ~/builds/2025-*",
+                                                     session: "demo-1", since: .now, until: .now.addingTimeInterval(NeedsYou.lifetime(.approval))))
+                StatusWidgets.waiting(WaitingRequest(id: "demo-2", kind: .question, title: "Move the blog to the new site",
+                                                     text: "Should the old addresses redirect at the server, or with a plugin?",
+                                                     session: "demo-2", since: .now, until: .now.addingTimeInterval(NeedsYou.lifetime(.question))))
+                StatusWidgets.reading(ContextReading(used: 84_600, window: 128_000, title: "Move the blog to the new site", date: .now))
+            }
+            WidgetCenter.shared.reloadAllTimelines()
+        }
         if has("-echo.demoHeavy") { conversation.seedHeavyDemo(turns: value("-echo.demoHeavy").flatMap(Int.init) ?? 32) }
         if has("-echo.demoApproval") {
             TurnActivity.shared.start(question: "Clear out the old build folders")

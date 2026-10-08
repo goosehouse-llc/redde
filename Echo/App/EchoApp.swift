@@ -16,6 +16,7 @@ struct EchoApp: App {
         Notifier.shared.attach(conversation: conversation)   // the delegate must exist before launch finishes
         // Approve and Deny on the Live Activity run here, in the app, and answer the same way.
         ApprovalAnswer.deliver = { Notifier.shared.answerApproval(requestID: $0, choice: $1) }
+        StatusWidgets.lockChanged(Settings.shared.requireBiometrics)   // a lock turned on before the widgets existed
         TipJar.shared.start()   // finish tips that completed while the app wasn't looking
         TurnActivity.shared.clearStrays()   // a reply's Live Activity left by a run that crashed or was closed
         // Before any scene: the watch can wake the app in the background with a question to

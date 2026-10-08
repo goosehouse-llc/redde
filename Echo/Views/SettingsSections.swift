@@ -560,6 +560,8 @@ struct ResetSettings: View {
             Keychain.delete(account: account)
         }
         WidgetSnapshot.clear()
+        NeedsYou.clear()
+        ContextReading.clear()
         WidgetCenter.shared.reloadAllTimelines()
         Notifier.shared.clearDelivered()
         Settings.shared.reset()

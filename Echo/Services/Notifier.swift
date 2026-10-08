@@ -211,6 +211,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
                          confirm: (PushPairing, String?) -> Void = { PushVault.confirm($0, host: $1) }) -> UNNotificationPresentationOptions {
         guard let (note, pairing) = PushSeal.note(from: sealed, pairings: vault()) else { return shown }
         confirm(pairing, note.n)
+        StatusWidgets.heard(note)   // as the extension does, for the "Needs you" widget
         let content = UNMutableNotificationContent()
         content.sound = sound
         guard note.fill(content) else { return shown }
@@ -296,9 +297,13 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         return givePushedAnswer("pushed-approval", sessionID: sessionID, kind: .approval, notGiven: "The approval wasn't answered",
                                 reaching: "\(approve ? "approve" : "deny") the command") {
             switch try await self.answerWaiting(sessionID, digest, approve) {
-            case .answered: nil
-            case .nothingWaiting: "That approval is no longer waiting. It was answered somewhere else, or it timed out."
-            case .anotherCommand: "Another command is waiting for approval now. Open Redde to see it."
+            case .answered:
+                StatusWidgets.settled(sessionID)   // the "Needs you" widget lets go of it
+                return nil
+            case .nothingWaiting:
+                StatusWidgets.settled(sessionID)
+                return "That approval is no longer waiting. It was answered somewhere else, or it timed out."
+            case .anotherCommand: return "Another command is waiting for approval now. Open Redde to see it."
             }
         }
     }
@@ -352,9 +357,13 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         return givePushedAnswer("pushed-answer", sessionID: sessionID, kind: .question, notGiven: "Your answer wasn't given",
                                 reaching: "give your answer") {
             switch try await self.answerWaitingQuestion(sessionID, digest, answer) {
-            case .answered: nil
-            case .nothingWaiting: "That question is no longer waiting. It was answered somewhere else, or it timed out."
-            case .anotherQuestion: "Something else is being asked now. Open Redde to see it."
+            case .answered:
+                StatusWidgets.settled(sessionID)
+                return nil
+            case .nothingWaiting:
+                StatusWidgets.settled(sessionID)
+                return "That question is no longer waiting. It was answered somewhere else, or it timed out."
+            case .anotherQuestion: return "Something else is being asked now. Open Redde to see it."
             }
         }
     }

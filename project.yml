@@ -241,6 +241,8 @@ targets:
     sources:
       - path: EchoPush
       - path: Shared/PushSeal.swift
+      # What a note says is waiting on the person goes on the "Needs you" widget.
+      - path: Shared/NeedsYou.swift
       - path: Shared/PlainText.swift
       - path: Shared/ReplyMedia.swift
       - path: Shared/Attachment.swift
@@ -268,6 +270,9 @@ targets:
     platform: iOS
     sources:
       - path: EchoTests
+      # The status widgets' views and timelines, compiled in so the tests can draw them
+      # (the file imports the app when WIDGET_VIEWS_IN_TESTS is set).
+      - path: EchoControls/StatusWidgets.swift
     dependencies:
       - target: Echo
     settings:
@@ -275,6 +280,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.goosehouse.echo.tests
         GENERATE_INFOPLIST_FILE: true
         SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) WIDGET_VIEWS_IN_TESTS
   EchoUITests:
     type: bundle.ui-testing
     platform: iOS

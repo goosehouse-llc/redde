@@ -44,7 +44,7 @@ A FULL CLIENT, NOT JUST A MIC
 • Select part of a reply and ask about it. Regenerate, edit and resend, or search a long chat.
 • Attach photos, videos and files, paste or drop them in, or dictate. Every chat keeps its draft. Mention a day and attach its calendar in one tap.
 • Share text, links, photos or files to Redde from any app. Export chats as Markdown.
-• A widget shows the last answer.
+• Widgets: last answer, needs you, context.
 • Switch models mid-chat from the header or with /model.
 • Skills and tool sets, on or off. Edit the agent's memory and context files, and create skills or let Redde draft one.
 
@@ -83,6 +83,7 @@ Notifications when Redde is closed, replies you can talk over, more of your conv
 • Answer from the Lock Screen and the wrist. A command waiting for approval takes over the Live Activity, with Approve and Deny, and a finished reply's notification takes your next message. On Apple Watch, approvals and questions come to the wrist, and a watch whose iPhone uses the Hermes Dashboard now asks through the iPhone.
 • One conversation, its own way. In the model menu on the Hermes Dashboard: Fast mode for models that have a faster tier, and Run commands without asking for the one conversation where you trust what the agent is doing. A bolt in the header shows while it is on. Touch and hold a conversation in the list to move it to a project.
 • The agent's plan, as a checklist. When Hermes keeps a task list for a longer job, the reply shows it: what is done, what it is working on, and what is left.
+• Two new widgets. Needs you shows a command waiting for your approval or a question from your agent, on the Home Screen or the Lock Screen, and a tap opens that conversation. Context shows how full the model's context is.
 • Your server, from the phone. Settings → Gateway shows what your Hermes is running and connected to, switches its MCP servers on and off and tests them, reads its logs, and restarts or updates Hermes. It needs the Hermes Dashboard login.
 • A switch for the notification sound, in Settings → Voice.
 • Fixes. Over the Dashboard on Hermes 0.21.3 and later, a command that needed approval was refused without asking and the agent's questions went unanswered: they reach you again. A file attached over the Dashboard now reaches the agent.
@@ -106,6 +107,7 @@ On devices, to check first:
 - Approvals over the Dashboard against a real Hermes 0.21.3 or later (checked against the lab's).
 - The model menu's switches and Move to Project against a real server. The lab covered running without asking (a command then runs unasked, and is asked about again when it is off) and the move, on Hermes 0.21.0, 0.21.3 and 0.21.5. Fast mode has only ever been refused: turning it on takes an OpenAI, Anthropic or xAI model, which the lab doesn't have.
 - A task list from a real model. The lab's stand-in model wrote and ticked a list on Hermes 0.21.0, 0.21.3 and 0.21.5, over both connections, live and reopened; no real model has, and no device has shown the card. Ask for something with several steps ("plan it as a to-do list and work through it") and watch the Tasks card under the reply. On the Hermes API with 0.21.3 or later a list ticked in a later message comes back with only the items that message named: that is Hermes forgetting the list between messages there, not the app.
+- The Needs you and Context widgets on a device. In the simulator, against the lab's Hermes 0.21.5: a real approval showed on the widget, stayed while the app was closed, a tap opened its conversation with the card, and Deny took it off. Not seen anywhere: the Lock Screen sizes on a Lock Screen (only drawn in tests), a tinted or clear Home Screen, and an entry arriving through a notification while Redde is closed, which only a device can show since a simulated push skips the extension. To try that last one: pair notifications, close Redde, have the agent ask for approval, and look at the widget before opening anything.
 - Settings → Gateway against a real server. The lab covered the status, MCP servers, logs, the update check and a restart of a gateway started by hand, on Hermes 0.21.0, 0.21.3 and 0.21.5. Not covered anywhere: a restart where a service manager (launchd, systemd) runs the gateway, which is how most servers are set up, and applying an update, which has never been run for real.
 
 ## App Privacy (App Store Connect → App Privacy)

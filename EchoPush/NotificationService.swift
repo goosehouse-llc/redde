@@ -1,4 +1,5 @@
 import UserNotifications
+import WidgetKit
 
 /// Opens a notification from the person's Hermes before it is shown. What arrives says only
 /// "Open Redde to see what's new" and carries a sealed note (`e`); this replaces the words with
@@ -17,6 +18,10 @@ final class NotificationService: UNNotificationServiceExtension {
            let (note, pairing) = PushSeal.note(from: payload, pairings: PushVault.load()),
            note.fill(content) {
             PushVault.confirm(pairing, host: note.n)
+            // A request the agent stopped for goes on the "Needs you" widget, and comes off it
+            // when a later note says the turn went on: this is how the widget hears of either
+            // while Redde is closed.
+            if NeedsYou.take(note) { WidgetCenter.shared.reloadTimelines(ofKind: NeedsYou.widgetKind) }
             choices = note.choiceCategory
             if note.repeatsTheApp() {
                 // The app said so when it happened. This takes its banner's place without

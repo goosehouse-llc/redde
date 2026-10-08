@@ -45,6 +45,22 @@ nonisolated enum EchoURL {
         return comps.url!
     }
 
+    /// Open the conversation a Hermes session id names (the "Needs you" widget).
+    static func session(_ id: String) -> URL {
+        var comps = URLComponents()
+        comps.scheme = scheme
+        comps.host = "session"
+        comps.queryItems = [URLQueryItem(name: "id", value: id)]
+        return comps.url ?? open
+    }
+
+    /// The session id when the URL asks for a conversation, nil otherwise.
+    static func parseSession(_ url: URL) -> String? {
+        guard url.scheme == scheme, url.host == "session" else { return nil }
+        let id = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "id" }?.value
+        return id?.isEmpty == false ? id : nil
+    }
+
     /// Returns hands-free flag when the URL is a listen request, nil otherwise.
     static func parseListen(_ url: URL) -> Bool? {
         guard url.scheme == scheme, url.host == "listen" else { return nil }

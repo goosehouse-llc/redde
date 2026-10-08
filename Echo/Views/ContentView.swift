@@ -129,6 +129,8 @@ struct ContentView: View {
             // Control Center / Lock Screen controls open the app through echo://listen.
             if let handsFree = EchoURL.parseListen(url) { router.requestVoice(handsFree: handsFree) }
             if url.scheme == EchoURL.scheme, url.host == "share" { consumeSharedItems() }
+            // The "Needs you" widget: the conversation that waits, as a notification's tap opens it.
+            if let session = EchoURL.parseSession(url) { router.requestSession(session) }
             // A setup link (redde.goosehouse.org/connect#… or redde://connect), from the Camera
             // or a tap: a setup code to confirm.
             // The same address carries a pairing link for notifications (`hermes redde-push pair`).

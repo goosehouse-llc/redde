@@ -39,8 +39,9 @@ and can't read them ([docs/push.md](docs/push.md)).
   for each, its logs, and restarting or updating Hermes, from Settings → Gateway.
 - **Set up by code.** Scan a QR code or open a setup link and the connection fills itself in. A
   device that is set up can show the code for the next one.
-- **Everywhere on iOS.** Siri and Shortcuts, the Action Button, Control Center, widgets, a Live
-  Activity, the share sheet, the camera, and Siri AI messaging on iOS 27 (opt-in).
+- **Everywhere on iOS.** Siri and Shortcuts, the Action Button, Control Center, a Live Activity,
+  the share sheet, the camera, and Siri AI messaging on iOS 27 (opt-in). Widgets for the last
+  reply, for what the agent is waiting on you for, and for how full the context is.
 - **Private.** An offline message queue, the conversations you have opened still readable with
   no connection, Face ID lock, and no account, analytics or tracking.
 
@@ -141,7 +142,7 @@ Debug builds accept launch flags for demos and screenshots, all listed in
 | Path | What's there |
 | --- | --- |
 | `Echo/` | The app: `App`, `Models`, `Services` (transports, voice, settings), `Views`, `Intents`, `CarPlay` |
-| `Shared/` | Code shared with the extensions (attachments, widget snapshots, controls) |
+| `Shared/` | Code shared with the extensions (attachments, what the widgets show, controls) |
 | `EchoControls/`, `EchoShare/` | Widget and controls extension; share extension |
 | `EchoTests/`, `EchoUITests/` | Tests |
 | `companion/` | The website, the push-notification relay Worker and the Hermes plugin that feeds it, and a calendar MCP server for Hermes |

@@ -76,11 +76,24 @@ final class Conversation {
     /// Test seam: retries fire on this schedule (seconds) instead of the production one.
     var retryDelays: [Double] = [5, 15, 30, 60]
 
+    /// Test seam: where the status widgets' data is kept (the App Group).
+    var widgetDefaults: UserDefaults? = NeedsYou.shared
+
     /// Whatever the gateway is waiting on you for (hermes serve).
     private(set) var pendingInterrupt: (interrupt: Interrupt, runtimeSession: String)? {
-        // However it went (answered, expired, cancelled), the Live Activity stops asking.
-        didSet { if oldValue != nil, pendingInterrupt == nil { TurnActivity.shared.approvalSettled() } }
+        // However it went (answered, expired, cancelled), the Live Activity stops asking, and
+        // so does the "Needs you" widget.
+        didSet {
+            guard oldValue != nil, pendingInterrupt == nil else { return }
+            TurnActivity.shared.approvalSettled()
+            settleWaiting()
+        }
     }
+    /// This conversation's entry on the "Needs you" widget, while it has one.
+    private var waitingKey: String?
+    /// A turn the app only joined is being left to go on on the host: what it waits on, it
+    /// still waits on, and the widget keeps saying so.
+    private var leavingJoinedTurn = false
 
     private let settings: Settings
     private let store: ConversationStore
@@ -355,6 +368,8 @@ final class Conversation {
                 clearStatus()
                 isStreaming = false
                 currentRunID = nil
+                settleWaiting()   // a turn that is over waits on nothing, whatever became of its card
+                publishContext()
                 BackgroundTurn.shared.end(success: outcome == .completed)
                 switch outcome {
                 case .completed: retryAttempt = 0; retryOutbox()
@@ -465,6 +480,7 @@ final class Conversation {
             flushDeltas()
             pendingInterrupt = (interrupt, runtime)
             statusLine = "waiting for you"
+            noteWaiting(interrupt)
             if case let .approval(request) = interrupt {
                 Notifier.shared.notifyApproval(request)
                 TurnActivity.shared.needsApproval(request)
@@ -567,6 +583,8 @@ final class Conversation {
                 clearStatus()
                 isStreaming = false
                 joinedStop = nil
+                settleWaiting()
+                publishContext()
                 BackgroundTurn.shared.end(success: completed)
                 if completed { retryAttempt = 0; retryOutbox() }
             }
@@ -671,6 +689,39 @@ final class Conversation {
         return item.message
     }
 
+    /// Puts what the agent stopped for on the "Needs you" widget, under this conversation.
+    private func noteWaiting(_ interrupt: Interrupt) {
+        let kind: WaitingRequest.Kind
+        let text: String
+        switch interrupt {
+        case let .approval(request): (kind, text) = (.approval, request.command)
+        case let .clarify(request): (kind, text) = (.question, request.questions.first?.question ?? "")
+        case .sudo: (kind, text) = (.sudo, "")
+        case let .secret(request): (kind, text) = (.secret, request.prompt.isEmpty ? "Value for \(request.envVar)" : request.prompt)
+        }
+        let key = NeedsYou.key(session: serverSessionID, conversation: id)
+        waitingKey = key
+        StatusWidgets.waiting(WaitingRequest(id: key, kind: kind, title: hasMessages ? title : nil,
+                                             text: String(text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(300)),
+                                             session: serverSessionID, since: .now, until: .now.addingTimeInterval(NeedsYou.lifetime(kind))),
+                              in: widgetDefaults)
+    }
+
+    private func settleWaiting() {
+        guard let key = waitingKey else { return }
+        waitingKey = nil
+        if !leavingJoinedTurn { StatusWidgets.settled(key, in: widgetDefaults) }
+    }
+
+    /// The Context widget's reading: the header ring's, when a turn ends or a conversation is
+    /// opened. A conversation with no reading yet leaves the one before on the widget.
+    private func publishContext() {
+        guard let contextUsage else { return }
+        StatusWidgets.reading(ContextReading(used: contextUsage.used, window: contextUsage.window,
+                                             title: settings.requireBiometrics || !hasMessages ? nil : title, date: .now),
+                              in: widgetDefaults)
+    }
+
     private static func interruptTitle(_ i: Interrupt) -> String {
         switch i {
         case .approval: "Redde needs your approval"
@@ -703,7 +754,9 @@ final class Conversation {
         flushDeltas()
         isStreaming = false
         clearStatus()
+        leavingJoinedTurn = leaving && joined != nil
         pendingInterrupt = nil
+        leavingJoinedTurn = false
         // Only a real Stop pauses the queue; regenerate/load/reset while idle must keep a
         // scheduled retry alive and a queued message queued.
         if wasStreaming {
@@ -812,6 +865,7 @@ final class Conversation {
         self.outbox = outbox
         self.serverSessionID = serverSessionID
         lastError = nil
+        publishContext()
     }
 
     private func persist() {
@@ -1087,6 +1141,9 @@ final class Conversation {
                messages: new, serverSessionID: summary.id,
                name: Self.name(fromServerTitle: summary.title, firstQuestion: new.first { $0.role == .user && !$0.isSteer }?.text))
         persist()
+        // What a note from Hermes said this session waits on is put right from here: joining
+        // its turn says so again if it still does.
+        StatusWidgets.settled(summary.id, in: widgetDefaults)
     }
 
     private func update(_ id: UUID, _ body: (inout Message) -> Void) {

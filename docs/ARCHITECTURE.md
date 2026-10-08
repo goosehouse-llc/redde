@@ -852,8 +852,8 @@ Two App Shortcuts, "Ask Redde" and "Talk with Redde" (hands-free); Siri also ans
 "Sol". Siri only opens the app, which then listens with its own recognizer; long free-form questions
 through Siri's dictation are unreliable. "Ask Redde a Question" in Shortcuts takes text and returns
 the reply as text. The `EchoControls` extension provides Control Center, Lock Screen and Action Button
-controls (via an App Group launch flag), Home Screen widgets (Last reply, Ask Redde) and the Live
-Activity (`Services/TurnActivity.swift`).
+controls (via an App Group launch flag), Home Screen widgets (Last reply, Ask Redde, Needs you,
+Context) and the Live Activity (`Services/TurnActivity.swift`).
 
 A Live Activity outlives the app, so one for a reply that never finished would sit on the Lock
 Screen and in the Dynamic Island looking busy for hours when the app crashes, is closed or is
@@ -872,6 +872,56 @@ so the answer goes to the conversation that is waiting, by the same door as the 
 buttons. Approve asks for the device to be unlocked; Deny doesn't. A stale activity shows no
 buttons: the app that would carry the answer has stopped. `-echo.demoApproval` puts one up to
 look at.
+
+### Status widgets: Needs you, and Context
+
+Two widgets say where things stand without the app being opened (`EchoControls/StatusWidgets.swift`;
+what they show is kept in the App Group by `Shared/NeedsYou.swift`).
+
+**Needs you** lists what an agent has stopped for: a command to approve, a question, the sudo
+password, a secret. Small, medium, and the three Lock Screen sizes. One entry per conversation,
+keyed by the Hermes session, since Hermes waits on one thing at a time in a session. Two things
+write the list:
+
+- The app, while it follows a turn (`Conversation.noteWaiting`), and it takes the entry away the
+  moment the request is answered or expires, or the turn is stopped or ends. Leaving a turn the app
+  only joined keeps the entry: that turn goes on on the host and still waits.
+- The notification extension, for a note a paired Hermes sends (`NeedsYou.take`): this is how a
+  request made while Redde is closed gets onto the widget. A later note that the turn ended, with
+  a reply or without, takes it off; so does answering from the notification, and opening the
+  conversation, which then joins the turn and says so again if it still waits.
+
+The app and a note can both speak of the same request, seconds apart: the entry is one, and a note
+that arrives after the app has seen its request answered doesn't bring it back (what was settled
+is remembered for as long as Hermes would have waited; the start of the command is compared, since
+the plugin cuts a long one short). Each entry also has an end, by Hermes's own defaults (an
+approval five minutes, a question an hour, the sudo password two minutes, a secret five), and the
+widget's timeline has an entry at each end, so it lets go without the app running. A server set up
+with other timeouts isn't known to the phone; an entry that outlives its request is put right when
+the conversation is opened. Something waiting gives the timeline entry a relevance, which is what
+brings the widget to the top of a Smart Stack.
+
+A tap opens the conversation that waits (`echo://session?id=…`, handled like a tap on a pushed
+notification, `LaunchRouter.requestSession`); in the medium size each row is its own link. The
+widget has no Approve and Deny of its own: the card in the app, the Live Activity and the
+notification have them.
+
+**Context** shows how full the model's context was at the newest reply that said, as the ring in
+the chat's header does: small, and the three Lock Screen sizes. The app writes the reading when a
+turn ends and when a conversation is opened (`Conversation.publishContext`, `ContextReading`); a
+conversation with no reading yet leaves the one before on the widget, under its title. Amber from
+three quarters and red from nine tenths, as in the app.
+
+Both are written through `StatusWidgets`, which reloads a widget only when what it shows changed.
+With the app lock on (Settings → Privacy), neither shows a command, a question or a title, only
+that something waits and how full the context is; the flag is mirrored into the App Group
+(`NeedsYou.hidesWords`) because the widgets and the notification extension can't read the app's
+settings. Erase Everything clears both.
+
+`EchoTests/StatusWidgetTests.swift` covers the list, the notes, the timelines and the conversation's
+hooks, and draws every size. The widget file is compiled into the test bundle for that
+(`WIDGET_VIEWS_IN_TESTS`). `-echo.demoWidgets` fills both with sample data for a look on a Home
+Screen.
 
 ### Siri AI (iOS 27, opt-in)
 

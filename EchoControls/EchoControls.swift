@@ -9,6 +9,8 @@ struct EchoControlsBundle: WidgetBundle {
         HandsFreeControl()
         LastReplyWidget()
         QuickAskWidget()
+        NeedsYouWidget()
+        ContextWidget()
         EchoTurnLiveActivity()
     }
 }

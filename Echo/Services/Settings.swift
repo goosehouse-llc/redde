@@ -231,11 +231,15 @@ final class Settings: ServeEndpoint {
     var earpieceAtEar: Bool {
         didSet { defaults.set(earpieceAtEar, forKey: Keys.earpieceAtEar) }
     }
-    /// Face ID / Touch ID / passcode gate on the app.
+    /// Face ID / Touch ID / passcode gate on the app. Kept in the app group as well: the status
+    /// widgets leave out a command, a question and a title while it is on (`NeedsYou.hidesWords`).
     var requireBiometrics: Bool {
         didSet {
             defaults.set(requireBiometrics, forKey: Keys.requireBiometrics)
-            if self === Settings.shared { SiriHooks.indexInputsChanged() }   // App Lock indexes titles only
+            if self === Settings.shared {
+                SiriHooks.indexInputsChanged()   // App Lock indexes titles only
+                StatusWidgets.lockChanged(requireBiometrics)
+            }
         }
     }
     /// Siri AI (iOS 27) may send messages to Redde and see its conversations. Off by default:
