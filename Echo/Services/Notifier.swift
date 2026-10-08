@@ -123,9 +123,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         // A question a paired Hermes announced, answered in words. One with choices arrives
         // under a category of its own that the notification extension registers on the spot
         // (`PushNote.choiceCategory`); this one is what it falls back on.
-        let pushedAnswer = UNTextInputNotificationAction(identifier: Self.replyAction, title: "Reply", options: [.authenticationRequired],
-                                                         textInputButtonTitle: "Send", textInputPlaceholder: "Your answer")
-        let pushedQuestion = UNNotificationCategory(identifier: PushNote.questionCategory, actions: [pushedAnswer], intentIdentifiers: [])
+        let pushedQuestion = UNNotificationCategory(identifier: PushNote.questionCategory, actions: [PushNote.replyField], intentIdentifiers: [])
         fixedCategories = [category, clarifyText, replied, pushed, pushedApproval, pushedQuestion]
         center.setNotificationCategories(fixedCategories)
     }
@@ -295,27 +293,39 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
             conversation.respond(approval: choice)
             return nil
         }
-        let background = UIApplication.shared.beginBackgroundTask(withName: "pushed-approval")
+        return givePushedAnswer("pushed-approval", sessionID: sessionID, kind: .approval, notGiven: "The approval wasn't answered",
+                                reaching: "\(approve ? "approve" : "deny") the command") {
+            switch try await self.answerWaiting(sessionID, digest, approve) {
+            case .answered: nil
+            case .nothingWaiting: "That approval is no longer waiting. It was answered somewhere else, or it timed out."
+            case .anotherCommand: "Another command is waiting for approval now. Open Redde to see it."
+            }
+        }
+    }
+
+    /// Takes an answer given on a notification to the Dashboard, for a turn the app has no card
+    /// for. `give` returns why it couldn't be given, or nil when it was; `reaching` is what the
+    /// app was trying to do, for when Hermes can't be reached at all. The app may have been
+    /// started just for this, so it asks for the time to finish.
+    private func givePushedAnswer(_ name: String, sessionID: String, kind: PushNote.Kind, notGiven title: String, reaching: String,
+                                  _ give: @escaping () async throws -> String?) -> Task<Void, Never> {
+        let background = UIApplication.shared.beginBackgroundTask(withName: name)
         return Task {
             defer { UIApplication.shared.endBackgroundTask(background) }
             let problem: String?
             do {
-                problem = switch try await answerWaiting(sessionID, digest, approve) {
-                case .answered: nil
-                case .nothingWaiting: "That approval is no longer waiting. It was answered somewhere else, or it timed out."
-                case .anotherCommand: "Another command is waiting for approval now. Open Redde to see it."
-                }
+                problem = try await give()
             } catch {
-                problem = "Redde couldn't reach your Hermes to \(approve ? "approve" : "deny") the command. Open Redde to answer. (\(error.localizedDescription))"
+                problem = "Redde couldn't reach your Hermes to \(reaching). Open Redde to answer. (\(error.localizedDescription))"
             }
             guard let problem else { return }
-            log.notice("pushed approval not answered: \(problem, privacy: .public)")
+            log.notice("\(name, privacy: .public) not given: \(problem, privacy: .public)")
             let content = UNMutableNotificationContent()
-            content.title = "The approval wasn't answered"
+            content.title = title
             content.body = problem
             content.sound = sound
             // Opens the conversation when tapped, like the notification it follows.
-            content.userInfo = [PushNote.sessionKey: sessionID, PushNote.kindKey: PushNote.Kind.approval.rawValue]
+            content.userInfo = [PushNote.sessionKey: sessionID, PushNote.kindKey: kind.rawValue]
             center.add(UNNotificationRequest(identifier: "redde.unanswered.\(sessionID)", content: content, trigger: nil), withCompletionHandler: nil)
         }
     }
@@ -339,28 +349,13 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
             conversation.respond(clarify: [question.id: answer])
             return nil
         }
-        let background = UIApplication.shared.beginBackgroundTask(withName: "pushed-answer")
-        return Task {
-            defer { UIApplication.shared.endBackgroundTask(background) }
-            let problem: String?
-            do {
-                problem = switch try await answerWaitingQuestion(sessionID, digest, answer) {
-                case .answered: nil
-                case .nothingWaiting: "That question is no longer waiting. It was answered somewhere else, or it timed out."
-                case .anotherQuestion: "Something else is being asked now. Open Redde to see it."
-                }
-            } catch {
-                problem = "Redde couldn't reach your Hermes to give your answer. Open Redde to answer. (\(error.localizedDescription))"
+        return givePushedAnswer("pushed-answer", sessionID: sessionID, kind: .question, notGiven: "Your answer wasn't given",
+                                reaching: "give your answer") {
+            switch try await self.answerWaitingQuestion(sessionID, digest, answer) {
+            case .answered: nil
+            case .nothingWaiting: "That question is no longer waiting. It was answered somewhere else, or it timed out."
+            case .anotherQuestion: "Something else is being asked now. Open Redde to see it."
             }
-            guard let problem else { return }
-            log.notice("pushed answer not given: \(problem, privacy: .public)")
-            let content = UNMutableNotificationContent()
-            content.title = "Your answer wasn't given"
-            content.body = problem
-            content.sound = sound
-            // Opens the conversation when tapped, like the notification it follows.
-            content.userInfo = [PushNote.sessionKey: sessionID, PushNote.kindKey: PushNote.Kind.question.rawValue]
-            center.add(UNNotificationRequest(identifier: "redde.unanswered.\(sessionID)", content: content, trigger: nil), withCompletionHandler: nil)
         }
     }
 

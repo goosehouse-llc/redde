@@ -656,24 +656,9 @@ struct ConversationsList: View {
     }
 
     private func savedRow(_ copy: ConversationSummary) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack(spacing: 6) {
-                Text(copy.title).font(.body.weight(.semibold)).lineLimit(1)
-                Spacer(minLength: 8)
-                Text(DateGroup.rowTime(copy.updatedAt)).font(.caption).foregroundStyle(.secondary)
-            }
-            HStack(spacing: 6) {
-                if drafts.isWaiting(copy.id) { draftMark }
-                Text("Saved copy · \(copy.turnCount) turn\(copy.turnCount == 1 ? "" : "s")")
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            .font(.subheadline)
-        }
-        .padding(.vertical, 2)
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
-        .accessibilityHint("Opens the copy kept on this iPhone")
+        keptRow(copy, caption: "Saved copy · \(Self.turns(copy))")
+            .accessibilityElement(children: .combine)
+            .accessibilityHint("Opens the copy kept on this iPhone")
     }
 
     private func openSaved(_ copy: ConversationSummary) {
@@ -726,6 +711,12 @@ struct ConversationsList: View {
     }
 
     private func localRow(_ record: ConversationSummary) -> some View {
+        keptRow(record, caption: "\(Self.turns(record)) · \(record.transport == .chatCompletions ? "OpenAI-compatible" : "Hermes")")
+    }
+
+    /// A conversation kept on this iPhone, as a row: its title and when it was last used, then
+    /// the "Draft" mark if it has one and what there is to say about it.
+    private func keptRow(_ record: ConversationSummary, caption: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 6) {
                 Text(record.title).font(.body.weight(.semibold)).lineLimit(1)
@@ -734,7 +725,7 @@ struct ConversationsList: View {
             }
             HStack(spacing: 6) {
                 if drafts.isWaiting(record.id) { draftMark }
-                Text("\(record.turnCount) turn\(record.turnCount == 1 ? "" : "s") · \(record.transport == .chatCompletions ? "OpenAI-compatible" : "Hermes")")
+                Text(caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -742,6 +733,11 @@ struct ConversationsList: View {
         }
         .padding(.vertical, 2)
         .contentShape(Rectangle())
+    }
+
+    /// "1 turn", "12 turns".
+    private static func turns(_ record: ConversationSummary) -> String {
+        "\(record.turnCount) turn\(record.turnCount == 1 ? "" : "s")"
     }
 }
 

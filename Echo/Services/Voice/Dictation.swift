@@ -120,8 +120,8 @@ final class Dictation {
         }
     }
 
-    /// A draft with what was dictated added to it: after a space when the draft doesn't end in
-    /// one, and as a sentence of its own when it ends a sentence.
+    /// A draft with what was dictated added to it, after a space when the draft doesn't end in
+    /// one (or in a line break).
     nonisolated static func joined(_ draft: String, _ heard: String) -> String {
         let heard = heard.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !heard.isEmpty else { return draft }

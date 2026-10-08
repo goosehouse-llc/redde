@@ -341,13 +341,12 @@ nonisolated struct HermesServeTransport: HermesTransport {
         }
     }
 
-    /// Stages one attachment on the session; the next `prompt.submit` consumes it. The disk
-    /// read and base64 of up to 8 MB happen off the main actor.
-    @MainActor
     /// Hands an attachment to the host. A picture or a PDF is kept with the session and goes
     /// out with the next message by itself. Any other file is only put in the session's
     /// workspace: the host answers with a reference to it (`@file:attachments/notes.txt`), and
     /// the agent learns of the file only if the message names it. That reference is returned.
+    /// The disk read and base64 of up to 8 MB happen off the main actor.
+    @MainActor
     private static func attach(_ att: Attachment, runtime: String, client: HermesServeClient) async throws -> String? {
         let (method, params) = await Task.detached { Self.attachFrame(att, runtime: runtime) }.value
         let result = try await client.call(method, params: params)

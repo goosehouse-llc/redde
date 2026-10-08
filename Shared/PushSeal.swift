@@ -355,10 +355,15 @@ nonisolated extension PushNote {
         let buttons = choices.map {
             UNNotificationAction(identifier: Self.replyAction + "." + $0, title: $0, options: [.authenticationRequired])
         }
-        let reply = UNTextInputNotificationAction(identifier: Self.replyAction, title: "Reply", options: [.authenticationRequired],
-                                                  textInputButtonTitle: "Send", textInputPlaceholder: "Your answer")
         return UNNotificationCategory(identifier: Self.questionCategory + "." + Self.digest(of: choices.joined(separator: "\u{1F}")),
-                                      actions: buttons + [reply], intentIdentifiers: [])
+                                      actions: buttons + [Self.replyField], intentIdentifiers: [])
+    }
+
+    /// The Reply field on a question's notification, the same with choices beside it or without:
+    /// behind an unlock, like every answer given from a notification a paired Hermes sent.
+    static var replyField: UNTextInputNotificationAction {
+        UNTextInputNotificationAction(identifier: replyAction, title: "Reply", options: [.authenticationRequired],
+                                      textInputButtonTitle: "Send", textInputPlaceholder: "Your answer")
     }
 
     /// What stands for a command in a note: sixteen hex digits of its SHA-256. The plugin's

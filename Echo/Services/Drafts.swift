@@ -34,18 +34,8 @@ final class Drafts {
     /// The conversations with something written and not sent, by `key(for:)`.
     private(set) var waiting: Set<String> = []
 
-    @ObservationIgnored private var entries: [String: Entry] = [:] {
-        didSet {
-            let now = Set(entries.keys).union(held.keys)
-            if now != waiting { waiting = now }
-        }
-    }
-    @ObservationIgnored private var held: [String: [Attachment]] = [:] {
-        didSet {
-            let now = Set(entries.keys).union(held.keys)
-            if now != waiting { waiting = now }
-        }
-    }
+    @ObservationIgnored private var entries: [String: Entry] = [:] { didSet { noteWaiting() } }
+    @ObservationIgnored private var held: [String: [Attachment]] = [:] { didSet { noteWaiting() } }
     @ObservationIgnored private let url: URL
     @ObservationIgnored private var saveTask: Task<Void, Never>?
     @ObservationIgnored private let log = Logger(subsystem: "com.goosehouse.echo", category: "drafts")
@@ -58,6 +48,13 @@ final class Drafts {
             entries = saved
             waiting = Set(saved.keys)   // (a property's observers don't run in its type's initialiser)
         }
+    }
+
+    /// A draft is its text or its attachments. Assigned only when the set changed: an equal
+    /// value would still redraw the list.
+    private func noteWaiting() {
+        let now = Set(entries.keys).union(held.keys)
+        if now != waiting { waiting = now }
     }
 
     /// Whether the conversation with this local id has a draft waiting: the list's marker.
