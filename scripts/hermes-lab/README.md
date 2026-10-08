@@ -12,6 +12,7 @@ scripts/hermes-lab/lab.sh run v2026.9.24 # one release; any tag of NousResearch/
 scripts/hermes-lab/lab.sh approvals      # the app's Dashboard client is asked before a command runs
 scripts/hermes-lab/lab.sh signin         # the app's Dashboard client signs in through a browser
 scripts/hermes-lab/lab.sh admin          # Settings → Gateway: status, MCP servers, logs, a restart
+scripts/hermes-lab/lab.sh controls       # one conversation's switches (run without asking, fast mode), and a move to a project
 scripts/hermes-lab/lab.sh push           # the push plugin: pairing, and a note for everything it announces
 scripts/hermes-lab/lab.sh push --app     # and the app in a simulator pairs with each release
 scripts/hermes-lab/lab.sh up v2026.9.24 two   # leave one lab running to poke at; `down` stops it
@@ -80,6 +81,16 @@ to the app's loopback listener. Then the app's tokens have to work for a REST ca
 WebSocket's ticket, a token the Dashboard refuses has to be refreshed and the call retried, and a
 refresh token it no longer takes has to end in "sign in again". The lab's login is a password, so
 what a real identity provider adds (its own pages, in the browser) is not covered.
+
+## A conversation's switches
+
+`controls` runs `EchoTests/HermesLabChatControlsTests` on the `approval` scenario. The app's
+client turns "run commands without asking" on for one conversation and sends the stub's "danger"
+message: `rm -rf` has to run unasked (`[gone]`). Off again, it has to be asked about (`[kept]`),
+and a second conversation has to be asked throughout. Fast mode is switched on and has to be
+refused, since the stub's model has none; a real one would take an OpenAI, Anthropic or xAI
+model. Then the conversation is moved to a folder made for the test, has to show up under that
+project, and a folder that doesn't exist has to be refused.
 
 ## Gateway administration
 

@@ -44,6 +44,8 @@ struct ConversationsList: View {
     @State private var renameText = ""
     @State private var usageFor: HermesSessionsAPI.SessionSummary?
     @State private var projects: [HermesServeClient.Project] = []
+    /// Every project that is a folder, with or without conversations: where one can be moved to.
+    @State private var folders: [HermesServeClient.Project] = []
     @AppStorage("sessions.showProjects") private var showProjects = true
     @State private var shareItem: ShareItem?
     @State private var selecting = false
@@ -439,11 +441,38 @@ struct ConversationsList: View {
                 Button("Rename", systemImage: "pencil") { renameText = session.title ?? ""; renaming = session }
                 Button(session.pinned == true ? "Unpin" : "Pin", systemImage: "pin") { setPinned(session, !(session.pinned ?? false)) }
                 Button("Fork", systemImage: "arrow.triangle.branch") { fork(session) }
+                moveMenu(for: session)
                 Button("Export as Markdown", systemImage: "square.and.arrow.up") { export(session) }
                 Button("Archive", systemImage: "archivebox") { archive(session) }
                 Divider()
                 Button("Delete", systemImage: "trash", role: .destructive) { delete(session) }
             }
+    }
+
+    /// "Move to Project": the projects that are folders on the server, other than the one the
+    /// conversation is in. On the Dashboard only, which is where projects are.
+    @ViewBuilder
+    private func moveMenu(for session: HermesSessionsAPI.SessionSummary) -> some View {
+        let targets = viaServe ? HermesServeClient.Project.moveTargets(in: folders, from: session.cwd) : []
+        if !targets.isEmpty {
+            Menu("Move to Project", systemImage: "folder") {
+                ForEach(targets) { project in
+                    Button(project.label) { move(session, to: project) }
+                }
+            }
+        }
+    }
+
+    private func move(_ session: HermesSessionsAPI.SessionSummary, to project: HermesServeClient.Project) {
+        guard let path = project.path else { return }
+        Task {
+            do {
+                try await HermesServeClient.shared.moveSession(stored: session.id, toFolder: path)
+                await refresh()
+            } catch {
+                ledgerError = "Couldn't move it to \(project.label): \(error.localizedDescription)"
+            }
+        }
     }
 
     private func ledgerRow(_ session: HermesSessionsAPI.SessionSummary, hasDraft: Bool) -> some View {
@@ -516,6 +545,7 @@ struct ConversationsList: View {
         // path can be driven without a gateway.
         if DevHooks.demoProjects {
             projects = Self.demoProjects
+            folders = Self.demoProjects
             ledger = Self.demoProjects.flatMap { $0.lanes.flatMap(\.sessions) }
             ledgerError = nil
             return
@@ -532,7 +562,8 @@ struct ConversationsList: View {
             conversation.noteServerTitles(sessions)
             if viaServe {
                 // Projects are a bonus; a failure here must not hide the flat list.
-                let tree = ((try? await HermesServeClient.shared.projectTree()) ?? [])
+                let all = (try? await HermesServeClient.shared.projectTree()) ?? []
+                let tree = all
                     .filter { $0.sessionCount > 0 }
                     .sorted { a, b in
                         if a.isHome != b.isHome { return a.isHome }
@@ -540,6 +571,7 @@ struct ConversationsList: View {
                     }
                 guard current else { return }
                 projects = tree
+                folders = all.sorted { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending }
             }
             ledgerError = nil
         } catch {

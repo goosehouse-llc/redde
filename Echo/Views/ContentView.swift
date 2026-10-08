@@ -249,6 +249,13 @@ struct ContentView: View {
                             }
                             .buttonStyle(.plain)
                             .accessibilityHidden(true)   // the line above says it, with the same action
+                            if runsWithoutAsking {
+                                Image(systemName: "bolt.fill")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundStyle(.orange)
+                                    .accessibilityLabel("Commands run without asking")
+                                    .accessibilityHint("Change it in the model menu")
+                            }
                             if let context = conversation.contextUsage {
                                 ContextRing(used: context.used, window: context.window)
                             }
@@ -603,6 +610,16 @@ struct ContentView: View {
     /// Download the on-device speech model early so the first voice turn isn't slow.
     private func warmSpeechAssets() async {
         try? await SpeechRecognizer().prepareAssets()
+    }
+
+    /// This conversation runs its commands without asking (the model menu's switch, or the
+    /// server's own setting): worth a mark that stays in sight.
+    private var runsWithoutAsking: Bool {
+        var session = settings.transport == .hermesServe ? conversation.serverSessionID : nil
+        #if DEBUG
+        if DevHooks.demoChatControls { session = DemoChatControls.session }
+        #endif
+        return ChatControlStore.shared.controls(for: session)?.autoApprove == true
     }
 
     /// The composer now belongs to the conversation `key` names: its draft comes in, and the one

@@ -488,6 +488,126 @@ struct HermesLabSignInTests {
     }
 }
 
+/// A conversation's own switches and a move to a project, against the lab
+/// (`scripts/hermes-lab/lab.sh controls`, the `approval` scenario): the app's client on an
+/// unmodified Hermes. Auto-approve is checked by what it is for: the stub's "danger" turn wants to
+/// run `rm -rf`, which Hermes asks about, and with the switch on it must run unasked. Fast mode can
+/// only be refused here, since the lab's model has none. Skips when no such lab is up.
+struct HermesLabChatControlsTests {
+    private struct Outcome: Sendable {
+        var asked = false
+        var reply = ""
+    }
+
+    /// One "danger" turn in a stored session. A question about the command is answered no, so
+    /// "[kept]" is a turn that asked and "[gone]" one that ran the command.
+    private static func danger(_ client: HermesServeClient, stored: String) async throws -> Outcome {
+        try await withThrowingTaskGroup(of: Outcome.self) { group in
+            group.addTask {
+                var outcome = Outcome()
+                let request = TurnRequest(userText: "Do the danger thing.", history: [], sessionID: stored, model: nil, instructions: nil)
+                for try await event in HermesServeTransport(client: client).stream(request) {
+                    switch event {
+                    case let .textDelta(delta): outcome.reply += delta
+                    case let .textFinal(text): outcome.reply = text
+                    case let .interrupt(.approval(approval), runtime):
+                        outcome.asked = true
+                        try await client.respondApproval(runtimeSession: runtime, requestID: approval.id, choice: "deny")
+                    default: break
+                    }
+                }
+                outcome.reply = outcome.reply.trimmingCharacters(in: .whitespacesAndNewlines)
+                return outcome
+            }
+            group.addTask {
+                try await Task.sleep(for: .seconds(60))
+                throw TransportError.malformed("the turn did not finish in a minute")
+            }
+            defer { group.cancelAll() }
+            return try await group.next() ?? Outcome()
+        }
+    }
+
+    @Test func aConversationsSwitchesAndAMoveWorkOnAnUnmodifiedHermes() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        func report(_ ok: Bool, _ what: String, _ detail: String = "") { HermesLabApprovalTests.report(ok, what, detail) }
+        func say(_ outcome: Outcome) -> String { "asked \(outcome.asked), reply \(outcome.reply)" }
+
+        let stored: String
+        do {
+            stored = try await client.openSession(stored: nil).stored
+            let first = try await Self.danger(client, stored: stored)
+            report(first.asked && first.reply == "[kept]", "as it comes, a conversation asks before the command", say(first))
+        } catch {
+            report(false, "as it comes, a conversation asks before the command", String(error.localizedDescription.prefix(160)))
+            return
+        }
+
+        let read = try? await client.chatControls(stored: stored)
+        report(read == ChatControls(autoApprove: false, approvalMode: "manual", fast: false), "the server says how the conversation runs",
+               "\(String(describing: read))")
+
+        // Run commands without asking: on, and it runs; off, and it asks again.
+        do {
+            let on = try await client.setAutoApprove(true, stored: stored)
+            report(on.autoApprove && ChatControlStore.shared.controls(for: stored)?.autoApprove == true,
+                   "the switch turns on, and the header's mark has it", "\(on)")
+            let unasked = try await Self.danger(client, stored: stored)
+            report(!unasked.asked && unasked.reply == "[gone]", "with it on, the command runs unasked", say(unasked))
+            let off = try await client.setAutoApprove(false, stored: stored)
+            let asked = try await Self.danger(client, stored: stored)
+            report(!off.autoApprove && asked.asked && asked.reply == "[kept]", "with it off again, the conversation asks", say(asked))
+        } catch {
+            report(false, "running commands without asking can be switched", String(error.localizedDescription.prefix(160)))
+        }
+
+        // Another conversation is not touched by the first one's switch.
+        do {
+            _ = try await client.setAutoApprove(true, stored: stored)
+            let other = try await client.openSession(stored: nil).stored
+            let asked = try await Self.danger(client, stored: other)
+            report(asked.asked && asked.reply == "[kept]", "the switch is that conversation's alone: another one still asks", say(asked))
+            _ = try await client.setAutoApprove(false, stored: stored)
+        } catch {
+            report(false, "the switch is that conversation's alone", String(error.localizedDescription.prefix(160)))
+        }
+
+        // Fast mode: the lab's model has none, so this is the refusal, and the way back.
+        var refusal = ""
+        do { _ = try await client.setFast(true, stored: stored) } catch { refusal = ChatControls.fastRefusal(error.localizedDescription) }
+        report(refusal == "This model has no fast mode.", "fast mode on a model without one is refused, and said plainly", "it said \"\(refusal)\"")
+        let normal = try? await client.setFast(false, stored: stored)
+        report(normal?.fast == false, "and normal is accepted", "\(String(describing: normal))")
+
+        // Move to a project: a folder that exists on the server (the simulator shares the Mac's disk).
+        let folder = FileManager.default.temporaryDirectory.appending(path: "lab-project-\(UUID().uuidString.prefix(8))")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        do {
+            try await client.moveSession(stored: stored, toFolder: folder.path())
+            let tree = try await client.projectTree()
+            let project = tree.first { $0.path.map { URL(fileURLWithPath: $0).standardizedFileURL.path() } == folder.standardizedFileURL.path() }
+            report(project != nil && project?.isHome == false && (project?.sessionCount ?? 0) >= 1, "a conversation moved to a folder is in that project",
+                   "projects: \(tree.map { "\($0.label)=\($0.sessionCount)" })")
+            let row = try await client.listSessions(limit: 50).first { $0.id == stored }
+            if row?.cwd == nil {
+                print("  ----  this Dashboard's session list doesn't say which folder a session is in; the menu then offers every project")
+            } else {
+                report(row?.cwd.map { URL(fileURLWithPath: $0).standardizedFileURL.path() } == folder.standardizedFileURL.path(),
+                       "and the list says which folder it is in now", row?.cwd ?? "")
+            }
+            let after = try? await client.chatControls(stored: stored)
+            report(after?.approvalMode == "manual", "its switches are still readable after the move", "\(String(describing: after))")
+        } catch {
+            report(false, "a conversation moved to a folder is in that project", String(error.localizedDescription.prefix(160)))
+        }
+        var missing = ""
+        do { try await client.moveSession(stored: stored, toFolder: "/no/such/folder") } catch { missing = error.localizedDescription }
+        report(missing.contains("does not exist"), "a folder that isn't there is refused in Hermes's words", "it said \"\(missing)\"")
+    }
+}
+
 /// Settings → Gateway against the same kind of lab (`scripts/hermes-lab/lab.sh admin`): the app's
 /// own client and the screen's own model, asking an unmodified Hermes for its status, its MCP
 /// servers and its logs, switching and testing a server, checking for an update without applying

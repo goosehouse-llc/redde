@@ -18,6 +18,7 @@ import Foundation
 /// - `-echo.demoHosts`: replace any real endpoints with example hosts.
 /// - `-echo.demoKanban`: a sample Kanban board instead of the server's.
 /// - `-echo.demoGateway`: Settings → Gateway on sample data, with no server (and the row unlocked).
+/// - `-echo.demoChatControls`: the model menu's "This conversation" switches on sample data.
 /// - `-echo.screen settings|sessions|setup|profiles|servers|model|tips|push`: open that screen at launch.
 /// - `-echo.pushLink <link>`: open a pairing link for notifications, as the Camera would.
 ///   `-push.relay <url>` points the app at another push relay (the lab's, on this Mac).
@@ -71,6 +72,7 @@ enum DevHooks {
     static var demoKanban: Bool { has("-echo.demoKanban") }
     static var demoProjects: Bool { has("-echo.demoProjects") }
     static var demoGateway: Bool { has("-echo.demoGateway") }
+    static var demoChatControls: Bool { has("-echo.demoChatControls") }
     static var expandAppIcons: Bool { has("-echo.expandAppIcons") }
     static var voiceDemo: Bool { has("-echo.voiceDemo") }
     static var settingsAnchor: Bool { has("-echo.settingsAnchor") }

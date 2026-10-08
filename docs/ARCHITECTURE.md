@@ -462,6 +462,38 @@ the same hand-over Siri's "draft a message" uses (`LaunchRouter.requestDraft`).
   under "On this iPhone" and opens them; when a row can't be fetched, it offers its copy. A
   message sent meanwhile waits in the outbox as ever.
 
+### A conversation's own switches, and its project
+
+On the Dashboard connection a conversation that exists on the server has two switches of its own,
+in the model menu under "This conversation" (`ChatControls.swift`, `ChatControlsSection.swift`):
+
+- **Fast mode**: `config.set key=fast value=fast|normal`. Hermes asks the provider for its fast
+  or priority tier, for the models that have one, and refuses (4002) for a model that has none;
+  the menu then says "This model has no fast mode" and the switch stays off.
+- **Run commands without asking**: `config.set key=yolo value=on|off`, with no `scope`, so it is
+  this session's flag and neither Hermes's config nor any other conversation changes. Turning it
+  on asks first. The flag lives in the Hermes process: a restart of Hermes turns it off.
+
+Where they stand comes from the server: a session's `info` when it is resumed, and every
+`session.info` event after a change, which carries the stored session id. The client files each
+under that id in `ChatControlStore`, taking only what an info says, since Hermes also sends short
+ones (a working directory that changed). The chat's header reads the store and shows a small bolt
+for as long as the open conversation runs commands without asking, whether by its own switch or
+because the server's `approvals.mode` is `off`; in that second case the switch is on and
+disabled, and the menu says the server never asks.
+
+**Move to Project**, in a row's menu in the conversation list, re-homes a conversation's working
+directory to a project's folder (`session.workspace.move {session_key, cwd}`), which is what
+puts it in that project; Hermes Desktop does the same. The targets are the projects that are
+folders, other than the one the conversation is in (the list's rows carry `cwd` on the
+Dashboard). The Home bucket is no folder, so nothing can be moved back into it from here.
+
+All three are the same in Hermes 0.21.0, 0.21.3 and 0.21.5. `scripts/hermes-lab/lab.sh controls`
+checks them with the app's client: with the switch on, the stub's `rm -rf` runs unasked; off, it
+is asked about again; another conversation still asks throughout. Fast mode can only be refused
+there, since the lab's model has none. `-echo.demoChatControls` shows the switches on sample data
+for `EchoUITests/ChatControlsUITests`.
+
 ### Session list and housekeeping
 
 On iPhone the list is a panel from the left (`SidePanel` in `Views/SwipeToOpen.swift`): a swipe to

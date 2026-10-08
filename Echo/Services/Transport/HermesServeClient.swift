@@ -173,6 +173,7 @@ final class HermesServeClient {
         // A refresh still in flight belongs to the server being left: its answer must not be
         // filed under the next one.
         refreshTask?.cancel(); refreshTask = nil
+        ChatControlStore.shared.removeAll()
         disconnect()
         if let host, let cookies = HTTPCookieStorage.shared.cookies {
             for cookie in cookies where cookie.domain == host || cookie.domain == "." + host {
@@ -524,6 +525,10 @@ final class HermesServeClient {
             if event.type == "request.cancel", let key = Self.key(event.payload["id"]), let open = openRequests.removeValue(forKey: key) {
                 event = ("\(open.method).expire", event.sessionID, .object(["request_id": .string(key)]))
             }
+            // A session saying how it runs now (auto-approve, fast mode): the chat's header shows it.
+            if event.type == "session.info", let stored = event.payload["stored_session_id"]?.string, !stored.isEmpty {
+                ChatControlStore.shared.note(event.payload, for: stored)
+            }
             for l in listeners.values { l(event) }
             return
         }
@@ -685,7 +690,7 @@ final class HermesServeClient {
     private static let profileScopedMethods: Set<String> = [
         "session.create", "session.resume", "session.delete", "session.branch",
         "projects.tree", "projects.project_sessions", "model.options", "config.set",
-        "slash.exec", "command.dispatch",
+        "slash.exec", "command.dispatch", "session.workspace.move",
     ]
 
     /// Adds the selected profile to a profile-scoped call; the default profile sends nothing.
@@ -767,6 +772,7 @@ final class HermesServeClient {
                 guard let id = result["session_id"]?.string else { throw TransportError.malformed("resume: no session id") }
                 runtimeIDs[stored] = id
                 runtime = id
+                if let info = result["info"] { ChatControlStore.shared.note(info, for: stored) }
             }
             // A resumed session runs at the level that chat last used, not the phone's pick. The
             // level is a phone setting and follows the user into every session they open, so the
@@ -801,6 +807,7 @@ final class HermesServeClient {
     func resume(stored: String, withMessages: Bool) async throws -> JSONValue {
         let result = try await call("session.resume", params: .object(["session_id": .string(stored), "omit_messages": .bool(!withMessages)]))
         if let runtime = result["session_id"]?.string { runtimeIDs[stored] = runtime }
+        if let info = result["info"] { ChatControlStore.shared.note(info, for: stored) }
         return result
     }
 

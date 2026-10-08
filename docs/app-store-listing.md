@@ -81,6 +81,7 @@ Notifications when Redde is closed, replies you can talk over, more of your conv
 • More ways to write. Dictate into the message field with the mic beside it, paste a picture, and open a long message on a page of its own. Over the Hermes Dashboard you can attach a video; a long one is made smaller first. Return can send, if you choose that in Settings → Writing.
 • Easier reading. Chat text size, in Settings → Appearance, sets conversations larger or smaller than the rest of the iPhone. A ring in the header shows how full the model's context is. When your server can't be reached, the conversations this iPhone has opened can still be read.
 • Answer from the Lock Screen and the wrist. A command waiting for approval takes over the Live Activity, with Approve and Deny, and a finished reply's notification takes your next message. On Apple Watch, approvals and questions come to the wrist, and a watch whose iPhone uses the Hermes Dashboard now asks through the iPhone.
+• One conversation, its own way. In the model menu on the Hermes Dashboard: Fast mode for models that have a faster tier, and Run commands without asking for the one conversation where you trust what the agent is doing. A bolt in the header shows while it is on. Touch and hold a conversation in the list to move it to a project.
 • Your server, from the phone. Settings → Gateway shows what your Hermes is running and connected to, switches its MCP servers on and off and tests them, reads its logs, and restarts or updates Hermes. It needs the Hermes Dashboard login.
 • A switch for the notification sound, in Settings → Voice.
 • Fixes. Over the Dashboard on Hermes 0.21.3 and later, a command that needed approval was refused without asking and the agent's questions went unanswered: they reach you again. A file attached over the Dashboard now reaches the agent.
@@ -102,6 +103,7 @@ On devices, to check first:
 - Dictation into the message field with a real voice, a picture pasted on a device, and a video picked from Photos.
 - Approve on the Live Activity behind an unlock, and on a real watch: approvals and questions on the wrist, and asking through the iPhone.
 - Approvals over the Dashboard against a real Hermes 0.21.3 or later (checked against the lab's).
+- The model menu's switches and Move to Project against a real server. The lab covered running without asking (a command then runs unasked, and is asked about again when it is off) and the move, on Hermes 0.21.0, 0.21.3 and 0.21.5. Fast mode has only ever been refused: turning it on takes an OpenAI, Anthropic or xAI model, which the lab doesn't have.
 - Settings → Gateway against a real server. The lab covered the status, MCP servers, logs, the update check and a restart of a gateway started by hand, on Hermes 0.21.0, 0.21.3 and 0.21.5. Not covered anywhere: a restart where a service manager (launchd, systemd) runs the gateway, which is how most servers are set up, and applying an update, which has never been run for real.
 
 ## App Privacy (App Store Connect → App Privacy)

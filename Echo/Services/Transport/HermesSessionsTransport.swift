@@ -204,6 +204,9 @@ nonisolated struct HermesSessionsAPI: Sendable {
         var estimated_cost_usd: Double?
         var actual_cost_usd: Double?
         var api_call_count: Int?
+        /// The folder the session works in, where the list says (the Dashboard's does): which
+        /// project it is in.
+        var cwd: String?
 
         var totalTokens: Int { (input_tokens ?? 0) + (output_tokens ?? 0) }
         var cost: Double? { actual_cost_usd ?? estimated_cost_usd }

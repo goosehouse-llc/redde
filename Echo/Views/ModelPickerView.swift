@@ -15,6 +15,15 @@ struct ModelPickerView: View {
 
     private var isFastLane: Bool { settings.transport == .chatCompletions }
 
+    /// The conversation whose own switches the menu shows: one that exists on the server, on the
+    /// Dashboard connection, which is where a session can be told how to run.
+    private var controlledSession: String? {
+        #if DEBUG
+        if DevHooks.demoChatControls { return DemoChatControls.session }
+        #endif
+        return settings.transport == .hermesServe ? conversation.serverSessionID : nil
+    }
+
     private var byProvider: [(provider: String, name: String, models: [ModelChoice])] {
         Self.grouped(choices)
     }
@@ -64,6 +73,10 @@ struct ModelPickerView: View {
                 }
             }
             .onChange(of: settings.reasoningEffort) { _, effort in applyEffortToOpenConversation(effort) }
+
+            if let stored = controlledSession {
+                ChatControlsSection(stored: stored, source: ChatControlsSection.defaultSource)
+            }
 
             Section {
                 Button { select(nil) } label: {
