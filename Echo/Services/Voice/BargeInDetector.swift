@@ -74,13 +74,28 @@ nonisolated enum StopWord {
     /// Said before "stop", these mean the opposite.
     private static let negations: Set<String> = ["don't", "dont", "not", "never", "won't", "wont", "can't", "cant", "cannot", "doesn't", "didn't"]
 
-    /// True when `text` has "stop" in it as a word of its own, and not as "don't stop".
-    static func heard(in text: String) -> Bool {
-        let words = text.lowercased().replacingOccurrences(of: "’", with: "'")
-            .split { !$0.isLetter && $0 != "'" }.map(String.init)
-        return words.indices.contains { i in
-            words[i] == "stop" && !(i > 0 && negations.contains(words[i - 1]))
+    /// True when `text` has "stop" in it as a word of its own, and not as "don't stop". One of
+    /// the person's own stop phrases (`own`) counts the same, said as a run of words anywhere in
+    /// what was heard; one written without spaces (Chinese, Japanese) counts wherever it stands.
+    static func heard(in text: String, own: [String] = []) -> Bool {
+        let words = Self.words(text)
+        let phrases = [["stop"]] + StopPhrase.own(own).map(Self.words).filter { !$0.isEmpty }
+        for phrase in phrases {
+            guard words.count >= phrase.count else { continue }
+            for i in 0 ... words.count - phrase.count where Array(words[i ..< i + phrase.count]) == phrase {
+                if !(i > 0 && negations.contains(words[i - 1])) { return true }
+            }
         }
+        let run = words.joined()
+        return StopPhrase.own(own).contains { phrase in
+            !phrase.contains(" ") && phrase.unicodeScalars.contains { $0.value >= 0x2E80 } && run.contains(phrase)
+        }
+    }
+
+    private static func words(_ text: String) -> [String] {
+        text.lowercased().folding(options: [.diacriticInsensitive, .widthInsensitive], locale: nil)
+            .replacingOccurrences(of: "’", with: "'")
+            .split { !$0.isLetter && !$0.isNumber && $0 != "'" }.map(String.init)
     }
 }
 

@@ -9,14 +9,16 @@ final class LaunchRouter {
 
     struct VoiceRequest: Equatable {
         var handsFree: Bool
+        /// The Hermes profile to be on first ("Ask Work in Redde"); nil for the one in use.
+        var profile: String?
         var issuedAt: Date
     }
 
     /// Set by an intent; consumed once by the UI.
     private(set) var pendingVoice: VoiceRequest?
 
-    func requestVoice(handsFree: Bool) {
-        pendingVoice = VoiceRequest(handsFree: handsFree, issuedAt: .now)
+    func requestVoice(handsFree: Bool, profile: String? = nil) {
+        pendingVoice = VoiceRequest(handsFree: handsFree, profile: profile, issuedAt: .now)
     }
 
     func consumeVoiceRequest() -> VoiceRequest? {

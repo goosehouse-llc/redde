@@ -526,6 +526,12 @@ struct ContentView: View {
     private func handleLaunchRequest() {
         guard !lock.isLocked, let request = router.consumeVoiceRequest() else { return }
         Logger(subsystem: "com.goosehouse.echo", category: "intent").info("UI consuming voice request handsFree=\(request.handsFree)")
+        // "Ask Work in Redde": be on that profile first. Here and not in the intent, so it waits
+        // for the app lock like the listening does. A name the phone doesn't know changes nothing.
+        if let asked = request.profile, let profile = ProfileCatalog.find(asked, in: ProfileCatalog.known()),
+           ProfileCatalog.use(profile, conversation: conversation), showVoice {
+            voiceSession.cancel()   // voice mode was open on the other profile: what it was saying is over
+        }
         Task { await launchVoice(handsFree: request.handsFree) }
     }
 

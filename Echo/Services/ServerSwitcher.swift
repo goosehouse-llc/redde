@@ -11,5 +11,6 @@ enum ServerSwitcher {
         HermesServeClient.shared.resetForServerChange()
         settings.activateServer(id)
         WatchLink.shared.push()
+        EchoShortcuts.updateAppShortcutParameters()   // Siri's profile phrases are this server's profiles now
     }
 }

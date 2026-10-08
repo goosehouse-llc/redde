@@ -93,6 +93,18 @@ struct BargeInDetectorTests {
         }
     }
 
+    @Test func aPhraseOfThePersonsOwnStopsAReplyLikeTheWord() {
+        let own = ["Das reicht", "basta così", "終わり"]
+        for said in ["Das reicht", "okay, das reicht jetzt", "und dann … Das reicht!", "Basta cosi, grazie", "stop", "はい、終わりです"] {
+            #expect(StopWord.heard(in: said, own: own), "\(said) would not stop a reply")
+        }
+        for said in ["das Geld reicht", "reicht das", "not das reicht", "basta", "così così", "das ist reichlich", ""] {
+            #expect(!StopWord.heard(in: said, own: own), "\(said) would stop a reply")
+        }
+        // Without them in the list they are only talk.
+        #expect(!StopWord.heard(in: "das reicht"))
+    }
+
     @Test func aListenersNoisesAreNotWords() {
         for noise in ["Mm-hm.", "Okay", "okay, right", "I see.", "Yeah yeah", "Uh-huh", "Got it", "Wow, cool"] {
             #expect(Backchannel.isOnly(noise), "\(noise) would stop a reply")

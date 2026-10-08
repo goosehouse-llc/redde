@@ -146,7 +146,8 @@ struct VoiceSessionTests {
         let cues = CueLog()
         let awake = AwakeLog()
 
-        init(transport: any HermesTransport, talkOver: Settings.TalkOver = .off, interruption: Settings.Interruption = .speech) {
+        init(transport: any HermesTransport, talkOver: Settings.TalkOver = .off, interruption: Settings.Interruption = .speech,
+             stopPhrases: [String] = []) {
             let suite = UserDefaults(suiteName: "voice-\(UUID().uuidString)")!
             let settings = Settings(defaults: suite)
             settings.transport = .chatCompletions
@@ -158,7 +159,8 @@ struct VoiceSessionTests {
             let (cues, awake) = (cues, awake)
             session = VoiceSession(conversation: conversation, recognizer: recognizer, output: speaker,
                                    audio: audio, requestPermissions: { true }, earcon: { cues.record($0) },
-                                   keepAwake: { awake.record($0) }, talkOver: { talkOver }, interruption: { interruption })
+                                   keepAwake: { awake.record($0) }, talkOver: { talkOver }, interruption: { interruption },
+                                   stopPhrases: { stopPhrases })
         }
     }
 
@@ -265,9 +267,9 @@ struct VoiceSessionTests {
     /// A turn asked and being answered, on headphones unless said otherwise. `hang`: the reply
     /// is still coming from the server.
     private func replying(talkOver: Settings.TalkOver = .headphones, route: VoiceRoute = .headphones, handsFree: Bool = false,
-                          hang: Bool = true, interruption: Settings.Interruption = .speech) async throws -> Harness {
+                          hang: Bool = true, interruption: Settings.Interruption = .speech, stopPhrases: [String] = []) async throws -> Harness {
         let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport([.textDelta("A long answer. "), .textDelta("It goes on.")], hang: hang),
-                        talkOver: talkOver, interruption: interruption)
+                        talkOver: talkOver, interruption: interruption, stopPhrases: stopPhrases)
         h.audio.route = route
         h.session.continuous = handsFree
         h.session.beginListening()
@@ -412,6 +414,19 @@ struct VoiceSessionTests {
         #expect(h.recognizer.starts == 1, "and nothing listens afterwards")
     }
 
+    @Test func withOnlyStopAPhraseOfThePersonsOwnEndsTheReplyToo() async throws {
+        let h = try await replying(handsFree: true, interruption: .stopWord, stopPhrases: ["Das reicht"])
+        try await waitUntil("the watch for a voice") { h.recognizer.watching != nil }
+        h.recognizer.raiseVoice()
+        h.recognizer.hear("das ist ja interessant")
+        try await Task.sleep(for: .milliseconds(120))
+        #expect(h.session.phase == .speaking, "other talk leaves the reply playing")
+        h.recognizer.hear("das ist ja interessant. Okay, das reicht.")
+        try await waitUntil("the reply ending") { h.speaker.spoken.last == "Okay." }
+        #expect(!h.conversation.isStreaming)
+        #expect(!h.session.continuous)
+    }
+
     @Test func withOnlyStopHandsFreeStillListensAfterAReplyThatRanItsCourse() async throws {
         let h = try await replying(handsFree: true, hang: false, interruption: .stopWord)
         try await waitUntil("the watch for a voice") { h.recognizer.watching != nil }
@@ -474,6 +489,25 @@ struct VoiceSessionTests {
         h.speaker.finishSpeaking()
         try await waitUntil("idle") { h.session.phase == .idle }
         #expect(h.recognizer.starts == 1, "hands-free ended; no relisten")
+    }
+
+    @Test func aStopPhraseOfThePersonsOwnEndsHandsFreeAndOthersAreQuestions() async throws {
+        let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport(reply(["Sure."])), stopPhrases: ["basta così", "Feierabend"])
+        h.session.continuous = true
+        h.session.beginListening()
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        h.recognizer.deliver("Okay, basta cosi.")   // heard without the accent
+        try await waitUntil("speaking") { h.session.phase == .speaking }
+        #expect(h.speaker.spoken == ["Okay."])
+        #expect(!h.session.continuous)
+        #expect(h.conversation.messages.isEmpty, "a stop phrase is not a turn")
+
+        // Without it in the list, the same words are a message for the agent.
+        let plain = Harness(transport: ConversationLifecycleTests.ScriptedTransport(reply(["Sure."])))
+        plain.session.beginListening()
+        try await waitUntil("listening") { plain.recognizer.starts == 1 }
+        plain.recognizer.deliver("Feierabend")
+        try await waitUntil("the turn") { plain.conversation.messages.contains { $0.role == .user && $0.text == "Feierabend" } }
     }
 
     // MARK: A full turn

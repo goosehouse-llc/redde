@@ -89,6 +89,8 @@ final class VoiceSession {
     /// Settings → Voice → Talk over replies, and what it takes. Injectable so tests choose.
     private let talkOver: () -> Settings.TalkOver
     private let interruption: () -> Settings.Interruption
+    /// Settings → Voice → Stop phrases: the person's own, heard beside the built-in ones.
+    private let stopPhrases: () -> [String]
     private var screenAwake = false
     private var awakeTimeout: Task<Void, Never>?
     /// How long a wait for the reply holds the screen on. Past it the phone may lock: the reply
@@ -144,9 +146,11 @@ final class VoiceSession {
          earcon: @escaping (Earcon) -> Void = { EarconPlayer.shared.play($0) },
          keepAwake: @escaping (Bool) -> Void = { UIApplication.shared.isIdleTimerDisabled = $0 },
          talkOver: @escaping () -> Settings.TalkOver = { Settings.shared.talkOver },
-         interruption: @escaping () -> Settings.Interruption = { Settings.shared.interruption }) {
+         interruption: @escaping () -> Settings.Interruption = { Settings.shared.interruption },
+         stopPhrases: @escaping () -> [String] = { Settings.shared.stopPhrases }) {
         self.talkOver = talkOver
         self.interruption = interruption
+        self.stopPhrases = stopPhrases
         self.conversation = conversation
         self.recognizer = recognizer
         self.output = output
@@ -435,7 +439,7 @@ final class VoiceSession {
             releaseAudioAfterCue()
             return
         }
-        if StopPhrase.matches(text) {
+        if StopPhrase.matches(text, own: stopPhrases()) {
             log.info("stop phrase heard: \(text, privacy: .public)")
             continuous = false
             acknowledging = true
@@ -669,6 +673,7 @@ final class VoiceSession {
     private func listenForStop() {
         log.info("a voice over the reply: listening for \"stop\"")
         recognizer.beginTranscribing(withHeldAudio: true, endsOnSilence: false)
+        let own = stopPhrases()
         confirmTask = Task { [weak self, stopWordQuiet] in
             let clock = ContinuousClock()
             var heard = ""
@@ -677,7 +682,7 @@ final class VoiceSession {
                 try? await Task.sleep(for: .milliseconds(80))
                 guard let self, !Task.isCancelled else { return }
                 let now = recognizer.transcript
-                if StopWord.heard(in: now) {
+                if StopWord.heard(in: now, own: own) {
                     confirmTask = nil
                     stoppedByWord()
                     return

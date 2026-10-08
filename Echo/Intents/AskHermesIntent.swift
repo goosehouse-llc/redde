@@ -62,6 +62,17 @@ struct EchoShortcuts: AppShortcutsProvider {
             shortTitle: "Talk with Redde",
             systemImageName: "ear"
         )
+        // One phrase per Hermes profile the phone knows of (`ProfileCatalog`): "Ask Work in Redde".
+        AppShortcut(
+            intent: AskProfileIntent(),
+            phrases: [
+                "Ask \(\.$profile) in \(.applicationName)",
+                "Talk to \(\.$profile) in \(.applicationName)",
+                "Open \(.applicationName) on \(\.$profile)",
+            ],
+            shortTitle: "Ask a Profile",
+            systemImageName: "person.crop.circle"
+        )
     }
 
     static let shortcutTileColor: ShortcutTileColor = .blue

@@ -7,6 +7,8 @@ struct ProfilePickerView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var settings = Settings.shared
     @State private var profiles: [HermesServeClient.Profile] = []
+    /// Profiles used by name before, where the server can't be asked for a list.
+    @State private var named: [KnownProfile] = []
     @State private var loading = false
     @State private var error: String?
     @State private var typedName = ""
@@ -26,10 +28,22 @@ struct ProfilePickerView: View {
                         choose(profile.name, home: profile.path)
                     }
                 }
+                // No list to pick from: the ones named before are a tap away, and can be swiped off.
+                if profiles.isEmpty {
+                    ForEach(named) { profile in
+                        row(title: profile.title, subtitle: nil, selected: settings.profileName == profile.name) {
+                            choose(profile.name, home: profile.path)
+                        }
+                    }
+                    .onDelete { offsets in
+                        for profile in offsets.map({ named[$0] }) { ProfileCatalog.forget(profile.name) }
+                        named = ProfileCatalog.kept()
+                    }
+                }
                 if loading { ProgressView().frame(maxWidth: .infinity) }
                 if let error { Text(error).font(.footnote).foregroundStyle(.secondary) }
             } footer: {
-                Text("Chats, sessions, projects, skills, tools, cron jobs and the context and memory files follow the profile. The Kanban board is shared by every profile. Switching starts a new conversation.")
+                Text("Chats, sessions, projects, skills, tools, cron jobs and the context and memory files follow the profile. The Kanban board is shared by every profile. Switching starts a new conversation. Siri can open voice mode on one: “Ask \(siriExample) in Redde”.")
             }
 
             if !canList || error != nil {
@@ -72,7 +86,10 @@ struct ProfilePickerView: View {
         }
         .navigationTitle("Profile")
         .task { await load() }
-        .onAppear { refreshKeyState() }
+        .onAppear {
+            refreshKeyState()
+            named = ProfileCatalog.kept()
+        }
         .onChange(of: settings.hermesProfile) { refreshKeyState() }
     }
 
@@ -99,6 +116,8 @@ struct ProfilePickerView: View {
         do {
             profiles = try await HermesServeClient.shared.profiles()
             error = nil
+            ProfileCatalog.keep(listed: profiles)   // what Siri and Shortcuts can name
+            named = ProfileCatalog.kept()
         } catch {
             self.error = error.localizedDescription
         }
@@ -118,16 +137,21 @@ struct ProfilePickerView: View {
     private func chooseTyped() {
         let name = typedName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { return }
+        if name.lowercased() != "default" {
+            ProfileCatalog.keep(named: name)
+            named = ProfileCatalog.kept()
+        }
         choose(name.lowercased() == "default" ? nil : name, home: "")
+    }
+
+    /// The name in the Siri example: a profile of this server's if there is one.
+    private var siriExample: String {
+        profiles.first { !$0.isDefault }?.title ?? named.first?.title ?? settings.profileName ?? "Work"
     }
 
     /// The open conversation belongs to the old profile, so a switch starts a fresh one.
     private func choose(_ name: String?, home: String) {
-        if name != settings.profileName {
-            settings.hermesProfile = name ?? ""
-            settings.hermesProfileHome = name == nil ? "" : home
-            conversation.reset()
-        }
+        ProfileCatalog.use(name.map { KnownProfile(name: $0, title: $0, path: home) } ?? ProfileCatalog.main, conversation: conversation)
         // A named profile over the Hermes API may still need its key, entered on this screen.
         if name == nil || settings.transport != .hermesSessions || Keychain.read(account: Keychain.profileAccount(name ?? "")) != nil {
             dismiss()

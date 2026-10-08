@@ -215,6 +215,17 @@ reloads the conversation list.
   stores that key per profile in the Keychain (`gateway-api-key.<profile>`). A rejected key or an
   unserved profile gets its own explanation in the conversation list.
 - The "Ask Redde a Question" Shortcut keeps one session per profile.
+- **Siri and Shortcuts** can open voice mode on a named profile: "Ask Work in Redde"
+  (`AskProfileIntent`, with its phrases in `EchoShortcuts`). Siri learns a phrase for each profile
+  it is given, so the phone keeps the ones it knows of (`ProfileCatalog`, per server): what the
+  Dashboard listed last, or over the Hermes API, which has no list, the names that were chosen by
+  hand (those show in the picker from then on, and can be swiped off). Siri and Shortcuts ask
+  through `ProfileCatalog.refreshed`, which asks the Dashboard again when there is a login and it
+  answers within four seconds. The action only leaves a request with the profile on it
+  (`LaunchRouter.requestVoice(handsFree:profile:)`); the app moves to the profile where it takes
+  the request up, in front and past the app lock, and a name it doesn't know changes nothing.
+  `EchoShortcuts.updateAppShortcutParameters()` runs whenever the kept list or the server
+  changes. Siri's phrases are trained at build time: a clean build, as for the other two.
 
 ### Reply language
 
@@ -787,6 +798,17 @@ word counted; with one word that counts, what else it makes of the room is throw
 speaker, at 75% volume, it transcribed a person talking and none of a reply that said "stop" a
 dozen times over them; on headphones the reply isn't in the microphone at all.
 
+**Stop phrases** (Settings → Voice). Between turns in hands-free, an utterance that means "that's
+all" ends the conversation and never reaches the agent (`StopPhrase`: the whole utterance, with or
+without "okay", "Redde", "please" or "thanks" around it, so "stop by the store" is still a
+question). The built-in list is English. A person's own phrases (`Settings.stopPhrases`, up to
+twenty) are heard beside it, which is how another language gets one: the recogniser writes
+"Stopp" in German, and neither list nor word would ever match it. They are compared lowercased
+and without accents or punctuation, so "basta cosi" typed is "Basta così." heard. With "Only
+stop" they stop a reply too (`StopWord.heard(in:own:)`): there a phrase counts as a run of words
+anywhere in what was heard, not after "don't" and its like, and one written without spaces
+(Chinese, Japanese) counts wherever it stands.
+
 On the phone's speaker this needs the system's echo cancellation for as long as Redde speaks, so
 the session stays in voice-chat mode instead of switching to `.default` for the reply
 (`AudioSessionController.setReplying`), and the reply plays at call volume; that is why the
@@ -848,9 +870,9 @@ the agent is waiting on. Stop stops a joined turn; leaving the conversation only
 
 ## Siri, Shortcuts and controls
 
-Two App Shortcuts, "Ask Redde" and "Talk with Redde" (hands-free); Siri also answers to "Hermes" and
-"Sol". Siri only opens the app, which then listens with its own recognizer; long free-form questions
-through Siri's dictation are unreliable. "Ask Redde a Question" in Shortcuts takes text and returns
+Three App Shortcuts: "Ask Redde", "Talk with Redde" (hands-free) and "Ask a Profile" ("Ask Work in
+Redde"); Siri also answers to "Hermes" and "Sol". Siri only opens the app, which then listens with
+its own recognizer; long free-form questions through Siri's dictation are unreliable. "Ask Redde a Question" in Shortcuts takes text and returns
 the reply as text. The `EchoControls` extension provides Control Center, Lock Screen and Action Button
 controls (via an App Group launch flag), Home Screen widgets (Last reply, Ask Redde, Needs you,
 Context) and the Live Activity (`Services/TurnActivity.swift`).

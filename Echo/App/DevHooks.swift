@@ -39,6 +39,8 @@ import WidgetKit
 /// - `-echo.demoTips`: sample tips on Settings → About → Support Redde (App Review screenshot).
 /// - `-echo.whatsNew`: show this version's "What's New" sheet (any other `-echo.` flag hides it).
 /// - `-echo.switchProfile <name>`: switch profile five seconds after launch.
+/// - `-echo.askProfile <name>`: what Siri's "Ask <name> in Redde" does, at launch: the name is
+///   made known, then voice mode is asked for on that profile ("default" is the main one).
 /// - `-echo.dropHint`: show the outline a drag over the chat brings up, without a drag.
 /// - `-echo.demoApproval`: a Live Activity with a command waiting for a yes or no, to look at
 ///   its buttons on the Lock Screen; the activity then shows which one was pressed.
@@ -156,6 +158,11 @@ enum DevHooks {
                     ServerSwitcher.switchTo(target.id, conversation: conversation)
                 }
             }
+        }
+
+        if let name = value("-echo.askProfile") {
+            ProfileCatalog.keep(named: name)
+            LaunchRouter.shared.requestVoice(handsFree: false, profile: name)
         }
 
         // The simulator can't tap the picker, so this checks that open screens follow a switch.

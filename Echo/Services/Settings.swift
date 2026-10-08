@@ -118,6 +118,12 @@ final class Settings: ServeEndpoint {
     var interruption: Interruption {
         didSet { defaults.set(interruption.rawValue, forKey: Keys.interruption) }
     }
+    /// The person's own ways of saying "that's all" in voice mode, heard beside the built-in
+    /// English ones (`StopPhrase`): another language's, or a word of the household's. They also
+    /// stop a reply where only "stop" does.
+    var stopPhrases: [String] {
+        didSet { defaults.set(stopPhrases, forKey: Keys.stopPhrases) }
+    }
     /// Opening voice mode starts a new conversation (unless the current one is empty or busy).
     var newConversationForVoice: Bool {
         didSet { defaults.set(newConversationForVoice, forKey: Keys.newConversationForVoice) }
@@ -369,6 +375,7 @@ final class Settings: ServeEndpoint {
         static let newConversationForVoice = "newConversationForVoice"
         static let talkOver = "talkOver"
         static let interruption = "interruption"
+        static let stopPhrases = "stopPhrases"
         static let useKokoro = "useKokoro"
         static let kokoroURL = "kokoroURL"
         static let kokoroVoice = "kokoroVoice"
@@ -423,6 +430,7 @@ final class Settings: ServeEndpoint {
         newConversationForVoice = defaults.bool(forKey: Keys.newConversationForVoice)
         talkOver = defaults.string(forKey: Keys.talkOver).flatMap(TalkOver.init(rawValue:)) ?? .headphones
         interruption = defaults.string(forKey: Keys.interruption).flatMap(Interruption.init(rawValue:)) ?? .speech
+        stopPhrases = defaults.stringArray(forKey: Keys.stopPhrases) ?? []
         useKokoro = defaults.bool(forKey: Keys.useKokoro)
         kokoroURL = defaults.string(forKey: Keys.kokoroURL) ?? Self.defaultKokoroURL
         kokoroVoice = defaults.string(forKey: Keys.kokoroVoice) ?? Self.defaultKokoroVoice
@@ -629,6 +637,7 @@ final class Settings: ServeEndpoint {
         newConversationForVoice = false
         talkOver = .headphones
         interruption = .speech
+        stopPhrases = []
         useKokoro = false
         kokoroURL = Self.defaultKokoroURL
         kokoroVoice = Self.defaultKokoroVoice

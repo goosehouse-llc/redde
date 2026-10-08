@@ -17,7 +17,8 @@ and can't read them ([docs/push.md](docs/push.md)).
 - **Voice first.** On-device speech recognition, replies spoken by the built-in voice or your own
   Kokoro server, hands-free mode, barge-in, AirPods and CarPlay.
 - **Your language.** Listen in any language on-device transcription supports, hear each reply in a
-  voice for the language it's written in, and ask the agent to always answer in one language.
+  voice for the language it's written in, ask the agent to always answer in one language, and
+  end a hands-free conversation with stop phrases of your own.
 - **Spoken prefixes.** Start a spoken message with a word of your choice and Redde adds a text
   prefix, switches the conversation to a model you pick, or both. Voice and Siri only.
 - **Watch it work.** Streaming reasoning, tool calls, subagents, and cards for approvals,
@@ -39,7 +40,8 @@ and can't read them ([docs/push.md](docs/push.md)).
   for each, its logs, and restarting or updating Hermes, from Settings → Gateway.
 - **Set up by code.** Scan a QR code or open a setup link and the connection fills itself in. A
   device that is set up can show the code for the next one.
-- **Everywhere on iOS.** Siri and Shortcuts, the Action Button, Control Center, a Live Activity,
+- **Everywhere on iOS.** Siri and Shortcuts (also by Hermes profile: "Ask Work in Redde"), the
+  Action Button, Control Center, a Live Activity,
   the share sheet, the camera, and Siri AI messaging on iOS 27 (opt-in). Widgets for the last
   reply, for what the agent is waiting on you for, and for how full the context is.
 - **Private.** An offline message queue, the conversations you have opened still readable with

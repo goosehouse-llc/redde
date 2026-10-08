@@ -2,6 +2,8 @@ import Foundation
 
 /// Recognizes an utterance that means "stop listening" so it never reaches the model.
 /// Whole-utterance match only: "stop" ends the loop, "stop by the store" is a question.
+/// The list here is English; a person's own phrases (Settings → Voice → Stop phrases) are heard
+/// as well, which is how another language gets one, or a household its own word.
 nonisolated enum StopPhrase {
     static let phrases: Set<String> = [
         "stop", "stop listening", "stop hands free", "stop hands-free", "hands free off", "hands-free off",
@@ -17,9 +19,25 @@ nonisolated enum StopPhrase {
     private static let leadingFiller = ["all right", "alright", "hermes", "redde", "reddy", "okay", "echo", "hey", "and", "ok", "so"]
     private static let trailingFiller = ["thank you", "for now", "hermes", "please", "thanks", "redde", "reddy", "echo", "now"]
 
-    static func matches(_ utterance: String) -> Bool {
+    /// The most phrases a person can add, and how long one can be: a list to say aloud, not a
+    /// document.
+    static let mostOwn = 20
+    static let longestOwn = 60
+
+    /// A person's phrases as they are compared: lowercased, without punctuation, no empties, no
+    /// repeats, in the order given.
+    static func own(_ phrases: [String]) -> [String] {
+        var seen: Set<String> = []
+        return phrases.map(normalize).filter { !$0.isEmpty && seen.insert($0).inserted }
+    }
+
+    static func matches(_ utterance: String, own: [String] = []) -> Bool {
         var text = normalize(utterance)
-        guard !text.isEmpty, text.split(separator: " ").count <= 7 else { return false }
+        let own = Self.own(own)
+        let phrases = own.isEmpty ? Self.phrases : Self.phrases.union(own)
+        // Longer than any phrase with its polite wrapping: a sentence, not a goodbye.
+        let longest = max(7, (own.map { $0.split(separator: " ").count }.max() ?? 0) + 3)
+        guard !text.isEmpty, text.split(separator: " ").count <= longest else { return false }
         if phrases.contains(text) { return true }
         // Peel polite wrappers: "okay redde, that's all, thanks" → "that's all".
         var changed = true
@@ -36,8 +54,11 @@ nonisolated enum StopPhrase {
         return false
     }
 
+    /// Lowercased, accents and width set aside (a phrase typed "arrete" is the one heard as
+    /// "Arrête"), punctuation dropped, single spaces.
     static func normalize(_ s: String) -> String {
         let lowered = s.lowercased()
+            .folding(options: [.diacriticInsensitive, .widthInsensitive], locale: nil)
             .replacingOccurrences(of: "’", with: "'")
         let kept = lowered.unicodeScalars.filter { CharacterSet.alphanumerics.contains($0) || $0 == " " || $0 == "'" || $0 == "-" }
         return String(String.UnicodeScalarView(kept))
