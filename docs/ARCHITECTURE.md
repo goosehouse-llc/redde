@@ -869,7 +869,9 @@ the handover itself is tested on a real watch.
   every Dashboard request and WebSocket handshake (the client's `URLSession` carries them, with
   the Cloudflare pair) and on every Hermes API request, the watch's included (`WatchConnection.headers`,
   kept in the watch's Keychain). A header the app sets itself (the API key's `Authorization`) wins.
-  Not in setup codes yet, and not sent to the OpenAI-compatible endpoint or the speech server.
+  A setup code made with its secrets carries them, one `header=Name: value` parameter each, up
+  to eight (the one parameter a code may repeat); the confirmation and the web page name them
+  and never show a value. Not sent to the OpenAI-compatible endpoint or the speech server.
 - **Transport security:** `NSAllowsArbitraryLoads` is set because users' servers often live on
   private networks without public certificates; HTTPS is used whenever the URL provides it.
 - **What's New:** after an update, the first launch shows that version's highlights once

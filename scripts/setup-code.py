@@ -12,6 +12,10 @@ run unattended, set them in the environment instead: REDDE_PASSWORD (Dashboard),
 API), REDDE_PROFILE_KEY, REDDE_ACCESS_SECRET (Cloudflare Access), REDDE_MODEL_KEY. With
 --no-secrets they are left out and typed on the phone.
 
+A server behind a reverse proxy that asks for a header of its own: --header X-Proxy-Token, once
+per header. Its value is asked for like a password, or read from REDDE_HEADER_X_PROXY_TOKEN (the
+name in capitals, anything that isn't a letter or digit as "_").
+
 The link is a web address, https://redde.goosehouse.org/connect#…, which iOS opens in Redde. The
 connection comes after the "#", the part of an address that is never sent to a server, so the site
 doesn't see it. With --app-link the link is redde://connect?… instead and involves no website.
@@ -21,6 +25,7 @@ The link and the QR code hold whatever secrets you gave: treat them like the pas
 import argparse
 import getpass
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -45,6 +50,16 @@ def secret(env, prompt, wanted):
     return getpass.getpass(f"{prompt} (blank to leave out): ") if sys.stdin.isatty() else ""
 
 
+def header_name(value):
+    """A header's name as Redde will take it: an HTTP token, and not one the connection sets."""
+    name = value.strip().rstrip(":")
+    if not re.fullmatch(r"[A-Za-z0-9!#$%&'*+.^_`|~-]+", name):
+        raise argparse.ArgumentTypeError(f"{value!r} is not a header name (letters, digits and hyphens)")
+    if name.lower() in ("host", "content-length", "connection", "upgrade", "transfer-encoding", "te", "trailer") or name.lower().startswith("sec-websocket-"):
+        raise argparse.ArgumentTypeError(f"{name} is set by the connection itself")
+    return name
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--name", default="", help="what the server is called in Redde")
@@ -53,6 +68,8 @@ def main():
     parser.add_argument("--api", type=address, default="", help="Hermes API server address (port 8642)")
     parser.add_argument("--profile", default="", help="Hermes profile, when it isn't the default one")
     parser.add_argument("--access-id", default="", help="Cloudflare Access service token client ID")
+    parser.add_argument("--header", type=header_name, action="append", default=[], metavar="NAME",
+                        help="a header your reverse proxy asks for (its value is asked for); may be repeated, up to 8")
     parser.add_argument("--model-url", type=address, default="", help="OpenAI-compatible endpoint address")
     parser.add_argument("--model", default="", help="model name at that endpoint")
     parser.add_argument("--use", choices=["dashboard", "api", "model"], help="which connection Redde talks to (default: the first given)")
@@ -74,6 +91,14 @@ def main():
         ("profile-key", secret("REDDE_PROFILE_KEY", f"API key of the profile {args.profile}", ask and args.api and args.profile)),
         ("access-id", args.access_id),
         ("access-secret", secret("REDDE_ACCESS_SECRET", "Cloudflare Access client secret", ask and args.access_id)),
+    ]
+    # A header goes along only with its value, and only for a Hermes server: a name alone sets nothing up.
+    for name in args.header[:8]:
+        value = secret("REDDE_HEADER_" + re.sub(r"[^A-Za-z0-9]", "_", name).upper(), f"Value of the header {name}",
+                       ask and (args.dashboard or args.api)).strip()
+        if value:
+            fields.append(("header", f"{name}: {value}"))
+    fields += [
         ("model-url", args.model_url),
         ("model-key", secret("REDDE_MODEL_KEY", "Model endpoint API key", ask and args.model_url)),
         ("model", args.model if args.model_url else ""),

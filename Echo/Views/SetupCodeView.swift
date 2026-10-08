@@ -76,6 +76,7 @@ struct SetupCodeView: View {
         if !code.dashboardURL.isEmpty { parts.append(withSecrets ? "the Dashboard address and login" : "the Dashboard address and user name") }
         if !code.apiURL.isEmpty { parts.append(withSecrets ? "the Hermes API address and key" : "the Hermes API address") }
         if !code.accessID.isEmpty { parts.append(withSecrets ? "the Cloudflare Access token" : "the Cloudflare Access client ID") }
+        if !code.headers.isEmpty { parts.append(code.headers.count == 1 ? "its custom header" : "its \(code.headers.count) custom headers") }
         if !code.modelURL.isEmpty { parts.append(withSecrets && !code.modelKey.isEmpty ? "the model endpoint and its key" : "the model endpoint") }
         return ListFormatter.localizedString(byJoining: parts)
     }

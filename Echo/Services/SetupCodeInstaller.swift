@@ -100,6 +100,7 @@ extension SetupCode {
             store(dashboardPassword, account: Keychain.account(.serveDashboardPassword, server: server))
             store(apiKey, account: Keychain.account(.gatewayAPIKey, server: server))
             store(accessSecret, account: Keychain.account(.cfAccessClientSecret, server: server))
+            store(CustomHeader.encode(headers), account: Keychain.account(.customHeaders, server: server))
             if let profile = settings.profileName {
                 store(profileKey, account: Keychain.profileAccount(profile, server: server))
             }
@@ -166,6 +167,10 @@ extension SetupCode {
         }
         if !accessID.isEmpty {
             accessSecret = Keychain.read(account: Keychain.account(.cfAccessClientSecret, server: id)) ?? ""
+        }
+        if hasServer {
+            headers = Array(CustomHeader.decode(Keychain.read(account: Keychain.account(.customHeaders, server: id)))
+                .filter(\.isUsable).prefix(Self.maximumHeaders))
         }
         if !modelURL.isEmpty { modelKey = Keychain.read(.fastLaneAPIKey) ?? "" }
     }

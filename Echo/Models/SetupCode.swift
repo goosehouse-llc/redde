@@ -19,6 +19,8 @@ import Foundation
 /// - `api`, `key`: the Hermes API server. `profile` names a Hermes profile, `profile-key` is that
 ///   profile's own API key when it has one.
 /// - `access-id`, `access-secret`: a Cloudflare Access service token for a server behind Access.
+/// - `header`: a header a reverse proxy in front of the server asks for, as `Name: value`. The
+///   one parameter that may come more than once, up to `maximumHeaders` of them.
 /// - `model-url`, `model-key`, `model`: an OpenAI-compatible endpoint.
 /// - `use`: `dashboard`, `api` or `model`, the connection the app should talk to. Left out, it is
 ///   the first of those the code carries.
@@ -39,6 +41,8 @@ nonisolated struct SetupCode: Equatable, Sendable {
     var profileKey = ""
     var accessID = ""
     var accessSecret = ""
+    /// Custom headers for the server (`CustomHeader`). Their values are secrets like a key.
+    var headers: [CustomHeader] = []
     var modelURL = ""
     var modelKey = ""
     var model = ""
@@ -52,6 +56,7 @@ nonisolated struct SetupCode: Equatable, Sendable {
     static let version = 1
     /// Longer than any real code, short enough to fit a QR code a phone can read off a screen.
     static let maximumLength = 2_500
+    static let maximumHeaders = 8
 
     enum ParseError: Error, Equatable {
         /// Made by a newer version of the app.
@@ -96,11 +101,19 @@ nonisolated struct SetupCode: Equatable, Sendable {
         guard let parameters = parameters(of: url) else { return nil }
         guard url.absoluteString.utf8.count <= maximumLength else { throw .tooLong }
         var fields: [String: String] = [:]
+        var headers: [CustomHeader] = []
         // Split by hand: a "+" is a plus sign here, and a badly escaped value is dropped, not fatal.
         for pair in parameters.split(separator: "&") {
             let parts = pair.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
             guard let name = String(parts[0]).removingPercentEncoding?.lowercased(), parts.count == 2,
                   let value = String(parts[1]).removingPercentEncoding?.trimmingCharacters(in: .whitespacesAndNewlines) else { continue }
+            if name == "header" {
+                // Each one its own header; of two by the same name the first counts, like the rest.
+                if let header = Self.header(from: value), headers.count < maximumHeaders, !headers.contains(where: { $0.id == header.id }) {
+                    headers.append(header)
+                }
+                continue
+            }
             // The first of a repeated parameter counts, as it does for the person reading the link.
             if !value.isEmpty, fields[name] == nil { fields[name] = value }
         }
@@ -121,6 +134,8 @@ nonisolated struct SetupCode: Equatable, Sendable {
         code.accessID = fields["access-id"] ?? ""
         code.accessSecret = fields["access-secret"] ?? ""
         code.modelURL = try address(fields["model-url"])
+        // Headers go to a Hermes server; a code for a model endpoint alone has no use for them.
+        code.headers = code.hasServer ? headers : []
         code.modelKey = fields["model-key"] ?? ""
         code.model = fields["model"] ?? ""
         code.use = switch fields["use"]?.lowercased() {
@@ -131,6 +146,14 @@ nonisolated struct SetupCode: Equatable, Sendable {
         }
         guard code.transport != nil else { throw .noAddress }
         return code
+    }
+
+    /// A header as a code writes it, `Name: value`. Nil for one the app couldn't send: no name
+    /// or no value, a name that isn't a header's, or one the connection sets itself.
+    static func header(from text: String) -> CustomHeader? {
+        guard let colon = text.firstIndex(of: ":") else { return nil }
+        let header = CustomHeader(name: String(text[..<colon]), value: String(text[text.index(after: colon)...]))
+        return header.isUsable ? header : nil
     }
 
     /// An address as Setup would accept it typed: http or https, with a host. One with a user
@@ -183,6 +206,7 @@ nonisolated struct SetupCode: Equatable, Sendable {
         add("profile-key", profileKey)
         add("access-id", accessID)
         add("access-secret", accessSecret)
+        for header in headers { add("header", "\(header.name): \(header.value)") }
         add("model-url", modelURL)
         add("model-key", modelKey)
         add("model", model)
@@ -218,7 +242,7 @@ nonisolated struct SetupCode: Equatable, Sendable {
     var hasServer: Bool { !dashboardURL.isEmpty || !apiURL.isEmpty }
 
     var hasSecrets: Bool {
-        !(dashboardPassword.isEmpty && apiKey.isEmpty && profileKey.isEmpty && accessSecret.isEmpty && modelKey.isEmpty)
+        !(dashboardPassword.isEmpty && apiKey.isEmpty && profileKey.isEmpty && accessSecret.isEmpty && modelKey.isEmpty && headers.isEmpty)
     }
 
     /// The same code with addresses and names only, for showing where a password shouldn't be.
@@ -228,6 +252,7 @@ nonisolated struct SetupCode: Equatable, Sendable {
         code.apiKey = ""
         code.profileKey = ""
         code.accessSecret = ""
+        code.headers = []
         code.modelKey = ""
         return code
     }

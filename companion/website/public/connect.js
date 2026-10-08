@@ -9,12 +9,18 @@
   if (raw && history.replaceState) history.replaceState(null, "", location.pathname);
 
   var fields = Object.create(null);
+  var headers = [];   // names only: a header's value is a secret, like a key
   raw.split("&").forEach(function (pair) {
     var at = pair.indexOf("=");
     if (at < 1) return;
     try {
       var name = decodeURIComponent(pair.slice(0, at)).toLowerCase();
       var value = decodeURIComponent(pair.slice(at + 1)).trim();
+      if (name === "header") {   // the one parameter that may repeat: "Name: value"
+        var colon = value.indexOf(":");
+        if (colon > 0 && value.slice(colon + 1).trim() && headers.length < 8) headers.push(value.slice(0, colon).trim());
+        return;
+      }
       if (value && !(name in fields)) fields[name] = value;   // the first of a repeat counts, as in the app
     } catch (e) { /* a badly escaped value is no value */ }
   });
@@ -42,6 +48,7 @@
       notes([fields.user && "user " + fields.user, fields.password ? "password included" : "no password"]));
   row("Hermes API", fields.api, fields.key || fields["profile-key"] ? "key included" : "no key");
   row("Profile", fields.profile);
+  if (fields.dashboard || fields.api) row(headers.length === 1 ? "Custom header" : "Custom headers", headers.join(", "), headers.length ? "value included" : "");
   row("Model endpoint", fields["model-url"], notes([fields.model, fields["model-key"] && "key included"]));
 
   document.getElementById("open").href = "redde://connect?" + raw;

@@ -82,6 +82,7 @@ The link is `https://redde.goosehouse.org/connect#` followed by any of these, pe
 | `api`, `key` | Hermes API server address and `API_SERVER_KEY` |
 | `profile`, `profile-key` | A Hermes profile, and its own API key if it has one |
 | `access-id`, `access-secret` | A Cloudflare Access service token |
+| `header` | A header your reverse proxy asks for, as `Name: value`; may be repeated (`setup-code.py --header Name`) |
 | `model-url`, `model-key`, `model` | An OpenAI-compatible endpoint |
 | `use` | `dashboard`, `api` or `model`: which connection Redde talks to (default: the first in the code) |
 

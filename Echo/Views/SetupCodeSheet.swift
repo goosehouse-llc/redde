@@ -93,6 +93,11 @@ struct SetupCodeSheet: View {
                 if !code.accessID.isEmpty {
                     LabeledContent("Cloudflare Access", value: code.accessSecret.isEmpty ? "Client ID only" : "Service token included")
                 }
+                if !code.headers.isEmpty {
+                    // By name; a header's value is a secret and is never shown.
+                    LabeledContent(code.headers.count == 1 ? "Custom header" : "Custom headers",
+                                   value: code.headers.map(\.name).joined(separator: ", "))
+                }
             } header: {
                 Text("Server")
             } footer: {

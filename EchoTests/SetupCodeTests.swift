@@ -112,6 +112,29 @@ struct SetupCodeTests {
         #expect(code.apiKey == "second")   // a blank one is no value
     }
 
+    /// The one parameter that may repeat: each `header` is a header of its own.
+    @Test func carriesTheHeadersAReverseProxyAsksFor() throws {
+        let link = "redde://connect?api=http://a.test:8642&key=k&header=X-Proxy-Token%3A%20s3cret%20value%2F%2B%26%3D"
+            + "&header=X-Tenant:home&header=x-tenant:second&header=Host:elsewhere&header=NoColon&header=Empty:&header=Bad%20Name:x"
+        let code = try #require(try read(link))
+        #expect(code.headers == [CustomHeader(name: "X-Proxy-Token", value: "s3cret value/+&="), CustomHeader(name: "X-Tenant", value: "home")],
+                "the first of two by one name counts, and what couldn't be sent is left out")
+        #expect(code.hasSecrets, "a header's value is a secret")
+        #expect(code.withoutSecrets.headers.isEmpty)
+        // Back out as a link, and in again, the same; in the web form too.
+        #expect(try read(code.url.absoluteString) == code)
+        #expect(try read(code.webURL.absoluteString) == code)
+        #expect(code.url.absoluteString.contains("header=X-Proxy-Token") && !code.url.absoluteString.contains("&="),
+                "the value's own & and = are escaped, or they would end the parameter")
+
+        // No more than a code has room for.
+        let many = "redde://connect?api=http://a.test" + (1 ... 12).map { "&header=X-H\($0):v" }.joined()
+        #expect(try #require(try read(many)).headers.count == SetupCode.maximumHeaders)
+        // A model endpoint is sent no headers, so a code for one alone carries none.
+        #expect(try #require(try read("redde://connect?model-url=http://m.test&header=X-Tenant:home")).headers.isEmpty)
+        #expect(SetupCode.header(from: "X-Token:a:b")?.value == "a:b", "only the first colon divides")
+    }
+
     @Test func useFallsBackToWhatTheCodeCarries() throws {
         #expect(try read("redde://connect?api=http://a.test&use=dashboard")?.transport == .hermesSessions)
         #expect(try read("redde://connect?api=http://a.test&dashboard=http://d.test")?.transport == .hermesServe)
@@ -244,6 +267,7 @@ struct SetupCodeTests {
             { Keychain.account(.cfAccessClientSecret, server: $0) },
             { Keychain.profileAccount("other", server: $0) },
             { Keychain.account(.serveDashboardPassword, server: $0) },
+            { Keychain.account(.customHeaders, server: $0) },
         ]
         for account in accounts {
             let settings = settings()
@@ -387,11 +411,14 @@ struct SetupCodeTests {
         Keychain.write(account: Keychain.profileAccount("work", server: id), value: "pk")
         Keychain.write(account: Keychain.account(.serveDashboardPassword, server: id), value: "pw")
         Keychain.write(account: Keychain.account(.cfAccessClientSecret, server: id), value: "cs")
+        let proxy = [CustomHeader(name: "X-Proxy-Token", value: "pt"), CustomHeader(name: "X-Tenant", value: "home")]
+        Keychain.write(account: Keychain.account(.customHeaders, server: id), value: CustomHeader.encode(proxy))
         let server = try #require(phone.activeServer)
 
         // Without the secrets: addresses and names only.
         let bare = SetupCode(server: server, settings: phone, secrets: false)
         #expect(!bare.hasSecrets)
+        #expect(bare.headers.isEmpty, "a header is nothing without its value, and its value is a secret")
         #expect(bare.name == "Home")
         #expect(bare.apiURL == "https://hermes.home.test:8642")
         #expect(bare.dashboardUser == "redde")
@@ -404,6 +431,7 @@ struct SetupCodeTests {
         #expect(full.profileKey == "pk")
         #expect(full.dashboardPassword == "pw")
         #expect(full.accessSecret == "cs")
+        #expect(full.headers == proxy)
         let pad = settings()
         defer { forget(pad.activeServerID) }
         let arrived = try #require(try SetupCode.read(full.url))
@@ -416,6 +444,8 @@ struct SetupCodeTests {
         #expect(copy == original)
         #expect(pad.transport == .hermesSessions)
         #expect(Keychain.read(account: Keychain.profileAccount("work", server: pad.activeServerID.uuidString)) == "pk")
+        // The proxy's headers arrive with it, so the second device gets through the proxy too.
+        #expect(CustomHeader.decode(Keychain.read(account: Keychain.account(.customHeaders, server: pad.activeServerID.uuidString))) == proxy)
     }
 
     @Test func aServerWithNoAddressHasNoCode() {
