@@ -214,6 +214,12 @@ final class Settings: ServeEndpoint {
     var returnSends: Bool {
         didSet { defaults.set(returnSends, forKey: Keys.returnSends) }
     }
+    /// How much larger or smaller than the iPhone's own text size the conversation is set, in
+    /// steps of that scale: `chatTextSizes`. Zero follows the system.
+    var chatTextSize: Int {
+        didSet { defaults.set(chatTextSize, forKey: Keys.chatTextSize) }
+    }
+    static let chatTextSizes = -2 ... 2
     /// Whether Redde's notifications make a sound. Kept in the app group as well: the
     /// notification extension decides for the ones a paired Hermes sends (`NotificationSound`).
     var notificationSound: Bool {
@@ -379,6 +385,7 @@ final class Settings: ServeEndpoint {
         static let announceOnAirPods = "announceOnAirPods"
         static let notificationSound = "notificationSound"
         static let returnSends = "returnSends"
+        static let chatTextSize = "chatTextSize"
         static let requireBiometrics = "requireBiometrics"
         static let siriAIEnabled = "siriAIEnabled"
         static let lockGraceSeconds = "lockGraceSeconds"
@@ -437,6 +444,7 @@ final class Settings: ServeEndpoint {
         announceOnAirPods = defaults.bool(forKey: Keys.announceOnAirPods)
         notificationSound = defaults.object(forKey: Keys.notificationSound) as? Bool ?? true
         returnSends = defaults.bool(forKey: Keys.returnSends)
+        chatTextSize = min(max(defaults.integer(forKey: Keys.chatTextSize), Self.chatTextSizes.lowerBound), Self.chatTextSizes.upperBound)
         requireBiometrics = defaults.bool(forKey: Keys.requireBiometrics)
         siriAIEnabled = defaults.bool(forKey: Keys.siriAIEnabled)
         lockGraceSeconds = defaults.object(forKey: Keys.lockGraceSeconds) as? Double ?? 60
@@ -635,6 +643,7 @@ final class Settings: ServeEndpoint {
         announceOnAirPods = false
         notificationSound = true
         returnSends = false
+        chatTextSize = 0
         requireBiometrics = false
         siriAIEnabled = false
         lockGraceSeconds = 60

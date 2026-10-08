@@ -21,7 +21,8 @@ speech is recognized on the device, and credentials stay in the iOS Keychain.
 - **Watch it work.** Streaming reasoning, tool calls, subagents, and cards for approvals,
   clarifying questions, sudo prompts and secrets, also answerable from a notification.
 - **Rich replies.** Markdown, highlighted code, tables, task lists, Mermaid diagrams and math,
-  rendered offline with no third-party Swift dependencies.
+  rendered offline with no third-party Swift dependencies, at a text size of the conversation's
+  own, with a ring that shows how full the model's context is.
 - **Write it your way.** A draft for each conversation, pictures pasted or dropped in, files and
   video, dictation into the message field, a page of its own for a long message, and a Return
   key that sends if you want it to.
@@ -31,7 +32,8 @@ speech is recognized on the device, and credentials stay in the iOS Keychain.
   device that is set up can show the code for the next one.
 - **Everywhere on iOS.** Siri and Shortcuts, the Action Button, Control Center, widgets, a Live
   Activity, the share sheet, the camera, and Siri AI messaging on iOS 27 (opt-in).
-- **Private.** An offline message queue, Face ID lock, and nothing collected.
+- **Private.** An offline message queue, the conversations you have opened still readable with
+  no connection, Face ID lock, and nothing collected.
 
 ## Requirements
 

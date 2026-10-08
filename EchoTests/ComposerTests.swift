@@ -113,6 +113,85 @@ struct ComposerLogicTests {
         #expect(Dictation.joined("Line one.\n", "Line two.") == "Line one.\nLine two.")
         #expect(Dictation.joined("as it was", "  ") == "as it was")
     }
+
+    @Test func theChatTextSizeIsStepsAlongTheSystemsScale() {
+        #expect(ChatTextSize.size(.large, steps: 0) == .large)
+        #expect(ChatTextSize.size(.large, steps: 1) == .xLarge)
+        #expect(ChatTextSize.size(.large, steps: -2) == .small)
+        #expect(ChatTextSize.size(.xSmall, steps: -2) == .xSmall, "it stops at the ends")
+        #expect(ChatTextSize.size(.accessibility5, steps: 2) == .accessibility5)
+        #expect(ChatTextSize.size(.accessibility1, steps: 2) == .accessibility3, "and still follows a large system size")
+        #expect(Settings.chatTextSizes.map(ChatTextSize.label) == ["Smallest", "Smaller", "Same as iPhone", "Larger", "Largest"])
+    }
+
+    @Test @MainActor func theSettingsForWritingAndReadingStayAsSet() {
+        let suite = UserDefaults(suiteName: "composer-\(UUID().uuidString)")!
+        let settings = Settings(defaults: suite)
+        #expect(!settings.returnSends && settings.chatTextSize == 0, "Return starts a line and the text is the iPhone's size until changed")
+        settings.returnSends = true
+        settings.chatTextSize = 2
+        let again = Settings(defaults: suite)
+        #expect(again.returnSends && again.chatTextSize == 2)
+        suite.set(9, forKey: "chatTextSize")
+        #expect(Settings(defaults: suite).chatTextSize == 2, "a value off the scale is brought back onto it")
+    }
+}
+
+/// The ring in the header.
+@MainActor
+struct ContextUsageTests {
+    private func reply(used: Int?, max: Int?, window: Int? = nil) -> Message {
+        var message = Message(role: .assistant, text: "ok")
+        var metrics = TurnMetrics(sentAt: .now)
+        metrics.completedAt = .now
+        metrics.usage = TokenUsage(input: 10, output: 3, cached: nil, contextUsed: used, contextMax: max)
+        metrics.contextWindow = window
+        message.metrics = metrics
+        return message
+    }
+
+    @Test func theConversationKnowsHowFullItsContextIsFromTheLatestReplyThatSays() {
+        let settings = Settings(defaults: UserDefaults(suiteName: "context-\(UUID().uuidString)")!)
+        let conversation = Conversation(settings: settings,
+                                        store: ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "c-\(UUID().uuidString)")))
+        #expect(conversation.contextUsage == nil)
+        conversation.replaceForDemo(messages: [Message(role: .user, text: "hi"), reply(used: 54_210, max: 128_000)])
+        #expect(conversation.contextUsage == ContextUsage(used: 54_210, window: 128_000))
+        // A reply that doesn't say (the Hermes API gives only session totals) leaves the last known.
+        conversation.mutateMessagesForDemo { $0 += [Message(role: .user, text: "more"), reply(used: nil, max: nil)] }
+        #expect(conversation.contextUsage == ContextUsage(used: 54_210, window: 128_000))
+        conversation.mutateMessagesForDemo { $0 += [Message(role: .user, text: "more"), reply(used: 60_000, max: nil, window: 131_072)] }
+        #expect(conversation.contextUsage == ContextUsage(used: 60_000, window: 131_072), "the window detected on the phone when the server names none")
+        conversation.reset()
+        #expect(conversation.contextUsage == nil)
+    }
+
+    @Test func theRingSaysItInTokens() {
+        #expect(ContextRing.sentence(used: 54_210, window: 128_000) == "\(54_210.formatted()) of \(128_000.formatted()) tokens (\(0.42.formatted(.percent.precision(.fractionLength(0)))))")
+        #expect(ContextRing.sentence(used: 200_000, window: 128_000).hasSuffix("(\(1.0.formatted(.percent.precision(.fractionLength(0)))))"), "never more than full")
+    }
+}
+
+/// Conversations the server can't hand over, read from what this iPhone kept.
+struct SavedCopiesTests {
+    private func summary(_ title: String, session: String?, transport: Echo.Transport, server: UUID?) -> ConversationSummary {
+        ConversationSummary(ConversationRecord(id: UUID(), title: title, createdAt: .now, updatedAt: .now, transport: transport,
+                                               serverSessionID: session, messages: [Message(role: .user, text: title)], serverID: server))
+    }
+
+    @Test func onlyThisServersConversationsAreOffered() {
+        let home = UUID(), work = UUID()
+        let all = [summary("Vet and calendar", session: "s1", transport: .hermesServe, server: home),
+                   summary("Release notes", session: "s2", transport: .hermesSessions, server: home),
+                   summary("At work", session: "s3", transport: .hermesServe, server: work),
+                   summary("Local model chat", session: nil, transport: .chatCompletions, server: nil),
+                   summary("Never reached the server", session: nil, transport: .hermesServe, server: home),
+                   summary("From before servers had names", session: "s0", transport: .hermesSessions, server: nil)]
+        let copies = ConversationsList.savedCopies(in: all, server: home, matching: "")
+        #expect(copies.map(\.title) == ["Vet and calendar", "Release notes", "From before servers had names"])
+        #expect(ConversationsList.savedCopies(in: all, server: work, matching: "").map(\.title) == ["At work", "From before servers had names"])
+        #expect(ConversationsList.savedCopies(in: all, server: home, matching: " vet ").map(\.title) == ["Vet and calendar"])
+    }
 }
 
 /// The composer's microphone.

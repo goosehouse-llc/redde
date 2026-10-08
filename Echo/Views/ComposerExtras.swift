@@ -146,3 +146,54 @@ extension UIResponder {
 
     @objc private func noteAsFirstResponder(_ sender: Any?) { UIResponder.found = self }
 }
+
+/// A ring that fills as the conversation fills the model's context window, with the share
+/// beside it; tapped, it says how many tokens that is.
+struct ContextRing: View {
+    let used: Int
+    let window: Int
+    @State private var showDetail = false
+    @Environment(\.theme) private var theme
+
+    private var share: Double { window > 0 ? min(1, Double(used) / Double(window)) : 0 }
+    /// Amber from three quarters, red from nine tenths: the point where a new conversation helps.
+    private var tint: Color { share >= 0.9 ? .red : share >= 0.75 ? .orange : theme.accent }
+
+    var body: some View {
+        Button { showDetail = true } label: {
+            HStack(spacing: 4) {
+                ZStack {
+                    Circle().stroke(Color.secondary.opacity(0.25), lineWidth: 2)
+                    Circle().trim(from: 0, to: share).stroke(tint, style: .init(lineWidth: 2, lineCap: .round)).rotationEffect(.degrees(-90))
+                }
+                .frame(width: 11, height: 11)
+                Text(share, format: .percent.precision(.fractionLength(0))).font(.caption.monospacedDigit())
+            }
+            .foregroundStyle(.secondary)
+            .padding(.vertical, 4).padding(.horizontal, 4)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Context")
+        .accessibilityValue(Self.sentence(used: used, window: window))
+        .accessibilityHint("Shows how much of the model's context this conversation uses")
+        .popover(isPresented: $showDetail) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Context").font(.headline)
+                Text(Self.sentence(used: used, window: window)).font(.subheadline)
+                ProgressView(value: share).tint(tint)
+                Text("Everything said in this conversation is read again with each message. When it fills up the oldest part is summarised or dropped; a new conversation starts empty.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            .padding(16)
+            .frame(width: 280)
+            .presentationCompactAdaptation(.popover)
+        }
+    }
+
+    /// "54,210 of 128,000 tokens (42%)".
+    nonisolated static func sentence(used: Int, window: Int) -> String {
+        let share = window > 0 ? min(1, Double(used) / Double(window)) : 0
+        return "\(used.formatted()) of \(window.formatted()) tokens (\(share.formatted(.percent.precision(.fractionLength(0)))))"
+    }
+}

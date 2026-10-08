@@ -52,6 +52,12 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
     }
 }
 
+/// How much of the model's context window a conversation fills, in tokens.
+nonisolated struct ContextUsage: Equatable, Sendable {
+    var used: Int
+    var window: Int
+}
+
 /// Wall-clock timings for one turn, measured on the phone. The whole point of M0/M1 is to know
 /// where the latency budget goes, so these are first-class.
 nonisolated struct TurnMetrics: Equatable, Sendable, Codable {
@@ -65,10 +71,12 @@ nonisolated struct TurnMetrics: Equatable, Sendable, Codable {
 
     /// Context occupancy after this turn. Only when the backend states it (hermes serve) or the
     /// numbers are unambiguous (fast lane: one call's prompt tokens against the detected window).
-    var contextPercent: Double? {
+    var context: ContextUsage? {
         guard let usage, let used = usage.contextUsed, let max = usage.contextMax ?? contextWindow, max > 0 else { return nil }
-        return Double(used) / Double(max) * 100
+        return ContextUsage(used: used, window: max)
     }
+
+    var contextPercent: Double? { context.map { Double($0.used) / Double($0.window) * 100 } }
 
     /// Average decode speed; see `TokenUsage.decodeRate` for the windowing rules.
     var tokensPerSecond: Double? {

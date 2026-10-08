@@ -159,6 +159,8 @@ final class Conversation {
     /// reply streams.
     private(set) var title = "New conversation"
     private(set) var hasMessages = false
+    /// How full the model's context is, as of the latest reply that says: the header's ring.
+    private(set) var contextUsage: ContextUsage?
     /// The name this conversation was given: by Rename, or on the gateway (a session renamed in
     /// the Dashboard, or titled by Hermes). Without one the title is the first question.
     private(set) var name: String? { didSet { refreshHeader() } }
@@ -169,6 +171,9 @@ final class Conversation {
         // Assigning an equal value would still notify every observer.
         if title != self.title { self.title = title }
         if hasMessages == messages.isEmpty { hasMessages = !messages.isEmpty }
+        // The newest reply that knows; nearly always the last message or the one before it.
+        let context = messages.reversed().lazy.compactMap { $0.metrics?.context }.first
+        if context != contextUsage { contextUsage = context }
     }
 
     // MARK: - Actions

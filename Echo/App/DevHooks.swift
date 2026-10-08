@@ -7,7 +7,8 @@ import Foundation
 /// Launch arguments (`xcrun simctl launch <device> com.goosehouse.echo <flags>`):
 /// - `-echo.demo`: seed the demo conversation. `-echo.demoShort` keeps its first exchange,
 ///   `-echo.demoTwo` its first two (ending on the checklist and table), `-echo.demoLong` seeds a
-///   transcript many screens long, `-echo.demoLibrary` adds a few local conversations.
+///   transcript many screens long, `-echo.demoLibrary` adds a few local conversations
+///   (`-echo.demoSaved`: the same as copies of conversations on the active Hermes server).
 ///   `-echo.demoStream [seconds]` plays the first exchange live, thinking and all (the promo
 ///   video); with a number, from an empty conversation, the question sent after that long.
 /// - `-echo.demoHeavy [turns]`: a thread of long replies (32 turns of about 10,000 characters by
@@ -80,6 +81,7 @@ enum DevHooks {
         if has("-echo.demoShort") { conversation.keepFirstMessages(2) }
         if has("-echo.demoTwo") { conversation.keepFirstMessages(4) }
         if has("-echo.demoLibrary") { conversation.seedDemoLibrary() }
+        if has("-echo.demoSaved") { conversation.seedDemoLibrary(savedFrom: settings.activeServerID) }
         if has("-echo.clearDrafts") { Drafts.shared.removeAll() }
         // The Projects section only shows on the Dashboard connection.
         if demoProjects { settings.transport = .hermesServe }

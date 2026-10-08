@@ -208,7 +208,9 @@ extension Conversation {
     }
 
     /// Screenshot helper (`-echo.demoLibrary`): a few local conversations so the list isn't empty.
-    func seedDemoLibrary() {
+    /// `savedFrom`: as this iPhone's copies of conversations on that Hermes server instead
+    /// (`-echo.demoSaved`), which is what the list falls back to when the server can't be reached.
+    func seedDemoLibrary(savedFrom server: UUID? = nil) {
         let samples: [(String, String, TimeInterval)] = [
             ("Plan the weekend hike", "Sunrise at Bear Peak works: 5:40 am start, back by 10. I've saved the route and packed-list reminder.", -3_600),
             ("Draft the landlord email", "Here's a firm but friendly draft about the heating; it references the lease clause and asks for a date.", -26_000),
@@ -223,8 +225,9 @@ extension Conversation {
             var reply = Message(role: .assistant, text: a, createdAt: when.addingTimeInterval(4))
             reply.metrics = TurnMetrics(sentAt: when, firstTokenAt: when.addingTimeInterval(0.6), completedAt: when.addingTimeInterval(4), characters: a.count)
             storeForDemo.upsert(ConversationRecord(id: UUID(), title: q, createdAt: when, updatedAt: when.addingTimeInterval(4),
-                                            transport: .chatCompletions, serverSessionID: nil,
-                                            messages: [Message(role: .user, text: q, createdAt: when), reply]))
+                                            transport: server == nil ? .chatCompletions : .hermesSessions,
+                                            serverSessionID: server == nil ? nil : "demo_\(abs(q.hashValue))",
+                                            messages: [Message(role: .user, text: q, createdAt: when), reply], serverID: server))
         }
     }
 }

@@ -201,6 +201,7 @@ struct ContentView: View {
 
     private func transcriptScreen(showListButton: Bool) -> some View {
         TranscriptView(showSetup: $showSetup, showSearch: $showSearch, onEdit: beginEditing, onEditQueued: editQueued)
+            .chatTextSize()
             .background(theme.pageColor)
             .foregroundStyle(theme.textColor)
             .safeAreaInset(edge: .bottom) {
@@ -224,24 +225,36 @@ struct ContentView: View {
                 // The conversation on top; the agent and model beneath, tap to pick the model —
                 // the /model sheet without typing /model.
                 ToolbarItem(placement: .principal) {
-                    Button { showModelPicker = true } label: {
-                        VStack(spacing: 1) {
+                    // Two lines, both of which open the model picker; beside the second, how
+                    // full the model's context is, which opens its own explanation.
+                    VStack(spacing: 1) {
+                        Button { showModelPicker = true } label: {
                             TypedTitle(title: headerTitle, conversationID: conversation.id,
                                        isPlaceholder: !conversation.hasMessages && conversation.outbox.isEmpty)
                                 .font(.headline)
                                 .foregroundStyle(theme.textColor)
-                            HStack(spacing: 3) {
-                                Text("\(settings.headerTitle) · \(modelChipLabel)").font(.caption).lineLimit(1)
-                                Image(systemName: "chevron.down").font(.system(size: 8, weight: .bold))
-                            }
-                            .foregroundStyle(.secondary)
+                                .contentShape(Rectangle())
                         }
-                        .frame(maxWidth: 220)
-                        .contentShape(Rectangle())
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(headerTitle). Model: \(modelChipLabel)")
+                        .accessibilityHint("Choose which model answers")
+                        HStack(spacing: 4) {
+                            Button { showModelPicker = true } label: {
+                                HStack(spacing: 3) {
+                                    Text("\(settings.headerTitle) · \(modelChipLabel)").font(.caption).lineLimit(1)
+                                    Image(systemName: "chevron.down").font(.system(size: 8, weight: .bold))
+                                }
+                                .foregroundStyle(.secondary)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityHidden(true)   // the line above says it, with the same action
+                            if let context = conversation.contextUsage {
+                                ContextRing(used: context.used, window: context.window)
+                            }
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("\(headerTitle). Model: \(modelChipLabel)")
-                    .accessibilityHint("Choose which model answers")
+                    .frame(maxWidth: 240)
                 }
                 ToolbarItem(placement: .topBarLeading) {
                     if showListButton {

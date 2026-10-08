@@ -97,6 +97,55 @@ struct SelectableTextView: UIViewRepresentable {
     }
 }
 
+/// Settings → Appearance → Chat text size: the conversation set a few steps larger or smaller
+/// than the iPhone's own text size, on the system's scale, so it still follows that setting.
+/// Everything in the transcript is sized by text style and moves together; the composer and
+/// the bars around it stay as the system has them.
+struct ChatTextSize: ViewModifier {
+    @Environment(\.dynamicTypeSize) private var system
+    @State private var settings = Settings.shared
+
+    func body(content: Content) -> some View {
+        let size = Self.size(system, steps: settings.chatTextSize)
+        content
+            .dynamicTypeSize(size)
+            .environment(\.chatFontPoints, settings.chatTextSize == 0 ? nil : Self.bodyPoints(at: size))
+    }
+
+    /// `steps` along the system's scale from `system`, stopping at either end of it.
+    nonisolated static func size(_ system: DynamicTypeSize, steps: Int) -> DynamicTypeSize {
+        let scale = DynamicTypeSize.allCases
+        guard let index = scale.firstIndex(of: system) else { return system }
+        return scale[min(max(index + steps, 0), scale.count - 1)]
+    }
+
+    /// The body font's size in points at a text size, for what isn't drawn by SwiftUI (formulas).
+    static func bodyPoints(at size: DynamicTypeSize) -> CGFloat {
+        UIFont.preferredFont(forTextStyle: .body, compatibleWith: UITraitCollection(preferredContentSizeCategory: UIContentSizeCategory(size))).pointSize
+    }
+
+    /// What Settings calls each step.
+    nonisolated static func label(_ steps: Int) -> String {
+        switch steps {
+        case ...(-2): "Smallest"
+        case -1: "Smaller"
+        case 0: "Same as iPhone"
+        case 1: "Larger"
+        default: "Largest"
+        }
+    }
+}
+
+extension View {
+    func chatTextSize() -> some View { modifier(ChatTextSize()) }
+}
+
+extension EnvironmentValues {
+    /// The body text size in points inside a conversation whose text size was changed in
+    /// Settings; nil where it is the system's.
+    @Entry var chatFontPoints: CGFloat?
+}
+
 extension EnvironmentValues {
     /// True in the transcript, where there is a composer for a quote to go to. Sheets it presents
     /// inherit it; a subagent's transcript and voice mode leave it off.

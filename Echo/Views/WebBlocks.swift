@@ -43,8 +43,10 @@ enum WebBlockAssets {
     /// - layout: JavaScript that sizes the content itself (diagrams); without it, content wider
     ///   than the block is scaled down by `fit()` (formulas).
     /// - zoomable: a full-screen page the reader can pinch and pan, with no size reporting.
+    /// - fontPoints: the text size to draw at, when it isn't the system's own (Settings →
+    ///   Appearance → Chat text size); the page follows the system's by itself.
     static func page(body: String, script: String, dark: Bool, textColor: String,
-                     layout: String? = nil, zoomable: Bool = false) -> String {
+                     layout: String? = nil, zoomable: Bool = false, fontPoints: CGFloat? = nil) -> String {
         let viewport = zoomable
             ? "width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=6, user-scalable=yes"
             : "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
@@ -55,7 +57,7 @@ enum WebBlockAssets {
         <style>
           :root { color-scheme: \(dark ? "dark" : "light"); }
           html, body { margin: 0; padding: 0; background: transparent; color: \(textColor);
-            font: -apple-system-body; -webkit-text-size-adjust: none; }
+            font: -apple-system-body; \(fontPoints.map { "font-size: \(Int($0.rounded()))px; " } ?? "")-webkit-text-size-adjust: none; }
           body { padding: \(zoomable ? "16px 12px" : "4px 2px"); overflow: \(zoomable ? "visible" : "hidden"); }
           #root { display: block; width: 100%; \(zoomable ? "text-align: center; min-height: calc(100vh - 32px); display: flex; align-items: center; justify-content: center;" : "") }
           #fit { display: inline-block; transform-origin: left top; }
@@ -279,6 +281,7 @@ private struct PageKey: Equatable {
     let source: String
     let dark: Bool
     var theme: ResolvedTheme? = nil
+    var fontPoints: CGFloat? = nil
 }
 
 extension EnvironmentValues {
@@ -517,6 +520,7 @@ struct MathBlock: View {
     /// See MermaidBlock.nearViewport.
     @State private var nearViewport: Bool
     @Environment(\.lazyWebBlocks) private var lazy
+    @Environment(\.chatFontPoints) private var fontPoints
 
     init(source: String) {
         self.source = source
@@ -526,7 +530,7 @@ struct MathBlock: View {
         _nearViewport = State(initialValue: remembered == nil)
     }
 
-    private var pageKey: PageKey { PageKey(source: source, dark: (drawnScheme ?? colorScheme) == .dark) }
+    private var pageKey: PageKey { PageKey(source: source, dark: (drawnScheme ?? colorScheme) == .dark, fontPoints: fontPoints) }
 
     private func page() -> String {
         let dark = (drawnScheme ?? colorScheme) == .dark
@@ -546,7 +550,7 @@ struct MathBlock: View {
               s.onerror = () => { document.getElementById('fit').textContent = `\(escaped)`; drawn(); };
               document.body.appendChild(s);
             """,
-            dark: dark, textColor: dark ? "#f2f2f7" : "#1c1c1e")
+            dark: dark, textColor: dark ? "#f2f2f7" : "#1c1c1e", fontPoints: fontPoints)
     }
 
     var body: some View {

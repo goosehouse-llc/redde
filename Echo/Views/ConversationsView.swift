@@ -36,6 +36,8 @@ struct ConversationsList: View {
     @State private var ledgerError: String?
     @State private var loading = false
     @State private var opening: String?
+    /// A conversation the server wouldn't hand over just now, of which this iPhone has a copy.
+    @State private var savedCopyOffered: UUID?
     @State private var query = ""
     @State private var renaming: HermesSessionsAPI.SessionSummary?
     @State private var renameText = ""
@@ -379,10 +381,17 @@ struct ConversationsList: View {
                                   openSettings: { showSettings = true })
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.clear)
+            // The server can't be reached: what this iPhone kept of its conversations can still be read.
+            savedCopiesSection
         } else if let ledgerError {
             // A failed rename/pin/delete must not blank the loaded list; show it inline.
             Label(ledgerError, systemImage: "exclamationmark.triangle")
                 .font(.footnote).foregroundStyle(.orange).listRowSeparator(.hidden)
+            if let id = savedCopyOffered, let copy = store.summaries.first(where: { $0.id == id }) {
+                Button("Open the copy on this iPhone, from \(DateGroup.rowTime(copy.updatedAt))", systemImage: "internaldrive") { openSaved(copy) }
+                    .font(.footnote)
+                    .listRowSeparator(.hidden)
+            }
         } else if ledger.isEmpty && !loading {
             ContentUnavailableView("No conversations yet", systemImage: "bubble.left.and.bubble.right",
                                    description: Text("Conversations from every platform appear here."))
@@ -581,9 +590,72 @@ struct ConversationsList: View {
     private func open(_ session: HermesSessionsAPI.SessionSummary) {
         opening = session.id
         Task {
-            do { try await load(session) } catch { ledgerError = error.localizedDescription }
+            do {
+                try await load(session)
+                savedCopyOffered = nil
+            } catch {
+                ledgerError = error.localizedDescription
+                savedCopyOffered = store.summaries.first { $0.serverSessionID == session.id }?.id
+            }
             opening = nil
         }
+    }
+
+    // MARK: - Saved copies (the server can't be reached)
+
+    /// This server's conversations as this iPhone last saw them: every one that was opened or
+    /// held here is kept on the device (`ConversationStore`), so it can be read with no
+    /// connection. Newest first, as the store has them.
+    static func savedCopies(in summaries: [ConversationSummary], server: UUID, matching query: String) -> [ConversationSummary] {
+        let wanted = query.trimmingCharacters(in: .whitespaces)
+        return summaries.filter {
+            $0.serverSessionID != nil && $0.transport != .chatCompletions && ($0.serverID ?? server) == server
+                && (wanted.isEmpty || $0.title.localizedCaseInsensitiveContains(wanted))
+        }
+    }
+
+    @ViewBuilder
+    private var savedCopiesSection: some View {
+        let copies = Self.savedCopies(in: store.sorted, server: settings.activeServerID, matching: query)
+        if !copies.isEmpty {
+            Section {
+                ForEach(copies) { copy in
+                    Button { openSaved(copy) } label: { savedRow(copy) }
+                        .buttonStyle(.plain)
+                        .opensConversation()
+                        .listRowBackground(copy.id == conversation.id ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
+                }
+            } header: {
+                groupHeader("On this iPhone")
+            } footer: {
+                Text("As each conversation was when it was last open here. A message you send now waits, and goes when the connection is back.")
+            }
+        }
+    }
+
+    private func savedRow(_ copy: ConversationSummary) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 6) {
+                Text(copy.title).font(.body.weight(.semibold)).lineLimit(1)
+                Spacer(minLength: 8)
+                Text(DateGroup.rowTime(copy.updatedAt)).font(.caption).foregroundStyle(.secondary)
+            }
+            Text("Saved copy · \(copy.turnCount) turn\(copy.turnCount == 1 ? "" : "s")")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .padding(.vertical, 2)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Opens the copy kept on this iPhone")
+    }
+
+    private func openSaved(_ copy: ConversationSummary) {
+        guard !selecting, let full = store.record(id: copy.id) else { return }
+        conversation.load(full)
+        savedCopyOffered = nil
+        opened()
     }
 
     // MARK: - Local (fast lane)

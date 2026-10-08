@@ -401,6 +401,21 @@ the same hand-over Siri's "draft a message" uses (`LaunchRouter.requestDraft`).
   is ever backed by something else, nothing is changed and pasting is what it was;
   `EchoUITests/ComposerUITests` pastes one on every run.
 
+### Reading
+
+- **Chat text size** (Settings → Appearance). The transcript is set up to two steps larger or
+  smaller than the iPhone's text size on the system's own scale (`ChatTextSize`, a
+  `dynamicTypeSize` on the transcript alone), so it still follows that setting and every text
+  style moves together. Formulas are drawn in a web view, which is told the size in points.
+- **The context ring.** `Conversation.contextUsage` is the latest reply's context occupancy,
+  kept as a value of its own like `title` (below), and `ContextRing` in the header shows it and
+  says the token counts when tapped. Only where the backend states it: the Dashboard, and the
+  OpenAI-compatible connection when the window is known.
+- **Saved copies.** Every server conversation opened on the phone is already kept in
+  `ConversationStore`. When the list can't be loaded, it now shows those for the active server
+  under "On this iPhone" and opens them; when a row can't be fetched, it offers its copy. A
+  message sent meanwhile waits in the outbox as ever.
+
 ### Session list and housekeeping
 
 On iPhone the list is a panel from the left (`SidePanel` in `Views/SwipeToOpen.swift`): a swipe to
@@ -469,8 +484,8 @@ streaming reply cheap:
 
 - Nothing outside the transcript reads `Conversation.messages` in a view body. Every update
   rewrites that array, and the header doing so rebuilt the navigation toolbar, the conversation
-  list and the composer each time. The header reads `title` and `hasMessages`, which the
-  conversation keeps as their own observed values.
+  list and the composer each time. The header reads `title`, `hasMessages` and `contextUsage`,
+  which the conversation keeps as their own observed values.
 - Nothing in a row animates through SwiftUI while a reply runs. Each animated frame walks the
   whole page's view tree; the waiting waveform, at 30 frames a second, took a third of a core in a
   long conversation. It is a `UIView` whose bars Core Animation moves (`WaveformBarsView`). What

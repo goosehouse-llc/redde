@@ -72,6 +72,10 @@ struct AppearanceSettings: View {
                 }
             }
 
+            Picker("Chat text size", selection: $settings.chatTextSize) {
+                ForEach(Array(Settings.chatTextSizes), id: \.self) { Text(ChatTextSize.label($0)).tag($0) }
+            }
+            .pickerStyle(.menu)
             AppIconSettings()
             VoiceOrbSettings()
         } header: {
@@ -79,6 +83,8 @@ struct AppearanceSettings: View {
         } footer: {
             if showColors {
                 Text("Each theme keeps its own colors. Text on your bubbles and on accent buttons turns light or dark to stay readable.")
+            } else {
+                Text("“Chat text size” sets the conversation larger or smaller than the rest of the iPhone's text. It still follows the iPhone's own text size from there.")
             }
         }
     }
