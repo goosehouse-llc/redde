@@ -11,6 +11,7 @@ scripts/hermes-lab/lab.sh run --app      # also runs EchoTests/HermesLabTests ag
 scripts/hermes-lab/lab.sh run v2026.9.24 # one release; any tag of NousResearch/hermes-agent
 scripts/hermes-lab/lab.sh approvals      # the app's Dashboard client is asked before a command runs
 scripts/hermes-lab/lab.sh signin         # the app's Dashboard client signs in through a browser
+scripts/hermes-lab/lab.sh admin          # Settings → Gateway: status, MCP servers, logs, a restart
 scripts/hermes-lab/lab.sh push           # the push plugin: pairing, and a note for everything it announces
 scripts/hermes-lab/lab.sh push --app     # and the app in a simulator pairs with each release
 scripts/hermes-lab/lab.sh up v2026.9.24 two   # leave one lab running to poke at; `down` stops it
@@ -79,6 +80,23 @@ to the app's loopback listener. Then the app's tokens have to work for a REST ca
 WebSocket's ticket, a token the Dashboard refuses has to be refreshed and the call retried, and a
 refresh token it no longer takes has to end in "sign in again". The lab's login is a password, so
 what a real identity provider adds (its own pages, in the browser) is not covered.
+
+## Gateway administration
+
+`admin` runs the `admin` scenario: the `approval` one plus an MCP server, switched off, that is the
+lab's own stand-in (`mcp_stub.py`: the handshake and one tool). `EchoTests/HermesLabAdminTests`
+drives the Gateway screen's model with the app's own client: the status and the host, the server
+switched on, tested and switched off, the logs with a level and a search, the update check, and a
+restart followed to its end.
+
+The lab's gateway is started by hand, with no service manager, and the releases differ there.
+0.21.0 and 0.21.3 stop it and run the new one inside the restart command, which never ends; the
+app takes a newly started, running gateway for the end. 0.21.5 stops it and starts nothing, which
+the test prints as a note and checks that the app says so. A restart through a service manager is
+not covered here.
+
+Two things the lab never does: Hermes's `start` (on 0.21.5 it installs a launchd service on this
+machine when there is none) and an update (it would fetch and install into the lab's checkout).
 
 ## Push
 

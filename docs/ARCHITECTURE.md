@@ -77,6 +77,50 @@ Settings says so when it's missing. Skills can be created and edited from the ph
 (`POST /api/skills`, `PUT /api/skills/content`); "Draft with Redde" asks the agent for a SKILL.md
 and drops it into the editor for review.
 
+### The gateway itself
+
+Settings → Gateway is the Hermes server as its own Dashboard administers it (`GatewayAdmin.swift`,
+`GatewayModel.swift`, `GatewayView.swift`). All of it is the Dashboard's REST API, the routes its
+own web pages use, and the same in Hermes 0.21.0, 0.21.3 and 0.21.5; the Hermes API server has
+none of them, so the screen takes the Dashboard login.
+
+| What | Route |
+|---|---|
+| Version, whether the gateway runs, what it is connected to, what is out of order | `GET /api/status` |
+| The machine: name, system, uptime, memory and disk in use | `GET /api/system/stats` |
+| MCP servers, a switch for each, and a test | `GET /api/mcp/servers`, `PUT …/{name}/enabled`, `POST …/{name}/test` |
+| Logs: agent, errors, gateway; by level and by search | `GET /api/logs` |
+| Restart the gateway | `POST /api/gateway/restart`, then `GET /api/actions/gateway-restart/status` |
+| Check for an update, and apply it | `GET /api/hermes/update/check`, `POST /api/hermes/update`, then `GET /api/actions/hermes-update/status` |
+
+The selected profile rides on the routes that take one (`HermesServeClient.profilePlacement`):
+status, MCP servers, logs and the restart. A switch changes Hermes's config, which Hermes reads
+for the next conversation, so the screen says "takes effect in new conversations". A server that
+a plugin provides (0.21.5) has no switch: Hermes refuses to change it.
+
+A restart and an update are asked for, confirmed with what they will stop, and then followed
+(`GatewayModel.follow`): Hermes runs them as background commands and reports whether each is
+still running and what it has printed.
+
+- **A restart is over** when its command has ended, or when a gateway that started after the
+  request is running (`memory.boot_id` in the status is the gateway's start time). The second is
+  for a gateway that was started by hand: with no service manager, Hermes 0.21.0 and 0.21.3 stop
+  the old gateway and run the new one inside the restart command, which therefore never ends.
+  Hermes 0.21.5 stops such a gateway, takes the one it just stopped for a running one and starts
+  nothing; the screen then says the gateway hasn't come back, and what to run on the server.
+- **An update** restarts Hermes on the way, the Dashboard included, so for a while nothing
+  answers; that is waited through, up to fifteen minutes. Afterwards Hermes may no longer know
+  how the command ended, so the version before and after is what decides. Where Hermes is updated
+  some other way (a container, a package manager) it says so and names the command, and nothing
+  is started.
+- There is no Start button. Hermes's own start installs a launchd or systemd service on the
+  machine if there is none, which is more than a phone should decide; the message names the
+  command instead.
+
+`-echo.demoGateway` shows the screen on sample data (`DemoGateway`), which is what
+`EchoUITests/GatewayUITests` walks. `scripts/hermes-lab/lab.sh admin` runs the client and the
+model against each release.
+
 ### Servers
 
 Redde keeps a list of Hermes servers (Settings → Server, or the server row at the top of the

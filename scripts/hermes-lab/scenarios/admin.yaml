@@ -1,0 +1,21 @@
+model:
+  default: alpha
+  provider: custom:my-local
+custom_providers:
+  - name: My Local
+    base_url: http://127.0.0.1:18801/v1
+    api_key: sk-stub
+    model: alpha
+    api_mode: chat_completions
+    models:
+      alpha: {}
+      beta: {}
+# Ask a person every time: the default hands the question to a model first.
+approvals:
+  mode: manual
+# A public address makes the Dashboard ask for a login, as it does anywhere but loopback, and the
+# app signs in the way it does on a real server (lab.sh sets the user and password).
+dashboard:
+  public_url: http://redde-lab.test:19119
+# The Gateway screen's routes (lab.sh admin). lab.sh adds an MCP server here, switched off: its
+# own stand-in (mcp_stub.py), which needs this checkout's path.

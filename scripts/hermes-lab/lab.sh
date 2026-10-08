@@ -7,6 +7,7 @@
 #   scripts/hermes-lab/lab.sh run --app [tag ...]  the same, plus the app's own transport code (EchoTests)
 #   scripts/hermes-lab/lab.sh approvals [tag ...]  the app's Dashboard client asked before a command runs
 #   scripts/hermes-lab/lab.sh signin [tag ...]     the app's Dashboard client signs in through a browser
+#   scripts/hermes-lab/lab.sh admin [tag ...]      the Gateway screen's routes: status, MCP servers, logs, a restart
 #   scripts/hermes-lab/lab.sh push [tag ...]       the push plugin: pairing, and a note for everything it announces
 #   scripts/hermes-lab/lab.sh push --app [tag ...] the same, then the app pairs both ways and reads a notification
 #   scripts/hermes-lab/lab.sh up <tag> <scenario>  leave one lab running (API :18642, Dashboard :19119)
@@ -32,20 +33,35 @@ install() {
   echo "installing Hermes $tag into $dir …"
   rm -rf "$dir"
   git -c advice.detachedHead=false clone -q --depth 1 --branch "$tag" https://github.com/NousResearch/hermes-agent.git "$dir" 2>/dev/null
-  (cd "$dir" && uv venv -q --python 3.12 .venv && VIRTUAL_ENV="$dir/.venv" uv pip install -q -e ".[web]" aiohttp websockets)
+  (cd "$dir" && uv venv -q --python 3.12 .venv && VIRTUAL_ENV="$dir/.venv" uv pip install -q -e ".[web,mcp]" aiohttp websockets)
+}
+
+# The MCP SDK, for a copy installed before the lab asked for it: Hermes can't test an MCP server without.
+with_mcp() {
+  local dir="$LAB_HOME/hermes-$1"
+  "$dir/.venv/bin/python" -c "import mcp" 2>/dev/null && return
+  echo "adding the MCP SDK to Hermes $1 …"
+  (cd "$dir" && VIRTUAL_ENV="$dir/.venv" uv pip install -q -e ".[web,mcp]")
 }
 
 down() {
   [[ -f "$LAB_HOME/pids" ]] || return 0
   while read -r pid; do kill "$pid" 2>/dev/null || true; done < "$LAB_HOME/pids"
   rm -f "$LAB_HOME/pids"
+  # A gateway that the Dashboard restarted (lab.sh admin) is a new process no list here has: it
+  # is the lab's if it is a Hermes listening on the lab's API port.
+  local pid
+  for pid in $(lsof -ti tcp:18642 -sTCP:LISTEN 2>/dev/null); do
+    [[ "$(ps -o command= -p "$pid" 2>/dev/null)" == *hermes* ]] && kill "$pid" 2>/dev/null || true
+  done
   sleep 1
 }
 
 up() {
   local tag="$1" scenario="$2" hermes="$LAB_HOME/hermes-$1/.venv/bin/hermes"
-  [[ -f "$HERE/scenarios/$scenario.yaml" ]] || { echo "no scenario '$scenario' (have: $SCENARIOS approval push)"; exit 2; }
+  [[ -f "$HERE/scenarios/$scenario.yaml" ]] || { echo "no scenario '$scenario' (have: $SCENARIOS approval admin push)"; exit 2; }
   install "$tag"
+  [[ "$scenario" == admin ]] && with_mcp "$tag"
   down
   rm -rf "$LAB_HOME"/run-*(N) 2>/dev/null || true
   local run="$LAB_HOME/run-$$-$RANDOM"
@@ -54,8 +70,10 @@ up() {
   cp "$HERE/scenarios/$scenario.yaml" "$HERMES_HOME/config.yaml"
   print -l "API_SERVER_ENABLED=true" "API_SERVER_KEY=labkey-labkey-labkey" "API_SERVER_PORT=18642" "API_SERVER_HOST=127.0.0.1" > "$HERMES_HOME/.env"
   # The Dashboard's login, for the scenarios that turn it on.
-  [[ "$scenario" == approval || "$scenario" == push ]] && print -l "HERMES_DASHBOARD_BASIC_AUTH_USERNAME=lab" "HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=labpass-labpass" \
+  [[ "$scenario" == approval || "$scenario" == admin || "$scenario" == push ]] && print -l "HERMES_DASHBOARD_BASIC_AUTH_USERNAME=lab" "HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=labpass-labpass" \
     "HERMES_DASHBOARD_BASIC_AUTH_SECRET=0123456789abcdef0123456789abcdef0123456789abcdef" >> "$HERMES_HOME/.env"
+  # An MCP server for the admin scenario to switch and test: the lab's own stand-in, off at first.
+  [[ "$scenario" == admin ]] && print -l "mcp_servers:" "  lab-notes:" "    command: python3" "    args: [\"$HERE/mcp_stub.py\"]" "    enabled: false" >> "$HERMES_HOME/config.yaml"
   : > "$LAB_HITS"
   : > "$LAB_APNS"
   # A skill that needs a secret, for the stub's "lab:secret": opening it makes Hermes ask for one.
@@ -125,6 +143,23 @@ app_check() {
   echo "App transport (${XCODE_ARGS[-1]#-only-testing:})"
   echo "$out" | grep -E "^  (PASS|FAIL|----)|LAB SKIP" || echo "  the test host never launched"
   [[ "$out" == *"TEST EXECUTE SUCCEEDED"* && "$out" == *"  PASS"* && "$out" != *"  FAIL"* ]]
+}
+
+# The Gateway screen's routes, with the app's own client and model: status, the host, MCP servers
+# switched and tested, logs, the update check (nothing is updated) and a restart followed to its end.
+# Only a restart: Hermes's "start" installs a launchd or systemd service on the machine it runs on,
+# and an update would fetch and install; neither belongs in a lab.
+admin() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  app_prepare HermesLabAdminTests || exit 1
+  for tag in $tags; do
+    echo "===== Hermes $tag / admin"
+    if ! up "$tag" admin; then failed+=("$tag (lab)"); continue; fi
+    app_check || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
 }
 
 run() {
@@ -256,6 +291,7 @@ case "${1:-}" in
   run) shift; run "$@" ;;
   approvals) shift; approvals "$@" ;;
   signin) shift; signin "$@" ;;
+  admin) shift; admin "$@" ;;
   push) shift; push "$@" ;;
   up) up "$2" "$3" && echo "lab up: Hermes $2 / $3 — API http://127.0.0.1:18642 (key labkey-labkey-labkey), Dashboard http://127.0.0.1:19119" ;;
   down) down ;;

@@ -271,6 +271,23 @@ struct AgentSettings<Details: View>: View {
                  : "The files the memory tool writes when you say “remember that…”. Like the context files, they need the Hermes Dashboard login.")
         }
         .disabled(!canEditFiles)
+
+        Section {
+            NavigationLink { GatewayView() } label: { Label("Gateway", systemImage: "gearshape.2") }
+                .disabled(!canAdminister)
+        } footer: {
+            Text(canAdminister
+                 ? "The Hermes server itself: what it is connected to, its MCP servers and logs, and restarting or updating it."
+                 : "The Hermes server itself: what it is connected to, its MCP servers and logs, and restarting or updating it. Needs the Hermes Dashboard login.")
+        }
+    }
+
+    /// The Gateway screen is the Dashboard's own administration, so it takes that login.
+    private var canAdminister: Bool {
+        #if DEBUG
+        if DevHooks.demoGateway { return true }
+        #endif
+        return canEditFiles
     }
 
     /// Why the files are greyed out with only the Hermes API set up, and the way to fix it

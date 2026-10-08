@@ -488,6 +488,85 @@ struct HermesLabSignInTests {
     }
 }
 
+/// Settings → Gateway against the same kind of lab (`scripts/hermes-lab/lab.sh admin`): the app's
+/// own client and the screen's own model, asking an unmodified Hermes for its status, its MCP
+/// servers and its logs, switching and testing a server, checking for an update without applying
+/// one, and restarting the gateway. The lab runs its gateway by hand, with no service manager,
+/// which is the case where Hermes's restart command never ends. Skips when no such lab is up.
+struct HermesLabAdminTests {
+    @Test func theGatewayScreenReadsAndRunsAnUnmodifiedHermes() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        func report(_ ok: Bool, _ what: String, _ detail: String = "") { HermesLabApprovalTests.report(ok, what, detail) }
+        guard let listed = try? await client.mcpServers(), listed.contains(where: { $0.name == "lab-notes" }) else {
+            print("LAB SKIP: this lab has no MCP server to switch (scripts/hermes-lab/lab.sh up <tag> admin)")
+            return
+        }
+
+        let model = GatewayModel(source: client)
+        await model.load()
+        let status = model.status ?? GatewayStatus()
+        report(!status.version.isEmpty && status.gatewayRunning, "the status names the version and a running gateway",
+               "version \"\(status.version)\", running \(status.gatewayRunning), \(model.problem ?? "")")
+        report(status.platforms.contains { $0.id == "api_server" && $0.isConnected }, "the Hermes API is among its connections",
+               "\(status.platforms.map { "\($0.id)=\($0.state)" })")
+        report(model.host?.hostname.isEmpty == false, "the host has a name", "\(String(describing: model.host))")
+
+        // An MCP server: off, switched on, tested, and off again.
+        report(model.servers.first { $0.name == "lab-notes" }?.enabled == false, "an MCP server that is off is listed as off")
+        if let server = model.servers.first(where: { $0.name == "lab-notes" }) {
+            await model.setServer(server, enabled: true)
+            report(model.servers.first { $0.name == "lab-notes" }?.enabled == true && model.problem == nil, "a switch turns it on in Hermes's config",
+                   model.problem ?? "still off")
+            await model.test(server)
+            let probe = model.probes["lab-notes"]
+            report(probe?.ok == true && probe?.tools == ["lab_echo"], "a test connects and lists its tools", probe?.summary ?? "no result")
+            await model.setServer(server, enabled: false)
+            report(model.servers.first { $0.name == "lab-notes" }?.enabled == false, "and off again")
+        }
+        var refused = ""
+        do { try await client.setMCPServer("no such server", enabled: true) } catch { refused = error.localizedDescription }
+        report(refused.contains("not found"), "a server that isn't there is refused in Hermes's words", "it said \"\(refused)\"")
+
+        // Logs.
+        let gatewayLog = (try? await client.gatewayLogs(.gateway, lines: 50, level: .all, search: "")) ?? []
+        report(!gatewayLog.isEmpty && !gatewayLog.contains { $0.hasSuffix("\n") }, "the gateway's log comes as lines", "\(gatewayLog.count) lines")
+        let none = try? await client.gatewayLogs(.agent, lines: 50, level: .all, search: "no-line-says-this-\(UUID().uuidString)")
+        report(none?.isEmpty == true, "a search that matches nothing finds nothing", "\(none?.count ?? -1) lines")
+        let errors = try? await client.gatewayLogs(.errors, lines: 20, level: .error, search: "")
+        report(errors != nil, "the errors log and a level are accepted")
+
+        // The update check answers; nothing is updated here.
+        await model.checkForUpdate()
+        report(model.update?.currentVersion == status.version, "the update check knows the running version",
+               "it said \"\(model.update?.currentVersion ?? "nothing")\": \(model.outcome?.text ?? "")")
+
+        // A restart, followed to its end.
+        let before = status.startedAt
+        await model.restart()
+        if model.outcome?.ok == false, model.status?.gatewayRunning == false, model.progress.contains(where: { $0.contains("nothing to start") }) {
+            // Hermes 0.21.5 and a gateway started by hand, as the lab's is: its restart command stops
+            // the gateway, takes the one it stopped for a running one and starts nothing. What can be
+            // checked is that the app says so, and how to get it back.
+            print("  ----  this Hermes stops a gateway that was started by hand and doesn't start it again (0.21.5)")
+            report(model.outcome?.text.contains("hermes gateway start") == true, "a gateway that didn't come back is reported, with the way to start it",
+                   model.outcome?.text ?? "no outcome")
+            return
+        }
+        report(model.outcome?.ok == true, "a restart is followed until the gateway is back", model.outcome?.text ?? "no outcome")
+        report(model.status?.gatewayRunning == true && model.status?.startedAt != before, "and it is a new gateway that runs",
+               "started \(before ?? "?") before, \(model.status?.startedAt ?? "?") now")
+        var api = URLRequest(url: URL(string: "http://127.0.0.1:18642/health")!)
+        api.timeoutInterval = 5
+        var answered = false
+        for _ in 0 ..< 20 where !answered {
+            answered = ((try? await URLSession.shared.data(for: api))?.1 as? HTTPURLResponse)?.statusCode == 200
+            if !answered { try? await Task.sleep(for: .milliseconds(500)) }
+        }
+        report(answered, "the Hermes API answers again")
+    }
+}
+
 /// The app pairing with the push plugin over the lab's Dashboard (`scripts/hermes-lab/lab.sh push
 /// --app`): the app's own client and push service, an unmodified Hermes with the plugin from
 /// this repository, and the relay's code on this machine. Skips when that lab isn't up.

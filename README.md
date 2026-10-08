@@ -31,6 +31,8 @@ and can't read them ([docs/push.md](docs/push.md)).
   key that sends if you want it to.
 - **The whole agent.** The shared session ledger, projects, several servers and Hermes profiles,
   skills and toolsets, memory and context files, cron jobs and the Kanban board.
+- **The server too.** What the gateway is connected to, its MCP servers with a switch and a test
+  for each, its logs, and restarting or updating Hermes, from Settings → Gateway.
 - **Set up by code.** Scan a QR code or open a setup link and the connection fills itself in. A
   device that is set up can show the code for the next one.
 - **Everywhere on iOS.** Siri and Shortcuts, the Action Button, Control Center, widgets, a Live
