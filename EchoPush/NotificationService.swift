@@ -17,6 +17,7 @@ final class NotificationService: UNNotificationServiceExtension {
            note.fill(content) {
             PushVault.confirm(pairing, host: note.n)
         }
+        if !NotificationSound.isOn { content.sound = nil }
         contentHandler(content)
     }
 

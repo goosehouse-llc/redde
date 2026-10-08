@@ -209,6 +209,14 @@ final class Settings: ServeEndpoint {
     var announceOnAirPods: Bool {
         didSet { defaults.set(announceOnAirPods, forKey: Keys.announceOnAirPods) }
     }
+    /// Whether Redde's notifications make a sound. Kept in the app group as well: the
+    /// notification extension decides for the ones a paired Hermes sends (`NotificationSound`).
+    var notificationSound: Bool {
+        didSet {
+            defaults.set(notificationSound, forKey: Keys.notificationSound)
+            if self === Settings.shared { NotificationSound.isOn = notificationSound }
+        }
+    }
     var earpieceAtEar: Bool {
         didSet { defaults.set(earpieceAtEar, forKey: Keys.earpieceAtEar) }
     }
@@ -364,6 +372,7 @@ final class Settings: ServeEndpoint {
         static let suggestFollowUps = "suggestFollowUps"
         static let earpieceAtEar = "earpieceAtEar"
         static let announceOnAirPods = "announceOnAirPods"
+        static let notificationSound = "notificationSound"
         static let requireBiometrics = "requireBiometrics"
         static let siriAIEnabled = "siriAIEnabled"
         static let lockGraceSeconds = "lockGraceSeconds"
@@ -420,6 +429,7 @@ final class Settings: ServeEndpoint {
         matchReplyLanguage = defaults.object(forKey: Keys.matchReplyLanguage) as? Bool ?? true
         earpieceAtEar = defaults.object(forKey: Keys.earpieceAtEar) as? Bool ?? true
         announceOnAirPods = defaults.bool(forKey: Keys.announceOnAirPods)
+        notificationSound = defaults.object(forKey: Keys.notificationSound) as? Bool ?? true
         requireBiometrics = defaults.bool(forKey: Keys.requireBiometrics)
         siriAIEnabled = defaults.bool(forKey: Keys.siriAIEnabled)
         lockGraceSeconds = defaults.object(forKey: Keys.lockGraceSeconds) as? Double ?? 60
@@ -616,6 +626,7 @@ final class Settings: ServeEndpoint {
         showLiveActivity = true
         earpieceAtEar = true
         announceOnAirPods = false
+        notificationSound = true
         requireBiometrics = false
         siriAIEnabled = false
         lockGraceSeconds = 60

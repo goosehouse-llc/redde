@@ -165,6 +165,9 @@ sixteen hex digits of `SHA-256(command)`. The plugin also sends an `apns-collaps
 session, so a later note about the same thing replaces the earlier one; the relay learns only that
 two notes belong together.
 
+Whether a notification makes a sound is the phone's choice (Settings › Voice › Notification
+sound): the relay asks Apple for the default sound every time, and the extension takes it off.
+
 ## Testing
 
 ```
@@ -200,6 +203,7 @@ from Apple, so a phone and the deployed relay.
 - **On a phone**: pair with a real Hermes; lock the phone and close the app; a reply and an
   approval each arrive with their text; tapping one opens its conversation, the approval's with
   its card; Approve and Deny on the approval answer it; Reply on a reply's banner sends into it.
+  With Notification sound off, a pushed note arrives silent.
 
 ## Not done
 

@@ -203,11 +203,11 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     /// in place of the one that says nothing. One it can't open either is shown as it came.
     func presentUnopened(_ sealed: String, vault: () -> [PushPairing] = { PushVault.load() },
                          confirm: (PushPairing, String?) -> Void = { PushVault.confirm($0, host: $1) }) -> UNNotificationPresentationOptions {
-        guard let (note, pairing) = PushSeal.note(from: sealed, pairings: vault()) else { return [.banner, .list, .sound] }
+        guard let (note, pairing) = PushSeal.note(from: sealed, pairings: vault()) else { return shown }
         confirm(pairing, note.n)
         let content = UNMutableNotificationContent()
-        content.sound = .default
-        guard note.fill(content) else { return [.banner, .list, .sound] }
+        content.sound = sound
+        guard note.fill(content) else { return shown }
         guard !presentation(pushKind: note.k, sessionID: note.s).isEmpty else { return [] }
         center.add(UNNotificationRequest(identifier: "redde.push.\(UUID().uuidString)", content: content, trigger: nil)) { [weak self] error in
             if let error { Task { @MainActor in self?.log.error("notify failed: \(error.localizedDescription)") } }
@@ -219,8 +219,13 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         guard let kind else { return [] }
         PushService.shared.reload()   // the first note from a pairing confirms it
         if let sessionID, sessionID == conversation?.serverSessionID, PushNote.Kind(rawValue: kind) != .paired { return [] }
-        return [.banner, .list, .sound]
+        return shown
     }
+
+    /// A notification's sound, or none: Settings › Voice › Notification sound.
+    private var sound: UNNotificationSound? { settings.notificationSound ? .default : nil }
+    /// How a notification that arrives while Redde is in front is shown.
+    private var shown: UNNotificationPresentationOptions { settings.notificationSound ? [.banner, .list, .sound] : [.banner, .list] }
 
     /// Testable core of the banner-action callback: maps the action and the notification's
     /// userInfo fields onto the pending interrupt. A plain tap (no requestID) just opens the app.
@@ -296,7 +301,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
             let content = UNMutableNotificationContent()
             content.title = "The approval wasn't answered"
             content.body = problem
-            content.sound = .default
+            content.sound = sound
             // Opens the conversation when tapped, like the notification it follows.
             content.userInfo = [PushNote.sessionKey: sessionID, PushNote.kindKey: PushNote.Kind.approval.rawValue]
             center.add(UNNotificationRequest(identifier: "redde.unanswered.\(sessionID)", content: content, trigger: nil), withCompletionHandler: nil)
@@ -419,7 +424,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = String(body.prefix(200))
-        content.sound = .default
+        content.sound = sound
         // Time-sensitive when asked for: that's what lets Siri announce it on AirPods.
         content.interruptionLevel = settings.announceOnAirPods ? .timeSensitive : .active
         content.threadIdentifier = "redde.turn"

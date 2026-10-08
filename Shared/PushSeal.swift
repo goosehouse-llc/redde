@@ -198,6 +198,19 @@ nonisolated enum PushVault {
     }
 }
 
+/// Whether Redde's notifications make a sound (Settings › Voice › Notification sound). In the app
+/// group, because the notification extension decides for the ones a paired Hermes sends: the
+/// relay asks Apple for the default sound every time, and the extension takes it off.
+nonisolated enum NotificationSound {
+    private static let key = "notificationSound"
+    private static var defaults: UserDefaults? { UserDefaults(suiteName: PushVault.group) }
+
+    static var isOn: Bool {
+        get { defaults?.object(forKey: key) as? Bool ?? true }
+        set { defaults?.set(newValue, forKey: key) }
+    }
+}
+
 nonisolated extension PushNote {
     /// The category of a reply that arrived as a push: its Reply button waits for an unlock,
     /// because the app is started for it and its saved passwords can't be read while locked.

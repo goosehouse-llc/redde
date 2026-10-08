@@ -656,6 +656,11 @@ reply's banner sends into it, and Approve and Deny on an approval's answer it, a
 unlock. [docs/push.md](push.md) has the design, the wire formats and what has to happen before it
 ships.
 
+**Notification sound.** Settings → Voice → "Notification sound" silences all of them. The app's
+own banners are posted without a sound; a pushed one arrives with Apple's default, which the
+relay always asks for, and the notification extension takes it off, reading the setting from the
+app group (`NotificationSound`).
+
 **A turn the app didn't see the end of.** A question is saved when the host has a session for it,
 not only with its reply, so an app that iOS closed mid-turn comes back to the right conversation.
 When it comes forward, a Hermes conversation that ends on an unanswered question is fetched again

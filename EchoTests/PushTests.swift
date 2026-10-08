@@ -563,6 +563,16 @@ struct UnopenedNoteTests {
         #expect(h.center.added.isEmpty)
     }
 
+    @Test func withTheSoundOffItsBannerIsSilent() throws {
+        let h = NotifierTests.Harness(appActive: true)
+        _ = h.notifier.presentUnopened(Vector.payload, vault: { [Vector.pairing] }, confirm: { _, _ in })
+        #expect(h.center.added.last?.content.sound != nil)
+        h.settings.notificationSound = false
+        #expect(h.notifier.presentUnopened(Vector.payload, vault: { [Vector.pairing] }, confirm: { _, _ in }) == [])
+        #expect(h.center.added.count == 2 && h.center.added.last?.content.sound == nil)
+        #expect(h.notifier.presentUnopened("garbage", vault: { [] }, confirm: { _, _ in }) == [.banner, .list], "one it can't open: shown as it came, without the sound")
+    }
+
     @Test func oneItCannotOpenIsShownAsItCame() {
         let h = NotifierTests.Harness(appActive: true)
         #expect(h.notifier.presentUnopened(Vector.payload, vault: { [] }, confirm: { _, _ in }).contains(.banner))

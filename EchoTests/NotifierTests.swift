@@ -159,6 +159,26 @@ struct NotifierTests {
         #expect(request.content.interruptionLevel == .timeSensitive)
     }
 
+    @Test func withTheSoundOffEveryNotificationIsSilentAndStillShown() {
+        let h = Harness()
+        h.notifier.notify(.replied, title: "t", body: "Done.")
+        #expect(h.center.added.last?.content.sound != nil, "a sound unless it is turned off")
+        #expect(h.notifier.presentation(pushKind: "reply", sessionID: "another").contains(.sound))
+
+        h.settings.notificationSound = false
+        h.notifier.notify(.replied, title: "t", body: "Done.")
+        h.notifier.notifyApproval(ApprovalRequest(id: "req1", command: "rm -rf /tmp/x", description: nil, choices: ["once", "deny"]))
+        #expect(h.center.added.count == 3)
+        #expect(h.center.added.dropFirst().allSatisfy { $0.content.sound == nil })
+        // One a paired Hermes sent, arriving while Redde is in front: shown, without the sound.
+        #expect(h.notifier.presentation(pushKind: "reply", sessionID: "another") == [.banner, .list])
+        // On until it is turned off, and it stays as set.
+        let suite = UserDefaults(suiteName: "sound-\(UUID().uuidString)")!
+        #expect(Settings(defaults: suite).notificationSound)
+        Settings(defaults: suite).notificationSound = false
+        #expect(!Settings(defaults: suite).notificationSound)
+    }
+
     // MARK: Routing banner actions
 
     /// A conversation whose transport raises an approval and then hangs, so the interrupt
