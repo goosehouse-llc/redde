@@ -350,8 +350,8 @@ file only if the message names it, so the references are added to what is submit
 names any other by path and type. Until 2026-10-07 the reference was dropped and such files
 never reached the agent; `lab.sh approvals` now attaches one of each kind on every release.
 
-A video (from Photos or Files) is a file like any other to the server; the app shows it with a
-film icon and plays it in Quick Look. One over the 8 MB limit is re-encoded, at medium quality
+A video (from Photos or Files) is a file like any other to the server; the app shows its first
+frame under a play mark (`VideoPoster`) and plays it in Quick Look. One over the 8 MB limit is re-encoded, at medium quality
 and then at low, and refused only if it is still too big (`Attachment.video`).
 
 Bytes are stored one file per attachment under Application Support (file-protected); transcripts

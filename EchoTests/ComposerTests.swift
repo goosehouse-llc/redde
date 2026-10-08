@@ -338,6 +338,11 @@ struct VideoAttachmentTests {
         await #expect(throws: AttachmentError.self) {
             _ = try await Attachment.video(fileURL: url, filename: "holiday.mov", maxBytes: 2000)
         }
+
+        // Its tile shows the first frame, no larger than asked for.
+        let poster = try #require(await VideoPoster.make(from: smaller.data, filename: smaller.filename, maxPixel: 180))
+        #expect(poster.size.width > 20 && max(poster.size.width, poster.size.height) <= 180)
+        #expect(await VideoPoster.make(from: Data("not a video".utf8), filename: "clip.mp4", maxPixel: 180) == nil, "no frame: the tile shows its play mark alone")
     }
 
     @Test func onAConnectionThatTakesNoFilesAVideoIsRefusedByName() throws {

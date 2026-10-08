@@ -1,3 +1,4 @@
+import AVFoundation
 import QuickLook
 import SwiftUI
 import UniformTypeIdentifiers
@@ -180,12 +181,74 @@ struct PhotoBubble: View {
     }
 }
 
+/// A video's first frame, for its tile. Made once per attachment, from a copy of its bytes in
+/// the temporary folder (the frame is read from a file, and by its extension), and kept for
+/// this run.
+nonisolated enum VideoPoster {
+    // NSCache is thread-safe by contract; the annotation just tells Swift so.
+    nonisolated(unsafe) private static let cache = NSCache<NSString, UIImage>()
+
+    static func image(for attachment: Attachment, maxPixel: CGFloat) async -> UIImage? {
+        let key = attachment.id.uuidString as NSString
+        if let kept = cache.object(forKey: key) { return kept }
+        guard let made = await make(from: attachment.data, filename: attachment.filename, maxPixel: maxPixel) else { return nil }
+        cache.setObject(made, forKey: key)
+        return made
+    }
+
+    static func make(from data: Data, filename: String, maxPixel: CGFloat) async -> UIImage? {
+        let kind = (filename as NSString).pathExtension
+        let url = FileManager.default.temporaryDirectory.appending(path: "poster-\(UUID().uuidString).\(kind.isEmpty ? "mp4" : kind)")
+        guard (try? data.write(to: url)) != nil else { return nil }
+        defer { try? FileManager.default.removeItem(at: url) }
+        let generator = AVAssetImageGenerator(asset: AVURLAsset(url: url))
+        generator.appliesPreferredTrackTransform = true   // upright, however the phone was held
+        generator.maximumSize = CGSize(width: maxPixel, height: maxPixel)
+        guard let frame = try? await generator.image(at: .zero).image else { return nil }
+        return UIImage(cgImage: frame)
+    }
+}
+
+/// A video attachment: its first frame under a play mark, or the mark alone when no frame can
+/// be read from it.
+struct VideoTile: View {
+    let attachment: Attachment
+    let size: CGFloat
+    @State private var poster: UIImage?
+
+    var body: some View {
+        ZStack {
+            if let poster {
+                Image(uiImage: poster).resizable().scaledToFill()
+            } else {
+                Color.primary.opacity(0.06)
+            }
+            Image(systemName: "play.fill")
+                .font(.system(size: size * 0.2))
+                .foregroundStyle(.white)
+                .padding(size * 0.12)
+                .background(.black.opacity(0.45), in: .circle)
+        }
+        .frame(width: size, height: size)
+        .clipShape(.rect(cornerRadius: 12))
+        .task(id: attachment.id) {
+            guard poster == nil else { return }
+            let att = attachment, px = size * 3
+            poster = await Task.detached(priority: .utility) { await VideoPoster.image(for: att, maxPixel: px) }.value
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Video: \(attachment.filename), \(attachment.sizeLabel)")
+    }
+}
+
 struct AttachmentTile: View {
     let attachment: Attachment
     let size: CGFloat
 
     var body: some View {
-        if attachment.kind == .image {
+        if attachment.isVideo {
+            VideoTile(attachment: attachment, size: size)
+        } else if attachment.kind == .image {
             ThumbnailImage(attachment: attachment, maxPixel: size * 3) { image in
                 Image(uiImage: image)
                     .resizable()
@@ -200,7 +263,7 @@ struct AttachmentTile: View {
             }
         } else {
             HStack(spacing: 6) {
-                Image(systemName: attachment.kind == .pdf ? "doc.richtext" : attachment.isVideo ? "film" : "doc.text")
+                Image(systemName: attachment.kind == .pdf ? "doc.richtext" : "doc.text")
                 VStack(alignment: .leading, spacing: 1) {
                     Text(attachment.filename).font(.caption.weight(.medium)).lineLimit(1)
                     Text(attachment.sizeLabel).font(.caption2).foregroundStyle(.secondary)
