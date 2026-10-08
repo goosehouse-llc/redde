@@ -381,7 +381,9 @@ the same hand-over Siri's "draft a message" uses (`LaunchRouter.requestDraft`).
   every new one shares one draft, which stays with it when its first message makes it a chat.
   Attachments waiting in a draft are kept for the run only: their bytes belong to no transcript
   yet. "Edit & resend" borrows the field and gives back what was there. Erase everything
-  removes the drafts too.
+  removes the drafts too. The conversation list marks a row that has one ("Draft"): `Drafts`
+  is observable in that one respect, which conversations have a draft, so the list is redrawn
+  when a draft begins or ends and not with every key.
 - **Return** (Settings → Writing). SwiftUI's multi-line field always starts a new line on
   Return. Set to send, the composer takes a draft that grew by exactly one line break for a
   Return (`ComposerView.isReturn`), takes the break out and sends; on a keyboard Return sends

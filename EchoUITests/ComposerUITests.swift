@@ -30,14 +30,18 @@ final class ComposerUITests: XCTestCase {
         add(shot)
     }
 
-    /// Taps the field until it has the keyboard: right after a launch the first tap can land
-    /// while the app is still settling.
+    /// Taps the field until it has the keyboard's focus: right after a launch the first tap can
+    /// land while the app is still settling. (Not "until the keyboard is on screen": with a
+    /// hardware keyboard attached to the simulator there may be none to see.)
     private func focus(_ field: XCUIElement, in app: XCUIApplication) {
         for _ in 0 ..< 4 {
             field.tap()
-            if app.keyboards.firstMatch.waitForExistence(timeout: 3) { return }
+            for _ in 0 ..< 6 {
+                if (field.value(forKey: "hasKeyboardFocus") as? Bool) == true || app.keyboards.firstMatch.exists { return }
+                usleep(500_000)
+            }
         }
-        XCTFail("The message field didn't take the keyboard")
+        XCTFail("The message field didn't take the keyboard's focus")
     }
 
     private func type(_ text: String, into field: XCUIElement, in app: XCUIApplication) {
@@ -85,9 +89,13 @@ final class ComposerUITests: XCTestCase {
         app.buttons["New conversation"].firstMatch.tap()
         XCTAssertEqual(field(app).value as? String, "for a new conversation")
 
-        // And the hike's is still with the hike, after the app has been closed too.
+        // And the hike's is still with the hike, after the app has been closed too. The list
+        // says which conversation has something unsent.
         app.buttons["Conversations"].firstMatch.tap()
         XCTAssertTrue(hike.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Has a draft"].waitForExistence(timeout: 5), "The list doesn't mark the conversation with a draft")
+        XCTAssertEqual(app.staticTexts.matching(identifier: "Has a draft").count, 1, "Only the one conversation has a draft")
+        keep("a draft marked in the list")
         hike.tap()
         XCTAssertEqual(field(app).value as? String, "about the hike")
         XCUIDevice.shared.press(.home)   // drafts are written as the app leaves the screen

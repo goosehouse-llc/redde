@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import os
 
 /// What was typed and not sent, conversation by conversation: each chat keeps its own draft,
@@ -8,6 +9,11 @@ import os
 ///
 /// A conversation with nothing in it has no lasting identity (every "New conversation" is
 /// another one), so all of them share one draft, under `newConversation`.
+///
+/// Observable in one respect only: which conversations have a draft (`waiting`), for the
+/// list's "Draft" marker. That changes with the first character typed and the last one
+/// deleted; the text itself changes with every key and nobody is redrawn for it.
+@Observable
 final class Drafts {
     static let shared = Drafts()
     /// The draft of a conversation nothing has been said in yet.
@@ -25,11 +31,24 @@ final class Drafts {
         var at: Date
     }
 
-    private var entries: [String: Entry] = [:]
-    private var held: [String: [Attachment]] = [:]
-    private let url: URL
-    private var saveTask: Task<Void, Never>?
-    private let log = Logger(subsystem: "com.goosehouse.echo", category: "drafts")
+    /// The conversations with something written and not sent, by `key(for:)`.
+    private(set) var waiting: Set<String> = []
+
+    @ObservationIgnored private var entries: [String: Entry] = [:] {
+        didSet {
+            let now = Set(entries.keys).union(held.keys)
+            if now != waiting { waiting = now }
+        }
+    }
+    @ObservationIgnored private var held: [String: [Attachment]] = [:] {
+        didSet {
+            let now = Set(entries.keys).union(held.keys)
+            if now != waiting { waiting = now }
+        }
+    }
+    @ObservationIgnored private let url: URL
+    @ObservationIgnored private var saveTask: Task<Void, Never>?
+    @ObservationIgnored private let log = Logger(subsystem: "com.goosehouse.echo", category: "drafts")
 
     init(directory: URL? = nil) {
         let support = try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
@@ -37,7 +56,13 @@ final class Drafts {
         url = (directory ?? support ?? URL.temporaryDirectory).appending(path: "drafts.json")
         if let data = try? Data(contentsOf: url), let saved = try? JSONDecoder().decode([String: Entry].self, from: data) {
             entries = saved
+            waiting = Set(saved.keys)   // (a property's observers don't run in its type's initialiser)
         }
+    }
+
+    /// Whether the conversation with this local id has a draft waiting: the list's marker.
+    func isWaiting(_ conversation: UUID?) -> Bool {
+        conversation.map { waiting.contains($0.uuidString) } ?? false
     }
 
     func text(for key: String) -> String { entries[key]?.text ?? "" }

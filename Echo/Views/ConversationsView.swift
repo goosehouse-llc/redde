@@ -32,6 +32,7 @@ struct ConversationsList: View {
     @Environment(\.sidePanelParked) private var panelParked
     @State private var store = ConversationStore.shared
     @State private var settings = Settings.shared
+    @State private var drafts = Drafts.shared
     @State private var ledger: [HermesSessionsAPI.SessionSummary] = []
     @State private var ledgerError: String?
     @State private var loading = false
@@ -399,11 +400,12 @@ struct ConversationsList: View {
         }
         let rows = visibleLedger
         let pinned = rows.filter { $0.pinned == true }
+        let drafted = draftedSessions
         if !pinned.isEmpty {
-            Section { ForEach(pinned) { ledgerButton($0) } } header: { groupHeader("Pinned") }
+            Section { ForEach(pinned) { ledgerButton($0, hasDraft: drafted.contains($0.id)) } } header: { groupHeader("Pinned") }
         }
         ForEach(DateGroup.group(rows.filter { $0.pinned != true }, by: { $0.lastActiveDate }), id: \.title) { group in
-            Section { ForEach(group.items) { ledgerButton($0) } } header: { groupHeader(group.title) }
+            Section { ForEach(group.items) { ledgerButton($0, hasDraft: drafted.contains($0.id)) } } header: { groupHeader(group.title) }
         }
     }
 
@@ -414,8 +416,8 @@ struct ConversationsList: View {
             .textCase(.uppercase)
     }
 
-    private func ledgerButton(_ session: HermesSessionsAPI.SessionSummary) -> some View {
-        Button { if !selecting { open(session) } } label: { ledgerRow(session) }
+    private func ledgerButton(_ session: HermesSessionsAPI.SessionSummary, hasDraft: Bool) -> some View {
+        Button { if !selecting { open(session) } } label: { ledgerRow(session, hasDraft: hasDraft) }
             .buttonStyle(.plain)
             .opensConversation()
             .tag(session.id)
@@ -444,15 +446,15 @@ struct ConversationsList: View {
             }
     }
 
-    private func ledgerRow(_ session: HermesSessionsAPI.SessionSummary) -> some View {
-        rowBody(session)
+    private func ledgerRow(_ session: HermesSessionsAPI.SessionSummary, hasDraft: Bool) -> some View {
+        rowBody(session, hasDraft: hasDraft)
             .accessibilityElement(children: .combine)
             .accessibilityHint("Opens this session")
     }
 
     /// Title and when on the first line, the last thing said beneath; where it came from when
     /// it wasn't this app.
-    private func rowBody(_ session: HermesSessionsAPI.SessionSummary) -> some View {
+    private func rowBody(_ session: HermesSessionsAPI.SessionSummary, hasDraft: Bool) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 6) {
                 if session.pinned == true {
@@ -467,6 +469,7 @@ struct ConversationsList: View {
                 }
             }
             HStack(spacing: 6) {
+                if hasDraft { draftMark }
                 if let source = session.source, !["api_server", "api-server"].contains(source) {
                     Text(session.sourceLabel)
                         .font(.caption2.weight(.semibold))
@@ -481,6 +484,25 @@ struct ConversationsList: View {
         }
         .padding(.vertical, 2)
         .contentShape(Rectangle())
+    }
+
+    /// "Draft", in front of a row's second line: something was written there and not sent.
+    private var draftMark: some View {
+        Text("Draft")
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Settings.shared.resolvedTheme.accent)
+            .accessibilityLabel("Has a draft")
+    }
+
+    /// The server conversations with a draft waiting, by their id on the server. Drafts are kept
+    /// by a conversation's id on this iPhone; the server's list knows only its own.
+    private var draftedSessions: Set<String> {
+        Self.drafted(drafts.waiting, in: store.summaries)
+    }
+
+    static func drafted(_ waiting: Set<String>, in summaries: [ConversationSummary]) -> Set<String> {
+        guard !waiting.isEmpty else { return [] }
+        return Set(summaries.filter { waiting.contains($0.id.uuidString) }.compactMap(\.serverSessionID))
     }
 
     private func refresh() async {
@@ -640,10 +662,13 @@ struct ConversationsList: View {
                 Spacer(minLength: 8)
                 Text(DateGroup.rowTime(copy.updatedAt)).font(.caption).foregroundStyle(.secondary)
             }
-            Text("Saved copy · \(copy.turnCount) turn\(copy.turnCount == 1 ? "" : "s")")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+            HStack(spacing: 6) {
+                if drafts.isWaiting(copy.id) { draftMark }
+                Text("Saved copy · \(copy.turnCount) turn\(copy.turnCount == 1 ? "" : "s")")
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            .font(.subheadline)
         }
         .padding(.vertical, 2)
         .contentShape(Rectangle())
@@ -707,10 +732,13 @@ struct ConversationsList: View {
                 Spacer(minLength: 8)
                 Text(DateGroup.rowTime(record.updatedAt)).font(.caption).foregroundStyle(.secondary)
             }
-            Text("\(record.turnCount) turn\(record.turnCount == 1 ? "" : "s") · \(record.transport == .chatCompletions ? "OpenAI-compatible" : "Hermes")")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+            HStack(spacing: 6) {
+                if drafts.isWaiting(record.id) { draftMark }
+                Text("\(record.turnCount) turn\(record.turnCount == 1 ? "" : "s") · \(record.transport == .chatCompletions ? "OpenAI-compatible" : "Hermes")")
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            .font(.subheadline)
         }
         .padding(.vertical, 2)
         .contentShape(Rectangle())

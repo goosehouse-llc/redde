@@ -33,7 +33,10 @@ struct DraftsTests {
         let again = Drafts(directory: directory)
         #expect(again.text(for: "a") == "" && again.text(for: "b") == "")
         #expect(again.text(for: Drafts.newConversation) == "for a chat not started yet")
+        #expect(again.waiting == [Drafts.newConversation], "which conversations have a draft is what the list marks")
+        #expect(relaunched.isWaiting(nil) == false)
         again.removeAll()
+        #expect(again.waiting.isEmpty)
         #expect(Drafts(directory: directory).text(for: Drafts.newConversation) == "", "Erase everything takes the drafts too")
         #expect(!FileManager.default.fileExists(atPath: directory.appending(path: "drafts.json").path))
     }
@@ -172,7 +175,8 @@ struct ContextUsageTests {
     }
 }
 
-/// Conversations the server can't hand over, read from what this iPhone kept.
+/// Conversations the server can't hand over, read from what this iPhone kept; and which of the
+/// server's conversations have something written and not sent.
 struct SavedCopiesTests {
     private func summary(_ title: String, session: String?, transport: Echo.Transport, server: UUID?) -> ConversationSummary {
         ConversationSummary(ConversationRecord(id: UUID(), title: title, createdAt: .now, updatedAt: .now, transport: transport,
@@ -191,6 +195,16 @@ struct SavedCopiesTests {
         #expect(copies.map(\.title) == ["Vet and calendar", "Release notes", "From before servers had names"])
         #expect(ConversationsList.savedCopies(in: all, server: work, matching: "").map(\.title) == ["At work", "From before servers had names"])
         #expect(ConversationsList.savedCopies(in: all, server: home, matching: " vet ").map(\.title) == ["Vet and calendar"])
+    }
+
+    @Test func aDraftMarksItsConversationInTheServersList() {
+        let home = UUID()
+        let all = [summary("Vet and calendar", session: "s1", transport: .hermesServe, server: home),
+                   summary("Release notes", session: "s2", transport: .hermesSessions, server: home),
+                   summary("Local model chat", session: nil, transport: .chatCompletions, server: nil)]
+        #expect(ConversationsList.drafted([], in: all).isEmpty)
+        // Drafts are kept by a conversation's id on this iPhone; the server's list has its own.
+        #expect(ConversationsList.drafted([all[1].id.uuidString, all[2].id.uuidString, Drafts.newConversation], in: all) == ["s2"])
     }
 }
 
