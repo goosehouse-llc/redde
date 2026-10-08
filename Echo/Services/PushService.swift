@@ -390,7 +390,7 @@ final class PushService {
     }
 
     /// A Dashboard turn is starting in `stored`: tell the plugin this phone takes part in that
-    /// conversation, so its replies and approvals notify it. Once per conversation per launch,
+    /// conversation, so what happens in it notifies it. Once per conversation per launch,
     /// off to the side of the turn. Over the Hermes API there is no such channel, and none is
     /// needed: the plugin notifies for every API turn.
     func follow(stored session: String, runtime: String, client: HermesServeClient, server: String) {

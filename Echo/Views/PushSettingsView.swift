@@ -38,7 +38,7 @@ struct PushSettingsView: View {
             } header: {
                 Text("Paired")
             } footer: {
-                Text("While Redde is running it notifies you itself. Once iOS has closed it, a paired Hermes does: it tells this iPhone when a reply is ready or a command waits for your approval, for conversations you have taken part in from here. Swipe a pairing to remove it.")
+                Text("While Redde is running it notifies you itself. Once iOS has closed it, a paired Hermes does: it tells this iPhone when a reply is ready, when the agent waits for you (an approval, a question, a password) and when it couldn't reply, for conversations you have taken part in from here. Swipe a pairing to remove it.")
             }
 
             Section {
@@ -228,10 +228,10 @@ struct PushPairingSheet: View {
     private var detail: String {
         switch stage {
         case .asking:
-            "It will tell this iPhone when a reply is ready or a command waits for your approval, also when Redde is closed. Notifications are encrypted between that Hermes and this iPhone; the relay that carries them can't read them."
+            "It will tell this iPhone when a reply is ready, when the agent waits for you and when it couldn't reply, also when Redde is closed. Notifications are encrypted between that Hermes and this iPhone; the relay that carries them can't read them."
         case .working: offer == nil ? "Registering this iPhone and asking your Hermes." : "Registering this iPhone and answering the code."
         case .waiting: "It should send a notification within a few seconds."
-        case .done: "You will be notified here when that Hermes finishes a reply or needs an approval."
+        case .done: "You will be notified here when that Hermes finishes a reply, waits for you, or couldn't reply."
         case .quiet:
             "Your Hermes has this iPhone, but its first notification hasn't arrived. It may not be able to reach the notification relay. On that machine, hermes redde-push test sends another."
         case .failed(let reason): reason

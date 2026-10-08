@@ -1,5 +1,6 @@
-"""Redde push: notifications on a paired iPhone when the agent finishes a reply or waits for an
-approval. See README.md here, and `core.py` for how a note is sealed and sent.
+"""Redde push: notifications on a paired iPhone when the agent finishes a reply, waits on a person
+(an approval, a question, a sudo password, a secret) or gives up on a turn. See README.md here,
+and `core.py` for how a note is sealed and sent.
 
     hermes redde-push pair      pair a phone (shows a QR code for Redde to scan)
     hermes redde-push list      the paired phones
@@ -28,7 +29,11 @@ log = logging.getLogger("redde_push")
 
 _store: core.Store | None = None
 _pusher: core.Pusher | None = None
+_turns: core.Turns | None = None
+_waiting: core.Waiting | None = None
 _offers = core.Offers()
+#: The platforms a turn over the Dashboard runs on: the ones that can put a question to a client.
+DASHBOARD = ("desktop", "tui")
 #: session id -> the platform its turns run on ("desktop" or "tui" for the Dashboard, "api_server",
 #: "cli", a messaging platform). The approval hook isn't told, so the turn's earlier hooks remember.
 _platforms: dict[str, str] = {}
@@ -57,8 +62,30 @@ def _state() -> tuple[core.Store, core.Pusher]:
     if _store is None or _pusher is None:
         _store = core.Store(_home())
         _pusher = core.Pusher(_store, title_of=_title)
-        atexit.register(_pusher.drain)
+        atexit.register(_leave)
     return _store, _pusher
+
+
+def _watchers() -> tuple[core.Turns, core.Waiting]:
+    global _turns, _waiting
+    if _turns is None or _waiting is None:
+        _turns = core.Turns(failed=_failed, finished=_tasks_came_back)
+        _waiting = core.Waiting(peek=_peek, found=_asked_for)
+    return _turns, _waiting
+
+
+#: Set as the process exits: what is said from then on is sent at once (`core.Pusher.submit`).
+_leaving = False
+
+
+def _leave() -> None:
+    """The process is going: a turn still being waited on won't get its reply from here."""
+    global _leaving
+    _leaving = True
+    if _turns is not None:
+        _turns.later.flush()
+    if _pusher is not None:
+        _pusher.drain()
 
 
 # ---- Hooks. Each runs inside a turn: it must be quick, and nothing it does may break the turn. ----
@@ -83,12 +110,174 @@ def _on_approval(command: str = "", description: str = "", session_id: str = "",
         log.debug("redde-push: approval hook failed", exc_info=True)
 
 
-def _on_reply(session_id: str = "", assistant_response: str = "", platform: str = "", **_) -> None:
+#: session id -> the turn whose reply has gone to the phone, so a turn Hermes then calls failed
+#: isn't announced twice.
+_replied: dict[str, str] = {}
+
+
+def _on_reply(session_id: str = "", assistant_response: str = "", platform: str = "", turn_id: str = "", **_) -> None:
     try:
+        platform = platform or _platforms.get(session_id, "")
+        if platform == "subagent":      # a subagent's answer goes to the agent that asked, not to a person
+            return
+        turns, waiting = _watchers()
+        turns.ended(session_id)
+        waiting.forget(session_id)
         if isinstance(assistant_response, str) and assistant_response.strip():
-            _state()[1].submit("reply", session_id, platform or _platforms.get(session_id, ""), body=assistant_response)
+            # A reply nobody asked for just now, in a conversation whose handed-off task just
+            # came back: Hermes started this turn itself, to say what came of the task.
+            kind = "task" if turns.reply_is_of_a_task(session_id) else "reply"
+            if _state()[1].submit(kind, session_id, platform, body=assistant_response) and turn_id:
+                _replied.pop(session_id, None)
+                _replied[session_id] = turn_id
+                while len(_replied) > 500:
+                    _replied.pop(next(iter(_replied)))
     except Exception:
         log.debug("redde-push: reply hook failed", exc_info=True)
+
+
+def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", **_) -> None:
+    """`pre_llm_call`: a turn starts."""
+    try:
+        _remember_platform(session_id, platform)
+        if platform != "subagent":
+            _watchers()[0].began(session_id, turn_id)
+    except Exception:
+        log.debug("redde-push: turn hook failed", exc_info=True)
+
+
+def _on_request(session_id: str = "", **_) -> None:
+    """`pre_api_request`: the turn is asking the model (again): it is alive, and whatever tools it
+    was running are done."""
+    try:
+        turns, waiting = _watchers()
+        turns.moved(session_id)
+        waiting.forget(session_id)
+    except Exception:
+        log.debug("redde-push: request hook failed", exc_info=True)
+
+
+def _on_answer(session_id: str = "", platform: str = "", assistant_message=None, **_) -> None:
+    """`post_api_request`: the model answered. If it calls the clarify tool, a person is about to
+    be asked a question; and whatever tools it calls, one of them may stop for a sudo password or
+    a secret, which only the Dashboard's own list shows (`core.Waiting`).
+
+    Read here, from the answer, not in `pre_tool_call`: Hermes 0.21.0 and 0.21.3 refuse a tool
+    when a plugin's `pre_tool_call` is still busy with another call, and no notification is
+    worth a refused tool."""
+    try:
+        turns, waiting = _watchers()
+        turns.moved(session_id)
+        platform = platform or _platforms.get(session_id, "")
+        if platform == "subagent" or not session_id:
+            return
+        calls = core.tool_calls(assistant_message)
+        if not calls:
+            return
+        store, pusher = _state()
+        for name, arguments in calls:
+            if name == "clarify":
+                asked, choices = core.question(arguments)
+                if asked:
+                    pusher.submit("question", session_id, platform, body=asked, detail=choices)
+        if platform in DASHBOARD and store.targets(session_id, platform):
+            waiting.watch(session_id)
+    except Exception:
+        log.debug("redde-push: answer hook failed", exc_info=True)
+
+
+def _on_request_error(session_id: str = "", platform: str = "", retryable=None, reason: str = "", status_code=None, error=None, **_) -> None:
+    """`api_request_error`: a request to the model failed. Hermes may try again or give up, and
+    says neither (`core.Turns`)."""
+    try:
+        platform = platform or _platforms.get(session_id, "")
+        if platform == "subagent" or not _state()[0].targets(session_id, platform):
+            return
+        _watchers()[0].request_failed(session_id, platform, retryable, reason, core.failure(status_code, error))
+    except Exception:
+        log.debug("redde-push: request error hook failed", exc_info=True)
+
+
+def _failed(session: str, platform: str, why: str) -> None:
+    _state()[1].submit("failed", session, platform, body=why, now=_leaving)
+
+
+def _on_turn_end(session_id: str = "", platform: str = "", turn_id: str = "", failed=False, turn_exit_reason: str = "", **_) -> None:
+    """`on_session_end`. With a turn id it is a turn ending; the Dashboard also sends it, without
+    one, when it closes a session, which says nothing about a turn."""
+    try:
+        if not turn_id or not session_id:
+            return
+        platform = platform or _platforms.get(session_id, "")
+        turns, waiting = _watchers()
+        turns.ended(session_id)
+        waiting.forget(session_id)
+        # Failed, and no reply went out for it: most turns Hermes calls failed still end on a
+        # few words about what went wrong, and those have been sent as the reply.
+        if failed is True and platform != "subagent" and _replied.get(session_id) != turn_id:
+            why = core.clipped(str(turn_exit_reason or "").replace("_", " "), 120)
+            _failed(session_id, platform, f"The turn ended with an error ({why})." if why else "The turn ended with an error.")
+    except Exception:
+        log.debug("redde-push: turn end hook failed", exc_info=True)
+
+
+def _on_stopped(session_key: str = "", session_id: str = "", **_) -> None:
+    """`agent_loop_stopped` (Hermes 0.21.3 and later): the person stopped the turn. Nothing to
+    announce, whatever was failing."""
+    try:
+        turns, waiting = _watchers()
+        for session in {session_key, session_id} - {""}:
+            turns.ended(session)
+            waiting.forget(session)
+    except Exception:
+        log.debug("redde-push: stop hook failed", exc_info=True)
+
+
+def _on_task_done(parent_session_id: str = "", child_status: str = "", child_summary: str = "", **_) -> None:
+    """`subagent_stop`: a task the agent handed off is finished. (One a subagent handed on is
+    that subagent's business.)"""
+    try:
+        if _platforms.get(parent_session_id or "") == "subagent":
+            return
+        _watchers()[0].task_finished(parent_session_id or "", child_status or "", child_summary or "")
+    except Exception:
+        log.debug("redde-push: task hook failed", exc_info=True)
+
+
+def _tasks_came_back(session: str, tasks: list[tuple[str, str]]) -> None:
+    """Tasks came back and Hermes started no turn to say so (`core.Turns`): their own words go."""
+    summary, about = core.task_report(tasks)
+    _state()[1].submit("task", session, _platforms.get(session, ""), body=summary or "The task has finished.", detail=about, now=_leaving)
+
+
+def _peek() -> list[tuple[str, str, str, dict]]:
+    """What the Dashboard is waiting on a client for, as (session, request id, method, params),
+    from the modules that keep it, if this process has them loaded: the Dashboard's has, from
+    Hermes 0.21.3. The session is given as Hermes stores it, which is how the hooks name it; the
+    Dashboard's own name for it is something else."""
+    requests, server = sys.modules.get("tui_gateway.server_requests"), sys.modules.get("tui_gateway.server")
+    if requests is None or server is None:
+        return []
+    waiting = list(getattr(requests, "_open", {}).values())
+    if not waiting:
+        return []
+    sessions = dict(getattr(server, "_sessions", {}))
+    found = []
+    for request in waiting:
+        kept = sessions.get(request.sid) or {}
+        for session in dict.fromkeys((getattr(kept.get("agent"), "session_id", None), kept.get("session_key"))):
+            if session:
+                found.append((str(session), str(request.id), str(request.method), dict(request.params or {})))
+    return found
+
+
+def _asked_for(session: str, method: str, params: dict) -> None:
+    """A sudo password or a secret is being asked for in a conversation someone follows."""
+    pusher, platform = _state()[1], _platforms.get(session, DASHBOARD[0])
+    if method == core.PASSWORD:
+        pusher.submit(core.PASSWORD, session, platform, body=str(params.get("command") or ""))
+    elif method == "secret":
+        pusher.submit("secret", session, platform, body=str(params.get("prompt") or ""), detail=str(params.get("env_var") or ""))
 
 
 # ---- /redde-push, for the app ------------------------------------------------------------------
@@ -218,8 +407,20 @@ def _pair(store: core.Store, pusher: core.Pusher, relay: str, wait: int) -> None
 
 def register(ctx) -> None:
     ctx.register_hook("on_session_start", _remember_platform)
-    ctx.register_hook("pre_llm_call", _remember_platform)
+    ctx.register_hook("pre_llm_call", _on_turn)
     ctx.register_hook("pre_approval_request", _on_approval)
     ctx.register_hook("post_llm_call", _on_reply)
+    ctx.register_hook("pre_api_request", _on_request)
+    ctx.register_hook("post_api_request", _on_answer)
+    ctx.register_hook("api_request_error", _on_request_error)
+    ctx.register_hook("on_session_end", _on_turn_end)
+    ctx.register_hook("subagent_stop", _on_task_done)
+    try:    # (not a hook Hermes 0.21.0 has, and it warns about a name it doesn't know)
+        from hermes_cli.plugins import VALID_HOOKS
+        known = "agent_loop_stopped" in VALID_HOOKS
+    except Exception:
+        known = False
+    if known:
+        ctx.register_hook("agent_loop_stopped", _on_stopped)
     ctx.register_command("redde-push", _slash, description="Used by the Redde app to follow a conversation", args_hint="watch <session> <device>")
     ctx.register_cli_command("redde-push", "Notifications on your iPhone from Redde", _cli_setup, _cli)

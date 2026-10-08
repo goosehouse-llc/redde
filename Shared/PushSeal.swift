@@ -4,9 +4,10 @@ import Security
 import UserNotifications
 
 /// Notifications when Redde isn't running come from the person's own Hermes: a plugin there
-/// (`companion/hermes-plugin/redde-push`) writes a short note when a reply finishes or a command
-/// waits for approval, seals it with a key only it and this iPhone hold, and hands it to a relay
-/// that passes it to Apple unread. The notification extension (`EchoPush`) opens it here.
+/// (`companion/hermes-plugin/redde-push`) writes a short note when a reply finishes, when the
+/// agent waits on a person (an approval, a question, a password, a secret) or when a turn fails,
+/// seals it with a key only it and this iPhone hold, and hands it to a relay that passes it to
+/// Apple unread. The notification extension (`EchoPush`) opens it here.
 ///
 /// The key comes from pairing. `hermes redde-push pair` shows a link with a fresh public key; the
 /// app answers with its own through the relay, and both derive the same secret (X25519, then
@@ -21,6 +22,18 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
         case reply
         /// A command waits for a yes or no (`b` is the command, `d` why it was stopped).
         case approval
+        /// The agent asked the person something (`b` is the question, `d` its choices).
+        case question
+        /// A command waits for the sudo password (`b` is the command, when Hermes says which).
+        case sudo
+        /// A skill waits for a secret (`b` is what it asks for, `d` the variable it is for).
+        case secret
+        /// The turn ended without a reply (`b` is why).
+        case failed
+        /// A task the agent had handed off came back. `b` is what the agent says about it, in
+        /// a reply nobody asked for just now, or what the task itself reported when no such
+        /// reply follows (`d` then says how it ended, when not well).
+        case task
         /// The first note after pairing: the plugin has the key too.
         case paired
         /// `hermes redde-push test`.
@@ -211,7 +224,44 @@ nonisolated enum NotificationSound {
     }
 }
 
+/// Failed turns the app has told the person about itself, so that the note a paired Hermes sends
+/// about the same failure can arrive without a second alert. Only a failed turn needs this. The
+/// plugin can't know a turn has failed until some time after, when Hermes has tried nothing more
+/// (`core.Turns` there), so its note arrives minutes after the app's own banner, by which time
+/// the app may not be running to take the duplicate away as it does for the others
+/// (`Notifier.sweepRelayDuplicates`). Kept in the app group: the notification extension asks.
+nonisolated enum ToldAlready {
+    private static let key = "push.toldFailed"
+    /// The plugin's longest wait (after a rate limit, eleven minutes) and some more.
+    static let window: TimeInterval = 15 * 60
+    static var shared: UserDefaults? { UserDefaults(suiteName: PushVault.group) }
+
+    /// The app has shown that the turn in this Hermes session failed.
+    static func failed(session: String, at now: Date = .now, in defaults: UserDefaults? = shared) {
+        guard !session.isEmpty, let defaults else { return }
+        var told = (defaults.dictionary(forKey: key) as? [String: Double] ?? [:])
+            .filter { now.timeIntervalSince1970 - $0.value < window }
+        told[session] = now.timeIntervalSince1970
+        defaults.set(told, forKey: key)
+    }
+
+    static func hasFailed(session: String, now: Date = .now, in defaults: UserDefaults? = shared) -> Bool {
+        guard let at = (defaults?.dictionary(forKey: key) as? [String: Double])?[session] else { return false }
+        return (0 ..< window).contains(now.timeIntervalSince1970 - at)
+    }
+}
+
 nonisolated extension PushNote {
+    /// The identifier of the banner the app posts itself when a turn fails (`Notifier.notify`).
+    static let appsFailureBanner = "redde.failed"
+
+    /// True for a note that says what the app has already said: a turn failed, and the app saw it
+    /// fail. The extension then lets the note in quietly, in place of the app's banner.
+    func repeatsTheApp(now: Date = .now, in defaults: UserDefaults? = ToldAlready.shared) -> Bool {
+        guard kind == .failed, let s, !s.isEmpty else { return false }
+        return ToldAlready.hasFailed(session: s, now: now, in: defaults)
+    }
+
     /// The category of a reply that arrived as a push: its Reply button waits for an unlock,
     /// because the app is started for it and its saved passwords can't be read while locked.
     static let repliedCategory = "redde.replied.push"
@@ -244,9 +294,27 @@ nonisolated extension PushNote {
             content.body = [d, b].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n")
             content.threadIdentifier = "redde.turn"
             if let h, !h.isEmpty, let s, !s.isEmpty { content.categoryIdentifier = Self.approvalCategory }
+        case .question, .sudo, .secret, .failed:
+            // The titles the app gives its own banners for the same things (`Conversation`).
+            content.title = switch kind {
+            case .question: "Redde has a question"
+            case .sudo: "Redde needs a sudo password"
+            case .secret: "Redde needs a secret"
+            default: "Redde couldn't reply"
+            }
+            if let t, !t.isEmpty { content.subtitle = t }
+            content.body = [b, d].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n")
+            if content.body.isEmpty, kind == .sudo { content.body = "Open Redde to enter it." }
+            content.threadIdentifier = "redde.turn"
+        case .task:
+            content.title = "A task finished"
+            if let t, !t.isEmpty { content.subtitle = t }
+            content.body = [String(PlainText.display(b ?? "").prefix(300)), d ?? ""].filter { !$0.isEmpty }.joined(separator: "\n")
+            content.categoryIdentifier = Self.repliedCategory
+            content.threadIdentifier = "redde.turn"
         case .paired:
             content.title = host.map { "Paired with \($0)" } ?? "Paired"
-            content.body = "Redde will tell you here when this Hermes finishes a reply or needs an approval."
+            content.body = "Redde will tell you here when this Hermes finishes a reply, waits for you, or couldn't reply."
         case .test:
             content.title = host.map { "Redde · \($0)" } ?? "Redde"
             content.body = b ?? "Notifications from your Hermes reach this iPhone."

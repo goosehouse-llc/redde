@@ -164,6 +164,62 @@ struct PushNoteContentTests {
         #expect(test.title == "Redde · studio" && test.body == "Notifications from this Hermes reach your phone.")
     }
 
+    @Test func aQuestionShowsWhatIsAskedAndItsChoices() {
+        let shown = content(PushNote(k: "question", s: "20261007_1", t: "Release", b: "Which branch should I deploy?", d: "main · release"))
+        #expect(shown.title == "Redde has a question", "the app's own banner for a question says the same")
+        #expect(shown.subtitle == "Release")
+        #expect(shown.body == "Which branch should I deploy?\nmain · release")
+        #expect(shown.userInfo[PushNote.sessionKey] as? String == "20261007_1", "a tap opens the conversation, where the card comes back")
+        #expect(shown.userInfo[PushNote.kindKey] as? String == "question")
+        #expect(shown.categoryIdentifier.isEmpty && shown.userInfo["e"] == nil)
+        #expect(content(PushNote(k: "question", s: "s", b: "Go ahead?")).body == "Go ahead?")
+    }
+
+    @Test func aPasswordOrASecretBeingAskedForSaysWhatFor() {
+        let sudo = content(PushNote(k: "sudo", s: "20261007_1", t: "Updates", b: "sudo apt-get upgrade"))
+        #expect(sudo.title == "Redde needs a sudo password" && sudo.subtitle == "Updates" && sudo.body == "sudo apt-get upgrade")
+        // Hermes 0.21.3 doesn't say which command.
+        #expect(content(PushNote(k: "sudo", s: "20261007_1")).body == "Open Redde to enter it.")
+        let secret = content(PushNote(k: "secret", s: "20261007_1", b: "Enter the lab token", d: "LAB_SECRET_TOKEN"))
+        #expect(secret.title == "Redde needs a secret" && secret.body == "Enter the lab token\nLAB_SECRET_TOKEN")
+        #expect(secret.userInfo[PushNote.sessionKey] as? String == "20261007_1")
+        #expect(sudo.categoryIdentifier.isEmpty && secret.categoryIdentifier.isEmpty, "neither is typed into a notification")
+    }
+
+    @Test func aFailedTurnSaysWhy() {
+        let shown = content(PushNote(k: "failed", s: "api_9", t: "Nightly build", b: "HTTP 401: Incorrect API key provided."))
+        #expect(shown.title == "Redde couldn't reply" && shown.subtitle == "Nightly build")
+        #expect(shown.body == "HTTP 401: Incorrect API key provided.")
+        #expect(shown.userInfo[PushNote.sessionKey] as? String == "api_9" && shown.categoryIdentifier.isEmpty)
+    }
+
+    @Test func aTaskThatCameBackReadsLikeAReplyAndCanBeAnswered() {
+        let shown = content(PushNote(k: "task", s: "20261007_1", t: "Nightly build", b: "The count is in: **12** files."))
+        #expect(shown.title == "A task finished" && shown.subtitle == "Nightly build")
+        #expect(shown.body == "The count is in: 12 files.")
+        #expect(shown.categoryIdentifier == PushNote.repliedCategory, "Reply sends into the conversation, as for any reply")
+        // With no reply from the agent, the task's own summary and how it ended.
+        #expect(content(PushNote(k: "task", s: "api_9", b: "The task has finished.", d: "Ended: timeout")).body == "The task has finished.\nEnded: timeout")
+    }
+
+    @Test func aFailureTheAppAlreadyShowedArrivesQuietly() throws {
+        let defaults = try #require(UserDefaults(suiteName: "told-\(UUID().uuidString)"))
+        let now = Date(timeIntervalSince1970: 1_791_330_000)
+        let failed = PushNote(k: "failed", s: "api_9", b: "HTTP 500")
+        #expect(!failed.repeatsTheApp(now: now, in: defaults), "the app wasn't there to see it: this note is the news")
+        ToldAlready.failed(session: "api_9", at: now, in: defaults)
+        #expect(failed.repeatsTheApp(now: now.addingTimeInterval(150), in: defaults), "the plugin's note, two and a half minutes on")
+        #expect(failed.repeatsTheApp(now: now.addingTimeInterval(700), in: defaults), "or eleven, after a rate limit")
+        #expect(!failed.repeatsTheApp(now: now.addingTimeInterval(ToldAlready.window + 1), in: defaults), "a later failure is another")
+        #expect(!PushNote(k: "failed", s: "another", b: "HTTP 500").repeatsTheApp(now: now, in: defaults))
+        #expect(!PushNote(k: "reply", s: "api_9", b: "Back.").repeatsTheApp(now: now, in: defaults), "a reply is never old news")
+        #expect(!PushNote(k: "failed", b: "HTTP 500").repeatsTheApp(now: now, in: defaults))
+        // What is kept is pruned as it is written.
+        ToldAlready.failed(session: "later", at: now.addingTimeInterval(ToldAlready.window + 60), in: defaults)
+        #expect((defaults.dictionary(forKey: "push.toldFailed") ?? [:]).keys.sorted() == ["later"])
+        #expect(PushNote.appsFailureBanner == "redde.\(Notifier.Kind.failed.rawValue)", "the banner the quiet note takes the place of")
+    }
+
     @Test func aKindFromANewerPluginLeavesTheRelaysWords() {
         let content = UNMutableNotificationContent()
         content.title = "Redde"

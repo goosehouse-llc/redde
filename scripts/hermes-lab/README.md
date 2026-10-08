@@ -11,7 +11,7 @@ scripts/hermes-lab/lab.sh run --app      # also runs EchoTests/HermesLabTests ag
 scripts/hermes-lab/lab.sh run v2026.9.24 # one release; any tag of NousResearch/hermes-agent
 scripts/hermes-lab/lab.sh approvals      # the app's Dashboard client is asked before a command runs
 scripts/hermes-lab/lab.sh signin         # the app's Dashboard client signs in through a browser
-scripts/hermes-lab/lab.sh push           # the push plugin: pairing, and notes for replies and approvals
+scripts/hermes-lab/lab.sh push           # the push plugin: pairing, and a note for everything it announces
 scripts/hermes-lab/lab.sh push --app     # and the app in a simulator pairs with each release
 scripts/hermes-lab/lab.sh up v2026.9.24 two   # leave one lab running to poke at; `down` stops it
 ```
@@ -52,7 +52,10 @@ terminal tool with `rm -rf` on a folder it has just made, and it answers the too
 message through the app's own client and answers the card, once with yes and once with no. Then it
 does what a closed app has to: a client starts the turn and disconnects, a second one joins the
 turn where it waits and answers its card, and a third answers without a card, by session and by
-the command's digest, as Approve and Deny on a notification do.
+the command's digest, as Approve and Deny on a notification do. The same joining is done for a
+turn left waiting on a question, on the sudo password and on a secret (the stub's `lab:question`,
+`lab:sudo` and `lab:secret`, below); Hermes 0.21.0 doesn't list those for a returning client,
+which the test says and doesn't count against it.
 
 The Dashboard changed how it asks. Hermes 0.21.0 sends an `approval.request` notification,
 answered by an `approval.respond` call. Hermes 0.21.3 sends a JSON-RPC request to the client,
@@ -83,6 +86,24 @@ it; over the Dashboard, only once the conversation is followed, and then an appr
 nothing "Apple" was handed may contain a word of it. A second stand-in phone pairs with no code,
 over the Dashboard, the way an app signed in to it does. The Dashboard has a login here, as in
 the approval scenario.
+
+The stub model does more on request, so the plugin's other notes can be checked. A message with
+one of these words in it, while it is the last thing said:
+
+| | the model | the note |
+|---|---|---|
+| `lab:question` | calls `clarify` with a question and two choices | `question` |
+| `lab:sudo` | runs `sudo true` (skipped where sudo wants no password) | `sudo`, on 0.21.3 and later |
+| `lab:secret` | opens the skill `lab-secret`, which the lab makes and which wants `LAB_SECRET_TOKEN` | `secret`, on 0.21.3 and later |
+| `lab:delegate` | hands a subagent a small task | `task`, when it comes back |
+| `lab:refused` | is refused with a 401 | `failed`, 20 seconds on |
+| `lab:hiccup` | fails twice with a 500, then answers | `reply`, and never `failed` |
+| `lab:outage` | fails with a 500 every time | `failed`, 150 seconds after Hermes's last try; only with `LAB_PUSH_SLOW=1`, since 0.21.5 keeps trying for five minutes |
+
+Nothing answers the question, the password or the secret: the check reads the note, asks the
+Dashboard what the session waits on (what a client that opens the conversation is told), and
+stops the turn. The check also runs Hermes's install scan over the plugin, which refuses, among
+other things, any mention of sudo in a plugin's code or README.
 
 `--app` then does both pairings with the app's own code. `EchoTests/HermesLabPushTests` signs the
 app's Dashboard client in and pairs through the app's push service in one step. And

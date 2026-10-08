@@ -7,7 +7,7 @@
 #   scripts/hermes-lab/lab.sh run --app [tag ...]  the same, plus the app's own transport code (EchoTests)
 #   scripts/hermes-lab/lab.sh approvals [tag ...]  the app's Dashboard client asked before a command runs
 #   scripts/hermes-lab/lab.sh signin [tag ...]     the app's Dashboard client signs in through a browser
-#   scripts/hermes-lab/lab.sh push [tag ...]       the push plugin: pairing, and notes for replies and approvals
+#   scripts/hermes-lab/lab.sh push [tag ...]       the push plugin: pairing, and a note for everything it announces
 #   scripts/hermes-lab/lab.sh push --app [tag ...] the same, then the app pairs both ways and reads a notification
 #   scripts/hermes-lab/lab.sh up <tag> <scenario>  leave one lab running (API :18642, Dashboard :19119)
 #   scripts/hermes-lab/lab.sh down
@@ -58,6 +58,10 @@ up() {
     "HERMES_DASHBOARD_BASIC_AUTH_SECRET=0123456789abcdef0123456789abcdef0123456789abcdef" >> "$HERMES_HOME/.env"
   : > "$LAB_HITS"
   : > "$LAB_APNS"
+  # A skill that needs a secret, for the stub's "lab:secret": opening it makes Hermes ask for one.
+  mkdir -p "$HERMES_HOME/skills/lab-secret"
+  print -l -- "---" "name: lab-secret" "description: Lab only. A skill that needs a secret." "required_environment_variables:" \
+    "  - name: LAB_SECRET_TOKEN" "    prompt: Enter the lab token" "---" "" "# Lab secret" "" "Say hello." > "$HERMES_HOME/skills/lab-secret/SKILL.md"
   # The push scenario: the plugin from this repository, the relay on this machine (the Worker's
   # own code under Node) and a stand-in for Apple that records what it is sent.
   if [[ "$scenario" == push ]]; then
@@ -119,7 +123,7 @@ app_check() {
     sleep 8
   done
   echo "App transport (${XCODE_ARGS[-1]#-only-testing:})"
-  echo "$out" | grep -E "^  (PASS|FAIL)|LAB SKIP" || echo "  the test host never launched"
+  echo "$out" | grep -E "^  (PASS|FAIL|----)|LAB SKIP" || echo "  the test host never launched"
   [[ "$out" == *"TEST EXECUTE SUCCEEDED"* && "$out" == *"  PASS"* && "$out" != *"  FAIL"* ]]
 }
 

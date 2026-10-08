@@ -1215,6 +1215,8 @@ final class Conversation {
         lastError = description
         TurnActivity.shared.fail(description)
         Notifier.shared.notify(.failed, title: "Redde couldn't reply", body: description)
+        // A paired Hermes will say so too, minutes later: that note then arrives quietly.
+        if let serverSessionID { ToldAlready.failed(session: serverSessionID) }
         update(id) { message in
             message.error = description
             if message.text.isEmpty { message.text = "⚠️ \(description)" }

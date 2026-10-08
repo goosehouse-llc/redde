@@ -127,6 +127,8 @@ struct HermesLabApprovalTests {
     private struct Outcome {
         var asked: ApprovalRequest?
         var reply = ""
+        /// What else the turn waited on a person for: a question, the sudo password, a secret.
+        var waitedOn = ""
     }
 
     /// One turn the stub answers with `rm -rf` on its target folder. The reply is "[gone]" when
@@ -207,10 +209,10 @@ struct HermesLabApprovalTests {
 
     /// Starts the turn that asks about `rm -rf`, and goes away before the agent gets to it, as the
     /// app does when iOS closes it. The agent then asks nobody, and waits. Returns the session.
-    private static func leaveATurnWaiting() async throws -> String? {
+    private static func leaveATurnWaiting(saying text: String = "Do the danger thing.") async throws -> String? {
         guard let first = await client() else { return nil }
         let (runtime, stored) = try await first.openSession(stored: nil)
-        try await first.call("prompt.submit", params: .object(["session_id": .string(runtime), "text": .string("Do the danger thing.")]))
+        try await first.call("prompt.submit", params: .object(["session_id": .string(runtime), "text": .string(text)]))
         first.disconnect()
         try await Task.sleep(for: .seconds(4))
         return stored
@@ -267,6 +269,62 @@ struct HermesLabApprovalTests {
         // Over: there is nothing to join.
         let finished = try await HermesServeTransport(client: client).rejoin(stored: stored) == nil
         Self.report(finished, "a session whose turn has ended has nothing to join")
+    }
+
+    /// The same for the other things a turn waits on a person for, which a paired Hermes also
+    /// announces: a question, the sudo password, a secret. Each is put again to the app that
+    /// opens the conversation, and its answer lets the turn go on. Hermes 0.21.0 keeps no list
+    /// of what a turn waits on, so there nothing comes back; that is said, not failed.
+    @Test func aQuestionAPasswordAndASecretLeftWaitingComeBackToo() async throws {
+        let cases = [("lab:question please", "a question", "question Which branch should I deploy? [main (Recommended), release]"),
+                     ("lab:sudo please", "the sudo password", "sudo"),
+                     ("lab:secret please", "a secret", "secret Enter the lab token for LAB_SECRET_TOKEN")]
+        for (text, what, expected) in cases {
+            guard let stored = try await Self.leaveATurnWaiting(saying: text), let client = await Self.client() else { return }
+            defer { client.disconnect() }
+            let waiting = try await client.resume(stored: stored, withMessages: false)
+            guard let listed = waiting["open_requests"]?.array, !listed.isEmpty else {
+                print(waiting["open_requests"]?.array == nil
+                    ? "  ----  this Hermes keeps no list of what a turn waits on (0.21.0): \(what) doesn't come back on opening"
+                    : "  ----  nothing is waiting for \(what) here (sudo needs no password on this machine?)")
+                _ = try? await client.call("session.interrupt", params: .object(["session_id": .string(waiting["session_id"]?.string ?? "")]))
+                continue
+            }
+            var detail = ""
+            var ok = false
+            do {
+                let outcome = try await Self.timed {
+                    guard let joined = try await HermesServeTransport(client: client).rejoin(stored: stored) else {
+                        throw TransportError.malformed("the host says nothing is under way")
+                    }
+                    var outcome = Outcome()
+                    for try await event in joined.events {
+                        switch event {
+                        case let .textDelta(delta): outcome.reply += delta
+                        case let .textFinal(text): outcome.reply = text
+                        case let .interrupt(.clarify(request), runtime):
+                            let asked = request.questions.first
+                            outcome.waitedOn = "question \(asked?.question ?? "") [\((asked?.choices ?? []).joined(separator: ", "))]"
+                            try await client.respondClarify(runtimeSession: runtime, requestID: request.id, questionID: asked?.id, answer: "release")
+                        case let .interrupt(.sudo(id), runtime):
+                            outcome.waitedOn = "sudo"
+                            try await client.respondSudo(runtimeSession: runtime, requestID: id, password: "")   // none given: the command fails, the turn goes on
+                        case let .interrupt(.secret(request), runtime):
+                            outcome.waitedOn = "secret \(request.prompt) for \(request.envVar)"
+                            try await client.respondSecret(runtimeSession: runtime, requestID: request.id, value: "")   // skipped
+                        default: break
+                        }
+                    }
+                    outcome.reply = outcome.reply.trimmingCharacters(in: .whitespacesAndNewlines)
+                    return outcome
+                }
+                ok = outcome.waitedOn == expected && !outcome.reply.isEmpty
+                detail = "waited on \(outcome.waitedOn.isEmpty ? "nothing" : outcome.waitedOn), reply \(outcome.reply)"
+            } catch {
+                detail = String(error.localizedDescription.prefix(160))
+            }
+            Self.report(ok, "a turn left waiting on \(what) is joined by the app when it returns, and goes on once it is answered", detail)
+        }
     }
 
     /// Approve or Deny on a notification: no card, only the session and the command's digest.

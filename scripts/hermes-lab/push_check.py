@@ -1,7 +1,12 @@
 """Checks the Redde push plugin (companion/hermes-plugin/redde-push) inside a running lab Hermes:
-pairs a stand-in phone through the lab's relay, then makes the agent reply and ask for an
-approval over both connections and reads the notes that reach "Apple", as the phone would.
+pairs a stand-in phone through the lab's relay, then makes the agent reply, stop for an approval,
+ask a question, want a sudo password and a secret, hand off a task, and fail, over both
+connections where they apply, and reads the notes that reach "Apple", as the phone would.
 Run through `lab.sh push` (it needs the lab's Python, which has `websockets` and `cryptography`).
+
+A turn that fails after Hermes has retried it is announced two and a half minutes after its last
+attempt, which on Hermes 0.21.5 comes five minutes in. That check is left out unless
+LAB_PUSH_SLOW=1.
 
 usage: push_check.py <hermes executable>
 """
@@ -34,7 +39,11 @@ HERMES = sys.argv[1]
 RELAY = "http://127.0.0.1:18980"
 API, KEY, SERVE = "http://127.0.0.1:18642", "labkey-labkey-labkey", "127.0.0.1:19119"
 APNS = os.environ["LAB_APNS"]
+SLOW = os.environ.get("LAB_PUSH_SLOW") == "1"
 failures = []
+#: Conversations whose turn failed once or twice and then got its reply: (session, when). None of
+#: them may have been called a failure by the end.
+recovered = []
 
 
 def report(ok, what, detail=""):
@@ -119,9 +128,19 @@ def pair(phone):
 
 def api_turn(text):
     session = http("POST", f"{API}/api/sessions", {"title": f"push lab {time.time()}"}, {"Authorization": f"Bearer {KEY}"})["session"]["id"]
-    threading.Thread(target=lambda: http("POST", f"{API}/api/sessions/{session}/chat/stream", {"input": text}, {"Authorization": f"Bearer {KEY}"}),
-                     daemon=True).start()
+
+    def run():
+        try:
+            http("POST", f"{API}/api/sessions/{session}/chat/stream", {"input": text}, {"Authorization": f"Bearer {KEY}"})
+        except Exception:
+            pass    # a turn that is meant to fail may end the stream any way it likes
+
+    threading.Thread(target=run, daemon=True).start()
     return session
+
+
+def notes_of(phone, session):
+    return [(made["k"], made.get("b")) for made in phone.notes() if made.get("s") == session]
 
 
 async def dashboard(phone):
@@ -162,6 +181,73 @@ async def dashboard(phone):
     waiting = (await dash.call("session.resume", {"session_id": stored, "omit_messages": True})).get("pending_approval") or {}
     report(bool(made) and made.get("h") == core.digest(waiting.get("command", "")) != core.digest(""),
            "Dashboard: the note names the waiting command by its digest", f"note {made and made.get('h')} for {waiting.get('command')!r}")
+
+    async def followed(text):
+        """A turn in a conversation the phone follows."""
+        runtime, stored = await turn(text)
+        await dash.call("slash.exec", {"session_id": runtime, "command": f"redde-push watch {stored} {phone.id}"})
+        await say(runtime, text)
+        return runtime, stored
+
+    async def waiting_on(stored):
+        """What the Dashboard says the session waits on a person for, as it tells a client that
+        opens the conversation. None from a Hermes that keeps no such list (0.21.0)."""
+        listed = (await dash.call("session.resume", {"session_id": stored, "omit_messages": True})).get("open_requests")
+        return [request.get("method") for request in listed] if isinstance(listed, list) else None
+
+    # A turn that fails twice and then gets its reply is a reply, and never "couldn't reply".
+    runtime, stored = await followed("lab:hiccup please")
+    made = await asyncio.to_thread(phone.wait_for, "reply", stored, 60)
+    report(bool(made) and made["b"] == "[A:alpha]", "Dashboard: a turn Hermes had to retry still ends in its reply", made)
+    recovered.append((stored, time.time()))
+
+    # The agent asks the person something.
+    runtime, stored = await followed("lab:question please")
+    made = await asyncio.to_thread(phone.wait_for, "question", stored)
+    report(bool(made) and made.get("b") == "Which branch should I deploy?" and made.get("d") == "main · release" and "h" not in made,
+           "Dashboard: a question the agent asks reaches the phone, with its choices", made)
+    waiting = await waiting_on(stored)
+    lists = waiting is not None
+    if lists:
+        report(waiting == ["clarify"], "Dashboard: and waits to be answered by whoever opens the conversation", waiting)
+    else:
+        print("  ----  this Hermes keeps no list of what it waits on (0.21.0): no card on opening, and sudo and secret go unannounced")
+    await dash.call("session.interrupt", {"session_id": runtime})
+
+    # A command wants the sudo password. (Not where sudo asks for none: then there is no prompt.)
+    if subprocess.run(["sudo", "-n", "true"], capture_output=True).returncode == 0:
+        print("  ----  sudo needs no password here: nothing to check")
+    else:
+        runtime, stored = await followed("lab:sudo please")
+        made = await asyncio.to_thread(phone.wait_for, "sudo", stored, 15)
+        if lists:
+            report(bool(made) and made.get("b", "sudo true") == "sudo true", "Dashboard: a command waiting for the sudo password reaches the phone", made)
+            report(await waiting_on(stored) == ["sudo"], "Dashboard: and waits for whoever opens the conversation")
+        else:
+            report(made is None, "Dashboard: no sudo note from a Hermes that can't say one is waiting", made)
+        await dash.call("session.interrupt", {"session_id": runtime})
+
+    # A skill wants a secret.
+    runtime, stored = await followed("lab:secret please")
+    made = await asyncio.to_thread(phone.wait_for, "secret", stored, 15)
+    if lists:
+        report(bool(made) and made.get("b") == "Enter the lab token" and made.get("d") == "LAB_SECRET_TOKEN", "Dashboard: a skill waiting for a secret reaches the phone", made)
+        report(await waiting_on(stored) == ["secret"], "Dashboard: and waits for whoever opens the conversation")
+    else:
+        report(made is None, "Dashboard: no secret note from a Hermes that can't say one is waiting", made)
+    await dash.call("session.interrupt", {"session_id": runtime})
+
+    # A task handed to a subagent: when it comes back Hermes starts a turn to say so, and that
+    # turn's reply is the news.
+    runtime, stored = await followed("lab:delegate please")
+    made = await asyncio.to_thread(phone.wait_for, "task", stored, 45)
+    report(bool(made) and made.get("b") == "[A:alpha]" and ("reply", "[kept]") in notes_of(phone, stored),
+           "Dashboard: a handed-off task coming back reaches the phone as that", notes_of(phone, stored))
+
+    # A request the provider refuses: Hermes doesn't retry, the turn ends, and no hook says so.
+    runtime, stored = await followed("lab:refused please")
+    made = await asyncio.to_thread(phone.wait_for, "failed", stored, 40)
+    report(bool(made) and made.get("b") == "HTTP 401: Incorrect API key provided.", "Dashboard: a turn that ends without a reply says why", made)
 
     # Pairing with no code, as an app signed in to this Dashboard does it: the plugin's offer and
     # the phone's answer cross on this connection, and no session is needed for it.
@@ -206,6 +292,21 @@ def main():
     # No approval over the Hermes API: there a guarded command isn't held for a person, the agent
     # is told it needs approval and says so in its reply, which is the note above.
 
+    session = api_turn("lab:refused please")
+    made = phone.wait_for("failed", session, 40)
+    report(bool(made) and made.get("b") == "HTTP 401: Incorrect API key provided." and made.get("t", "").startswith("push lab"),
+           "Hermes API: a turn that ends without a reply says why", made)
+    # A handed-off task: on 0.21.0 Hermes starts a turn when it comes back, as on the Dashboard;
+    # later releases start none over the Hermes API, and the task's own summary is sent.
+    session = api_turn("lab:delegate please")
+    made = phone.wait_for("task", session, 60)
+    report(bool(made) and made.get("b") == "[A:alpha]", "Hermes API: a handed-off task coming back reaches the phone", notes_of(phone, session))
+    if SLOW:
+        session = api_turn("lab:outage please")
+        made = phone.wait_for("failed", session, 600)
+        report(bool(made) and made.get("b", "").startswith("HTTP 500: "), "Hermes API: a turn Hermes gives up on after retrying says why", made)
+        report(len([k for k, _ in notes_of(phone, session) if k == "failed"]) == 1, "Hermes API: and says it once, when Hermes has stopped trying", notes_of(phone, session))
+
     try:
         asyncio.run(dashboard(phone))
     except Exception as error:
@@ -214,7 +315,13 @@ def main():
     records = [json.loads(line) for line in open(APNS)]
     plain = json.dumps(records)
     report(all(set(r["body"]) == {"aps", "e"} and r["body"]["aps"]["alert"]["body"] == "Open Redde to see what's new." for r in records)
-           and "alpha" not in plain and "rm -rf" not in plain and "push lab" not in plain, "what Apple and the relay carry is sealed: no reply, command or title in it")
+           and not any(word in plain for word in ("alpha", "rm -rf", "push lab", "Which branch", "lab token", "API key")),
+           "what Apple and the relay carry is sealed: no reply, command, question, error or title in it")
+    for session, since in recovered:
+        if SLOW:    # long enough for the longest wait to have run out
+            time.sleep(max(0, since + core.Turns.RETRYING + 10 - time.time()))
+        report(not any(kind == "failed" for kind, _ in notes_of(phone, session)),
+               f"the turn that recovered was never called a failure ({time.time() - since:.0f} s on)", notes_of(phone, session))
 
     said = hermes("test")
     report(bool(phone.wait_for("test", seconds=10)), "`hermes redde-push test` sends a test note", said)

@@ -16,6 +16,13 @@ final class NotificationService: UNNotificationServiceExtension {
            let (note, pairing) = PushSeal.note(from: payload, pairings: PushVault.load()),
            note.fill(content) {
             PushVault.confirm(pairing, host: note.n)
+            if note.repeatsTheApp() {
+                // The app said so when it happened. This takes its banner's place without
+                // sounding or lighting the screen a second time.
+                content.sound = nil
+                content.interruptionLevel = .passive
+                UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [PushNote.appsFailureBanner])
+            }
         }
         if !NotificationSound.isOn { content.sound = nil }
         contentHandler(content)
