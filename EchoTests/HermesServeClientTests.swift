@@ -47,6 +47,41 @@ struct HermesServeClientTests {
         return HermesServeClient(settings: settings, password: { "hunter2" }, tokens: TokenBox().store, protocolClasses: [ServeStub.self])
     }
 
+    /// What `HermesServeTransport` makes of events for a turn, by whether the turn ended.
+    private func ends(_ events: [(String, JSONValue)], underWay: Bool = false) async -> Bool {
+        let turn = HermesServeTransport.TurnState(runtime: "live-1", stored: "stored-1")
+        turn.underWay = underWay
+        let reply = AsyncThrowingStream<TurnEvent, Error>.makeStream()
+        let finished = AsyncStream<Result<Void, Error>>.makeStream()
+        let client = makeClient()
+        for (type, payload) in events {
+            HermesServeTransport.hear((type, "live-1", payload), turn: turn, client: client, continuation: reply.continuation, finished: finished.continuation)
+        }
+        finished.continuation.finish()
+        reply.continuation.finish()
+        var ended = false
+        for await _ in finished.stream { ended = true }
+        return ended
+    }
+
+    @Test func aSessionThatIsNotRunningEndsOnlyATurnThatStarted() async {
+        let idle: JSONValue = .object(["running": .bool(false)])
+        // Hermes 0.21.3 and 0.21.5 say once more where the session stands a moment after a
+        // reply's last message. The outbox's next message is already listening by then, and that
+        // word is about the turn before: the new one must wait for its own reply.
+        #expect(await ends([("session.info", idle)]) == false)
+        #expect(await ends([("session.info", idle), ("session.info", .object(["cwd": .string("/tmp")]))]) == false)
+        // Once the turn is seen running, the same word is its end (a turn stopped from elsewhere
+        // sends no last message).
+        #expect(await ends([("session.info", idle), ("message.start", .null), ("session.info", idle)]))
+        #expect(await ends([("session.info", .object(["running": .bool(true)])), ("session.info", idle)]))
+        #expect(await ends([("tool.start", .object(["name": .string("terminal")])), ("session.info", idle)]))
+        // A turn that was joined while running is under way from the start.
+        #expect(await ends([("session.info", idle)], underWay: true))
+        // The last message ends a turn whatever came before.
+        #expect(await ends([("message.complete", .object(["text": .string("Done.")]))]))
+    }
+
     @Test func sessionListAsksForTheProfile() async throws {
         ServeStub.reset()
         nonisolated(unsafe) var urls: [String] = []

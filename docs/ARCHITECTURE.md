@@ -237,7 +237,11 @@ streaming or backfills the missing tail of the reply from history.
 - The sessions stream is `event:`/`data:` frames ending on `done`; reasoning arrives as
   `tool.progress` with `tool_name: "_thinking"`.
 - Session titles must be unique on the gateway, so the first question gets a timestamp.
-- On the Dashboard, `message.complete` ends a turn; `session.usage` is only a live tick.
+- On the Dashboard, `message.complete` ends a turn; `session.usage` is only a live tick. A
+  `session.info` with `running: false` ends one too (a turn stopped from elsewhere sends no last
+  message), but only a turn that was seen running: Hermes 0.21.3 and 0.21.5 send that info once
+  more some 75 ms after a reply's last message, by when a message that waited in the outbox is
+  already listening for its own reply.
 - Every request runs the full agent loop; restrict tools with `platform_toolsets.api_server`.
 
 ## Conversations and messages

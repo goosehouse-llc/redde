@@ -15,11 +15,14 @@ nonisolated struct HermesServeTransport: HermesTransport {
 
     /// Mutable per-turn state shared between the event listener and the driver.
     @MainActor
-    private final class TurnState {
+    final class TurnState {
         var runtime: String
         var stored: String
         var streamed = ""
         var recovering = false
+        /// The host has shown this turn running. Until then a word that the session is not
+        /// running is about the turn before.
+        var underWay = false
         /// The reconnect wait after a drop; cancelled with the turn so a stopped turn doesn't
         /// poll for 90 s and then pull the whole transcript into a finished continuation.
         var recoverTask: Task<Void, Never>?
@@ -99,10 +102,16 @@ nonisolated struct HermesServeTransport: HermesTransport {
         }
     }
 
+    /// What only a turn under way sends.
+    private static let turnEvents: Set<String> = [
+        "message.start", "message.delta", "reasoning.delta", "reasoning.available", "tool.start", "tool.complete",
+        "approval.request", "clarify.request", "sudo.request", "secret.request",
+    ]
+
     /// One event from the host, for the turn being followed: what it means for the reply goes to
     /// `continuation`, and the turn's end to `finished`.
     @MainActor
-    private static func hear(_ event: HermesServeClient.Event, turn: TurnState, client: HermesServeClient,
+    static func hear(_ event: HermesServeClient.Event, turn: TurnState, client: HermesServeClient,
                              continuation: AsyncThrowingStream<TurnEvent, Error>.Continuation,
                              finished: AsyncStream<Result<Void, Error>>.Continuation) {
         // A turn being joined doesn't know its session's id until the host has answered; what
@@ -127,6 +136,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
             break
         }
         guard event.sessionID == turn.runtime else { return }
+        if turnEvents.contains(event.type) { turn.underWay = true }
         switch event.type {
         case "message.delta":
             if let t = p["text"]?.string, !t.isEmpty { turn.streamed += t; continuation.yield(.textDelta(t)) }
@@ -180,7 +190,15 @@ nonisolated struct HermesServeTransport: HermesTransport {
                                                      contextUsed: used, contextMax: max)))
             }
         case "session.info":
-            if p["running"]?.bool == false { finished.yield(.success(())) }
+            // Hermes says where a session stands whenever something about it changes, and from
+            // 0.21.3 once more a moment after a reply's last message. A message that goes out
+            // the instant a reply ends (the outbox's next one) hears that late word about the
+            // turn before, and must not take it for its own end.
+            if p["running"]?.bool == true {
+                turn.underWay = true
+            } else if p["running"]?.bool == false, turn.underWay {
+                finished.yield(.success(()))
+            }
         case "error":
             finished.yield(.failure(TransportError.malformed(p["message"]?.string ?? "gateway error")))
         default:
@@ -222,6 +240,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
             continuation.finish()
             return nil
         }
+        turn.underWay = true
         if let soFar = info["inflight"]?["assistant"]?.string, !soFar.isEmpty {
             turn.streamed = soFar
             continuation.yield(.textDelta(soFar))
@@ -326,6 +345,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
             // A question the host asked while the socket was down, or still waits on.
             client.replayOpenRequests(in: info)
             if info["running"]?.bool == true {
+                turn.underWay = true
                 return // still generating; events now arrive under the new runtime id
             }
             // The turn finished while we were away: fill in whatever we missed.
