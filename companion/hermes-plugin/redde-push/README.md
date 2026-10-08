@@ -33,6 +33,13 @@ closed › Pair with a code. A notification on the phone confirms the pairing.
 Run the command as the user Hermes runs as, without `-p`: the pairing is kept in that Hermes home
 and read by the gateway and the Dashboard from there.
 
+## Updating
+
+The install line again, with `--force` on the end, then restart Hermes as above. Your pairings are
+kept: they live beside the plugin, not in it. (`hermes plugins update redde-push` works from Hermes
+0.21.5; earlier releases answer that the plugin wasn't installed from git, which is how they see
+one that came out of a folder of a repository.)
+
 ## Commands
 
 | | |
