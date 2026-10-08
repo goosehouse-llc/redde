@@ -327,6 +327,41 @@ struct HermesLabApprovalTests {
         }
     }
 
+    /// A file that isn't a picture or a PDF is only put in the session's workspace by the
+    /// Dashboard; the agent hears of it when the message names it, by the reference the
+    /// Dashboard answers with. The stub says whether the file's text (or, for one that can't
+    /// be read as text, its name) reached the model.
+    @Test func aFileAttachedOverTheDashboardReachesTheAgent() async throws {
+        guard let client = await Self.client() else { return }
+        defer { client.disconnect() }
+        let notes = Attachment(kind: .text, filename: "lab-notes.txt", mimeType: "text/plain", data: Data("The password is lab-file-token.".utf8))
+        let clip = Attachment(kind: .other, filename: "lab-clip.mp4", mimeType: "video/mp4", data: Data(repeating: 7, count: 2048))
+        for (attachment, what) in [(notes, "a text file"), (clip, "a video")] {
+            var detail = ""
+            var ok = false
+            do {
+                let outcome = try await Self.timed {
+                    var outcome = Outcome()
+                    let request = TurnRequest(userText: "lab:file please", history: [], sessionID: nil, model: nil, instructions: nil, attachments: [attachment])
+                    for try await event in HermesServeTransport(client: client).stream(request) {
+                        switch event {
+                        case let .textDelta(delta): outcome.reply += delta
+                        case let .textFinal(text): outcome.reply = text
+                        default: break
+                        }
+                    }
+                    outcome.reply = outcome.reply.trimmingCharacters(in: .whitespacesAndNewlines)
+                    return outcome
+                }
+                ok = outcome.reply == "[file seen]"
+                detail = "reply \(outcome.reply)"
+            } catch {
+                detail = String(error.localizedDescription.prefix(160))
+            }
+            Self.report(ok, "\(what) attached to a message over the Dashboard reaches the agent", detail)
+        }
+    }
+
     /// Approve or Deny on a notification: no card, only the session and the command's digest.
     @Test func anAnswerFromANotificationReachesTheCommandItWasFor() async throws {
         for (approve, expected) in [(false, "[kept]"), (true, "[gone]")] {

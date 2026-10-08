@@ -69,11 +69,12 @@ nonisolated struct HermesServeTransport: HermesTransport {
                         Self.hear($0, turn: turn, client: client, continuation: continuation, finished: finished.continuation)
                     }
 
+                    var references: [String] = []
                     for att in request.attachments {
-                        try await Self.attach(att, runtime: runtime, client: client)
+                        if let reference = try await Self.attach(att, runtime: runtime, client: client) { references.append(reference) }
                     }
                     // prompt.submit takes no instructions: a reply language rides on the message.
-                    let text = request.userText + (request.replyLanguage.map(ReplyLanguage.note) ?? "")
+                    let text = Self.prompt(request.userText, naming: references) + (request.replyLanguage.map(ReplyLanguage.note) ?? "")
                     let submit = try await client.call("prompt.submit", params: .object([
                         "session_id": .string(runtime), "text": .string(text)]))
                     if submit["status"]?.string == "queued" { continuation.yield(.status("queued behind a running turn…")) }
@@ -343,9 +344,22 @@ nonisolated struct HermesServeTransport: HermesTransport {
     /// Stages one attachment on the session; the next `prompt.submit` consumes it. The disk
     /// read and base64 of up to 8 MB happen off the main actor.
     @MainActor
-    private static func attach(_ att: Attachment, runtime: String, client: HermesServeClient) async throws {
+    /// Hands an attachment to the host. A picture or a PDF is kept with the session and goes
+    /// out with the next message by itself. Any other file is only put in the session's
+    /// workspace: the host answers with a reference to it (`@file:attachments/notes.txt`), and
+    /// the agent learns of the file only if the message names it. That reference is returned.
+    private static func attach(_ att: Attachment, runtime: String, client: HermesServeClient) async throws -> String? {
         let (method, params) = await Task.detached { Self.attachFrame(att, runtime: runtime) }.value
-        try await client.call(method, params: params)
+        let result = try await client.call(method, params: params)
+        return method == "file.attach" ? result["ref_text"]?.string?.nilIfEmpty : nil
+    }
+
+    /// The message as it is submitted: what was typed, then the files it comes with, by the
+    /// references the host gave for them.
+    nonisolated static func prompt(_ text: String, naming references: [String]) -> String {
+        guard !references.isEmpty else { return text }
+        let named = references.joined(separator: " ")
+        return text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? named : text + "\n\n" + named
     }
 
     nonisolated private static func attachFrame(_ att: Attachment, runtime: String) -> (method: String, params: JSONValue) {

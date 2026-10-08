@@ -343,6 +343,13 @@ no camera). Images are downscaled to 1600 px JPEG:
 | Hermes API | `input_image` data URL parts | inlined into the prompt | refused (no file parts) |
 | OpenAI-compatible | `image_url` parts (needs a vision model) | inlined | refused |
 
+`file.attach` only puts the file in the session's workspace and answers with a reference to it
+(`@file:attachments/notes.txt`). Nothing ties it to the next message: the agent learns of the
+file only if the message names it, so the references are added to what is submitted
+(`HermesServeTransport.prompt`). Hermes then inlines a text file where the reference stands and
+names any other by path and type. Until 2026-10-07 the reference was dropped and such files
+never reached the agent; `lab.sh approvals` now attaches one of each kind on every release.
+
 Bytes are stored one file per attachment under Application Support (file-protected); transcripts
 keep metadata only. The share extension (`EchoShare`) writes to the App Group
 (`group.com.goosehouse.echo`); the app turns shared items into a draft on its next foreground.

@@ -18,6 +18,10 @@ that follows in the same conversation is an ordinary one):
     lab:outage     the endpoint answers 500 every time: one it retries, then gives up on
     lab:hiccup     the endpoint answers 500 twice, then as usual: one it retries and gets past
 
+And one for attachments: a message with "lab:file" in it is answered "[file seen]" when what
+reached the model also holds "lab-file-token" (a text file's contents, as Hermes inlines them)
+or "lab-clip.mp4" (how it names a file it can't inline), and "[file missing]" when it doesn't.
+
 usage: stub_llm.py <port> <name> <model,model,...>
 """
 import json
@@ -88,6 +92,8 @@ class Handler(BaseHTTPRequestHandler):
             if failure:
                 return self._json(*failure)
             planned = next((plan for word, plan in CALLS.items() if word in just_said and plan[0] in offered), None)
+            if "lab:file" in just_said:
+                text = "[file seen]" if "lab-file-token" in just_said or "lab-clip.mp4" in just_said else "[file missing]"
             if messages[-1].get("role") == "tool":
                 text = "[kept]" if os.path.isdir(TARGET) else "[gone]"
             elif "danger" in asked and "terminal" in offered:
