@@ -458,6 +458,32 @@ final class SpeechRecognizer {
         return task
     }
 
+    /// The transcriber's last results, which normally end right behind the analyzer. A
+    /// transcriber that was given no audio never ends them, whatever the analyzer is told: a mic
+    /// held behind a reply that nobody talked over, or a listen cancelled as it opened. Waiting
+    /// for those left the recogniser finalizing for good, and every later `start` waiting on
+    /// it: after one spoken reply the mic would not open again. So with no audio heard the
+    /// reading is given up at once, and otherwise after `resultsGrace` at the latest.
+    private func lastResults(heardAudio: Bool) async {
+        guard let reading = resultsTask else { return }
+        guard heardAudio else {
+            reading.cancel()
+            await reading.value
+            return
+        }
+        let giveUp = Task {
+            try await Task.sleep(for: Self.resultsGrace)
+            Self.log.error("the transcriber's results didn't end; no longer waiting for them")
+            reading.cancel()
+        }
+        await reading.value
+        giveUp.cancel()
+    }
+
+    /// How long the results may take to end once the analyzer has finished; they take a few
+    /// hundredths of a second.
+    private static let resultsGrace: Duration = .seconds(2)
+
     private func teardownAndFinalize() async -> String {
         state = .finalizing
         engine.inputNode.removeTap(onBus: 0)
@@ -471,6 +497,7 @@ final class SpeechRecognizer {
             AudioSessionController.shared.refreshRoute()
         }
         tap?.flush()   // the last few frames still staged for the analyzer
+        let heardAudio = tap?.hasFedAnalyzer ?? false
         inputContinuation?.finish()
         inputContinuation = nil
         let finalizeStart = Date.now
@@ -479,8 +506,8 @@ final class SpeechRecognizer {
         } catch {
             log.error("finalize failed: \(error.localizedDescription)")
         }
-        await resultsTask?.value
-        log.info("finalize took \(Date.now.timeIntervalSince(finalizeStart), format: .fixed(precision: 3))s")
+        await lastResults(heardAudio: heardAudio)
+        log.info("finalize took \(Date.now.timeIntervalSince(finalizeStart), format: .fixed(precision: 3))s\(heardAudio ? "" : " (no audio was heard)")")
         resultsTask = nil
         analyzer = nil
         transcriber = nil
@@ -514,6 +541,9 @@ nonisolated private final class TapProcessor: @unchecked Sendable {
     /// (under `stageLock`, like `staged`), for `release` to send first or drop.
     private let kept: AVAudioPCMBuffer
     private var holding = false
+    /// Whether the analyzer has been handed any audio at all (under `stageLock`).
+    private var fed = false
+    var hasFedAnalyzer: Bool { stageLock.withLock { fed } }
     private static let heldSeconds = 1.0
     /// Watches the level for a voice while a reply plays; nil when nobody asked.
     private let watch = OSAllocatedUnfairLock<BargeInDetector?>(initialState: nil)
@@ -574,6 +604,7 @@ nonisolated private final class TapProcessor: @unchecked Sendable {
                 Self.copy(kept.frameLength, from: kept, to: buffer, at: 0)
                 buffer.frameLength = kept.frameLength
                 continuation.yield(AnalyzerInput(buffer: buffer))
+                fed = true
             }
             kept.frameLength = 0
             holding = false
@@ -656,6 +687,7 @@ nonisolated private final class TapProcessor: @unchecked Sendable {
         buffer.frameLength = staged.frameLength
         staged.frameLength = 0
         continuation.yield(AnalyzerInput(buffer: buffer))
+        fed = true
     }
 
     /// A raw byte copy: the analyzer picks its own sample format (16-bit as readily as float),
