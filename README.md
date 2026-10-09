@@ -37,7 +37,8 @@ and can't read them ([docs/push.md](docs/push.md)).
 - **The agent's plan.** When Hermes keeps a task list for a long job, the reply shows it as a
   checklist: what is done, what it is on, what is left.
 - **The server too.** What the gateway is connected to, its MCP servers with a switch and a test
-  for each, its logs, and restarting or updating Hermes, from Settings → Gateway.
+  for each, its logs, and restarting or updating Hermes, from Settings → Gateway. And its
+  folders, from Settings → Files: look at a file, edit a text one, upload, make folders, delete.
 - **Set up by code.** Scan a QR code or open a setup link and the connection fills itself in. A
   device that is set up can show the code for the next one.
 - **Everywhere on iOS.** Siri and Shortcuts (also by Hermes profile: "Ask Work in Redde"), the

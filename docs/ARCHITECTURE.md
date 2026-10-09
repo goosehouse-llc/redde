@@ -121,6 +121,46 @@ still running and what it has printed.
 `EchoUITests/GatewayUITests` walks. `scripts/hermes-lab/lab.sh admin` runs the client and the
 model against each release.
 
+### The server's files
+
+Settings → Files is the Hermes host's folders, through the Dashboard's own file manager
+(`ServerFiles.swift`, `ServerFilesModel.swift`, `FilesView.swift`). The routes are the same in
+Hermes 0.21.0, 0.21.3 and 0.21.5, and like the Gateway screen it takes the Dashboard login.
+
+| What | Route |
+|---|---|
+| A folder: what is in it, its parent, whether the server keeps to one folder | `GET /api/files?path=` |
+| A file, saved to the phone | `GET /api/files/download?path=` |
+| A file from the phone | `POST /api/files/upload-stream` (a multipart form) |
+| A new folder | `POST /api/files/mkdir` |
+| Delete a file, or a folder with everything in it | `DELETE /api/files` |
+| A text file read for the editor, and saved back | `GET /api/fs/read-text`, `POST /api/fs/write-text` |
+
+- **Where it starts** is the server's choice: its user's home, or the one folder a hosted install
+  (or `HERMES_DASHBOARD_FILES_ROOT`) keeps the file manager to, in which case nothing above it
+  opens and the screen offers no "Go to Folder". Otherwise the first page has a link to the
+  Hermes home of the profile in use, which is a dot folder and would be hidden with the rest.
+- **Hermes keeps credentials out**: `.env`, `auth.json`, `config.yaml`, the token folders. They
+  are not listed, and asking for one is refused; the screen says so.
+- **Transfers go by file, not through memory.** A download is saved by the URL session and moved
+  to a folder of its own under the temporary directory, under its own name, for Quick Look, whose
+  share button is the way to keep it or send it on; those copies are thrown away when the browser
+  is next opened. An upload's form is written to a file first, the source copied through in
+  pieces, and sent from there. Hermes takes and gives at most 100 MB as one file; a larger one
+  isn't sent or asked for.
+- **An upload never replaces unasked.** A name already in the folder is held back and asked
+  about; only a yes sends it with `overwrite`.
+- **Text opens in an editor** when its type or its ending says text and it is no larger than the
+  512 KB Hermes reads for one. Hermes says when what it read was cut short or isn't text after
+  all; then it can be read and not saved, since saving would cut the file short.
+- A "+" in a name is sent as `%2B`: in a query the server reads a bare one as a space.
+
+`scripts/hermes-lab/lab.sh files` drives the client against each release inside a scratch folder
+of its own: a file up, listed and down byte for byte, a refusal to replace, text read and saved,
+three megabytes both ways, a credentials file neither listed nor handed out, and a folder deleted
+with what was in it. `-echo.demoFiles` shows the screen on sample folders for
+`EchoUITests/FilesUITests`.
+
 ### Servers
 
 Redde keeps a list of Hermes servers (Settings → Server, or the server row at the top of the

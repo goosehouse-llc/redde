@@ -19,6 +19,7 @@ import WidgetKit
 /// - `-echo.demoHosts`: replace any real endpoints with example hosts.
 /// - `-echo.demoKanban`: a sample Kanban board instead of the server's.
 /// - `-echo.demoGateway`: Settings → Gateway on sample data, with no server (and the row unlocked).
+/// - `-echo.demoFiles`: Settings → Files on sample folders, with no server (and the row unlocked).
 /// - `-echo.demoChatControls`: the model menu's "This conversation" switches on sample data.
 /// - `-echo.demoTodos`: a conversation in which the agent keeps a task list (the checklist under a reply).
 /// - `-echo.demoWidgets`: fill the "Needs you" and Context widgets with sample data (two requests
@@ -80,6 +81,7 @@ enum DevHooks {
     static var demoProjects: Bool { has("-echo.demoProjects") }
     static var demoGateway: Bool { has("-echo.demoGateway") }
     static var demoChatControls: Bool { has("-echo.demoChatControls") }
+    static var demoFiles: Bool { has("-echo.demoFiles") }
     static var expandAppIcons: Bool { has("-echo.expandAppIcons") }
     static var voiceDemo: Bool { has("-echo.voiceDemo") }
     static var settingsAnchor: Bool { has("-echo.settingsAnchor") }

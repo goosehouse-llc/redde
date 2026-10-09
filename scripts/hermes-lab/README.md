@@ -14,6 +14,7 @@ scripts/hermes-lab/lab.sh signin         # the app's Dashboard client signs in t
 scripts/hermes-lab/lab.sh admin          # Settings → Gateway: status, MCP servers, logs, a restart
 scripts/hermes-lab/lab.sh controls       # one conversation's switches (run without asking, fast mode), and a move to a project
 scripts/hermes-lab/lab.sh todos          # the agent's task list as a reply's checklist, on both connections, live and reopened
+scripts/hermes-lab/lab.sh files          # the file browser: list, upload, download, edit text, make folders, delete
 scripts/hermes-lab/lab.sh push           # the push plugin: pairing, and a note for everything it announces
 scripts/hermes-lab/lab.sh push --app     # and the app in a simulator pairs with each release
 scripts/hermes-lab/lab.sh up v2026.9.24 two   # leave one lab running to poke at; `down` stops it
@@ -107,6 +108,17 @@ tool's own answer when the turn is over, and both replies have the same list whe
 Two things print as notes (`----`) and not as failures, because they are how that Hermes is:
 0.21.3 and later turn the wordless merge down, and their API starts each turn on an empty list,
 so the merge there leaves two items where the Dashboard has three.
+
+## The server's files
+
+`files` runs `EchoTests/HermesLabFilesTests` on the `approval` scenario (any with a Dashboard
+login would do). The Dashboard's file manager starts in the home of whoever runs the lab, so the
+test keeps to a scratch folder it makes itself, `files-<id>` under the lab's own directory, and
+removes it at the end; nothing else is written or deleted. In there: a file with a space and a
+plus in its name goes up, is listed with its size and type and comes back byte for byte; a second
+upload of that name is refused until it is asked to replace; text is read, changed and read
+again; three megabytes go both ways with progress to the end; a `.env` is neither listed nor
+handed out; a folder is deleted with what was in it.
 
 ## Gateway administration
 

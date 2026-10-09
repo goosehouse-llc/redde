@@ -273,6 +273,15 @@ struct AgentSettings<Details: View>: View {
         .disabled(!canEditFiles)
 
         Section {
+            NavigationLink { FilesView() } label: { Label("Files", systemImage: "folder") }
+                .disabled(!canBrowseFiles)
+        } footer: {
+            Text(canBrowseFiles
+                 ? "The folders on the Hermes host: look at files, change text ones, upload from this iPhone, make folders and delete."
+                 : "The folders on the Hermes host: look at files, upload from this iPhone, make folders and delete. Needs the Hermes Dashboard login.")
+        }
+
+        Section {
             NavigationLink { GatewayView() } label: { Label("Gateway", systemImage: "gearshape.2") }
                 .disabled(!canAdminister)
         } footer: {
@@ -286,6 +295,14 @@ struct AgentSettings<Details: View>: View {
     private var canAdminister: Bool {
         #if DEBUG
         if DevHooks.demoGateway { return true }
+        #endif
+        return canEditFiles
+    }
+
+    /// The file browser is the Dashboard's file manager, so it takes that login too.
+    private var canBrowseFiles: Bool {
+        #if DEBUG
+        if DevHooks.demoFiles { return true }
         #endif
         return canEditFiles
     }

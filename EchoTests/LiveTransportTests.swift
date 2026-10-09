@@ -616,6 +616,124 @@ struct HermesLabTodoTests {
     }
 }
 
+/// The file browser's client against the lab (`scripts/hermes-lab/lab.sh files`, the `approval`
+/// scenario, whose Dashboard has a login): the app's own calls on an unmodified Hermes. Everything
+/// happens inside a scratch folder the test makes under the lab's directory and removes at the
+/// end; nothing else on the machine is written or deleted. Skips when no such lab is up.
+struct HermesLabFilesTests {
+    private func local(_ name: String, _ data: Data) throws -> URL {
+        let url = FileManager.default.temporaryDirectory.appending(path: "lab-files-\(UUID().uuidString)-\(name)")
+        try data.write(to: url)
+        return url
+    }
+
+    @Test func theFileBrowserWorksOnAnUnmodifiedHermes() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        func report(_ ok: Bool, _ what: String, _ detail: String = "") { HermesLabApprovalTests.report(ok, what, detail) }
+        func refusal(_ work: () async throws -> Void) async -> String {
+            do { try await work(); return "it went through" } catch { return ServerFiles.explain(error) }
+        }
+
+        // Where the server starts: its user's home, with nothing locked.
+        let home = try await client.folder(at: nil)
+        report(home.path.hasPrefix("/") && home.lockedRoot == nil && !home.entries.isEmpty && home.parent != nil,
+               "the starting folder is the server user's home, and lists", "\(home.entries.count) entries, locked: \(home.lockedRoot ?? "no")")
+        report(home.entries.first?.isDirectory == true || home.entries.allSatisfy { !$0.isDirectory }, "folders come first")
+        let tilde = try? await client.folder(at: "~")
+        report(tilde?.path == home.path, "~ is that home", tilde?.path ?? "refused")
+
+        // A scratch folder of the test's own, under the lab's directory.
+        let labs = ServerFiles.join(home.path, ".cache/redde-hermes-lab")
+        let scratchName = "files-\(UUID().uuidString.prefix(8))"
+        let scratch = try await client.makeFolder(scratchName, in: labs)
+        report(scratch.isDirectory && scratch.path == ServerFiles.join(labs, scratchName), "a folder is made", scratch.path)
+        guard scratch.path.contains("/redde-hermes-lab/files-") else { return }
+
+        // Up, listed, down: a name with a space and a plus in it.
+        let words = Data("line one\nline two: ünïcödé\n".utf8)
+        let name = "hello world+1.txt"
+        do {
+            let up = try await client.upload(try local("a.txt", words), as: name, into: scratch.path, replacing: false, watch: nil)
+            report(up.name == name && up.size == words.count, "a file is uploaded under its name", "\(up.name), \(up.size ?? -1) bytes")
+            let listed = try await client.folder(at: scratch.path)
+            let entry = listed.entry(named: name)
+            report(entry?.size == words.count && entry?.modified != nil && entry?.mimeType == "text/plain" && listed.parent == labs,
+                   "the folder lists it with its size, date and type", "\(String(describing: entry))")
+            let down = try await client.download(entry ?? up, watch: nil)
+            report((try? Data(contentsOf: down)) == words && down.lastPathComponent == name, "it comes back byte for byte, under its name", down.lastPathComponent)
+        } catch {
+            report(false, "a file goes up, is listed and comes down", String(error.localizedDescription.prefix(200)))
+        }
+
+        // A file of that name is not replaced unasked.
+        let file = ServerFile(name: name, path: ServerFiles.join(scratch.path, name), isDirectory: false)
+        let other = Data("replaced\n".utf8)
+        let said = await refusal { _ = try await client.upload(try self.local("b.txt", other), as: name, into: scratch.path, replacing: false, watch: nil) }
+        report(said == "Something with that name is already there.", "a second upload of that name is refused", said)
+        do {
+            _ = try await client.upload(try local("b.txt", other), as: name, into: scratch.path, replacing: true, watch: nil)
+            let text = try await client.text(of: file)
+            report(text == ServerText(text: "replaced\n"), "asked to replace, it replaces, and the text reads back", "\(text)")
+            try await client.write("changed on the phone\n", to: file)
+            report(try await client.text(of: file).text == "changed on the phone\n", "text changed on the phone is saved")
+        } catch {
+            report(false, "replacing and editing text", String(error.localizedDescription.prefix(200)))
+        }
+
+        // Something bigger than a packet or two, and not text.
+        do {
+            var bytes = Data(count: 3_300_000)
+            bytes.withUnsafeMutableBytes { raw in for i in stride(from: 0, to: raw.count, by: 97) { raw[i] = UInt8(truncatingIfNeeded: i &* 31) } }
+            let watch = TransferWatch()
+            let up = try await client.upload(try local("blob.bin", bytes), as: "blob.bin", into: scratch.path, replacing: false, watch: watch)
+            let down = try await client.download(up, watch: watch)
+            report((try? Data(contentsOf: down)) == bytes && watch.fraction == 1, "three megabytes go up and come down whole, with progress to the end",
+                   "progress \(String(describing: watch.fraction))")
+            let read = try await client.text(of: up)
+            report(read.binary && !read.canEdit, "bytes that aren't text are known for it")
+        } catch {
+            report(false, "a larger file both ways", String(error.localizedDescription.prefix(200)))
+        }
+
+        // Hermes keeps credentials out of its file manager.
+        do {
+            let secret = ServerFile(name: ".env", path: ServerFiles.join(scratch.path, ".env"), isDirectory: false)
+            try await client.write("LAB_SECRET=not-a-secret\n", to: secret)
+            let listed = try await client.folder(at: scratch.path)
+            let hidden = listed.entry(named: ".env") == nil
+            let why = await refusal { _ = try await client.download(secret, watch: nil) }
+            report(hidden && why == "Hermes doesn't hand this one out: it holds credentials.", "a credentials file is neither listed nor handed out", "listed: \(!hidden); download: \(why)")
+        } catch {
+            report(false, "a credentials file is kept out", String(error.localizedDescription.prefix(200)))
+        }
+
+        // A folder with something in it, removed whole; then a file.
+        do {
+            let sub = try await client.makeFolder("sub folder", in: scratch.path)
+            _ = try await client.upload(try local("c.txt", words), as: "inside.txt", into: sub.path, replacing: false, watch: nil)
+            try await client.delete(sub)
+            try await client.delete(file)
+            let listed = try await client.folder(at: scratch.path)
+            report(listed.entry(named: "sub folder") == nil && listed.entry(named: name) == nil && listed.entry(named: "blob.bin") != nil,
+                   "a folder goes with what is in it, and a file goes alone", "\(listed.entries.map(\.name))")
+        } catch {
+            report(false, "deleting a folder and a file", String(error.localizedDescription.prefix(200)))
+        }
+        let gone = await refusal { _ = try await client.folder(at: ServerFiles.join(scratch.path, "sub folder")) }
+        report(gone == "It isn't there any more.", "a folder that is gone says so", gone)
+
+        // The scratch folder itself.
+        do {
+            try await client.delete(scratch)
+            let left = try await client.folder(at: labs).entry(named: scratchName)
+            report(left == nil, "the scratch folder is removed")
+        } catch {
+            report(false, "the scratch folder is removed", String(error.localizedDescription.prefix(200)))
+        }
+    }
+}
+
 /// A conversation's own switches and a move to a project, against the lab
 /// (`scripts/hermes-lab/lab.sh controls`, the `approval` scenario): the app's client on an
 /// unmodified Hermes. Auto-approve is checked by what it is for: the stub's "danger" turn wants to

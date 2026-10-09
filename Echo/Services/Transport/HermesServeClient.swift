@@ -310,6 +310,13 @@ final class HermesServeClient {
     /// bearer token. A 401 gets one fresh proof and one more try: the cookie the TTL vouched for
     /// is dead (gateway restart, password change), or the access token lapsed early.
     private func send(_ request: URLRequest, baseURL: URL) async throws -> (Data, URLResponse) {
+        try await send(request, baseURL: baseURL) { try await self.session.data(for: $0) }
+    }
+
+    /// The same, for a round trip that isn't data in and data out: a body sent from a file, or
+    /// an answer saved to one (`perform`).
+    private func send<Answer>(_ request: URLRequest, baseURL: URL,
+                              perform: (URLRequest) async throws -> (Answer, URLResponse)) async throws -> (Answer, URLResponse) {
         func authorized(_ token: String?) -> URLRequest {
             guard let token else { return request }
             var request = request
@@ -317,7 +324,7 @@ final class HermesServeClient {
             return request
         }
         let used = signInTokens()?.accessToken
-        let first = try await session.data(for: authorized(used))
+        let first = try await perform(authorized(used))
         guard (first.1 as? HTTPURLResponse)?.statusCode == 401 else { return first }
         if let used {
             try await refreshTokens(baseURL: baseURL, spent: used)
@@ -327,7 +334,7 @@ final class HermesServeClient {
         } else {
             return first
         }
-        return try await session.data(for: authorized(signInTokens()?.accessToken))
+        return try await perform(authorized(signInTokens()?.accessToken))
     }
 
     // MARK: - Browser sign-in
@@ -1122,12 +1129,51 @@ final class HermesServeClient {
         }
         let (data, response) = try await send(request, baseURL: baseURL)
         guard let http = response as? HTTPURLResponse else { throw TransportError.malformed("not HTTP") }
-        guard (200 ..< 300).contains(http.statusCode) else {
-            struct Detail: Decodable { var detail: String? }
-            let detail = (try? JSONDecoder().decode(Detail.self, from: data))?.detail
-            throw TransportError.http(status: http.statusCode, body: detail ?? String(decoding: data.prefix(200), as: UTF8.self))
-        }
+        guard (200 ..< 300).contains(http.statusCode) else { throw Self.refusal(http.statusCode, data) }
         return data
+    }
+
+    /// What a Dashboard REST call refused with, as `rest` reports it.
+    private static func refusal(_ status: Int, _ data: Data) -> TransportError {
+        struct Detail: Decodable { var detail: String? }
+        let detail = (try? JSONDecoder().decode(Detail.self, from: data))?.detail
+        return .http(status: status, body: detail ?? String(decoding: data.prefix(200), as: UTF8.self))
+    }
+
+    /// A Dashboard GET whose answer is saved to a file and not held in memory (a download). The
+    /// file is the system's temporary one: the caller moves it where it wants it. `watch` hears
+    /// of the transfer as it goes, for a progress bar.
+    func restDownload(_ path: String, watch: (any URLSessionTaskDelegate)? = nil) async throws -> URL {
+        guard let baseURL else { throw TransportError.badURL }
+        try await login(baseURL: baseURL)
+        guard let url = URL(string: path, relativeTo: baseURL.appending(path: "/"))?.absoluteURL else { throw TransportError.badURL }
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 60   // between packets, not for the whole file
+        let (file, response) = try await send(request, baseURL: baseURL) { try await self.session.download(for: $0, delegate: watch) }
+        guard let http = response as? HTTPURLResponse else { throw TransportError.malformed("not HTTP") }
+        guard (200 ..< 300).contains(http.statusCode) else {
+            // A refusal is saved like anything else: its few words are in the file.
+            let said = (try? Data(contentsOf: file)) ?? Data()
+            try? FileManager.default.removeItem(at: file)
+            throw Self.refusal(http.statusCode, said)
+        }
+        return file
+    }
+
+    /// A Dashboard POST whose body is a file on disk (a multipart form written out beforehand),
+    /// so an upload is never held in memory whole.
+    func restUpload(_ path: String, bodyFile: URL, contentType: String, watch: (any URLSessionTaskDelegate)? = nil) async throws -> JSONValue {
+        guard let baseURL else { throw TransportError.badURL }
+        try await login(baseURL: baseURL)
+        guard let url = URL(string: path, relativeTo: baseURL.appending(path: "/"))?.absoluteURL else { throw TransportError.badURL }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 120
+        request.setValue(contentType, forHTTPHeaderField: "Content-Type")
+        let (data, response) = try await send(request, baseURL: baseURL) { try await self.session.upload(for: $0, fromFile: bodyFile, delegate: watch) }
+        guard let http = response as? HTTPURLResponse else { throw TransportError.malformed("not HTTP") }
+        guard (200 ..< 300).contains(http.statusCode) else { throw Self.refusal(http.statusCode, data) }
+        return data.isEmpty ? .null : try JSONValue.parse(data)
     }
 
     /// One entry of the slash-command menu: `text` is what goes into the draft.
