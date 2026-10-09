@@ -1033,8 +1033,8 @@ stops (`VoiceSession.leftForeground`) unless hands-free is on or the car is conn
 
 ## Apple Watch
 
-A watchOS app (`Watch/`, target `EchoWatch`, embedded in the iPhone app) for one thing: ask a
-question by dictation, read the answer, hear it read aloud. It talks to Hermes itself, over plain
+A watchOS app (`Watch/`, target `EchoWatch`, embedded in the iPhone app): ask a question by
+dictation, read the answer, hear it read aloud, and carry on a conversation from the server. It talks to Hermes itself, over plain
 HTTP: the Hermes API or the fast lane. The phone hands over a `WatchConnection`
 (`Shared/WatchSync.swift`) as WatchConnectivity application context. A phone on the fast lane
 hands that over; a phone on either Hermes connection hands over the Hermes API, with the profile
@@ -1078,9 +1078,31 @@ the phone is asking (its choices as buttons, or dictated). A password is not for
 watch says to open the conversation on the phone. The phone's own notifications reach the wrist
 on their own. `Watch/AskReddeIntent.swift` is the Ask Redde App Shortcut: a Siri phrase on the
 watch, and what the Ultra's Action button runs (Settings › Action Button › Shortcut); it opens
-the app and starts dictation once the screen is up. Debug launch arguments for the simulator, which can neither dictate nor receive the
-phone's handover: `-echo.connection <hermesAPI|fastLane|phone> <url> <key>`, `-echo.ask "text"` and
-`-echo.preview <state>` (among them `approval` and `question`).
+the app and starts dictation once the screen is up.
+
+**Carrying a conversation on.** A watch that talks to the Hermes API itself can list the server's
+recent conversations (`Watch/ChatsView.swift`, `Models/WatchChats.swift`; the list button at the
+top left): the twenty newest that have anything in them, under their titles. Picking one makes it
+the session the watch's questions go into, and brings up its last question and answer, read from
+the end of its transcript, with its title above them. "New Chat" goes back to a session of the
+watch's own. The session and its title are kept, so the watch is still in that conversation the
+next day; another server, or a session deleted there, starts over. Through the iPhone and on the
+fast lane there is no list: the phone's end of the relay knows one question at a time, and the
+fast lane keeps no conversations.
+
+**The complication.** "Ask Redde" on a watch face, in the circular, corner, rectangular and inline
+sizes (`WatchWidgets/`, target `EchoWatchWidgets`, a WidgetKit extension inside the watch app). A
+tap opens the app with `redde-watch://ask`, which starts dictation as the Ask button does. It
+shows nothing that changes and shares no data with the app, so it has no timeline to keep and no
+app group. Its look lives in `WatchWidgets/AskComplication.swift`, which the watch app compiles
+too.
+
+Debug launch arguments for the simulator, which can neither dictate nor receive the
+phone's handover: `-echo.connection <hermesAPI|fastLane|phone> <url> <key>` (the phone is then not
+listened to: a paired simulator's phone would hand over its own), `-echo.ask "text"`,
+`-echo.preview <state>` (among them `approval` and `question`), `-echo.chatList`, `-echo.openChat <n>`,
+`-echo.complications` (the complication's sizes side by side, since a face can't be set up from a
+script) and `-echo.link <url>`.
 Paired simulators don't treat a watch app installed with `simctl` as the phone's companion, so
 the handover itself is tested on a real watch.
 

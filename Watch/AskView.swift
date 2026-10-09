@@ -20,6 +20,12 @@ struct AskView: View {
             .navigationTitle(store.agentName)
             .toolbar {
                 if store.connection != nil {
+                    // The server's conversations, to carry one on; where they can be listed.
+                    if store.canListChats {
+                        ToolbarItem(placement: .topBarLeading) {
+                            NavigationLink { ChatsView() } label: { Label("Chats", systemImage: "list.bullet") }
+                        }
+                    }
                     // The crown sets the volume, not the scroll: the control keeps crown focus.
                     ToolbarItem(placement: .topBarTrailing) { VolumeControl().frame(width: 36, height: 36) }
                     // Not while the agent is waiting on the wrist: the bar would sit on the
@@ -54,10 +60,13 @@ struct AskView: View {
             Text("Ask \(store.agentName)")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
-            // Which connection the phone handed over: the fast lane is the bare model, no tools.
-            Text(connectionLabel)
+            // The conversation the question goes into, when one was picked; else which
+            // connection the phone handed over: the fast lane is the bare model, no tools.
+            Text(store.chatTitle.map { "in “\($0)”" } ?? connectionLabel)
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -73,6 +82,9 @@ struct AskView: View {
     private var exchange: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
+                if let chat = store.chatTitle {
+                    Text(chat).font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
+                }
                 Text(store.question)
                     .font(.footnote)
                     .foregroundStyle(.secondary)

@@ -45,6 +45,9 @@ and can't read them ([docs/push.md](docs/push.md)).
   Action Button, Control Center, a Live Activity,
   the share sheet, the camera, and Siri AI messaging on iOS 27 (opt-in). Widgets for the last
   reply, for what the agent is waiting on you for, and for how full the context is.
+- **On the wrist.** An Apple Watch app that asks by dictation and reads the answer aloud, carries
+  on a conversation picked from the server's list, answers approvals, and puts Ask Redde on a
+  watch face as a complication.
 - **Private.** An offline message queue, the conversations you have opened still readable with
   no connection, Face ID lock, and no account, analytics or tracking.
 
@@ -146,7 +149,8 @@ Debug builds accept launch flags for demos and screenshots, all listed in
 | --- | --- |
 | `Echo/` | The app: `App`, `Models`, `Services` (transports, voice, settings), `Views`, `Intents`, `CarPlay` |
 | `Shared/` | Code shared with the extensions (attachments, what the widgets show, controls) |
-| `EchoControls/`, `EchoShare/` | Widget and controls extension; share extension |
+| `EchoControls/`, `EchoShare/`, `EchoPush/` | Widget and controls extension; share extension; the extension that opens a paired Hermes's notifications |
+| `Watch/`, `WatchWidgets/` | The Apple Watch app, and its complication |
 | `EchoTests/`, `EchoUITests/` | Tests |
 | `companion/` | The website, the push-notification relay Worker and the Hermes plugin that feeds it, and a calendar MCP server for Hermes |
 | `scripts/` | Setup codes, the build-number bump, the CarPlay simulator, and the Hermes lab for testing against stock gateways |

@@ -145,6 +145,9 @@ targets:
       - path: Shared/ReplyMedia.swift
       - path: Echo/Services/Keychain.swift
       - path: Echo/Models/Message.swift
+      - path: Echo/Models/WatchChats.swift
+      # The complication's look and its link, shared with the extension that draws it.
+      - path: WatchWidgets/AskComplication.swift
       - path: Echo/Models/ReplyLanguage.swift
       - path: Echo/Services/Transport/HermesTransport.swift
       - path: Echo/Services/Transport/HermesSessionsTransport.swift
@@ -168,6 +171,8 @@ targets:
           - audio
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
+    dependencies:
+      - target: EchoWatchWidgets
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.goosehouse.echo.watchkitapp
@@ -175,6 +180,26 @@ targets:
         SWIFT_APPROACHABLE_CONCURRENCY: true
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        SKIP_INSTALL: true
+  # The watch app's complications (WidgetKit). They share no data with the app, only a link it
+  # opens, so the extension needs no app group.
+  EchoWatchWidgets:
+    type: app-extension
+    platform: watchOS
+    sources:
+      - path: WatchWidgets
+    info:
+      path: WatchWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: Redde
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.goosehouse.echo.watchkitapp.widgets
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
         SKIP_INSTALL: true
   EchoControls:
     type: app-extension
