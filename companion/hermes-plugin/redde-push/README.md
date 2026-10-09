@@ -16,6 +16,11 @@ hermes plugins install goosehouse-llc/redde/companion/hermes-plugin/redde-push -
 
 Restart Hermes (`hermes gateway restart`, and `hermes serve` if you run the Dashboard).
 
+Or leave the terminal out of it: with the Hermes Dashboard login saved in Redde, Settings ›
+Voice › Notify when Redde is closed has an Install the Plugin button that has this Hermes fetch
+and enable the same plugin. Hermes 0.21.5 and later load it at once; earlier ones still need the
+restart above.
+
 **If Redde is connected through the Dashboard**, that is all there is to do here. In Redde:
 Settings › Voice › Notify when Redde is closed › Pair with your server. A notification on the
 phone confirms the pairing.

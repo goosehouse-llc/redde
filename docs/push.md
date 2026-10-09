@@ -56,9 +56,13 @@ could pair their own phone; the relay could not, since it never sees a private k
 
 ### With one tap, over the Dashboard
 
-An app that is signed in to that Hermes's Dashboard needs no code and no terminal, once the
-plugin is installed. "Pair with <server>" does the same key agreement over the connection the
-app already has (`PushService.pairDirectly`):
+An app that is signed in to that Hermes's Dashboard needs no code, and from Hermes 0.21.5 no
+terminal at all: the same screen has Hermes install the plugin ("Install the Plugin", which asks
+the Dashboard to fetch this repository's plugin folder from GitHub and switch it on, the way its
+own Plugins page would), and that Hermes loads it at once. On 0.21.0 and 0.21.3 the install works
+the same but Hermes loads a new plugin only when it starts, so the gateway and the Dashboard
+have to be restarted on that machine first. Then "Pair with <server>" does the same key agreement
+over the connection the app already has (`PushService.pairDirectly`):
 
 1. The app asks the plugin for an offer: `command.dispatch redde-push "offer"`. The plugin makes
    a key pair, keeps it in memory for ten minutes at most, and answers

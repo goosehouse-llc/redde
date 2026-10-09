@@ -616,6 +616,61 @@ struct HermesLabTodoTests {
     }
 }
 
+/// Installing the notification plugin through the Dashboard, against the lab
+/// (`scripts/hermes-lab/lab.sh plugin`, the `approval` scenario, which has a Dashboard login and
+/// no plugin): Hermes fetches the plugin from this repository on GitHub, so the machine has to
+/// reach it, and what is installed is what is published there. Skips when no such lab is up.
+struct HermesLabPluginTests {
+    @Test func thePluginIsInstalledFromThePhone() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        func report(_ ok: Bool, _ what: String, _ detail: String = "") { HermesLabApprovalTests.report(ok, what, detail) }
+        let command = PushService.command(over: client)
+        func loaded() async -> Bool { (try? await command("offer"))?.hasPrefix("redde-push offer ") == true }
+
+        let before = try await client.pushPlugin()
+        report(before == PushPlugin.State(), "a Hermes without the plugin says so", "\(before)")
+        report(!(await loaded()), "and its Dashboard has no such command")
+
+        // Hermes allows its clone a minute; the first fetch of a repository can take longer.
+        var outcome: PushPlugin.Outcome?
+        var said = ""
+        for _ in 1 ... 3 where outcome == nil {
+            do { outcome = try await client.installPushPlugin(replacing: false) } catch {
+                said = PushPlugin.explain(error)
+                guard said.contains("try again") else { break }
+                print("  ----  the download timed out on Hermes's side; trying again")
+            }
+        }
+        report(outcome != nil, "Hermes installs it when the phone asks", outcome.map { "\($0)" } ?? said)
+        guard let outcome else { return }
+
+        let after = try await client.pushPlugin()
+        report(after.installed && after.enabled && after.version == PushPlugin.version && !after.isOutdated,
+               "it is listed, switched on, at the version this app goes with", "\(after)")
+
+        let live = await loaded()
+        switch outcome {
+        case .running:
+            report(live, "Hermes loaded it then and there: the plugin answers, and pairing can go ahead")
+        case .needsRestart:
+            print("  ----  this Hermes loads a new plugin only when it starts (0.21.0 and 0.21.3): the app says to restart it")
+            report(!live, "until that restart the plugin doesn't answer, as the app says")
+        }
+
+        // Asked again without replacing, Hermes refuses; asked to replace, it fetches it anew.
+        do {
+            _ = try await client.installPushPlugin(replacing: false)
+            report(false, "a second install is refused", "it went through")
+        } catch {
+            report(PushPlugin.explain(error).contains("already exists"), "a second install is refused", PushPlugin.explain(error))
+        }
+        var again: PushPlugin.Outcome?
+        for _ in 1 ... 3 where again == nil { again = try? await client.installPushPlugin(replacing: true) }
+        report(again == outcome, "an update fetches it again and ends the same way", "\(String(describing: again))")
+    }
+}
+
 /// The file browser's client against the lab (`scripts/hermes-lab/lab.sh files`, the `approval`
 /// scenario, whose Dashboard has a login): the app's own calls on an unmodified Hermes. Everything
 /// happens inside a scratch folder the test makes under the lab's directory and removes at the

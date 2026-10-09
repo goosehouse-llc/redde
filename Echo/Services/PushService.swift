@@ -59,7 +59,7 @@ nonisolated enum PushError: LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case .noPlugin: "The Redde plugin isn't on this Hermes yet. Install it there (the command is on the screen behind this one), restart Hermes, then pair again."
+        case .noPlugin: "This Hermes hasn't loaded the Redde plugin. Install it from the screen behind this one; if it was only just installed, restart Hermes there (the gateway and the Dashboard), then pair again."
         case .oldPlugin: "The Redde plugin on this Hermes is an older one that pairs only by code. Update it there by running the install command again with --force, restart Hermes, then pair again."
         case .noDashboard(let reason): "Couldn't ask your Hermes over the Dashboard: \(reason)"
         case .refused(let reason): "Your Hermes didn't take the pairing: \(reason). Try again."

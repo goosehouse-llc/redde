@@ -15,6 +15,7 @@ scripts/hermes-lab/lab.sh admin          # Settings → Gateway: status, MCP ser
 scripts/hermes-lab/lab.sh controls       # one conversation's switches (run without asking, fast mode), and a move to a project
 scripts/hermes-lab/lab.sh todos          # the agent's task list as a reply's checklist, on both connections, live and reopened
 scripts/hermes-lab/lab.sh files          # the file browser: list, upload, download, edit text, make folders, delete
+scripts/hermes-lab/lab.sh plugin         # the notification plugin installed through the Dashboard, as the app asks for it
 scripts/hermes-lab/lab.sh push           # the push plugin: pairing, and a note for everything it announces
 scripts/hermes-lab/lab.sh push --app     # and the app in a simulator pairs with each release
 scripts/hermes-lab/lab.sh up v2026.9.24 two   # leave one lab running to poke at; `down` stops it
@@ -119,6 +120,17 @@ plus in its name goes up, is listed with its size and type and comes back byte f
 upload of that name is refused until it is asked to replace; text is read, changed and read
 again; three megabytes go both ways with progress to the end; a `.env` is neither listed nor
 handed out; a folder is deleted with what was in it.
+
+## Installing the plugin from the app
+
+`plugin` runs `EchoTests/HermesLabPluginTests` on the `approval` scenario, which has a Dashboard
+login and no plugin. The app's client asks the Dashboard whether the plugin is there, has it
+installed, and asks again: listed, switched on, at the version the app's source has. Hermes fetches
+it from this repository on GitHub, so the machine has to be online, and what is installed is what
+is published there, not the working tree (`push` tests the plugin itself, from the tree). On
+0.21.5 the plugin has to answer its command straight away; on 0.21.0 and 0.21.3 it must not, since
+those load a plugin only when they start, and that prints as a note (`----`). Hermes allows its
+clone a minute, which the first fetch can overrun: the test tries again, as the screen says to.
 
 ## Gateway administration
 

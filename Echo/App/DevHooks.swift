@@ -20,6 +20,8 @@ import WidgetKit
 /// - `-echo.demoKanban`: a sample Kanban board instead of the server's.
 /// - `-echo.demoGateway`: Settings → Gateway on sample data, with no server (and the row unlocked).
 /// - `-echo.demoFiles`: Settings → Files on sample folders, with no server (and the row unlocked).
+/// - `-echo.demoPlugin missing|old|off|there [restart]`: the notifications screen's plugin line on a
+///   made-up server, with no Dashboard. Installing leaves it running; with `restart`, waiting for one.
 /// - `-echo.demoChatControls`: the model menu's "This conversation" switches on sample data.
 /// - `-echo.demoTodos`: a conversation in which the agent keeps a task list (the checklist under a reply).
 /// - `-echo.demoWidgets`: fill the "Needs you" and Context widgets with sample data (two requests

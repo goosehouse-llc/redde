@@ -887,7 +887,15 @@ is on).
 **When Redde is closed.** Those stop when iOS closes the app. From then on a paired Hermes sends
 them itself (Settings → Voice → "Notify when Redde is closed"): a plugin there seals a short note
 with a key only it and the phone hold, a relay passes it to Apple unread, and the `EchoPush`
-notification extension opens it (`Shared/PushSeal.swift`, `PushService`). Pairing is one tap for
+notification extension opens it (`Shared/PushSeal.swift`, `PushService`). An app with that
+Hermes's Dashboard login can have Hermes install the plugin (`PushPlugin.swift`: the Dashboard's
+own plugin routes, `GET /api/dashboard/plugins/hub` and `POST /api/dashboard/agent-plugins/install`,
+with the folder of this repository the terminal's command names). Hermes 0.21.5 loads it into the
+running gateway and Dashboard and says so, and pairing can go straight on; 0.21.0 and 0.21.3 put
+it on disk and switch it on, and load it when they next start, so the screen then asks for a
+restart on that machine, which no route can do for the Dashboard itself. A plugin older than the
+one this build's source has (`PushPlugin.version`, held to `plugin.yaml` by a test) is offered an
+update, which is the same install again, replacing. Pairing is one tap for
 an app signed in to that Hermes's Dashboard, and otherwise a QR code from `hermes redde-push pair`. A tap opens the conversation, fetched from the server; Reply on a
 reply's banner sends into it, and Approve and Deny on an approval's answer it, all behind an
 unlock; a question's takes the answer, typed or by a button for each of its choices. It announces a

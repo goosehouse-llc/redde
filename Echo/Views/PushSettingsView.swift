@@ -1,17 +1,27 @@
 import SwiftUI
 
 /// Settings › Notifications when Redde is closed: the Hermes machines this iPhone is paired with,
-/// and how to pair one. The plugin on the Hermes is the person's own to install. After that, an
-/// app signed in to that Hermes's Dashboard pairs with one tap; any other scans the code the
-/// plugin's command shows.
+/// and how to pair one. It takes a plugin on the Hermes. An app with that Hermes's Dashboard login
+/// can have Hermes install it and then pairs with one tap; any other is shown the command for a
+/// terminal there, and scans the code the plugin's command shows.
 struct PushSettingsView: View {
     @State private var push = PushService.shared
     @State private var settings = Settings.shared
+    @State private var plugin = PushPluginModel(manager: PushSettingsView.pluginManager)
+    @State private var confirmingInstall = false
     @State private var scanning = false
     @State private var offer: PushOffer?
     @State private var pairingDirectly = false
     @State private var pasteProblem: String?
     @Environment(\.scenePhase) private var scenePhase
+
+    /// The server the plugin is asked about: the Dashboard, or a stand-in (`-echo.demoPlugin`).
+    static var pluginManager: any PushPluginManaging {
+        #if DEBUG
+        if let demo = DevHooks.value("-echo.demoPlugin") { return DemoPushPlugin(demo, needsRestart: DevHooks.has("restart")) }
+        #endif
+        return HermesServeClient.shared
+    }
 
     static let installCommand = "hermes plugins install goosehouse-llc/redde/companion/hermes-plugin/redde-push --enable"
     static let pairCommand = "hermes redde-push pair"
@@ -42,7 +52,11 @@ struct PushSettingsView: View {
             }
 
             Section {
-                CommandRow(title: "On the machine that runs Hermes, install the plugin, then restart Hermes", command: Self.installCommand)
+                if canAskDashboard {
+                    pluginRow
+                } else {
+                    CommandRow(title: "On the machine that runs Hermes, install the plugin, then restart Hermes", command: Self.installCommand)
+                }
                 if signedInToDashboard {
                     // Signed in to that Hermes's Dashboard: the two can agree on the key over it.
                     Button { pairingDirectly = true } label: {
@@ -70,10 +84,76 @@ struct PushSettingsView: View {
                 return true
             }
         }
+        .confirmationDialog(installQuestion, isPresented: $confirmingInstall, titleVisibility: .visible) {
+            Button(plugin.installTitle) { Task { await plugin.install() } }
+        } message: {
+            Text("Hermes downloads it from github.com/goosehouse-llc/redde and switches it on. It is the same plugin the command in a terminal installs.")
+        }
+        .task { if canAskDashboard { await plugin.refresh() } }
         .sheet(item: $offer, onDismiss: { push.reload() }) { PushPairingSheet(offer: $0) }
         .sheet(isPresented: $pairingDirectly, onDismiss: { push.reload() }) { PushPairingSheet(offer: nil, server: serverName) }
         .onAppear { push.reload() }
         .onChange(of: scenePhase) { push.reload() }
+    }
+
+    /// There is a Dashboard login to ask about the plugin with, whichever connection chats use.
+    private var canAskDashboard: Bool {
+        #if DEBUG
+        if DevHooks.value("-echo.demoPlugin") != nil { return true }
+        #endif
+        return HermesServeClient.shared.hasCredentials
+    }
+
+    private var installQuestion: String {
+        let server = serverName ?? "your Hermes"
+        return plugin.state?.installed == true ? "Have \(server) fetch the plugin again?" : "Have \(server) install the Redde plugin?"
+    }
+
+    /// Whether the plugin is on the server, and the button that puts it there.
+    @ViewBuilder
+    private var pluginRow: some View {
+        switch plugin.phase {
+        case .checking:
+            HStack(spacing: 10) {
+                ProgressView()
+                Text("Looking for the plugin on \(serverName ?? "your Hermes")…").foregroundStyle(.secondary)
+            }
+        case .unknown:
+            // The Dashboard couldn't be asked: the terminal's way still works.
+            CommandRow(title: "On the machine that runs Hermes, install the plugin, then restart Hermes", command: Self.installCommand)
+        case let .known(state):
+            VStack(alignment: .leading, spacing: 6) {
+                Label(Self.pluginLine(state, restart: plugin.outcome == .needsRestart), systemImage: state.installed && state.enabled && !state.isOutdated ? "checkmark.circle" : "shippingbox")
+                if plugin.outcome == .needsRestart {
+                    Text("Hermes loads it when it next starts. Restart the gateway and the Dashboard on that machine, then pair.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+                if let problem = plugin.problem {
+                    Text(problem).font(.footnote).foregroundStyle(.red)
+                }
+            }
+            if plugin.installing {
+                HStack(spacing: 10) {
+                    ProgressView()
+                    Text("Hermes is fetching it from GitHub. This can take a minute.").font(.footnote).foregroundStyle(.secondary)
+                }
+            } else if plugin.offersInstall {
+                Button(plugin.installTitle, systemImage: "arrow.down.circle") { confirmingInstall = true }
+            }
+            if plugin.outcome == .needsRestart {
+                CommandRow(title: "On that machine", command: "hermes gateway restart")
+            }
+        }
+    }
+
+    /// The plugin's state in a line.
+    static func pluginLine(_ state: PushPlugin.State, restart: Bool) -> String {
+        guard state.installed else { return "The plugin isn't on this Hermes yet." }
+        let version = state.version.map { " \($0)" } ?? ""
+        if restart { return "The plugin\(version) is installed." }
+        if !state.enabled { return "The plugin\(version) is installed, but switched off." }
+        if state.isOutdated { return "The plugin\(version) is installed; this Redde goes with \(PushPlugin.version)." }
+        return "The plugin\(version) is on this Hermes."
     }
 
     /// The connection the app is on is a Dashboard it has a login for. Over the Hermes API there
