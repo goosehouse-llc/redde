@@ -66,6 +66,16 @@ final class ComposerUITests: XCTestCase {
         if delete.waitForExistence(timeout: 3) { delete.tap() }
     }
 
+    /// Taps a conversation's row in the list. The title is also the header of the conversation
+    /// that is open, and a plain tap fails when it finds both, which happened once in a full
+    /// run as the list came in: wait for the row to be the only one.
+    private func tapRow(_ title: String, in app: XCUIApplication) {
+        let matches = app.staticTexts.matching(identifier: title)
+        let deadline = Date().addingTimeInterval(5)
+        while matches.count != 1, Date() < deadline { RunLoop.current.run(until: Date().addingTimeInterval(0.2)) }
+        matches.firstMatch.tap()
+    }
+
     func testEachConversationKeepsItsOwnDraft() {
         continueAfterFailure = false
         var app = launch(["-echo.fresh", "-echo.demoLibrary"])
@@ -77,7 +87,7 @@ final class ComposerUITests: XCTestCase {
         app.buttons["Conversations"].firstMatch.tap()
         let hike = app.staticTexts["Plan the weekend hike"]
         XCTAssertTrue(hike.waitForExistence(timeout: 10), "The demo conversations aren't in the list")
-        hike.tap()
+        tapRow("Plan the weekend hike", in: app)
         composer = field(app)
         XCTAssertTrue(app.navigationBars.staticTexts["Plan the weekend hike"].waitForExistence(timeout: 10))
         clear(composer)
@@ -96,7 +106,7 @@ final class ComposerUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Has a draft"].waitForExistence(timeout: 5), "The list doesn't mark the conversation with a draft")
         XCTAssertEqual(app.staticTexts.matching(identifier: "Has a draft").count, 1, "Only the one conversation has a draft")
         keep("a draft marked in the list")
-        hike.tap()
+        tapRow("Plan the weekend hike", in: app)
         XCTAssertEqual(field(app).value as? String, "about the hike")
         XCUIDevice.shared.press(.home)   // drafts are written as the app leaves the screen
         sleep(1)
@@ -105,7 +115,7 @@ final class ComposerUITests: XCTestCase {
         _ = field(app)
         app.buttons["Conversations"].firstMatch.tap()
         XCTAssertTrue(hike.waitForExistence(timeout: 10))
-        hike.tap()
+        tapRow("Plan the weekend hike", in: app)
         XCTAssertTrue(app.navigationBars.staticTexts["Plan the weekend hike"].waitForExistence(timeout: 10))
         XCTAssertEqual(field(app).value as? String, "about the hike", "The draft didn't survive the app being closed")
         clear(field(app))
