@@ -111,7 +111,10 @@ up() {
     [[ "$serve" == 200 && "$api" == 200 ]] && return 0
     sleep 1
   done
-  echo "lab did not come up (serve=$serve api=$api); logs in $run"; return 1
+  echo "lab did not come up (serve=$serve api=$api); logs in $run"
+  # The next lab clears those logs away: say now what the two last wrote.
+  tail -n 8 "$run/serve.log" "$run/gateway.log" 2>/dev/null | cut -c1-300
+  return 1
 }
 
 # The app's own transport code against the running lab. The simulator shares the Mac's loopback.
