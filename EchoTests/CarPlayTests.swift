@@ -175,6 +175,21 @@ struct CarPlayTests {
         }
     }
 
+    @Test func everyStateKeepsItsPictureForAsLongAsItLasts() {
+        // The card treats a state's image as an animation and takes away one that doesn't repeat
+        // once its single cycle is over: on 2026-10-07 every state was set to play once, and the
+        // car showed "Listening…" and "Thinking…" with nothing above the words.
+        let states = Harness().delegate.voiceTemplate().voiceControlStates
+        for state in states {
+            #expect(state.repeats, "\(state.identifier) would lose its picture after a moment")
+            let image = state.image
+            #expect(image != nil, "\(state.identifier) has no picture")
+            // CarPlay takes at most 150 by 150 points.
+            #expect((image?.size.width ?? 999) <= 150 && (image?.size.height ?? 999) <= 150, "\(state.identifier)'s picture is larger than the card takes")
+        }
+        #expect(CarPlayArtwork.voiceImageSide == 150)
+    }
+
     @Test func muteShutsTheMicAndKeepsTheConversation() async throws {
         let h = Harness()
         try await press(h.row("Talk with Redde"))

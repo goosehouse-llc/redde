@@ -197,7 +197,10 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// Not private, so the tests can count them and press the buttons.
     func voiceTemplate() -> CPVoiceControlTemplate {
         func state(_ id: CarPlayArtwork.VoiceState, _ titles: [String], _ buttons: [CardButton]) -> CPVoiceControlState {
-            let state = CPVoiceControlState(identifier: id.rawValue, titleVariants: titles, image: CarPlayArtwork.voiceStateImage(id), repeats: false)
+            // `repeats`: the card plays a state's image as an animation, and one that doesn't
+            // repeat is taken off the card when its one cycle is over, still or not. Every state
+            // here lasts until the session moves on, so every image stays.
+            let state = CPVoiceControlState(identifier: id.rawValue, titleVariants: titles, image: CarPlayArtwork.voiceStateImage(id), repeats: true)
             if #available(iOS 26.4, *) { state.actionButtons = buttons.map(button) }
             return state
         }

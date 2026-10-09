@@ -49,8 +49,11 @@ enum CarPlayArtwork {
         }
     }
 
+    /// The largest image a voice-control state takes, in points (CarPlay's own limit).
+    static let voiceImageSide: CGFloat = 150
+
     /// The voice card's large image for each state: a graphite disc with light or gold marks.
-    static func voiceStateImage(_ state: VoiceState, side: CGFloat = 160) -> UIImage {
+    static func voiceStateImage(_ state: VoiceState, side: CGFloat = voiceImageSide) -> UIImage {
         render(CGSize(width: side, height: side)) { ctx, rect in
             disc(ctx, rect)
             let u = side / 100
