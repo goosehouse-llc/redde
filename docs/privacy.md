@@ -40,6 +40,8 @@ The relay has no accounts and nothing that says who you are: no name, no email a
 
 A pairing is deleted from the relay when you remove it in Redde (swipe it away under Notify when Redde is closed), when Apple reports that the token is no longer valid, for example after the app is deleted, or after 120 days in which the iPhone has not checked in. Your Hermes server keeps its own record of the pairing until it next tries to send; `hermes redde-push remove` deletes it there.
 
+The Hermes server needs a small plugin for this. You can install it there yourself, or, when Redde is signed in to that server's Dashboard, have Redde ask the server to install it: the server then downloads the plugin from our public repository on GitHub. Redde passes the request to your own server and downloads nothing itself.
+
 Notifications that Redde posts itself while it is running do not involve the relay.
 
 ## Speech
@@ -48,7 +50,7 @@ Voice input is transcribed on your device using Apple's on-device speech recogni
 
 ## Siri and Shortcuts
 
-Redde offers Siri phrases and Shortcuts actions. When you use them, Apple's Siri processes your spoken command according to Apple's privacy policy, then hands control to Redde. Redde does not receive audio from Siri. Questions typed or dictated into the "Ask Redde a Question" shortcut action are sent only to your configured server.
+Redde offers Siri phrases and Shortcuts actions. When you use them, Apple's Siri processes your spoken command according to Apple's privacy policy, then hands control to Redde. Redde does not receive audio from Siri. Questions typed or dictated into the "Ask Redde a Question" shortcut action are sent only to your configured server. If you use Hermes profiles, Redde tells Siri and Shortcuts the names of the profiles it knows of, so that a phrase such as "Ask Work in Redde" is understood; Apple handles those names as it does any app's Siri phrases.
 
 ### Siri with Apple Intelligence (optional, off by default)
 
@@ -61,6 +63,8 @@ On iOS 27 and later you can turn on "Let Siri use Redde" in Settings. With it on
 - **Conversation history**, **attachments** and **drafts** (what you have typed and not sent) are stored in the app's private container with iOS data protection. They are not synced or backed up by Redde, though they are included in your own iCloud or computer backups of the device like any app data.
 - **Settings** are stored in the app's preferences on the device.
 - **Shared items** sent to Redde from other apps via the share sheet are stored briefly in the app's private container until Redde opens and moves them into the composer.
+- **Files from your server** that you open in Settings → Files are downloaded to a temporary folder so they can be shown, and removed the next time you open the file browser. Files you upload from there go only to your server.
+- **What the widgets show** (the last reply, a command or question that is waiting for you, and how full the model's context is) is kept in a container the app shares with its widgets, on the device. With the app lock on, the widgets leave out commands, questions and titles.
 
 You can delete conversations and attachments inside the app, remove credentials in Settings, or delete all data by deleting the app.
 
@@ -70,7 +74,7 @@ If your Hermes Dashboard signs people in with Google or another identity provide
 
 ## Apple Watch
 
-The Apple Watch app gets your server's address and key from Redde on your iPhone and then talks to that server itself, or asks through the iPhone. The key is kept in the watch's Keychain. Questions are dictated with the watch's own dictation. Nothing goes anywhere else.
+The Apple Watch app gets your server's address and key from Redde on your iPhone and then talks to that server itself, or asks through the iPhone. The key is kept in the watch's Keychain. Questions are dictated with the watch's own dictation. When it talks to the server itself, the watch can list your recent conversations there and carry one on. The "Ask Redde" complication for a watch face only opens the app; it holds no data. Nothing goes anywhere else.
 
 ## Photos, camera, files, microphone, and Face ID
 
@@ -83,9 +87,9 @@ The Apple Watch app gets your server's address and key from Redde on your iPhone
 
 A setup link (`https://redde.goosehouse.org/connect#…`) carries a server's connection in the part of the address after the `#`. Browsers do not send that part to a website, so it never reaches redde.goosehouse.org. With Redde installed, iOS opens the link in the app without loading the page at all. Without it, the page reads the link on your device only to show what it carries and hand it to the app; it sends nothing anywhere and collects nothing.
 
-## Live Activities and Controls
+## Live Activities, widgets and Controls
 
-Redde can show the progress of a reply in a Live Activity on the Lock Screen and in the Dynamic Island, and offers Control Center buttons. These display information already on your device and send nothing anywhere.
+Redde can show the progress of a reply in a Live Activity on the Lock Screen and in the Dynamic Island, and offers widgets and Control Center buttons. These display information already on your device and send nothing anywhere.
 
 ## Children
 

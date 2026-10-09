@@ -27,8 +27,8 @@ TALK, DON'T TYPE
 • In CarPlay, ask through the car's mic and speakers, in a new chat or a recent one. On Apple Watch, raise your wrist and ask.
 • "Hey Siri, ask Redde…" works from the Lock Screen and AirPods. A Control Center button, a widget or the Action Button starts listening.
 • On iOS 27, Siri can message your agent in your own words and read the reply back (opt-in).
-• A voice orb moves with your voice and Redde's. Pause, replay, or have any reply read aloud.
-• Spoken prefixes: start with a word you chose and Redde adds a text prefix or switches model. "Opus, review this diff" moves the chat to Opus.
+• A voice orb moves with both voices. Pause, replay, or have any reply read aloud.
+• Spoken prefixes: start with a word you chose to add a text prefix or switch model: "Opus, review this diff".
 • "Ask Redde a Question" in Shortcuts returns the answer as text.
 
 SEE THE AGENT WORK
@@ -39,14 +39,15 @@ SEE THE AGENT WORK
 
 A FULL CLIENT, NOT JUST A MIC
 • Conversations live in your gateway's session ledger: start on the phone, continue on the desktop, Telegram or the CLI. Search, pin, rename, fork, archive.
-• Sessions by project, scheduled jobs with delivery targets and blueprints, and the Kanban board, live.
-• Rich replies: Markdown, code, tables, task lists, zoomable Mermaid diagrams and math, at a text size you choose. Pictures, charts and PDFs from the agent open in place.
+• Sessions by project, scheduled jobs with delivery targets, and the Kanban board, live.
+• Rich replies: Markdown, code, tables, task lists, Mermaid diagrams and math, at a text size you choose. Pictures, charts and PDFs from the agent open in place.
 • Select part of a reply and ask about it. Regenerate, edit and resend, or search a long chat.
 • Attach photos, videos and files, paste or drop them in, or dictate. Every chat keeps its draft. Mention a day and attach its calendar in one tap.
 • Share text, links, photos or files to Redde from any app. Export chats as Markdown.
-• Widgets: last answer, needs you, context.
+• Widgets: last answer, what needs you, context.
 • Switch models mid-chat from the header or with /model.
-• Skills and tool sets, on or off. Edit the agent's memory and context files, and create skills or let Redde draft one.
+• Skills and tool sets, on or off. Edit memory and context files; create skills or let Redde draft one.
+• The server too: MCP servers, logs, restart, update, and its files.
 
 YOUR BACKEND, YOUR RULES
 • Connect to Hermes through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access or a reverse proxy. Save several servers.
@@ -70,11 +71,11 @@ Two pictures App Store Connect has taken since October 2026, on the version page
 The words in both sit inside the "art safe area" of Apple's templates. Use Preview in App Store Connect before submitting: it shows each on iPhone and iPad, both ways up.
 
 ## What's New in 1.7 (4000)
-Notifications when Redde is closed, replies you can talk over, more of your conversations in the car, and a better place to write.
+Notifications when Redde is closed, replies you can talk over, new CarPlay screens, and a better place to write.
 
 • Notified when Redde is closed. Until now Redde went quiet once iOS closed it. Pair your Hermes in Settings → Voice → Notify when Redde is closed and it tells your iPhone itself: a reply is ready, a command waits for approval, the agent has a question or needs a password, a turn failed, a task it handed off came back. Approve, deny or answer from the notification. Notifications are encrypted between your Hermes and your iPhone, and the relay that carries them can't read them. It takes a small plugin on your Hermes; over the Hermes Dashboard, Redde installs it for you and pairing is one tap.
 • Talk over a reply. Start speaking while Redde is answering and it stops to listen. A cough or an "mm-hm" doesn't count. It is on with headphones from the start; Settings → Voice → Talk over replies adds the phone's speaker, and Interrupt with can make it only the word "stop", for a room where other people are talking. Not in the car.
-• More in the car. CarPlay gains New Chat and Recent Chats, so you can start fresh or carry on an earlier conversation, and the voice card has Mute and End.
+• A new look in the car. CarPlay opens on buttons to Ask, Talk or start a New Chat, with your chats on a tab of their own. The voice card has a moving waveform, Mute and End.
 • Sign in with a browser. A Hermes Dashboard that signs you in with Google or another provider now works: Settings → Connection details → Sign in with a browser.
 • Custom headers. A server behind a reverse proxy that asks for a header of its own can be sent it, in Settings → Connection details. Setup codes carry them too.
 • A draft for every conversation. What you typed and didn't send stays with its conversation, also after Redde has been closed, and the list marks it Draft.
@@ -95,12 +96,14 @@ Written ahead of the release, so unlike the rest of this page not all of it has 
 In App Store Connect and on the web:
 - The privacy policy and the support page as they are in `docs/` have to be published. On 2026-10-08 legal.goosehouse.org still served the policy of September 27, which says Goosehouse receives nothing and lacks even 1.6's paragraphs on setup links and scanning a code.
 - Review notes from `app-review-notes.md`, with the key put in.
+- The build is 1.7 (261). Archive from a clean build, which is also what trains Siri's phrases, the new "Ask <a profile> in Redde" among them.
 - The first archive with the notification extension (`com.goosehouse.echo.push`): Xcode's automatic signing has to make its App Store profile, with the app group.
+- The first archive with the watch's complication extension (`com.goosehouse.echo.watchkitapp.widgets`), new in build 261: Xcode has to make its App ID and profile too. It has no entitlements of its own. Nothing here has built it for a device: the simulator builds don't sign.
 - The Hermes plugin people install is whatever is on the main branch of the public repository, so the plugin that goes with this build has to be pushed before the release (it is, as 1.1.0).
 
 On devices, to check first:
 - Notifications with Redde closed, against a real Hermes with the plugin at 1.1.0: a reply and an approval arrive with their text, Approve and Deny answer, a question shows its choices as buttons and takes a typed answer, a failed turn says why. With Notification sound off they arrive silent. None of this can be seen in the simulator, where a simulated push skips the notification extension.
-- CarPlay on a car's screen or the CarPlay Simulator: the four rows, Recent Chats, Mute and End. They have only been pressed by tests.
+- CarPlay on a car's screen or the CarPlay Simulator: the two tabs (Ask's three buttons; the Chats list and its check beside the open chat), the voice card's moving waveform in Listening and Speaking and the turning spark in Thinking, the backdrop behind the card (iOS 27) in the car's light and dark appearance, Mute and End. All of it has only been built and pressed by tests; nobody has seen CarPlay draw it.
 - Sign in with a browser against a Dashboard that uses a real identity provider (tried against Hermes's own username-and-password page), and custom headers through a real reverse proxy.
 - Talk over replies beyond what was tried (an iPhone 15 Pro Max on its speaker and with AirPods): the earpiece, another phone, a reply several minutes long, only "stop" on headphones.
 - Dictation into the message field with a real voice, a picture pasted on a device, and a video picked from Photos.
