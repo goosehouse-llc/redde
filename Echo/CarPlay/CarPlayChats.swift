@@ -1,6 +1,6 @@
 import Foundation
 
-/// One row of the car screen's Recent Chats: a conversation that can be carried on by voice.
+/// One row of the car screen's Chats tab: a conversation that can be carried on by voice.
 nonisolated struct CarPlayChat: Equatable, Sendable {
     enum Source: Equatable, Sendable {
         /// A session on the Hermes server (either Hermes connection).
@@ -16,12 +16,12 @@ nonisolated struct CarPlayChat: Equatable, Sendable {
     var source: Source
 }
 
-/// The conversations behind CarPlay's Recent Chats: the phone's own list, in its order, cut to
+/// The conversations behind CarPlay's Chats tab: the phone's own list, in its order, cut to
 /// what a car screen shows. A row is a name and a time. Nothing a reply said goes on the car's
 /// screen, so a session nobody named gets a plain label and never the preview of its last message.
 enum CarPlayChats {
     static let untitled = "Untitled chat"
-    static let currentDetail = "Open now"
+    static let currentDetail = "The chat you are in"
 
     /// Server sessions as rows: pinned first, then the most recently used, like the phone's list.
     static func rows(sessions: [HermesSessionsAPI.SessionSummary], currentSessionID: String?, limit: Int,

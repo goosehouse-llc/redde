@@ -1,11 +1,12 @@
 import CarPlay
 import Foundation
 import Testing
+import UIKit
 @testable import Echo
 
-/// The car screen without a car: the rows, the Recent Chats list and the voice card are built
-/// and pressed directly, against a fake microphone and a scripted transport. What the car draws
-/// with them is CarPlay's business and isn't covered here.
+/// The car screen without a car: the tabs, the Ask buttons, the Chats list and the voice card
+/// are built and pressed directly, against a fake microphone and a scripted transport. What the
+/// car draws with them is CarPlay's business and isn't covered here.
 @MainActor
 struct CarPlayTests {
     // MARK: Harness
@@ -40,10 +41,6 @@ struct CarPlayTests {
         func ask(_ question: String) async {
             for await _ in conversation.send(question) {}
             while conversation.isStreaming { try? await Task.sleep(for: .milliseconds(5)) }
-        }
-
-        func row(_ title: String) -> CPListItem? {
-            delegate.menuSections().flatMap(\.items).compactMap { $0 as? CPListItem }.first { $0.text == title }
         }
     }
 
@@ -97,24 +94,29 @@ struct CarPlayTests {
         #expect(rows.first?.title == "Chat 29")
     }
 
-    // MARK: The rows
+    // MARK: The tabs
 
-    @Test func theMenuIsFourRowsAndSaysWhichConversationIsOpen() async throws {
-        let h = Harness()
-        let rows = h.delegate.menuSections().map { $0.items.compactMap { ($0 as? CPListItem)?.text } }
-        #expect(rows == [["Ask Redde", "Talk with Redde"], ["New Chat", "Recent Chats"]])
-        #expect(h.row("Recent Chats")?.detailText == "Carry on an earlier conversation")
-        await h.ask("Plan the lake trip")
-        #expect(h.row("Recent Chats")?.detailText == "Now in “Plan the lake trip”")
+    @Test func theScreenOpensOnTwoTabsAskFirst() throws {
+        let tabs = Harness().delegate.rootTemplate()
+        #expect(tabs.templates.count == 2)
+        #expect(tabs.templates.count <= CPTabBarTemplate.maximumTabCount, "the car refuses a tab bar with more tabs than it allows")
+        let ask = try #require(tabs.templates.first as? CPGridTemplate)
+        let chats = try #require(tabs.templates.last as? CPListTemplate)
+        #expect(ask.title == "Ask")
+        #expect(chats.title == "Chats")
+        #expect(ask.tabImage != nil && chats.tabImage != nil)
+        #expect(ask.gridButtons.map(\.titleVariants) == [["Ask"], ["Talk"], ["New Chat", "New"]])
+        #expect(ask.gridButtons.count <= CPGridTemplateMaximumItems)
+        #expect(ask.gridButtons.allSatisfy { $0.image.size.width > 0 }, "a grid button without a picture isn't shown")
     }
 
     @Test func askAndTalkListenInTheirOwnModes() async throws {
         let h = Harness()
-        try await press(h.row("Talk with Redde"))
+        h.delegate.chose(.talk)
         try await waitUntil("listening") { h.recognizer.starts == 1 }
         #expect(h.session.continuous)
         h.delegate.pressed(.end)
-        try await press(h.row("Ask Redde"))
+        h.delegate.chose(.ask)
         try await waitUntil("listening again") { h.recognizer.starts == 2 }
         #expect(!h.session.continuous)
     }
@@ -124,7 +126,7 @@ struct CarPlayTests {
         h.settings.handsFreeByDefault = handsFreeByDefault
         await h.ask("Plan the lake trip")
         let before = h.conversation.id
-        try await press(h.row("New Chat"))
+        h.delegate.chose(.newChat)
         #expect(h.conversation.id != before)
         #expect(!h.conversation.hasMessages)
         #expect(h.store.sorted.map(\.id) == [before], "the one that was open stays in the list")
@@ -133,7 +135,18 @@ struct CarPlayTests {
         #expect(h.session.continuous == handsFreeByDefault)
     }
 
-    // MARK: Recent chats
+    // MARK: The Chats tab
+
+    @Test func onlyTheOpenChatIsMarked() async throws {
+        let h = Harness()
+        await h.ask("Plan the lake trip")
+        h.conversation.reset()
+        await h.ask("What's for dinner")
+        let rows = try await h.delegate.chatRows()
+        #expect(rows.map(\.text) == ["What's for dinner", "Plan the lake trip"])
+        #expect(rows.map { $0.accessoryImage != nil } == [true, false])
+        #expect(rows.allSatisfy { $0.image == nil }, "a picture on one row alone would push its name out of line with the others")
+    }
 
     @Test func pickingAChatOpensItAndListens() async throws {
         let h = Harness()
@@ -190,9 +203,18 @@ struct CarPlayTests {
         #expect(CarPlayArtwork.voiceImageSide == 150)
     }
 
+    @Test func theWaveformMovesAndTheCardHasItsBackdrop() {
+        let states = Harness().delegate.voiceTemplate().voiceControlStates
+        let moving = states.filter { ($0.image?.images?.count ?? 0) > 1 }.map(\.identifier)
+        #expect(moving == (UIAccessibility.isReduceMotionEnabled ? [] : ["listening", "thinking", "speaking"]))
+        if #available(iOS 27.0, *) {
+            #expect(states.allSatisfy { $0.backgroundImage != nil })
+        }
+    }
+
     @Test func muteShutsTheMicAndKeepsTheConversation() async throws {
         let h = Harness()
-        try await press(h.row("Talk with Redde"))
+        h.delegate.chose(.talk)
         try await waitUntil("listening") { h.recognizer.starts == 1 }
         h.delegate.pressed(.mute)
         #expect(h.session.phase == .idle)
@@ -211,7 +233,7 @@ struct CarPlayTests {
 
     @Test func endStopsEverythingIncludingHandsFree() async throws {
         let h = Harness()
-        try await press(h.row("Talk with Redde"))
+        h.delegate.chose(.talk)
         try await waitUntil("listening") { h.recognizer.starts == 1 }
         h.delegate.pressed(.mute)
         h.delegate.pressed(.end)

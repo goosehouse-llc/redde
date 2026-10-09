@@ -4,23 +4,25 @@ import UIKit
 
 /// CarPlay, as a voice-based conversational app (entitlement
 /// `com.apple.developer.carplay-voice-based-conversation`, iOS 26.4+). Opening Redde on the car
-/// screen shows four rows. "Ask Redde" and "Talk with Redde" (hands-free) carry on the
-/// conversation the phone has open, "New Chat" starts another, and "Recent Chats" lists the
-/// phone's conversations to pick one from. Each of them ends in listening, on a voice-control
-/// card that shows Listening, Thinking, Speaking, with Mute and End on it. Replies are spoken
-/// only: Apple's rules for the category allow no text or imagery in responses, so the list is
-/// names and times, never what was said. When a reply ends the card closes back onto the rows.
-/// Requires the entitlement; inert without it.
+/// screen shows two tabs. Ask is three round buttons: "Ask" (one question) and "Talk"
+/// (hands-free) carry on the conversation the phone has open, "New Chat" starts another. Chats
+/// lists the phone's conversations, the open one marked, and picking one carries it on. Each of
+/// them ends in listening, on a voice-control card that shows Listening, Thinking, Speaking, with
+/// Mute and End on it. Replies are spoken only: Apple's rules for the category allow no text or
+/// imagery in responses, so the list is names and times, never what was said. When a reply ends
+/// the card closes back onto the tab it came from. Requires the entitlement; inert without it.
 @MainActor
-final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
+final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate, CPTabBarTemplateDelegate {
     private var controller: CPInterfaceController?
-    private var menu: CPListTemplate?
+    private var chatsTab: CPListTemplate?
+    /// Counts the loads of the Chats tab, so that a slow one can't write over a later one.
+    private var chatsLoad = 0
     private var observing = false
 
     /// Tests put their own voice session and conversation here; the app's one of each otherwise.
     var sessionOverride: VoiceSession?
     var conversationOverride: Conversation?
-    /// Where Recent Chats are listed from, and how a picked chat starts listening.
+    /// Where the Chats tab lists from, and how a picked chat starts listening.
     var settings = Settings.shared
     var store = ConversationStore.shared
 
@@ -35,10 +37,13 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     nonisolated func templateApplicationScene(_ scene: CPTemplateApplicationScene, didConnect interfaceController: CPInterfaceController) {
         Task { @MainActor in
             controller = interfaceController
-            let menu = CPListTemplate(title: "Redde", sections: menuSections())
-            self.menu = menu
-            interfaceController.setRootTemplate(menu, animated: false, completion: nil)
+            let tabs = rootTemplate()
+            tabs.delegate = self
+            interfaceController.setRootTemplate(tabs, animated: false, completion: nil)
             observe()
+            reloadChats()
+            // Draw the voice card's pictures now, not at the first press.
+            _ = voiceTemplate()
             // The car just connected: have llama-swap load the model before the first question.
             if let conversation { ModelWarmer.warm(conversation) }
         }
@@ -48,7 +53,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         Task { @MainActor in
             // The conversation keeps running on the phone; only the car UI goes away.
             controller = nil
-            menu = nil
+            chatsTab = nil
+            CarPlayArtwork.forget()
         }
     }
 
@@ -62,35 +68,55 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         templateApplicationScene(scene, didDisconnectInterfaceController: interfaceController)
     }
 
-    // MARK: - Menu
+    // MARK: - Tabs
 
-    /// The rows the car screen opens on. Not private, so the tests can press them.
-    func menuSections() -> [CPListSection] {
-        let ask = CPListItem(text: "Ask Redde", detailText: "One question, answered out loud", image: CarPlayArtwork.rowIcon(.ask))
-        ask.handler = { [weak self] _, completion in
-            self?.listen(handsFree: false)
-            completion()
+    /// What the car screen opens on: the Ask tab's buttons, and the Chats tab. Not private, so the
+    /// tests can look at it.
+    func rootTemplate() -> CPTabBarTemplate {
+        let ask = CPGridTemplate(title: "Ask", gridButtons: startButtons())
+        ask.tabImage = UIImage(systemName: "mic.fill")
+        let chats = CPListTemplate(title: "Chats", sections: [])
+        chats.tabImage = UIImage(systemName: "list.bullet")
+        chats.emptyViewTitleVariants = ["Loading…"]
+        chats.showsSpinnerWhileEmpty = true
+        chatsTab = chats
+        return CPTabBarTemplate(templates: [ask, chats])
+    }
+
+    /// The Chats tab was opened: the phone may have been used since the list was read.
+    nonisolated func tabBarTemplate(_ tabBarTemplate: CPTabBarTemplate, didSelect selectedTemplate: CPTemplate) {
+        let isChats = selectedTemplate is CPListTemplate
+        Task { @MainActor in
+            if isChats { reloadChats() }
         }
-        let handsFree = CPListItem(text: "Talk with Redde", detailText: "Hands-free until you say “that's all”", image: CarPlayArtwork.rowIcon(.talk))
-        handsFree.handler = { [weak self] _, completion in
-            self?.listen(handsFree: true)
-            completion()
+    }
+
+    /// The Ask tab's buttons. A grid button keeps its handler to itself, so the tests press
+    /// `chose` instead.
+    func startButtons() -> [CPGridButton] {
+        CarPlayArtwork.Start.allCases.map { start in
+            CPGridButton(titleVariants: Self.titles(start), image: CarPlayArtwork.startIcon(start)) { [weak self] _ in
+                self?.chose(start)
+            }
         }
-        let newChat = CPListItem(text: "New Chat", detailText: "Start a fresh conversation", image: CarPlayArtwork.rowIcon(.newChat))
-        newChat.handler = { [weak self] _, completion in
-            self?.startNewChat()
-            completion()
+    }
+
+    static func titles(_ start: CarPlayArtwork.Start) -> [String] {
+        switch start {
+        case .ask: ["Ask"]
+        case .talk: ["Talk"]
+        case .newChat: ["New Chat", "New"]
         }
-        // Which conversation Ask and Talk carry on, so a pick (or a New Chat) shows it took.
-        let open = conversation.flatMap { $0.hasMessages ? $0.title : nil }
-        let chats = CPListItem(text: "Recent Chats", detailText: open.map { "Now in “\($0)”" } ?? "Carry on an earlier conversation",
-                               image: CarPlayArtwork.rowIcon(.chats), accessoryImage: nil, accessoryType: .disclosureIndicator)
-        chats.handler = { [weak self] _, completion in
-            self?.showChats()
-            completion()
+    }
+
+    /// Ask is one question and Talk is hands-free until "that's all", both in the conversation
+    /// the phone has open; New Chat starts another.
+    func chose(_ start: CarPlayArtwork.Start) {
+        switch start {
+        case .ask: listen(handsFree: false)
+        case .talk: listen(handsFree: true)
+        case .newChat: startNewChat()
         }
-        return [CPListSection(items: [ask, handsFree], header: "Your agent, by voice", sectionIndexTitle: nil),
-                CPListSection(items: [newChat, chats], header: "Conversations", sectionIndexTitle: nil)]
     }
 
     private func listen(handsFree: Bool) {
@@ -111,6 +137,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         guard let conversation else { return }
         stopVoice()
         conversation.reset()
+        reloadChats()
         listenAsSet()
     }
 
@@ -120,21 +147,24 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         if let session, session.mightBeBusy { session.cancel() }
     }
 
-    // MARK: - Recent chats
+    // MARK: - Chats
 
-    private func showChats() {
-        let list = CPListTemplate(title: "Recent Chats", sections: [])
-        list.emptyViewTitleVariants = ["Loading…"]
-        list.showsSpinnerWhileEmpty = true
-        controller?.pushTemplate(list, animated: true, completion: nil)
+    /// Reads the phone's conversations into the Chats tab. Rows already there stay until the
+    /// new ones arrive, and stay if they can't be read.
+    private func reloadChats() {
+        guard let list = chatsTab else { return }
+        chatsLoad += 1
+        let load = chatsLoad
         Task {
             do {
                 let rows = try await chatRows()
+                guard load == chatsLoad else { return }
                 list.emptyViewTitleVariants = ["No chats yet"]
                 list.emptyViewSubtitleVariants = ["Ask Redde something to start one"]
                 list.showsSpinnerWhileEmpty = false
                 list.updateSections([CPListSection(items: rows)])
             } catch {
+                guard load == chatsLoad else { return }
                 list.emptyViewTitleVariants = ["Couldn't load your chats"]
                 list.emptyViewSubtitleVariants = ["Check the connection on your iPhone"]
                 list.showsSpinnerWhileEmpty = false
@@ -148,7 +178,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         let most = Int(CPListTemplate.maximumItemCount)
         let chats = try await CarPlayChats.load(for: conversation, settings: settings, store: store, limit: most > 0 ? most : 12)
         return chats.map { chat in
-            let row = CPListItem(text: chat.title, detailText: chat.detail)
+            let row = CPListItem(text: chat.title, detailText: chat.detail, image: nil,
+                                 accessoryImage: chat.isCurrent ? CarPlayArtwork.openChatMark : nil, accessoryType: .none)
             // The row spins until the completion is called: while the transcript loads.
             row.handler = { [weak self] _, completion in
                 Task { @MainActor in
@@ -161,7 +192,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     }
 
     /// Carry on the chat that was picked: it becomes the conversation the phone has open, the
-    /// car goes back to the rows, and Redde listens.
+    /// mark moves to its row, and Redde listens.
     private func carryOn(_ chat: CarPlayChat) async {
         guard let conversation else { return }
         stopVoice()
@@ -171,10 +202,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             alert("Couldn't open that chat")
             return
         }
-        guard let controller else { listenAsSet(); return }
-        controller.popToRootTemplate(animated: true) { [weak self] _, _ in
-            Task { @MainActor in self?.listenAsSet() }
-        }
+        if !chat.isCurrent { reloadChats() }
+        listenAsSet()
     }
 
     // MARK: - Voice card
@@ -196,11 +225,22 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// (iOS 26.4, like the category). Five states is the most a voice-control template takes.
     /// Not private, so the tests can count them and press the buttons.
     func voiceTemplate() -> CPVoiceControlTemplate {
+        // The waveform moves, unless Reduce Motion is on. Its pictures are drawn for the car's
+        // screen, at two pixels a point at most: some eighty of them are kept while the car is
+        // connected.
+        let scale: CGFloat? = UIAccessibility.isReduceMotionEnabled ? nil : min(max(controller?.carTraitCollection.displayScale ?? 2, 1), 2)
         func state(_ id: CarPlayArtwork.VoiceState, _ titles: [String], _ buttons: [CardButton]) -> CPVoiceControlState {
+            let image = CarPlayArtwork.voiceStateImage(id, movingAt: scale)
             // `repeats`: the card plays a state's image as an animation, and one that doesn't
             // repeat is taken off the card when its one cycle is over, still or not. Every state
             // here lasts until the session moves on, so every image stays.
-            let state = CPVoiceControlState(identifier: id.rawValue, titleVariants: titles, image: CarPlayArtwork.voiceStateImage(id), repeats: true)
+            let state: CPVoiceControlState
+            if #available(iOS 27.0, *) {
+                state = CPVoiceControlState(identifier: id.rawValue, titleVariants: titles, image: image,
+                                            backgroundImage: CarPlayArtwork.voiceBackdrop(id), repeats: true)
+            } else {
+                state = CPVoiceControlState(identifier: id.rawValue, titleVariants: titles, image: image, repeats: true)
+            }
             if #available(iOS 26.4, *) { state.actionButtons = buttons.map(button) }
             return state
         }
@@ -227,7 +267,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     }
 
     /// Mute shuts the mic and keeps the conversation; End stops whatever Redde is doing, hands-free
-    /// with it, and goes back to the rows. Before these the card had no control of its own.
+    /// with it, and goes back to the tabs. Before these the card had no control of its own.
     func pressed(_ kind: CardButton) {
         guard let session else { return }
         switch kind {
@@ -249,15 +289,15 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         // An approval request parks the turn on the phone.
         case .thinking: .showing(waitingOnPhone ? .phone : .thinking)
         case .speaking: .showing(.speaking)
-        // Reply finished, or the question was dropped: back to the rows, unless the mic is only muted.
+        // Reply finished, or the question was dropped: back to the tabs, unless the mic is only muted.
         case .idle: muted ? .showing(.muted) : .closed
         case .error: .failed
         }
     }
 
-    /// Track the voice session and mirror it onto the card, and keep the rows' "Now in" line on
-    /// the conversation the phone has open. Observation tracking fires once per change, so
-    /// re-arm after each callback.
+    /// Track the voice session and mirror it onto the card, and keep the Chats tab on what the
+    /// phone has: which conversation is open, and what it is called. Observation tracking fires
+    /// once per change, so re-arm after each callback.
     private func observe() {
         guard !observing else { return }
         observing = true
@@ -286,7 +326,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             _ = conversation.hasMessages
         } onChange: { [weak self] in
             Task { @MainActor in
-                self?.menu?.updateSections(self?.menuSections() ?? [])
+                self?.reloadChats()
                 self?.armTitleObservation()
             }
         }
