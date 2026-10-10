@@ -153,7 +153,7 @@ Debug builds accept launch flags for demos and screenshots, all listed in
 | `Watch/`, `WatchWidgets/` | The Apple Watch app, and its complication |
 | `EchoTests/`, `EchoUITests/` | Tests |
 | `companion/` | The website, the push-notification relay Worker and the Hermes plugin that feeds it, and a calendar MCP server for Hermes |
-| `scripts/` | Setup codes, the build-number bump, the CarPlay simulator, and the Hermes lab for testing against stock gateways |
+| `scripts/` | Setup codes, the build-number bump, the CarPlay simulator and a preview of the car's screens without one, and the Hermes lab for testing against stock gateways |
 | `design/` | App Store screenshots and the scripts that make them, icon sources |
 | `docs/` | [Architecture](docs/ARCHITECTURE.md), privacy policy, support page, App Store listing |
 
