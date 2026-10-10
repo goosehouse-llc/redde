@@ -138,6 +138,31 @@ struct CarPlayTests {
         #expect(named.handler != nil, "the car puts an arrow after that line: it has to lead somewhere")
     }
 
+    @Test func theAskTabListsAFewOtherChatsUnderItsCards() async throws {
+        let h = Harness()
+        for title in ["One", "Two", "Three", "Four", "Five", "Six"] {
+            await h.ask(title)
+            h.conversation.reset()
+        }
+        await h.ask("Plan the lake trip")
+        let open = h.conversation.id
+        #expect(h.delegate.askSections().count == 1, "nothing has been read from the phone yet")
+        _ = try await h.delegate.chatRows()
+        let sections = h.delegate.askSections()
+        #expect(sections.count == 2)
+        #expect(sections.last?.header == "Recent")
+        let recent = sections.last?.items.compactMap { $0 as? CPListItem } ?? []
+        // The newest four of the others: the open one is named above the cards already.
+        #expect(recent.map(\.text) == ["Six", "Five", "Four", "Three"])
+        #expect(recent.count == CarPlaySceneDelegate.recentOnAsk)
+        #expect(recent.allSatisfy { $0.accessoryImage == nil })
+
+        try await press(recent.last)
+        #expect(h.conversation.id != open)
+        #expect(h.conversation.messages.first?.text == "Three")
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+    }
+
     @Test func askAndTalkListenInTheirOwnModes() async throws {
         let h = Harness()
         try await press(card: 1, of: h.delegate)

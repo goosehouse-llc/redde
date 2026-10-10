@@ -26,6 +26,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private var chatsTab: CPListTemplate?
     /// Counts the loads of the Chats tab, so that a slow one can't write over a later one.
     private var chatsLoad = 0
+    /// The phone's conversations as last read, for the few the Ask tab shows under its cards.
+    private var chats: [CarPlayChat] = []
     private var observing = false
 
     /// Tests put their own voice session and conversation here; the app's one of each otherwise.
@@ -65,6 +67,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             tabs = nil
             askTab = nil
             chatsTab = nil
+            chats = []
             CarPlayArtwork.forget()
         }
     }
@@ -127,8 +130,16 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
                 completion()
             }
         }
-        return [CPListSection(items: [row])]
+        // Under the cards, the conversations last carried on. A card stays some 85 points wide on
+        // any screen, so on a wide one this is what keeps the tab from standing mostly empty; on
+        // a small one the cards fill the screen and these are a scroll away.
+        let others = chats.filter { !$0.isCurrent }.prefix(Self.recentOnAsk).map { self.row(for: $0) }
+        guard !others.isEmpty else { return [CPListSection(items: [row])] }
+        return [CPListSection(items: [row]), CPListSection(items: others, header: "Recent", sectionIndexTitle: nil)]
     }
+
+    /// How many conversations the Ask tab lists; the Chats tab has them all.
+    static let recentOnAsk = 4
 
     private func showChats() {
         guard let tabs, let chatsTab else { return }
@@ -206,6 +217,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
                 list.emptyViewSubtitleVariants = ["Ask Redde something to start one"]
                 list.showsSpinnerWhileEmpty = false
                 list.updateSections([CPListSection(items: rows)])
+                askTab?.updateSections(askSections())
             } catch {
                 guard load == chatsLoad else { return }
                 list.emptyViewTitleVariants = ["Couldn't load your chats"]
@@ -219,19 +231,22 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     func chatRows() async throws -> [CPListItem] {
         guard let conversation else { return [] }
         let most = Int(CPListTemplate.maximumItemCount)
-        let chats = try await CarPlayChats.load(for: conversation, settings: settings, store: store, limit: most > 0 ? most : 12)
-        return chats.map { chat in
-            let row = CPListItem(text: chat.title, detailText: chat.detail, image: nil,
-                                 accessoryImage: chat.isCurrent ? CarPlayArtwork.openChatMark : nil, accessoryType: .none)
-            // The row spins until the completion is called: while the transcript loads.
-            row.handler = { [weak self] _, completion in
-                Task { @MainActor in
-                    await self?.carryOn(chat)
-                    completion()
-                }
+        chats = try await CarPlayChats.load(for: conversation, settings: settings, store: store, limit: most > 0 ? most : 12)
+        return chats.map { row(for: $0) }
+    }
+
+    /// A conversation as a row that carries it on, the open one marked.
+    private func row(for chat: CarPlayChat) -> CPListItem {
+        let row = CPListItem(text: chat.title, detailText: chat.detail, image: nil,
+                             accessoryImage: chat.isCurrent ? CarPlayArtwork.openChatMark : nil, accessoryType: .none)
+        // The row spins until the completion is called: while the transcript loads.
+        row.handler = { [weak self] _, completion in
+            Task { @MainActor in
+                await self?.carryOn(chat)
+                completion()
             }
-            return row
         }
+        return row
     }
 
     /// Carry on the chat that was picked: it becomes the conversation the phone has open, the

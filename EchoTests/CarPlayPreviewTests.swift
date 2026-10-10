@@ -63,10 +63,12 @@ struct CarPlayPreviewTests {
                 return parts.count == 2 ? CGSize(width: parts[0], height: parts[1]) : nil
             }
 
-        // A phone with two conversations, the hike open.
+        // A phone with a handful of conversations, the hike open.
         let h = CarPlayTests.Harness()
-        await h.ask("Draft the landlord email")
-        h.conversation.reset()
+        for earlier in ["Move the blog to the new site", "Lisbon trip ideas", "What did we decide about the deck?", "Draft the landlord email"] {
+            await h.ask(earlier)
+            h.conversation.reset()
+        }
         await h.ask("Plan the weekend hike")
         let chatRows = try await h.delegate.chatRows()
         let states = h.delegate.voiceTemplate().voiceControlStates

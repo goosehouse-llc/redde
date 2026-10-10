@@ -1009,7 +1009,8 @@ tests in `EchoTests/SiriSchemaTests.swift`.
 A CarPlay scene in the voice-based conversational category (iOS 26.4+). A tab bar with two tabs.
 **Ask** is a list holding one row of three cards (`CPListImageRowItem` with card elements): **Ask**
 and **Talk** carry on the conversation the phone has open, **New Chat** starts another. Above them
-the row names that conversation ("Now in …"), and that line leads to the other tab. **Chats** is
+the row names that conversation ("Now in …"), and that line leads to the other tab; under them
+are the four conversations last carried on besides that one. **Chats** is
 a list of the phone's conversations to pick one from (`CarPlay/CarPlayChats.swift`: the phone's
 list in its order, as names and times; a session nobody named is "Untitled chat", never the
 preview of its last message), the open one marked with a check at the trailing edge. The list is
@@ -1024,7 +1025,8 @@ and a failure is an alert. Replies are spoken only.
 CarPlay sizes everything in points and nothing to the screen, and two of its choices decide this
 layout (both found by drawing its own views, below). A grid template's button has a 40-point
 picture on every screen, so the first tab is cards: about 85 by 112 points each, the largest
-buttons there are, which fill a 400-point-wide screen and sit at the leading edge of a wider one.
+buttons there are, which fill a 400-point-wide screen and sit at the leading edge of a wider one
+(the recent conversations under them are what keeps a wide screen from standing half empty).
 And a voice state with action buttons is laid out title, picture, buttons, with the picture
 given a third of whatever height is left: 10 points on a 240-point-high screen, 58 on a
 480-point one. Without them it has that height less 150 points, up to its full 150. Builds 260
