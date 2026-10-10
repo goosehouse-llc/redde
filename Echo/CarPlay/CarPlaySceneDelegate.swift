@@ -4,16 +4,25 @@ import UIKit
 
 /// CarPlay, as a voice-based conversational app (entitlement
 /// `com.apple.developer.carplay-voice-based-conversation`, iOS 26.4+). Opening Redde on the car
-/// screen shows two tabs. Ask is three round buttons: "Ask" (one question) and "Talk"
+/// screen shows two tabs. Ask is a row of three cards: "Ask" (one question) and "Talk"
 /// (hands-free) carry on the conversation the phone has open, "New Chat" starts another. Chats
 /// lists the phone's conversations, the open one marked, and picking one carries it on. Each of
 /// them ends in listening, on a voice-control card that shows Listening, Thinking, Speaking, with
-/// Mute and End on it. Replies are spoken only: Apple's rules for the category allow no text or
-/// imagery in responses, so the list is names and times, never what was said. When a reply ends
-/// the card closes back onto the tab it came from. Requires the entitlement; inert without it.
+/// End and Mute in its bar. Replies are spoken only: Apple's rules for the category allow no text
+/// or imagery in responses, so the list is names and times, never what was said. When a reply
+/// ends the card closes back onto the tab it came from. Requires the entitlement; inert without
+/// it.
+///
+/// What CarPlay makes of a template can be drawn without a car: see `scripts/carplay-preview.sh`.
+/// Two things learned that way shape this file. A grid button's picture is 40 points on every
+/// screen, so the Ask tab is cards, the largest buttons there are. And a voice state that has
+/// action buttons gets a third of what height is left for its picture, a speck on most screens
+/// and nothing on a short one, so the card's controls are in its bar.
 @MainActor
 final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate, CPTabBarTemplateDelegate {
     private var controller: CPInterfaceController?
+    private var tabs: CPTabBarTemplate?
+    private var askTab: CPListTemplate?
     private var chatsTab: CPListTemplate?
     /// Counts the loads of the Chats tab, so that a slow one can't write over a later one.
     private var chatsLoad = 0
@@ -53,6 +62,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         Task { @MainActor in
             // The conversation keeps running on the phone; only the car UI goes away.
             controller = nil
+            tabs = nil
+            askTab = nil
             chatsTab = nil
             CarPlayArtwork.forget()
         }
@@ -70,42 +81,74 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     // MARK: - Tabs
 
-    /// What the car screen opens on: the Ask tab's buttons, and the Chats tab. Not private, so the
+    /// What the car screen opens on: the Ask tab's cards, and the Chats tab. Not private, so the
     /// tests can look at it.
     func rootTemplate() -> CPTabBarTemplate {
-        let ask = CPGridTemplate(title: "Ask", gridButtons: startButtons())
+        let ask = CPListTemplate(title: "Ask", sections: askSections())
         ask.tabImage = UIImage(systemName: "mic.fill")
+        askTab = ask
         let chats = CPListTemplate(title: "Chats", sections: [])
         chats.tabImage = UIImage(systemName: "list.bullet")
         chats.emptyViewTitleVariants = ["Loading…"]
         chats.showsSpinnerWhileEmpty = true
         chatsTab = chats
-        return CPTabBarTemplate(templates: [ask, chats])
+        let tabs = CPTabBarTemplate(templates: [ask, chats])
+        self.tabs = tabs
+        return tabs
     }
 
     /// The Chats tab was opened: the phone may have been used since the list was read.
     nonisolated func tabBarTemplate(_ tabBarTemplate: CPTabBarTemplate, didSelect selectedTemplate: CPTemplate) {
-        let isChats = selectedTemplate is CPListTemplate
+        let selected = ObjectIdentifier(selectedTemplate)
         Task { @MainActor in
-            if isChats { reloadChats() }
+            if let chatsTab, ObjectIdentifier(chatsTab) == selected { reloadChats() }
         }
     }
 
-    /// The Ask tab's buttons. A grid button keeps its handler to itself, so the tests press
-    /// `chose` instead.
-    func startButtons() -> [CPGridButton] {
-        CarPlayArtwork.Start.allCases.map { start in
-            CPGridButton(titleVariants: Self.titles(start), image: CarPlayArtwork.startIcon(start)) { [weak self] _ in
-                self?.chose(start)
+    /// The Ask tab: one row of three cards, under the name of the conversation they carry on.
+    /// Not private, so the tests can read the cards and press them.
+    func askSections() -> [CPListSection] {
+        let cards = CarPlayArtwork.Start.allCases.map { start in
+            CPListImageRowItemCardElement(image: CarPlayArtwork.startCard(start), showsImageFullHeight: false,
+                                          title: Self.title(start), subtitle: Self.subtitle(start), tintColor: nil)
+        }
+        // Which conversation Ask and Talk carry on, so a pick (or a New Chat) shows it took.
+        let open = conversation.flatMap { $0.hasMessages ? $0.title : nil }
+        let row = CPListImageRowItem(text: open.map { "Now in “\($0)”" }, cardElements: cards, allowsMultipleLines: false)
+        row.listImageRowHandler = { [weak self] _, index, completion in
+            let starts = CarPlayArtwork.Start.allCases
+            if starts.indices.contains(index) { self?.chose(starts[index]) }
+            completion()
+        }
+        // The car draws that line with an arrow after it: it leads to the other conversations.
+        if open != nil {
+            row.handler = { [weak self] _, completion in
+                self?.showChats()
+                completion()
             }
         }
+        return [CPListSection(items: [row])]
     }
 
-    static func titles(_ start: CarPlayArtwork.Start) -> [String] {
+    private func showChats() {
+        guard let tabs, let chatsTab else { return }
+        tabs.select(chatsTab)
+        reloadChats()
+    }
+
+    static func title(_ start: CarPlayArtwork.Start) -> String {
         switch start {
-        case .ask: ["Ask"]
-        case .talk: ["Talk"]
-        case .newChat: ["New Chat", "New"]
+        case .ask: "Ask"
+        case .talk: "Talk"
+        case .newChat: "New Chat"
+        }
+    }
+
+    static func subtitle(_ start: CarPlayArtwork.Start) -> String {
+        switch start {
+        case .ask: "One question"
+        case .talk: "Hands-free"
+        case .newChat: "Start fresh"
         }
     }
 
@@ -221,53 +264,70 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         controller.dismissTemplate(animated: true, completion: nil)
     }
 
-    /// The card: one state per thing the voice session can be doing, each with its buttons
-    /// (iOS 26.4, like the category). Five states is the most a voice-control template takes.
+    /// The card: one state per thing the voice session can be doing, with End and Mute in its
+    /// bar (iOS 26.4, like the category). Five states is the most a voice-control template takes.
     /// Not private, so the tests can count them and press the buttons.
     func voiceTemplate() -> CPVoiceControlTemplate {
         // The waveform moves, unless Reduce Motion is on. Its pictures are drawn for the car's
         // screen, at two pixels a point at most: some eighty of them are kept while the car is
         // connected.
         let scale: CGFloat? = UIAccessibility.isReduceMotionEnabled ? nil : min(max(controller?.carTraitCollection.displayScale ?? 2, 1), 2)
-        func state(_ id: CarPlayArtwork.VoiceState, _ titles: [String], _ buttons: [CardButton]) -> CPVoiceControlState {
+        func state(_ id: CarPlayArtwork.VoiceState, _ titles: [String]) -> CPVoiceControlState {
             let image = CarPlayArtwork.voiceStateImage(id, movingAt: scale)
-            // `repeats`: the card plays a state's image as an animation, and one that doesn't
-            // repeat is taken off the card when its one cycle is over, still or not. Every state
-            // here lasts until the session moves on, so every image stays.
-            let state: CPVoiceControlState
+            // No action buttons on a state. With them CarPlay lays the card out title, picture,
+            // buttons, and the picture gets a third of the height left over: ten points on a
+            // 240-point screen, where it has ninety without them. That is how "Listening…" came
+            // to stand there with nothing to look at.
             if #available(iOS 27.0, *) {
-                state = CPVoiceControlState(identifier: id.rawValue, titleVariants: titles, image: image,
-                                            backgroundImage: CarPlayArtwork.voiceBackdrop(id), repeats: true)
-            } else {
-                state = CPVoiceControlState(identifier: id.rawValue, titleVariants: titles, image: image, repeats: true)
+                return CPVoiceControlState(identifier: id.rawValue, titleVariants: titles, image: image,
+                                           backgroundImage: CarPlayArtwork.voiceBackdrop(id), repeats: true)
             }
-            if #available(iOS 26.4, *) { state.actionButtons = buttons.map(button) }
-            return state
+            return CPVoiceControlState(identifier: id.rawValue, titleVariants: titles, image: image, repeats: true)
         }
-        return CPVoiceControlTemplate(voiceControlStates: [
-            state(.listening, ["Listening…", "Go ahead"], [.mute, .end]),
-            state(.thinking, ["Thinking…"], [.end]),
-            state(.speaking, ["Speaking…"], [.end]),
-            state(.muted, ["Muted"], [.unmute, .end]),
-            state(.phone, ["Needs your phone"], [.end]),
+        let template = CPVoiceControlTemplate(voiceControlStates: [
+            state(.listening, ["Listening…", "Go ahead"]),
+            state(.thinking, ["Thinking…"]),
+            state(.speaking, ["Speaking…"]),
+            state(.muted, ["Muted"]),
+            state(.phone, ["Needs your phone"]),
         ])
+        setBar(of: template, for: .listening)
+        return template
     }
 
-    enum CardButton { case mute, unmute, end }
+    enum CardButton: Equatable { case mute, unmute, end }
 
-    private func button(_ kind: CardButton) -> CPButton {
-        let (symbol, title) = switch kind {
-        case .mute: ("mic.slash.fill", "Mute")
-        case .unmute: ("mic.fill", "Unmute")
-        case .end: ("xmark", "End")
+    /// What the card's bar offers in a state: End always, and the microphone's switch while it
+    /// applies. End is at the leading edge, where a card that offers nothing there gets a close
+    /// button from the car, and that one takes the card down without telling anybody: the
+    /// conversation would carry on unseen. (The car's own Back button still does that.)
+    static func barButtons(for state: CarPlayArtwork.VoiceState) -> (leading: [CardButton], trailing: [CardButton]) {
+        switch state {
+        case .listening: ([.end], [.mute])
+        case .muted: ([.end], [.unmute])
+        case .thinking, .speaking, .phone: ([.end], [])
         }
-        let button = CPButton(image: UIImage(systemName: symbol) ?? UIImage()) { [weak self] _ in self?.pressed(kind) }
-        button.title = title
-        return button
+    }
+
+    /// Not private, so the preview can draw each state with its own bar.
+    func setBar(of template: CPVoiceControlTemplate, for state: CarPlayArtwork.VoiceState) {
+        guard #available(iOS 26.4, *) else { return }
+        let buttons = Self.barButtons(for: state)
+        template.leadingNavigationBarButtons = buttons.leading.map(barButton)
+        template.trailingNavigationBarButtons = buttons.trailing.map(barButton)
+    }
+
+    private func barButton(_ kind: CardButton) -> CPBarButton {
+        let title = switch kind {
+        case .mute: "Mute"
+        case .unmute: "Unmute"
+        case .end: "End"
+        }
+        return CPBarButton(title: title) { [weak self] _ in self?.pressed(kind) }
     }
 
     /// Mute shuts the mic and keeps the conversation; End stops whatever Redde is doing, hands-free
-    /// with it, and goes back to the tabs. Before these the card had no control of its own.
+    /// with it, and goes back to the tabs.
     func pressed(_ kind: CardButton) {
         guard let session else { return }
         switch kind {
@@ -295,7 +355,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         }
     }
 
-    /// Track the voice session and mirror it onto the card, and keep the Chats tab on what the
+    /// Track the voice session and mirror it onto the card, and keep both tabs on what the
     /// phone has: which conversation is open, and what it is called. Observation tracking fires
     /// once per change, so re-arm after each callback.
     private func observe() {
@@ -326,6 +386,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             _ = conversation.hasMessages
         } onChange: { [weak self] in
             Task { @MainActor in
+                if let self { self.askTab?.updateSections(self.askSections()) }
                 self?.reloadChats()
                 self?.armTitleObservation()
             }
@@ -335,7 +396,9 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private func phaseChanged() {
         guard let session, let voiceCard else { return }
         switch Self.card(phase: session.phase, waitingOnPhone: session.activeTool == "waiting for you", muted: session.isMuted) {
-        case .showing(let state): voiceCard.activateVoiceControlState(withIdentifier: state.rawValue)
+        case .showing(let state):
+            voiceCard.activateVoiceControlState(withIdentifier: state.rawValue)
+            setBar(of: voiceCard, for: state)
         case .closed: hideVoiceCard()
         case .failed: alert("Couldn't reach Redde")
         }

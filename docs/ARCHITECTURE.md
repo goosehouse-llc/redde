@@ -1007,29 +1007,49 @@ tests in `EchoTests/SiriSchemaTests.swift`.
 ## CarPlay
 
 A CarPlay scene in the voice-based conversational category (iOS 26.4+). A tab bar with two tabs.
-**Ask** is a grid of three round buttons: **Ask** and **Talk** carry on the conversation the phone
-has open, **New Chat** starts another. **Chats** is a list of the phone's conversations to pick
-one from (`CarPlay/CarPlayChats.swift`: the phone's list in its order, as names and times; a
-session nobody named is "Untitled chat", never the preview of its last message), the open one
-marked with a check at the trailing edge. The list is read when the car connects, when the tab is
-opened and when the open conversation changes. A grid has no place for a line of text, so the tab
-that says which conversation is open is Chats. New Chat and a picked chat listen in the mode
-Settings → Voice gives the phone's voice button. Each of them ends on a voice-control card
-(Listening, Thinking, Speaking, Muted, Needs your phone) with **Mute** and **End** on it: Mute
-shuts the mic and keeps the conversation (`VoiceSession.mute`, which also gives the car its audio
-back), End stops whatever Redde is doing. A voice-control template takes five states and no more,
-so a finished reply closes the card and a failure is an alert. Replies are spoken only.
+**Ask** is a list holding one row of three cards (`CPListImageRowItem` with card elements): **Ask**
+and **Talk** carry on the conversation the phone has open, **New Chat** starts another. Above them
+the row names that conversation ("Now in …"), and that line leads to the other tab. **Chats** is
+a list of the phone's conversations to pick one from (`CarPlay/CarPlayChats.swift`: the phone's
+list in its order, as names and times; a session nobody named is "Untitled chat", never the
+preview of its last message), the open one marked with a check at the trailing edge. The list is
+read when the car connects, when the tab is opened and when the open conversation changes. New
+Chat and a picked chat listen in the mode Settings → Voice gives the phone's voice button. Each of
+them ends on a voice-control card (Listening, Thinking, Speaking, Muted, Needs your phone) with
+**End** and **Mute** in its bar: Mute shuts the mic and keeps the conversation
+(`VoiceSession.mute`, which also gives the car its audio back), End stops whatever Redde is
+doing. A voice-control template takes five states and no more, so a finished reply closes the card
+and a failure is an alert. Replies are spoken only.
 
-The brand lives in artwork drawn in code (`CarPlay/CarPlayArtwork.swift`), since CarPlay owns
-layout and type. The card's pictures move: a state's image is an animation to CarPlay (a loop of
-0.3 to 5 seconds, 150 points at most, and one that doesn't repeat is taken away after a single
-cycle), so Listening is a swell running across the bars, Speaking is the bars in gold rising and
+CarPlay sizes everything in points and nothing to the screen, and two of its choices decide this
+layout (both found by drawing its own views, below). A grid template's button has a 40-point
+picture on every screen, so the first tab is cards: about 85 by 112 points each, the largest
+buttons there are, which fill a 400-point-wide screen and sit at the leading edge of a wider one.
+And a voice state with action buttons is laid out title, picture, buttons, with the picture
+given a third of whatever height is left: 10 points on a 240-point-high screen, 58 on a
+480-point one. Without them it has that height less 150 points, up to its full 150. Builds 260
+and 261 had Mute and End as action buttons, and on a car the card stood there with words and no
+picture. So no state has action buttons, and the controls are bar buttons
+(`CarPlaySceneDelegate.barButtons(for:)`). End is the leading one on purpose: a card that
+offers nothing there gets a close button from CarPlay, which takes the card down without the
+conversation being told. The car's own Back button still does that; nothing here hears of it.
+
+The brand lives in artwork drawn in code (`CarPlay/CarPlayArtwork.swift`). The card's pictures
+move: a state's image is an animation to CarPlay (a loop of 0.3 to 5 seconds, 150 points at
+most), so Listening is a swell running across the bars, Speaking is the bars in gold rising and
 falling together, and Thinking is the spark making a quarter turn. They are pictures drawn ahead
 of time at the car's display scale, about thirty to a loop: unlike the phone's waveform they
 cannot follow the level of a voice. Reduce Motion gets the still pictures. On iOS 27 each state
 also has a backdrop behind the whole card (`voiceBackdrop`): graphite with a soft light, mist
 while you are heard and gold while Redde thinks and speaks, as one image holding a dark and a
 light picture, because the card writes its words in the car's own appearance.
+
+`scripts/carplay-preview.sh` draws all of this without a car: `EchoTests/CarPlayPreviewTests.swift`
+hands the app's real templates to the view controllers CarPlay itself uses (in the simulator's
+CarPlaySupport framework, by class name, so it can break with any iOS release) and writes PNG
+files at car-screen sizes in both appearances, with the measured sizes beside them. It leaves out
+the car's status bar and the tab bar. Look at its pictures before changing anything here: two
+rounds of this work were done from the headers alone and both looked wrong on a car.
 
 Declaring the scene enables multiple scenes, so the WindowGroup routes
 external events to the existing window (`handlesExternalEvents` in `EchoApp`); re-check the Action
@@ -1038,10 +1058,9 @@ Button, Control Center and widget paths on a device after changes here.
 project. The `audio` background mode keeps a conversation going when the car screen switches to
 navigation (or the phone locks): without it iOS cuts the microphone and silences the reply as soon
 as Redde leaves the foreground, and the continued-processing task (above) only covers the wait in
-between. The tabs, the moving pictures and the backdrop (2026-10-08) are built and pressed by
-`EchoTests/CarPlayTests.swift` and drawn to files by `EchoTests/CarPlayArtworkTests.swift`
-(`TEST_RUNNER_REDDE_ARTWORK_DIR`); what CarPlay makes of them on a car's screen, real or
-simulated, has not been seen. The flip side: a mic left open on a locked phone
+between. The cards and the card's bar (2026-10-10) are pressed by `EchoTests/CarPlayTests.swift`
+and have been seen in the preview's pictures, not yet on a car's screen. The flip side: a mic left
+open on a locked phone
 would now stay open, so when every scene goes to the background while listening, the session
 stops (`VoiceSession.leftForeground`) unless hands-free is on or the car is connected
 (`CarPlaySceneDelegate.isConnected`). A reply being thought about or spoken is never stopped there.

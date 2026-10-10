@@ -2,7 +2,7 @@
 
 # App Review notes
 
-Paste the block below into App Store Connect → App Review Information → Notes. The field takes plain text, 4,000 characters at most; this is 3,896 with the placeholder and about 3,955 with a key in its place. Replace `<<REVIEW KEY>>` first. Keep it under the limit when adding to it: the notes for 1.6 ran to 6,600 before they were cut.
+Paste the block below into App Store Connect → App Review Information → Notes. The field takes plain text, 4,000 characters at most; this is 3,897 with the placeholder and about 3,956 with a key in its place. Replace `<<REVIEW KEY>>` first. Keep it under the limit when adding to it: the notes for 1.6 ran to 6,600 before they were cut.
 
 ```text
 Redde is a voice and chat client for a self-hosted AI assistant. It has no account, and conversations go only to the server the user configures. We run one service for it, an optional notification relay.
@@ -16,7 +16,7 @@ TO TEST
 The Hermes connections and the Skills, Tools, Context files, Memory, Files and Gateway screens need a self-hosted Hermes server; they say so when none is configured.
 
 CARPLAY (voice-based conversational app entitlement)
-Connect the phone to CarPlay or the CarPlay Simulator. Two tabs, new in 1.7. Ask has three buttons: Ask (one question), Talk (hands-free until the user says "that's all") and New Chat. Chats lists the user's conversations by name and time only; picking one carries it on by voice. The voice card shows Listening, Thinking and Speaking, with Mute and End buttons. Answers are spoken; no reply text is shown.
+Connect the phone to CarPlay or the CarPlay Simulator. Two tabs, new in 1.7. Ask has three cards: Ask (one question), Talk (hands-free until the user says "that's all") and New Chat. Chats lists the user's conversations by name and time only; picking one carries it on by voice. The voice card shows Listening, Thinking and Speaking, with End and Mute in its bar. Answers are spoken; no reply text is shown.
 
 APPLE WATCH
 Open Redde on the paired watch, tap Ask and dictate; the reply is shown and read aloud. The watch gets its connection from the iPhone app. New in 1.7: a list of the user's conversations, and an Ask Redde complication. Background audio: with Bluetooth headphones a reply keeps playing after the wrist is lowered. The watch app records nothing.

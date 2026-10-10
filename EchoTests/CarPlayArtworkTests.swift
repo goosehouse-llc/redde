@@ -5,21 +5,21 @@ import UIKit
 
 /// The CarPlay artwork: its sizes, and how the voice card's pictures move. Set REDDE_ARTWORK_DIR
 /// (passed to the test runner as TEST_RUNNER_REDDE_ARTWORK_DIR) to also write PNGs there for a
-/// visual check: the buttons, every picture of each loop, and the backdrops.
+/// visual check: the cards, every picture of each loop, and the backdrops.
 @MainActor
 struct CarPlayArtworkTests {
     typealias Art = CarPlayArtwork
 
-    @Test func rendersTheButtonsAndVoiceStates() throws {
-        let buttons = Art.Start.allCases.map { ("start-\($0)", Art.startIcon($0, size: CGSize(width: 80, height: 80))) }
+    @Test func rendersTheCardsAndVoiceStates() throws {
+        let buttons = Art.Start.allCases.map { ("start-\($0)", Art.startCard($0, size: CGSize(width: 141, height: 141))) }
         let states = Art.VoiceState.allCases.map { ("voice-\($0.rawValue)", Art.voiceStateImage($0)) }
-        for (_, image) in buttons { #expect(image.size == CGSize(width: 80, height: 80)); #expect(image.scale == 3) }
+        for (_, image) in buttons { #expect(image.size == CGSize(width: 141, height: 141)); #expect(image.scale == 3) }
         for (_, image) in states {
             #expect(image.size == CGSize(width: Art.voiceImageSide, height: Art.voiceImageSide))
             #expect(image.images == nil, "a picture nobody asked to move stands still")
         }
-        // Outside a car the grid has no size to give; the button still has to come out a picture.
-        #expect(Art.startIcon(.ask, size: .zero).size.width > 0)
+        // A card with no size to go by still has to come out a picture.
+        #expect(Art.startCard(.ask, size: .zero).size.width > 0)
         try write(buttons + states)
     }
 

@@ -4,9 +4,9 @@ import Testing
 import UIKit
 @testable import Echo
 
-/// The car screen without a car: the tabs, the Ask buttons, the Chats list and the voice card
-/// are built and pressed directly, against a fake microphone and a scripted transport. What the
-/// car draws with them is CarPlay's business and isn't covered here.
+/// The car screen without a car: the tabs, the Ask cards, the Chats list and the voice card are
+/// built and pressed directly, against a fake microphone and a scripted transport. What CarPlay
+/// draws with them is `EchoTests/CarPlayPreviewTests.swift`'s business (`scripts/carplay-preview.sh`).
 @MainActor
 struct CarPlayTests {
     // MARK: Harness
@@ -96,29 +96,60 @@ struct CarPlayTests {
 
     // MARK: The tabs
 
+    /// The Ask tab's row of cards.
+    private func cards(_ delegate: CarPlaySceneDelegate) throws -> CPListImageRowItem {
+        try #require(delegate.askSections().first?.items.first as? CPListImageRowItem)
+    }
+
+    /// Presses a card the way the car does, by its place in the row.
+    private func press(card index: Int, of delegate: CarPlaySceneDelegate) async throws {
+        let row = try cards(delegate)
+        let handler = try #require(row.listImageRowHandler)
+        await withCheckedContinuation { done in handler(row, index) { done.resume() } }
+    }
+
     @Test func theScreenOpensOnTwoTabsAskFirst() throws {
         let tabs = Harness().delegate.rootTemplate()
         #expect(tabs.templates.count == 2)
         #expect(tabs.templates.count <= CPTabBarTemplate.maximumTabCount, "the car refuses a tab bar with more tabs than it allows")
-        let ask = try #require(tabs.templates.first as? CPGridTemplate)
+        let ask = try #require(tabs.templates.first as? CPListTemplate)
         let chats = try #require(tabs.templates.last as? CPListTemplate)
         #expect(ask.title == "Ask")
         #expect(chats.title == "Chats")
         #expect(ask.tabImage != nil && chats.tabImage != nil)
-        #expect(ask.gridButtons.map(\.titleVariants) == [["Ask"], ["Talk"], ["New Chat", "New"]])
-        #expect(ask.gridButtons.count <= CPGridTemplateMaximumItems)
-        #expect(ask.gridButtons.allSatisfy { $0.image.size.width > 0 }, "a grid button without a picture isn't shown")
+        #expect(ask !== chats)
+    }
+
+    @Test func theAskTabIsThreeCardsAndSaysWhichConversationIsOpen() async throws {
+        let h = Harness()
+        // Cards, not a grid: a grid button's picture is 40 points on any screen, which is what
+        // "very small" on a car's screen was (2026-10-10).
+        let row = try cards(h.delegate)
+        let elements = row.elements.compactMap { $0 as? CPListImageRowItemCardElement }
+        #expect(elements.map(\.title) == ["Ask", "Talk", "New Chat"])
+        #expect(elements.map(\.subtitle) == ["One question", "Hands-free", "Start fresh"])
+        #expect(elements.allSatisfy { $0.image.size.width >= 100 }, "a card's picture is drawn for a card, not for a list row")
+        #expect(elements.allSatisfy { !$0.showsImageFullHeight }, "at full height the car stretches a square picture")
+        #expect(row.text == nil, "nothing is open yet")
+        #expect(row.handler == nil)
+        await h.ask("Plan the lake trip")
+        let named = try cards(h.delegate)
+        #expect(named.text == "Now in “Plan the lake trip”")
+        #expect(named.handler != nil, "the car puts an arrow after that line: it has to lead somewhere")
     }
 
     @Test func askAndTalkListenInTheirOwnModes() async throws {
         let h = Harness()
-        h.delegate.chose(.talk)
+        try await press(card: 1, of: h.delegate)
         try await waitUntil("listening") { h.recognizer.starts == 1 }
         #expect(h.session.continuous)
         h.delegate.pressed(.end)
-        h.delegate.chose(.ask)
+        try await press(card: 0, of: h.delegate)
         try await waitUntil("listening again") { h.recognizer.starts == 2 }
         #expect(!h.session.continuous)
+        // A press the row can't place is nothing, not a crash.
+        try await press(card: 7, of: h.delegate)
+        #expect(h.recognizer.starts == 2)
     }
 
     @Test(arguments: [false, true]) func newChatStartsFreshAndListens(handsFreeByDefault: Bool) async throws {
@@ -126,7 +157,7 @@ struct CarPlayTests {
         h.settings.handsFreeByDefault = handsFreeByDefault
         await h.ask("Plan the lake trip")
         let before = h.conversation.id
-        h.delegate.chose(.newChat)
+        try await press(card: 2, of: h.delegate)
         #expect(h.conversation.id != before)
         #expect(!h.conversation.hasMessages)
         #expect(h.store.sorted.map(\.id) == [before], "the one that was open stays in the list")
@@ -178,23 +209,41 @@ struct CarPlayTests {
     // MARK: The voice card
 
     @Test func theCardStaysWithinFiveStatesAndEachHasAWayOut() {
-        let states = Harness().delegate.voiceTemplate().voiceControlStates
+        let template = Harness().delegate.voiceTemplate()
+        let states = template.voiceControlStates
         #expect(states.map(\.identifier) == ["listening", "thinking", "speaking", "muted", "phone"])
         #expect(states.count <= 5, "a voice-control template drops any state past its fifth")
+        typealias D = CarPlaySceneDelegate
+        for state in CarPlayArtwork.VoiceState.allCases {
+            #expect(D.barButtons(for: state).leading == [.end], "\(state) has no way out")
+        }
+        #expect(D.barButtons(for: .listening).trailing == [.mute])
+        #expect(D.barButtons(for: .muted).trailing == [.unmute])
+        #expect(D.barButtons(for: .thinking).trailing.isEmpty && D.barButtons(for: .speaking).trailing.isEmpty && D.barButtons(for: .phone).trailing.isEmpty)
         if #available(iOS 26.4, *) {
-            #expect(states.map { $0.actionButtons.compactMap(\.title) } ==
-                [["Mute", "End"], ["End"], ["End"], ["Unmute", "End"], ["End"]])
-            #expect(states.allSatisfy { $0.actionButtons.count <= CPVoiceControlState.maximumActionButtonCount })
+            // The card opens listening.
+            #expect(template.leadingNavigationBarButtons.map(\.title) == ["End"])
+            #expect(template.trailingNavigationBarButtons.map(\.title) == ["Mute"])
         }
     }
 
-    @Test func everyStateKeepsItsPictureForAsLongAsItLasts() {
-        // The card treats a state's image as an animation and takes away one that doesn't repeat
-        // once its single cycle is over: on 2026-10-07 every state was set to play once, and the
-        // car showed "Listening…" and "Thinking…" with nothing above the words.
+    @Test func noStateHasActionButtonsSoThePictureHasRoom() {
+        // With action buttons on a state CarPlay gives its picture a third of the height that
+        // is left: 10 points on a 240-point screen, 58 on a 480-point one, where it has 90 and
+        // 150 without them (drawn with CarPlay's own view, scripts/carplay-preview.sh). Builds
+        // 260 and 261 had Mute and End there, and the car showed "Listening…" with no picture.
+        guard #available(iOS 26.4, *) else { return }
+        for state in Harness().delegate.voiceTemplate().voiceControlStates {
+            #expect(state.actionButtons.isEmpty, "\(state.identifier) would squeeze its picture out")
+        }
+    }
+
+    @Test func everyStateHasAPictureThatLoops() {
+        // A loop that plays once would leave its first picture standing still for the rest of a
+        // state that can last minutes.
         let states = Harness().delegate.voiceTemplate().voiceControlStates
         for state in states {
-            #expect(state.repeats, "\(state.identifier) would lose its picture after a moment")
+            #expect(state.repeats, "\(state.identifier) would stop moving after one loop")
             let image = state.image
             #expect(image != nil, "\(state.identifier) has no picture")
             // CarPlay takes at most 150 by 150 points.
@@ -214,7 +263,7 @@ struct CarPlayTests {
 
     @Test func muteShutsTheMicAndKeepsTheConversation() async throws {
         let h = Harness()
-        h.delegate.chose(.talk)
+        try await press(card: 1, of: h.delegate)
         try await waitUntil("listening") { h.recognizer.starts == 1 }
         h.delegate.pressed(.mute)
         #expect(h.session.phase == .idle)
@@ -233,7 +282,7 @@ struct CarPlayTests {
 
     @Test func endStopsEverythingIncludingHandsFree() async throws {
         let h = Harness()
-        h.delegate.chose(.talk)
+        try await press(card: 1, of: h.delegate)
         try await waitUntil("listening") { h.recognizer.starts == 1 }
         h.delegate.pressed(.mute)
         h.delegate.pressed(.end)

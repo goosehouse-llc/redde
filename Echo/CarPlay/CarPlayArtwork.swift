@@ -2,8 +2,8 @@ import CarPlay
 import UIKit
 
 /// Redde's CarPlay artwork, drawn in the app's current look instead of generic SF Symbols:
-/// graphite discs, light waveform bars in the spark's profile (centre tallest, each bar outward
-/// lower, like voice mode's Waveform orb) and the gold spark. CarPlay owns layout and type, so
+/// graphite cards and discs, light waveform bars in the spark's profile (centre tallest, each bar
+/// outward lower, like voice mode's Waveform orb) and the gold spark. CarPlay owns layout and type, so
 /// these images are where the brand shows. Everything is drawn in code so it stays sharp on any
 /// car display, and every picture carries its own graphite ground so it reads the same on
 /// CarPlay's light and dark appearances.
@@ -13,7 +13,7 @@ enum CarPlayArtwork {
     static let mist = UIColor(red: 0.863, green: 0.890, blue: 0.933, alpha: 1)             // #DCE3EE
     static let gold = UIColor(red: 0xE8 / 255.0, green: 0xB0 / 255.0, blue: 0x4B / 255.0, alpha: 1)
 
-    /// The Ask tab's three buttons: the ways to start talking.
+    /// The Ask tab's three cards: the ways to start talking.
     enum Start: CaseIterable { case ask, talk, newChat }
     /// The voice card's states. Five, the most a voice-control template takes.
     enum VoiceState: String, CaseIterable { case listening, thinking, speaking, muted, phone }
@@ -23,12 +23,14 @@ enum CarPlayArtwork {
 
     // MARK: - The Ask tab
 
-    /// A button on the Ask tab: a graphite disc like the voice card's, with the button's mark.
-    static func startIcon(_ start: Start, size: CGSize = CPGridTemplate.maximumGridButtonImageSize) -> UIImage {
-        // Outside a car the template has no size to give.
-        let side = min(size.width, size.height) > 0 ? min(size.width, size.height) : 80
-        return render(CGSize(width: side, height: side)) { ctx, rect in
-            disc(ctx, rect)
+    /// A card on the Ask tab: graphite from edge to edge with the button's mark, drawn square
+    /// for the car to round into its card. A card is the largest button CarPlay draws: a grid
+    /// button's picture is 40 points on every screen, however large.
+    static func startCard(_ start: Start, size: CGSize = CPListImageRowItemCardElement.maximumImageSize) -> UIImage {
+        // Outside a car the element has no size to give.
+        let side = min(size.width, size.height) > 0 ? min(size.width, size.height) : 141
+        return render(CGSize(width: side, height: side), opaque: true) { ctx, rect in
+            gradient(ctx, rect)
             let u = side / 100   // draw in a 100-unit square
             switch start {
             case .ask:
@@ -225,11 +227,16 @@ enum CarPlayArtwork {
     private static func disc(_ ctx: CGContext, _ rect: CGRect) {
         ctx.saveGState()
         UIBezierPath(ovalIn: rect).addClip()
+        gradient(ctx, rect)
+        ctx.restoreGState()
+    }
+
+    /// The graphite ground, lighter at the top left.
+    private static func gradient(_ ctx: CGContext, _ rect: CGRect) {
         let colours = [graphiteTop.cgColor, graphiteBottom.cgColor] as CFArray
         if let g = CGGradient(colorsSpace: CGColorSpace(name: CGColorSpace.sRGB), colors: colours, locations: [0, 1]) {
             ctx.drawLinearGradient(g, start: rect.origin, end: CGPoint(x: rect.maxX, y: rect.maxY), options: [])
         }
-        ctx.restoreGState()
     }
 
     /// A gradient out from a centre, on an ellipse of the given radii, carried on past its edge.
