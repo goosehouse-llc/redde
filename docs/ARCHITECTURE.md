@@ -1051,7 +1051,9 @@ hands the app's real templates to the view controllers CarPlay itself uses (in t
 CarPlaySupport framework, by class name, so it can break with any iOS release) and writes PNG
 files at car-screen sizes in both appearances, with the measured sizes beside them. It leaves out
 the car's status bar and the tab bar. Look at its pictures before changing anything here: two
-rounds of this work were done from the headers alone and both looked wrong on a car.
+rounds of this work were done from the headers alone and both looked wrong on a car. What size a
+given car's screen is in points can't be read off its dashboard, so a development build writes it
+down when the car connects (`noteScreen`, a file in Application Support).
 
 Declaring the scene enables multiple scenes, so the WindowGroup routes
 external events to the existing window (`handlesExternalEvents` in `EchoApp`); re-check the Action

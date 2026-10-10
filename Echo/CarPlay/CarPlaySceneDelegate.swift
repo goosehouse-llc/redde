@@ -55,6 +55,9 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             reloadChats()
             // Draw the voice card's pictures now, not at the first press.
             _ = voiceTemplate()
+            #if DEBUG
+            noteScreen(of: scene, interfaceController)
+            #endif
             // The car just connected: have llama-swap load the model before the first question.
             if let conversation { ModelWarmer.warm(conversation) }
         }
@@ -81,6 +84,32 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     nonisolated func templateApplicationScene(_ scene: CPTemplateApplicationScene, didDisconnect interfaceController: CPInterfaceController, from window: CPWindow) {
         templateApplicationScene(scene, didDisconnectInterfaceController: interfaceController)
     }
+
+    #if DEBUG
+    /// A development build writes down the car's screen as this app finds it: nothing in CarPlay
+    /// is sized to the screen, so what a given car shows follows from its size in points, and
+    /// that can't be read off a dashboard. The file is in Application Support, where a Mac can
+    /// copy it off the phone (`devicectl device copy from`, domain appDataContainer).
+    private func noteScreen(of scene: CPTemplateApplicationScene, _ controller: CPInterfaceController) {
+        var lines = ["\(Date.now.formatted(.iso8601))", "traits: scale \(controller.carTraitCollection.displayScale)"]
+        // Declared never nil, and nil all the same for an app that isn't a navigation app: asked by name.
+        if let window = scene.value(forKey: "carWindow") as? UIWindow {
+            lines.append("window: \(Int(window.bounds.width))x\(Int(window.bounds.height)) pt, safe area \(window.safeAreaInsets)")
+        } else {
+            lines.append("window: none")
+        }
+        let screens = NSSelectorFromString("screens")
+        let all: AnyObject = UIScreen.self
+        if all.responds(to: screens), let found = all.perform(screens)?.takeUnretainedValue() as? [UIScreen] {
+            for screen in found {
+                lines.append("screen: \(Int(screen.bounds.width))x\(Int(screen.bounds.height)) pt at \(screen.scale)x, idiom \(screen.traitCollection.userInterfaceIdiom.rawValue)")
+            }
+        }
+        let folder = URL.applicationSupportDirectory
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try? lines.joined(separator: "\n").write(to: folder.appending(path: "carplay-screen.txt"), atomically: true, encoding: .utf8)
+    }
+    #endif
 
     // MARK: - Tabs
 
