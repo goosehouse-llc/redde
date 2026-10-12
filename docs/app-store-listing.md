@@ -40,7 +40,7 @@ SEE THE AGENT WORK
 A FULL CLIENT, NOT JUST A MIC
 • Conversations live in your gateway's session ledger: start on the phone, continue on the desktop, Telegram or the CLI. Search, pin, rename, fork, archive.
 • Sessions by project, scheduled jobs with delivery targets, and the Kanban board, live.
-• Rich replies: Markdown, code, tables, task lists, Mermaid diagrams and math, at a text size you choose. Pictures, charts and PDFs from the agent open in place.
+• Rich replies: Markdown, code, tables, task lists, Mermaid diagrams and math, at a text size you choose. Pictures, charts, PDFs and audio from the agent open in place.
 • Select part of a reply and ask about it. Regenerate, edit and resend, or search a long chat.
 • Attach photos, videos and files, paste or drop them in, or dictate. Every chat keeps its draft. Mention a day and attach its calendar in one tap.
 • Share text, links, photos or files to Redde from any app. Export chats as Markdown.
