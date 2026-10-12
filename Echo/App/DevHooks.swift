@@ -27,7 +27,8 @@ import WidgetKit
 /// - `-echo.demoWidgets`: fill the "Needs you" and Context widgets with sample data (two requests
 ///   that wait, a context about two thirds full), to look at them on the Home Screen.
 ///   `-echo.demoWidgets clear` empties them again.
-/// - `-echo.screen settings|sessions|setup|profiles|servers|model|tips|push`: open that screen at launch.
+/// - `-echo.screen settings|sessions|setup|profiles|servers|model|tips|push|gateway|files`: open that
+///   screen at launch (the last two want `-echo.demoGateway` and `-echo.demoFiles` without a server).
 /// - `-echo.pushLink <link>`: open a pairing link for notifications, as the Camera would.
 ///   `-push.relay <url>` points the app at another push relay (the lab's, on this Mac).
 /// - `-echo.section cron|kanban`: open the conversation list on that tab.

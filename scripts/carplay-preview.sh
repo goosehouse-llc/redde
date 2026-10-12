@@ -8,6 +8,9 @@
 # folder   where the PNG files and measurements.txt go (default: tmp/carplay-preview)
 # sizes    car screens in points, e.g. 400x240,960x540 (default: 400x240,640x360,800x480)
 #
+# REDDE_CARPLAY_STILL=1 draws the voice card's pictures standing still, as Reduce Motion shows
+# them: a moving one is caught wherever its loop happens to be.
+#
 # The simulator has to run iOS 26.4 or later, where the voice card got its bar and its action
 # buttons; name another with REDDE_PREVIEW_SIMULATOR.
 set -euo pipefail
@@ -24,6 +27,9 @@ xcodegen generate --quiet
 DEST="platform=iOS Simulator,name=$SIM"
 xcodebuild build-for-testing -project Echo.xcodeproj -scheme Echo -destination "$DEST" -derivedDataPath DerivedData-tests > "$LOG" 2>&1 \
   || { grep -E " error: " "$LOG" | cut -c1-200; echo "the build failed; see $LOG"; exit 1; }
+
+# Handed on to the test runner, which sees only what is named TEST_RUNNER_….
+[[ -n "${REDDE_CARPLAY_STILL:-}" ]] && export TEST_RUNNER_REDDE_CARPLAY_STILL=1
 
 # The first launch of the test runner after a build often hangs here, and xcodebuild often stays
 # up after the tests are over: go by its log, stop it, and try again if no test ran.

@@ -51,6 +51,9 @@ struct ContentView: View {
     @State private var showPush = false
     @State private var showTips = false
     @State private var showServers = false
+    /// Dev hooks: `-echo.screen gateway` and `files` open those screens of Settings (screenshots).
+    @State private var showGateway = false
+    @State private var showFiles = false
     #endif
 
     var body: some View {
@@ -86,6 +89,8 @@ struct ContentView: View {
         .sheet(isPresented: $showTips) { NavigationStack { TipJarView() } }
         .sheet(isPresented: $showServers) { NavigationStack { ServersView() } }
         .sheet(isPresented: $showPush) { NavigationStack { PushSettingsView() } }
+        .sheet(isPresented: $showGateway) { NavigationStack { GatewayView() } }
+        .sheet(isPresented: $showFiles) { NavigationStack { FilesView() } }
         #endif
         .fullScreenCover(isPresented: $showVoice) {
             VoiceView(session: voiceSession, onSwitchToTyping: {
@@ -572,6 +577,8 @@ struct ContentView: View {
         case "model": showModelPicker = true
         case "tips": showTips = true
         case "push": showPush = true
+        case "gateway": showGateway = true
+        case "files": showFiles = true
         default: break
         }
         if let text = DevHooks.value("-echo.draft") {

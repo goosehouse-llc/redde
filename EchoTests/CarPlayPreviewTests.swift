@@ -71,7 +71,10 @@ struct CarPlayPreviewTests {
         }
         await h.ask("Plan the weekend hike")
         let chatRows = try await h.delegate.chatRows()
-        let states = h.delegate.voiceTemplate().voiceControlStates
+        // A moving picture is caught wherever its loop happens to be, often at rest: with
+        // REDDE_CARPLAY_STILL the card gets the pictures that stand still (the store screenshot).
+        let moving = ProcessInfo.processInfo.environment["REDDE_CARPLAY_STILL"] == nil
+        let states = h.delegate.voiceTemplate(moving: moving).voiceControlStates
 
         // The Ask tab in the look a new install has, then in the others Settings offers.
         func ask(_ look: CarPlayCardLook) -> () -> UIViewController? {

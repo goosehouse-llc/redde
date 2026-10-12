@@ -60,6 +60,10 @@ shot "$PHONE" ph-diagram   -echo.demo -echo.demoTwo -theme claudeCode -appearanc
 shot "$PHONE" ph-settings  -echo.demo -echo.screen setup -theme standard -appearance light "${LEDGER[@]}"
 # "Make it yours": Settings with the App icon grid open.
 shot "$PHONE" ph-chat      -echo.demo -echo.screen settings -echo.expandAppIcons -theme standard -appearance light "${FAST[@]}"
+# 1.7: the agent's task list under its reply, and the Hermes server's own screens on sample data.
+shot "$PHONE" ph-tasks     -echo.demoTodos -theme standard -appearance dark "${FAST[@]}"
+shot "$PHONE" ph-gateway   -echo.demo -echo.demoGateway -echo.screen gateway -theme standard -appearance dark "${FAST[@]}"
+shot "$PHONE" ph-files     -echo.demo -echo.demoFiles -echo.screen files -theme standard -appearance light "${FAST[@]}"
 # Website only: the Kanban board (demo cards, no server) and typing with the keyboard up.
 shot "$PHONE" ph-kanban    -echo.demo -echo.demoKanban -echo.screen sessions -echo.section kanban -theme claudeCode -appearance dark "${FAST[@]}"
 # A headless simulator hides the software keyboard; turn that off for this one shot.
@@ -81,4 +85,16 @@ shot "$PAD" pad-dark         -echo.demo -echo.demoTwo -echo.demoLibrary -theme c
 # iPad keeps the fast lane here: with the gateway selected the sidebar tries the example host and shows an error.
 shot "$PAD" pad-settings     -echo.demo -echo.demoLibrary -echo.screen setup -theme standard -appearance light "${FAST[@]}" "${CHATS[@]}"
 shot "$PAD" pad-split        -echo.demo -echo.demoLibrary -echo.screen settings -echo.expandAppIcons -theme standard -appearance light "${FAST[@]}" "${CHATS[@]}"
+shot "$PAD" pad-tasks        -echo.demoTodos -echo.demoLibrary -theme standard -appearance dark "${FAST[@]}" "${CHATS[@]}"
+shot "$PAD" pad-gateway      -echo.demo -echo.demoLibrary -echo.demoGateway -echo.screen gateway -theme standard -appearance dark "${FAST[@]}" "${CHATS[@]}"
+fi
+
+# The car's screens, as CarPlay's own views draw them (scripts/carplay-preview.sh), at the shape
+# of a wide dashboard display.
+if [[ "${ONLY:-}" != pad ]]; then
+REDDE_CARPLAY_STILL=1 scripts/carplay-preview.sh "$RAW/carplay" 770x360 > /dev/null
+cp "$RAW/carplay/ask-770x360-dark.png" "$RAW/car-ask.png"
+cp "$RAW/carplay/voice-listening-770x360-dark.png" "$RAW/car-voice.png"
+cp "$RAW/carplay/voice-speaking-770x360-dark.png" "$RAW/car-speaking.png"
+echo car-ask car-voice car-speaking
 fi

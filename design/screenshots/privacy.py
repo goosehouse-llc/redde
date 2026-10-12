@@ -116,5 +116,5 @@ def privacy(W, H, dst, pad=False):
     canvas.convert('RGB').save(dst, 'PNG', optimize=True)
     print(os.path.basename(dst), canvas.size)
 
-privacy(1320, 2868, f'{OUT}/iphone-6.9/07-privacy.png')
-privacy(2064, 2752, f'{OUT}/ipad-13/07-ipad-privacy.png', pad=True)
+privacy(1320, 2868, f'{OUT}/iphone-6.9/10-privacy.png')
+privacy(2064, 2752, f'{OUT}/ipad-13/09-ipad-privacy.png', pad=True)

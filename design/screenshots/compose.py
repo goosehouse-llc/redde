@@ -51,6 +51,38 @@ def compose(src, dst, headline, sub, bg, fg, subfg, pad):
     canvas.convert('RGB').save(dst, 'PNG', optimize=True)
     print(os.path.basename(dst), canvas.size)
 
+def compose_car(shots, dst, headline, sub, bg, fg, subfg):
+    """The CarPlay slot: the car's screens stacked under the words, each in a dark bezel. The
+    shots are landscape (a dashboard display), drawn by scripts/carplay-preview.sh."""
+    W, H = 1320, 2868
+    canvas = Image.new('RGBA', (W, H), bg)
+    d = ImageDraw.Draw(canvas)
+    margin = int(W * 0.07)
+    hf = font(int(W * 0.075)); sf = font(int(W * 0.034), bold=False)
+    y = int(H * 0.055)
+    for line in wrap(d, headline, hf, W - 2 * margin):
+        d.text((margin, y), line, font=hf, fill=fg); y += int(hf.size * 1.12)
+    y += int(sf.size * 0.5)
+    for line in wrap(d, sub, sf, W - 2 * margin):
+        d.text((margin, y), line, font=sf, fill=subfg); y += int(sf.size * 1.3)
+    screens = [Image.open(p).convert('RGBA') for p in shots]
+    sw = int(W * 0.86); frame = 16; gap = int(H * 0.028)
+    sizes = [(sw, int(sw * im.height / im.width)) for im in screens]
+    stack = sum(h + 2 * frame for _, h in sizes) + gap * (len(sizes) - 1)
+    top = y + max(int(H * 0.035), (H - y - stack) // 2)
+    x = (W - sw) // 2
+    for im, (w, h) in zip(screens, sizes):
+        box = (x - frame, top, x + w + frame, top + h + 2 * frame)
+        shadow = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+        ImageDraw.Draw(shadow).rounded_rectangle((box[0], box[1] + 18, box[2], box[3] + 18), 46, fill=(0, 0, 0, 120))
+        canvas = Image.alpha_composite(canvas, shadow.filter(ImageFilter.GaussianBlur(30)))
+        ImageDraw.Draw(canvas).rounded_rectangle(box, 46, fill=(6, 8, 12))
+        mask = Image.new('L', (w, h), 0); ImageDraw.Draw(mask).rounded_rectangle((0, 0, w, h), 32, fill=255)
+        canvas.paste(im.resize((w, h), Image.LANCZOS), (x, top + frame), mask)
+        top += h + 2 * frame + gap
+    canvas.convert('RGB').save(dst, 'PNG', optimize=True)
+    print(os.path.basename(dst), canvas.size)
+
 BLUE = (30, 111, 217); NAVY = (16, 24, 56); PAPER = (239, 235, 226); INK = (27, 29, 58); CHAR = (29, 28, 27); BONE = (237, 232, 208)
 WHITE = (255, 255, 255); MIST = (200, 214, 240); SAND = (100, 96, 88); ASH = (170, 165, 158)
 os.makedirs(f'{OUT}/iphone-6.9', exist_ok=True); os.makedirs(f'{OUT}/ipad-13', exist_ok=True)
@@ -61,6 +93,8 @@ phone = [
   ('ph-diagram',  '04-rich',     'Answers with substance.',      'Code, tables, diagrams and math, rendered on the spot.', CHAR, BONE, ASH),
   ('ph-settings', '05-backend',  'Your backend, your rules.',    'Hermes, or any OpenAI-compatible model server. A setup code fills in the address and keys for you.', BLUE, WHITE, MIST),
   ('ph-chat',     '06-light',    'Make it yours.',               'Seven themes, your own colors, 13 app icons and 12 voice orbs. Face ID lock included.', (236, 238, 243), INK, SAND),
+  ('ph-gateway',  '08-server',   'Your server, from your phone.', 'What Hermes is running, its MCP servers, logs and files. Restart it without a terminal.', NAVY, WHITE, MIST),
+  ('ph-tasks',    '09-plan',     'It shows its plan.',           'On a longer job the agent keeps a task list, ticked off under its reply as it works.', CHAR, BONE, ASH),
 ]
 pad = [
   ('pad-default-dark', '01-ipad',      'Built for iPad.',              'Sessions, scheduled jobs and the Kanban board beside the conversation.', BLUE, WHITE, MIST),
@@ -69,6 +103,12 @@ pad = [
   ('pad-dark',         '04-ipad-rich', 'Answers with substance.',      'Code, tables, diagrams and math, rendered on the spot.', CHAR, BONE, ASH),
   ('pad-settings',     '05-ipad-backend', 'Your backend, your rules.', 'Hermes, or any OpenAI-compatible model server. A setup code fills in the address and keys for you.', BLUE, WHITE, MIST),
   ('pad-split',        '06-ipad-light','Make it yours.',               'Seven themes, your own colors, 13 app icons and 12 voice orbs.', (236, 238, 243), INK, SAND),
+  ('pad-gateway',      '07-ipad-server', 'Your server, from your iPad.', 'What Hermes is running, its MCP servers, logs and files. Restart it without a terminal.', NAVY, WHITE, MIST),
+  ('pad-tasks',        '08-ipad-plan', 'It shows its plan.',           'On a longer job the agent keeps a task list, ticked off under its reply as it works.', CHAR, BONE, ASH),
 ]
 for src, name, h, s, bg, fg, sfg in phone: compose(f'{SHOTS}/{src}.png', f'{OUT}/iphone-6.9/{name}.png', h, s, bg, fg, sfg, False)
 for src, name, h, s, bg, fg, sfg in pad:   compose(f'{SHOTS}/{src}.png', f'{OUT}/ipad-13/{name}.png',   h, s, bg, fg, sfg, True)
+# iPhone only: CarPlay runs from the phone.
+compose_car([f'{SHOTS}/car-ask.png', f'{SHOTS}/car-voice.png', f'{SHOTS}/car-speaking.png'], f'{OUT}/iphone-6.9/07-car.png',
+            'In the car, by voice.', 'CarPlay: tap Ask or Talk, or pick up a recent chat. Answers are spoken, so your eyes stay on the road.',
+            (24, 32, 46), WHITE, MIST)

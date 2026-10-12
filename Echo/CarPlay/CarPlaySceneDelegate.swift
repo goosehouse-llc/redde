@@ -321,12 +321,12 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     /// The card: one state per thing the voice session can be doing, with End and Mute in its
     /// bar (iOS 26.4, like the category). Five states is the most a voice-control template takes.
-    /// Not private, so the tests can count them and press the buttons.
-    func voiceTemplate() -> CPVoiceControlTemplate {
-        // The waveform moves, unless Reduce Motion is on. Its pictures are drawn for the car's
-        // screen, at two pixels a point at most: some eighty of them are kept while the car is
-        // connected.
-        let scale: CGFloat? = UIAccessibility.isReduceMotionEnabled ? nil : min(max(controller?.carTraitCollection.displayScale ?? 2, 1), 2)
+    /// Not private, so the tests can count them and press the buttons, and the preview can ask
+    /// for the pictures standing still.
+    func voiceTemplate(moving: Bool = !UIAccessibility.isReduceMotionEnabled) -> CPVoiceControlTemplate {
+        // The pictures move, unless Reduce Motion is on. They are drawn for the car's screen, at
+        // two pixels a point at most: some eighty of them are kept while the car is connected.
+        let scale: CGFloat? = moving ? min(max(controller?.carTraitCollection.displayScale ?? 2, 1), 2) : nil
         func state(_ id: CarPlayArtwork.VoiceState, _ titles: [String]) -> CPVoiceControlState {
             let image = CarPlayArtwork.voiceStateImage(id, movingAt: scale)
             // No action buttons on a state. With them CarPlay lays the card out title, picture,
