@@ -605,7 +605,7 @@ struct ContentView: View {
         let current = WhatsNew.currentVersion
         let isNewInstall = !settings.setupDone && !settings.isConfigured
         #if DEBUG
-        if DevHooks.has("-echo.whatsNew") { whatsNew = WhatsNew.releases.first { $0.version == current } ?? WhatsNew.releases.first; return }
+        if DevHooks.has("-echo.whatsNew") { whatsNew = WhatsNew.highlights(of: current); return }
         if DevHooks.screenshotRun { return }   // App Store captures must not get a sheet on top
         #endif
         if isNewInstall { WhatsNew.markSeen(current); return }

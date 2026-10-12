@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import UIKit
 @testable import Echo
 
 struct WhatsNewTests {
@@ -28,6 +29,26 @@ struct WhatsNewTests {
         #expect(WhatsNew.pending(lastSeen: "1.5", current: "1.5.1", isNewInstall: false) == nil)
     }
 
+    /// A point release with an entry of its own: someone on its version sees only what is new
+    /// since, and someone who comes from the version before sees that version's highlights
+    /// too, first. Without that, 1.7's would be skipped by everyone who updates past it.
+    @Test func aPointReleaseWithItsOwnEntryCarriesItsVersionsHighlights() throws {
+        func entry(_ version: String) throws -> WhatsNew.Release { try #require(WhatsNew.releases.first { $0.version == version }) }
+        let base = try entry("1.7"), point = try entry("1.7.1")
+        #expect(WhatsNew.pending(lastSeen: "1.7", current: "1.7.1", isNewInstall: false) == point)
+        let fromBefore = try #require(WhatsNew.pending(lastSeen: "1.6", current: "1.7.1", isNewInstall: false))
+        #expect(fromBefore.version == "1.7.1")
+        #expect(fromBefore.items == base.items + point.items)
+        // The sheet tells its rows apart by title.
+        #expect(Set(fromBefore.items.map(\.title)).count == fromBefore.items.count)
+        // Not yet on the point release: 1.7 as it was.
+        #expect(WhatsNew.pending(lastSeen: "1.6", current: "1.7", isNewInstall: false) == base)
+        // And an older version's highlights stay out of it.
+        #expect(WhatsNew.pending(lastSeen: "1.5", current: "1.7.1", isNewInstall: false) == fromBefore)
+        // Settings → About opens the same full list.
+        #expect(WhatsNew.highlights(of: "1.7.1") == fromBefore)
+    }
+
     @Test func versionsWithoutHighlightsShowNothing() {
         #expect(WhatsNew.pending(lastSeen: "1.0", current: "1.0.1", isNewInstall: false) == nil)
     }
@@ -42,6 +63,8 @@ struct WhatsNewTests {
         for release in WhatsNew.releases {
             #expect(!release.items.isEmpty)
             #expect(release.items.allSatisfy { !$0.title.isEmpty && !$0.detail.isEmpty })
+            // A symbol's name that the system doesn't know leaves the row without a picture.
+            for item in release.items { #expect(UIImage(systemName: item.symbol) != nil, "no symbol called \(item.symbol)") }
         }
     }
 }

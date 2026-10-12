@@ -536,7 +536,7 @@ struct AboutSettings: View {
             Link(destination: URL(string: "https://apps.apple.com/app/id6810900557?action=write-review")!) {
                 Label("Rate Redde on the App Store", systemImage: "star")
             }
-            if let release = WhatsNew.releases.first(where: { $0.version == WhatsNew.currentVersion }) ?? WhatsNew.releases.first {
+            if let release = WhatsNew.highlights(of: WhatsNew.currentVersion) {
                 NavigationLink("What's New in Redde") { WhatsNewView(release: release) }
             }
             NavigationLink("Acknowledgements") { AcknowledgementsView() }

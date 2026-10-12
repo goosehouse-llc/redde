@@ -1,6 +1,6 @@
 import Foundation
 
-/// The highlights shown once after an update ("What's New in Redde 1.7"). One entry per
+/// The highlights shown once after an update ("What's New in Redde 1.7.1"). One entry per
 /// version that has something worth showing; a version without an entry shows nothing.
 nonisolated enum WhatsNew {
     struct Item: Identifiable, Equatable, Sendable {
@@ -22,6 +22,12 @@ nonisolated enum WhatsNew {
 
     /// Newest first. Keep each to a handful of lines a person reads in ten seconds.
     static let releases: [Release] = [
+        Release(version: "1.7.1", items: [
+            Item(symbol: "mic", title: "Voice on iPhone 11 and iPhone SE",
+                 detail: "On an iPhone 11 or an iPhone SE (2nd generation), voice mode and the mic in the message field said your language wasn't available. Apple's newer speech recognition isn't on those iPhones, so Redde now listens with the one behind keyboard dictation. It stays on the iPhone, as before."),
+            Item(symbol: "car", title: "CarPlay, in color",
+                 detail: "The Ask tab's cards are wider and a color each: blue to Ask, gold to Talk, green for a New Chat. Settings → Appearance → CarPlay cards has five more looks. On the voice card, columns of lights jump with each syllable while Redde speaks, and a light sweeps to and fro while it thinks."),
+        ]),
         Release(version: "1.7", items: [
             Item(symbol: "bell.badge", title: "Notified when Redde is closed",
                  detail: "Pair your Hermes in Settings → Voice → Notify when Redde is closed, and it tells this iPhone when a reply is ready or the agent waits for you. Approve, deny or answer from the notification. It takes a small plugin on your Hermes, which Redde installs for you over the Dashboard."),
@@ -114,12 +120,30 @@ nonisolated enum WhatsNew {
     static func pending(lastSeen: String?, current: String, isNewInstall: Bool) -> Release? {
         guard !isNewInstall else { return nil }
         if let lastSeen, compare(lastSeen, current) != .orderedAscending { return nil }
-        // The newest entry not seen yet, up to this version: a point release without its own
-        // entry (1.4) still shows 1.4's to someone coming from 1.3, and nothing to someone on 1.4.
-        return releases.first { release in
+        // The entries not seen yet, up to this version, newest first: a point release without
+        // its own entry (1.4.2) still shows 1.4's to someone coming from 1.3, and nothing to
+        // someone on 1.4.
+        let unseen = releases.filter { release in
             compare(release.version, current) != .orderedDescending
                 && lastSeen.map { compare(release.version, $0) == .orderedDescending } ?? true
         }
+        guard let newest = unseen.first else { return nil }
+        // A point release with an entry of its own (1.7.1) comes days after its version, and
+        // most people reach it straight from the one before (1.6): they are shown what 1.7
+        // brought as well, first, and someone on 1.7 only what is new since.
+        let family = unseen.filter { sameMinor($0.version, newest.version) }
+        return Release(version: newest.version, items: family.reversed().flatMap(\.items))
+    }
+
+    /// A version's highlights in full, as someone coming from the version before is shown them:
+    /// what Settings → About opens.
+    static func highlights(of version: String) -> Release? {
+        pending(lastSeen: nil, current: version, isNewInstall: false)
+    }
+
+    /// "1.7.1" belongs to "1.7"; "1.8" does not.
+    private static func sameMinor(_ a: String, _ b: String) -> Bool {
+        a.split(separator: ".").prefix(2).elementsEqual(b.split(separator: ".").prefix(2))
     }
 
     /// Numeric, component by component: "1.10" is newer than "1.9".
