@@ -510,7 +510,8 @@ A chat opened again from the server comes back as text, its files bare paths onc
 pictures included: the newest eight replies that name files have them fetched again, newest
 first (`Conversation.resolveReopenedMedia`). `-echo.demoAudio` shows a reply with a sound to
 press. Tried with a stand-in for the file API (`EchoTests/ReplyAudioTests.swift`) and in the
-app with a tone made on the spot (`ReplyAudioUITests`); not yet with a file from a real Hermes.
+app with a tone made on the spot (`ReplyAudioUITests`). A file from a real Hermes played on an
+iPhone on 2026-10-12; a reopened chat getting its player back has not been seen on a device.
 
 Bytes are stored one file per attachment under Application Support (file-protected); transcripts
 keep metadata only. The share extension (`EchoShare`) writes to the App Group
