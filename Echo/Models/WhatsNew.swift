@@ -27,6 +27,8 @@ nonisolated enum WhatsNew {
                  detail: "On an iPhone 11 or an iPhone SE (2nd generation), voice mode and the mic in the message field said your language wasn't available. Apple's newer speech recognition isn't on those iPhones, so Redde now listens with the one behind keyboard dictation. It stays on the iPhone, as before."),
             Item(symbol: "car", title: "CarPlay, in color",
                  detail: "The Ask tab's cards are wider and a color each: blue to Ask, gold to Talk, green for a New Chat. Settings → Appearance → CarPlay cards has five more looks. On the voice card, columns of lights jump with each syllable while Redde speaks, and a light sweeps to and fro while it thinks."),
+            Item(symbol: "play.circle", title: "Audio that plays",
+                 detail: "When your agent sends a sound file, such as a reply spoken by its speech tool, the conversation shows a player where the file's path used to be. Files your agent sent also come back when you open a chat again. Like pictures, this uses the Dashboard login in Settings → Connection details."),
         ]),
         Release(version: "1.7", items: [
             Item(symbol: "bell.badge", title: "Notified when Redde is closed",

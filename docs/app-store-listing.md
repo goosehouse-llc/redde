@@ -71,16 +71,18 @@ Two pictures App Store Connect has taken since October 2026, on the version page
 The words in both sit inside the "art safe area" of Apple's templates. Use Preview in App Store Connect before submitting: it shows each on iPhone and iPad, both ways up.
 
 ## What's New in 1.7.1 (4000)
-Voice on the iPhone 11 and iPhone SE, and a new look for CarPlay.
+Voice on the iPhone 11 and iPhone SE, a new look for CarPlay, and audio that plays in the conversation.
 
 • Voice on iPhone 11 and iPhone SE (2nd generation). On these iPhones voice mode and the microphone in the message field said on-device transcription wasn't available for your language, whatever the language. Apple's newer speech recognition isn't available on them, so Redde now listens there with the one behind keyboard dictation. It runs on the iPhone too, and nothing you say leaves it.
 • CarPlay, in color. The Ask tab's cards are wider and a color each: blue to Ask, gold to Talk, green for a New Chat. Settings → Appearance → CarPlay cards has five more looks to pick from.
 • A livelier voice card in the car. Columns of lights jump with each syllable while Redde speaks, and a light sweeps to and fro while it thinks.
+• Audio in replies. When your agent sends a sound file, such as a summary spoken by its speech tool, the conversation shows a player where the file's path used to be: play, pause, and drag to move along. Files your agent sent also come back when you open a chat again. Like pictures and documents, this uses the Hermes Dashboard login in Settings → Connection details.
 
 ## Before submitting 1.7.1
 - The build is 1.7.1 (262). Archive from a clean build.
 - Voice on an iPhone 11 or SE (2nd generation) has not been tried by anyone: neither is at hand, the simulator cannot transcribe with the dictation model, and the tests that pass ran on a Mac (`SpeechRecognizerTests`, each with both transcribers). Somebody with one of those iPhones should try voice mode and the microphone in the message field first, over TestFlight if need be. The line above says it works.
 - CarPlay on a car: the wide cards in each of the six looks and the voice card's new pictures have been drawn with `scripts/carplay-preview.sh`, not yet looked at on a car's screen. Whether the voice card's pictures play there as they do on the mock-up is the thing to see.
+- Audio in a reply has been played from a sound made on the phone and fetched from a stand-in for the server (`ReplyAudioTests`, `ReplyAudioUITests`), not yet from a file a real Hermes sent. On the Dashboard connection, ask an agent that has a speech tool to say something aloud and press play; then open the chat again from the list and see that the player is there again. MP3, Ogg Opus, M4A, WAV and FLAC decode in the iOS 27 simulator; iOS 26 has not been checked, where a file that doesn't decode is shown as a file to open.
 - Everything under "Before submitting 1.7" that was still owed is still owed.
 
 ## What's New in 1.7 (4000)
