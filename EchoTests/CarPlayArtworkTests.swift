@@ -11,16 +11,50 @@ struct CarPlayArtworkTests {
     typealias Art = CarPlayArtwork
 
     @Test func rendersTheCardsAndVoiceStates() throws {
-        let buttons = Art.Start.allCases.map { ("start-\($0)", Art.startCard($0, size: CGSize(width: 141, height: 141))) }
+        let buttons = Art.Start.allCases.map { ("start-\($0)", Art.startCard($0)) }
+        let square = Art.Start.allCases.map { ("start-square-\($0)", Art.startCard($0, wide: false)) }
         let states = Art.VoiceState.allCases.map { ("voice-\($0.rawValue)", Art.voiceStateImage($0)) }
-        for (_, image) in buttons { #expect(image.size == CGSize(width: 141, height: 141)); #expect(image.scale == 3) }
+        for (_, image) in buttons {
+            // The car makes a card in the shape of its picture, and squeezes any wide picture
+            // that isn't 16 by 9 into that shape.
+            #expect(abs(image.size.width / image.size.height - 16.0 / 9) < 0.01)
+            #expect(image.scale == 3)
+        }
+        for (_, image) in square { #expect(image.size.width == image.size.height) }
         for (_, image) in states {
             #expect(image.size == CGSize(width: Art.voiceImageSide, height: Art.voiceImageSide))
             #expect(image.images == nil, "a picture nobody asked to move stands still")
         }
-        // A card with no size to go by still has to come out a picture.
-        #expect(Art.startCard(.ask, size: .zero).size.width > 0)
-        try write(buttons + states)
+        try write(buttons + square + states)
+    }
+
+    /// The car writes a card's two lines over the bottom left of its picture, in white by day
+    /// and by night: the colour there has to be deep enough to read them on.
+    @Test func theCardsAreDeepWhereTheCarWritesOnThem() throws {
+        for start in Art.Start.allCases {
+            let image = Art.startCard(start)
+            // Under the words: the lower third, as far across as the longer line reaches.
+            for (x, y) in [(0.06, 0.92), (0.25, 0.80), (0.45, 0.90), (0.50, 0.74)] {
+                let ground = try luminance(of: image, at: CGPoint(x: x, y: y))
+                let contrast = 1.05 / (ground + 0.05)
+                #expect(contrast >= 3.5, "\(start): white words at \(x), \(y) have a contrast of \(contrast)")
+            }
+            // And bright at the other corner, behind the symbol: a card is its colour.
+            #expect(try luminance(of: image, at: CGPoint(x: 0.96, y: 0.06)) > 3 * luminance(of: image, at: CGPoint(x: 0.06, y: 0.92)))
+        }
+    }
+
+    /// The relative luminance of a picture at a point given as fractions of its width and height.
+    private func luminance(of image: UIImage, at point: CGPoint) throws -> Double {
+        let cg = try #require(image.cgImage)
+        var pixel = [UInt8](repeating: 0, count: 4)
+        let context = try #require(CGContext(data: &pixel, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
+                                             space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        // One pixel of the picture, drawn so that it lands on the context's only one.
+        let x = (point.x * CGFloat(cg.width)).rounded(.down), y = (point.y * CGFloat(cg.height)).rounded(.down)
+        context.draw(cg, in: CGRect(x: -x, y: -(CGFloat(cg.height) - 1 - y), width: CGFloat(cg.width), height: CGFloat(cg.height)))
+        func linear(_ c: UInt8) -> Double { let v = Double(c) / 255; return v <= 0.04045 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4) }
+        return 0.2126 * linear(pixel[0]) + 0.7152 * linear(pixel[1]) + 0.0722 * linear(pixel[2])
     }
 
     @Test func listeningThinkingAndSpeakingMove() throws {

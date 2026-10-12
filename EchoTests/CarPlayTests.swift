@@ -128,8 +128,14 @@ struct CarPlayTests {
         let elements = row.elements.compactMap { $0 as? CPListImageRowItemCardElement }
         #expect(elements.map(\.title) == ["Ask", "Talk", "New Chat"])
         #expect(elements.map(\.subtitle) == ["One question", "Hands-free", "Start fresh"])
-        #expect(elements.allSatisfy { $0.image.size.width >= 100 }, "a card's picture is drawn for a card, not for a list row")
-        #expect(elements.allSatisfy { !$0.showsImageFullHeight }, "at full height the car stretches a square picture")
+        // Wide cards: the car gives a card the shape of its thumbnail, and a square picture
+        // set inside a card makes one half as wide.
+        if #available(iOS 26.4, *) {
+            let pictures = elements.compactMap { $0.thumbnail?.image }
+            #expect(pictures.count == 3, "a card without a thumbnail is the small kind")
+            #expect(pictures.allSatisfy { $0.size.width > $0.size.height * 1.7 })
+        }
+        #expect(row.allowsMultipleLines, "on the smallest screens two wide cards fill a line, and the third must not fall off it")
         #expect(row.text == nil, "nothing is open yet")
         #expect(row.handler == nil)
         await h.ask("Plan the lake trip")

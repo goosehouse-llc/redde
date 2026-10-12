@@ -1,12 +1,12 @@
 import CarPlay
 import UIKit
 
-/// Redde's CarPlay artwork, drawn in the app's current look instead of generic SF Symbols:
-/// graphite cards and discs, light waveform bars in the spark's profile (centre tallest, each bar
-/// outward lower, like voice mode's Waveform orb) and the gold spark. CarPlay owns layout and type, so
-/// these images are where the brand shows. Everything is drawn in code so it stays sharp on any
-/// car display, and every picture carries its own graphite ground so it reads the same on
-/// CarPlay's light and dark appearances.
+/// Redde's CarPlay artwork. The Ask tab's cards are a colour each, to be told apart at a glance.
+/// The voice card is in the app's own look: graphite discs, light waveform bars in the spark's
+/// profile (centre tallest, each bar outward lower, like voice mode's Waveform orb) and the gold
+/// spark. CarPlay owns layout and type, so these images are where the brand shows. Everything is
+/// drawn in code so it stays sharp on any car display, and every picture carries its own ground
+/// so it reads the same on CarPlay's light and dark appearances.
 enum CarPlayArtwork {
     static let graphiteTop = UIColor(red: 0.231, green: 0.267, blue: 0.325, alpha: 1)      // #3B4453
     static let graphiteBottom = UIColor(red: 0.078, green: 0.102, blue: 0.149, alpha: 1)   // #141A26
@@ -23,28 +23,48 @@ enum CarPlayArtwork {
 
     // MARK: - The Ask tab
 
-    /// A card on the Ask tab: graphite from edge to edge with the button's mark, drawn square
-    /// for the car to round into its card. A card is the largest button CarPlay draws: a grid
-    /// button's picture is 40 points on every screen, however large.
-    static func startCard(_ start: Start, size: CGSize = CPListImageRowItemCardElement.maximumImageSize) -> UIImage {
-        // Outside a car the element has no size to give.
-        let side = min(size.width, size.height) > 0 ? min(size.width, size.height) : 141
-        return render(CGSize(width: side, height: side), opaque: true) { ctx, rect in
-            gradient(ctx, rect)
-            let u = side / 100   // draw in a 100-unit square
-            switch start {
-            case .ask:
-                // One voice, waiting to be heard.
-                bars(ctx, centreX: 50 * u, centreY: 50 * u, heights: profile(tallest: 50, rest: 9, count: 5).map { $0 * u },
-                     gap: 10.5 * u, width: 6 * u, colour: mist)
-            case .talk:
-                // A conversation: your voice running into the spark that answers.
-                bars(ctx, centreX: 36 * u, centreY: 50 * u, heights: [16, 28, 42, 24].map { $0 * u }, gap: 9 * u, width: 5.5 * u, colour: mist)
-                spark(ctx, centre: CGPoint(x: 70 * u, y: 50 * u), radius: 15 * u, colour: gold)
-            case .newChat:
-                // A fresh start: the spark, about to be asked something.
-                spark(ctx, centre: CGPoint(x: 50 * u, y: 50 * u), radius: 23 * u, colour: gold)
+    /// A card on the Ask tab: its own colour from edge to edge and a plain white symbol. The
+    /// picture is wide because a card made from a thumbnail takes its picture's shape and lets
+    /// the picture fill it, and 16 by 9 is the widest the car draws: 146 points across on a
+    /// 770-point screen, where a square picture set inside a card made one of 80. The car writes
+    /// the card's two lines over the bottom left corner, in white whatever its appearance, so
+    /// the colour is deep there and bright behind the symbol at the right. `wide: false` is the
+    /// square picture for a card of the older kind (before iOS 26.4), its symbol in the middle.
+    static func startCard(_ start: Start, wide: Bool = true) -> UIImage {
+        render(wide ? wideCard : squareCard, opaque: true) { ctx, rect in
+            let (deep, bright) = cardColours(start)
+            if let g = CGGradient(colorsSpace: CGColorSpace(name: CGColorSpace.sRGB), colors: [deep.cgColor, bright.cgColor] as CFArray, locations: [0, 1]) {
+                ctx.drawLinearGradient(g, start: CGPoint(x: rect.minX, y: rect.maxY), end: CGPoint(x: rect.maxX, y: rect.minY), options: [])
             }
+            let centre = wide ? CGPoint(x: rect.width * 0.73, y: rect.height * 0.44) : CGPoint(x: rect.midX, y: rect.midY)
+            let config = UIImage.SymbolConfiguration(pointSize: rect.height * (wide ? 0.50 : 0.37), weight: .semibold)
+            guard let symbol = UIImage(systemName: cardSymbol(start), withConfiguration: config)?
+                .withTintColor(.white, renderingMode: .alwaysOriginal) else { return }
+            symbol.draw(at: CGPoint(x: centre.x - symbol.size.width / 2, y: centre.y - symbol.size.height / 2))
+        }
+    }
+
+    /// The pictures' sizes in points; the car scales them to its card.
+    static let wideCard = CGSize(width: 292, height: 164)
+    static let squareCard = CGSize(width: 141, height: 141)
+
+    /// Blue to ask, gold to talk, green for a new chat: the deep end and the bright end of each.
+    static func cardColours(_ start: Start) -> (deep: UIColor, bright: UIColor) {
+        func rgb(_ hex: UInt32) -> UIColor {
+            UIColor(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255, blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
+        }
+        return switch start {
+        case .ask: (rgb(0x0A2E66), rgb(0x3D9BFF))
+        case .talk: (rgb(0x6E4708), rgb(0xF0B850))
+        case .newChat: (rgb(0x0A4A3C), rgb(0x3ECFA6))
+        }
+    }
+
+    private static func cardSymbol(_ start: Start) -> String {
+        switch start {
+        case .ask: "mic.fill"
+        case .talk: "waveform"
+        case .newChat: "plus.bubble.fill"
         }
     }
 
@@ -118,15 +138,15 @@ enum CarPlayArtwork {
         switch state {
         case .listening:
             // Your voice: light bars in the spark's profile.
-            waveform(p.map(listeningHeights) ?? profile(tallest: 52, rest: 8, count: 7), mist)
+            waveform(p.map(listeningHeights) ?? profile(tallest: 52, rest: 8), mist)
         case .thinking:
             spark(ctx, centre: CGPoint(x: 50 * u, y: 50 * u), radius: 22 * u, colour: gold, turned: p.map(thinkingTurn) ?? 0)
         case .speaking:
             // Redde's voice: the same bars in gold.
-            waveform(p.map(speakingHeights) ?? profile(tallest: 52, rest: 8, count: 7), gold)
+            waveform(p.map(speakingHeights) ?? profile(tallest: 52, rest: 8), gold)
         case .muted:
             // Nobody is being heard: the bars at rest, struck through.
-            waveform(profile(tallest: 8, rest: 8, count: 7), mist)
+            waveform(profile(tallest: 8, rest: 8), mist)
             line(ctx, from: CGPoint(x: 30 * u, y: 70 * u), to: CGPoint(x: 70 * u, y: 30 * u), width: 6 * u, colour: gold)
         case .phone:
             // The agent is waiting for an approval that only the phone can give: a phone outline.
@@ -207,10 +227,9 @@ enum CarPlayArtwork {
         }
     }
 
-    /// `count` bar heights (5 or 7) from the spark profile, each at least `rest` units tall.
-    private static func profile(tallest: CGFloat, rest: CGFloat, count: Int) -> [CGFloat] {
-        let weights = count == 5 ? Array(sparkProfile[1...5]) : sparkProfile
-        return weights.map { rest + (tallest - rest) * $0 }
+    /// The bars' heights from the spark profile, each at least `rest` units tall.
+    private static func profile(tallest: CGFloat, rest: CGFloat) -> [CGFloat] {
+        sparkProfile.map { rest + (tallest - rest) * $0 }
     }
 
     // MARK: - Drawing

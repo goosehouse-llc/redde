@@ -1024,9 +1024,14 @@ and a failure is an alert. Replies are spoken only.
 
 CarPlay sizes everything in points and nothing to the screen, and two of its choices decide this
 layout (both found by drawing its own views, below). A grid template's button has a 40-point
-picture on every screen, so the first tab is cards: about 85 by 112 points each, the largest
-buttons there are, which fill a 400-point-wide screen and sit at the leading edge of a wider one
-(the recent conversations under them are what keeps a wide screen from standing half empty).
+picture on every screen, so the first tab is cards, the largest buttons there are. A card made
+from a thumbnail (`CPThumbnailImage`, iOS 26.4) takes the shape of its picture, which fills it,
+and Redde's are 16 by 9: 146 by 82 points on a screen 770 points wide, 176 by 98 on one of 640,
+which three of them fill, and 164 by 92 on one of 400, where two fill a line and New Chat goes on
+a second (`allowsMultipleLines`). A square picture set inside a card, as the first version had,
+makes a card 80 points wide; a 3 by 4 picture makes one of 95 by 126; any other wide picture is
+squeezed into the 16 by 9 shape. On a large screen the recent conversations under the cards are
+what keeps the tab from standing half empty.
 And a voice state with action buttons is laid out title, picture, buttons, with the picture
 given a third of whatever height is left: 10 points on a 240-point-high screen, 58 on a
 480-point one. Without them it has that height less 150 points, up to its full 150. Builds 260
@@ -1036,7 +1041,11 @@ picture. So no state has action buttons, and the controls are bar buttons
 offers nothing there gets a close button from CarPlay, which takes the card down without the
 conversation being told. The car's own Back button still does that; nothing here hears of it.
 
-The brand lives in artwork drawn in code (`CarPlay/CarPlayArtwork.swift`). The card's pictures
+The brand lives in artwork drawn in code (`CarPlay/CarPlayArtwork.swift`). The Ask tab's cards
+are a colour each, blue to ask, gold to talk and green for a new chat, with a plain white
+symbol (picked from six looks, 2026-10-11). The car writes a card's two lines over the bottom
+left of its picture, in white by day and by night, so each colour is deep in that corner and
+bright behind the symbol; `CarPlayArtworkTests` holds the contrast. The voice card's pictures
 move: a state's image is an animation to CarPlay (a loop of 0.3 to 5 seconds, 150 points at
 most), so Listening is a swell running across the bars, Speaking is the bars in gold rising and
 falling together, and Thinking is the spark making a quarter turn. They are pictures drawn ahead

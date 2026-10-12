@@ -141,12 +141,20 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// Not private, so the tests can read the cards and press them.
     func askSections() -> [CPListSection] {
         let cards = CarPlayArtwork.Start.allCases.map { start in
-            CPListImageRowItemCardElement(image: CarPlayArtwork.startCard(start), showsImageFullHeight: false,
-                                          title: Self.title(start), subtitle: Self.subtitle(start), tintColor: nil)
+            // A card made from a thumbnail takes the shape of its picture, which fills it: a wide
+            // picture makes a card nearly twice as wide as one with a square picture set inside.
+            if #available(iOS 26.4, *) {
+                return CPListImageRowItemCardElement(thumbnail: CPThumbnailImage(image: CarPlayArtwork.startCard(start)),
+                                                     title: Self.title(start), subtitle: Self.subtitle(start), tintColor: nil)
+            }
+            return CPListImageRowItemCardElement(image: CarPlayArtwork.startCard(start, wide: false), showsImageFullHeight: false,
+                                                 title: Self.title(start), subtitle: Self.subtitle(start), tintColor: nil)
         }
         // Which conversation Ask and Talk carry on, so a pick (or a New Chat) shows it took.
         let open = conversation.flatMap { $0.hasMessages ? $0.title : nil }
-        let row = CPListImageRowItem(text: open.map { "Now in “\($0)”" }, cardElements: cards, allowsMultipleLines: false)
+        // A second line is allowed for the smallest screens (400 points across), where two wide
+        // cards fill a line: New Chat goes under them there, not off the edge.
+        let row = CPListImageRowItem(text: open.map { "Now in “\($0)”" }, cardElements: cards, allowsMultipleLines: true)
         row.listImageRowHandler = { [weak self] _, index, completion in
             let starts = CarPlayArtwork.Start.allCases
             if starts.indices.contains(index) { self?.chose(starts[index]) }
@@ -159,9 +167,10 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
                 completion()
             }
         }
-        // Under the cards, the conversations last carried on. A card stays some 85 points wide on
-        // any screen, so on a wide one this is what keeps the tab from standing mostly empty; on
-        // a small one the cards fill the screen and these are a scroll away.
+        // Under the cards, the conversations last carried on. The cards are a strip some 85
+        // points high at the top of any screen, so on a large one this is what keeps the tab from
+        // standing mostly empty; on a small one the cards fill the screen and these are a scroll
+        // away.
         let others = chats.filter { !$0.isCurrent }.prefix(Self.recentOnAsk).map { self.row(for: $0) }
         guard !others.isEmpty else { return [CPListSection(items: [row])] }
         return [CPListSection(items: [row]), CPListSection(items: others, header: "Recent", sectionIndexTitle: nil)]
