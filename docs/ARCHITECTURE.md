@@ -760,7 +760,18 @@ Replies are spoken sentence by sentence while they stream, by AVSpeechSynthesize
 replay button speaks the last reply again without a new turn. The speech model is downloaded in the
 background at launch.
 
-**Languages.** Settings → Voice → Listening language picks what `SpeechTranscriber` listens for
+**Which transcriber.** `Transcriber` picks the SpeechAnalyzer module by the device:
+`SpeechTranscriber` where `SpeechTranscriber.isAvailable` says so, and `DictationTranscriber`
+where it does not. An iPhone 11 or SE 2 is such a device (the newer one knows no language there,
+which Redde used to report as a problem with the user's language), and so is the simulator.
+`DictationTranscriber` is the model behind keyboard dictation; it runs on the device too, needs no
+speech-recognition permission, and gives tentative text as the words come, which endpointing
+reads. It punctuates less and gives one final result per utterance. `-echo.dictation` listens with
+it on a device that has both, and `SpeechRecognizerTests` runs each test with each of the two; in
+the simulator both skip (it calls the dictation model installed and then has no audio format for
+it), so a run on a device or the Mac is what tests them.
+
+**Languages.** Settings → Voice → Listening language picks what the transcriber listens for
 (default: the iPhone's language); picking one reserves and downloads its model, releasing the
 oldest reserved language only when the app's limit is reached. "Voice for replies: Match each reply"
 detects each reply's language on-device (`SpokenLanguage`, NaturalLanguage) from its first

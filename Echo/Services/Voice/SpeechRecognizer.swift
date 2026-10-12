@@ -6,8 +6,9 @@ import Speech
 import os
 
 /// On-device live transcription using iOS 26 SpeechAnalyzer. Nothing here can reach a server:
-/// SpeechTranscriber has no cloud path. Endpointing (deciding the user stopped talking) is ours,
-/// because the API doesn't provide it: we watch mic level and the volatile transcript.
+/// neither of its transcribers (`Transcriber`) has a cloud path. Endpointing (deciding the user
+/// stopped talking) is ours, because the API doesn't provide it: we watch mic level and the
+/// volatile transcript.
 @Observable
 final class SpeechRecognizer {
     /// `holding`: the microphone is open and nothing is transcribed yet (see `startHeld`).
@@ -15,6 +16,8 @@ final class SpeechRecognizer {
     enum Failure: LocalizedError {
         case permissionDenied
         case localeUnsupported
+        /// The device has no on-device transcription in any language.
+        case unavailable
         case assetsUnavailable
         case audioFormat
         case busy
@@ -24,6 +27,7 @@ final class SpeechRecognizer {
             case .busy: "The microphone is still shutting down. Try again in a moment."
             case .permissionDenied: "Microphone access was denied. Enable it for Redde in Settings."
             case .localeUnsupported: "On-device transcription isn't available for this language. Pick another under Settings → Voice → Listening language."
+            case .unavailable: "On-device transcription isn't available on this device, so Redde can't listen here. Typing works as usual."
             case .assetsUnavailable: "The on-device speech model isn't installed yet."
             case .audioFormat: "Couldn't set up the microphone audio format."
             }
@@ -48,11 +52,15 @@ final class SpeechRecognizer {
     /// Hard cap so a stuck mic never records forever.
     var maxUtterance: TimeInterval = 45
 
+    /// What it listens with. Anything but the device's own is for tests.
+    private let kind: Transcriber.Kind
+    init(listeningWith kind: Transcriber.Kind = .onThisDevice) { self.kind = kind }
+
     nonisolated private static let log = Logger(subsystem: "com.goosehouse.echo", category: "stt")
     private var log: Logger { Self.log }
     private let engine = AVAudioEngine()
     private var analyzer: SpeechAnalyzer?
-    private var transcriber: SpeechTranscriber?
+    private var transcriber: Transcriber?
     private var inputContinuation: AsyncStream<AnalyzerInput>.Continuation?
     private var resultsTask: Task<Void, Never>?
     private var endpointTask: Task<Void, Never>?
@@ -82,33 +90,49 @@ final class SpeechRecognizer {
     /// The module must belong to an analyzer before AssetInventory will talk about it
     /// ("not subscribed to transcription.en" otherwise).
     /// `chosen` is read once by the caller, so a language picked meanwhile can't mix into this one.
-    static func prepareAssets(for chosen: Locale = Settings.shared.speechLocale) async throws {
-        guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: chosen) else {
-            throw Failure.localeUnsupported
+    static func prepareAssets(for chosen: Locale = Settings.shared.speechLocale,
+                              with kind: Transcriber.Kind = .onThisDevice) async throws {
+        let locale = try await Self.locale(for: chosen, kind)
+        let probe = try await Self.makeTranscriber(for: chosen, with: kind)
+        let installed = await kind.installedLocales
+        if !installed.contains(where: { $0.identifier(.bcp47) == locale.identifier(.bcp47) }) {
+            // The module must stay attached to an analyzer while AssetInventory is asked about it;
+            // referencing `analyzer` after the awaits keeps it alive through them.
+            let analyzer = SpeechAnalyzer(modules: [probe.module])
+            if let request = try await AssetInventory.assetInstallationRequest(supporting: [probe.module]) {
+                Self.log.info("downloading speech assets for \(locale.identifier)")
+                try await request.downloadAndInstall()
+                Self.log.info("speech assets installed")
+            }
+            withExtendedLifetime(analyzer) {}
         }
-        let probe = try await Self.makeTranscriber(for: chosen)
-        let installed = await SpeechTranscriber.installedLocales
-        if installed.contains(where: { $0.identifier(.bcp47) == locale.identifier(.bcp47) }) { return }
-        // The module must stay attached to an analyzer while AssetInventory is asked about it;
-        // referencing `analyzer` after the awaits keeps it alive through them.
-        let analyzer = SpeechAnalyzer(modules: [probe])
-        if let request = try await AssetInventory.assetInstallationRequest(supporting: [probe]) {
-            Self.log.info("downloading speech assets for \(locale.identifier)")
-            try await request.downloadAndInstall()
-            Self.log.info("speech assets installed")
+        // Installed is not yet able to listen: the simulator calls the dictation model installed
+        // and then has no audio format to give it.
+        guard await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [probe.module]) != nil else {
+            throw Failure.assetsUnavailable
         }
-        withExtendedLifetime(analyzer) {}
     }
 
-    func prepareAssets() async throws { try await Self.prepareAssets() }
+    func prepareAssets() async throws { try await Self.prepareAssets(with: kind) }
+
+    /// The languages this device can listen for, and those whose model is already on it. For the
+    /// picker in Settings.
+    static var supportedLocales: [Locale] { get async { await Transcriber.Kind.onThisDevice.supportedLocales } }
+    static var installedLocales: [Locale] { get async { await Transcriber.Kind.onThisDevice.installedLocales } }
 
     // MARK: - Shared setup
 
+    /// `chosen` in the form the transcriber knows it.
+    private static func locale(for chosen: Locale, _ kind: Transcriber.Kind) async throws -> Locale {
+        if let locale = await kind.supportedLocale(equivalentTo: chosen) { return locale }
+        // No language at all: the device is the trouble, and no other pick would help.
+        throw await kind.supportedLocales.isEmpty ? Failure.unavailable : Failure.localeUnsupported
+    }
+
     /// Same module configuration the live path uses, so file-based tests exercise the real thing.
-    static func makeTranscriber(for chosen: Locale = Settings.shared.speechLocale) async throws -> SpeechTranscriber {
-        guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: chosen) else {
-            throw Failure.localeUnsupported
-        }
+    static func makeTranscriber(for chosen: Locale = Settings.shared.speechLocale,
+                                with kind: Transcriber.Kind = .onThisDevice) async throws -> Transcriber {
+        let locale = try await Self.locale(for: chosen, kind)
         // Allocate the locale for this app. Without it the framework warns
         // "Cannot use modules with unallocated locales" and AssetInventory refuses downloads.
         let reserved = await AssetInventory.reservedLocales
@@ -122,12 +146,7 @@ final class SpeechRecognizer {
             }
             _ = try await AssetInventory.reserve(locale: locale)
         }
-        return SpeechTranscriber(
-            locale: locale,
-            transcriptionOptions: [],
-            reportingOptions: [.volatileResults, .fastResults],
-            attributeOptions: []
-        )
+        return Transcriber(kind, locale: locale)
     }
 
     /// Tells the analyzer the spoken-prefix words, so "Claude" is heard as Claude rather than
@@ -143,12 +162,18 @@ final class SpeechRecognizer {
 
     /// Transcribes an audio file through the exact pipeline the mic uses (converter + analyzer).
     /// Used by tests; the test machine has no microphone, so this is how STT gets verified offline.
-    static func transcribe(fileURL: URL) async throws -> String {
-        let transcriber = try await makeTranscriber()
-        guard let analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber]) else {
+    static func transcribe(fileURL: URL, with kind: Transcriber.Kind = .onThisDevice) async throws -> String {
+        try await results(fileURL: fileURL, with: kind).filter(\.isFinal).map(\.text).joined()
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Every result that pipeline gives for an audio file, the tentative ones too, in order.
+    static func results(fileURL: URL, with kind: Transcriber.Kind = .onThisDevice) async throws -> [(text: String, isFinal: Bool)] {
+        let transcriber = try await makeTranscriber(with: kind)
+        guard let analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber.module]) else {
             throw Failure.assetsUnavailable
         }
-        let analyzer = SpeechAnalyzer(modules: [transcriber])
+        let analyzer = SpeechAnalyzer(modules: [transcriber.module])
         await applySpokenPrefixHints(to: analyzer)
         let file = try AVAudioFile(forReading: fileURL)
         guard let converter = AVAudioConverter(from: file.processingFormat, to: analyzerFormat) else {
@@ -159,10 +184,11 @@ final class SpeechRecognizer {
             throw Failure.audioFormat
         }
 
-        var finalText = ""
+        var heard: [(text: String, isFinal: Bool)] = []
         let collector = Task {
-            for try await result in transcriber.results where result.isFinal {
-                finalText += String(result.text.characters)
+            try await transcriber.results { text, isFinal in
+                heard.append((text, isFinal))
+                return true
             }
         }
         try await analyzer.start(inputSequence: inputSequence)
@@ -176,7 +202,7 @@ final class SpeechRecognizer {
         continuation.finish()
         try await analyzer.finalizeAndFinishThroughEndOfInput()
         try await collector.value
-        return finalText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return heard
     }
 
     // MARK: - Lifecycle
@@ -282,14 +308,14 @@ final class SpeechRecognizer {
             guard gen == generation, state == .preparing else { throw CancellationError() }
         }
 
-        let transcriber: SpeechTranscriber
-        do { transcriber = try await Self.makeTranscriber() } catch { abandon(); throw error }
+        let transcriber: Transcriber
+        do { transcriber = try await Self.makeTranscriber(with: kind) } catch { abandon(); throw error }
         try stillPreparing()
-        guard let analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber]) else {
+        guard let analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber.module]) else {
             abandon(); throw Failure.assetsUnavailable
         }
         try stillPreparing()
-        let analyzer = SpeechAnalyzer(modules: [transcriber])
+        let analyzer = SpeechAnalyzer(modules: [transcriber.module])
         await Self.applySpokenPrefixHints(to: analyzer)
         self.transcriber = transcriber
         self.analyzer = analyzer
@@ -324,27 +350,10 @@ final class SpeechRecognizer {
 
         resultsTask = Task { [weak self] in
             do {
-                for try await result in transcriber.results {
-                    guard let self else { return }
-                    let text = String(result.text.characters)
-                    // Held again after a false alarm: whatever the recogniser still makes of that
-                    // noise belongs to no utterance.
-                    if state == .holding {
-                        finalizedText = ""; volatileText = ""
-                        if !transcript.isEmpty { transcript = "" }
-                        continue
-                    }
-                    if result.isFinal {
-                        finalizedText += text
-                        volatileText = ""
-                    } else {
-                        volatileText = text
-                    }
-                    let combined = (finalizedText + volatileText).trimmingCharacters(in: .whitespaces)
-                    if combined != transcript {
-                        transcript = combined
-                        lastTextChangeAt = .now
-                    }
+                try await transcriber.results { text, isFinal in
+                    guard let self else { return false }
+                    self.heard(text, isFinal: isFinal)
+                    return true
                 }
             } catch {
                 Self.log.error("transcriber results ended: \(error.localizedDescription)")
@@ -375,6 +384,28 @@ final class SpeechRecognizer {
             startedAt = .now
             state = .listening
             startEndpointing(tap)
+        }
+    }
+
+    /// One result from the transcriber, tentative or final.
+    private func heard(_ text: String, isFinal: Bool) {
+        // Held again after a false alarm: whatever the recogniser still makes of that noise
+        // belongs to no utterance.
+        if state == .holding {
+            finalizedText = ""; volatileText = ""
+            if !transcript.isEmpty { transcript = "" }
+            return
+        }
+        if isFinal {
+            finalizedText += text
+            volatileText = ""
+        } else {
+            volatileText = text
+        }
+        let combined = (finalizedText + volatileText).trimmingCharacters(in: .whitespaces)
+        if combined != transcript {
+            transcript = combined
+            lastTextChangeAt = .now
         }
     }
 

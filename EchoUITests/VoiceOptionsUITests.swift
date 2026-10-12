@@ -57,6 +57,26 @@ final class VoiceOptionsUITests: XCTestCase {
         XCTAssertTrue(phrase.waitForNonExistence(timeout: 5), "The phrase wasn't removed")
     }
 
+    /// The list an iPhone 11 was sent to pick another language from, and which never came up
+    /// there: its newer transcriber knows no language. The simulator's doesn't either, so the
+    /// languages here are the older transcriber's, as they are on that phone.
+    func testTheListeningLanguagesLoad() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = XCUIApplication.straightToChat + ["-echo.screen", "settings"]
+        app.launch()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20), "Settings didn't open")
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Listening language'")).firstMatch
+        reach(row, in: app, "The Listening language row")
+        row.tap()
+        XCTAssertTrue(app.navigationBars["Listening language"].waitForExistence(timeout: 10), "The Listening language screen didn't open")
+        XCTAssertTrue(app.staticTexts["Languages"].waitForExistence(timeout: 15), "No languages to pick from")
+        shot("listening languages")
+        // A long list, and a row is only there once it has been scrolled to.
+        reach(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'English (United States)'")).firstMatch,
+              in: app, "English (United States)")
+    }
+
     func testAskingForAProfileOpensVoiceModeOnIt() {
         continueAfterFailure = false
         let app = XCUIApplication()

@@ -1,11 +1,11 @@
-import Speech
 import SwiftUI
 
 /// Picks the language Redde listens for. On-device transcription understands one language at a
 /// time; picking one downloads its speech model if it isn't on the iPhone yet.
 struct SpeechLanguageView: View {
     @State private var settings = Settings.shared
-    @State private var locales: [Locale] = []
+    /// Nil until the list has been read.
+    @State private var locales: [Locale]?
     @State private var installed: Set<String> = []
     @State private var status: Status = .idle
     /// The download for the latest pick; a new pick cancels it, so only the latest shows.
@@ -20,16 +20,21 @@ struct SpeechLanguageView: View {
             } footer: {
                 statusText
             }
-            Section("Languages") {
-                ForEach(locales, id: \.self) { locale in
-                    let id = locale.identifier(.bcp47)
-                    row(id: id, title: Self.name(id), detail: installed.contains(id) ? "Downloaded" : nil)
+            if let locales, !locales.isEmpty {
+                Section("Languages") {
+                    ForEach(locales, id: \.self) { locale in
+                        let id = locale.identifier(.bcp47)
+                        row(id: id, title: Self.name(id), detail: installed.contains(id) ? "Downloaded" : nil)
+                    }
                 }
+            } else if locales != nil {
+                // A device with no transcription at all: say so, where a list would never come.
+                Section { Text(SpeechRecognizer.Failure.unavailable.localizedDescription).foregroundStyle(.secondary) }
             }
         }
         .navigationTitle("Listening language")
         .navigationBarTitleDisplayMode(.inline)
-        .overlay { if locales.isEmpty { ProgressView() } }
+        .overlay { if locales == nil { ProgressView() } }
         .task { await load() }
     }
 
@@ -68,8 +73,8 @@ struct SpeechLanguageView: View {
     }
 
     private func load() async {
-        let supported = await SpeechTranscriber.supportedLocales
-        installed = Set(await SpeechTranscriber.installedLocales.map { $0.identifier(.bcp47) })
+        let supported = await SpeechRecognizer.supportedLocales
+        installed = Set(await SpeechRecognizer.installedLocales.map { $0.identifier(.bcp47) })
         locales = supported.sorted { Self.name($0.identifier(.bcp47)) < Self.name($1.identifier(.bcp47)) }
     }
 
@@ -79,7 +84,7 @@ struct SpeechLanguageView: View {
             try await SpeechRecognizer.prepareAssets(for: chosen)
             guard !Task.isCancelled else { return }
             status = .idle
-            installed = Set(await SpeechTranscriber.installedLocales.map { $0.identifier(.bcp47) })
+            installed = Set(await SpeechRecognizer.installedLocales.map { $0.identifier(.bcp47) })
         } catch {
             guard !Task.isCancelled else { return }
             status = .failed(error.localizedDescription)
