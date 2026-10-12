@@ -491,6 +491,27 @@ A video (from Photos or Files) is a file like any other to the server; the app s
 frame under a play mark (`VideoPoster`) and plays it in Quick Look. One over the 8 MB limit is re-encoded, at medium quality
 and then at low, and refused only if it is still too big (`Attachment.video`).
 
+The other way round, a reply delivers a file by naming it: a line `MEDIA:/path/on/the/server`,
+a Markdown image of such a path, or "[IMAGE: /path]" (`ServeMedia`, `Shared/ReplyMedia.swift`).
+After a turn the app fetches each over the Dashboard's file API (`/api/fs/read-data-url`, so it
+needs the Dashboard login, also when the conversation runs over the Hermes API), attaches it
+and takes its path out of the text; one that can't be fetched stays as it was written
+(`Conversation.resolveServeMedia`). Pictures and documents were fetched from the start. Sound
+was not, and a spoken reply from the agent's speech tool stood there as its path (reported
+2026-10-12): it is now, by its ending (mp3, m4a, aac, wav, ogg, oga, opus, flac, aiff, caf),
+along with the tool's `[[audio_as_voice]]` line, which goes. Stock Hermes writes MP3, and
+Opus in an .ogg for platforms with voice bubbles; iOS 27 decodes both, and FLAC, WAV and AAC
+(checked in the simulator; iOS 26 not checked). A sound attachment is a file like any other to
+the server (`Attachment.isAudio`, by type or by name) and is shown as a player where it stands
+(`AudioBubble`: play or pause, a bar to move along, the time; `AttachmentAudio` plays one at a
+time through the playback audio session, like a reply read aloud). One the phone can't decode
+is a file chip that opens in Quick Look. Read aloud, the tag is "audio attached", never a path.
+A chat opened again from the server comes back as text, its files bare paths once more,
+pictures included: the newest eight replies that name files have them fetched again, newest
+first (`Conversation.resolveReopenedMedia`). `-echo.demoAudio` shows a reply with a sound to
+press. Tried with a stand-in for the file API (`EchoTests/ReplyAudioTests.swift`) and in the
+app with a tone made on the spot (`ReplyAudioUITests`); not yet with a file from a real Hermes.
+
 Bytes are stored one file per attachment under Application Support (file-protected); transcripts
 keep metadata only. The share extension (`EchoShare`) writes to the App Group
 (`group.com.goosehouse.echo`); the app turns shared items into a draft on its next foreground.

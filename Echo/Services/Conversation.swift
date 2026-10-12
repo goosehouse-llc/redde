@@ -1141,6 +1141,7 @@ final class Conversation {
                messages: new, serverSessionID: summary.id,
                name: Self.name(fromServerTitle: summary.title, firstQuestion: new.first { $0.role == .user && !$0.isSteer }?.text))
         persist()
+        resolveReopenedMedia()
         // What a note from Hermes said this session waits on is put right from here: joining
         // its turn says so again if it still does.
         StatusWidgets.settled(summary.id, in: widgetDefaults)
@@ -1215,7 +1216,7 @@ final class Conversation {
         var attachments: [Attachment] = []
         var fetched: Set<String> = []
         for c in candidates where !fetched.contains(c.path) {
-            guard let dataURL = try? await HermesServeClient.shared.readDataURL(path: c.path),
+            guard let dataURL = await fetchServerFile(c.path),
                   let att = ServeMedia.attachment(dataURL: dataURL, name: c.filename) else { continue }
             fetched.insert(c.path)
             attachments.append(att)
@@ -1225,7 +1226,38 @@ final class Conversation {
         for c in candidates where fetched.contains(c.path) {
             cleaned = cleaned.replacingOccurrences(of: c.whole, with: "")
         }
+        // The speech tool's request for a voice bubble went with its file.
+        if attachments.contains(where: \.isAudio) { cleaned = cleaned.replacingOccurrences(of: ServeMedia.voiceMarker, with: "") }
+        // The message may have been replaced while its files were on their way (another chat opened).
+        guard messages.contains(where: { $0.id == id && $0.text == text }) else { return }
         update(id) { $0.text = cleaned.trimmingCharacters(in: .whitespacesAndNewlines); $0.attachments += attachments }
+    }
+
+    /// A file on the server as a data URL, over the Dashboard's file API. Tests put their own here.
+    var fetchServerFile: (String) async -> String? = { try? await HermesServeClient.shared.readDataURL(path: $0) }
+
+    /// How many replies of a chat opened from the server have their files fetched again.
+    static let reopenedMediaReach = 8
+    private var reopenedMedia: Task<Void, Never>?
+
+    /// A chat opened from the server comes back as text: the files its replies delivered are
+    /// bare paths again, pictures and sound alike. The newest of them are fetched once more,
+    /// as they were when they first arrived, newest first; older ones stay as they are written.
+    func resolveReopenedMedia() {
+        reopenedMedia?.cancel()
+        guard settings.transport == .hermesServe || (settings.transport == .hermesSessions && HermesServeClient.shared.hasCredentials) else { return }
+        let opened = id
+        let replies = messages.reversed().lazy.filter { $0.role == .assistant && !ServeMedia.candidates(in: $0.text).isEmpty }
+            .prefix(Self.reopenedMediaReach).map(\.id)
+        guard !replies.isEmpty else { return }
+        reopenedMedia = Task { [weak self] in
+            for reply in replies {
+                guard let self, !Task.isCancelled, id == opened else { return }
+                await resolveServeMedia(reply)
+            }
+            guard let self, !Task.isCancelled, id == opened else { return }
+            persist()
+        }
     }
 
     /// Throws away text deltas buffered for this reply, keeping any pending reasoning. Used when

@@ -78,6 +78,10 @@ nonisolated struct Attachment: Identifiable, Codable, Equatable, Sendable {
     var dataURL: String { "data:\(mimeType);base64,\(data.base64EncodedString())" }
     /// A video is a file like any other to the server (`.other`); the app only shows it as one.
     var isVideo: Bool { mimeType.hasPrefix("video/") }
+    /// Sound, likewise: played where it stands in the conversation.
+    var isAudio: Bool {
+        mimeType.hasPrefix("audio/") || (kind == .other && ServeMedia.audioExts.contains((filename as NSString).pathExtension.lowercased()))
+    }
     var sizeLabel: String { ByteCountFormatter.string(fromByteCount: Int64(byteCount), countStyle: .file) }
 
     /// Text-like files can be inlined into the prompt on transports that don't take files.

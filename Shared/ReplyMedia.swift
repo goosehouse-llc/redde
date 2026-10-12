@@ -79,6 +79,24 @@ nonisolated enum ServeMedia {
     /// Documents worth fetching as attachments; anything else stays as text in the reply.
     private static let docExts: Set<String> = ["pdf", "txt", "md", "markdown", "csv", "json", "log",
                                               "html", "htm", "yaml", "yml", "xml", "rtf"]
+    /// Sound: what the agent's speech tool writes (MP3, or Opus in an .ogg for platforms with
+    /// voice bubbles), and recordings. Played where it stands in the conversation.
+    static let audioExts: Set<String> = ["mp3", "m4a", "aac", "wav", "ogg", "oga", "opus", "flac", "aiff", "aif", "caf"]
+    /// A line the speech tool puts before its `MEDIA:` tag to ask a chat platform for a voice
+    /// bubble. It means nothing to a reader.
+    static let voiceMarker = "[[audio_as_voice]]"
+
+    /// What a sound file is called when the server doesn't say, or says only "a file".
+    static func audioMime(forExtension ext: String) -> String {
+        switch ext {
+        case "mp3": "audio/mpeg"
+        case "m4a": "audio/mp4"
+        case "ogg", "oga", "opus": "audio/ogg"
+        case "aif", "aiff": "audio/aiff"
+        case "caf": "audio/x-caf"
+        default: "audio/\(ext)"
+        }
+    }
 
     static func candidates(in text: String) -> [Candidate] {
         guard text.contains("/") else { return [] }
@@ -96,7 +114,7 @@ nonisolated enum ServeMedia {
             for match in text.matches(of: pattern) {
                 let path = String(match.output.1)
                 guard let ext = path.split(separator: ".").last?.lowercased(),
-                      imageExts.contains(ext) || docExts.contains(ext),
+                      imageExts.contains(ext) || docExts.contains(ext) || audioExts.contains(ext),
                       seen.insert(String(match.output.0)).inserted else { continue }
                 found.append(Candidate(whole: String(match.output.0), path: path))
             }
@@ -109,12 +127,15 @@ nonisolated enum ServeMedia {
     static func attachment(dataURL: String, name: String) -> Attachment? {
         guard dataURL.hasPrefix("data:"), let comma = dataURL.range(of: ";base64,"),
               let data = Data(base64Encoded: String(dataURL[comma.upperBound...])), !data.isEmpty else { return nil }
-        let mime = String(dataURL[dataURL.index(dataURL.startIndex, offsetBy: 5)..<comma.lowerBound])
+        var mime = String(dataURL[dataURL.index(dataURL.startIndex, offsetBy: 5)..<comma.lowerBound])
+        // A sound file the server only called "a file" (an .opus, often) is still sound.
+        let named = (name as NSString).pathExtension.lowercased()
+        if audioExts.contains(named), !mime.hasPrefix("audio/") { mime = audioMime(forExtension: named) }
         let kind: Attachment.Kind = mime.hasPrefix("image/") ? .image
             : mime == "application/pdf" ? .pdf
             : mime.hasPrefix("text/") || mime == "application/json" || mime == "application/xml" ? .text
             : .other
-        let ext = mime == "image/jpeg" ? "jpg" : String(mime.split(separator: "/").last ?? "bin")
+        let ext = mime == "image/jpeg" ? "jpg" : mime == "audio/mpeg" ? "mp3" : String(mime.split(separator: "/").last ?? "bin")
         return Attachment(kind: kind, filename: name.contains(".") ? name : "\(name).\(ext)", mimeType: mime, data: data)
     }
 }
@@ -123,6 +144,8 @@ extension ServeMedia {
     // The tag shapes, shared with PlainText's spoken/display stripping so the grammar
     // can't drift between rendering and speech.
     nonisolated static let spokenImageTagPattern = #"MEDIA:\S+\.(?i:png|jpe?g|gif|webp|bmp|heic)\S*"#
+    nonisolated static let spokenAudioTagPattern = #"MEDIA:\S+\.(?i:mp3|m4a|aac|wav|ogg|oga|opus|flac|aiff?|caf)\b\S*"#
+    nonisolated static let voiceMarkerPattern = #"\[\[audio_as_voice\]\]\s*"#
     nonisolated static let mediaTagPattern = #"MEDIA:\S+"#
     nonisolated static let imageTagPattern = #"\[IMAGE:[^\]]*\]"#
 }

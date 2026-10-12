@@ -24,6 +24,7 @@ import WidgetKit
 ///   made-up server, with no Dashboard. Installing leaves it running; with `restart`, waiting for one.
 /// - `-echo.demoChatControls`: the model menu's "This conversation" switches on sample data.
 /// - `-echo.demoTodos`: a conversation in which the agent keeps a task list (the checklist under a reply).
+/// - `-echo.demoAudio`: a reply that came with a sound file (the player in the conversation).
 /// - `-echo.demoWidgets`: fill the "Needs you" and Context widgets with sample data (two requests
 ///   that wait, a context about two thirds full), to look at them on the Home Screen.
 ///   `-echo.demoWidgets clear` empties them again.
@@ -105,6 +106,7 @@ enum DevHooks {
         if demoProjects { settings.transport = .hermesServe }
         if has("-echo.demoLong") { conversation.seedLongDemo() }
         if has("-echo.demoTodos") { conversation.seedTodoDemo() }
+        if has("-echo.demoAudio") { conversation.seedAudioDemo() }
         if has("-echo.demoWidgets") {
             NeedsYou.clear()
             ContextReading.clear()

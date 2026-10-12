@@ -235,6 +235,32 @@ extension Conversation {
                                   Message(role: .user, text: "Carry on."), second])
     }
 
+    /// Dev hook (`-echo.demoAudio`): a reply that came with a sound file, as the agent's speech
+    /// tool delivers one, to look at the player and to press it. The sound is a tone made here:
+    /// four seconds, rising.
+    func seedAudioDemo() {
+        // A new conversation first, not only a stop: the one saved last may still be coming off
+        // the disk, or be there already with a message it is trying to send, and either can take
+        // the screen back.
+        reset()
+        let rate = 16000, seconds = 4
+        var wav = Data()
+        func put<T: FixedWidthInteger>(_ value: T) { withUnsafeBytes(of: value.littleEndian) { wav.append(contentsOf: $0) } }
+        let count = rate * seconds
+        wav.append(contentsOf: Array("RIFF".utf8)); put(UInt32(36 + count * 2)); wav.append(contentsOf: Array("WAVEfmt ".utf8))
+        put(UInt32(16)); put(UInt16(1)); put(UInt16(1)); put(UInt32(rate)); put(UInt32(rate * 2)); put(UInt16(2)); put(UInt16(16))
+        wav.append(contentsOf: Array("data".utf8)); put(UInt32(count * 2))
+        var phase = 0.0
+        for i in 0 ..< count {
+            let t = Double(i) / Double(rate)
+            phase += 2 * .pi * (330 + 55 * t) / Double(rate)
+            put(Int16(sin(phase) * 6000 * min(1, t * 8, (Double(seconds) - t) * 8)))
+        }
+        var reply = Message(role: .assistant, text: "Here is this morning's summary, read aloud. It runs to about a minute.")
+        reply.attachments = [Attachment(kind: .other, filename: "summary.wav", mimeType: "audio/wav", data: wav)]
+        replaceForDemo(messages: [Message(role: .user, text: "Read me this morning's summary."), reply])
+    }
+
     /// Screenshot helper (`-echo.demoLibrary`): a few local conversations so the list isn't empty.
     /// `savedFrom`: as this iPhone's copies of conversations on that Hermes server instead
     /// (`-echo.demoSaved`), which is what the list falls back to when the server can't be reached.

@@ -27,7 +27,9 @@ nonisolated enum PlainText {
         rule(#"\$\$[\s\S]*?\$\$"#, "formula omitted"),
         // MEDIA:<path> file delivery and the "[IMAGE: /path]" phrasing: never read a server
         // path aloud — the picture arrives in the transcript (see resolveServeMedia).
+        rule(ServeMedia.voiceMarkerPattern, ""),
         rule(ServeMedia.spokenImageTagPattern, "picture attached"),
+        rule(ServeMedia.spokenAudioTagPattern, "audio attached"),
         rule(ServeMedia.mediaTagPattern, "file attached"),
         rule(ServeMedia.imageTagPattern, "picture attached"),
         rule(#"!\[([^\]]*)\]\([^)]*\)"#, "$1"),
@@ -45,6 +47,7 @@ nonisolated enum PlainText {
     private static let displayRules: [(NSRegularExpression, String)] = [
         rule(#"```[\s\S]*?```"#, "[code]"),
         rule(#"\$\$[\s\S]*?\$\$"#, "[formula]"),
+        rule(ServeMedia.voiceMarkerPattern, ""),
         rule(ServeMedia.mediaTagPattern, ""),
         rule(ServeMedia.imageTagPattern, ""),
         rule(#"!\[[^\]]*\]\([^)]*\)"#, ""),

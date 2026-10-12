@@ -32,8 +32,99 @@ struct AttachmentStrip: View {
 
 /// Attachments shown with a message. A lone image displays as a photo bubble, like a received
 /// picture message; several show as tiles. Images open full screen on tap, out of the thumbnail
-/// that was tapped and back into it.
+/// that was tapped and back into it. Sound is played where it stands, each file on a bar of its
+/// own above the rest.
 struct AttachmentGallery: View {
+    let attachments: [Attachment]
+
+    var body: some View {
+        let sound = attachments.filter(\.isAudio)
+        let rest = attachments.filter { !$0.isAudio }
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(sound) { AudioBubble(attachment: $0) }
+            if !rest.isEmpty { AttachmentTiles(attachments: rest) }
+        }
+    }
+}
+
+/// A sound attachment as a player: play or pause, where it has got to, how long it is. A file
+/// this phone can't decode is offered as a file instead, to open or share.
+struct AudioBubble: View {
+    let attachment: Attachment
+    @State private var audio = AttachmentAudio.shared
+    /// Nil until the file has been looked at; 0 when it can't be played.
+    @State private var duration: TimeInterval?
+    @State private var previewing = false
+
+    private var isCurrent: Bool { audio.current == attachment.id }
+    private var isPlaying: Bool { isCurrent && audio.isPlaying }
+
+    var body: some View {
+        Group {
+            if duration == 0 {
+                AttachmentTile(attachment: attachment, size: 64)
+                    .onTapGesture { previewing = true }
+                    .sheet(isPresented: $previewing) { DocumentPreview(attachment: attachment).ignoresSafeArea() }
+            } else {
+                player
+            }
+        }
+        .task(id: attachment.id) {
+            guard duration == nil else { return }
+            let att = attachment
+            duration = await Task.detached(priority: .utility) { AttachmentAudio.duration(of: att) }.value ?? 0
+        }
+    }
+
+    private var player: some View {
+        HStack(spacing: 10) {
+            Button { audio.toggle(attachment) } label: {
+                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                    .font(.body.weight(.semibold))
+                    .frame(width: 36, height: 36)
+                    .background(Color.accentColor.opacity(0.16), in: .circle)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.accentColor)
+            .disabled(duration == nil)
+            .accessibilityLabel(isPlaying ? "Pause" : "Play")
+            // The clock only runs while this one is playing; at rest the bar costs nothing.
+            TimelineView(.periodic(from: .now, by: isPlaying ? 0.1 : 3600)) { _ in
+                let length = max(duration ?? 0, 0.01)
+                let at = min(audio.position(of: attachment.id), length)
+                HStack(spacing: 10) {
+                    Slider(value: Binding(get: { at }, set: { audio.seek(attachment, to: $0) }), in: 0 ... length)
+                        .accessibilityLabel("Position")
+                        .accessibilityValue(Self.clock(at))
+                    Text(isCurrent ? Self.clock(at) : Self.clock(duration ?? 0))
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .frame(minWidth: 34, alignment: .trailing)
+                }
+            }
+        }
+        .padding(.vertical, 8)
+        .padding(.leading, 8)
+        .padding(.trailing, 12)
+        .frame(maxWidth: 300)
+        .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 22))
+        .contextMenu {
+            Button("Open", systemImage: "arrow.up.forward.square") { previewing = true }
+        }
+        .sheet(isPresented: $previewing) { DocumentPreview(attachment: attachment).ignoresSafeArea() }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Audio: \(attachment.filename)")
+    }
+
+    /// "0:07", "12:40".
+    static func clock(_ seconds: TimeInterval) -> String {
+        let whole = Int(seconds.rounded(.down))
+        return String(format: "%d:%02d", whole / 60, whole % 60)
+    }
+}
+
+/// Everything but sound: a photo bubble for a lone image, tiles otherwise.
+private struct AttachmentTiles: View {
     let attachments: [Attachment]
     @State private var viewing: Attachment?
     @State private var previewingDoc: Attachment?
@@ -263,7 +354,7 @@ struct AttachmentTile: View {
             }
         } else {
             HStack(spacing: 6) {
-                Image(systemName: attachment.kind == .pdf ? "doc.richtext" : "doc.text")
+                Image(systemName: attachment.isAudio ? "waveform" : attachment.kind == .pdf ? "doc.richtext" : "doc.text")
                 VStack(alignment: .leading, spacing: 1) {
                     Text(attachment.filename).font(.caption.weight(.medium)).lineLimit(1)
                     Text(attachment.sizeLabel).font(.caption2).foregroundStyle(.secondary)
