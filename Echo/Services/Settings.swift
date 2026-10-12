@@ -195,6 +195,10 @@ final class Settings: ServeEndpoint {
     var orbLight: OrbLight {
         didSet { defaults.set(orbLight.rawValue, forKey: Keys.orbLight) }
     }
+    /// How CarPlay's Ask tab draws its three cards.
+    var carPlayCards: CarPlayCardLook {
+        didSet { defaults.set(carPlayCards.rawValue, forKey: Keys.carPlayCards) }
+    }
     /// What the app renders in: the appearance choice, nil meaning follow the system.
     var effectiveColorScheme: ColorScheme? { appearance.colorScheme }
     /// Local notifications for approvals / replies / failures while the app is in the background.
@@ -389,6 +393,7 @@ final class Settings: ServeEndpoint {
         static let appearance = "appearance"
         static let voiceOrb = "voiceOrb"
         static let orbLight = "orbLight"
+        static let carPlayCards = "carPlayCards"
         static let notifyInBackground = "notifyInBackground"
         static let showLiveActivity = "showLiveActivity"
         static let suggestFollowUps = "suggestFollowUps"
@@ -447,6 +452,7 @@ final class Settings: ServeEndpoint {
         // A still orb picked in an earlier version falls back to the default; they are gone.
         voiceOrb = VoiceOrb(rawValue: defaults.string(forKey: Keys.voiceOrb) ?? "") ?? .waveform
         orbLight = OrbLight(rawValue: defaults.string(forKey: Keys.orbLight) ?? "") ?? .nebula
+        carPlayCards = CarPlayCardLook(rawValue: defaults.string(forKey: Keys.carPlayCards) ?? "") ?? .color
         notifyInBackground = defaults.bool(forKey: Keys.notifyInBackground)
         showLiveActivity = defaults.object(forKey: Keys.showLiveActivity) as? Bool ?? true
         suggestFollowUps = defaults.bool(forKey: Keys.suggestFollowUps)
@@ -650,6 +656,7 @@ final class Settings: ServeEndpoint {
         appearance = .system
         voiceOrb = .waveform
         orbLight = .nebula
+        carPlayCards = .color
         notifyInBackground = false
         showLiveActivity = true
         earpieceAtEar = true

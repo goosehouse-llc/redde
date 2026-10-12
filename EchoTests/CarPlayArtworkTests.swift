@@ -11,8 +11,12 @@ struct CarPlayArtworkTests {
     typealias Art = CarPlayArtwork
 
     @Test func rendersTheCardsAndVoiceStates() throws {
-        let buttons = Art.Start.allCases.map { ("start-\($0)", Art.startCard($0)) }
-        let square = Art.Start.allCases.map { ("start-square-\($0)", Art.startCard($0, wide: false)) }
+        // Every look of Settings → Appearance → CarPlay cards.
+        let looks = CarPlayCardLook.allCases
+        let buttons = looks.flatMap { look in Art.Start.allCases.map { ("start-\(look.rawValue)-\($0)", Art.startCard($0, look: look)) } }
+        let square = looks.flatMap { look in Art.Start.allCases.map { ("start-square-\(look.rawValue)-\($0)", Art.startCard($0, look: look, wide: false)) } }
+        // Eighteen pictures, no two alike.
+        #expect(Set(buttons.compactMap { $0.1.pngData() }).count == buttons.count)
         let states = Art.VoiceState.allCases.map { ("voice-\($0.rawValue)", Art.voiceStateImage($0)) }
         for (_, image) in buttons {
             // The car makes a card in the shape of its picture, and squeezes any wide picture
@@ -29,17 +33,18 @@ struct CarPlayArtworkTests {
     }
 
     /// The car writes a card's two lines over the bottom left of its picture, in white by day
-    /// and by night: the colour there has to be deep enough to read them on.
-    @Test func theCardsAreDeepWhereTheCarWritesOnThem() throws {
+    /// and by night: in every look the ground there has to be deep enough to read them on.
+    @Test(arguments: CarPlayCardLook.allCases) func theCardsAreDeepWhereTheCarWritesOnThem(_ look: CarPlayCardLook) throws {
         for start in Art.Start.allCases {
-            let image = Art.startCard(start)
+            let image = Art.startCard(start, look: look)
             // Under the words: the lower third, as far across as the longer line reaches.
             for (x, y) in [(0.06, 0.92), (0.25, 0.80), (0.45, 0.90), (0.50, 0.74)] {
                 let ground = try relativeLuminance(of: image, at: CGPoint(x: x, y: y))
                 let contrast = 1.05 / (ground + 0.05)
-                #expect(contrast >= 3.5, "\(start): white words at \(x), \(y) have a contrast of \(contrast)")
+                #expect(contrast >= 3.5, "\(look) \(start): white words at \(x), \(y) have a contrast of \(contrast)")
             }
-            // And bright at the other corner, behind the symbol: a card is its colour.
+            // The colour cards are bright at the other corner, behind the symbol: a card is its colour.
+            guard look == .color else { continue }
             #expect(try relativeLuminance(of: image, at: CGPoint(x: 0.96, y: 0.06)) > 3 * relativeLuminance(of: image, at: CGPoint(x: 0.06, y: 0.92)))
         }
     }

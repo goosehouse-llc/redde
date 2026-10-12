@@ -73,10 +73,18 @@ struct CarPlayPreviewTests {
         let chatRows = try await h.delegate.chatRows()
         let states = h.delegate.voiceTemplate().voiceControlStates
 
+        // The Ask tab in the look a new install has, then in the others Settings offers.
+        func ask(_ look: CarPlayCardLook) -> () -> UIViewController? {
+            {
+                h.settings.carPlayCards = look
+                return self.list(CPListTemplate(title: "Ask", sections: h.delegate.askSections()))
+            }
+        }
         var screens: [(String, () -> UIViewController?)] = [
-            ("ask", { self.list(CPListTemplate(title: "Ask", sections: h.delegate.askSections())) }),
+            ("ask", ask(.color)),
             ("chats", { self.list(CPListTemplate(title: "Chats", sections: [CPListSection(items: chatRows)])) }),
         ]
+        screens += CarPlayCardLook.allCases.filter { $0 != .color }.map { ("ask-\($0.rawValue)", ask($0)) }
         for state in CarPlayArtwork.VoiceState.allCases {
             screens.append(("voice-\(state.rawValue)", {
                 let template = CPVoiceControlTemplate(voiceControlStates: states.filter { $0.identifier == state.rawValue })

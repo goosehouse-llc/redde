@@ -13,6 +13,7 @@ struct CarPlayTests {
 
     struct Harness {
         let delegate = CarPlaySceneDelegate()
+        let defaults = UserDefaults(suiteName: "carplay-\(UUID().uuidString)")!
         let settings: Settings
         let store: ConversationStore
         let conversation: Conversation
@@ -22,7 +23,7 @@ struct CarPlayTests {
         let audio = VoiceSessionTests.FakeAudio()
 
         init() {
-            settings = Settings(defaults: UserDefaults(suiteName: "carplay-\(UUID().uuidString)")!)
+            settings = Settings(defaults: defaults)
             settings.transport = .chatCompletions
             settings.fastLaneURL = "http://example.invalid:11500"
             settings.fastLaneModel = "test"
@@ -106,6 +107,27 @@ struct CarPlayTests {
         let row = try cards(delegate)
         let handler = try #require(row.listImageRowHandler)
         await withCheckedContinuation { done in handler(row, index) { done.resume() } }
+    }
+
+    /// Settings → Appearance → CarPlay cards: the tab draws its cards in the look picked there,
+    /// and in the colour one until something else is.
+    @Test func theCardsAreDrawnInTheLookPickedInSettings() throws {
+        guard #available(iOS 26.4, *) else { return }
+        let h = Harness()
+        func pictures() throws -> [Data] {
+            try cards(h.delegate).elements.compactMap { ($0 as? CPListImageRowItemCardElement)?.thumbnail?.image.pngData() }
+        }
+        #expect(h.settings.carPlayCards == .color)
+        var drawn: Set<[Data]> = []
+        for look in CarPlayCardLook.allCases {
+            h.settings.carPlayCards = look
+            let three = try pictures()
+            #expect(three.count == 3)
+            #expect(drawn.insert(three).inserted, "\(look) draws what another look does")
+        }
+        h.settings.carPlayCards = .glow
+        // The pick outlives the app.
+        #expect(Settings(defaults: h.defaults).carPlayCards == .glow)
     }
 
     @Test func theScreenOpensOnTwoTabsAskFirst() throws {

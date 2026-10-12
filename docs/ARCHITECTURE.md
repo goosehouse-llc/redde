@@ -1053,10 +1053,15 @@ offers nothing there gets a close button from CarPlay, which takes the card down
 conversation being told. The car's own Back button still does that; nothing here hears of it.
 
 The brand lives in artwork drawn in code (`CarPlay/CarPlayArtwork.swift`). The Ask tab's cards
-are a colour each, blue to ask, gold to talk and green for a new chat, with a plain white
-symbol (picked from six looks, 2026-10-11). The car writes a card's two lines over the bottom
-left of its picture, in white by day and by night, so each colour is deep in that corner and
-bright behind the symbol; `CarPlayArtworkTests` holds the contrast. The voice card's pictures
+come in six looks, picked in Settings → Appearance → CarPlay cards (`CarPlayCardLook`,
+`Settings.carPlayCards`; the row is left out on an iPad, which has no CarPlay). Color, the one a
+new install has, gives each card its own: blue to ask, gold to talk and green for a new chat,
+with a plain white symbol. The others are Glow, Orb, Gold, Graphite and Marks, the last being the
+voice bars and gold spark the cards first had. Settings shows each look as the three pictures
+the car is given, and a pick made while the car shows the tab brings it up to date. The car
+writes a card's two lines over the bottom left of its picture, in white by day and by night, so
+every look is dark in that corner and keeps its mark to the right; `CarPlayArtworkTests` holds
+the contrast for each. The voice card's pictures
 move: a state's image is an animation to CarPlay (a loop of 0.3 to 5 seconds, 150 points at
 most). They are drawn after the dashboard of KITT, the car in Knight Rider (asked for
 2026-10-11), in the mist and gold the card had before. Speaking is its voice display: three

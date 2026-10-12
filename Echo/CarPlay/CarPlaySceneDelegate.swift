@@ -140,14 +140,16 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// The Ask tab: one row of three cards, under the name of the conversation they carry on.
     /// Not private, so the tests can read the cards and press them.
     func askSections() -> [CPListSection] {
+        // In the look picked in Settings → Appearance → CarPlay cards.
+        let look = settings.carPlayCards
         let cards = CarPlayArtwork.Start.allCases.map { start in
             // A card made from a thumbnail takes the shape of its picture, which fills it: a wide
             // picture makes a card nearly twice as wide as one with a square picture set inside.
             if #available(iOS 26.4, *) {
-                return CPListImageRowItemCardElement(thumbnail: CPThumbnailImage(image: CarPlayArtwork.startCard(start)),
+                return CPListImageRowItemCardElement(thumbnail: CPThumbnailImage(image: CarPlayArtwork.startCard(start, look: look)),
                                                      title: Self.title(start), subtitle: Self.subtitle(start), tintColor: nil)
             }
-            return CPListImageRowItemCardElement(image: CarPlayArtwork.startCard(start, wide: false), showsImageFullHeight: false,
+            return CPListImageRowItemCardElement(image: CarPlayArtwork.startCard(start, look: look, wide: false), showsImageFullHeight: false,
                                                  title: Self.title(start), subtitle: Self.subtitle(start), tintColor: nil)
         }
         // Which conversation Ask and Talk carry on, so a pick (or a New Chat) shows it took.
@@ -416,6 +418,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         observing = true
         armPhaseObservation()
         armTitleObservation()
+        armLookObservation()
     }
 
     private func armPhaseObservation() {
@@ -442,6 +445,18 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
                 if let self { self.askTab?.updateSections(self.askSections()) }
                 self?.reloadChats()
                 self?.armTitleObservation()
+            }
+        }
+    }
+
+    /// Another look for the cards, picked on the phone while the car shows them.
+    private func armLookObservation() {
+        withObservationTracking {
+            _ = settings.carPlayCards
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                if let self { self.askTab?.updateSections(self.askSections()) }
+                self?.armLookObservation()
             }
         }
     }

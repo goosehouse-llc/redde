@@ -1,7 +1,8 @@
 import CarPlay
 import UIKit
 
-/// Redde's CarPlay artwork. The Ask tab's cards are a colour each, to be told apart at a glance.
+/// Redde's CarPlay artwork. The Ask tab's cards come in six looks (`CarPlayCardLook`, picked in
+/// Settings), a colour each unless another is chosen, to be told apart at a glance.
 /// The voice card's pictures are graphite discs with lights on them, after the dashboard of KITT,
 /// the talking car in Knight Rider: three columns of lights that rise and fall with a voice, in
 /// mist while you are heard and in gold while Redde speaks, and a scanner whose light runs to and
@@ -21,25 +22,66 @@ enum CarPlayArtwork {
 
     // MARK: - The Ask tab
 
-    /// A card on the Ask tab: its own colour from edge to edge and a plain white symbol. The
-    /// picture is wide because a card made from a thumbnail takes its picture's shape and lets
-    /// the picture fill it, and 16 by 9 is the widest the car draws: 146 points across on a
-    /// 770-point screen, where a square picture set inside a card made one of 80. The car writes
-    /// the card's two lines over the bottom left corner, in white whatever its appearance, so
-    /// the colour is deep there and bright behind the symbol at the right. `wide: false` is the
-    /// square picture for a card of the older kind (before iOS 26.4), its symbol in the middle.
-    static func startCard(_ start: Start, wide: Bool = true) -> UIImage {
-        render(wide ? wideCard : squareCard, opaque: true) { ctx, rect in
-            let (deep, bright) = cardColours(start)
-            if let g = CGGradient(colorsSpace: CGColorSpace(name: CGColorSpace.sRGB), colors: [deep.cgColor, bright.cgColor] as CFArray, locations: [0, 1]) {
-                ctx.drawLinearGradient(g, start: CGPoint(x: rect.minX, y: rect.maxY), end: CGPoint(x: rect.maxX, y: rect.minY), options: [])
-            }
+    /// A card on the Ask tab, in the look Settings names. The picture is wide because a card made
+    /// from a thumbnail takes its picture's shape and lets the picture fill it, and 16 by 9 is
+    /// the widest the car draws: 146 points across on a 770-point screen, where a square picture
+    /// set inside a card made one of 80. The car writes the card's two lines over the bottom left
+    /// corner, in white whatever its appearance, so every look is dark there and keeps its mark
+    /// to the right. `wide: false` is the square picture for a card of the older kind (before
+    /// iOS 26.4), its mark in the middle.
+    static func startCard(_ start: Start, look: CarPlayCardLook = .color, wide: Bool = true) -> UIImage {
+        let key = "\(start) \(look.rawValue) \(wide)"
+        if let made = cardPictures[key] { return made }
+        let picture = render(wide ? wideCard : squareCard, opaque: true) { ctx, rect in
+            // Where the mark goes, and how tall it is.
             let centre = wide ? CGPoint(x: rect.width * 0.73, y: rect.height * 0.44) : CGPoint(x: rect.midX, y: rect.midY)
-            let config = UIImage.SymbolConfiguration(pointSize: rect.height * (wide ? 0.50 : 0.37), weight: .semibold)
-            guard let symbol = UIImage(systemName: cardSymbol(start), withConfiguration: config)?
-                .withTintColor(.white, renderingMode: .alwaysOriginal) else { return }
-            symbol.draw(at: CGPoint(x: centre.x - symbol.size.width / 2, y: centre.y - symbol.size.height / 2))
+            let height = rect.height * (wide ? 0.62 : 0.46)
+            let light = cardLight(start)
+            switch look {
+            case .color:
+                // Deep at the corner where the words lie, bright behind the symbol.
+                let (deep, bright) = cardColours(start)
+                diagonal(ctx, rect, from: deep, to: bright)
+                symbol(cardSymbol(start), height: height * 0.80, colour: .white, centre: centre)
+            case .glow:
+                // Nearly black, with a light in the card's colour behind its symbol.
+                diagonal(ctx, rect, from: rgb(0x07090D), to: rgb(0x161B26))
+                radial(ctx, [light.withAlphaComponent(0.55), light.withAlphaComponent(0.16), light.withAlphaComponent(0)], at: [0, 0.55, 1],
+                       centre: centre, radii: CGSize(width: height * 1.25, height: height * 1.25))
+                symbol(cardSymbol(start), height: height * 0.78, colour: .white, centre: centre)
+            case .orb:
+                // The phone's voice orb: a dark glass disc in a ring of the card's colour.
+                diagonal(ctx, rect, from: rgb(0x06080B), to: rgb(0x11151D))
+                let r = height * 0.60
+                radial(ctx, [light.withAlphaComponent(0.34), light.withAlphaComponent(0)], at: [0.55, 1], centre: centre,
+                       radii: CGSize(width: r * 1.55, height: r * 1.55))
+                let face = CGRect(x: centre.x - r, y: centre.y - r, width: r * 2, height: r * 2)
+                ctx.saveGState()
+                UIBezierPath(ovalIn: face).addClip()
+                gradient(ctx, face, from: rgb(0x343D4D), to: rgb(0x0D1118))
+                radial(ctx, [UIColor.white.withAlphaComponent(0.16), UIColor.white.withAlphaComponent(0)], at: [0, 1],
+                       centre: CGPoint(x: centre.x - r * 0.35, y: centre.y - r * 0.45), radii: CGSize(width: r * 0.9, height: r * 0.9))
+                ctx.restoreGState()
+                ctx.setLineWidth(max(2.5, r * 0.07)); light.setStroke()
+                ctx.strokeEllipse(in: face)
+                if start == .newChat {
+                    symbol("plus", height: r * 0.72, weight: .bold, colour: mist, centre: centre)
+                } else {
+                    mark(start, ctx, centre: centre, height: r * 0.86)
+                }
+            case .gold:
+                gradient(ctx, rect, from: rgb(0x2B3240), to: rgb(0x0C1017))
+                symbol(cardSymbol(start), height: height * 0.80, colour: gold, centre: centre)
+            case .graphite:
+                gradient(ctx, rect)
+                symbol(cardSymbol(start), height: height * 0.80, colour: mist, centre: centre)
+            case .marks:
+                gradient(ctx, rect)
+                mark(start, ctx, centre: centre, height: height)
+            }
         }
+        cardPictures[key] = picture
+        return picture
     }
 
     /// The pictures' sizes in points; the car scales them to its card.
@@ -48,13 +90,19 @@ enum CarPlayArtwork {
 
     /// Blue to ask, gold to talk, green for a new chat: the deep end and the bright end of each.
     static func cardColours(_ start: Start) -> (deep: UIColor, bright: UIColor) {
-        func rgb(_ hex: UInt32) -> UIColor {
-            UIColor(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255, blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
-        }
-        return switch start {
+        switch start {
         case .ask: (rgb(0x0A2E66), rgb(0x3D9BFF))
         case .talk: (rgb(0x6E4708), rgb(0xF0B850))
         case .newChat: (rgb(0x0A4A3C), rgb(0x3ECFA6))
+        }
+    }
+
+    /// The same three colours as light: a glow, or an orb's ring.
+    private static func cardLight(_ start: Start) -> UIColor {
+        switch start {
+        case .ask: rgb(0x2E8BF5)
+        case .talk: gold
+        case .newChat: rgb(0x38C29E)
         }
     }
 
@@ -63,6 +111,21 @@ enum CarPlayArtwork {
         case .ask: "mic.fill"
         case .talk: "waveform"
         case .newChat: "plus.bubble.fill"
+        }
+    }
+
+    /// Redde's own marks, as the cards first had them: one voice waiting to be heard, a voice
+    /// running into the spark that answers, and the spark by itself, about to be asked something.
+    private static func mark(_ start: Start, _ ctx: CGContext, centre c: CGPoint, height: CGFloat) {
+        let u = height / 50
+        switch start {
+        case .ask:
+            bars(ctx, centre: c, heights: [19, 31, 50, 31, 19].map { $0 * u }, gap: 10.5 * u, width: 6 * u, colour: mist)
+        case .talk:
+            bars(ctx, centre: CGPoint(x: c.x - 17 * u, y: c.y), heights: [18, 32, 48, 27].map { $0 * u }, gap: 10 * u, width: 6 * u, colour: mist)
+            spark(ctx, centre: CGPoint(x: c.x + 24 * u, y: c.y), radius: 17 * u, colour: gold)
+        case .newChat:
+            spark(ctx, centre: c, radius: 25 * u, colour: gold)
         }
     }
 
@@ -123,11 +186,14 @@ enum CarPlayArtwork {
     /// The pictures already drawn, so that a card opens without drawing eighty of them first.
     private static var voicePictures: [String: UIImage] = [:]
     private static var backdrops: [Bool: UIImage] = [:]
+    /// And the Ask tab's cards, which are asked for again whenever the tab is brought up to date.
+    private static var cardPictures: [String: UIImage] = [:]
 
     /// Lets go of the drawn pictures: the car is gone.
     static func forget() {
         voicePictures = [:]
         backdrops = [:]
+        cardPictures = [:]
     }
 
     /// One picture of a state. `p` is how far through its loop, 0 up to 1; nil is the picture
@@ -314,12 +380,58 @@ enum CarPlayArtwork {
         ctx.restoreGState()
     }
 
-    /// The graphite ground, lighter at the top left.
-    private static func gradient(_ ctx: CGContext, _ rect: CGRect) {
-        let colours = [graphiteTop.cgColor, graphiteBottom.cgColor] as CFArray
-        if let g = CGGradient(colorsSpace: CGColorSpace(name: CGColorSpace.sRGB), colors: colours, locations: [0, 1]) {
+    private static func rgb(_ hex: UInt32) -> UIColor {
+        UIColor(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255, blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
+    }
+
+    /// A ground lighter at the top left: the graphite one, unless other colours are given.
+    private static func gradient(_ ctx: CGContext, _ rect: CGRect, from: UIColor = graphiteTop, to: UIColor = graphiteBottom) {
+        if let g = CGGradient(colorsSpace: CGColorSpace(name: CGColorSpace.sRGB), colors: [from.cgColor, to.cgColor] as CFArray, locations: [0, 1]) {
             ctx.drawLinearGradient(g, start: rect.origin, end: CGPoint(x: rect.maxX, y: rect.maxY), options: [])
         }
+    }
+
+    /// A ground that runs from the bottom left corner, where a card's words lie, to the top right.
+    private static func diagonal(_ ctx: CGContext, _ rect: CGRect, from: UIColor, to: UIColor) {
+        if let g = CGGradient(colorsSpace: CGColorSpace(name: CGColorSpace.sRGB), colors: [from.cgColor, to.cgColor] as CFArray, locations: [0, 1]) {
+            ctx.drawLinearGradient(g, start: CGPoint(x: rect.minX, y: rect.maxY), end: CGPoint(x: rect.maxX, y: rect.minY), options: [])
+        }
+    }
+
+    /// A system symbol of that height, centred on a point.
+    private static func symbol(_ name: String, height: CGFloat, weight: UIImage.SymbolWeight = .semibold, colour: UIColor, centre: CGPoint) {
+        let config = UIImage.SymbolConfiguration(pointSize: height, weight: weight)
+        guard let symbol = UIImage(systemName: name, withConfiguration: config)?.withTintColor(colour, renderingMode: .alwaysOriginal) else { return }
+        symbol.draw(at: CGPoint(x: centre.x - symbol.size.width / 2, y: centre.y - symbol.size.height / 2))
+    }
+
+    /// Vertical rounded bars centred on a point.
+    private static func bars(_ ctx: CGContext, centre: CGPoint, heights: [CGFloat], gap: CGFloat, width: CGFloat, colour: UIColor) {
+        ctx.saveGState()
+        ctx.setLineCap(.round); ctx.setLineWidth(width); colour.setStroke()
+        let start = centre.x - gap * CGFloat(heights.count - 1) / 2
+        for (i, h) in heights.enumerated() {
+            let x = start + CGFloat(i) * gap
+            ctx.move(to: CGPoint(x: x, y: centre.y - h / 2 + width / 2))
+            ctx.addLine(to: CGPoint(x: x, y: centre.y + h / 2 - width / 2))
+        }
+        ctx.strokePath()
+        ctx.restoreGState()
+    }
+
+    /// The app icon's four-point spark: quadratic arms pulled in to the centre.
+    private static func spark(_ ctx: CGContext, centre c: CGPoint, radius r: CGFloat, colour: UIColor) {
+        let path = UIBezierPath()
+        path.move(to: CGPoint(x: 0, y: -r))
+        path.addQuadCurve(to: CGPoint(x: r, y: 0), controlPoint: .zero)
+        path.addQuadCurve(to: CGPoint(x: 0, y: r), controlPoint: .zero)
+        path.addQuadCurve(to: CGPoint(x: -r, y: 0), controlPoint: .zero)
+        path.addQuadCurve(to: CGPoint(x: 0, y: -r), controlPoint: .zero)
+        path.close()
+        ctx.saveGState()
+        ctx.translateBy(x: c.x, y: c.y)
+        colour.setFill(); path.fill()
+        ctx.restoreGState()
     }
 
     /// A gradient out from a centre, on an ellipse of the given radii, carried on past its edge.

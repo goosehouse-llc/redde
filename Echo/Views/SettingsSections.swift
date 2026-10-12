@@ -78,6 +78,8 @@ struct AppearanceSettings: View {
             .pickerStyle(.menu)
             AppIconSettings()
             VoiceOrbSettings()
+            // An iPad has no CarPlay.
+            if UIDevice.current.userInterfaceIdiom == .phone { CarPlayCardSettings() }
         } header: {
             Text("Appearance")
         } footer: {
