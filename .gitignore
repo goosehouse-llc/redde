@@ -24,3 +24,6 @@ design/video/*.log
 
 # Python caches from the Hermes plugin and the lab scripts
 __pycache__/
+
+# An App Store Connect API key's whereabouts, for scripts/app-store-push.py. Never commit it.
+tmp/asc.env

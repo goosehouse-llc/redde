@@ -109,6 +109,7 @@ Written ahead of the release, so unlike the rest of this page not all of it has 
 In App Store Connect and on the web:
 - The privacy policy and the support page as they are in `docs/` have to be published. On 2026-10-08 legal.goosehouse.org still served the policy of September 27, which says Goosehouse receives nothing and lacks even 1.6's paragraphs on setup links and scanning a code.
 - Review notes from `app-review-notes.md`, with the key put in.
+- The copy on this page and the screenshots in `design/screenshots/` (retaken for 1.7 on 2026-10-10, with new slots for CarPlay, the server's screens and the task list): `scripts/app-store-push.py all` sends both, given an App Store Connect API key. It leaves the review notes, the Apple Watch set and the Header and Search Results pictures alone.
 - The build is 1.7 (261). Archive from a clean build, which is also what trains Siri's phrases, the new "Ask <a profile> in Redde" among them.
 - The first archive with the notification extension (`com.goosehouse.echo.push`): Xcode's automatic signing has to make its App Store profile, with the app group.
 - The first archive with the watch's complication extension (`com.goosehouse.echo.watchkitapp.widgets`), new in build 261: Xcode has to make its App ID and profile too. It has no entitlements of its own. Nothing here has built it for a device: the simulator builds don't sign.
