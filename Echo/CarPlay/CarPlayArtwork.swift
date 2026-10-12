@@ -2,11 +2,12 @@ import CarPlay
 import UIKit
 
 /// Redde's CarPlay artwork. The Ask tab's cards are a colour each, to be told apart at a glance.
-/// The voice card is in the app's own look: graphite discs, light waveform bars in the spark's
-/// profile (centre tallest, each bar outward lower, like voice mode's Waveform orb) and the gold
-/// spark. CarPlay owns layout and type, so these images are where the brand shows. Everything is
-/// drawn in code so it stays sharp on any car display, and every picture carries its own ground
-/// so it reads the same on CarPlay's light and dark appearances.
+/// The voice card's pictures are graphite discs with lights on them, after the dashboard of KITT,
+/// the talking car in Knight Rider: three columns of lights that rise and fall with a voice, in
+/// mist while you are heard and in gold while Redde speaks, and a scanner whose light runs to and
+/// fro while it thinks. CarPlay owns layout and type, so these images are where the brand shows.
+/// Everything is drawn in code so it stays sharp on any car display, and every picture carries
+/// its own ground so it reads the same on CarPlay's light and dark appearances.
 enum CarPlayArtwork {
     static let graphiteTop = UIColor(red: 0.231, green: 0.267, blue: 0.325, alpha: 1)      // #3B4453
     static let graphiteBottom = UIColor(red: 0.078, green: 0.102, blue: 0.149, alpha: 1)   // #141A26
@@ -17,9 +18,6 @@ enum CarPlayArtwork {
     enum Start: CaseIterable { case ask, talk, newChat }
     /// The voice card's states. Five, the most a voice-control template takes.
     enum VoiceState: String, CaseIterable { case listening, thinking, speaking, muted, phone }
-
-    /// Bar heights in the spark's profile, as fractions of the tallest (voice mode's weights).
-    private static let sparkProfile: [CGFloat] = [0.13, 0.27, 0.51, 1.0, 0.51, 0.27, 0.13]
 
     // MARK: - The Ask tab
 
@@ -82,19 +80,19 @@ enum CarPlayArtwork {
     /// CarPlay plays a loop of 0.3 to 5 seconds. Muted and "needs your phone" stand still.
     static func loop(_ state: VoiceState) -> (duration: TimeInterval, frames: Int)? {
         switch state {
-        case .listening: (2.4, 29)
-        case .thinking: (2.4, 29)
-        case .speaking: (2.0, 32)
+        case .listening: (2.4, 30)
+        case .thinking: (2.0, 30)
+        case .speaking: (3.0, 42)
         case .muted, .phone: nil
         }
     }
 
-    /// The voice card's large image for each state: a graphite disc with light or gold marks.
+    /// The voice card's large image for each state: a graphite disc with lights in mist or gold.
     /// `movingAt` makes Listening, Thinking and Speaking a loop, drawn at that many pixels a
-    /// point: the waveform swells while the mic is open, rises and falls in gold while Redde
-    /// speaks, and the spark turns while it thinks. The card plays pictures made ahead of time,
-    /// so the bars follow a rhythm of their own and not the level of anybody's voice, unlike the
-    /// phone's.
+    /// point: the columns stir while the mic is open, rise and fall in gold on the rhythm of
+    /// speech while Redde speaks, and the scanner's light runs to and fro while it thinks. The
+    /// card plays pictures made ahead of time, so the lights follow a rhythm of their own and not
+    /// the level of anybody's voice, unlike the phone's waveform.
     static func voiceStateImage(_ state: VoiceState, side: CGFloat = voiceImageSide, movingAt scale: CGFloat? = nil) -> UIImage {
         let key = "\(state.rawValue) \(side) \(scale ?? 0)"
         if let made = voicePictures[key] { return made }
@@ -102,13 +100,18 @@ enum CarPlayArtwork {
         var picture = render(size) { ctx, rect in draw(state, at: nil, ctx, rect) }
         if let scale, let loop = loop(state) {
             var frames: [UIImage] = []
+            // The columns move a light at a time, so most pictures of their loops are one that
+            // has been drawn already: it is used again.
+            var drawn: [String: UIImage] = [:]
             for i in 0 ..< loop.frames {
                 let p = CGFloat(i) / CGFloat(loop.frames)
-                // The spark rests between turns: those pictures are the first one again.
-                if state == .thinking, p >= thinkingTurnEnds, let first = frames.first {
-                    frames.append(first)
+                let look = level(state, at: p).map { "\(columns(at: $0))" }
+                if let look, let same = drawn[look] {
+                    frames.append(same)
                 } else {
-                    frames.append(render(size, scale: scale) { ctx, rect in draw(state, at: p, ctx, rect) })
+                    let frame = render(size, scale: scale) { ctx, rect in draw(state, at: p, ctx, rect) }
+                    if let look { drawn[look] = frame }
+                    frames.append(frame)
                 }
             }
             picture = UIImage.animatedImage(with: frames, duration: loop.duration) ?? picture
@@ -132,21 +135,19 @@ enum CarPlayArtwork {
     private static func draw(_ state: VoiceState, at p: CGFloat?, _ ctx: CGContext, _ rect: CGRect) {
         disc(ctx, rect)
         let u = rect.width / 100
-        func waveform(_ heights: [CGFloat], _ colour: UIColor) {
-            bars(ctx, centreX: 50 * u, centreY: 50 * u, heights: heights.map { $0 * u }, gap: 8.5 * u, width: 5.5 * u, colour: colour)
-        }
         switch state {
         case .listening:
-            // Your voice: light bars in the spark's profile.
-            waveform(p.map(listeningHeights) ?? profile(tallest: 52, rest: 8), mist)
+            // The mic is open: the columns in mist, low.
+            columns(ctx, u, lit: columns(at: level(state, at: p) ?? 0.34), colour: mist)
         case .thinking:
-            spark(ctx, centre: CGPoint(x: 50 * u, y: 50 * u), radius: 22 * u, colour: gold, turned: p.map(thinkingTurn) ?? 0)
+            // Standing still, the light is on the lamp just past the middle, on its way out.
+            scanner(ctx, u, lamps: scanner(p ?? 0.273), colour: gold)
         case .speaking:
-            // Redde's voice: the same bars in gold.
-            waveform(p.map(speakingHeights) ?? profile(tallest: 52, rest: 8), gold)
+            // Redde's voice: the same columns in gold, as loud as the syllable.
+            columns(ctx, u, lit: columns(at: level(state, at: p) ?? 0.75), colour: gold)
         case .muted:
-            // Nobody is being heard: the bars at rest, struck through.
-            waveform(profile(tallest: 8, rest: 8), mist)
+            // Nobody is being heard: the columns at rest, struck through.
+            columns(ctx, u, lit: columns(at: 0), colour: mist)
             line(ctx, from: CGPoint(x: 30 * u, y: 70 * u), to: CGPoint(x: 70 * u, y: 30 * u), width: 6 * u, colour: gold)
         case .phone:
             // The agent is waiting for an approval that only the phone can give: a phone outline.
@@ -156,33 +157,101 @@ enum CarPlayArtwork {
         }
     }
 
-    /// Listening: a swell that runs across the bars from left to right, never flat and never
-    /// full. The mic is open and waiting. Heights are in the 100-unit square.
-    static func listeningHeights(_ p: CGFloat) -> [CGFloat] {
-        sparkProfile.indices.map { i in
-            let swell = 0.5 + 0.5 * sin(2 * .pi * (p - CGFloat(i) * 0.085))
-            return 8 + 44 * sparkProfile[i] * (0.30 + 0.45 * swell) + 5 * swell
+    // MARK: The columns
+
+    /// How many lights a column has above its middle one, and as many below: the centre column
+    /// and the two beside it, which are shorter.
+    static let centreLights = 6, sideLights = 4
+
+    /// What the columns show at a loudness of 0 to 1: the lights lit above the middle one of the
+    /// centre column and of the side ones. At rest only the middle ones are lit, three dashes,
+    /// and whenever more are, the centre column stands above the other two.
+    static func columns(at level: CGFloat) -> (centre: Int, sides: Int) {
+        let level = min(max(level, 0), 1)
+        return (Int((level * CGFloat(centreLights)).rounded()), Int(level * CGFloat(sideLights)))
+    }
+
+    /// How loud the columns' state is at `p` of its loop. Nil for a state that has no columns,
+    /// or no moment.
+    private static func level(_ state: VoiceState, at p: CGFloat?) -> CGFloat? {
+        guard let p else { return nil }
+        switch state {
+        case .listening: return listeningLevel(p)
+        case .speaking: return speakingLevel(p)
+        case .thinking, .muted, .phone: return nil
         }
     }
 
-    /// Speaking: the bars rise and fall together, as the phone's do with the loudness of the
-    /// reply, on a rhythm like speech. The outer ones follow a moment after the centre.
-    static func speakingHeights(_ p: CGFloat) -> [CGFloat] {
-        sparkProfile.indices.map { i in
-            let q = p - CGFloat(abs(i - 3)) * 0.012
-            let loudness = 0.52 + 0.26 * sin(2 * .pi * 2 * q) + 0.17 * sin(2 * .pi * 5 * q + 0.9) + 0.09 * sin(2 * .pi * 3 * q + 2.1)
-            return 8 + 44 * sparkProfile[i] * min(max(loudness, 0.06), 1)
+    /// Listening: low and restless, like a meter on an open mic in a quiet car. Never still for
+    /// long and never high: it is nobody's speech, and must not look as if it followed yours.
+    static func listeningLevel(_ p: CGFloat) -> CGFloat {
+        let stir = 0.20 + 0.11 * sin(2 * .pi * 2 * p + 0.6) + 0.09 * sin(2 * .pi * 5 * p + 1.9) + 0.07 * sin(2 * .pi * 7 * p + 4.0)
+        return min(max(stir, 0), 1)
+    }
+
+    /// The syllables of the Speaking loop: when each is loudest, as a fraction of the loop, and
+    /// how loud. Three phrases with a breath between them, about four syllables a second.
+    private static let syllables: [(at: CGFloat, peak: CGFloat)] = [
+        (0.040, 0.75), (0.113, 1.00), (0.173, 0.60), (0.260, 0.90), (0.327, 0.55),
+        (0.473, 0.85), (0.533, 0.65), (0.607, 1.00), (0.687, 0.70),
+        (0.813, 0.90), (0.873, 0.60), (0.940, 0.80),
+    ]
+
+    /// Speaking: each syllable comes up at once and dies away more slowly, as a voice does, and
+    /// the lights fall back to rest in the breaths.
+    static func speakingLevel(_ p: CGFloat) -> CGFloat {
+        syllables.map { syllable in
+            // How far past the syllable's peak, in loops: the loop is a circle.
+            var since = (p - syllable.at).truncatingRemainder(dividingBy: 1)
+            if since > 0.5 { since -= 1 } else if since < -0.5 { since += 1 }
+            return syllable.peak * (since < 0 ? max(0, 1 + since / 0.013) : exp(-since / 0.037))
+        }.max() ?? 0
+    }
+
+    /// Three columns of lights, each a stack about its middle one, the centre column taller.
+    /// `lit` is how many are lit above the middle one, and as many below it; the others show
+    /// faintly, as lamps that are off.
+    private static func columns(_ ctx: CGContext, _ u: CGFloat, lit: (centre: Int, sides: Int), colour: UIColor) {
+        let width: CGFloat = 13, across: CGFloat = 19.5, height: CGFloat = 3.4, up: CGFloat = 5.2
+        for (column, (lights, lit)) in [(sideLights, lit.sides), (centreLights, lit.centre), (sideLights, lit.sides)].enumerated() {
+            let x = 50 + CGFloat(column - 1) * across
+            for light in -lights ... lights {
+                let lamp = CGRect(x: (x - width / 2) * u, y: (50 + CGFloat(light) * up - height / 2) * u, width: width * u, height: height * u)
+                colour.withAlphaComponent(abs(light) <= lit ? 1 : offLamp).setFill()
+                UIBezierPath(roundedRect: lamp, cornerRadius: 1.3 * u).fill()
+            }
         }
     }
 
-    /// Thinking: the spark makes a quarter turn, which leaves a four-pointed spark as it was,
-    /// then rests for the remainder of the loop.
-    static func thinkingTurn(_ p: CGFloat) -> CGFloat {
-        let x = min(p / thinkingTurnEnds, 1)
-        return .pi / 2 * x * x * (3 - 2 * x)
+    /// How much of its colour a lamp that is off still shows.
+    private static let offLamp: CGFloat = 0.14
+
+    // MARK: The scanner
+
+    static let scannerLamps = 8
+
+    /// Thinking: how bright each lamp of the scanner is, 0 to 1, at `p` of the loop. One light
+    /// runs to the far end and back, slowing as it turns, and the lamps behind it fade out.
+    static func scanner(_ p: CGFloat) -> [CGFloat] {
+        func light(_ p: CGFloat) -> CGFloat { CGFloat(scannerLamps - 1) * (0.5 - 0.5 * cos(2 * .pi * p)) }
+        return (0 ..< scannerLamps).map { lamp in
+            // The light itself, and what is left of it where it was a moment ago.
+            (0 ..< 12).map { ago in
+                max(0, 1 - abs(CGFloat(lamp) - light(p - CGFloat(ago) * 0.012)) / 1.25) * pow(0.8, CGFloat(ago))
+            }.max() ?? 0
+        }
     }
 
-    private static let thinkingTurnEnds: CGFloat = 0.6
+    /// A row of lamps across the middle of the disc, each as bright as `lamps` says.
+    private static func scanner(_ ctx: CGContext, _ u: CGFloat, lamps: [CGFloat], colour: UIColor) {
+        let width: CGFloat = 7.4, across: CGFloat = 9.6, height: CGFloat = 16
+        for (i, brightness) in lamps.enumerated() {
+            let x = 50 + (CGFloat(i) - CGFloat(lamps.count - 1) / 2) * across
+            colour.withAlphaComponent(offLamp + (1 - offLamp) * brightness).setFill()
+            UIBezierPath(roundedRect: CGRect(x: (x - width / 2) * u, y: (50 - height / 2) * u, width: width * u, height: height * u),
+                         cornerRadius: 1.6 * u).fill()
+        }
+    }
 
     /// What lies behind the voice card (iOS 27): graphite with a soft light where the picture
     /// sits, mist while you are heard and gold while Redde thinks and speaks. One image holding a
@@ -227,11 +296,6 @@ enum CarPlayArtwork {
         }
     }
 
-    /// The bars' heights from the spark profile, each at least `rest` units tall.
-    private static func profile(tallest: CGFloat, rest: CGFloat) -> [CGFloat] {
-        sparkProfile.map { rest + (tallest - rest) * $0 }
-    }
-
     // MARK: - Drawing
 
     private static func render(_ size: CGSize, scale: CGFloat = 3, opaque: Bool = false, _ draw: (CGContext, CGRect) -> Void) -> UIImage {
@@ -268,41 +332,11 @@ enum CarPlayArtwork {
         ctx.restoreGState()
     }
 
-    /// Vertical rounded bars centred on a point.
-    private static func bars(_ ctx: CGContext, centreX: CGFloat, centreY: CGFloat, heights: [CGFloat], gap: CGFloat, width: CGFloat, colour: UIColor) {
-        ctx.saveGState()
-        ctx.setLineCap(.round); ctx.setLineWidth(width); colour.setStroke()
-        let start = centreX - gap * CGFloat(heights.count - 1) / 2
-        for (i, h) in heights.enumerated() {
-            let x = start + CGFloat(i) * gap
-            ctx.move(to: CGPoint(x: x, y: centreY - h / 2 + width / 2))
-            ctx.addLine(to: CGPoint(x: x, y: centreY + h / 2 - width / 2))
-        }
-        ctx.strokePath()
-        ctx.restoreGState()
-    }
-
     private static func line(_ ctx: CGContext, from: CGPoint, to: CGPoint, width: CGFloat, colour: UIColor) {
         ctx.saveGState()
         ctx.setLineCap(.round); ctx.setLineWidth(width); colour.setStroke()
         ctx.move(to: from); ctx.addLine(to: to)
         ctx.strokePath()
-        ctx.restoreGState()
-    }
-
-    /// The app icon's four-point spark: quadratic arms pulled in to the centre.
-    private static func spark(_ ctx: CGContext, centre c: CGPoint, radius r: CGFloat, colour: UIColor, turned: CGFloat = 0) {
-        let path = UIBezierPath()
-        path.move(to: CGPoint(x: 0, y: -r))
-        path.addQuadCurve(to: CGPoint(x: r, y: 0), controlPoint: .zero)
-        path.addQuadCurve(to: CGPoint(x: 0, y: r), controlPoint: .zero)
-        path.addQuadCurve(to: CGPoint(x: -r, y: 0), controlPoint: .zero)
-        path.addQuadCurve(to: CGPoint(x: 0, y: -r), controlPoint: .zero)
-        path.close()
-        ctx.saveGState()
-        ctx.translateBy(x: c.x, y: c.y)
-        ctx.rotate(by: turned)
-        colour.setFill(); path.fill()
         ctx.restoreGState()
     }
 }

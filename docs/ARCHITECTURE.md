@@ -1058,9 +1058,15 @@ symbol (picked from six looks, 2026-10-11). The car writes a card's two lines ov
 left of its picture, in white by day and by night, so each colour is deep in that corner and
 bright behind the symbol; `CarPlayArtworkTests` holds the contrast. The voice card's pictures
 move: a state's image is an animation to CarPlay (a loop of 0.3 to 5 seconds, 150 points at
-most), so Listening is a swell running across the bars, Speaking is the bars in gold rising and
-falling together, and Thinking is the spark making a quarter turn. They are pictures drawn ahead
-of time at the car's display scale, about thirty to a loop: unlike the phone's waveform they
+most). They are drawn after the dashboard of KITT, the car in Knight Rider (asked for
+2026-10-11), in the mist and gold the card had before. Speaking is its voice display: three
+columns of lights that grow out from their middle, the centre one tallest, jumping with each
+syllable of a made-up sentence and falling back to three dashes in its breaths. Listening is the
+same columns in mist, kept low and restless like a meter on an open mic, so that it never looks
+as if it followed a voice it cannot hear. Thinking is the scanner, one gold light running along
+a row of lamps and back with the lamps behind it fading. They are pictures drawn ahead of time
+at the car's display scale, thirty or forty to a loop, and a picture that comes round again in
+the columns' loops is the same object and not another copy: unlike the phone's waveform they
 cannot follow the level of a voice. Reduce Motion gets the still pictures. On iOS 27 each state
 also has a backdrop behind the whole card (`voiceBackdrop`): graphite with a soft light, mist
 while you are heard and gold while Redde thinks and speaks, as one image holding a dark and a

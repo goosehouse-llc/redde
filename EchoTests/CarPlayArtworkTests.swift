@@ -35,17 +35,18 @@ struct CarPlayArtworkTests {
             let image = Art.startCard(start)
             // Under the words: the lower third, as far across as the longer line reaches.
             for (x, y) in [(0.06, 0.92), (0.25, 0.80), (0.45, 0.90), (0.50, 0.74)] {
-                let ground = try luminance(of: image, at: CGPoint(x: x, y: y))
+                let ground = try relativeLuminance(of: image, at: CGPoint(x: x, y: y))
                 let contrast = 1.05 / (ground + 0.05)
                 #expect(contrast >= 3.5, "\(start): white words at \(x), \(y) have a contrast of \(contrast)")
             }
             // And bright at the other corner, behind the symbol: a card is its colour.
-            #expect(try luminance(of: image, at: CGPoint(x: 0.96, y: 0.06)) > 3 * luminance(of: image, at: CGPoint(x: 0.06, y: 0.92)))
+            #expect(try relativeLuminance(of: image, at: CGPoint(x: 0.96, y: 0.06)) > 3 * relativeLuminance(of: image, at: CGPoint(x: 0.06, y: 0.92)))
         }
     }
 
-    /// The relative luminance of a picture at a point given as fractions of its width and height.
-    private func luminance(of image: UIImage, at point: CGPoint) throws -> Double {
+    /// The relative luminance of a picture (the measure contrast ratios are made of) at a point
+    /// given as fractions of its width and height.
+    private func relativeLuminance(of image: UIImage, at point: CGPoint) throws -> Double {
         let cg = try #require(image.cgImage)
         var pixel = [UInt8](repeating: 0, count: 4)
         let context = try #require(CGContext(data: &pixel, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
@@ -73,6 +74,9 @@ struct CarPlayArtworkTests {
             #expect((0.3 ... 5).contains(loop.duration))
             #expect(frames.allSatisfy { $0.scale == 2 }, "pictures at the car's scale, not three times its pixels")
             #expect(frames.first?.pngData() != frames[frames.count / 3].pngData(), "\(state) plays the same picture throughout")
+            // The columns move a light at a time: a picture that comes round again is the same
+            // object, not another copy of it for the car to hold.
+            if state != .thinking { #expect(Set(frames.map(ObjectIdentifier.init)).count < frames.count / 2) }
             pictures += frames.enumerated().map { (String(format: "loop-\(state.rawValue)-%02d", $0.offset), $0.element) }
         }
         try write(pictures)
@@ -80,19 +84,45 @@ struct CarPlayArtworkTests {
 
     @Test func theLoopsCloseOnThemselves() {
         // The picture after the last is the first again: no jump where a loop starts over.
-        for (heights, frames) in [(Art.listeningHeights, 29), (Art.speakingHeights, 32)] {
-            let step = 1 / CGFloat(frames)
-            let first = heights(0), wrapped = heights(1)
-            for i in first.indices { #expect(abs(first[i] - wrapped[i]) < 0.001) }
-            // The bars stay inside the disc, and never thinner than a dot.
-            for f in 0 ..< frames {
-                #expect(heights(CGFloat(f) * step).allSatisfy { (5.5 ... 60).contains($0) })
-            }
+        #expect(abs(Art.listeningLevel(0) - Art.listeningLevel(1)) < 0.001)
+        #expect(abs(Art.speakingLevel(0) - Art.speakingLevel(1)) < 0.001)
+        for (first, wrapped) in zip(Art.scanner(0), Art.scanner(1)) { #expect(abs(first - wrapped) < 0.001) }
+    }
+
+    /// Speaking has to look like speech and Listening must not: nothing on the car's screen
+    /// can follow a voice, so a meter that leapt about while nobody spoke would be a lie.
+    @Test func speakingRisesAndRestsAndListeningStaysLow() {
+        let speaking = (0 ..< 300).map { Art.speakingLevel(CGFloat($0) / 300) }
+        #expect(speaking.max()! >= 0.95, "a loud syllable lights the whole column")
+        #expect(speaking.min()! <= 0.05, "the lights fall back to rest in a breath")
+        // Syllables, not a hum: the level crosses its middle many times in a loop.
+        let crossings = zip(speaking, speaking.dropFirst()).filter { ($0 < 0.4) != ($1 < 0.4) }.count
+        #expect(crossings >= 12)
+        let listening = (0 ..< 300).map { Art.listeningLevel(CGFloat($0) / 300) }
+        #expect(listening.max()! <= 0.5)
+        #expect(Set(listening.map { Art.columns(at: $0).centre }).count >= 3, "the columns stir while the mic is open")
+        // At rest the middle light of each column is all that is lit; at full, every light.
+        #expect(Art.columns(at: 0) == (0, 0))
+        #expect(Art.columns(at: 1) == (Art.centreLights, Art.sideLights))
+    }
+
+    /// One light, running from one end of the row to the other and back, with lamps fading
+    /// behind it.
+    @Test func theScannersLightRunsToTheFarEndAndBack() {
+        func brightest(_ p: CGFloat) -> Int { Art.scanner(p).enumerated().max { $0.element < $1.element }!.offset }
+        #expect(brightest(0) == 0)
+        #expect(brightest(0.25) == Art.scannerLamps / 2 || brightest(0.25) == Art.scannerLamps / 2 - 1)
+        #expect(brightest(0.5) == Art.scannerLamps - 1)
+        #expect(brightest(0.75) == Art.scannerLamps / 2 || brightest(0.75) == Art.scannerLamps / 2 - 1)
+        for step in 0 ..< 60 {
+            let lamps = Art.scanner(CGFloat(step) / 60)
+            #expect(lamps.count == Art.scannerLamps)
+            #expect(lamps.allSatisfy { (0 ... 1).contains($0) })
+            #expect(lamps.max()! > 0.6, "the light never goes out between two lamps")
         }
-        // A quarter turn puts a four-pointed spark back as it was.
-        #expect(Art.thinkingTurn(0) == 0)
-        #expect(abs(Art.thinkingTurn(0.6) - .pi / 2) < 0.0001)
-        #expect(abs(Art.thinkingTurn(0.95) - .pi / 2) < 0.0001)
+        // On the way out the lamps it has passed still glow; those ahead are dark.
+        let outward = Art.scanner(0.25)
+        #expect(outward[brightest(0.25) - 1] > outward[brightest(0.25) + 2])
     }
 
     @Test func theBackdropIsDarkAtNightAndLightByDay() throws {
