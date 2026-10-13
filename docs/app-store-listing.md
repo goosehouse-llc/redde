@@ -9,51 +9,49 @@ Redde for Hermes
 Talk, chat and run your agent
 
 ## Promotional text (170, editable without a new build)
-New: notifications when Redde is closed, replies you can talk over, and your recent chats in CarPlay. Talk to your own agent at home, at your desk or in the car.
+New: your agent can use your iPhone's calendar, reminders, contacts and photos, if you let it. Approve out loud or with a nod, and take a note by Siri or in the car.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name)
 voice,assistant,ai,agent,carplay,self-hosted,llm,ollama,llama,watch,siri,shortcuts,private,openai
 
 ## Description (4000)
 
-Redde is a complete iPhone and iPad client for Hermes, the open-source AI agent, with CarPlay and an Apple Watch app. Talk to it or type, watch it think and use tools, approve what it wants to run, and manage everything it does: sessions, projects, profiles, scheduled jobs, and the Kanban board. It also talks straight to any OpenAI-compatible model server when you just want a fast answer.
+Redde is a complete iPhone and iPad client for Hermes, the open-source AI agent, with CarPlay and an Apple Watch app. Talk to it or type, watch it think and use tools, approve what it wants to run, and manage its sessions, projects, profiles, scheduled jobs and Kanban board. It also talks straight to any OpenAI-compatible model server for a fast answer.
 
 You bring the backend. Redde has no account and no analytics, and your conversations go only to the server you configured.
 
 TALK, DON'T TYPE
 • Tap the mic, ask, hear the answer. Speech is recognized on your iPhone; the reply is spoken with the built-in voice or your own Kokoro server.
 • Hands-free mode keeps the conversation going until you say "that's all".
-• Interrupt mid-answer: just start talking, tap the mic, or type to steer the reply.
+• Interrupt mid-answer: start talking, tap the mic, or type to steer the reply.
 • In CarPlay, ask through the car's mic and speakers, in a new chat or a recent one. On Apple Watch, raise your wrist and ask.
 • "Hey Siri, ask Redde…" works from the Lock Screen and AirPods. A Control Center button, a widget or the Action Button starts listening.
 • On iOS 27, Siri can message your agent in your own words and read the reply back (opt-in).
-• A voice orb moves with both voices. Pause, replay, or have any reply read aloud.
-• Spoken prefixes: start with a word you chose to add a text prefix or switch model: "Opus, review this diff".
-• "Ask Redde a Question" in Shortcuts returns the answer as text.
+• Pause, replay, or have any reply read aloud.
+• Spoken prefixes: a word you chose adds a text prefix or switches model: "Opus, review this diff".
+• "Hey Siri, take a note in Redde" files a thought with your agent. Shortcuts can ask and get the answer as text.
 
 SEE THE AGENT WORK
-• Watch reasoning stream, with tool calls as they happen and a Live Activity for progress. Open a step to see what it returned.
-• Lock the phone or switch apps: the reply carries on.
-• Approve a risky command or answer the agent's question from a notification. Pair your Hermes and they arrive even when Redde is closed, encrypted end to end.
+• Watch reasoning and tool calls as they happen, with a Live Activity for progress; lock the phone and the reply carries on. Open a step to see what it returned.
+• Approve a risky command or answer the agent's question from a notification, out loud, or with a nod in AirPods. Pair your Hermes and notifications arrive with Redde closed, encrypted end to end.
 • Subagents get their own rows; tap one to follow, steer or stop it.
 
 A FULL CLIENT, NOT JUST A MIC
 • Conversations live in your gateway's session ledger: start on the phone, continue on the desktop, Telegram or the CLI. Search, pin, rename, fork, archive.
-• Sessions by project, scheduled jobs with delivery targets, and the Kanban board, live.
+• Sessions by project, scheduled jobs with delivery targets, and the Kanban board.
+• Phone tools: your agent can use the calendar, reminders, contacts, photos and files on your iPhone, each only if you switch it on.
 • Rich replies: Markdown, code, tables, task lists, Mermaid diagrams and math, at a text size you choose. Pictures, charts, PDFs and audio from the agent open in place.
-• Select part of a reply and ask about it. Regenerate, edit and resend, or search a long chat.
-• Attach photos, videos and files, paste or drop them in, or dictate. Every chat keeps its draft. Mention a day and attach its calendar in one tap.
+• Select part of a reply and ask about it. Regenerate, edit and resend, search a long chat, or switch models with /model.
+• Attach photos, videos and files, paste or drop them in, or dictate. Every chat keeps its draft. Attach a day's calendar in one tap.
 • Share text, links, photos or files to Redde from any app. Export chats as Markdown.
 • Widgets: last answer, what needs you, context.
-• Switch models mid-chat from the header or with /model.
-• Skills and tool sets, on or off. Edit memory and context files; create skills or let Redde draft one.
+• Skills and tool sets, on or off. Edit memory and context files; create or draft skills.
 • The server too: MCP servers, logs, restart, update, and its files.
 
 YOUR BACKEND, YOUR RULES
-• Connect to Hermes through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access or a reverse proxy. Save several servers.
-• Sign in to the Dashboard with a password, or in a browser with Google or another provider.
+• Connect to Hermes through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access or a reverse proxy. Save several servers. Sign in with a password, or in a browser with Google or another provider.
 • Or go straight to any OpenAI-compatible endpoint: llama.cpp, llama-swap, vLLM or Ollama on your hardware, or a hosted provider with your key.
-• Set up by scanning a QR code or opening a link, and pass it on to your other devices. Credentials stay in the Keychain.
+• Set up by QR code or link, and pass it on to your other devices. Credentials stay in the Keychain.
 • Face ID lock, seven themes with your own colors, app icons and voice orbs, iPad split view, keyboard shortcuts.
 • No account, no analytics, no tracking. The one service we run is an optional relay for notifications, which it can't read.
 
@@ -69,6 +67,50 @@ Two pictures App Store Connect has taken since October 2026, on the version page
 - Search results (`search-3840x2560.png`, 3:2): "Talk to your own AI agent. Voice and chat for Hermes." beside voice mode and a chat. Shown with the app in search in place of the first screenshots.
 
 The words in both sit inside the "art safe area" of Apple's templates. Use Preview in App Store Connect before submitting: it shows each on iPhone and iPad, both ways up.
+
+## What's New in 1.8 (4000)
+Phone tools, answers out loud or with a nod, notes by Siri, and more in the car.
+
+• Phone tools. Your agent can now use what is on your iPhone, if you let it: look up and add calendar events and reminders, look up a contact, find a photo by its date or by what it shows, and keep files in Redde's folder in the Files app. Settings → Phone tools switches on each area by itself, as Ask each time or Allow reading, and adding, changing and deleting always ask you first. What it reads goes to your own server and nowhere else. It takes Redde's plugin on your Hermes (that screen installs or updates it) and the Hermes Dashboard login, and it works while Redde is open.
+• Approve out loud. With Settings → Voice → Answer requests by voice, Redde reads out a command that is waiting for your approval and listens for "approve" or "deny", in voice mode and in the car. A question from your agent is read out the same way. Passwords are never asked for aloud.
+• Or with a nod. With AirPods Pro, AirPods Max, or AirPods 3 or later, nod a couple of times to approve, or shake your head to deny.
+• Take a note. For something you want kept, not answered: say "Hey Siri, take a note in Redde", use the Note to Redde control in Control Center or on the Action Button, or tap Take a Note on the car's screen. Your agent files it in a chat called Notes, and nothing is read back. Without a connection the note waits on the iPhone and goes when it can.
+• Stop and Pause in the car. The voice screen has Stop and Pause at the top. Pause holds the microphone while Redde listens, or the reply while it thinks or speaks, until you tap Resume.
+• Short answers in the car. Turn it on in Settings → Voice or on the car's Ask tab, and a question you ask by voice in the car gets two or three sentences. Say "more" for the rest.
+• A calmer voice screen in the car, in four looks. Settings → Appearance → CarPlay voice screen plays the one you pick as it will look on the car.
+• A thinking sound. Settings → Voice → Thinking sound plays a quiet pulse while your agent works and nothing is being said, in the car or always.
+• Progress on the Lock Screen. When your agent keeps a task list for a longer job, the Live Activity shows how far it has got and the task in hand.
+• Pictures, together. Several pictures in a message are set out together. Tap one to see it full screen, swipe to the next, and pinch or double-tap to zoom.
+• Fixes. "Jump to latest" goes away once you have scrolled back to the end of a conversation, and new text is followed from there again.
+
+## Before submitting 1.8
+Written ahead of the release. Most of 1.8 has been tried in the simulator and in tests only; what a phone or a car has shown is said where it has.
+
+In App Store Connect and on the web:
+- 1.7.1 came through review on 2026-10-13 (App Store Connect shows it ready for distribution), so the 1.8 version could be made.
+- The build is 1.8 (263). Archive from a clean build, which is also what trains Siri's phrases, the new "Take a note in Redde" among them.
+- Review notes from `app-review-notes.md`, with the key put in. They are rewritten for 1.8: Phone tools, and the four permissions the version adds (Reminders, Contacts, Photos, and Motion & Fitness for the nod). The Calendar permission's words changed too.
+- App Privacy stays "Data Not Collected" (below).
+- The privacy manifest (`Echo/Resources/PrivacyInfo.xcprivacy`) has a second required-reason entry: file timestamps, reason C617.1 (files inside the app's own container), because Phone tools' Files area lists the files in Redde's folder with when each was changed. An upload that uses such an API without its reason is answered with ITMS-91053.
+- The privacy policy and the support page as they are in `docs/` have to be published before the release. On 2026-10-13 legal.goosehouse.org still served the policy of September 27 and the old support page, which say nothing of the notification relay (live since 1.7), of Phone tools, of notes or of the nod. The policy's effective date in `docs/privacy.md` is the day this was written; make it the day it goes up.
+- The copy on this page and the screenshots in `design/screenshots/` are in App Store Connect since 2026-10-13: `scripts/app-store-push.py` made the 1.8 version there and sent the promotional text, the description, What's New and the one screenshot that changed. That is the CarPlay slot, `07-car`, drawn again for 1.8: the Ask tab with Take a Note and Short Answers under the cards, and the voice card with Stop and Pause. After a change to this page, `scripts/app-store-push.py status` says what differs and `all` sends it.
+- Still to go in by hand or by a later script: the review notes, the build, and the submission.
+- The Hermes plugin people install is whatever is on the main branch of the public repository. Phone tools need 1.2.0, which has been there since 2026-10-13.
+- The website still says "coming soon in 1.6 and 1.7".
+
+On devices, to check first:
+- Phone tools on a phone, against a real Hermes with the plugin at 1.2.0. Seen on an iPhone 15 Pro Max on 2026-10-12: the agent found the most recent photo, fetched it and described it. Not seen: the fetched photo shown in the reply, a photo found by what it shows (the simulator cannot classify pictures, so the looking has only run on a Mac), how long a real library takes and what it does to the battery, a reminder or an event added through the phone, the question Redde asks before a change, deleting photos, and Files. The lab ran every tool on Hermes 0.21.0, 0.21.3 and 0.21.5 with a stand-in model.
+- Several photos in one reply. An agent asked for a few calls the photo tool once for each; that a later call is not lost is tested with a stand-in plugin only.
+- Approving out loud: a real microphone, a real agent's request read aloud in the middle of a turn, and the car. Tested with a stand-in recognizer and voice.
+- The nod: nobody has nodded at it. The detector is tested on made-up head movement; AirPods and the Motion & Fitness question have not been tried.
+- Take a note by Siri, by the control and in the car. The filing was run with a scripted server; Siri, the control and a real agent's filing have not been tried.
+- CarPlay on a car's screen: Stop, Pause and Resume, the four looks and whether their pictures play as they do in Settings, the Short Answers row and its switch, and Take a Note. All drawn with `scripts/carplay-preview.sh`, which is not a car. Pause with a Kokoro voice has not been heard.
+- Short answers in the car against a real agent: what it makes of the request, and "more".
+- The thinking sound, by ear: beside a reply, and in a car. Its pulses were spaced out on 2026-10-13 and nobody has listened since.
+- The task list on the Live Activity: seen on the simulator's Lock Screen. Not seen: the Dynamic Island, a real agent's list, a phone.
+- Pictures: the group and the viewer were driven in the simulator (tap, swipe, pinch, double tap). Not on a phone, not with real photos, and not on an iPad.
+- "Jump to latest": fixed and tested in the simulator on iOS 26.3 and 27.0.
+- Everything under "Before submitting 1.7.1" and "Before submitting 1.7" that was still owed is still owed.
 
 ## What's New in 1.7.1 (4000)
 Voice on the iPhone 11 and iPhone SE, a new look for CarPlay, and audio that plays in the conversation.
@@ -136,7 +178,9 @@ On devices, to check first:
 - Settings → Gateway against a real server. The lab covered the status, MCP servers, logs, the update check and a restart of a gateway started by hand, on Hermes 0.21.0, 0.21.3 and 0.21.5. Not covered anywhere: a restart where a service manager (launchd, systemd) runs the gateway, which is how most servers are set up, and applying an update, which has never been run for real.
 
 ## App Privacy (App Store Connect → App Privacy)
-"Data Not Collected", unchanged in 1.7 (decided 2026-10-08, with the notification relay in view).
+"Data Not Collected", unchanged in 1.7 (decided 2026-10-08, with the notification relay in view) and in 1.8.
+
+1.8's Phone tools read the calendar, reminders, contacts and photos, and the label is about what the developer collects: all of it goes to the person's own server, at their agent's request and with the area switched on by them, and none of it to Goosehouse. What Redde makes out in photos stays in a file on the device. Head movement for the nod is read on the device and kept nowhere. App Store Connect's label is unchanged; the purpose strings in `project.yml` and the privacy policy say what each permission is for.
 
 What that decision weighed: the optional relay keeps a paired iPhone's push token, the hash of a secret and the time of its last check-in, for as long as the pairing lasts and at most 120 days after the iPhone last checked in (`docs/push.md`, "What is where"). It has no account and nothing that says who the person is, the notifications pass through it encrypted and are not kept, and conversations, credentials and everything else go only to the person's own server. The privacy policy describes the relay in full, and the review notes point the reviewer to it. If Apple asks for the token to be on the label, the entry would be Identifiers → Device ID, for App Functionality, not linked to the user and not used for tracking, with the same entry in `Echo/Resources/PrivacyInfo.xcprivacy`.
 

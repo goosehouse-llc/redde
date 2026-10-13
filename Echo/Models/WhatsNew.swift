@@ -22,6 +22,23 @@ nonisolated enum WhatsNew {
 
     /// Newest first. Keep each to a handful of lines a person reads in ten seconds.
     static let releases: [Release] = [
+        Release(version: "1.8", items: [
+            Item(symbol: "iphone", title: "Phone tools",
+                 detail: "Settings → Phone tools lets your agent use what is on this device: the calendar, reminders, contacts, photos and a folder of files. You switch on each area yourself, and adding, changing or deleting always asks you first. It takes Redde's plugin on your Hermes, which that screen installs."),
+            Item(symbol: "hand.thumbsup", title: "Approve out loud, or with a nod",
+                 detail: "Turn on Settings → Voice → Answer requests by voice, and Redde reads out a command that waits for your approval and listens for “approve” or “deny”, in voice mode and in the car. With AirPods, Nod or shake to answer lets your head say it."),
+            Item(symbol: "note.text", title: "Take a note",
+                 detail: "For something you want kept, not answered. Say “Hey Siri, take a note in Redde”, add the Note to Redde control, or tap Take a Note in the car. Your agent files it in a chat called Notes. If your server can't be reached, the note waits and goes later."),
+            Item(symbol: "car", title: "More in the car",
+                 detail: "Stop and Pause on the voice screen: Pause holds the microphone or the reply until you tap Resume. Short answers in the car asks your agent for two or three sentences; switch it in Settings → Voice or on the car's Ask tab. And Settings → Appearance → CarPlay voice screen has four looks.",
+                 phoneOnly: true),
+            Item(symbol: "waveform", title: "A sound while it thinks",
+                 detail: "Settings → Voice → Thinking sound plays a quiet pulse while your agent works and nothing is being said, so silence isn't taken for a failure. And when the agent keeps a task list, the Live Activity shows how far it has got."),
+            Item(symbol: "photo.on.rectangle", title: "Pictures, together",
+                 detail: "Several pictures in a message stand together. Tap one to see it full screen, swipe to the next, and pinch or double-tap to zoom."),
+            Item(symbol: "checkmark.seal", title: "Fixes",
+                 detail: "“Jump to latest” goes away once you have scrolled back to the end of a conversation, and new text is followed from there again."),
+        ]),
         Release(version: "1.7.1", items: [
             Item(symbol: "mic", title: "Voice on iPhone 11 and iPhone SE",
                  detail: "On an iPhone 11 or an iPhone SE (2nd generation), voice mode and the mic in the message field said your language wasn't available. Apple's newer speech recognition isn't on those iPhones, so Redde now listens with the one behind keyboard dictation. It stays on the iPhone, as before."),

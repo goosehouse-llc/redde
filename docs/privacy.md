@@ -4,7 +4,7 @@ title: Redde Privacy Policy
 
 # Redde Privacy Policy
 
-**Effective date:** October 8, 2026
+**Effective date:** October 13, 2026
 **Publisher:** Goosehouse LLC
 
 Redde is a voice and chat client for an AI assistant that you run yourself. This policy explains what the app does with your information. The short version: Redde has no account, no analytics and no tracking, and your conversations go only to the server you configure. One optional feature, notifications when Redde is closed, uses a relay that we run. It holds your iPhone's push address and passes on notifications it cannot read.

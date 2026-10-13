@@ -2,7 +2,7 @@
 
 # App Review notes
 
-Paste the block below into App Store Connect → App Review Information → Notes. The field takes plain text, 4,000 characters at most; this is 3,897 with the placeholder and about 3,956 with a key in its place. Replace `<<REVIEW KEY>>` first. Keep it under the limit when adding to it: the notes for 1.6 ran to 6,600 before they were cut.
+Paste the block below into App Store Connect → App Review Information → Notes. The field takes plain text, 4,000 characters at most; this is 3,931 with the placeholder and about 3,990 with a key in its place. Replace `<<REVIEW KEY>>` first. Keep it under the limit when adding to it: the notes for 1.6 ran to 6,600 before they were cut.
 
 ```text
 Redde is a voice and chat client for a self-hosted AI assistant. It has no account, and conversations go only to the server the user configures. We run one service for it, an optional notification relay.
@@ -15,34 +15,33 @@ TO TEST
 
 The Hermes connections and the Skills, Tools, Context files, Memory, Files and Gateway screens need a self-hosted Hermes server; they say so when none is configured.
 
+PHONE TOOLS (new in 1.8; optional, off by default)
+Settings > Phone tools. The user's assistant, on their own Hermes server, can ask the app for calendar events, reminders, a contact, photos, and files in the app's own folder. Each area is off until the user sets it to "Ask each time" or "Allow reading"; iOS asks for that permission then, which can be seen without a server. Adding, changing and deleting always ask first; deleting photos uses the system's confirmation. What is read goes only to the user's server. The tools need a plugin on that server, so the review endpoint can't run them.
+
 CARPLAY (voice-based conversational app entitlement)
-Connect the phone to CarPlay or the CarPlay Simulator. Two tabs, new in 1.7. Ask has three cards: Ask (one question), Talk (hands-free until the user says "that's all") and New Chat. Chats lists the user's conversations by name and time only; picking one carries it on by voice. The voice card shows Listening, Thinking and Speaking, with Stop and Pause in its bar (Pause holds the microphone or the reply until Resume). Answers are spoken; no reply text is shown.
+Connect the phone to CarPlay or the CarPlay Simulator. Ask has three cards: Ask (one question), Talk (hands-free until the user says "that's all") and New Chat, and rows to take a spoken note and to switch short answers. Chats lists conversations by name and time only; picking one carries it on by voice. The voice card shows Listening, Thinking and Speaking, with Stop and Pause. Answers are spoken; no reply text is shown.
 
 APPLE WATCH
-Open Redde on the paired watch, tap Ask and dictate; the reply is shown and read aloud. The watch gets its connection from the iPhone app. New in 1.7: a list of the user's conversations, and an Ask Redde complication. Background audio: with Bluetooth headphones a reply keeps playing after the wrist is lowered. The watch app records nothing.
+Open Redde on the paired watch, tap Ask and dictate; the reply is shown and read aloud. Background audio: with Bluetooth headphones a reply keeps playing after the wrist is lowered. The watch app records nothing.
 
-NOTIFICATIONS (new in 1.7; optional, off by default)
-Settings > Voice > Notify when Redde is closed. A user can pair their own Hermes server (it takes a plugin there, so the review endpoint can't show it). "Install the Plugin" asks that server to install it on itself; the app downloads and runs no code. That server then sends notifications through our relay, redde-push.goosehouse.org, to APNs, encrypted between server and iPhone with CryptoKit; the notification service extension decrypts them. The relay keeps the device's push token and can't read them; the privacy policy describes it.
-
-SIGN IN WITH A BROWSER (new in 1.7)
-For a Hermes Dashboard that uses Google or another identity provider: ASWebAuthenticationSession opens that server's own login page (OAuth with PKCE, returning to a loopback listener on the phone). It is the user's server's login, not an account with us.
+NOTIFICATIONS (optional, off by default)
+Settings > Voice > Notify when Redde is closed. A user can pair their own Hermes server, which takes a plugin there. "Install the Plugin" asks that server to install it on itself; the app downloads and runs no code. The server sends notifications through our relay, redde-push.goosehouse.org, to APNs, encrypted between server and iPhone with CryptoKit. The relay keeps the device's push token and can't read them.
 
 MICROPHONE
-Used only while the user talks to the app: voice mode, the dictation button in the message field, and, with "Talk over replies" (on with headphones), while a reply is spoken, so that speaking interrupts it. Transcription is on the device; no audio is kept or sent.
+Used only while the user talks to the app: voice mode, dictation into the message field, and, with "Talk over replies", while a reply is spoken, so that speaking interrupts it. Transcription is on the device; no audio is kept or sent.
 
 IN-APP PURCHASES
-Settings > About > Support Redde offers three optional one-time tips (consumables). They unlock nothing; there are no subscriptions.
+Settings > About > Support Redde: three optional one-time tips (consumables) that unlock nothing.
 
 BACKGROUND MODES (iPhone)
-Audio: a voice conversation the user started continues in CarPlay when the driver switches to navigation, and on the phone when it locks.
-Processing: only BGContinuedProcessingTaskRequest. A reply the user asked for keeps streaming after the phone locks; iOS shows its progress with a stop button. Nothing is scheduled for later.
+Audio: a voice conversation continues in CarPlay when the driver switches to navigation, and on the phone when it locks.
+Processing: only BGContinuedProcessingTaskRequest, so a reply the user asked for keeps streaming after the phone locks.
 
 PERMISSIONS
-Calendar: asked for only when the user taps the calendar card on a new conversation or the Calendar chip in the message field; it attaches that day's events to the message.
-Camera: Camera in the + menu, to attach a photo, and "Scan a setup code", which reads a QR code. No picture is kept or sent.
-
-ASSOCIATED DOMAINS (applinks:redde.goosehouse.org)
-A setup link, https://redde.goosehouse.org/connect#..., opens a sheet that shows what it would set. Nothing is saved until the user confirms.
+Calendar: the calendar card on a new conversation and the Calendar chip in the message field attach a day's events; Phone tools' Calendar lets the assistant look up and add events.
+Reminders, Contacts, Photos (new in 1.8): only for Phone tools, asked when the user turns that area on.
+Motion & Fitness (new in 1.8): asked when the user turns on Settings > Voice > Nod or shake to answer. Head movement from AirPods is read on the device while a request from the assistant waits, to tell a nod (approve) from a shake (deny). Nothing is kept or sent.
+Camera: Camera in the + menu, to attach a photo, and "Scan a setup code".
 
 APP TRANSPORT SECURITY
 Plain HTTP is allowed (NSAllowsArbitraryLoads) because self-hosted servers on private networks usually have no public TLS certificate. The review endpoint is HTTPS.
