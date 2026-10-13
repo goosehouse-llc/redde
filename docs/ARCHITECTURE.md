@@ -1359,7 +1359,8 @@ is CarPlay connected or the car as the audio route, as for short answers.
 
 The sound is one file, `Echo/Resources/Earcons/thinking.wav`, made by
 `scripts/thinking-sound.py`: one note (442.5 Hz, the octave under the listening tones' upper
-note, with their overtones), two soft pulses a fifth of a second apart, every 2.2 seconds,
+note, with their overtones), two soft pulses a third of a second apart, every 3 seconds (0.22
+and 2.2 until 2026-10-13, when more room between them was asked for),
 peaking 6 dB under the listening tones. One pitch on purpose: the two-note tones mean the
 microphone has opened or closed. `ThinkingSoundPlayer` loops it through the app's audio session
 like those tones, so it goes where the reply goes, and fades it out in a tenth of a second.

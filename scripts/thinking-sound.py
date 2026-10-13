@@ -14,11 +14,11 @@ import wave
 from pathlib import Path
 
 RATE = 44100
-LOOP = 2.2                # seconds from one double pulse to the next
+LOOP = 3.0                # seconds from one double pulse to the next (2.2 until 2026-10-13: asked for more room)
 NOTE = 442.5              # Hz: an octave under the listening tones' 885
 PEAK = 10 ** (-16 / 20)   # the listening tones peak at -10 dBFS
 #: when each pulse starts, how loud it is beside the first, and how fast it dies away (seconds)
-PULSES = [(0.0, 1.0, 0.16), (0.22, 0.6, 0.20)]
+PULSES = [(0.0, 1.0, 0.16), (0.34, 0.6, 0.20)]   # the second came 0.22 s after the first until the same day
 ATTACK = 0.018            # seconds: softer than the listening tones, which start at once
 #: the note's overtones, as the listening tones have them: twice the pitch at -20 dB, three times at -34
 PARTIALS = [(1, 1.0), (2, 0.1), (3, 0.02)]
