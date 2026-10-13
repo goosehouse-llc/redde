@@ -227,11 +227,6 @@ final class Settings: ServeEndpoint {
     var phoneTools: PhoneToolsSettings {
         didSet { if phoneTools != oldValue { defaults.set(try? JSONEncoder().encode(phoneTools), forKey: Keys.phoneTools) } }
     }
-    /// When each chat was last seen, for the car's "Catch me up" (`CatchUp`). Not a choice
-    /// anyone makes: the app keeps it.
-    var catchUp: CatchUp.Marks {
-        didSet { if catchUp != oldValue { defaults.set(try? JSONEncoder().encode(catchUp), forKey: Keys.catchUp) } }
-    }
     /// What the app renders in: the appearance choice, nil meaning follow the system.
     var effectiveColorScheme: ColorScheme? { appearance.colorScheme }
     /// Local notifications for approvals / replies / failures while the app is in the background.
@@ -431,7 +426,6 @@ final class Settings: ServeEndpoint {
         static let voiceOrb = "voiceOrb"
         static let orbLight = "orbLight"
         static let carPlayCards = "carPlayCards"
-        static let catchUp = "catchUp"
         static let phoneTools = "phoneTools"
         static let notifyInBackground = "notifyInBackground"
         static let showLiveActivity = "showLiveActivity"
@@ -496,7 +490,6 @@ final class Settings: ServeEndpoint {
         voiceOrb = VoiceOrb(rawValue: defaults.string(forKey: Keys.voiceOrb) ?? "") ?? .waveform
         orbLight = OrbLight(rawValue: defaults.string(forKey: Keys.orbLight) ?? "") ?? .nebula
         carPlayCards = CarPlayCardLook(rawValue: defaults.string(forKey: Keys.carPlayCards) ?? "") ?? .color
-        catchUp = defaults.data(forKey: Keys.catchUp).flatMap { try? JSONDecoder().decode(CatchUp.Marks.self, from: $0) } ?? .init()
         phoneTools = defaults.data(forKey: Keys.phoneTools).flatMap { try? JSONDecoder().decode(PhoneToolsSettings.self, from: $0) } ?? .init()
         notifyInBackground = defaults.bool(forKey: Keys.notifyInBackground)
         showLiveActivity = defaults.object(forKey: Keys.showLiveActivity) as? Bool ?? true
@@ -710,7 +703,6 @@ final class Settings: ServeEndpoint {
         voiceOrb = .waveform
         orbLight = .nebula
         carPlayCards = .color
-        catchUp = .init()
         phoneTools = .init()
         notifyInBackground = false
         showLiveActivity = true

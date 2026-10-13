@@ -95,7 +95,7 @@ final class Conversation {
     /// still waits on, and the widget keeps saying so.
     private var leavingJoinedTurn = false
 
-    let settings: Settings
+    private let settings: Settings
     private let store: ConversationStore
     private var streamTask: Task<Void, Never>?
     /// Increments per send; a turn's tail only touches shared state if it is still the current turn.

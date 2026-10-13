@@ -131,9 +131,9 @@ struct CarPlayTests {
         var drawn: Set<[Data]> = []
         for look in CarPlayCardLook.allCases {
             h.settings.carPlayCards = look
-            let four = try pictures()
-            #expect(four.count == 4)
-            #expect(drawn.insert(four).inserted, "\(look) draws what another look does")
+            let three = try pictures()
+            #expect(three.count == 3)
+            #expect(drawn.insert(three).inserted, "\(look) draws what another look does")
         }
         h.settings.carPlayCards = .glow
         // The pick outlives the app.
@@ -152,22 +152,22 @@ struct CarPlayTests {
         #expect(ask !== chats)
     }
 
-    @Test func theAskTabIsFourCardsAndSaysWhichConversationIsOpen() async throws {
+    @Test func theAskTabIsThreeCardsAndSaysWhichConversationIsOpen() async throws {
         let h = Harness()
         // Cards, not a grid: a grid button's picture is 40 points on any screen, which is what
         // "very small" on a car's screen was (2026-10-10).
         let row = try cards(h.delegate)
         let elements = row.elements.compactMap { $0 as? CPListImageRowItemCardElement }
-        #expect(elements.map(\.title) == ["Ask", "Talk", "New Chat", "Catch Up"])
-        #expect(elements.map(\.subtitle) == ["One question", "Hands-free", "Start fresh", "What's new"])
+        #expect(elements.map(\.title) == ["Ask", "Talk", "New Chat"])
+        #expect(elements.map(\.subtitle) == ["One question", "Hands-free", "Start fresh"])
         // Wide cards: the car gives a card the shape of its thumbnail, and a square picture
         // set inside a card makes one half as wide.
         if #available(iOS 26.4, *) {
             let pictures = elements.compactMap { $0.thumbnail?.image }
-            #expect(pictures.count == 4, "a card without a thumbnail is the small kind")
+            #expect(pictures.count == 3, "a card without a thumbnail is the small kind")
             #expect(pictures.allSatisfy { $0.size.width > $0.size.height * 1.7 })
         }
-        #expect(row.allowsMultipleLines, "a screen 640 points across fits three wide cards to a line, a small one two: the rest must not fall off it")
+        #expect(row.allowsMultipleLines, "on the smallest screens two wide cards fill a line, and the third must not fall off it")
         #expect(row.text == nil, "nothing is open yet")
         #expect(row.handler == nil)
         await h.ask("Plan the lake trip")
@@ -199,85 +199,6 @@ struct CarPlayTests {
         #expect(h.conversation.id != open)
         #expect(h.conversation.messages.first?.text == "Three")
         try await waitUntil("listening") { h.recognizer.starts == 1 }
-    }
-
-    // MARK: Catch me up
-
-    private func catchUpCard(_ delegate: CarPlaySceneDelegate) throws -> CPListImageRowItemCardElement {
-        try #require(try cards(delegate).elements.last as? CPListImageRowItemCardElement)
-    }
-
-    @Test func catchUpSaysWhatIsNewAndThenItHasBeenTold() async throws {
-        let h = Harness()
-        for title in ["Move the blog to the new site", "Lisbon trip ideas"] {
-            await h.ask(title)
-            h.conversation.reset()
-        }
-        #expect(try catchUpCard(h.delegate).subtitle == "What's new", "the chats haven't been read yet")
-        _ = try await h.delegate.chatRows()
-        #expect(try catchUpCard(h.delegate).subtitle == "2 new")
-
-        try await press(card: 3, of: h.delegate)
-        #expect(h.session.phase == .thinking, "the car's card says Thinking while the chats are read")
-        try await waitUntil("the catch-up") { h.session.phase == .speaking }
-        let said = h.speaker.spoken.joined()
-        #expect(said.hasPrefix("2 chats have something new."))
-        // The newest first, each with the start of its latest reply.
-        let lisbon = try #require(said.range(of: "Lisbon trip ideas, just now. Hello."))
-        let blog = try #require(said.range(of: "Move the blog to the new site, just now. Hello."))
-        #expect(lisbon.lowerBound < blog.lowerBound)
-        #expect(h.recognizer.starts == 0, "nothing is listened to")
-        #expect(h.settings.catchUp.told == nil, "not told until it has been heard")
-
-        h.speaker.finishSpeaking()
-        #expect(h.session.phase == .idle)
-        #expect(h.recognizer.starts == 0, "and the mic doesn't open after it")
-        #expect(h.settings.catchUp.told != nil)
-        #expect(Settings(defaults: h.defaults).catchUp.told != nil, "what has been told outlives the app")
-        try await waitUntil("the card to count again") { (try? self.catchUpCard(h.delegate).subtitle) == "Nothing new" }
-        #expect(await h.delegate.catchUpScript().hasPrefix("You're all caught up. Nothing new since "))
-
-        // Something moves after that: news again.
-        await h.ask("Draft the landlord email")
-        #expect(await h.delegate.catchUpScript().hasPrefix("One chat has something new.\n\nDraft the landlord email, just now. Hello."))
-    }
-
-    @Test func aCatchUpEndedEarlyHasNotBeenTold() async throws {
-        let h = Harness()
-        await h.ask("Lisbon trip ideas")
-        h.conversation.reset()
-        try await press(card: 3, of: h.delegate)
-        try await waitUntil("the catch-up") { h.session.phase == .speaking }
-        h.delegate.pressed(.end)
-        #expect(h.session.phase == .idle)
-        h.speaker.finishSpeaking()
-        #expect(h.settings.catchUp.told == nil)
-        #expect(await h.delegate.catchUpScript().contains("Lisbon trip ideas"), "it is still news")
-    }
-
-    /// What was heard in the car, or was on the phone's screen, is no news.
-    @Test func aChatAlreadyHeardOrSeenIsNotNews() async throws {
-        let h = Harness()
-        // A question asked from the car, and its reply heard to the end.
-        try await press(card: 0, of: h.delegate)
-        try await waitUntil("listening") { h.recognizer.starts == 1 }
-        h.recognizer.deliver("What's the weather in Lisbon?")
-        try await waitUntil("the reply") { h.session.phase == .speaking && !h.conversation.isStreaming }
-        h.speaker.finishSpeaking()
-        #expect(await h.delegate.catchUpScript() == "You're all caught up. Nothing new in the last day.")
-
-        // A typed one that nobody has looked at yet is news, until the phone shows it.
-        h.conversation.reset()
-        await h.ask("Draft the landlord email")
-        #expect(await h.delegate.catchUpScript().contains("Draft the landlord email"))
-        CatchUp.saw(h.conversation)
-        #expect(await h.delegate.catchUpScript() == "You're all caught up. Nothing new in the last day.")
-    }
-
-    @Test func aServerThatCannotBeReachedIsSaidSo() async throws {
-        let h = Harness()
-        h.settings.transport = .hermesSessions   // and no key for it
-        #expect(await h.delegate.catchUpScript() == "I couldn't reach your server to see what's new.")
     }
 
     // MARK: Take a note

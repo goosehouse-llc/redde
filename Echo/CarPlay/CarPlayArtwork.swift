@@ -15,8 +15,8 @@ enum CarPlayArtwork {
     static let mist = UIColor(red: 0.863, green: 0.890, blue: 0.933, alpha: 1)             // #DCE3EE
     static let gold = UIColor(red: 0xE8 / 255.0, green: 0xB0 / 255.0, blue: 0x4B / 255.0, alpha: 1)
 
-    /// The Ask tab's cards: three ways to start talking, and one to be told what is new.
-    enum Start: CaseIterable { case ask, talk, newChat, catchUp }
+    /// The Ask tab's three cards: the ways to start talking.
+    enum Start: CaseIterable { case ask, talk, newChat }
     /// The voice card's states. Five, the most a voice-control template takes.
     enum VoiceState: String, CaseIterable { case listening, thinking, speaking, muted, phone }
 
@@ -66,8 +66,6 @@ enum CarPlayArtwork {
                 ctx.strokeEllipse(in: face)
                 if start == .newChat {
                     symbol("plus", height: r * 0.72, weight: .bold, colour: mist, centre: centre)
-                } else if start == .catchUp {
-                    mark(start, ctx, centre: centre, height: r * 0.98)
                 } else {
                     mark(start, ctx, centre: centre, height: r * 0.86)
                 }
@@ -90,24 +88,21 @@ enum CarPlayArtwork {
     static let wideCard = CGSize(width: 292, height: 164)
     static let squareCard = CGSize(width: 141, height: 141)
 
-    /// Blue to ask, gold to talk, green for a new chat, violet to be caught up: the deep end and
-    /// the bright end of each.
+    /// Blue to ask, gold to talk, green for a new chat: the deep end and the bright end of each.
     static func cardColours(_ start: Start) -> (deep: UIColor, bright: UIColor) {
         switch start {
         case .ask: (rgb(0x0A2E66), rgb(0x3D9BFF))
         case .talk: (rgb(0x6E4708), rgb(0xF0B850))
         case .newChat: (rgb(0x0A4A3C), rgb(0x3ECFA6))
-        case .catchUp: (rgb(0x35125E), rgb(0xAE82FF))
         }
     }
 
-    /// The same colours as light: a glow, or an orb's ring.
+    /// The same three colours as light: a glow, or an orb's ring.
     private static func cardLight(_ start: Start) -> UIColor {
         switch start {
         case .ask: rgb(0x2E8BF5)
         case .talk: gold
         case .newChat: rgb(0x38C29E)
-        case .catchUp: rgb(0x9B72F2)
         }
     }
 
@@ -116,13 +111,11 @@ enum CarPlayArtwork {
         case .ask: "mic.fill"
         case .talk: "waveform"
         case .newChat: "plus.bubble.fill"
-        case .catchUp: "clock.arrow.circlepath"
         }
     }
 
     /// Redde's own marks, as the cards first had them: one voice waiting to be heard, a voice
-    /// running into the spark that answers, the spark by itself, about to be asked something,
-    /// and the spark at the head of a few lines: what it said while you were away, in short.
+    /// running into the spark that answers, and the spark by itself, about to be asked something.
     private static func mark(_ start: Start, _ ctx: CGContext, centre c: CGPoint, height: CGFloat) {
         let u = height / 50
         switch start {
@@ -133,11 +126,6 @@ enum CarPlayArtwork {
             spark(ctx, centre: CGPoint(x: c.x + 24 * u, y: c.y), radius: 17 * u, colour: gold)
         case .newChat:
             spark(ctx, centre: c, radius: 25 * u, colour: gold)
-        case .catchUp:
-            spark(ctx, centre: CGPoint(x: c.x - 19 * u, y: c.y - 15 * u), radius: 10 * u, colour: gold)
-            for (y, from, to) in [(-15.0, -3.0, 25.0), (0, -27, 25), (15, -27, 7)] {
-                line(ctx, from: CGPoint(x: c.x + from * u, y: c.y + y * u), to: CGPoint(x: c.x + to * u, y: c.y + y * u), width: 6 * u, colour: mist)
-            }
         }
     }
 
