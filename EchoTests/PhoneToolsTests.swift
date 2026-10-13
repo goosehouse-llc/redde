@@ -376,6 +376,48 @@ struct PhoneToolsTests {
         #expect(asked.isEmpty, "nor fetched back from the server it was just sent to")
     }
 
+    /// An agent that fetches several photos asks for them one after the other, or all at once.
+    /// A call that starts while the one before is being answered was lost: its request was not
+    /// with the plugin yet when the first was asked for, and nothing looked again, so one
+    /// picture came and the others waited until the server gave up on them.
+    @Test func photosFetchedOneAfterAnotherAreAllShown() async throws {
+        let defaults = UserDefaults(suiteName: "phone-tools-\(UUID().uuidString)")!
+        let settings = Settings(defaults: defaults)
+        settings.phoneTools.on = true
+        settings.phoneTools.set(.photos, .allow)
+        let world = World()
+        func request(_ number: Int) -> [String: JSONValue] {
+            ["id": .string("r\(number)"), "tool": .string("phone_photos_get"), "args": .object(["id": .string("PHOTO-\(number)")])]
+        }
+        world.waiting = [request(1)]
+        final class Later { var service: DeviceToolsService?; var fetched = 0 }
+        let later = Later()
+        let service = DeviceToolsService(settings: settings, defaults: defaults, command: { try world.command($0) }, run: { tool, _, _ in
+            _ = try world.run(tool)
+            later.fetched += 1
+            // While the first picture is being read the agent's next two calls start, and only
+            // now do their requests reach the plugin.
+            if later.fetched == 1 {
+                world.waiting += [request(2), request(3)]
+                later.service?.toolStarted("phone_photos_get")
+                later.service?.toolStarted("phone_photos_get")
+            }
+            let picture = Data([0xFF, 0xD8, UInt8(later.fetched)])
+            return .object(["file": .object(["name": .string("photo-\(later.fetched).jpg"), "base64": .string(picture.base64EncodedString())])])
+        }, ask: { world.ask($0) }, onScreen: { true })
+        service.patience = (5, .milliseconds(20))
+        later.service = service
+
+        var shown: [Echo.Attachment] = []
+        service.toolStarted("phone_photos_get") { shown.append($0) }
+        let deadline = Date().addingTimeInterval(3)
+        while shown.count < 3, Date() < deadline { try await Task.sleep(for: .milliseconds(10)) }
+        #expect(shown.map(\.filename) == ["photo-1.jpg", "photo-2.jpg", "photo-3.jpg"])
+        #expect(shown.allSatisfy { $0.kind == .image })
+        #expect(world.answers.keys.sorted() == ["r1", "r2", "r3"], "and the agent has all three")
+        #expect(world.ran == [.photosGet, .photosGet, .photosGet], "each fetched once")
+    }
+
     /// Asked to "show me" a photo it was given a moment ago, an agent answered with the file's
     /// path on the server, in backticks. That path is in the plugin's own folder: it is shown.
     @Test func aPhotoNamedByItsBarePathIsShown() async throws {

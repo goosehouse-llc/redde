@@ -77,6 +77,8 @@ final class DeviceToolsService {
     /// handed to the agent is shown as it goes. Given by the conversation with the cue.
     @ObservationIgnored private var show: ((Attachment) -> Void)?
     @ObservationIgnored private var checking: Task<Void, Never>?
+    /// Another phone tool started while `checking` was at work.
+    @ObservationIgnored private var again = false
     @ObservationIgnored private let logger = Logger(subsystem: "com.goosehouse.echo", category: "phone-tools")
     /// How often, and how many times, the plugin is asked for a request the turn says exists
     /// (the agent's call can show a moment before the plugin has written it down).
@@ -106,9 +108,15 @@ final class DeviceToolsService {
     func toolStarted(_ name: String, show: ((Attachment) -> Void)? = nil) {
         guard name.hasPrefix(DeviceTool.prefix) else { return }
         if let show { self.show = show }
-        guard checking == nil else { return }
+        // A call that starts while another is being answered (an agent fetching several photos
+        // one after the other, or at once) is looked for when that one is done: its request
+        // may not have been with the plugin yet when the first was asked for.
+        guard checking == nil else { again = true; return }
         checking = Task { [weak self] in
-            await self?.collect()
+            repeat {
+                self?.again = false
+                await self?.collect()
+            } while self?.again == true
             self?.checking = nil
         }
     }

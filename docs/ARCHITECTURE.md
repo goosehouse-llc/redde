@@ -1233,6 +1233,14 @@ that nothing found is not taken for there being none. These are the phone's gues
 tells the agent to fetch a likely one and look. The picture itself still leaves the phone only
 through `phone_photos_get`.
 
+That tool hands over one photo a call. An agent asked for several calls it several times, one
+after the other or at once, and each picture is put in the reply as it goes, where they stand
+together (`PhotoGroup`). A call that started while the one before was being answered used to be
+lost: its request was not with the plugin yet when the first was asked for, and nothing looked
+again, so one picture came and the others waited until the server gave up. Now the phone looks
+again when it is done (`DeviceToolsService.toolStarted`; found by reading, held by
+`photosFetchedOneAfterAnotherAreAllShown`, not seen against a real agent).
+
 Measured on the Mac with real pictures (macOS's own account pictures, the simulator's sample
 photos, the store screenshots): "bowling" 0.98 for the bowling picture and nothing else kept,
 "photo of a bird" four birds, "flowers" nine, "guitar" the guitar and then the other
