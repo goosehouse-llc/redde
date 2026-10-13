@@ -49,7 +49,8 @@ final class VoiceSession {
     private(set) var phase: Phase = .idle {
         didSet {
             guard phase != oldValue else { return }
-            if phase != .speaking { isPaused = false }
+            // A reply held while it was being thought about is still held at its first word.
+            if !(oldValue == .thinking && phase == .speaking) { isPaused = false }
             // Voice-chat mode (and its call-volume buttons) only while the mic is open, which it
             // stays behind a reply that can be talked over.
             audio.setReplying((phase == .thinking || phase == .speaking) && !micStaysOpen)
@@ -73,8 +74,9 @@ final class VoiceSession {
     private(set) var lastMetrics: VoiceMetrics?
     /// When true, the mic reopens automatically after each reply (hands-free mode, M2).
     var continuous = false
-    /// The mic is held shut in the middle of a conversation (the car screen's Mute): the session
-    /// is idle but not over. `unmute()`, or the mic by any other route, listens again.
+    /// The mic is held shut in the middle of a conversation (the car screen's Pause while Redde
+    /// listens): the session is idle but not over. `unmute()`, or the mic by any other route,
+    /// listens again.
     private(set) var isMuted = false
 
     let recognizer: any VoiceRecognizing
@@ -120,7 +122,8 @@ final class VoiceSession {
     /// True while speaking the "Okay." that confirms a stop phrase; not a real turn.
     private var acknowledging = false
     private var replaying = false
-    /// The reply is held by the voice screen's Pause button; still `.speaking`.
+    /// The reply is held by Pause: where it had got to while `.speaking`, or from its first word
+    /// while it is still being thought about (`.thinking`, from the car's card).
     private(set) var isPaused = false {
         didSet { if isPaused != oldValue { updateScreenAwake(); watchIfSpeaking() } }
     }
@@ -235,7 +238,10 @@ final class VoiceSession {
             // A mic opened behind the reply was set up for the device that just left.
             stopMonitor()
             switch phase {
-            case .speaking:
+            // (A reply held while it is still being thought about goes the same way: the car
+            // whose card would have resumed it is gone.)
+            case .speaking,
+                 .thinking where isPaused:
                 // Stop mirroring the stream too: the next delta would otherwise restart the
                 // player on the loudspeaker. The transcript still completes on its own.
                 replyTask?.cancel(); replyTask = nil
@@ -353,7 +359,7 @@ final class VoiceSession {
 
     func unmute() {
         guard isMuted else { return }
-        beginListening()
+        beginListening(capturing: isCapturing)   // a note being taken is still a note
     }
 
     /// Tap again while listening: end the utterance now.
@@ -393,15 +399,18 @@ final class VoiceSession {
         keepAwake(on)
     }
 
-    /// The voice screen's Pause / Play while a reply is being read.
+    /// Pause / Play: the voice screen's while a reply is being read, and the car's also while
+    /// it is still being thought about. Then the agent works on and the reply waits, whole,
+    /// until Play.
     func pauseSpeaking() {
-        guard phase == .speaking, !isPaused else { return }
+        guard phase == .speaking || phase == .thinking, !isPaused else { return }
         output.pause()
         isPaused = true
+        playThinkingSound(false)   // held is quiet
     }
 
     func resumeSpeaking() {
-        guard phase == .speaking, isPaused else { return }
+        guard phase == .speaking || phase == .thinking, isPaused else { return }
         output.resume()
         isPaused = false
     }

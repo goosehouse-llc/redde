@@ -29,6 +29,12 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
     private var epoch = 0
     private var utteranceEpochs: [ObjectIdentifier: Int] = [:]
     private var streamEnded = false
+    /// Held by `pause`. The built-in voice can only be held in the middle of a sentence, so one
+    /// that arrives while nothing is being said (before the reply's first word, or in a gap of
+    /// it) waits in `held` for `resume`. Kokoro holds what arrives itself.
+    private var paused = false
+    private var held: [String] = []
+    private var resumeWaiters: [CheckedContinuation<Void, Never>] = []
     /// Decided per reply so a Settings change takes effect on the next turn, not mid-sentence.
     private var usingKokoro = false
     private var kokoroDrained = false
@@ -80,6 +86,10 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
     private var utteranceWaiters: [ObjectIdentifier: CheckedContinuation<Void, Never>] = [:]
 
     private func speakLocallyAndWait(_ spoken: String) async {
+        // A sentence Kokoro failed on while the reply is held is not said into the hold.
+        let begun = epoch
+        while paused { await withCheckedContinuation { resumeWaiters.append($0) } }
+        guard begun == epoch else { return }   // stopped meanwhile
         let utterance = speakLocally(spoken)
         await withCheckedContinuation { utteranceWaiters[ObjectIdentifier(utterance)] = $0 }
     }
@@ -180,7 +190,7 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         if let tail = chunker.flush() { enqueue(tail) }
         if usingKokoro {
             kokoro.finish() // onDrained → onFinished
-        } else if queued == 0 {
+        } else if queued == 0, held.isEmpty {
             onFinished?()
         }
     }
@@ -196,15 +206,31 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         chunker = SentenceChunker()
         queued = 0
         isSpeaking = false
+        paused = false
+        held = []
+        letResumeWaitersGo()
     }
 
     /// Holds the reply mid-word (built-in voice) or mid-buffer (Kokoro); `resume` carries on.
+    /// Before the reply's first word it holds the whole of it: what is appended waits.
     func pause() {
+        paused = true
         if usingKokoro { kokoro.pause() } else { synthesizer.pauseSpeaking(at: .word) }
     }
 
     func resume() {
+        paused = false
         if usingKokoro { kokoro.resume() } else { synthesizer.continueSpeaking() }
+        let waiting = held
+        held = []
+        waiting.forEach { speakLocally($0) }
+        letResumeWaitersGo()
+    }
+
+    private func letResumeWaitersGo() {
+        let waiters = resumeWaiters
+        resumeWaiters = []
+        waiters.forEach { $0.resume() }
     }
 
     /// Stops the streaming player's audio engine without touching reply state, so the audio
@@ -228,6 +254,7 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
             usingKokoro = false
             kokoro.stop()
         }
+        if paused { held.append(spoken); return }
         speakLocally(spoken)
     }
 
@@ -295,7 +322,7 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
                 if kokoroDrained { isSpeaking = false; onFinished?() }
             } else {
                 isSpeaking = false
-                if streamEnded { onFinished?() }
+                if streamEnded, held.isEmpty { onFinished?() }
             }
         }
     }

@@ -16,7 +16,7 @@ TO TEST
 The Hermes connections and the Skills, Tools, Context files, Memory, Files and Gateway screens need a self-hosted Hermes server; they say so when none is configured.
 
 CARPLAY (voice-based conversational app entitlement)
-Connect the phone to CarPlay or the CarPlay Simulator. Two tabs, new in 1.7. Ask has three cards: Ask (one question), Talk (hands-free until the user says "that's all") and New Chat. Chats lists the user's conversations by name and time only; picking one carries it on by voice. The voice card shows Listening, Thinking and Speaking, with End and Mute in its bar. Answers are spoken; no reply text is shown.
+Connect the phone to CarPlay or the CarPlay Simulator. Two tabs, new in 1.7. Ask has three cards: Ask (one question), Talk (hands-free until the user says "that's all") and New Chat. Chats lists the user's conversations by name and time only; picking one carries it on by voice. The voice card shows Listening, Thinking and Speaking, with Stop and Pause in its bar (Pause holds the microphone or the reply until Resume). Answers are spoken; no reply text is shown.
 
 APPLE WATCH
 Open Redde on the paired watch, tap Ask and dictate; the reply is shown and read aloud. The watch gets its connection from the iPhone app. New in 1.7: a list of the user's conversations, and an Ask Redde complication. Background audio: with Bluetooth headphones a reply keeps playing after the wrist is lowered. The watch app records nothing.

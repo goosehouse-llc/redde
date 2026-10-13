@@ -18,7 +18,7 @@ enum CarPlayArtwork {
     /// The Ask tab's three cards: the ways to start talking.
     enum Start: CaseIterable { case ask, talk, newChat }
     /// The voice card's states. Five, the most a voice-control template takes.
-    enum VoiceState: String, CaseIterable { case listening, thinking, speaking, muted, phone }
+    enum VoiceState: String, CaseIterable { case listening, thinking, speaking, paused, phone }
 
     // MARK: - The Ask tab
 
@@ -149,13 +149,13 @@ enum CarPlayArtwork {
     static let voiceImageSide: CGFloat = 150
 
     /// How a state's picture moves: how long one loop lasts and how many pictures it is made of.
-    /// CarPlay plays a loop of 0.3 to 5 seconds. Muted and "needs your phone" stand still.
+    /// CarPlay plays a loop of 0.3 to 5 seconds. Paused and "needs your phone" stand still.
     static func loop(_ state: VoiceState) -> (duration: TimeInterval, frames: Int)? {
         switch state {
         case .listening: (2.4, 30)
         case .thinking: (2.0, 30)
         case .speaking: (3.0, 42)
-        case .muted, .phone: nil
+        case .paused, .phone: nil
         }
     }
 
@@ -220,8 +220,8 @@ enum CarPlayArtwork {
         case .speaking:
             // Redde's voice: the same columns in gold, as loud as the syllable.
             columns(ctx, u, lit: columns(at: level(state, at: p) ?? 0.75), colour: gold)
-        case .muted:
-            // Nobody is being heard: the columns at rest, struck through.
+        case .paused:
+            // Held: the columns at rest, struck through, as they were for Muted.
             columns(ctx, u, lit: columns(at: 0), colour: mist)
             line(ctx, from: CGPoint(x: 30 * u, y: 70 * u), to: CGPoint(x: 70 * u, y: 30 * u), width: 6 * u, colour: gold)
         case .phone:
@@ -253,7 +253,7 @@ enum CarPlayArtwork {
         switch state {
         case .listening: return listeningLevel(p)
         case .speaking: return speakingLevel(p)
-        case .thinking, .muted, .phone: return nil
+        case .thinking, .paused, .phone: return nil
         }
     }
 

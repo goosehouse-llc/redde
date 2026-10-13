@@ -29,14 +29,13 @@ struct CarPlayTests {
             func add(_ note: String) { notes.append(note) }
         }
 
-        init() {
+        init(transport: any HermesTransport = ConversationLifecycleTests.ScriptedTransport([.textDelta("Hello."), .done])) {
             settings = Settings(defaults: defaults)
             settings.transport = .chatCompletions
             settings.fastLaneURL = "http://example.invalid:11500"
             settings.fastLaneModel = "test"
             store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "carplay-\(UUID().uuidString)"))
-            conversation = Conversation(settings: settings, store: store,
-                                        transportOverride: ConversationLifecycleTests.ScriptedTransport([.textDelta("Hello."), .done]))
+            conversation = Conversation(settings: settings, store: store, transportOverride: transport)
             let taken = taken
             session = VoiceSession(conversation: conversation, recognizer: recognizer, output: speaker, audio: audio,
                                    requestPermissions: { true }, earcon: { _ in }, keepAwake: { _ in }, talkOver: { .off }, interruption: { .speech },
@@ -52,6 +51,12 @@ struct CarPlayTests {
         func ask(_ question: String) async {
             for await _ in conversation.send(question) {}
             while conversation.isStreaming { try? await Task.sleep(for: .milliseconds(5)) }
+        }
+
+        /// What the car's card shows for where the voice session stands now.
+        var card: CarPlaySceneDelegate.Card {
+            CarPlaySceneDelegate.card(phase: session.phase, waitingOnPhone: session.activeTool == "waiting for you",
+                                      muted: session.isMuted, paused: session.isPaused)
         }
     }
 
@@ -239,7 +244,7 @@ struct CarPlayTests {
         try await press(card: 1, of: h.delegate)
         try await waitUntil("listening") { h.recognizer.starts == 1 }
         #expect(h.session.continuous)
-        h.delegate.pressed(.end)
+        h.delegate.pressed(.stop)
         try await press(card: 0, of: h.delegate)
         try await waitUntil("listening again") { h.recognizer.starts == 2 }
         #expect(!h.session.continuous)
@@ -307,19 +312,22 @@ struct CarPlayTests {
     @Test func theCardStaysWithinFiveStatesAndEachHasAWayOut() {
         let template = Harness().delegate.voiceTemplate()
         let states = template.voiceControlStates
-        #expect(states.map(\.identifier) == ["listening", "thinking", "speaking", "muted", "phone"])
+        #expect(states.map(\.identifier) == ["listening", "thinking", "speaking", "paused", "phone"])
         #expect(states.count <= 5, "a voice-control template drops any state past its fifth")
         typealias D = CarPlaySceneDelegate
         for state in CarPlayArtwork.VoiceState.allCases {
-            #expect(D.barButtons(for: state).leading == [.end], "\(state) has no way out")
+            #expect(D.barButtons(for: state).leading == [.stop], "\(state) has no way out")
         }
-        #expect(D.barButtons(for: .listening).trailing == [.mute])
-        #expect(D.barButtons(for: .muted).trailing == [.unmute])
-        #expect(D.barButtons(for: .thinking).trailing.isEmpty && D.barButtons(for: .speaking).trailing.isEmpty && D.barButtons(for: .phone).trailing.isEmpty)
+        // Pause whatever Redde is at, and Resume once it is held.
+        for state in [CarPlayArtwork.VoiceState.listening, .thinking, .speaking] {
+            #expect(D.barButtons(for: state).trailing == [.pause], "\(state) can't be paused")
+        }
+        #expect(D.barButtons(for: .paused).trailing == [.resume])
+        #expect(D.barButtons(for: .phone).trailing.isEmpty, "a request waiting on the phone is not something to pause")
         if #available(iOS 26.4, *) {
             // The card opens listening.
-            #expect(template.leadingNavigationBarButtons.map(\.title) == ["End"])
-            #expect(template.trailingNavigationBarButtons.map(\.title) == ["Mute"])
+            #expect(template.leadingNavigationBarButtons.map(\.title) == ["Stop"])
+            #expect(template.trailingNavigationBarButtons.map(\.title) == ["Pause"])
         }
     }
 
@@ -357,31 +365,119 @@ struct CarPlayTests {
         }
     }
 
-    @Test func muteShutsTheMicAndKeepsTheConversation() async throws {
+    @Test func pauseWhileListeningShutsTheMicAndKeepsTheConversation() async throws {
         let h = Harness()
         try await press(card: 1, of: h.delegate)
         try await waitUntil("listening") { h.recognizer.starts == 1 }
-        h.delegate.pressed(.mute)
+        h.delegate.pressed(.pause)
         #expect(h.session.phase == .idle)
         #expect(h.session.isMuted)
+        #expect(h.card == .showing(.paused))
         #expect(h.session.continuous, "hands-free is still on for when the mic comes back")
         #expect(h.recognizer.cancels == 1)
         h.recognizer.deliver("something said in the car")
         try await Task.sleep(for: .milliseconds(50))
-        #expect(h.conversation.messages.isEmpty, "nothing heard while muted is sent")
+        #expect(h.conversation.messages.isEmpty, "nothing heard while paused is sent")
 
-        h.delegate.pressed(.unmute)
+        h.delegate.pressed(.resume)
         try await waitUntil("listening again") { h.recognizer.starts == 2 }
         #expect(h.session.phase == .listening)
         #expect(!h.session.isMuted)
+        #expect(h.card == .showing(.listening))
     }
 
-    @Test func endStopsEverythingIncludingHandsFree() async throws {
+    /// The agent works on behind a pause; what it says waits, whole, for Resume.
+    @Test func pauseWhileThinkingHoldsTheReplyUntilResume() async throws {
+        let transport = PhoneToolsTests.HeldTransport([], then: [.textDelta("It finished at nine."), .done])
+        let h = Harness(transport: transport)
+        try await press(card: 0, of: h.delegate)
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        h.recognizer.deliver("Is the backup done?")
+        try await waitUntil("thinking") { h.session.phase == .thinking }
+        #expect(h.card == .showing(.thinking))
+
+        h.delegate.pressed(.pause)
+        #expect(h.session.isPaused)
+        #expect(h.speaker.pauses == 1, "the voice is held before it has said anything")
+        #expect(h.card == .showing(.paused))
+
+        transport.letGo()
+        try await waitUntil("the reply") { h.session.phase == .speaking }
+        #expect(h.session.isPaused, "still held at its first word")
+        #expect(h.speaker.resumes == 0)
+        #expect(h.card == .showing(.paused))
+
+        h.delegate.pressed(.resume)
+        #expect(!h.session.isPaused)
+        #expect(h.speaker.resumes == 1)
+        #expect(h.card == .showing(.speaking))
+        try await waitUntil("the reply streamed") { !h.conversation.isStreaming }
+        h.speaker.finishSpeaking()
+        #expect(h.card == .closed)
+    }
+
+    /// The car goes away with a reply held: nothing is left waiting for a Resume that can't be
+    /// pressed, the agent's turn is not ended, and its reply is in the conversation, unsaid.
+    @Test func aReplyHeldWhenTheCarGoesIsLetGoUnsaid() async throws {
+        let transport = PhoneToolsTests.HeldTransport([], then: [.textDelta("It finished at nine."), .done])
+        let h = Harness(transport: transport)
+        try await press(card: 0, of: h.delegate)
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        h.recognizer.deliver("Is the backup done?")
+        try await waitUntil("thinking") { h.session.phase == .thinking }
+        h.delegate.pressed(.pause)
+
+        h.audio.onOutputDeviceLost?()
+        #expect(h.session.phase == .idle)
+        #expect(!h.session.isPaused)
+        #expect(h.conversation.isStreaming, "the turn is still the agent's")
+        transport.letGo()
+        try await waitUntil("the reply") { !h.conversation.isStreaming }
+        #expect(h.conversation.messages.last?.text == "It finished at nine.")
+        #expect(h.speaker.spoken.isEmpty)
+    }
+
+    @Test func pauseWhileSpeakingHoldsTheReplyWhereItIs() async throws {
+        let h = Harness()
+        try await press(card: 0, of: h.delegate)
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        h.recognizer.deliver("What's the weather in Lisbon?")
+        try await waitUntil("the reply") { h.session.phase == .speaking }
+        h.delegate.pressed(.pause)
+        #expect(h.session.isPaused && h.speaker.pauses == 1)
+        #expect(h.card == .showing(.paused))
+        h.delegate.pressed(.resume)
+        #expect(!h.session.isPaused && h.speaker.resumes == 1)
+        #expect(h.card == .showing(.speaking))
+
+        // Stop ends a held reply like any other.
+        h.delegate.pressed(.pause)
+        h.delegate.pressed(.stop)
+        #expect(h.session.phase == .idle)
+        #expect(!h.session.isPaused)
+        #expect(h.card == .closed)
+    }
+
+    @Test func aNotePausedIsStillANoteOnResume() async throws {
+        let h = Harness()
+        h.delegate.takeNote()
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        h.delegate.pressed(.pause)
+        h.delegate.pressed(.resume)
+        try await waitUntil("listening again") { h.recognizer.starts == 2 }
+        #expect(h.session.isCapturing)
+        h.recognizer.deliver("The plumber comes Thursday at ten.")
+        try await waitUntil("noted") { h.session.phase == .speaking }
+        #expect(h.taken.notes == ["The plumber comes Thursday at ten."])
+        #expect(h.conversation.messages.isEmpty, "it did not go to the agent as a question")
+    }
+
+    @Test func stopEndsEverythingIncludingHandsFree() async throws {
         let h = Harness()
         try await press(card: 1, of: h.delegate)
         try await waitUntil("listening") { h.recognizer.starts == 1 }
-        h.delegate.pressed(.mute)
-        h.delegate.pressed(.end)
+        h.delegate.pressed(.pause)
+        h.delegate.pressed(.stop)
         #expect(h.session.phase == .idle)
         #expect(!h.session.isMuted)
         #expect(!h.session.continuous)
@@ -389,12 +485,16 @@ struct CarPlayTests {
 
     @Test func theCardFollowsTheVoiceSession() {
         typealias D = CarPlaySceneDelegate
-        #expect(D.card(phase: .listening, waitingOnPhone: false, muted: false) == .showing(.listening))
-        #expect(D.card(phase: .thinking, waitingOnPhone: false, muted: false) == .showing(.thinking))
-        #expect(D.card(phase: .thinking, waitingOnPhone: true, muted: false) == .showing(.phone))
-        #expect(D.card(phase: .speaking, waitingOnPhone: false, muted: false) == .showing(.speaking))
-        #expect(D.card(phase: .idle, waitingOnPhone: false, muted: true) == .showing(.muted))
-        #expect(D.card(phase: .idle, waitingOnPhone: false, muted: false) == .closed)
-        #expect(D.card(phase: .error("no route"), waitingOnPhone: false, muted: false) == .failed)
+        #expect(D.card(phase: .listening, waitingOnPhone: false, muted: false, paused: false) == .showing(.listening))
+        #expect(D.card(phase: .thinking, waitingOnPhone: false, muted: false, paused: false) == .showing(.thinking))
+        #expect(D.card(phase: .thinking, waitingOnPhone: true, muted: false, paused: false) == .showing(.phone))
+        #expect(D.card(phase: .speaking, waitingOnPhone: false, muted: false, paused: false) == .showing(.speaking))
+        // Held: the mic shut, or the reply kept back.
+        #expect(D.card(phase: .idle, waitingOnPhone: false, muted: true, paused: false) == .showing(.paused))
+        #expect(D.card(phase: .thinking, waitingOnPhone: false, muted: false, paused: true) == .showing(.paused))
+        #expect(D.card(phase: .speaking, waitingOnPhone: false, muted: false, paused: true) == .showing(.paused))
+        #expect(D.card(phase: .thinking, waitingOnPhone: true, muted: false, paused: true) == .showing(.phone), "a request on the phone comes first")
+        #expect(D.card(phase: .idle, waitingOnPhone: false, muted: false, paused: false) == .closed)
+        #expect(D.card(phase: .error("no route"), waitingOnPhone: false, muted: false, paused: false) == .failed)
     }
 }

@@ -40,6 +40,32 @@ struct SpeechOutputTests {
         #expect(chunker.flush() == "five and six")
     }
 
+    /// Pause before the reply's first word (the car's card, while the agent is still at work):
+    /// the built-in voice can only be held mid-sentence, so what arrives waits to be said.
+    @Test func aReplyHeldBeforeItsFirstWordWaitsForResume() async throws {
+        guard !AVSpeechSynthesisVoice.speechVoices().isEmpty, !Settings.shared.useKokoro else { print("SKIP: no built-in voice in use"); return }
+        let output = SpeechOutput()
+        var finished = false
+        output.onFinished = { finished = true }
+        output.beginReply()
+        output.pause()
+        output.append("Hello from Redde. And a second sentence. ")
+        output.endReply()
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(!output.isSpeaking, "nothing is said into the hold")
+        #expect(!finished, "and a reply that hasn't been said isn't over")
+
+        output.resume()
+        #expect(output.isSpeaking)
+        output.stop()
+        #expect(!output.isSpeaking)
+        // A stop ends the hold with the reply: the next one is said as it comes.
+        output.beginReply()
+        output.append("Again. ")
+        #expect(output.isSpeaking)
+        output.stop()
+    }
+
     @Test func synthesizerStartsSpeakingQuickly() async throws {
         guard !AVSpeechSynthesisVoice.speechVoices().isEmpty else { print("SKIP: no voices"); return }
         let output = SpeechOutput()

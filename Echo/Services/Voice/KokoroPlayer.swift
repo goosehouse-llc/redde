@@ -138,7 +138,9 @@ final class KokoroPlayer {
 
     /// Holds playback; queued and still-arriving sentences wait behind it.
     func pause() { paused = true; player.pause() }
-    func resume() { paused = false; player.play() }
+    /// (A reply held before its first sound may have nothing scheduled yet, on an engine that
+    /// has been stopped since: `schedule` starts the player then.)
+    func resume() { paused = false; if engine.isRunning { player.play() } }
 
     func stop() {
         meter.reset()

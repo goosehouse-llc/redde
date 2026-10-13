@@ -854,7 +854,7 @@ phone"); nothing is approved because it sounded like yes. A request settled some
 meanwhile (its card, its notification, the host's time limit) shuts the mic at once. A password,
 a secret, several questions at once and a question that takes several answers are never asked
 aloud. A tap on the mic while the request is read out means "I'll answer now" and does not end
-the turn, as it would end a reply; the car's Mute at that point leaves the request for the
+the turn, as it would end a reply; the car's Pause at that point leaves the request for the
 phone. The mic behind a reply (below) is closed first: a "yes" said over the request would
 otherwise count as talking over a reply and end the turn. Tried with scripted turns in
 `EchoTests/SpokenRequestTests.swift`; not yet with a microphone, a real agent or a car.
@@ -1236,11 +1236,21 @@ list in its order, as names and times; a session nobody named is "Untitled chat"
 preview of its last message), the open one marked with a check at the trailing edge. The list is
 read when the car connects, when the tab is opened and when the open conversation changes. New
 Chat and a picked chat listen in the mode Settings → Voice gives the phone's voice button. Each of
-them ends on a voice-control card (Listening, Thinking, Speaking, Muted, Needs your phone) with
-**End** and **Mute** in its bar: Mute shuts the mic and keeps the conversation
-(`VoiceSession.mute`, which also gives the car its audio back), End stops whatever Redde is
-doing. A voice-control template takes five states and no more, so a finished reply closes the card
-and a failure is an alert. Replies are spoken only.
+them ends on a voice-control card (Listening, Thinking, Speaking, Paused, Needs your phone) with
+**Stop** and **Pause** in its bar while Redde listens, thinks or speaks. Stop ends whatever
+Redde is doing, hands-free with it, and closes the card. Pause holds it and keeps the
+conversation, and the card says Paused, with Resume where Pause was. While Redde listens, Pause
+shuts the mic (`VoiceSession.mute`, which also gives the car its audio back), so nothing said
+in the car is taken for a question. While it speaks, the reply stops where it is. While it
+still thinks, the agent works on and its reply waits, whole, until Resume
+(`VoiceSession.pauseSpeaking`, which the phone's voice screen has while a reply is read). The
+built-in voice can only be held in the middle of a sentence, so `SpeechOutput` keeps what
+arrives during a hold and says it on `resume`, and a sentence Kokoro fails on meanwhile waits
+too. The thinking sound is off while a reply is held. A request that waits on the phone is not
+something to pause: that state has Stop alone. A voice-control template takes five states and
+no more, so a finished reply closes the card and a failure is an alert. Replies are spoken only.
+The buttons and the hold are tried in `EchoTests/CarPlayTests.swift` with a stand-in voice;
+nobody has pressed them on a car yet.
 
 CarPlay sizes everything in points and nothing to the screen, and two of its choices decide this
 layout (both found by drawing its own views, below). A grid template's button has a 40-point

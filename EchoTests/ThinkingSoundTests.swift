@@ -69,6 +69,22 @@ struct ThinkingSoundTests {
         h.session.cancel()
     }
 
+    /// The car's Pause while the agent works: held is quiet, and Resume brings the sound back.
+    @Test func aReplyHeldWhileItIsThoughtAboutIsQuiet() async throws {
+        let transport = Held([], then: [.textDelta("It finished at nine."), .done])
+        let h = Harness(transport)
+        try await h.ask()
+        try await SpokenRequestTests.waitUntil("the sound") { h.sound.isOn }
+        h.session.pauseSpeaking()
+        #expect(!h.sound.isOn, "at once, not at the next look")
+        try await h.wait()
+        #expect(!h.sound.isOn && h.sound.starts == 1)
+
+        h.session.resumeSpeaking()
+        try await SpokenRequestTests.waitUntil("the sound again") { h.sound.isOn }
+        h.session.cancel()
+    }
+
     @Test func anAnswerThatComesAtOnceHasNoSound() async throws {
         let h = Harness(Held([.textDelta("Yes."), .done], then: []))
         try await h.ask()
