@@ -11,7 +11,7 @@ nonisolated enum PushPlugin {
     static let identifier = "goosehouse-llc/redde/companion/hermes-plugin/redde-push"
     /// The plugin's version in this build's source (`companion/hermes-plugin/redde-push/plugin.yaml`):
     /// one on a Hermes that is older than this can be brought up to it.
-    static let version = "1.1.0"
+    static let version = "1.2.0"
 
     /// Whether the plugin is on a Hermes, and in what state.
     struct State: Equatable, Sendable {

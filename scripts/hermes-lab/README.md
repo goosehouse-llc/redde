@@ -18,6 +18,8 @@ scripts/hermes-lab/lab.sh files          # the file browser: list, upload, downl
 scripts/hermes-lab/lab.sh plugin         # the notification plugin installed through the Dashboard, as the app asks for it
 scripts/hermes-lab/lab.sh push           # the push plugin: pairing, and a note for everything it announces
 scripts/hermes-lab/lab.sh push --app     # and the app in a simulator pairs with each release
+scripts/hermes-lab/lab.sh device         # phone tools: the agent calls one and a stand-in phone answers it
+scripts/hermes-lab/lab.sh device --app   # and the app's own service carries one out
 scripts/hermes-lab/lab.sh up v2026.9.24 two   # leave one lab running to poke at; `down` stops it
 ```
 
@@ -191,3 +193,19 @@ Not covered: cloud providers (no keys here), and a conversation with no model pi
 0.21.3 or older over the Hermes API, which fails from the second turn on the server's side.
 
 When Hermes ships a release, add its tag to `DEFAULT_TAGS` in `lab.sh`.
+
+## Phone tools
+
+`device` runs the `push` scenario on each release (the plugin from this repository, a Dashboard
+with a login) and `device_check.py` plays the phone. The stub calls a phone tool for a message
+with `lab:reminder`, `lab:photo` or `lab:note` in it, through tool search where the release
+doesn't offer the tool outright (0.21.0 takes one call there, later releases a list of them),
+and says `[phone: added]`, `[phone: file]`, `[phone: saved]` or `[phone: no]` once the tool has
+answered, so the check knows the answer reached the model. It holds that nothing is offered
+until the phone turns an area on, that a call made over the Hermes API (the gateway's process)
+is found and answered through the Dashboard's (another process), that the app is told the
+tool started under its own name on both connections, that a 450 KB picture gets through the
+command and ends up as a file on the server, and that nothing is left behind.
+`--app` then runs `EchoTests/HermesLabDeviceTests`: the app's Dashboard client carries the
+command, `DeviceToolsService` fetches and answers, and the files tool saves a file in a folder
+of the test's own, after the question a change always gets.

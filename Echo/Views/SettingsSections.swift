@@ -238,6 +238,18 @@ struct AgentSettings<Details: View>: View {
         }
 
         Section {
+            NavigationLink { PhoneToolsSettingsView() } label: {
+                LabeledContent {
+                    Text(Settings.shared.phoneTools.on ? "On" : "Off")
+                } label: {
+                    Label("Phone tools", systemImage: "iphone.gen3")
+                }
+            }
+        } footer: {
+            Text("Let your agent use this device's calendar, reminders, contacts, photos and a folder of files, through Redde.")
+        }
+
+        Section {
             if !canEditFiles { filesLocked }
             NavigationLink {
                 ContextFileEditorView(title: "SOUL.md", path: Settings.shared.profileFilePath("SOUL.md"),

@@ -1027,3 +1027,76 @@ struct HermesLabPushTests {
         HermesLabApprovalTests.report(ok, "the app pairs with the plugin over the Dashboard in one step", detail)
     }
 }
+
+/// The app's own side of phone tools against the plugin in an unmodified Hermes
+/// (`scripts/hermes-lab/lab.sh device --app`): the app's Dashboard client carries the plugin's
+/// command, its service fetches the request and hands back the answer, and its files tool does
+/// the work, in a folder of the test's own. The turn runs over the Hermes API, so the agent's
+/// call waits in the gateway's process while the app talks to the Dashboard's. Skips when that
+/// lab isn't up.
+struct HermesLabDeviceTests {
+    private static let base = URL(string: "http://127.0.0.1:18642")!
+    private static let key = "labkey-labkey-labkey"
+
+    @MainActor final class Asked { var count = 0 }
+
+    @Test func theAppCarriesOutAPhoneToolTheAgentCalls() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        let plugin = PushService.command(over: client)
+        do {
+            guard try await plugin("device status").hasPrefix("redde-push device status") else {
+                print("LAB SKIP: this lab's plugin has no phone tools")
+                return
+            }
+        } catch {
+            print("LAB SKIP: this lab's Hermes has no push plugin (scripts/hermes-lab/lab.sh up <tag> push)")
+            return
+        }
+        let defaults = UserDefaults(suiteName: "lab-device-\(UUID().uuidString)")!
+        let settings = Settings(defaults: defaults)
+        settings.phoneTools.on = true
+        settings.phoneTools.set(.files, .allow)
+        let folder = FileManager.default.temporaryDirectory.appending(path: "lab-device-\(UUID().uuidString)")
+        let runner = DeviceToolRunner(files: DeviceFiles(root: folder))
+        let asked = Asked()
+        let service = DeviceToolsService(settings: settings, defaults: defaults, command: plugin,
+                                         run: { try await runner.run($0, $1, info: $2) },
+                                         ask: { _ in asked.count += 1; return .allow }, onScreen: { true })
+
+        let open = await service.publish()
+        HermesLabApprovalTests.report(open == [.files], "the app tells the plugin which areas are on", "\(String(describing: open))")
+        try await Task.sleep(for: .seconds(5))   // each Hermes process hears of it within a couple of seconds
+
+        var reply = "", tools: [String] = [], detail = ""
+        do {
+            let session = try await HermesSessionsAPI(baseURL: Self.base, apiKey: Self.key).createSession(title: "device lab app \(Date.now.timeIntervalSince1970)")
+            let transport = HermesSessionsTransport(baseURL: Self.base, apiKey: Self.key)
+            let request = TurnRequest(userText: "lab:note please", history: [], sessionID: session.id, model: nil, instructions: nil)
+            for try await event in transport.stream(request) {
+                switch event {
+                case let .toolStarted(name, _, _):
+                    tools.append(name)
+                    service.toolStarted(name)   // what Conversation does with a turn it follows
+                case let .textDelta(delta): reply += delta
+                case let .textFinal(final): reply = final
+                default: break
+                }
+            }
+        } catch {
+            detail = String(error.localizedDescription.prefix(200))
+        }
+        let saved = try? String(contentsOf: folder.appending(path: "lab/note.txt"), encoding: .utf8)
+        HermesLabApprovalTests.report(tools.contains("phone_files_write"), "the turn shows the phone tool starting, by its own name", "\(tools) \(detail)")
+        HermesLabApprovalTests.report(saved == "from the agent", "the app does what was asked, on the phone", "\(String(describing: saved))")
+        HermesLabApprovalTests.report(asked.count == 1, "after asking the person, since it is a change", "asked \(asked.count) times")
+        HermesLabApprovalTests.report(reply.contains("[phone: saved]"), "and the agent is told it was done", "\(reply) \(detail)")
+        HermesLabApprovalTests.report(service.log.first?.outcome == .done && service.log.first?.title == "Save a file to Redde's folder",
+                                      "the phone's list of what was asked for has it", "\(service.log)")
+
+        settings.phoneTools.on = false
+        let shut = await service.publish()
+        HermesLabApprovalTests.report(shut == [], "turned off, the plugin is told so", "\(String(describing: shut))")
+        try? FileManager.default.removeItem(at: folder)
+    }
+}

@@ -98,6 +98,26 @@ never sent the key, and it stores nothing that passes.
 secret and key) and `watch.json` (which sessions each phone follows). Delete the folder and
 nothing is paired.
 
+## Phone tools
+
+From 1.2.0 the plugin also offers the agent tools that are carried out on the iPhone, by the
+Redde app: the calendar, reminders, contacts, the photo library and Redde's folder in the Files
+app (`phone_calendar_events`, `phone_reminders_add`, `phone_photos_search` and so on, fourteen
+in the toolset `redde_phone`; `device.py` has each one's description). They need no pairing.
+Photos are found by date and kind, and by what they show or say (`query`): the phone looks at
+its pictures itself and answers with the ones that match, not with the pictures.
+
+The agent is offered none of them until the phone turns an area on (Redde's Settings → Phone
+tools), and only that area's then. A call waits, for up to two minutes, while the app does the
+work, asking the person first where it should; the app hears of the call in the turn it is
+following and answers through this plugin's command over the Dashboard, so the tools answer
+only while Redde is open on the phone and in that conversation, and the app needs the
+Dashboard login. A photo or a file the agent asks for is saved under `redde-push/device/files`
+in the Hermes home for a day.
+
+A conversation already open on the Dashboard keeps the tools it started with; a new one sees
+the change within a couple of seconds.
+
 ## Requirements
 
 Hermes 0.21.0 or later; 0.21.3 or later is the one to have. On 0.21.0 the Dashboard stops a turn
@@ -112,8 +132,8 @@ here.
 ## Tests
 
 In the Redde repository, beside this folder: `companion/hermes-plugin/tests` (unit tests, run
-with Hermes's own Python) and `scripts/hermes-lab/lab.sh push`, which runs the plugin inside
-unmodified Hermes releases. They are kept out of this folder because everything in it is copied,
+with Hermes's own Python) and `scripts/hermes-lab/lab.sh push` and `lab.sh device`, which run the
+plugin inside unmodified Hermes releases. They are kept out of this folder because everything in it is copied,
 and scanned, when the plugin is installed. The scan is also why this page and the plugin's code
 avoid the name of the command that runs another as root: Hermes refuses to install a plugin from
 GitHub that has it in either.

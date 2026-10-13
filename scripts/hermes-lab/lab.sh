@@ -14,6 +14,8 @@
 #   scripts/hermes-lab/lab.sh plugin [tag ...]     the notification plugin installed through the Dashboard (fetches it from GitHub)
 #   scripts/hermes-lab/lab.sh push [tag ...]       the push plugin: pairing, and a note for everything it announces
 #   scripts/hermes-lab/lab.sh push --app [tag ...] the same, then the app pairs both ways and reads a notification
+#   scripts/hermes-lab/lab.sh device [tag ...]     phone tools: the agent calls one, a stand-in phone answers, on both connections
+#   scripts/hermes-lab/lab.sh device --app [tag ...] the same, then the app's own service carries one out
 #   scripts/hermes-lab/lab.sh up <tag> <scenario>  leave one lab running (API :18642, Dashboard :19119)
 #   scripts/hermes-lab/lab.sh down
 #
@@ -350,6 +352,24 @@ push() {
   echo "\nAll checks passed."
 }
 
+# Phone tools inside each release: the agent calls one, a stand-in phone answers it over the
+# Dashboard, and the answer has to reach the model, over both connections.
+device() {
+  local with_app=0
+  [[ "${1:-}" == "--app" ]] && { with_app=1; shift; }
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  (( with_app )) && { app_prepare HermesLabDeviceTests || exit 1 }   # (the app's own client, service and files tool)
+  for tag in $tags; do
+    echo "===== Hermes $tag / phone tools"
+    if ! up "$tag" push; then failed+=("$tag (lab)"); continue; fi
+    "$LAB_HOME/hermes-$tag/.venv/bin/python" "$HERE/device_check.py" || failed+=("$tag")
+    if (( with_app )); then app_check || failed+=("$tag (app)"); fi
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
 mkdir -p "$LAB_HOME"
 case "${1:-}" in
   run) shift; run "$@" ;;
@@ -361,7 +381,8 @@ case "${1:-}" in
   files) shift; files "$@" ;;
   plugin) shift; plugin "$@" ;;
   push) shift; push "$@" ;;
+  device) shift; device "$@" ;;
   up) up "$2" "$3" && echo "lab up: Hermes $2 / $3 — API http://127.0.0.1:18642 (key labkey-labkey-labkey), Dashboard http://127.0.0.1:19119" ;;
   down) down ;;
-  *) sed -n '2,17p' "$0"; exit 2 ;;
+  *) sed -n '2,19p' "$0"; exit 2 ;;
 esac

@@ -426,6 +426,10 @@ final class Conversation {
             flushDeltas()
             clearStatus()
             TurnActivity.shared.tool(name)
+            // One of the phone's own tools: the plugin is holding a request for this iPhone.
+            if settings.phoneTools.on {
+                phoneTools.toolStarted(name) { [weak self] picture in self?.update(replyID) { $0.attachments.append(picture) } }
+            }
             update(replyID) { $0.tools.append(ToolActivity(name: name, preview: preview, status: .running, startedAt: .now, args: args)) }
         case let .toolFinished(name, failed, output):
             interruptResolvedElsewhere()
@@ -1218,13 +1222,21 @@ final class Conversation {
         guard !candidates.isEmpty else { return }
         var attachments: [Attachment] = []
         var fetched: Set<String> = []
+        // A photo the phone handed over in this very reply is in it already (`DeviceToolsService`):
+        // the agent naming it as well is no reason to show it twice. Its name on the server ends
+        // in the name it has here.
+        let shown = messages.first(where: { $0.id == id })?.attachments.map(\.filename) ?? []
         for c in candidates where !fetched.contains(c.path) {
+            if ServeMedia.isFromThePhone(c.path), shown.contains(where: { c.filename.hasSuffix($0) }) {
+                fetched.insert(c.path)
+                continue
+            }
             guard let dataURL = await fetchServerFile(c.path),
                   let att = ServeMedia.attachment(dataURL: dataURL, name: c.filename) else { continue }
             fetched.insert(c.path)
             attachments.append(att)
         }
-        guard !attachments.isEmpty else { return }
+        guard !fetched.isEmpty else { return }
         var cleaned = text
         for c in candidates where fetched.contains(c.path) {
             cleaned = cleaned.replacingOccurrences(of: c.whole, with: "")
@@ -1235,6 +1247,9 @@ final class Conversation {
         guard messages.contains(where: { $0.id == id && $0.text == text }) else { return }
         update(id) { $0.text = cleaned.trimmingCharacters(in: .whitespacesAndNewlines); $0.attachments += attachments }
     }
+
+    /// Who carries out a phone tool the agent calls in a turn here. Tests put their own.
+    var phoneTools = DeviceToolsService.shared
 
     /// A file on the server as a data URL, over the Dashboard's file API. Tests put their own here.
     var fetchServerFile: (String) async -> String? = { try? await HermesServeClient.shared.readDataURL(path: $0) }

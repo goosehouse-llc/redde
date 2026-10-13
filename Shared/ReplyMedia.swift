@@ -103,10 +103,15 @@ nonisolated enum ServeMedia {
         // `MEDIA:/abs/path` (what every hermes platform hint teaches), `![alt](/abs/path)` and
         // `![alt](file:///abs/path)` (a markdown image of a server file the phone can't load),
         // and `[IMAGE: /abs/path]` (the phrasing models fall back to).
+        // And a file the phone handed over for the agent to look at (phone tools), which Redde's
+        // plugin keeps in a folder of its own on the server: named by its bare path, in
+        // backticks or not, it is shown all the same. An agent asked to "show me" the photo it
+        // was just given answered with that path.
         let patterns: [Regex<(Substring, Substring)>] = [
             /MEDIA:(\/[^\s"'()\[\]]+)/,
             /!\[[^\]]*\]\((?:file:\/\/)?(\/[^)\s]+)\)/,
             /\[IMAGE:\s*(\/[^\]\s]+)\]/,
+            /`?(\/[^\s`"'()\[\]]*\/redde-push\/device\/files\/[^\s`"'()\[\]]+)`?/,
         ]
         var found: [Candidate] = []
         var seen: Set<String> = []
@@ -121,6 +126,9 @@ nonisolated enum ServeMedia {
         }
         return found
     }
+
+    /// A path into the folder where Redde's plugin keeps what the phone handed to the agent.
+    static func isFromThePhone(_ path: String) -> Bool { path.contains("/redde-push/device/files/") }
 
     /// Any data URL as an attachment; the kind follows the mime type, so a fetched PDF becomes
     /// a document chip and an image a photo. `name` keeps its own extension when it has one.

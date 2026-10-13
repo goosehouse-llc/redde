@@ -11,6 +11,10 @@ and `core.py` for how a note is sealed and sent.
 The app itself uses the slash command `/redde-push`, over the Dashboard: `watch <session>
 <device,...>` says which conversations it has taken part in (only those notify, and every turn
 over the Hermes API), and `offer` then `accept <offer> <key> <box>` pair it without a code.
+
+The plugin also offers the agent phone tools, carried out by the app on the iPhone (the calendar,
+reminders, contacts, photos, a folder of files): see `device.py`. They need no pairing, and the
+agent is offered none of them until the phone turns some on (`/redde-push device …`).
 """
 
 from __future__ import annotations
@@ -24,6 +28,7 @@ import time
 from pathlib import Path
 
 from . import core, qr
+from . import device as phone_tools   # (`device` is a paired phone, in this file)
 
 log = logging.getLogger("redde_push")
 
@@ -299,6 +304,9 @@ def _slash(raw_args: str = "") -> str:
     """What the app says to the plugin. Every reply starts with "redde-push " and a word the app
     reads: watching, status, offer, paired, refused."""
     words = (raw_args or "").split()
+    if words[:1] == ["device"]:
+        # Phone tools: which the agent is offered, what it has asked for, and the phone's answers.
+        return phone_tools.slash(phone_tools.Phone(_home()), words[1:])
     store, pusher = _state()
     if len(words) == 3 and words[0] == "watch":
         following = store.watch(words[1], [w for w in words[2].split(",") if w])
@@ -432,4 +440,6 @@ def register(ctx) -> None:
     if known:
         ctx.register_hook("agent_loop_stopped", _on_stopped)
     ctx.register_command("redde-push", _slash, description="Used by the Redde app to follow a conversation", args_hint="watch <session> <device>")
+    # Phone tools (device.py): offered to the agent only for what the phone has turned on.
+    phone_tools.register(ctx, lambda: phone_tools.Phone(_home()))
     ctx.register_cli_command("redde-push", "Notifications on your iPhone from Redde", _cli_setup, _cli)

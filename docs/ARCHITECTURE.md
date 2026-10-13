@@ -1104,6 +1104,111 @@ ones. Off means off: queries return nothing and Spotlight entries are deleted. N
 runs Siri AI, English, and a supported region. `Intents/Siri/`, `Services/SiriIntegration.swift`,
 tests in `EchoTests/SiriSchemaTests.swift`.
 
+## Phone tools
+
+Things on the iPhone that the agent can ask Redde to do, because iOS lets an app do them with
+its owner's permission (Settings → Phone tools; everything off until turned on): the calendar
+(look up events, add one), reminders (list, add, mark done), contacts (look someone up; no
+changes), the photo library (find by date, kind and what a picture shows, hand one over, delete), and Redde's own
+folder in the Files app (list, read, save text, delete). Fourteen tools, `DeviceTool`. Nothing
+reaches into another app: iOS allows no app that, and no client of any agent can do it.
+
+**How a call travels.** The tools are declared to the agent by Redde's plugin on the Hermes
+server, the one that sends notifications (`companion/hermes-plugin/redde-push/device.py`, from
+plugin 1.2.0): a Hermes plugin can register tools, and each of these is a handler that waits. It
+writes the request down as a small file in the Hermes home and polls for an answer file, for up
+to two minutes. Redde sees the tool start in the turn it is following (`Conversation.apply` →
+`DeviceToolsService.toolStarted`; any tool whose name starts `phone_`), asks the plugin what is
+wanted with the command the plugin already has for the app (`/redde-push device next`, by
+`command.dispatch` over the Dashboard), settles whether it may be done, does it
+(`DeviceToolRunner`), and hands the answer back (`device done <id> <answer>`), which the plugin
+writes beside the request. Files and not memory because the two ends can be in different
+processes: a turn over the Hermes API runs in the gateway's, and the app's command in the
+Dashboard's. A picture or a file goes back inside the answer (up to 450 KB, what one command
+has been seen to carry), is saved under the plugin's folder on the server, and the agent is
+given its path. So phone tools need the Dashboard login, also when the conversation runs over
+the Hermes API, and they answer only while Redde is following the turn: one started from
+another client gets "the phone didn't answer" after the two minutes.
+
+**What the agent is offered** is the phone's to say. Each area has a setting (Off, Ask each
+time, Allow reading), and Redde tells the plugin which areas are on (`device areas
+calendar,files`, when the switches change and each time Redde comes forward). A tool whose
+area is off is not offered (its `check_fn`), and refuses if called anyway. Hermes remembers the
+list of tools it worked out and that memory doesn't go by `check_fn`, so each Hermes process
+that loaded the plugin watches the areas file and has the list worked out afresh when it
+changes (`device._watch`, two seconds at most; found in the lab, where the gateway otherwise
+never offered a tool turned on after its first turn). A conversation already open on the
+Dashboard keeps the tools it started with.
+
+**What the person is asked.** Adding, changing and deleting are put to the person every time,
+whatever the area's setting; reading is too where the area says "Ask each time", with an
+"Always allow reading" that moves the area to "Allow reading". The question is an alert over
+whatever Redde shows, voice mode included, worded from the call's arguments (`DeviceAsk`).
+Deleting photos is put to the person by iOS itself, with the photos shown, and not by Redde as
+well. A question needs Redde on the screen: asked for while it isn't, the tool says so. What
+needs no question still runs with the phone locked while the turn goes on. Each call is noted
+in Settings → Phone tools → Asked for lately (the last forty). iOS's own permissions are asked
+for when an area is turned on.
+
+The plugin's tools live in its own toolset (`redde_phone`), on by default like any plugin's,
+so with every area off the cost to a Hermes that never uses them is nothing offered and
+nothing in the prompt.
+
+**Finding a photo by what it shows.** `phone_photos_search` takes a `query` in plain words
+("bowling scoreboard", "dog beach"). iOS has an index of what is in every picture, for the
+Photos app's own search, and lends it to no other app; so Redde makes its own, on the phone.
+`PhotoLook` looks at a picture with Vision: what is in it, from the small copy the phone always
+has (about 15 ms a picture on an M-series Mac; 1,303 things it can name), and the text in it,
+from a larger copy, for the kinds of picture that have some (a screenshot, a document, a sign, a
+scoreboard: reading costs ten to twenty times as much as looking). `PhotoIndex` keeps what was
+made out, a line a picture, in a file that is left out of backups and deleted when Photos is
+turned off. Pictures are looked at newest first: a search waits up to thirty seconds for the
+ones in its dates, three at a time, and the rest of the library is worked through two at a time
+while Redde is open, and not while the phone is saving power or hot (`PhotoLooking`; Settings →
+Phone tools says how far it has got). From iOS 27 an app can read the caption and keywords a
+person wrote on a picture in Photos (`PHAsset.extendedMetadata`), and those are matched too,
+for every picture, looked at or not.
+
+`PhotoQuery` holds the words against all of that. A word on the picture counts in full; a near
+relation of it, by the word embedding iOS carries, counts for less ("puppy" finds a dog, behind
+"dog"); what the phone made out counts by how sure it was; text in the picture is matched as
+written. Answers far behind the best are left out (asked for bowling, every ball game is a
+distant relation). The agent gets the matches best first, each with what the phone made out,
+the text, the caption and how well it matched, and the number of pictures not yet looked at, so
+that nothing found is not taken for there being none. These are the phone's guesses: the tool
+tells the agent to fetch a likely one and look. The picture itself still leaves the phone only
+through `phone_photos_get`.
+
+Measured on the Mac with real pictures (macOS's own account pictures, the simulator's sample
+photos, the store screenshots): "bowling" 0.98 for the bowling picture and nothing else kept,
+"photo of a bird" four birds, "flowers" nine, "guitar" the guitar and then the other
+instruments, "countertop" the two screenshots with that word in them. Not found: "cookie" for
+a fortune cookie Vision calls a bagel. In the simulator Vision cannot be tried: it refuses on
+its default device and on the CPU calls every picture a night sky, so there a picture counts
+as not looked at and the tests give the index a stand-in. Not tried: any of it on a real
+phone, so how long a real library takes, how much of it is on the phone at reading size with
+iCloud Photos on, and what the looking costs in battery are all unknown.
+
+**Showing a photo.** A photo the agent fetches is put into the reply as it goes
+(`DeviceToolsService` hands it to the conversation before it answers the plugin): the person
+sees which picture left the phone, and "show me my latest photo" shows it. For a later reply
+the tool's result carries the line to write (`show_with`, a `MEDIA:` tag), and since the first
+real agent to be asked "show me" answered with the file's bare path in backticks, a path into
+the plugin's folder on the server is taken for the file it names, tag or no tag
+(`ServeMedia.candidates`). A picture already in the reply is not fetched back or shown twice.
+
+**Tried.** On a real phone against a real Hermes (2026-10-12, a 0.21 server with the plugin
+copied in by hand): asked for the most recent photo, the agent found it, fetched it and
+described it correctly. The loop also runs in the lab against unmodified Hermes 0.21.0, 0.21.3 and 0.21.5
+(`scripts/hermes-lab/lab.sh device --app`): a stand-in phone over both connections, then the
+app's own client, service and files tool. The calendar, reminders, contacts and photos tools
+run for real in the simulator once it has been let at them
+(`EchoTests/PhoneToolsOnDeviceTests.swift`), which is how "photos that are not screenshots"
+was found to come back as one picture of six when asked of the library, and is now sorted out
+picture by picture. Not tried: the other areas on a real phone, deleting photos (it takes a
+person's tap), and the question in the car. An agent that already has a tool for the same
+thing uses that one: asked for a reminder, the one tried used its own reminders tool.
+
 ## CarPlay
 
 A CarPlay scene in the voice-based conversational category (iOS 26.4+). A tab bar with two tabs.

@@ -67,6 +67,7 @@ struct EchoApp: App {
                     Drafts.shared.saveNow()
                     // Every scene is in the background now, the car's included if there is one.
                     voiceSession.leftForeground(carPlayConnected: CarPlaySceneDelegate.isConnected)
+                    PhotoLooking.shared.pause()
                 case .active:
                     lock.appDidBecomeActive()
                     WatchLink.shared.push()   // settings may have changed since the watch last heard
@@ -74,6 +75,12 @@ struct EchoApp: App {
                     // without its reply fetches it, or picks the turn up where it stands.
                     Task { await conversation.catchUp() }
                     Task { await CaptureInbox.shared.file() }   // notes taken offline
+                    // Which phone tools the agent is offered is this phone's to say, and the
+                    // server may have been restarted, or reached for the first time, since it did.
+                    if Settings.shared.phoneTools.on { Task { await DeviceToolsService.shared.publish() } }
+                    // With Photos among them, the library is looked through while Redde is open,
+                    // so that the agent can find a picture by what it shows.
+                    PhotoLooking.shared.resume()
                 @unknown default: break
                 }
             }

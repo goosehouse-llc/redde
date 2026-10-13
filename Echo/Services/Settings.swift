@@ -216,6 +216,11 @@ final class Settings: ServeEndpoint {
     var carPlayCards: CarPlayCardLook {
         didSet { defaults.set(carPlayCards.rawValue, forKey: Keys.carPlayCards) }
     }
+    /// Settings → Phone tools: which of the phone's own things the agent may use (`DeviceTool`).
+    /// Everything off until turned on.
+    var phoneTools: PhoneToolsSettings {
+        didSet { if phoneTools != oldValue { defaults.set(try? JSONEncoder().encode(phoneTools), forKey: Keys.phoneTools) } }
+    }
     /// When each chat was last seen, for the car's "Catch me up" (`CatchUp`). Not a choice
     /// anyone makes: the app keeps it.
     var catchUp: CatchUp.Marks {
@@ -420,6 +425,7 @@ final class Settings: ServeEndpoint {
         static let orbLight = "orbLight"
         static let carPlayCards = "carPlayCards"
         static let catchUp = "catchUp"
+        static let phoneTools = "phoneTools"
         static let notifyInBackground = "notifyInBackground"
         static let showLiveActivity = "showLiveActivity"
         static let suggestFollowUps = "suggestFollowUps"
@@ -483,6 +489,7 @@ final class Settings: ServeEndpoint {
         orbLight = OrbLight(rawValue: defaults.string(forKey: Keys.orbLight) ?? "") ?? .nebula
         carPlayCards = CarPlayCardLook(rawValue: defaults.string(forKey: Keys.carPlayCards) ?? "") ?? .color
         catchUp = defaults.data(forKey: Keys.catchUp).flatMap { try? JSONDecoder().decode(CatchUp.Marks.self, from: $0) } ?? .init()
+        phoneTools = defaults.data(forKey: Keys.phoneTools).flatMap { try? JSONDecoder().decode(PhoneToolsSettings.self, from: $0) } ?? .init()
         notifyInBackground = defaults.bool(forKey: Keys.notifyInBackground)
         showLiveActivity = defaults.object(forKey: Keys.showLiveActivity) as? Bool ?? true
         suggestFollowUps = defaults.bool(forKey: Keys.suggestFollowUps)
@@ -695,6 +702,7 @@ final class Settings: ServeEndpoint {
         orbLight = .nebula
         carPlayCards = .color
         catchUp = .init()
+        phoneTools = .init()
         notifyInBackground = false
         showLiveActivity = true
         earpieceAtEar = true

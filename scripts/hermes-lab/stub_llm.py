@@ -55,7 +55,14 @@ CALLS = {
     "lab:delegate": ("delegate_task", {"goal": "Say hello."}),
     "lab:sudo": ("terminal", {"command": "sudo true"}),
     "lab:secret": ("skill_view", {"name": "lab-secret"}),
+    # Phone tools (the Redde plugin's): carried out by whoever plays the phone in the check.
+    "lab:reminder": ("phone_reminders_add", {"title": "Renew the car registration", "due": "2026-10-20"}),
+    "lab:photo": ("phone_photos_get", {"id": "ABC-123"}),
+    "lab:note": ("phone_files_write", {"path": "lab/note.txt", "text": "from the agent"}),
 }
+#: What the model says once a phone tool has answered, by what the answer holds.
+PHONE_SAID = (('"added"', "[phone: added]"), ("file_path", "[phone: file]"), ('"saved"', "[phone: saved]"), ("said no", "[phone: no]"),
+              ("didn't answer", "[phone: no answer]"), ("turned off", "[phone: off]"))
 #: How many more times each "lab:hiccup" message is answered with a failure.
 HICCUPS = {}
 #: What a message makes the endpoint answer in place of a completion.
@@ -90,8 +97,11 @@ class Handler(BaseHTTPRequestHandler):
         if not self.path.rstrip("/").endswith("/chat/completions"):
             return self._json(404, {"error": {"message": "not found"}})
         model = body.get("model", "")
+        tools = [tool.get("function", {}).get("name") or "" for tool in body.get("tools") or []]
         with open(HITS, "a") as f:
-            f.write(json.dumps({"stub": NAME, "model": model, "stream": bool(body.get("stream"))}) + "\n")
+            f.write(json.dumps({"stub": NAME, "model": model, "stream": bool(body.get("stream")),
+                                "phone": sorted(name for name in tools if name.startswith("phone_")), "tools": len(tools),
+                                "search": "tool_call" in tools}) + "\n")
         text, call = f"[{NAME}:{model}]", None
         messages = body.get("messages") or []
         if TARGET.endswith("/redde-lab-target") and messages:
@@ -115,10 +125,13 @@ class Handler(BaseHTTPRequestHandler):
                 name = next((n for n in names if n in offered), None)
                 if name:
                     planned = (name, arguments)
-                elif names is TODO and "tool_call" in offered:
+                elif (names is TODO or names[0].startswith("phone_")) and "tool_call" in offered:
                     # From Hermes 0.21.3 most tools are not offered outright: the model finds
-                    # them and calls them through `tool_call`, by name.
-                    planned = ("tool_call", {"calls": [{"name": names[0], "arguments": arguments}]})
+                    # them and calls them through `tool_call`, by name. (0.21.0 does the same once
+                    # enough tools are on, and its `tool_call` takes one call, not a list of them.)
+                    bridge = next(tool.get("function", {}) for tool in body.get("tools") or [] if tool.get("function", {}).get("name") == "tool_call")
+                    batched = "calls" in (bridge.get("parameters") or {}).get("properties", {})
+                    planned = ("tool_call", {"calls": [{"name": names[0], "arguments": arguments}]} if batched else {"name": names[0], "arguments": arguments})
                 break
             if "lab:file" in just_said:
                 text = "[file seen]" if "lab-file-token" in just_said or "lab-clip.mp4" in just_said else "[file missing]"
@@ -131,6 +144,7 @@ class Handler(BaseHTTPRequestHandler):
                         text = f"[answered: {answers[0].get('user_response', '')}]"
                 except (ValueError, AttributeError):
                     pass
+                text = next((words for mark, words in PHONE_SAID if mark in said(messages[-1])), text)
             elif "danger" in asked and "terminal" in offered:
                 os.makedirs(TARGET, exist_ok=True)
                 planned = ("terminal", {"command": f"rm -rf {TARGET}"})
