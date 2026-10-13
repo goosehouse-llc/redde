@@ -26,20 +26,43 @@ struct AskHermesTextIntent: AppIntent {
 }
 
 /// Drives one turn outside the UI. Keeps its own ledger session so shortcut traffic doesn't
-/// land in whatever conversation is open on screen.
+/// land in whatever conversation is open on screen, and another for quick capture's notes.
 @MainActor
 enum ShortcutRunner {
     private static let log = Logger(subsystem: "com.goosehouse.echo", category: "shortcut")
+
+    /// The chats of Redde's own that such a turn lands in.
+    enum Thread {
+        case shortcuts, notes
+
+        var prefix: String {
+            switch self {
+            case .shortcuts: Settings.shortcutSessionPrefix
+            case .notes: Settings.notesSessionPrefix
+            }
+        }
+
+        var title: String {
+            switch self {
+            case .shortcuts: "Shortcuts · \(Date.now.formatted(date: .abbreviated, time: .omitted))"
+            case .notes: CaptureFiler.title
+            }
+        }
+    }
+
     /// Per server and profile: a session belongs to where it was created. Keyed by the server's
     /// id, so removing another server never hands its session to this one.
-    private static var sessionKey: String {
+    private static func slot(for thread: Thread) -> String {
         let settings = Settings.shared
-        return Settings.shortcutSessionPrefix + ".\(settings.activeServerID.uuidString)"
+        return thread.prefix + ".\(settings.activeServerID.uuidString)"
             + (settings.profileName.map { ".\($0)" } ?? "")
     }
 
-    static func ask(_ question: String, retried: Bool = false) async throws -> String {
+    /// `taken` is called once the server has answered at all: from then on it has the message,
+    /// whatever becomes of the turn.
+    static func ask(_ question: String, in thread: Thread = .shortcuts, retried: Bool = false, taken: (() -> Void)? = nil) async throws -> String {
         let settings = Settings.shared
+        let sessionKey = slot(for: thread)
         let trimmed = question.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw IntentError.emptyQuestion }
         guard let url = settings.activeBaseURL else { throw IntentError.notConfigured }
@@ -52,7 +75,7 @@ enum ShortcutRunner {
             guard let key, !key.isEmpty else { throw IntentError.notConfigured }
             let headers = settings.customHeaderFields
             transport = HermesSessionsTransport(baseURL: url, apiKey: key, headers: headers)
-            sessionID = try await ledgerSession(api: HermesSessionsAPI(baseURL: url, apiKey: key, headers: headers))
+            sessionID = try await ledgerSession(thread, api: HermesSessionsAPI(baseURL: url, apiKey: key, headers: headers))
         case .hermesServe:
             transport = HermesServeTransport()
             sessionID = UserDefaults.standard.string(forKey: sessionKey + ".serve")
@@ -65,11 +88,17 @@ enum ShortcutRunner {
                                   provider: settings.gatewayProvider.nilIfEmpty, reasoningEffort: settings.reasoningEffort.nilIfEmpty,
                                   instructions: nil, replyLanguage: settings.replyLanguage.nilIfEmpty)
         var text = ""
+        var answered = false
         do {
             for try await event in transport.stream(request) {
+                if !answered { answered = true; taken?() }
                 switch event {
                 case let .textDelta(delta): text += delta
                 case let .sessionID(id) where settings.transport == .hermesServe:
+                    // A chat the Dashboard has just made for the notes is given its name.
+                    if thread == .notes, sessionID == nil, UserDefaults.standard.string(forKey: sessionKey + ".serve") != id {
+                        Task { try? await HermesServeClient.shared.updateSession(stored: id, title: thread.title) }
+                    }
                     UserDefaults.standard.set(id, forKey: sessionKey + ".serve")
                 default: break
                 }
@@ -78,17 +107,19 @@ enum ShortcutRunner {
             // The "Shortcuts" session was deleted on the gateway; start a fresh one and retry once.
             UserDefaults.standard.removeObject(forKey: sessionKey)
             guard !retried else { throw TransportError.http(status: 404, body: "session") }
-            return try await ask(trimmed, retried: true)
+            return try await ask(trimmed, in: thread, retried: true, taken: taken)
         }
         let reply = text.trimmingCharacters(in: .whitespacesAndNewlines)
         log.info("shortcut reply: \(reply.count) chars")
         return reply.isEmpty ? "Redde didn't reply." : PlainText.spoken(reply)
     }
 
-    /// One long-lived ledger session for all shortcut runs, created on first use.
-    private static func ledgerSession(api: HermesSessionsAPI) async throws -> String {
+    /// One long-lived ledger session for all shortcut runs, and one for all notes, each created
+    /// on first use.
+    private static func ledgerSession(_ thread: Thread, api: HermesSessionsAPI) async throws -> String {
+        let sessionKey = slot(for: thread)
         if let existing = UserDefaults.standard.string(forKey: sessionKey) { return existing }
-        let created = try await api.createSession(title: "Shortcuts · \(Date.now.formatted(date: .abbreviated, time: .omitted))")
+        let created = try await api.createSession(title: thread.title)
         UserDefaults.standard.set(created.id, forKey: sessionKey)
         return created.id
     }

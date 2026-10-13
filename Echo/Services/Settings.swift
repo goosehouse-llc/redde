@@ -532,6 +532,8 @@ final class Settings: ServeEndpoint {
     /// Shortcuts keep their own session per server and profile under keys with this prefix
     /// (`ShortcutRunner`).
     static let shortcutSessionPrefix = "shortcutSessionID"
+    /// Quick capture's notes have a chat of their own the same way (`CaptureFiler`).
+    static let notesSessionPrefix = "notesSessionID"
 
     /// Once: the keys from before they carried a server id (`shortcutSessionID`,
     /// `shortcutSessionID.<profile>`, with `.serve` for the Dashboard) belong to the first server.
@@ -548,10 +550,12 @@ final class Settings: ServeEndpoint {
         defaults.set(true, forKey: done)
     }
 
-    /// Forgets the Shortcuts sessions of one server, or of all of them.
+    /// Forgets the Shortcuts and Notes sessions of one server, or of all of them.
     private func removeShortcutSessions(server: UUID?) {
-        let prefix = Self.shortcutSessionPrefix + (server.map { ".\($0.uuidString)" } ?? "")
-        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix(prefix) { defaults.removeObject(forKey: key) }
+        for kind in [Self.shortcutSessionPrefix, Self.notesSessionPrefix] {
+            let prefix = kind + (server.map { ".\($0.uuidString)" } ?? "")
+            for key in defaults.dictionaryRepresentation().keys where key.hasPrefix(prefix) { defaults.removeObject(forKey: key) }
+        }
     }
 
     /// Saved Hermes servers. The connection fields above are the active server's working copy:

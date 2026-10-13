@@ -93,6 +93,8 @@ final class VoiceSession {
     private let stopPhrases: () -> [String]
     /// Settings → Voice → Answer requests by voice. Injectable so tests choose.
     private let answersAloud: () -> Bool
+    /// Where a note taken by voice goes (quick capture). Injectable so tests see it.
+    private let takeNote: (String) -> Void
     /// Settings → Voice → Nod or shake to answer, and the AirPods' movement it reads.
     private let answersByNod: () -> Bool
     private let head: any HeadGestureSensing
@@ -190,6 +192,7 @@ final class VoiceSession {
          stopPhrases: @escaping () -> [String] = { Settings.shared.stopPhrases },
          answersAloud: @escaping () -> Bool = { Settings.shared.answerRequestsByVoice },
          answersByNod: @escaping () -> Bool = { Settings.shared.answerRequestsByNod },
+         takeNote: @escaping (String) -> Void = { CaptureInbox.shared.add($0) },
          respond: ((SpokenRequest.Answer) -> Void)? = nil) {
         self.talkOver = talkOver
         self.interruption = interruption
@@ -197,6 +200,7 @@ final class VoiceSession {
         self.answersAloud = answersAloud
         self.answersByNod = answersByNod
         self.head = head
+        self.takeNote = takeNote
         self.respond = respond ?? { [weak conversation] answer in
             switch answer {
             case let .approval(choice): conversation?.respond(approval: choice)
@@ -300,8 +304,13 @@ final class VoiceSession {
 
     // MARK: - Public actions
 
-    /// Tap the mic: start listening. If a reply is being spoken, this barges in.
-    func beginListening() {
+    /// What is being listened for is a note to file, not a question (quick capture): nothing is
+    /// sent to the conversation and nothing comes back but "Noted."
+    private(set) var isCapturing = false
+
+    /// Tap the mic: start listening. If a reply is being spoken, this barges in. `capturing`:
+    /// for a note (`CaptureInbox`), which leaves the conversation and whatever it is doing alone.
+    func beginListening(capturing: Bool = false) {
         if asking != nil {
             // Tapped while the request is being read out: hear the answer now. The turn is not
             // one to barge in on; it waits for that answer.
@@ -310,15 +319,19 @@ final class VoiceSession {
             listenForAnswer()
             return
         }
+        // A note is taken between turns, never over a reply: that would end the reply for it.
+        if capturing, phase != .idle, !isErrored { return }
         replaying = false
         guard phase == .idle || phase == .speaking || isErrored else { return }
+        isCapturing = capturing
         briefingHeard = nil   // (cut short, if it was being said)
         isMuted = false
         stopMonitor()   // the mic behind a reply closes; listening opens it afresh
         output.stop()
         replyTask?.cancel()
-        // Barge-in: stop the server turn too, or it keeps streaming (and billing) unheard.
-        if conversation.isStreaming { conversation.cancel() }
+        // Barge-in: stop the server turn too, or it keeps streaming (and billing) unheard. A
+        // note has nothing to do with a reply being typed out on the phone meanwhile.
+        if conversation.isStreaming, !capturing { conversation.cancel() }
         metrics = VoiceMetrics()
         phase = .listening
         liveTranscript = ""
@@ -418,6 +431,7 @@ final class VoiceSession {
     func cancel() {
         replaying = false
         isMuted = false
+        isCapturing = false
         briefing?.cancel()
         briefing = nil
         briefingHeard = nil
@@ -506,17 +520,33 @@ final class VoiceSession {
         liveTranscript = text
         guard !text.isEmpty else {
             log.info("empty utterance")
+            isCapturing = false
             phase = .idle
             releaseAudioAfterCue()
             return
         }
+        // ("Never mind" instead of a note: no note.)
         if StopPhrase.matches(text, own: stopPhrases()) {
             log.info("stop phrase heard: \(text, privacy: .public)")
+            isCapturing = false
             continuous = false
             acknowledging = true
             phase = .speaking
             output.beginReply()
             output.append("Okay.")
+            output.endReply()
+            return
+        }
+        if isCapturing {
+            // A note: kept, to be filed when the server can be reached, and that is all. No turn,
+            // and the mic doesn't reopen, hands-free or not.
+            log.info("a note taken")
+            isCapturing = false
+            takeNote(text)
+            acknowledging = true
+            phase = .speaking
+            output.beginReply()
+            output.append("Noted.")
             output.endReply()
             return
         }

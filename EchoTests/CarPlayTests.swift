@@ -21,6 +21,13 @@ struct CarPlayTests {
         let recognizer = VoiceSessionTests.FakeRecognizer()
         let speaker = VoiceSessionTests.FakeSpeaker()
         let audio = VoiceSessionTests.FakeAudio()
+        /// Notes taken by voice (quick capture), in order.
+        let taken = Taken()
+
+        @MainActor final class Taken {
+            private(set) var notes: [String] = []
+            func add(_ note: String) { notes.append(note) }
+        }
 
         init() {
             settings = Settings(defaults: defaults)
@@ -30,12 +37,15 @@ struct CarPlayTests {
             store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "carplay-\(UUID().uuidString)"))
             conversation = Conversation(settings: settings, store: store,
                                         transportOverride: ConversationLifecycleTests.ScriptedTransport([.textDelta("Hello."), .done]))
+            let taken = taken
             session = VoiceSession(conversation: conversation, recognizer: recognizer, output: speaker, audio: audio,
-                                   requestPermissions: { true }, earcon: { _ in }, keepAwake: { _ in }, talkOver: { .off }, interruption: { .speech })
+                                   requestPermissions: { true }, earcon: { _ in }, keepAwake: { _ in }, talkOver: { .off }, interruption: { .speech },
+                                   takeNote: { taken.add($0) })
             delegate.sessionOverride = session
             delegate.conversationOverride = conversation
             delegate.settings = settings
             delegate.store = store
+            delegate.notes = CaptureInbox(defaults: defaults, settings: settings, deliver: { _ in throw URLError(.notConnectedToInternet) })
         }
 
         /// One typed turn, start to finish, so the conversation is worth keeping.
@@ -269,6 +279,40 @@ struct CarPlayTests {
         h.settings.transport = .hermesSessions   // and no key for it
         #expect(await h.delegate.catchUpScript() == "I couldn't reach your server to see what's new.")
     }
+
+    // MARK: Take a note
+
+    private func noteRow(_ delegate: CarPlaySceneDelegate) throws -> CPListItem {
+        try #require(delegate.askSections().first?.items.last as? CPListItem)
+    }
+
+    @Test func theNoteRowListensForANoteAndSaysNothingBack() async throws {
+        let h = Harness()
+        let row = try noteRow(h.delegate)
+        #expect(row.text == "Take a Note" && row.detailText == "Say it, and Redde files it. Nothing is said back.")
+        #expect(row.image != nil)
+
+        try await press(row)
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        #expect(h.session.isCapturing)
+        h.recognizer.deliver("The plumber comes Thursday at ten.")
+        try await waitUntil("noted") { h.session.phase == .speaking }
+        #expect(h.taken.notes == ["The plumber comes Thursday at ten."])
+        #expect(h.speaker.spoken == ["Noted."])
+        #expect(h.conversation.messages.isEmpty && !h.conversation.isStreaming, "nothing went to the conversation")
+        h.speaker.finishSpeaking()
+        #expect(h.session.phase == .idle && h.recognizer.starts == 1)
+    }
+
+    @Test func theNoteRowCountsWhatIsStillWaiting() async throws {
+        let h = Harness()
+        h.delegate.notes.retryDelays = [600]
+        h.delegate.notes.add("Renew the car registration")
+        #expect(try noteRow(h.delegate).detailText == "1 note waiting to be sent")
+        h.delegate.notes.add("Call the school on Monday")
+        #expect(try noteRow(h.delegate).detailText == "2 notes waiting to be sent")
+    }
+
     @Test func askAndTalkListenInTheirOwnModes() async throws {
         let h = Harness()
         try await press(card: 1, of: h.delegate)

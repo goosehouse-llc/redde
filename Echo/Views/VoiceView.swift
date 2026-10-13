@@ -170,6 +170,10 @@ struct VoiceView: View {
                 Text(session.headAnswers ? asking.nodHint : asking.hint)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            } else if session.isCapturing {
+                Text("Taking a note. Redde files it and says nothing back.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             } else if session.continuous {
                 Text("Say “stop listening” or “that's all” to end hands-free.")
                     .font(.caption)

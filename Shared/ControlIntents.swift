@@ -31,6 +31,21 @@ struct StartHandsFreeIntent: AppIntent {
     }
 }
 
+/// Quick capture from a control: Redde opens listening for a note, files it and says nothing back.
+struct StartCaptureIntent: AppIntent {
+    static let title: LocalizedStringResource = "Take a Note with Redde"
+    static let description = IntentDescription("Opens Redde and listens for a note to file. Nothing is sent back.")
+    static let openAppWhenRun = true
+    /// The Siri App Shortcut for notes lives in the app target and needs no screen; this is the
+    /// control's.
+    static let isDiscoverable = false
+
+    func perform() async throws -> some IntentResult {
+        LaunchFlag.requestCapture()
+        return .result()
+    }
+}
+
 /// `echo://listen` and `echo://listen?handsfree=1`.
 nonisolated enum EchoURL {
     static let scheme = "echo"

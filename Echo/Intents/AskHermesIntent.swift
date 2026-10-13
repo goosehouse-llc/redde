@@ -62,6 +62,18 @@ struct EchoShortcuts: AppShortcutsProvider {
             shortTitle: "Talk with Redde",
             systemImageName: "ear"
         )
+        // Quick capture: Siri asks for the note and Redde keeps it to file; the app stays shut.
+        AppShortcut(
+            intent: CaptureNoteIntent(),
+            phrases: [
+                "Take a note in \(.applicationName)",
+                "Take a note with \(.applicationName)",
+                "Note to \(.applicationName)",
+                "Add a note to \(.applicationName)",
+            ],
+            shortTitle: "Take a Note",
+            systemImageName: "square.and.pencil"
+        )
         // One phrase per Hermes profile the phone knows of (`ProfileCatalog`): "Ask Work in Redde".
         AppShortcut(
             intent: AskProfileIntent(),

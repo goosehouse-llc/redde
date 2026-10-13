@@ -50,7 +50,7 @@ Voice input is transcribed on your device using Apple's on-device speech recogni
 
 ## Siri and Shortcuts
 
-Redde offers Siri phrases and Shortcuts actions. When you use them, Apple's Siri processes your spoken command according to Apple's privacy policy, then hands control to Redde. Redde does not receive audio from Siri. Questions typed or dictated into the "Ask Redde a Question" shortcut action are sent only to your configured server. If you use Hermes profiles, Redde tells Siri and Shortcuts the names of the profiles it knows of, so that a phrase such as "Ask Work in Redde" is understood; Apple handles those names as it does any app's Siri phrases.
+Redde offers Siri phrases and Shortcuts actions. When you use them, Apple's Siri processes your spoken command according to Apple's privacy policy, then hands control to Redde. Redde does not receive audio from Siri. Questions typed or dictated into the "Ask Redde a Question" shortcut action, and notes given to "Take a Note in Redde", are sent only to your configured server; a note taken while that server can't be reached is kept on the device until it can be sent, and then removed. If you use Hermes profiles, Redde tells Siri and Shortcuts the names of the profiles it knows of, so that a phrase such as "Ask Work in Redde" is understood; Apple handles those names as it does any app's Siri phrases.
 
 ### Siri with Apple Intelligence (optional, off by default)
 

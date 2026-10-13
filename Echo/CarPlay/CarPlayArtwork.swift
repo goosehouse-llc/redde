@@ -141,6 +141,15 @@ enum CarPlayArtwork {
         }
     }
 
+    /// Beside "Take a Note" on the Ask tab: a pencil in Redde's gold, on its own graphite so it
+    /// reads on the car's light appearance as on its dark one.
+    static let noteMark: UIImage = render(CGSize(width: 44, height: 44), opaque: false) { ctx, rect in
+        ctx.addPath(UIBezierPath(roundedRect: rect, cornerRadius: 10).cgPath)
+        ctx.clip()
+        gradient(ctx, rect)
+        symbol("square.and.pencil", height: 22, colour: gold, centre: CGPoint(x: rect.midX + 1, y: rect.midY - 1))
+    }
+
     /// The mark beside the chat that is open, at the trailing edge of its row.
     static var openChatMark: UIImage? {
         UIImage(systemName: "checkmark")?.withTintColor(gold, renderingMode: .alwaysOriginal)

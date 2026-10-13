@@ -174,6 +174,7 @@ struct ConversationsList: View {
         // never push on iPad.
         List(selection: selecting ? $selected : nil) {
             topRow
+            if query.isEmpty, !selecting { waitingNotesSection }
             if usesLedger {
                 if viaServe, !projects.isEmpty, query.isEmpty, !selecting { projectsSection }
                 ledgerSection
@@ -408,6 +409,30 @@ struct ConversationsList: View {
         }
         ForEach(DateGroup.group(rows.filter { $0.pinned != true }, by: { $0.lastActiveDate }), id: \.title) { group in
             Section { ForEach(group.items) { ledgerButton($0, hasDraft: drafted.contains($0.id)) } } header: { groupHeader(group.title) }
+        }
+    }
+
+    /// Quick capture's notes that haven't reached the server yet (`CaptureInbox`): shown until
+    /// they have, so that a note is never somewhere nobody can see it. A swipe throws one away.
+    @ViewBuilder
+    private var waitingNotesSection: some View {
+        let notes = CaptureInbox.shared.waiting
+        if !notes.isEmpty {
+            Section {
+                ForEach(notes) { note in
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(note.text).lineLimit(3)
+                        Text(DateGroup.rowTime(note.at)).font(.caption).foregroundStyle(.secondary)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .selectionDisabled()
+                    .swipeActions { Button("Delete", role: .destructive) { CaptureInbox.shared.remove(note.id) } }
+                }
+            } header: {
+                groupHeader("Notes waiting to be sent")
+            } footer: {
+                Text("Filed as soon as your server can be reached, in a chat called Notes.")
+            }
         }
     }
 

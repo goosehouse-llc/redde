@@ -26,6 +26,16 @@ final class LaunchRouter {
         return pendingVoice
     }
 
+    /// Quick capture asked for from a control: listen for a note. Set once, consumed once.
+    private(set) var pendingCapture: Date?
+
+    func requestCapture() { pendingCapture = .now }
+
+    func consumeCaptureRequest() -> Bool {
+        defer { pendingCapture = nil }
+        return pendingCapture != nil
+    }
+
     /// Siri's "draft a message to Sol …": open with this in the composer, not sent.
     struct DraftRequest: Equatable {
         var text: String

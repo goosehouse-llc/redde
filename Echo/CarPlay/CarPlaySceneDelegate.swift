@@ -37,6 +37,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// Where the Chats tab lists from, and how a picked chat starts listening.
     var settings = Settings.shared
     var store = ConversationStore.shared
+    /// Quick capture's notes, for the row that takes one and says how many are waiting.
+    var notes = CaptureInbox.shared
 
     private var session: VoiceSession? { sessionOverride ?? VoiceSession.current }
     private var conversation: Conversation? { conversationOverride ?? Conversation.current }
@@ -177,8 +179,30 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         // standing mostly empty; on a small one the cards fill the screen and these are a scroll
         // away.
         let others = chats.filter { !$0.isCurrent }.prefix(Self.recentOnAsk).map { self.row(for: $0) }
-        guard !others.isEmpty else { return [CPListSection(items: [row])] }
-        return [CPListSection(items: [row]), CPListSection(items: others, header: "Recent", sectionIndexTitle: nil)]
+        let top = CPListSection(items: [row, noteRow()])
+        guard !others.isEmpty else { return [top] }
+        return [top, CPListSection(items: others, header: "Recent", sectionIndexTitle: nil)]
+    }
+
+    /// Quick capture: under the cards, a row that listens for a note and files it (`CaptureInbox`).
+    /// It says so, or how many notes are still waiting for the server.
+    private func noteRow() -> CPListItem {
+        let waiting = notes.waiting.count
+        let detail = waiting == 0 ? "Say it, and Redde files it. Nothing is said back." : waiting == 1 ? "1 note waiting to be sent" : "\(waiting) notes waiting to be sent"
+        let item = CPListItem(text: "Take a Note", detailText: detail, image: CarPlayArtwork.noteMark, accessoryImage: nil, accessoryType: .none)
+        item.handler = { [weak self] _, completion in
+            self?.takeNote()
+            completion()
+        }
+        return item
+    }
+
+    /// Listens for one note, on the voice card; "Noted." and the card closes. Not while Redde is
+    /// in the middle of something: a note doesn't end a reply.
+    func takeNote() {
+        guard let session, !session.mightBeBusy else { return }
+        showVoiceCard()
+        session.beginListening(capturing: true)
     }
 
     /// How many conversations the Ask tab lists; the Chats tab has them all.
@@ -486,6 +510,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         armTitleObservation()
         armLookObservation()
         armSeenObservation()
+        armNotesObservation()
     }
 
     private func armPhaseObservation() {
@@ -539,6 +564,19 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             }
         }
     }
+
+    /// A note was taken or handed over: the row counts again.
+    private func armNotesObservation() {
+        withObservationTracking {
+            _ = notes.waiting.count
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                if let self { self.askTab?.updateSections(self.askSections()) }
+                self?.armNotesObservation()
+            }
+        }
+    }
+
     private func phaseChanged() {
         guard let session, let voiceCard else { return }
         switch Self.card(phase: session.phase, waitingOnPhone: session.activeTool == "waiting for you", muted: session.isMuted) {

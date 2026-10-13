@@ -73,6 +73,7 @@ struct EchoApp: App {
                     // The app may have been closed while the agent worked: a conversation left
                     // without its reply fetches it, or picks the turn up where it stands.
                     Task { await conversation.catchUp() }
+                    Task { await CaptureInbox.shared.file() }   // notes taken offline
                 @unknown default: break
                 }
             }

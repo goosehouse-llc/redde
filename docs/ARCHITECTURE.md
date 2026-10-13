@@ -993,12 +993,37 @@ the agent is waiting on. Stop stops a joined turn; leaving the conversation only
 
 ## Siri, Shortcuts and controls
 
-Three App Shortcuts: "Ask Redde", "Talk with Redde" (hands-free) and "Ask a Profile" ("Ask Work in
-Redde"); Siri also answers to "Hermes" and "Sol". Siri only opens the app, which then listens with
+Four App Shortcuts: "Ask Redde", "Talk with Redde" (hands-free), "Take a Note" (quick capture,
+below) and "Ask a Profile" ("Ask Work in Redde"); Siri also answers to "Hermes" and "Sol". Siri only opens the app, which then listens with
 its own recognizer; long free-form questions through Siri's dictation are unreliable. "Ask Redde a Question" in Shortcuts takes text and returns
 the reply as text. The `EchoControls` extension provides Control Center, Lock Screen and Action Button
 controls (via an App Group launch flag), Home Screen widgets (Last reply, Ask Redde, Needs you,
 Context) and the Live Activity (`Services/TurnActivity.swift`).
+
+**Quick capture** is a note taken in passing, for Hermes to file, with nothing said back
+(`Services/Capture.swift`). There are three ways in. "Take a note in Redde" (`CaptureNoteIntent`)
+runs without opening the app: Siri asks for the note and answers "Noted", so it works from the
+Lock Screen, AirPods and the car. The "Note to Redde" control (`StartCaptureIntent`, by the
+launch flag like the others) and the "Take a Note" row under the cards on the car's Ask tab open
+listening for a note with Redde's own recogniser: `VoiceSession.beginListening(capturing:)`,
+after which the utterance goes to `CaptureInbox` and not to the conversation, "Noted." is said,
+and the mic stays shut, hands-free or not. A stop phrase or silence takes no note. A reply being
+typed out meanwhile is left running, and a note is not taken over a reply being spoken.
+`CaptureInbox` keeps a note from the moment it is taken (in UserDefaults) and hands it over
+as soon as it can: at once as a rule, and otherwise when the network comes back, when Redde
+comes forward, and on a schedule while it runs (15 seconds, 1, 3, then every 10 minutes).
+Notes that waited together go as one message. On a Hermes connection that is a turn nobody
+watches, in a chat of its own called "Notes" per server and profile (`ShortcutRunner`, thread
+`.notes`), which tells the agent these are notes to file where they belong and that nobody is
+waiting for an answer (`CaptureFiler.message`); what it answers is in that chat and is never
+read out. A note counts as handed over once the server has answered the turn at all, so one
+whose turn then breaks off is not sent twice. On the OpenAI-compatible connection there is
+no agent, and the notes are kept as messages in a conversation called "Notes" on the phone. A
+note belongs to the server and profile in use when it was taken and waits for them. Notes not
+yet handed over are listed at the top of the chat list, where a swipe throws one away, and
+counted on the car's row. Tried with a stand-in for the server (`EchoTests/CaptureTests.swift`);
+the turn that files a note with a real Hermes, Siri's phrase, the control and the car's row
+have not been run on a device. The watch has no way in yet.
 
 A Live Activity outlives the app, so one for a reply that never finished would sit on the Lock
 Screen and in the Dynamic Island looking busy for hours when the app crashes, is closed or is

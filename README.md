@@ -46,6 +46,8 @@ and can't read them ([docs/push.md](docs/push.md)).
   device that is set up can show the code for the next one.
 - **Everywhere on iOS.** Siri and Shortcuts (also by Hermes profile: "Ask Work in Redde"), the
   Action Button, Control Center, a Live Activity,
+  quick notes for your agent to file ("Take a note in Redde": nothing is said back, and a
+  note taken offline goes when it can),
   the share sheet, the camera, and Siri AI messaging on iOS 27 (opt-in). Widgets for the last
   reply, for what the agent is waiting on you for, and for how full the context is.
 - **On the wrist.** An Apple Watch app that asks by dictation and reads the answer aloud, carries

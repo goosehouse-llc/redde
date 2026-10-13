@@ -148,15 +148,16 @@ struct ContentView: View {
             if let offer = PushOffer(url: url) { router.requestPushPairing(offer) }
             else if let offer = SetupCodeOffer(url: url) { router.requestSetup(offer) }
         }
-        .onAppear { consumeControlRequest(); handleLaunchRequest(); handleDraftRequest(); handleSetupCode(); handlePushRequests() }
+        .onAppear { consumeControlRequest(); handleLaunchRequest(); handleCaptureRequest(); handleDraftRequest(); handleSetupCode(); handlePushRequests() }
         .onChange(of: router.pendingVoice) { handleLaunchRequest() }
+        .onChange(of: router.pendingCapture) { handleCaptureRequest() }
         .onChange(of: router.pendingDraft) { handleDraftRequest() }
         .onChange(of: router.pendingSetupCode) { handleSetupCode() }
         .onChange(of: router.pendingPushOffer) { handlePushRequests() }
         .onChange(of: router.pendingSession) { handlePushRequests() }
         .onChange(of: lock.isLocked) { _, locked in
             // A Siri / control / share request that arrived while locked runs once unlocked.
-            if !locked { consumeControlRequest(); handleLaunchRequest(); consumeSharedItems(); handleDraftRequest(); handleSetupCode(); handlePushRequests() }
+            if !locked { consumeControlRequest(); handleLaunchRequest(); handleCaptureRequest(); consumeSharedItems(); handleDraftRequest(); handleSetupCode(); handlePushRequests() }
             // "What's New" held back by the lock. A moment later, so a voice request opens first.
             if !locked { Task { try? await Task.sleep(for: .milliseconds(600)); presentWhatsNewIfDue() } }
         }
@@ -535,6 +536,26 @@ struct ContentView: View {
     /// A control (Action Button, Control Center, Lock Screen) asked for voice via the App Group.
     private func consumeControlRequest() {
         if let handsFree = LaunchFlag.consumeVoice() { router.requestVoice(handsFree: handsFree) }
+        if LaunchFlag.consumeCapture() { router.requestCapture() }
+    }
+
+    /// Quick capture's control: the voice screen opens listening for a note. The conversation is
+    /// left as it is: no new one is started, and a reply under way carries on.
+    private func handleCaptureRequest() {
+        guard !lock.isLocked, router.consumeCaptureRequest() else { return }
+        Task {
+            if !showVoice {
+                if let shown = whatsNew {
+                    deferredWhatsNew = shown
+                    whatsNew = nil
+                    try? await Task.sleep(for: .milliseconds(450))
+                }
+                showVoice = true
+                // Let the cover present before the audio session and mic spin up.
+                try? await Task.sleep(for: .milliseconds(400))
+            }
+            voiceSession.beginListening(capturing: true)
+        }
     }
 
     private func handleLaunchRequest() {

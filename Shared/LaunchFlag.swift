@@ -10,6 +10,20 @@ nonisolated enum LaunchFlag {
         defaults?.set(["handsFree": handsFree, "at": Date.now.timeIntervalSince1970], forKey: key)
     }
 
+    private static let captureKey = "launchFlag.capture"
+
+    /// "Listen for a note when you come forward" (quick capture's control).
+    static func requestCapture() {
+        defaults?.set(Date.now.timeIntervalSince1970, forKey: captureKey)
+    }
+
+    /// True if a fresh request for a note is waiting, clearing it.
+    static func consumeCapture(maxAge: TimeInterval = 20) -> Bool {
+        guard let at = defaults?.object(forKey: captureKey) as? TimeInterval else { return false }
+        defaults?.removeObject(forKey: captureKey)
+        return Date.now.timeIntervalSince1970 - at < maxAge
+    }
+
     /// Returns the hands-free flag if a fresh request is waiting, clearing it.
     static func consumeVoice(maxAge: TimeInterval = 20) -> Bool? {
         guard let d = defaults?.dictionary(forKey: key) else { return nil }
