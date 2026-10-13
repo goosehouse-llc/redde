@@ -1279,6 +1279,32 @@ off). That line is why it is off to begin with. A message typed on the phone is 
 and one that had to wait for a connection goes out later as an ordinary one. What the request
 makes of a real agent's answers has not been heard yet, and what each connection sends was not
 checked against a server (`EchoTests/CarBrevityTests.swift` holds when it is asked for).
+
+**The thinking sound** (Settings → Voice: Off, In the car, Always; off until chosen). While the
+agent works and nothing is being said, voice mode plays a soft double pulse round and round, so
+that someone who can't look at the screen doesn't take the silence for a failure. It starts
+after two and a half seconds with nothing to hear, so an answer that comes at once has none,
+and stops with the reply's first sound. That covers the wait before the first word and also the
+quiet in the middle of a reply while the agent is at its tools ("Let me check", then a minute
+of nothing): `VoiceSession.isQuietlyWorking` is the thinking phase, or the speaking phase with
+the turn's stream still open and the speech output silent, looked at five times a second
+(`watchForQuiet`). It does not play while the turn waits for the person (an approval is not
+work), over a reply that is held, or into a microphone left open on the phone's own speaker
+(Talk over replies set to "Headphones and speaker"), where a sound that starts can pass for a
+voice; on
+headphones the microphone hears none of it, and in a car the microphone is shut. "In the car"
+is CarPlay connected or the car as the audio route, as for short answers.
+
+The sound is one file, `Echo/Resources/Earcons/thinking.wav`, made by
+`scripts/thinking-sound.py`: one note (442.5 Hz, the octave under the listening tones' upper
+note, with their overtones), two soft pulses a fifth of a second apart, every 2.2 seconds,
+peaking 6 dB under the listening tones. One pitch on purpose: the two-note tones mean the
+microphone has opened or closed. `ThinkingSoundPlayer` loops it through the app's audio session
+like those tones, so it goes where the reply goes, and fades it out in a tenth of a second.
+Choosing it in Settings plays it twice, like a ringtone. When it starts and stops is in
+`EchoTests/ThinkingSoundTests.swift`; what it sounds like, how loud it is beside a reply and
+how it carries in a car are for ears, and nobody has listened yet.
+
 The brand lives in artwork drawn in code (`CarPlay/CarPlayArtwork.swift`). The Ask tab's cards
 come in six looks, picked in Settings → Appearance → CarPlay cards (`CarPlayCardLook`,
 `Settings.carPlayCards`; the row is left out on an iPad, which has no CarPlay). Color, the one a

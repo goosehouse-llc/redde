@@ -85,6 +85,8 @@ struct VoiceSessionTests {
         private(set) var released = 0
         private(set) var pauses = 0
         private(set) var resumes = 0
+        /// How loud the reply is right now: 0 while nothing is heard.
+        var meterLevel: Float = 0
         func pause() { pauses += 1 }
         func resume() { resumes += 1 }
 

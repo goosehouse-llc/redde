@@ -57,6 +57,36 @@ final class VoiceOptionsUITests: XCTestCase {
         XCTAssertTrue(phrase.waitForNonExistence(timeout: 5), "The phrase wasn't removed")
     }
 
+    /// Settings → Voice → Thinking sound: off until chosen, and choosing plays it, like a
+    /// ringtone. (What it sounds like is for ears; that the app is still there after the sample
+    /// has played and let go of the audio is what this sees.)
+    func testAThinkingSoundIsChosen() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = XCUIApplication.straightToChat + ["-echo.screen", "settings"]
+        app.launch()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20), "Settings didn't open")
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Thinking sound'")).firstMatch
+        reach(row, in: app, "The Thinking sound row")
+        func shows(_ choice: String) -> Bool {
+            app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Thinking sound' AND (label CONTAINS %@ OR value CONTAINS %@)", choice, choice)).firstMatch
+                .waitForExistence(timeout: 5)
+        }
+        row.tap()
+        let car = app.buttons["In the car"]
+        XCTAssertTrue(car.waitForExistence(timeout: 5), "The choices didn't open")
+        XCTAssertTrue(app.buttons["Off"].exists && app.buttons["Always"].exists)
+        car.tap()
+        XCTAssertTrue(shows("In the car"), "The choice didn't take")
+        shot("thinking sound")
+        XCTAssertFalse(app.wait(for: .notRunning, timeout: 6), "Redde went away while the sample played")
+
+        // Off again, for whatever runs next.
+        row.tap()
+        app.buttons["Off"].tap()
+        XCTAssertTrue(shows("Off"))
+    }
+
     /// The list an iPhone 11 was sent to pick another language from, and which never came up
     /// there: its newer transcriber knows no language. The simulator's doesn't either, so the
     /// languages here are the older transcriber's, as they are on that phone.

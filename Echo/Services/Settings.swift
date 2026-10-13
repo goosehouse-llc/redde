@@ -136,6 +136,12 @@ final class Settings: ServeEndpoint {
     var shortAnswersInCar: Bool {
         didSet { defaults.set(shortAnswersInCar, forKey: Keys.shortAnswersInCar) }
     }
+    /// Voice mode fills the silence while the agent works with a quiet sound
+    /// (`ThinkingSoundPlayer`): never, only with a car connected, or always. Off until chosen.
+    enum ThinkingSound: String, CaseIterable, Sendable { case off, car, always }
+    var thinkingSound: ThinkingSound {
+        didSet { defaults.set(thinkingSound.rawValue, forKey: Keys.thinkingSound) }
+    }
     /// With that on, a nod of the head approves and a shake denies, with AirPods that sense
     /// movement (`HeadGestures`). Off until asked for: iOS has to be asked for Motion & Fitness.
     var answerRequestsByNod: Bool {
@@ -410,6 +416,7 @@ final class Settings: ServeEndpoint {
         static let answerRequestsByVoice = "answerRequestsByVoice"
         static let answerRequestsByNod = "answerRequestsByNod"
         static let shortAnswersInCar = "shortAnswersInCar"
+        static let thinkingSound = "thinkingSound"
         static let useKokoro = "useKokoro"
         static let kokoroURL = "kokoroURL"
         static let kokoroVoice = "kokoroVoice"
@@ -471,6 +478,7 @@ final class Settings: ServeEndpoint {
         answerRequestsByVoice = defaults.bool(forKey: Keys.answerRequestsByVoice)
         answerRequestsByNod = defaults.bool(forKey: Keys.answerRequestsByNod)
         shortAnswersInCar = defaults.bool(forKey: Keys.shortAnswersInCar)
+        thinkingSound = defaults.string(forKey: Keys.thinkingSound).flatMap(ThinkingSound.init(rawValue:)) ?? .off
         useKokoro = defaults.bool(forKey: Keys.useKokoro)
         kokoroURL = defaults.string(forKey: Keys.kokoroURL) ?? Self.defaultKokoroURL
         kokoroVoice = defaults.string(forKey: Keys.kokoroVoice) ?? Self.defaultKokoroVoice
@@ -688,6 +696,7 @@ final class Settings: ServeEndpoint {
         answerRequestsByVoice = false
         answerRequestsByNod = false
         shortAnswersInCar = false
+        thinkingSound = .off
         useKokoro = false
         kokoroURL = Self.defaultKokoroURL
         kokoroVoice = Self.defaultKokoroVoice

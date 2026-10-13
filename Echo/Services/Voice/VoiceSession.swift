@@ -63,6 +63,7 @@ final class VoiceSession {
             // which made the tone land on the earpiece or the silent-switch session.
             if oldValue == .listening { earcon(.stopped) }
             watchIfSpeaking()
+            watchForQuiet()
             if phase == .idle || isErrored { stopMonitor() }
         }
     }
@@ -99,6 +100,9 @@ final class VoiceSession {
     private let carConnected: () -> Bool
     /// Where a note taken by voice goes (quick capture). Injectable so tests see it.
     private let takeNote: (String) -> Void
+    /// Settings → Voice → Thinking sound, and what plays it. Injectable so tests choose and listen.
+    private let thinkingSoundWanted: () -> Settings.ThinkingSound
+    private let thinkingSound: any ThinkingSounding
     /// Settings → Voice → Nod or shake to answer, and the AirPods' movement it reads.
     private let answersByNod: () -> Bool
     private let head: any HeadGestureSensing
@@ -199,6 +203,8 @@ final class VoiceSession {
          shortInCar: @escaping () -> Bool = { Settings.shared.shortAnswersInCar },
          carConnected: @escaping () -> Bool = { CarPlaySceneDelegate.isConnected },
          takeNote: @escaping (String) -> Void = { CaptureInbox.shared.add($0) },
+         thinkingSoundWanted: @escaping () -> Settings.ThinkingSound = { Settings.shared.thinkingSound },
+         thinkingSound: any ThinkingSounding = ThinkingSoundPlayer.shared,
          respond: ((SpokenRequest.Answer) -> Void)? = nil) {
         self.talkOver = talkOver
         self.interruption = interruption
@@ -207,6 +213,8 @@ final class VoiceSession {
         self.answersByNod = answersByNod
         self.head = head
         self.takeNote = takeNote
+        self.thinkingSoundWanted = thinkingSoundWanted
+        self.thinkingSound = thinkingSound
         self.shortInCar = shortInCar
         self.carConnected = carConnected
         self.respond = respond ?? { [weak conversation] answer in
@@ -224,6 +232,7 @@ final class VoiceSession {
         self.keepAwake = keepAwake
         output.onFirstSpeech = { [weak self] in
             self?.metrics.firstSpokenAt = .now
+            self?.playThinkingSound(false)   // the reply is out: not a note over its first word
             // The sound starts now: the watch for a voice over it starts its count from here.
             self?.watchIfSpeaking()
             // Starting playback (Kokoro's engine, or the synthesizer) can put the output back on
@@ -582,10 +591,11 @@ final class VoiceSession {
         if micStaysOpen { startMonitor() }
         replySerial += 1
         let serial = replySerial
+        turnOpen = true
         replyTask = Task { [weak self] in
             // A finished task must not keep counting as "our turn": cancel() would then kill a
             // typed reply that started later.
-            defer { if let self, self.replySerial == serial { self.replyTask = nil } }
+            defer { if let self, self.replySerial == serial { self.replyTask = nil; self.turnOpen = false } }
             for await event in events {
                 guard let self, !Task.isCancelled else { return }
                 // The turn has moved on while a request was being asked about: it was answered on
@@ -610,6 +620,7 @@ final class VoiceSession {
                     activeTool = nil
                 case .done:
                     metrics.replyDoneAt = .now
+                    turnOpen = false
                     output.endReply()
                 case let .interrupt(interrupt, _):
                     // Conversation holds the request; the voice screen shows the card. Asked
@@ -642,6 +653,81 @@ final class VoiceSession {
                 phase = .error(error)
                 output.releaseAudio(); audio.deactivate()
             }
+        }
+    }
+
+    // MARK: - The thinking sound
+
+    /// How long there has to be nothing to hear, while the agent works, before the sound starts:
+    /// an answer that comes at once has no need of it. And how often that is looked at.
+    var thinkingSoundAfter: Duration = .seconds(2.5)
+    var quietCheck: Duration = .milliseconds(200)
+    /// The reply's stream is still open: more may come, however long nothing has.
+    private var turnOpen = false
+    private var quietTask: Task<Void, Never>?
+    private var thinkingSoundOn = false
+
+    /// The agent is at work and there is nothing to hear: before its first word, and in the
+    /// middle of a reply while it uses its tools ("Let me check", and then a minute of nothing).
+    private var isQuietlyWorking: Bool {
+        switch thinkingSoundWanted() {
+        case .off: return false
+        case .car: if !carConnected(), audio.route != .car { return false }
+        case .always: break
+        }
+        // Not while the turn waits for the person, which is not work; not over a reply that is
+        // held; and not into a microphone left open on the phone's own speaker, where a sound
+        // that starts can pass for a voice (`BargeInDetector`).
+        guard asking == nil, conversation.pendingInterrupt == nil, !isPaused, !acknowledging, !replaying,
+              !(micStaysOpen && audio.route == .speaker) else { return false }
+        switch phase {
+        case .thinking: return true
+        case .speaking: return turnOpen && output.meterLevel < 0.02
+        default: return false
+        }
+    }
+
+    /// While Redde thinks or speaks, the quiet is watched; anywhere else the sound stops at once.
+    private func watchForQuiet() {
+        guard phase == .thinking || phase == .speaking else {
+            quietTask?.cancel()
+            quietTask = nil
+            playThinkingSound(false)
+            return
+        }
+        guard quietTask == nil else { return }
+        quietTask = Task { [weak self, quietCheck] in
+            var since: ContinuousClock.Instant?
+            while !Task.isCancelled {
+                do {
+                    guard let self else { return }
+                    since = heardNothing(since: since)
+                }
+                try? await Task.sleep(for: quietCheck)
+            }
+        }
+    }
+
+    /// One look at the quiet: since when there has been nothing to hear, the sound started once
+    /// that is long enough and stopped as soon as it isn't so.
+    private func heardNothing(since: ContinuousClock.Instant?) -> ContinuousClock.Instant? {
+        guard isQuietlyWorking else {
+            playThinkingSound(false)
+            return nil
+        }
+        let start = since ?? .now
+        if ContinuousClock.now - start >= thinkingSoundAfter { playThinkingSound(true) }
+        return start
+    }
+
+    private func playThinkingSound(_ on: Bool) {
+        guard on != thinkingSoundOn else { return }
+        thinkingSoundOn = on
+        if on {
+            thinkingSound.start()
+            audio.refreshRoute()   // (starting a sound can put the output back on the earpiece)
+        } else {
+            thinkingSound.stop()
         }
     }
 

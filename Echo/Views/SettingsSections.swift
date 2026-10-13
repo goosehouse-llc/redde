@@ -447,6 +447,18 @@ struct VoiceSettings: View {
                 }
             }
             Toggle("Short answers in the car", isOn: $settings.shortAnswersInCar)
+            Picker("Thinking sound", selection: Binding(
+                get: { settings.thinkingSound },
+                set: { choice in
+                    settings.thinkingSound = choice
+                    // Heard as it is chosen, like a ringtone.
+                    if choice != .off { ThinkingSoundPlayer.shared.preview() }
+                })) {
+                Text("Off").tag(Settings.ThinkingSound.off)
+                Text("In the car").tag(Settings.ThinkingSound.car)
+                Text("Always").tag(Settings.ThinkingSound.always)
+            }
+            .pickerStyle(.menu)
             Toggle("New conversation in voice mode", isOn: $settings.newConversationForVoice)
             Picker("When Redde opens", selection: $settings.launchScreen) {
                 Text("Last conversation").tag(Settings.LaunchScreen.conversation)
