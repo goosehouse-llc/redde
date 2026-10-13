@@ -88,7 +88,7 @@ Written ahead of the release. Most of 1.8 has been tried in the simulator and in
 
 In App Store Connect and on the web:
 - 1.7.1 came through review on 2026-10-13 (App Store Connect shows it ready for distribution), so the 1.8 version could be made.
-- The build is 1.8 (263). Archive from a clean build, which is also what trains Siri's phrases, the new "Take a note in Redde" among them.
+- The build is 1.8 (264): 263 went to App Store Connect on 2026-10-13 without the fix for the crash when a notification is tapped, and 264 replaces it. Archive from a clean build, which is also what trains Siri's phrases, the new "Take a note in Redde" among them.
 - Review notes from `app-review-notes.md`, with the key put in. They are rewritten for 1.8: Phone tools, and the four permissions the version adds (Reminders, Contacts, Photos, and Motion & Fitness for the nod). The Calendar permission's words changed too.
 - App Privacy stays "Data Not Collected" (below).
 - The privacy manifest (`Echo/Resources/PrivacyInfo.xcprivacy`) has a second required-reason entry: file timestamps, reason C617.1 (files inside the app's own container), because Phone tools' Files area lists the files in Redde's folder with when each was changed. An upload that uses such an API without its reason is answered with ITMS-91053.
