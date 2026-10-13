@@ -727,8 +727,32 @@ numbers and `TranscriptJumpUITests` scrolls back to the end by hand.
   held behind a running reply arrives in the queue the same way.
 - **A picture or a diagram opens out of its thumbnail** and closes back into it: the system's
   zoom transition (`matchedTransitionSource` on the thumbnail, `navigationTransition(.zoom)` on
-  the full-screen cover), in `AttachmentGallery`, `MarkdownImage` and `MermaidBlock`. It brings
+  the full-screen cover), in `PhotoGroup`, `MarkdownImage` and `MermaidBlock`. It brings
   the drag-down and pinch to close with it.
+- **A message's pictures stand together and open as one set** (asked 2026-10-13, after Messages).
+  One picture is shown at its own shape; two side by side, three as one large and two small,
+  four as a square of four, and from five on the fourth tile says how many more there are
+  (`PhotoCollage`, `PhotoGroup` in `Attachments.swift`). Files and videos are tiles under them.
+  A tap opens `PhotoViewer` on the picture tapped, with the rest a swipe away, "2 of 5" at the
+  top, a pinch or a double tap to zoom, a drag to move about a zoomed picture, a tap to clear
+  the screen of everything else. A picture in a reply's text (`MarkdownImage`) opens in the
+  same viewer on its own. Three things in it are UIKit's on purpose, each found with
+  `PhotoViewerUITests`:
+  - The zooming is a scroll view's (`ZoomingPictureView`). The system's pinch for closing a
+    view that opened out of a thumbnail takes a pinch away from a SwiftUI gesture, which is why
+    pictures never zoomed before; it gives way to a scroll view that can still zoom.
+  - The pages are a row in a scroll view written out here (`PhotoPagerController`). A SwiftUI
+    scroll view that pages opened on the first picture whichever it was told to show. UIKit's
+    page view controller keeps one page in its scroll view until a drag is under way, and the
+    system closes the viewer on a swipe back (a drag to the right) unless a scroll view under
+    the finger has somewhere to go that way: going to the picture before closed the viewer or
+    did nothing. With every page in its place from the start the system can see there is one
+    before; on the first picture a swipe back closes the viewer, as anywhere in iOS.
+  - While a picture is zoomed a do-nothing recognizer takes every drag, and the system's
+    closing gestures have to wait for it to fail, so a drag that reaches the picture's edge
+    does not close the viewer.
+  The pages showing and beside it hold their pictures, decoded off the main actor at up to
+  4,096 pixels; the others hold nothing. `-echo.demoPhotos [n]` seeds a conversation to try it on.
 - **A conversation opens out of its row or its card** (`OpeningCover`). The iPhone's list is a
   side panel and the start screen's "Continue" card swaps the transcript in place, so there is
   no pushed page or sheet for the system's zoom to attach to. A surface grows from the row (from

@@ -30,10 +30,10 @@ struct AttachmentStrip: View {
     }
 }
 
-/// Attachments shown with a message. A lone image displays as a photo bubble, like a received
-/// picture message; several show as tiles. Images open full screen on tap, out of the thumbnail
-/// that was tapped and back into it. Sound is played where it stands, each file on a bar of its
-/// own above the rest.
+/// Attachments shown with a message. Pictures are set out together, as Messages sets out photos
+/// sent at once (`PhotoGroup`), and open full screen on a tap, out of the picture that was
+/// tapped and back into it. Files and videos are tiles under them. Sound is played where it
+/// stands, each file on a bar of its own above the rest.
 struct AttachmentGallery: View {
     let attachments: [Attachment]
 
@@ -123,39 +123,148 @@ struct AudioBubble: View {
     }
 }
 
-/// Everything but sound: a photo bubble for a lone image, tiles otherwise.
+/// Everything but sound: the pictures together, then a tile for each file and video.
 private struct AttachmentTiles: View {
     let attachments: [Attachment]
-    @State private var viewing: Attachment?
     @State private var previewingDoc: Attachment?
-    @Namespace private var zoom
 
     var body: some View {
-        Group {
-            if attachments.count == 1, attachments[0].kind == .image {
-                PhotoBubble(attachment: attachments[0]) { viewing = attachments[0] }
-                    .matchedTransitionSource(id: attachments[0].id, in: zoom) { $0.clipShape(.rect(cornerRadius: 14)) }
-            } else {
+        let pictures = attachments.filter { $0.kind == .image }
+        let files = attachments.filter { $0.kind != .image }
+        VStack(alignment: .leading, spacing: 8) {
+            if !pictures.isEmpty { PhotoGroup(pictures: pictures) }
+            if !files.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        ForEach(attachments) { att in
+                        ForEach(files) { att in
                             AttachmentTile(attachment: att, size: 120)
-                                .matchedTransitionSource(id: att.id, in: zoom) { $0.clipShape(.rect(cornerRadius: 12)) }
-                                .onTapGesture {
-                                    if att.kind == .image { viewing = att } else { previewingDoc = att }
-                                }
+                                .onTapGesture { previewingDoc = att }
                         }
                     }
                 }
             }
         }
-        .fullScreenCover(item: $viewing) { att in
-            if let image = UIImage(data: att.data) {
-                ZoomableImage(image: image, caption: att.filename)
-                    .navigationTransition(.zoom(sourceID: att.id, in: zoom))
+        .sheet(item: $previewingDoc) { DocumentPreview(attachment: $0).ignoresSafeArea() }
+    }
+}
+
+/// How a message's pictures are set out together: two side by side, three as one large and two
+/// small, four as a square of four. From five on the fourth tile says how many more there are,
+/// and every one of them is in the viewer.
+nonisolated enum PhotoCollage {
+    /// How many pictures get a tile.
+    static let most = 4
+
+    /// The tiles as parts of the whole: where each starts and how much of the width and the
+    /// height it takes. One picture is not a collage (`PhotoBubble` shows it at its own shape).
+    static func tiles(for count: Int) -> [CGRect] {
+        switch count {
+        case ...1: []
+        case 2: [CGRect(x: 0, y: 0, width: 0.5, height: 1), CGRect(x: 0.5, y: 0, width: 0.5, height: 1)]
+        case 3: [CGRect(x: 0, y: 0, width: 0.6, height: 1), CGRect(x: 0.6, y: 0, width: 0.4, height: 0.5), CGRect(x: 0.6, y: 0.5, width: 0.4, height: 0.5)]
+        default: [CGRect(x: 0, y: 0, width: 0.5, height: 0.5), CGRect(x: 0.5, y: 0, width: 0.5, height: 0.5),
+                  CGRect(x: 0, y: 0.5, width: 0.5, height: 0.5), CGRect(x: 0.5, y: 0.5, width: 0.5, height: 0.5)]
+        }
+    }
+
+    /// The whole collage's width for a height of one.
+    static func shape(for count: Int) -> CGFloat {
+        switch count {
+        case 2: 1.5
+        case 3: 4.0 / 3
+        default: 1
+        }
+    }
+
+    /// The pictures that have no tile of their own.
+    static func hidden(_ count: Int) -> Int { max(0, count - most) }
+}
+
+/// A message's pictures: one at its own shape, several as a collage. A tap opens the viewer on
+/// the picture tapped, with the others a swipe away.
+struct PhotoGroup: View {
+    let pictures: [Attachment]
+    @State private var open = false
+    @State private var showing: String?
+    @Namespace private var zoom
+
+    private static let width: CGFloat = 300
+    private static let gap: CGFloat = 3
+
+    var body: some View {
+        Group {
+            if pictures.count == 1 {
+                PhotoBubble(attachment: pictures[0]) { show(pictures[0]) }
+                    .matchedTransitionSource(id: pictures[0].id.uuidString, in: zoom) { $0.clipShape(.rect(cornerRadius: 14)) }
+            } else {
+                collage
             }
         }
-        .sheet(item: $previewingDoc) { DocumentPreview(attachment: $0).ignoresSafeArea() }
+        .fullScreenCover(isPresented: $open) {
+            PhotoViewer(photos: pictures.map { ViewerPhoto($0) }, showing: $showing)
+                .navigationTransition(.zoom(sourceID: source, in: zoom))
+        }
+    }
+
+    private func show(_ picture: Attachment) {
+        showing = picture.id.uuidString
+        open = true
+    }
+
+    /// The tile the viewer closes back into: the showing picture's own, or the last tile for a
+    /// picture that has none.
+    private var source: String {
+        let tiled = pictures.prefix(PhotoCollage.most).map(\.id.uuidString)
+        return showing.flatMap { tiled.contains($0) ? $0 : nil } ?? tiled.last ?? ""
+    }
+
+    private var collage: some View {
+        let tiles = PhotoCollage.tiles(for: pictures.count), hidden = PhotoCollage.hidden(pictures.count)
+        return Color.clear
+            .aspectRatio(PhotoCollage.shape(for: pictures.count), contentMode: .fit)
+            .frame(maxWidth: Self.width)
+            .overlay {
+                GeometryReader { room in
+                    ForEach(Array(zip(pictures, tiles).enumerated()), id: \.element.0.id) { index, pair in
+                        let (picture, tile) = pair
+                        let frame = CGRect(x: tile.minX * room.size.width, y: tile.minY * room.size.height,
+                                           width: tile.width * room.size.width, height: tile.height * room.size.height)
+                            .insetBy(dx: Self.gap / 2, dy: Self.gap / 2)
+                        ThumbnailImage(attachment: picture, maxPixel: 720) { image in
+                            Image(uiImage: image).resizable().scaledToFill()
+                        } placeholder: {
+                            Color.primary.opacity(0.06)
+                        }
+                        .frame(width: frame.width, height: frame.height)
+                        .clipShape(.rect(cornerRadius: 4))
+                        .overlay {
+                            // The last tile stands for the pictures that have none.
+                            if hidden > 0, index == tiles.count - 1 {
+                                ZStack {
+                                    Color.black.opacity(0.5)
+                                    Text("+\(hidden)").font(.title.weight(.semibold)).foregroundStyle(.white)
+                                }
+                                .clipShape(.rect(cornerRadius: 4))
+                            }
+                        }
+                        .contentShape(.rect)
+                        .matchedTransitionSource(id: picture.id.uuidString, in: zoom) { $0.clipShape(.rect(cornerRadius: 4)) }
+                        .onTapGesture { show(picture) }
+                        .contextMenu {
+                            Button("Copy image", systemImage: "doc.on.doc") { UIPasteboard.general.image = UIImage(data: picture.data) }
+                        }
+                        .position(x: frame.midX, y: frame.midY)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(hidden > 0 && index == tiles.count - 1
+                            ? "Photo \(index + 1) of \(pictures.count), and \(hidden) more"
+                            : "Photo \(index + 1) of \(pictures.count)")
+                        .accessibilityAddTraits([.isImage, .isButton])
+                        .accessibilityIdentifier("photo-tile-\(index + 1)")
+                    }
+                }
+            }
+            // The outer corners are the bubble's; the gaps between tiles show the page.
+            .clipShape(.rect(cornerRadius: 14))
     }
 }
 

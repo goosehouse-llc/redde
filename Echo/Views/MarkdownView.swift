@@ -185,40 +185,8 @@ struct MarkdownImage: View {
         }
         .fullScreenCover(isPresented: $showViewer) {
             if let loaded {
-                ZoomableImage(image: loaded, caption: alt)
+                PhotoViewer(photos: [ViewerPhoto(id: "image", caption: alt, image: loaded)], showing: .constant("image"))
                     .navigationTransition(.zoom(sourceID: "image", in: zoom))
-            }
-        }
-    }
-}
-
-struct ZoomableImage: View {
-    let image: UIImage
-    let caption: String
-    @Environment(\.dismiss) private var dismiss
-    @State private var scale: CGFloat = 1
-    @State private var lastScale: CGFloat = 1
-
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            Color.black.ignoresSafeArea()
-            ScrollView([.horizontal, .vertical], showsIndicators: false) {
-                Image(uiImage: image).resizable().scaledToFit()
-                    .containerRelativeFrame([.horizontal, .vertical]) { size, _ in size * scale }
-            }
-            .gesture(MagnifyGesture().onChanged { v in scale = max(1, min(5, lastScale * v.magnification)) }
-                                     .onEnded { _ in lastScale = scale })
-            .onTapGesture(count: 2) { withAnimation { scale = scale > 1 ? 1 : 2.5; lastScale = scale } }
-            Button { dismiss() } label: {
-                Image(systemName: "xmark.circle.fill").font(.title).foregroundStyle(.white.opacity(0.9))
-            }
-            .padding()
-            .accessibilityLabel("Close")
-        }
-        .overlay(alignment: .bottom) {
-            if !caption.isEmpty {
-                Text(caption).font(.footnote).foregroundStyle(.white).padding(8)
-                    .background(.black.opacity(0.5), in: .capsule).padding()
             }
         }
     }

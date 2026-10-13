@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import WidgetKit
 
 #if DEBUG
@@ -233,6 +234,47 @@ extension Conversation {
         ]
         replaceForDemo(messages: [Message(role: .user, text: "Move the blog to the new site."), first,
                                   Message(role: .user, text: "Carry on."), second])
+    }
+
+    /// Dev hook (`-echo.demoPhotos [n]`): a reply with n photos, as the phone's photo tool hands
+    /// them over one after another (five unless a number says otherwise), after a message that
+    /// sent two and a reply with one, to look at the collage and the viewer. The pictures are
+    /// drawn here: a colour each, its number large in the middle, in the shapes a camera makes,
+    /// with fine lines to zoom into.
+    func seedPhotoDemo(count: Int = 5) {
+        reset()
+        func picture(_ number: Int, set: String) -> Attachment {
+            let shapes = [CGSize(width: 1600, height: 1200), CGSize(width: 1200, height: 1600), CGSize(width: 1600, height: 1600), CGSize(width: 1600, height: 900)]
+            let size = shapes[(number - 1) % shapes.count]
+            let format = UIGraphicsImageRendererFormat()
+            format.scale = 1
+            format.opaque = true
+            let jpeg = UIGraphicsImageRenderer(size: size, format: format).jpegData(withCompressionQuality: 0.8) { context in
+                let hue = CGFloat((number * 67) % 360) / 360
+                UIColor(hue: hue, saturation: 0.55, brightness: 0.62, alpha: 1).setFill()
+                context.fill(CGRect(origin: .zero, size: size))
+                UIColor.white.withAlphaComponent(0.18).setStroke()
+                for x in stride(from: CGFloat(0), through: size.width, by: 40) {
+                    let line = UIBezierPath(); line.move(to: CGPoint(x: x, y: 0)); line.addLine(to: CGPoint(x: x, y: size.height)); line.stroke()
+                }
+                for y in stride(from: CGFloat(0), through: size.height, by: 40) {
+                    let line = UIBezierPath(); line.move(to: CGPoint(x: 0, y: y)); line.addLine(to: CGPoint(x: size.width, y: y)); line.stroke()
+                }
+                let words = NSAttributedString(string: "\(number)", attributes: [
+                    .font: UIFont.systemFont(ofSize: size.height * 0.5, weight: .bold), .foregroundColor: UIColor.white,
+                ])
+                let room = words.size()
+                words.draw(at: CGPoint(x: (size.width - room.width) / 2, y: (size.height - room.height) / 2))
+            }
+            return Attachment(kind: .image, filename: "\(set)-\(number).jpg", mimeType: "image/jpeg", data: jpeg)
+        }
+        var sent = Message(role: .user, text: "Which of these two is sharper?")
+        sent.attachments = [picture(1, set: "sent"), picture(2, set: "sent")]
+        var one = Message(role: .assistant, text: "The second. Here it is again.")
+        one.attachments = [picture(2, set: "again")]
+        var reply = Message(role: .assistant, text: "Here are the \(count) most recent photos from your library.")
+        reply.attachments = (1 ... max(count, 1)).map { picture($0, set: "photo") }
+        replaceForDemo(messages: [sent, one, Message(role: .user, text: "Show me my latest photos."), reply])
     }
 
     /// Dev hook (`-echo.demoAudio`): a reply that came with a sound file, as the agent's speech
