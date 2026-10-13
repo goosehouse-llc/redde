@@ -14,13 +14,23 @@ nonisolated struct CarPlayChat: Equatable, Sendable {
     var detail: String
     var isCurrent: Bool
     var source: Source
+    /// When it last moved, where the list says: what "Catch me up" goes by.
+    var lastActive: Date? = nil
+
+    /// What it is known by from one reading of the list to the next.
+    var key: String {
+        switch source {
+        case .session(let session): session.id
+        case .local(let id): id.uuidString
+        }
+    }
 }
 
 /// The conversations behind CarPlay's Chats tab: the phone's own list, in its order, cut to
 /// what a car screen shows. A row is a name and a time. Nothing a reply said goes on the car's
 /// screen, so a session nobody named gets a plain label and never the preview of its last message.
 enum CarPlayChats {
-    static let untitled = "Untitled chat"
+    nonisolated static let untitled = "Untitled chat"
     static let currentDetail = "The chat you are in"
 
     /// Server sessions as rows: pinned first, then the most recently used, like the phone's list.
@@ -34,7 +44,8 @@ enum CarPlayChats {
             let isCurrent = session.id == currentSessionID
             let when = session.lastActiveDate.map { DateGroup.rowTime($0, now: now) }
             let detail = isCurrent ? currentDetail : [session.pinned == true ? "Pinned" : nil, when].compactMap { $0 }.joined(separator: " · ")
-            return CarPlayChat(title: session.title?.nilIfEmpty ?? untitled, detail: detail, isCurrent: isCurrent, source: .session(session))
+            return CarPlayChat(title: session.title?.nilIfEmpty ?? untitled, detail: detail, isCurrent: isCurrent, source: .session(session),
+                               lastActive: session.lastActiveDate)
         }
     }
 
@@ -44,7 +55,7 @@ enum CarPlayChats {
             let isCurrent = record.id == currentID
             return CarPlayChat(title: record.title.nilIfEmpty ?? untitled,
                                detail: isCurrent ? currentDetail : DateGroup.rowTime(record.updatedAt, now: now),
-                               isCurrent: isCurrent, source: .local(record.id))
+                               isCurrent: isCurrent, source: .local(record.id), lastActive: record.updatedAt)
         }
     }
 
@@ -61,6 +72,22 @@ enum CarPlayChats {
         let sessions = try await backend.listSessions()
         conversation.noteServerTitles(sessions)
         return rows(sessions: sessions, currentSessionID: conversation.serverSessionID, limit: limit)
+    }
+
+    /// What was said in `chat`, for "Catch me up": read from where the chat lives, without
+    /// opening it. The open one is read as the phone has it.
+    static func messages(of chat: CarPlayChat, in conversation: Conversation, settings: Settings = .shared,
+                         store: ConversationStore = .shared) async throws -> [Message] {
+        if chat.isCurrent { return conversation.messages }
+        switch chat.source {
+        case .session(let session):
+            guard let backend = SessionBackend.current(conversation, settings: settings) else {
+                throw TransportError.malformed(SessionBackend.notConfiguredMessage)
+            }
+            return try await backend.messages(for: session.id)
+        case .local(let id):
+            return await store.loadRecord(id: id)?.messages ?? []
+        }
     }
 
     /// Makes `chat` the conversation the phone has open, transcript and all, so the next thing

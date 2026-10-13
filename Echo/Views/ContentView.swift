@@ -192,6 +192,15 @@ struct ContentView: View {
             guard !done, !settings.isConfigured else { return }
             Task { try? await Task.sleep(for: .milliseconds(500)); showSetup = true }
         }
+        // What is on the phone's screen has been seen, and is no news to the car's "Catch me
+        // up": the open chat as Redde comes forward and as it is left, and both chats when
+        // another one is opened.
+        .onChange(of: scenePhase) { CatchUp.saw(conversation) }
+        .onChange(of: conversation.catchUpKey) { old, _ in
+            guard scenePhase == .active else { return }
+            if let old { settings.catchUp.saw(old) }
+            CatchUp.saw(conversation)
+        }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
             consumeControlRequest()

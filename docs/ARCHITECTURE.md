@@ -1082,8 +1082,9 @@ tests in `EchoTests/SiriSchemaTests.swift`.
 ## CarPlay
 
 A CarPlay scene in the voice-based conversational category (iOS 26.4+). A tab bar with two tabs.
-**Ask** is a list holding one row of three cards (`CPListImageRowItem` with card elements): **Ask**
-and **Talk** carry on the conversation the phone has open, **New Chat** starts another. Above them
+**Ask** is a list holding one row of four cards (`CPListImageRowItem` with card elements): **Ask**
+and **Talk** carry on the conversation the phone has open, **New Chat** starts another, and
+**Catch Up** has Redde say what is new (below). Above them
 the row names that conversation ("Now in …"), and that line leads to the other tab; under them
 are the four conversations last carried on besides that one. **Chats** is
 a list of the phone's conversations to pick one from (`CarPlay/CarPlayChats.swift`: the phone's
@@ -1101,9 +1102,9 @@ CarPlay sizes everything in points and nothing to the screen, and two of its cho
 layout (both found by drawing its own views, below). A grid template's button has a 40-point
 picture on every screen, so the first tab is cards, the largest buttons there are. A card made
 from a thumbnail (`CPThumbnailImage`, iOS 26.4) takes the shape of its picture, which fills it,
-and Redde's are 16 by 9: 146 by 82 points on a screen 770 points wide, 176 by 98 on one of 640,
-which three of them fill, and 164 by 92 on one of 400, where two fill a line and New Chat goes on
-a second (`allowsMultipleLines`). A square picture set inside a card, as the first version had,
+and Redde's are 16 by 9: 146 by 82 points on a screen 770 points wide, which four of them fill,
+176 by 98 on one of 640, where three fill a line and Catch Up goes on a second, and 164 by 92 on
+one of 400, two to a line (`allowsMultipleLines`). A square picture set inside a card, as the first version had,
 makes a card 80 points wide; a 3 by 4 picture makes one of 95 by 126; any other wide picture is
 squeezed into the 16 by 9 shape. On a large screen the recent conversations under the cards are
 what keeps the tab from standing half empty.
@@ -1116,12 +1117,29 @@ picture. So no state has action buttons, and the controls are bar buttons
 offers nothing there gets a close button from CarPlay, which takes the card down without the
 conversation being told. The car's own Back button still does that; nothing here hears of it.
 
+**Catch me up.** The fourth card has Redde say which chats have something new and how each
+one's latest reply starts, on the voice card: Thinking while it reads them, then Speaking, and
+no microphone (`CarPlaySceneDelegate.catchMeUp`, `VoiceSession.brief`). No model is asked. The
+chat list says which chats moved, each one's own messages say with what, and `CatchUp.script`
+puts it into sentences: how many, then for the five newest the name, how long ago, and the
+first sentences of the reply made fit to be said (`CatchUp.gist`, up to 220 characters), or
+"No reply yet" where the last word is the person's. A request the open chat is waiting on is
+said first. News is what moved since a chat was last seen, kept as marks in `Settings.catchUp`:
+when a catch-up was last heard to its end (one ended early tells nothing), and per chat when it
+was last on the phone's screen (`ContentView`, as Redde comes forward, as it is left and when
+another chat is opened) or its reply was last heard by voice (`VoiceSession`). The first
+catch-up looks a day back. The card's second line counts the news ("3 new") from the list as
+last read, so it can run a little behind what is then said. It works on either kind of
+connection: a Hermes server's sessions, whoever moved them, or the conversations saved on the
+phone. The times compared are the server's and the phone's, so clocks a minute apart can tell a
+reply twice or miss one. Tried with scripted conversations (`EchoTests/CatchUpTests.swift`,
+`CarPlayTests`) and drawn with the preview below; not yet on a car or against a real server.
 The brand lives in artwork drawn in code (`CarPlay/CarPlayArtwork.swift`). The Ask tab's cards
 come in six looks, picked in Settings → Appearance → CarPlay cards (`CarPlayCardLook`,
 `Settings.carPlayCards`; the row is left out on an iPad, which has no CarPlay). Color, the one a
-new install has, gives each card its own: blue to ask, gold to talk and green for a new chat,
-with a plain white symbol. The others are Glow, Orb, Gold, Graphite and Marks, the last being the
-voice bars and gold spark the cards first had. Settings shows each look as the three pictures
+new install has, gives each card its own: blue to ask, gold to talk, green for a new chat and
+violet to be caught up, with a plain white symbol. The others are Glow, Orb, Gold, Graphite and Marks, the last being the
+voice bars and gold spark the cards first had. Settings shows each look as the four pictures
 the car is given, and a pick made while the car shows the tab brings it up to date. The car
 writes a card's two lines over the bottom left of its picture, in white by day and by night, so
 every look is dark in that corner and keeps its mark to the right; `CarPlayArtworkTests` holds

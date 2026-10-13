@@ -142,6 +142,38 @@ final class VoiceSession {
         output.append(text)
         output.endReply()
     }
+
+    /// Says something that has to be fetched first (the car's "Catch me up" asks the server what
+    /// is new): thinking while `words` is at it, then spoken like a reply read aloud. It is not
+    /// a turn. Nothing is sent, and the mic doesn't reopen after it. `heard` is called when it
+    /// has been said to its end, not when it is cut short.
+    func brief(_ words: @escaping () async -> String, heard: (() -> Void)? = nil) {
+        guard phase == .idle || isErrored else { return }
+        do { try audio.activateForPlayback() } catch {
+            phase = .error(error.localizedDescription); return
+        }
+        activeTool = nil
+        phase = .thinking
+        briefingSerial += 1
+        let serial = briefingSerial
+        briefing = Task { [weak self] in
+            let text = await words()
+            guard let self, briefingSerial == serial, briefing != nil, phase == .thinking else { return }
+            briefing = nil
+            briefingHeard = heard
+            replaying = true
+            replayResumesHandsFree = false
+            phase = .speaking
+            output.beginReply()
+            output.append(text)
+            output.endReply()
+        }
+    }
+    /// What `brief` is fetching, and what to call once it has been said.
+    private var briefing: Task<Void, Never>?
+    private var briefingSerial = 0
+    private var briefingHeard: (() -> Void)?
+
     /// Set when an interruption cut a live turn short; listening restarts when it ends.
     private var resumeAfterInterruption = false
 
@@ -280,6 +312,7 @@ final class VoiceSession {
         }
         replaying = false
         guard phase == .idle || phase == .speaking || isErrored else { return }
+        briefingHeard = nil   // (cut short, if it was being said)
         isMuted = false
         stopMonitor()   // the mic behind a reply closes; listening opens it afresh
         output.stop()
@@ -385,6 +418,9 @@ final class VoiceSession {
     func cancel() {
         replaying = false
         isMuted = false
+        briefing?.cancel()
+        briefing = nil
+        briefingHeard = nil
         stopAsking()
         stopMonitor()
         // Only a turn this session started is ours to cancel: leaving the voice screen while a
@@ -591,6 +627,9 @@ final class VoiceSession {
         if replaying {
             // A replay isn't a new turn: keep the metrics, then resume hands-free or go quiet.
             replaying = false
+            let heard = briefingHeard
+            briefingHeard = nil
+            heard?()
             phase = .idle
             if continuous, replayResumesHandsFree { beginListening() } else { output.releaseAudio(); audio.deactivate() }
             return
@@ -598,6 +637,7 @@ final class VoiceSession {
         metrics.speechDoneAt = .now
         lastMetrics = metrics
         log.info("turn: \(self.metrics.summary)")
+        CatchUp.saw(conversation)   // heard to its end: no news to the car's "Catch me up"
         if monitoring, continuous {
             // Hands-free, and the mic is already open behind the reply: listen on it, rather
             // than close it and open it again. Nothing kept from while Redde spoke is used.

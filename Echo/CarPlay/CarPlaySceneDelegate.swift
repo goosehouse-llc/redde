@@ -4,14 +4,15 @@ import UIKit
 
 /// CarPlay, as a voice-based conversational app (entitlement
 /// `com.apple.developer.carplay-voice-based-conversation`, iOS 26.4+). Opening Redde on the car
-/// screen shows two tabs. Ask is a row of three cards: "Ask" (one question) and "Talk"
-/// (hands-free) carry on the conversation the phone has open, "New Chat" starts another. Chats
-/// lists the phone's conversations, the open one marked, and picking one carries it on. Each of
-/// them ends in listening, on a voice-control card that shows Listening, Thinking, Speaking, with
-/// End and Mute in its bar. Replies are spoken only: Apple's rules for the category allow no text
-/// or imagery in responses, so the list is names and times, never what was said. When a reply
-/// ends the card closes back onto the tab it came from. Requires the entitlement; inert without
-/// it.
+/// screen shows two tabs. Ask is a row of four cards: "Ask" (one question) and "Talk"
+/// (hands-free) carry on the conversation the phone has open, "New Chat" starts another, and
+/// "Catch Up" has Redde say what is new in the chats (`CatchUp`). Chats lists the phone's
+/// conversations, the open one marked, and picking one carries it on. Each of the first three
+/// ends in listening, on a voice-control card that shows Listening, Thinking, Speaking, with End
+/// and Mute in its bar. Replies are spoken only: Apple's rules for the category allow no text
+/// or imagery in responses, so the list is names and times, never what was said, and a catch-up
+/// is said and not shown. When a reply ends the card closes back onto the tab it came from.
+/// Requires the entitlement; inert without it.
 ///
 /// What CarPlay makes of a template can be drawn without a car: see `scripts/carplay-preview.sh`.
 /// Two things learned that way shape this file. A grid button's picture is 40 points on every
@@ -137,7 +138,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         }
     }
 
-    /// The Ask tab: one row of three cards, under the name of the conversation they carry on.
+    /// The Ask tab: one row of four cards, under the name of the conversation they carry on.
     /// Not private, so the tests can read the cards and press them.
     func askSections() -> [CPListSection] {
         // In the look picked in Settings → Appearance → CarPlay cards.
@@ -145,17 +146,19 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         let cards = CarPlayArtwork.Start.allCases.map { start in
             // A card made from a thumbnail takes the shape of its picture, which fills it: a wide
             // picture makes a card nearly twice as wide as one with a square picture set inside.
+            // Catch Up says how many chats have something new, as far as the list last read knows.
+            let subtitle = start == .catchUp ? catchUpLine() : Self.subtitle(start)
             if #available(iOS 26.4, *) {
                 return CPListImageRowItemCardElement(thumbnail: CPThumbnailImage(image: CarPlayArtwork.startCard(start, look: look)),
-                                                     title: Self.title(start), subtitle: Self.subtitle(start), tintColor: nil)
+                                                     title: Self.title(start), subtitle: subtitle, tintColor: nil)
             }
             return CPListImageRowItemCardElement(image: CarPlayArtwork.startCard(start, look: look, wide: false), showsImageFullHeight: false,
-                                                 title: Self.title(start), subtitle: Self.subtitle(start), tintColor: nil)
+                                                 title: Self.title(start), subtitle: subtitle, tintColor: nil)
         }
         // Which conversation Ask and Talk carry on, so a pick (or a New Chat) shows it took.
         let open = conversation.flatMap { $0.hasMessages ? $0.title : nil }
-        // A second line is allowed for the smallest screens (400 points across), where two wide
-        // cards fill a line: New Chat goes under them there, not off the edge.
+        // A second line is allowed: the car fits four wide cards to a line on a screen 770 points
+        // across, three at 640 and two at 400, and the rest go under them, not off the edge.
         let row = CPListImageRowItem(text: open.map { "Now in “\($0)”" }, cardElements: cards, allowsMultipleLines: true)
         row.listImageRowHandler = { [weak self] _, index, completion in
             let starts = CarPlayArtwork.Start.allCases
@@ -192,6 +195,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         case .ask: "Ask"
         case .talk: "Talk"
         case .newChat: "New Chat"
+        case .catchUp: "Catch Up"
         }
     }
 
@@ -200,16 +204,18 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         case .ask: "One question"
         case .talk: "Hands-free"
         case .newChat: "Start fresh"
+        case .catchUp: "What's new"
         }
     }
 
     /// Ask is one question and Talk is hands-free until "that's all", both in the conversation
-    /// the phone has open; New Chat starts another.
+    /// the phone has open; New Chat starts another; Catch Up listens to nothing and tells.
     func chose(_ start: CarPlayArtwork.Start) {
         switch start {
         case .ask: listen(handsFree: false)
         case .talk: listen(handsFree: true)
         case .newChat: startNewChat()
+        case .catchUp: catchMeUp()
         }
     }
 
@@ -239,6 +245,66 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// spoken (one started on the phone; the car's own are behind the card) belongs to the old one.
     private func stopVoice() {
         if let session, session.mightBeBusy { session.cancel() }
+    }
+
+    // MARK: - Catch me up
+
+    /// Under "Catch Up" on its card: how many of the chats last read have something new.
+    private func catchUpLine() -> String {
+        guard !chats.isEmpty else { return Self.subtitle(.catchUp) }
+        let new = CatchUp.moved(chats, marks: settings.catchUp).count
+        return new == 0 ? "Nothing new" : "\(new) new"
+    }
+
+    /// Redde says what is new in the chats, on the voice card: Thinking while it reads them,
+    /// then Speaking. Heard to its end, all of it counts as told; ended early, none of it.
+    private func catchMeUp() {
+        guard let session else { return }
+        stopVoice()
+        showVoiceCard()
+        var read: Date?
+        session.brief({ [weak self] in
+            let now = Date.now
+            read = now
+            return await self?.catchUpScript(now: now) ?? ""
+        }, heard: { [weak self] in
+            guard let self, let read else { return }
+            settings.catchUp.told = read
+            reloadChats()
+        })
+    }
+
+    /// How many chats' lists "Catch me up" looks through.
+    private static let catchUpReach = 50
+
+    /// What "Catch me up" says now. Not private, for the tests.
+    func catchUpScript(now: Date = .now) async -> String {
+        guard let conversation else { return "" }
+        let marks = settings.catchUp
+        let all: [CarPlayChat]
+        do {
+            all = try await CarPlayChats.load(for: conversation, settings: settings, store: store, limit: Self.catchUpReach)
+        } catch {
+            return "I couldn't reach your server to see what's new."
+        }
+        let moved = CatchUp.moved(all, marks: marks, now: now)
+        let latest = Array(moved.prefix(CatchUp.most))
+        // Each chat's own messages say what its news is; read side by side, told in the list's order.
+        let reads = latest.map { chat in
+            Task { @MainActor [settings, store] () -> CatchUp.Item? in
+                guard let messages = try? await CarPlayChats.messages(of: chat, in: conversation, settings: settings, store: store) else {
+                    // It moved, the list says so, and it can't be read just now: named, at least.
+                    return chat.lastActive.map { CatchUp.Item(title: chat.title, when: $0, said: .nothing) }
+                }
+                return CatchUp.item(for: chat, messages: messages, working: chat.isCurrent && conversation.isStreaming, marks: marks, now: now)
+            }
+        }
+        var found: [CatchUp.Item] = []
+        for read in reads {
+            if let item = await read.value { found.append(item) }
+        }
+        let waiting = conversation.pendingInterrupt != nil ? (conversation.hasMessages ? conversation.title : CarPlayChats.untitled) : nil
+        return CatchUp.script(found, more: moved.count - latest.count, told: marks.told, waiting: waiting, now: now)
     }
 
     // MARK: - Chats
@@ -419,6 +485,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         armPhaseObservation()
         armTitleObservation()
         armLookObservation()
+        armSeenObservation()
     }
 
     private func armPhaseObservation() {
@@ -461,6 +528,17 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         }
     }
 
+    /// A chat was seen on the phone, or heard: the Catch Up card counts one fewer.
+    private func armSeenObservation() {
+        withObservationTracking {
+            _ = settings.catchUp
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                if let self { self.askTab?.updateSections(self.askSections()) }
+                self?.armSeenObservation()
+            }
+        }
+    }
     private func phaseChanged() {
         guard let session, let voiceCard else { return }
         switch Self.card(phase: session.phase, waitingOnPhone: session.activeTool == "waiting for you", muted: session.isMuted) {

@@ -1,7 +1,7 @@
 import XCTest
 
 /// Settings → Appearance → CarPlay cards: the six looks of the car's Ask tab, each shown as the
-/// three pictures the car is given. Needs no server and no car.
+/// four pictures the car is given. Needs no server and no car.
 @MainActor
 final class CarPlayCardsUITests: XCTestCase {
     private func shot(_ name: String) {
