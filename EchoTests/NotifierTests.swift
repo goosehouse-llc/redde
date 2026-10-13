@@ -523,6 +523,47 @@ struct NotifierTests {
         try await Task.sleep(for: .milliseconds(200))
         #expect(h.center.removedIDs == ["pushed"])
     }
+
+    // MARK: Telling iOS a tap was handled
+
+    /// A notification and a tap on it, as iOS hands them to the delegate. Neither has a public
+    /// initializer, so the tests ask the classes for the ones iOS itself uses.
+    static func notification() -> UNNotification? {
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: UNNotificationContent(), trigger: nil)
+        let make = NSSelectorFromString("notificationWithRequest:date:")
+        guard UNNotification.responds(to: make) else { return nil }
+        return (UNNotification.self as AnyObject).perform(make, with: request, with: Date())?.takeUnretainedValue() as? UNNotification
+    }
+
+    static func tap() -> UNNotificationResponse? {
+        let make = NSSelectorFromString("responseWithNotification:actionIdentifier:")
+        guard let notification = notification(), UNNotificationResponse.responds(to: make) else { return nil }
+        return (UNNotificationResponse.self as AnyObject).perform(make, with: notification, with: UNNotificationDefaultActionIdentifier)?
+            .takeUnretainedValue() as? UNNotificationResponse
+    }
+
+    /// iOS hands a tap over with a completion of its own, which saves the app's snapshot and so
+    /// has to run on the main thread. 1.7 called it from a background thread, and iOS closed the
+    /// app for it whenever a notification was tapped. Called through the protocol here, as iOS
+    /// calls it: the method that takes the completion handler.
+    @Test func iOSIsToldATapWasHandledOnTheMainThread() async throws {
+        let delegate: any UNUserNotificationCenterDelegate = Harness().notifier
+        let tap = try #require(Self.tap())
+        let onMain = await withCheckedContinuation { (told: CheckedContinuation<Bool, Never>) in
+            delegate.userNotificationCenter?(.current(), didReceive: tap) { told.resume(returning: Thread.isMainThread) }
+        }
+        #expect(onMain)
+    }
+
+    @Test func iOSIsToldHowToShowANotificationOnTheMainThread() async throws {
+        let delegate: any UNUserNotificationCenterDelegate = Harness(appActive: true).notifier
+        let notification = try #require(Self.notification())
+        let (onMain, shown) = await withCheckedContinuation { (told: CheckedContinuation<(Bool, UNNotificationPresentationOptions), Never>) in
+            delegate.userNotificationCenter?(.current(), willPresent: notification) { told.resume(returning: (Thread.isMainThread, $0)) }
+        }
+        #expect(onMain)
+        #expect(shown == [], "One of the app's own, in front: the screen already shows it")
+    }
 }
 
 /// The system activity for a reply that runs on after the phone locks needs a progress value,

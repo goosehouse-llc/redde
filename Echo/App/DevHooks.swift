@@ -1,5 +1,6 @@
 #if DEBUG
 import Foundation
+import UserNotifications
 import WidgetKit
 
 /// Debug-only launch hooks for screenshots, demos and live tests; none of this exists in release
@@ -34,6 +35,8 @@ import WidgetKit
 ///   screen at launch (the last two want `-echo.demoGateway` and `-echo.demoFiles` without a server).
 /// - `-echo.pushLink <link>`: open a pairing link for notifications, as the Camera would.
 ///   `-push.relay <url>` points the app at another push relay (the lab's, on this Mac).
+/// - `-echo.demoNotify [seconds]`: ask to send notifications, then post one that many seconds
+///   later (twelve by default), for the test that closes the app and taps it.
 /// - `-echo.section cron|kanban`: open the conversation list on that tab.
 /// - `-echo.settingsAnchor`: scroll Settings to the context and memory files.
 /// - `-echo.expandAppIcons`: open Settings' app icon grid.
@@ -126,6 +129,18 @@ enum DevHooks {
             WidgetCenter.shared.reloadAllTimelines()
         }
         if has("-echo.demoHeavy") { conversation.seedHeavyDemo(turns: value("-echo.demoHeavy").flatMap(Int.init) ?? 32) }
+        if has("-echo.demoNotify") {
+            let wait = value("-echo.demoNotify").flatMap(Double.init) ?? 12
+            Task {
+                let center = UNUserNotificationCenter.current()
+                guard (try? await center.requestAuthorization(options: [.alert, .sound])) == true else { return }
+                let content = UNMutableNotificationContent()
+                content.title = "Redde"
+                content.body = "A notification to tap"
+                try? await center.add(UNNotificationRequest(identifier: "redde.demo", content: content,
+                                                            trigger: UNTimeIntervalNotificationTrigger(timeInterval: wait, repeats: false)))
+            }
+        }
         if has("-echo.demoApproval") {
             TurnActivity.shared.start(question: "Clear out the old build folders")
             TurnActivity.shared.tool("terminal")

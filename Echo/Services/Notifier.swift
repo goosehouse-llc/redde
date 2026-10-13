@@ -167,7 +167,14 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
 
     // MARK: UNUserNotificationCenterDelegate
 
-    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+    // Both methods are the ones that take iOS's completion handler, not their `async` twins. An
+    // `async` delegate method is wrapped in a task that calls the handler from whatever thread
+    // the task ends on, and the handler for a tap saves the app's snapshot, which iOS allows on
+    // the main thread only: 1.7 was closed by it whenever a notification was tapped. Here each
+    // handler is called on the main actor.
+
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
+                                            withCompletionHandler completionHandler: @escaping () -> Void) {
         // The userInfo dictionary is not Sendable; extract the strings before hopping actors.
         let action = response.actionIdentifier
         let info = response.notification.request.content.userInfo
@@ -180,26 +187,29 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let digest = info[PushNote.approvalKey] as? String
         let asked = info[PushNote.questionKey] as? String
         let userText = (response as? UNTextInputNotificationResponse)?.userText
-        let work = await MainActor.run {
-            self.route(action: action, requestID: requestID, questionID: questionID, approve: approve, deny: deny,
-                       userText: userText, conversationID: conversationID, sessionID: sessionID, approvalDigest: digest,
-                       questionDigest: asked)
+        nonisolated(unsafe) let handled = completionHandler   // iOS's own; only ever called below
+        Task { @MainActor in
+            let work = self.route(action: action, requestID: requestID, questionID: questionID, approve: approve, deny: deny,
+                                  userText: userText, conversationID: conversationID, sessionID: sessionID, approvalDigest: digest,
+                                  questionDigest: asked)
+            // The app may have been started just for this: iOS keeps it running until it is told.
+            await work?.value
+            handled()
         }
-        // The app may have been started just for this: iOS keeps it running until this returns.
-        await work?.value
     }
 
     /// A notification arriving while Redde is in front. The app's own are only posted from the
     /// background, so this is one a paired Hermes sent: shown unless it is about the conversation
     /// on screen, which already shows it.
-    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
+                                            withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         let info = notification.request.content.userInfo
         let kind = info[PushNote.kindKey] as? String
         let sessionID = info[PushNote.sessionKey] as? String
         let sealed = info[PushNote.sealedKey] as? String
-        return await MainActor.run {
-            if kind == nil, let sealed { return self.presentUnopened(sealed) }
-            return self.presentation(pushKind: kind, sessionID: sessionID)
+        nonisolated(unsafe) let show = completionHandler
+        Task { @MainActor in
+            if kind == nil, let sealed { show(self.presentUnopened(sealed)) } else { show(self.presentation(pushKind: kind, sessionID: sessionID)) }
         }
     }
 
