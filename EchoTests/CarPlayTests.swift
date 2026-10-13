@@ -309,6 +309,29 @@ struct CarPlayTests {
 
     // MARK: The voice card
 
+    /// Settings → Appearance → CarPlay voice screen: the card shows its five states in the look
+    /// picked there, and in solid bars until something else is.
+    @Test func theVoiceCardIsDrawnInTheLookPickedInSettings() throws {
+        let h = Harness()
+        #expect(h.settings.carPlayVoice == .bars)
+        var drawn: Set<Data> = []
+        for look in CarPlayVoiceLook.allCases {
+            h.settings.carPlayVoice = look
+            let states = h.delegate.voiceTemplate(moving: false).voiceControlStates
+            #expect(states.map(\.identifier) == ["listening", "thinking", "speaking", "paused", "phone"])
+            // What the card is seen doing is drawn in no other look's way. (The phone it waits
+            // for is the same phone in lamps as in solid bars.)
+            for state in states.prefix(4) {
+                let picture = try #require(state.image?.pngData())
+                #expect(drawn.insert(picture).inserted, "\(look) \(state.identifier) is drawn as something else already is")
+            }
+        }
+        #expect(drawn.count == 16)
+        h.settings.carPlayVoice = .orb
+        // The pick outlives the app.
+        #expect(Settings(defaults: h.defaults).carPlayVoice == .orb)
+    }
+
     @Test func theCardStaysWithinFiveStatesAndEachHasAWayOut() {
         let template = Harness().delegate.voiceTemplate()
         let states = template.voiceControlStates

@@ -1322,18 +1322,54 @@ writes a card's two lines over the bottom left of its picture, in white by day a
 every look is dark in that corner and keeps its mark to the right; `CarPlayArtworkTests` holds
 the contrast for each. The voice card's pictures
 move: a state's image is an animation to CarPlay (a loop of 0.3 to 5 seconds, 150 points at
-most). They are drawn after the dashboard of KITT, the car in Knight Rider (asked for
+most). They come in four looks, picked in Settings → Appearance → CarPlay voice screen
+(`CarPlayVoiceLook`, `Settings.carPlayVoice`; asked 2026-10-13): Bars, Lamps, KITT and Orb.
+Bars, the one a new install has, is described first; the others follow it. They
+are drawn after the dashboard of KITT, the car in Knight Rider (asked for
 2026-10-11), in the mist and gold the card had before. Speaking is its voice display: three
-columns of lights that grow out from their middle, the centre one tallest, jumping with each
-syllable of a made-up sentence and falling back to three dashes in its breaths. Listening is the
-same columns in mist, kept low and restless like a meter on an open mic, so that it never looks
-as if it followed a voice it cannot hear. Thinking is the scanner, one gold light running along
-a row of lamps and back with the lamps behind it fading. They are pictures drawn ahead of time
-at the car's display scale, thirty or forty to a loop, and a picture that comes round again in
-the columns' loops is the same object and not another copy: unlike the phone's waveform they
-cannot follow the level of a voice. Reduce Motion gets the still pictures. On iOS 27 each state
-also has a backdrop behind the whole card (`voiceBackdrop`): graphite with a soft light, mist
-while you are heard and gold while Redde thinks and speaks, as one image holding a dark and a
+bars of light that grow out of their middles, the centre one tallest, in a slow gold swell,
+three to a loop of four seconds and not all the same height. Listening is the same bars in
+mist, low and swaying: the centre one grows as the outer ones shrink and back, once in 3.6
+seconds, so the picture is alive without pulsing and never looks as if it followed a voice it
+cannot hear. The outer bars never stand as high as the centre one, at any moment of either loop
+(asked 2026-10-13; `CarPlayArtworkTests` holds it). Thinking is one gold light gliding along a
+slot and back in 2.8 seconds, a trace fading behind it. Paused stands still: two bars, the sign
+on any pause button. Each bar is one piece in a faint housing, with a little light around it,
+and no end of a bar moves by more than a twentieth of the picture from one picture to the next.
+This is the third version. The first was stacked lamps that leapt from three dashes to the full
+column within one picture with each syllable of a made-up sentence, twelve in three seconds,
+and the fast movement looked odd (said 2026-10-12). A loop cannot follow the voice that is
+heard, so lights that act as if they did are wrong twice over, and slow ones make no such
+claim. The second kept the lamps and made them fade; solid bars were then picked to try, from
+sketches of four KITT looks (2026-10-13).
+
+Lamps is that second version, kept as a look: the same three bars as stacks of small lamps,
+thirteen in the centre column and nine in each beside it, and for Thinking a scanner, a row of
+eight lamps with one light running to the far end and back. It moves exactly as Bars does (the
+two share `voiceBars` and `speakingLevel`, so the outer columns stay under the centre one
+here too); a column grows by its edge lamp fading in (`glow(ofLamp:)`), never by a lamp at a
+time. KITT is Lamps in the car's own red on a disc that is nearly black. It gives up telling
+you from Redde by colour, so the height of the columns and the scanner do that. Orb is the
+other family: a ring of light around Redde's own marks, close to the phone's voice orb. A
+glint goes round the ring in 4.8 seconds while you are heard, around five voice bars in mist;
+while Redde thinks a gold comet circles the spark in 1.8 seconds, its tail a third of the ring
+long; while it speaks, rings spread from the spark to the ring, a new one every 1.2 seconds,
+each leaving the spark unlit and unlit again when it arrives (`ringLight`, `ripples`). Those
+are the speeds of the sketch that was picked from. Paused and "needs your phone" stand still
+in every look, drawn in its manner.
+
+The pictures are drawn ahead of time at the car's display scale, thirty-six to sixty to a
+loop. The bars' loops come down the way they went up, so each picture serves twice and is one
+object, not two copies, and the orb's speaking loop is its first half twice; that leaves about
+a hundred different ones in any look (112 at most), some 40 MB while the car is connected.
+Only the picked look's are kept: picking another lets the old ones go and draws the new ones
+at once, for the next card to open (a card that is up keeps its pictures, since a template's
+states cannot be changed). Settings shows each look as its Listening, Thinking and Speaking
+pictures and plays the picked one's loops there (`voicePicture`, drawn small and not kept),
+so a look can be judged without a car. Reduce Motion gets the still pictures, on the car and
+in Settings. On iOS 27 each state
+also has a backdrop behind the whole card (`voiceBackdrop`): graphite with a soft light, gold
+while Redde thinks and speaks and mist otherwise, as one image holding a dark and a
 light picture, because the card writes its words in the car's own appearance.
 
 `scripts/carplay-preview.sh` draws all of this without a car: `EchoTests/CarPlayPreviewTests.swift`

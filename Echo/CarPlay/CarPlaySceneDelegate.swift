@@ -348,18 +348,20 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// Not private, so the tests can count them and press the buttons, and the preview can ask
     /// for the pictures standing still.
     func voiceTemplate(moving: Bool = !UIAccessibility.isReduceMotionEnabled) -> CPVoiceControlTemplate {
+        // In the look picked in Settings → Appearance → CarPlay voice screen.
+        let look = settings.carPlayVoice
         // The pictures move, unless Reduce Motion is on. They are drawn for the car's screen, at
-        // two pixels a point at most: some eighty of them are kept while the car is connected.
+        // two pixels a point at most: about a hundred of them are kept while the car is connected.
         let scale: CGFloat? = moving ? min(max(controller?.carTraitCollection.displayScale ?? 2, 1), 2) : nil
         func state(_ id: CarPlayArtwork.VoiceState, _ titles: [String]) -> CPVoiceControlState {
-            let image = CarPlayArtwork.voiceStateImage(id, movingAt: scale)
+            let image = CarPlayArtwork.voiceStateImage(id, look: look, movingAt: scale)
             // No action buttons on a state. With them CarPlay lays the card out title, picture,
             // buttons, and the picture gets a third of the height left over: ten points on a
             // 240-point screen, where it has ninety without them. That is how "Listening…" came
             // to stand there with nothing to look at.
             if #available(iOS 27.0, *) {
                 return CPVoiceControlState(identifier: id.rawValue, titleVariants: titles, image: image,
-                                           backgroundImage: CarPlayArtwork.voiceBackdrop(id), repeats: true)
+                                           backgroundImage: CarPlayArtwork.voiceBackdrop(id, look: look), repeats: true)
             }
             return CPVoiceControlState(identifier: id.rawValue, titleVariants: titles, image: image, repeats: true)
         }
@@ -448,6 +450,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         armPhaseObservation()
         armTitleObservation()
         armLookObservation()
+        armVoiceLookObservation()
         armNotesObservation()
     }
 
@@ -488,6 +491,22 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             Task { @MainActor in
                 if let self { self.askTab?.updateSections(self.askSections()) }
                 self?.armLookObservation()
+            }
+        }
+    }
+
+    /// Another look was picked for the voice card: the next card to open has it. The pictures
+    /// of the old one are let go, and the new one's drawn now, not at the next press. A card
+    /// that is up keeps its pictures until it closes; a template's states can't be changed.
+    private func armVoiceLookObservation() {
+        withObservationTracking {
+            _ = settings.carPlayVoice
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                CarPlayArtwork.keepVoicePictures(only: self.settings.carPlayVoice)
+                if self.controller != nil { _ = self.voiceTemplate() }
+                self.armVoiceLookObservation()
             }
         }
     }

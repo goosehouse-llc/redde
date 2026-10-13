@@ -74,7 +74,6 @@ struct CarPlayPreviewTests {
         // A moving picture is caught wherever its loop happens to be, often at rest: with
         // REDDE_CARPLAY_STILL the card gets the pictures that stand still (the store screenshot).
         let moving = ProcessInfo.processInfo.environment["REDDE_CARPLAY_STILL"] == nil
-        let states = h.delegate.voiceTemplate(moving: moving).voiceControlStates
 
         // The Ask tab in the look a new install has, then in the others Settings offers.
         func ask(_ look: CarPlayCardLook) -> () -> UIViewController? {
@@ -88,12 +87,17 @@ struct CarPlayPreviewTests {
             ("chats", { self.list(CPListTemplate(title: "Chats", sections: [CPListSection(items: chatRows)])) }),
         ]
         screens += CarPlayCardLook.allCases.filter { $0 != .color }.map { ("ask-\($0.rawValue)", ask($0)) }
-        for state in CarPlayArtwork.VoiceState.allCases {
-            screens.append(("voice-\(state.rawValue)", {
-                let template = CPVoiceControlTemplate(voiceControlStates: states.filter { $0.identifier == state.rawValue })
-                h.delegate.setBar(of: template, for: state)
-                return self.voice(template)
-            }))
+        // The voice card likewise: solid bars first, then the other looks.
+        for look in CarPlayVoiceLook.allCases {
+            for state in CarPlayArtwork.VoiceState.allCases {
+                screens.append(("voice-\(look == .bars ? "" : "\(look.rawValue)-")\(state.rawValue)", {
+                    h.settings.carPlayVoice = look
+                    let states = h.delegate.voiceTemplate(moving: moving).voiceControlStates
+                    let template = CPVoiceControlTemplate(voiceControlStates: states.filter { $0.identifier == state.rawValue })
+                    h.delegate.setBar(of: template, for: state)
+                    return self.voice(template)
+                }))
+            }
         }
 
         var notes: [String] = []

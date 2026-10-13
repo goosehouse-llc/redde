@@ -222,6 +222,10 @@ final class Settings: ServeEndpoint {
     var carPlayCards: CarPlayCardLook {
         didSet { defaults.set(carPlayCards.rawValue, forKey: Keys.carPlayCards) }
     }
+    /// How CarPlay's voice screen shows Redde listening, thinking and speaking.
+    var carPlayVoice: CarPlayVoiceLook {
+        didSet { defaults.set(carPlayVoice.rawValue, forKey: Keys.carPlayVoice) }
+    }
     /// Settings → Phone tools: which of the phone's own things the agent may use (`DeviceTool`).
     /// Everything off until turned on.
     var phoneTools: PhoneToolsSettings {
@@ -426,6 +430,7 @@ final class Settings: ServeEndpoint {
         static let voiceOrb = "voiceOrb"
         static let orbLight = "orbLight"
         static let carPlayCards = "carPlayCards"
+        static let carPlayVoice = "carPlayVoice"
         static let phoneTools = "phoneTools"
         static let notifyInBackground = "notifyInBackground"
         static let showLiveActivity = "showLiveActivity"
@@ -490,6 +495,7 @@ final class Settings: ServeEndpoint {
         voiceOrb = VoiceOrb(rawValue: defaults.string(forKey: Keys.voiceOrb) ?? "") ?? .waveform
         orbLight = OrbLight(rawValue: defaults.string(forKey: Keys.orbLight) ?? "") ?? .nebula
         carPlayCards = CarPlayCardLook(rawValue: defaults.string(forKey: Keys.carPlayCards) ?? "") ?? .color
+        carPlayVoice = CarPlayVoiceLook(rawValue: defaults.string(forKey: Keys.carPlayVoice) ?? "") ?? .bars
         phoneTools = defaults.data(forKey: Keys.phoneTools).flatMap { try? JSONDecoder().decode(PhoneToolsSettings.self, from: $0) } ?? .init()
         notifyInBackground = defaults.bool(forKey: Keys.notifyInBackground)
         showLiveActivity = defaults.object(forKey: Keys.showLiveActivity) as? Bool ?? true
@@ -703,6 +709,7 @@ final class Settings: ServeEndpoint {
         voiceOrb = .waveform
         orbLight = .nebula
         carPlayCards = .color
+        carPlayVoice = .bars
         phoneTools = .init()
         notifyInBackground = false
         showLiveActivity = true
