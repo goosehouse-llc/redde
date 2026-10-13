@@ -49,6 +49,8 @@ import WidgetKit
 /// - `-echo.askProfile <name>`: what Siri's "Ask <name> in Redde" does, at launch: the name is
 ///   made known, then voice mode is asked for on that profile ("default" is the main one).
 /// - `-echo.dropHint`: show the outline a drag over the chat brings up, without a drag.
+/// - `-echo.demoTasks [n|run]`: a Live Activity for a job with a six-task list, `n` of them done
+///   (or one more every few seconds with `run`), to look at the progress on the Lock Screen.
 /// - `-echo.demoApproval`: a Live Activity with a command waiting for a yes or no, to look at
 ///   its buttons on the Lock Screen; the activity then shows which one was pressed.
 /// - `-echo.slowMotion <factor>`: stretch a conversation opening out of its row or card
@@ -128,6 +130,30 @@ enum DevHooks {
                                                               choices: ["once", "session", "always", "deny"]))
             ApprovalAnswer.deliver = { _, choice in
                 TurnActivity.shared.finish(reply: choice == "deny" ? "Denied. Nothing was removed." : "Approved (\(choice)).")
+            }
+        }
+        if has("-echo.demoTasks") {
+            // "3": that many of the six done, and it stays so. "run": one more every few seconds.
+            let titles = ["Export the posts", "Set up the new theme", "Import the posts", "Redirect the old addresses",
+                          "Check every link", "Switch the domain over"]
+            func list(done: Int) -> [TodoItem] {
+                titles.enumerated().map { i, title in
+                    TodoItem(id: "\(i + 1)", content: title, status: i < done ? .completed : i == done ? .inProgress : .pending, parent: nil)
+                }
+            }
+            let start = min(max(value("-echo.demoTasks").flatMap(Int.init) ?? 0, 0), titles.count)
+            TurnActivity.shared.start(question: "Move the blog to the new site")
+            TurnActivity.shared.tool("terminal")
+            TurnActivity.shared.tasks(list(done: start))
+            if value("-echo.demoTasks") == "run" {
+                Task {
+                    for done in 1 ... titles.count {
+                        try? await Task.sleep(for: .seconds(4))
+                        TurnActivity.shared.tasks(list(done: done))
+                    }
+                    try? await Task.sleep(for: .seconds(2))
+                    TurnActivity.shared.finish(reply: "The blog is on the new site, and the old addresses lead to it.")
+                }
             }
         }
         if has("-echo.demoStream") { conversation.streamDemo(askingAfter: value("-echo.demoStream").flatMap(Double.init)) }

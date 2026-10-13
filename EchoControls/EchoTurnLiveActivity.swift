@@ -10,6 +10,10 @@ import WidgetKit
 /// A command waiting for a yes or no is shown with Approve and Deny, on the Lock Screen and in
 /// the expanded island. The buttons run in the app (`ApproveRequestIntent`), which is alive for
 /// as long as the activity isn't stale.
+///
+/// Through a job the agent keeps a task list for, the list's progress is there too: a bar and
+/// "3 of 6 done" with the task in hand on the Lock Screen and in the expanded island, "3/6" in
+/// the island at rest.
 struct EchoTurnLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: EchoTurnAttributes.self) { context in
@@ -49,10 +53,14 @@ struct EchoTurnLiveActivity: Widget {
                             ApprovalButtons(approval: approval)
                         }
                     } else {
-                        Text(state.detailLine(stale: stale, question: context.attributes.question))
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(3)
+                        let tasks = state.tasks(stale: stale)
+                        VStack(alignment: .leading, spacing: 6) {
+                            if let tasks { TaskProgress(progress: tasks) }
+                            Text(state.detailLine(stale: stale, question: context.attributes.question))
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(tasks == nil ? 3 : 2)
+                        }
                     }
                 }
             } compactLeading: {
@@ -61,7 +69,7 @@ struct EchoTurnLiveActivity: Widget {
                     .symbolEffect(.pulse, isActive: running)
             } compactTrailing: {
                 Text(state.compact(stale: stale))
-                    .font(.caption2)
+                    .font(.caption2.monospacedDigit())
                     .lineLimit(1)
                     .frame(maxWidth: 60)
             } minimal: {
@@ -92,13 +100,18 @@ struct EchoTurnLiveActivity: Widget {
                 }
                 Text(context.attributes.question)
                     .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                // The banner has room for five lines: with the task list's bar, the last gives one up.
+                let tasks = state.tasks(stale: stale)
+                if let tasks { TaskProgress(progress: tasks).padding(.vertical, 1) }
                 if stale, state.isLive {
                     Text(state.detailLine(stale: true, question: "")).font(.footnote).lineLimit(2)
                 } else if let approval = state.pendingApproval(stale: stale) {
                     Text(approval.command).font(.footnote.monospaced()).lineLimit(2)
                     ApprovalButtons(approval: approval).padding(.top, 2)
+                } else if let step = state.step(stale: stale) {
+                    Text(step).font(.footnote).lineLimit(2)
                 } else if !state.detail.isEmpty, state.phase != .thinking {
-                    Text(state.detail).font(.footnote).lineLimit(3)
+                    Text(state.detail).font(.footnote).lineLimit(tasks == nil ? 3 : 2)
                 }
             }
         }
@@ -114,6 +127,25 @@ struct EchoTurnLiveActivity: Widget {
         case .done: return .green
         case .failed: return .red
         }
+    }
+}
+
+/// The agent's task list: a bar, and how many are done of how many.
+private struct TaskProgress: View {
+    let progress: EchoTurnAttributes.ContentState.Progress
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ProgressView(value: progress.fraction)
+                .progressViewStyle(.linear)
+                .tint(progress.done >= progress.total ? Color.green : Color(red: 0.180, green: 0.545, blue: 0.961))
+            Text(progress.summary)
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .fixedSize()
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Tasks: \(progress.summary)")
     }
 }
 

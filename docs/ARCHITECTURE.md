@@ -1035,6 +1035,21 @@ stale and its views show "Reply interrupted" with no pulse and no clock (the wor
 acts; asked for less, it still waited that long. The next launch ends whatever an earlier run
 left (`TurnActivity.clearStrays`).
 
+**The task list on the Live Activity.** Through a long job the agent keeps a task list (Hermes's
+to-do tool, `TodoList`), and how far it has got is on the activity: a bar, "3 of 6 done" and
+the task in hand on the Lock Screen and in the expanded island, "3/6" in the island at rest.
+`Conversation` hands the list over whenever the turn changes it (`TurnActivity.tasks`), and
+`TodoList.progress` makes the count of it: cancelled tasks are neither done nor left, a list of
+one task is not shown, and of a task and its subtask both in hand the subtask is the one named.
+The count rides on the state as `ContentState.progress`, optional like the approval so that an
+older state decodes, and stays on a reply that finished ("All 6 done") or stopped. A list left
+from an earlier turn is not shown until this turn touches it, so a quick question about
+something else doesn't wear another job's count; a command waiting for an answer takes the
+activity over until it is settled. `-echo.demoTasks 3` puts a job with three of six done on
+the activity (`run` moves it along). Looked at on the simulator's Lock Screen; the Dynamic
+Island can't be captured there and has not been seen, and nothing has run against a real
+agent's list on a phone.
+
 A command waiting for a yes or no takes the activity over: "Needs your approval", the command,
 and Deny and Approve, on the Lock Screen and in the expanded island. The buttons are Live
 Activity intents (`Shared/ApprovalIntents.swift`), which the system runs in the app's process,

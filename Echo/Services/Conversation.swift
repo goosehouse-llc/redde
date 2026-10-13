@@ -447,9 +447,11 @@ final class Conversation {
             // the list now. (The Dashboard says the list itself right after: `.todos`.)
             if let finished, let list = TodoList.after(step: finished, previous: TodoList.latest(in: messages)) {
                 update(replyID) { $0.todos = list }
+                TurnActivity.shared.tasks(list)
             }
         case let .todos(list):
             update(replyID) { $0.todos = list }
+            TurnActivity.shared.tasks(list)
         case let .subagent(u):
             clearStatus()
             if case .started = u.phase { TurnActivity.shared.tool("delegating") }

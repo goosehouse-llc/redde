@@ -24,6 +24,8 @@ final class TurnActivity {
     private var heartbeat: Task<Void, Never>?
     /// The command waiting for an answer, carried on every update until it is settled.
     private var approval: EchoTurnAttributes.ContentState.Approval?
+    /// How far the agent is down its task list, carried on every update once it has said.
+    private var progress: EchoTurnAttributes.ContentState.Progress?
 
     private var enabled: Bool {
         Settings.shared.showLiveActivity && ActivityAuthorizationInfo().areActivitiesEnabled
@@ -72,10 +74,21 @@ final class TurnActivity {
         refresh()
     }
 
-    /// The latest state again, at once, with the approval as it now stands.
+    /// The agent's task list has changed in this turn: "3 of 6" and the task in hand go on the
+    /// activity. (A list left from an earlier turn that this one hasn't touched is not shown: a
+    /// quick question about something else would wear another job's count.)
+    func tasks(_ items: [TodoItem]) {
+        let now = TodoList.progress(items)
+        guard activity != nil, now != progress else { return }
+        progress = now
+        refresh()
+    }
+
+    /// The latest state again, at once, with the approval and the task list as they now stand.
     private func refresh() {
         guard var state = pending ?? lastState else { return }
         state.approval = approval
+        state.progress = progress
         flush(state)
     }
 
@@ -87,11 +100,11 @@ final class TurnActivity {
     }
 
     func finish(reply: String) {
-        end(final: .init(phase: .done, detail: String(reply.prefix(200)), startedAt: startedAt))
+        end(final: .init(phase: .done, detail: String(reply.prefix(200)), startedAt: startedAt, progress: progress))
     }
 
     func fail(_ message: String) {
-        end(final: .init(phase: .failed, detail: String(message.prefix(160)), startedAt: startedAt))
+        end(final: .init(phase: .failed, detail: String(message.prefix(160)), startedAt: startedAt, progress: progress))
     }
 
     /// The turn goes on, but not here: the activity goes without a last word.
@@ -123,6 +136,7 @@ final class TurnActivity {
         guard let activity else { return }
         var state = EchoTurnAttributes.ContentState(phase: phase, detail: detail, startedAt: activity.content.state.startedAt)
         state.approval = approval
+        state.progress = progress
         if Date.now.timeIntervalSince(lastFlush) > 1 {
             flush(state)
         } else {
@@ -167,6 +181,7 @@ final class TurnActivity {
         lastState = nil
         pending = nil
         approval = nil
+        progress = nil
         guard let current = activity else { return }
         nonisolated(unsafe) let activity = current
         self.activity = nil
