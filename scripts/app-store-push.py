@@ -4,7 +4,7 @@
     scripts/app-store-push.py check                  the copy's lengths and the pictures, without signing in
     scripts/app-store-push.py status                 what App Store Connect has now
     scripts/app-store-push.py copy [--dry-run]       promotional text, keywords, description, What's New
-    scripts/app-store-push.py screenshots [--dry-run]  the iPhone and iPad sets, replacing what is there
+    scripts/app-store-push.py screenshots [--dry-run]  the iPhone and iPad sets; only pictures that differ are sent
     scripts/app-store-push.py all [--dry-run]
 
 The copy is read from docs/app-store-listing.md (the sections named for those four fields, the
@@ -16,9 +16,10 @@ It needs an App Store Connect API key with the App Manager role: ASC_KEY_ID, ASC
 ASC_KEY_PATH (the .p8 file), in the environment or as KEY=value lines in tmp/asc.env, which
 .gitignore lists. The key is only read to sign a token; nothing here stores or prints it.
 
-Only `check` had been run when this was written (2026-10-10): the signing was tried against a
-throwaway key, and nothing past it against App Store Connect. Start with `status`, then `copy`,
-and `screenshots` last, since that one deletes the set that is there before it uploads.
+First run for real on 2026-10-13, for 1.8: `status`, then `copy` (which made the version and
+sent three fields), then `screenshots` (which sent the one picture that had changed and left
+the other eighteen alone). `status` changes nothing and says what a push would do. Not yet run:
+a set of a different length from the one in App Store Connect, which is deleted and sent whole.
 """
 import base64, hashlib, json, os, re, subprocess, sys, time, urllib.error, urllib.request
 
@@ -208,33 +209,47 @@ def pictures(folder, names):
     return paths, sizes.pop()
 
 
+def send_screenshot(set_id, path):
+    data = open(path, 'rb').read()
+    made = api('POST', '/v1/appScreenshots', {'data': {'type': 'appScreenshots', 'attributes': {'fileName': os.path.basename(path), 'fileSize': len(data)},
+               'relationships': {'appScreenshotSet': {'data': {'type': 'appScreenshotSets', 'id': set_id}}}}})['data']
+    for part in made['attributes']['uploadOperations']:
+        chunk = data[part['offset']: part['offset'] + part['length']]
+        request = urllib.request.Request(part['url'], data=chunk, method=part['method'],
+                                         headers={h['name']: h['value'] for h in part['requestHeaders']})
+        urllib.request.urlopen(request, timeout=300).read()
+    api('PATCH', f"/v1/appScreenshots/{made['id']}", {'data': {'type': 'appScreenshots', 'id': made['id'],
+        'attributes': {'uploaded': True, 'sourceFileChecksum': hashlib.md5(data).hexdigest()}}})
+    return made['id']
+
+
 def push_screenshots(loc, dry):
+    """Makes each set in App Store Connect the one in the repository. A picture that is there
+    already, in its place (told by its checksum), is left alone: a new version starts with the
+    last one's pictures, and usually only a few have changed."""
     sets = {s['attributes']['screenshotDisplayType']: s for s in every(f"/v1/appStoreVersionLocalizations/{loc['id']}/appScreenshotSets")}
     for folder, kind, names in SETS:
         paths, size = pictures(folder, names)
-        print(f'  {folder}: {len(paths)} pictures of {size[0]}×{size[1]} as {kind}')
-        if dry:
-            continue
+        sums = [hashlib.md5(open(p, 'rb').read()).hexdigest() for p in paths]
         current = sets.get(kind)
+        held = every(f"/v1/appScreenshotSets/{current['id']}/appScreenshots") if current else []
+        there = [h['attributes'].get('sourceFileChecksum') for h in held]
+        # In step with the repository: the same number of pictures, so each has its place.
+        in_step = len(held) == len(paths)
+        to_send = [i for i in range(len(paths)) if not in_step or there[i] != sums[i]]
+        what = 'already there' if not to_send else f"{len(to_send)} to send ({', '.join(os.path.basename(paths[i]) for i in to_send)})"
+        print(f'  {folder}: {len(paths)} pictures of {size[0]}×{size[1]} as {kind}, {what}')
+        if dry or not to_send:
+            continue
         if current is None:
             current = api('POST', '/v1/appScreenshotSets', {'data': {'type': 'appScreenshotSets', 'attributes': {'screenshotDisplayType': kind},
                           'relationships': {'appStoreVersionLocalization': {'data': {'type': 'appStoreVersionLocalizations', 'id': loc['id']}}}}})['data']
-        for old in every(f"/v1/appScreenshotSets/{current['id']}/appScreenshots"):
+        ids = [h['id'] for h in held] if in_step else [None] * len(paths)
+        for old in (held if not in_step else [held[i] for i in to_send]):
             api('DELETE', f"/v1/appScreenshots/{old['id']}")
-        ids = []
-        for p in paths:
-            data = open(p, 'rb').read()
-            made = api('POST', '/v1/appScreenshots', {'data': {'type': 'appScreenshots', 'attributes': {'fileName': os.path.basename(p), 'fileSize': len(data)},
-                       'relationships': {'appScreenshotSet': {'data': {'type': 'appScreenshotSets', 'id': current['id']}}}}})['data']
-            for part in made['attributes']['uploadOperations']:
-                chunk = data[part['offset']: part['offset'] + part['length']]
-                request = urllib.request.Request(part['url'], data=chunk, method=part['method'],
-                                                 headers={h['name']: h['value'] for h in part['requestHeaders']})
-                urllib.request.urlopen(request, timeout=300).read()
-            api('PATCH', f"/v1/appScreenshots/{made['id']}", {'data': {'type': 'appScreenshots', 'id': made['id'],
-                'attributes': {'uploaded': True, 'sourceFileChecksum': hashlib.md5(data).hexdigest()}}})
-            ids.append(made['id'])
-            print(f'    {os.path.basename(p)}')
+        for i in to_send:
+            ids[i] = send_screenshot(current['id'], paths[i])
+            print(f'    {os.path.basename(paths[i])}')
         api('PATCH', f"/v1/appScreenshotSets/{current['id']}/relationships/appScreenshots",
             {'data': [{'type': 'appScreenshots', 'id': i} for i in ids]})
 
@@ -265,9 +280,7 @@ def main():
             return
         loc = localization(version)
         push_copy(loc, fields, dry=True)
-        for s in every(f"/v1/appStoreVersionLocalizations/{loc['id']}/appScreenshotSets"):
-            count = len(every(f"/v1/appScreenshotSets/{s['id']}/appScreenshots"))
-            print(f"  {s['attributes']['screenshotDisplayType']}: {count} pictures")
+        push_screenshots(loc, dry=True)
         return
     version = editable_version(app, wanted, make=not dry)
     if version is None:
