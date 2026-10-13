@@ -93,6 +93,10 @@ final class VoiceSession {
     private let stopPhrases: () -> [String]
     /// Settings → Voice → Answer requests by voice. Injectable so tests choose.
     private let answersAloud: () -> Bool
+    /// Settings → Voice → Short answers in the car, and whether the phone is with a car right
+    /// now (CarPlay, connected or not on its screen). Injectable so tests choose.
+    private let shortInCar: () -> Bool
+    private let carConnected: () -> Bool
     /// Where a note taken by voice goes (quick capture). Injectable so tests see it.
     private let takeNote: (String) -> Void
     /// Settings → Voice → Nod or shake to answer, and the AirPods' movement it reads.
@@ -192,6 +196,8 @@ final class VoiceSession {
          stopPhrases: @escaping () -> [String] = { Settings.shared.stopPhrases },
          answersAloud: @escaping () -> Bool = { Settings.shared.answerRequestsByVoice },
          answersByNod: @escaping () -> Bool = { Settings.shared.answerRequestsByNod },
+         shortInCar: @escaping () -> Bool = { Settings.shared.shortAnswersInCar },
+         carConnected: @escaping () -> Bool = { CarPlaySceneDelegate.isConnected },
          takeNote: @escaping (String) -> Void = { CaptureInbox.shared.add($0) },
          respond: ((SpokenRequest.Answer) -> Void)? = nil) {
         self.talkOver = talkOver
@@ -201,6 +207,8 @@ final class VoiceSession {
         self.answersByNod = answersByNod
         self.head = head
         self.takeNote = takeNote
+        self.shortInCar = shortInCar
+        self.carConnected = carConnected
         self.respond = respond ?? { [weak conversation] answer in
             switch answer {
             case let .approval(choice): conversation?.respond(approval: choice)
@@ -568,7 +576,8 @@ final class VoiceSession {
                 log.error("spoken prefix: model switch to \(model, privacy: .public) failed: \(error.localizedDescription)")
             }
         }
-        let events = conversation.send(outgoing)
+        // In a car (its CarPlay, or its Bluetooth alone), if Settings says so: a short answer.
+        let events = conversation.send(outgoing, brief: shortInCar() && (carConnected() || audio.route == .car))
         SiriHooks.donateSend(outgoing)
         if micStaysOpen { startMonitor() }
         replySerial += 1

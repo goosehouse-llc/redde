@@ -60,7 +60,8 @@ nonisolated struct ChatCompletionsTransport: HermesTransport {
         let (baseURL, apiKey) = (baseURL, apiKey)
         return StreamingHTTP.run(session: StreamingHTTP.longSession, decode: Self.decode) {
             var messages: [Body.Msg] = []
-            let system = [request.instructions?.nilIfEmpty, request.replyLanguage.map(ReplyLanguage.instruction)].compactMap { $0 }
+            let system = [request.instructions?.nilIfEmpty, request.replyLanguage.map(ReplyLanguage.instruction),
+                          request.brief ? CarBrevity.instruction : nil].compactMap { $0 }
             if !system.isEmpty {
                 messages.append(.init(role: "system", content: .string(system.joined(separator: "\n\n"))))
             }

@@ -1159,6 +1159,21 @@ connection: a Hermes server's sessions, whoever moved them, or the conversations
 phone. The times compared are the server's and the phone's, so clocks a minute apart can tell a
 reply twice or miss one. Tried with scripted conversations (`EchoTests/CatchUpTests.swift`,
 `CarPlayTests`) and drawn with the preview below; not yet on a car or against a real server.
+
+**Short answers in the car** (Settings → Voice, off until turned on). A long reply is hard to
+follow at the wheel. With the switch on, a question asked by voice while the phone is with a car
+(CarPlay connected, or the car's Bluetooth as the audio route) asks the agent for two or three
+spoken sentences and to offer the rest; "more" is then a question like any other and the agent
+carries on (`CarBrevity`, `VoiceSession` → `Conversation.send(brief:)` → `TurnRequest.brief`).
+Nothing is cut or summed up on the phone, so the reply in the conversation is the one that was
+heard. Each connection asks in its own way, as for the reply language: the Hermes API in the
+turn's instructions, an OpenAI-compatible server in a system message, and the Dashboard, which
+takes no instructions with a message, in a line added to the message itself, which other
+clients of that server show and Redde hides again (`ReplyLanguage.stripNote` takes both notes
+off). That line is why it is off to begin with. A message typed on the phone is sent as it is,
+and one that had to wait for a connection goes out later as an ordinary one. What the request
+makes of a real agent's answers has not been heard yet, and what each connection sends was not
+checked against a server (`EchoTests/CarBrevityTests.swift` holds when it is asked for).
 The brand lives in artwork drawn in code (`CarPlay/CarPlayArtwork.swift`). The Ask tab's cards
 come in six looks, picked in Settings → Appearance → CarPlay cards (`CarPlayCardLook`,
 `Settings.carPlayCards`; the row is left out on an iPad, which has no CarPlay). Color, the one a

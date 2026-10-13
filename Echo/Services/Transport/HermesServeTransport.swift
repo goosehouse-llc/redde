@@ -76,8 +76,10 @@ nonisolated struct HermesServeTransport: HermesTransport {
                     for att in request.attachments {
                         if let reference = try await Self.attach(att, runtime: runtime, client: client) { references.append(reference) }
                     }
-                    // prompt.submit takes no instructions: a reply language rides on the message.
+                    // prompt.submit takes no instructions: a reply language rides on the message,
+                    // and so does the car's request for a short answer.
                     let text = Self.prompt(request.userText, naming: references) + (request.replyLanguage.map(ReplyLanguage.note) ?? "")
+                        + (request.brief ? CarBrevity.note : "")
                     let submit = try await client.call("prompt.submit", params: .object([
                         "session_id": .string(runtime), "text": .string(text)]))
                     if submit["status"]?.string == "queued" { continuation.yield(.status("queued behind a running turn…")) }

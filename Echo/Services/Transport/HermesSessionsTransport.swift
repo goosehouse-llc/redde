@@ -62,7 +62,8 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
                 apiKey: apiKey, headers: headers, body: Body(
                     input: try Self.makeInput(text: request.userText, attachments: request.attachments),
                     instructions: ([Self.clientHint] + [request.instructions?.nilIfEmpty,
-                                   request.replyLanguage.map(ReplyLanguage.instruction)].compactMap { $0 })
+                                   request.replyLanguage.map(ReplyLanguage.instruction),
+                                   request.brief ? CarBrevity.instruction : nil].compactMap { $0 })
                         .joined(separator: "\n\n"),
                     model: request.model, provider: request.provider,
                     require_model_lock: request.model?.nilIfEmpty == nil ? nil : true,

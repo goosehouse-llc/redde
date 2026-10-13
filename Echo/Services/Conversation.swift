@@ -195,8 +195,10 @@ final class Conversation {
 
     /// Sends one user turn. The returned stream mirrors the transport events for callers that
     /// want them live (the voice loop); the transcript is updated regardless.
+    /// `brief`: asked by voice in a car, for an answer short enough to follow there
+    /// (`CarBrevity`). A message that has to wait its turn goes out later as an ordinary one.
     @discardableResult
-    func send(_ text: String, attachments: [Attachment] = []) -> AsyncStream<TurnEvent> {
+    func send(_ text: String, attachments: [Attachment] = [], brief: Bool = false) -> AsyncStream<TurnEvent> {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty || !attachments.isEmpty else { return Self.finishedStream() }
         userSendCount += 1
@@ -211,7 +213,7 @@ final class Conversation {
             if !isStreaming { retryOutbox() }
             return Self.finishedStream()
         }
-        return startTurn(userMessage)
+        return startTurn(userMessage, brief: brief)
     }
 
     private static func finishedStream() -> AsyncStream<TurnEvent> {
@@ -223,7 +225,7 @@ final class Conversation {
     /// Runs one turn for a user message that isn't in the transcript yet. `heldSince` is when a
     /// message coming out of the outbox was first queued, so holding it again keeps its age.
     @discardableResult
-    private func startTurn(_ outgoing: Message, heldSince: Date? = nil) -> AsyncStream<TurnEvent> {
+    private func startTurn(_ outgoing: Message, heldSince: Date? = nil, brief: Bool = false) -> AsyncStream<TurnEvent> {
         let (mirror, mirrorContinuation) = AsyncStream.makeStream(of: TurnEvent.self)
         lastSendWasHeld = false
         lastError = nil
@@ -250,7 +252,8 @@ final class Conversation {
             reasoningEffort: settings.reasoningEffort.nilIfEmpty,
             instructions: nil,
             attachments: attachments,
-            replyLanguage: settings.replyLanguage.nilIfEmpty
+            replyLanguage: settings.replyLanguage.nilIfEmpty,
+            brief: brief
         )
         guard let transport = makeTransport() else {
             fail(replyID, settings.isConfigured ? TransportError.badURL.localizedDescription

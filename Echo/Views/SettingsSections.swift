@@ -434,6 +434,7 @@ struct VoiceSettings: View {
                     }
                 }
             }
+            Toggle("Short answers in the car", isOn: $settings.shortAnswersInCar)
             Toggle("New conversation in voice mode", isOn: $settings.newConversationForVoice)
             Picker("When Redde opens", selection: $settings.launchScreen) {
                 Text("Last conversation").tag(Settings.LaunchScreen.conversation)
@@ -476,6 +477,7 @@ struct VoiceSettings: View {
                     ? " “Nod or shake to answer” adds your head, with AirPods that sense movement (AirPods Pro, AirPods Max, AirPods 3 or later): once the request has been read out, nod a couple of times to approve, or shake your head to deny. iOS asks for Motion & Fitness when you turn it on; the movement is read on this device and kept nowhere."
                     : "")
                 + "\n\n"
+                + "“Short answers in the car”: a question asked by voice while your iPhone is connected to a car asks your agent for two or three sentences and to offer the rest; say “more” and it carries on. On the Hermes Dashboard connection the request is a line added to your message, which other apps on the same server will show. "
                 + "“New conversation in voice mode” starts a fresh conversation each time voice mode opens, from the button, Siri, the Action button or at launch; the one you were in stays in your list. "
                 + "“Suggest follow-up questions” shows three things you might ask next under each reply, written by the model on your OpenAI-compatible connection (it needs that address set, whichever connection the conversation uses). "
                 + "“When Redde opens” picks where it starts: your last conversation, the conversation list, or voice mode; “Listen whenever Redde opens” starts the mic as well, so “Hey Siri, open Redde” goes straight to listening. “Earpiece” plays replies through the earpiece when the phone is at your ear, like a call; turn it off for hands-free use with the phone face down. Background notifications tell you when Redde needs an approval or an answer, or when a reply finishes, while you're in another app; they stop when iOS closes Redde, and “Notify when Redde is closed” has your Hermes send them from then on. “Announce on AirPods” marks them time-sensitive so Siri can read them aloud through AirPods (turn on Announce Notifications for Redde in the iPhone's Settings) and so they reach you in a Focus. “Notification sound” off makes all of them silent, the ones from your Hermes too; they still appear. With AirPods in, pressing the stem on the voice screen works like tapping the mic.")
