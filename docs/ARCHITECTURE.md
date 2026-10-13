@@ -701,7 +701,22 @@ the conversation held 1.4 GB until the page was sized by what it holds (the firs
 "Jump to latest" is a pill over the bottom of the transcript once the reader has scrolled away
 from the end, with a dot when something new has come in below since: a reply still being
 written (the dot pulses, opacity only), more of one, or another message. `TranscriptView` notes
-how much conversation there was when `following` went off and compares.
+how much conversation there was when `following` went off and compares. The pill is there only
+while the end is out of reach (`offersJump`): it goes the moment the end comes up under a
+scrolling finger, and a touch at the end does not bring it out. Following itself starts again
+once the scrolling has stopped at the end, so text that arrives under a finger does not pull
+the transcript along.
+
+Whether the transcript is at its end comes from the scroll view's own account of itself
+(`TranscriptEnd`, 120 points of reach). That account is easy to misread: `containerSize` is the
+room between the bars and `contentOffset` is where the scroll view begins behind the top bar,
+so what can be read ends at offset + top inset + room. Until 2026-10-13 the sum was made as if
+the room still had the insets in it and came out short by both of them, about 214 points with a
+navigation bar and the composer, which is more than the reach: the end never counted as
+reached by hand, "Jump to latest" stayed on screen there, and new text was not followed until
+the pill was tapped. (Tapping it always worked, which is all the UI tests had tried.) Measured
+the same on iOS 26.3 and 27.0; `EchoTests/TranscriptEndTests.swift` holds the sums with those
+numbers and `TranscriptJumpUITests` scrolls back to the end by hand.
 
 ### Arrivals and openings
 

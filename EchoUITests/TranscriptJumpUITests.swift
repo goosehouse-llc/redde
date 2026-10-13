@@ -49,4 +49,22 @@ final class TranscriptJumpUITests: XCTestCase {
         XCTAssertTrue(end.waitForExistence(timeout: 5), "The arrow didn't bring back the newest message")
         XCTAssertTrue(end.isHittable, "The newest message exists but isn't on screen")
     }
+
+    /// Scrolled back to the end by hand, the pill has nothing left to offer and goes.
+    func testJumpToLatestGoesOnceTheEndIsReachedByHand() {
+        let app = launchLongDemo()
+        let end = app.staticTexts["End of the long demo."]
+        let transcript = app.scrollViews.firstMatch
+        transcript.swipeDown(velocity: .fast)
+        let jump = app.buttons["Jump to the newest message"]
+        XCTAssertTrue(jump.waitForExistence(timeout: 5), "No Jump to latest after scrolling up")
+
+        for _ in 0 ..< 6 where !end.isHittable { transcript.swipeUp(velocity: .fast) }
+        XCTAssertTrue(end.isHittable, "Swiping didn't reach the end")
+        XCTAssertTrue(jump.waitForNonExistence(timeout: 3), "Jump to latest is still there at the end")
+
+        // A touch on the transcript at its end doesn't bring it back.
+        transcript.swipeUp(velocity: .slow)
+        XCTAssertFalse(jump.exists, "A swipe at the end brought Jump to latest back")
+    }
 }

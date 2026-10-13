@@ -202,10 +202,7 @@ struct TranscriptView: View {
             .defaultScrollAnchor(following ? .bottom : nil, for: .sizeChanges)
             .scrollDismissesKeyboard(.interactively)
             .onScrollGeometryChange(for: Bool.self) { g in
-                // Visible bottom edge in content space, insets (composer, nav bar) excluded.
-                let visibleBottom = g.contentOffset.y + g.containerSize.height - g.contentInsets.bottom
-                let fits = g.contentSize.height <= g.containerSize.height - g.contentInsets.top - g.contentInsets.bottom
-                return fits || visibleBottom >= g.contentSize.height - 120
+                TranscriptEnd.isReached(g)
             } action: { _, isAtBottom in
                 atBottom = isAtBottom
                 // Drifting back to the end by hand counts as catching up, but only at rest:
@@ -217,9 +214,7 @@ struct TranscriptView: View {
             // Rows that shrink after the jump (diagrams, math, images) can leave blank space below
             // the last message; once the scroll view is at rest, settle back onto it.
             .onScrollGeometryChange(for: Bool.self) { g in
-                let visibleBottom = g.contentOffset.y + g.containerSize.height - g.contentInsets.bottom
-                let fits = g.contentSize.height <= g.containerSize.height - g.contentInsets.top - g.contentInsets.bottom
-                return !fits && visibleBottom > g.contentSize.height + 24
+                TranscriptEnd.isPassed(g)
             } action: { _, isPastEnd in
                 pastEnd = isPastEnd
                 if isPastEnd, scrollPhase == .idle { settleAtEnd(proxy) }
@@ -251,7 +246,7 @@ struct TranscriptView: View {
             }
             .toast($toaster.text, duration: .seconds(1.6))
             .environment(toaster)
-            .animation(.easeOut(duration: 0.2), value: following)
+            .animation(.easeOut(duration: 0.2), value: offersJump)
             .safeAreaInset(edge: .top, spacing: 0) { reconnectBanner }
             .safeAreaInset(edge: .top, spacing: 0) { if showSearch { searchBar(proxy) } }
             .onChange(of: showSearch) { _, on in
@@ -358,11 +353,17 @@ struct TranscriptView: View {
             || (conversation.messages.last?.text.utf8.count ?? 0) > leftAt.lastLength
     }
 
+    /// Whether "Jump to latest" is offered: the reader has scrolled away and the end is out of
+    /// reach. With the end on screen there is nowhere to jump to, so the pill goes as soon as
+    /// the end comes up, not when the scrolling stops, and a touch at the end doesn't bring it
+    /// out (asked 2026-10-13).
+    private var offersJump: Bool { !following && !atBottom && !conversation.messages.isEmpty }
+
     /// "Jump to latest", once the reader has scrolled away from the end: a pill over the bottom of
     /// the transcript, with a dot when something new is waiting there.
     @ViewBuilder
     private func jumpButton(_ proxy: ScrollViewProxy) -> some View {
-        if !following, !conversation.messages.isEmpty {
+        if offersJump {
             Button {
                 jumpToEnd(proxy)
             } label: {
@@ -434,6 +435,40 @@ struct TranscriptView: View {
         case let .failed(reason): "Hermes Dashboard: \(reason)"
         default: nil
         }
+    }
+}
+
+/// Where the end of the transcript is, from what a scroll view reports about itself.
+///
+/// `containerSize` is the room between the bars, and `contentOffset` is where the scroll view
+/// itself begins, behind the top bar: what can be read ends at the offset plus the top inset
+/// plus that room. Measured on iOS 26.3 and 27.0 at the end of a transcript 11,964 points long
+/// on a 956-point screen: offset 11,091, room 699, insets 158 above and 98 below. This used to
+/// be worked out as if the room still had the insets in it, which came out short by both of
+/// them, more than the reach below: the end never counted as reached by hand, so "Jump to
+/// latest" stayed and new text was not followed until it was tapped.
+nonisolated enum TranscriptEnd {
+    /// How near the end counts as at it, in points.
+    static let reach: CGFloat = 120
+    /// How much blank space under the last message is left alone.
+    static let slack: CGFloat = 24
+
+    /// The bottom edge of what can be read, above the composer, in the content's coordinates.
+    static func readableBottom(_ g: ScrollGeometry) -> CGFloat {
+        g.contentOffset.y + g.contentInsets.top + g.containerSize.height
+    }
+
+    /// The whole conversation is on screen at once: there is nowhere to scroll to.
+    static func fits(_ g: ScrollGeometry) -> Bool { g.contentSize.height <= g.containerSize.height }
+
+    /// The newest message is on screen, or nearly.
+    static func isReached(_ g: ScrollGeometry) -> Bool {
+        fits(g) || readableBottom(g) >= g.contentSize.height - reach
+    }
+
+    /// The reader is looking at blank space below the last message.
+    static func isPassed(_ g: ScrollGeometry) -> Bool {
+        !fits(g) && readableBottom(g) > g.contentSize.height + slack
     }
 }
 
