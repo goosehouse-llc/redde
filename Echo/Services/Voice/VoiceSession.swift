@@ -91,6 +91,13 @@ final class VoiceSession {
     private let interruption: () -> Settings.Interruption
     /// Settings → Voice → Stop phrases: the person's own, heard beside the built-in ones.
     private let stopPhrases: () -> [String]
+    /// Settings → Voice → Answer requests by voice. Injectable so tests choose.
+    private let answersAloud: () -> Bool
+    /// Settings → Voice → Nod or shake to answer, and the AirPods' movement it reads.
+    private let answersByNod: () -> Bool
+    private let head: any HeadGestureSensing
+    /// How an answer given aloud reaches the agent: the conversation's own way, unless a test listens.
+    private let respond: (SpokenRequest.Answer) -> Void
     private var screenAwake = false
     private var awakeTimeout: Task<Void, Never>?
     /// How long a wait for the reply holds the screen on. Past it the phone may lock: the reply
@@ -142,15 +149,28 @@ final class VoiceSession {
          recognizer: any VoiceRecognizing = SpeechRecognizer(),
          output: any VoiceSpeaking = SpeechOutput(),
          audio: any VoiceAudioControlling = AudioSessionController.shared,
+         head: any HeadGestureSensing = HeadGestures.shared,
          requestPermissions: @escaping () async -> Bool = { await SpeechRecognizer.requestPermissions() },
          earcon: @escaping (Earcon) -> Void = { EarconPlayer.shared.play($0) },
          keepAwake: @escaping (Bool) -> Void = { UIApplication.shared.isIdleTimerDisabled = $0 },
          talkOver: @escaping () -> Settings.TalkOver = { Settings.shared.talkOver },
          interruption: @escaping () -> Settings.Interruption = { Settings.shared.interruption },
-         stopPhrases: @escaping () -> [String] = { Settings.shared.stopPhrases }) {
+         stopPhrases: @escaping () -> [String] = { Settings.shared.stopPhrases },
+         answersAloud: @escaping () -> Bool = { Settings.shared.answerRequestsByVoice },
+         answersByNod: @escaping () -> Bool = { Settings.shared.answerRequestsByNod },
+         respond: ((SpokenRequest.Answer) -> Void)? = nil) {
         self.talkOver = talkOver
         self.interruption = interruption
         self.stopPhrases = stopPhrases
+        self.answersAloud = answersAloud
+        self.answersByNod = answersByNod
+        self.head = head
+        self.respond = respond ?? { [weak conversation] answer in
+            switch answer {
+            case let .approval(choice): conversation?.respond(approval: choice)
+            case let .clarify(questionID, text): conversation?.respond(clarify: [questionID: text])
+            }
+        }
         self.conversation = conversation
         self.recognizer = recognizer
         self.output = output
@@ -250,6 +270,14 @@ final class VoiceSession {
 
     /// Tap the mic: start listening. If a reply is being spoken, this barges in.
     func beginListening() {
+        if asking != nil {
+            // Tapped while the request is being read out: hear the answer now. The turn is not
+            // one to barge in on; it waits for that answer.
+            guard phase == .speaking else { return }
+            output.stop()
+            listenForAnswer()
+            return
+        }
         replaying = false
         guard phase == .idle || phase == .speaking || isErrored else { return }
         isMuted = false
@@ -273,6 +301,8 @@ final class VoiceSession {
         guard !continuous, !carPlayConnected else { return }
         // The same goes for the mic behind a reply: the reply plays on, and can't be talked over.
         if phase == .thinking || phase == .speaking { stopMonitor() }
+        // And for a mic waiting on an answer: the request stays, on the screen and in its notification.
+        if asking != nil, phase == .listening { leaveForTheScreen(saying: false); return }
         guard phase == .listening else { return }
         log.info("left the foreground while listening: stopping")
         cancel()
@@ -282,6 +312,8 @@ final class VoiceSession {
     /// question. Only while listening; hands-free stays as it was for when the mic comes back.
     func mute() {
         guard phase == .listening else { return }
+        // Muted instead of answering: the request waits on the screen, the turn on the request.
+        if asking != nil { leaveForTheScreen(saying: false); return }
         recognizer.cancel()
         isMuted = true
         phase = .idle
@@ -353,6 +385,7 @@ final class VoiceSession {
     func cancel() {
         replaying = false
         isMuted = false
+        stopAsking()
         stopMonitor()
         // Only a turn this session started is ours to cancel: leaving the voice screen while a
         // typed reply streams must not kill it.
@@ -385,6 +418,7 @@ final class VoiceSession {
             guard await requestPermissions() else {
                 throw SpeechRecognizer.Failure.permissionDenied
             }
+            guard phase == .listening else { return }   // answered or cancelled meanwhile (a nod can be that quick)
             do {
                 try audio.activateForVoice()
             } catch {
@@ -431,6 +465,7 @@ final class VoiceSession {
 
     private func handleUtterance(_ text: String) async {
         guard phase == .listening else { return }
+        if let asking { heardAnswer(text, to: asking); return }
         metrics.speechEndedAt = .now
         liveTranscript = text
         guard !text.isEmpty else {
@@ -478,6 +513,9 @@ final class VoiceSession {
             defer { if let self, self.replySerial == serial { self.replyTask = nil } }
             for await event in events {
                 guard let self, !Task.isCancelled else { return }
+                // The turn has moved on while a request was being asked about: it was answered on
+                // the screen, from a notification, or by the host's own time limit.
+                if let asking, conversation.pendingInterrupt?.interrupt.id != asking.id { answeredElsewhere() }
                 switch event {
                 case let .textDelta(delta):
                     if metrics.firstTokenAt == nil { metrics.firstTokenAt = .now }
@@ -498,9 +536,10 @@ final class VoiceSession {
                 case .done:
                     metrics.replyDoneAt = .now
                     output.endReply()
-                case .interrupt:
-                    // Conversation holds the request; the voice screen shows the card.
-                    activeTool = "waiting for you"
+                case let .interrupt(interrupt, _):
+                    // Conversation holds the request; the voice screen shows the card. Asked
+                    // aloud too if Settings says so and it is one a voice can answer.
+                    if !ask(interrupt) { activeTool = "waiting for you" }
                 case .interruptExpired:
                     activeTool = nil
                 case .status, .sessionID, .runID, .subagent, .prefill, .todos:
@@ -532,6 +571,17 @@ final class VoiceSession {
     }
 
     private func replyFinishedSpeaking() {
+        if asking != nil {
+            // The request has been read out, or the reminder said: now the answer.
+            listenForAnswer()
+            return
+        }
+        if leftForScreen {
+            // "It's waiting on your iPhone" has been said. The turn is still the agent's.
+            leftForScreen = false
+            phase = .thinking
+            return
+        }
         if acknowledging {
             acknowledging = false
             phase = .idle
@@ -568,6 +618,152 @@ final class VoiceSession {
         } else {
             output.releaseAudio(); audio.deactivate()
         }
+    }
+
+    // MARK: - Answering a request aloud
+
+    /// The request being put to the person aloud, from its being read out until it is answered,
+    /// answered elsewhere or left for the screen. The voice screen shows its hint.
+    private(set) var asking: SpokenRequest? {
+        didSet { if asking?.id != oldValue?.id { watchHead() } }
+    }
+    /// How many answers so far weren't one. The second is the last.
+    private var unclearAnswers = 0
+    /// Speaking the line that hands a request over to the screen.
+    private var leftForScreen = false
+    private var answerTimeout: Task<Void, Never>?
+    /// How long silence may last before it counts as no answer.
+    var answerWindow: Duration = .seconds(12)
+
+    /// Puts a request the agent waits on to the person aloud, after whatever of the reply is
+    /// still being said. False when Settings doesn't allow it or a voice can't answer it: then
+    /// it is the screen's, as it always was.
+    private func ask(_ interrupt: Interrupt) -> Bool {
+        guard answersAloud(), let request = SpokenRequest(interrupt) else { return false }
+        // The request is not a reply to talk over: a "yes" said early would end the whole turn.
+        stopMonitor()
+        asking = request
+        unclearAnswers = 0
+        activeTool = nil
+        phase = .speaking
+        output.append("\n\n" + request.prompt)
+        output.endReply()
+        watchRequest()
+        return true
+    }
+
+    /// Notices at once when the request is settled some other way: its card on the screen, its
+    /// notification, the host's own time limit. The next event of the turn would say so too, but
+    /// that can be a long command away, with the mic open all the while.
+    private func watchRequest() {
+        withObservationTracking {
+            _ = conversation.pendingInterrupt?.interrupt.id
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                guard let self, let asking = self.asking else { return }
+                if self.conversation.pendingInterrupt?.interrupt.id == asking.id { self.watchRequest() } else { self.answeredElsewhere() }
+            }
+        }
+    }
+
+    /// Opens the mic for the answer. The turn stays as it is, waiting.
+    private func listenForAnswer() {
+        phase = .listening
+        liveTranscript = ""
+        Task { await startRecognizer() }
+        answerTimeout?.cancel()
+        answerTimeout = Task { [weak self, answerWindow] in
+            try? await Task.sleep(for: answerWindow)
+            guard let self, !Task.isCancelled, asking != nil, phase == .listening, recognizer.transcript.isEmpty else { return }
+            endListening()   // nothing was said: that is no answer
+        }
+    }
+
+    private func heardAnswer(_ text: String, to request: SpokenRequest) {
+        answerTimeout?.cancel()
+        liveTranscript = text
+        guard conversation.pendingInterrupt?.interrupt.id == request.id else { answeredElsewhere(); return }
+        if let answer = request.answer(text) {
+            log.info("a request answered aloud")
+            answered(answer, to: request)
+            return
+        }
+        unclearAnswers += 1
+        guard unclearAnswers < 2 else { leaveForTheScreen(saying: true); return }
+        phase = .speaking
+        output.beginReply()
+        output.append(request.reminder)
+        output.endReply()
+    }
+
+    /// The answer goes to the agent the way the card's buttons send it.
+    private func answered(_ answer: SpokenRequest.Answer, to request: SpokenRequest) {
+        asking = nil
+        respond(answer)
+        // Said back, so a mishearing is heard; the reply carries on behind it.
+        phase = .speaking
+        output.beginReply()
+        output.append(request.confirmation(of: answer) + " ")
+        if canBeTalkedOver() { micStaysOpen = true; startMonitor() }
+    }
+
+    // MARK: A nod or a shake
+
+    /// A nod or a shake of the head would answer right now: the voice screen says so.
+    var headAnswers: Bool { asking?.takesNod == true && head.isSensing }
+
+    /// The AirPods' movement is read from when a request starts being read out until it is
+    /// settled, and at no other time. From the start, so that by the time the request has been
+    /// read the AirPods are answering and a nod begun on its last words is seen whole.
+    private func watchHead() {
+        guard let asking, asking.takesNod, answersByNod(), audio.route == .headphones else { head.stop(); return }
+        head.start { [weak self] gesture in self?.headMoved(gesture) }
+    }
+
+    /// A nod approves and a shake denies, but only once the request has been read out and the
+    /// mic is open for the answer. A nod along to the reply before it, or to the request while
+    /// it is still being read, answers nothing.
+    private func headMoved(_ gesture: HeadGesture) {
+        guard let asking, phase == .listening, let answer = asking.answer(nod: gesture == .nod) else { return }
+        answerTimeout?.cancel()
+        guard conversation.pendingInterrupt?.interrupt.id == asking.id else { answeredElsewhere(); return }
+        log.info("a request answered by a \(gesture.rawValue, privacy: .public)")
+        recognizer.cancel()   // whatever the mic had heard so far is not the answer
+        liveTranscript = ""
+        answered(answer, to: asking)
+    }
+
+    /// No answer came by voice: the request stays where it has been all along, on the screen (the
+    /// car's card says "Needs your phone") and in its notification.
+    private func leaveForTheScreen(saying: Bool) {
+        answerTimeout?.cancel()
+        asking = nil
+        activeTool = "waiting for you"
+        if phase == .listening { recognizer.cancel() }
+        guard saying else { phase = .thinking; return }
+        leftForScreen = true
+        phase = .speaking
+        output.beginReply()
+        output.append("It's waiting for you on your iPhone.")
+        output.endReply()
+    }
+
+    /// The request was settled some other way while it was being asked about.
+    private func answeredElsewhere() {
+        guard asking != nil else { return }
+        answerTimeout?.cancel()
+        asking = nil
+        if phase == .listening { recognizer.cancel() }
+        output.stop()
+        output.beginReply()
+        phase = .thinking
+    }
+
+    /// The conversation is over: nothing is being asked any more.
+    private func stopAsking() {
+        answerTimeout?.cancel()
+        asking = nil
+        leftForScreen = false
     }
 
     // MARK: - Talking over a reply

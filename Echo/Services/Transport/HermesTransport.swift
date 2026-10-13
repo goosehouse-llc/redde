@@ -479,7 +479,7 @@ nonisolated struct ApprovalRequest: Identifiable, Equatable, Sendable, Codable {
     var choices: [String]     // once | session | always | deny
 }
 
-extension ApprovalRequest {
+nonisolated extension ApprovalRequest {
     /// The two answers a pair of buttons can give: run it this once, or don't. Nil when the
     /// request doesn't offer both; then only the full card in the app can answer it.
     var yesNo: (approve: String, deny: String)? {

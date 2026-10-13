@@ -328,6 +328,9 @@ struct AgentSettings<Details: View>: View {
 
 struct VoiceSettings: View {
     @State private var settings = Settings.shared
+    /// Motion & Fitness has been refused for Redde: the nod switch went back off, and says why.
+    @State private var motionRefused = false
+    @Environment(\.openURL) private var openURL
 
     private var listeningLanguageName: String {
         SpeechLanguageView.name(settings.speechLanguage.isEmpty ? Locale.current.identifier(.bcp47) : settings.speechLanguage)
@@ -410,6 +413,27 @@ struct VoiceSettings: View {
                         .lineLimit(1)
                 }
             }
+            Toggle("Answer requests by voice", isOn: $settings.answerRequestsByVoice)
+            if settings.answerRequestsByVoice, HeadGestures.isAvailable {
+                Toggle("Nod or shake to answer", isOn: Binding(
+                    get: { settings.answerRequestsByNod },
+                    set: { on in
+                        settings.answerRequestsByNod = on
+                        motionRefused = false
+                        guard on else { return }
+                        // iOS asks for Motion & Fitness here, not in the middle of a conversation.
+                        Task {
+                            guard await !HeadGestures.shared.askToSense() else { return }
+                            settings.answerRequestsByNod = false
+                            motionRefused = true
+                        }
+                    }))
+                if motionRefused {
+                    Button("Allow Motion & Fitness for Redde…") {
+                        if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                    }
+                }
+            }
             Toggle("New conversation in voice mode", isOn: $settings.newConversationForVoice)
             Picker("When Redde opens", selection: $settings.launchScreen) {
                 Text("Last conversation").tag(Settings.LaunchScreen.conversation)
@@ -447,6 +471,11 @@ struct VoiceSettings: View {
                     ? "“Voice for replies”: Match each reply picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice (the built-in one when Kokoro has none for it). "
                     : "“Voice for replies”: Match each reply picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice. Download more voices in the iPhone's Settings → Accessibility → Read & Speak → Voices. ")
                 + "“Talk over replies” lets you interrupt a spoken reply by speaking: the reply stops and what you say is your next message. With headphones it costs nothing. On the phone's speaker Redde has to cancel its own echo for as long as it speaks, so replies play at call volume, quieter than usual; that is why the speaker is a separate choice. Not in the car. “Interrupt with” says what counts: anything you say, or only the word “stop”, for when other people are talking nearby. With “Only “stop””, the reply plays on through whatever else is said, and “stop” ends it. “Stop phrases” adds your own ways of ending a hands-free conversation to the built-in ones, for another language or a word of your own; with “Only “stop””, they end a reply as well. "
+                + "“Answer requests by voice”: in voice mode and in the car, Redde reads out a command that waits for your approval, or a question from your agent, and takes your spoken answer: “approve” or “deny”, or the answer to the question. Anyone in earshot can answer, and what the agent wants to run is said aloud, so it is off until you turn it on. Passwords and secrets are only ever asked for on the screen."
+                + (HeadGestures.isAvailable
+                    ? " “Nod or shake to answer” adds your head, with AirPods that sense movement (AirPods Pro, AirPods Max, AirPods 3 or later): once the request has been read out, nod a couple of times to approve, or shake your head to deny. iOS asks for Motion & Fitness when you turn it on; the movement is read on this device and kept nowhere."
+                    : "")
+                + "\n\n"
                 + "“New conversation in voice mode” starts a fresh conversation each time voice mode opens, from the button, Siri, the Action button or at launch; the one you were in stays in your list. "
                 + "“Suggest follow-up questions” shows three things you might ask next under each reply, written by the model on your OpenAI-compatible connection (it needs that address set, whichever connection the conversation uses). "
                 + "“When Redde opens” picks where it starts: your last conversation, the conversation list, or voice mode; “Listen whenever Redde opens” starts the mic as well, so “Hey Siri, open Redde” goes straight to listening. “Earpiece” plays replies through the earpiece when the phone is at your ear, like a call; turn it off for hands-free use with the phone face down. Background notifications tell you when Redde needs an approval or an answer, or when a reply finishes, while you're in another app; they stop when iOS closes Redde, and “Notify when Redde is closed” has your Hermes send them from then on. “Announce on AirPods” marks them time-sensitive so Siri can read them aloud through AirPods (turn on Announce Notifications for Redde in the iPhone's Settings) and so they reach you in a Focus. “Notification sound” off makes all of them silent, the ones from your Hermes too; they still appear. With AirPods in, pressing the stem on the voice screen works like tapping the mic.")

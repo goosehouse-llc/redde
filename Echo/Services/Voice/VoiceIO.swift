@@ -60,6 +60,17 @@ extension VoiceSpeaking {
     func resume() {}
 }
 
+/// The head-movement side (HeadGestures in production): a nod or a shake, from AirPods.
+@MainActor
+protocol HeadGestureSensing: AnyObject {
+    /// Movement is arriving: headphones that sense it are in, and iOS lets Redde read it.
+    var isSensing: Bool { get }
+    /// Reads movement until `stop()`; `heard` is called for each nod or shake made meanwhile.
+    func start(heard: @escaping (HeadGesture) -> Void)
+    func stop()
+}
+extension HeadGestures: HeadGestureSensing {}
+
 /// What a reply plays through, as far as talking over it goes: the phone's own speaker (or
 /// earpiece) needs the echo cancelled, a headset doesn't, and a car is left alone.
 nonisolated enum VoiceRoute: Sendable { case speaker, headphones, car }

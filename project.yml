@@ -98,6 +98,7 @@ targets:
         UIBackgroundModes:
           - audio
           - processing
+        NSMotionUsageDescription: Redde reads head movement from your AirPods so you can nod to approve, or shake your head to deny, a request from your assistant. It is read on this device and never stored or sent.
         NSMicrophoneUsageDescription: Redde listens so you can talk to your assistant. Audio is transcribed on this device and only your own server ever receives the text.
         NSCalendarsFullAccessUsageDescription: Redde can show your next event when you start a conversation, and attach a day's events to a message for your assistant. Events are sent only when you tap, and only to your own server.
         NSCameraUsageDescription: Redde uses the camera when you take a photo to attach to a message, and to scan a setup code. A photo goes only to the server you connect to.

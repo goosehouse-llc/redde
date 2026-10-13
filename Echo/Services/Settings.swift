@@ -124,6 +124,17 @@ final class Settings: ServeEndpoint {
     var stopPhrases: [String] {
         didSet { defaults.set(stopPhrases, forKey: Keys.stopPhrases) }
     }
+    /// In voice mode a command that waits for approval, or a question from the agent, is read
+    /// out and answered by voice (`SpokenRequest`). Off until asked for: whoever is in earshot
+    /// can answer, and what the agent wants to run is said aloud.
+    var answerRequestsByVoice: Bool {
+        didSet { defaults.set(answerRequestsByVoice, forKey: Keys.answerRequestsByVoice) }
+    }
+    /// With that on, a nod of the head approves and a shake denies, with AirPods that sense
+    /// movement (`HeadGestures`). Off until asked for: iOS has to be asked for Motion & Fitness.
+    var answerRequestsByNod: Bool {
+        didSet { defaults.set(answerRequestsByNod, forKey: Keys.answerRequestsByNod) }
+    }
     /// Opening voice mode starts a new conversation (unless the current one is empty or busy).
     var newConversationForVoice: Bool {
         didSet { defaults.set(newConversationForVoice, forKey: Keys.newConversationForVoice) }
@@ -380,6 +391,8 @@ final class Settings: ServeEndpoint {
         static let talkOver = "talkOver"
         static let interruption = "interruption"
         static let stopPhrases = "stopPhrases"
+        static let answerRequestsByVoice = "answerRequestsByVoice"
+        static let answerRequestsByNod = "answerRequestsByNod"
         static let useKokoro = "useKokoro"
         static let kokoroURL = "kokoroURL"
         static let kokoroVoice = "kokoroVoice"
@@ -436,6 +449,8 @@ final class Settings: ServeEndpoint {
         talkOver = defaults.string(forKey: Keys.talkOver).flatMap(TalkOver.init(rawValue:)) ?? .headphones
         interruption = defaults.string(forKey: Keys.interruption).flatMap(Interruption.init(rawValue:)) ?? .speech
         stopPhrases = defaults.stringArray(forKey: Keys.stopPhrases) ?? []
+        answerRequestsByVoice = defaults.bool(forKey: Keys.answerRequestsByVoice)
+        answerRequestsByNod = defaults.bool(forKey: Keys.answerRequestsByNod)
         useKokoro = defaults.bool(forKey: Keys.useKokoro)
         kokoroURL = defaults.string(forKey: Keys.kokoroURL) ?? Self.defaultKokoroURL
         kokoroVoice = defaults.string(forKey: Keys.kokoroVoice) ?? Self.defaultKokoroVoice
@@ -644,6 +659,8 @@ final class Settings: ServeEndpoint {
         talkOver = .headphones
         interruption = .speech
         stopPhrases = []
+        answerRequestsByVoice = false
+        answerRequestsByNod = false
         useKokoro = false
         kokoroURL = Self.defaultKokoroURL
         kokoroVoice = Self.defaultKokoroVoice

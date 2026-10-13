@@ -76,11 +76,12 @@ If your Hermes Dashboard signs people in with Google or another identity provide
 
 The Apple Watch app gets your server's address and key from Redde on your iPhone and then talks to that server itself, or asks through the iPhone. The key is kept in the watch's Keychain. Questions are dictated with the watch's own dictation. When it talks to the server itself, the watch can list your recent conversations there and carry one on. The "Ask Redde" complication for a watch face only opens the app; it holds no data. Nothing goes anywhere else.
 
-## Photos, camera, files, microphone, and Face ID
+## Photos, camera, files, microphone, head movement, and Face ID
 
 - Redde uses the system photo picker and file picker, which give the app access only to the items you select. A video that is too large to send is made smaller on the device first.
 - The camera is used only when you choose Camera from the + menu or Scan a setup code in setup. A photo you take becomes an attachment in your message: it is kept with that conversation like any attachment and sent only to your server, and it is not saved to your photo library. Scanning a setup code reads the QR code on the device; no picture is kept or sent.
 - The microphone is used only while you are talking with the app (voice mode, including while a reply that can be talked over is read aloud, and dictation into the message field), with the system's indicator showing, and only for on-device transcription.
+- If you turn on "Nod or shake to answer", Redde reads head movement from your AirPods while a request from your assistant waits for your answer in voice mode, to tell a nod from a shake. It is read on the device, at no other time, and is not stored or sent anywhere.
 - If you enable the app lock, or ask for your passwords to be included in a setup code for another device, Face ID or Touch ID is evaluated by iOS. Redde never receives biometric data.
 
 ## Setup links

@@ -22,8 +22,10 @@ and can't read them ([docs/push.md](docs/push.md)).
 - **Spoken prefixes.** Start a spoken message with a word of your choice and Redde adds a text
   prefix, switches the conversation to a model you pick, or both. Voice and Siri only.
 - **Watch it work.** Streaming reasoning, tool calls, subagents, and cards for approvals,
-  clarifying questions, sudo prompts and secrets, also answerable from a notification. A paired
-  Hermes sends those notifications when the app is closed too, encrypted end to end.
+  clarifying questions, sudo prompts and secrets, also answerable from a notification, and
+  approvals and questions by voice, or with a nod of the head on AirPods, if you turn that
+  on. A paired Hermes sends those notifications when the app is closed too, encrypted end to
+  end.
 - **Rich replies.** Markdown, highlighted code, tables, task lists, Mermaid diagrams and math,
   rendered offline with no third-party Swift dependencies, at a text size of the conversation's
   own, with a ring that shows how full the model's context is.

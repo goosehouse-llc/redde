@@ -165,7 +165,12 @@ struct VoiceView: View {
 
     private var footer: some View {
         VStack(spacing: 6) {
-            if session.continuous {
+            if let asking = session.asking {
+                // A request is being answered by voice: what to say, where the hands-free line goes.
+                Text(session.headAnswers ? asking.nodHint : asking.hint)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if session.continuous {
                 Text("Say “stop listening” or “that's all” to end hands-free.")
                     .font(.caption)
                     .foregroundStyle(.secondary)

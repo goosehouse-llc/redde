@@ -839,6 +839,48 @@ minutes (`VoiceSession.updateScreenAwake`). Past that, a paused reply, an error 
 back: the reply carries on with the phone locked, and a screen held on through a ten-minute task
 is a flat battery. Reading a reply aloud from the transcript counts as speaking.
 
+**Answering a request aloud** (Settings → Voice → Answer requests by voice, off until turned on).
+When a turn that voice mode started stops on a command to approve or on one question from the
+agent, `VoiceSession.ask` reads it out after whatever of the reply is still being said
+(`SpokenRequest.prompt`: what the command is for, the command cut to a line, "Say approve, or
+deny"; or the question and its choices by number), then opens the mic for the answer. An answer
+is the whole utterance and one of a short list (`SpokenRequest.answer`): "approve", "yes", "go
+ahead" on one side, "deny", "no", "cancel" on the other, a choice by its number or its own
+words, or for a question without choices whatever is said. It is said back ("Approved.") and
+sent the way the card's buttons send it, and the reply carries on. Anything that is no answer,
+silence for twelve seconds included, gets one reminder and is then left for the screen with
+"It's waiting for you on your iPhone", which is also where the car's card goes ("Needs your
+phone"); nothing is approved because it sounded like yes. A request settled some other way
+meanwhile (its card, its notification, the host's time limit) shuts the mic at once. A password,
+a secret, several questions at once and a question that takes several answers are never asked
+aloud. A tap on the mic while the request is read out means "I'll answer now" and does not end
+the turn, as it would end a reply; the car's Mute at that point leaves the request for the
+phone. The mic behind a reply (below) is closed first: a "yes" said over the request would
+otherwise count as talking over a reply and end the turn. Tried with scripted turns in
+`EchoTests/SpokenRequestTests.swift`; not yet with a microphone, a real agent or a car.
+
+**A nod or a shake** (Settings → Voice → Nod or shake to answer, offered with the switch above
+and off until turned on). With AirPods that sense movement, a nod approves and a shake of the
+head denies; for a question, only one whose two choices are a yes and a no
+(`SpokenRequest.answer(nod:)`). `HeadGestures` reads the AirPods through
+`CMHeadphoneMotionManager` and `HeadGestureDetector` tells the gestures from the rest of what a
+head does: three swings in a row, down, up, down, each at least 6° and no slower than 0.7
+seconds, and mostly in its own direction. One nod is not enough, nor is a look down at the
+phone and back, the bob of a walk, or a head that rolls or moves on a slant.
+`VoiceSession.watchHead` reads the AirPods from when a request starts being read out until it is
+settled, at no other time, and only when the reply plays through headphones; `headMoved` takes a
+gesture for an answer only once the request has been read and the mic is open, so a nod along
+to the reply, or to the request while it is still being read, answers nothing. The answer is
+said back like a spoken one. Saying it works alongside, and whichever comes first counts. iOS
+asks for Motion & Fitness when the switch is turned on (`HeadGestures.askToSense`), not in the
+middle of a conversation. The movement is used where it is read and kept nowhere, except that a
+DEBUG build writes what the AirPods reported while a request waited to
+`Library/Application Support/head-motion.csv` in its container: the detector's numbers are
+estimates of how a head moves, and that file is for setting them from a real one.
+The detector is tried on drawn movement and the conversation on a stand-in for the AirPods
+(`EchoTests/HeadGestureTests.swift`); nothing here has run with AirPods on a head, which the
+simulator can't stand in for.
+
 **Talking over a reply** (Settings → Voice → Talk over replies: off, with headphones (the
 default), or headphones and speaker). A reply can be interrupted by speaking, not only by tapping
 the mic. It was tried twice in September 2026 by letting the recogniser listen while Redde spoke

@@ -77,6 +77,35 @@ final class VoiceOptionsUITests: XCTestCase {
               in: app, "English (United States)")
     }
 
+    /// Settings → Voice → Nod or shake to answer belongs to answering requests by voice, and is
+    /// offered only with it. The simulator can't read AirPods' movement; `-echo.headGestures`
+    /// says it can, as far as offering the switch goes.
+    func testTheNodSwitchComesWithAnsweringByVoice() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = XCUIApplication.straightToChat + ["-echo.screen", "settings", "-echo.headGestures"]
+        app.launch()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20), "Settings didn't open")
+        let aloud = app.switches["Answer requests by voice"]
+        reach(aloud, in: app, "The Answer requests by voice switch")
+        func flip(_ row: XCUIElement) {
+            let knob = row.switches.firstMatch
+            (knob.exists ? knob : row).tap()
+        }
+        let nod = app.switches["Nod or shake to answer"]
+        if aloud.value as? String == "1" { flip(aloud) }   // (left on by a run that stopped halfway)
+        XCTAssertTrue(nod.waitForNonExistence(timeout: 5), "The nod switch is offered without answering by voice")
+
+        flip(aloud)
+        XCTAssertTrue(nod.waitForExistence(timeout: 5), "Answering by voice is on and the nod switch isn't offered")
+        XCTAssertEqual(nod.value as? String, "0", "Nothing reads the AirPods until it is asked for")
+        shot("nod switch")
+
+        // Off again, for whatever runs next.
+        flip(aloud)
+        XCTAssertTrue(nod.waitForNonExistence(timeout: 5))
+    }
+
     func testAskingForAProfileOpensVoiceModeOnIt() {
         continueAfterFailure = false
         let app = XCUIApplication()
