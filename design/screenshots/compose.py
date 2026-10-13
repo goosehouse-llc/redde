@@ -110,5 +110,5 @@ for src, name, h, s, bg, fg, sfg in phone: compose(f'{SHOTS}/{src}.png', f'{OUT}
 for src, name, h, s, bg, fg, sfg in pad:   compose(f'{SHOTS}/{src}.png', f'{OUT}/ipad-13/{name}.png',   h, s, bg, fg, sfg, True)
 # iPhone only: CarPlay runs from the phone.
 compose_car([f'{SHOTS}/car-ask.png', f'{SHOTS}/car-voice.png', f'{SHOTS}/car-speaking.png'], f'{OUT}/iphone-6.9/07-car.png',
-            'In the car, by voice.', 'CarPlay: tap Ask or Talk, or pick up a recent chat. Answers are spoken, so your eyes stay on the road.',
+            'In the car, by voice.', 'CarPlay: tap Ask or Talk, take a note, or pause a reply. Answers are spoken, so your eyes stay on the road.',
             (24, 32, 46), WHITE, MIST)

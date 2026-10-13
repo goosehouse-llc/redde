@@ -93,7 +93,7 @@ fi
 # of a wide dashboard display.
 if [[ "${ONLY:-}" != pad ]]; then
 REDDE_CARPLAY_STILL=1 scripts/carplay-preview.sh "$RAW/carplay" 770x360 > /dev/null
-cp "$RAW/carplay/ask-770x360-dark.png" "$RAW/car-ask.png"
+cp "$RAW/carplay/ask-short-770x360-dark.png" "$RAW/car-ask.png"   # the Ask tab with Short Answers switched on
 cp "$RAW/carplay/voice-listening-770x360-dark.png" "$RAW/car-voice.png"
 cp "$RAW/carplay/voice-speaking-770x360-dark.png" "$RAW/car-speaking.png"
 echo car-ask car-voice car-speaking
