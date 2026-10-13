@@ -208,8 +208,38 @@ struct CarPlayTests {
 
     // MARK: Take a note
 
-    private func noteRow(_ delegate: CarPlaySceneDelegate) throws -> CPListItem {
-        try #require(delegate.askSections().first?.items.last as? CPListItem)
+    private func row(_ title: String, of delegate: CarPlaySceneDelegate) throws -> CPListItem {
+        try #require(delegate.askSections().first?.items.compactMap { $0 as? CPListItem }.first { $0.text == title })
+    }
+
+    private func noteRow(_ delegate: CarPlaySceneDelegate) throws -> CPListItem { try row("Take a Note", of: delegate) }
+
+    /// Short answers can be switched from the car's screen, without picking up the phone.
+    @Test func theShortAnswersRowIsASwitch() async throws {
+        let h = Harness()
+        #expect(h.delegate.askSections().first?.items.count == 3, "the cards, Take a Note and Short Answers")
+        let off = try row("Short Answers", of: h.delegate)
+        #expect(off.detailText == "Off. Replies are read in full.")
+        #expect(off.image != nil)
+        let offSwitch = try #require(off.accessoryImage?.pngData())
+        // A picture at the end of a row has to fit the list's own limit, or CarPlay blows it up.
+        let size = try #require(off.accessoryImage?.size), most = CPListItem.maximumImageSize
+        #expect(size.width <= most.width && size.height <= most.height, "the switch is \(size), the limit \(most)")
+
+        try await press(off)
+        #expect(h.settings.shortAnswersInCar)
+        // The pick outlives the app, as one made in Settings does.
+        #expect(Settings(defaults: h.defaults).shortAnswersInCar)
+        let on = try row("Short Answers", of: h.delegate)
+        #expect(on.detailText == "On. Say “more” for the rest.")
+        #expect(try #require(on.accessoryImage?.pngData()) != offSwitch, "the switch looks the same on as off")
+
+        // Turned off on the phone, the row says so too.
+        h.settings.shortAnswersInCar = false
+        #expect(try row("Short Answers", of: h.delegate).detailText == "Off. Replies are read in full.")
+        try await press(try row("Short Answers", of: h.delegate))
+        try await press(try row("Short Answers", of: h.delegate))
+        #expect(!h.settings.shortAnswersInCar, "pressed twice, it is back where it was")
     }
 
     @Test func theNoteRowListensForANoteAndSaysNothingBack() async throws {

@@ -176,7 +176,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         // standing mostly empty; on a small one the cards fill the screen and these are a scroll
         // away.
         let others = chats.filter { !$0.isCurrent }.prefix(Self.recentOnAsk).map { self.row(for: $0) }
-        let top = CPListSection(items: [row, noteRow()])
+        let top = CPListSection(items: [row, noteRow(), brevityRow()])
         guard !others.isEmpty else { return [top] }
         return [top, CPListSection(items: others, header: "Recent", sectionIndexTitle: nil)]
     }
@@ -189,6 +189,21 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         let item = CPListItem(text: "Take a Note", detailText: detail, image: CarPlayArtwork.noteMark, accessoryImage: nil, accessoryType: .none)
         item.handler = { [weak self] _, completion in
             self?.takeNote()
+            completion()
+        }
+        return item
+    }
+
+    /// Settings → Voice → Short answers in the car, on the car's own screen: a row that says
+    /// whether it is on, with a switch drawn at its end (CarPlay's lists have no switch), and
+    /// flips it when pressed. The next question asked in the car goes by it; a reply already
+    /// on its way is not cut short. Not private, so the tests can press it.
+    func brevityRow() -> CPListItem {
+        let on = settings.shortAnswersInCar
+        let item = CPListItem(text: "Short Answers", detailText: on ? "On. Say “more” for the rest." : "Off. Replies are read in full.",
+                              image: CarPlayArtwork.brevityMark, accessoryImage: CarPlayArtwork.switchMark(on: on), accessoryType: .none)
+        item.handler = { [weak self] _, completion in
+            self?.settings.shortAnswersInCar.toggle()
             completion()
         }
         return item
@@ -484,9 +499,12 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     }
 
     /// Another look for the cards, picked on the phone while the car shows them.
+    /// The cards' look, or short answers, was changed, on the phone or with the row here: the
+    /// Ask tab is drawn again.
     private func armLookObservation() {
         withObservationTracking {
             _ = settings.carPlayCards
+            _ = settings.shortAnswersInCar
         } onChange: { [weak self] in
             Task { @MainActor in
                 if let self { self.askTab?.updateSections(self.askSections()) }

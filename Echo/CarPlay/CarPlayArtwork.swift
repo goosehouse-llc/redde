@@ -146,6 +146,38 @@ enum CarPlayArtwork {
         symbol("square.and.pencil", height: 22, colour: gold, centre: CGPoint(x: rect.midX + 1, y: rect.midY - 1))
     }
 
+    /// Beside "Short Answers" on the Ask tab, in the manner of the pencil.
+    static let brevityMark: UIImage = render(CGSize(width: 44, height: 44), opaque: false) { ctx, rect in
+        ctx.addPath(UIBezierPath(roundedRect: rect, cornerRadius: 10).cgPath)
+        ctx.clip()
+        gradient(ctx, rect)
+        symbol("text.badge.minus", height: 21, colour: gold, centre: CGPoint(x: rect.midX, y: rect.midY))
+    }
+
+    /// The end of the Short Answers row: a switch, as iOS draws one. CarPlay's lists have none
+    /// of their own, only a picture at the end of a row. Green with the knob to the right is on.
+    static func switchMark(on: Bool) -> UIImage { on ? switchOn : switchOff }
+
+    private static let switchOn = drawnSwitch(on: true), switchOff = drawnSwitch(on: false)
+
+    /// No more than 44 points either way (`CPListItem.maximumImageSize`). A picture at the end
+    /// of a row that is any larger is made to fit by CarPlay, which then takes its pixels for
+    /// points: a switch 46 points wide came out 132 wide in a row twice the height (drawn with
+    /// CarPlay's own views, 2026-10-13).
+    static let switchSize = CGSize(width: 42, height: 26)
+
+    private static func drawnSwitch(on: Bool) -> UIImage {
+        render(switchSize, opaque: false) { ctx, rect in
+            // The grey shows on the car's light appearance as on its dark one.
+            (on ? rgb(0x34C759) : rgb(0x8E8E93).withAlphaComponent(0.6)).setFill()
+            UIBezierPath(roundedRect: rect, cornerRadius: rect.height / 2).fill()
+            let knob = rect.height - 4
+            ctx.setShadow(offset: CGSize(width: 0, height: 1), blur: 2 * abs(ctx.ctm.a), color: UIColor.black.withAlphaComponent(0.25).cgColor)
+            UIColor.white.setFill()
+            ctx.fillEllipse(in: CGRect(x: on ? rect.maxX - knob - 2 : 2, y: 2, width: knob, height: knob))
+        }
+    }
+
     /// The mark beside the chat that is open, at the trailing edge of its row.
     static var openChatMark: UIImage? {
         UIImage(systemName: "checkmark")?.withTintColor(gold, renderingMode: .alwaysOriginal)

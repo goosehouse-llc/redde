@@ -87,6 +87,12 @@ struct CarPlayPreviewTests {
             ("chats", { self.list(CPListTemplate(title: "Chats", sections: [CPListSection(items: chatRows)])) }),
         ]
         screens += CarPlayCardLook.allCases.filter { $0 != .color }.map { ("ask-\($0.rawValue)", ask($0)) }
+        // The Short Answers row with its switch on.
+        screens.append(("ask-short", {
+            h.settings.shortAnswersInCar = true
+            defer { h.settings.shortAnswersInCar = false }
+            return ask(.color)()
+        }))
         // The voice card likewise: solid bars first, then the other looks.
         for look in CarPlayVoiceLook.allCases {
             for state in CarPlayArtwork.VoiceState.allCases {

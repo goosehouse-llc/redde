@@ -1286,6 +1286,15 @@ and one that had to wait for a connection goes out later as an ordinary one. Wha
 makes of a real agent's answers has not been heard yet, and what each connection sends was not
 checked against a server (`EchoTests/CarBrevityTests.swift` holds when it is asked for).
 
+The same switch is on the car's screen (asked 2026-10-13): a "Short Answers" row under Take a
+Note on the Ask tab, which says On or Off and flips when pressed (`brevityRow`). The next
+question goes by it. CarPlay's lists have no switch, only a picture at the end of a row, so one
+is drawn (`CarPlayArtwork.switchMark`), and it has to stay within 44 points either way
+(`CPListItem.maximumImageSize`): a larger picture is made to fit by CarPlay, which then takes
+its pixels for points, and a switch 46 points wide came out 132 wide in a row twice the height.
+(A symbol given as that picture is set after the row's second line instead, in grey.) The row
+follows the phone's own toggle and the other way round.
+
 **The thinking sound** (Settings → Voice: Off, In the car, Always; off until chosen). While the
 agent works and nothing is being said, voice mode plays a soft double pulse round and round, so
 that someone who can't look at the screen doesn't take the silence for a failure. It starts
