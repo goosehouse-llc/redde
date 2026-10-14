@@ -24,7 +24,7 @@ struct PhoneToolsSettingsView: View {
             Section {
                 Toggle("Phone tools", isOn: Binding(get: { settings.phoneTools.on }, set: { settings.phoneTools.on = $0 }))
             } footer: {
-                Text("Lets your agent ask Redde for things on this \(device): your calendar, reminders, contacts, photos, and a folder of files. It is asked each time it wants to add, change or delete something. It can't go into other apps; iOS allows no app that.")
+                Text("Lets your agent ask Redde for things on this \(device): your calendar, reminders, contacts, photos, a folder of files, and alarms. It is asked each time it wants to add, change or delete something. It can't go into other apps; iOS allows no app that.")
             }
 
             if settings.phoneTools.on {
@@ -143,6 +143,7 @@ struct PhoneToolsSettingsView: View {
         case .contacts: await DeviceContacts.allowed()
         case .photos: await DevicePhotos.allowed()
         case .files: true
+        case .alarms: await SystemAlarms().allowed()
         }
     }
 

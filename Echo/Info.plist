@@ -55,6 +55,8 @@
 	<false/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
+	<key>NSAlarmKitUsageDescription</key>
+	<string>With Phone tools turned on, Redde sets an alarm or a timer when your assistant asks it to, once you have said yes to it.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

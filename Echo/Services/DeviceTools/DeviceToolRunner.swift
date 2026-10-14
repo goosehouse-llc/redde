@@ -6,6 +6,7 @@ import UIKit
 /// before this is called (`DeviceToolsService`).
 nonisolated struct DeviceToolRunner: Sendable {
     var files = DeviceFiles()
+    var alarms = DeviceAlarms()
 
     func run(_ tool: DeviceTool, _ args: JSONValue, info: JSONValue = .object([:])) async throws -> JSONValue {
         switch tool {
@@ -23,6 +24,9 @@ nonisolated struct DeviceToolRunner: Sendable {
         case .filesRead: try files.read(args)
         case .filesWrite: try files.write(args)
         case .filesDelete: try files.delete(args)
+        case .alarmsSet: try await alarms.set(args)
+        case .alarmsList: try await alarms.list(args)
+        case .alarmsCancel: try await alarms.cancel(args)
         }
     }
 }
@@ -92,6 +96,20 @@ nonisolated struct DeviceAsk: Equatable, Sendable {
             title = "Save a file to Redde's folder"; detail = quoted("path") ?? ""
         case .filesDelete:
             title = "Delete from Redde's folder"; detail = quoted("path") ?? ""
+        case .alarmsSet:
+            // A timer when it is given minutes, as the tool itself reads it.
+            if let minutes = args["minutes"]?.number {
+                title = "Set a timer"
+                let length = Duration.seconds(minutes * 60).formatted(.units(allowed: [.hours, .minutes, .seconds], width: .wide))
+                detail = [quoted("title"), "for \(length)"].compactMap { $0 }.joined(separator: ", ")
+            } else {
+                title = "Set an alarm"
+                detail = [quoted("title"), day("at")].compactMap { $0 }.joined(separator: ", ")
+            }
+        case .alarmsList:
+            title = "See the alarms Redde set"; detail = "Alarms and timers set through Redde, not the Clock app's"
+        case .alarmsCancel:
+            title = "Cancel an alarm or a timer"; detail = "One that Redde set"
         }
     }
 }

@@ -13,6 +13,7 @@ struct EchoControlsBundle: WidgetBundle {
         NeedsYouWidget()
         ContextWidget()
         EchoTurnLiveActivity()
+        AlarmCountdownActivity()
     }
 }
 

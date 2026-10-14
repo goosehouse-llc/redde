@@ -46,6 +46,8 @@ import WidgetKit
 ///   `-echo.fresh` starts on a new conversation first.
 /// - `-echo.voiceView`: open voice mode without listening. `-echo.voiceDemo` poses it mid-listen;
 ///   `-echo.autoVoice` opens it and starts listening.
+/// - `-echo.demoAlarm [seconds]`: set a timer as the phone tool does (thirty seconds by default;
+///   Alarms has to be allowed already), to look at its countdown and at what rings.
 /// - `-echo.voiceLook`: give voice mode a made-up camera (`DemoEye`), since the simulator has
 ///   none: the camera button shows, and a question asked with it on goes with a drawn picture.
 /// - `-echo.dictation`: listen with the transcriber an iPhone 11 or SE 2 gets (`Transcriber`),
@@ -131,6 +133,10 @@ enum DevHooks {
             WidgetCenter.shared.reloadAllTimelines()
         }
         if has("-echo.demoHeavy") { conversation.seedHeavyDemo(turns: value("-echo.demoHeavy").flatMap(Int.init) ?? 32) }
+        if has("-echo.demoAlarm") {
+            let seconds = value("-echo.demoAlarm").flatMap(Double.init) ?? 30
+            Task { _ = try? await DeviceAlarms().set(.object(["title": .string("Pasta"), "minutes": .number(seconds / 60)])) }
+        }
         if has("-echo.demoNotify") {
             let wait = value("-echo.demoNotify").flatMap(Double.init) ?? 12
             Task {

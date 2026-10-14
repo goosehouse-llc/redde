@@ -1,6 +1,7 @@
 """Phone tools: things on the person's iPhone that the agent can ask the Redde app to do, because
 iOS lets an app do them with its owner's permission. The calendar, reminders, contacts, the photo
-library, and one folder of files. Nothing here reaches into other apps: iOS allows no app that.
+library, one folder of files, and alarms. Nothing here reaches into other apps: iOS allows no app
+that.
 
 How a call travels. The agent calls a tool here; the call is written down as a small file in the
 Hermes home and the tool waits. The Redde app, which is following the turn, sees the tool start,
@@ -34,7 +35,7 @@ TOOLSET = "redde_phone"
 WAIT = 120.0
 #: A request nobody collected, or a saved file nobody needs any more, is cleared out after this.
 STALE = 600.0
-AREAS = ("calendar", "reminders", "contacts", "photos", "files")
+AREAS = ("calendar", "reminders", "contacts", "photos", "files", "alarms")
 
 _WHERE = ("Runs on the user's iPhone, through the Redde app. It answers only while Redde is open on the phone "
           "and following this conversation. ")
@@ -129,6 +130,18 @@ TOOLS: dict[str, tuple[str | None, str, dict, list[str]]] = {
     "phone_files_delete": ("files", _WHERE + "Deletes a file or a folder inside Redde's folder on the phone. " + _ASKED, {
         "path": _text("Its path inside the folder."),
     }, ["path"]),
+    "phone_alarms_set": ("alarms", _WHERE + "Sets an alarm or a timer on the phone. It rings there like the Clock app's, through "
+                         "silent mode and a Focus, whether or not Redde is open by then. Give `at` for an alarm at a time, or "
+                         "`minutes` for a timer counting down from now: one of the two. " + _ASKED, {
+        "title": _text("What it is for; the phone shows it when it rings."),
+        "at": _text("When to ring, like 2026-10-14T06:10 (the phone's own time zone unless one is given)."),
+        "minutes": {"type": "number", "description": "A timer instead: how many minutes from now (0.5 is thirty seconds), a day at most."},
+    }, ["title"]),
+    "phone_alarms_list": ("alarms", _WHERE + "The alarms and timers set through Redde that have yet to ring, soonest first, with "
+                          "their ids. The Clock app's own alarms are not among them: the phone shows those to no app.", {}, []),
+    "phone_alarms_cancel": ("alarms", _WHERE + "Cancels an alarm or a timer that was set through Redde. " + _ASKED, {
+        "id": _text("Its id, as phone_alarms_list or phone_alarms_set gave it."),
+    }, ["id"]),
 }
 
 

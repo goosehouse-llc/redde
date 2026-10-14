@@ -1,3 +1,4 @@
+import AlarmKit
 import Contacts
 import EventKit
 import Foundation
@@ -10,7 +11,7 @@ import Testing
 /// let at that thing already, which a test can't ask for; on a simulator:
 ///
 ///     xcrun simctl privacy <simulator> grant calendar com.goosehouse.echo
-///     (and reminders, contacts, photos)
+///     (and reminders, contacts, photos; alarms are allowed in the app itself, see their test)
 ///
 /// Without it a test here is skipped. What is added is taken away again.
 @Suite(.serialized)
@@ -235,5 +236,19 @@ struct PhoneToolsOnDeviceTests {
         #expect(fetched?["caption"]?.string == "\(word) at the lake", "and it comes with the picture")
         let after = PHAsset.fetchAssets(withLocalIdentifiers: [asset.localIdentifier], options: nil).firstObject
         #expect(after?.extendedMetadata.caption?.nilIfEmpty == before?.nilIfEmpty, "what was written is taken away again")
+    }
+
+    /// AlarmKit has no `simctl privacy` grant: turn Alarms on once in Settings → Phone tools on
+    /// the simulator (or run `PhoneToolsUITests`, which does) and this runs.
+    @Test(.enabled(if: AlarmManager.shared.authorizationState == .authorized))
+    func aTimerAndAnAlarmAreSetListedAndCancelled() async throws {
+        let alarms = DeviceAlarms(file: FileManager.default.temporaryDirectory.appending(path: "alarms-\(UUID().uuidString).json"))
+        let timer = try await alarms.set(.object(["title": .string("Redde test timer"), "minutes": .number(10)]))
+        let alarm = try await alarms.set(.object(["title": .string("Redde test alarm"), "at": .string(Self.local(morning))]))
+        let ids = try [timer, alarm].map { try #require($0["set"]?["id"]?.string) }
+        let listed = try await alarms.list(.object([:]))["alarms"]?.array ?? []
+        #expect(listed.compactMap { $0["title"]?.string } == ["Redde test timer", "Redde test alarm"], "iOS holds both, soonest first")
+        for id in ids { _ = try await alarms.cancel(.object(["id": .string(id)])) }
+        #expect(try await alarms.list(.object([:]))["alarms"]?.array?.isEmpty == true)
     }
 }

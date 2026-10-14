@@ -2,8 +2,8 @@ import Foundation
 
 /// Phone tools: things on this iPhone that the agent can ask Redde to do for it, because Apple
 /// lets an app do them with the person's permission. The calendar, reminders, contacts, the
-/// photo library, and a folder of files. Nothing here reaches into another app: iOS has no way
-/// to do that, for any app.
+/// photo library, a folder of files, and alarms. Nothing here reaches into another app: iOS has
+/// no way to do that, for any app.
 ///
 /// The tools are declared to the agent by Redde's plugin on the Hermes server
 /// (`companion/hermes-plugin/redde-push/device.py`), which holds each one's description and
@@ -14,7 +14,7 @@ import Foundation
 /// A tool belongs to an area, and an area is off until it is turned on in Settings → Phone
 /// tools, which is also when iOS is asked for its permission.
 nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiable {
-    case calendar, reminders, contacts, photos, files
+    case calendar, reminders, contacts, photos, files, alarms
 
     var id: String { rawValue }
 
@@ -25,6 +25,7 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
         case .contacts: "Contacts"
         case .photos: "Photos"
         case .files: "Files"
+        case .alarms: "Alarms"
         }
     }
 
@@ -35,6 +36,7 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
         case .contacts: "person.crop.circle"
         case .photos: "photo.on.rectangle"
         case .files: "folder"
+        case .alarms: "alarm"
         }
     }
 
@@ -46,6 +48,7 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
         case .contacts: "Look someone up: names, numbers, addresses. It can't change them."
         case .photos: "Find photos by date, kind and what they show, look at one, and delete (iOS asks you each time)."
         case .files: "Read and save files in Redde's folder in the Files app."
+        case .alarms: "Set an alarm or a timer, see the ones it set, and cancel one. They ring like the Clock app's."
         }
     }
 }
@@ -65,6 +68,9 @@ nonisolated enum DeviceTool: String, CaseIterable, Sendable {
     case filesRead = "phone_files_read"
     case filesWrite = "phone_files_write"
     case filesDelete = "phone_files_delete"
+    case alarmsSet = "phone_alarms_set"
+    case alarmsList = "phone_alarms_list"
+    case alarmsCancel = "phone_alarms_cancel"
 
     /// Every phone tool's name starts with this: how a turn's tool is told from the agent's own.
     static let prefix = "phone_"
@@ -78,6 +84,7 @@ nonisolated enum DeviceTool: String, CaseIterable, Sendable {
         case .contactsSearch: .contacts
         case .photosSearch, .photosGet, .photosDelete: .photos
         case .filesList, .filesRead, .filesWrite, .filesDelete: .files
+        case .alarmsSet, .alarmsList, .alarmsCancel: .alarms
         }
     }
 
@@ -85,7 +92,7 @@ nonisolated enum DeviceTool: String, CaseIterable, Sendable {
     /// for reading. (Deleting photos is asked about by iOS itself, so Redde doesn't ask twice.)
     var changes: Bool {
         switch self {
-        case .calendarAdd, .remindersAdd, .remindersComplete, .filesWrite, .filesDelete: true
+        case .calendarAdd, .remindersAdd, .remindersComplete, .filesWrite, .filesDelete, .alarmsSet, .alarmsCancel: true
         default: false
         }
     }

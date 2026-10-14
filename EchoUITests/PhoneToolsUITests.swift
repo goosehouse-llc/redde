@@ -42,7 +42,7 @@ final class PhoneToolsUITests: XCTestCase {
         flip(master)
         let calendar = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Calendar'")).firstMatch
         XCTAssertTrue(calendar.waitForExistence(timeout: 5), "Turned on, the areas aren't offered")
-        for area in ["Reminders", "Contacts", "Photos", "Files"] {
+        for area in ["Reminders", "Contacts", "Photos", "Files", "Alarms"] {
             XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", area)).firstMatch.exists, "\(area) isn't offered")
         }
         // Under Photos: where the pictures are looked at, and what of them leaves the phone.
@@ -69,5 +69,44 @@ final class PhoneToolsUITests: XCTestCase {
         app.buttons["Off"].tap()
         flip(master)
         XCTAssertTrue(calendar.waitForNonExistence(timeout: 5))
+    }
+
+    /// Turning Alarms on is when iOS is asked whether Redde may set them. The iOS 27.0 simulator
+    /// refuses without asking (the 26.3 one asks), and where it was refused once it stays so.
+    func testTurningAlarmsOnAsksIOSForThem() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = XCUIApplication.straightToChat + ["-echo.screen", "settings", "-echo.demoPlugin", "there"]
+        app.launch()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20), "Settings didn't open")
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Phone tools'")).firstMatch
+        reach(row, in: app, "The Phone tools row")
+        row.tap()
+        let master = app.switches["Phone tools"]
+        XCTAssertTrue(master.waitForExistence(timeout: 10))
+        if master.value as? String != "1" { flip(master) }
+        let alarms = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Alarms'")).firstMatch
+        reach(alarms, in: app, "The Alarms row")
+        alarms.tap()
+        app.buttons["Ask each time"].tap()
+        // The first time, iOS asks whether Redde may schedule alarms and timers.
+        let allow = XCUIApplication(bundleIdentifier: "com.apple.springboard").buttons["Allow"]
+        if allow.waitForExistence(timeout: 6) { allow.tap() }
+        let refused = app.buttons.matching(NSPredicate(format: "label CONTAINS 'allow Redde this'")).firstMatch
+        if refused.waitForExistence(timeout: 3) {
+            // Refused, the area goes back to Off and says where to allow it: that much is right.
+            shot("alarms refused")
+            for _ in 0 ..< 6 where !master.isHittable { app.swipeDown() }
+            flip(master)
+            throw XCTSkip("iOS refused the alarms permission here without being allowed to ask (the iOS 27.0 simulator does)")
+        }
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Alarms' AND (label CONTAINS 'Ask each time' OR value CONTAINS 'Ask each time')")).firstMatch
+            .waitForExistence(timeout: 8), "The choice didn't take")
+        shot("alarms on")
+
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Alarms'")).firstMatch.tap()
+        app.buttons["Off"].tap()
+        for _ in 0 ..< 6 where !master.isHittable { app.swipeDown() }
+        flip(master)
     }
 }

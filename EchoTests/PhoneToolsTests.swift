@@ -191,13 +191,14 @@ struct PhoneToolsTests {
     }
 
     @Test func changesAreAskedAboutEvenWhereReadingIsAllowed() async throws {
-        let h = Harness([.reminders: .allow, .files: .allow, .calendar: .allow])
+        let h = Harness([.reminders: .allow, .files: .allow, .calendar: .allow, .alarms: .allow])
         _ = try await h.service.perform(.init(id: "1", tool: "phone_reminders_list"))
         #expect(h.world.asked.isEmpty)
-        for tool in ["phone_reminders_add", "phone_reminders_complete", "phone_calendar_add_event", "phone_files_write", "phone_files_delete"] {
+        for tool in ["phone_reminders_add", "phone_reminders_complete", "phone_calendar_add_event", "phone_files_write", "phone_files_delete",
+                     "phone_alarms_set", "phone_alarms_cancel"] {
             _ = try await h.service.perform(.init(id: tool, tool: tool))
         }
-        #expect(h.world.asked.count == 5)
+        #expect(h.world.asked.count == 7)
         #expect(h.world.asked.allSatisfy { !$0.offersAlways }, "no \"always\" for a change")
         // "Always" pressed on a change anyway changes nothing.
         h.world.answer = .always
@@ -460,6 +461,7 @@ struct PhoneToolsTests {
             if let area = tool.area { #expect(tool.rawValue.hasPrefix("phone_\(area.rawValue)"), "\(tool.rawValue) is filed under \(area.rawValue)") }
         }
         #expect(DeviceTool.allCases.filter(\.changes).map(\.rawValue).sorted()
-            == ["phone_calendar_add_event", "phone_files_delete", "phone_files_write", "phone_reminders_add", "phone_reminders_complete"])
+            == ["phone_alarms_cancel", "phone_alarms_set", "phone_calendar_add_event", "phone_files_delete", "phone_files_write",
+                "phone_reminders_add", "phone_reminders_complete"])
     }
 }

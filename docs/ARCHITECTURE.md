@@ -1179,13 +1179,14 @@ tests in `EchoTests/SiriSchemaTests.swift`.
 Things on the iPhone that the agent can ask Redde to do, because iOS lets an app do them with
 its owner's permission (Settings → Phone tools; everything off until turned on): the calendar
 (look up events, add one), reminders (list, add, mark done), contacts (look someone up; no
-changes), the photo library (find by date, kind and what a picture shows, hand one over, delete), and Redde's own
-folder in the Files app (list, read, save text, delete). Fourteen tools, `DeviceTool`. Nothing
+changes), the photo library (find by date, kind and what a picture shows, hand one over, delete), Redde's own
+folder in the Files app (list, read, save text, delete), and alarms (set an alarm or a timer,
+list and cancel the ones Redde set). Seventeen tools, `DeviceTool`. Nothing
 reaches into another app: iOS allows no app that, and no client of any agent can do it.
 
 **How a call travels.** The tools are declared to the agent by Redde's plugin on the Hermes
 server, the one that sends notifications (`companion/hermes-plugin/redde-push/device.py`, from
-plugin 1.2.0): a Hermes plugin can register tools, and each of these is a handler that waits. It
+plugin 1.2.0; alarms from 1.3.0): a Hermes plugin can register tools, and each of these is a handler that waits. It
 writes the request down as a small file in the Hermes home and polls for an answer file, for up
 to two minutes. Redde sees the tool start in the turn it is following (`Conversation.apply` →
 `DeviceToolsService.toolStarted`; any tool whose name starts `phone_`), asks the plugin what is
@@ -1199,6 +1200,25 @@ has been seen to carry), is saved under the plugin's folder on the server, and t
 given its path. So phone tools need the Dashboard login, also when the conversation runs over
 the Hermes API, and they answer only while Redde is following the turn: one started from
 another client gets "the phone didn't answer" after the two minutes.
+
+**Alarms and timers** (`DeviceAlarms`, from plugin 1.3.0) are set with AlarmKit, so they ring
+like the Clock app's: through silent mode and a Focus, with Redde open or closed. `phone_alarms_set`
+takes a title and either `at`, a moment (a fixed-date alarm), or `minutes`, a timer from now (a
+second to a day); `phone_alarms_list` and `phone_alarms_cancel` see only what Redde set, which is
+all iOS shows an app. iOS hands back an alarm's id and state and not what it was for, so the
+titles are kept in a file of Redde's own (`phone-alarms.json`), and an alarm iOS no longer holds
+(it rang, or was stopped on the phone) is dropped from it at the next look. Setting and
+cancelling are changes: asked about each time, on the phone's screen. A timer's countdown on
+the Lock Screen and in the Dynamic Island is the app's to draw (`AlarmCountdownActivity` in the
+widget extension, on `AlarmAttributes<AgentAlarm>`); the alert when it rings is iOS's own.
+`AlarmSetting` is the seam (`PhoneAlarmsTests`). iOS asks for the permission when the area is
+turned on (`NSAlarmKitUsageDescription`). Tried on the iOS 26.3 simulator: iOS asks when the
+area is turned on (`PhoneToolsUITests`), a timer and an alarm are set, listed and cancelled
+through AlarmKit itself (`PhoneToolsOnDeviceTests`, which runs once Alarms has been allowed
+there), and a timer set with `-echo.demoAlarm` counted down on the Lock Screen and rang with its
+title. The iOS 27.0 simulator refuses the permission without asking (`mobiletimerd` logs the
+request and a denial 13 ms later, on a simulator made for the purpose too), so the UI test skips
+there and nothing has been seen on iOS 27, nor on any phone.
 
 **What the agent is offered** is the phone's to say. Each area has a setting (Off, Ask each
 time, Allow reading), and Redde tells the plugin which areas are on (`device areas

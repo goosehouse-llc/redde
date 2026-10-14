@@ -184,6 +184,17 @@ class PhoneTools(unittest.TestCase):
         self.phone.answer(asked[0]["id"], {"ok": True, "result": {}})
         call.join(5)
 
+    def test_alarms_are_set_as_an_alarm_at_a_time_or_a_timer_from_now(self):
+        area, description, properties, required = device.TOOLS["phone_alarms_set"]
+        self.assertEqual(area, "alarms")
+        self.assertEqual(required, ["title"], "at or minutes, whichever it is, is the phone's to check")
+        self.assertEqual({"title", "at", "minutes"}, set(properties))
+        self.assertEqual(properties["minutes"]["type"], "number", "half a minute is a timer too")
+        self.assertIn("confirm", description)
+        self.assertIn("confirm", device.TOOLS["phone_alarms_cancel"][1])
+        self.phone.set_areas(["alarms"])
+        self.assertTrue(self.phone.offers("alarms") and not self.phone.offers("files"))
+
     def test_photos_can_be_asked_for_by_what_they_show(self):
         area, description, properties, required = device.TOOLS["phone_photos_search"]
         self.assertEqual(area, "photos")
