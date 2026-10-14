@@ -106,6 +106,8 @@ struct PhoneToolsTests {
         var answer = DeviceToolsService.Answer.allow
         var onScreen = true
         var failure: DeviceToolError?
+        /// The areas the plugin knows, for an older one; nil knows them all.
+        var pluginKnows: Set<String>?
 
         func command(_ arguments: String) throws -> String {
             commands.append(arguments)
@@ -114,7 +116,11 @@ struct PhoneToolsTests {
                 let data = try JSONEncoder().encode(JSONValue.array(waiting.map(JSONValue.object)))
                 return "redde-push device next " + data.base64EncodedString()
             }
-            if arguments.hasPrefix("device areas ") { return "redde-push device areas " + arguments.dropFirst("device areas ".count) }
+            if arguments.hasPrefix("device areas ") {
+                let asked = arguments.dropFirst("device areas ".count).split(separator: ",").map(String.init)
+                let held = asked.filter { $0 != "none" && pluginKnows?.contains($0) != false }
+                return "redde-push device areas " + (held.isEmpty ? "none" : held.joined(separator: ","))
+            }
             return "redde-push device done"
         }
 
@@ -277,6 +283,19 @@ struct PhoneToolsTests {
         h.settings.phoneTools.on = false
         #expect(await h.service.publish() == [])
         #expect(h.world.commands.last == "device areas none")
+    }
+
+    /// A plugin from before an area was added drops it: Settings says so under that area.
+    @Test func anAreaAnOlderPluginDoesNotKnowIsPointedOut() async throws {
+        let h = Harness([.contacts: .allow, .people: .allow])
+        #expect(await h.service.publish() == [.contacts, .people])
+        #expect(h.service.unoffered.isEmpty)
+        h.world.pluginKnows = ["calendar", "contacts"]
+        #expect(await h.service.publish() == [.contacts])
+        #expect(h.service.unoffered == [.people])
+        h.settings.phoneTools.set(.people, .off)
+        #expect(await h.service.publish() == [.contacts])
+        #expect(h.service.unoffered.isEmpty)
     }
 
     /// The cue: a phone tool starting in a turn Redde is following.

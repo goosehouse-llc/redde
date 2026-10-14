@@ -56,6 +56,11 @@ struct PhoneToolsSettingsView: View {
                                 .font(.footnote)
                                 .foregroundStyle(.red)
                             }
+                            if service.unoffered.contains(area), settings.phoneTools.access(area) != .off {
+                                Text("Redde's plugin on your Hermes is older than this and doesn't offer it, so your agent isn't given it.")
+                                    .font(.footnote)
+                                    .foregroundStyle(.red)
+                            }
                             if refused.contains(area) {
                                 Button("iOS doesn't allow Redde this. Open Settings…") {
                                     if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }

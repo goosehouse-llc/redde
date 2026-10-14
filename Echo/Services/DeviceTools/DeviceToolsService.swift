@@ -63,6 +63,9 @@ final class DeviceToolsService {
     }
     /// A request is being dealt with.
     private(set) var isBusy = false
+    /// Areas that are on but that the plugin didn't take when last told: an older plugin knows
+    /// fewer, and the agent isn't offered their tools. Empty when the plugin couldn't be asked.
+    private(set) var unoffered: [DeviceArea] = []
 
     @ObservationIgnored private let settings: Settings
     @ObservationIgnored private let defaults: UserDefaults
@@ -250,7 +253,9 @@ final class DeviceToolsService {
         guard let reply = try? await command("device areas " + (open.isEmpty ? "none" : open.map(\.rawValue).joined(separator: ","))),
               reply.hasPrefix("redde-push device areas") else { return nil }
         let named = reply.dropFirst("redde-push device areas".count).split(whereSeparator: { $0 == " " || $0 == "," })
-        return named.compactMap { DeviceArea(rawValue: String($0)) }
+        let held = named.compactMap { DeviceArea(rawValue: String($0)) }
+        unoffered = open.filter { !held.contains($0) }
+        return held
     }
 
     func clearLog() { log = [] }
