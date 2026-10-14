@@ -24,7 +24,9 @@ nonisolated enum WhatsNew {
     static let releases: [Release] = [
         Release(version: "1.8", items: [
             Item(symbol: "iphone", title: "Phone tools",
-                 detail: "Settings → Phone tools lets your agent use what is on this device: the calendar, reminders, contacts, photos and a folder of files. You switch on each area yourself, and adding, changing or deleting always asks you first. It takes Redde's plugin on your Hermes, which that screen installs."),
+                 detail: "Settings → Phone tools lets your agent use what is on this device: the calendar, reminders, contacts, photos, a folder of files, alarms and timers, and a widget it writes on. It can start a call, which iOS asks you about, or write a text for you to send. You switch on each area yourself, and adding, changing or deleting always asks you first. It takes Redde's plugin on your Hermes, which that screen installs."),
+            Item(symbol: "camera.viewfinder", title: "Show it",
+                 detail: "In voice mode, tap the camera beside Hands-free and it takes the orb's place. Each question you ask goes with a picture of what it sees, so “what is this?” has an answer."),
             Item(symbol: "hand.thumbsup", title: "Approve out loud, or with a nod",
                  detail: "Turn on Settings → Voice → Answer requests by voice, and Redde reads out a command that waits for your approval and listens for “approve” or “deny”, in voice mode and in the car. With AirPods, Nod or shake to answer lets your head say it."),
             Item(symbol: "note.text", title: "Take a note",
@@ -37,7 +39,7 @@ nonisolated enum WhatsNew {
             Item(symbol: "photo.on.rectangle", title: "Pictures, together",
                  detail: "Several pictures in a message stand together. Tap one to see it full screen, swipe to the next, and pinch or double-tap to zoom."),
             Item(symbol: "checkmark.seal", title: "Fixes",
-                 detail: "“Jump to latest” goes away once you have scrolled back to the end of a conversation, and new text is followed from there again."),
+                 detail: "Tapping a notification no longer closes Redde. Thinking can be folded away while a reply is still coming. “Jump to latest” goes away once you have scrolled back to the end of a conversation, and new text is followed from there again."),
         ]),
         Release(version: "1.7.1", items: [
             Item(symbol: "mic", title: "Voice on iPhone 11 and iPhone SE",
