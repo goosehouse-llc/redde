@@ -2,8 +2,9 @@ import Foundation
 
 /// Phone tools: things on this iPhone that the agent can ask Redde to do for it, because Apple
 /// lets an app do them with the person's permission. The calendar, reminders, contacts, the
-/// photo library, a folder of files, alarms, and a widget of Redde's that the agent writes on.
-/// Nothing here reaches into another app: iOS has no way to do that, for any app.
+/// photo library, a folder of files, alarms, a widget of Redde's that the agent writes on, and
+/// starting a call or a message for the person to send. Nothing here reaches into another app:
+/// iOS has no way to do that, for any app.
 ///
 /// The tools are declared to the agent by Redde's plugin on the Hermes server
 /// (`companion/hermes-plugin/redde-push/device.py`), which holds each one's description and
@@ -14,7 +15,7 @@ import Foundation
 /// A tool belongs to an area, and an area is off until it is turned on in Settings → Phone
 /// tools, which is also when iOS is asked for its permission.
 nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiable {
-    case calendar, reminders, contacts, photos, files, alarms, widget
+    case calendar, reminders, contacts, photos, files, alarms, widget, people
 
     var id: String { rawValue }
 
@@ -27,6 +28,7 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
         case .files: "Files"
         case .alarms: "Alarms"
         case .widget: "Widget"
+        case .people: "Calls and Messages"
         }
     }
 
@@ -39,6 +41,7 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
         case .files: "folder"
         case .alarms: "alarm"
         case .widget: "text.bubble"
+        case .people: "phone.bubble"
         }
     }
 
@@ -52,12 +55,17 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
         case .files: "Read and save files in Redde's folder in the Files app."
         case .alarms: "Set an alarm or a timer, see the ones it set, and cancel one. They ring like the Clock app's."
         case .widget: "Write a few lines on Redde's “From Your Agent” widget, for now or for later in the day."
+        case .people: "Start a call or a FaceTime, and write a message for you to send. iOS asks before a call goes out, and sending a message is your tap."
         }
     }
 
+    /// Whether the area has anything for Redde to ask about. Calls and messages have not: iOS
+    /// asks before a call, and a message is the person's to send, so the area is on or off.
+    var offersAsking: Bool { self != .people }
+
     /// What the setting that lets it go ahead unasked is called: there is reading in every
     /// area but the widget's, which is only written on.
-    var allowLabel: String { self == .widget ? "Allow" : "Allow reading" }
+    var allowLabel: String { self == .people ? "On" : self == .widget ? "Allow" : "Allow reading" }
     /// The same, as the button on a question that offers it.
     var alwaysLabel: String { self == .widget ? "Always Allow the Widget" : "Always Allow Reading \(label)" }
 }
@@ -82,6 +90,8 @@ nonisolated enum DeviceTool: String, CaseIterable, Sendable {
     case alarmsCancel = "phone_alarms_cancel"
     case widgetSet = "phone_widget_set"
     case widgetClear = "phone_widget_clear"
+    case peopleCall = "phone_people_call"
+    case peopleMessage = "phone_people_message"
 
     /// Every phone tool's name starts with this: how a turn's tool is told from the agent's own.
     static let prefix = "phone_"
@@ -97,6 +107,7 @@ nonisolated enum DeviceTool: String, CaseIterable, Sendable {
         case .filesList, .filesRead, .filesWrite, .filesDelete: .files
         case .alarmsSet, .alarmsList, .alarmsCancel: .alarms
         case .widgetSet, .widgetClear: .widget
+        case .peopleCall, .peopleMessage: .people
         }
     }
 
@@ -107,6 +118,16 @@ nonisolated enum DeviceTool: String, CaseIterable, Sendable {
     var changes: Bool {
         switch self {
         case .calendarAdd, .remindersAdd, .remindersComplete, .filesWrite, .filesDelete, .alarmsSet, .alarmsCancel: true
+        default: false
+        }
+    }
+
+    /// iOS puts it to the person itself, on the screen: its own question before photos are
+    /// deleted or a call goes out, and the Messages sheet, where sending is their tap. Redde
+    /// doesn't ask first, and can't do it at all unless it is on the screen.
+    var asksItself: Bool {
+        switch self {
+        case .photosDelete, .peopleCall, .peopleMessage: true
         default: false
         }
     }

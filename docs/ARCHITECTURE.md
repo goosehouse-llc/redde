@@ -1181,8 +1181,9 @@ its owner's permission (Settings → Phone tools; everything off until turned on
 (look up events, add one), reminders (list, add, mark done), contacts (look someone up; no
 changes), the photo library (find by date, kind and what a picture shows, hand one over, delete), Redde's own
 folder in the Files app (list, read, save text, delete), alarms (set an alarm or a timer,
-list and cancel the ones Redde set), and a widget of Redde's that the agent writes on. Nineteen
-tools, `DeviceTool`. Nothing
+list and cancel the ones Redde set), a widget of Redde's that the agent writes on, and calls and
+messages (start a call, write a message for the person to send). Twenty-one tools,
+`DeviceTool`. Nothing
 reaches into another app: iOS allows no app that, and no client of any agent can do it.
 
 **How a call travels.** The tools are declared to the agent by Redde's plugin on the Hermes
@@ -1257,6 +1258,22 @@ widget on a simulator's Home Screen, filled with `-echo.demoBoard`: it showed th
 moved on to the line set for a minute later with Redde closed, and came back when that ran out.
 Not tried: a note arriving on a phone (a simulated push skips the extension, and with Redde in
 front the app applies it itself), nor a real agent writing on it.
+
+**Calls and messages** (`DevicePeople`, area `people`, from plugin 1.3.0). `phone_people_call`
+hands iOS a `tel:` address (or `facetime:`, `facetime-audio:`), and iOS asks "Call…?" itself
+before anything dials; Redde isn't told what the person answered, and the agent is not on the
+call. `phone_people_message` puts up the Messages sheet (`MessageSheet`, an
+`MFMessageComposeViewController`) with the recipients and the text filled in, and answers with
+whether the person sent it or closed it: no app may send a message itself. So neither is asked
+about by Redde first (`DeviceTool.asksItself`, as with deleting photos, which iOS also puts to
+the person), the area has no "Ask each time" (`DeviceArea.offersAsking`: it is Off or On), and
+both need Redde on the screen. `to` is a number, or a name: a name is looked up in Contacts,
+only with the Contacts area on, and has to come to one person and one number. Two Danas, or a
+vet with a main line and an after-hours one, are answered with the choices, for the agent to
+ask about or to name with `label`; a mobile is taken when there is exactly one. The agent reads
+no messages and hears no call. `PeopleReaching` is the seam (`PhonePeopleTests`). Not tried
+on a phone: a simulator has no phone for iOS to ask about and no Messages to open, so what iOS
+shows, and what `open` answers when the person cancels, are still to be seen.
 
 **What the agent is offered** is the phone's to say. Each area has a setting (Off, Ask each
 time, Allow reading), and Redde tells the plugin which areas are on (`device areas

@@ -1,7 +1,8 @@
 """Phone tools: things on the person's iPhone that the agent can ask the Redde app to do, because
 iOS lets an app do them with its owner's permission. The calendar, reminders, contacts, the photo
-library, one folder of files, alarms, and a widget of Redde's that the agent writes on. Nothing
-here reaches into other apps: iOS allows no app that.
+library, one folder of files, alarms, a widget of Redde's that the agent writes on, and starting
+a call or a message for the person to send. Nothing here reaches into other apps: iOS allows no
+app that.
 
 How a call travels. The agent calls a tool here; the call is written down as a small file in the
 Hermes home and the tool waits. The Redde app, which is following the turn, sees the tool start,
@@ -35,7 +36,7 @@ TOOLSET = "redde_phone"
 WAIT = 120.0
 #: A request nobody collected, or a saved file nobody needs any more, is cleared out after this.
 STALE = 600.0
-AREAS = ("calendar", "reminders", "contacts", "photos", "files", "alarms", "widget")
+AREAS = ("calendar", "reminders", "contacts", "photos", "files", "alarms", "widget", "people")
 #: How long a call for the widget waits for a phone that is following the turn, before what was
 #: written is sent to the phone as a notification instead.
 WIDGET_WAIT = 10.0
@@ -157,6 +158,22 @@ TOOLS: dict[str, tuple[str | None, str, dict, list[str]]] = {
         "at": _text("From when it shows. Default: now."),
         "until": _text("Until when it holds. Default: until you write something else."),
     }, ["text"]),
+    "phone_people_call": ("people", _WHERE + "Starts a phone call or a FaceTime call from the user's iPhone. The phone asks the "
+                          "user to confirm before it dials, and you are not told whether they did. You are not on the call: it is "
+                          "between the user and whoever they called. Give a number, or a name as it is in their contacts (that "
+                          "needs the contacts tools turned on); when a contact has several numbers, say which with `label`.", {
+        "to": _text("Whom to call: a phone number, or a contact's name."),
+        "label": _text("Which of the contact's numbers, like mobile or work, or its last four digits when two share a label."),
+        "kind": {"type": "string", "enum": ["phone", "facetime", "facetime_audio"], "description": "Default: phone."},
+    }, ["to"]),
+    "phone_people_message": ("people", _WHERE + "Writes a text message for the user to send: the phone opens Messages with the "
+                             "recipient and your text filled in, and the user reads it and taps Send, or doesn't. Nothing is sent "
+                             "without that tap, and you are told which it was. You can't read their messages. Give a number, or a "
+                             "name as it is in their contacts (that needs the contacts tools turned on).", {
+        "to": _text("Whom it is for: a phone number, or a contact's name. Several, separated by commas, for a group."),
+        "text": _text("The message, as it should be sent."),
+        "label": _text("Which of the contact's numbers, like mobile or work, or its last four digits when two share a label."),
+    }, ["to", "text"]),
     "phone_widget_clear": ("widget", "Runs on the user's iPhone, through the Redde app: takes everything off Redde's \"From Your "
                            "Agent\" widget, what was set for later included. Works with Redde closed too, as phone_widget_set "
                            "does.", {}, []),

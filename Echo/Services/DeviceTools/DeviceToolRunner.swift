@@ -8,6 +8,7 @@ nonisolated struct DeviceToolRunner: Sendable {
     var files = DeviceFiles()
     var alarms = DeviceAlarms()
     var board = DeviceBoard()
+    var people = DevicePeople()
 
     func run(_ tool: DeviceTool, _ args: JSONValue, info: JSONValue = .object([:])) async throws -> JSONValue {
         switch tool {
@@ -30,6 +31,9 @@ nonisolated struct DeviceToolRunner: Sendable {
         case .alarmsCancel: try await alarms.cancel(args)
         case .widgetSet: try await board.set(args)
         case .widgetClear: try await board.clear(args)
+        // A name is looked up in Contacts, which is for the person to have turned on.
+        case .peopleCall: try await people.call(args, contactsOn: info["areas"]?[DeviceArea.contacts.rawValue]?.string?.hasPrefix("on") == true)
+        case .peopleMessage: try await people.message(args, contactsOn: info["areas"]?[DeviceArea.contacts.rawValue]?.string?.hasPrefix("on") == true)
         }
     }
 }
@@ -119,6 +123,17 @@ nonisolated struct DeviceAsk: Equatable, Sendable {
             detail = [words, day("at").map { "from \($0)" }].compactMap { $0?.nilIfEmpty }.joined(separator: ", ")
         case .widgetClear:
             title = "Clear its widget"; detail = "What it shows, and what was set for later"
+        case .peopleCall:
+            title = switch (args["kind"]?.string ?? "").lowercased() {
+            case let kind where kind.contains("audio"): "Start a FaceTime audio call"
+            case let kind where kind.contains("facetime") || kind == "video": "Start a FaceTime call"
+            default: "Start a phone call"
+            }
+            detail = [quoted("to"), quoted("label")].compactMap { $0 }.joined(separator: ", ")
+        case .peopleMessage:
+            title = "Write a message for you to send"
+            let to = args["to"]?.array?.compactMap(\.string).joined(separator: ", ") ?? args["to"]?.string ?? ""
+            detail = to.isEmpty ? "" : "To “\(String(to.prefix(80)))”"
         }
     }
 }

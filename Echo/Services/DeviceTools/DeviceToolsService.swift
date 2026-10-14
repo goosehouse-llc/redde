@@ -186,7 +186,7 @@ final class DeviceToolsService {
             }
             // Changes are asked about every time; reads where the area says ask. A delete of
             // photos is put to the person by iOS, with the photos shown: not by Redde as well.
-            if tool.changes || (access == .ask && tool != .photosDelete) {
+            if tool.changes || (access == .ask && !tool.asksItself) {
                 guard onScreen() else {
                     throw DeviceToolError("This needs a yes on the iPhone, and Redde isn't on its screen. Ask the person to open Redde and try again.")
                 }
@@ -195,8 +195,9 @@ final class DeviceToolsService {
                 case .always: if let area = tool.area, !tool.changes { settings.phoneTools.set(area, .allow) }
                 case .allow: break
                 }
-            } else if tool == .photosDelete, !onScreen() {
-                throw DeviceToolError("Deleting photos needs the person at the iPhone, and Redde isn't on its screen.")
+            } else if tool.asksItself, !onScreen() {
+                throw DeviceToolError(tool == .photosDelete ? "Deleting photos needs the person at the iPhone, and Redde isn't on its screen."
+                                      : "This needs the person at the iPhone, and Redde isn't on its screen. Ask them to open Redde and try again.")
             }
         } catch let error as DeviceToolError {
             note(error == .denied ? .denied : .failed, error == .denied ? nil : error.message)
@@ -220,6 +221,8 @@ final class DeviceToolsService {
             let state = switch settings.phoneTools.access(area) {
             case .off: "off"
             case .ask: "on; the person is asked each time"
+            case .allow where area == .people: "on; iOS asks the person before a call goes out, and a message is theirs to send"
+            case .allow where area == .widget: "on; written on without asking"
             case .allow: "on; reading needs no asking, changes are asked about"
             }
             areas[area.rawValue] = .string(state)

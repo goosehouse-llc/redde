@@ -249,7 +249,7 @@ struct AgentSettings<Details: View>: View {
                 }
             }
         } footer: {
-            Text("Let your agent use this device's calendar, reminders, contacts, photos and a folder of files, set alarms, and write on a widget, through Redde.")
+            Text("Let your agent use this device's calendar, reminders, contacts, photos and a folder of files, set alarms, write on a widget, and start calls and messages, through Redde.")
         }
 
         Section {

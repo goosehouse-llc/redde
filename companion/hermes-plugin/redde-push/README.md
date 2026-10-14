@@ -102,10 +102,11 @@ nothing is paired.
 
 From 1.2.0 the plugin also offers the agent tools that are carried out on the iPhone, by the
 Redde app: the calendar, reminders, contacts, the photo library, Redde's folder in the Files
-app and, from 1.3.0, alarms and timers and a widget the agent writes on
+app and, from 1.3.0, alarms and timers, a widget the agent writes on, and calls and messages
+(a call the phone asks the person to confirm, a message written for them to send)
 (`phone_calendar_events`, `phone_reminders_add`, `phone_photos_search`, `phone_alarms_set`,
-`phone_widget_set` and so on, nineteen in the toolset `redde_phone`; `device.py` has each one's
-description). They need no pairing, with one exception: what the agent writes for the widget
+`phone_widget_set`, `phone_people_call` and so on, twenty-one in the toolset `redde_phone`;
+`device.py` has each one's description). They need no pairing, with one exception: what the agent writes for the widget
 in a turn no phone is following (a scheduled job, another client) is sent to the paired phones
 as a note, sealed like any other, and the phone puts it on the widget.
 Photos are found by date and kind, and by what they show or say (`query`): the phone looks at

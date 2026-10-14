@@ -42,9 +42,11 @@ final class PhoneToolsUITests: XCTestCase {
         flip(master)
         let calendar = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Calendar'")).firstMatch
         XCTAssertTrue(calendar.waitForExistence(timeout: 5), "Turned on, the areas aren't offered")
-        for area in ["Reminders", "Contacts", "Photos", "Files", "Alarms", "Widget"] {
-            XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", area)).firstMatch.exists, "\(area) isn't offered")
+        // More areas than fit on the screen at once: each is scrolled to.
+        for area in ["Reminders", "Contacts", "Photos", "Files", "Alarms", "Widget", "Calls and Messages"] {
+            reach(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", area)).firstMatch, in: app, "\(area)")
         }
+        for _ in 0 ..< 8 where !master.isHittable { app.swipeDown() }
         // Under Photos: where the pictures are looked at, and what of them leaves the phone.
         XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'keeps what it finds here' AND label CONTAINS 'to your Hermes and nowhere else'")).firstMatch.exists,
                       "The note under Photos isn't there")
@@ -54,6 +56,9 @@ final class PhoneToolsUITests: XCTestCase {
         XCTAssertTrue(asking.waitForExistence(timeout: 5), "The area's choices didn't open")
         XCTAssertTrue(app.buttons["Off"].exists && app.buttons["Allow reading"].exists)
         asking.tap()
+        // Where Redde has never been let at the calendar, this is when iOS asks.
+        let full = XCUIApplication(bundleIdentifier: "com.apple.springboard").buttons["Allow Full Access"]
+        if full.waitForExistence(timeout: 3) { full.tap() }
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Calendar' AND (label CONTAINS 'Ask each time' OR value CONTAINS 'Ask each time')")).firstMatch
             .waitForExistence(timeout: 5), "The choice didn't take")
         shot("phone tools on")

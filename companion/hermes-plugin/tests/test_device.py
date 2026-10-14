@@ -195,6 +195,16 @@ class PhoneTools(unittest.TestCase):
         self.phone.set_areas(["alarms"])
         self.assertTrue(self.phone.offers("alarms") and not self.phone.offers("files"))
 
+    def test_a_call_and_a_message_are_the_persons_to_let_go(self):
+        area, description, properties, required = device.TOOLS["phone_people_call"]
+        self.assertEqual((area, required), ("people", ["to"]))
+        self.assertIn("asks the user to confirm", description)
+        self.assertEqual(properties["kind"]["enum"], ["phone", "facetime", "facetime_audio"])
+        area, description, properties, required = device.TOOLS["phone_people_message"]
+        self.assertEqual((area, required), ("people", ["to", "text"]))
+        self.assertIn("taps Send", description)
+        self.assertIn("can't read their messages", description)
+
     # ---- the widget, which a phone that isn't following the turn hears of by notification
 
     def _widget(self, sent, wait=0.3):

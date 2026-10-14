@@ -29,8 +29,9 @@ and can't read them ([docs/push.md](docs/push.md)).
   end.
 - **Phone tools.** Turn them on and your agent can use the iPhone's calendar, reminders,
   contacts, photos and a folder of files, through Redde: look things up, add a reminder or an
-  event, save a file, set an alarm or a timer, and write a few lines on a widget of its own
-  that it can keep up to date while Redde is closed. Changes are put to you first; nothing
+  event, save a file, set an alarm or a timer, write a few lines on a widget of its own
+  that it can keep up to date while Redde is closed, start a call, and write a message for
+  you to send. Changes are put to you first; nothing
   reaches into other apps.
 - **Rich replies.** Markdown, highlighted code, tables, task lists, Mermaid diagrams and math,
   rendered offline with no third-party Swift dependencies, at a text size of the conversation's
