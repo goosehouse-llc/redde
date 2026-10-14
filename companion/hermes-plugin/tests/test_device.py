@@ -195,6 +195,73 @@ class PhoneTools(unittest.TestCase):
         self.phone.set_areas(["alarms"])
         self.assertTrue(self.phone.offers("alarms") and not self.phone.offers("files"))
 
+    # ---- the widget, which a phone that isn't following the turn hears of by notification
+
+    def _widget(self, sent, wait=0.3):
+        """The agent's two widget tools, with what goes by notification kept in `sent`."""
+        class Context:
+            def __init__(self):
+                self.tools = {}
+
+            def register_tool(self, name, toolset, schema, handler, check_fn=None, **more):
+                self.tools[name] = handler
+
+        def to_widget(title, text, start, end):
+            sent.append((title, text, start, end))
+            return 1
+
+        ctx = Context()
+        device.register(ctx, lambda: self.phone, to_widget=to_widget)
+        self.phone.set_areas(["widget"])
+        before, device.WIDGET_WAIT = device.WIDGET_WAIT, wait
+        self.addCleanup(setattr, device, "WIDGET_WAIT", before)
+        return ctx.tools
+
+    def test_what_is_written_for_the_widget_goes_by_notification_when_no_phone_is_following(self):
+        sent = []
+        tools = self._widget(sent)
+        answer = json.loads(tools["phone_widget_set"]({"title": "Today", "text": "9:30 standup", "until": "2026-10-14T17:00"}, session_id="cron-1"))
+        self.assertEqual(sent, [("Today", "9:30 standup", "", "2026-10-14T17:00")])
+        self.assertEqual(answer["phones"], 1)
+        self.assertIn("notification", answer["sent"])
+        self.assertEqual(self.phone.waiting(), [], "the request isn't left for a phone to find later")
+        json.loads(tools["phone_widget_clear"]({}))
+        self.assertEqual(sent[-1], ("", "", "", ""), "nothing in it: the widget is cleared")
+
+    def test_a_phone_that_is_following_writes_it_itself_and_nothing_is_sent(self):
+        sent = []
+        tools = self._widget(sent, wait=5.0)
+        result = {}
+        call = threading.Thread(target=lambda: result.update(json.loads(tools["phone_widget_set"]({"text": "Build 381 is green"}, session_id="s1"))), daemon=True)
+        call.start()
+        asked = waiting(self.phone)
+        self.assertEqual((asked[0]["tool"], asked[0]["args"]), ("phone_widget_set", {"text": "Build 381 is green"}))
+        self.phone.answer(asked[0]["id"], {"ok": True, "result": {"showing": {"text": "Build 381 is green"}}})
+        call.join(5)
+        self.assertEqual(result["showing"]["text"], "Build 381 is green")
+        self.assertEqual(sent, [])
+
+    def test_what_the_phone_could_not_show_is_not_sent(self):
+        sent = []
+        tools = self._widget(sent)
+        self.assertIn("nothing to write", json.loads(tools["phone_widget_set"]({"text": " "}))["error"])
+        self.assertIn("isn't a date", json.loads(tools["phone_widget_set"]({"text": "x", "at": "soon"}))["error"])
+        self.assertEqual(sent, [])
+        # And with no phone paired there is nowhere to send it.
+        self.assertIn("isn't paired", json.loads(device.widget_by_note("phone_widget_set", {"text": "x"}, lambda *a: 0))["error"])
+        self.assertIn("isn't paired", json.loads(device.widget_by_note("phone_widget_set", {"text": "x"}, None))["error"])
+
+    def test_the_note_for_the_widget_says_what_and_when_as_written(self):
+        core = plugin.core
+        made = core.widget_note("Today", "9:30 standup", "2026-10-14T07:00", "2026-10-14T17:00")
+        self.assertEqual((made["k"], made["t"], made["b"], made["f"], made["u"]), ("widget", "Today", "9:30 standup", "2026-10-14T07:00", "2026-10-14T17:00"))
+        cleared = core.widget_note()
+        self.assertFalse({"t", "b", "f", "u"} & set(cleared))
+        phone = {"id": "dev-1", "key": core.b64u(bytes(32))}
+        self.assertEqual(core.collapse_id(phone, made), core.collapse_id(phone, cleared), "each takes the last one's place on the phone")
+        self.assertEqual(core.TTL["widget"], 43200)
+        self.assertLessEqual(len(core.sealed(phone, core.widget_note("t" * 200, "x" * 2000))), 3600)
+
     def test_photos_can_be_asked_for_by_what_they_show(self):
         area, description, properties, required = device.TOOLS["phone_photos_search"]
         self.assertEqual(area, "photos")

@@ -29,8 +29,9 @@ and can't read them ([docs/push.md](docs/push.md)).
   end.
 - **Phone tools.** Turn them on and your agent can use the iPhone's calendar, reminders,
   contacts, photos and a folder of files, through Redde: look things up, add a reminder or an
-  event, save a file, set an alarm or a timer. Changes are put to you first; nothing reaches
-  into other apps.
+  event, save a file, set an alarm or a timer, and write a few lines on a widget of its own
+  that it can keep up to date while Redde is closed. Changes are put to you first; nothing
+  reaches into other apps.
 - **Rich replies.** Markdown, highlighted code, tables, task lists, Mermaid diagrams and math,
   rendered offline with no third-party Swift dependencies, at a text size of the conversation's
   own, with a ring that shows how full the model's context is.
@@ -53,7 +54,8 @@ and can't read them ([docs/push.md](docs/push.md)).
   quick notes for your agent to file ("Take a note in Redde": nothing is said back, and a
   note taken offline goes when it can),
   the share sheet, the camera, and Siri AI messaging on iOS 27 (opt-in). Widgets for the last
-  reply, for what the agent is waiting on you for, and for how full the context is.
+  reply, for what the agent is waiting on you for, for how full the context is, and one the
+  agent writes on itself.
 - **On the wrist.** An Apple Watch app that asks by dictation and reads the answer aloud, carries
   on a conversation picked from the server's list, answers approvals, and puts Ask Redde on a
   watch face as a complication.

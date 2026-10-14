@@ -2,8 +2,8 @@ import Foundation
 
 /// Phone tools: things on this iPhone that the agent can ask Redde to do for it, because Apple
 /// lets an app do them with the person's permission. The calendar, reminders, contacts, the
-/// photo library, a folder of files, and alarms. Nothing here reaches into another app: iOS has
-/// no way to do that, for any app.
+/// photo library, a folder of files, alarms, and a widget of Redde's that the agent writes on.
+/// Nothing here reaches into another app: iOS has no way to do that, for any app.
 ///
 /// The tools are declared to the agent by Redde's plugin on the Hermes server
 /// (`companion/hermes-plugin/redde-push/device.py`), which holds each one's description and
@@ -14,7 +14,7 @@ import Foundation
 /// A tool belongs to an area, and an area is off until it is turned on in Settings → Phone
 /// tools, which is also when iOS is asked for its permission.
 nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiable {
-    case calendar, reminders, contacts, photos, files, alarms
+    case calendar, reminders, contacts, photos, files, alarms, widget
 
     var id: String { rawValue }
 
@@ -26,6 +26,7 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
         case .photos: "Photos"
         case .files: "Files"
         case .alarms: "Alarms"
+        case .widget: "Widget"
         }
     }
 
@@ -37,6 +38,7 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
         case .photos: "photo.on.rectangle"
         case .files: "folder"
         case .alarms: "alarm"
+        case .widget: "text.bubble"
         }
     }
 
@@ -49,8 +51,15 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
         case .photos: "Find photos by date, kind and what they show, look at one, and delete (iOS asks you each time)."
         case .files: "Read and save files in Redde's folder in the Files app."
         case .alarms: "Set an alarm or a timer, see the ones it set, and cancel one. They ring like the Clock app's."
+        case .widget: "Write a few lines on Redde's “From Your Agent” widget, for now or for later in the day."
         }
     }
+
+    /// What the setting that lets it go ahead unasked is called: there is reading in every
+    /// area but the widget's, which is only written on.
+    var allowLabel: String { self == .widget ? "Allow" : "Allow reading" }
+    /// The same, as the button on a question that offers it.
+    var alwaysLabel: String { self == .widget ? "Always Allow the Widget" : "Always Allow Reading \(label)" }
 }
 
 nonisolated enum DeviceTool: String, CaseIterable, Sendable {
@@ -71,6 +80,8 @@ nonisolated enum DeviceTool: String, CaseIterable, Sendable {
     case alarmsSet = "phone_alarms_set"
     case alarmsList = "phone_alarms_list"
     case alarmsCancel = "phone_alarms_cancel"
+    case widgetSet = "phone_widget_set"
+    case widgetClear = "phone_widget_clear"
 
     /// Every phone tool's name starts with this: how a turn's tool is told from the agent's own.
     static let prefix = "phone_"
@@ -85,11 +96,14 @@ nonisolated enum DeviceTool: String, CaseIterable, Sendable {
         case .photosSearch, .photosGet, .photosDelete: .photos
         case .filesList, .filesRead, .filesWrite, .filesDelete: .files
         case .alarmsSet, .alarmsList, .alarmsCancel: .alarms
+        case .widgetSet, .widgetClear: .widget
         }
     }
 
     /// It adds, changes or removes something: asked about every time, whatever the area allows
-    /// for reading. (Deleting photos is asked about by iOS itself, so Redde doesn't ask twice.)
+    /// for reading. (Deleting photos is asked about by iOS itself, so Redde doesn't ask twice.
+    /// The widget is Redde's own and nothing of the person's: writing on it is what allowing
+    /// the area allows.)
     var changes: Bool {
         switch self {
         case .calendarAdd, .remindersAdd, .remindersComplete, .filesWrite, .filesDelete, .alarmsSet, .alarmsCancel: true
@@ -131,47 +145,6 @@ nonisolated struct DeviceToolError: Error, Equatable, Sendable {
     }
     static let denied = DeviceToolError("The person said no on the iPhone.")
     static func missing(_ name: String) -> DeviceToolError { DeviceToolError("The argument \"\(name)\" is missing or isn't what it should be.") }
-}
-
-/// Dates as the agent writes them and as it is told them.
-nonisolated enum DeviceDates {
-    /// "2026-10-13T09:00:00-04:00", the same without seconds or without a zone (the phone's own
-    /// time), with fractions of a second, or a day alone ("2026-10-13": its first moment here).
-    static func parse(_ text: String, calendar: Calendar = .current) -> Date? {
-        let text = text.trimmingCharacters(in: .whitespaces)
-        for options: ISO8601DateFormatter.Options in [[.withInternetDateTime], [.withInternetDateTime, .withFractionalSeconds]] {
-            let formatter = ISO8601DateFormatter()
-            formatter.formatOptions = options
-            if let date = formatter.date(from: text) { return date }
-        }
-        let local = DateFormatter()
-        local.locale = Locale(identifier: "en_US_POSIX")
-        local.calendar = calendar
-        local.timeZone = calendar.timeZone
-        for format in ["yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd'T'HH:mm", "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy-MM-dd"] {
-            local.dateFormat = format
-            if let date = local.date(from: text) { return date }
-        }
-        return nil
-    }
-
-    /// Whether what was written names a day and no time.
-    static func isDayOnly(_ text: String) -> Bool {
-        text.trimmingCharacters(in: .whitespaces).wholeMatch(of: /\d{4}-\d{2}-\d{2}/) != nil
-    }
-
-    /// With the phone's own offset, so the agent reads the time the person lives in.
-    static func string(_ date: Date, timeZone: TimeZone = .current) -> String {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        formatter.timeZone = timeZone
-        return formatter.string(from: date)
-    }
-
-    /// For a person: "Tuesday, October 13 at 9:00 AM".
-    static func spoken(_ date: Date) -> String {
-        date.formatted(.dateTime.weekday(.wide).month(.wide).day().hour().minute())
-    }
 }
 
 extension JSONValue {

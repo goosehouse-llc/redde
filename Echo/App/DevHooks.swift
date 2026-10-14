@@ -46,6 +46,8 @@ import WidgetKit
 ///   `-echo.fresh` starts on a new conversation first.
 /// - `-echo.voiceView`: open voice mode without listening. `-echo.voiceDemo` poses it mid-listen;
 ///   `-echo.autoVoice` opens it and starts listening.
+/// - `-echo.demoBoard [clear]`: write on the agent's widget as its phone tool does (a day's plan
+///   now, and a line that takes over in a minute), to look at it on the Home Screen.
 /// - `-echo.demoAlarm [seconds]`: set a timer as the phone tool does (thirty seconds by default;
 ///   Alarms has to be allowed already), to look at its countdown and at what rings.
 /// - `-echo.voiceLook`: give voice mode a made-up camera (`DemoEye`), since the simulator has
@@ -133,6 +135,15 @@ enum DevHooks {
             WidgetCenter.shared.reloadAllTimelines()
         }
         if has("-echo.demoHeavy") { conversation.seedHeavyDemo(turns: value("-echo.demoHeavy").flatMap(Int.init) ?? 32) }
+        if has("-echo.demoBoard") {
+            AgentBoard.clear()
+            if value("-echo.demoBoard") != "clear" {
+                AgentBoard.put(AgentBoard(title: "Today", text: "9:30 standup\n12:15 lunch with Dana\nLeave by 4:40 for the vet", from: .now))
+                AgentBoard.put(AgentBoard(title: "Leave now", text: "The vet is 20 minutes away and it is raining.",
+                                          from: .now.addingTimeInterval(60), until: .now.addingTimeInterval(180)))
+            }
+            WidgetCenter.shared.reloadTimelines(ofKind: AgentBoard.widgetKind)
+        }
         if has("-echo.demoAlarm") {
             let seconds = value("-echo.demoAlarm").flatMap(Double.init) ?? 30
             Task { _ = try? await DeviceAlarms().set(.object(["title": .string("Pasta"), "minutes": .number(seconds / 60)])) }

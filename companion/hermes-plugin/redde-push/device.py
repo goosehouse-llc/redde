@@ -1,7 +1,7 @@
 """Phone tools: things on the person's iPhone that the agent can ask the Redde app to do, because
 iOS lets an app do them with its owner's permission. The calendar, reminders, contacts, the photo
-library, one folder of files, and alarms. Nothing here reaches into other apps: iOS allows no app
-that.
+library, one folder of files, alarms, and a widget of Redde's that the agent writes on. Nothing
+here reaches into other apps: iOS allows no app that.
 
 How a call travels. The agent calls a tool here; the call is written down as a small file in the
 Hermes home and the tool waits. The Redde app, which is following the turn, sees the tool start,
@@ -35,7 +35,10 @@ TOOLSET = "redde_phone"
 WAIT = 120.0
 #: A request nobody collected, or a saved file nobody needs any more, is cleared out after this.
 STALE = 600.0
-AREAS = ("calendar", "reminders", "contacts", "photos", "files", "alarms")
+AREAS = ("calendar", "reminders", "contacts", "photos", "files", "alarms", "widget")
+#: How long a call for the widget waits for a phone that is following the turn, before what was
+#: written is sent to the phone as a notification instead.
+WIDGET_WAIT = 10.0
 
 _WHERE = ("Runs on the user's iPhone, through the Redde app. It answers only while Redde is open on the phone "
           "and following this conversation. ")
@@ -142,6 +145,21 @@ TOOLS: dict[str, tuple[str | None, str, dict, list[str]]] = {
     "phone_alarms_cancel": ("alarms", _WHERE + "Cancels an alarm or a timer that was set through Redde. " + _ASKED, {
         "id": _text("Its id, as phone_alarms_list or phone_alarms_set gave it."),
     }, ["id"]),
+    "phone_widget_set": ("widget", "Runs on the user's iPhone, through the Redde app: writes a title and a few lines on Redde's "
+                         "\"From Your Agent\" widget, on the Home Screen or Lock Screen, where the user sees them without opening "
+                         "anything. For what is worth a glance: today's plan, something that is running, when to leave. Unlike the "
+                         "other phone tools it also works with Redde closed: what you write is then sent as a notification and the "
+                         "widget changes when the phone receives it. With `at`, it shows from that moment and what is there stays "
+                         "until then, so a day can be laid out ahead; with `until`, it comes off then and what was there before "
+                         "shows again. " + _WHEN, {
+        "text": _text("A few short lines, 300 characters at most. A line break starts a new line."),
+        "title": _text("A heading over them, 60 characters at most."),
+        "at": _text("From when it shows. Default: now."),
+        "until": _text("Until when it holds. Default: until you write something else."),
+    }, ["text"]),
+    "phone_widget_clear": ("widget", "Runs on the user's iPhone, through the Redde app: takes everything off Redde's \"From Your "
+                           "Agent\" widget, what was set for later included. Works with Redde closed too, as phone_widget_set "
+                           "does.", {}, []),
 }
 
 
@@ -201,8 +219,9 @@ class Phone:
 
     # ---- a call, from the agent's side
 
-    def ask(self, tool: str, args: dict, session: str | None = None, wait: float = WAIT) -> str:
-        """Writes the request down, waits for the phone's answer and gives the tool's result."""
+    def ask(self, tool: str, args: dict, session: str | None = None, wait: float = WAIT, otherwise=None) -> str:
+        """Writes the request down, waits for the phone's answer and gives the tool's result.
+        `otherwise`, when given, is what to do and answer if the phone never collects it."""
         area = TOOLS[tool][0]
         if not self.offers(area):
             return json.dumps({"error": "Phone tools for this are turned off in Redde on the iPhone (Settings, Phone tools)."})
@@ -220,6 +239,8 @@ class Phone:
                 if _interrupted():
                     return json.dumps({"error": "The turn was stopped before the phone answered."})
                 time.sleep(0.15)
+            if otherwise is not None:
+                return otherwise()
             return json.dumps({"error": "The phone didn't answer. Phone tools work while Redde is open on the iPhone and following "
                                         "this conversation, and some need the user to tap Allow there. Say so, and try again when they are ready."})
         finally:
@@ -334,9 +355,46 @@ def _watch(phone, every: float = 2.0) -> None:
         time.sleep(every)
 
 
-def register(ctx, phone) -> None:
+def _readable(when: str) -> bool:
+    """Whether the phone will be able to read a date: it does the reading, in its own time zone."""
+    from datetime import datetime
+    try:
+        datetime.fromisoformat(when.strip().replace("Z", "+00:00"))
+        return True
+    except ValueError:
+        return False
+
+
+def widget_by_note(tool: str, args: dict, to_widget) -> str:
+    """What a call for the widget does when no phone is following the turn: what was written
+    goes to every paired phone as a notification, which puts it on the widget. `to_widget`
+    (title, text, at, until) sends it and says to how many phones."""
+    title, text = str(args.get("title") or "").strip(), str(args.get("text") or "").strip()
+    start, end = str(args.get("at") or "").strip(), str(args.get("until") or "").strip()
+    if tool == "phone_widget_clear":
+        title = text = start = end = ""
+    else:
+        if not (title or text):
+            return json.dumps({"error": "The argument \"text\" is missing: there is nothing to write."})
+        for name, when in (("at", start), ("until", end)):
+            if when and not _readable(when):
+                return json.dumps({"error": f"\"{name}\" isn't a date the phone can read: write it like 2026-10-13T09:00."})
+    try:
+        phones = to_widget(title, text, start, end) if to_widget else 0
+    except Exception as error:
+        return json.dumps({"error": f"The phone isn't following this conversation, and the notification couldn't be sent: {error}"})
+    if not phones:
+        return json.dumps({"error": "The phone isn't following this conversation and isn't paired for notifications, so there "
+                                    "was no way to reach its widget. It works while Redde is open on this conversation, or at "
+                                    "any time once the phone is paired (Redde's Settings, When Redde is closed)."})
+    return json.dumps({"sent": "The phone isn't following this conversation, so this went to it as a notification. The widget "
+                               "changes when the phone receives it; you won't hear back.", "phones": phones})
+
+
+def register(ctx, phone, to_widget=None) -> None:
     """Offers the tools to the agent. `phone` gives the `Phone` of the Hermes home in use: asked
-    for at each call, since a home is a profile's and a process can serve several."""
+    for at each call, since a home is a profile's and a process can serve several. `to_widget`
+    sends something for the widget as a notification (see `widget_by_note`)."""
     try:
         home = str(phone().dir)
     except Exception:
@@ -363,7 +421,12 @@ def register(ctx, phone) -> None:
 
     def handler(name):
         def handle(args, **kwargs) -> str:
-            return phone().ask(name, args if isinstance(args, dict) else {}, session=kwargs.get("session_id"))
+            args = args if isinstance(args, dict) else {}
+            if TOOLS[name][0] == "widget":
+                # A phone following the turn does it and answers; any other hears by notification.
+                return phone().ask(name, args, session=kwargs.get("session_id"), wait=WIDGET_WAIT,
+                                   otherwise=lambda: widget_by_note(name, args, to_widget))
+            return phone().ask(name, args, session=kwargs.get("session_id"))
         return handle
 
     for name, (area, description, properties, required) in TOOLS.items():

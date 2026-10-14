@@ -250,9 +250,15 @@ opens only for the pairing it was sealed to. Inside:
 {"v": 1, "k": "reply", "s": "<session id>", "t": "<title>", "b": "<text>", "d": "<detail>", "n": "<machine>", "at": 1791330000}
 ```
 
-`k` is `reply`, `task`, `approval`, `question`, `sudo`, `secret`, `failed`, `paired` or `test`;
-what `b` and `d` hold for each is listed at `core.note`. A kind the app doesn't know leaves the
-relay's words in place. An approval that can be answered from the notification also has `h`, the first
+`k` is `reply`, `task`, `approval`, `question`, `sudo`, `secret`, `failed`, `paired`, `test` or
+`widget`; what `b` and `d` hold for each is listed at `core.note`. A kind the app doesn't know
+leaves the relay's words in place. `widget` (plugin 1.3.0, `core.widget_note`) is not about a
+turn: it is what the agent wrote for its widget on the phone while no phone was following the
+conversation, with `t` the heading, `b` the lines, and `f` and `u` from and until when, as the
+agent wrote them (the phone reads them in its own time zone). It is sent only once the phone
+has turned the widget's phone tool on, which no app before it can do, kept by Apple for half a
+day instead of an hour, and shown on the phone as a notification without sound that says what
+was written. An approval that can be answered from the notification also has `h`, the first
 sixteen hex digits of `SHA-256(command)`; a question that can has `h` of its text, and `c`, a list of up to four choices. The plugin also sends an `apns-collapse-id`, a hash over the key, the kind and the
 session, so a later note about the same thing replaces the earlier one; the relay learns only that
 two notes belong together. `reply`, `task` and `failed` count as one kind for this: however a turn

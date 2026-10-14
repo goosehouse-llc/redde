@@ -7,6 +7,7 @@ import UIKit
 nonisolated struct DeviceToolRunner: Sendable {
     var files = DeviceFiles()
     var alarms = DeviceAlarms()
+    var board = DeviceBoard()
 
     func run(_ tool: DeviceTool, _ args: JSONValue, info: JSONValue = .object([:])) async throws -> JSONValue {
         switch tool {
@@ -27,6 +28,8 @@ nonisolated struct DeviceToolRunner: Sendable {
         case .alarmsSet: try await alarms.set(args)
         case .alarmsList: try await alarms.list(args)
         case .alarmsCancel: try await alarms.cancel(args)
+        case .widgetSet: try await board.set(args)
+        case .widgetClear: try await board.clear(args)
         }
     }
 }
@@ -110,6 +113,12 @@ nonisolated struct DeviceAsk: Equatable, Sendable {
             title = "See the alarms Redde set"; detail = "Alarms and timers set through Redde, not the Clock app's"
         case .alarmsCancel:
             title = "Cancel an alarm or a timer"; detail = "One that Redde set"
+        case .widgetSet:
+            title = "Write on its widget"
+            let words = quoted("title") ?? quoted("text") ?? ""
+            detail = [words, day("at").map { "from \($0)" }].compactMap { $0?.nilIfEmpty }.joined(separator: ", ")
+        case .widgetClear:
+            title = "Clear its widget"; detail = "What it shows, and what was set for later"
         }
     }
 }

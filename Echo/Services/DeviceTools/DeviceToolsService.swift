@@ -271,7 +271,7 @@ final class DeviceToolsService {
             alert.addAction(UIAlertAction(title: "Don't Allow", style: .cancel) { _ in done.resume(returning: .deny) })
             alert.addAction(UIAlertAction(title: "Allow", style: .default) { _ in done.resume(returning: .allow) })
             if question.offersAlways, let area = question.area {
-                alert.addAction(UIAlertAction(title: "Always Allow Reading \(area.label)", style: .default) { _ in done.resume(returning: .always) })
+                alert.addAction(UIAlertAction(title: area.alwaysLabel, style: .default) { _ in done.resume(returning: .always) })
             }
             top.present(alert, animated: true)
         }

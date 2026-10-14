@@ -24,7 +24,7 @@ struct PhoneToolsSettingsView: View {
             Section {
                 Toggle("Phone tools", isOn: Binding(get: { settings.phoneTools.on }, set: { settings.phoneTools.on = $0 }))
             } footer: {
-                Text("Lets your agent ask Redde for things on this \(device): your calendar, reminders, contacts, photos, a folder of files, and alarms. It is asked each time it wants to add, change or delete something. It can't go into other apps; iOS allows no app that.")
+                Text("Lets your agent ask Redde for things on this \(device): your calendar, reminders, contacts, photos, a folder of files, alarms, and a widget it can write on. It is asked each time it wants to add, change or delete something. It can't go into other apps; iOS allows no app that.")
             }
 
             if settings.phoneTools.on {
@@ -34,7 +34,7 @@ struct PhoneToolsSettingsView: View {
                             Picker(selection: access(area)) {
                                 Text("Off").tag(PhoneToolsSettings.Access.off)
                                 Text("Ask each time").tag(PhoneToolsSettings.Access.ask)
-                                Text("Allow reading").tag(PhoneToolsSettings.Access.allow)
+                                Text(area.allowLabel).tag(PhoneToolsSettings.Access.allow)
                             } label: {
                                 Label(area.label, systemImage: area.symbol)
                             }
@@ -57,7 +57,7 @@ struct PhoneToolsSettingsView: View {
                 } header: {
                     Text("What it may use")
                 } footer: {
-                    Text("“Ask each time” puts every request to you first. “Allow reading” lets it look things up without asking; adding, changing and deleting are still put to you, and deleting photos is put to you by iOS with the photos shown. Files are Redde's folder in the Files app, under On My \(device).")
+                    Text("“Ask each time” puts every request to you first. “Allow reading” lets it look things up without asking; adding, changing and deleting are still put to you, and deleting photos is put to you by iOS with the photos shown. Files are Redde's folder in the Files app, under On My \(device). The widget is Redde's own, “From Your Agent”, which you add to your Home Screen: allowed, your agent writes on it without asking, also while Redde is closed if this \(device) is paired for notifications.")
                 }
 
                 Section {
@@ -144,6 +144,7 @@ struct PhoneToolsSettingsView: View {
         case .photos: await DevicePhotos.allowed()
         case .files: true
         case .alarms: await SystemAlarms().allowed()
+        case .widget: true
         }
     }
 

@@ -62,6 +62,16 @@ def _title(session: str) -> str:
         return ""
 
 
+def _to_widget(title: str, text: str, start: str = "", end: str = "") -> int:
+    """Sends what the agent wrote for its widget to every paired phone, sealed like any note;
+    to how many. For a turn no phone is following (device.py). Empty: the widget is cleared."""
+    store, pusher = _state()
+    devices = store.devices
+    if not devices:
+        return 0
+    return pusher.send(devices, core.widget_note(title, text, start, end))
+
+
 def _state() -> tuple[core.Store, core.Pusher]:
     global _store, _pusher
     if _store is None or _pusher is None:
@@ -441,5 +451,5 @@ def register(ctx) -> None:
         ctx.register_hook("agent_loop_stopped", _on_stopped)
     ctx.register_command("redde-push", _slash, description="Used by the Redde app to follow a conversation", args_hint="watch <session> <device>")
     # Phone tools (device.py): offered to the agent only for what the phone has turned on.
-    phone_tools.register(ctx, lambda: phone_tools.Phone(_home()))
+    phone_tools.register(ctx, lambda: phone_tools.Phone(_home()), to_widget=_to_widget)
     ctx.register_cli_command("redde-push", "Notifications on your iPhone from Redde", _cli_setup, _cli)

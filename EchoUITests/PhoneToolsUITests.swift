@@ -42,7 +42,7 @@ final class PhoneToolsUITests: XCTestCase {
         flip(master)
         let calendar = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Calendar'")).firstMatch
         XCTAssertTrue(calendar.waitForExistence(timeout: 5), "Turned on, the areas aren't offered")
-        for area in ["Reminders", "Contacts", "Photos", "Files", "Alarms"] {
+        for area in ["Reminders", "Contacts", "Photos", "Files", "Alarms", "Widget"] {
             XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", area)).firstMatch.exists, "\(area) isn't offered")
         }
         // Under Photos: where the pictures are looked at, and what of them leaves the phone.

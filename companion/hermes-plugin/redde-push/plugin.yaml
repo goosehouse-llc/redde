@@ -1,6 +1,6 @@
 name: redde-push
 version: 1.3.0
-description: "Notifications on your iPhone from Redde when the agent finishes a reply, waits for you (an approval, a question, a password) or gives up on a turn, encrypted between this Hermes and the phone. And phone tools: with them turned on in Redde, the agent can use the iPhone's calendar, reminders, contacts, photos and a folder of files, and set alarms and timers there, through the app."
+description: "Notifications on your iPhone from Redde when the agent finishes a reply, waits for you (an approval, a question, a password) or gives up on a turn, encrypted between this Hermes and the phone. And phone tools: with them turned on in Redde, the agent can use the iPhone's calendar, reminders, contacts, photos and a folder of files, set alarms and timers there, and write on a widget, through the app."
 author: "Goosehouse"
 provides_hooks:
   - on_session_start
@@ -31,3 +31,5 @@ provides_tools:
   - phone_alarms_set
   - phone_alarms_list
   - phone_alarms_cancel
+  - phone_widget_set
+  - phone_widget_clear

@@ -236,6 +236,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         guard let kind else { return [] }
         PushService.shared.reload()   // the first note from a pairing confirms it
         if let sessionID, sessionID == conversation?.serverSessionID, PushNote.Kind(rawValue: kind) != .paired { return [] }
+        if PushNote.Kind(rawValue: kind) == .widget { return [] }   // it is on the widget; nothing to say with Redde in front
         return shown
     }
 

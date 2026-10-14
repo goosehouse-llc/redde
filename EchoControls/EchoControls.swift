@@ -12,6 +12,7 @@ struct EchoControlsBundle: WidgetBundle {
         QuickAskWidget()
         NeedsYouWidget()
         ContextWidget()
+        BoardWidget()
         EchoTurnLiveActivity()
         AlarmCountdownActivity()
     }

@@ -1053,7 +1053,7 @@ below) and "Ask a Profile" ("Ask Work in Redde"); Siri also answers to "Hermes" 
 its own recognizer; long free-form questions through Siri's dictation are unreliable. "Ask Redde a Question" in Shortcuts takes text and returns
 the reply as text. The `EchoControls` extension provides Control Center, Lock Screen and Action Button
 controls (via an App Group launch flag), Home Screen widgets (Last reply, Ask Redde, Needs you,
-Context) and the Live Activity (`Services/TurnActivity.swift`).
+Context, and From Your Agent, which Phone tools' widget area writes) and the Live Activity (`Services/TurnActivity.swift`).
 
 **Quick capture** is a note taken in passing, for Hermes to file, with nothing said back
 (`Services/Capture.swift`). There are three ways in. "Take a note in Redde" (`CaptureNoteIntent`)
@@ -1180,8 +1180,9 @@ Things on the iPhone that the agent can ask Redde to do, because iOS lets an app
 its owner's permission (Settings → Phone tools; everything off until turned on): the calendar
 (look up events, add one), reminders (list, add, mark done), contacts (look someone up; no
 changes), the photo library (find by date, kind and what a picture shows, hand one over, delete), Redde's own
-folder in the Files app (list, read, save text, delete), and alarms (set an alarm or a timer,
-list and cancel the ones Redde set). Seventeen tools, `DeviceTool`. Nothing
+folder in the Files app (list, read, save text, delete), alarms (set an alarm or a timer,
+list and cancel the ones Redde set), and a widget of Redde's that the agent writes on. Nineteen
+tools, `DeviceTool`. Nothing
 reaches into another app: iOS allows no app that, and no client of any agent can do it.
 
 **How a call travels.** The tools are declared to the agent by Redde's plugin on the Hermes
@@ -1219,6 +1220,33 @@ there), and a timer set with `-echo.demoAlarm` counted down on the Lock Screen a
 title. The iOS 27.0 simulator refuses the permission without asking (`mobiletimerd` logs the
 request and a denial 13 ms later, on a simulator made for the purpose too), so the UI test skips
 there and nothing has been seen on iOS 27, nor on any phone.
+
+**The agent's widget** ("From Your Agent", `BoardWidget` in the widget extension; small, medium,
+and two Lock Screen sizes) shows a title and a few lines the agent wrote with `phone_widget_set`
+(60 and 300 characters; `phone_widget_clear` takes everything off). What it wrote is kept in the
+App Group (`AgentBoard`), several at a time: `at` sets one for later and `until` gives one an
+end, and what shows is the one that started last and hasn't run out, so "Leave now" until five
+gives way to the day's plan again. The widget's timeline holds every such change ahead
+(`BoardEntry.timeline`), which is how it moves on with Redde closed. Nothing of the person's is
+read or changed, so with the area allowed the tool isn't asked about each time (its setting
+reads "Allow", and no call counts as a change). The tool answers with what shows now, what
+waits, and whether the widget is on a screen at all, which only the person can do.
+
+It is the one phone tool that works with Redde closed. The plugin waits ten seconds for a phone
+that is following the turn (`WIDGET_WAIT`); if none collects the call, what was written goes to
+every paired phone as a sealed note of kind `widget` (`widget_by_note`, `core.widget_note`: `t`,
+`b`, and `f` and `u` as the agent wrote them, read on the phone in its own time zone, which is
+why `DeviceDates` is shared code). The notification extension puts it on the widget
+(`AgentBoard.take`) and reloads it. iOS shows every notification that reaches the extension,
+so this one says what was written, makes no sound and doesn't light the screen (`.passive`), and
+each takes the last one's place (one collapse id); with Redde in front nothing is shown at all.
+A phone that isn't paired hears nothing, and the agent is told so. A cron job that keeps the
+widget up needs only the pairing. Tried: the store, the timeline, the tool and the note against
+tests (`AgentBoardTests`, the plugin's `test_device.py`), the views drawn at each size, and the
+widget on a simulator's Home Screen, filled with `-echo.demoBoard`: it showed the day's plan,
+moved on to the line set for a minute later with Redde closed, and came back when that ran out.
+Not tried: a note arriving on a phone (a simulated push skips the extension, and with Redde in
+front the app applies it itself), nor a real agent writing on it.
 
 **What the agent is offered** is the phone's to say. Each area has a setting (Off, Ask each
 time, Allow reading), and Redde tells the plugin which areas are on (`device areas

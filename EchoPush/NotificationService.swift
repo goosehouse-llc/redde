@@ -22,6 +22,8 @@ final class NotificationService: UNNotificationServiceExtension {
             // when a later note says the turn went on: this is how the widget hears of either
             // while Redde is closed.
             if NeedsYou.take(note) { WidgetCenter.shared.reloadTimelines(ofKind: NeedsYou.widgetKind) }
+            // And what the agent wrote for its own widget in a turn the phone wasn't following.
+            if AgentBoard.take(note) { WidgetCenter.shared.reloadTimelines(ofKind: AgentBoard.widgetKind) }
             choices = note.choiceCategory
             if note.repeatsTheApp() {
                 // The app said so when it happened. This takes its banner's place without

@@ -281,7 +281,9 @@ def digest(command: str) -> str:
 PASSWORD = "su" + "do"
 #: How long Apple keeps a note for a phone it can't reach, in seconds, by kind: about as long as
 #: Hermes waits for the answer. Anything else: an hour.
-TTL = {"approval": 600, "question": 600, "secret": 300, PASSWORD: 180}
+#: How long Apple keeps trying a phone that is off. What is on the widget is good for longer than
+#: a notification about a turn: half a day.
+TTL = {"approval": 600, "question": 600, "secret": 300, PASSWORD: 180, "widget": 43200}
 
 
 def note(kind: str, session: str = "", body: str = "", title: str = "", detail: str = "", answerable: bool = False,
@@ -317,6 +319,20 @@ def note(kind: str, session: str = "", body: str = "", title: str = "", detail: 
         made["b"] = clipped(body, BODY_LIMIT, lines=True)
     while len(json.dumps(made, ensure_ascii=False).encode()) > NOTE_LIMIT and len(made.get("b", "")) > 20:
         made["b"] = clipped(made["b"], len(made["b"]) * 2 // 3, lines=True)
+    return made
+
+
+def widget_note(title: str = "", text: str = "", start: str = "", end: str = "") -> dict:
+    """What the agent wrote for its widget on the phone, for a phone that isn't following the
+    turn: `t` the heading, `b` the lines, `f` and `u` from and until when, as the agent wrote
+    them (the phone reads them, in its own time zone). With neither `t` nor `b`, the widget is
+    cleared. Every such note has the same collapse id, so the notification the phone has to
+    show for it takes the place of the last one."""
+    made = note("widget", body=text, title=title)
+    if start:
+        made["f"] = clipped(start, 40)
+    if end:
+        made["u"] = clipped(end, 40)
     return made
 
 

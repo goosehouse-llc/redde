@@ -276,6 +276,9 @@ targets:
       - path: Shared/PushSeal.swift
       # What a note says is waiting on the person goes on the "Needs you" widget.
       - path: Shared/NeedsYou.swift
+      # And what the agent sent for its own widget while the phone wasn't following the turn.
+      - path: Shared/AgentBoard.swift
+      - path: Shared/DeviceDates.swift
       - path: Shared/PlainText.swift
       - path: Shared/ReplyMedia.swift
       - path: Shared/Attachment.swift
@@ -306,6 +309,7 @@ targets:
       # The status widgets' views and timelines, compiled in so the tests can draw them
       # (the file imports the app when WIDGET_VIEWS_IN_TESTS is set).
       - path: EchoControls/StatusWidgets.swift
+      - path: EchoControls/BoardWidget.swift
     dependencies:
       - target: Echo
     settings:

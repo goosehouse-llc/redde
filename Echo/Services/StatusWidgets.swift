@@ -1,9 +1,10 @@
 import Foundation
 import WidgetKit
 
-/// The app's hand in the two status widgets, "Needs you" and Context. What they show lives in
-/// the App Group (`NeedsYou`, `ContextReading`); this writes it and has the widget drawn again,
-/// only when something changed, since a widget's reloads are counted.
+/// The app's hand in the two status widgets, "Needs you" and Context, and in the agent's own.
+/// What they show lives in the App Group (`NeedsYou`, `ContextReading`, `AgentBoard`); this
+/// writes it and has the widget drawn again, only when something changed, since a widget's
+/// reloads are counted.
 enum StatusWidgets {
     /// The agent stopped for something in a conversation.
     static func waiting(_ request: WaitingRequest, in defaults: UserDefaults? = NeedsYou.shared) {
@@ -19,6 +20,7 @@ enum StatusWidgets {
     /// the same for the ones it opens).
     static func heard(_ note: PushNote, in defaults: UserDefaults? = NeedsYou.shared) {
         if NeedsYou.take(note, in: defaults) { reload(NeedsYou.widgetKind) }
+        if AgentBoard.take(note, in: defaults) { reload(AgentBoard.widgetKind) }
     }
 
     /// How full the context is after a reply, or in a conversation just opened.
@@ -37,6 +39,7 @@ enum StatusWidgets {
         }
         reload(NeedsYou.widgetKind)
         reload(ContextReading.widgetKind)
+        reload(AgentBoard.widgetKind)
     }
 
     private static func reload(_ kind: String) { WidgetCenter.shared.reloadTimelines(ofKind: kind) }

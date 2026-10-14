@@ -39,6 +39,10 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
         case paired
         /// `hermes redde-push test`.
         case test
+        /// What the agent wrote for its widget in a turn the phone wasn't following (`t` and `b`
+        /// are the title and the text, `f` and `u` from and until when; neither `t` nor `b`
+        /// clears it). Sent only to a phone that has the widget's phone tool turned on.
+        case widget
     }
 
     var v = 1
@@ -59,6 +63,10 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
     var h: String?
     /// A question's choices, to make buttons of. Absent for one answered in words.
     var c: [String]?
+    /// On a note for the widget: from when it shows and until when it holds, when the agent
+    /// said, as the agent wrote them (`DeviceDates`), so a time without a zone is the phone's.
+    var f: String?
+    var u: String?
 
     /// Nil for a kind a newer plugin sends and this build doesn't know.
     var kind: Kind? { Kind(rawValue: k) }
@@ -330,6 +338,15 @@ nonisolated extension PushNote {
         case .test:
             content.title = host.map { "Redde · \($0)" } ?? "Redde"
             content.body = b ?? "Notifications from your Hermes reach this iPhone."
+        case .widget:
+            // Not something to be told: it is on the widget. iOS shows every notification that
+            // reaches the extension, so this one says what was written and makes no sound.
+            let wrote = [t, b].compactMap { $0 }.filter { !$0.isEmpty }
+            content.title = "Your agent updated its widget"
+            content.body = wrote.isEmpty ? "It cleared what was there." : wrote.joined(separator: "\n")
+            content.threadIdentifier = "redde.widget"
+            content.sound = nil
+            content.interruptionLevel = .passive
         }
         if content.body.isEmpty { content.body = "Open Redde to see it." }
         var info: [AnyHashable: Any] = [Self.kindKey: k]

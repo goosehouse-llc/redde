@@ -249,7 +249,7 @@ struct AgentSettings<Details: View>: View {
                 }
             }
         } footer: {
-            Text("Let your agent use this device's calendar, reminders, contacts, photos and a folder of files, through Redde.")
+            Text("Let your agent use this device's calendar, reminders, contacts, photos and a folder of files, set alarms, and write on a widget, through Redde.")
         }
 
         Section {
@@ -647,6 +647,7 @@ struct ResetSettings: View {
         WidgetSnapshot.clear()
         NeedsYou.clear()
         ContextReading.clear()
+        AgentBoard.clear()
         WidgetCenter.shared.reloadAllTimelines()
         Notifier.shared.clearDelivered()
         Settings.shared.reset()
