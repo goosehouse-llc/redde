@@ -1219,7 +1219,17 @@ through AlarmKit itself (`PhoneToolsOnDeviceTests`, which runs once Alarms has b
 there), and a timer set with `-echo.demoAlarm` counted down on the Lock Screen and rang with its
 title. The iOS 27.0 simulator refuses the permission without asking (`mobiletimerd` logs the
 request and a denial 13 ms later, on a simulator made for the purpose too), so the UI test skips
-there and nothing has been seen on iOS 27, nor on any phone.
+there. An iPhone on iOS 27 does ask and allow (Marta, 2026-10-13).
+
+iOS shows and sounds an alarm as a Live Activity, the alert included. With Live Activities
+turned off for Redde in the iPhone's Settings, AlarmKit still takes the alarm, counts it down
+and puts it in the state "alerting", with nothing on the screen and no sound: three timers sat
+ringing unheard on that phone before this was found. So nothing is set then
+(`AlarmSetting.canShow`, `ActivityAuthorizationInfo().areActivitiesEnabled`): the agent is told
+why and where the switch is, and the Alarms row in Settings → Phone tools says the same with a
+way to the iPhone's Settings. A development build writes what iOS does with each alarm to
+`alarm-trace.log` in its Application Support folder (`AlarmTrace`), which is how this was read
+off the phone.
 
 **The agent's widget** ("From Your Agent", `BoardWidget` in the widget extension; small, medium,
 and two Lock Screen sizes) shows a title and a few lines the agent wrote with `phone_widget_set`

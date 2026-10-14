@@ -13,6 +13,8 @@ struct PhoneAlarmsTests {
         private var state = (allowed: true, rung: [(id: UUID, title: String, at: Date)](), counted: [(id: UUID, title: String, seconds: TimeInterval)](),
                              cancelled: [UUID](), holding: Set<UUID>(), failure: (any Error)?.none)
         var isAllowed: Bool { get { lock.withLock { state.allowed } } set { lock.withLock { state.allowed = newValue } } }
+        private var shows = true
+        var canShow: Bool { get { lock.withLock { shows } } set { lock.withLock { shows = newValue } } }
         var failure: (any Error)? { get { lock.withLock { state.failure } } set { lock.withLock { state.failure = newValue } } }
         var rung: [(id: UUID, title: String, at: Date)] { lock.withLock { state.rung } }
         var counted: [(id: UUID, title: String, seconds: TimeInterval)] { lock.withLock { state.counted } }
@@ -118,6 +120,24 @@ struct PhoneAlarmsTests {
         let full = await message { try await h.set(["title": .string("x"), "minutes": .number(5)]) }
         #expect(full?.contains("won't hold any more") == true)
         #expect(try await h.listed().isEmpty, "One that wasn't set isn't listed")
+    }
+
+    /// iOS shows and sounds an alarm as a Live Activity. With those off for Redde it takes the
+    /// alarm and rings it unseen and unheard, so Redde doesn't set one, and says why.
+    @Test func withLiveActivitiesOffNothingIsSetAndTheAgentIsToldWhy() async throws {
+        let h = Harness()
+        h.system.canShow = false
+        let refused = await message { try await h.set(["title": .string("Tea"), "minutes": .number(1)]) }
+        #expect(refused == DeviceAlarms.needsLiveActivities && refused?.contains("Live Activities") == true)
+        #expect(await message { try await h.set(["title": .string("Up"), "at": .string("2026-10-14T06:10")]) } == refused)
+        #expect(h.system.counted.isEmpty && h.system.rung.isEmpty)
+        // What was set before can still be seen and cancelled.
+        h.system.canShow = true
+        let set = try await h.set(["title": .string("Tea"), "minutes": .number(1)])
+        h.system.canShow = false
+        #expect(try await h.listed().count == 1)
+        _ = try await h.alarms.cancel(.object(["id": set["set"]?["id"] ?? .null]))
+        #expect(try await h.listed().isEmpty)
     }
 
     // MARK: Listing and cancelling

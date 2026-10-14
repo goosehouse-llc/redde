@@ -1,4 +1,5 @@
 #if DEBUG
+import AlarmKit
 import Foundation
 import UserNotifications
 import WidgetKit
@@ -50,6 +51,7 @@ import WidgetKit
 ///   now, and a line that takes over in a minute), to look at it on the Home Screen.
 /// - `-echo.demoAlarm [seconds]`: set a timer as the phone tool does (thirty seconds by default;
 ///   Alarms has to be allowed already), to look at its countdown and at what rings.
+///   `-echo.demoAlarm clear` cancels every alarm and timer iOS holds for Redde.
 /// - `-echo.voiceLook`: give voice mode a made-up camera (`DemoEye`), since the simulator has
 ///   none: the camera button shows, and a question asked with it on goes with a drawn picture.
 /// - `-echo.dictation`: listen with the transcriber an iPhone 11 or SE 2 gets (`Transcriber`),
@@ -145,8 +147,13 @@ enum DevHooks {
             WidgetCenter.shared.reloadTimelines(ofKind: AgentBoard.widgetKind)
         }
         if has("-echo.demoAlarm") {
-            let seconds = value("-echo.demoAlarm").flatMap(Double.init) ?? 30
-            Task { _ = try? await DeviceAlarms().set(.object(["title": .string("Pasta"), "minutes": .number(seconds / 60)])) }
+            if value("-echo.demoAlarm") == "clear" {
+                for alarm in (try? AlarmManager.shared.alarms) ?? [] { try? AlarmManager.shared.cancel(id: alarm.id) }
+                AlarmTrace.note("cleared; holds \((try? AlarmManager.shared.alarms).map(AlarmTrace.describe) ?? "unreadable")")
+            } else {
+                let seconds = value("-echo.demoAlarm").flatMap(Double.init) ?? 30
+                Task { _ = try? await DeviceAlarms().set(.object(["title": .string("Pasta"), "minutes": .number(seconds / 60)])) }
+            }
         }
         if has("-echo.demoNotify") {
             let wait = value("-echo.demoNotify").flatMap(Double.init) ?? 12

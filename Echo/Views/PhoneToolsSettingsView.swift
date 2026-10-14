@@ -9,6 +9,9 @@ struct PhoneToolsSettingsView: View {
     @State private var looking = PhotoLooking.shared
     @State private var plugin = PushPluginModel(manager: PhoneToolsSettingsView.server)
     @State private var refused: Set<DeviceArea> = []
+    /// Whether iOS will show an alarm Redde sets: it does so as a Live Activity.
+    @State private var alarmsShow = true
+    @Environment(\.scenePhase) private var scenePhase
     @State private var confirmingInstall = false
     @Environment(\.openURL) private var openURL
 
@@ -45,6 +48,13 @@ struct PhoneToolsSettingsView: View {
                                     Text(Self.lookingLine(looked: looking.looked, of: looking.total, working: looking.isWorking))
                                         .font(.footnote).foregroundStyle(.secondary)
                                 }
+                            }
+                            if area == .alarms, settings.phoneTools.access(.alarms) != .off, !alarmsShow {
+                                Button("Live Activities are off for Redde, and iOS neither shows nor sounds an alarm without them. Open Settings…") {
+                                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                                }
+                                .font(.footnote)
+                                .foregroundStyle(.red)
                             }
                             if refused.contains(area) {
                                 Button("iOS doesn't allow Redde this. Open Settings…") {
@@ -95,6 +105,8 @@ struct PhoneToolsSettingsView: View {
             Text("Hermes downloads it from github.com/goosehouse-llc/redde and switches it on. It is the same plugin that sends notifications.")
         }
         .task { await plugin.refresh() }
+        // Read again on coming back from the iPhone's Settings, where it is switched.
+        .onChange(of: scenePhase, initial: true) { alarmsShow = SystemAlarms().canShow }
         .task(id: settings.phoneTools) { await service.publish() }
         .onChange(of: settings.phoneTools.access(.photos), initial: true) { looking.resume() }
     }

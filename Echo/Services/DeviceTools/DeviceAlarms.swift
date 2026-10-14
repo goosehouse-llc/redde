@@ -1,3 +1,4 @@
+import ActivityKit
 import AlarmKit
 import Foundation
 import SwiftUI
@@ -6,6 +7,10 @@ import SwiftUI
 nonisolated protocol AlarmSetting: Sendable {
     /// Whether iOS lets Redde set alarms, asking the person the first time.
     func allowed() async -> Bool
+    /// Whether iOS will show and sound what is set. It does both as a Live Activity; with those
+    /// turned off for Redde it takes the alarm, counts it down and "rings" it with nothing on
+    /// the screen and no sound (seen on an iPhone, 2026-10-13: three timers ringing unheard).
+    var canShow: Bool { get }
     /// An alarm that rings at a moment.
     func ring(id: UUID, title: String, at date: Date) async throws
     /// A timer that counts down from now and then rings.
@@ -25,6 +30,8 @@ nonisolated struct DeviceAlarms: Sendable {
 
     /// The longest timer: a day. Past that it is an alarm with a date.
     static let longestTimer: TimeInterval = 24 * 3600
+    /// What the agent is told in place of an alarm that would never be seen or heard.
+    static let needsLiveActivities = "It wasn't set: Live Activities are turned off for Redde on the iPhone, and iOS neither shows nor sounds an app's alarm or timer without them. The person can turn them on in the iPhone's Settings → Apps → Redde → Live Activities."
 
     nonisolated struct Kept: Codable, Equatable, Sendable {
         var id: UUID
@@ -36,6 +43,7 @@ nonisolated struct DeviceAlarms: Sendable {
     /// `title`, and `at` (a moment) or `minutes` (a timer from now): one of the two.
     func set(_ args: JSONValue, now: Date = .now) async throws -> JSONValue {
         guard await system.allowed() else { throw DeviceToolError.refused(.alarms) }
+        guard system.canShow else { throw DeviceToolError(Self.needsLiveActivities) }
         let title = String(try args.required("title").prefix(80))
         let minutes = args["minutes"]?.number
         let at = try args.date("at")
@@ -113,6 +121,8 @@ nonisolated struct DeviceAlarms: Sendable {
 /// AlarmKit. The alert when one rings is iOS's own, with its Stop button; a timer's countdown
 /// on the Lock Screen and in the Dynamic Island is drawn by `AlarmCountdownActivity`.
 nonisolated struct SystemAlarms: AlarmSetting {
+    var canShow: Bool { ActivityAuthorizationInfo().areActivitiesEnabled }
+
     func allowed() async -> Bool {
         switch AlarmManager.shared.authorizationState {
         case .authorized: true
@@ -124,13 +134,19 @@ nonisolated struct SystemAlarms: AlarmSetting {
     func ring(id: UUID, title: String, at date: Date) async throws {
         let attributes = AlarmAttributes(presentation: AlarmPresentation(alert: Self.alert(title)),
                                          metadata: AgentAlarm(title: title), tintColor: .accentColor)
-        _ = try await AlarmManager.shared.schedule(id: id, configuration: .alarm(schedule: .fixed(date), attributes: attributes))
+        let alarm = try await AlarmManager.shared.schedule(id: id, configuration: .alarm(schedule: .fixed(date), attributes: attributes))
+        #if DEBUG
+        AlarmTrace.set(alarm, what: "alarm for \(DeviceDates.string(date))")
+        #endif
     }
 
     func count(id: UUID, title: String, down seconds: TimeInterval) async throws {
         let presentation = AlarmPresentation(alert: Self.alert(title), countdown: .init(title: "\(title)"))
         let attributes = AlarmAttributes(presentation: presentation, metadata: AgentAlarm(title: title), tintColor: .accentColor)
-        _ = try await AlarmManager.shared.schedule(id: id, configuration: .timer(duration: seconds, attributes: attributes))
+        let alarm = try await AlarmManager.shared.schedule(id: id, configuration: .timer(duration: seconds, attributes: attributes))
+        #if DEBUG
+        AlarmTrace.set(alarm, what: "timer of \(Int(seconds)) s")
+        #endif
     }
 
     func cancel(id: UUID) throws { try AlarmManager.shared.cancel(id: id) }
@@ -143,3 +159,51 @@ nonisolated struct SystemAlarms: AlarmSetting {
         return .init(title: "\(title)", stopButton: AlarmButton(text: "Stop", textColor: .white, systemImageName: "stop.circle"))
     }
 }
+
+#if DEBUG
+/// A development build writes down what iOS does with an alarm Redde set, since what a phone
+/// does with one can't be seen from here: `Library/Application Support/alarm-trace.log` in the
+/// app's container (`xcrun devicectl device copy from --domain-type appDataContainer …`).
+nonisolated enum AlarmTrace {
+    static let file = URL.applicationSupportDirectory.appending(path: "alarm-trace.log")
+
+    static func note(_ line: String) {
+        let stamp = Date.now.formatted(.iso8601.time(includingFractionalSeconds: true))
+        let text = "\(stamp) \(line)\n"
+        try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+        if let handle = try? FileHandle(forWritingTo: file) {
+            defer { try? handle.close() }
+            _ = try? handle.seekToEnd()
+            try? handle.write(contentsOf: Data(text.utf8))
+        } else {
+            try? Data(text.utf8).write(to: file)
+        }
+    }
+
+    static func describe(_ alarms: [Alarm]) -> String {
+        alarms.isEmpty ? "none" : alarms.map { "\($0.id.uuidString.prefix(8)) \($0.state)" }.joined(separator: ", ")
+    }
+
+    /// What iOS says it holds, as it changes, for as long as the app runs.
+    static func watch() {
+        note("launched: alarms \(AlarmManager.shared.authorizationState), live activities \(ActivityAuthorizationInfo().areActivitiesEnabled ? "on" : "OFF"), holds \((try? AlarmManager.shared.alarms).map(describe) ?? "unreadable")")
+        Task.detached {
+            for await alarms in AlarmManager.shared.alarmUpdates { note("update: \(describe(alarms))") }
+        }
+    }
+
+    /// One was set: what iOS gave back, and what it holds every few seconds for the next while.
+    static func set(_ alarm: Alarm, what: String) {
+        note("set \(what): \(alarm.id.uuidString.prefix(8)) came back \(alarm.state), countdown \(String(describing: alarm.countdownDuration)), schedule \(String(describing: alarm.schedule)); live activities \(ActivityAuthorizationInfo().areActivitiesEnabled ? "on" : "OFF")")
+        Task.detached {
+            var last = ""
+            for _ in 0 ..< 60 {
+                try? await Task.sleep(for: .seconds(3))
+                let now = (try? AlarmManager.shared.alarms).map(describe) ?? "unreadable"
+                if now != last { note("holds: \(now)"); last = now }
+            }
+        }
+    }
+}
+#endif
+

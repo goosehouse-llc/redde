@@ -22,6 +22,9 @@ struct EchoApp: App {
         // Before any scene: the watch can wake the app in the background with a question to
         // run for it, and no window ever appears then to do this from.
         WatchLink.shared.activate()
+        #if DEBUG
+        AlarmTrace.watch()   // what iOS does with Redde's alarms, kept in a file to read off a phone
+        #endif
     }
 
     @State private var settings = Settings.shared
