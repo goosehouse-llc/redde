@@ -5,12 +5,18 @@
     scripts/app-store-push.py status                 what App Store Connect has now
     scripts/app-store-push.py copy [--dry-run]       promotional text, keywords, description, What's New
     scripts/app-store-push.py screenshots [--dry-run]  the iPhone and iPad sets; only pictures that differ are sent
-    scripts/app-store-push.py all [--dry-run]
+    scripts/app-store-push.py notes [--dry-run]      the notes for App Review, with the test key put in
+    scripts/app-store-push.py all [--dry-run]        copy and screenshots (not the notes)
 
 The copy is read from docs/app-store-listing.md (the sections named for those four fields, the
 What's New being the one for the version in project.yml) and the pictures from
 design/screenshots/, in the order listed below. The version has to be editable in App Store
 Connect; one that isn't there yet is made.
+
+The review notes are the block in docs/app-review-notes.md with its <<REVIEW KEY>> replaced by
+the test key: ASC_REVIEW_KEY if that is set (environment or tmp/asc.env), or else the key in the
+newest notes App Store Connect holds that have one. The key is never printed. (Found 2026-10-13:
+the notes of every version from 1.1 to 1.7.1 had gone in with the placeholder still in them.)
 
 It needs an App Store Connect API key with the App Manager role: ASC_KEY_ID, ASC_ISSUER_ID and
 ASC_KEY_PATH (the .p8 file), in the environment or as KEY=value lines in tmp/asc.env, which
@@ -254,11 +260,56 @@ def push_screenshots(loc, dry):
             {'data': [{'type': 'appScreenshots', 'id': i} for i in ids]})
 
 
+PLACEHOLDER = '<<REVIEW KEY>>'
+KEY_IN_NOTES = re.compile(r'API key:?\s*`?([^\s`,]+)')
+
+
+def review_detail(version):
+    return api('GET', f"/v1/appStoreVersions/{version['id']}/appStoreReviewDetail").get('data')
+
+
+def review_key(app):
+    given = os.environ.get('ASC_REVIEW_KEY')
+    path = os.path.join(ROOT, 'tmp', 'asc.env')
+    if not given and os.path.exists(path):
+        for line in open(path):
+            if line.replace('export', '').strip().startswith('ASC_REVIEW_KEY='):
+                given = line.split('=', 1)[1].strip().strip('"\'')
+    if given:
+        return given, 'the one given'
+    for v in versions(app):
+        found = KEY_IN_NOTES.search(((review_detail(v) or {}).get('attributes') or {}).get('notes') or '')
+        if found and not found.group(1).startswith('<<'):
+            return found.group(1), f"the one in {v['attributes']['versionString']}'s notes"
+    sys.exit('No test key: set ASC_REVIEW_KEY, or put one into the notes in App Store Connect once.')
+
+
+def push_notes(app, version, dry):
+    text = open(os.path.join(ROOT, 'docs', 'app-review-notes.md')).read()
+    start = text.index('```text\n') + len('```text\n')
+    notes = text[start:text.index('\n```', start)]
+    if PLACEHOLDER not in notes:
+        sys.exit(f'docs/app-review-notes.md has no {PLACEHOLDER} for the key to go in')
+    key, where = review_key(app)
+    notes = notes.replace(PLACEHOLDER, key)
+    if len(notes) > 4000:
+        sys.exit(f'The review notes are {len(notes)} characters with the key in, over the limit of 4000')
+    detail = review_detail(version)
+    if detail is None:
+        sys.exit('This version has no App Review information yet: open its page in App Store Connect once, so the contact details are there.')
+    same = (detail['attributes'].get('notes') or '') == notes
+    print(f"  review notes: {len(notes)} of 4000 characters, test key: {where}, {'already there' if same else 'changes'}")
+    if not same and not dry:
+        api('PATCH', f"/v1/appStoreReviewDetails/{detail['id']}",
+            {'data': {'type': 'appStoreReviewDetails', 'id': detail['id'], 'attributes': {'notes': notes}}})
+        print('  sent')
+
+
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith('-')]
     dry = '--dry-run' in sys.argv
     what = args[0] if args else ''
-    if what not in ('check', 'status', 'copy', 'screenshots', 'all'):
+    if what not in ('check', 'status', 'copy', 'screenshots', 'notes', 'all'):
         sys.exit(__doc__)
     wanted = project_version()
     fields = copy_fields(wanted)
@@ -281,6 +332,7 @@ def main():
         loc = localization(version)
         push_copy(loc, fields, dry=True)
         push_screenshots(loc, dry=True)
+        push_notes(app, version, dry=True)
         return
     version = editable_version(app, wanted, make=not dry)
     if version is None:
@@ -292,6 +344,8 @@ def main():
         push_copy(loc, fields, dry)
     if what in ('screenshots', 'all'):
         push_screenshots(loc, dry)
+    if what == 'notes':
+        push_notes(app, version, dry)
 
 
 if __name__ == '__main__':
