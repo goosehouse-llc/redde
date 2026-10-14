@@ -41,8 +41,10 @@ struct MessageRow: View, Equatable {
 
     @Environment(\.theme) private var theme
     @State private var settings = Settings.shared
-    @State private var showThinking = false
-    @State private var showSteps = false
+    /// What the person chose for each fold, once they have tapped it; until then each is open
+    /// while it is what the agent is doing, and folded after.
+    @State private var showThinking: Bool?
+    @State private var showSteps: Bool?
     @State private var selecting = false
     @State private var fullMetrics = false
     /// Just copied: the button shows a check. `copyCount` drives the haptic.
@@ -190,16 +192,17 @@ struct MessageRow: View, Equatable {
     }
 
     /// The reply's thinking: "Thinking" while it happens, with the newest of it underneath, then
-    /// "Thought for 6 s", which opens onto all of it.
+    /// "Thought for 6 s", which opens onto all of it. Open while the reply is being worked on,
+    /// unless the person folds it, which they can at any moment, as with the steps.
     private var thinkingFold: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            foldHeader(open: showThinking || isLive, hint: showThinking ? "Hide thinking" : "Show thinking") {
-                withAnimation(.snappy(duration: 0.3)) { showThinking.toggle() }
+        let open = showThinking ?? isLive
+        return VStack(alignment: .leading, spacing: 2) {
+            foldHeader(open: open, hint: open ? "Hide thinking" : "Show thinking") {
+                withAnimation(.snappy(duration: 0.3)) { showThinking = !open }
             } label: {
                 thinkingLabel
             }
-            .disabled(isLive)
-            if isLive || showThinking { reasoningText }
+            if open { reasoningText }
         }
     }
 
@@ -236,10 +239,10 @@ struct MessageRow: View, Equatable {
     private var stepsFold: some View {
         let tools = message.tools
         let working = isLive && tools.contains { $0.status == .running }
-        let open = (isLive && message.text.isEmpty) || showSteps
+        let open = showSteps ?? (isLive && message.text.isEmpty)
         return VStack(alignment: .leading, spacing: 2) {
             foldHeader(open: open, hint: open ? "Hide tool steps" : "Show tool steps") {
-                withAnimation(.snappy(duration: 0.3)) { showSteps.toggle() }
+                withAnimation(.snappy(duration: 0.3)) { showSteps = !open }
             } label: {
                 Text(working ? "Working · \(Self.toolsSummary(tools, working: true))" : "Used \(Self.toolsSummary(tools, working: false))")
                     .monospacedDigit()

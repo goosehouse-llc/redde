@@ -27,6 +27,22 @@ final class ReplyActionsUITests: XCTestCase {
         XCTAssertLessThan(toast.frame.maxY, composer.frame.minY, "The toast sits under the composer")
     }
 
+    /// While a reply is being worked on its thinking is open, and a tap folds it all the same:
+    /// it used to stay open, with a header that took no taps, until the reply was done.
+    func testThinkingFoldsWhileTheReplyIsStillComing() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demoStream"] + XCUIApplication.straightToChat
+        app.launch()
+        let hide = app.buttons["Hide thinking"]
+        XCTAssertTrue(hide.waitForExistence(timeout: 20), "The thinking isn't open while the reply is live")
+        hide.tap()
+        XCTAssertTrue(app.buttons["Show thinking"].waitForExistence(timeout: 3), "The tap didn't fold the thinking")
+        XCTAssertFalse(hide.exists)
+        // And it stays as the person left it once the reply is done.
+        XCTAssertTrue(app.buttons["Regenerate"].waitForExistence(timeout: 30), "The demo reply never finished")
+        XCTAssertTrue(app.buttons["Show thinking"].exists)
+    }
+
     func testAToolStepOpensOntoWhatItReturned() {
         let app = launchDemo()
         let steps = app.buttons["Show tool steps"]
