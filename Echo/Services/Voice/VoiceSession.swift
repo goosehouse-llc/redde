@@ -108,6 +108,8 @@ final class VoiceSession {
     /// Settings → Voice → Nod or shake to answer, and the AirPods' movement it reads.
     private let answersByNod: () -> Bool
     private let head: any HeadGestureSensing
+    /// The camera the voice screen can open. Injectable so tests show it what they like.
+    let eye: any VoiceLooking
     /// How an answer given aloud reaches the agent: the conversation's own way, unless a test listens.
     private let respond: (SpokenRequest.Answer) -> Void
     private var screenAwake = false
@@ -164,6 +166,7 @@ final class VoiceSession {
          output: any VoiceSpeaking = SpeechOutput(),
          audio: any VoiceAudioControlling = AudioSessionController.shared,
          head: any HeadGestureSensing = HeadGestures.shared,
+         eye: any VoiceLooking = VoiceCamera.forApp,
          requestPermissions: @escaping () async -> Bool = { await SpeechRecognizer.requestPermissions() },
          earcon: @escaping (Earcon) -> Void = { EarconPlayer.shared.play($0) },
          keepAwake: @escaping (Bool) -> Void = { UIApplication.shared.isIdleTimerDisabled = $0 },
@@ -184,6 +187,7 @@ final class VoiceSession {
         self.answersAloud = answersAloud
         self.answersByNod = answersByNod
         self.head = head
+        self.eye = eye
         self.takeNote = takeNote
         self.thinkingSoundWanted = thinkingSoundWanted
         self.thinkingSound = thinkingSound
@@ -299,6 +303,32 @@ final class VoiceSession {
     /// What is being listened for is a note to file, not a question (quick capture): nothing is
     /// sent to the conversation and nothing comes back but "Noted."
     private(set) var isCapturing = false
+
+    /// The camera is open on the voice screen: each question asked goes with a picture of what
+    /// it sees as the question ends.
+    private(set) var isLooking = false
+    /// Why the camera couldn't be opened, for the voice screen to say.
+    private(set) var lookProblem: String?
+    /// Whether there is a camera to offer at all.
+    var canLook: Bool { eye.isAvailable }
+
+    /// The voice screen's camera button. Leaving the voice screen closes the camera; Stop and a
+    /// finished reply leave it open, for the next question about the same thing.
+    func setLooking(_ on: Bool) {
+        lookProblem = nil
+        guard on != isLooking else { return }
+        isLooking = on   // at once, so the button shows it; taken back if the camera can't be had
+        guard on else { eye.close(); return }
+        Task {
+            let opened = await eye.open()
+            if !isLooking {
+                eye.close()   // switched off again while it was opening
+            } else if !opened {
+                isLooking = false
+                lookProblem = "Redde can't use the camera. Allow it in Settings → Privacy & Security → Camera."
+            }
+        }
+    }
 
     /// Tap the mic: start listening. If a reply is being spoken, this barges in. `capturing`:
     /// for a note (`CaptureInbox`), which leaves the conversation and whatever it is doing alone.
@@ -541,6 +571,8 @@ final class VoiceSession {
             output.endReply()
             return
         }
+        // What the camera sees as the question ends, before anything below takes its time.
+        let seen = isLooking ? eye.still() : nil
         await conversation.initialLoad?.value   // cold launch: the latest transcript may still be decoding
         guard phase == .listening else { return }
         micStaysOpen = canBeTalkedOver()
@@ -560,7 +592,8 @@ final class VoiceSession {
             }
         }
         // In a car (its CarPlay, or its Bluetooth alone), if Settings says so: a short answer.
-        let events = conversation.send(outgoing, brief: shortInCar() && (carConnected() || audio.route == .car))
+        let events = conversation.send(outgoing, attachments: seen.map { [$0] } ?? [],
+                                       brief: shortInCar() && (carConnected() || audio.route == .car))
         SiriHooks.donateSend(outgoing)
         if micStaysOpen { startMonitor() }
         replySerial += 1

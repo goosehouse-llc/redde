@@ -2,7 +2,8 @@ import SwiftUI
 
 /// Full-screen voice mode. The orb near the top is the one control that matters: the phase
 /// under it says what a tap does. Your words and the reply sit right beneath it; typing,
-/// replay/stop and ending the call wait at the bottom.
+/// replay/stop and ending the call wait at the bottom. With the camera switched on (the button
+/// beside Hands-free) the orb's place shows what the camera sees, and works as the orb does.
 struct VoiceView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(Conversation.self) private var conversation
@@ -55,7 +56,7 @@ struct VoiceView: View {
         .background(theme.pageColor)
         .foregroundStyle(theme.textColor)
         .onAppear { session.attachHeadsetControls() }
-        .onDisappear { session.detachHeadsetControls(); session.cancel() }
+        .onDisappear { session.detachHeadsetControls(); session.cancel(); session.setLooking(false) }
     }
 
     private var header: some View {
@@ -65,6 +66,15 @@ struct VoiceView: View {
             }
             .toggleStyle(.button)
             .buttonStyle(.glass)
+            if session.canLook {
+                Toggle(isOn: Binding(get: { session.isLooking }, set: { session.setLooking($0) })) {
+                    Label("Camera", systemImage: "camera")
+                }
+                .labelStyle(.iconOnly)
+                .toggleStyle(.button)
+                .buttonStyle(.glass)
+                .accessibilityHint("Sends what the camera sees with each question")
+            }
             Spacer(minLength: 0)
             if !conversation.messages.isEmpty {
                 Text(conversation.title)
@@ -81,13 +91,20 @@ struct VoiceView: View {
 
     private var orb: some View {
         Button(action: session.primaryAction) {
-            // Its own view: the mic level ticks ten times a second while listening, and only the
-            // face should re-evaluate for it, not this whole screen.
-            OrbFace(session: session, phase: phase, phaseColor: phaseColor, demo: Self.demo)
-                // Fixed footprint; the aura spills past it without pushing the text below around
-                // with each syllable.
-                .frame(width: 233, height: 233)
-                .contentShape(.circle)
+            if session.isLooking {
+                // The same footprint as the orb, so nothing below moves when the camera opens.
+                Viewfinder(session: session, phase: phase, phaseColor: phaseColor)
+                    .frame(width: 233, height: 233)
+                    .contentShape(.rect)
+            } else {
+                // Its own view: the mic level ticks ten times a second while listening, and only the
+                // face should re-evaluate for it, not this whole screen.
+                OrbFace(session: session, phase: phase, phaseColor: phaseColor, demo: Self.demo)
+                    // Fixed footprint; the aura spills past it without pushing the text below around
+                    // with each syllable.
+                    .frame(width: 233, height: 233)
+                    .contentShape(.circle)
+            }
         }
         .buttonStyle(.plain)
         .keyboardShortcut(.space, modifiers: [])
@@ -172,6 +189,15 @@ struct VoiceView: View {
                     .foregroundStyle(.secondary)
             } else if session.isCapturing {
                 Text("Taking a note. Redde files it and says nothing back.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if let problem = session.lookProblem {
+                Text(problem)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .multilineTextAlignment(.center)
+            } else if session.isLooking {
+                Text("Your question goes with a picture of what the camera sees.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else if session.continuous {
@@ -279,6 +305,48 @@ struct VoiceView: View {
         case .error: .red
         case .idle: .secondary
         }
+    }
+}
+
+/// What the camera sees, where the orb was. Its edge wears the phase colour as the orb's ring
+/// does, and the orb's bars ride along its foot, so it still says when it hears you.
+private struct Viewfinder: View {
+    let session: VoiceSession
+    let phase: VoiceSession.Phase
+    let phaseColor: Color
+
+    private static let corner: CGFloat = 36
+
+    var body: some View {
+        ZStack {
+            Color.black
+            if let live = session.eye.viewfinder {
+                CameraPreview(session: live)
+            } else {
+                // A stand-in camera has nothing to show.
+                Image(systemName: "camera")
+                    .font(.largeTitle)
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+        }
+        .clipShape(.rect(cornerRadius: Self.corner))
+        .overlay(alignment: .bottom) {
+            if phase == .listening || phase == .speaking {
+                LiveWaveform(phase: phase, level: { phase == .speaking ? session.output.meterLevel : session.recognizer.meterLevel })
+                    .scaleEffect(0.45, anchor: .bottom)
+                    .padding(.bottom, 14)
+            }
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: Self.corner)
+                .strokeBorder(phaseColor.opacity(phase == .idle ? 0.4 : 0.9), lineWidth: phase == .listening ? 5 : 3)
+        }
+        .overlay {
+            if phase == .thinking { ProgressView().controlSize(.large).tint(.white) }
+        }
+        .shadow(color: .black.opacity(0.35), radius: 22, y: 12)
+        .animation(.easeOut(duration: 0.3), value: phase)
+        .accessibilityHidden(true)
     }
 }
 

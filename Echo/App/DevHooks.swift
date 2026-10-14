@@ -46,6 +46,8 @@ import WidgetKit
 ///   `-echo.fresh` starts on a new conversation first.
 /// - `-echo.voiceView`: open voice mode without listening. `-echo.voiceDemo` poses it mid-listen;
 ///   `-echo.autoVoice` opens it and starts listening.
+/// - `-echo.voiceLook`: give voice mode a made-up camera (`DemoEye`), since the simulator has
+///   none: the camera button shows, and a question asked with it on goes with a drawn picture.
 /// - `-echo.dictation`: listen with the transcriber an iPhone 11 or SE 2 gets (`Transcriber`),
 ///   on a device that has the newer one too.
 /// - `-echo.demoTips`: sample tips on Settings → About → Support Redde (App Review screenshot).

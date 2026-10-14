@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 
 // Seams for VoiceSession's hardware dependencies, so the orchestration — phases, barge-in,
@@ -70,6 +71,21 @@ protocol HeadGestureSensing: AnyObject {
     func stop()
 }
 extension HeadGestures: HeadGestureSensing {}
+
+/// The camera side (VoiceCamera in production): what the person is showing while they ask.
+@MainActor
+protocol VoiceLooking: AnyObject {
+    /// Whether there is a camera to open at all.
+    var isAvailable: Bool { get }
+    /// Opens the camera, asking iOS for it the first time. False when it can't be had.
+    func open() async -> Bool
+    func close()
+    /// What the camera sees right now, as a picture to send; nil when it has shown nothing lately.
+    func still() -> Attachment?
+    /// The live picture for the voice screen; nil for a stand-in, which has none.
+    var viewfinder: AVCaptureSession? { get }
+}
+extension VoiceCamera: VoiceLooking {}
 
 /// What a reply plays through, as far as talking over it goes: the phone's own speaker (or
 /// earpiece) needs the echo cancelled, a headset doesn't, and a car is left alone.

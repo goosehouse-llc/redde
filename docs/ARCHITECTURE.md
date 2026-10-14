@@ -878,6 +878,22 @@ minutes (`VoiceSession.updateScreenAwake`). Past that, a paused reply, an error 
 back: the reply carries on with the phone locked, and a screen held on through a ten-minute task
 is a flat battery. Reading a reply aloud from the transcript counts as speaking.
 
+**Showing it something.** The camera button beside Hands-free on the voice screen
+(`VoiceSession.setLooking`) opens the back camera, and the orb's place shows what it sees
+(`Viewfinder`, `CameraPreview`): the same size, the same tap to listen and to stop, the phase
+colour on its edge and the bars along its foot. While it is open, each question asked goes with
+one picture, taken as the question ends (`VoiceSession.handleUtterance`): a frame of the running
+video (`CameraFeed`, 1080p, no shutter and no sound), stood upright by the angle iOS gives for
+the way the device is held (`CameraStill`), and sent as any attached picture is, so the model has
+to be one that sees. The picture stands with the question in the conversation. Stop and a
+finished reply leave the camera open for the next question; leaving the voice screen closes it,
+and it is never open when the screen comes up. A note taken by voice takes no picture. A frame
+more than a second old is not sent: iOS takes the camera away when the app leaves the screen,
+and what it saw before is not what it sees now. `VoiceLooking` is the seam; `-echo.voiceLook`
+puts a made-up camera there for the simulator, which has none (`VoiceLookTests`,
+`VoiceLookUITests`). Not run on a phone yet: the real camera's picture, the preview, and the
+camera beside voice mode's microphone are all to be seen there.
+
 **Answering a request aloud** (Settings → Voice → Answer requests by voice, off until turned on).
 When a turn that voice mode started stops on a command to approve or on one question from the
 agent, `VoiceSession.ask` reads it out after whatever of the reply is still being said

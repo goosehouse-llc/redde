@@ -15,7 +15,8 @@ and can't read them ([docs/push.md](docs/push.md)).
 ## Features
 
 - **Voice first.** On-device speech recognition, replies spoken by the built-in voice or your own
-  Kokoro server, hands-free mode, barge-in, AirPods and CarPlay.
+  Kokoro server, hands-free mode, barge-in, AirPods and CarPlay. Switch the camera on in voice
+  mode and what you point the phone at goes with your question.
 - **Your language.** Listen in any language on-device transcription supports, hear each reply in a
   voice for the language it's written in, ask the agent to always answer in one language, and
   end a hands-free conversation with stop phrases of your own.

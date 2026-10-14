@@ -63,7 +63,7 @@
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Redde can show your next event when you start a conversation, and attach a day's events to a message for your assistant. With Phone tools turned on, your assistant can also look up events and add them. Events go only to your own server.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Redde uses the camera when you take a photo to attach to a message, and to scan a setup code. A photo goes only to the server you connect to.</string>
+	<string>Redde uses the camera when you take a photo to attach to a message, when you show your assistant something in voice mode, and to scan a setup code. A photo goes only to the server you connect to.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>With Phone tools turned on, Redde looks up a contact when your assistant asks it to. What it finds goes only to the server you connect to.</string>
 	<key>NSFaceIDUsageDescription</key>
