@@ -154,6 +154,275 @@ extension Conversation {
         }
     }
 
+    /// Dev hook (`-echo.demoPhone`): the agent using the phone, played live for the video. It
+    /// reads tomorrow's calendar, wants to add a reminder, which Phone tools puts to the person
+    /// with its own question (the take waits for the answer), and then finds a photo by what
+    /// it shows. Nothing on the phone is read or changed: what the tools answer is canned.
+    /// `reach`: the other two instead, a call and a message, to numbers that are nobody's. On
+    /// an iPhone iOS really asks about the call and the Messages sheet really opens; a
+    /// simulator has no phone and no Messages, so there the two are only spoken of.
+    func streamPhoneDemo(reach: Bool = false) {
+        cancel()
+        replaceForDemo(messages: [])
+        Task { @MainActor in
+            setStreamingForDemo(true)
+            defer { setStreamingForDemo(false) }
+            if reach {
+                try? await Task.sleep(for: .seconds(1.4))
+                await playForDemo(
+                    question: "Call the vet.",
+                    thinking: "Riverside Vet is in the contacts with a main line and an after-hours one. It is the afternoon: the main line.",
+                    steps: [(ToolActivity(name: "phone_contacts_search", preview: "vet", status: .running, output: "Riverside Vet: main, after hours"), nil),
+                            (ToolActivity(name: "phone_people_call", preview: "Riverside Vet, main", status: .running, output: "asked"), {
+                                if let number = URL(string: "tel:5550107700") { _ = await SystemPeople().open(number) }
+                            })],
+                    reply: "Your iPhone is asking whether to call **Riverside Vet**. Tap Call and it dials.")
+                try? await Task.sleep(for: .seconds(1.8))
+                await playForDemo(
+                    question: "Text Dana that I'm running ten minutes late.",
+                    thinking: "A message is the person's to send. I write it, and Messages opens with it for them.",
+                    steps: [(ToolActivity(name: "phone_people_message", preview: "Dana Lee", status: .running, output: "sent"), {
+                        // Where there is no Messages to open, the time a person takes to read and send.
+                        if await MessageSheet.shared.present(to: ["+1 (555) 010-2030"], text: "Running about ten minutes late. Start without me!") == .failed {
+                            try? await Task.sleep(for: .seconds(2.2))
+                        }
+                    })],
+                    reply: "You sent it. Dana knows you're ten minutes behind.")
+                return
+            }
+            // Tomorrow at four, on this phone's own calendar.
+            let tomorrow = Calendar.current.dateComponents([.year, .month, .day], from: Calendar.current.date(byAdding: .day, value: 1, to: .now) ?? .now)
+            let due = String(format: "%04d-%02d-%02dT16:00", tomorrow.year ?? 2026, tomorrow.month ?? 1, tomorrow.day ?? 1)
+            // The question is the real one, asked by a service whose plugin and tools are stand-ins.
+            let phone = DeviceToolsService(settings: .shared, defaults: UserDefaults(suiteName: "demo-phone") ?? .standard,
+                                           command: { _ in "" }, run: { _, _, _ in .object([:]) })
+            try? await Task.sleep(for: .seconds(1.4))
+            await playForDemo(
+                question: "What's on tomorrow? And remind me to call the vet at 4.",
+                thinking: "Two things. Tomorrow's events come from the calendar on the phone. The reminder is a change there, so the phone asks first.",
+                steps: [(ToolActivity(name: "phone_calendar_events", preview: "tomorrow", status: .running,
+                                      output: "09:30 Standup\n12:15 Lunch with Dana"), nil),
+                        (ToolActivity(name: "phone_reminders_add", preview: "Call the vet, 4:00 PM", status: .running, output: "added"), {
+                            _ = try? await phone.perform(DeviceRequest(id: "demo", tool: DeviceTool.remindersAdd.rawValue,
+                                                                       arguments: .object(["title": .string("Call the vet"), "due": .string(due)])))
+                        })],
+                reply: """
+                Tomorrow you have **two things**:
+
+                - 9:30 standup
+                - 12:15 lunch with Dana
+
+                The reminder to call the vet is set for 4 PM.
+                """)
+            try? await Task.sleep(for: .seconds(1.6))
+            await playForDemo(
+                question: "Find my photo of the bowling scoreboard.",
+                thinking: "The phone looks through its own pictures for what they show. I ask for the best match and look at it.",
+                steps: [(ToolActivity(name: "phone_photos_search", preview: "bowling scoreboard", status: .running, output: "1 match: scoreboard, lane, 187"), nil),
+                        (ToolActivity(name: "phone_photos_get", preview: "Saturday, 8:42 PM", status: .running, output: "scoreboard.jpg"), nil)],
+                reply: "Found it, from Saturday at 8:42 PM. You bowled a **187**, your best this year.",
+                picture: Self.scoreboardForDemo())
+        }
+    }
+
+    /// The scenes of the second Phone tools video (`-echo.demoFun`): a day with the agent, every
+    /// area in turn. Played like `streamPhoneDemo`; the timer and the widget are set for real, so
+    /// the Lock Screen and the Home Screen show them.
+    func streamFunDemo(_ scene: String) {
+        cancel()
+        replaceForDemo(messages: [])
+        Task { @MainActor in
+            func step(_ name: String, _ preview: String, _ output: String) -> ToolActivity {
+                ToolActivity(name: name, preview: preview, status: .running, output: output)
+            }
+            if scene == "look" {
+                // Once the camera has been opened and the question asked over it.
+                while DemoEye.openedAt == nil { try? await Task.sleep(for: .milliseconds(100)) }
+                try? await Task.sleep(for: .seconds(3.6))
+            } else {
+                try? await Task.sleep(for: .seconds(1.4))
+            }
+            setStreamingForDemo(true)
+            defer { setStreamingForDemo(false) }
+            switch scene {
+            case "morning":
+                let today = Calendar.current.dateComponents([.year, .month, .day], from: .now)
+                let due = String(format: "%04d-%02d-%02dT16:00", today.year ?? 2026, today.month ?? 1, today.day ?? 1)
+                let phone = DeviceToolsService(settings: .shared, defaults: UserDefaults(suiteName: "demo-phone") ?? .standard,
+                                               command: { _ in "" }, run: { _, _, _ in .object([:]) })
+                await playForDemo(
+                    question: "Morning! What's on today?",
+                    thinking: "Today's events are on the phone's calendar.",
+                    steps: [(step("phone_calendar_events", "today", "09:30 Standup\n12:15 Lunch with Dana\n19:00 Pasta night"), nil)],
+                    reply: """
+                    Morning ☀️ Today you've got:
+
+                    - 9:30 standup
+                    - 12:15 lunch with Dana
+                    - 7:00 pasta night 🍝
+                    """)
+                try? await Task.sleep(for: .seconds(1.2))
+                await playForDemo(
+                    question: "Remind me to call the vet at 4.",
+                    thinking: "A reminder is a change on the phone, so the phone asks first.",
+                    steps: [(step("phone_reminders_add", "Call the vet, 4:00 PM", "added"), {
+                        _ = try? await phone.perform(DeviceRequest(id: "demo", tool: DeviceTool.remindersAdd.rawValue,
+                                                                   arguments: .object(["title": .string("Call the vet"), "due": .string(due)])))
+                    })],
+                    reply: "Done ✅ I'll nudge you at 4.")
+            case "timer":
+                await playForDemo(
+                    question: "Pasta's in! Nine minute timer?",
+                    thinking: "A timer on the phone, one of iOS's own, so it rings like the Clock app's.",
+                    steps: [(step("phone_alarms_set", "Pasta, 9 minutes", "set"), {
+                        _ = try? await DeviceAlarms().set(.object(["title": .string("Pasta"), "minutes": .number(9)]))
+                    })],
+                    reply: "Timer's on: **9 minutes**. It's on your Lock Screen, and it rings even with Redde closed.")
+            case "widget":
+                await playForDemo(
+                    question: "Save my shopping list to Files and stick it on my widget: spaghetti, basil, parmesan, two lemons.",
+                    thinking: "The list goes in Redde's folder in Files, and the same lines on its widget.",
+                    steps: [(step("phone_files_save", "Shopping list.md", "saved"), nil),
+                            (step("phone_widget_set", "Shopping list", "on the widget"), {
+                                _ = try? await DeviceBoard().set(.object(["title": .string("Shopping list"),
+                                                                         "text": .string("Spaghetti\nBasil\nParmesan\nTwo lemons")]))
+                            })],
+                    reply: "Saved to **Files**, and it's on your widget. Don't forget the parmesan.")
+            case "photo":
+                await playForDemo(
+                    question: "Find my bowling scoreboard from Saturday.",
+                    thinking: "The phone looks through its own pictures for what they show. I ask for the best match and look at it.",
+                    steps: [(step("phone_photos_search", "bowling scoreboard", "1 match: scoreboard, lane, 187"), nil),
+                            (step("phone_photos_get", "Saturday, 8:42 PM", "scoreboard.jpg"), nil)],
+                    reply: "Found it 🎳 You bowled a **187**. Personal best, by the way.",
+                    picture: Self.scoreboardForDemo())
+            case "look":
+                await playForDemo(
+                    question: "Is my plant okay? It looks kind of sad.",
+                    thinking: "A pothos: drooping stems, dry soil pulling away from the pot, one yellow leaf.",
+                    steps: [],
+                    reply: "That's a pothos, and it's **thirsty** 🪴 The droop and the dry soil give it away. Water it until it drains, and it'll perk up by tomorrow.",
+                    shown: Attachment.image(DemoEye.plant(), filename: "camera.jpg"))
+            case "reach":
+                await playForDemo(
+                    question: "Call the vet.",
+                    thinking: "Riverside Vet is in the contacts with a main line and an after-hours one. It's the afternoon: the main line.",
+                    steps: [(step("phone_contacts_search", "vet", "Riverside Vet: main, after hours"), nil),
+                            (step("phone_people_call", "Riverside Vet, main", "asked"), {
+                                if let number = URL(string: "tel:5550107700") { _ = await SystemPeople().open(number) }
+                            })],
+                    reply: "Your iPhone's asking whether to call **Riverside Vet** 📞 Tap Call and it dials.")
+                try? await Task.sleep(for: .seconds(1.6))
+                await playForDemo(
+                    question: "Text Dana I'm running ten minutes late.",
+                    thinking: "A message is theirs to send. I write it, and Messages opens with it.",
+                    steps: [(step("phone_people_message", "Dana Lee", "written"), {
+                        // Where there is no Messages to open, the time a person takes to read and send.
+                        if await MessageSheet.shared.present(to: ["+1 (555) 010-2030"], text: "Running ten minutes late, start without me! 🏃") == .failed {
+                            try? await Task.sleep(for: .seconds(1.6))
+                        }
+                    })],
+                    reply: "It's written and waiting in Messages 💬 Tap Send and Dana knows.")
+            default:
+                break
+            }
+        }
+    }
+
+    /// One exchange played live: the question arrives (with `shown`, a picture sent with it),
+    /// then thinking, each tool step in turn (a step with something to wait for waits for it),
+    /// then the reply word by word.
+    private func playForDemo(question: String, thinking: String, steps: [(ToolActivity, (() async -> Void)?)], reply text: String,
+                             picture: Attachment? = nil, shown: Attachment? = nil) async {
+        mutateMessagesForDemo {
+            var asked = Message(role: .user, text: question)
+            if let shown { asked.attachments = [shown] }
+            $0.append(asked)
+        }
+        try? await Task.sleep(for: .seconds(0.9))
+        var reply = Message(role: .assistant, text: "")
+        let id = reply.id
+        mutateMessagesForDemo { $0.append(reply) }
+        func update(_ change: (inout Message) -> Void) {
+            change(&reply)
+            mutateMessagesForDemo { if let i = $0.firstIndex(where: { $0.id == id }) { $0[i] = reply } }
+        }
+        let started = Date.now
+        update { $0.reasoningStartedAt = .now }
+        for word in thinking.split(separator: " ") {
+            update { $0.reasoning += ($0.reasoning.isEmpty ? "" : " ") + word }
+            try? await Task.sleep(for: .milliseconds(28))
+        }
+        update { $0.reasoningEndedAt = .now }
+        for (step, wait) in steps {
+            var tool = step
+            try? await Task.sleep(for: .milliseconds(260))
+            tool.startedAt = .now
+            update { $0.tools.append(tool) }
+            try? await Task.sleep(for: .milliseconds(wait == nil ? 1000 : 500))
+            await wait?()
+            update { if let i = $0.tools.firstIndex(where: { $0.id == tool.id }) { $0.tools[i].status = .completed; $0.tools[i].endedAt = .now } }
+        }
+        try? await Task.sleep(for: .milliseconds(300))
+        if let picture { update { $0.attachments.append(picture) } }
+        let first = Date.now
+        var rest = Substring(text)
+        while !rest.isEmpty {
+            let end = rest.firstIndex(where: { $0 == " " || $0 == "\n" }).map { rest.index(after: $0) } ?? rest.endIndex
+            update { $0.text += rest[..<end] }
+            rest = rest[end...]
+            try? await Task.sleep(for: .milliseconds(42))
+        }
+        update { $0.metrics = TurnMetrics(sentAt: started, firstTokenAt: first, completedAt: .now, characters: text.count, usage: nil, contextWindow: 131_072) }
+    }
+
+    /// A picture of a bowling alley's scoreboard, drawn: the photo the demo's agent finds.
+    static func scoreboardForDemo() -> Attachment? {
+        let size = CGSize(width: 1200, height: 800)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let image = UIGraphicsImageRenderer(size: size, format: format).image { context in
+            let cg = context.cgContext
+            UIColor(red: 0.04, green: 0.05, blue: 0.12, alpha: 1).setFill()
+            cg.fill(CGRect(origin: .zero, size: size))
+            // The glow of a screen hung over the lane.
+            let glow = CGGradient(colorsSpace: nil, colors: [UIColor(red: 0.16, green: 0.25, blue: 0.62, alpha: 1).cgColor,
+                                                              UIColor(red: 0.04, green: 0.05, blue: 0.12, alpha: 1).cgColor] as CFArray, locations: [0, 1])!
+            cg.drawRadialGradient(glow, startCenter: CGPoint(x: 600, y: 380), startRadius: 0, endCenter: CGPoint(x: 600, y: 380), endRadius: 720, options: [])
+            func write(_ text: String, at point: CGPoint, size: CGFloat, weight: UIFont.Weight, color: UIColor, width: CGFloat? = nil) {
+                let style = NSMutableParagraphStyle()
+                style.alignment = width == nil ? .left : .center
+                let string = NSAttributedString(string: text, attributes: [.font: UIFont.monospacedDigitSystemFont(ofSize: size, weight: weight),
+                                                                             .foregroundColor: color, .paragraphStyle: style])
+                if let width { string.draw(in: CGRect(x: point.x, y: point.y, width: width, height: size * 1.4)) } else { string.draw(at: point) }
+            }
+            let gold = UIColor(red: 1, green: 0.78, blue: 0.25, alpha: 1)
+            write("LANE 12", at: CGPoint(x: 70, y: 56), size: 64, weight: .heavy, color: gold)
+            write("SAT 8:42 PM", at: CGPoint(x: 800, y: 76), size: 40, weight: .semibold, color: .white.withAlphaComponent(0.7))
+            let rows: [(String, [String], [String], String)] = [
+                ("ALEX", ["X", "9/", "X", "X", "81", "X", "7/", "X", "9-", "XX8"], ["20", "40", "68", "87", "96", "116", "136", "155", "164", "187"], "187"),
+                ("DANA", ["72", "X", "9/", "63", "X", "8/", "71", "X", "9/", "X81"], ["9", "29", "45", "54", "74", "91", "99", "119", "139", "158"], "158"),
+            ]
+            for (r, row) in rows.enumerated() {
+                let top = 210 + CGFloat(r) * 270
+                write(row.0, at: CGPoint(x: 70, y: top - 62), size: 46, weight: .bold, color: .white)
+                write(row.3, at: CGPoint(x: 930, y: top - 74), size: 64, weight: .heavy, color: r == 0 ? gold : .white, width: 200)
+                for frame in 0 ..< 10 {
+                    let box = CGRect(x: 70 + CGFloat(frame) * 106, y: top, width: 100, height: 150)
+                    UIColor.white.withAlphaComponent(0.08).setFill()
+                    UIBezierPath(roundedRect: box, cornerRadius: 10).fill()
+                    UIColor.white.withAlphaComponent(0.35).setStroke()
+                    let edge = UIBezierPath(roundedRect: box, cornerRadius: 10)
+                    edge.lineWidth = 2
+                    edge.stroke()
+                    write(row.1[frame], at: CGPoint(x: box.minX, y: box.minY + 14), size: 34, weight: .semibold, color: .white.withAlphaComponent(0.85), width: 100)
+                    write(row.2[frame], at: CGPoint(x: box.minX, y: box.minY + 78), size: 40, weight: .bold, color: r == 0 ? gold : .white, width: 100)
+                }
+            }
+        }
+        return Attachment.image(image, filename: "scoreboard.jpg")
+    }
+
     /// Measuring aid (`-echo.demoHeavy [turns]`, 32 by default): a thread of long replies, about
     /// ten thousand characters each, like a long session with a model that writes at length.
     func seedHeavyDemo(turns: Int) {

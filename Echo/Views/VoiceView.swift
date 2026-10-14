@@ -15,10 +15,14 @@ struct VoiceView: View {
 
     /// Dev hook: `-echo.voiceDemo` shows voice mode mid-listen — raised waveform, the Listening
     /// label, a spoken caption — for store screenshots, where the simulator has no microphone.
+    /// `-echo.voiceDemo "<words>"` puts other words in the caption.
     #if DEBUG
     private static let demo = DevHooks.voiceDemo
+    private static let demoWords = DevHooks.value("-echo.voiceDemo").flatMap { $0.hasPrefix("-") ? nil : $0 }
+        ?? "Okay, prune anything older than thirty days and try the media share again"
     #else
     private static let demo = false
+    private static let demoWords = ""
     #endif
     private var phase: VoiceSession.Phase { Self.demo ? .listening : session.phase }
 
@@ -121,7 +125,7 @@ struct VoiceView: View {
     private var captionArea: some View {
         switch phase {
         case .listening:
-            let words = Self.demo ? "Okay, prune anything older than thirty days and try the media share again" : session.liveTranscript
+            let words = Self.demo ? Self.demoWords : session.liveTranscript
             if words.isEmpty {
                 Text("Go ahead.")
                     .font(.title2.weight(.semibold))
@@ -237,7 +241,8 @@ struct VoiceView: View {
             // While something is running (listening, thinking, reading the reply) the button is a
             // red square that only stops it; once nothing runs it's the ✕ that leaves voice mode.
             Button {
-                let wasWorking = solIsWorking   // cancel() idles the phase synchronously
+                // cancel() idles the phase synchronously. In the demo pose nothing runs, so it leaves.
+                let wasWorking = solIsWorking && !Self.demo
                 session.cancel()
                 if !wasWorking { dismiss() }
             } label: {
@@ -322,6 +327,8 @@ private struct Viewfinder: View {
             Color.black
             if let live = session.eye.viewfinder {
                 CameraPreview(session: live)
+            } else if let picture = Self.standIn(session.eye) {
+                Color.clear.overlay { Image(uiImage: picture).resizable().scaledToFill() }
             } else {
                 // A stand-in camera has nothing to show.
                 Image(systemName: "camera")
@@ -347,6 +354,15 @@ private struct Viewfinder: View {
         .shadow(color: .black.opacity(0.35), radius: 22, y: 12)
         .animation(.easeOut(duration: 0.3), value: phase)
         .accessibilityHidden(true)
+    }
+
+    /// What a made-up camera sees (`-echo.voiceLook`), shown as a real one's picture would be.
+    private static func standIn(_ eye: any VoiceLooking) -> UIImage? {
+        #if DEBUG
+        (eye as? DemoEye)?.picture
+        #else
+        nil
+        #endif
     }
 }
 

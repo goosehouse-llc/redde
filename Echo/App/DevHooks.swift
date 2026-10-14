@@ -26,6 +26,16 @@ import WidgetKit
 ///   made-up server, with no Dashboard. Installing leaves it running; with `restart`, waiting for one.
 /// - `-echo.demoChatControls`: the model menu's "This conversation" switches on sample data.
 /// - `-echo.demoTodos`: a conversation in which the agent keeps a task list (the checklist under a reply).
+/// - `-echo.demoPhone [settings]`: Phone tools switched on, each area set (in these settings
+///   only: nothing of iOS's is asked for), and the agent using the phone played live: the
+///   calendar, a reminder that Phone tools asks about for real, a photo found by what it
+///   shows. With `reach`, a call and a message instead, the message in the real Messages
+///   sheet. With `settings`, only the switches are set, to look at Settings → Phone tools.
+/// - `-echo.demoFun <scene>`: a scene of the second Phone tools video, a day with the agent:
+///   `morning` (the calendar, and a reminder asked about for real), `timer` (a real nine-minute
+///   timer; Alarms has to be allowed already), `widget` (writes on the real widget), `photo`,
+///   `look` (plays once voice mode's made-up camera has been opened: add `-echo.voiceView
+///   -echo.voiceLook`), `reach` (a call and a message). Switches set as with `-echo.demoPhone`.
 /// - `-echo.demoAudio`: a reply that came with a sound file (the player in the conversation).
 /// - `-echo.demoPhotos [n]`: messages with two photos, one, and n (five by default), to look at
 ///   how pictures are set out together and at the full-screen viewer.
@@ -45,7 +55,7 @@ import WidgetKit
 ///   `-echo.clearDrafts` forgets every conversation's unsent draft first (UI tests).
 /// - `-echo.ask "text"`: send a question at launch (the lab, screenshots of a live reply).
 ///   `-echo.fresh` starts on a new conversation first.
-/// - `-echo.voiceView`: open voice mode without listening. `-echo.voiceDemo` poses it mid-listen;
+/// - `-echo.voiceView`: open voice mode without listening. `-echo.voiceDemo ["<words>"]` poses it mid-listen;
 ///   `-echo.autoVoice` opens it and starts listening.
 /// - `-echo.demoBoard [clear]`: write on the agent's widget as its phone tool does (a day's plan
 ///   now, and a line that takes over in a minute), to look at it on the Home Screen.
@@ -121,6 +131,23 @@ enum DevHooks {
         if demoProjects { settings.transport = .hermesServe }
         if has("-echo.demoLong") { conversation.seedLongDemo() }
         if has("-echo.demoTodos") { conversation.seedTodoDemo() }
+        if has("-echo.demoPhone") {
+            var tools = PhoneToolsSettings()
+            tools.on = true
+            for (area, access) in [(DeviceArea.calendar, PhoneToolsSettings.Access.allow), (.reminders, .ask), (.contacts, .ask), (.photos, .allow), (.files, .ask),
+                                   (.alarms, .ask), (.widget, .allow), (.people, .allow)] {
+                tools.set(area, access)
+            }
+            settings.phoneTools = tools
+            if value("-echo.demoPhone") != "settings" { conversation.streamPhoneDemo(reach: value("-echo.demoPhone") == "reach") }
+        }
+        if let scene = value("-echo.demoFun") {
+            var tools = PhoneToolsSettings()
+            tools.on = true
+            for area in DeviceArea.allCases { tools.set(area, area == .reminders ? .ask : .allow) }
+            settings.phoneTools = tools
+            conversation.streamFunDemo(scene)
+        }
         if has("-echo.demoAudio") { conversation.seedAudioDemo() }
         if has("-echo.demoPhotos") { conversation.seedPhotoDemo(count: value("-echo.demoPhotos").flatMap(Int.init) ?? 5) }
         if has("-echo.demoWidgets") {
