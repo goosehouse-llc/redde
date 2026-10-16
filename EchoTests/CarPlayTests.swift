@@ -75,9 +75,10 @@ struct CarPlayTests {
         }
     }
 
-    private func session(_ id: String, title: String? = nil, preview: String? = nil, lastActive: Double, pinned: Bool? = nil) -> HermesSessionsAPI.SessionSummary {
+    private func session(_ id: String, title: String? = nil, preview: String? = nil, lastActive: Double, pinned: Bool? = nil,
+                         source: String? = nil) -> HermesSessionsAPI.SessionSummary {
         var s = HermesSessionsAPI.SessionSummary(id: id)
-        s.title = title; s.preview = preview; s.last_active = lastActive; s.pinned = pinned
+        s.title = title; s.preview = preview; s.last_active = lastActive; s.pinned = pinned; s.source = source
         return s
     }
 
@@ -108,6 +109,16 @@ struct CarPlayTests {
         let rows = CarPlayChats.rows(sessions: sessions, currentSessionID: nil, limit: 12)
         #expect(rows.count == 12)
         #expect(rows.first?.title == "Chat 29")
+    }
+
+    /// GitHub issue 19: every run of a scheduled job is a session, and they filled the list.
+    @Test func scheduledRunsStayOutUnlessPinnedOrOpen() {
+        let runs = (0 ..< 20).map { session("run\($0)", title: "Briefing \($0)", lastActive: Double(100 + $0), source: "cron") }
+        let rows = CarPlayChats.rows(sessions: runs + [
+            session("chat", title: "Kitchen", lastActive: 50, source: "api_server"),
+            session("kept", title: "Pinned run", lastActive: 10, pinned: true, source: "cron"),
+        ], currentSessionID: "run3", limit: 12)
+        #expect(rows.map(\.title) == ["Pinned run", "Briefing 3", "Kitchen"])
     }
 
     // MARK: The tabs

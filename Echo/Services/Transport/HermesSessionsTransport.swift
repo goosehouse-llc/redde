@@ -241,6 +241,8 @@ nonisolated struct HermesSessionsAPI: Sendable {
             return id
         }
         var lastActiveDate: Date? { (last_active ?? started_at).map { Date(timeIntervalSince1970: $0) } }
+        /// A run of a scheduled job: Hermes makes a session of each one (GitHub issue 19).
+        var isScheduledRun: Bool { source == "cron" }
         var sourceLabel: String {
             switch source ?? "" {
             case "api_server", "api-server": "Redde / API"

@@ -1,8 +1,9 @@
 import XCTest
 
 /// A conversation's own switches in the model menu, on sample data (`-echo.demoChatControls`), and
-/// projects in the chat list (`-echo.demoProjects`): "Move to Project" in a row's menu, and a new
-/// conversation in a project that has none yet. None of it needs a server.
+/// projects in the chat list (`-echo.demoProjects`): "Move to Project" in a row's menu, a new
+/// conversation in a project that has none yet, and scheduled runs folded away. None of it needs
+/// a server.
 @MainActor
 final class ChatControlsUITests: XCTestCase {
     private func shot(_ name: String) {
@@ -99,5 +100,30 @@ final class ChatControlsUITests: XCTestCase {
         let named = app.descendants(matching: .any).matching(NSPredicate(format: "label == 'Project: Garden'")).firstMatch
         XCTAssertTrue(named.waitForExistence(timeout: 8), "The new conversation's header doesn't name its project")
         shot("header names the project")
+    }
+
+    /// GitHub issue 19: runs of scheduled jobs wait folded at the end of the list, and open on a tap.
+    func testScheduledRunsAreFoldedAwayUntilAsked() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demoProjects", "-echo.screen", "sessions"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launch()
+        let chat = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Transcript scrolling'")).firstMatch
+        XCTAssertTrue(chat.waitForExistence(timeout: 20), "The demo's conversations never appeared")
+        let show = app.buttons["Show scheduled runs"]
+        let hide = app.buttons["Hide scheduled runs"]
+        let run = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Morning briefing'")).firstMatch
+        // The fold is remembered: start from folded, whatever a run before left.
+        for _ in 0 ..< 4 where !(show.exists || hide.exists) { app.swipeUp() }
+        if hide.exists { hide.tap() }
+        XCTAssertTrue(show.waitForExistence(timeout: 5), "No Scheduled runs header at the end of the list")
+        XCTAssertFalse(run.exists, "A scheduled run is among the chats")
+        shot("scheduled runs folded")
+        show.tap()
+        XCTAssertTrue(run.waitForExistence(timeout: 5), "Opening Scheduled runs didn't show the runs")
+        shot("scheduled runs open")
+        hide.tap()
+        XCTAssertTrue(show.waitForExistence(timeout: 5), "Scheduled runs didn't fold again")
+        XCTAssertFalse(run.exists, "The runs stayed after folding")
     }
 }

@@ -53,6 +53,7 @@ struct ConversationsList: View {
     @State private var projectRenameText = ""
     @State private var projectRemoving: HermesServeClient.Project?
     @AppStorage("sessions.showProjects") private var showProjects = true
+    @AppStorage("sessions.showScheduled") private var showScheduled = false
     @State private var shareItem: ShareItem?
     @State private var selecting = false
     @State private var selected: Set<String> = []
@@ -356,32 +357,43 @@ struct ConversationsList: View {
             .accessibilityHint("Makes a project folder on your server and starts a conversation in it")
             }
         } header: {
-            Button {
-                withAnimation(.easeOut(duration: 0.2)) { showProjects.toggle() }
-            } label: {
-                HStack(spacing: 6) {
-                    Text("Projects")
-                    if !showProjects {
-                        Text("\(projects.count)").font(.caption2.weight(.semibold)).monospacedDigit()
-                            .padding(.horizontal, 6).padding(.vertical, 1)
-                            .background(.quaternary, in: .capsule)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .rotationEffect(.degrees(showProjects ? 90 : 0))
-                }
-                .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(showProjects ? "Hide projects" : "Show projects")
-            .accessibilityAddTraits(.isHeader)
+            foldingHeader("Projects", count: projects.count, isOpen: $showProjects)
         }
     }
 
-    /// Ids of the rows currently shown, for select-all and bulk actions.
+    /// A header that folds its section away and opens it again; folded, it says how many rows wait.
+    private func foldingHeader(_ title: String, count: Int, isOpen: Binding<Bool>) -> some View {
+        Button {
+            withAnimation(.easeOut(duration: 0.2)) { isOpen.wrappedValue.toggle() }
+        } label: {
+            HStack(spacing: 6) {
+                Text(title)
+                if !isOpen.wrappedValue {
+                    Text("\(count)").font(.caption2.weight(.semibold)).monospacedDigit()
+                        .padding(.horizontal, 6).padding(.vertical, 1)
+                        .background(.quaternary, in: .capsule)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .rotationEffect(.degrees(isOpen.wrappedValue ? 90 : 0))
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(isOpen.wrappedValue ? "Hide" : "Show") \(title.lowercased())")
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    /// Ids of the rows currently shown, for select-all and bulk actions: folded runs aren't.
     private var visibleIDs: Set<String> {
-        usesLedger ? Set(visibleLedger.map(\.id)) : Set(visibleLocal.map { $0.id.uuidString })
+        usesLedger ? Set(visibleLedger.filter { showScheduled || !Self.isFoldable($0) }.map(\.id))
+                   : Set(visibleLocal.map { $0.id.uuidString })
+    }
+
+    /// A row that goes under Scheduled runs rather than among the chats: a run nobody pinned.
+    private static func isFoldable(_ session: HermesSessionsAPI.SessionSummary) -> Bool {
+        session.isScheduledRun && session.pinned != true
     }
 
     private var visibleLocal: [ConversationSummary] {
@@ -462,12 +474,22 @@ struct ConversationsList: View {
         }
         let rows = visibleLedger
         let pinned = rows.filter { $0.pinned == true }
+        let runs = rows.filter(Self.isFoldable)
         let drafted = draftedSessions
         if !pinned.isEmpty {
             Section { ForEach(pinned) { ledgerButton($0, hasDraft: drafted.contains($0.id)) } } header: { groupHeader("Pinned") }
         }
-        ForEach(DateGroup.group(rows.filter { $0.pinned != true }, by: { $0.lastActiveDate }), id: \.title) { group in
+        ForEach(DateGroup.group(rows.filter { $0.pinned != true && !$0.isScheduledRun }, by: { $0.lastActiveDate }), id: \.title) { group in
             Section { ForEach(group.items) { ledgerButton($0, hasDraft: drafted.contains($0.id)) } } header: { groupHeader(group.title) }
+        }
+        // Hermes makes a session of every run of a scheduled job, and a busy schedule buried
+        // the conversations (GitHub issue 19): the runs wait at the end, folded unless opened.
+        if !runs.isEmpty {
+            Section {
+                if showScheduled { ForEach(runs) { ledgerButton($0, hasDraft: drafted.contains($0.id)) } }
+            } header: {
+                foldingHeader("Scheduled runs", count: runs.count, isOpen: $showScheduled)
+            }
         }
     }
 
@@ -834,7 +856,7 @@ struct ConversationsList: View {
         if DevHooks.demoProjects {
             projects = Self.demoProjects
             folders = Self.demoProjects
-            ledger = Self.demoProjects.flatMap { $0.lanes.flatMap(\.sessions) }
+            ledger = Self.demoProjects.flatMap { $0.lanes.flatMap(\.sessions) } + Self.demoScheduledRuns
             ledgerError = nil
             return
         }
@@ -1313,6 +1335,15 @@ extension ConversationsList {
             guard let data = text.data(using: .utf8), let value = try? JSONDecoder().decode(JSONValue.self, from: data) else { return nil }
             return HermesServeClient.Project(value)
         }
+    }
+
+    /// Two runs of a scheduled job, in no project: they fold away under Scheduled runs.
+    static var demoScheduledRuns: [HermesSessionsAPI.SessionSummary] {
+        let json = """
+        [{"id":"demo-cron-1","title":"Morning briefing","source":"cron","started_at":1772998000,"last_active":1772998100,"message_count":2},
+         {"id":"demo-cron-2","title":"Morning briefing","source":"cron","started_at":1772911600,"last_active":1772911700,"message_count":2}]
+        """
+        return (try? JSONDecoder().decode([HermesSessionsAPI.SessionSummary].self, from: Data(json.utf8))) ?? []
     }
 }
 #endif

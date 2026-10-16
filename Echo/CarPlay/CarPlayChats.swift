@@ -24,9 +24,11 @@ enum CarPlayChats {
     static let currentDetail = "The chat you are in"
 
     /// Server sessions as rows: pinned first, then the most recently used, like the phone's list.
+    /// Scheduled runs are left out (a busy schedule would fill every row), unless pinned or open.
     static func rows(sessions: [HermesSessionsAPI.SessionSummary], currentSessionID: String?, limit: Int,
                      now: Date = .now) -> [CarPlayChat] {
-        let ordered = sessions.sorted { a, b in
+        let kept = sessions.filter { !$0.isScheduledRun || $0.pinned == true || $0.id == currentSessionID }
+        let ordered = kept.sorted { a, b in
             if (a.pinned ?? false) != (b.pinned ?? false) { return a.pinned ?? false }
             return (a.lastActiveDate ?? .distantPast) > (b.lastActiveDate ?? .distantPast)
         }
