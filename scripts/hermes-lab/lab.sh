@@ -34,12 +34,14 @@ export LAB_TARGET="$LAB_HOME/redde-lab-target"   # what the stub's "danger" comm
 export LAB_APNS="$LAB_HOME/apns.jsonl"           # what the push scenario's stand-in for Apple received
 
 install() {
-  local tag="$1" dir="$LAB_HOME/hermes-$1"
+  local tag="$1" dir="$LAB_HOME/hermes-$1" py=3.12
+  # 0.22 declares every dependency for Python 3.14 only: on 3.12 it installs none and can't start.
+  [[ "$tag" == v2026.* ]] || py=3.14
   [[ -x "$dir/.venv/bin/hermes" ]] && return
   echo "installing Hermes $tag into $dir …"
   rm -rf "$dir"
   git -c advice.detachedHead=false clone -q --depth 1 --branch "$tag" https://github.com/NousResearch/hermes-agent.git "$dir" 2>/dev/null
-  (cd "$dir" && uv venv -q --python 3.12 .venv && VIRTUAL_ENV="$dir/.venv" uv pip install -q -e ".[web,mcp]" aiohttp websockets)
+  (cd "$dir" && uv venv -q --python $py .venv && VIRTUAL_ENV="$dir/.venv" uv pip install -q -e ".[web,mcp]" aiohttp websockets)
 }
 
 # The MCP SDK, for a copy installed before the lab asked for it: Hermes can't test an MCP server without.
@@ -384,5 +386,5 @@ case "${1:-}" in
   device) shift; device "$@" ;;
   up) up "$2" "$3" && echo "lab up: Hermes $2 / $3 — API http://127.0.0.1:18642 (key labkey-labkey-labkey), Dashboard http://127.0.0.1:19119" ;;
   down) down ;;
-  *) sed -n '2,19p' "$0"; exit 2 ;;
+  *) sed -n '2,20p' "$0"; exit 2 ;;
 esac

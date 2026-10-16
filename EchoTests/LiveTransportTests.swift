@@ -207,6 +207,61 @@ struct HermesLabApprovalTests {
         }
     }
 
+    /// The same over the Hermes API. Stock Hermes asks there from 0.21.6 (`approval.request` on
+    /// the session stream, answered at `/v1/runs/{run}/approval`); before that only a patched
+    /// Hermes did, and the agent was told the command waits. That is said, not failed.
+    @Test func theHermesAPIAsksBeforeACommandRuns() async throws {
+        let api = URL(string: "http://127.0.0.1:18642")!, key = "labkey-labkey-labkey"
+        var probe = URLRequest(url: Self.dashboard.appending(path: "api/status"))
+        probe.timeoutInterval = 2
+        guard let (status, _) = try? await URLSession.shared.data(for: probe) else {
+            print("LAB SKIP: no Hermes lab on 127.0.0.1:19119 (scripts/hermes-lab/lab.sh up <tag> approval)")
+            return
+        }
+        let version = (try? JSONValue.parse(status))?["version"]?.string ?? ""
+        let asksOnAPI = version.split(separator: ".").compactMap { Int($0) }.lexicographicallyPrecedes([0, 21, 6]) == false
+        let ledger = HermesSessionsAPI(baseURL: api, apiKey: key)
+        let transport = HermesSessionsTransport(baseURL: api, apiKey: key)
+        // As the app asks: the model by its full name, every turn.
+        let choices = (try? await ledger.modelOptions()) ?? []
+        let model = choices.first { $0.model == "alpha" }
+        let provider = model.flatMap { Conversation.liveProvider(for: $0.model, saved: $0.provider, in: choices) }
+        for (answer, expected) in [("once", "[gone]"), ("deny", "[kept]")] {
+            var detail = ""
+            var ok = false
+            var asked: ApprovalRequest?
+            do {
+                let session = try await ledger.createSession(title: "lab api approval \(UUID().uuidString.prefix(8))", model: model?.model, provider: provider)
+                let request = TurnRequest(userText: "Do the danger thing.", history: [], sessionID: session.id, model: model?.model, provider: provider, instructions: nil)
+                let outcome = try await Self.timed {
+                    var outcome = Outcome()
+                    for try await event in transport.stream(request) {
+                        switch event {
+                        case let .textDelta(delta): outcome.reply += delta
+                        case let .textFinal(text): outcome.reply = text
+                        case let .interrupt(.approval(approval), run):
+                            outcome.asked = approval
+                            try await ledger.respondApproval(runID: run, requestID: approval.id, choice: answer)
+                        default: break
+                        }
+                    }
+                    outcome.reply = outcome.reply.trimmingCharacters(in: .whitespacesAndNewlines)
+                    return outcome
+                }
+                asked = outcome.asked
+                ok = outcome.asked?.command.contains("rm -rf") == true && outcome.reply == expected
+                detail = "asked \(outcome.asked?.command ?? "nothing") \(outcome.asked?.choices ?? []), reply \(outcome.reply.prefix(120))"
+            } catch {
+                detail = String(error.localizedDescription.prefix(160))
+            }
+            if asked == nil, !asksOnAPI {
+                print("  ----  Hermes \(version) doesn't ask over the Hermes API (stock asks from 0.21.6): \(detail)")
+                return
+            }
+            Self.report(ok, "Hermes API: a command the agent wants to run is asked about; \"\(answer)\" \(expected == "[gone]" ? "runs it" : "stops it")", detail)
+        }
+    }
+
     /// Starts the turn that asks about `rm -rf`, and goes away before the agent gets to it, as the
     /// app does when iOS closes it. The agent then asks nobody, and waits. Returns the session.
     private static func leaveATurnWaiting(saying text: String = "Do the danger thing.") async throws -> String? {
