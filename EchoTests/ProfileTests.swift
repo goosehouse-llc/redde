@@ -37,6 +37,16 @@ struct ProfileTests {
         #expect(settings(profile: "work").profileFilePath("SOUL.md") == "~/.hermes/profiles/work/SOUL.md")
     }
 
+    /// GitHub issue 15: a Hermes whose home isn't `~/.hermes` (Docker's `/opt/data`) had every
+    /// context file "not there yet". The home the server gives now wins over the guess.
+    @Test func theHomeTheServerGivesWins() {
+        #expect(settings().profileFilePath("memories/USER.md", home: "/opt/data/") == "/opt/data/memories/USER.md")
+        #expect(settings(profile: "work", home: "/home/redde/.hermes/profiles/work")
+            .profileFilePath("SOUL.md", home: "/opt/data/profiles/work") == "/opt/data/profiles/work/SOUL.md")
+        // A named profile's home, left over, is never the default profile's.
+        #expect(settings(profile: "", home: "/home/redde/.hermes/profiles/work").profileFilePath("SOUL.md") == "~/.hermes/SOUL.md")
+    }
+
     @Test func restPlacementPerRoute() {
         typealias C = HermesServeClient
         #expect(C.profilePlacement(method: "GET", path: "api/sessions?limit=50&offset=0&order=recent") == .query)

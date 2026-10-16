@@ -943,6 +943,53 @@ struct HermesLabFilesTests {
     }
 }
 
+/// Settings' context and memory files against the lab (`scripts/hermes-lab/lab.sh context`), where
+/// Hermes's home is a folder of the lab's own and not `~/.hermes`, as in Docker (GitHub issue 15):
+/// the files are found where the server says, SOUL.md through its own route. `lab.sh context`
+/// puts a SOUL.md and a MEMORY.md there first. Nothing is written outside the lab's run folder.
+struct HermesLabContextFilesTests {
+    @Test func contextFilesAreFoundWhereHermesKeepsThem() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        func report(_ ok: Bool, _ what: String, _ detail: String = "") { HermesLabApprovalTests.report(ok, what, detail) }
+        let settings = Settings(defaults: UserDefaults(suiteName: "lab-context-\(UUID().uuidString)")!)
+
+        let home = await client.profileHome()
+        report(home?.contains("/redde-hermes-lab/run-") == true && home != "~/.hermes", "the Dashboard says where the profile keeps its files",
+               home ?? "it didn't say")
+        // Never write anywhere but the lab's own run folder.
+        guard let home, home.contains("/redde-hermes-lab/run-") else { return }
+
+        let memory = settings.profileFilePath("memories/MEMORY.md", home: home)
+        let found = try? await client.readText(path: memory)
+        report(found == "Lab memory for issue 15.\n", "MEMORY.md is found there", "\(memory): \(found ?? "nothing")")
+        // With a home of the lab's own, the old guess looks in an empty folder, as on a Docker host.
+        if (try? await client.folder(at: nil))?.path.contains("/redde-hermes-lab/run-") == true {
+            let guessed = try? await client.readText(path: settings.profileFilePath("memories/MEMORY.md"))
+            report(guessed == nil, "the old guess, ~/.hermes, finds nothing (what issue 15 saw)", guessed ?? "")
+        }
+
+        do {
+            let soul = try await client.soul(profile: ProfileCatalog.defaultID)
+            report(soul == "Lab soul for issue 15.\n", "SOUL.md reads through its own route", soul ?? "none")
+            try await client.setSoul(profile: ProfileCatalog.defaultID, content: "Changed on the phone.\n")
+            let landed = try await client.readText(path: settings.profileFilePath("SOUL.md", home: home))
+            report(landed == "Changed on the phone.\n", "SOUL.md saved through its route lands in that home", landed ?? "nothing")
+        } catch {
+            report(false, "SOUL.md through its own route", String(error.localizedDescription.prefix(160)))
+        }
+
+        do {
+            let user = settings.profileFilePath("memories/USER.md", home: home)
+            report(try await client.readText(path: user) == nil, "a file not made yet reads as missing", user)
+            try await client.writeText(path: user, content: "Likes short answers.\n")
+            report(try await client.readText(path: user) == "Likes short answers.\n", "USER.md saved lands there")
+        } catch {
+            report(false, "USER.md saved", String(error.localizedDescription.prefix(160)))
+        }
+    }
+}
+
 /// A conversation's own switches and a move to a project, against the lab
 /// (`scripts/hermes-lab/lab.sh controls`, the `approval` scenario): the app's client on an
 /// unmodified Hermes. Auto-approve is checked by what it is for: the stub's "danger" turn wants to

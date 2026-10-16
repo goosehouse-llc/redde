@@ -255,12 +255,12 @@ struct AgentSettings<Details: View>: View {
         Section {
             if !canEditFiles { filesLocked }
             NavigationLink {
-                ContextFileEditorView(title: "SOUL.md", path: Settings.shared.profileFilePath("SOUL.md"),
+                ContextFileEditorView(title: "SOUL.md", file: "SOUL.md",
                                       purpose: "The agent's persona: who Redde is, how it speaks, what it values.")
             } label: { Label("SOUL.md", systemImage: "person.text.rectangle") }
             .disabled(!canEditFiles)
             NavigationLink {
-                ContextFileEditorView(title: "ENVIRONMENT.md", path: Settings.shared.profileFilePath("ENVIRONMENT.md"),
+                ContextFileEditorView(title: "ENVIRONMENT.md", file: "ENVIRONMENT.md",
                                       purpose: "Standing facts about your setup: machines, services, names, conventions.")
             } label: { Label("ENVIRONMENT.md", systemImage: "server.rack") }
             .disabled(!canEditFiles)
@@ -273,11 +273,11 @@ struct AgentSettings<Details: View>: View {
 
         Section {
             NavigationLink {
-                ContextFileEditorView(title: "MEMORY.md", path: Settings.shared.profileFilePath("memories/MEMORY.md"),
+                ContextFileEditorView(title: "MEMORY.md", file: "memories/MEMORY.md",
                                       purpose: "The agent's own notes: things it decided to remember across conversations. Injected into every system prompt.")
             } label: { Label("MEMORY.md", systemImage: "brain") }
             NavigationLink {
-                ContextFileEditorView(title: "USER.md", path: Settings.shared.profileFilePath("memories/USER.md"),
+                ContextFileEditorView(title: "USER.md", file: "memories/USER.md",
                                       purpose: "What the agent knows about you: preferences, facts, how you like answers. Also injected into every prompt.")
             } label: { Label("USER.md", systemImage: "person.crop.circle") }
         } header: {

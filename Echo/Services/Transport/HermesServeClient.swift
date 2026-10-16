@@ -963,6 +963,33 @@ final class HermesServeClient {
         return list.filter(\.isDefault) + list.filter { !$0.isDefault }
     }
 
+    /// Where the profile in use keeps its files (its Hermes home), as the profile list says:
+    /// `~/.hermes` usually, but HERMES_HOME itself where that is set, as Hermes's Docker image
+    /// does (`/opt/data`). Nil when the list can't be had or doesn't say (GitHub issue 15).
+    func profileHome() async -> String? {
+        guard let listed = try? await profiles() else { return nil }
+        let profile = if let name = settings.profileName {
+            listed.first { $0.name.caseInsensitiveCompare(name) == .orderedSame }
+        } else {
+            listed.first(where: \.isDefault)
+        }
+        return profile?.path.nilIfEmpty
+    }
+
+    /// A profile's SOUL.md through the Dashboard's own route, which finds the profile's folder by
+    /// itself; nil when it has none yet. (The file routes read where the terminal works, which
+    /// from 0.22 can be another machine over SSH.)
+    func soul(profile: String) async throws -> String? {
+        struct Envelope: Decodable { var content: String; var exists: Bool }
+        let envelope = try JSONDecoder().decode(Envelope.self, from: try await rest("GET", "api/profiles/\(profile)/soul", body: nil as Data?))
+        return envelope.exists ? envelope.content : nil
+    }
+
+    func setSoul(profile: String, content: String) async throws {
+        struct Body: Encodable { var content: String }
+        _ = try await rest("PUT", "api/profiles/\(profile)/soul", body: try JSONEncoder().encode(Body(content: content)))
+    }
+
     func dashboardSkills() async throws -> [DashboardSkill] {
         let data = try await rest("GET", "api/skills", body: nil as Data?)
         if let list = try? JSONDecoder().decode([DashboardSkill].self, from: data) { return list }

@@ -22,6 +22,8 @@ struct FilesView: View {
     @State private var typedPath = ""
     @State private var jump: String?
     @State private var deleting: ServerFile?
+    /// Where Places → Hermes goes: the usual layout until the server says (GitHub issue 15).
+    @State private var hermesHome = Self.hermesHome
 
     /// The server behind the screen: the Dashboard, or sample data (`-echo.demoFiles`).
     static var browser: any ServerFileBrowsing {
@@ -47,7 +49,7 @@ struct FilesView: View {
         List {
             if isRoot, model.folder?.lockedRoot == nil, search.isEmpty, model.phase == .loaded {
                 Section("Places") {
-                    NavigationLink { FilesView(path: Self.hermesHome) } label: {
+                    NavigationLink { FilesView(path: hermesHome) } label: {
                         Label("Hermes", systemImage: "brain")
                     }
                 }
@@ -97,6 +99,7 @@ struct FilesView: View {
             guard model.folder == nil else { return }
             if isRoot { ServerFiles.clearLocalCopies() }   // what was fetched to look at last time
             await model.load()
+            if isRoot, let client = Self.browser as? HermesServeClient, let home = await client.profileHome() { hermesHome = home }
         }
         .toolbar { ToolbarItem(placement: .primaryAction) { menu } }
         .quickLookPreview($preview)
@@ -217,7 +220,8 @@ struct FilesView: View {
 
     // MARK: Doing things
 
-    /// The Hermes home of the profile in use: `~/.hermes`, or the profile's own.
+    /// The Hermes home of the profile in use as Hermes usually lays it out: `~/.hermes`, or the
+    /// profile's own.
     static var hermesHome: String {
         (Settings.shared.profileFilePath("SOUL.md") as NSString).deletingLastPathComponent
     }

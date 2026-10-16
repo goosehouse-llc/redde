@@ -23,6 +23,7 @@ scripts/hermes-lab/lab.sh device --app   # and the app's own service carries one
 scripts/hermes-lab/lab.sh switch         # a turn left for another conversation goes on, and is picked up on return
 scripts/hermes-lab/lab.sh projects       # projects made in the app: a folder in ~/Projects, a conversation in it, a move, rename, remove
 scripts/hermes-lab/lab.sh search         # searching inside messages: words said on either connection, found through the Dashboard
+scripts/hermes-lab/lab.sh context        # Settings' context and memory files, found where Hermes keeps them (issue 15)
 scripts/hermes-lab/lab.sh up v2026.9.24 two   # leave one lab running to poke at; `down` stops it
 ```
 
@@ -121,6 +122,17 @@ the Dashboard's `GET /api/sessions/search`) has to find each conversation by its
 by its first letters (Hermes matches word beginnings), with the word marked in the snippet; and
 a word nobody said has to find nothing. The Hermes API has no search of its own: the app searches
 through the Dashboard on either connection.
+
+## Context and memory files
+
+`context` runs `EchoTests/HermesLabContextFilesTests` on the `approval` scenario, with a home
+folder of the lab's own (`LAB_OWN_HOME`), so `~/.hermes` is empty while Hermes's home is the run
+folder: what a Docker host (`HERMES_HOME=/opt/data`) looked like to Settings, where every file
+read as not made yet (GitHub issue 15). `lab.sh` puts a SOUL.md and a MEMORY.md in Hermes's home.
+The app's client has to learn that home from the profile list (`GET /api/profiles`, the
+default's `path`), find MEMORY.md there and nothing at `~/.hermes`, read and save SOUL.md through
+its own route (`/api/profiles/default/soul`), the save landing in that home, and save a USER.md
+that wasn't there. Nothing is written outside the run folder.
 
 ## The agent's task list
 

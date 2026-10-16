@@ -338,12 +338,14 @@ final class Settings: ServeEndpoint {
         return Keychain.read(.gatewayAPIKey)
     }
 
-    /// Where a file under `~/.hermes` lives for the selected profile, e.g. "SOUL.md". Uses the
-    /// home the server reported, else Hermes's layout for named profiles (`~/.hermes/profiles/<name>`).
-    func profileFilePath(_ relative: String) -> String {
-        guard let name = profileName else { return "~/.hermes/\(relative)" }
-        var home = hermesProfileHome.trimmingCharacters(in: .whitespacesAndNewlines)
-        if home.isEmpty { home = "~/.hermes/profiles/\(name)" }
+    /// Where a file in the selected profile's Hermes home lives, e.g. "SOUL.md". In `home` when
+    /// the server just said where that is (`HermesServeClient.profileHome`), else in the home it
+    /// reported when the profile was picked, else Hermes's usual layout (`~/.hermes`,
+    /// `~/.hermes/profiles/<name>`).
+    func profileFilePath(_ relative: String, home: String? = nil) -> String {
+        // The home kept from picking a profile is a named profile's: not the default's.
+        var home = (home ?? (profileName == nil ? "" : hermesProfileHome)).trimmingCharacters(in: .whitespacesAndNewlines)
+        if home.isEmpty { home = profileName.map { "~/.hermes/profiles/\($0)" } ?? "~/.hermes" }
         while home.hasSuffix("/") { home.removeLast() }
         return home + "/" + relative
     }
