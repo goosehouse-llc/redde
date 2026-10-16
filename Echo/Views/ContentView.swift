@@ -37,6 +37,7 @@ struct ContentView: View {
     @State private var deferredWhatsNew: WhatsNew.Release?
     @State private var showVoice = false
     @State private var showSearch = false
+    @State private var showTerminal = false
     @State private var showModelPicker = false
     /// "Edit & resend": the message being replaced; sending truncates the transcript from it.
     @State private var editing: Message?
@@ -305,6 +306,9 @@ struct ContentView: View {
                             }
                         }
                         .disabled(!conversation.hasMessages)
+                        if settings.transport.hasLedger {
+                            Button("Terminal", systemImage: "apple.terminal") { showTerminal = true }
+                        }
                         Divider()
                         Button("Settings", systemImage: "gearshape") { showSettings = true }
                     } label: {
@@ -318,6 +322,7 @@ struct ContentView: View {
                 }
             }
             .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
+            .fullScreenCover(isPresented: $showTerminal) { TerminalScreen(folderLookup: terminalFolder) }
             .alert("Rename conversation", isPresented: $showRename) {
                 TextField("Name", text: $renameText)
                     // Return on the keyboard saves, like the button.
@@ -401,6 +406,14 @@ struct ContentView: View {
         .opacity(0)
         .accessibilityHidden(true)
         .disabled(showConversations)   // the chat is behind the iPhone's conversation list then
+    }
+
+    /// The folder a terminal opened from this chat starts in: the project a new conversation is
+    /// starting in, else the session's working folder as the Dashboard lists it; home without one.
+    private func terminalFolder() async -> String? {
+        if let place = conversation.startsIn { return place.path }
+        guard let id = conversation.serverSessionID, settings.serveBaseURL != nil else { return nil }
+        return try? await HermesServeClient.shared.listSessions(limit: 200).first { $0.id == id }?.cwd?.nilIfEmpty
     }
 
     /// The header's first line: this conversation, or "New conversation" before the first message.

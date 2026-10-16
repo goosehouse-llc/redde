@@ -299,6 +299,12 @@ struct AgentSettings<Details: View>: View {
         }
 
         Section {
+            NavigationLink { TerminalSettingsView() } label: { Label("Terminal", systemImage: "apple.terminal") }
+        } footer: {
+            Text("A shell on your Hermes server over SSH, signed in with a key made on this iPhone. Also in a chat's More menu, in the chat's folder.")
+        }
+
+        Section {
             NavigationLink { GatewayView() } label: { Label("Gateway", systemImage: "gearshape.2") }
                 .disabled(!canAdminister)
         } footer: {
@@ -644,6 +650,8 @@ struct ResetSettings: View {
         for account in Keychain.allAccounts() where account != Keychain.Item.pushRegisterSecret.rawValue {
             Keychain.delete(account: account)
         }
+        KnownHosts.forgetAll()
+        TerminalAccount.forgetAll()
         WidgetSnapshot.clear()
         NeedsYou.clear()
         ContextReading.clear()

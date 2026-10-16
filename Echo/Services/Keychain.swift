@@ -17,6 +17,8 @@ nonisolated enum Keychain {
         /// The person's own headers for a server behind a reverse proxy (`CustomHeader`, as JSON).
         case customHeaders = "custom-headers"
         case pushRegisterSecret = "push-register-secret"
+        /// This device's SSH key for the terminal (`SSHIdentity`), Ed25519, raw and base64: app-wide.
+        case sshKey = "ssh-key"
     }
 
     private static let service = "com.goosehouse.echo"
