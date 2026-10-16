@@ -1046,6 +1046,19 @@ When it comes forward, a Hermes conversation that ends on an unanswered question
 joins it (`HermesTransport.rejoin`): the reply so far, what follows, and the card for whatever
 the agent is waiting on. Stop stops a joined turn; leaving the conversation only stops listening.
 
+**Leaving a conversation while the agent works in it** (opening another one, or starting a new
+one) lets go of the turn without stopping it, on both Hermes connections (GitHub issue 12): the
+Dashboard's turn is not sent `session.interrupt` (`TurnDeparture` on the request tells the
+transport it was left, not stopped), and the Hermes API's stream is simply dropped. Hermes
+finishes a turn nobody listens to and records its reply (0.21.0, 0.21.3 and 0.21.5,
+`scripts/hermes-lab/lab.sh switch`). Coming back, the Dashboard joins the turn if it is still
+under way; the Hermes API can't be listened to again, so a conversation that ends on a question
+asked in the last ten minutes says "Your agent is still working on this…" and is fetched every
+four seconds until the reply is in it (`Conversation.watchForLedgerReply`). Stop, deleting the
+conversation, and anything on the OpenAI-compatible connection (no host to go on) still stop the
+turn. Over the Hermes API, Stop has never reached the host: the app stops listening and the
+agent finishes there.
+
 ## Siri, Shortcuts and controls
 
 Four App Shortcuts: "Ask Redde", "Talk with Redde" (hands-free), "Take a Note" (quick capture,
@@ -1124,8 +1137,8 @@ keyed by the Hermes session, since Hermes waits on one thing at a time in a sess
 write the list:
 
 - The app, while it follows a turn (`Conversation.noteWaiting`), and it takes the entry away the
-  moment the request is answered or expires, or the turn is stopped or ends. Leaving a turn the app
-  only joined keeps the entry: that turn goes on on the host and still waits.
+  moment the request is answered or expires, or the turn is stopped or ends. Leaving a turn for
+  another conversation keeps the entry: that turn goes on on the host and still waits.
 - The notification extension, for a note a paired Hermes sends (`NeedsYou.take`): this is how a
   request made while Redde is closed gets onto the widget. A later note that the turn ended, with
   a reply or without, takes it off; so does answering from the notification, and opening the

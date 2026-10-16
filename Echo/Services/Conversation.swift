@@ -91,9 +91,9 @@ final class Conversation {
     }
     /// This conversation's entry on the "Needs you" widget, while it has one.
     private var waitingKey: String?
-    /// A turn the app only joined is being left to go on on the host: what it waits on, it
-    /// still waits on, and the widget keeps saying so.
-    private var leavingJoinedTurn = false
+    /// A turn is being left to go on on the host (another conversation was opened): what it
+    /// waits on, it still waits on, and the widget keeps saying so.
+    private var leavingTurn = false
 
     private let settings: Settings
     private let store: ConversationStore
@@ -255,6 +255,9 @@ final class Conversation {
             replyLanguage: settings.replyLanguage.nilIfEmpty,
             brief: brief
         )
+        let departure = TurnDeparture()
+        self.departure = departure
+        request.departure = departure
         guard let transport = makeTransport() else {
             fail(replyID, settings.isConfigured ? TransportError.badURL.localizedDescription
                                                 : "No connection is set up yet. Go to Settings → Connection → Set up connection….")
@@ -509,6 +512,10 @@ final class Conversation {
 
     /// How to stop the turn on screen when it is one the app joined and didn't start; nil otherwise.
     private var joinedStop: (@Sendable () -> Void)?
+    /// How the turn on screen that the app started is let go of, when it is left and not stopped.
+    private var departure: TurnDeparture?
+    /// Looks for the reply to a Hermes API conversation that was left while the agent worked.
+    private var ledgerWatch: Task<Void, Never>?
     /// The reply whose question has been saved already (see `.sessionID` in `apply`).
     private var questionSavedFor: UUID?
 
@@ -719,7 +726,7 @@ final class Conversation {
     private func settleWaiting() {
         guard let key = waitingKey else { return }
         waitingKey = nil
-        if !leavingJoinedTurn { StatusWidgets.settled(key, in: widgetDefaults) }
+        if !leavingTurn { StatusWidgets.settled(key, in: widgetDefaults) }
     }
 
     /// The Context widget's reading: the header ring's, when a turn ends or a conversation is
@@ -749,13 +756,19 @@ final class Conversation {
         }
     }
 
-    /// Stops the turn. `leaving`: the conversation is being left, not stopped; a turn the app only
-    /// joined (`rejoinIfWaiting`) then goes on on the host, where someone else may be waiting for
-    /// it. One the app started is stopped either way, as it always was.
+    /// Stops the turn. `leaving`: the conversation is being left, not stopped (another one is
+    /// opened, or a new one started). On a Hermes connection the turn then goes on on the host,
+    /// whether the app started it or only joined it: the reply is there when the conversation is
+    /// opened again, and on the Dashboard a turn still running is joined (GitHub issue 12; the
+    /// host finishing a turn nobody listens to was checked on Hermes 0.21.0, 0.21.3 and 0.21.5,
+    /// `scripts/hermes-lab/lab.sh switch`). The fast lane has no host to go on, so it stops.
     func cancel(leaving: Bool = false) {
         let wasStreaming = isStreaming
         let joined = joinedStop
         joinedStop = nil
+        let lettingGo = leaving && settings.transport.hasLedger
+        if lettingGo { departure?.leave() }
+        departure = nil
         if !leaving { joined?() }
         streamTask?.cancel()
         streamTask = nil
@@ -763,13 +776,13 @@ final class Conversation {
         flushDeltas()
         isStreaming = false
         clearStatus()
-        leavingJoinedTurn = leaving && joined != nil
+        leavingTurn = lettingGo
         pendingInterrupt = nil
-        leavingJoinedTurn = false
+        leavingTurn = false
         // Only a real Stop pauses the queue; regenerate/load/reset while idle must keep a
         // scheduled retry alive and a queued message queued.
         if wasStreaming {
-            if joined != nil, leaving { TurnActivity.shared.leave() } else { TurnActivity.shared.fail("Cancelled") }
+            if lettingGo { TurnActivity.shared.leave() } else { TurnActivity.shared.fail("Cancelled") }
             pauseQueue()
         }
     }
@@ -846,7 +859,8 @@ final class Conversation {
     }
 
     func delete(id recordID: UUID) {
-        if recordID == id { cancel(leaving: true) }   // a running turn would otherwise re-persist it
+        // A running turn would otherwise re-persist it; and the agent has no more to do for it.
+        if recordID == id { cancel() }
         store.delete(id: recordID)
         if store === ConversationStore.shared { Drafts.shared.forget(recordID.uuidString) }
         if recordID == id { become() }
@@ -863,6 +877,8 @@ final class Conversation {
     private func become(id: UUID = UUID(), createdAt: Date = .now, messages: [Message] = [],
                         outbox: [OutboxItem] = [], serverSessionID: String? = nil, name: String? = nil) {
         identity += 1
+        ledgerWatch?.cancel()
+        ledgerWatch = nil
         self.id = id
         self.createdAt = createdAt
         self.name = name
@@ -1033,6 +1049,42 @@ final class Conversation {
         guard let api = ledgerAPI() else { throw TransportError.missingAPIKey }
         let stored = try await api.messages(sessionID: summary.id)
         adopt(serverSession: summary, messages: Self.mapStored(stored))
+        watchForLedgerReply()
+    }
+
+    /// How long after its question a Hermes API conversation without a reply is taken to have
+    /// one still coming, and is looked at for it.
+    static let replyStillComing: TimeInterval = 10 * 60
+    /// How often it is looked at meanwhile.
+    static let replyLookEvery: Duration = .seconds(4)
+
+    /// A Hermes API conversation that ends on a question asked lately, with nothing after it: the
+    /// agent may still be at work on it (the app left it for another conversation, or was
+    /// closed). That API can't be listened to again, so the transcript is fetched every few
+    /// seconds while the conversation stays open, until the reply is in it.
+    func watchForLedgerReply() {
+        ledgerWatch?.cancel()
+        guard settings.transport == .hermesSessions, endsUnanswered, let stored = serverSessionID,
+              let asked = messages.last?.createdAt, Date.now.timeIntervalSince(asked) < Self.replyStillComing else { return }
+        let identity = identity
+        statusLine = "Your agent is still working on this…"
+        ledgerWatch = Task { [weak self] in
+            let until = asked.addingTimeInterval(Self.replyStillComing)
+            while Date.now < until {
+                try? await Task.sleep(for: Self.replyLookEvery)
+                guard let self, !Task.isCancelled, self.identity == identity, !self.isStreaming else { return }
+                guard let rows = try? await self.ledgerAPI()?.messages(sessionID: stored) else { continue }
+                guard !Task.isCancelled, self.identity == identity, !self.isStreaming else { return }
+                let fetched = Self.mapStored(rows)
+                guard let last = fetched.last, last.role == .assistant, !last.text.isEmpty else { continue }
+                self.messages = fetched
+                self.clearStatus()
+                self.resolveReopenedMedia()
+                self.persist()
+                return
+            }
+            if let self, self.identity == identity, !self.isStreaming { self.clearStatus() }
+        }
     }
 
     // MARK: - Helpers

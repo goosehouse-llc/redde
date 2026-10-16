@@ -164,6 +164,16 @@ nonisolated struct TokenUsage: Equatable, Sendable, Codable {
     var total: Int { input + output }
 }
 
+/// How a turn was let go of. A cancelled turn is a stopped one, and the host is told to stop it;
+/// one the app only lets go of, because another conversation was opened, is left to the host to
+/// finish, and its reply is there when the conversation is opened again (GitHub issue 12).
+nonisolated final class TurnDeparture: Sendable {
+    private let left = OSAllocatedUnfairLock(initialState: false)
+    /// The app let go of the turn without stopping it.
+    var hasLeft: Bool { left.withLock { $0 } }
+    func leave() { left.withLock { $0 = true } }
+}
+
 /// What the client sends for one turn.
 nonisolated struct TurnRequest: Sendable {
     var userText: String
@@ -183,6 +193,8 @@ nonisolated struct TurnRequest: Sendable {
     /// Asked by voice in a car, with Settings → Voice → Short answers in the car on: the agent
     /// is asked to keep it short (`CarBrevity`), each transport in its own way.
     var brief = false
+    /// Marked when the app lets go of the turn without stopping it; nil, every cancellation stops.
+    var departure: TurnDeparture? = nil
 }
 
 /// One selectable model as the gateway lists it.

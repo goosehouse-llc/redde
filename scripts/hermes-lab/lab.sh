@@ -16,6 +16,7 @@
 #   scripts/hermes-lab/lab.sh push --app [tag ...] the same, then the app pairs both ways and reads a notification
 #   scripts/hermes-lab/lab.sh device [tag ...]     phone tools: the agent calls one, a stand-in phone answers, on both connections
 #   scripts/hermes-lab/lab.sh device --app [tag ...] the same, then the app's own service carries one out
+#   scripts/hermes-lab/lab.sh switch [tag ...]     a turn left for another conversation goes on (issue 12), then the app's conversation
 #   scripts/hermes-lab/lab.sh up <tag> <scenario>  leave one lab running (API :18642, Dashboard :19119)
 #   scripts/hermes-lab/lab.sh down
 #
@@ -154,6 +155,23 @@ app_check() {
   echo "App transport (${XCODE_ARGS[-1]#-only-testing:})"
   echo "$out" | grep -E "^  (PASS|FAIL|----)|LAB SKIP" || echo "  the test host never launched"
   [[ "$out" == *"TEST EXECUTE SUCCEEDED"* && "$out" == *"  PASS"* && "$out" != *"  FAIL"* ]]
+}
+
+# Leaving a conversation while the agent works in it (GitHub issue 12): what Hermes does with a
+# turn nobody listens to any more (switch_check.py), then the app's own conversation leaving one
+# and coming back to it on both connections (HermesLabSwitchTests).
+switch() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  app_prepare HermesLabSwitchTests || exit 1
+  for tag in $tags; do
+    echo "===== Hermes $tag / approval"
+    if ! up "$tag" approval; then failed+=("$tag (lab)"); continue; fi
+    (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" switch_check.py) || failed+=("$tag (host)")
+    app_check || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
 }
 
 # The agent's task list: the stub writes one with Hermes's to-do tool and merges into it, and the
@@ -384,7 +402,8 @@ case "${1:-}" in
   plugin) shift; plugin "$@" ;;
   push) shift; push "$@" ;;
   device) shift; device "$@" ;;
+  switch) shift; switch "$@" ;;
   up) up "$2" "$3" && echo "lab up: Hermes $2 / $3 — API http://127.0.0.1:18642 (key labkey-labkey-labkey), Dashboard http://127.0.0.1:19119" ;;
   down) down ;;
-  *) sed -n '2,20p' "$0"; exit 2 ;;
+  *) sed -n '2,21p' "$0"; exit 2 ;;
 esac

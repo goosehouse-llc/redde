@@ -24,6 +24,9 @@ that follows in the same conversation is an ordinary one):
     lab:badtick    it merges an item that names no words, which Hermes 0.21.3 and later turn
                    down without running the tool (0.21.0 takes it)
 
+And one for a long turn: a message with "lab:slow" in it is answered "[slow done]" after eight
+seconds, for a check that leaves a turn under way (switching to another conversation).
+
 And one for attachments: a message with "lab:file" in it is answered "[file seen]" when what
 reached the model also holds "lab-file-token" (a text file's contents, as Hermes inlines them)
 or "lab-clip.mp4" (how it names a file it can't inline), and "[file missing]" when it doesn't.
@@ -104,6 +107,10 @@ class Handler(BaseHTTPRequestHandler):
                                 "search": "tool_call" in tools}) + "\n")
         text, call = f"[{NAME}:{model}]", None
         messages = body.get("messages") or []
+        last = messages[-1] if messages else {}
+        if last.get("role") == "user" and "lab:slow" in json.dumps(last.get("content")):
+            time.sleep(8)
+            text = "[slow done]"
         if TARGET.endswith("/redde-lab-target") and messages:
             def said(message):
                 content = message.get("content")

@@ -94,7 +94,9 @@ nonisolated struct HermesServeTransport: HermesTransport {
                     continuation.yield(.done)
                     continuation.finish()
                 } catch is CancellationError {
-                    if let state { client.interrupt(runtimeSession: state.runtime) }
+                    // Stopped, the agent is told to stop. Left for another conversation, it goes on
+                    // with the turn; the reply is there, or the turn is joined, when it is opened again.
+                    if let state, request.departure?.hasLeft != true { client.interrupt(runtimeSession: state.runtime) }
                     continuation.finish()
                 } catch {
                     continuation.finish(throwing: error)

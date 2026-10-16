@@ -20,6 +20,7 @@ scripts/hermes-lab/lab.sh push           # the push plugin: pairing, and a note 
 scripts/hermes-lab/lab.sh push --app     # and the app in a simulator pairs with each release
 scripts/hermes-lab/lab.sh device         # phone tools: the agent calls one and a stand-in phone answers it
 scripts/hermes-lab/lab.sh device --app   # and the app's own service carries one out
+scripts/hermes-lab/lab.sh switch         # a turn left for another conversation goes on, and is picked up on return
 scripts/hermes-lab/lab.sh up v2026.9.24 two   # leave one lab running to poke at; `down` stops it
 ```
 
@@ -193,6 +194,18 @@ Not covered: cloud providers (no keys here), and a conversation with no model pi
 0.21.3 or older over the Hermes API, which fails from the second turn on the server's side.
 
 When Hermes ships a release, add its tag to `DEFAULT_TAGS` in `lab.sh`.
+
+## Leaving a turn for another conversation
+
+`switch` runs the `approval` scenario on each release. The stub answers a message with
+`lab:slow` in it after eight seconds. `switch_check.py` starts such a turn in one conversation,
+leaves it the way the app leaves a conversation (on the Dashboard another session is resumed on
+the same socket and asked something; on the Hermes API the request is dropped mid-reply), and
+holds that the first turn still finishes and its reply is in its history, and, as a control,
+that `session.interrupt` does stop it. It also notes what a closed socket leaves behind.
+Then `EchoTests/HermesLabSwitchTests` does it with the app's own `Conversation`: a turn left by
+starting a new conversation is joined on return on the Dashboard and waited for on the Hermes
+API, and one stopped with Stop is stopped on the host (GitHub issue 12).
 
 ## Phone tools
 

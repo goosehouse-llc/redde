@@ -671,6 +671,105 @@ struct HermesLabTodoTests {
     }
 }
 
+/// Leaving a conversation while the agent works in it, for another one (GitHub issue 12), against
+/// the lab's `approval` scenario (`scripts/hermes-lab/lab.sh switch`), whose stub answers
+/// "lab:slow" after eight seconds. Left, the turn goes on on the host, and coming back finds it:
+/// joined on the Dashboard, waited for on the Hermes API. Stopped, it stops. Skips when that lab
+/// isn't up.
+struct HermesLabSwitchTests {
+    private static let api = URL(string: "http://127.0.0.1:18642")!
+    private static let key = "labkey-labkey-labkey"
+    private static let slow = "lab:slow, please"
+    private static let done = "[slow done]"
+
+    private static func conversation(_ settings: Settings, _ transport: any HermesTransport) -> Conversation {
+        Conversation(settings: settings, store: ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "lab-switch-\(UUID().uuidString)")),
+                     transportOverride: transport)
+    }
+
+    private static func settings() -> Settings {
+        Settings(defaults: UserDefaults(suiteName: "lab-switch-\(UUID().uuidString)")!)
+    }
+
+    /// Asks the slow question and gives the host a moment to have it under way.
+    private static func askSlowly(_ conversation: Conversation) async throws {
+        _ = conversation.send(slow)
+        try await Task.sleep(for: .seconds(2))
+    }
+
+    /// The last reply the Dashboard's host has recorded for a session, after `wait`.
+    private static func recorded(_ client: HermesServeClient, stored: String) async throws -> String {
+        let messages = Conversation.messages(fromServeRows: try await client.history(stored: stored))
+        return messages.last { $0.role == .assistant }?.text ?? ""
+    }
+
+    @Test func aTurnLeftOnTheDashboardGoesOnAndIsJoinedOnReturn() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        let settings = Self.settings()
+        settings.transport = .hermesServe
+
+        // Left: another conversation is started while the agent works.
+        let left = Self.conversation(settings, HermesServeTransport(client: client))
+        try await Self.askSlowly(left)
+        if let stored = left.serverSessionID {
+            left.reset()
+            var heard = ""
+            let joined = try await HermesServeTransport(client: client).rejoin(stored: stored)
+            if let joined { for try await event in joined.events { if case let .textDelta(text) = event { heard += text } } }
+            HermesLabApprovalTests.report(joined != nil && heard.contains(Self.done),
+                                          "Dashboard: a turn left for another conversation goes on, and is joined on return",
+                                          "joined: \(joined != nil), heard: \(heard)")
+        } else {
+            HermesLabApprovalTests.report(false, "Dashboard: a turn left for another conversation goes on", "the conversation got no session")
+        }
+
+        // Stopped: the agent is told to stop, and records no reply.
+        let stopped = Self.conversation(settings, HermesServeTransport(client: client))
+        try await Self.askSlowly(stopped)
+        if let stored = stopped.serverSessionID {
+            stopped.cancel()
+            try await Task.sleep(for: .seconds(10))
+            let reply = try await Self.recorded(client, stored: stored)
+            HermesLabApprovalTests.report(!reply.contains(Self.done), "Dashboard: a turn stopped with Stop is stopped on the host", "recorded: \(reply)")
+        }
+    }
+
+    @Test func aTurnLeftOnTheHermesAPIIsWaitedForOnReturn() async throws {
+        var probe = URLRequest(url: Self.api.appending(path: "health"))
+        probe.timeoutInterval = 2
+        guard (try? await URLSession.shared.data(for: probe)) != nil else {
+            print("LAB SKIP: no Hermes lab on 127.0.0.1:18642 (scripts/hermes-lab/lab.sh up <tag> approval)")
+            return
+        }
+        let settings = Self.settings()
+        settings.transport = .hermesSessions
+        settings.gatewayURL = Self.api.absoluteString
+        // The key where the app keeps it, for the server it is on now; what was there goes back.
+        let account = Keychain.account(.gatewayAPIKey)
+        let before = Keychain.read(account: account)
+        Keychain.write(account: account, value: Self.key)
+        defer { if let before { Keychain.write(account: account, value: before) } else { Keychain.delete(account: account) } }
+
+        let conversation = Self.conversation(settings, HermesSessionsTransport(baseURL: Self.api, apiKey: Self.key))
+        try await Self.askSlowly(conversation)
+        guard let stored = conversation.serverSessionID else {
+            HermesLabApprovalTests.report(false, "Hermes API: a turn left for another conversation is waited for", "the conversation got no session")
+            return
+        }
+        conversation.reset()
+        try await conversation.open(serverSession: stored)
+        let waiting = conversation.statusLine
+        for _ in 0 ..< 50 where !(conversation.messages.last?.text.contains(Self.done) ?? false) {
+            try await Task.sleep(for: .milliseconds(500))
+        }
+        let reply = conversation.messages.last?.text ?? ""
+        HermesLabApprovalTests.report(waiting != nil && reply.contains(Self.done) && conversation.statusLine == nil,
+                                      "Hermes API: a turn left for another conversation is waited for on return, and its reply shown",
+                                      "status on return: \(waiting ?? "none"), reply: \(reply), status after: \(conversation.statusLine ?? "none")")
+    }
+}
+
 /// Installing the notification plugin through the Dashboard, against the lab
 /// (`scripts/hermes-lab/lab.sh plugin`, the `approval` scenario, which has a Dashboard login and
 /// no plugin): Hermes fetches the plugin from this repository on GitHub, so the machine has to
