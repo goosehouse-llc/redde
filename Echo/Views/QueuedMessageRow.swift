@@ -23,10 +23,10 @@ struct QueuedMessageRow: View {
                     .font(theme.userFont)
                     .padding(.horizontal, 14)
                     .padding(.vertical, theme.bubbleVerticalPadding)
-                    .background(theme.userBubble.opacity(0.45), in: .rect(cornerRadius: theme.bubbleRadius))
+                    .background(theme.userBubble.opacity(0.45), in: theme.userBubbleShape)
                     .foregroundStyle(theme.userBubbleText.opacity(0.85))
                     .overlay {
-                        RoundedRectangle(cornerRadius: theme.bubbleRadius)
+                        theme.userBubbleShape
                             .strokeBorder(theme.userBubble.opacity(0.8), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
                     }
             }

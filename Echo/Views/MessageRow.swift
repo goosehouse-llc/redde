@@ -113,7 +113,13 @@ struct MessageRow: View, Equatable {
                     .textSelection(.enabled)
                     .padding(.horizontal, 14)
                     .padding(.vertical, theme.bubbleVerticalPadding)
-                    .background(bubble, in: .rect(cornerRadius: theme.bubbleRadius))
+                    .background {
+                        if message.role == .user {
+                            theme.userBubbleShape.fill(bubble)
+                        } else {
+                            RoundedRectangle(cornerRadius: theme.bubbleRadius).fill(bubble)
+                        }
+                    }
                     .foregroundStyle(message.role == .user ? theme.userBubbleText : theme.textColor)
                     .overlay(highlightRing)
                     .contextMenu { userMenu }

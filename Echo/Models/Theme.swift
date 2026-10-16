@@ -186,8 +186,7 @@ nonisolated enum Theme: String, CaseIterable, Identifiable, Codable {
         checkboxColor: dyn((0.240, 0.480, 0.420), (0.450, 0.720, 0.620)),   // teal
         quoteBarColor: dyn((0.480, 0.380, 0.520), (0.698, 0.580, 0.733)).opacity(0.8),   // muted purple
         tableHeaderTint: dyn((0.290, 0.420, 0.580), (0.561, 0.659, 0.800)).opacity(0.16),   // dusty blue, like the links
-        replyDesign: .serif, headingDesign: .serif, sansUserFont: true,
-        bubbleRadius: 12)
+        replyDesign: .serif, headingDesign: .serif, sansUserFont: true)
 
     /// This theme with the reader's color picks applied. The picks replace palette values
     /// before anything derives from them, so links, checkboxes and the rest follow a custom
@@ -322,6 +321,11 @@ extension ThemeStyle {
     func syntaxPalette(dark: Bool) -> SyntaxHighlighter.Palette { dark ? palette.syntaxDark : palette.syntaxLight }
     var usesGlass: Bool { palette.usesGlass }
     var bubbleRadius: CGFloat { palette.bubbleRadius }
+    /// Your bubble: the theme's corners, with the bottom one on your side tucked in.
+    var userBubbleShape: UnevenRoundedRectangle {
+        UnevenRoundedRectangle(topLeadingRadius: bubbleRadius, bottomLeadingRadius: bubbleRadius,
+                               bottomTrailingRadius: min(5, bubbleRadius), topTrailingRadius: bubbleRadius)
+    }
     var bubbleVerticalPadding: CGFloat { palette.bubbleVerticalPadding }
 }
 
