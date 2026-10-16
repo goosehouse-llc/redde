@@ -147,7 +147,9 @@ final class Settings: ServeEndpoint {
     var answerRequestsByNod: Bool {
         didSet { defaults.set(answerRequestsByNod, forKey: Keys.answerRequestsByNod) }
     }
-    /// Opening voice mode starts a new conversation (unless the current one is empty or busy).
+    /// Coming into voice mode from outside the chat (Siri, the Action button, a control, opening
+    /// Redde) starts a new conversation, unless the current one is empty or busy. The Talk button
+    /// in a chat carries that chat on.
     var newConversationForVoice: Bool {
         didSet { defaults.set(newConversationForVoice, forKey: Keys.newConversationForVoice) }
     }

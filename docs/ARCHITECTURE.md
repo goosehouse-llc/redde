@@ -795,8 +795,9 @@ only reports session totals, shown as `session N tok`.
 The waveform button beside the message field opens voice mode (or the Action Button, Siri, Control
 Center, or launch with "Open to the voice screen"). One button on the voice screen; the phase
 decides what a tap does (listen, stop, cancel, barge in). "New conversation in voice mode" starts a
-fresh conversation each time the voice screen opens, before it appears, and also while the last
-conversation is still loading at a cold launch. A turn ends after about a second of silence; hands-free reopens the mic after each reply.
+fresh conversation each time the voice screen is opened from outside the chat (Siri, the Action
+Button, a control, opening Redde), before it appears, and also while the last conversation is still
+loading at a cold launch; the waveform button and ⌘⇧V carry the chat on (GitHub issue 14). A turn ends after about a second of silence; hands-free reopens the mic after each reply.
 "Stop listening", "that's all", "goodbye" or "thanks" on its own ends the loop and is never sent.
 
 The orb (`Views/VoiceView.swift`, `OrbFace`) is the picked orb's picture with three things drawn

@@ -118,7 +118,7 @@ struct ContentView: View {
             // screen below must not wait on it. (It sat inside the DEBUG block from 2026-09-11,
             // so release builds skipped it.)
             Task { await warmSpeechAssets() }
-            if Settings.shared.openToVoiceScreen, router.pendingVoice == nil, !showVoice { openVoice() }
+            if Settings.shared.openToVoiceScreen, router.pendingVoice == nil, !showVoice { openVoice(fromOutside: true) }
             // "When Redde opens: Conversations": the iPhone's panel starts out, on its last tab. (On
             // iPad the list is always beside the chat.) A Siri or control request still wins.
             if settings.launchScreen == .conversations, sizeClass != .regular, router.pendingVoice == nil, !showVoice {
@@ -127,8 +127,8 @@ struct ContentView: View {
             // After the voice screen may have opened: then it waits until that closes.
             presentWhatsNewIfDue()
             #if DEBUG
-            if DevHooks.has("-echo.voiceView") { openVoice() }
-            if DevHooks.has("-echo.autoVoice") { await launchVoice(handsFree: false) }
+            if DevHooks.has("-echo.voiceView") { openVoice(fromOutside: true) }
+            if DevHooks.has("-echo.autoVoice") { await launchVoice(handsFree: false, fromOutside: true) }
             #endif
         }
         .onOpenURL { url in
@@ -204,7 +204,7 @@ struct ContentView: View {
             conversation.retryOutbox()   // back in the foreground: try anything still waiting to send
             consumeSharedItems()
             guard Settings.shared.listenOnOpen, router.pendingVoice == nil, !voiceSession.mightBeBusy else { return }
-            Task { await launchVoice(handsFree: showVoice ? voiceSession.continuous : settings.handsFreeByDefault) }
+            Task { await launchVoice(handsFree: showVoice ? voiceSession.continuous : settings.handsFreeByDefault, fromOutside: true) }
         }
     }
 
@@ -218,7 +218,7 @@ struct ContentView: View {
                     FollowUpChips()
                     ComposerView(draft: $draft, pendingAttachments: $pendingAttachments, editing: $editing,
                                  focused: $composerFocused,
-                                 openHandsFree: { Task { await launchVoice(handsFree: settings.handsFreeByDefault) } },
+                                 openHandsFree: { Task { await launchVoice(handsFree: settings.handsFreeByDefault, fromOutside: false) } },
                                  openModelPicker: { showModelPicker = true })
                 }
                     .animation(.snappy(duration: 0.3), value: conversation.followUps)
@@ -392,7 +392,7 @@ struct ContentView: View {
     private var keyboardShortcuts: some View {
         Group {
             Button("Settings") { showSettings = true }.keyboardShortcut(",", modifiers: .command)
-            Button("Voice mode") { openVoice() }.keyboardShortcut("v", modifiers: [.command, .shift])
+            Button("Voice mode") { openVoice(fromOutside: false) }.keyboardShortcut("v", modifiers: [.command, .shift])
             Button("Focus composer") { composerFocused = true }.keyboardShortcut("l", modifiers: .command)
             Button("Find in conversation") { withAnimation { showSearch.toggle() } }.keyboardShortcut("f", modifiers: .command)
                 .disabled(!conversation.hasMessages)
@@ -437,17 +437,18 @@ struct ContentView: View {
     }
 
     /// Voice mode as you'd open it by hand: Hands-free follows Settings → Voice.
-    private func openVoice() {
+    private func openVoice(fromOutside: Bool) {
         voiceSession.continuous = settings.handsFreeByDefault
-        startFreshForVoice()
+        if fromOutside { startFreshForVoice() }
         showVoice = true
     }
 
-    /// Settings → Voice → "New conversation in voice mode": every way into voice mode starts one,
-    /// before the screen appears so the old conversation doesn't flash up. Not while a reply is
-    /// still coming or a message waits to send, and not when this one is empty anyway. At a cold
-    /// launch (Siri, the Action button) the last conversation may still be loading from disk: it
-    /// counts, and the reset drops the load.
+    /// Settings → Voice → "New conversation in voice mode": coming into voice mode from outside
+    /// the chat (Siri, the Action button, a control, opening Redde) starts one; the Talk button
+    /// in a chat carries that chat on (GitHub issue 14). Before the screen appears, so the old
+    /// conversation doesn't flash up. Not while a reply is still coming or a message waits to
+    /// send, and not when this one is empty anyway. At a cold launch the last conversation may
+    /// still be loading from disk: it counts, and the reset drops the load.
     private func startFreshForVoice() {
         guard settings.newConversationForVoice, !showVoice,
               !conversation.messages.isEmpty || conversation.initialLoad != nil,
@@ -584,15 +585,15 @@ struct ContentView: View {
            ProfileCatalog.use(profile, conversation: conversation), showVoice {
             voiceSession.cancel()   // voice mode was open on the other profile: what it was saying is over
         }
-        Task { await launchVoice(handsFree: request.handsFree) }
+        Task { await launchVoice(handsFree: request.handsFree, fromOutside: true) }
     }
 
-    /// Voice mode asked for in a specific mode (the hands-free button, Siri, a control): that mode
-    /// wins over the Settings default.
-    private func launchVoice(handsFree: Bool) async {
+    /// Voice mode asked for in a specific mode (the Talk button, Siri, a control): that mode wins
+    /// over the Settings default. `fromOutside`: not from a button in the chat.
+    private func launchVoice(handsFree: Bool, fromOutside: Bool) async {
         voiceSession.continuous = handsFree
         if !showVoice {
-            startFreshForVoice()
+            if fromOutside { startFreshForVoice() }
             if let shown = whatsNew {
                 // A cover can't present over the sheet; without this, voice silently never opened.
                 deferredWhatsNew = shown
