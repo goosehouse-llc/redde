@@ -22,6 +22,9 @@ final class Conversation {
     /// The project a new conversation starts in (a project's New Conversation, on the Dashboard):
     /// its first turn opens the session in the project's folder. Gone when it becomes another.
     private(set) var startsIn: ProjectPlace?
+    /// Words to find once this conversation is on screen: set when a message search opens it,
+    /// taken by the transcript, which opens Find on them (`TranscriptView`).
+    var findRequest: String?
     /// API-server run id of the turn in flight (sessions transport).
     private var currentRunID: String?
 

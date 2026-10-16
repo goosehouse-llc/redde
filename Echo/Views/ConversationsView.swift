@@ -61,9 +61,15 @@ struct ConversationsList: View {
     /// Pinned first, then most recent; filtered by the search field. Cached: the body reads it
     /// several times per pass and every keystroke in the search field would repeat the sort.
     @State private var visibleLedger: [HermesSessionsAPI.SessionSummary] = []
+    /// Conversations with a message matching the search, from the server (`MessageSearch`).
+    @State private var messageHits: [MessageSearchHit] = []
+    @State private var searchingMessages = false
+    @State private var messageSearchProblem: String?
 
     private var usesLedger: Bool { settings.transport.hasLedger }
     private var viaServe: Bool { settings.transport == .hermesServe }
+    /// Searching inside messages takes the Dashboard (only it has the route), on either connection.
+    private var searchesMessages: Bool { usesLedger && settings.serveBaseURL != nil }
 
     /// A project being made: to start a conversation in, or to move one into.
     private enum NewProject {
@@ -190,6 +196,7 @@ struct ConversationsList: View {
             if usesLedger {
                 if viaServe, query.isEmpty, !selecting { projectsSection }
                 ledgerSection
+                if searchesMessages, !selecting { messageHitsSection }
             } else {
                 localSection
             }
@@ -261,6 +268,7 @@ struct ConversationsList: View {
             if showing, usesLedger { Task { await refresh() } }
         }
         .onChange(of: query, initial: true) { filterLedger() }
+        .task(id: "\(query)|\(settings.connectionKey)") { await searchMessages() }
         .onChange(of: ledger) { filterLedger() }
         .sheet(item: $usageFor) { SessionUsageView(session: $0) }
         .alert("Rename session", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
@@ -460,6 +468,124 @@ struct ConversationsList: View {
         }
         ForEach(DateGroup.group(rows.filter { $0.pinned != true }, by: { $0.lastActiveDate }), id: \.title) { group in
             Section { ForEach(group.items) { ledgerButton($0, hasDraft: drafted.contains($0.id)) } } header: { groupHeader(group.title) }
+        }
+    }
+
+    // MARK: - Searching inside messages
+
+    /// Conversations that match only inside their messages: the ones the search field's own
+    /// filter (titles, previews) already lists above are left out.
+    @ViewBuilder
+    private var messageHitsSection: some View {
+        let typed = query.trimmingCharacters(in: .whitespaces)
+        let listed = Set(visibleLedger.map(\.id))
+        let hits = messageHits.filter { !listed.contains($0.id) }
+        if typed.count >= Self.messageSearchMinimum, searchingMessages || !hits.isEmpty || messageSearchProblem != nil {
+            Section {
+                ForEach(hits) { hit in
+                    Button { open(hit.session, find: hit.findText(typed: typed)) } label: { messageHitRow(hit) }
+                        .buttonStyle(.plain)
+                        .opensConversation()
+                        .disabled(opening != nil)
+                }
+                if let messageSearchProblem {
+                    Label(messageSearchProblem, systemImage: "exclamationmark.triangle")
+                        .font(.footnote).foregroundStyle(.secondary).listRowSeparator(.hidden)
+                }
+            } header: {
+                HStack(spacing: 6) {
+                    groupHeader("In messages")
+                    if searchingMessages { ProgressView().controlSize(.mini) }
+                }
+            }
+        }
+    }
+
+    /// Title and when, then who said it and the matching words, marked.
+    private func messageHitRow(_ hit: MessageSearchHit) -> some View {
+        let session = hit.session
+        return VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 6) {
+                Text(session.displayTitle).font(.body.weight(.semibold)).lineLimit(1)
+                Spacer(minLength: 8)
+                if opening == session.id {
+                    ProgressView().controlSize(.small)
+                } else if let when = session.lastActiveDate {
+                    Text(DateGroup.rowTime(when)).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            Text(Self.snippetText(hit, accent: Settings.shared.resolvedTheme.accent))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+            if hit.archived || !["api_server", "api-server", ""].contains(session.source ?? "") {
+                HStack(spacing: 6) {
+                    if !["api_server", "api-server", ""].contains(session.source ?? "") { capsule(session.sourceLabel) }
+                    if hit.archived { capsule("Archived") }
+                }
+            }
+        }
+        .padding(.vertical, 2)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Opens this conversation at the match")
+    }
+
+    private func capsule(_ text: String) -> some View {
+        Text(text)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 6).padding(.vertical, 1)
+            .background(.quaternary, in: .capsule)
+    }
+
+    /// "You: …the >>>words<<< that matched…", the matched words in the accent and bold.
+    static func snippetText(_ hit: MessageSearchHit, accent: Color) -> AttributedString {
+        var out = AttributedString()
+        if let speaker = hit.speaker {
+            var who = AttributedString(speaker + ": ")
+            who.font = .subheadline.weight(.semibold)
+            out += who
+        }
+        for run in hit.runs {
+            var piece = AttributedString(run.text)
+            if run.matched {
+                piece.font = .subheadline.weight(.semibold)
+                piece.foregroundColor = accent
+            }
+            out += piece
+        }
+        return out
+    }
+
+    static let messageSearchMinimum = 2
+
+    /// The search behind "In messages", a moment after typing stops. Quiet about a Hermes
+    /// without the route (it predates 0.21): the titles above are then all there is.
+    private func searchMessages() async {
+        let typed = query.trimmingCharacters(in: .whitespaces)
+        guard searchesMessages, typed.count >= Self.messageSearchMinimum else {
+            messageHits = []
+            messageSearchProblem = nil
+            searchingMessages = false
+            return
+        }
+        do { try await Task.sleep(for: .milliseconds(350)) } catch { return }
+        searchingMessages = true
+        defer { if !Task.isCancelled { searchingMessages = false } }
+        do {
+            let hits = try await HermesServeClient.shared.searchMessages(typed)
+            guard !Task.isCancelled else { return }
+            messageHits = hits
+            messageSearchProblem = nil
+        } catch {
+            guard !Task.isCancelled, !(error is CancellationError), (error as? URLError)?.code != .cancelled else { return }
+            messageHits = []
+            if case let .http(status, _) = error as? TransportError, status == 404 {
+                messageSearchProblem = nil
+            } else {
+                messageSearchProblem = "Couldn't search inside messages: \(error.localizedDescription)"
+            }
         }
     }
 
@@ -798,11 +924,13 @@ struct ConversationsList: View {
         opened()
     }
 
-    private func open(_ session: HermesSessionsAPI.SessionSummary) {
+    /// Opens a conversation; `find` opens Find in it on those words once it is on screen.
+    private func open(_ session: HermesSessionsAPI.SessionSummary, find: String? = nil) {
         opening = session.id
         Task {
             do {
                 try await load(session)
+                if let find { conversation.findRequest = find }
                 savedCopyOffered = nil
             } catch {
                 ledgerError = error.localizedDescription

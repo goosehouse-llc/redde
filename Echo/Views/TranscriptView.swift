@@ -250,8 +250,17 @@ struct TranscriptView: View {
             .safeAreaInset(edge: .top, spacing: 0) { reconnectBanner }
             .safeAreaInset(edge: .top, spacing: 0) { if showSearch { searchBar(proxy) } }
             .onChange(of: showSearch) { _, on in
-                if on { searchFocused = true } else { searchText = ""; matchIndex = 0 }
+                // Opened from a message search, Find already has its words: no keyboard over the
+                // match, and straight to it.
+                if on { searchFocused = searchText.isEmpty } else { searchText = ""; matchIndex = 0 }
                 recomputeMatches()
+                if on, !searchText.isEmpty { goToMatch(0, proxy) }
+            }
+            .onChange(of: conversation.findRequest, initial: true) { _, wanted in
+                guard let wanted, !wanted.isEmpty else { return }
+                conversation.findRequest = nil
+                searchText = wanted
+                showSearch = true
             }
             .onChange(of: searchText) { recomputeMatches(); matchIndex = 0; goToMatch(0, proxy) }
             .animation(.easeOut(duration: 0.25), value: reconnectText)

@@ -22,6 +22,7 @@ scripts/hermes-lab/lab.sh device         # phone tools: the agent calls one and 
 scripts/hermes-lab/lab.sh device --app   # and the app's own service carries one out
 scripts/hermes-lab/lab.sh switch         # a turn left for another conversation goes on, and is picked up on return
 scripts/hermes-lab/lab.sh projects       # projects made in the app: a folder in ~/Projects, a conversation in it, a move, rename, remove
+scripts/hermes-lab/lab.sh search         # searching inside messages: words said on either connection, found through the Dashboard
 scripts/hermes-lab/lab.sh up v2026.9.24 two   # leave one lab running to poke at; `down` stops it
 ```
 
@@ -111,6 +112,16 @@ folder, in words; moves the conversation to a second project, renames that one (
 its name) and removes it, after which the folder and the conversation are still there, in no
 project. A lab started some other way has your real home, and then the test puts its projects in a
 scratch folder under the lab's directory instead.
+
+## Searching inside messages
+
+`search` runs `EchoTests/HermesLabSearchTests` on the `approval` scenario. A made-up word is said
+in a Dashboard conversation and another over the Hermes API; the app's client (`searchMessages`,
+the Dashboard's `GET /api/sessions/search`) has to find each conversation by its word, whole and
+by its first letters (Hermes matches word beginnings), with the word marked in the snippet; and
+a word nobody said has to find nothing. The Hermes API has no search of its own: the app searches
+through the Dashboard on either connection.
+
 ## The agent's task list
 
 `todos` runs `EchoTests/HermesLabTodoTests` on the `approval` scenario. The stub model writes a

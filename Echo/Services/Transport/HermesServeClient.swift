@@ -1114,7 +1114,8 @@ final class HermesServeClient {
         case ("POST", "api/skills"), ("PUT", "api/skills/content"): return .body
         case (_, "api/sessions"): return method == "GET" ? .query : .none
         default:
-            let queryRoutes = ["api/skills", "api/tools/toolsets", "api/cron/", "api/mcp/servers", "api/logs", "api/status", "api/gateway/restart"]
+            let queryRoutes = ["api/skills", "api/tools/toolsets", "api/cron/", "api/mcp/servers", "api/logs", "api/status", "api/gateway/restart",
+                               "api/sessions/search"]
             return queryRoutes.contains { route == $0 || route.hasPrefix($0.hasSuffix("/") ? $0 : $0 + "/") } ? .query : .none
         }
     }

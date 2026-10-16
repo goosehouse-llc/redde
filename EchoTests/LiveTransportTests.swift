@@ -1186,6 +1186,72 @@ struct HermesLabProjectsTests {
         try? await client.removeProject(firstID)
     }
 }
+
+/// Searching inside messages against an unmodified Hermes (`scripts/hermes-lab/lab.sh search`): a
+/// word said in a Dashboard conversation and one said over the Hermes API are both found through
+/// the Dashboard's search, whole and by their first letters, with the word marked in the snippet.
+/// Skips when no such lab is up.
+struct HermesLabSearchTests {
+    @Test func wordsSaidAnywhereAreFound() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        func report(_ ok: Bool, _ what: String, _ detail: String = "") { HermesLabApprovalTests.report(ok, what, detail) }
+        // Letters only: one word to Hermes's full-text index, and nobody's said it before.
+        func madeUpWord() -> String { "zeph" + String(UUID().uuidString.lowercased().filter(\.isLetter).prefix(6)) }
+        func found(_ query: String, _ id: String, word: String) async -> (Bool, String) {
+            do {
+                let hits = try await client.searchMessages(query)
+                let hit = hits.first { $0.id == id }
+                let marked = hit?.runs.contains { $0.matched && $0.text.lowercased() == word } == true
+                return (hit != nil && marked, "\(hits.count) hits; ours: \(hit.map { "\($0.snippet.prefix(90))" } ?? "none")")
+            } catch {
+                return (false, String(error.localizedDescription.prefix(160)))
+            }
+        }
+
+        // Said in a Dashboard conversation.
+        let word = madeUpWord()
+        var stored = ""
+        do {
+            let request = TurnRequest(userText: "Please remember the word \(word) for me.", history: [], sessionID: nil, model: nil, instructions: nil)
+            for try await event in HermesServeTransport(client: client).stream(request) {
+                if case let .sessionID(id) = event { stored = id }
+            }
+        } catch {
+            report(false, "a Dashboard conversation to search", String(error.localizedDescription.prefix(160)))
+            return
+        }
+        let (whole, wholeDetail) = await found(word, stored, word: word)
+        report(whole, "a word said in a Dashboard conversation is found, marked in the snippet", wholeDetail)
+        let (prefix, prefixDetail) = await found(String(word.prefix(7)), stored, word: word)
+        report(prefix, "and by its first letters", prefixDetail)
+
+        // Said over the Hermes API: the same server, so the same search finds it.
+        let api = URL(string: "http://127.0.0.1:18642")!, key = "labkey-labkey-labkey"
+        let ledger = HermesSessionsAPI(baseURL: api, apiKey: key)
+        let choices = (try? await ledger.modelOptions()) ?? []
+        let model = choices.first { $0.model == "alpha" }
+        let provider = model.flatMap { Conversation.liveProvider(for: $0.model, saved: $0.provider, in: choices) }
+        let apiWord = madeUpWord()
+        var apiSession = ""
+        do {
+            let session = try await ledger.createSession(title: "lab search \(UUID().uuidString.prefix(8))", model: model?.model, provider: provider)
+            apiSession = session.id
+            let request = TurnRequest(userText: "Note \(apiWord) down.", history: [], sessionID: session.id, model: model?.model, provider: provider, instructions: nil)
+            for try await _ in HermesSessionsTransport(baseURL: api, apiKey: key).stream(request) {}
+        } catch {
+            report(false, "a Hermes API conversation to search", String(error.localizedDescription.prefix(160)))
+            return
+        }
+        let (overAPI, apiDetail) = await found(apiWord, apiSession, word: apiWord)
+        report(overAPI, "a word said over the Hermes API is found too", apiDetail)
+
+        // A word nobody said.
+        let none = (try? await client.searchMessages(madeUpWord() + "q")) ?? [MessageSearchHit(session: .init(id: "error"), snippet: "")]
+        report(none.isEmpty, "a word nobody said finds nothing", "\(none.map(\.id))")
+    }
+}
+
 /// Settings → Gateway against the same kind of lab (`scripts/hermes-lab/lab.sh admin`): the app's
 /// own client and the screen's own model, asking an unmodified Hermes for its status, its MCP
 /// servers and its logs, switching and testing a server, checking for an update without applying
