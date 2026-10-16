@@ -21,6 +21,7 @@ scripts/hermes-lab/lab.sh push --app     # and the app in a simulator pairs with
 scripts/hermes-lab/lab.sh device         # phone tools: the agent calls one and a stand-in phone answers it
 scripts/hermes-lab/lab.sh device --app   # and the app's own service carries one out
 scripts/hermes-lab/lab.sh switch         # a turn left for another conversation goes on, and is picked up on return
+scripts/hermes-lab/lab.sh projects       # projects made in the app: a folder in ~/Projects, a conversation in it, a move, rename, remove
 scripts/hermes-lab/lab.sh up v2026.9.24 two   # leave one lab running to poke at; `down` stops it
 ```
 
@@ -98,6 +99,18 @@ refused, since the stub's model has none; a real one would take an OpenAI, Anthr
 model. Then the conversation is moved to a folder made for the test, has to show up under that
 project, and a folder that doesn't exist has to be refused.
 
+## Projects
+
+`projects` runs `EchoTests/HermesLabProjectsTests` on the `approval` scenario, with Hermes given a
+home folder of the lab's own (`LAB_OWN_HOME`, `run-*/home`), since the app makes a project's
+folder in the server's `~/Projects`; your own home is never written. The app's client makes a
+project, which has to be listed before it has a conversation (`isAuto: false`); starts a
+conversation in its folder (`session.create` with `cwd`), which has to land in the project and
+have its info name it, as the chat's header does; is refused a second project over the same
+folder, in words; moves the conversation to a second project, renames that one (the folder keeps
+its name) and removes it, after which the folder and the conversation are still there, in no
+project. A lab started some other way has your real home, and then the test puts its projects in a
+scratch folder under the lab's directory instead.
 ## The agent's task list
 
 `todos` runs `EchoTests/HermesLabTodoTests` on the `approval` scenario. The stub model writes a

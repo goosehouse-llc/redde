@@ -601,9 +601,29 @@ disabled, and the menu says the server never asks.
 directory to a project's folder (`session.workspace.move {session_key, cwd}`), which is what
 puts it in that project; Hermes Desktop does the same. The targets are the projects that are
 folders, other than the one the conversation is in (the list's rows carry `cwd` on the
-Dashboard). The Home bucket is no folder, so nothing can be moved back into it from here.
+Dashboard), and **New Project…**, which makes one and moves the conversation into it. The Home
+bucket is no folder, so nothing can be moved back into it from here.
 
-All three are the same in Hermes 0.21.0, 0.21.3 and 0.21.5. `scripts/hermes-lab/lab.sh controls`
+**Projects of your own** (`ServerProjects.swift`) are Hermes's named projects, the ones Hermes
+Desktop lists (`projects.create`, `projects.update`, `projects.delete`, per profile). Redde makes
+one over a folder of the same name in the server's `~/Projects`, made with the file manager's
+`POST /api/files/mkdir` if it isn't there (an existing folder, a repository say, is used as it
+is; a hosted install that keeps its files to one folder gets its Projects folder inside that).
+The name loses what a path can't hold; renaming keeps the folder; removing takes the project off
+Hermes's list and leaves the folder and the conversations, which then belong to no project. A
+second project over the same folder is refused by Hermes, and said in the app's words.
+
+A conversation starts in a project from **New Conversation** on the project's screen or its row's
+menu, or straight after **New Project**: `Conversation.startNew(in:)` keeps the project as
+`startsIn`, and the first turn's `session.create` carries the folder as `cwd`; later turns have
+the session and no folder. The chat's header names the project beside the folder glyph: Hermes
+says which project owns a session's folder in its `info` (`project.name`, null for none), which
+`ChatControlStore` files with the switches; until it has, a new conversation shows the project it
+was started in. Moving, renaming or removing asks the server again for the open conversation, so
+the header follows.
+
+All of this is the same in Hermes 0.21.0, 0.21.3 and 0.21.5 (`lab.sh projects` checks the
+projects with the app's client). `scripts/hermes-lab/lab.sh controls`
 checks them with the app's client: with the switch on, the stub's `rm -rf` runs unasked; off, it
 is asked about again; another conversation still asks throughout. Fast mode can only be refused
 there, since the lab's model has none. `-echo.demoChatControls` shows the switches on sample data
@@ -623,7 +643,8 @@ In both, the server switch and Chats / Cron / Kanban are the first row of each l
 with pull-to-refresh.
 
 On the Dashboard the list starts with **Projects** (`projects.tree`), grouped by working directory
-and repo. Search, pin, rename, fork, archive and delete go through `PATCH /api/sessions/{id}`, fork
+and repo: the ones someone made (`isAuto: false`) even before their first conversation, the ones
+Hermes found (repositories conversations ran in) once they have one, then a **New Project** row. Search, pin, rename, fork, archive and delete go through `PATCH /api/sessions/{id}`, fork
 through `POST /api/sessions/{id}/fork` (API) or `session.branch` (Dashboard). Rows show token totals
 and the gateway's cost estimate; long-press for the full usage breakdown. Any conversation exports
 as Markdown. Local (OpenAI-compatible) conversations are saved on the phone as JSON with complete

@@ -38,16 +38,27 @@ nonisolated struct ChatControls: Equatable, Sendable {
     }
 }
 
-/// Where each open conversation's controls stand, by the session's id on the server. Written by
-/// the Dashboard client as the server reports them; read by the chat's header, which marks a
-/// conversation that runs commands without asking.
+/// Where each open conversation's controls stand, by the session's id on the server, and which
+/// project it is in. Written by the Dashboard client as the server reports them; read by the
+/// chat's header, which marks a conversation that runs commands without asking and names its project.
 @Observable
 final class ChatControlStore {
     static let shared = ChatControlStore()
 
     private(set) var bySession: [String: ChatControls] = [:]
+    /// The project each session is in, as its info last said (Hermes names the project that owns
+    /// the session's folder; the same in 0.21.0, 0.21.3 and 0.21.5).
+    private var projects: [String: SessionProject] = [:]
+
+    /// A session's project: `name` nil when it is in none.
+    nonisolated struct SessionProject: Equatable, Sendable {
+        var name: String?
+    }
 
     func controls(for session: String?) -> ChatControls? { session.flatMap { bySession[$0] } }
+
+    /// Which project a session is in; nil while the server hasn't said.
+    func project(for session: String?) -> SessionProject? { session.flatMap { projects[$0] } }
 
     /// What the server just said about a session; an equal answer changes nothing.
     @discardableResult
@@ -55,6 +66,10 @@ final class ChatControlStore {
         var controls = bySession[session] ?? ChatControls()
         controls.merge(info)
         set(controls, for: session)
+        if let project = info["project"] {
+            let said = SessionProject(name: project["name"]?.string?.nilIfEmpty)
+            if projects[session] != said { projects[session] = said }
+        }
         return controls
     }
 
@@ -65,6 +80,7 @@ final class ChatControlStore {
     /// Another server: its sessions are other sessions.
     func removeAll() {
         if !bySession.isEmpty { bySession = [:] }
+        if !projects.isEmpty { projects = [:] }
     }
 }
 

@@ -46,6 +46,12 @@ struct ConversationsList: View {
     @State private var projects: [HermesServeClient.Project] = []
     /// Every project that is a folder, with or without conversations: where one can be moved to.
     @State private var folders: [HermesServeClient.Project] = []
+    /// The New Project prompt, and what the project is for once made.
+    @State private var newProject: NewProject?
+    @State private var newProjectName = ""
+    @State private var projectRenaming: HermesServeClient.Project?
+    @State private var projectRenameText = ""
+    @State private var projectRemoving: HermesServeClient.Project?
     @AppStorage("sessions.showProjects") private var showProjects = true
     @State private var shareItem: ShareItem?
     @State private var selecting = false
@@ -58,6 +64,12 @@ struct ConversationsList: View {
 
     private var usesLedger: Bool { settings.transport.hasLedger }
     private var viaServe: Bool { settings.transport == .hermesServe }
+
+    /// A project being made: to start a conversation in, or to move one into.
+    private enum NewProject {
+        case start
+        case move(HermesSessionsAPI.SessionSummary)
+    }
 
     /// Sessions, scheduled jobs, or the kanban board; the latter two live on the gateway.
     enum Tab: String, CaseIterable, Identifiable {
@@ -176,7 +188,7 @@ struct ConversationsList: View {
             topRow
             if query.isEmpty, !selecting { waitingNotesSection }
             if usesLedger {
-                if viaServe, !projects.isEmpty, query.isEmpty, !selecting { projectsSection }
+                if viaServe, query.isEmpty, !selecting { projectsSection }
                 ledgerSection
             } else {
                 localSection
@@ -185,7 +197,8 @@ struct ConversationsList: View {
         .listStyle(.plain)
         .navigationDestination(for: ProjectRoute.self) { route in
             if let project = projects.first(where: { $0.id == route.id }) {
-                ProjectSessionsView(project: project, open: load, currentID: conversation.serverSessionID)
+                ProjectSessionsView(project: project, open: load, currentID: conversation.serverSessionID,
+                                    startNew: { startNew(in: $0) })
             }
         }
         .environment(\.editMode, .constant(selecting ? .active : .inactive))
@@ -255,6 +268,28 @@ struct ConversationsList: View {
             Button("Save") { if let s = renaming { rename(s, to: renameText) } }
             Button("Cancel", role: .cancel) { renaming = nil }
         }
+        .alert("New Project", isPresented: Binding(get: { newProject != nil }, set: { if !$0 { newProject = nil } })) {
+            TextField("Name", text: $newProjectName)
+            Button("Create") { makeProject() }
+                .disabled(HermesServeClient.projectFolderName(for: newProjectName) == nil)
+            Button("Cancel", role: .cancel) { newProject = nil }
+        } message: {
+            Text("A folder of that name is made in ~/Projects on your server. The project's conversations work in it.")
+        }
+        .alert("Rename project", isPresented: Binding(get: { projectRenaming != nil }, set: { if !$0 { projectRenaming = nil } })) {
+            TextField("Name", text: $projectRenameText)
+            Button("Save") { if let p = projectRenaming { renameProject(p, to: projectRenameText) } }
+            Button("Cancel", role: .cancel) { projectRenaming = nil }
+        } message: {
+            Text("Its folder keeps its name.")
+        }
+        .confirmationDialog("Remove “\(projectRemoving?.label ?? "")” from Projects?",
+                            isPresented: Binding(get: { projectRemoving != nil }, set: { if !$0 { projectRemoving = nil } }),
+                            titleVisibility: .visible) {
+            Button("Remove Project", role: .destructive) { if let p = projectRemoving { removeProject(p) } }
+        } message: {
+            Text("Its folder and its conversations stay on the server. The conversations just aren't grouped under it any more.")
+        }
     }
 
     private func filterLedger() {
@@ -294,7 +329,23 @@ struct ConversationsList: View {
                     }
                 }
                 .accessibilityHint("Shows this project's sessions")
+                .contextMenu { projectMenu(project) }
             }
+            Button {
+                newProjectName = ""
+                newProject = .start
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "folder.badge.plus")
+                        .foregroundStyle(Settings.shared.resolvedTheme.accent)
+                        .frame(width: 28, height: 28)
+                        .background(.quaternary, in: .rect(cornerRadius: 7))
+                    Text("New Project").font(.body)
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Makes a project folder on your server and starts a conversation in it")
             }
         } header: {
             Button {
@@ -475,14 +526,19 @@ struct ConversationsList: View {
     }
 
     /// "Move to Project": the projects that are folders on the server, other than the one the
-    /// conversation is in. On the Dashboard only, which is where projects are.
+    /// conversation is in, and a new one. On the Dashboard only, which is where projects are.
     @ViewBuilder
     private func moveMenu(for session: HermesSessionsAPI.SessionSummary) -> some View {
-        let targets = viaServe ? HermesServeClient.Project.moveTargets(in: folders, from: session.cwd) : []
-        if !targets.isEmpty {
+        if viaServe {
+            let targets = HermesServeClient.Project.moveTargets(in: folders, from: session.cwd)
             Menu("Move to Project", systemImage: "folder") {
                 ForEach(targets) { project in
                     Button(project.label) { move(session, to: project) }
+                }
+                if !targets.isEmpty { Divider() }
+                Button("New Project…", systemImage: "folder.badge.plus") {
+                    newProjectName = ""
+                    newProject = .move(session)
                 }
             }
         }
@@ -492,10 +548,91 @@ struct ConversationsList: View {
         guard let path = project.path else { return }
         Task {
             do {
-                try await HermesServeClient.shared.moveSession(stored: session.id, toFolder: path)
-                await refresh()
+                try await moveSession(session, to: path)
             } catch {
                 ledgerError = "Couldn't move it to \(project.label): \(error.localizedDescription)"
+            }
+        }
+    }
+
+    private func moveSession(_ session: HermesSessionsAPI.SessionSummary, to path: String) async throws {
+        let client = HermesServeClient.shared
+        try await client.moveSession(stored: session.id, toFolder: path)
+        // The open conversation's header names its project: have the server say the new one.
+        if session.id == conversation.serverSessionID { _ = try? await client.chatControls(stored: session.id) }
+        await refresh()
+    }
+
+    // MARK: - Making and keeping projects
+
+    /// A project row's menu: a conversation in it, and for a project someone made, its name and
+    /// its place on the list.
+    @ViewBuilder
+    private func projectMenu(_ project: HermesServeClient.Project) -> some View {
+        if project.path != nil, !project.isHome {
+            Button("New Conversation", systemImage: "square.and.pencil") { startNew(in: project) }
+        }
+        if project.isOwn {
+            Button("Rename", systemImage: "pencil") {
+                projectRenameText = project.label
+                projectRenaming = project
+            }
+            Divider()
+            Button("Remove Project", systemImage: "folder.badge.minus", role: .destructive) { projectRemoving = project }
+        }
+    }
+
+    private func startNew(in project: HermesServeClient.Project) {
+        guard let path = project.path, !project.isHome else { return }
+        conversation.startNew(in: ProjectPlace(name: project.label, path: path))
+        opened()
+    }
+
+    /// Makes the project named in the prompt; then starts a conversation in it, or moves the one
+    /// whose menu asked into it.
+    private func makeProject() {
+        let name = newProjectName
+        let purpose = newProject
+        newProject = nil
+        Task {
+            do {
+                let place = try await HermesServeClient.shared.createProject(named: name)
+                if case let .move(session) = purpose {
+                    try await moveSession(session, to: place.path)
+                } else {
+                    conversation.startNew(in: place)
+                    opened()
+                    await refresh()
+                }
+            } catch {
+                ledgerError = "Couldn't make the project: \(ServerFiles.explain(error))"
+            }
+        }
+    }
+
+    private func renameProject(_ project: HermesServeClient.Project, to name: String) {
+        projectRenaming = nil
+        Task {
+            do {
+                try await HermesServeClient.shared.renameProject(project.id, to: name)
+                // The open conversation's header names its project.
+                if let open = conversation.serverSessionID { _ = try? await HermesServeClient.shared.chatControls(stored: open) }
+                await refresh()
+            } catch {
+                ledgerError = "Couldn't rename \(project.label): \(error.localizedDescription)"
+            }
+        }
+    }
+
+    private func removeProject(_ project: HermesServeClient.Project) {
+        projectRemoving = nil
+        Task {
+            do {
+                try await HermesServeClient.shared.removeProject(project.id)
+                if let open = conversation.serverSessionID { _ = try? await HermesServeClient.shared.chatControls(stored: open) }
+                await refresh()
+            } catch {
+                ledgerError = "Couldn't remove \(project.label): \(error.localizedDescription)"
             }
         }
     }
@@ -588,12 +725,7 @@ struct ConversationsList: View {
             if viaServe {
                 // Projects are a bonus; a failure here must not hide the flat list.
                 let all = (try? await HermesServeClient.shared.projectTree()) ?? []
-                let tree = all
-                    .filter { $0.sessionCount > 0 }
-                    .sorted { a, b in
-                        if a.isHome != b.isHome { return a.isHome }
-                        return (a.lastActive ?? .distantPast) > (b.lastActive ?? .distantPast)
-                    }
+                let tree = HermesServeClient.Project.listed(all)
                 guard current else { return }
                 projects = tree
                 folders = all.sorted { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending }
@@ -885,11 +1017,14 @@ struct SessionUsageView: View {
 }
 
 
-/// One project's sessions, grouped by lane (repo checkout / branch), newest first.
+/// One project's sessions, grouped by lane (repo checkout / branch), newest first, and a new
+/// conversation in it.
 struct ProjectSessionsView: View {
     let project: HermesServeClient.Project
     let open: (HermesSessionsAPI.SessionSummary) async throws -> Void
     let currentID: String?
+    /// Starts a conversation in this project (its folder); nil where that isn't offered.
+    var startNew: ((HermesServeClient.Project) -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @Environment(\.sidePanelParked) private var panelParked
     @State private var lanes: [HermesServeClient.Project.Lane] = []
@@ -907,7 +1042,19 @@ struct ProjectSessionsView: View {
                 ContentUnavailableView("Couldn't load the project", systemImage: "wifi.exclamationmark", description: Text(error))
                     .listRowSeparator(.hidden)
             } else if lanes.allSatisfy(\.sessions.isEmpty), !loading {
-                ContentUnavailableView("No sessions", systemImage: "folder").listRowSeparator(.hidden)
+                ContentUnavailableView {
+                    Label("No conversations yet", systemImage: "folder")
+                } description: {
+                    if canStart, let path = project.path {
+                        VStack(spacing: 6) {
+                            Text("Conversations started here work in its folder on your server:")
+                            Text(path).font(.footnote.monospaced()).textSelection(.enabled)
+                        }
+                    }
+                } actions: {
+                    if canStart { Button("New Conversation") { startNew?(project) }.buttonStyle(.borderedProminent) }
+                }
+                .listRowSeparator(.hidden)
             }
             ForEach(lanes) { lane in
                 let rows = filtered(lane.sessions)
@@ -935,6 +1082,14 @@ struct ProjectSessionsView: View {
         .navigationTitle(project.label)
         .toolbarVisibility(panelParked ? .hidden : .automatic, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if canStart {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("New Conversation", systemImage: "square.and.pencil") { startNew?(project) }
+                        .accessibilityHint("Starts a conversation in \(project.label)")
+                }
+            }
+        }
         .searchable(text: $query, prompt: "Search in \(project.label)")
         .overlay { if loading { ProgressView() } }
         .alert("Couldn't open the session", isPresented: Binding(get: { openError != nil }, set: { if !$0 { openError = nil } })) {
@@ -949,6 +1104,10 @@ struct ProjectSessionsView: View {
                 lanes = project.lanes.filter { !$0.sessions.isEmpty }
                 loading = lanes.isEmpty
             }
+            #if DEBUG
+            // The fixture's projects have no server behind them: what the list handed over is all.
+            if DevHooks.demoProjects { loading = false; return }
+            #endif
             do {
                 let full = try await HermesServeClient.shared.projectSessions(project.id)
                 lanes = (full?.lanes ?? []).filter { !$0.sessions.isEmpty }
@@ -959,6 +1118,9 @@ struct ProjectSessionsView: View {
             loading = false
         }
     }
+
+    /// A conversation can start here: a project with a folder, not the catch-all for none.
+    private var canStart: Bool { startNew != nil && project.path != nil && !project.isHome }
 
     private func openRow(_ session: HermesSessionsAPI.SessionSummary) {
         guard opening == nil else { return }
@@ -1004,7 +1166,8 @@ struct ProjectSessionsView: View {
 
 #if DEBUG
 extension ConversationsList {
-    /// One project, one lane, two sessions: enough to reach ProjectSessionsView and tap a row.
+    /// One project Hermes found, with one lane and two sessions (enough to reach
+    /// ProjectSessionsView and tap a row), and one someone made, still empty.
     static var demoProjects: [HermesServeClient.Project] {
         let json = """
         {"id":"/home/redde/echo","label":"Echo","path":"/home/redde/echo","isNoProject":false,
@@ -1013,10 +1176,15 @@ extension ConversationsList {
            {"id":"demo-1","title":"Transcript scrolling","source":"cli","started_at":1772999000,"last_active":1773000000,"message_count":12},
            {"id":"demo-2","title":"Calendar MCP guards","source":"desktop","started_at":1772990000,"last_active":1772999000,"message_count":30}]}]}]}
         """
-        guard let data = json.data(using: .utf8),
-              let value = try? JSONDecoder().decode(JSONValue.self, from: data),
-              let project = HermesServeClient.Project(value) else { return [] }
-        return [project]
+        // And one made by someone, with no conversations yet.
+        let own = """
+        {"id":"p_demo","label":"Garden","path":"/home/redde/Projects/Garden","isAuto":false,"isNoProject":false,
+         "sessionCount":0,"lastActive":0,"totalCostUsd":0,"repos":[]}
+        """
+        return [json, own].compactMap { text in
+            guard let data = text.data(using: .utf8), let value = try? JSONDecoder().decode(JSONValue.self, from: data) else { return nil }
+            return HermesServeClient.Project(value)
+        }
     }
 }
 #endif

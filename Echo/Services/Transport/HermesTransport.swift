@@ -195,6 +195,9 @@ nonisolated struct TurnRequest: Sendable {
     var brief = false
     /// Marked when the app lets go of the turn without stopping it; nil, every cancellation stops.
     var departure: TurnDeparture? = nil
+    /// The folder a new conversation starts in on the Dashboard (a project's). Only the turn that
+    /// opens the session uses it; the other connections have no folders.
+    var folder: String? = nil
 }
 
 /// One selectable model as the gateway lists it.

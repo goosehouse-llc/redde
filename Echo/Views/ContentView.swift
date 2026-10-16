@@ -247,6 +247,19 @@ struct ContentView: View {
                         .accessibilityLabel("\(headerTitle). Model: \(modelChipLabel)")
                         .accessibilityHint("Choose which model answers")
                         HStack(spacing: 4) {
+                            if let projectName {
+                                // Its own width, a long name cut short in words: a frame with a
+                                // most width took all of it and pushed the model off the line.
+                                HStack(spacing: 2) {
+                                    Image(systemName: "folder.fill").font(.system(size: 9, weight: .semibold))
+                                    Text(projectName.count > 16 ? projectName.prefix(15) + "…" : projectName)
+                                        .font(.caption.weight(.medium)).lineLimit(1)
+                                }
+                                .foregroundStyle(theme.accent)
+                                .fixedSize()
+                                .accessibilityElement(children: .ignore)
+                                .accessibilityLabel("Project: \(projectName)")
+                            }
                             Button { showModelPicker = true } label: {
                                 HStack(spacing: 3) {
                                     Text("\(settings.headerTitle) · \(modelChipLabel)").font(.caption).lineLimit(1)
@@ -646,6 +659,14 @@ struct ContentView: View {
     /// Download the on-device speech model early so the first voice turn isn't slow.
     private func warmSpeechAssets() async {
         try? await SpeechRecognizer().prepareAssets()
+    }
+
+    /// The project this conversation is in, on the Dashboard: as the server last said, or for a
+    /// new one, the project it is about to start in.
+    private var projectName: String? {
+        guard settings.transport == .hermesServe else { return nil }
+        if let said = ChatControlStore.shared.project(for: conversation.serverSessionID) { return said.name }
+        return conversation.startsIn?.name
     }
 
     /// This conversation runs its commands without asking (the model menu's switch, or the

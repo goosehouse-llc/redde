@@ -1063,6 +1063,129 @@ struct HermesLabChatControlsTests {
     }
 }
 
+/// Projects as the app makes them, against the lab (`scripts/hermes-lab/lab.sh projects`, the
+/// `approval` scenario, with a home folder of the lab's own, so `~/Projects` is the lab's): the
+/// app's client on an unmodified Hermes makes a project and its folder, starts a conversation in
+/// it, moves the conversation to a second one made for it, renames that one and removes it. The
+/// header's project name is checked through the store it reads. Skips when no such lab is up.
+struct HermesLabProjectsTests {
+    @Test func projectsMadeInTheAppWorkOnAnUnmodifiedHermes() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        func report(_ ok: Bool, _ what: String, _ detail: String = "") { HermesLabApprovalTests.report(ok, what, detail) }
+        func named(_ stored: String) async -> String? {
+            _ = try? await client.chatControls(stored: stored)
+            return ChatControlStore.shared.project(for: stored)?.name
+        }
+
+        // `lab.sh projects` gives Hermes a home of the lab's own. A lab started some other way has
+        // the real one, and then the projects go in a scratch folder instead of ~/Projects.
+        let home = try await client.folder(at: nil)
+        let ownHome = home.path.contains("/redde-hermes-lab/run-")
+        let root: String? = ownHome ? nil : ServerFiles.join(home.path, ".cache/redde-hermes-lab/projects-\(UUID().uuidString.prefix(8))")
+        if let root { print("  ----  this lab has the real home folder; the projects go in \(root)") }
+        let parent = root ?? ServerFiles.join(home.path, "Projects")
+        let name = "Lab Garden \(UUID().uuidString.prefix(4))"
+
+        let first: ProjectPlace
+        do {
+            first = try await client.createProject(named: name, under: root)
+            report(first.name == name && first.path == ServerFiles.join(parent, name), "a project is made, its folder in ~/Projects", first.path)
+        } catch {
+            report(false, "a project is made", String(error.localizedDescription.prefix(160)))
+            return
+        }
+        report((try? await client.folder(at: first.path)) != nil, "its folder is there on the server", first.path)
+        let before = try await client.projectTree()
+        let listed = HermesServeClient.Project.listed(before).first { $0.path == first.path }
+        report(listed?.isOwn == true && listed?.label == name && listed?.sessionCount == 0, "the list shows it before its first conversation",
+               "\(before.map { "\($0.label)=\($0.sessionCount) auto \($0.isAuto)" })")
+        let firstID = listed?.id ?? ""
+        do {
+            let opened = try await client.projectSessions(firstID)
+            report(opened != nil && opened?.lanes.allSatisfy(\.sessions.isEmpty) == true, "opened, it has no conversations yet, and no error",
+                   "\(String(describing: opened?.lanes.map(\.sessions.count)))")
+        } catch {
+            report(false, "opened, it has no conversations yet, and no error", String(error.localizedDescription.prefix(160)))
+        }
+
+        // A conversation started in it.
+        var stored = ""
+        do {
+            var reply = ""
+            var request = TurnRequest(userText: "Hello from the garden.", history: [], sessionID: nil, model: nil, instructions: nil)
+            request.folder = first.path
+            for try await event in HermesServeTransport(client: client).stream(request) {
+                switch event {
+                case let .sessionID(id): stored = id
+                case let .textDelta(delta): reply += delta
+                case let .textFinal(text): reply = text
+                default: break
+                }
+            }
+            report(!stored.isEmpty && !reply.isEmpty, "a conversation starts in it and is answered", reply)
+        } catch {
+            report(false, "a conversation starts in it and is answered", String(error.localizedDescription.prefix(160)))
+            return
+        }
+        let inside = try await client.projectTree().first { $0.id == firstID }
+        report((inside?.sessionCount ?? 0) == 1, "the conversation is in the project", "\(inside?.sessionCount ?? -1) conversations")
+        let rows = (try? await client.projectSessions(firstID))?.lanes.flatMap(\.sessions).map(\.id) ?? []
+        report(rows == [stored], "and on the project's screen", "\(rows)")
+        let header = await named(stored)
+        report(header == name, "the header names the project", header ?? "nothing")
+        if let cwd = try await client.listSessions(limit: 50).first(where: { $0.id == stored })?.cwd {
+            report(cwd == first.path, "the conversation works in the project's folder", cwd)
+        }
+
+        // The same name again: that folder is a project's already.
+        var again = ""
+        do { _ = try await client.createProject(named: name, under: root) } catch { again = error.localizedDescription }
+        report(again.contains("already a project's folder"), "a second project over the same folder is refused, in words", again)
+
+        // Moved to a project made for it from its menu.
+        let second: ProjectPlace
+        do {
+            second = try await client.createProject(named: name + " Two", under: root)
+            try await client.moveSession(stored: stored, toFolder: second.path)
+        } catch {
+            report(false, "a conversation moves to a new project", String(error.localizedDescription.prefix(160)))
+            return
+        }
+        let moved = try await client.projectTree()
+        let secondID = moved.first { $0.path == second.path }?.id ?? ""
+        report(moved.first { $0.id == secondID }?.sessionCount == 1 && moved.first { $0.id == firstID }?.sessionCount == 0,
+               "a conversation moves to a new project", "\(moved.map { "\($0.label)=\($0.sessionCount)" })")
+        let movedHeader = await named(stored)
+        report(movedHeader == second.name, "and the header names that one", movedHeader ?? "nothing")
+
+        // Renamed: the folder keeps its name; the list and the header take the new one.
+        do {
+            try await client.renameProject(secondID, to: name + " Renamed")
+            let renamed = try await client.projectTree().first { $0.id == secondID }
+            report(renamed?.label == name + " Renamed" && renamed?.path == second.path, "a project is renamed, its folder kept",
+                   "\(renamed?.label ?? "gone") at \(renamed?.path ?? "")")
+            let renamedHeader = await named(stored)
+            report(renamedHeader == name + " Renamed", "and the header has the new name", renamedHeader ?? "nothing")
+        } catch {
+            report(false, "a project is renamed", String(error.localizedDescription.prefix(160)))
+        }
+
+        // Removed: off the list; its folder and its conversation stay, in no project now.
+        do {
+            try await client.removeProject(secondID)
+            let after = try await client.projectTree()
+            report(!after.contains { $0.id == secondID }, "a project is removed from the list", "\(after.map(\.label))")
+            report((try? await client.folder(at: second.path)) != nil, "its folder stays")
+            report(try await client.listSessions(limit: 50).contains { $0.id == stored }, "and so does its conversation")
+            let none = await named(stored)
+            report(ChatControlStore.shared.project(for: stored) != nil && none == nil, "which the header shows in no project", none ?? "none")
+        } catch {
+            report(false, "a project is removed", String(error.localizedDescription.prefix(160)))
+        }
+        try? await client.removeProject(firstID)
+    }
+}
 /// Settings → Gateway against the same kind of lab (`scripts/hermes-lab/lab.sh admin`): the app's
 /// own client and the screen's own model, asking an unmodified Hermes for its status, its MCP
 /// servers and its logs, switching and testing a server, checking for an update without applying

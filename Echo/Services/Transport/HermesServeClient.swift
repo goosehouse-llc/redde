@@ -699,7 +699,8 @@ final class HermesServeClient {
     /// the session's own profile. Params reject unknown keys, so no other method gets one.
     private static let profileScopedMethods: Set<String> = [
         "session.create", "session.resume", "session.delete", "session.branch",
-        "projects.tree", "projects.project_sessions", "model.options", "config.set",
+        "projects.tree", "projects.project_sessions", "projects.create", "projects.update", "projects.delete",
+        "model.options", "config.set",
         "slash.exec", "command.dispatch", "session.workspace.move",
     ]
 
@@ -770,9 +771,10 @@ final class HermesServeClient {
     // MARK: - Sessions
 
     /// Runtime session id for a stored session (resuming it), or a fresh session when nil.
-    /// Returns (runtime id, stored id).
-    func openSession(stored: String?, model: String? = nil, provider: String? = nil, reasoningEffort: String? = nil)
-        async throws -> (runtime: String, stored: String) {
+    /// Returns (runtime id, stored id). A fresh session works in `folder` when one is given (a
+    /// project's): that is what puts it in the project.
+    func openSession(stored: String?, model: String? = nil, provider: String? = nil, reasoningEffort: String? = nil,
+                     folder: String? = nil) async throws -> (runtime: String, stored: String) {
         if let stored {
             let runtime: String
             if let cached = runtimeIDs[stored] {
@@ -804,10 +806,12 @@ final class HermesServeClient {
         if let model, !model.isEmpty { params["model"] = .string(model) }
         if let provider, !provider.isEmpty { params["provider"] = .string(provider) }
         if let reasoningEffort, !reasoningEffort.isEmpty { params["reasoning_effort"] = .string(reasoningEffort) }
+        if let folder, !folder.isEmpty { params["cwd"] = .string(folder) }
         let result = try await call("session.create", params: .object(params))
         guard let runtime = result["session_id"]?.string else { throw TransportError.malformed("create: no session id") }
         let storedID = result["stored_session_id"]?.string ?? runtime
         runtimeIDs[storedID] = runtime
+        if let info = result["info"] { ChatControlStore.shared.note(info, for: storedID) }
         if let reasoningEffort, !reasoningEffort.isEmpty { pinnedEfforts[runtime] = reasoningEffort }
         return (runtime, storedID)
     }
@@ -830,6 +834,7 @@ final class HermesServeClient {
                                     params: .object(["session_id": .string(stored), "omit_messages": .bool(false)]),
                                     timeout: 180)
         if let runtime = result["session_id"]?.string { runtimeIDs[stored] = runtime }
+        if let info = result["info"] { ChatControlStore.shared.note(info, for: stored) }
         hostTodos[stored] = TodoList.list(result["todo_state"])
         return result["messages"]?.array ?? []
     }
@@ -841,10 +846,27 @@ final class HermesServeClient {
         var label: String
         var path: String?
         var isHome: Bool
+        /// Found by Hermes (a repository its conversations ran in), not made by anyone.
+        var isAuto: Bool
         var sessionCount: Int
         var lastActive: Date?
         var totalCost: Double
         var lanes: [Lane]
+
+        /// Made by someone, here or in Hermes Desktop: a name of its own over a folder, which can
+        /// be renamed and removed.
+        var isOwn: Bool { !isAuto && !isHome }
+
+        /// The projects the list shows: Hermes's catch-all for conversations in none first, then
+        /// the most recently used. One someone made shows before its first conversation; one
+        /// Hermes found, only once it has some.
+        static func listed(_ all: [Project]) -> [Project] {
+            all.filter { $0.sessionCount > 0 || $0.isOwn }
+                .sorted { a, b in
+                    if a.isHome != b.isHome { return a.isHome }
+                    return (a.lastActive ?? .distantPast) > (b.lastActive ?? .distantPast)
+                }
+        }
 
         nonisolated struct Lane: Identifiable, Sendable, Equatable {
             var id: String
@@ -859,6 +881,8 @@ final class HermesServeClient {
             label = j["label"]?.string ?? id
             path = j["path"]?.string
             isHome = j["isNoProject"]?.bool ?? (id == "__no_project__")
+            // Said by 0.21.0 and later; without it, a project counts as found, so an empty one stays out of the list.
+            isAuto = j["isAuto"]?.bool ?? true
             sessionCount = j["sessionCount"]?.int ?? 0
             lastActive = j["lastActive"]?.number.flatMap { $0 > 0 ? Date(timeIntervalSince1970: $0) : nil }
             totalCost = j["totalCostUsd"]?.number ?? 0

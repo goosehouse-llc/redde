@@ -19,6 +19,9 @@ final class Conversation {
 
     /// Hermes ledger session id (sessions transport) or stored session id (hermes serve).
     private(set) var serverSessionID: String?
+    /// The project a new conversation starts in (a project's New Conversation, on the Dashboard):
+    /// its first turn opens the session in the project's folder. Gone when it becomes another.
+    private(set) var startsIn: ProjectPlace?
     /// API-server run id of the turn in flight (sessions transport).
     private var currentRunID: String?
 
@@ -255,6 +258,7 @@ final class Conversation {
             replyLanguage: settings.replyLanguage.nilIfEmpty,
             brief: brief
         )
+        if settings.transport == .hermesServe, serverSessionID == nil { request.folder = startsIn?.path }
         let departure = TurnDeparture()
         self.departure = departure
         request.departure = departure
@@ -847,6 +851,12 @@ final class Conversation {
         become()
     }
 
+    /// Start a fresh conversation in a project: it works in the project's folder.
+    func startNew(in place: ProjectPlace) {
+        reset()
+        startsIn = place
+    }
+
     /// Switch to a saved conversation. Streaming, if any, is cancelled.
     func load(_ record: ConversationRecord) {
         cancel(leaving: true)
@@ -889,6 +899,7 @@ final class Conversation {
         self.messages = messages
         self.outbox = outbox
         self.serverSessionID = serverSessionID
+        startsIn = nil
         lastError = nil
         publishContext()
     }

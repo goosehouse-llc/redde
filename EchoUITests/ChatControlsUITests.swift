@@ -1,7 +1,8 @@
 import XCTest
 
 /// A conversation's own switches in the model menu, on sample data (`-echo.demoChatControls`), and
-/// "Move to Project" in the chat list's row menu (`-echo.demoProjects`). Neither needs a server.
+/// projects in the chat list (`-echo.demoProjects`): "Move to Project" in a row's menu, and a new
+/// conversation in a project that has none yet. None of it needs a server.
 @MainActor
 final class ChatControlsUITests: XCTestCase {
     private func shot(_ name: String) {
@@ -74,6 +75,29 @@ final class ChatControlsUITests: XCTestCase {
         XCTAssertTrue(move.waitForExistence(timeout: 5), "No Move to Project in the row's menu")
         move.tap()
         XCTAssertTrue(app.buttons["Echo"].waitForExistence(timeout: 5), "The project isn't offered as a place to move to")
+        XCTAssertTrue(app.buttons["New Project…"].exists, "No way to make a project to move it to")
         shot("move to project")
+    }
+
+    func testANewConversationInAnEmptyProjectIsNamedInTheHeader() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demoProjects", "-echo.screen", "sessions"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launch()
+        // Row labels are combined from the whole cell, so match on the leading title.
+        let garden = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Garden'")).firstMatch
+        XCTAssertTrue(garden.waitForExistence(timeout: 20), "A project with no conversations yet isn't in the list")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'New Project'")).firstMatch.exists, "No New Project row")
+        shot("projects with new project")
+        garden.tap()
+        XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 10), "The project didn't open")
+        XCTAssertTrue(app.staticTexts["No conversations yet"].waitForExistence(timeout: 5), "The empty project says nothing")
+        shot("empty project")
+        let start = app.buttons.matching(identifier: "New Conversation").allElementsBoundByIndex.last { $0.isHittable }
+        XCTAssertNotNil(start, "No New Conversation in the project")
+        start?.tap()
+        let named = app.descendants(matching: .any).matching(NSPredicate(format: "label == 'Project: Garden'")).firstMatch
+        XCTAssertTrue(named.waitForExistence(timeout: 8), "The new conversation's header doesn't name its project")
+        shot("header names the project")
     }
 }
