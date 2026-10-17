@@ -22,6 +22,18 @@ nonisolated enum WhatsNew {
 
     /// Newest first. Keep each to a handful of lines a person reads in ten seconds.
     static let releases: [Release] = [
+        Release(version: "1.9", items: [
+            Item(symbol: "text.magnifyingglass", title: "Search inside messages",
+                 detail: "Search in the conversation list now looks inside your messages too. Matches are listed under In messages with the words around them, and opening one goes to the word. It uses the Hermes Dashboard address."),
+            Item(symbol: "apple.terminal", title: "A terminal",
+                 detail: "Settings → Terminal, or More in a chat, opens a shell on your server over SSH, in the chat's folder when there is one. Redde makes a key on this device and shows the line to add to the server."),
+            Item(symbol: "folder.badge.plus", title: "Projects",
+                 detail: "New Project in the conversation list makes a Hermes project over a folder in ~/\u{2060}Projects on your server. A conversation started in it works in that folder, and its header names the project. On the Hermes Dashboard."),
+            Item(symbol: "clock.arrow.circlepath", title: "Scheduled runs, out of the way",
+                 detail: "Each run of a scheduled job is a conversation of its own. They now wait at the end of the list, folded until you open them, and stay out of the car's Chats."),
+            Item(symbol: "checkmark.seal", title: "Fixes",
+                 detail: "Opening another conversation no longer stops your agent: the reply is there when you come back. The Talk button in a chat keeps that chat, with New conversation in voice mode on too. SOUL.md and the memory files open where your Hermes keeps them, in Docker as well."),
+        ]),
         Release(version: "1.8", items: [
             Item(symbol: "iphone", title: "Phone tools",
                  detail: "Settings → Phone tools lets your agent use what is on this device: the calendar, reminders, contacts, photos, a folder of files, alarms and timers, and a widget it writes on. It can start a call, which iOS asks you about, or write a text for you to send. You switch on each area yourself, and adding, changing or deleting always asks you first. It takes Redde's plugin on your Hermes, which that screen installs."),

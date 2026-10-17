@@ -9,7 +9,7 @@ Redde for Hermes
 Talk, chat and run your agent
 
 ## Promotional text (170, editable without a new build)
-New: your agent can use your iPhone's calendar, photos and alarms, write on a widget, and start a call or a text, if you let it. Show it things in voice mode.
+New: search inside your messages, open a terminal on your server, and start a conversation in a Hermes project. Scheduled runs now fold away at the end of the list.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name)
 voice,assistant,ai,agent,carplay,self-hosted,llm,ollama,llama,watch,siri,shortcuts,private,openai
@@ -33,21 +33,21 @@ TALK, DON'T TYPE
 • Show your agent things with the camera in voice mode.
 
 SEE THE AGENT WORK
-• Watch reasoning and tool calls as they happen, with a Live Activity for progress; lock the phone and the reply carries on.
+• Watch reasoning and tool calls live, with a Live Activity for progress; lock the phone and the reply carries on.
 • Approve a risky command or answer the agent's question from a notification, out loud, or with a nod in AirPods. Pair your Hermes and notifications arrive with Redde closed, encrypted end to end.
 • Subagents get their own rows: follow, steer or stop one.
 
 A FULL CLIENT, NOT JUST A MIC
-• Conversations live in your gateway's session ledger: start on the phone, continue on the desktop, Telegram or the CLI. Search, pin, rename, fork, archive.
-• Sessions by project, scheduled jobs with delivery targets, and the Kanban board.
+• Conversations live in your gateway's session ledger: start on the phone, continue on the desktop, Telegram or the CLI. Search inside them, pin, rename, fork, archive.
+• Projects with their folders, scheduled jobs with delivery targets, the Kanban board.
 • Phone tools: your agent can use your iPhone's calendar, reminders, contacts, photos and files, set alarms, write on a widget, and start calls and texts, each only if you allow it.
 • Rich replies: Markdown, code, tables, task lists, Mermaid diagrams and math. Pictures, charts, PDFs and audio from the agent open in place.
-• Select part of a reply and ask about it. Regenerate, edit and resend, search a long chat, or switch models with /model.
+• Select part of a reply and ask about it. Regenerate, edit and resend, or switch models with /model.
 • Attach photos, videos and files, paste or drop them in, or dictate. Attach a day's calendar in one tap.
 • Share text, links, photos or files to Redde from any app. Export chats as Markdown.
 • Widgets: last answer, what needs you, context.
 • Skills and tool sets, on or off. Edit memory and context files; create or draft skills.
-• The server too: MCP servers, logs, restart, update, and its files.
+• The server too: MCP servers, logs, restart, update, files and an SSH terminal.
 
 YOUR BACKEND, YOUR RULES
 • Connect to Hermes through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access or a reverse proxy. Save several servers. Sign in with a password, or in a browser with Google or another provider.
@@ -68,6 +68,35 @@ Two pictures App Store Connect has taken since October 2026, on the version page
 - Search results (`search-3840x2560.png`, 3:2): "Talk to your own AI agent. Voice and chat for Hermes." beside voice mode and a chat. Shown with the app in search in place of the first screenshots.
 
 The words in both sit inside the "art safe area" of Apple's templates. Use Preview in App Store Connect before submitting: it shows each on iPhone and iPad, both ways up.
+
+## What's New in 1.9 (4000)
+Search inside your messages, a terminal on your server, and Hermes projects.
+
+• Search inside messages. Search in the conversation list now looks inside your conversations too. Those that match only in a message are listed under In messages, with the words around the match; open one and Redde goes to the word. It uses the Hermes Dashboard address, on either Hermes connection.
+• A terminal. Settings → Terminal, or More in a chat, opens a shell on your Hermes server over SSH. From a chat it starts in the conversation's folder. Redde makes a key on this iPhone, keeps it in the Keychain and shows the line to add to the server, and the first time it shows the server's fingerprint and asks before going on.
+• Projects. New Project in the conversation list makes a Hermes project over a folder of that name in ~/Projects on your server, or uses the folder if it is already there. Start a conversation in a project and your agent works in its folder; the chat's header names the project. Renaming or removing a project leaves the folder and its conversations as they are. Projects need the Hermes Dashboard.
+• Scheduled runs, out of the way. Hermes keeps each run of a scheduled job as a conversation, and on a busy server they buried the rest. They now wait in a Scheduled runs section at the end of the list, folded until you open it, and stay out of the car's Chats. A run you pinned stays pinned.
+• Fixes. Opening another conversation, or starting a new one, while your agent works no longer stops it: on a Hermes connection it finishes on your server, and the reply is there when you come back. With New conversation in voice mode on, the Talk button in a chat now carries that chat on; Siri, the Action Button, a control or opening Redde still start a new one. SOUL.md and the memory files in Settings open where your Hermes keeps them, in Docker too, where they looked empty.
+
+## Before submitting 1.9
+Written ahead of the release. What a phone has shown is said where it has.
+
+In App Store Connect and on the web:
+- 1.8 went live on 2026-10-15.
+- The build is 1.9 (266). Archive it from a clean build of origin/main once this is pushed.
+- The promotional text, the description (three lines) and What's New changed. `scripts/app-store-push.py all` makes the 1.9 version and sends them. No screenshot shows a 1.9 feature, so none were retaken. Run it from the checkout that has the Phone tools slots (`09-tools`, `08-ipad-tools`, made on 2026-10-14 and not yet committed): from one that still has the plan slots, `all` would put the plan pictures back.
+- Review notes from `app-review-notes.md`: a TERMINAL section is new, and the "new in 1.8" labels are gone. Send them with `scripts/app-store-push.py notes`.
+- Export compliance: the answer stays as it is, and the paragraph below says why now that the terminal speaks SSH.
+- App Privacy stays "Data Not Collected". The terminal connects only to a server the user names, and its key never leaves the device.
+- The privacy manifest needs nothing new: the new packages call only file-timestamp APIs, already declared (C617.1), and swift-crypto has its own manifest.
+- The licences of SwiftTerm and the SwiftNIO packages are in Settings → About → Acknowledgements.
+- The website still says "coming soon in 1.6 and 1.7".
+
+On devices, to check first:
+- The terminal has logged in to a real server from an iPhone. Not tried: starting in a chat's folder, a changed server key, the iPad with a keyboard.
+- Search inside messages, projects and the scheduled runs fold have been tried in the simulator, in UI tests and against Hermes 0.21.0 to 0.22.2 in the lab, not on a phone.
+- Leaving a conversation while the agent works (issue 12): tried in the lab on Hermes 0.21.0 to 0.22.2, not on a phone.
+- The Talk button (issue 14) and the context files (issue 15) are on an iPhone 15 Pro Max as a development build, not yet tried by hand. Issue 15 has run against Hermes in the lab with a home of its own, not in Docker.
 
 ## What's New in 1.8 (4000)
 Phone tools, the camera in voice mode, answers out loud or with a nod, notes by Siri, and more in the car.
@@ -191,7 +220,7 @@ On devices, to check first:
 What that decision weighed: the optional relay keeps a paired iPhone's push token, the hash of a secret and the time of its last check-in, for as long as the pairing lasts and at most 120 days after the iPhone last checked in (`docs/push.md`, "What is where"). It has no account and nothing that says who the person is, the notifications pass through it encrypted and are not kept, and conversations, credentials and everything else go only to the person's own server. The privacy policy describes the relay in full, and the review notes point the reviewer to it. If Apple asks for the token to be on the label, the entry would be Identifiers → Device ID, for App Functionality, not linked to the user and not used for tracking, with the same entry in `Echo/Resources/PrivacyInfo.xcprivacy`.
 
 ## Export compliance
-`ITSAppUsesNonExemptEncryption` stays `false` (`project.yml`). Besides HTTPS, 1.7 encrypts and decrypts notifications (X25519, HKDF-SHA256, AES-256-GCM) and hashes for its browser sign-in (SHA-256, for PKCE). All of it is CryptoKit, Apple's implementation in the operating system; the app contains no cryptography of its own and none from a third party. App Store Connect asks for documentation when an app implements proprietary algorithms, or standard ones "instead of, or in addition to, using or accessing the encryption within Apple's operating system". Redde does neither, so the answer to "What type of encryption algorithms does your app implement?" is "None of the algorithms mentioned above", and with the key set to `false` the question isn't asked at upload.
+`ITSAppUsesNonExemptEncryption` stays `false` (`project.yml`). Besides HTTPS, 1.7 encrypts and decrypts notifications (X25519, HKDF-SHA256, AES-256-GCM) and hashes for its browser sign-in (SHA-256, for PKCE). All of it is CryptoKit, Apple's implementation in the operating system; the app contains no cryptography of its own and none from a third party. Since 1.9 the terminal speaks SSH through Apple's open-source swift-nio-ssh, with standard algorithms only (curve25519-sha256 and ecdh-sha2-nistp256/384/521 key exchange, aes128-gcm and aes256-gcm, ssh-ed25519 and ecdsa-sha2 keys, hmac-sha2-256). Its primitives come from swift-crypto, which on Apple's platforms is CryptoKit itself (`@_exported import CryptoKit`; its vendored BoringSSL is built only for Linux, Android, Windows, WASI and OpenBSD, and a 1.9 build links none of it), and the device's own key is CryptoKit's Ed25519. So the cryptography is still all the operating system's. App Store Connect asks for documentation when an app implements proprietary algorithms, or standard ones "instead of, or in addition to, using or accessing the encryption within Apple's operating system". Redde does neither, so the answer to "What type of encryption algorithms does your app implement?" is "None of the algorithms mentioned above", and with the key set to `false` the question isn't asked at upload.
 
 ## What's New in 1.6 (4000)
 Redde comes to Apple Watch, sets itself up from a QR code, and keeps a reply going after the phone locks.

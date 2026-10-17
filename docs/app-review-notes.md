@@ -2,7 +2,7 @@
 
 # App Review notes
 
-Paste the block below into App Store Connect → App Review Information → Notes. The field takes plain text, 4,000 characters at most; this is 3,910 with the placeholder and about 3,970 with a key in its place. Replace `<<REVIEW KEY>>` first, or let `scripts/app-store-push.py notes` put the key in and send them: until 1.8 the notes went in by hand, and from 1.1 to 1.7.1 with the placeholder still in them. Keep it under the limit when adding to it: the notes for 1.6 ran to 6,600 before they were cut.
+Paste the block below into App Store Connect → App Review Information → Notes. The field takes plain text, 4,000 characters at most; this is 3,903 with the placeholder and about 3,962 with a key in its place. Replace `<<REVIEW KEY>>` first, or let `scripts/app-store-push.py notes` put the key in and send them: until 1.8 the notes went in by hand, and from 1.1 to 1.7.1 with the placeholder still in them. Keep it under the limit when adding to it: the notes for 1.6 ran to 6,600 before they were cut.
 
 ```text
 Redde is a voice and chat client for a self-hosted AI assistant. It has no account, and conversations go only to the server the user configures. We run one service for it, an optional notification relay.
@@ -15,17 +15,20 @@ TO TEST
 
 Hermes connections and screens (Skills, Tools, Memory, Files…) need a self-hosted Hermes server and say so without one.
 
-PHONE TOOLS (new in 1.8; optional, off by default)
-Settings > Phone tools. The user's assistant, on their own Hermes server, can ask the app for calendar events, reminders, a contact, photos, files in the app's own folder, alarms and timers (AlarmKit), and a widget it writes on. It can start a call (iOS confirms before dialling) or write a text the user sends from the Messages sheet. Each area is off until the user turns it on, when iOS asks for its permission (visible without a server). Adding, changing and deleting ask first. What is read goes only to the user's server. The tools need a plugin on that server, so the review endpoint can't run them.
+PHONE TOOLS (optional, off by default)
+Settings > Phone tools. The user's Hermes assistant can ask the app for calendar events, reminders, a contact, photos, files in the app's own folder, alarms and timers (AlarmKit) and a widget it writes on, start a call (iOS confirms) or draft a text the user sends. Each area is off until the user turns it on, when iOS asks for its permission (visible without a server). Changes ask first. What is read goes only to the user's server. The tools need a plugin there, so the review endpoint can't run them.
 
 CARPLAY (voice-based conversational app entitlement)
-Connect the phone to CarPlay or the CarPlay Simulator. Ask has three cards: Ask (one question), Talk (hands-free until the user says "that's all") and New Chat, and rows for a spoken note and short answers. Chats lists conversations by name and time only; picking one carries it on by voice. The voice card shows Listening, Thinking and Speaking, with Stop and Pause. Answers are spoken; no reply text is shown.
+Connect the phone to CarPlay or the CarPlay Simulator. Ask has three cards: Ask (one question), Talk (hands-free until the user says "that's all") and New Chat, with rows for a note and short answers. Chats lists conversations by name and time only; picking one carries it on by voice. The voice card shows Listening, Thinking and Speaking, with Stop and Pause. Answers are spoken; no reply text is shown.
 
 APPLE WATCH
 Open Redde on the paired watch, tap Ask and dictate; the reply is shown and read aloud. Background audio: with Bluetooth headphones a reply keeps playing after the wrist is lowered. The watch app records nothing.
 
+TERMINAL (new in 1.9)
+Settings > Terminal, or More in a chat: a shell on the user's own server over SSH, signed in with a key the app makes and keeps in the Keychain. It needs an SSH server, so the review endpoint can't use it.
+
 NOTIFICATIONS (optional, off by default)
-Settings > Voice > Notify when Redde is closed. Pairing takes a plugin on the user's Hermes server: "Install the Plugin" asks that server to install it on itself; the app downloads and runs no code. The server sends notifications through our relay, redde-push.goosehouse.org, to APNs, encrypted between server and iPhone with CryptoKit. The relay keeps only the push token and can't read them.
+Settings > Voice > Notify when Redde is closed. Pairing takes a plugin on the user's Hermes server: "Install the Plugin" asks that server to install it on itself; the app downloads and runs no code. The server sends them through our relay, redde-push.goosehouse.org, to APNs, encrypted between server and iPhone with CryptoKit; the relay keeps only the push token.
 
 MICROPHONE
 Used only while the user talks to the app: voice mode, dictation into the message field, and, with "Talk over replies", while a reply plays, so speaking interrupts it. Transcription is on the device; no audio is kept or sent.
@@ -39,9 +42,9 @@ Processing: only BGContinuedProcessingTaskRequest, so a reply the user asked for
 
 PERMISSIONS
 Calendar: the calendar card and the Calendar chip in the message field attach a day's events; also Phone tools.
-Reminders, Contacts, Photos, Alarms (new in 1.8): only for Phone tools, asked when the user turns that area on.
-Motion & Fitness (new in 1.8): asked when the user turns on Settings > Voice > Nod or shake to answer. Head movement from AirPods is read on the device while a request waits, to tell a nod (approve) from a shake (deny); nothing is kept or sent.
-Camera: Camera in the + menu, to attach a photo; "Scan a setup code"; and voice mode's camera button (new in 1.8), which sends a still with each spoken question.
+Reminders, Contacts, Photos, Alarms: only for Phone tools, asked when the user turns that area on.
+Motion & Fitness: for Settings > Voice > Nod or shake to answer. AirPods head movement is read on the device while a request waits, to tell a nod (approve) from a shake (deny); nothing is kept or sent.
+Camera: the + menu's Camera, "Scan a setup code", and voice mode's camera button, which sends a still with each spoken question.
 
 APP TRANSPORT SECURITY
 Plain HTTP is allowed (NSAllowsArbitraryLoads) because self-hosted servers on private networks usually have no public TLS certificate. The review endpoint is HTTPS.
