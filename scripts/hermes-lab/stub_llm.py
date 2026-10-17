@@ -27,6 +27,11 @@ that follows in the same conversation is an ordinary one):
 And one for a long turn: a message with "lab:slow" in it is answered "[slow done]" after eight
 seconds, for a check that leaves a turn under way (switching to another conversation).
 
+And a voice, for the speech scenario (`lab.sh speech`): `/v1/audio/speech` answers as OpenAI's
+speech API does, with a 440 Hz tone at 24 kHz, 50 ms for each character of the input, so a check
+can tell from the length and loudness of what it heard that nothing was lost or misread. `pcm`
+streams it in odd-sized pieces (a sample split across two); `wav` is a file; `mp3` needs ffmpeg.
+
 And one for attachments: a message with "lab:file" in it is answered "[file seen]" when what
 reached the model also holds "lab-file-token" (a text file's contents, as Hermes inlines them)
 or "lab-clip.mp4" (how it names a file it can't inline), and "[file missing]" when it doesn't.
@@ -35,9 +40,12 @@ usage: stub_llm.py <port> <name> <model,model,...>
 """
 import json
 import os
+import subprocess
 import sys
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+from lab_tone import tone, wav
 
 PORT, NAME, MODELS = int(sys.argv[1]), sys.argv[2], sys.argv[3].split(",")
 HITS = os.environ["LAB_HITS"]
@@ -94,9 +102,43 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {"object": "list", "data": [{"id": m, "object": "model", "owned_by": NAME} for m in MODELS]})
         self._json(404, {"error": {"message": "not found"}})
 
+    def _speech(self, body):
+        pcm = tone(len(str(body.get("input") or "")) * 0.05, 24000)
+        kind = body.get("response_format") or "mp3"
+        if kind == "pcm":
+            self.send_response(200)
+            self.send_header("Content-Type", "audio/pcm")
+            self.send_header("Transfer-Encoding", "chunked")
+            self.end_headers()
+            for start in range(0, len(pcm), 4801):
+                piece = pcm[start:start + 4801]
+                self.wfile.write(f"{len(piece):x}\r\n".encode() + piece + b"\r\n")
+                self.wfile.flush()
+                time.sleep(0.005)
+            self.wfile.write(b"0\r\n\r\n")
+            return
+        if kind == "wav":
+            data, mime = wav(pcm, 24000), "audio/wav"
+        elif kind == "mp3":
+            try:
+                data = subprocess.run(["ffmpeg", "-loglevel", "error", "-f", "s16le", "-ar", "24000", "-ac", "1", "-i", "-", "-f", "mp3", "-"],
+                                      input=pcm, capture_output=True, check=True).stdout
+            except (OSError, subprocess.CalledProcessError):
+                return self._json(501, {"error": {"message": "the lab's mp3 needs ffmpeg"}})
+            mime = "audio/mpeg"
+        else:
+            return self._json(400, {"error": {"message": f"no {kind} here"}})
+        self.send_response(200)
+        self.send_header("Content-Type", mime)
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
     def do_POST(self):
         length = int(self.headers.get("Content-Length") or 0)
         body = json.loads(self.rfile.read(length) or b"{}")
+        if self.path.rstrip("/").endswith("/audio/speech"):
+            return self._speech(body)
         if not self.path.rstrip("/").endswith("/chat/completions"):
             return self._json(404, {"error": {"message": "not found"}})
         model = body.get("model", "")

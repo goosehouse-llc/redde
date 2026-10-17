@@ -161,10 +161,14 @@ final class Settings: ServeEndpoint {
     }
     /// Launch straight into the voice screen. (Once its own switch; now one of `launchScreen`.)
     var openToVoiceScreen: Bool { launchScreen == .voice }
-    /// Speak replies with a Kokoro server instead of the on-device voice.
-    var useKokoro: Bool {
-        didSet { defaults.set(useKokoro, forKey: Keys.useKokoro) }
+    /// Who reads replies out: the iPhone's own voice, a Kokoro server, or the person's Hermes
+    /// with the voice it is set up with (`HermesSpeech`, over the Dashboard).
+    enum ReplyVoice: String, CaseIterable, Sendable { case onDevice, kokoro, hermes }
+    var replyVoice: ReplyVoice {
+        didSet { defaults.set(replyVoice.rawValue, forKey: Keys.replyVoice) }
     }
+    /// Speak replies with a Kokoro server instead of the on-device voice.
+    var useKokoro: Bool { replyVoice == .kokoro }
     var kokoroURL: String {
         didSet { defaults.set(kokoroURL, forKey: Keys.kokoroURL) }
     }
@@ -421,6 +425,7 @@ final class Settings: ServeEndpoint {
         static let shortAnswersInCar = "shortAnswersInCar"
         static let thinkingSound = "thinkingSound"
         static let useKokoro = "useKokoro"
+        static let replyVoice = "replyVoice"
         static let kokoroURL = "kokoroURL"
         static let kokoroVoice = "kokoroVoice"
         static let voiceSpeed = "voiceSpeed"
@@ -482,7 +487,9 @@ final class Settings: ServeEndpoint {
         answerRequestsByNod = defaults.bool(forKey: Keys.answerRequestsByNod)
         shortAnswersInCar = defaults.bool(forKey: Keys.shortAnswersInCar)
         thinkingSound = defaults.string(forKey: Keys.thinkingSound).flatMap(ThinkingSound.init(rawValue:)) ?? .off
-        useKokoro = defaults.bool(forKey: Keys.useKokoro)
+        // Before there were three, Kokoro was a switch.
+        replyVoice = defaults.string(forKey: Keys.replyVoice).flatMap(ReplyVoice.init(rawValue:))
+            ?? (defaults.bool(forKey: Keys.useKokoro) ? .kokoro : .onDevice)
         kokoroURL = defaults.string(forKey: Keys.kokoroURL) ?? Self.defaultKokoroURL
         kokoroVoice = defaults.string(forKey: Keys.kokoroVoice) ?? Self.defaultKokoroVoice
         // "kokoroSpeed" was this setting's name for one build; carry the value over.
@@ -700,7 +707,7 @@ final class Settings: ServeEndpoint {
         answerRequestsByNod = false
         shortAnswersInCar = false
         thinkingSound = .off
-        useKokoro = false
+        replyVoice = .onDevice
         kokoroURL = Self.defaultKokoroURL
         kokoroVoice = Self.defaultKokoroVoice
         voiceSpeed = 1.0

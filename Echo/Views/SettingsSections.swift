@@ -357,13 +357,31 @@ struct VoiceSettings: View {
         SpeechLanguageView.name(settings.speechLanguage.isEmpty ? Locale.current.identifier(.bcp47) : settings.speechLanguage)
     }
 
+    /// The footer's opening: what the chosen voice is, and where the reply's text goes for it.
+    private var voiceFooter: String {
+        switch settings.replyVoice {
+        case .onDevice:
+            "Apple's on-device synthesizer. Zero network, fastest start. "
+                + "“Voice for replies”: Match each reply picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice. Download more voices in the iPhone's Settings → Accessibility → Read & Speak → Voices. "
+        case .kokoro:
+            "Streams audio from a Kokoro-compatible TTS server and starts playing before the sentence finishes. Falls back to the on-device voice if the server is unreachable. "
+                + "“Voice for replies”: Match each reply picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice (the built-in one when Kokoro has none for it). "
+        case .hermes:
+            "Your Hermes reads replies out with the voice set under tts in its config.yaml (ElevenLabs, OpenAI, Gemini, a voice running on the server, and others), through the Dashboard connection. The phone needs no voice key and no second server. The reply's text goes from your Hermes to that provider; Hermes's default, Edge, is Microsoft's online voice. “Say a test sentence” shows which one speaks. Speed and language are Hermes's settings too. Falls back to the on-device voice when the Dashboard can't speak. "
+        }
+    }
+
     var body: some View {
         Section {
-            Picker("Voice", selection: $settings.useKokoro) {
-                Text("On-device (Apple)").tag(false)
-                Text("Server TTS").tag(true)
+            Picker("Voice", selection: $settings.replyVoice) {
+                Text("On-device").tag(Settings.ReplyVoice.onDevice)
+                Text("Kokoro").tag(Settings.ReplyVoice.kokoro)
+                Text("Hermes").tag(Settings.ReplyVoice.hermes)
             }
             .adaptiveSegmented()
+            if settings.replyVoice == .hermes {
+                HermesVoiceRows()
+            }
             if settings.useKokoro {
                 TextField("http://your-tts-server:8880", text: $settings.kokoroURL)
                     .urlFieldStyle()
@@ -399,18 +417,21 @@ struct VoiceSettings: View {
                         .lineLimit(1)
                 }
             }
-            Picker("Voice for replies", selection: $settings.matchReplyLanguage) {
-                Text("Match each reply").tag(true)
-                Text(settings.useKokoro ? "Always your Kokoro voice" : "Always \(listeningLanguageName)").tag(false)
-            }
-            .pickerStyle(.menu)
-            // Applies to Kokoro and the built-in fallback voice alike.
-            VStack(alignment: .leading, spacing: 2) {
-                LabeledContent("Voice speed") {
-                    Text(String(format: "%.2f×", settings.voiceSpeed)).monospacedDigit()
+            // Hermes's voice is the one it is set up with: no language to match, no speed to send.
+            if settings.replyVoice != .hermes {
+                Picker("Voice for replies", selection: $settings.matchReplyLanguage) {
+                    Text("Match each reply").tag(true)
+                    Text(settings.useKokoro ? "Always your Kokoro voice" : "Always \(listeningLanguageName)").tag(false)
                 }
-                Slider(value: $settings.voiceSpeed, in: 0.5...2.0, step: 0.05)
-                    .accessibilityLabel("Voice speed")
+                .pickerStyle(.menu)
+                // Applies to Kokoro and the built-in fallback voice alike.
+                VStack(alignment: .leading, spacing: 2) {
+                    LabeledContent("Voice speed") {
+                        Text(String(format: "%.2f×", settings.voiceSpeed)).monospacedDigit()
+                    }
+                    Slider(value: $settings.voiceSpeed, in: 0.5...2.0, step: 0.05)
+                        .accessibilityLabel("Voice speed")
+                }
             }
             Toggle("Start voice mode in hands-free", isOn: $settings.handsFreeByDefault)
             Picker("Talk over replies", selection: $settings.talkOver) {
@@ -498,12 +519,7 @@ struct VoiceSettings: View {
         } header: {
             Text("Voice")
         } footer: {
-            Text((settings.useKokoro
-                ? "Streams audio from a Kokoro-compatible TTS server and starts playing before the sentence finishes. Falls back to the on-device voice if the server is unreachable. "
-                : "Apple's on-device synthesizer. Zero network, fastest start. ")
-                + (settings.useKokoro
-                    ? "“Voice for replies”: Match each reply picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice (the built-in one when Kokoro has none for it). "
-                    : "“Voice for replies”: Match each reply picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice. Download more voices in the iPhone's Settings → Accessibility → Read & Speak → Voices. ")
+            Text(voiceFooter
                 + "“Talk over replies” lets you interrupt a spoken reply by speaking: the reply stops and what you say is your next message. With headphones it costs nothing. On the phone's speaker Redde has to cancel its own echo for as long as it speaks, so replies play at call volume, quieter than usual; that is why the speaker is a separate choice. Not in the car. “Interrupt with” says what counts: anything you say, or only the word “stop”, for when other people are talking nearby. With “Only “stop””, the reply plays on through whatever else is said, and “stop” ends it. “Stop phrases” adds your own ways of ending a hands-free conversation to the built-in ones, for another language or a word of your own; with “Only “stop””, they end a reply as well. "
                 + "“Answer requests by voice”: in voice mode and in the car, Redde reads out a command that waits for your approval, or a question from your agent, and takes your spoken answer: “approve” or “deny”, or the answer to the question. Anyone in earshot can answer, and what the agent wants to run is said aloud, so it is off until you turn it on. Passwords and secrets are only ever asked for on the screen."
                 + (HeadGestures.isAvailable

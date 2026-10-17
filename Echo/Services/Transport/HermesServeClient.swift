@@ -441,6 +441,12 @@ final class HermesServeClient {
         return task
     }
 
+    /// The Dashboard's speech socket (`HermesSpeech`), speaking with the selected profile's voice.
+    func openSpeechSocket() async throws -> URLSessionWebSocketTask {
+        try await openPluginSocket(path: "api/audio/speak-stream",
+                                   query: settings.profileName.map { [URLQueryItem(name: "profile", value: $0)] } ?? [])
+    }
+
     private func openSocket(baseURL: URL, ticket: String) async throws {
         guard var comps = URLComponents(url: baseURL.appending(path: "api/ws"), resolvingAgainstBaseURL: false) else {
             throw TransportError.badURL
@@ -1142,7 +1148,7 @@ final class HermesServeClient {
         case (_, "api/sessions"): return method == "GET" ? .query : .none
         default:
             let queryRoutes = ["api/skills", "api/tools/toolsets", "api/cron/", "api/mcp/servers", "api/logs", "api/status", "api/gateway/restart",
-                               "api/sessions/search"]
+                               "api/sessions/search", "api/audio/speak"]
             return queryRoutes.contains { route == $0 || route.hasPrefix($0.hasSuffix("/") ? $0 : $0 + "/") } ? .query : .none
         }
     }

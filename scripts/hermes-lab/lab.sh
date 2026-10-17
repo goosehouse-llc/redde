@@ -20,6 +20,7 @@
 #   scripts/hermes-lab/lab.sh projects [tag ...]   projects made in the app: a folder in ~/Projects (the lab's own home), a conversation in it
 #   scripts/hermes-lab/lab.sh search [tag ...]     searching inside messages: words said on either connection, found through the Dashboard
 #   scripts/hermes-lab/lab.sh context [tag ...]    Settings' context and memory files, found where Hermes keeps them (issue 15)
+#   scripts/hermes-lab/lab.sh speech [tag ...]     replies read out with the voice Hermes is set up with, streamed and whole (issue 7)
 #   scripts/hermes-lab/lab.sh up <tag> <scenario>  leave one lab running (API :18642, Dashboard :19119)
 #   scripts/hermes-lab/lab.sh down
 #
@@ -71,7 +72,7 @@ down() {
 
 up() {
   local tag="$1" scenario="$2" hermes="$LAB_HOME/hermes-$1/.venv/bin/hermes"
-  [[ -f "$HERE/scenarios/$scenario.yaml" ]] || { echo "no scenario '$scenario' (have: $SCENARIOS approval admin push)"; exit 2; }
+  [[ -f "$HERE/scenarios/$scenario.yaml" ]] || { echo "no scenario '$scenario' (have: $SCENARIOS approval admin push speech speech-whole)"; exit 2; }
   install "$tag"
   [[ "$scenario" == admin ]] && with_mcp "$tag"
   down
@@ -79,10 +80,11 @@ up() {
   local run="$LAB_HOME/run-$$-$RANDOM"
   mkdir -p "$run/.hermes"
   export HERMES_HOME="$run/.hermes"
-  cp "$HERE/scenarios/$scenario.yaml" "$HERMES_HOME/config.yaml"
+  # (@LAB@ in a scenario is this folder: a voice that runs one of the lab's scripts.)
+  sed "s#@LAB@#$HERE#g" "$HERE/scenarios/$scenario.yaml" > "$HERMES_HOME/config.yaml"
   print -l "API_SERVER_ENABLED=true" "API_SERVER_KEY=labkey-labkey-labkey" "API_SERVER_PORT=18642" "API_SERVER_HOST=127.0.0.1" > "$HERMES_HOME/.env"
   # The Dashboard's login, for the scenarios that turn it on.
-  [[ "$scenario" == approval || "$scenario" == admin || "$scenario" == push ]] && print -l "HERMES_DASHBOARD_BASIC_AUTH_USERNAME=lab" "HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=labpass-labpass" \
+  [[ "$scenario" == (approval|admin|push|speech|speech-whole) ]] && print -l "HERMES_DASHBOARD_BASIC_AUTH_USERNAME=lab" "HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=labpass-labpass" \
     "HERMES_DASHBOARD_BASIC_AUTH_SECRET=0123456789abcdef0123456789abcdef0123456789abcdef" >> "$HERMES_HOME/.env"
   # An MCP server for the admin scenario to switch and test: the lab's own stand-in, off at first.
   [[ "$scenario" == admin ]] && print -l "mcp_servers:" "  lab-notes:" "    command: python3" "    args: [\"$HERE/mcp_stub.py\"]" "    enabled: false" >> "$HERMES_HOME/config.yaml"
@@ -443,6 +445,30 @@ device() {
   echo "\nAll checks passed."
 }
 
+# Replies read out by the voice Hermes is set up with, through the Dashboard (GitHub issue 7): a
+# voice that streams (the stub's "OpenAI"), and one that runs on the server and only writes whole
+# files (tts_command.py). LAB_SPEAKS tells the app's check which the socket should do: stream, or
+# say "fallback" so the app asks for each sentence whole (up to 0.21.5, for the second voice).
+speech() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  app_prepare HermesLabSpeechTests || exit 1
+  for tag in $tags; do
+    for scenario in speech speech-whole; do
+      echo "===== Hermes $tag / $scenario"
+      if ! up "$tag" "$scenario"; then failed+=("$tag $scenario (lab)"); continue; fi
+      local speaks=stream voice=openai
+      [[ "$scenario" == speech-whole ]] && voice=lab-tone
+      [[ "$scenario" == speech-whole && "$tag" == v2026.* ]] && speaks=whole
+      # (xcodebuild hands TEST_RUNNER_ variables to the tests without the prefix.)
+      export TEST_RUNNER_LAB_SPEAKS=$speaks TEST_RUNNER_LAB_VOICE=$voice
+      app_check || failed+=("$tag $scenario")
+    done
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
 mkdir -p "$LAB_HOME"
 case "${1:-}" in
   run) shift; run "$@" ;;
@@ -459,7 +485,8 @@ case "${1:-}" in
   projects) shift; projects "$@" ;;
   search) shift; search "$@" ;;
   context) shift; context "$@" ;;
+  speech) shift; speech "$@" ;;
   up) up "$2" "$3" && echo "lab up: Hermes $2 / $3 — API http://127.0.0.1:18642 (key labkey-labkey-labkey), Dashboard http://127.0.0.1:19119" ;;
   down) down ;;
-  *) sed -n '2,24p' "$0"; exit 2 ;;
+  *) sed -n '2,25p' "$0"; exit 2 ;;
 esac

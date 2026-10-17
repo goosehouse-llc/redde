@@ -4,9 +4,10 @@ import Foundation
 import Observation
 import os
 
-/// Streams speech from a Kokoro (OpenAI-compatible) TTS server on the tailnet and plays it as
-/// the bytes arrive. One request per sentence, a couple fetched ahead, played strictly in order.
-/// Wire format: `response_format: pcm` = 24 kHz, 16-bit signed little-endian, mono.
+/// Streams speech from a Kokoro (OpenAI-compatible) TTS server on the tailnet, or from the
+/// person's Hermes (`HermesSpeech`), and plays it as the bytes arrive. One request per sentence,
+/// a couple fetched ahead, played strictly in order.
+/// Kokoro's wire format: `response_format: pcm` = 24 kHz, 16-bit signed little-endian, mono.
 @Observable
 final class KokoroPlayer {
     nonisolated static let sampleRate: Double = 24_000
@@ -48,17 +49,24 @@ final class KokoroPlayer {
     /// GPU, which lengthens the wait for the sentence that is actually due.
     private static let lookahead = 2
 
+    /// Who speaks a sentence.
+    private enum Source {
+        case kokoro(baseURL: URL, voice: String, speed: Double)
+        /// The Dashboard at `server`, with the voice its Hermes is set up with.
+        case hermes(HermesServeClient, server: URL)
+        /// Audio already in hand.
+        case ready
+    }
+
     private final class Sentence {
         let text: String
-        let baseURL: URL
-        let voice: String
-        let speed: Double
+        let source: Source
         let chunks: AsyncThrowingStream<AVAudioPCMBuffer, Error>
         let continuation: AsyncThrowingStream<AVAudioPCMBuffer, Error>.Continuation
         var fetch: Task<Void, Never>?
 
-        init(text: String, baseURL: URL, voice: String, speed: Double) {
-            self.text = text; self.baseURL = baseURL; self.voice = voice; self.speed = speed
+        init(text: String, source: Source) {
+            self.text = text; self.source = source
             (chunks, continuation) = AsyncThrowingStream.makeStream()
         }
     }
@@ -95,7 +103,7 @@ final class KokoroPlayer {
     }
 
     // Standard float mono at 24 kHz always exists; the fallback is only to keep the initializer total.
-    nonisolated private static func makeFormat() -> AVAudioFormat {
+    nonisolated static func makeFormat() -> AVAudioFormat {
         AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)
             ?? AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
     }
@@ -124,7 +132,26 @@ final class KokoroPlayer {
     }
 
     func enqueue(_ text: String, baseURL: URL, voice: String, speed: Double = 1.0) {
-        queue.append(Sentence(text: text, baseURL: baseURL, voice: voice, speed: speed))
+        enqueue(Sentence(text: text, source: .kokoro(baseURL: baseURL, voice: voice, speed: speed)))
+    }
+
+    /// A sentence for the person's Hermes to say, through the Dashboard at `server`.
+    func enqueueHermes(_ text: String, client: HermesServeClient, server: URL) {
+        enqueue(Sentence(text: text, source: .hermes(client, server: server)))
+    }
+
+    /// Audio already fetched (Settings' test of the Hermes voice), played like a sentence.
+    func enqueue(samples: [[Float]], text: String) {
+        let sentence = Sentence(text: text, source: .ready)
+        for piece in samples {
+            if let buffer = HermesSpeech.buffer(piece, format: format) { sentence.continuation.yield(buffer) }
+        }
+        sentence.continuation.finish()
+        enqueue(sentence)
+    }
+
+    private func enqueue(_ sentence: Sentence) {
+        queue.append(sentence)
         fetchAhead()
         if playbackTask == nil { startPlayback(generation: generation) } else { wakePlayback() }
     }
@@ -194,13 +221,22 @@ final class KokoroPlayer {
 
     private func startFetch(_ sentence: Sentence) {
         guard sentence.fetch == nil else { return }
-        let text = sentence.text, baseURL = sentence.baseURL, voice = sentence.voice, speed = sentence.speed
-        let continuation = sentence.continuation
-        sentence.fetch = Task { [weak self] in
-            // The bytes are decoded off the main actor; only the bookkeeping hops back.
-            if await Self.fetch(text, baseURL: baseURL, voice: voice, speed: speed, into: continuation) {
-                self?.lastRequestAt = .now
+        let text = sentence.text, continuation = sentence.continuation
+        switch sentence.source {
+        case let .kokoro(baseURL, voice, speed):
+            sentence.fetch = Task { [weak self] in
+                // The bytes are decoded off the main actor; only the bookkeeping hops back.
+                if await Self.fetch(text, baseURL: baseURL, voice: voice, speed: speed, into: continuation) {
+                    self?.lastRequestAt = .now
+                }
             }
+        case let .hermes(client, server):
+            let format = format
+            sentence.fetch = Task {
+                _ = await HermesSpeech.fetch(text, client: client, server: server, format: format, into: continuation)
+            }
+        case .ready:
+            sentence.fetch = Task {}
         }
     }
 

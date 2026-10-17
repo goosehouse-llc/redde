@@ -43,7 +43,7 @@ struct SpeechOutputTests {
     /// Pause before the reply's first word (the car's card, while the agent is still at work):
     /// the built-in voice can only be held mid-sentence, so what arrives waits to be said.
     @Test func aReplyHeldBeforeItsFirstWordWaitsForResume() async throws {
-        guard !AVSpeechSynthesisVoice.speechVoices().isEmpty, !Settings.shared.useKokoro else { print("SKIP: no built-in voice in use"); return }
+        guard !AVSpeechSynthesisVoice.speechVoices().isEmpty, Settings.shared.replyVoice == .onDevice else { print("SKIP: no built-in voice in use"); return }
         let output = SpeechOutput()
         var finished = false
         output.onFinished = { finished = true }

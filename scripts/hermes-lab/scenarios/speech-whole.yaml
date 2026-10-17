@@ -1,0 +1,29 @@
+model:
+  default: alpha
+  provider: custom:my-local
+custom_providers:
+  - name: My Local
+    base_url: http://127.0.0.1:18801/v1
+    api_key: sk-stub
+    model: alpha
+    api_mode: chat_completions
+    models:
+      alpha: {}
+      beta: {}
+# Ask a person every time: the default hands the question to a model first.
+approvals:
+  mode: manual
+# A public address makes the Dashboard ask for a login, as it does anywhere but loopback, and the
+# app signs in the way it does on a real server (lab.sh sets the user and password).
+dashboard:
+  public_url: http://redde-lab.test:19119
+# Replies read out by a voice that runs on the server and only writes whole files (tts_command.py),
+# as Edge, Piper and the other voices with no streaming API do: up to 0.21.5 the socket answers
+# "fallback" and the app asks for each sentence whole; 0.22 speaks it a sentence at a time itself.
+tts:
+  provider: lab-tone
+  providers:
+    lab-tone:
+      type: command
+      command: "python3 @LAB@/tts_command.py {input_path} {output_path}"
+      output_format: wav

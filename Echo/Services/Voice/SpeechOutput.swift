@@ -19,7 +19,8 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
     /// The built-in voice can't be metered, so each word it starts is a pulse: when, and how
     /// strong (longer words hit harder). Written from the synthesizer's callback thread.
     private nonisolated let wordPulse = OSAllocatedUnfairLock(initialState: (at: Date.distantPast, strength: Float(0)))
-    private let kokoro = KokoroPlayer()
+    /// Plays Kokoro's sentences, or Hermes's.
+    private let player = KokoroPlayer()
     private var chunker = SentenceChunker()
     private var queued = 0
     private var announcedStart = false
@@ -31,13 +32,16 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
     private var streamEnded = false
     /// Held by `pause`. The built-in voice can only be held in the middle of a sentence, so one
     /// that arrives while nothing is being said (before the reply's first word, or in a gap of
-    /// it) waits in `held` for `resume`. Kokoro holds what arrives itself.
+    /// it) waits in `held` for `resume`. The player (Kokoro, Hermes) holds what arrives itself.
     private var paused = false
     private var held: [String] = []
     private var resumeWaiters: [CheckedContinuation<Void, Never>] = []
-    /// Decided per reply so a Settings change takes effect on the next turn, not mid-sentence.
-    private var usingKokoro = false
-    private var kokoroDrained = false
+    /// Decided per reply so a Settings change takes effect on the next turn, not mid-sentence:
+    /// whether the player speaks it (Kokoro, or Hermes when `hermesServer` is set).
+    private var usingPlayer = false
+    /// The Dashboard whose Hermes reads this reply out.
+    private var hermesServer: URL?
+    private var playerDrained = false
     /// Whether this reply has handed Kokoro a sentence; until then it can still switch to the
     /// built-in voice for a language Kokoro can't speak.
     private var sentToKokoro = false
@@ -58,25 +62,25 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
             MainActor.assumeIsolated { self?.cachedVoices = [:] }
         }
         // Ready before the first reply, so it isn't read by the wrong voice while the list loads.
-        if Settings.shared.useKokoro, let server = Settings.shared.kokoroBaseURL { loadKokoroVoices(server) }
+        if Settings.shared.replyVoice == .kokoro, let server = Settings.shared.kokoroBaseURL { loadKokoroVoices(server) }
         synthesizer.delegate = self
         // Mixing with the session we already configured; don't let the synthesizer flip categories.
         synthesizer.usesApplicationAudioSession = true
-        kokoro.onFirstAudio = { [weak self] in
+        player.onFirstAudio = { [weak self] in
             guard let self, !announcedStart else { return }
             announcedStart = true
             onFirstSpeech?()
         }
-        kokoro.onDrained = { [weak self] in
-            guard let self, usingKokoro else { return }
-            kokoroDrained = true
+        player.onDrained = { [weak self] in
+            guard let self, usingPlayer else { return }
+            playerDrained = true
             // Fallback utterances may still be queued on the synthesizer.
             if queued == 0 { isSpeaking = false; onFinished?() }
         }
-        kokoro.onFailure = { [weak self] text in
+        player.onFailure = { [weak self] text in
             guard let self else { return }
-            log.warning("Kokoro failed; speaking on-device instead")
-            // Both voices share the session: Kokoro's playback loop waits here until the
+            log.warning("the server's voice failed; speaking on-device instead")
+            // Both voices share the session: the player's playback loop waits here until the
             // built-in voice has finished the sentence, or it would talk over the next one.
             await speakLocallyAndWait(text)
         }
@@ -86,7 +90,7 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
     private var utteranceWaiters: [ObjectIdentifier: CheckedContinuation<Void, Never>] = [:]
 
     private func speakLocallyAndWait(_ spoken: String) async {
-        // A sentence Kokoro failed on while the reply is held is not said into the hold.
+        // A sentence the player failed on while the reply is held is not said into the hold.
         let begun = epoch
         while paused { await withCheckedContinuation { resumeWaiters.append($0) } }
         guard begun == epoch else { return }   // stopped meanwhile
@@ -169,14 +173,25 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         queued = 0
         announcedStart = false
         streamEnded = false
-        kokoroDrained = false
+        playerDrained = false
         sentToKokoro = false
         detectedLanguage = nil
         heard = ""
-        usingKokoro = Settings.shared.useKokoro && Settings.shared.kokoroBaseURL != nil
-        if usingKokoro, let server = Settings.shared.kokoroBaseURL {
-            kokoro.begin(baseURL: server)
-            if Settings.shared.matchReplyLanguage { loadKokoroVoices(server) }
+        hermesServer = nil
+        switch Settings.shared.replyVoice {
+        case .kokoro:
+            usingPlayer = Settings.shared.kokoroBaseURL != nil
+            if let server = Settings.shared.kokoroBaseURL {
+                player.begin(baseURL: server)
+                if Settings.shared.matchReplyLanguage { loadKokoroVoices(server) }
+            }
+        case .hermes:
+            // Without a Dashboard to speak through, the built-in voice reads it.
+            hermesServer = HermesSpeech.isAvailable ? Settings.shared.serveBaseURL : nil
+            usingPlayer = hermesServer != nil
+            if usingPlayer { player.begin() }
+        case .onDevice:
+            usingPlayer = false
         }
     }
 
@@ -188,8 +203,8 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         guard !streamEnded else { return }   // idempotent: callers may not know whether .done arrived
         streamEnded = true
         if let tail = chunker.flush() { enqueue(tail) }
-        if usingKokoro {
-            kokoro.finish() // onDrained → onFinished
+        if usingPlayer {
+            player.finish() // onDrained → onFinished
         } else if queued == 0, held.isEmpty {
             onFinished?()
         }
@@ -202,7 +217,7 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         utteranceWaiters.removeAll()
         waiters.forEach { $0.resume() }
         synthesizer.stopSpeaking(at: .immediate)
-        kokoro.stop()
+        player.stop()
         chunker = SentenceChunker()
         queued = 0
         isSpeaking = false
@@ -211,16 +226,16 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         letResumeWaitersGo()
     }
 
-    /// Holds the reply mid-word (built-in voice) or mid-buffer (Kokoro); `resume` carries on.
+    /// Holds the reply mid-word (built-in voice) or mid-buffer (the player); `resume` carries on.
     /// Before the reply's first word it holds the whole of it: what is appended waits.
     func pause() {
         paused = true
-        if usingKokoro { kokoro.pause() } else { synthesizer.pauseSpeaking(at: .word) }
+        if usingPlayer { player.pause() } else { synthesizer.pauseSpeaking(at: .word) }
     }
 
     func resume() {
         paused = false
-        if usingKokoro { kokoro.resume() } else { synthesizer.continueSpeaking() }
+        if usingPlayer { player.resume() } else { synthesizer.continueSpeaking() }
         let waiting = held
         held = []
         waiting.forEach { speakLocally($0) }
@@ -235,24 +250,30 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
 
     /// Stops the streaming player's audio engine without touching reply state, so the audio
     /// session can actually deactivate once a reply has finished playing.
-    func releaseAudio() { kokoro.release() }
+    func releaseAudio() { player.release() }
 
     private func enqueue(_ text: String) {
         let spoken = PlainText.spoken(text)
         guard !spoken.isEmpty else { return }
         let language = replyLanguage(adding: spoken)
-        if usingKokoro, let base = Settings.shared.kokoroBaseURL {
+        // Hermes's voice is the one it is set up with, whatever the reply's language.
+        if let server = hermesServer {
+            isSpeaking = true
+            player.enqueueHermes(spoken, client: .shared, server: server)
+            return
+        }
+        if usingPlayer, let base = Settings.shared.kokoroBaseURL {
             let voice = kokoroVoice(for: language)
             if voice != nil || sentToKokoro {
                 isSpeaking = true
                 sentToKokoro = true
-                kokoro.enqueue(spoken, baseURL: base, voice: voice ?? Settings.shared.kokoroVoice,
+                player.enqueue(spoken, baseURL: base, voice: voice ?? Settings.shared.kokoroVoice,
                                speed: Settings.shared.voiceSpeed)
                 return
             }
             // Kokoro has no voice for this language: the built-in one reads the whole reply.
-            usingKokoro = false
-            kokoro.stop()
+            usingPlayer = false
+            player.stop()
         }
         if paused { held.append(spoken); return }
         speakLocally(spoken)
@@ -275,11 +296,11 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         return utterance
     }
 
-    /// How loud the reply is right now, 0…1, for voice mode's waveform: Kokoro's real output
-    /// level, or the built-in voice's word pulses fading over ~180 ms.
+    /// How loud the reply is right now, 0…1, for voice mode's waveform: the player's real output
+    /// level (Kokoro, Hermes), or the built-in voice's word pulses fading over ~180 ms.
     var meterLevel: Float {
         guard isSpeaking else { return 0 }
-        if usingKokoro { return kokoro.meterLevel }
+        if usingPlayer { return player.meterLevel }
         let pulse = wordPulse.withLock { $0 }
         let age = Float(Date.now.timeIntervalSince(pulse.at))
         return pulse.strength * exp(-age / 0.18)
@@ -318,8 +339,8 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         guard utteranceEpochs.removeValue(forKey: key) == epoch else { return }
         queued = max(queued - 1, 0)
         if queued == 0 {
-            if usingKokoro {
-                if kokoroDrained { isSpeaking = false; onFinished?() }
+            if usingPlayer {
+                if playerDrained { isSpeaking = false; onFinished?() }
             } else {
                 isSpeaking = false
                 if streamEnded, held.isEmpty { onFinished?() }

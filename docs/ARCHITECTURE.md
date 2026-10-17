@@ -7,8 +7,9 @@ How Redde works, for contributors. For what it is and how to build it, see the [
 - **Your server, nothing else.** Requests go only to the servers the user configures. No analytics,
   no crash reporting, no service of our own in the request path.
 - **On the device where possible.** Speech recognition (SpeechAnalyzer) and the built-in voice
-  (AVSpeechSynthesizer) run on the phone. The only optional remote audio service is a Kokoro server
-  the user runs.
+  (AVSpeechSynthesizer) run on the phone. The only optional remote audio services are a Kokoro
+  server the user runs and the user's own Hermes, which speaks with the voice it is set up with
+  (so the reply's text may go on from it to the provider chosen there; Settings says which).
 - **Secrets in the Keychain.** Keys and passwords are stored `WhenUnlockedThisDeviceOnly`, never in
   UserDefaults, source or config files.
 - **One opt-in exception:** Settings → Siri → "Let Siri use Redde" (iOS 27) lets Apple Intelligence
@@ -837,11 +838,32 @@ and while listening each new word of the caption rises in on its own (`RisingCap
 Each turn's footer shows where the time went: end of speech → first spoken word (the number that
 matters), recognizer finalize, time to first token, first token → audio, and total model time.
 
-Replies are spoken sentence by sentence while they stream, by AVSpeechSynthesizer or a Kokoro server
-("Server TTS"): one PCM streaming request per sentence, decoded ~100 ms at a time onto an
-`AVAudioPlayerNode`, fetched ahead and played in order, with the built-in voice as the fallback. The
-replay button speaks the last reply again without a new turn. The speech model is downloaded in the
-background at launch.
+Replies are spoken sentence by sentence while they stream, by AVSpeechSynthesizer, a Kokoro server
+or the user's Hermes (Settings → Voice: On-device, Kokoro, Hermes; `Settings.replyVoice`, which
+took over the old Kokoro switch). Kokoro: one PCM streaming request per sentence, decoded ~100 ms
+at a time onto an `AVAudioPlayerNode`, fetched ahead and played in order, with the built-in voice
+as the fallback. The replay button speaks the last reply again without a new turn. The speech model
+is downloaded in the background at launch.
+
+**Hermes's own voice** (GitHub issue 7, `Services/Voice/HermesSpeech.swift`). The Dashboard speaks
+with whatever `tts:` in Hermes's config.yaml names (Edge by default, ElevenLabs, OpenAI, Gemini,
+xAI, a command or a voice running on the server), so the phone holds no voice key. The same player
+plays it, a sentence at a time: each one opens `api/audio/speak-stream` (a ticket, as the Kanban
+socket does, and `?profile=`), sends `{"text", "done": true}` and gets back a start frame with the
+sample rate, 16-bit mono PCM, and an end frame. `PCMStream` turns that into the player's 24 kHz,
+converting another rate (22.05 kHz from Piper; whatever an OpenAI-compatible server reports on
+0.22) and dropping a WAV header an OpenAI-compatible server may send for "pcm". A voice with no
+streaming API makes Hermes up to 0.21.5 answer `fallback` at once; 0.22 speaks such a voice a
+sentence at a time itself and says fallback only when that made no sound (Edge's MP3 with no
+ffmpeg on the server). Then `POST api/audio/speak` speaks the sentence whole, as a data URL of MP3
+or WAV, and the Dashboard is remembered as whole-only for ten minutes so later sentences skip the
+socket. A sentence stopped partway closes its socket, which stops Hermes too. Speed and language
+are Hermes's settings, so Settings hides those rows for this voice; Settings' "Say a test
+sentence" asks for a sentence whole, because that answer names the provider ("Spoken by
+ElevenLabs", "Edge, Microsoft's online voice"). The Hermes API server has no speech routes
+(`audio_api: false`), so this needs a Dashboard address and login, whichever connection the chats
+use; without one, the built-in voice reads replies. The watch keeps its own voice. Checked against
+real Hermes by `lab.sh speech`.
 
 **Which transcriber.** `Transcriber` picks the SpeechAnalyzer module by the device:
 `SpeechTranscriber` where `SpeechTranscriber.isAvailable` says so, and `DictationTranscriber`

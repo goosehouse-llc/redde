@@ -24,6 +24,7 @@ scripts/hermes-lab/lab.sh switch         # a turn left for another conversation 
 scripts/hermes-lab/lab.sh projects       # projects made in the app: a folder in ~/Projects, a conversation in it, a move, rename, remove
 scripts/hermes-lab/lab.sh search         # searching inside messages: words said on either connection, found through the Dashboard
 scripts/hermes-lab/lab.sh context        # Settings' context and memory files, found where Hermes keeps them (issue 15)
+scripts/hermes-lab/lab.sh speech         # replies read out with the voice Hermes is set up with, streamed and whole (issue 7)
 scripts/hermes-lab/lab.sh up v2026.9.24 two   # leave one lab running to poke at; `down` stops it
 ```
 
@@ -133,6 +134,24 @@ The app's client has to learn that home from the profile list (`GET /api/profile
 default's `path`), find MEMORY.md there and nothing at `~/.hermes`, read and save SOUL.md through
 its own route (`/api/profiles/default/soul`), the save landing in that home, and save a USER.md
 that wasn't there. Nothing is written outside the run folder.
+
+## Reading replies aloud
+
+`speech` runs `EchoTests/HermesLabSpeechTests` twice on each release, once for each of two voices
+set under `tts:` (both scenarios have the `approval` scenario's login). In `speech`, Hermes's
+"OpenAI" voice is stub A's `/v1/audio/speech`, which streams. In `speech-whole`, it is a command
+that runs on the server and only writes whole files (`tts_command.py`), as Edge, Piper and other
+voices without a streaming API do; its files are 22.05 kHz, so the app's rate conversion is in the
+path. Both answer with a 440 Hz tone, 50 ms for each character (`lab_tone.py`), so the length and
+loudness of what the app heard say whether anything was lost or misread. The app's client opens
+the Dashboard's speak-stream socket for a sentence. For the first voice the whole tone has to come
+back as PCM. For the second, Hermes up to 0.21.5 has to say "fallback" before any sound, and 0.22
+has to stream it itself (`LAB_SPEAKS`). Then the player's fetch has to hear the sentence whole
+either way, twice. A sentence spoken whole (`POST /api/audio/speak`, Settings' test sentence) has
+to be heard and name its voice (`openai`, `lab-tone`). The stub's MP3 for that needs ffmpeg on
+this Mac. And a long sentence stopped after its first sound has to end there, without an error the
+player would read out with the built-in voice (spoken whole, it has all arrived by then: it only
+has to end without the error). No real voice provider is reached.
 
 ## The agent's task list
 
