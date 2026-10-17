@@ -29,6 +29,8 @@ nonisolated enum WhatsNew {
                  detail: "Settings → Terminal, or More in a chat, opens a shell on your server over SSH, in the chat's folder when there is one. Redde makes a key on this device and shows the line to add to the server."),
             Item(symbol: "folder.badge.plus", title: "Projects",
                  detail: "New Project in the conversation list makes a Hermes project over a folder in ~/\u{2060}Projects on your server. A conversation started in it works in that folder, and its header names the project. On the Hermes Dashboard."),
+            Item(symbol: "speaker.wave.2", title: "Your Hermes's voice",
+                 detail: "Settings → Voice → Hermes reads replies out with the voice your Hermes is set up with, such as ElevenLabs or one on your server, so no voice key goes on the phone. Say a test sentence shows which voice speaks. It uses the Hermes Dashboard login."),
             Item(symbol: "clock.arrow.circlepath", title: "Scheduled runs, out of the way",
                  detail: "Each run of a scheduled job is a conversation of its own. They now wait at the end of the list, folded until you open them, and stay out of the car's Chats."),
             Item(symbol: "checkmark.seal", title: "Fixes",

@@ -21,7 +21,7 @@ Redde is a complete iPhone and iPad client for Hermes, the open-source AI agent,
 You bring the backend. Redde has no account and no analytics, and your conversations go only to the server you configured.
 
 TALK, DON'T TYPE
-• Tap the mic, ask, hear the answer. Speech is recognized on your iPhone; the reply is spoken with the built-in voice or your own Kokoro server.
+• Tap the mic, ask, hear the answer. Speech is recognized on your iPhone; the reply is spoken by the built-in voice, a Kokoro server or your Hermes.
 • Hands-free mode keeps the conversation going until you say "that's all".
 • Interrupt mid-answer: talk, tap the mic, or type to steer the reply.
 • In CarPlay, ask through the car's mic and speakers, in a new chat or a recent one. On Apple Watch, raise your wrist and ask.
@@ -70,11 +70,12 @@ Two pictures App Store Connect has taken since October 2026, on the version page
 The words in both sit inside the "art safe area" of Apple's templates. Use Preview in App Store Connect before submitting: it shows each on iPhone and iPad, both ways up.
 
 ## What's New in 1.9 (4000)
-Search inside your messages, a terminal on your server, and Hermes projects.
+Search inside your messages, a terminal on your server, Hermes projects, and replies in your Hermes's voice.
 
 • Search inside messages. Search in the conversation list now looks inside your conversations too. Those that match only in a message are listed under In messages, with the words around the match; open one and Redde goes to the word. It uses the Hermes Dashboard address, on either Hermes connection.
 • A terminal. Settings → Terminal, or More in a chat, opens a shell on your Hermes server over SSH. From a chat it starts in the conversation's folder. Redde makes a key on this iPhone, keeps it in the Keychain and shows the line to add to the server, and the first time it shows the server's fingerprint and asks before going on.
 • Projects. New Project in the conversation list makes a Hermes project over a folder of that name in ~/Projects on your server, or uses the folder if it is already there. Start a conversation in a project and your agent works in its folder; the chat's header names the project. Renaming or removing a project leaves the folder and its conversations as they are. Projects need the Hermes Dashboard.
+• Your Hermes's voice. Settings → Voice → Hermes reads replies out with the voice your Hermes is set up with: ElevenLabs, OpenAI, Gemini, one running on your server, or Hermes's default, Edge, which is Microsoft's online voice. No voice key goes on the iPhone, and Say a test sentence shows which voice speaks. It uses the Hermes Dashboard login, on either Hermes connection; without one, the built-in voice reads replies as before.
 • Scheduled runs, out of the way. Hermes keeps each run of a scheduled job as a conversation, and on a busy server they buried the rest. They now wait in a Scheduled runs section at the end of the list, folded until you open it, and stay out of the car's Chats. A run you pinned stays pinned.
 • Fixes. Opening another conversation, or starting a new one, while your agent works no longer stops it: on a Hermes connection it finishes on your server, and the reply is there when you come back. With New conversation in voice mode on, the Talk button in a chat now carries that chat on; Siri, the Action Button, a control or opening Redde still start a new one. SOUL.md and the memory files in Settings open where your Hermes keeps them, in Docker too, where they looked empty.
 
@@ -84,18 +85,20 @@ Written ahead of the release. What a phone has shown is said where it has.
 In App Store Connect and on the web:
 - 1.8 went live on 2026-10-15.
 - The build is 1.9 (266). Archive it from a clean build of origin/main once this is pushed.
-- The promotional text, the description (three lines) and What's New changed. `scripts/app-store-push.py all` makes the 1.9 version and sends them. No screenshot shows a 1.9 feature, so none were retaken. Run it from the checkout that has the Phone tools slots (`09-tools`, `08-ipad-tools`, made on 2026-10-14 and not yet committed): from one that still has the plan slots, `all` would put the plan pictures back.
+- The promotional text, the description (four lines) and What's New changed. `scripts/app-store-push.py all` makes the 1.9 version and sends them. It was run on 2026-10-16, before the Hermes voice was added to What's New and the description: run it again. No screenshot shows a 1.9 feature, so none were retaken. Run it from the checkout that has the Phone tools slots (`09-tools`, `08-ipad-tools`, made on 2026-10-14 and not yet committed): from one that still has the plan slots, `all` would put the plan pictures back.
 - Review notes from `app-review-notes.md`: a TERMINAL section is new, and the "new in 1.8" labels are gone. Send them with `scripts/app-store-push.py notes`.
 - Export compliance: the answer stays as it is, and the paragraph below says why now that the terminal speaks SSH.
 - App Privacy stays "Data Not Collected". The terminal connects only to a server the user names, and its key never leaves the device.
 - The privacy manifest needs nothing new: the new packages call only file-timestamp APIs, already declared (C617.1), and swift-crypto has its own manifest.
 - The licences of SwiftTerm and the SwiftNIO packages are in Settings → About → Acknowledgements.
-- The website still says "coming soon in 1.6 and 1.7".
+- The website says "coming soon in 1.9" (deployed 2026-10-16) and doesn't mention the Hermes voice.
+- App Privacy stays "Data Not Collected" with the Hermes voice too: the reply's text goes to the user's own Hermes, which takes it on to the voice provider the user set up there. Settings says so, and names that provider.
 
 On devices, to check first:
 - The terminal has logged in to a real server from an iPhone. Not tried: starting in a chat's folder, a changed server key, the iPad with a keyboard.
 - Search inside messages, projects and the scheduled runs fold have been tried in the simulator, in UI tests and against Hermes 0.21.0 to 0.22.2 in the lab, not on a phone.
 - Leaving a conversation while the agent works (issue 12): tried in the lab on Hermes 0.21.0 to 0.22.2, not on a phone.
+- The Hermes voice (issue 7): against Hermes 0.21.0 to 0.22.2 in the lab with stand-in voices (`lab.sh speech`), and on an iPhone 15 Pro Max as a development build. Not yet heard with a real provider, nor with Edge.
 - The Talk button (issue 14) and the context files (issue 15) are on an iPhone 15 Pro Max as a development build, not yet tried by hand. Issue 15 has run against Hermes in the lab with a home of its own, not in Docker.
 
 ## What's New in 1.8 (4000)
