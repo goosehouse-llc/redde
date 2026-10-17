@@ -1013,8 +1013,9 @@ voice, 2026-10-07). Not tried: the earpiece, other phones, a reply several minut
 
 **AirPods.** Full-bandwidth Bluetooth recording when the headset supports it; voice processing off
 on headphones (on for the speaker and CarPlay). While the voice screen is open Redde is the Now
-Playing app, so a stem press or play-pause does what the mic does. Removing the headset stops
-speaking. "Announce on AirPods" makes alerts time-sensitive so Siri can read them.
+Playing app, so a stem press or play-pause does what the mic does, except while the agent works
+on a reply: the Lock Screen has the turn's Live Activity and iOS's "is working" card then, and
+Redde gives up the player until the reply is spoken. Removing the headset stops speaking. "Announce on AirPods" makes alerts time-sensitive so Siri can read them.
 
 **Replies that outlast the screen.** A reply started in the app keeps streaming after the phone
 locks or the app is left (`Services/BackgroundTurn.swift`). Each such turn is submitted as an iOS

@@ -51,6 +51,27 @@ nonisolated final class HeadsetControls: @unchecked Sendable {
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
     }
 
+    /// Gives up the Lock Screen player while the voice screen stays open: the play/pause commands
+    /// go and the player with them; the mute gesture is still heard. `enable` takes it back.
+    func stepAside() {
+        lock.lock()
+        let old = targets
+        targets = []
+        lock.unlock()
+        for (command, target) in old {
+            command.removeTarget(target)
+            command.isEnabled = false
+        }
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+        MPNowPlayingInfoCenter.default().playbackState = .stopped
+    }
+
+    /// Headset presses come here: enabled and not stepped aside.
+    var hasPlayer: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return !targets.isEmpty
+    }
+
     /// What the Lock Screen and Control Center show while the voice screen is open.
     func setNowPlaying(status: String, active: Bool) {
         MPNowPlayingInfoCenter.default().nowPlayingInfo = [

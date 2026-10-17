@@ -275,7 +275,6 @@ final class VoiceSession {
     /// While the voice screen is open, headset presses drive the mic.
     func attachHeadsetControls() {
         headsetControlsOn = true
-        HeadsetControls.shared.enable { [weak self] in self?.primaryAction() }
         publishNowPlaying()
     }
 
@@ -285,10 +284,20 @@ final class VoiceSession {
     }
 
     private func publishNowPlaying() {
+        // While the agent works on the reply, the Lock Screen already has the turn's Live
+        // Activity and iOS's "is working" card; a player saying "Thinking" made three. Headset
+        // presses go with it until the reply is spoken (Stop on the screen still stops it).
+        if phase == .thinking {
+            HeadsetControls.shared.stepAside()
+            return
+        }
+        if !HeadsetControls.shared.hasPlayer {
+            HeadsetControls.shared.enable { [weak self] in self?.primaryAction() }
+        }
         let status = switch phase {
         case .idle: "Ready"
         case .listening: "Listening"
-        case .thinking: "Thinking"
+        case .thinking: ""   // stepped aside above
         case .speaking: "Speaking"
         case .error: "Tap to try again"
         }
