@@ -101,6 +101,12 @@ Then `SIM=<udid> ./record.sh --test f1-morning testFunMorning` and so on (`f2-ti
 `f4-photo`, `f5-look`, `f6-reach`), `ffmpeg -i <take>.mov -vf fps=30 cfr-<take>.mov` for each, and
 `/usr/bin/python3 make_preview.py fun` (`fun pages` draws only the two pages).
 
+`make_preview.py fun store` cuts the same takes to 29.2 s for the App Store
+(`redde-app-preview-phone-tools.mp4`, made 2026-10-14 for 1.8): the morning, the question
+before a change, the timer and its Lock Screen, the widget and its Home Screen, the photo and
+the plant, quicker, with the same soundtrack, and no call or text scene, which in a simulator
+show only the conversation. The script stops if it comes out over 29.8 s.
+
 The simulator writes a frame only when the screen changes, so a take that ends on a still
 screen ends early: the Home Screen shot holds its last frame. Cut points were set by looking at
 frames, not from the marks alone. xcodebuild sometimes doesn't exit after a passing take, and

@@ -15,12 +15,15 @@ a time). Apple takes 15 to 30 seconds: the script stops if the cut runs longer.
   make_preview.py fun      the fun Phone tools cut (redde-phone-fun.mp4): a day with the agent, every
                            area, captions that drop in with an emoji, the chat a little faster, and a
                            soundtrack made by fun_music.py
+  make_preview.py fun store  the same in under 30 s for the App Store (redde-app-preview-phone-tools.mp4):
+                           no call or text scene (a simulator shows neither), quicker throughout
 """
 import math, subprocess, os, shutil, sys
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 IPAD = 'ipad' in sys.argv[1:]
 FUN = 'fun' in sys.argv[1:]
+STORE = FUN and 'store' in sys.argv[1:]
 PHONE = 'phone' in sys.argv[1:] or FUN
 PAGES_ONLY = 'pages' in sys.argv[1:]
 
@@ -77,7 +80,7 @@ if FUN:
     ]
     TITLE_LINES = ('Phone tools', 'Your agent just got an iPhone')
     LAST_LINE = 'Each one off until you say so.'
-    TITLE_SECONDS, END_SECONDS = 2.6, 5.0
+    TITLE_SECONDS, END_SECONDS = (1.6, 3.2) if STORE else (2.6, 5.0)
     TITLE_EMOJI = ['🗓️', '⏰', '🛒', '📸', '🪴', '📞', '💬']
 
 def font(size, weight):
@@ -280,6 +283,19 @@ if FUN:
         ('f6-reach', 13.2, 19.6, 'call', None, 1.3),
         ('f6-reach', 19.4, 26.5, 'text', None, 1.3),
     ]
+if STORE:
+    # Apple's limit is 30 s: the scenes that show something beyond the chat, at a faster pace.
+    SHOTS = [
+        ('f1-morning', 15.3, 20.5, 'cal', None, 1.7),
+        ('f1-morning', 21.6, 26.0, 'ask', None, 1.2),
+        ('f2-timer', 8.3, 12.0, 'timer', None, 1.5),
+        ('f2-timer', 15.0, 17.6, 'timer', None, 1.0),
+        ('f3-widget', 8.6, 13.6, 'widget', None, 1.6),
+        ('f3-widget', 14.3, 15.5, 'widget', 2.4, 1.0),
+        ('f4-photo', 14.0, 21.4, 'photo', None, 1.8),
+        ('f5-look', 16.3, 20.3, 'look', None, 1.3),
+        ('f5-look', 20.8, 25.6, 'plant', None, 1.4),
+    ]
 CAPTIONS = {
     'ask': ('Your agent, using your iPhone', 'Ask, and it reads your calendar'),
     'allow': ('A change asks you first', 'Nothing is added without your yes'),
@@ -358,8 +374,8 @@ def main():
         chain.append(f'{last}[{i}:v]xfade=transition=fade:duration={FADE}:offset={offset:.3f}{label}')
         last = label
         total = offset + segs[i][1]
-    if not PHONE and total > 29.8: raise SystemExit(f'{total:.2f}s: an App Store preview is at most 30 seconds; shorten a shot')
-    out = f'{V}/redde-phone-fun.mp4' if FUN else f'{V}/redde-phone-tools.mp4' if PHONE else f'{V}/redde-app-preview-{"ipad" if IPAD else "iphone"}.mp4'
+    if (not PHONE or STORE) and total > 29.8: raise SystemExit(f'{total:.2f}s: an App Store preview is at most 30 seconds; shorten a shot')
+    out = f'{V}/redde-app-preview-phone-tools.mp4' if STORE else f'{V}/redde-phone-fun.mp4' if FUN else f'{V}/redde-phone-tools.mp4' if PHONE else f'{V}/redde-app-preview-{"ipad" if IPAD else "iphone"}.mp4'
     if FUN:
         sys.path.insert(0, V); import fun_music
         sound = ['-i', fun_music.render(total, f'{V}/fun-music.wav', pops)]
