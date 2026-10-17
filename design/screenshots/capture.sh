@@ -60,8 +60,10 @@ shot "$PHONE" ph-diagram   -echo.demo -echo.demoTwo -theme claudeCode -appearanc
 shot "$PHONE" ph-settings  -echo.demo -echo.screen setup -theme standard -appearance light "${LEDGER[@]}"
 # "Make it yours": Settings with the App icon grid open.
 shot "$PHONE" ph-chat      -echo.demo -echo.screen settings -echo.expandAppIcons -theme standard -appearance light "${FAST[@]}"
-# 1.7: the agent's task list under its reply, and the Hermes server's own screens on sample data.
-shot "$PHONE" ph-tasks     -echo.demoTodos -theme standard -appearance dark "${FAST[@]}"
+# 1.8: the agent having used the phone (the Phone tools slot; its two insets, the timer on the
+# Lock Screen and the widget, come from PromoVideoUITests.testToolsShotInsets on an iOS 26.3
+# simulator: see README). 1.7: the Hermes server's own screens on sample data.
+shot "$PHONE" ph-phone     -echo.demoPhoneShot -theme standard -appearance dark "${FAST[@]}"
 shot "$PHONE" ph-gateway   -echo.demo -echo.demoGateway -echo.screen gateway -theme standard -appearance dark "${FAST[@]}"
 shot "$PHONE" ph-files     -echo.demo -echo.demoFiles -echo.screen files -theme standard -appearance light "${FAST[@]}"
 # Website only: the Kanban board (demo cards, no server) and typing with the keyboard up.
@@ -85,7 +87,7 @@ shot "$PAD" pad-dark         -echo.demo -echo.demoTwo -echo.demoLibrary -theme c
 # iPad keeps the fast lane here: with the gateway selected the sidebar tries the example host and shows an error.
 shot "$PAD" pad-settings     -echo.demo -echo.demoLibrary -echo.screen setup -theme standard -appearance light "${FAST[@]}" "${CHATS[@]}"
 shot "$PAD" pad-split        -echo.demo -echo.demoLibrary -echo.screen settings -echo.expandAppIcons -theme standard -appearance light "${FAST[@]}" "${CHATS[@]}"
-shot "$PAD" pad-tasks        -echo.demoTodos -echo.demoLibrary -theme standard -appearance dark "${FAST[@]}" "${CHATS[@]}"
+shot "$PAD" pad-phone        -echo.demoPhoneShot -echo.demoLibrary -theme standard -appearance dark "${FAST[@]}" "${CHATS[@]}"
 shot "$PAD" pad-gateway      -echo.demo -echo.demoLibrary -echo.demoGateway -echo.screen gateway -theme standard -appearance dark "${FAST[@]}" "${CHATS[@]}"
 fi
 

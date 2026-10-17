@@ -190,6 +190,30 @@ final class PromoVideoUITests: XCTestCase {
         tidyHomeScreen(XCUIApplication(bundleIdentifier: "com.apple.springboard"))
     }
 
+    /// The Phone tools store screenshot's two insets, as pictures in SHOT_DIR: the agent's widget
+    /// on the Home Screen (as it was left: the `widget` take writes the shopping list on it) and a
+    /// nine-minute timer counting down on the Lock Screen. On the simulator `testFunReady`
+    /// readied, with no status bar override (one hides the countdown).
+    func testToolsShotInsets() throws {
+        let app = try launch(["-echo.demoAlarm", "540"])
+        let dir = URL(fileURLWithPath: try XCTUnwrap(ProcessInfo.processInfo.environment["SHOT_DIR"], "SHOT_DIR is where they go"))
+        XCTAssertTrue(app.navigationBars.buttons["New conversation"].firstMatch.waitForExistence(timeout: 20))
+        hold(2)
+        XCUIDevice.shared.press(.home)
+        hold(3)
+        try XCUIScreen.main.screenshot().pngRepresentation.write(to: dir.appending(path: "home-widget.png"))
+        XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
+        hold(1)
+        XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
+        hold(4)
+        try XCUIScreen.main.screenshot().pngRepresentation.write(to: dir.appending(path: "lock-timer.png"))
+        XCUIDevice.shared.press(.home)
+        let clear = XCUIApplication()
+        clear.launchArguments = XCUIApplication.straightToChat + ["-echo.demoAlarm", "clear"]
+        clear.launch()
+        hold(2)
+    }
+
     /// Morning: the day from the calendar, then a reminder, which Phone tools asks about.
     func testFunMorning() throws {
         let app = try fun("morning")

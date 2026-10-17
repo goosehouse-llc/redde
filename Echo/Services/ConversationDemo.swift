@@ -505,6 +505,29 @@ extension Conversation {
                                   Message(role: .user, text: "Carry on."), second])
     }
 
+    /// Dev hook (`-echo.demoPhoneShot`): the agent having used the phone four times, short, for
+    /// the Phone tools store screenshot: the day from the calendar, a timer, the widget, a
+    /// message. Short so the screenshot's insets (the timer on the Lock Screen, the widget) sit
+    /// below it.
+    func seedPhoneShotDemo() {
+        cancel()
+        func answer(_ text: String, _ tools: [(String, String)]) -> Message {
+            var reply = Message(role: .assistant, text: text)
+            reply.tools = tools.map { ToolActivity(name: $0.0, preview: $0.1, status: .completed) }
+            return reply
+        }
+        replaceForDemo(messages: [
+            Message(role: .user, text: "Morning! What's on today?"),
+            answer("Morning ☀️ Standup at 9:30, lunch with Dana at 12:15, and pasta night at 7 🍝", [("phone_calendar_events", "today")]),
+            Message(role: .user, text: "Pasta's in! Nine minute timer?"),
+            answer("Timer's on: **9 minutes**. It's on your Lock Screen ⏰", [("phone_alarms_set", "Pasta, 9 minutes")]),
+            Message(role: .user, text: "Stick my shopping list on my widget."),
+            answer("Done 🛒 Spaghetti, basil, parmesan and two lemons, right on your Home Screen.", [("phone_files_read", "Shopping list.md"), ("phone_widget_set", "Shopping list")]),
+            Message(role: .user, text: "Text Dana I'm running ten minutes late."),
+            answer("It's written and waiting in Messages 💬 Tap Send and Dana knows.", [("phone_people_message", "Dana Lee")]),
+        ])
+    }
+
     /// Dev hook (`-echo.demoPhotos [n]`): a reply with n photos, as the phone's photo tool hands
     /// them over one after another (five unless a number says otherwise), after a message that
     /// sent two and a reply with one, to look at the collage and the viewer. The pictures are

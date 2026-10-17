@@ -36,9 +36,9 @@ LOCALE = 'en-US'
 # Folder, the display type App Store Connect files it under, and the upload order.
 SETS = [
     ('iphone-6.9', 'APP_IPHONE_67', ['pano-01a', 'pano-01b', '03-work', '04-rich', '05-backend', '06-light',
-                                    '07-car', '08-server', '09-plan', '10-privacy']),
+                                    '07-car', '08-server', '09-tools', '10-privacy']),
     ('ipad-13', 'APP_IPAD_PRO_3GEN_129', ['pano-01a', 'pano-01b', '03-ipad-work', '04-ipad-rich', '05-ipad-backend',
-                                          '06-ipad-light', '07-ipad-server', '08-ipad-plan', '09-ipad-privacy']),
+                                          '06-ipad-light', '07-ipad-server', '08-ipad-tools', '09-ipad-privacy']),
 ]
 LIMITS = {'promotionalText': 170, 'keywords': 100, 'description': 4000, 'whatsNew': 4000}
 

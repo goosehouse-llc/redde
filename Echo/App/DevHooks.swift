@@ -26,6 +26,8 @@ import WidgetKit
 ///   made-up server, with no Dashboard. Installing leaves it running; with `restart`, waiting for one.
 /// - `-echo.demoChatControls`: the model menu's "This conversation" switches on sample data.
 /// - `-echo.demoTodos`: a conversation in which the agent keeps a task list (the checklist under a reply).
+/// - `-echo.demoPhoneShot`: a short conversation in which the agent has used the phone four
+///   times (the Phone tools store screenshot).
 /// - `-echo.demoPhone [settings]`: Phone tools switched on, each area set (in these settings
 ///   only: nothing of iOS's is asked for), and the agent using the phone played live: the
 ///   calendar, a reminder that Phone tools asks about for real, a photo found by what it
@@ -131,6 +133,7 @@ enum DevHooks {
         if demoProjects { settings.transport = .hermesServe }
         if has("-echo.demoLong") { conversation.seedLongDemo() }
         if has("-echo.demoTodos") { conversation.seedTodoDemo() }
+        if has("-echo.demoPhoneShot") { conversation.seedPhoneShotDemo() }
         if has("-echo.demoPhone") {
             var tools = PhoneToolsSettings()
             tools.on = true
