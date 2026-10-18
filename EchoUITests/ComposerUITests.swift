@@ -59,21 +59,15 @@ final class ComposerUITests: XCTestCase {
     /// Removes a conversation a test made, so the next run starts as this one did.
     private func delete(conversation title: String, in app: XCUIApplication) {
         app.buttons["Conversations"].firstMatch.tap()
-        let row = app.staticTexts[title].firstMatch
-        guard row.waitForExistence(timeout: 10) else { return }
-        row.swipeLeft()
-        let delete = app.buttons["Delete"].firstMatch
-        if delete.waitForExistence(timeout: 3) { delete.tap() }
+        app.deleteConversation(titled: title)
     }
 
-    /// Taps a conversation's row in the list. The title is also the header of the conversation
-    /// that is open, and a plain tap fails when it finds both, which happened once in a full
-    /// run as the list came in: wait for the row to be the only one.
+    /// Taps a conversation's row in the list: the one on screen, not the open conversation's
+    /// header of the same title behind the list. (After the relaunch the hike is the open one,
+    /// unless some newer conversation is left on the simulator.)
     private func tapRow(_ title: String, in app: XCUIApplication) {
-        let matches = app.staticTexts.matching(identifier: title)
-        let deadline = Date().addingTimeInterval(5)
-        while matches.count != 1, Date() < deadline { RunLoop.current.run(until: Date().addingTimeInterval(0.2)) }
-        matches.firstMatch.tap()
+        guard let row = app.staticTexts.matching(identifier: title).hittable(within: 5) else { return XCTFail("No row titled \(title) to tap") }
+        row.tap()
     }
 
     func testEachConversationKeepsItsOwnDraft() {

@@ -6,10 +6,14 @@ import WidgetKit
 // Screenshot and dev-hook seeding (`-echo.demo*` launch arguments) — kept out of
 // Conversation proper so the turn logic stays readable.
 extension Conversation {
+    /// The demo conversation's id, the same at every launch: a test that leaves it for another
+    /// conversation saves it, and the next seeding replaces that copy instead of adding one more.
+    static let demoID = UUID(uuidString: "DE300000-0000-4000-8000-000000000001")!
+
     /// Dev hook (`-echo.demo`): a canned exchange so screenshots show every transcript element.
     func seedDemo() {
         cancel()
-        replaceForDemo(messages: [Message(role: .user, text: "What's on my calendar tomorrow, and remind me to call the vet?")])
+        replaceForDemo(id: Self.demoID, messages: [Message(role: .user, text: "What's on my calendar tomorrow, and remind me to call the vet?")])
         var reply = Message(role: .assistant, text: """
         Tomorrow you have **two things** on the calendar:
 

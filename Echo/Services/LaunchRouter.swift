@@ -36,17 +36,20 @@ final class LaunchRouter {
         return pendingCapture != nil
     }
 
-    /// Siri's "draft a message to Sol …": open with this in the composer, not sent.
+    /// Siri's "draft a message to Sol …": open with this in the composer, not sent. Also a quote
+    /// from the transcript to ask about, which stays in its own conversation.
     struct DraftRequest: Equatable {
         var text: String
         var attachments: [Attachment]
+        /// In a new conversation's composer, not the open one's (GitHub issue 21).
+        var newConversation = false
         var issuedAt: Date
     }
 
     private(set) var pendingDraft: DraftRequest?
 
-    func requestDraft(text: String, attachments: [Attachment]) {
-        pendingDraft = DraftRequest(text: text, attachments: attachments, issuedAt: .now)
+    func requestDraft(text: String, attachments: [Attachment], newConversation: Bool = false) {
+        pendingDraft = DraftRequest(text: text, attachments: attachments, newConversation: newConversation, issuedAt: .now)
     }
 
     func consumeDraftRequest() -> DraftRequest? {

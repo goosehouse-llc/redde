@@ -377,10 +377,20 @@ struct KanbanCardDetail: View {
                             Button("Post") { post() }.disabled(newComment.trimmingCharacters(in: .whitespaces).isEmpty)
                         }
                     }
-                    Section {
-                        Button("Ask Redde about this card", systemImage: "bubble.left.and.text.bubble.right") {
-                            dismiss()
-                            conversation.send("About kanban card “\(task.title)” (\(task.id)): \(task.body ?? "")\n\nWhat's the status, and what should happen next?")
+                    Section("Ask Redde about this card") {
+                        Button("Ask in a new conversation", systemImage: "square.and.pencil") { ask(about: task, fresh: true) }
+                        // The one open now, by name; an empty one is new anyway.
+                        if conversation.hasMessages || !conversation.outbox.isEmpty {
+                            Button { ask(about: task, fresh: false) } label: {
+                                Label {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Ask in the open conversation")
+                                        Text(conversation.title).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                    }
+                                } icon: {
+                                    Image(systemName: "bubble.left.and.text.bubble.right")
+                                }
+                            }
                         }
                     }
                 } else if let error {
@@ -430,6 +440,14 @@ struct KanbanCardDetail: View {
                 await load(); await onChange()
             } catch { status = task.status; self.error = error.localizedDescription }
         }
+    }
+
+    /// A card question is usually a check on its own: a new conversation keeps a long one free
+    /// of the card's text (GitHub issue 21). A Hermes turn under way in the one left goes on.
+    private func ask(about task: KanbanTask, fresh: Bool) {
+        dismiss()
+        if fresh, conversation.hasMessages || !conversation.outbox.isEmpty { conversation.reset() }
+        conversation.send("About kanban card “\(task.title)” (\(task.id)): \(task.body ?? "")\n\nWhat's the status, and what should happen next?")
     }
 
     private func load() async {

@@ -8,7 +8,7 @@ import os
 // The Messages-domain intents. The schema asks for all five together (draft, send, edit,
 // unsend, read status), so Redde implements each in its own terms:
 //   send   → a turn in the open conversation, reply spoken if quick
-//   draft  → Redde opens with the text in the composer
+//   draft  → Redde opens with the text in the composer (a new conversation's, if so set)
 //   edit   → "Edit & resend": the turn and everything after it are replaced
 //   unsend → the turn and everything after it are removed (serve rewinds the gateway too)
 //   read   → Redde's own unread marks (replies that landed while you were away)
@@ -16,7 +16,7 @@ import os
 nonisolated private let siriLog = Logger(subsystem: "com.goosehouse.echo", category: "siri")
 
 /// Who Siri is messaging. The schema allows people only, no conversations, so a Siri message
-/// always lands in the open conversation.
+/// lands in the open conversation (a draft in a new one, with "Drafts in a new conversation").
 @available(iOS 27.0, *)
 @UnionValue
 enum ReddeMessageDestination {
@@ -90,7 +90,8 @@ struct ReddeDraftMessageIntent: AppIntent {
         try SiriAccess.require()
         if let destination { try SiriTurn.check(destination) }
         let text = SiriTurn.compose(content: content, subject: subject, links: links)
-        LaunchRouter.shared.requestDraft(text: text, attachments: SiriTurn.images(from: attachments))
+        LaunchRouter.shared.requestDraft(text: text, attachments: SiriTurn.images(from: attachments),
+                                         newConversation: Settings.shared.siriDraftsInNewConversation)
         return .result()
     }
 }

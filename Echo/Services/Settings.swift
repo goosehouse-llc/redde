@@ -298,6 +298,11 @@ final class Settings: ServeEndpoint {
             if self === Settings.shared, oldValue != siriAIEnabled { SiriHooks.accessChanged(siriAIEnabled) }
         }
     }
+    /// A message Siri drafts for Redde waits in a new conversation's composer, not the open
+    /// one's (GitHub issue 21). Unless the open one is empty anyway.
+    var siriDraftsInNewConversation: Bool {
+        didSet { defaults.set(siriDraftsInNewConversation, forKey: Keys.siriDraftsInNewConversation) }
+    }
     /// How long the app may be in the background before it locks again.
     var lockGraceSeconds: Double {
         didSet { defaults.set(lockGraceSeconds, forKey: Keys.lockGraceSeconds) }
@@ -451,6 +456,7 @@ final class Settings: ServeEndpoint {
         static let chatTextSize = "chatTextSize"
         static let requireBiometrics = "requireBiometrics"
         static let siriAIEnabled = "siriAIEnabled"
+        static let siriDraftsInNewConversation = "siriDraftsInNewConversation"
         static let lockGraceSeconds = "lockGraceSeconds"
         static let displayName = "displayName"
         static let setupDone = "setupDone"
@@ -520,6 +526,7 @@ final class Settings: ServeEndpoint {
         chatTextSize = min(max(defaults.integer(forKey: Keys.chatTextSize), Self.chatTextSizes.lowerBound), Self.chatTextSizes.upperBound)
         requireBiometrics = defaults.bool(forKey: Keys.requireBiometrics)
         siriAIEnabled = defaults.bool(forKey: Keys.siriAIEnabled)
+        siriDraftsInNewConversation = defaults.bool(forKey: Keys.siriDraftsInNewConversation)
         lockGraceSeconds = defaults.object(forKey: Keys.lockGraceSeconds) as? Double ?? 60
         displayName = defaults.string(forKey: Keys.displayName) ?? ""
         setupDone = defaults.bool(forKey: Keys.setupDone)
@@ -731,6 +738,7 @@ final class Settings: ServeEndpoint {
         chatTextSize = 0
         requireBiometrics = false
         siriAIEnabled = false
+        siriDraftsInNewConversation = false
         lockGraceSeconds = 60
         displayName = ""
         serveURL = Self.defaultServeURL

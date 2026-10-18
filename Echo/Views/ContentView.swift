@@ -457,6 +457,17 @@ struct ContentView: View {
         conversation.reset()
     }
 
+    /// A share or a Siri draft asked for a conversation of its own (GitHub issue 21): one is
+    /// started, and the composer is handed to it before the text comes in, or the text would stay
+    /// behind as the draft of the one being left. Not when this one is empty anyway, and not on
+    /// the fast lane while a reply streams: leaving would stop it (a Hermes turn goes on).
+    private func startFreshForDraft() {
+        guard !conversation.messages.isEmpty || conversation.initialLoad != nil || !conversation.outbox.isEmpty,
+              !conversation.isStreaming || settings.transport.hasLedger else { return }
+        conversation.reset()
+        bindDraft(to: Drafts.key(for: conversation))
+    }
+
     /// A reply came back whole: count it toward the rating prompt, and ask a moment later if it's
     /// due (see `ReviewPrompt`), but only with nothing else on screen and no reply running.
     private func replyFinished() {
@@ -478,7 +489,8 @@ struct ContentView: View {
         }
     }
 
-    /// Items handed over by the share extension become the draft and pending attachments.
+    /// Items handed over by the share extension become the draft and pending attachments, of a
+    /// new conversation if the share sheet said so.
     private func consumeSharedItems() {
         guard !lock.isLocked else { return }
         Task {
@@ -486,6 +498,7 @@ struct ContentView: View {
             guard let payload = await ShareInbox.takePending(), !payload.isEmpty, !lock.isLocked else { return }
             showVoice = false
             setDrawer(open: false)   // the composer is under the conversation list
+            if payload.newConversation == true { startFreshForDraft() }
             let text = payload.draft
             if !text.isEmpty { draft = draft.isEmpty ? text : draft + "\n\n" + text }
             pendingAttachments += payload.attachments
@@ -493,11 +506,13 @@ struct ContentView: View {
         }
     }
 
-    /// Siri AI's "draft a message": the text lands in the open conversation's composer.
+    /// Siri AI's "draft a message": the text lands in the open conversation's composer, or a new
+    /// conversation's with "Drafts in a new conversation". (And a quote to ask about, in its own.)
     private func handleDraftRequest() {
         guard !lock.isLocked, let request = router.consumeDraftRequest() else { return }
         showVoice = false
         setDrawer(open: false)   // the composer is under the conversation list
+        if request.newConversation { startFreshForDraft() }
         if !request.text.isEmpty { draft = draft.isEmpty ? request.text : draft + "\n\n" + request.text }
         pendingAttachments += request.attachments
         composerFocused = true
@@ -641,6 +656,21 @@ struct ContentView: View {
             router.requestPushPairing(offer)
         }
         if DevHooks.has("-echo.fresh") { conversation.reset() }
+        // Arriving as from the share sheet and from Siri, once the launch has settled.
+        let share = DevHooks.value("-echo.share").map { ($0, false) } ?? DevHooks.value("-echo.shareNew").map { ($0, true) }
+        let siriDraft = DevHooks.value("-echo.siriDraft")
+        if share != nil || siriDraft != nil {
+            Task {
+                try? await Task.sleep(for: .milliseconds(800))
+                if let share {
+                    try? ShareInbox.write(ShareInbox.Payload(note: "", text: share.0, urls: [], attachments: [], createdAt: .now, newConversation: share.1))
+                    consumeSharedItems()
+                }
+                if let siriDraft {
+                    router.requestDraft(text: siriDraft, attachments: [], newConversation: settings.siriDraftsInNewConversation)
+                }
+            }
+        }
         if let text = DevHooks.value("-echo.ask") {
             Task { try? await Task.sleep(for: .milliseconds(800)); conversation.send(text) }
         }

@@ -33,6 +33,8 @@ struct ShareView: View {
     let cancel: () -> Void
 
     @State private var note = ""
+    /// Kept for the next share, as it was left.
+    @State private var newConversation = ShareInbox.prefersNewConversation
     @State private var text = ""
     @State private var urls: [String] = []
     @State private var attachments: [Attachment] = []
@@ -46,8 +48,11 @@ struct ShareView: View {
                 Section {
                     TextField("Ask Redde about this…", text: $note, axis: .vertical)
                         .lineLimit(2 ... 6)
+                    Toggle("New conversation", isOn: $newConversation)
                 } footer: {
-                    Text("Optional. Everything below lands in Redde's composer the next time you open it; nothing is sent until you tap send there.")
+                    Text(newConversation
+                         ? "The question is optional. Everything below waits in a new conversation the next time you open Redde; nothing is sent until you tap send there."
+                         : "The question is optional. Everything below waits in the conversation you had open, the next time you open Redde; nothing is sent until you tap send there.")
                 }
                 Section("Sharing") {
                     if loading { ProgressView("Reading shared items…") }
@@ -74,7 +79,9 @@ struct ShareView: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel", action: cancel) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save for Redde") {
-                        send(ShareInbox.Payload(note: note.trimmingCharacters(in: .whitespacesAndNewlines), text: text, urls: urls, attachments: attachments, createdAt: .now))
+                        ShareInbox.prefersNewConversation = newConversation
+                        send(ShareInbox.Payload(note: note.trimmingCharacters(in: .whitespacesAndNewlines), text: text, urls: urls, attachments: attachments,
+                                                createdAt: .now, newConversation: newConversation))
                     }
                     .disabled(loading || (text.isEmpty && urls.isEmpty && attachments.isEmpty && note.isEmpty))
                 }

@@ -56,8 +56,13 @@ import WidgetKit
 /// - `-echo.expandAppIcons`: open Settings' app icon grid.
 /// - `-echo.draft "text"`: type a question into a focused composer (keyboard screenshots).
 ///   `-echo.clearDrafts` forgets every conversation's unsent draft first (UI tests).
+///   `-echo.forget "title"` deletes the saved conversations whose title starts so (a UI test's
+///   own, which the list can't always reach: a message still waiting to go closes it).
 /// - `-echo.ask "text"`: send a question at launch (the lab, screenshots of a live reply).
 ///   `-echo.fresh` starts on a new conversation first.
+/// - `-echo.share "text"`: the text arrives as from the share sheet; `-echo.shareNew "text"` with
+///   its "New conversation" on. `-echo.siriDraft "text"`: as Siri's "draft a message" (in a new
+///   conversation with `-siriDraftsInNewConversation YES`).
 /// - `-echo.voiceView`: open voice mode without listening. `-echo.voiceDemo ["<words>"]` poses it mid-listen;
 ///   `-echo.autoVoice` opens it and starts listening.
 /// - `-echo.demoBoard [clear]`: write on the agent's widget as its phone tool does (a day's plan
@@ -131,6 +136,15 @@ enum DevHooks {
         if has("-echo.demoLibrary") { conversation.seedDemoLibrary() }
         if has("-echo.demoSaved") { conversation.seedDemoLibrary(savedFrom: settings.activeServerID) }
         if has("-echo.clearDrafts") { Drafts.shared.removeAll() }
+        if let prefix = value("-echo.forget") {
+            Task {
+                // After the last conversation has loaded: a load still under way would bring it back.
+                await conversation.initialLoad?.value
+                for record in conversation.storeForContext.summaries where record.title.hasPrefix(prefix) {
+                    conversation.delete(id: record.id)
+                }
+            }
+        }
         // The Projects section only shows on the Dashboard connection.
         if demoProjects { settings.transport = .hermesServe }
         if has("-echo.demoLong") { conversation.seedLongDemo() }

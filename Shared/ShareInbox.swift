@@ -11,6 +11,9 @@ nonisolated enum ShareInbox {
         var urls: [String]
         var attachments: [Attachment]
         var createdAt: Date
+        /// The share sheet's "New conversation": in a new conversation's composer, not the open
+        /// one's (GitHub issue 21). Nil in a share saved before there was the choice.
+        var newConversation: Bool?
 
         var isEmpty: Bool { note.isEmpty && text.isEmpty && urls.isEmpty && attachments.isEmpty }
 
@@ -40,6 +43,12 @@ nonisolated enum ShareInbox {
         try encoder.encode(payload).write(to: directory.appending(path: name), options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
     }
 
+    /// The share sheet's "New conversation" as it was last left, in the App Group's defaults.
+    static var prefersNewConversation: Bool {
+        get { UserDefaults(suiteName: appGroup)?.bool(forKey: "share.newConversation") ?? false }
+        set { UserDefaults(suiteName: appGroup)?.set(newValue, forKey: "share.newConversation") }
+    }
+
     /// Returns every pending share merged into one payload (oldest first) and clears them.
     /// Off the main actor: the payloads carry the attachment bytes inline as base64, so a few
     /// shared photos are tens of MB of JSON to decode while the app is coming forward.
@@ -52,15 +61,26 @@ nonisolated enum ShareInbox {
               let files = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else { return nil }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        var merged: Payload?
+        var payloads: [Payload] = []
         for file in files.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
             defer { try? FileManager.default.removeItem(at: file) }
             guard let data = try? Data(contentsOf: file), let p = try? decoder.decode(Payload.self, from: data) else { continue }
+            payloads.append(p)
+        }
+        return merged(payloads)
+    }
+
+    /// Shares made one after another before Redde was opened, as one: in a new conversation if
+    /// any of them asked for one.
+    static func merged(_ payloads: [Payload]) -> Payload? {
+        var merged: Payload?
+        for p in payloads {
             if var m = merged {
                 if !p.text.isEmpty { m.text += (m.text.isEmpty ? "" : "\n\n") + p.text }
                 m.urls += p.urls
                 m.attachments += p.attachments
                 if !p.note.isEmpty { m.note += (m.note.isEmpty ? "" : "\n") + p.note }
+                if p.newConversation == true { m.newConversation = true }
                 merged = m
             } else {
                 merged = p

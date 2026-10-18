@@ -517,6 +517,14 @@ iPhone on 2026-10-12; a reopened chat getting its player back has not been seen 
 Bytes are stored one file per attachment under Application Support (file-protected); transcripts
 keep metadata only. The share extension (`EchoShare`) writes to the App Group
 (`group.com.goosehouse.echo`); the app turns shared items into a draft on its next foreground.
+The share sheet's "New conversation" switch (remembered in the App Group's defaults) puts that
+draft in a new conversation instead of the open one, and Settings → Siri → "Drafts in a new
+conversation" does the same for Siri's "draft a message" (GitHub issue 21). `ContentView`
+hands the composer to the new conversation before the text goes in (`startFreshForDraft`):
+the per-conversation draft follows a change of conversation only on the next update, which
+would otherwise leave the text with the one being left. Not when the open conversation is
+empty, and not on the fast lane while a reply streams. `-echo.share`, `-echo.shareNew` and
+`-echo.siriDraft` bring one in at launch (`NewConversationEntryUITests`).
 
 A drop anywhere on the chat goes to the composer too (`DroppedItems` sorts it, `ChatDropTarget`
 is the modifier on the chat): pictures and files join what is waiting to be sent, a link or a
@@ -663,7 +671,8 @@ schedule grammar), delivery targets, and blueprints on the Dashboard. Works over
 (`/api/cron/jobs`) or the API (`/api/jobs`, no run history).
 
 **Kanban** shows the Dashboard's task board plugin: one column at a time on the phone, swipe or menu
-to move a card, edit, comment, and "Ask Redde about this card". Moving to Blocked or Scheduled asks
+to move a card, edit, comment, and ask Redde about the card, in a new conversation or the open
+one (GitHub issue 21; a Hermes turn under way in the one left goes on). Moving to Blocked or Scheduled asks
 for a reason, Review or Done for a summary. It updates live over the plugin's events socket and
 falls back to polling. `Services/HermesAutomation.swift`, `Views/CronView.swift`,
 `Views/KanbanView.swift`.

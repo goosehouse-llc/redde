@@ -543,10 +543,16 @@ struct SiriSettings: View {
     var body: some View {
         Section {
             Toggle("Let Siri use Redde", isOn: $settings.siriAIEnabled)
+            if settings.siriAIEnabled {
+                Toggle("Drafts in a new conversation", isOn: $settings.siriDraftsInNewConversation)
+            }
         } header: {
             Text("Siri")
         } footer: {
-            Text("Lets Siri message \(settings.headerTitle) in your own words (“Hey Siri, ask \(settings.headerTitle) in Redde whether the backup ran”), read its replies, and find your conversations. Siri waits about 20 seconds and reads the reply; longer answers come back as a notification you can reply to by voice. Apple Intelligence processes what you say to Siri and can see Redde's recent conversations, so this is the one path where Apple, not only your own servers, handles your requests. Turning it off removes Redde from Spotlight. With App Lock on, only conversation titles are searchable. “Hey Siri, ask Redde” (open and listen) works either way.")
+            Text("Lets Siri message \(settings.headerTitle) in your own words (“Hey Siri, ask \(settings.headerTitle) in Redde whether the backup ran”), read its replies, and find your conversations. Siri waits about 20 seconds and reads the reply; longer answers come back as a notification you can reply to by voice. Apple Intelligence processes what you say to Siri and can see Redde's recent conversations, so this is the one path where Apple, not only your own servers, handles your requests. Turning it off removes Redde from Spotlight. With App Lock on, only conversation titles are searchable. “Hey Siri, ask Redde” (open and listen) works either way."
+                 + (settings.siriAIEnabled
+                    ? " A message Siri drafts for you waits in the message field of the conversation you have open, or, with “Drafts in a new conversation”, of a new one."
+                    : ""))
         }
     }
 }

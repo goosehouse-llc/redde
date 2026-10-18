@@ -374,6 +374,9 @@ struct KanbanClient {
     }
 
     static func task(_ id: String) async throws -> (KanbanTask, [KanbanComment]) {
+        #if DEBUG
+        if isDemo, let card = demoBoard().columns.flatMap(\.tasks).first(where: { $0.id == id }) { return (card, []) }
+        #endif
         let json = try await HermesServeClient.shared.restJSON("GET", "\(base)/tasks/\(id)")
         guard let t = json["task"].flatMap(KanbanTask.init) else { throw TransportError.malformed("no task") }
         return (t, (json["comments"]?.array ?? []).compactMap(KanbanComment.init))
