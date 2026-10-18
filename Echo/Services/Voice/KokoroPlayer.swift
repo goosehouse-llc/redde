@@ -15,7 +15,8 @@ final class KokoroPlayer {
     var onFirstAudio: (() -> Void)?
     var onDrained: (() -> Void)?
     /// Called when a sentence couldn't be fetched, with the text, so a fallback voice can say it.
-    /// Playback waits for it to return, so the fallback never talks over the next sentence.
+    /// Only once what was scheduled before it has been heard, and playback waits for it to
+    /// return, so the fallback talks over neither the sentence before nor the next one.
     var onFailure: ((String) async -> Void)?
 
     nonisolated private static let log = Logger(subsystem: "com.goosehouse.echo", category: "kokoro")
@@ -35,6 +36,8 @@ final class KokoroPlayer {
     /// the engine had queued, can put it back.
     private var unplayed: [AVAudioPCMBuffer] = []
     private var pendingBuffers: Int { unplayed.count }
+    /// Waiting for `unplayed` to run out (`untilPlayed`); a stop lets them go too.
+    private var playedWaiters: [CheckedContinuation<Void, Never>] = []
     private var announcedFirst = false
     private var finished = false
     /// Held by the Pause button: buffers still arriving are scheduled but must not restart play.
@@ -99,6 +102,7 @@ final class KokoroPlayer {
         player.stop()
         startEngine(reason: "after route change")
         remaining.forEach(schedule)
+        if unplayed.isEmpty { letPlayedWaitersGo() }   // nothing to put back, or the engine won't start
         if remaining.isEmpty, playbackTask == nil, finished { onDrained?() }
     }
 
@@ -181,6 +185,7 @@ final class KokoroPlayer {
         playbackTask = nil
         wakePlayback()
         unplayed = []
+        letPlayedWaitersGo()
         paused = false
         player.stop()
     }
@@ -194,6 +199,18 @@ final class KokoroPlayer {
     private func wakePlayback() {
         wake?.resume()
         wake = nil
+    }
+
+    /// Returns once everything scheduled so far has been heard, or playback has been stopped.
+    private func untilPlayed() async {
+        guard pendingBuffers > 0 else { return }
+        await withCheckedContinuation { playedWaiters.append($0) }
+    }
+
+    private func letPlayedWaitersGo() {
+        let waiters = playedWaiters
+        playedWaiters = []
+        waiters.forEach { $0.resume() }
     }
 
     private func startEngine(reason: String) {
@@ -354,14 +371,34 @@ final class KokoroPlayer {
                 current = sentence
                 startFetch(sentence)
                 fetchAhead()
-                do {
-                    for try await buffer in sentence.chunks {
+                var attempt = sentence
+                while true {
+                    do {
+                        for try await buffer in attempt.chunks {
+                            guard gen == generation else { return }
+                            schedule(buffer)
+                        }
+                    } catch {
                         guard gen == generation else { return }
-                        schedule(buffer)
+                        if attempt === sentence, Self.worthAskingAgain(error) {
+                            // Asked for once more before another voice says it: a connection
+                            // that dropped (Redde was away in another app, the network changed)
+                            // usually answers the second time. One cut off part-way starts over.
+                            log.info("asking again for a sentence: \(error.localizedDescription)")
+                            try? await Task.sleep(for: .milliseconds(300))
+                            guard gen == generation else { return }
+                            attempt = Sentence(text: sentence.text, source: sentence.source)
+                            current = attempt
+                            startFetch(attempt)
+                            continue
+                        }
+                        // The loop runs ahead of the sound, so the sentences before this one can
+                        // still be playing: the fallback voice talked over them.
+                        await untilPlayed()
+                        guard gen == generation else { return }
+                        await onFailure?(sentence.text)
                     }
-                } catch {
-                    guard gen == generation else { return }
-                    await onFailure?(sentence.text)
+                    break
                 }
                 guard gen == generation else { return }
                 current = nil
@@ -394,7 +431,17 @@ final class KokoroPlayer {
         // `engineReconfigured` can put them back instead of the reply ending here.
         guard engine.isRunning else { return }
         if !unplayed.isEmpty { unplayed.removeFirst() }
+        if pendingBuffers == 0 { letPlayedWaitersGo() }
         if pendingBuffers == 0, playbackTask == nil, finished { onDrained?() }
+    }
+
+    /// Whether a sentence that failed is worth asking for again. Not after a wait that ran out:
+    /// a server that said nothing for that long would only be waited on twice.
+    nonisolated static func worthAskingAgain(_ error: Error) -> Bool {
+        if error is CancellationError { return false }
+        if let error = error as? URLError { return ![.timedOut, .cancelled].contains(error.code) }
+        if case TransportError.unreachable = error { return false }   // Hermes said nothing for 15 s
+        return true
     }
 }
 

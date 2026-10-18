@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import Network
 import Testing
 @testable import Echo
 
@@ -74,5 +75,132 @@ struct KokoroFramingTests {
         #expect(pending.isEmpty)
         #expect(decoded.count == samples.count)
         #expect(decoded == samples.map { Float($0) / 32768 })
+    }
+}
+
+/// A Kokoro that drops the first `drops` connections before it reads them a word, the way a
+/// connection goes when Redde has been away in another app, then answers with silence.
+nonisolated final class DroppingSpeechServer: @unchecked Sendable {
+    let port: UInt16
+    var baseURL: URL { URL(string: "http://127.0.0.1:\(port)")! }
+    private let listener: NWListener
+    private let lock = NSLock()
+    private var count = 0
+    private static let queue = DispatchQueue(label: "dropping-speech-server")
+
+    /// How many times a sentence has been asked for.
+    var connections: Int { lock.withLock { count } }
+
+    private init(listener: NWListener, port: UInt16) { self.listener = listener; self.port = port }
+
+    static func start(drops: Int, seconds: Double = 0.3) async throws -> DroppingSpeechServer {
+        let parameters = NWParameters.tcp
+        parameters.requiredLocalEndpoint = .hostPort(host: .ipv4(.loopback), port: .any)
+        let listener = try NWListener(using: parameters)
+        let box = Box()
+        let pcm = Data(count: Int(KokoroPlayer.sampleRate * seconds) * 2)   // 16-bit silence
+        listener.newConnectionHandler = { connection in
+            connection.start(queue: queue)
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 64 * 1024) { _, _, _, _ in
+                guard let server = box.server, server.connected() > drops else { connection.cancel(); return }
+                let head = "HTTP/1.1 200 OK\r\nContent-Type: audio/pcm\r\nContent-Length: \(pcm.count)\r\nConnection: close\r\n\r\n"
+                connection.send(content: Data(head.utf8) + pcm, contentContext: .finalMessage, isComplete: true, completion: .contentProcessed { _ in
+                    connection.receive(minimumIncompleteLength: 1, maximumLength: 1024) { _, _, _, _ in connection.cancel() }
+                })
+            }
+        }
+        let port: UInt16 = try await withCheckedThrowingContinuation { ready in
+            let resumed = NSLock()
+            nonisolated(unsafe) var done = false
+            listener.stateUpdateHandler = { state in
+                resumed.lock(); defer { resumed.unlock() }
+                guard !done else { return }
+                switch state {
+                case .ready: done = true; ready.resume(returning: listener.port?.rawValue ?? 0)
+                case .failed(let error): done = true; ready.resume(throwing: error)
+                default: break
+                }
+            }
+            listener.start(queue: queue)
+        }
+        let server = DroppingSpeechServer(listener: listener, port: port)
+        box.server = server
+        return server
+    }
+
+    func stop() { listener.cancel() }
+    /// Counts this connection in; returns how many there have been.
+    private func connected() -> Int { lock.withLock { count += 1; return count } }
+
+    private final class Box: @unchecked Sendable { var server: DroppingSpeechServer? }
+}
+
+/// GitHub issue 11: a reply read out by Kokoro (or Hermes) went on in Apple's voice as well, on
+/// top of it, after Redde had been away in another app.
+struct KokoroFailureTests {
+    /// Plays until `onDrained`, or gives up after `limit`. False when it never drained.
+    private func playToTheEnd(_ player: KokoroPlayer, limit: Duration = .seconds(10),
+                              _ enqueue: @escaping () -> Void) async -> Bool {
+        await withCheckedContinuation { done in
+            var resumed = false
+            player.onDrained = {
+                guard !resumed else { return }
+                resumed = true
+                done.resume(returning: true)
+            }
+            player.begin()   // no address: no warm-up request to count
+            enqueue()
+            player.finish()
+            Task {
+                try? await Task.sleep(for: limit)
+                guard !resumed else { return }
+                resumed = true
+                done.resume(returning: false)
+            }
+        }
+    }
+
+    @Test func aSentenceWhoseConnectionDroppedIsAskedForAgain() async throws {
+        let server = try await DroppingSpeechServer.start(drops: 1)
+        defer { server.stop() }
+        let player = KokoroPlayer()
+        var failed: [String] = []
+        player.onFailure = { failed.append($0) }
+        let drained = await playToTheEnd(player) {
+            player.enqueue("Said in Kokoro's voice after all.", baseURL: server.baseURL, voice: "af_heart")
+        }
+        player.release()
+        #expect(drained)
+        #expect(server.connections == 2)
+        #expect(failed.isEmpty, "the second ask was answered: nothing for another voice to say")
+    }
+
+    @Test func theOtherVoiceWaitsForWhatIsStillPlaying() async throws {
+        let server = try await DroppingSpeechServer.start(drops: .max)
+        defer { server.stop() }
+        let player = KokoroPlayer()
+        let started = ContinuousClock.now
+        var failedAfter: [Duration] = []
+        player.onFailure = { _ in failedAfter.append(ContinuousClock.now - started) }
+        let drained = await playToTheEnd(player) {
+            // A second of the sentence before, already in hand, and then one that can't be had.
+            player.enqueue(samples: [[Float](repeating: 0, count: Int(KokoroPlayer.sampleRate))], text: "One second.")
+            player.enqueue("Then one that never comes.", baseURL: server.baseURL, voice: "af_heart")
+        }
+        player.release()
+        #expect(drained)
+        #expect(server.connections == 2, "asked for twice before giving up on it")
+        #expect(failedAfter.count == 1)
+        let after = try #require(failedAfter.first)
+        #expect(after >= .milliseconds(900), "the other voice began \(after) in, over the second still playing")
+    }
+
+    @Test func whichFailuresAreWorthAskingAgain() {
+        #expect(KokoroPlayer.worthAskingAgain(URLError(.networkConnectionLost)))
+        #expect(KokoroPlayer.worthAskingAgain(POSIXError(.ECONNABORTED)), "a socket iOS took back while Redde was away")
+        #expect(KokoroPlayer.worthAskingAgain(TransportError.http(status: 503, body: "")))
+        #expect(!KokoroPlayer.worthAskingAgain(URLError(.timedOut)))
+        #expect(!KokoroPlayer.worthAskingAgain(TransportError.unreachable("Hermes stopped answering mid-sentence")))
+        #expect(!KokoroPlayer.worthAskingAgain(CancellationError()))
     }
 }
