@@ -199,6 +199,7 @@ struct ContentView: View {
             consumeControlRequest()
             Notifier.shared.clearDelivered()
             ReadState.markConversationRead(conversation.id)
+            conversation.noteSeen()   // and on the host, for the chat list's Unread
             HermesServeClient.shared.reconnectIfNeeded()
             ModelWarmer.warm(conversation)
             conversation.retryOutbox()   // back in the foreground: try anything still waiting to send

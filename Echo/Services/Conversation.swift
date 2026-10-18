@@ -26,7 +26,7 @@ final class Conversation {
     /// taken by the transcript, which opens Find on them (`TranscriptView`).
     var findRequest: String?
     /// API-server run id of the turn in flight (sessions transport).
-    private var currentRunID: String?
+    private(set) var currentRunID: String?
 
     /// Steering is possible while a Hermes turn is streaming.
     var canSteer: Bool { isStreaming && settings.transport.hasLedger }
@@ -352,6 +352,7 @@ final class Conversation {
                                        messageEntityID: SiriID.message(self.id, replyID))
                 persist()
                 outcome = .completed
+                noteSeen(onlyOnScreen: true)
                 suggestFollowUps(question: trimmed, replyID: replyID, reply: replyText)
             } catch is CancellationError {
                 windowTask.cancel()
@@ -586,6 +587,7 @@ final class Conversation {
                                        category: Notifier.repliedCategory, userInfo: [Notifier.conversationKey: self.id.uuidString],
                                        messageEntityID: SiriID.message(self.id, replyID))
                 persist()
+                noteSeen(onlyOnScreen: true)
                 completed = true
             } catch is CancellationError {
                 flushDeltas()
@@ -775,6 +777,12 @@ final class Conversation {
         joinedStop = nil
         let lettingGo = leaving && settings.transport.hasLedger
         if lettingGo { departure?.leave() }
+        // The chat list shows it working until it ends: on the Hermes API by its run, which is
+        // all there is to ask after (the Dashboard lists its own turns).
+        if lettingGo, wasStreaming, settings.transport == .hermesSessions, store === ConversationStore.shared,
+           let stored = serverSessionID, let run = currentRunID {
+            ChatActivity.shared.noteLeft(sessionID: stored, runID: run, settings: settings)
+        }
         departure = nil
         if !leaving { joined?() }
         streamTask?.cancel()
@@ -889,6 +897,7 @@ final class Conversation {
 
     private func become(id: UUID = UUID(), createdAt: Date = .now, messages: [Message] = [],
                         outbox: [OutboxItem] = [], serverSessionID: String? = nil, name: String? = nil) {
+        noteSeen()   // the one being left
         identity += 1
         ledgerWatch?.cancel()
         ledgerWatch = nil
@@ -1220,6 +1229,16 @@ final class Conversation {
         // What a note from Hermes said this session waits on is put right from here: joining
         // its turn says so again if it still does.
         StatusWidgets.settled(summary.id, in: widgetDefaults)
+        noteSeen()
+    }
+
+    /// Everything here so far has been seen: the chat list's Unread mark, kept on the host for
+    /// every app (`ChatActivity`). Opening a conversation, leaving it, a reply finishing on
+    /// screen and coming back to Redde with it open all say so. Only for the app's own
+    /// conversations, not a test's.
+    func noteSeen(onlyOnScreen: Bool = false) {
+        guard store === ConversationStore.shared, let stored = serverSessionID else { return }
+        ChatActivity.shared.markRead(stored, conversation: self, onlyOnScreen: onlyOnScreen, settings: settings)
     }
 
     private func update(_ id: UUID, _ body: (inout Message) -> Void) {

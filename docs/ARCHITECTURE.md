@@ -1104,6 +1104,25 @@ conversation, and anything on the OpenAI-compatible connection (no host to go on
 turn. Over the Hermes API, Stop has never reached the host: the app stops listening and the
 agent finishes there.
 
+**The chat list's marks** (`Services/ChatActivity.swift`) show what became of conversations left
+like that: a spinner where the time goes while the agent works, "Needs you" while it waits on an
+answer, an approval or a password, and a dot in the margin for a reply not yet seen. While the
+list is on screen it looks every four seconds. On the Dashboard, `session.active_list` lists the
+conversations with a turn under way in that Dashboard, working or waiting (an approval counts as
+waiting from 0.21.3; 0.21.0 calls it working); turns run elsewhere (cron, a messaging app, the
+Hermes API) aren't in it. Unread is Hermes's own, the same for every app: `unread` in its list,
+against a read mark set by `PATCH /api/sessions/{id} {"unread": …}`. A conversation nobody has
+ever marked is never unread, so the app marks one read when it is opened, when it is left, when
+a reply finishes on screen and when Redde comes back with it open. The Hermes API lists no turns
+and doesn't return `unread`: a turn the app left mid-way is asked after by its run
+(`GET /v1/runs/{id}`, `waiting_for_approval` only from 0.22, where that route first waits for
+one), and what was last seen of each conversation is kept on the phone, against the time of its
+last activity; the read mark still goes to the host for the other apps. The list is fetched again
+when a turn ends, and at most every thirty seconds when the Dashboard says its conversations
+changed (`sessions.changed`). Mark as Read / Unread is in a row's swipe and menu.
+`scripts/hermes-lab/lab.sh status` checks what each release says, and the app's own
+`ChatActivity` against it (`HermesLabStatusTests`).
+
 ## Siri, Shortcuts and controls
 
 Four App Shortcuts: "Ask Redde", "Talk with Redde" (hands-free), "Take a Note" (quick capture,

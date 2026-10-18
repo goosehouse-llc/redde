@@ -30,7 +30,10 @@ struct ConversationsList: View {
     var isShowing = true
     @Environment(Conversation.self) private var conversation
     @Environment(\.sidePanelParked) private var panelParked
+    @Environment(\.scenePhase) private var scenePhase
     @State private var store = ConversationStore.shared
+    /// Working, Needs you and Unread, for the rows.
+    @State private var activity = ChatActivity.shared
     @State private var settings = Settings.shared
     @State private var drafts = Drafts.shared
     @State private var ledger: [HermesSessionsAPI.SessionSummary] = []
@@ -268,6 +271,8 @@ struct ConversationsList: View {
         .onChange(of: isShowing) { _, showing in
             if showing, usesLedger { Task { await refresh() } }
         }
+        .modifier(WatchingActivity(key: "\(settings.connectionKey)|\(isShowing)|\(scenePhase == .active)",
+                                   openID: conversation.serverSessionID, watch: watchActivity, opened: openChanged))
         .onChange(of: query, initial: true) { filterLedger() }
         .task(id: "\(query)|\(settings.connectionKey)") { await searchMessages() }
         .onChange(of: ledger) { filterLedger() }
@@ -642,14 +647,28 @@ struct ConversationsList: View {
             .textCase(.uppercase)
     }
 
+    private func marks(_ session: HermesSessionsAPI.SessionSummary) -> ChatMarks {
+        ChatMarks(kind: activity.kind(of: session.id, open: conversation),
+                  unread: activity.isUnread(session, open: conversation))
+    }
+
     private func ledgerButton(_ session: HermesSessionsAPI.SessionSummary, hasDraft: Bool) -> some View {
-        Button { if !selecting { open(session) } } label: { ledgerRow(session, hasDraft: hasDraft) }
+        let marks = marks(session)
+        // The open conversation is read whatever it is marked: leaving it marks it read again.
+        let canMark = session.id != conversation.serverSessionID
+        return Button { if !selecting { open(session) } } label: { ledgerRow(session, hasDraft: hasDraft, marks: marks) }
             .buttonStyle(.plain)
             .opensConversation()
             .tag(session.id)
             .listRowBackground(session.id == conversation.serverSessionID ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
             .disabled(opening != nil)
             .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                if canMark {
+                    Button { setUnread(session, !marks.unread) } label: {
+                        Label(marks.unread ? "Read" : "Unread", systemImage: marks.unread ? "checkmark.message" : "message.badge")
+                    }
+                    .tint(Settings.shared.resolvedTheme.accent)
+                }
                 Button { setPinned(session, !(session.pinned ?? false)) } label: {
                     Label(session.pinned == true ? "Unpin" : "Pin", systemImage: session.pinned == true ? "pin.slash" : "pin")
                 }
@@ -661,6 +680,11 @@ struct ConversationsList: View {
                     .tint(.gray)
             }
             .contextMenu {
+                if canMark {
+                    Button(marks.unread ? "Mark as Read" : "Mark as Unread", systemImage: marks.unread ? "checkmark.message" : "message.badge") {
+                        setUnread(session, !marks.unread)
+                    }
+                }
                 Button("Usage & cost", systemImage: "chart.bar") { usageFor = session }
                 Button("Rename", systemImage: "pencil") { renameText = session.title ?? ""; renaming = session }
                 Button(session.pinned == true ? "Unpin" : "Pin", systemImage: "pin") { setPinned(session, !(session.pinned ?? false)) }
@@ -785,15 +809,17 @@ struct ConversationsList: View {
         }
     }
 
-    private func ledgerRow(_ session: HermesSessionsAPI.SessionSummary, hasDraft: Bool) -> some View {
-        rowBody(session, hasDraft: hasDraft)
+    private func ledgerRow(_ session: HermesSessionsAPI.SessionSummary, hasDraft: Bool, marks: ChatMarks) -> some View {
+        rowBody(session, hasDraft: hasDraft, marks: marks)
+            .unreadDot(marks.unread && !selecting)
             .accessibilityElement(children: .combine)
+            .accessibilityValue(marks.spoken)
             .accessibilityHint("Opens this session")
     }
 
     /// Title and when on the first line, the last thing said beneath; where it came from when
     /// it wasn't this app.
-    private func rowBody(_ session: HermesSessionsAPI.SessionSummary, hasDraft: Bool) -> some View {
+    private func rowBody(_ session: HermesSessionsAPI.SessionSummary, hasDraft: Bool, marks: ChatMarks) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 6) {
                 if session.pinned == true {
@@ -801,13 +827,14 @@ struct ConversationsList: View {
                 }
                 Text(session.displayTitle).font(.body.weight(.semibold)).lineLimit(1)
                 Spacer(minLength: 8)
-                if opening == session.id {
+                if opening == session.id || marks.kind == .working {
                     ProgressView().controlSize(.small)
                 } else if let when = session.lastActiveDate {
                     Text(DateGroup.rowTime(when)).font(.caption).foregroundStyle(.secondary)
                 }
             }
             HStack(spacing: 6) {
+                if marks.kind == .needsYou { NeedsYouTag() }
                 if hasDraft { draftMark }
                 if let source = session.source, !["api_server", "api-server"].contains(source) {
                     Text(session.sourceLabel)
@@ -857,6 +884,10 @@ struct ConversationsList: View {
             projects = Self.demoProjects
             folders = Self.demoProjects
             ledger = Self.demoProjects.flatMap { $0.lanes.flatMap(\.sessions) } + Self.demoScheduledRuns
+            if DevHooks.demoMarks {
+                ledger += Self.demoMarkedRows
+                activity.showDemo(["demo-1": .working, "demo-marks-2": .needsYou])
+            }
             ledgerError = nil
             return
         }
@@ -869,6 +900,7 @@ struct ConversationsList: View {
             let sessions = try await backend.listSessions()
             guard current else { return }
             ledger = sessions
+            activity.listed(sessions)
             conversation.noteServerTitles(sessions)
             if viaServe {
                 // Projects are a bonus; a failure here must not hide the flat list.
@@ -905,6 +937,49 @@ struct ConversationsList: View {
     private func setPinned(_ session: HermesSessionsAPI.SessionSummary, _ pinned: Bool) {
         housekeeping(session) {
             try await SessionBackend.current(conversation)?.setPinned(session.id, pinned)
+        }
+    }
+
+    /// The open conversation changed: both have just been marked read on the host (the one left,
+    /// the one opened), and the rows say so now rather than at the next fetch.
+    private func openChanged(from old: String?, to new: String?) {
+        for id in [old, new].compactMap(\.self) {
+            if let i = ledger.firstIndex(where: { $0.id == id }), ledger[i].unread == true { ledger[i].unread = false }
+        }
+    }
+
+    /// Mark as Read / Mark as Unread. A row the host marks (the Dashboard's) changes at once.
+    private func setUnread(_ session: HermesSessionsAPI.SessionSummary, _ unread: Bool) {
+        if let i = ledger.firstIndex(where: { $0.id == session.id }), ledger[i].unread != nil { ledger[i].unread = unread }
+        if unread {
+            activity.markUnread(session.id, conversation: conversation)
+        } else {
+            activity.markRead(session.id, conversation: conversation)
+        }
+    }
+
+    /// While the list is on screen: what the host is doing, every few seconds (a turn under way,
+    /// one waiting on the person), and the conversations fetched again when a turn ends or, at
+    /// most every thirty seconds, when the Dashboard says they changed.
+    private func watchActivity() async {
+        guard usesLedger, isShowing, scenePhase == .active else { return }
+        #if DEBUG
+        if DevHooks.demoProjects { return }
+        #endif
+        var fetchedAt = Date.now
+        var changes = activity.changes
+        while !Task.isCancelled {
+            let before = Set(activity.live.keys)
+            let reached = await activity.look(conversation)
+            let ended = !before.subtracting(activity.live.keys).isEmpty
+            let changed = activity.changes != changes && Date.now.timeIntervalSince(fetchedAt) >= 30
+            if ended || changed {
+                changes = activity.changes
+                fetchedAt = .now
+                await refresh()
+            }
+            // A host that can't be asked is asked less often.
+            try? await Task.sleep(for: reached ? .seconds(4) : .seconds(30))
         }
     }
 
@@ -1185,6 +1260,8 @@ struct ProjectSessionsView: View {
     /// while a long transcript loads, and says nothing at all when the load fails.
     @State private var opening: String?
     @State private var openError: String?
+    @Environment(Conversation.self) private var conversation
+    @State private var activity = ChatActivity.shared
 
     var body: some View {
         List {
@@ -1288,17 +1365,20 @@ struct ProjectSessionsView: View {
     }
 
     private func row(_ session: HermesSessionsAPI.SessionSummary) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        let marks = ChatMarks(kind: activity.kind(of: session.id, open: conversation),
+                              unread: activity.isUnread(session, open: conversation))
+        return VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(session.displayTitle).font(.body).lineLimit(1)
                 Spacer()
-                if opening == session.id {
+                if opening == session.id || marks.kind == .working {
                     ProgressView().controlSize(.small)
                 } else if session.id == currentID {
                     Image(systemName: "checkmark.circle.fill").foregroundStyle(.tint)
                 }
             }
             HStack(spacing: 6) {
+                if marks.kind == .needsYou { NeedsYouTag() }
                 Text(session.sourceLabel).font(.caption2.weight(.semibold))
                     .padding(.horizontal, 6).padding(.vertical, 2).background(.quaternary, in: .capsule)
                 if let when = session.lastActiveDate { Text(when, format: .relative(presentation: .named)) }
@@ -1309,8 +1389,70 @@ struct ProjectSessionsView: View {
         }
         .padding(.vertical, 2)
         .contentShape(.rect)
+        .unreadDot(marks.unread)
         .accessibilityElement(children: .combine)
+        .accessibilityValue(marks.spoken)
         .accessibilityHint("Opens this session")
+    }
+}
+
+// MARK: - The rows' marks
+
+/// The list looks at what the host is doing while it is on screen (`key` changes when that
+/// starts or stops), and hears when the open conversation changes. A modifier of its own: the
+/// list's chain of them was more than the type checker would take.
+private struct WatchingActivity: ViewModifier {
+    var key: String
+    var openID: String?
+    var watch: () async -> Void
+    var opened: (String?, String?) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .task(id: key) { await watch() }
+            .onChange(of: openID) { old, new in opened(old, new) }
+    }
+}
+
+/// What a conversation's row shows of it (`ChatActivity`): the agent working (a spinner where
+/// the time goes), waiting on the person ("Needs you"), or a reply not yet seen (a dot).
+struct ChatMarks: Equatable {
+    var kind: ChatActivity.Kind?
+    var unread: Bool
+
+    /// Read out with the row.
+    var spoken: String {
+        [unread ? "Unread" : nil,
+         kind == .working ? "Agent working" : kind == .needsYou ? "Needs you" : nil].compactMap(\.self).joined(separator: ", ")
+    }
+}
+
+/// "Needs you", in front of a row's second line: the agent waits on an answer, an approval or a
+/// password.
+struct NeedsYouTag: View {
+    var body: some View {
+        Text("Needs you")
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(.orange)
+            .padding(.horizontal, 6).padding(.vertical, 1)
+            .background(.orange.opacity(0.15), in: .capsule)
+            .fixedSize()
+    }
+}
+
+extension View {
+    /// A dot in the row's leading margin, as Messages marks an unread conversation. In the
+    /// margin, so the titles of read and unread rows still line up.
+    func unreadDot(_ shown: Bool) -> some View {
+        overlay(alignment: .leading) {
+            if shown {
+                Circle()
+                    .fill(Settings.shared.resolvedTheme.accent)
+                    .frame(width: 9, height: 9)
+                    .offset(x: -14)
+                    .accessibilityHidden(true)
+            }
+        }
     }
 }
 
@@ -1338,6 +1480,17 @@ extension ConversationsList {
     }
 
     /// Two runs of a scheduled job, in no project: they fold away under Scheduled runs.
+    /// Two more for `-echo.demoMarks`: a reply not yet seen, and the agent waiting on an approval.
+    static var demoMarkedRows: [HermesSessionsAPI.SessionSummary] {
+        let json = """
+        [{"id":"demo-marks-1","title":"Grocery list","source":"api_server","started_at":1772999800,"last_active":1773000300,"message_count":4,
+          "preview":"Here's what I found for this week","unread":true},
+         {"id":"demo-marks-2","title":"Server cleanup","source":"api_server","started_at":1772999700,"last_active":1772999900,"message_count":6,
+          "preview":"Run rm -rf ~/old-backups?","unread":false}]
+        """
+        return (try? JSONDecoder().decode([HermesSessionsAPI.SessionSummary].self, from: Data(json.utf8))) ?? []
+    }
+
     static var demoScheduledRuns: [HermesSessionsAPI.SessionSummary] {
         let json = """
         [{"id":"demo-cron-1","title":"Morning briefing","source":"cron","started_at":1772998000,"last_active":1772998100,"message_count":2},

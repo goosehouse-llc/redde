@@ -1301,10 +1301,18 @@ final class HermesServeClient {
         try await call("secret.respond", params: .object(["session_id": .string(runtimeSession), "request_id": .string(requestID), "value": .string(value)]))
     }
 
-    /// Rename / pin / archive through the dashboard's PATCH.
-    func updateSession(stored: String, title: String? = nil, pinned: Bool? = nil, archived: Bool? = nil) async throws {
-        struct Body: Encodable { var title: String?; var pinned: Bool?; var archived: Bool? }
-        _ = try await rest("PATCH", "api/sessions/\(stored)", body: try JSONEncoder().encode(Body(title: title, pinned: pinned, archived: archived)))
+    /// Rename / pin / archive / mark read or unread through the dashboard's PATCH.
+    func updateSession(stored: String, title: String? = nil, pinned: Bool? = nil, archived: Bool? = nil, unread: Bool? = nil) async throws {
+        struct Body: Encodable { var title: String?; var pinned: Bool?; var archived: Bool?; var unread: Bool? }
+        _ = try await rest("PATCH", "api/sessions/\(stored)", body: try JSONEncoder().encode(Body(title: title, pinned: pinned, archived: archived, unread: unread)))
+    }
+
+    /// The conversations with a turn under way in this Dashboard, by stored id: working, or
+    /// waiting on a person (`session.active_list`, every release; an approval counts as waiting
+    /// from 0.21.3). Turns run elsewhere (cron, a messaging app, the Hermes API) aren't listed.
+    func liveActivity() async throws -> [String: ChatActivity.Kind] {
+        try await ensureConnected()
+        return ChatActivity.kinds(activeList: try await call("session.active_list", params: .object([:]), timeout: 15))
     }
 
     /// Branch a session (`session.branch`). Needs the session open on this connection.

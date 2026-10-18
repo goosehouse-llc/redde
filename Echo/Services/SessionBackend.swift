@@ -54,6 +54,14 @@ enum SessionBackend {
         }
     }
 
+    /// Marks a conversation read up to now (false), or unread.
+    func setUnread(_ id: String, _ unread: Bool) async throws {
+        switch self {
+        case .serve(let client): try await client.updateSession(stored: id, unread: unread)
+        case .ledger(let api): try await api.updateSession(id: id, unread: unread)
+        }
+    }
+
     func archive(_ id: String) async throws {
         switch self {
         case .serve(let client): try await client.updateSession(stored: id, archived: true)

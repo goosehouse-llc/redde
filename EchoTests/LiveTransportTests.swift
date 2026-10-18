@@ -1490,3 +1490,114 @@ struct HermesLabDeviceTests {
         try? FileManager.default.removeItem(at: folder)
     }
 }
+
+/// The chat list's marks against the lab (`scripts/hermes-lab/lab.sh status`, the `approval`
+/// scenario): `ChatActivity` with the app's own clients on both connections, a conversation left
+/// while its turn goes on, then its reply, and one whose agent asks a question. Skips when no lab
+/// is up.
+@MainActor
+struct HermesLabStatusTests {
+    private static let api = URL(string: "http://127.0.0.1:18642")!
+    private static let key = "labkey-labkey-labkey"
+    private static let slow = "lab:slow, please"
+
+    private static func setup(_ transport: Transport) -> (Settings, ChatActivity) {
+        let defaults = UserDefaults(suiteName: "lab-status-\(UUID().uuidString)")!
+        let settings = Settings(defaults: defaults)
+        settings.transport = transport
+        return (settings, ChatActivity(defaults: defaults))
+    }
+
+    private static func conversation(_ settings: Settings, _ transport: any HermesTransport) -> Conversation {
+        Conversation(settings: settings, store: ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "lab-status-\(UUID().uuidString)")),
+                     transportOverride: transport)
+    }
+
+    /// Looks every second until the mark is `want`, or `seconds` pass; the last one seen.
+    private static func until(_ want: ChatActivity.Kind?, of stored: String, _ activity: ChatActivity, open: Conversation,
+                              _ settings: Settings, dashboard: HermesServeClient? = nil, seconds: Int = 30) async throws -> ChatActivity.Kind? {
+        var kind: ChatActivity.Kind?
+        for _ in 0 ..< seconds {
+            if let dashboard { await activity.look(open, settings: settings, dashboard: dashboard) } else { await activity.look(open, settings: settings) }
+            kind = activity.kind(of: stored, open: open, settings: settings)
+            if kind == want { break }
+            try await Task.sleep(for: .seconds(1))
+        }
+        return kind
+    }
+
+    @Test func theDashboardSaysWhatIsUnderWayAndUnread() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        func report(_ ok: Bool, _ what: String, _ detail: String = "") { HermesLabApprovalTests.report(ok, "Dashboard: \(what)", detail) }
+        let (settings, activity) = Self.setup(.hermesServe)
+
+        let left = Self.conversation(settings, HermesServeTransport(client: client))
+        _ = left.send(Self.slow)
+        try await Task.sleep(for: .seconds(2))
+        guard let stored = left.serverSessionID else { report(false, "a conversation left mid-turn", "it got no session"); return }
+        left.reset()   // another conversation started: the turn goes on
+        try await client.updateSession(stored: stored, unread: false)   // what leaving it marks, for the app's own
+        await activity.look(left, settings: settings, dashboard: client)
+        let during = activity.kind(of: stored, open: left, settings: settings)
+        report(during == .working, "a conversation left mid-turn is working", "\(String(describing: during))")
+        let after = try await Self.until(nil, of: stored, activity, open: left, settings, dashboard: client)
+        report(after == nil, "and not once its turn is over", "\(String(describing: after))")
+        let row = try await client.listSessions().first { $0.id == stored }
+        report(row.map { activity.isUnread($0, open: left, settings: settings) } == true, "and its reply is unread",
+               "row unread: \(String(describing: row?.unread))")
+
+        let asking = Self.conversation(settings, HermesServeTransport(client: client))
+        _ = asking.send("lab:question")
+        try await Task.sleep(for: .seconds(2))
+        if let waiting = asking.serverSessionID {
+            // Seen from the list, not as the open conversation, which says for itself.
+            let kind = try await Self.until(.needsYou, of: waiting, activity, open: left, settings, dashboard: client, seconds: 20)
+            report(kind == .needsYou, "one whose agent asks a question needs you", "\(String(describing: kind))")
+        } else {
+            report(false, "one whose agent asks a question needs you", "it got no session")
+        }
+        asking.cancel()
+    }
+
+    @Test func theHermesAPIsLeftTurnIsAskedAfterByItsRun() async throws {
+        var probe = URLRequest(url: Self.api.appending(path: "health"))
+        probe.timeoutInterval = 2
+        guard (try? await URLSession.shared.data(for: probe)) != nil else {
+            print("LAB SKIP: no Hermes lab on 127.0.0.1:18642 (scripts/hermes-lab/lab.sh up <tag> approval)")
+            return
+        }
+        func report(_ ok: Bool, _ what: String, _ detail: String = "") { HermesLabApprovalTests.report(ok, "Hermes API: \(what)", detail) }
+        let (settings, activity) = Self.setup(.hermesSessions)
+        settings.gatewayURL = Self.api.absoluteString
+        // The key where the app keeps it, for the server it is on now; what was there goes back.
+        let account = Keychain.account(.gatewayAPIKey)
+        let before = Keychain.read(account: account)
+        Keychain.write(account: account, value: Self.key)
+        defer { if let before { Keychain.write(account: account, value: before) } else { Keychain.delete(account: account) } }
+
+        let left = Self.conversation(settings, HermesSessionsTransport(baseURL: Self.api, apiKey: Self.key))
+        _ = left.send(Self.slow)
+        try await Task.sleep(for: .seconds(2))
+        guard let stored = left.serverSessionID, let run = left.currentRunID else {
+            report(false, "a conversation left mid-turn", "session \(String(describing: left.serverSessionID)), run \(String(describing: left.currentRunID))")
+            return
+        }
+        activity.noteLeft(sessionID: stored, runID: run, settings: settings)   // what leaving it notes, for the app's own
+        left.reset()
+        await activity.look(left, settings: settings)
+        let during = activity.kind(of: stored, open: left, settings: settings)
+        report(during == .working, "a conversation left mid-turn is working, by its run", "\(String(describing: during))")
+        let after = try await Self.until(nil, of: stored, activity, open: left, settings)
+        report(after == nil, "and not once its run is over", "\(String(describing: after))")
+        let api = HermesSessionsAPI(baseURL: Self.api, apiKey: Self.key)
+        let row = try await api.listSessions().first { $0.id == stored }
+        report(row.map { activity.isUnread($0, open: left, settings: settings) } == true, "and its reply is unread")
+        do {
+            try await api.updateSession(id: stored, unread: false)
+            report(true, "the read mark is taken")
+        } catch {
+            report(false, "the read mark is taken", error.localizedDescription)
+        }
+    }
+}

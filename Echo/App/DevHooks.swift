@@ -18,6 +18,7 @@ import WidgetKit
 ///   default), for measuring. `-echo.pageBudget <characters>` overrides how much of a thread the
 ///   transcript lays out (`TranscriptPage`); 0 lifts the limit.
 /// - `-echo.demoProjects`: fill the conversation list's Projects from a fixture (Dashboard connection).
+///   Add `-echo.demoMarks` for rows marked working, needing you and unread (`ChatActivity`).
 /// - `-echo.demoHosts`: replace any real endpoints with example hosts.
 /// - `-echo.demoKanban`: a sample Kanban board instead of the server's.
 /// - `-echo.demoGateway`: Settings → Gateway on sample data, with no server (and the row unlocked).
@@ -112,6 +113,7 @@ enum DevHooks {
 
     static var demoKanban: Bool { has("-echo.demoKanban") }
     static var demoProjects: Bool { has("-echo.demoProjects") }
+    static var demoMarks: Bool { has("-echo.demoMarks") }
     static var demoGateway: Bool { has("-echo.demoGateway") }
     static var demoChatControls: Bool { has("-echo.demoChatControls") }
     static var demoFiles: Bool { has("-echo.demoFiles") }

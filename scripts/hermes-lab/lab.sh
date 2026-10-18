@@ -21,6 +21,7 @@
 #   scripts/hermes-lab/lab.sh search [tag ...]     searching inside messages: words said on either connection, found through the Dashboard
 #   scripts/hermes-lab/lab.sh context [tag ...]    Settings' context and memory files, found where Hermes keeps them (issue 15)
 #   scripts/hermes-lab/lab.sh speech [tag ...]     replies read out with the voice Hermes is set up with, streamed and whole (issue 7)
+#   scripts/hermes-lab/lab.sh status [tag ...]     the chat list's marks: working, waiting on a person, unread, on both connections
 #   scripts/hermes-lab/lab.sh up <tag> <scenario>  leave one lab running (API :18642, Dashboard :19119)
 #   scripts/hermes-lab/lab.sh down
 #
@@ -174,6 +175,23 @@ switch() {
     echo "===== Hermes $tag / approval"
     if ! up "$tag" approval; then failed+=("$tag (lab)"); continue; fi
     (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" switch_check.py) || failed+=("$tag (host)")
+    app_check || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
+# The chat list's marks: what Hermes says while a conversation's turn runs, while it waits on a
+# person, and about replies nobody has read, on both connections (status_check.py), then the app's
+# own ChatActivity with its clients (HermesLabStatusTests).
+list_status() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  app_prepare HermesLabStatusTests || exit 1
+  for tag in $tags; do
+    echo "===== Hermes $tag / approval"
+    if ! up "$tag" approval; then failed+=("$tag (lab)"); continue; fi
+    (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" status_check.py) || failed+=("$tag (host)")
     app_check || failed+=("$tag")
   done
   down
@@ -482,11 +500,12 @@ case "${1:-}" in
   push) shift; push "$@" ;;
   device) shift; device "$@" ;;
   switch) shift; switch "$@" ;;
+  status) shift; list_status "$@" ;;
   projects) shift; projects "$@" ;;
   search) shift; search "$@" ;;
   context) shift; context "$@" ;;
   speech) shift; speech "$@" ;;
   up) up "$2" "$3" && echo "lab up: Hermes $2 / $3 — API http://127.0.0.1:18642 (key labkey-labkey-labkey), Dashboard http://127.0.0.1:19119" ;;
   down) down ;;
-  *) sed -n '2,25p' "$0"; exit 2 ;;
+  *) sed -n '2,26p' "$0"; exit 2 ;;
 esac

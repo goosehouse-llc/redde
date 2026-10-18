@@ -215,6 +215,9 @@ nonisolated struct HermesSessionsAPI: Sendable {
         /// The folder the session works in, where the list says (the Dashboard's does): which
         /// project it is in.
         var cwd: String?
+        /// A reply here since it was last marked read (`PATCH … {"unread": false}`), as Hermes
+        /// keeps it for every app. Only the Dashboard's list says; the Hermes API's leaves it out.
+        var unread: Bool?
 
         var totalTokens: Int { (input_tokens ?? 0) + (output_tokens ?? 0) }
         var cost: Double? { actual_cost_usd ?? estimated_cost_usd }
@@ -382,10 +385,20 @@ nonisolated struct HermesSessionsAPI: Sendable {
         _ = try await requestJSON("POST", "v1/runs/\(runID)/approval", body: .object(body))
     }
 
-    /// Rename / pin / archive. Only the given fields are sent.
-    func updateSession(id: String, title: String? = nil, pinned: Bool? = nil, archived: Bool? = nil) async throws {
-        struct Body: Encodable { var title: String?; var pinned: Bool?; var archived: Bool? }
-        _ = try await send("PATCH", "api/sessions/\(id)", body: try Self.encoder.encode(Body(title: title, pinned: pinned, archived: archived)))
+    /// Rename / pin / archive / mark read or unread. Only the given fields are sent.
+    func updateSession(id: String, title: String? = nil, pinned: Bool? = nil, archived: Bool? = nil, unread: Bool? = nil) async throws {
+        struct Body: Encodable { var title: String?; var pinned: Bool?; var archived: Bool?; var unread: Bool? }
+        _ = try await send("PATCH", "api/sessions/\(id)", body: try Self.encoder.encode(Body(title: title, pinned: pinned, archived: archived, unread: unread)))
+    }
+
+    /// What has become of a run (`GET /v1/runs/{id}`): "queued", "running", "waiting_for_approval",
+    /// "stopping", or how it ended. Nil when the host no longer knows it (restarted, or long after).
+    func runStatus(_ runID: String) async throws -> String? {
+        do {
+            return try await requestJSON("GET", "v1/runs/\(runID)")["status"]?.string
+        } catch TransportError.http(let status, _) where status == 404 {
+            return nil
+        }
     }
 
     /// Branch a session: a new one carrying a copy of the transcript.
