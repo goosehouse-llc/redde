@@ -1,12 +1,14 @@
 import SwiftUI
 import UIKit
 
-/// The Home Screen icons Redde ships. `AppIconGraphiteFlat` (Matte Graphite) is the primary; the rest,
-/// the glass Graphite (`AppIcon`) included, are alternates listed in
-/// ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES. Each has a small copy under IconPreviews/ because
-/// app icon sets can't be loaded as images. Glass orbs first, then their matte partners and the
-/// matte-only colors, then Classic.
+/// The Home Screen icons Redde ships. `AppIconFaceMist` (Redde Face: Redde's bot face on the Matte
+/// Mist tile) is the primary; the rest, Matte Graphite (the primary before it) and the glass Graphite
+/// (`AppIcon`) included, are alternates listed in ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES. Each
+/// has a small copy under IconPreviews/ because app icon sets can't be loaded as images. The primary
+/// first, then the glass orbs, their matte partners and the matte-only colors, then Classic.
 enum AppIconChoice: String, CaseIterable, Identifiable {
+    /// Redde's own bot face (`BotFace.main`) on the Matte Mist tile: design/icons/picker/redde-face-mist.svg.
+    case faceMist = "AppIconFaceMist"
     case graphite = "AppIcon"
     case graphiteBlock = "AppIconGraphiteBlock"
     case steelBlock = "AppIconSteelBlock"
@@ -24,7 +26,7 @@ enum AppIconChoice: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 
     /// The primary icon: what a fresh install shows, and what nil puts back.
-    static let primary = AppIconChoice.graphiteFlat
+    static let primary = AppIconChoice.faceMist
 
     /// The name `setAlternateIconName` takes: nil puts the primary icon back.
     var alternateName: String? { self == Self.primary ? nil : rawValue }
@@ -39,6 +41,7 @@ enum AppIconChoice: String, CaseIterable, Identifiable {
         case .graphiteBlockFlat: "Matte Graphite Block"
         case .steelFlat: "Matte Steel"
         case .mistFlat: "Matte Mist"
+        case .faceMist: "Redde Face"
         case .navyBlock: "Navy"
         case .ink: "Ink"
         case .paperNavy: "Paper Navy"
@@ -48,8 +51,8 @@ enum AppIconChoice: String, CaseIterable, Identifiable {
     }
 
     static var current: AppIconChoice {
-        // Someone who picked Matte Graphite before it became the primary still has that name set;
-        // it maps to the same choice.
+        // Someone who picked Redde Face before it became the primary still has that name set; it
+        // maps to the same choice. Matte Graphite, the primary before, is an alternate again.
         UIApplication.shared.alternateIconName.flatMap(AppIconChoice.init(rawValue:)) ?? primary
     }
 }
