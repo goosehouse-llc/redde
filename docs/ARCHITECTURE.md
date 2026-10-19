@@ -277,14 +277,18 @@ the server has a profile besides the main one (Settings → Hermes server → Bo
 turns it off). Each bot is a little creature of its own (`BotAvatar.swift`): a speech bubble at
 heart (each has a bubble's tail) in one of eight shapes, white eyes glancing somewhere, on some a
 small mouth or a mark (an antenna, a sparkle, freckles, blush), in a gradient of its own. All of it
-comes from the profile's name, except the main profile's, which is always Redde's blue round bubble
-(`BotFace.main`); `BotFace.faces(for:)` keeps any two bots on a server apart, with a shape and a
-colour each while there are some left. Kept clear of other Hermes apps' looks on purpose (Cadu's
+comes from the profile's name, except the main profile's, which is always Redde's own bubble
+(`BotFace.main`): a message bubble, nearly square, its corners the theme's and the bottom left one
+tucked in (a reply's side), in the theme's bubble colour (the prompt line's in Terminal and Amber
+CRT), the whites of its eyes rimmed when that colour is pale. `BotFace.faces(for:)` keeps any two
+bots on a server apart, with a shape and a colour each while there are some left (none gets Redde's
+shape, nor the standard theme's blue). Kept clear of other Hermes apps' looks on purpose (Cadu's
 clouds, flowers, ghosts, hearts, pears, cats and bears; plain dark oval eyes). The creature is in
 the list, the @ menu, the chat's header and beside its replies; `-echo.screen botGallery` (DEBUG)
-shows a dozen large. Rows come from `profiles.list` (every release from 0.21.0): the bot's name (its
-Hermes Desktop title, its profile's display name, or the profile's name; the main profile goes by
-the name in Settings → Name), and its chat's last line and time (`canonical_session`).
+shows a dozen large, and Redde in every theme. Rows come from `profiles.list` (every release from
+0.21.0): the bot's name (its Hermes Desktop title, its profile's display name, or the profile's
+name; the main profile goes by the name in Settings → Name), and its chat's last line and time
+(`canonical_session`).
 
 - **A bot's chat** is found by its title on the bot's profile every time it is opened
   (`session.list {profile, title, include_hidden}`), never by a stored id: Hermes Desktop lost

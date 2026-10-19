@@ -5,8 +5,16 @@ import SwiftUI
 /// own. Shape, eyes, mouth, mark and colour come from the bot's profile name, so a bot keeps its
 /// creature when it is renamed in Hermes Desktop, and `BotFace.faces(for:)` gives every bot on a
 /// server one no other has there (a shape and a colour of its own too, while there are some left).
+/// The main agent is Redde itself: the app's own message bubble, in the theme's bubble colour.
 nonisolated struct BotFace: Equatable, Hashable, Sendable {
-    enum Shape: CaseIterable, Sendable { case round, squircle, pill, capsule, burst, pick, hex, diamond }
+    enum Shape: CaseIterable, Sendable {
+        case round, squircle, pill, capsule, burst, pick, hex, diamond
+        /// Redde's own: the message bubble, its tucked corner on the left. No other bot gets it.
+        case bubble
+
+        /// The shapes a bot's name can give.
+        static let given = allCases.filter { $0 != .bubble }
+    }
     enum Eyes: CaseIterable, Sendable { case round, mismatched, sleepy, happy, sparkle }
     enum Mouth: CaseIterable, Sendable { case none, smile, oh, grin }
     enum Mark: CaseIterable, Sendable { case none, antenna, spark, freckles, blush }
@@ -37,7 +45,7 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
     ]
 
     /// Every face there is (colour, glance and lean aside), in a fixed order.
-    private static let all: [BotFace] = Shape.allCases.flatMap { shape in
+    private static let all: [BotFace] = Shape.given.flatMap { shape in
         Eyes.allCases.flatMap { eyes in
             Mouth.allCases.flatMap { mouth in
                 Mark.allCases.map { BotFace(shape: shape, eyes: eyes, mouth: mouth, mark: $0, glance: 0, tilt: 0, color: 0) }
@@ -45,8 +53,10 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
         }
     }
 
-    /// The main agent's: Redde's own blue speech bubble, whatever its profile is called.
-    static let main = BotFace(shape: .round, eyes: .round, mouth: .none, mark: .none, glance: 1, tilt: -4, color: 0)
+    /// The main agent's, whatever its profile is called: Redde's own bubble, the shape of a message
+    /// in the app with its tucked corner on the left (a reply's side), in the theme's bubble colour.
+    /// Its colour number only keeps the other bots off blue, the colour of the standard theme.
+    static let main = BotFace(shape: .bubble, eyes: .round, mouth: .none, mark: .none, glance: 1, tilt: -3, color: 0)
 
     /// The face a name gives, on its own. The main profile's is always Redde's (`main`).
     init(seed: String) {
@@ -84,7 +94,7 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
             let start = all.firstIndex { $0.sameFeatures(as: given) } ?? 0
             // The shapes used least so far are the ones open to it: every shape once before any twice.
             let uses = Dictionary(grouping: taken, by: \.shape).mapValues(\.count)
-            let fewest = Shape.allCases.map { uses[$0] ?? 0 }.min() ?? 0
+            let fewest = Shape.given.map { uses[$0] ?? 0 }.min() ?? 0
             var face = given
             for step in 0 ..< all.count {
                 var candidate = all[(start + step) % all.count]
@@ -115,6 +125,8 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
 struct BotAvatar: View {
     var face: BotFace
     var size: CGFloat = 32
+    /// Redde's bubble takes its colour and corners from the theme, as a message does.
+    @Environment(\.theme) private var theme
 
     var body: some View {
         Canvas { context, canvas in draw(in: &context, size: canvas.width) }
@@ -173,12 +185,28 @@ struct BotAvatar: View {
         case .diamond:
             return Layout(body: rounded([CGPoint(x: 51, y: 7), CGPoint(x: 91, y: 47), CGPoint(x: 51, y: 87), CGPoint(x: 11, y: 47)]),
                           eyeY: 46, eyeGap: 11, tail: CGPoint(x: 36, y: 72), top: CGPoint(x: 51, y: 9))
+        case .bubble:
+            // Nearly square, its corners the theme's, scaled up, the bottom left one tucked in as the
+            // bottom right of your own messages is (`userBubbleShape`).
+            let scale: CGFloat = 1.45
+            let radius = min(theme.bubbleRadius * scale, 29), tucked = min(5, theme.bubbleRadius) * scale
+            let bubble = UnevenRoundedRectangle(topLeadingRadius: radius, bottomLeadingRadius: tucked,
+                                                bottomTrailingRadius: radius, topTrailingRadius: radius)
+            return Layout(body: bubble.path(in: CGRect(x: 12, y: 13, width: 78, height: 74)), eyeY: 45, eyeGap: 12,
+                          tail: CGPoint(x: 12, y: 87), top: CGPoint(x: 51, y: 13))
         }
     }
 
+    /// The colour of a message bubble in this theme: the prompt line's in a theme without bubbles.
+    private var bubbleColor: Color { theme.promptPrefix != nil ? theme.promptColor : theme.userBubble }
+
     private func draw(in context: inout GraphicsContext, size s: CGFloat) {
-        let colors = BotFace.palette[face.color % BotFace.palette.count]
+        let colors = face.shape == .bubble ? (light: bubbleColor.mix(with: .white, by: 0.14), deep: bubbleColor)
+                                           : BotFace.palette[face.color % BotFace.palette.count]
         let ink = Color(red: 0.09, green: 0.09, blue: 0.13)
+        // On a body nearly white (a theme's pale bubble) the white of the eyes gets a rim, or it'd vanish.
+        let skin = colors.deep.resolve(in: context.environment)
+        let pale = 0.2126 * skin.linearRed + 0.7152 * skin.linearGreen + 0.0722 * skin.linearBlue > 0.62
         let shape = layout(face.shape)
         let u = s / 100
         context.scaleBy(x: u, y: u)
@@ -195,7 +223,7 @@ struct BotAvatar: View {
 
         // The body and its tail: a speech bubble. Filled one after the other: as one path, where they
         // overlap the winding cancels and leaves a hole.
-        let body = shape.body
+        let outline = shape.body
         let t = shape.tail
         var tail = Path()
         tail.move(to: CGPoint(x: t.x - 3, y: t.y - 6))
@@ -213,8 +241,9 @@ struct BotAvatar: View {
             context.stroke(stalk, with: .color(colors.deep), style: StrokeStyle(lineWidth: 3.6, lineCap: .round))
             context.fill(Path(ellipseIn: CGRect(x: shape.top.x + 4.5, y: shape.top.y - 15, width: 9, height: 9)), with: .color(colors.deep))
         }
-        context.fill(tail, with: fill)
-        context.fill(body, with: fill)
+        // Redde's bubble has no tail of its own: its tucked corner is one.
+        if face.shape != .bubble { context.fill(tail, with: fill) }
+        context.fill(outline, with: fill)
         if face.mark == .spark {
             // A small four-pointed sparkle by its top right.
             let c = CGPoint(x: 74, y: shape.top.y + 12)
@@ -231,7 +260,7 @@ struct BotAvatar: View {
 
         // A little gloss on its top left.
         var gloss = context
-        gloss.clip(to: body)
+        gloss.clip(to: outline)
         gloss.translateBy(x: shape.top.x - 17, y: shape.top.y + 13)
         gloss.rotate(by: .degrees(-28))
         gloss.fill(Path(ellipseIn: CGRect(x: -9, y: -5, width: 18, height: 10)), with: .color(.white.opacity(0.28)))
@@ -240,7 +269,9 @@ struct BotAvatar: View {
         let look = [CGPoint(x: -1.8, y: 0.6), CGPoint(x: 1.8, y: 0.6), CGPoint(x: -1.4, y: -1.2), CGPoint(x: 1.4, y: -1.2)][face.glance % 4]
         let left = CGPoint(x: 51 - shape.eyeGap, y: shape.eyeY), right = CGPoint(x: 51 + shape.eyeGap, y: shape.eyeY)
         func eye(_ c: CGPoint, white r: CGFloat, pupil p: CGFloat, sparkle: Bool = false) {
-            context.fill(Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r * 1.06, width: r * 2, height: r * 2.12)), with: .color(.white))
+            let white = Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r * 1.06, width: r * 2, height: r * 2.12))
+            context.fill(white, with: .color(.white))
+            if pale { context.stroke(white, with: .color(ink.opacity(0.32)), lineWidth: 1.4) }
             let pc = CGPoint(x: c.x + look.x * r / 7, y: c.y + look.y * r / 7)
             context.fill(Path(ellipseIn: CGRect(x: pc.x - p, y: pc.y - p, width: p * 2, height: p * 2)), with: .color(ink))
             if sparkle {
@@ -339,6 +370,21 @@ struct BotGallery: View {
             }
             .padding(10)
             .background(Color.white, in: .rect(cornerRadius: 12))
+            // Redde in every theme, on that theme's page.
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 10) {
+                ForEach(Theme.allCases) { theme in
+                    let resolved = theme.resolved(with: nil)
+                    VStack(spacing: 4) {
+                        BotAvatar(face: .main, size: 56)
+                        Text(theme.rawValue).font(.caption2).foregroundStyle(resolved.textColor).lineLimit(1)
+                    }
+                    .padding(8)
+                    .frame(maxWidth: .infinity)
+                    .background(resolved.pageColor, in: .rect(cornerRadius: 12))
+                    .environment(\.theme, resolved)
+                }
+            }
+            .padding()
         }
         .background(Color(white: 0.08))
     }

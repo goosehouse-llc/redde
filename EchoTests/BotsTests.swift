@@ -115,9 +115,9 @@ struct BotsTests {
         #expect(Set(firstEight.map { "\($0.shape)" }).count == 8, "nor a shape, while there are shapes left")
         #expect(BotFace.faces(for: names.reversed()) == faces, "the same creatures whatever order they come in")
         #expect(BotFace.faces(for: ["scout"])["scout"] == BotFace(seed: "scout"), "a bot alone has the creature its name gives")
-        #expect(faces["default"] == BotFace.main && BotFace(seed: "default") == BotFace.main, "the main agent is always Redde's blue bubble")
-        #expect(!faces.filter { $0.key != "default" }.values.contains { $0.shape == .round && $0.color == BotFace.main.color },
-                "and no other bot looks like it")
+        #expect(faces["default"] == BotFace.main && BotFace(seed: "default") == BotFace.main, "the main agent is always Redde's bubble")
+        #expect(!faces.filter { $0.key != "default" }.values.contains { $0.shape == .bubble || $0.color == BotFace.main.color },
+                "and no other bot has its shape, nor the standard theme's blue")
         let fourteen = BotFace.faces(for: names + ["eleven", "twelve", "thirteen", "fourteen"])
         #expect(features(Array(fourteen.values)).count == 14, "creatures stay apart past the shapes and colours")
     }
