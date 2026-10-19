@@ -216,7 +216,6 @@ struct BotEditor: View {
             if !isMain {
                 Button("Change Face") { pickingFace = true }
                     .font(.subheadline)
-                    .disabled(editing == nil && handle == nil)
             }
         }
         .frame(maxWidth: .infinity)

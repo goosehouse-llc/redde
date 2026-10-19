@@ -40,6 +40,22 @@ final class BotsUITests: XCTestCase {
         XCTAssertFalse(fixit.exists, "the bots are still offered once the tag is finished")
     }
 
+    /// Change Face in New Bot and in a bot's settings opens the face picker.
+    func testChangeFaceInTheBotEditorOpensThePicker() {
+        continueAfterFailure = false
+        for which in ["new", "scout"] {
+            let app = XCUIApplication()
+            app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.clearDrafts", "-displayName", "Redde",
+                                   "-echo.screen", "sessions", "-echo.botEditor", which] + XCUIApplication.chatsSection
+            app.launch()
+            let change = app.buttons["Change Face"].firstMatch
+            XCTAssertTrue(change.waitForExistence(timeout: 20), "\(which): no Change Face")
+            change.tap()
+            XCTAssertTrue(app.staticTexts["Shape"].firstMatch.waitForExistence(timeout: 5), "\(which): Change Face opened nothing")
+            app.terminate()
+        }
+    }
+
     override func tearDownWithError() throws {
         // What was typed is a draft, and drafts outlast the app.
         MainActor.assumeIsolated {
