@@ -367,7 +367,7 @@ struct CarPlayTests {
                 #expect(drawn.insert(picture).inserted, "\(look) \(state.identifier) is drawn as something else already is")
             }
         }
-        #expect(drawn.count == 16)
+        #expect(drawn.count == 20)
         h.settings.carPlayVoice = .orb
         // The pick outlives the app.
         #expect(Settings(defaults: h.defaults).carPlayVoice == .orb)

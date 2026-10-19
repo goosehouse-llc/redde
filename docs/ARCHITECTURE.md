@@ -1673,8 +1673,15 @@ writes a card's two lines over the bottom left of its picture, in white by day a
 every look is dark in that corner and keeps its mark to the right; `CarPlayArtworkTests` holds
 the contrast for each. The voice card's pictures
 move: a state's image is an animation to CarPlay (a loop of 0.3 to 5 seconds, 150 points at
-most). They come in four looks, picked in Settings → Appearance → CarPlay voice screen
-(`CarPlayVoiceLook`, `Settings.carPlayVoice`; asked 2026-10-13): Bars, Lamps, KITT and Orb.
+most). They come in five looks, picked in Settings → Appearance → CarPlay voice screen
+(`CarPlayVoiceLook`, `Settings.carPlayVoice`; asked 2026-10-13): Bars, Lamps, KITT, Orb and
+Redde. Redde (asked 2026-10-19) is Redde's own bot face (`BotFace.main`, drawn by `BotAvatar` in
+the theme's bubble colour through `BotAvatar.picture`), with no disc, in a soft light of the
+state's colour: listening it looks at you, eyes drifting, and blinks once in a 4-second loop;
+thinking its eyes go round, up and away (2.4 s); speaking its mouth says two syllables twice
+(2.4 s, half of the pictures kept); paused its eyes are shut; waiting on the phone it looks down
+at one (`CarPlayArtwork.reddePose`). Its pictures are kept by theme, so another theme draws them
+again.
 Bars, the one a new install has, is described first; the others follow it. They
 are drawn after the dashboard of KITT, the car in Knight Rider (asked for
 2026-10-11), in the mist and gold the card had before. Speaking is its voice display: three

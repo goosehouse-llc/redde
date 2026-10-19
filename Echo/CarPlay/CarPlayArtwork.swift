@@ -8,7 +8,8 @@ import UIKit
 /// Rider: three bars of light, low while you are heard and swelling while Redde speaks, and one
 /// light going to and fro while it thinks. Solid bars in mist and gold, the same as stacks of
 /// small lamps, and the lamps in the car's own red on black. The fourth is a ring of light
-/// around Redde's marks. They move slowly and in one piece: nothing here can follow a real
+/// around Redde's marks, and the fifth Redde's own face (`BotFace.main`, in the theme's bubble
+/// colour) doing what the voice orb's does. They move slowly and in one piece: nothing here can follow a real
 /// voice, and lights that leapt about as if they did looked odd. CarPlay owns layout and type,
 /// so these images are where the brand shows.
 /// Everything is drawn in code so it stays sharp on any car display, and every picture carries
@@ -194,6 +195,9 @@ enum CarPlayArtwork {
     static func loop(_ state: VoiceState, look: CarPlayVoiceLook = .bars) -> (duration: TimeInterval, frames: Int)? {
         switch (state, look) {
         case (.paused, _), (.phone, _): nil
+        case (.listening, .redde): (4.0, 40)
+        case (.thinking, .redde): (2.4, 32)
+        case (.speaking, .redde): (2.4, 36)
         case (.listening, .orb): (4.8, 58)
         case (.thinking, .orb): (1.8, 36)
         case (.speaking, .orb): (2.4, 36)
@@ -210,7 +214,10 @@ enum CarPlayArtwork {
     /// That is why they are slow: see `speakingLevel`.
     static func voiceStateImage(_ state: VoiceState, look: CarPlayVoiceLook = .bars, side: CGFloat = voiceImageSide,
                                 movingAt scale: CGFloat? = nil) -> UIImage {
-        let key = "\(look.rawValue) \(state.rawValue) \(side) \(scale ?? 0)"
+        // Redde's face is in the theme's bubble colour: another theme, another picture.
+        let settings = Settings.shared
+        let theme = look == .redde ? " \(settings.theme.rawValue) \(String(describing: settings.themeColors[settings.theme.rawValue]))" : ""
+        let key = "\(look.rawValue) \(state.rawValue) \(side) \(scale ?? 0)\(theme)"
         if let made = voicePictures[key] { return made }
         let picture = voicePicture(state, look: look, side: side, movingAt: scale)
         voicePictures[key] = picture
@@ -250,8 +257,9 @@ enum CarPlayArtwork {
         switch look {
         case .bars, .lamps, .kitt:
             voiceBars(state, at: CGFloat(i) / CGFloat(frames)).map { .bars($0) }
-        case .orb:
+        case .orb, .redde:
             // Speaking sends out two rings half a loop apart: its second half is its first again.
+            // Redde's mouth says the same two syllables twice.
             state == .speaking ? .half(i % (frames / 2)) : nil
         }
     }
@@ -281,6 +289,10 @@ enum CarPlayArtwork {
         // Mist is you and what waits on you, gold is Redde. KITT gives that up for the car's
         // red: there the height of the lights and the scanner tell the states apart.
         let colour = look == .kitt ? red : state == .thinking || state == .speaking ? gold : mist
+        if look == .redde {
+            reddeFace(ctx, rect, state, at: p, colour: colour)
+            return
+        }
         if look == .kitt { disc(ctx, rect, from: dashTop, to: dashBottom) } else { disc(ctx, rect) }
         switch (look, state) {
         case (.orb, _):
@@ -578,6 +590,51 @@ enum CarPlayArtwork {
             ctx.translateBy(x: centre.x, y: centre.y); ctx.scaleBy(x: 0.78, y: 0.78); ctx.translateBy(x: -centre.x, y: -centre.y)
             phone(ctx, u, colour: colour)
             ctx.restoreGState()
+        }
+    }
+
+    /// The Redde look: Redde's own face, no disc behind it, in a soft light of the state's colour.
+    /// While you are heard it looks at you, its eyes drifting a little, and blinks once a loop;
+    /// thinking, it looks up and away, its eyes going round; speaking, its mouth opens and shuts
+    /// on two syllables; paused, its eyes are shut; waiting on the phone, it looks down at one.
+    private static func reddeFace(_ ctx: CGContext, _ rect: CGRect, _ state: VoiceState, at p: CGFloat?, colour: UIColor) {
+        let u = rect.width / 100
+        if state != .paused {
+            radial(ctx, [colour.withAlphaComponent(0.34), colour.withAlphaComponent(0)], at: [0, 1],
+                   centre: CGPoint(x: rect.midX, y: rect.midY), radii: CGSize(width: 50 * u, height: 50 * u))
+        }
+        let side = 84 * u
+        if let image = BotAvatar.picture(of: .main, side: side, pose: reddePose(state, at: p), scale: max(1, abs(ctx.ctm.a))) {
+            image.draw(in: CGRect(x: rect.midX - side / 2, y: rect.midY - side / 2 - (state == .phone ? 6 * u : 0), width: side, height: side))
+        }
+        if state == .phone {
+            ctx.saveGState()
+            ctx.translateBy(x: 74 * u, y: 72 * u); ctx.scaleBy(x: 0.42, y: 0.42); ctx.translateBy(x: -50 * u, y: -50 * u)
+            phone(ctx, u, colour: colour)
+            ctx.restoreGState()
+        }
+    }
+
+    /// Where Redde's face looks, how shut its eyes are and how open its mouth, `p` through a loop.
+    static func reddePose(_ state: VoiceState, at p: CGFloat?) -> BotPose {
+        let t = Double(p ?? 0.3)
+        switch state {
+        case .listening:
+            // A blink at about two thirds of the loop.
+            let blink = (0.6 ... 0.66).contains(t) ? CGFloat(sin((t - 0.6) / 0.06 * .pi)) : 0
+            return BotPose(look: CGPoint(x: 0.15 * sin(2 * .pi * t), y: 0.3 + 0.05 * sin(4 * .pi * t)), blink: blink, mouth: 0, tilt: -3 + 0.4 * sin(2 * .pi * t))
+        case .thinking:
+            let look = CGPoint(x: 0.55 + 0.3 * cos(2 * .pi * t), y: -0.8 + 0.15 * sin(2 * .pi * t))
+            return BotPose(look: look, blink: 0, mouth: 0, tilt: -3 + Double(look.x) * 2.5)
+        case .speaking:
+            // Two syllables a half loop, the second a little smaller.
+            let q = (2 * t).truncatingRemainder(dividingBy: 1)
+            let open = q < 0.5 ? sin(q / 0.5 * .pi) : 0.7 * sin((q - 0.5) / 0.5 * .pi)
+            return BotPose(look: CGPoint(x: 0.1, y: 0.2), blink: 0, mouth: CGFloat(0.15 + 0.75 * max(0, open)), tilt: -3)
+        case .paused:
+            return BotPose(look: CGPoint(x: 0, y: 0.3), blink: 1, mouth: 0, tilt: -3)
+        case .phone:
+            return BotPose(look: CGPoint(x: 0.75, y: 0.9), blink: 0, mouth: 0, tilt: -1)
         }
     }
 

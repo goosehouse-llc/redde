@@ -4,7 +4,7 @@ import SwiftUI
 /// pictures are drawn in code by `CarPlayArtwork.voiceStateImage`; the car places them and writes
 /// the words under them.
 enum CarPlayVoiceLook: String, CaseIterable, Identifiable {
-    case bars, lamps, kitt, orb
+    case bars, lamps, kitt, orb, redde
 
     var id: String { rawValue }
 
@@ -14,6 +14,7 @@ enum CarPlayVoiceLook: String, CaseIterable, Identifiable {
         case .lamps: "Lamps"
         case .kitt: "KITT"
         case .orb: "Orb"
+        case .redde: "Redde"
         }
     }
 
@@ -23,6 +24,7 @@ enum CarPlayVoiceLook: String, CaseIterable, Identifiable {
         case .lamps: "The bars as stacks of small lamps, and a scanner"
         case .kitt: "The lamps in red, on black"
         case .orb: "A ring of light around Redde's spark"
+        case .redde: "Redde's face: it looks at you, looks up to think, and talks"
         }
     }
 }

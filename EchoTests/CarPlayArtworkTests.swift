@@ -21,8 +21,8 @@ struct CarPlayArtworkTests {
         let states = CarPlayVoiceLook.allCases.flatMap { look in
             Art.VoiceState.allCases.map { ("voice-\(look.rawValue)-\($0.rawValue)", Art.voiceStateImage($0, look: look)) }
         }
-        // Twenty pictures, and one of them twice: the phone waited for is the same in lamps as
-        // in solid bars.
+        // Twenty-five pictures, and one of them twice: the phone waited for is the same in lamps
+        // as in solid bars.
         #expect(Set(states.compactMap { $0.1.pngData() }).count == states.count - 1)
         #expect(Art.voiceStateImage(.phone, look: .lamps).pngData() == Art.voiceStateImage(.phone, look: .bars).pngData())
         for (_, image) in buttons {
@@ -92,8 +92,8 @@ struct CarPlayArtworkTests {
             // leave the spark twice a loop.
             let different = Set(frames.map(ObjectIdentifier.init)).count
             switch (look, state) {
-            case (.orb, .speaking): #expect(different == frames.count / 2)
-            case (.orb, _), (_, .thinking): #expect(different == frames.count)
+            case (.orb, .speaking), (.redde, .speaking): #expect(different == frames.count / 2)
+            case (.orb, _), (.redde, _), (_, .thinking): #expect(different == frames.count)
             default: #expect(different <= frames.count * 3 / 5)
             }
             kept += different
