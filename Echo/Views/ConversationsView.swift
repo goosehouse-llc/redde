@@ -1075,6 +1075,7 @@ struct ConversationsList: View {
                 let all = (try? await HermesServeClient.shared.projectTree()) ?? []
                 let tree = HermesServeClient.Project.listed(all)
                 guard current else { return }
+                ProjectDirectory.shared.set(all, key: key)
                 projects = tree
                 folders = all.sorted { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending }
             }

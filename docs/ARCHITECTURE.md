@@ -659,6 +659,10 @@ the same hand-over Siri's "draft a message" uses (`LaunchRouter.requestDraft`).
 
 ### A conversation's own switches, and its project
 
+A conversation on the Dashboard can be put in a project from the chat's ••• menu (Add to Project,
+or Move to Project when it is in one; New Project… makes one and moves it there), as the chat
+list's Move to Project does (`ChatProjectMenu.swift`, the projects kept in `ProjectDirectory`).
+
 On the Hermes API a conversation has fast mode only (`RunChatControls`): the API keeps no switch for
 a session, so the phone keeps it, by server and conversation, and each run asks for the fast tier
 (`model_options.fast`, every release). Hermes passes it on only to a provider that bills for it; a

@@ -25,6 +25,9 @@ struct ContentView: View {
     @State private var showRename = false
     @State private var renameText = ""
     @State private var renameError: String?
+    /// "Add to Project" from the header's menu: the New Project prompt, and what went wrong.
+    @State private var namingProject = false
+    @State private var projectProblem: String?
     @State private var showSetup = false
     /// A setup link that was opened, up for confirmation.
     @State private var setupCode: SetupCodeOffer?
@@ -331,6 +334,10 @@ struct ContentView: View {
                             }
                         }
                         .disabled(!conversation.hasMessages)
+                        // The Dashboard's projects, for a conversation on the server (a bot's chat is its bot's).
+                        if settings.transport == .hermesServe, conversation.serverSessionID != nil, conversation.bot == nil {
+                            ChatProjectMenu(naming: $namingProject, problem: $projectProblem)
+                        }
                         if settings.transport.hasLedger {
                             Button("Terminal", systemImage: "apple.terminal") { showTerminal = true }
                         }
@@ -359,6 +366,7 @@ struct ContentView: View {
                 Text(conversation.serverSessionID == nil ? "Leave it empty to go back to the first question."
                                                          : "The session is renamed on your server too.")
             }
+            .modifier(ChatProjectPrompt(naming: $namingProject, problem: $projectProblem))
             .alert("Couldn't rename", isPresented: Binding(get: { renameError != nil }, set: { if !$0 { renameError = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {
