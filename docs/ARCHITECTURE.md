@@ -915,6 +915,14 @@ on and around it:
   cut read as a ring round a hole, not an orb), with colour kept deep rather than pale and a soft
   dark edge on the bars. It is a little brighter and swells with the voice while live, and moves
   faster while the model thinks. Animated offsets, scales and rotations only.
+
+One orb is no picture: **Redde** (`ReddeVoiceFace`) is Redde's own bot face, its bubble in the
+theme's bubble colour, glowing along its outline in the phase colour. It has no bars or light; its
+eyes say what is happening instead. It blinks about every four and a half seconds (now and then
+twice); at rest it holds a look, then glances quickly to the next; while you talk it looks at you;
+while it thinks it looks up and away, its eyes circling; while the reply is read out its mouth opens
+with the voice's level. It leans a little the way it looks. One pose a frame from the time and the
+phase (`BotPose`), no breathing, and still under Reduce Motion.
 - **Rings** outside the face: one in the phase colour while something is happening, with a bright
   arc chasing round it while thinking (`ThinkingArc`), and ripples widening out while listening
   and speaking, one faint one every few seconds at rest (`Halos`).
@@ -1816,7 +1824,7 @@ the handover itself is tested on a real watch.
 ## App and settings
 
 - **Themes:** seven (Messages, Paper, Slate, Terminal, Amber CRT, Hermes, Code), each with light and
-  dark faces and the user's own accent and bubble colours. 14 app icons (Redde Face the default) and 12 voice orbs with three lights inside.
+  dark faces and the user's own accent and bubble colours. 14 app icons (Redde Face the default) and 13 voice orbs, three lights inside the picture ones.
 - **Model:** per-connection model and reasoning effort (Default, None, Low, Medium, High, and
   X-High / Max for frontier models; None on a fresh install). The level follows the phone, not the
   session: it goes with every fast-lane and Hermes API turn, with every new Dashboard session,

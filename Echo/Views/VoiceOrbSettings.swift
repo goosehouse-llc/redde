@@ -4,9 +4,11 @@ import SwiftUI
 /// rendered from design/icons/orbs/<rawValue>.svg with a transparent background, and draws its
 /// bars live over an empty copy (`<rawValue>Blank`) so they move with the mic. Dark Glass is the
 /// exception: voice mode draws it in code (`GlassOrb`), and its picker picture comes from
-/// design/icons/orbs/darkGlass.swift.
+/// design/icons/orbs/darkGlass.swift. Redde's own face has no picture either: it is Redde's bot
+/// creature (`BotFace.main`), drawn live in voice mode (`ReddeVoiceFace`) and in the picker.
 enum VoiceOrb: String, CaseIterable, Identifiable {
     case darkGlass
+    case reddeFace
     case waveform, glassWave, matteWave, flatWave, bubbleWave, bubbleMatteWave, navyGlassWave, navyMatteWave, steelGlassWave, inkWave, goldWave
 
     var id: String { rawValue }
@@ -14,6 +16,7 @@ enum VoiceOrb: String, CaseIterable, Identifiable {
     var label: String {
         switch self {
         case .darkGlass: "Dark Glass"
+        case .reddeFace: "Redde"
         case .waveform: "Softer Glass"
         case .glassWave: "Glass"
         case .matteWave: "Matte"
@@ -47,7 +50,21 @@ enum VoiceOrb: String, CaseIterable, Identifiable {
 
     /// The speech-bubble orbs have a tail, so voice mode lights their outline instead of
     /// drawing a round ring around them.
-    var isRound: Bool { ![.bubbleWave, .bubbleMatteWave].contains(self) }
+    var isRound: Bool { ![.bubbleWave, .bubbleMatteWave, .reddeFace].contains(self) }
+}
+
+/// An orb as the picker shows it: its picture, or Redde's face drawn.
+struct VoiceOrbPicture: View {
+    let orb: VoiceOrb
+    let size: CGFloat
+
+    var body: some View {
+        if orb == .reddeFace {
+            BotAvatar(face: .main, size: size)
+        } else {
+            orb.image.resizable().scaledToFit().frame(width: size, height: size)
+        }
+    }
 }
 
 /// What moves inside a round orb's face, under the bars.
@@ -93,10 +110,7 @@ struct VoiceOrbSettings: View {
             DisclosureSummary(title: "Voice orb") {
                 HStack(spacing: 8) {
                     Text(settings.voiceOrb.label)
-                    settings.voiceOrb.image
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 24, height: 24)
+                    VoiceOrbPicture(orb: settings.voiceOrb, size: 24)
                         .accessibilityHidden(true)
                 }
             }
@@ -111,16 +125,13 @@ struct VoiceOrbSettings: View {
 
     private var grid: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("The bars move when you speak; the light inside follows “Orb light”.")
+            Text("The bars move when you speak; the light inside follows “Orb light”. Redde looks at you instead, and talks with the reply.")
                 .font(.footnote).foregroundStyle(.secondary)
             LazyVGrid(columns: columns, spacing: 14) {
                 ForEach(VoiceOrb.allCases) { orb in
                     Button { settings.voiceOrb = orb } label: {
                         VStack(spacing: 6) {
-                            orb.image
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 58, height: 58)
+                            VoiceOrbPicture(orb: orb, size: 58)
                                 .padding(4)
                                 .overlay {
                                     RoundedRectangle(cornerRadius: orb.isRound ? 40 : 16, style: .continuous)

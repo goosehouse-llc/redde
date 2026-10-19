@@ -402,7 +402,11 @@ private struct OrbFace: View {
                 // At rest: one faint, slow ring now and then, so it never looks switched off.
                 Halos(color: phaseColor, subtle: true, diameter: orb.isDrawn ? GlassOrb.haloDiameter : 198)
             }
-            if orb.isDrawn {
+            if orb == .reddeFace {
+                ReddeVoiceFace(phase: phase, phaseColor: phaseColor, level: meter)
+                    .scaleEffect(listening ? 1 + level * 0.06 : 1)
+                    .accessibilityHidden(true)
+            } else if orb.isDrawn {
                 GlassOrb(light: Settings.shared.orbLight, phase: phase, phaseColor: phaseColor, accent: theme.accent)
                     .overlay { LiveWaveform(phase: phase, level: meter, color: orb.waveColor, shadowed: false) }
                     // The same ring outside the face as the picture orbs wear, in the phase
@@ -471,6 +475,63 @@ private struct OrbFace: View {
         // One animation for everything the level drives (aura size and orb scale).
         .animation(.easeOut(duration: 0.12), value: level)
         .animation(.easeOut(duration: 0.3), value: listening)
+    }
+}
+
+/// Redde's own face as the voice orb (Settings → Appearance → Voice orb → Redde): its bubble in the
+/// theme's bubble colour, glowing along its outline in the phase colour while it is doing anything.
+/// It blinks now and then; at rest it glances about, a look held a moment before the next; while
+/// you talk it looks at you; while it thinks it looks up and away, eyes circling; while the reply
+/// is read out its mouth opens with the voice. Small moves, no breathing; still under Reduce Motion.
+private struct ReddeVoiceFace: View {
+    let phase: VoiceSession.Phase
+    let phaseColor: Color
+    /// The mic's level, or the reply's while it is read out.
+    let level: () -> Float
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    static let size: CGFloat = 196
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: reduceMotion)) { timeline in
+            BotAvatar(face: .main, size: Self.size, pose: Self.pose(at: timeline.date.timeIntervalSinceReferenceDate, phase: phase,
+                                                                    level: CGFloat(level())))
+        }
+        .shadow(color: phase == .idle ? .clear : phaseColor.opacity(0.9), radius: 10)
+        .shadow(color: .black.opacity(0.35), radius: 22, y: 12)
+        .animation(.easeOut(duration: 0.3), value: phase)
+    }
+
+    /// Where the face looks, how shut its eyes are and how open its mouth, at a moment.
+    static func pose(at t: TimeInterval, phase: VoiceSession.Phase, level: CGFloat) -> BotPose {
+        // A blink about every four seconds and a half, now and then a double one.
+        func blink(_ t: TimeInterval, every period: TimeInterval, offset: TimeInterval) -> CGFloat {
+            let at = (t + offset).truncatingRemainder(dividingBy: period)
+            return at < 0.16 ? CGFloat(sin(at / 0.16 * .pi)) : 0
+        }
+        let shut = max(blink(t, every: 4.6, offset: 0), blink(t, every: 13.8, offset: 0.35))
+        let look: CGPoint
+        switch phase {
+        case .listening:
+            // At you, a touch below the middle, the smallest drift.
+            look = CGPoint(x: 0.08 * sin(t * 1.3), y: 0.3 + 0.06 * sin(t * 0.9))
+        case .thinking:
+            // Up and to the side, going round as if turning it over.
+            look = CGPoint(x: 0.55 + 0.3 * cos(t * 2.2), y: -0.8 + 0.15 * sin(t * 2.2))
+        case .speaking:
+            look = CGPoint(x: 0.18 * sin(t * 0.8), y: 0.2 + 0.08 * sin(t * 1.3))
+        default:
+            // At rest: a look held, then a quick move to the next.
+            let spots = [CGPoint(x: 0.7, y: 0.25), CGPoint(x: -0.6, y: 0.4), CGPoint(x: 0.1, y: -0.55),
+                         CGPoint(x: -0.85, y: -0.2), CGPoint(x: 0.45, y: 0.6), CGPoint(x: 0, y: 0.15)]
+            let slot = 2.4, index = Int(t / slot), within = t.truncatingRemainder(dividingBy: slot) / slot
+            let from = spots[(index + spots.count - 1) % spots.count], to = spots[index % spots.count]
+            let move = min(1, within / 0.12)
+            let eased = move * move * (3 - 2 * move)
+            look = CGPoint(x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased)
+        }
+        let mouth: CGFloat = phase == .speaking ? min(1, max(0, level * 1.8)) : 0
+        return BotPose(look: look, blink: shut, mouth: mouth, tilt: -3 + Double(look.x) * 2.5)
     }
 }
 
