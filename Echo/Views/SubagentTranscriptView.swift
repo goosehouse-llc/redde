@@ -2,7 +2,9 @@ import SwiftUI
 
 /// A delegated child's own conversation: stored history, then live reasoning, tools and text
 /// while it runs (the gateway mirrors the child's stream onto a lazily resumed session).
-/// Steer sends a nudge into the child; Stop interrupts it.
+/// Steer sends a nudge into the child; Stop interrupts it. A child of a Hermes API turn runs in
+/// the gateway, not the Dashboard: its conversation is read through the Dashboard and read again
+/// every few seconds while it works, and it can't be steered or stopped from here.
 struct SubagentTranscriptView: View {
     let agent: SubagentActivity
     @Environment(\.dismiss) private var dismiss
@@ -15,6 +17,8 @@ struct SubagentTranscriptView: View {
     @State private var runtime: String?
     @State private var steer = ""
     @State private var toast: String?
+    /// The turn ran over the Hermes API.
+    private let viaAPI = Settings.shared.transport == .hermesSessions
 
     var body: some View {
         NavigationStack {
@@ -41,20 +45,23 @@ struct SubagentTranscriptView: View {
                 .onChange(of: messages.count) { proxy.scrollTo("bottom", anchor: .bottom) }
                 .environment(\.lazyWebBlocks, true)
             }
-            .safeAreaInset(edge: .bottom) { if running { steerBar } }
+            .safeAreaInset(edge: .bottom) { if running, !viaAPI { steerBar } }
             .overlay { if loading { ProgressView() } }
             .toast($toast, bottomPadding: running ? 64 : 12)
             .navigationTitle("Subagent")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    if running {
+                    if running, !viaAPI {
                         Button("Stop", systemImage: "stop.circle", role: .destructive) { stop() }
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
-            .task { await open() }
+            .task {
+                await open()
+                if viaAPI { await follow() }
+            }
             .onDisappear { if let listener { HermesServeClient.shared.removeListener(listener) } }
         }
     }
@@ -100,15 +107,38 @@ struct SubagentTranscriptView: View {
             runtime = rt
             messages = Conversation.messages(fromServeRows: rows)
             running = isRunning || agent.status == .running
-            listener = HermesServeClient.shared.addListener { event in
-                guard event.sessionID == rt else { return }
-                Task { @MainActor in handle(event) }
+            if !viaAPI {
+                listener = HermesServeClient.shared.addListener { event in
+                    guard event.sessionID == rt else { return }
+                    Task { @MainActor in handle(event) }
+                }
             }
             error = nil
         } catch {
             self.error = error.localizedDescription
         }
         loading = false
+    }
+
+    /// A Hermes API turn's child, read again every few seconds while it works: the Dashboard has no
+    /// live stream of a turn that runs in the gateway. Done once its reply is in and nothing changes.
+    private func follow() async {
+        guard let stored = agent.childSessionID, running else { return }
+        var unchanged = 0
+        while !Task.isCancelled, unchanged < 3 {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled, let rows = try? await HermesServeClient.shared.history(stored: stored) else { continue }
+            let fresh = Conversation.messages(fromServeRows: rows)
+            // Read again, each message has a new id: what it says is what tells.
+            let said = { (all: [Message]) in all.map { "\($0.role)|\($0.text)|\($0.tools.count)" } }
+            if said(fresh) == said(messages) {
+                if fresh.last?.role == .assistant { unchanged += 1 }
+            } else {
+                unchanged = 0
+                messages = fresh
+            }
+        }
+        running = false
     }
 
     private func handle(_ event: HermesServeClient.Event) {

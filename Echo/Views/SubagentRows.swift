@@ -8,8 +8,12 @@ struct SubagentRows: View {
     @State private var expanded: Set<String> = []
     @State private var watching: SubagentActivity?
 
+    /// A subagent's own conversation is read through the Dashboard: on its connection, or over
+    /// the Hermes API with the Dashboard's login saved (the API doesn't serve a child's session).
     private func canOpen(_ a: SubagentActivity) -> Bool {
-        a.childSessionID != nil && Settings.shared.transport == .hermesServe
+        let settings = Settings.shared
+        return a.childSessionID != nil
+            && (settings.transport == .hermesServe || (settings.transport == .hermesSessions && HermesServeClient.shared.hasCredentials))
     }
 
     var body: some View {

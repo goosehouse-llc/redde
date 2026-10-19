@@ -176,6 +176,8 @@ nonisolated enum AttachmentError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case let .tooLarge(name): "\(name) is over the 8 MB attachment limit."
+        case let .unsupported(kind, transport) where transport == "the Hermes API":
+            "\(kind) attachments aren't supported on the Hermes API alone. Save the Hermes Dashboard login in Settings → Connection details, and they go to the server through it."
         case let .unsupported(kind, transport): "\(kind) attachments aren't supported on \(transport). Switch to the Hermes Dashboard in Settings."
         case let .videoTooLong(name): "\(name) is too long to attach: even at low quality it is over the 8 MB limit. Trim it in Photos first."
         }

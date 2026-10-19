@@ -103,3 +103,46 @@ struct HermesRunsTests {
         #expect(!HermesRuns.isTransient(TransportError.malformed("x")))
     }
 }
+
+/// What the Hermes API connection does that only the Dashboard did: a conversation's fast mode,
+/// asked for on each run; files other than pictures, put on the server through the Dashboard's
+/// login and named in the message.
+@MainActor
+struct APIConnectionTests {
+    @Test func fastModeIsTheConversationsAndRidesOnEachRun() async throws {
+        let defaults = UserDefaults(suiteName: "run-controls-\(UUID().uuidString)")!
+        let settings = Settings(defaults: defaults)
+        settings.transport = .hermesSessions
+        let controls = RunChatControls(defaults: defaults, settings: settings)
+        #expect(try await controls.chatControls(stored: "s1").fast == false)
+        _ = try await controls.setFast(true, stored: "s1")
+        #expect(controls.isFast("s1") && !controls.isFast("s2"))
+        #expect(RunChatControls(defaults: defaults, settings: settings).isFast("s1"), "kept across launches")
+        await #expect(throws: (any Error).self) { try await controls.setAutoApprove(true, stored: "s1") }
+        _ = try await controls.setFast(false, stored: "s1")
+        #expect(!controls.isFast("s1"))
+
+        var request = TurnRequest(userText: "hi", history: [], sessionID: "s1", model: nil, instructions: nil)
+        request.fast = true
+        #expect(try HermesSessionsTransport.runBody(request, sessionID: "s1").model_options?.fast == true)
+        request.fast = false
+        #expect(try HermesSessionsTransport.runBody(request, sessionID: "s1").model_options == nil)
+    }
+
+    @Test func aFileGoesToTheServerAndTheMessageSaysWhere() async throws {
+        let files = DemoServerFiles()
+        let pdf = Attachment(kind: .pdf, filename: "lease.pdf", mimeType: "application/pdf", data: Data(count: 1200))
+        let picture = Attachment(kind: .image, filename: "a.jpg", mimeType: "image/jpeg", data: Data(count: 10))
+        let request = TurnRequest(userText: "What does the lease say about pets?", history: [], sessionID: "s1", model: nil,
+                                  instructions: nil, attachments: [pdf, picture])
+        let placed = try await Conversation.placingFiles(request, client: files)
+        #expect(placed.attachments.map(\.kind) == [.image], "a picture still goes in the message itself")
+        #expect(placed.userText.hasPrefix("What does the lease say about pets?" + AttachedFileNote.opening))
+        #expect(placed.userText.contains(DemoServerFiles.home + "/Redde attachments/") && placed.userText.contains("lease.pdf"))
+        let folder = try await files.folder(at: DemoServerFiles.home + "/Redde attachments")
+        #expect(folder.entries.contains { $0.name.hasSuffix("lease.pdf") })
+        #expect(ReplyLanguage.stripNote(placed.userText) == "What does the lease say about pets?", "the note comes off what the app shows")
+        let again = try await Conversation.placingFiles(request, client: files)
+        #expect(again.userText.contains("lease.pdf"), "the folder there already is used as it is")
+    }
+}

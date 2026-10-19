@@ -43,7 +43,25 @@ nonisolated enum ReplyLanguage {
            !text[range.upperBound...].contains("\n") {
             text = String(text[..<range.lowerBound])
         }
-        return MentionNote.strip(text)
+        return MentionNote.strip(AttachedFileNote.strip(text))
+    }
+}
+
+/// A file other than a picture, sent over the Hermes API, which takes text and pictures only: it
+/// goes to the server through the Dashboard's login, and the message says where it is for the
+/// agent to read with its own tools (`Conversation.placingFiles`). Redde hides the note.
+nonisolated enum AttachedFileNote {
+    static let opening = "\n\n[The user attached a file, saved on your machine at "
+
+    static func note(path: String) -> String { opening + path + " — read it with your tools.]" }
+
+    /// A message loaded back from the server, without the notes (one per file).
+    static func strip(_ text: String) -> String {
+        var text = text
+        while text.hasSuffix("]"), let range = text.range(of: opening, options: .backwards), !text[range.upperBound...].contains("\n") {
+            text = String(text[..<range.lowerBound])
+        }
+        return text
     }
 }
 

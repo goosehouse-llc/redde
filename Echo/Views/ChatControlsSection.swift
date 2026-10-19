@@ -7,6 +7,8 @@ struct ChatControlsSection: View {
     /// The conversation's id on the server.
     let stored: String
     let source: any ChatControlling
+    /// "Run commands without asking" is offered: the Dashboard has it, the Hermes API doesn't.
+    var offersAutoApprove = true
 
     @State private var controls: ChatControls?
     @State private var busy = false
@@ -18,24 +20,27 @@ struct ChatControlsSection: View {
         #if DEBUG
         if DevHooks.demoChatControls { return DemoChatControls() }
         #endif
-        return HermesServeClient.shared
+        return Settings.shared.transport == .hermesSessions ? RunChatControls.shared : HermesServeClient.shared
     }
 
     var body: some View {
         Section {
             Toggle("Fast mode", isOn: Binding(get: { controls?.fast ?? false }, set: { on in change { try await source.setFast(on, stored: stored) } }))
                 .disabled(controls == nil || busy)
-            Toggle("Run commands without asking", isOn: Binding(get: { controls?.autoApprove ?? false }, set: { on in
-                if on { confirmingAutoApprove = true } else { change { try await source.setAutoApprove(false, stored: stored) } }
-            }))
-            .disabled(controls == nil || busy || controls?.serverNeverAsks == true)
+            if offersAutoApprove {
+                Toggle("Run commands without asking", isOn: Binding(get: { controls?.autoApprove ?? false }, set: { on in
+                    if on { confirmingAutoApprove = true } else { change { try await source.setAutoApprove(false, stored: stored) } }
+                }))
+                .disabled(controls == nil || busy || controls?.serverNeverAsks == true)
+            }
             if let problem {
                 Label(problem, systemImage: "exclamationmark.triangle").font(.footnote).foregroundStyle(.orange)
             }
         } header: {
             Text("This conversation")
         } footer: {
-            Text(Self.footer(controls))
+            Text(offersAutoApprove ? Self.footer(controls)
+                 : Self.fastFooter + " It is asked for on each of this conversation's turns; a model without one answers as usual.")
         }
         .task(id: stored) {
             do {
@@ -67,8 +72,10 @@ struct ChatControlsSection: View {
         }
     }
 
+    nonisolated static let fastFooter = "Fast mode asks the provider for its faster tier, which usually costs more; only some models have one."
+
     nonisolated static func footer(_ controls: ChatControls?) -> String {
-        let fast = "Fast mode asks the provider for its faster tier, which usually costs more; only some models have one."
+        let fast = fastFooter
         if controls?.serverNeverAsks == true {
             return fast + " This server never asks before a command: approvals are off in Hermes's config, for every conversation."
         }

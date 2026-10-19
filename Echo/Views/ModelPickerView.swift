@@ -21,7 +21,7 @@ struct ModelPickerView: View {
         #if DEBUG
         if DevHooks.demoChatControls { return DemoChatControls.session }
         #endif
-        return settings.transport == .hermesServe ? conversation.serverSessionID : nil
+        return settings.transport.hasLedger ? conversation.serverSessionID : nil
     }
 
     private var byProvider: [(provider: String, name: String, models: [ModelChoice])] {
@@ -75,7 +75,8 @@ struct ModelPickerView: View {
             .onChange(of: settings.reasoningEffort) { _, effort in applyEffortToOpenConversation(effort) }
 
             if let stored = controlledSession {
-                ChatControlsSection(stored: stored, source: ChatControlsSection.defaultSource)
+                ChatControlsSection(stored: stored, source: ChatControlsSection.defaultSource,
+                                    offersAutoApprove: settings.transport != .hermesSessions)
             }
 
             Section {

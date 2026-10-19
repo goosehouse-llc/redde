@@ -1791,6 +1791,51 @@ struct HermesLabRunsTests {
         report(one != nil && one == two, "sent again with its key, it is the same run", "\(one ?? "-") / \(two ?? "-")")
     }
 
+    /// What the Hermes API connection now does that only the Dashboard did: a turn asking for fast
+    /// mode on a model without one is answered as usual; a subagent of a Hermes API turn is read
+    /// through the Dashboard; a file that isn't a picture reaches the agent through the
+    /// Dashboard's login, named in the message.
+    @Test func theHermesAPIDoesWhatTheDashboardDid() async throws {
+        guard let ledger = await Self.ledger(), let dashboard = await HermesLabApprovalTests.client() else { return }
+        defer { dashboard.disconnect() }
+        let transport = HermesSessionsTransport(baseURL: Self.api, apiKey: Self.key)
+
+        let fastSession = try await ledger.createSession(title: "lab runs fast")
+        var fast = TurnRequest(userText: "hi", turnKey: UUID().uuidString, history: [], sessionID: fastSession.id, model: nil, instructions: nil)
+        fast.fast = true
+        let heard = Heard()
+        for try await event in transport.stream(fast) { heard.take(event) }
+        HermesLabApprovalTests.report(heard.text.hasPrefix("["), "a turn asking for fast mode on a model without one is answered", heard.text)
+
+        let delegating = try await ledger.createSession(title: "lab runs delegate")
+        var child: String?
+        for try await event in transport.stream(TurnRequest(userText: "lab:delegate please", turnKey: UUID().uuidString, history: [],
+                                                            sessionID: delegating.id, model: nil, instructions: nil)) {
+            if case let .subagent(update) = event, let id = update.childSessionID { child = id }
+        }
+        // The child's messages are kept a moment after the turn's reply: looked for a while.
+        var childSaid: [String] = []
+        for _ in 0 ..< 15 where childSaid.isEmpty {
+            if let child, let rows = try? await dashboard.history(stored: child) { childSaid = Conversation.messages(fromServeRows: rows).map(\.text) }
+            if childSaid.isEmpty { try await Task.sleep(for: .seconds(1)) }
+        }
+        HermesLabApprovalTests.report(child != nil && !childSaid.isEmpty, "a subagent of a Hermes API turn is read through the Dashboard",
+                                      "child \(child ?? "none"), said \(childSaid)")
+
+        let filing = try await ledger.createSession(title: "lab runs file")
+        let clip = Attachment(kind: .other, filename: "lab-clip.mp4", mimeType: "video/mp4", data: Data(count: 2048))
+        let asked = TurnRequest(userText: "lab:file please", turnKey: UUID().uuidString, history: [], sessionID: filing.id,
+                                model: nil, instructions: nil, attachments: [clip])
+        let placed = try await Conversation.placingFiles(asked, client: dashboard)
+        let filed = Heard()
+        for try await event in transport.stream(placed) { filed.take(event) }
+        HermesLabApprovalTests.report(placed.attachments.isEmpty && filed.text.contains("[file seen]"),
+                                      "a file goes to the server through the Dashboard, and the agent is told where", filed.text)
+        let stored = try await ledger.messages(sessionID: filing.id).first { $0.role == "user" }?.content?.text ?? ""
+        HermesLabApprovalTests.report(ReplyLanguage.stripNote(stored) == "lab:file please", "the app shows the message without the note",
+                                      ReplyLanguage.stripNote(stored))
+    }
+
     /// The conversation as the app has it: a turn left for another conversation, then the
     /// conversation opened again, takes its run up again and shows its reply. On the app's own
     /// store and run notes (the only ones a run is noted in), so what it saved goes again after.

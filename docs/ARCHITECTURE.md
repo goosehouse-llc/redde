@@ -467,8 +467,11 @@ Two kinds of suggestion around the composer, both optional:
 
 Each child agent from `delegate_task` gets a row under the reply: goal, task N of M, live tool line,
 then duration and summary. On the Dashboard, tap a row for the child's own transcript, and steer or
-stop it (`subagent.*` events). The API stream doesn't forward subagent events, so rows there are
-built from the delegate call's goals. `Views/SubagentRows.swift`.
+stop it (`subagent.*` events). On the Hermes API a run sends the same events (the chat stream
+didn't, and rows there were built from the delegate call's goals). The API doesn't serve a child's
+session (404), so its transcript is read through the Dashboard when its login is saved, again every
+three seconds while it works; a child of an API turn runs in the gateway, so it can't be steered or
+stopped from the Dashboard. `Views/SubagentRows.swift`, `SubagentTranscriptView.swift`.
 
 ### The agent's task list
 
@@ -509,6 +512,13 @@ Things about Hermes this had to allow for, all measured in the lab:
 releases. `-echo.demoTodos` seeds a conversation with a list for `EchoUITests/TodoChecklistUITests`.
 
 ### Attachments and sharing
+
+On the Hermes API, which takes text and pictures, any other file (a PDF, a video, anything) goes to
+the server through the Dashboard when its login is saved: into "Redde attachments" in the server
+user's home, named with the time it was sent (`Conversation.placingFiles`). The message then says
+where it is, for the agent to read with its own tools (`AttachedFileNote`, hidden when the message
+is shown again; the API doesn't expand `@file:` references as the Dashboard does). Without the
+login it is refused, saying so.
 
 The composer's round button follows what you're doing (the app's waveform, still, for voice; send;
 stop; steer and queue during a reply) and springs between those; the field gets a faint accent
@@ -628,6 +638,11 @@ the same hand-over Siri's "draft a message" uses (`LaunchRouter.requestDraft`).
   message sent meanwhile waits in the outbox as ever.
 
 ### A conversation's own switches, and its project
+
+On the Hermes API a conversation has fast mode only (`RunChatControls`): the API keeps no switch for
+a session, so the phone keeps it, by server and conversation, and each run asks for the fast tier
+(`model_options.fast`, every release). Hermes passes it on only to a provider that bills for it; a
+turn on any other model runs as usual. There is no way over the API to run commands without asking.
 
 On the Dashboard connection a conversation that exists on the server has two switches of its own,
 in the model menu under "This conversation" (`ChatControls.swift`, `ChatControlsSection.swift`):

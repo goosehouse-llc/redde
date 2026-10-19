@@ -150,6 +150,46 @@ extension HermesServeClient.Project {
     }
 }
 
+/// A conversation's switches on the Hermes API: fast mode only, since the API has no way to tell
+/// a session to run commands without asking. Hermes keeps no switch for a session there, so the
+/// phone does, by server and conversation, and each of its turns asks for the fast tier
+/// (`model_options.fast`, the same in Hermes 0.21.0 to 0.22.2). Hermes passes it on only to a
+/// provider that bills for it; with any other model the turn runs as usual.
+final class RunChatControls: ChatControlling {
+    static let shared = RunChatControls()
+
+    private let defaults: UserDefaults
+    private let settings: Settings
+    private static let key = "chatControls.fast"
+    /// The conversations with fast mode on, by connection (`Settings.connectionKey`).
+    private var fast: [String: [String]]
+
+    init(defaults: UserDefaults = .standard, settings: Settings = .shared) {
+        self.defaults = defaults
+        self.settings = settings
+        fast = defaults.dictionary(forKey: Self.key) as? [String: [String]] ?? [:]
+    }
+
+    func isFast(_ stored: String) -> Bool { fast[settings.connectionKey]?.contains(stored) == true }
+
+    func chatControls(stored: String) async throws -> ChatControls {
+        ChatControls(fast: isFast(stored))
+    }
+
+    func setFast(_ on: Bool, stored: String) async throws -> ChatControls {
+        var sessions = fast[settings.connectionKey] ?? []
+        sessions.removeAll { $0 == stored }
+        if on { sessions.append(stored) }
+        fast[settings.connectionKey] = sessions.isEmpty ? nil : sessions
+        defaults.set(fast, forKey: Self.key)
+        return ChatControls(fast: on)
+    }
+
+    func setAutoApprove(_ on: Bool, stored: String) async throws -> ChatControls {
+        throw TransportError.malformed("Over the Hermes API a conversation can't be told to run commands without asking; on the Dashboard connection it can.")
+    }
+}
+
 #if DEBUG
 /// Switches made of sample data, for the model menu's own look (`-echo.demoChatControls`) and its
 /// UI test: a conversation whose model has a fast mode.

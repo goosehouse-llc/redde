@@ -21,7 +21,18 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
         /// the gateway resolves the named provider every turn and pins the session to it.
         var require_model_lock: Bool?
         var model_options: ModelOptions?
-        struct ModelOptions: Encodable, Sendable { var reasoning_effort: String? }
+        struct ModelOptions: Encodable, Sendable {
+            var reasoning_effort: String?
+            /// The provider's fast (priority) tier, for this turn (`RunChatControls`).
+            var fast: Bool? = nil
+
+            /// Nil when there's nothing to ask for.
+            static func asked(effort: String?, fast: Bool) -> ModelOptions? {
+                let effort = effort?.nilIfEmpty
+                guard effort != nil || fast else { return nil }
+                return ModelOptions(reasoning_effort: effort, fast: fast ? true : nil)
+            }
+        }
     }
 
     /// Appended by the gateway to its own system prompt every turn (`instructions` →
@@ -104,7 +115,7 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
     static func runBody(_ request: TurnRequest, sessionID: String) throws -> RunBody {
         RunBody(input: try runInput(text: request.userText, attachments: request.attachments), session_id: sessionID,
                 instructions: instructions(for: request), model: request.model?.nilIfEmpty, provider: request.provider?.nilIfEmpty,
-                model_options: request.reasoningEffort?.nilIfEmpty.map { .init(reasoning_effort: $0) })
+                model_options: .asked(effort: request.reasoningEffort, fast: request.fast))
     }
 
     /// A run's message: the text, or with pictures one user message of parts as chat models take
@@ -137,7 +148,7 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
                     instructions: Self.instructions(for: request),
                     model: request.model, provider: request.provider,
                     require_model_lock: request.model?.nilIfEmpty == nil ? nil : true,
-                    model_options: request.reasoningEffort.map { .init(reasoning_effort: $0) }))
+                    model_options: .asked(effort: request.reasoningEffort, fast: request.fast)))
         }
     }
 

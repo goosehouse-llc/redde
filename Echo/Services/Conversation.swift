@@ -268,6 +268,10 @@ final class Conversation {
         if settings.transport == .hermesServe, serverSessionID == nil { request.folder = startsIn?.path }
         // The Hermes API's run for this message, should it go again after a dropped connection.
         request.turnKey = userID.uuidString
+        // The conversation's fast mode: the Hermes API keeps none for a session, so each turn asks.
+        if settings.transport == .hermesSessions, let stored = serverSessionID, store === ConversationStore.shared {
+            request.fast = RunChatControls.shared.isFast(stored)
+        }
         // A bot's chat: the other bots the message tags, and the note that says which they are.
         if settings.transport == .hermesServe, let bot {
             let mentioned = BotMentions.mentioned(in: trimmed, roster: BotDirectory.shared.bots(for: settings.connectionKey), to: bot.profile)
@@ -323,6 +327,13 @@ final class Conversation {
                                                               reasoningEffort: request.reasoningEffort)
                     serverSessionID = created.id
                     request.sessionID = created.id
+                }
+                // The Hermes API takes text and pictures: other files go to the server through the
+                // Dashboard's login, and the message says where they are.
+                if transportKind == .hermesSessions, request.attachments.contains(where: { $0.kind == .pdf || $0.kind == .other }),
+                   HermesServeClient.shared.hasCredentials {
+                    statusLine = "putting the file on the server…"
+                    request = try await Self.placingFiles(request)
                 }
                 for try await event in transport.stream(request) {
                     mirrorContinuation.yield(event)
@@ -409,6 +420,42 @@ final class Conversation {
             mirrorContinuation.finish()
         }
         return mirror
+    }
+
+    /// A turn's files the Hermes API can't take (anything but pictures and text), put in
+    /// "Redde attachments" in the server's home through the Dashboard, and named in the message
+    /// instead (`AttachedFileNote`): the agent reads them there with its own tools.
+    static func placingFiles(_ request: TurnRequest, client: some ServerFileBrowsing = HermesServeClient.shared) async throws -> TurnRequest {
+        var request = request
+        let home = try await client.folder(at: nil).path
+        let folder: String
+        do {
+            folder = try await client.makeFolder("Redde attachments", in: home).path
+        } catch {
+            folder = try await client.folder(at: ServerFiles.join(home, "Redde attachments")).path   // there already
+        }
+        let stamp = Date.now.formatted(.verbatim("\(year: .defaultDigits)-\(month: .twoDigits)-\(day: .twoDigits) \(hour: .twoDigits(clock: .twentyFourHour, hourCycle: .zeroBased))\(minute: .twoDigits)\(second: .twoDigits)",
+                                                 timeZone: .current, calendar: .current))
+        var kept: [Attachment] = []
+        for attachment in request.attachments {
+            guard attachment.kind == .pdf || attachment.kind == .other else { kept.append(attachment); continue }
+            let local = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+            try attachment.data.write(to: local)
+            defer { try? FileManager.default.removeItem(at: local) }
+            var placed: ServerFile?
+            for copy in 1 ... 9 where placed == nil {
+                // The same name in the same second (the file sent twice): a number of its own.
+                let name = copy == 1 ? "\(stamp) \(attachment.filename)" : "\(stamp) \(copy) \(attachment.filename)"
+                do {
+                    placed = try await client.upload(local, as: name, into: folder, replacing: false, watch: nil)
+                } catch TransportError.http(409, _) where copy < 9 {
+                    continue
+                }
+            }
+            if let placed { request.userText += AttachedFileNote.note(path: placed.path) }
+        }
+        request.attachments = kept
+        return request
     }
 
     /// One event of a turn, written into its reply.
