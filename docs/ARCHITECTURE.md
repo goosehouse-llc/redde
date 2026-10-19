@@ -306,7 +306,8 @@ Settings → Name), and its chat's last line and time (`canonical_session`).
 - **Its length:** Hermes keeps a bot's chat as one long conversation and condenses it as it fills
   (from three quarters of a window under 512K; the newest part word for word, the rest as a
   summary, then on in a linked part, which the roster's `canonical_session.resolved_id` names);
-  `/compress` in the chat does it at once. **Start Fresh…** (the chat's ••• menu) is the clean
+  `/compress` in the chat does it at once. **Start Fresh** (the toolbar's button in a bot's chat,
+where a new conversation is in the ••• menu, and ⌘N as anywhere) is the clean
   slate: the chat is archived, kept on the server with its messages (`startFresh`,
   `session.archive`, Hermes 0.22 and later), Hermes then names no chat for the bot, the roster is
   read again, and the next open makes a new chat as the first did. Hermes refuses to rename a

@@ -354,9 +354,10 @@ struct ContentView: View {
                         if let bot = chatBot, !bot.isDefault {
                             Button("Change Face…", systemImage: "face.smiling") { facingBot = bot }
                         }
+                        // A bot's chat: Start Fresh has the toolbar's button, and a new conversation
+                        // with the agent is here.
                         if conversation.bot != nil {
-                            Button("Start Fresh…", systemImage: "arrow.counterclockwise") { confirmingFresh = true }
-                                .disabled(conversation.isStreaming)
+                            Button("New Conversation with \(settings.headerTitle)", systemImage: "square.and.pencil") { conversation.reset() }
                         }
                         if settings.transport.hasLedger {
                             Button("Terminal", systemImage: "apple.terminal") { showTerminal = true }
@@ -366,12 +367,17 @@ struct ContentView: View {
                     } label: {
                         Label("More", systemImage: "ellipsis")
                     }
-                    Button("New conversation", systemImage: "square.and.pencil") {
-                        conversation.reset()
+                    if conversation.bot != nil {
+                        // A bot has one chat: a new one is that chat started over (asked first).
+                        Button("Start Fresh", systemImage: "arrow.counterclockwise") { confirmingFresh = true }
+                            .disabled(conversation.isStreaming || !conversation.hasMessages)
+                    } else {
+                        Button("New conversation", systemImage: "square.and.pencil") {
+                            conversation.reset()
+                        }
+                        .disabled(!conversation.hasMessages)
+                        .keyboardShortcut("n", modifiers: .command)
                     }
-                    // From a bot's chat, even before its first message: a new one is with the agent, not the bot.
-                    .disabled(!conversation.hasMessages && conversation.bot == nil)
-                    .keyboardShortcut("n", modifiers: .command)
                 }
             }
             .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
@@ -478,6 +484,8 @@ struct ContentView: View {
             Button("Settings") { showSettings = true }.keyboardShortcut(",", modifiers: .command)
             Button("Voice mode") { openVoice(fromOutside: false) }.keyboardShortcut("v", modifiers: [.command, .shift])
             Button("Focus composer") { composerFocused = true }.keyboardShortcut("l", modifiers: .command)
+            // ⌘N in a bot's chat, whose toolbar button is Start Fresh: a new conversation with the agent, as anywhere.
+            Button("New conversation") { conversation.reset() }.keyboardShortcut("n", modifiers: .command).disabled(conversation.bot == nil)
             Button("Find in conversation") { withAnimation { showSearch.toggle() } }.keyboardShortcut("f", modifiers: .command)
                 .disabled(!conversation.hasMessages)
             Button("Stop reply") { conversation.cancel() }.keyboardShortcut(".", modifiers: .command).disabled(!conversation.isStreaming)
