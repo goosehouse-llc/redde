@@ -35,10 +35,27 @@ nonisolated enum ReplyLanguage {
     static func note(_ code: String) -> String { "\n\n(Reply in \(name(code)).)" }
 
     /// A message loaded back from the server, without the note, nor the one a question asked
-    /// from the car carries after it (`CarBrevity`).
+    /// from the car carries after it (`CarBrevity`), nor the one that says who an @mention is
+    /// (`MentionNote`), which comes before both.
     static func stripNote(_ text: String) -> String {
-        let text = CarBrevity.strip(text)
-        guard text.hasSuffix(".)"), let range = text.range(of: "\n\n(Reply in ", options: .backwards),
+        var text = CarBrevity.strip(text)
+        if text.hasSuffix(".)"), let range = text.range(of: "\n\n(Reply in ", options: .backwards),
+           !text[range.upperBound...].contains("\n") {
+            text = String(text[..<range.lowerBound])
+        }
+        return MentionNote.strip(text)
+    }
+}
+
+/// A message to a bot that @mentions another bot carries a note after it saying which bot each
+/// tag means, worded as Hermes Desktop words it (`BotMentions.note`): what the agent needs to
+/// pass the question on with its message_agent tool. Other clients see it; Redde hides it.
+nonisolated enum MentionNote {
+    static let opening = "\n\n[@mentions resolved from the Bot Mode roster — "
+
+    /// A message loaded back from the server, without the note (Redde's or Hermes Desktop's).
+    static func strip(_ text: String) -> String {
+        guard text.hasSuffix("]"), let range = text.range(of: opening, options: .backwards),
               !text[range.upperBound...].contains("\n") else { return text }
         return String(text[..<range.lowerBound])
     }

@@ -22,6 +22,7 @@
 #   scripts/hermes-lab/lab.sh context [tag ...]    Settings' context and memory files, found where Hermes keeps them (issue 15)
 #   scripts/hermes-lab/lab.sh speech [tag ...]     replies read out with the voice Hermes is set up with, streamed and whole (issue 7)
 #   scripts/hermes-lab/lab.sh status [tag ...]     the chat list's marks: working, waiting on a person, unread, on both connections
+#   scripts/hermes-lab/lab.sh bots [tag ...]       bots: each profile's own chat, hidden from the list, and bots messaging bots
 #   scripts/hermes-lab/lab.sh up <tag> <scenario>  leave one lab running (API :18642, Dashboard :19119)
 #   scripts/hermes-lab/lab.sh down
 #
@@ -234,6 +235,27 @@ todos() {
     echo "===== Hermes $tag / approval"
     if ! up "$tag" approval; then failed+=("$tag (lab)"); continue; fi
     app_check || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
+# Bots (Hermes's Bot Mode): what Hermes does with a profile's own chat and with a profile set up as
+# a bot (bots_check.py), then the app's own client opening a bot's chat, talking in it and
+# mentioning another bot (HermesLabBotsTests).
+bots() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  [[ -n "${LAB_HOST_ONLY:-}" ]] || app_prepare HermesLabBotsTests || exit 1
+  for tag in $tags; do
+    echo "===== Hermes $tag / approval"
+    if ! up "$tag" approval; then failed+=("$tag (lab)"); continue; fi
+    (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" bots_check.py) || failed+=("$tag (host)")
+    if [[ -z "${LAB_HOST_ONLY:-}" ]]; then
+      # The host check left a bot and its chat behind: the app starts on a fresh lab.
+      up "$tag" approval || { failed+=("$tag (lab)"); continue; }
+      app_check || failed+=("$tag")
+    fi
   done
   down
   if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
@@ -502,6 +524,7 @@ case "${1:-}" in
   switch) shift; switch "$@" ;;
   status) shift; list_status "$@" ;;
   projects) shift; projects "$@" ;;
+  bots) shift; bots "$@" ;;
   search) shift; search "$@" ;;
   context) shift; context "$@" ;;
   speech) shift; speech "$@" ;;

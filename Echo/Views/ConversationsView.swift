@@ -56,6 +56,13 @@ struct ConversationsList: View {
     @State private var projectRenameText = ""
     @State private var projectRemoving: HermesServeClient.Project?
     @AppStorage("sessions.showProjects") private var showProjects = true
+    /// The server's bots (Hermes's Bot Mode), for the Bots section.
+    @State private var botDirectory = BotDirectory.shared
+    @AppStorage("sessions.showBots") private var showBotRows = true
+    /// The bot whose chat is being found or made.
+    @State private var openingBot: String?
+    /// "Let bots message each other", being asked about.
+    @State private var askingBotMessaging = false
     @AppStorage("sessions.showScheduled") private var showScheduled = false
     @State private var shareItem: ShareItem?
     @State private var selecting = false
@@ -198,7 +205,7 @@ struct ConversationsList: View {
             topRow
             if query.isEmpty, !selecting { waitingNotesSection }
             if usesLedger {
-                if viaServe, query.isEmpty, !selecting { projectsSection }
+                if viaServe, query.isEmpty, !selecting { botsSection; projectsSection }
                 ledgerSection
                 if searchesMessages, !selecting { messageHitsSection }
             } else {
@@ -314,6 +321,102 @@ struct ConversationsList: View {
         visibleLedger = filtered.sorted { a, b in
             if (a.pinned ?? false) != (b.pinned ?? false) { return a.pinned ?? false }
             return (a.lastActiveDate ?? .distantPast) > (b.lastActiveDate ?? .distantPast)
+        }
+    }
+
+    // MARK: - Bots (Hermes's Bot Mode, on the Dashboard)
+
+    /// The bots the list shows: none with the setting off, or while the main profile is the only one.
+    private var listedBots: [HermesBot] {
+        guard settings.showBots, botDirectory.key == settings.connectionKey else { return [] }
+        return botDirectory.roster?.listed ?? []
+    }
+
+    @ViewBuilder
+    private var botsSection: some View {
+        let bots = listedBots
+        if !bots.isEmpty {
+            Section {
+                if showBotRows {
+                    ForEach(bots) { botRow($0) }
+                    if botDirectory.roster?.messagingIsOn == false {
+                        Button { askingBotMessaging = true } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: "bubble.left.and.text.bubble.right")
+                                    .foregroundStyle(Settings.shared.resolvedTheme.accent)
+                                    .frame(width: 32, height: 32)
+                                Text("Let bots message each other").font(.body)
+                            }
+                            .contentShape(.rect)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityHint("Sets your main profile up as a bot on the server, as Hermes Desktop does")
+                    }
+                }
+            } header: {
+                foldingHeader("Bots", count: bots.count, isOpen: $showBotRows)
+            }
+            .confirmationDialog("Let bots message each other?", isPresented: $askingBotMessaging, titleVisibility: .visible) {
+                Button("Let Them") { letBotsMessageEachOther() }
+            } message: {
+                Text("Hermes gives each bot's chat a tool to message the other bots, so you can say \u{201C}@scout, what do you think?\u{201D} in one bot's chat and have it ask. Redde turns this on the way Hermes Desktop does, by setting your main profile up as a bot on the server. Chats with your agent stay as they are.")
+            }
+        }
+    }
+
+    private func botRow(_ bot: HermesBot) -> some View {
+        let name = bot.label(mainName: settings.headerTitle)
+        let isOpen = conversation.bot?.profile == bot.name
+        return Button { openBot(bot) } label: {
+            HStack(spacing: 12) {
+                BotAvatar(name: name, seed: bot.name)
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text(name).font(.body.weight(.semibold)).lineLimit(1)
+                        Spacer(minLength: 8)
+                        if openingBot == bot.name {
+                            ProgressView().controlSize(.small)
+                        } else if let when = bot.lastActive {
+                            Text(DateGroup.rowTime(when)).font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    Text(bot.preview ?? bot.description.nilIfEmpty ?? "@\(bot.handle)")
+                        .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
+                }
+            }
+            .padding(.vertical, 2)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .opensConversation()
+        .listRowBackground(isOpen ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
+        .disabled(opening != nil || openingBot != nil)
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Opens your chat with this bot")
+    }
+
+    private func openBot(_ bot: HermesBot) {
+        openingBot = bot.name
+        Task {
+            do {
+                try await conversation.openBot(bot, mainName: settings.headerTitle)
+                opened()
+            } catch {
+                ledgerError = error.localizedDescription
+            }
+            openingBot = nil
+        }
+    }
+
+    private func letBotsMessageEachOther() {
+        guard let roster = botDirectory.roster else { return }
+        Task {
+            do {
+                try await HermesServeClient.shared.letBotsMessageEachOther(roster)
+                try await botDirectory.refresh()
+            } catch {
+                ledgerError = "Couldn't set that up: \(error.localizedDescription)"
+            }
         }
     }
 
@@ -884,6 +987,7 @@ struct ConversationsList: View {
             projects = Self.demoProjects
             folders = Self.demoProjects
             ledger = Self.demoProjects.flatMap { $0.lanes.flatMap(\.sessions) } + Self.demoScheduledRuns
+            if DevHooks.demoBots { botDirectory.set(Self.demoBots, key: settings.connectionKey) }
             if DevHooks.demoMarks {
                 ledger += Self.demoMarkedRows
                 activity.showDemo(["demo-1": .working, "demo-marks-2": .needsYou])
@@ -903,7 +1007,8 @@ struct ConversationsList: View {
             activity.listed(sessions)
             conversation.noteServerTitles(sessions)
             if viaServe {
-                // Projects are a bonus; a failure here must not hide the flat list.
+                // Bots and projects are a bonus; a failure here must not hide the flat list.
+                if settings.showBots { _ = try? await botDirectory.refresh() }
                 let all = (try? await HermesServeClient.shared.projectTree()) ?? []
                 let tree = HermesServeClient.Project.listed(all)
                 guard current else { return }
@@ -1460,6 +1565,17 @@ extension View {
 extension ConversationsList {
     /// One project Hermes found, with one lane and two sessions (enough to reach
     /// ProjectSessionsView and tap a row), and one someone made, still empty.
+    static var demoBots: BotRoster {
+        BotRoster(bots: [
+            HermesBot(name: "default", isDefault: true, lastActive: .now.addingTimeInterval(-3_600), preview: "Done: the reminder is set for 4 pm."),
+            HermesBot(name: "scout", title: "Scout", description: "Finds things out", lastActive: .now.addingTimeInterval(-600),
+                      preview: "Three trails under two hours from you, all open."),
+            HermesBot(name: "writer", displayName: "Quill", description: "Edits and drafts", lastActive: .now.addingTimeInterval(-120),
+                      preview: "Want me to carry that through the next paragraph?"),
+            HermesBot(name: "fixit", title: "Fix-it", description: "Looks after the home server"),
+        ])
+    }
+
     static var demoProjects: [HermesServeClient.Project] {
         let json = """
         {"id":"/home/redde/echo","label":"Echo","path":"/home/redde/echo","isNoProject":false,

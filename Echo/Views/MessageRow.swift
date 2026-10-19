@@ -40,6 +40,8 @@ struct MessageRow: View, Equatable {
     private var flatReply: Bool { message.role == .assistant && theme.palette.flatReplies && message.error == nil }
 
     @Environment(\.theme) private var theme
+    /// A bot's name, in its chat; else the agent's (`settings.headerTitle`).
+    @Environment(\.replySpeaker) private var replySpeaker
     @State private var settings = Settings.shared
     /// What the person chose for each fold, once they have tapped it; until then each is open
     /// while it is what the agent is doing, and folded after.
@@ -133,7 +135,7 @@ struct MessageRow: View, Equatable {
         .animation(.easeOut(duration: 0.3), value: isLive)
         .frame(maxWidth: .infinity, alignment: message.role == .user && !promptStyled ? .trailing : .leading)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(message.role == .user ? (message.isSteer ? "Your steer" : "You") : settings.headerTitle)
+        .accessibilityLabel(message.role == .user ? (message.isSteer ? "Your steer" : "You") : replySpeaker ?? settings.headerTitle)
         .sensoryFeedback(.success, trigger: copyCount)
         .sheet(item: $fullDetail) { SelectableTextSheet(text: $0.text, title: $0.title, monospaced: true) }
     }
@@ -156,7 +158,7 @@ struct MessageRow: View, Equatable {
     private var speakerLine: some View {
         HStack(spacing: 6) {
             if isLive { LiveMark(color: theme.accent) }
-            Text(settings.headerTitle).font(.subheadline.weight(.semibold))
+            Text(replySpeaker ?? settings.headerTitle).font(.subheadline.weight(.semibold))
             if isLive {
                 // The one place that shimmers while the reply is being worked on.
                 TimelineView(.periodic(from: message.createdAt, by: 1)) { context in

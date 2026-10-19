@@ -22,6 +22,9 @@ final class Conversation {
     /// The project a new conversation starts in (a project's New Conversation, on the Dashboard):
     /// its first turn opens the session in the project's folder. Gone when it becomes another.
     private(set) var startsIn: ProjectPlace?
+    /// The bot this conversation is with, when it is a bot's chat (the Dashboard's Bots): a
+    /// session of the bot's own profile, its one conversation, which Redde never renames.
+    private(set) var bot: BotRef?
     /// Words to find once this conversation is on screen: set when a message search opens it,
     /// taken by the transcript, which opens Find on them (`TranscriptView`).
     var findRequest: String?
@@ -146,10 +149,11 @@ final class Conversation {
 
     #if DEBUG
     /// Seeding seam for ConversationDemo.swift: replaces the visible conversation wholesale.
-    func replaceForDemo(id: UUID = UUID(), createdAt: Date = .now, serverSessionID: String? = nil, messages: [Message]) {
+    func replaceForDemo(id: UUID = UUID(), createdAt: Date = .now, serverSessionID: String? = nil, messages: [Message], bot: BotRef? = nil) {
         self.id = id
         self.createdAt = createdAt
         self.serverSessionID = serverSessionID
+        self.bot = bot
         self.name = nil   // a new conversation: not the name of the one it replaces
         var messages = messages
         TodoList.resolve(&messages)
@@ -262,6 +266,11 @@ final class Conversation {
             brief: brief
         )
         if settings.transport == .hermesServe, serverSessionID == nil { request.folder = startsIn?.path }
+        // A bot's chat: the other bots the message tags, and the note that says which they are.
+        if settings.transport == .hermesServe, let bot {
+            let mentioned = BotMentions.mentioned(in: trimmed, roster: BotDirectory.shared.bots(for: settings.connectionKey), to: bot.profile)
+            request.mentionNote = BotMentions.note(for: mentioned)
+        }
         let departure = TurnDeparture()
         self.departure = departure
         request.departure = departure
@@ -873,7 +882,7 @@ final class Conversation {
         cancel(leaving: true)
         persist()
         become(id: record.id, createdAt: record.createdAt, messages: record.messages,
-               outbox: record.outbox ?? [], serverSessionID: record.serverSessionID, name: record.name)
+               outbox: record.outbox ?? [], serverSessionID: record.serverSessionID, name: record.name, bot: record.bot)
         // A held message from an earlier launch goes out if it can.
         retryAttempt = 0
         if outbox.first?.state == .waitingForConnection { scheduleRetry() }
@@ -896,7 +905,7 @@ final class Conversation {
     private var identity = 0
 
     private func become(id: UUID = UUID(), createdAt: Date = .now, messages: [Message] = [],
-                        outbox: [OutboxItem] = [], serverSessionID: String? = nil, name: String? = nil) {
+                        outbox: [OutboxItem] = [], serverSessionID: String? = nil, name: String? = nil, bot: BotRef? = nil) {
         noteSeen()   // the one being left
         identity += 1
         ledgerWatch?.cancel()
@@ -911,6 +920,9 @@ final class Conversation {
         self.messages = messages
         self.outbox = outbox
         self.serverSessionID = serverSessionID
+        self.bot = bot
+        // Every call about a bot's chat names the bot's profile, from the first one.
+        if let bot, let serverSessionID { HermesServeClient.shared.noteProfile(bot.profile, forStored: serverSessionID) }
         startsIn = nil
         lastError = nil
         publishContext()
@@ -928,13 +940,13 @@ final class Conversation {
             transport: settings.transport, serverSessionID: serverSessionID, messages: kept,
             outbox: outbox.isEmpty ? nil : outbox,
             serverID: settings.transport == .chatCompletions ? nil : settings.activeServerID,
-            name: name)
+            name: name, bot: bot)
         // Unchanged content keeps its stamp: the list is ordered by updatedAt and relaunch opens
         // the newest, so merely viewing a conversation must not make it "newest".
         if let existing = store.cachedRecord(id: id),
            existing.messages == kept, existing.outbox == record.outbox,
            existing.serverSessionID == serverSessionID, existing.transport == record.transport,
-           existing.serverID == record.serverID, existing.name == name { return }
+           existing.serverID == record.serverID, existing.name == name, existing.bot == bot { return }
         store.upsert(record)
     }
 
@@ -1026,6 +1038,8 @@ final class Conversation {
     /// empty name takes a local conversation back to its first question (a gateway session
     /// keeps the title it has).
     func rename(to newName: String) async throws {
+        // A bot's chat is known by its title on the server: renaming it would lose it.
+        guard bot == nil else { return }
         let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
         if let sessionID = serverSessionID {
             guard !trimmed.isEmpty else { return }
@@ -1041,7 +1055,8 @@ final class Conversation {
     /// name, is this conversation's name. That picks up a rename made in the list or the
     /// Dashboard, and the title Hermes gives a session by itself.
     func noteServerTitles(_ sessions: [HermesSessionsAPI.SessionSummary]) {
-        guard let sessionID = serverSessionID, let session = sessions.first(where: { $0.id == sessionID }) else { return }
+        // A bot's chat goes by its bot, whatever its title ("Bot Chat") says.
+        guard bot == nil, let sessionID = serverSessionID, let session = sessions.first(where: { $0.id == sessionID }) else { return }
         setName(Self.name(fromServerTitle: session.title, firstQuestion: messages.first { $0.role == .user && !$0.isSteer }?.text))
     }
 
@@ -1190,17 +1205,29 @@ final class Conversation {
         }
     }
 
-    /// Resume a stored `hermes serve` session: history via `session.resume`.
-    func loadServeSession(_ summary: HermesSessionsAPI.SessionSummary) async throws {
-        let rows = try await HermesServeClient.shared.history(stored: summary.id)
-        var messages = Self.messages(fromServeRows: rows)
+    /// Resume a stored `hermes serve` session: history via `session.resume`. A bot's chat names
+    /// its bot; one this iPhone has kept (opened from a notification, say) is known from its copy.
+    func loadServeSession(_ summary: HermesSessionsAPI.SessionSummary, bot: BotRef? = nil, isNew: Bool = false) async throws {
+        let bot = bot ?? store.summaries.first { $0.serverSessionID == summary.id }?.bot
+        if let bot { HermesServeClient.shared.noteProfile(bot.profile, forStored: summary.id) }
+        // A chat made just now has nothing to fetch, and resuming it would start a second agent on it.
+        var messages: [Message] = []
+        if !isNew { messages = Self.messages(fromServeRows: try await HermesServeClient.shared.history(stored: summary.id)) }
         // The agent's task list: replayed from the transcript's to-do calls, then set against
         // what the host says the list is now.
         TodoList.resolve(&messages)
         TodoList.reconcile(&messages, with: HermesServeClient.shared.hostTodos[summary.id])
-        adopt(serverSession: summary, messages: messages)
+        adopt(serverSession: summary, messages: messages, bot: bot)
         // The agent may still be at work in it, or waiting for an answer.
-        await rejoinIfWaiting()
+        if !isNew { await rejoinIfWaiting() }
+    }
+
+    /// Opens a bot's chat (the Dashboard's Bots): its one conversation, found on the server or
+    /// made there the first time. `mainName` is what the main profile goes by when it has no name.
+    func openBot(_ bot: HermesBot, mainName: String) async throws {
+        let (stored, isNew) = try await HermesServeClient.shared.botChat(for: bot)
+        try await loadServeSession(HermesSessionsAPI.SessionSummary(id: stored), bot: BotRef(profile: bot.name, name: bot.label(mainName: mainName)),
+                                   isNew: isNew)
     }
 
     /// Opens the conversation a Hermes session id names, from the server the app is on: what a
@@ -1217,13 +1244,17 @@ final class Conversation {
 
     /// Switches this conversation to a gateway session: keeps (or mints) the matching local
     /// record, swaps in its transcript, and persists. Shared by both ledger transports.
-    private func adopt(serverSession summary: HermesSessionsAPI.SessionSummary, messages new: [Message]) {
+    private func adopt(serverSession summary: HermesSessionsAPI.SessionSummary, messages new: [Message], bot: BotRef? = nil) {
         cancel(leaving: true)
         persist()
+        // A bot's chat keeps its copy here when Hermes has compressed it into a new session.
+        let server = settings.activeServerID
         let existing = store.summaries.first { $0.serverSessionID == summary.id }
+            ?? bot.flatMap { bot in store.summaries.first { $0.bot?.profile == bot.profile && ($0.serverID ?? server) == server } }
         become(id: existing?.id ?? UUID(), createdAt: existing?.createdAt ?? summary.lastActiveDate ?? .now,
                messages: new, serverSessionID: summary.id,
-               name: Self.name(fromServerTitle: summary.title, firstQuestion: new.first { $0.role == .user && !$0.isSteer }?.text))
+               name: bot?.name ?? Self.name(fromServerTitle: summary.title, firstQuestion: new.first { $0.role == .user && !$0.isSteer }?.text),
+               bot: bot)
         persist()
         resolveReopenedMedia()
         // What a note from Hermes said this session waits on is put right from here: joining

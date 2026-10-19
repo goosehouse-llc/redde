@@ -21,6 +21,8 @@ nonisolated struct ConversationRecord: Identifiable, Codable, Equatable, Sendabl
     /// The name the conversation was given (`Conversation.name`); `title` is that, or else the
     /// first question. Absent in older files and for conversations never named.
     var name: String? = nil
+    /// The bot, when the conversation is a bot's chat (`Conversation.bot`). Absent in older files.
+    var bot: BotRef? = nil
 
     var turnCount: Int { messages.filter { $0.role == .user && !$0.isSteer }.count }
 }
@@ -35,9 +37,11 @@ nonisolated struct ConversationSummary: Identifiable, Codable, Equatable, Sendab
     var serverSessionID: String?
     var turnCount: Int
     var serverID: UUID?
+    var bot: BotRef?
 
     init(_ record: ConversationRecord) {
         serverID = record.serverID
+        bot = record.bot
         id = record.id
         title = record.title
         createdAt = record.createdAt

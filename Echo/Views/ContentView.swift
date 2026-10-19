@@ -211,6 +211,7 @@ struct ContentView: View {
 
     private func transcriptScreen(showListButton: Bool) -> some View {
         TranscriptView(showSetup: $showSetup, showSearch: $showSearch, onEdit: beginEditing, onEditQueued: editQueued)
+            .environment(\.replySpeaker, conversation.bot?.name)
             .chatTextSize()
             .background(theme.pageColor)
             .foregroundStyle(theme.textColor)
@@ -264,7 +265,8 @@ struct ContentView: View {
                             }
                             Button { showModelPicker = true } label: {
                                 HStack(spacing: 3) {
-                                    Text("\(settings.headerTitle) · \(modelChipLabel)").font(.caption).lineLimit(1)
+                                    // A bot's chat names the bot's handle, what another bot's chat tags it with.
+                                    Text("\(conversation.bot.map { "@" + $0.handle } ?? settings.headerTitle) · \(modelChipLabel)").font(.caption).lineLimit(1)
                                     Image(systemName: "chevron.down").font(.system(size: 8, weight: .bold))
                                 }
                                 .foregroundStyle(.secondary)
@@ -296,11 +298,14 @@ struct ContentView: View {
                     Menu {
                         Button("Find in conversation", systemImage: "magnifyingglass") { withAnimation { showSearch.toggle() } }
                             .disabled(!conversation.hasMessages)
-                        Button("Rename", systemImage: "pencil") {
-                            renameText = conversation.name ?? conversation.title
-                            showRename = true
+                        // A bot's chat goes by its bot.
+                        if conversation.bot == nil {
+                            Button("Rename", systemImage: "pencil") {
+                                renameText = conversation.name ?? conversation.title
+                                showRename = true
+                            }
+                            .disabled(!conversation.hasMessages)
                         }
-                        .disabled(!conversation.hasMessages)
                         Button("Export as Markdown", systemImage: "square.and.arrow.up") {
                             if let url = try? TranscriptExporter.file(title: conversation.title, messages: conversation.messages) {
                                 shareItem = ShareItem(url: url)
@@ -318,7 +323,8 @@ struct ContentView: View {
                     Button("New conversation", systemImage: "square.and.pencil") {
                         conversation.reset()
                     }
-                    .disabled(!conversation.hasMessages)
+                    // From a bot's chat, even before its first message: a new one is with the agent, not the bot.
+                    .disabled(!conversation.hasMessages && conversation.bot == nil)
                     .keyboardShortcut("n", modifiers: .command)
                 }
             }
@@ -426,12 +432,18 @@ struct ContentView: View {
     }
 
     private var headerTitle: String {
-        !conversation.hasMessages && conversation.outbox.isEmpty ? "New conversation" : conversation.title
+        if let bot = conversation.bot { return bot.name }
+        return !conversation.hasMessages && conversation.outbox.isEmpty ? "New conversation" : conversation.title
     }
 
     /// What the title chip shows: the picked model, or the backend's default.
     private var modelChipLabel: String {
-        switch settings.transport {
+        // A bot's chat runs on the bot's own model, as its profile says (unless picked here).
+        if let bot = conversation.bot, settings.gatewayModel.isEmpty,
+           let model = BotDirectory.shared.bots(for: settings.connectionKey).first(where: { $0.name == bot.profile })?.model {
+            return model
+        }
+        return switch settings.transport {
         case .chatCompletions: settings.fastLaneModel.nilIfEmpty ?? "model"
         default: settings.gatewayModel.nilIfEmpty ?? "default model"
         }

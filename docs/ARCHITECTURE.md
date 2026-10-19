@@ -268,6 +268,47 @@ reloads the conversation list.
   `EchoShortcuts.updateAppShortcutParameters()` runs whenever the kept list or the server
   changes. Siri's phrases are trained at build time: a clean build, as for the other two.
 
+### Bots
+
+Hermes's Bot Mode, as Hermes Desktop has it, on the Dashboard connection (`ServerBots.swift`). A
+bot is a Hermes profile with one conversation of its own: the session titled exactly "Bot Chat" on
+that profile. Hermes counts every profile as one, so the chat list shows a **Bots** section once
+the server has a profile besides the main one (Settings → Hermes server → Bots in the chat list
+turns it off). Rows come from `profiles.list` (every release from 0.21.0): the bot's name (its
+Hermes Desktop title, its profile's display name, or the profile's name; the main profile goes by
+the name in Settings → Name), and its chat's last line and time (`canonical_session`).
+
+- **A bot's chat** is found by its title on the bot's profile every time it is opened
+  (`session.list {profile, title, include_hidden}`), never by a stored id: Hermes Desktop lost
+  people's chats each time it kept a pointer (its `src/AGENTS.md`, "Bot Mode"). The first open makes
+  it as Desktop does (`session.create {profile, title, hidden, follow_profile_config}`, then
+  `session.title` at once so a second open finds it); a lookup that fails, or finds nothing where
+  the roster says there is a chat, refuses rather than make a second one. It is hidden from the
+  profile's conversation list, runs on the bot's own model and settings, and is never renamed in
+  Redde (the title is what finds it). A new conversation from it is with the agent again.
+- **Its profile, on every call:** whichever profile Redde is set to, a bot's chat is a session of
+  the bot's profile, and Hermes only finds it when told which. `Conversation.bot` (kept in the
+  saved copy) has the client note it (`HermesServeClient.noteProfile`), and from then on every
+  profile-scoped call and REST route about that session, by its stored or runtime id, names the
+  bot's profile. The main profile is named as "default".
+- **@mentions** in a bot's chat: typing "@" offers the other bots; a tag names a bot by its handle
+  (the profile's name; "hermes" for the main one), its friendly name ("@research-buddy") or a name
+  it had before. The message goes with Hermes Desktop's note saying which bot each tag means
+  (`BotMentions.note`, after the message and before the reply-language note), and the agent passes
+  the question on with its `message_agent` tool, in words of its own. Redde hides the note when it
+  shows the message (`MentionNote.strip`). Outside a bot's chat a tag is plain text: only a bot's
+  chat has the tool.
+- **Bots messaging bots** needs one profile set up as a bot (an entry under `ui_meta` in its
+  profile.yaml). Hermes Desktop sets that up when a bot is made or named there; without it, "Let
+  bots message each other" at the end of the section writes an empty entry on the main profile
+  (`profiles.configure`, compare-and-swap on its revision). Hermes then gives each bot's chat the
+  tool and a list of the others; a chat begun before has the tool from its next message, but not
+  the instructions about it. Ordinary conversations get neither.
+- `scripts/hermes-lab/lab.sh bots` checks all of it on each release: what Hermes does
+  (`bots_check.py`), then the app's own client (`HermesLabBotsTests`). Not on the Hermes API
+  connection, whose bots would need the Dashboard's socket. Group chats (Hermes's rooms) aren't in
+  Redde.
+
 ### Reply language
 
 Settings → Voice → Reply language asks the agent to answer in one language (`Models/ReplyLanguage.swift`;

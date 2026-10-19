@@ -198,6 +198,9 @@ nonisolated struct TurnRequest: Sendable {
     /// The folder a new conversation starts in on the Dashboard (a project's). Only the turn that
     /// opens the session uses it; the other connections have no folders.
     var folder: String? = nil
+    /// In a bot's chat, a message that @mentions other bots: the note saying which bot each tag
+    /// means (`BotMentions.note`), sent after the message (the Dashboard only).
+    var mentionNote: String? = nil
 }
 
 /// One selectable model as the gateway lists it.

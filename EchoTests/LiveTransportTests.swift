@@ -1601,3 +1601,74 @@ struct HermesLabStatusTests {
         }
     }
 }
+
+/// Bots with the app's own Dashboard client (lab.sh bots, after bots_check.py): a bot's chat found
+/// or made on the bot's profile, the same one every time, a turn in it, its transcript read again
+/// over a new connection, the main profile as a bot, an @mention's note reaching Hermes (and
+/// coming off what the app shows), and the bots let message each other.
+@MainActor
+struct HermesLabBotsTests {
+    private static func say(_ text: String, in stored: String, _ client: HermesServeClient, note: String? = nil) async throws -> String {
+        var request = TurnRequest(userText: text, history: [], sessionID: stored, model: nil, instructions: nil)
+        request.mentionNote = note
+        var reply = ""
+        for try await event in HermesServeTransport(client: client).stream(request) {
+            switch event {
+            case let .textDelta(delta): reply += delta
+            case let .textFinal(text): reply = text
+            default: break
+            }
+        }
+        return reply
+    }
+
+    @Test func aBotHasOneChatOfItsOwn() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        _ = try? await client.call("profiles.create", params: .object(["name": .string("scout"), "clone_from": .string("default"),
+                                                                       "no_alias": .bool(true)]))
+        var roster = try await client.bots()
+        HermesLabApprovalTests.report(roster.listed.map(\.name).sorted() == ["default", "scout"] && !roster.messagingIsOn,
+               "the roster lists the main profile and the new one", "\(roster.bots.map(\.name)), on: \(roster.messagingIsOn)")
+        guard let scout = roster.bots.first(where: { $0.name == "scout" }), let main = roster.bots.first(where: \.isDefault) else { return }
+
+        let made = try await client.botChat(for: scout)
+        let again = try await client.botChat(for: scout)
+        HermesLabApprovalTests.report(made.isNew && !again.isNew && again.stored == made.stored, "the first open makes the chat, the next finds the same one",
+               "\(made) then \(again)")
+        let reply = try await Self.say("hello scout", in: made.stored, client)
+        HermesLabApprovalTests.report(reply.hasPrefix("["), "a turn in the bot's chat is answered", reply)
+        let listed = try await client.listSessions()
+        HermesLabApprovalTests.report(!listed.contains { $0.id == made.stored }, "it stays out of the conversation list")
+
+        // Over a new connection, as after a relaunch: the app names the bot's profile.
+        guard let fresh = await HermesLabApprovalTests.client() else { return }
+        defer { fresh.disconnect() }
+        fresh.noteProfile("scout", forStored: made.stored)
+        let rows = try await fresh.history(stored: made.stored)
+        let said = Conversation.messages(fromServeRows: rows).map(\.text)
+        HermesLabApprovalTests.report(said.contains("hello scout") && said.count >= 2, "its transcript, read again with its profile", "\(said)")
+        roster = try await fresh.bots()
+        HermesLabApprovalTests.report(roster.bots.first { $0.name == "scout" }?.chatID == made.stored, "the roster names it as the bot's chat")
+
+        // The main profile as a bot, named explicitly as "default".
+        let home = try await fresh.botChat(for: main)
+        let homeReply = try await Self.say("hello hermes", in: home.stored, fresh)
+        HermesLabApprovalTests.report(home.isNew && homeReply.hasPrefix("["), "the main profile's own chat", "\(home) \(homeReply)")
+
+        // An @mention from the main profile's chat: the note reaches Hermes and comes off again.
+        let note = try #require(BotMentions.note(for: BotMentions.mentioned(in: "@scout what do you think?", roster: roster.bots, to: "default")))
+        _ = try await Self.say("@scout what do you think?", in: home.stored, fresh, note: note)
+        let raw = try await fresh.history(stored: home.stored).compactMap { $0["text"]?.string ?? $0["content"]?.displayText }
+        let shown = Conversation.messages(fromServeRows: try await fresh.history(stored: home.stored)).map(\.text)
+        HermesLabApprovalTests.report(raw.contains { $0.hasPrefix("@scout what do you think?" + MentionNote.opening) }
+               && shown.contains("@scout what do you think?"), "a mention's note reaches Hermes, and the app shows the message without it",
+               "\(raw.suffix(2)) / \(shown.suffix(2))")
+
+        try await fresh.letBotsMessageEachOther(roster)
+        roster = try await fresh.bots()
+        HermesLabApprovalTests.report(roster.messagingIsOn && roster.bots.first(where: \.isDefault)?.isSetUp == true, "the bots let message each other",
+               "\(roster.bots.map { "\($0.name): \($0.isSetUp)" })")
+        try await fresh.letBotsMessageEachOther(roster)   // already on: nothing to do
+    }
+}

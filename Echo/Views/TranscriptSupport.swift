@@ -150,6 +150,8 @@ extension EnvironmentValues {
     /// True in the transcript, where there is a composer for a quote to go to. Sheets it presents
     /// inherit it; a subagent's transcript and voice mode leave it off.
     @Entry var asksAboutSelection = false
+    /// Who the replies are from, when not the agent by its own name: a bot, in its chat.
+    @Entry var replySpeaker: String?
 }
 
 

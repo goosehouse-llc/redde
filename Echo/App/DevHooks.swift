@@ -18,7 +18,8 @@ import WidgetKit
 ///   default), for measuring. `-echo.pageBudget <characters>` overrides how much of a thread the
 ///   transcript lays out (`TranscriptPage`); 0 lifts the limit.
 /// - `-echo.demoProjects`: fill the conversation list's Projects from a fixture (Dashboard connection).
-///   Add `-echo.demoMarks` for rows marked working, needing you and unread (`ChatActivity`).
+///   Add `-echo.demoMarks` for rows marked working, needing you and unread (`ChatActivity`), and
+///   `-echo.demoBots` for the Bots section, with a bot's chat open (Quill's).
 /// - `-echo.demoHosts`: replace any real endpoints with example hosts.
 /// - `-echo.demoKanban`: a sample Kanban board instead of the server's.
 /// - `-echo.demoGateway`: Settings → Gateway on sample data, with no server (and the row unlocked).
@@ -119,6 +120,7 @@ enum DevHooks {
     static var demoKanban: Bool { has("-echo.demoKanban") }
     static var demoProjects: Bool { has("-echo.demoProjects") }
     static var demoMarks: Bool { has("-echo.demoMarks") }
+    static var demoBots: Bool { has("-echo.demoBots") }
     static var demoGateway: Bool { has("-echo.demoGateway") }
     static var demoChatControls: Bool { has("-echo.demoChatControls") }
     static var demoFiles: Bool { has("-echo.demoFiles") }
@@ -147,6 +149,10 @@ enum DevHooks {
         }
         // The Projects section only shows on the Dashboard connection.
         if demoProjects { settings.transport = .hermesServe }
+        if demoBots {
+            conversation.seedBotDemo()
+            BotDirectory.shared.set(ConversationsList.demoBots, key: settings.connectionKey)
+        }
         if has("-echo.demoLong") { conversation.seedLongDemo() }
         if has("-echo.demoTodos") { conversation.seedTodoDemo() }
         if has("-echo.demoPhoneShot") { conversation.seedPhoneShotDemo() }

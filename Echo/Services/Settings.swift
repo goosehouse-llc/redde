@@ -303,6 +303,11 @@ final class Settings: ServeEndpoint {
     var siriDraftsInNewConversation: Bool {
         didSet { defaults.set(siriDraftsInNewConversation, forKey: Keys.siriDraftsInNewConversation) }
     }
+    /// The chat list shows the server's bots (Hermes's Bot Mode, on the Dashboard), once it has
+    /// any besides the main profile. Off, Redde is as it was without them.
+    var showBots: Bool {
+        didSet { defaults.set(showBots, forKey: Keys.showBots) }
+    }
     /// How long the app may be in the background before it locks again.
     var lockGraceSeconds: Double {
         didSet { defaults.set(lockGraceSeconds, forKey: Keys.lockGraceSeconds) }
@@ -457,6 +462,7 @@ final class Settings: ServeEndpoint {
         static let requireBiometrics = "requireBiometrics"
         static let siriAIEnabled = "siriAIEnabled"
         static let siriDraftsInNewConversation = "siriDraftsInNewConversation"
+        static let showBots = "showBots"
         static let lockGraceSeconds = "lockGraceSeconds"
         static let displayName = "displayName"
         static let setupDone = "setupDone"
@@ -527,6 +533,7 @@ final class Settings: ServeEndpoint {
         requireBiometrics = defaults.bool(forKey: Keys.requireBiometrics)
         siriAIEnabled = defaults.bool(forKey: Keys.siriAIEnabled)
         siriDraftsInNewConversation = defaults.bool(forKey: Keys.siriDraftsInNewConversation)
+        showBots = defaults.object(forKey: Keys.showBots) as? Bool ?? true
         lockGraceSeconds = defaults.object(forKey: Keys.lockGraceSeconds) as? Double ?? 60
         displayName = defaults.string(forKey: Keys.displayName) ?? ""
         setupDone = defaults.bool(forKey: Keys.setupDone)
@@ -739,6 +746,7 @@ final class Settings: ServeEndpoint {
         requireBiometrics = false
         siriAIEnabled = false
         siriDraftsInNewConversation = false
+        showBots = true
         lockGraceSeconds = 60
         displayName = ""
         serveURL = Self.defaultServeURL

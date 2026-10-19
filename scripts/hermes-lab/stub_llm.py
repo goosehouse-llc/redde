@@ -143,12 +143,18 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(404, {"error": {"message": "not found"}})
         model = body.get("model", "")
         tools = [tool.get("function", {}).get("name") or "" for tool in body.get("tools") or []]
+        messages = body.get("messages") or []
+        system = " ".join(json.dumps(m.get("content")) for m in messages if m.get("role") == "system")
+        last_user = next((json.dumps(m.get("content")) for m in reversed(messages) if m.get("role") == "user"), "")
         with open(HITS, "a") as f:
             f.write(json.dumps({"stub": NAME, "model": model, "stream": bool(body.get("stream")),
                                 "phone": sorted(name for name in tools if name.startswith("phone_")), "tools": len(tools),
-                                "search": "tool_call" in tools}) + "\n")
+                                "search": "tool_call" in tools,
+                                # Bot Mode (lab.sh bots): the teammate protocol in the system prompt,
+                                # its tool, and the @mention note on the message.
+                                "bots": "Messaging other agents" in system, "message_agent": "message_agent" in tools,
+                                "mention": "[@mentions resolved from the Bot Mode roster" in last_user}) + "\n")
         text, call = f"[{NAME}:{model}]", None
-        messages = body.get("messages") or []
         last = messages[-1] if messages else {}
         if last.get("role") == "user" and "lab:slow" in json.dumps(last.get("content")):
             time.sleep(8)

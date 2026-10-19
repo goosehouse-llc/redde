@@ -509,6 +509,22 @@ extension Conversation {
                                   Message(role: .user, text: "Carry on."), second])
     }
 
+    /// Dev hook (`-echo.demoBots`): a chat with a bot, Quill, for the Bots screenshots.
+    func seedBotDemo() {
+        cancel()
+        // One id, so seeding again replaces the saved copy rather than adding one.
+        replaceForDemo(id: UUID(uuidString: "DE300000-0000-4000-8000-000000000002")!, serverSessionID: "demo-bot-writer", messages: [
+            Message(role: .user, text: "Can you tighten the opening of the hike post?"),
+            Message(role: .assistant, text: """
+                Here's a tighter opening:
+
+                > We left the car at six, before the fog had made up its mind.
+
+                It drops the weather report and starts on the trail. Want me to carry that through the next paragraph?
+                """),
+        ], bot: BotRef(profile: "writer", name: "Quill"))
+    }
+
     /// Dev hook (`-echo.demoPhoneShot`): the agent having used the phone four times, short, for
     /// the Phone tools store screenshot: the day from the calendar, a timer, the widget, a
     /// message. Short so the screenshot's insets (the timer on the Lock Screen, the widget) sit

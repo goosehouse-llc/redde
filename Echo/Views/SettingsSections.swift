@@ -158,10 +158,16 @@ struct ProfileSettings: View {
                         Label("Profile", systemImage: "person.2")
                     }
                 }
+                if settings.transport == .hermesServe {
+                    Toggle(isOn: $settings.showBots) { Label("Bots in the chat list", systemImage: "at") }
+                }
             } header: {
                 Text("Hermes server")
             } footer: {
-                Text("The server and agent profile Redde talks to. Chats, skills, tools, cron jobs and memory all follow them.")
+                Text("The server and agent profile Redde talks to. Chats, skills, tools, cron jobs and memory all follow them."
+                     + (settings.transport == .hermesServe
+                        ? " Bots are your other profiles, as Hermes Desktop shows them: each has one chat of its own, listed under Bots once the server has more than one profile."
+                        : ""))
             }
         }
     }

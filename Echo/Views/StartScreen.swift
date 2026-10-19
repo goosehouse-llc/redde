@@ -88,7 +88,7 @@ struct StartScreen: View {
                     Text(Self.greeting(for: .now))
                         .font(.system(.title, weight: .bold))
                         .modifier(Arriving(index: 1, shown: shown))
-                    Text("What should \(settings.headerTitle) look into?")
+                    Text("What should \(conversation.bot?.name ?? settings.headerTitle) look into?")
                         .font(.body)
                         .foregroundStyle(.secondary)
                         .modifier(Arriving(index: 2, shown: shown))

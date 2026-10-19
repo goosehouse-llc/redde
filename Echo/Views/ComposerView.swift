@@ -62,9 +62,20 @@ struct ComposerView: View {
         settings.transport == .hermesServe && draft.hasPrefix("/") && !draft.contains("\n") && !conversation.isStreaming
     }
 
+    /// In a bot's chat, the other bots a tag being typed ("@sc") could be.
+    private var mentionSuggestions: [HermesBot] {
+        guard settings.transport == .hermesServe, let bot = conversation.bot, !draft.contains("\n"),
+              let typed = BotMentions.typing(in: draft) else { return [] }
+        let roster = BotDirectory.shared.roster?.listed ?? []
+        return Array(BotMentions.suggestions(for: typed, roster: BotDirectory.shared.key == settings.connectionKey ? roster : [],
+                                             to: bot.profile).prefix(6))
+    }
+
     var body: some View {
         VStack(spacing: 8) {
             if slashMenuActive, !slashItems.isEmpty { slashMenu }
+            let mentions = mentionSuggestions
+            if !mentions.isEmpty { mentionMenu(mentions) }
             if let editing {
                 HStack(spacing: 8) {
                     Image(systemName: "pencil").foregroundStyle(.secondary)
@@ -284,6 +295,33 @@ struct ComposerView: View {
         .accessibilityLabel("Command suggestions")
     }
 
+    /// Bots to tag in a bot's chat: tap one to finish the tag. The bot it is sent to asks that one.
+    private func mentionMenu(_ bots: [HermesBot]) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(bots) { bot in
+                Button {
+                    draft = BotMentions.complete(draft, with: bot)
+                    focused = true
+                } label: {
+                    HStack(spacing: 10) {
+                        BotAvatar(name: bot.label(mainName: settings.headerTitle), seed: bot.name, size: 22)
+                        Text("@" + BotMentions.tag(for: bot)).font(.callout.weight(.medium)).lineLimit(1)
+                        Text(bot.label(mainName: settings.headerTitle)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, 12).padding(.vertical, 8)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                if bot.id != bots.last?.id { Divider().padding(.leading, 44) }
+            }
+        }
+        .background(theme.surfaceColor, in: .rect(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.quaternary))
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+        .accessibilityLabel("Bots to mention")
+    }
+
     private func applySlash(_ item: HermesServeClient.SlashCompletion) {
         let keep = String(draft.prefix(max(0, min(slashReplaceFrom, draft.count))))
         draft = keep + item.text
@@ -421,7 +459,7 @@ struct ComposerView: View {
                 }
                 .accessibilityLabel("Add")
                 .accessibilityHint("Add a photo or file to your message")
-                TextField(dictation.isActive ? "Listening…" : conversation.canSteer ? "Steer the reply…" : "Ask \(settings.headerTitle)",
+                TextField(dictation.isActive ? "Listening…" : conversation.canSteer ? "Steer the reply…" : "Ask \(conversation.bot?.name ?? settings.headerTitle)",
                           text: $draft, axis: .vertical)
                     .lineLimit(1 ... 5)
                     .textFieldStyle(.plain)

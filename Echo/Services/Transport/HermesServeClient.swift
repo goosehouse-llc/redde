@@ -710,13 +710,33 @@ final class HermesServeClient {
         "slash.exec", "command.dispatch", "session.workspace.move",
     ]
 
-    /// Adds the selected profile to a profile-scoped call; the default profile sends nothing.
+    /// Adds the selected profile to a profile-scoped call; the default profile sends nothing. A
+    /// call about a bot's chat names the bot's profile instead (`sessionProfiles`).
     func withProfile(_ params: JSONValue, for method: String) -> JSONValue {
-        guard Self.profileScopedMethods.contains(method), let profile = settings.profileName,
-              case .object(var fields) = params, fields["profile"] == nil else { return params }
+        guard Self.profileScopedMethods.contains(method), case .object(var fields) = params, fields["profile"] == nil,
+              let profile = sessionProfile(in: fields) ?? settings.profileName else { return params }
         fields["profile"] = .string(profile)
         return .object(fields)
     }
+
+    /// Bots' chats this app has opened, by stored session id: the profile each belongs to. A bot's
+    /// chat is a session of the bot's own profile, whichever profile Redde is set to, and Hermes
+    /// only finds it when told which (`session.resume` without it finds none).
+    private var sessionProfiles: [String: String] = [:]
+
+    /// Has every later call about `stored` name `profile`.
+    func noteProfile(_ profile: String, forStored stored: String) { sessionProfiles[stored] = profile }
+
+    /// The profile of the session a call is about, when it is a bot's chat, by its stored id or
+    /// the runtime id it has on this connection.
+    private func sessionProfile(in fields: [String: JSONValue]) -> String? {
+        guard !sessionProfiles.isEmpty, let id = (fields["session_id"] ?? fields["session_key"])?.string else { return nil }
+        if let profile = sessionProfiles[id] { return profile }
+        return runtimeIDs.first { $0.value == id }.flatMap { sessionProfiles[$0.key] }
+    }
+
+    /// A session this client made outside `openSession` (a bot's chat): later turns use its runtime id.
+    func adopt(runtime: String, stored: String) { runtimeIDs[stored] = runtime }
 
     @discardableResult
     func call(_ method: String, params: JSONValue, timeout: TimeInterval = 60) async throws -> JSONValue {
@@ -1173,10 +1193,13 @@ final class HermesServeClient {
         }
     }
 
-    private func rest(_ method: String, _ path: String, body: Data?, timeout: TimeInterval = 30) async throws -> Data {
+    /// `about`: the stored session the call is about, when there is one: a bot's chat is in the
+    /// bot's profile.
+    private func rest(_ method: String, _ path: String, body: Data?, timeout: TimeInterval = 30, about stored: String? = nil) async throws -> Data {
         guard let baseURL else { throw TransportError.badURL }
         try await login(baseURL: baseURL)
-        let (path, body) = Self.scoped(method: method, path: path, body: body, profile: settings.profileName)
+        let profile = stored.flatMap { sessionProfiles[$0] } ?? settings.profileName
+        let (path, body) = Self.scoped(method: method, path: path, body: body, profile: profile)
         guard let url = URL(string: path, relativeTo: baseURL.appending(path: "/"))?.absoluteURL else { throw TransportError.badURL }
         var request = URLRequest(url: url)
         request.httpMethod = method
@@ -1304,7 +1327,8 @@ final class HermesServeClient {
     /// Rename / pin / archive / mark read or unread through the dashboard's PATCH.
     func updateSession(stored: String, title: String? = nil, pinned: Bool? = nil, archived: Bool? = nil, unread: Bool? = nil) async throws {
         struct Body: Encodable { var title: String?; var pinned: Bool?; var archived: Bool?; var unread: Bool? }
-        _ = try await rest("PATCH", "api/sessions/\(stored)", body: try JSONEncoder().encode(Body(title: title, pinned: pinned, archived: archived, unread: unread)))
+        _ = try await rest("PATCH", "api/sessions/\(stored)", body: try JSONEncoder().encode(Body(title: title, pinned: pinned, archived: archived, unread: unread)),
+                           about: stored)
     }
 
     /// The conversations with a turn under way in this Dashboard, by stored id: working, or
