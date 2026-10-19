@@ -272,9 +272,9 @@ reloads the conversation list.
 
 Hermes's Bot Mode, as Hermes Desktop has it, on the Dashboard connection (`ServerBots.swift`). A
 bot is a Hermes profile with one conversation of its own: the session titled exactly "Bot Chat" on
-that profile. Hermes counts every profile as one, so the chat list shows a **Bots** section once
-the server has a profile besides the main one (Settings → Hermes server → Bots in the chat list
-turns it off). Each bot is a little creature of its own (`BotAvatar.swift`): a speech bubble at
+that profile. Hermes counts every profile as one. The chat list's **Bots** section lists them once
+the server has a profile besides the main one, and has New Bot either way (Settings → Hermes server
+→ Bots in the chat list turns it off). Each bot is a little creature of its own (`BotAvatar.swift`): a speech bubble at
 heart, its tail the corner nearest its bottom left drawn sharp as a message bubble's is (a round or
 egg shape gets a corner there, a pointed one sharpens that point), in one of eight shapes (round,
 egg, pill, capsule, burst, pick, hex, diamond), white eyes glancing somewhere, on some a small mouth
@@ -325,6 +325,28 @@ Settings → Name), and its chat's last line and time (`canonical_session`).
   the question on with its `message_agent` tool, in words of its own. Redde hides the note when it
   shows the message (`MentionNote.strip`). Outside a bot's chat a tag is plain text: only a bot's
   chat has the tool.
+- **Making and changing bots** (`BotManagement.swift`, `BotEditor.swift`), as Hermes Desktop does:
+  New Bot asks for a name, what it does, a personality (empty: one written from the name and what
+  it does, Desktop's wording), a model and a face. The profile is made with `profiles.create`
+  under a handle from the name (`BotNames.handle`: Hermes's rule for a profile's name, never a
+  reserved word or one in use) and no command of its own on the server (`no_alias`; 0.21.0 makes
+  one anyway), as a copy of the main profile, its keys and sign-ins included (`clone_from:
+  default`, sign-ins shared), as Desktop makes one. Not without them: a custom endpoint is in the
+  main profile's config.yaml with its key, so a profile made with none of it has no model it can
+  reach, and Hermes takes no endpoint for a profile over the socket (a keyless bot is set up on the
+  server). Then its name goes in its Bot Mode settings (`ui_meta['hermes-bots'].title` and `created`), and Hermes's
+  `setup.runtime_check` says whether it can answer; a bot that can't is made all the same, with
+  that said. Edit Bot… (its row's menu, or its chat's ••• menu) changes its name, what it does
+  (the profile's description), its personality (SOUL.md, read with `profiles.describe`), its model
+  (`profiles.configure`; a model Hermes asks about first is asked about here too) and whether the
+  list shows it. Its Bot Mode settings are read, changed and written back with the revision read,
+  three tries, so what Desktop keeps there (its colour, shape, sections) stays. Hide is on its row
+  too; Hidden Bots at the end of the section shows them again. Delete Bot goes through the
+  Dashboard's REST route (`DELETE /api/profiles/<name>`; there is no socket call): the profile,
+  its chat and its memories go. The main profile is the person's agent: only what it does and its
+  personality are changed here, and it can't be hidden or deleted. A profile's handle is never
+  renamed (its folder, its sessions and Redde's saved chats are named by it); the name is what
+  changes.
 - **Bots messaging bots** needs one profile set up as a bot (an entry under `ui_meta` in its
   profile.yaml). Hermes Desktop sets that up when a bot is made or named there; without it, "Let
   bots message each other" at the end of the section writes an empty entry on the main profile

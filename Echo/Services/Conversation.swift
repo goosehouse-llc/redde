@@ -1362,6 +1362,18 @@ final class Conversation {
                                    isNew: isNew)
     }
 
+    /// The open bot's chat goes by what `roster` calls its bot now: renamed in Redde or in Hermes
+    /// Desktop, the header, the composer and its replies say the new name.
+    func followBotName(in roster: BotRoster, mainName: String) {
+        guard var ref = bot, let current = roster.bots.first(where: { $0.name == ref.profile }) else { return }
+        let name = current.label(mainName: mainName)
+        guard name != ref.name else { return }
+        if title == ref.name { title = name }
+        ref.name = name
+        bot = ref
+        persist()
+    }
+
     /// Starts this bot's chat over (`HermesServeClient.startFresh`) and opens the new one, empty.
     func startBotChatFresh(mainName: String) async throws {
         guard let ref = bot, !isStreaming else { return }

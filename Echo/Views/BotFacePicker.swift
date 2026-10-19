@@ -3,23 +3,26 @@ import SwiftUI
 /// Picking a bot's face (the chat list's Bots, and a bot's chat's ••• menu): its shape, eyes, mouth,
 /// a mark and a colour, each choice drawn as the bot with that part changed. Kept on the server, so
 /// every Redde on it shows the same face (`HermesServeClient.setFace`); "Its Own Face" goes back to
-/// the one its name gives. Redde's own bubble isn't offered: no other bot can have it.
+/// the one its name gives. Redde's own bubble isn't offered: no other bot can have it. For a bot
+/// not made yet (New Bot), `choose` is given the face instead, and nothing is written.
 struct BotFacePicker: View {
     let bot: HermesBot
     /// What the bot is called here.
     let name: String
     var onSaved: () -> Void = {}
+    var choose: ((BotFace?) -> Void)?
     @Environment(\.dismiss) private var dismiss
     @State private var face: BotFace
     private let current: BotFace
     @State private var saving = false
     @State private var problem: String?
 
-    init(bot: HermesBot, name: String, current: BotFace, onSaved: @escaping () -> Void = {}) {
+    init(bot: HermesBot, name: String, current: BotFace, onSaved: @escaping () -> Void = {}, choose: ((BotFace?) -> Void)? = nil) {
         self.bot = bot
         self.name = name
         self.current = current
         self.onSaved = onSaved
+        self.choose = choose
         _face = State(initialValue: current)
     }
 
@@ -48,7 +51,8 @@ struct BotFacePicker: View {
                             .disabled(saving)
                     }
                 } footer: {
-                    Text("Kept on your Hermes server, so Redde on your other devices shows it too.")
+                    Text(choose == nil ? "Kept on your Hermes server, so Redde on your other devices shows it too."
+                                       : "Kept on your Hermes server once the bot is made, so Redde on your other devices shows it too.")
                 }
                 if let problem {
                     Section { Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(.orange) }
@@ -121,6 +125,11 @@ struct BotFacePicker: View {
     }
 
     private func save(_ picked: BotFace?) {
+        if let choose {
+            choose(picked)
+            dismiss()
+            return
+        }
         saving = true
         problem = nil
         Task {

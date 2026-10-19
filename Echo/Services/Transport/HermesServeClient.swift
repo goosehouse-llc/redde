@@ -1222,6 +1222,13 @@ final class HermesServeClient {
         return data
     }
 
+    /// Deletes a profile and everything in it (Dashboard REST: Hermes has no socket call for it).
+    /// Hermes stops what runs for it first, waiting up to 10 seconds.
+    func deleteProfile(_ name: String) async throws {
+        let path = "api/profiles/" + (name.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? name)
+        _ = try await rest("DELETE", path, body: nil, timeout: 45)
+    }
+
     /// What a Dashboard REST call refused with, as `rest` reports it.
     private static func refusal(_ status: Int, _ data: Data) -> TransportError {
         struct Detail: Decodable { var detail: String? }

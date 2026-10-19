@@ -69,6 +69,9 @@ struct ConversationsList: View {
     @State private var makingGroup = false
     /// The bot whose face is being picked.
     @State private var facing: HermesBot?
+    /// A bot being made or changed, and the hidden ones being looked at.
+    @State private var editingBot: BotEditor.Mode?
+    @State private var showingHiddenBots = false
     @AppStorage("sessions.showScheduled") private var showScheduled = false
     @State private var shareItem: ShareItem?
     @State private var selecting = false
@@ -163,6 +166,10 @@ struct ConversationsList: View {
                 Task { _ = try? await botDirectory.refresh() }
             }
         }
+        .sheet(item: $editingBot) { mode in
+            BotEditor(mode: mode, mainName: settings.headerTitle) { botEdited($0) }
+        }
+        .sheet(isPresented: $showingHiddenBots) { HiddenBotsView(mainName: settings.headerTitle) }
         .background {
             Group {
                 Button("Sessions") { section = .sessions }.keyboardShortcut("1", modifiers: .command)
@@ -354,42 +361,36 @@ struct ConversationsList: View {
         return botDirectory.roster?.listed ?? []
     }
 
+    /// The server's bots as last read, with the setting on: nil before they are (or can't be) read.
+    private var serverBots: [HermesBot]? {
+        guard settings.showBots, botDirectory.key == settings.connectionKey else { return nil }
+        return botDirectory.roster?.bots
+    }
+
+    /// The Bots section: once the server's bots are read, even with none yet but the main
+    /// profile, for New Bot.
     @ViewBuilder
     private var botsSection: some View {
-        let bots = listedBots
-        if !bots.isEmpty {
+        if let all = serverBots {
+            let bots = listedBots
+            let hidden = all.filter { $0.isHidden && !$0.isDefault }
             let faces = botDirectory.roster?.faces ?? [:]
             Section {
                 if showBotRows {
                     ForEach(bots) { botRow($0, face: faces[$0.name] ?? BotFace(seed: $0.name)) }
-                    if groups.key == settings.connectionKey, groups.supported {
+                    if !bots.isEmpty, groups.key == settings.connectionKey, groups.supported {
                         ForEach(groups.rooms) { groupRow($0, faces: faces) }
                         if groups.writable {
-                            Button { makingGroup = true } label: {
-                                HStack(spacing: 12) {
-                                    Image(systemName: "person.3")
-                                        .foregroundStyle(Settings.shared.resolvedTheme.accent)
-                                        .frame(width: 32, height: 32)
-                                    Text("New Group Chat").font(.body)
-                                }
-                                .contentShape(.rect)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityHint("Starts a chat with several bots at once")
+                            sectionAction("New Group Chat", systemImage: "person.3", hint: "Starts a chat with several bots at once") { makingGroup = true }
                         }
                     }
-                    if botDirectory.roster?.messagingIsOn == false {
-                        Button { askingBotMessaging = true } label: {
-                            HStack(spacing: 12) {
-                                Image(systemName: "bubble.left.and.text.bubble.right")
-                                    .foregroundStyle(Settings.shared.resolvedTheme.accent)
-                                    .frame(width: 32, height: 32)
-                                Text("Let bots message each other").font(.body)
-                            }
-                            .contentShape(.rect)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityHint("Sets your main profile up as a bot on the server, as Hermes Desktop does")
+                    sectionAction("New Bot", systemImage: "plus.bubble", hint: "Makes a bot on your server, with a chat of its own") { editingBot = .new }
+                    if !bots.isEmpty, botDirectory.roster?.messagingIsOn == false {
+                        sectionAction("Let bots message each other", systemImage: "bubble.left.and.text.bubble.right",
+                                      hint: "Sets your main profile up as a bot on the server, as Hermes Desktop does") { askingBotMessaging = true }
+                    }
+                    if !hidden.isEmpty {
+                        sectionAction("Hidden Bots", systemImage: "eye.slash", count: hidden.count, hint: "Shows the bots hidden from this list") { showingHiddenBots = true }
                     }
                 }
             } header: {
@@ -401,6 +402,25 @@ struct ConversationsList: View {
                 Text("Hermes gives each bot's chat a tool to message the other bots, so you can say \u{201C}@scout, what do you think?\u{201D} in one bot's chat and have it ask. Redde turns this on the way Hermes Desktop does, by setting your main profile up as a bot on the server. Chats with your agent stay as they are.")
             }
         }
+    }
+
+    /// A row that does something in its section (New Bot, New Group Chat), drawn as New Project is.
+    private func sectionAction(_ title: String, systemImage: String, count: Int? = nil, hint: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: systemImage)
+                    .foregroundStyle(Settings.shared.resolvedTheme.accent)
+                    .frame(width: 32, height: 32)
+                Text(title).font(.body)
+                if let count {
+                    Spacer()
+                    Text("\(count)").foregroundStyle(.secondary).monospacedDigit()
+                }
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(hint)
     }
 
     private func botRow(_ bot: HermesBot, face: BotFace) -> some View {
@@ -431,9 +451,11 @@ struct ConversationsList: View {
         .listRowBackground(isOpen ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
         .disabled(opening != nil || openingBot != nil)
         .contextMenu {
+            Button("Edit Bot…", systemImage: "slider.horizontal.3") { editingBot = .edit(bot) }
             // Redde's own bubble is the main agent's alone.
             if !bot.isDefault {
                 Button("Change Face…", systemImage: "face.smiling") { facing = bot }
+                Button("Hide", systemImage: "eye.slash") { hide(bot) }
             }
         }
         .accessibilityElement(children: .combine)
@@ -474,6 +496,37 @@ struct ConversationsList: View {
                 ledgerError = error.localizedDescription
             }
             openingBot = nil
+        }
+    }
+
+    /// A bot made, changed or deleted in BotEditor: the list reads the bots again; a new one's
+    /// chat opens, and a deleted one's, if open, is left for a new conversation.
+    private func botEdited(_ outcome: BotEditor.Outcome) {
+        Task {
+            do {
+                let roster = try await botDirectory.refresh()
+                switch outcome {
+                case let .made(name):
+                    if let bot = roster.bots.first(where: { $0.name == name }) { openBot(bot) }
+                case let .deleted(name):
+                    if conversation.bot?.profile == name { conversation.reset() }
+                case .changed:
+                    break
+                }
+            } catch {
+                ledgerError = error.localizedDescription
+            }
+        }
+    }
+
+    private func hide(_ bot: HermesBot) {
+        Task {
+            do {
+                _ = try await HermesServeClient.shared.changeBot(bot, BotChange(hidden: true))
+                try await botDirectory.refresh()
+            } catch {
+                ledgerError = "Couldn't hide \(bot.label(mainName: settings.headerTitle)): \(error.localizedDescription)"
+            }
         }
     }
 
@@ -1061,6 +1114,10 @@ struct ConversationsList: View {
                 groups.set(rooms: [.demo], supported: true, writable: true, key: settings.connectionKey)
                 // `-echo.openGroup`: that group chat open (screenshots).
                 if DevHooks.has("-echo.openGroup") { openRoom = .demo }
+                // `-echo.botEditor new|<bot>`: New Bot, or that bot's settings, open (screenshots).
+                if let which = DevHooks.value("-echo.botEditor") {
+                    editingBot = which == "new" ? .new : Self.demoBots.bots.first { $0.name == which }.map { .edit($0) }
+                }
             }
             if DevHooks.demoMarks {
                 ledger += Self.demoMarkedRows

@@ -30,6 +30,8 @@ struct ContentView: View {
     @State private var projectProblem: String?
     /// "Change Face…" in a bot's chat: that bot, its face being picked.
     @State private var facingBot: HermesBot?
+    /// "Edit Bot…" in a bot's chat.
+    @State private var editingBot: HermesBot?
     /// "Start Fresh…" in a bot's chat: being asked about, and what went wrong.
     @State private var confirmingFresh = false
     @State private var freshProblem: String?
@@ -343,6 +345,9 @@ struct ContentView: View {
                         if settings.transport == .hermesServe, conversation.serverSessionID != nil, conversation.bot == nil {
                             ChatProjectMenu(naming: $namingProject, problem: $projectProblem)
                         }
+                        if let bot = chatBot {
+                            Button("Edit Bot…", systemImage: "slider.horizontal.3") { editingBot = bot }
+                        }
                         // A bot's chat: its face, but Redde's own bubble stays the main agent's.
                         if let bot = chatBot, !bot.isDefault {
                             Button("Change Face…", systemImage: "face.smiling") { facingBot = bot }
@@ -397,6 +402,17 @@ struct ContentView: View {
             .sheet(item: $facingBot) { bot in
                 BotFacePicker(bot: bot, name: bot.label(mainName: settings.headerTitle), current: botFace ?? BotFace(seed: bot.name)) {
                     Task { _ = try? await BotDirectory.shared.refresh() }
+                }
+            }
+            .onChange(of: BotDirectory.shared.roster) { _, roster in
+                if let roster, BotDirectory.shared.key == settings.connectionKey { conversation.followBotName(in: roster, mainName: settings.headerTitle) }
+            }
+            .sheet(item: $editingBot) { bot in
+                BotEditor(mode: .edit(bot), mainName: settings.headerTitle) { outcome in
+                    Task {
+                        _ = try? await BotDirectory.shared.refresh()
+                        if case let .deleted(name) = outcome, conversation.bot?.profile == name { conversation.reset() }
+                    }
                 }
             }
             .alert("Couldn't rename", isPresented: Binding(get: { renameError != nil }, set: { if !$0 { renameError = nil } })) {

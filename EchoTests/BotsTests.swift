@@ -153,6 +153,49 @@ struct BotsTests {
         #expect(roster.faces["scout"] == picked)
     }
 
+    // MARK: - Making and changing bots
+
+    @Test func aNewBotsHandleComesFromItsNameAsHermesTakesIt() {
+        #expect(BotNames.handle(for: "Research Buddy", taken: []) == "research-buddy")
+        #expect(BotNames.handle(for: "  Café Crème!  ", taken: []) == "cafe-creme", "accents and stray marks fold away")
+        #expect(BotNames.handle(for: "Scout", taken: ["scout", "scout-2"]) == "scout-3", "a name in use gets a number")
+        #expect(BotNames.handle(for: "SCOUT", taken: ["Scout"]) == "scout-2", "whatever case the taken one was written in")
+        #expect(BotNames.handle(for: "Hermes", taken: []) == "hermes-bot" && BotNames.handle(for: "everyone", taken: []) == "everyone-bot",
+                "never a name Hermes or @mentions keep for themselves")
+        #expect(BotNames.handle(for: "🤖", taken: []) == nil && BotNames.handle(for: "--", taken: []) == nil, "nothing to make one from")
+        let long = BotNames.handle(for: String(repeating: "a", count: 90), taken: []) ?? ""
+        #expect(long.count <= 64 && long.wholeMatch(of: /[a-z0-9][a-z0-9_-]*/) != nil, "within Hermes's rule for a profile's name")
+    }
+
+    @Test func aNewBotWithNoPersonalityWrittenGetsOneFromItsName() {
+        let soul = BotNames.soul(title: "Scout", handle: "scout", description: "Finds things out")
+        #expect(soul.hasPrefix("# Scout\n\n**Mission:** Finds things out\n\n"))
+        #expect(soul.contains("You are Scout, a persistent named agent (profile `scout`)"))
+        #expect(!BotNames.soul(title: "Scout", handle: "scout", description: " ").contains("Mission"), "no mission line without one")
+    }
+
+    @Test func aBotsSettingsAreChangedOverWhatHermesDesktopKeepsThere() {
+        let desktop: [String: JSONValue] = ["title": .string("Old"), "color": .string("#ff8800"), "shape": .string("blob"),
+                                            "pinned": .bool(true), "chat": .object(["id": .string("s-1")])]
+        let renamed = BotNames.merged(desktop, BotChange(title: " Scout "))
+        #expect(renamed["title"] == .string("Scout") && renamed["color"] == .string("#ff8800") && renamed["shape"] == .string("blob")
+                && renamed["pinned"] == .bool(true), "only the name changes; Desktop's look for it stays")
+        #expect(renamed["chat"] == nil, "what Hermes adds on reading isn't written back")
+        let hidden = BotNames.merged(renamed, BotChange(hidden: true))
+        #expect(hidden["hidden"] == .bool(true) && hidden["title"] == .string("Scout"))
+        #expect(BotNames.merged(hidden, BotChange(hidden: false))["hidden"] == nil, "shown again: the mark comes off")
+        #expect(BotNames.merged(nil, BotChange(title: "New")) == ["title": .string("New")], "a profile not yet a bot becomes one")
+    }
+
+    @Test func aBotsDetailsReadAsEachReleaseGivesThem() throws {
+        let json = ##"{"name": "scout", "description": "Finds things", "soul": "# Scout", "model": {"provider": "custom:lab", "default": "stub-b"}}"##
+        let details = BotDetails(try JSONDecoder().decode(JSONValue.self, from: Data(json.utf8)))
+        #expect(details == BotDetails(soul: "# Scout", description: "Finds things", model: "stub-b", provider: "custom:lab"))
+        let bare = BotDetails(try JSONDecoder().decode(JSONValue.self, from: Data(#"{"name": "x", "model": "m1"}"#.utf8)))
+        #expect(bare.model == "m1" && bare.provider == nil && bare.soul.isEmpty)
+        #expect(BotChange().isEmpty && !BotChange(hidden: false).isEmpty)
+    }
+
     // MARK: - A bot's chat as a conversation
 
     final class RecordingTransport: HermesTransport, @unchecked Sendable {
@@ -204,6 +247,14 @@ struct BotsTests {
         #expect(store.summaries.first { $0.serverSessionID == "s-writer" }?.bot == writer, "the copy on the iPhone knows its bot")
         try await conversation.rename(to: "Something else")
         #expect(conversation.title == "Quill", "a bot's chat goes by its bot")
+
+        // Renamed, in Redde or in Hermes Desktop: the open chat goes by the new name.
+        var renamed = try roster(Self.listing)
+        renamed.bots[try #require(renamed.bots.firstIndex { $0.name == "writer" })].title = "Ink"
+        conversation.followBotName(in: renamed, mainName: "Redde")
+        #expect(conversation.bot == BotRef(profile: "writer", name: "Ink") && conversation.title == "Ink")
+        await store.flush()
+        #expect(store.summaries.first { $0.serverSessionID == "s-writer" }?.bot?.name == "Ink", "and so does the copy on the iPhone")
 
         conversation.reset()
         #expect(conversation.bot == nil, "a new conversation is with the agent")

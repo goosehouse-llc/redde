@@ -1715,6 +1715,93 @@ struct HermesLabBotsTests {
                "\(roster.bots.map { "\($0.name): \($0.isSetUp)" })")
         try await fresh.letBotsMessageEachOther(roster)   // already on: nothing to do
     }
+
+    /// Making, changing and deleting bots as BotEditor does, Hermes Desktop's way (a copy of the
+    /// main profile): one with a model of its own and the personality written for it, one with the
+    /// main model and a personality of the person's; renamed and hidden without losing what Hermes
+    /// Desktop keeps for it; then deleted.
+    @Test func aBotIsMadeChangedAndDeleted() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        let before = try await client.bots()
+        let taken = Set(before.bots.map(\.name))
+        let models = try await client.modelOptions(forProfile: "default")
+        let main = models.first(where: \.isCurrent)
+        print("  info  models: \(models.map { "\($0.provider)/\($0.model)\($0.isCurrent ? " (current)" : "")" })")
+        // Another of the lab's own models: Hermes 0.21.0 and 0.21.3 also offer a free tier that
+        // refuses anyone but its own app.
+        let other = models.first { !$0.isCurrent && $0.provider == main?.provider }
+
+        // With a model picked, and no personality written.
+        let handle = try #require(BotNames.handle(for: "Lab Helper", taken: taken))
+        let picked = BotFace(shape: .hex, eyes: .sparkle, mouth: .grin, mark: .antenna, glance: 1, tilt: 2, color: 4)
+        let made = try await client.makeBot(NewBot(title: "Lab Helper", handle: handle, description: "Helps in the lab", soul: "",
+                                                   model: other, face: picked))
+        HermesLabApprovalTests.report(made.name == handle, "a bot is made", "\(made)")
+        print("  info  made with notes: \(made.notes)")
+        var roster = try await client.bots()
+        guard let bot = roster.bots.first(where: { $0.name == handle }) else { return HermesLabApprovalTests.report(false, "and listed", "\(roster.bots.map(\.name))") }
+        HermesLabApprovalTests.report(bot.title == "Lab Helper" && bot.description == "Helps in the lab" && bot.isSetUp && !bot.isHidden && bot.face == picked,
+               "listed with its name, what it does and its face, as a bot", "\(bot)")
+        let details = try await client.botDetails(bot)
+        HermesLabApprovalTests.report(details.soul.contains("You are Lab Helper") && details.soul.contains("**Mission:** Helps in the lab"),
+               "its personality is written from its name and what it does", String(details.soul.prefix(160)))
+        let wanted = other ?? main
+        HermesLabApprovalTests.report(wanted == nil || details.model == wanted?.model, "it has the model picked for it", "\(details.model ?? "none") / \(details.provider ?? "none")")
+        let chat = try await client.botChat(for: bot)
+        let reply = try await Self.say("hello helper", in: chat.stored, client)
+        HermesLabApprovalTests.report(reply.hasPrefix("["), "it answers in its chat", reply)
+
+        // Renamed, described, a personality of the person's own; Hermes Desktop's look kept.
+        let row = try await client.call("profiles.list", params: .object(["include_sessions": .bool(false)]))["profiles"]?.array?
+            .first { $0["name"]?.string == handle }
+        let desktop = try await client.call("profiles.configure", params: .object([
+            "name": .string(handle), "ui_meta": .object(["hermes-bots": .object(["title": .string("Lab Helper"), "color": .string("#ff8800")])]),
+            "ui_meta_expected_revisions": .object(["hermes-bots": .number(Double(row?["ui_meta_revisions"]?["hermes-bots"]?.int ?? 0))])]))
+        HermesLabApprovalTests.report(desktop["applied"]?["ui_meta"]?.bool == true, "(Hermes Desktop gives it a colour)")
+        let outcome = try await client.changeBot(bot, BotChange(title: "Lab Aide", description: "Aids the lab", soul: "# Lab Aide\n\nShort answers."))
+        roster = try await client.bots()
+        let changed = roster.bots.first { $0.name == handle }
+        let reread = try await client.botDetails(bot)
+        HermesLabApprovalTests.report(outcome == .done && changed?.title == "Lab Aide" && changed?.description == "Aids the lab" && reread.soul == "# Lab Aide\n\nShort answers."
+               && changed?.face == picked, "renamed, described anew and given a personality; its face kept", "\(String(describing: changed)) \(reread.soul)")
+        _ = try await client.changeBot(try #require(changed), BotChange(hidden: true))
+        roster = try await client.bots()
+        let look = try await client.call("profiles.list", params: .object(["include_sessions": .bool(false)]))["profiles"]?.array?
+            .first { $0["name"]?.string == handle }?["ui_meta"]?["hermes-bots"]
+        HermesLabApprovalTests.report(roster.bots.first { $0.name == handle }?.isHidden == true && !roster.listed.contains { $0.name == handle }
+               && look?["color"]?.string == "#ff8800" && look?["title"]?.string == "Lab Aide",
+               "hidden, it leaves the list, and Hermes Desktop's colour for it stays", "\(String(describing: look))")
+        _ = try await client.changeBot(try #require(roster.bots.first { $0.name == handle }), BotChange(hidden: false))
+        roster = try await client.bots()
+        HermesLabApprovalTests.report(roster.bots.first { $0.name == handle }?.isHidden == false, "and shown again")
+        if let main, other != nil {
+            let back = try await client.changeBot(try #require(roster.bots.first { $0.name == handle }), BotChange(model: main))
+            let now = try await client.botDetails(bot).model
+            HermesLabApprovalTests.report(back == .done && now == main.model, "its model changed", "\(back) \(now ?? "none")")
+        }
+
+        // The main model, and a personality of the person's own.
+        let copyHandle = try #require(BotNames.handle(for: "Lab Copy", taken: taken.union([handle])))
+        let copy = try await client.makeBot(NewBot(title: "Lab Copy", handle: copyHandle, description: "", soul: "You are terse.",
+                                                   model: nil, face: nil))
+        roster = try await client.bots()
+        guard let copied = roster.bots.first(where: { $0.name == copyHandle }) else { return HermesLabApprovalTests.report(false, "a copy of the main profile is made", "\(copy)") }
+        let copyDetails = try await client.botDetails(copied)
+        HermesLabApprovalTests.report(copyDetails.soul == "You are terse." && (main == nil || copyDetails.model == main?.model) && copy.notes.isEmpty,
+               "one made with the main model has the personality written for it", "\(copy) \(copyDetails)")
+        let copyChat = try await client.botChat(for: copied)
+        let copyReply = try await Self.say("hello copy", in: copyChat.stored, client)
+        HermesLabApprovalTests.report(copyReply.hasPrefix("["), "and answers in its chat", copyReply)
+
+        // Deleted, with their chats.
+        try await client.deleteBot(bot)
+        try await client.deleteBot(copied)
+        roster = try await client.bots()
+        HermesLabApprovalTests.report(!roster.bots.contains { $0.name == handle || $0.name == copyHandle }, "deleted, they are gone from the server", "\(roster.bots.map(\.name))")
+        try await client.deleteBot(try #require(roster.bots.first(where: \.isDefault)))   // never the main profile
+        HermesLabApprovalTests.report(try await client.bots().bots.contains(where: \.isDefault), "the main profile can't be deleted")
+    }
 }
 
 /// Hermes API turns as runs (lab.sh runs), with the app's own transport: a turn is a run and is

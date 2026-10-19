@@ -361,18 +361,19 @@ runs() {
 }
 
 # Bots (Hermes's Bot Mode): what Hermes does with a profile's own chat and with a profile set up as
-# a bot (bots_check.py), then the app's own client opening a bot's chat, talking in it and
-# mentioning another bot (HermesLabBotsTests).
+# a bot (bots_check.py), then the app's own client opening a bot's chat, talking in it, mentioning
+# another bot, and making, changing and deleting one (HermesLabBotsTests). In a home of the lab's
+# own: Hermes 0.21.0 puts a command for each new profile in ~/.local/bin, whatever it is asked.
 bots() {
   local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
   [[ -n "${LAB_HOST_ONLY:-}" ]] || app_prepare HermesLabBotsTests || exit 1
   for tag in $tags; do
     echo "===== Hermes $tag / approval"
-    if ! up "$tag" approval; then failed+=("$tag (lab)"); continue; fi
+    if ! LAB_OWN_HOME=1 up "$tag" approval; then failed+=("$tag (lab)"); continue; fi
     (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" bots_check.py) || failed+=("$tag (host)")
     if [[ -z "${LAB_HOST_ONLY:-}" ]]; then
       # The host check left a bot and its chat behind: the app starts on a fresh lab.
-      up "$tag" approval || { failed+=("$tag (lab)"); continue; }
+      LAB_OWN_HOME=1 up "$tag" approval || { failed+=("$tag (lab)"); continue; }
       app_check || failed+=("$tag")
     fi
   done
