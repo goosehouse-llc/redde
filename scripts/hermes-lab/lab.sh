@@ -25,6 +25,9 @@
 #   scripts/hermes-lab/lab.sh bots [tag ...]       bots: each profile's own chat, hidden from the list, and bots messaging bots
 #   scripts/hermes-lab/lab.sh groups [tag ...]     group chats: a room of bots made, talked to, a bot tagged, stopped, renamed, disbanded
 #   scripts/hermes-lab/lab.sh runs [tag ...]       Hermes API turns as runs: left, taken up again, stopped, sent twice (app check)
+#   scripts/hermes-lab/lab.sh butler [--app] [tag ...]  the main profile hands coding to a claude bot (kanban), Claude Code
+#                                                  runs on another machine over SSH, the patch comes back and is applied
+#                                                  after asking; --app: the app's open conversation gets that question
 #   scripts/hermes-lab/lab.sh up <tag> <scenario>  leave one lab running (API :18642, Dashboard :19119)
 #   scripts/hermes-lab/lab.sh down
 #
@@ -88,7 +91,7 @@ up() {
   sed "s#@LAB@#$HERE#g" "$HERE/scenarios/$scenario.yaml" > "$HERMES_HOME/config.yaml"
   print -l "API_SERVER_ENABLED=true" "API_SERVER_KEY=labkey-labkey-labkey" "API_SERVER_PORT=18642" "API_SERVER_HOST=127.0.0.1" > "$HERMES_HOME/.env"
   # The Dashboard's login, for the scenarios that turn it on.
-  [[ "$scenario" == (approval|admin|push|speech|speech-whole) ]] && print -l "HERMES_DASHBOARD_BASIC_AUTH_USERNAME=lab" "HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=labpass-labpass" \
+  [[ "$scenario" == (approval|admin|push|speech|speech-whole|butler) ]] && print -l "HERMES_DASHBOARD_BASIC_AUTH_USERNAME=lab" "HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=labpass-labpass" \
     "HERMES_DASHBOARD_BASIC_AUTH_SECRET=0123456789abcdef0123456789abcdef0123456789abcdef" >> "$HERMES_HOME/.env"
   # An MCP server for the admin scenario to switch and test: the lab's own stand-in, off at first.
   [[ "$scenario" == admin ]] && print -l "mcp_servers:" "  lab-notes:" "    command: python3" "    args: [\"$HERE/mcp_stub.py\"]" "    enabled: false" >> "$HERMES_HOME/config.yaml"
@@ -107,6 +110,12 @@ up() {
   else
     unset REDDE_PUSH_RELAY 2>/dev/null || true
   fi
+  if [[ "$scenario" == butler ]]; then
+    butler_setup "$run" || return 1
+    export LAB_BUTLER="$run" LAB_HOOK_LOG="$run/hook.jsonl" PATH="$run/bin:$PATH"
+  else
+    unset LAB_BUTLER LAB_HOOK_LOG 2>/dev/null || true
+  fi
   # No real keys may leak in: the point is to see where an unkeyed fallback goes.
   unset OPENROUTER_API_KEY OPENAI_API_KEY ANTHROPIC_API_KEY HERMES_INFERENCE_PROVIDER 2>/dev/null || true
   (cd "$run"
@@ -117,6 +126,9 @@ up() {
    if [[ "$scenario" == push ]]; then
      nohup python3 "$HERE/fake_apns.py" 18990 > apns.log 2>&1 & echo $! >> "$LAB_HOME/pids"
      nohup node "$REPO/companion/push-relay/test/local.mjs" 18980 http://127.0.0.1:18990 > relay.log 2>&1 & echo $! >> "$LAB_HOME/pids"
+   fi
+   if [[ "$scenario" == butler ]]; then
+     nohup /usr/sbin/sshd -D -e -f "$run/ssh/sshd_config" > sshd.log 2>&1 & echo $! >> "$LAB_HOME/pids"
    fi
    nohup "$hermes" serve --host 127.0.0.1 --port 19119 --skip-build > serve.log 2>&1 & echo $! >> "$LAB_HOME/pids"
    nohup "$hermes" gateway run > gateway.log 2>&1 & echo $! >> "$LAB_HOME/pids")
@@ -254,6 +266,75 @@ groups() {
     (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" groups_check.py) || failed+=("$tag (host)")
     if [[ -z "${LAB_HOST_ONLY:-}" ]]; then
       up "$tag" approval || { failed+=("$tag (lab)"); continue; }
+      app_check || failed+=("$tag")
+    fi
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
+# The butler: the main profile ("Sol") hands a coding task to a "claude" bot on the kanban board; the
+# bot's worker runs Claude Code (fakebin/claude, the lab's stand-in) on "Workbox" through its SSH
+# terminal; Sol, woken when the card is done, applies the patch as it is, and Hermes asks first
+# (ask_before_writes.py). "Workbox" is this Mac through an SSH server of the lab's own on 18222 with
+# its own keys, known-hosts file and home: nothing touches ~/.ssh. Its login is fenced off from the
+# Hermes home and the host's repository (sandbox-exec), as a second machine would be. The main
+# profile's .env holds a canary the bot must never see.
+butler_setup() {
+  local run="$1" ssh="$1/ssh" user
+  user="$(id -un)"
+  mkdir -p "$ssh" "$run/bin" "$run/workbox/home/work" "$run/host" "$run/kanban-work"
+  print "LAB_CANARY_KEY=canary-$RANDOM$RANDOM$RANDOM" >> "$HERMES_HOME/.env"
+  ssh-keygen -q -t ed25519 -N "" -C lab-host -f "$ssh/host_key"
+  ssh-keygen -q -t ed25519 -N "" -C lab-client -f "$ssh/client_key"
+  cp "$ssh/client_key.pub" "$ssh/authorized_keys"
+  local fence="(version 1)(allow default)(deny file-read* file-write* (subpath \"$run/.hermes\") (subpath \"$run/host\"))"
+  print -l "#!/bin/sh" "export HOME='$run/workbox/home' LAB_RUN='$run' PATH='$HERE/fakebin:/usr/bin:/bin:/usr/sbin:/sbin'" 'cd "$HOME"' \
+    "FENCE='$fence'" \
+    'if [ -n "$SSH_ORIGINAL_COMMAND" ]; then exec /usr/bin/sandbox-exec -p "$FENCE" /bin/bash -c "$SSH_ORIGINAL_COMMAND"; fi' \
+    'exec /usr/bin/sandbox-exec -p "$FENCE" /bin/bash -l' > "$ssh/login.sh"
+  chmod +x "$ssh/login.sh"
+  print -l "Port 18222" "ListenAddress 127.0.0.1" "HostKey $ssh/host_key" "PidFile $ssh/sshd.pid" "AuthorizedKeysFile $ssh/authorized_keys" \
+    "PasswordAuthentication no" "KbdInteractiveAuthentication no" "PubkeyAuthentication yes" "UsePAM no" "StrictModes no" \
+    "ForceCommand $ssh/login.sh" "AllowTcpForwarding no" "X11Forwarding no" > "$ssh/sshd_config"
+  print -l "Host workbox" "  HostName 127.0.0.1" "  Port 18222" "  User $user" "  IdentityFile $ssh/client_key" \
+    "Host *" "  IdentitiesOnly yes" "  UserKnownHostsFile $ssh/known_hosts" "  GlobalKnownHostsFile /dev/null" \
+    "  StrictHostKeyChecking accept-new" "  BatchMode yes" > "$ssh/ssh_config"
+  print -l "#!/bin/sh" "exec /usr/bin/ssh -F '$ssh/ssh_config' \"\$@\"" > "$run/bin/ssh"
+  print -l "#!/bin/sh" "exec /usr/bin/scp -O -F '$ssh/ssh_config' \"\$@\"" > "$run/bin/scp"
+  chmod +x "$run/bin/ssh" "$run/bin/scp"
+  # The repository on the Hermes host, and the copy "Workbox" has of it (as both would have GitHub's).
+  (cd "$run/host" && git init -q repo && cd repo && git config user.name Lab && git config user.email lab@example.invalid \
+    && print 'print("hello")' > hello.py && git add hello.py && git commit -q -m start) || return 1
+  git clone -q --bare "$run/host/repo" "$run/workbox/origin" || return 1
+  # The claude bot: its own model (stub B), no keys of its own, its terminal on "Workbox".
+  local bot="$HERMES_HOME/profiles/claude"
+  mkdir -p "$bot"
+  : > "$bot/.env"
+  print -l "model:" "  default: gamma" "  provider: custom:stub-b" "custom_providers:" "  - name: Stub B" \
+    "    base_url: http://127.0.0.1:18802/v1" "    api_key: sk-stub" "    model: gamma" "    api_mode: chat_completions" \
+    "terminal:" "  backend: ssh" "  ssh_host: 127.0.0.1" "  ssh_user: $user" "  ssh_port: 18222" "  ssh_key: $ssh/client_key" \
+    "approvals:" "  mode: manual" > "$bot/config.yaml"
+  print -l "description: Coding worker. Does each task with Claude Code on Workbox and sends back a patch." \
+    "ui_meta:" "  hermes-bots:" "    title: Claude" > "$bot/profile.yaml"
+  # A variant of the setup kept elsewhere (LAB_BUTLER_EXTRA, a zsh script): it may change any of
+  # the above before Hermes starts. `run`, `hermes`, `HERE` and HERMES_HOME are set.
+  [[ -z "${LAB_BUTLER_EXTRA:-}" ]] || source "$LAB_BUTLER_EXTRA" || return 1
+}
+
+butler() {
+  local app=""
+  [[ "${1:-}" == --app ]] && { app=1; shift; }
+  local tags=("${@:-v0.22.2}") failed=()
+  [[ -z "$app" ]] || app_prepare HermesLabButlerTests || exit 1
+  for tag in $tags; do
+    echo "===== Hermes $tag / butler"
+    if ! up "$tag" butler; then failed+=("$tag (lab)"); continue; fi
+    # (LAB_BUTLER_CHECK: another check, for a variant of the setup.)
+    (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" "${LAB_BUTLER_CHECK:-butler_check.py}") || failed+=("$tag (host)")
+    if [[ -n "$app" ]]; then
+      up "$tag" butler || { failed+=("$tag (lab)"); continue; }
       app_check || failed+=("$tag")
     fi
   done
@@ -564,6 +645,7 @@ case "${1:-}" in
   projects) shift; projects "$@" ;;
   bots) shift; bots "$@" ;;
   runs) shift; runs "$@" ;;
+  butler) shift; butler "$@" ;;
   groups) shift; groups "$@" ;;
   search) shift; search "$@" ;;
   context) shift; context "$@" ;;

@@ -262,6 +262,35 @@ Then `EchoTests/HermesLabSwitchTests` does it with the app's own `Conversation`:
 starting a new conversation is joined on return on the Dashboard and waited for on the Hermes
 API, and one stopped with Stop is stopped on the host (GitHub issue 12).
 
+## A butler and a coding bot
+
+`butler` (0.22.2 by default; `sam-0.22` for a patched tree with its own venv in the lab home) sets
+up what a main profile ("Sol") handing coding to a "claude" bot looks like, and `butler_check.py`
+plays it through on the Dashboard and the Hermes API:
+
+- The main profile has the kanban tools on (`platform_toolsets`), the dispatcher ticks every three
+  seconds, and a `pre_tool_call` shell hook (`ask_before_writes.py`) makes Hermes ask before every
+  command that could change something, each on its own. Its `.env` holds a canary.
+- The claude bot is a profile with its own model (stub B), no keys, and an SSH terminal on
+  "Workbox": this Mac through an SSH server of the lab's own on 18222, with its own keys,
+  known-hosts file and home (nothing touches `~/.ssh`). Its login runs fenced off from the Hermes
+  home and the host's repository (`sandbox-exec`), as a second machine would be. `fakebin/claude`
+  stands in for Claude Code there: it adds a line to `hello.py` in a clone, writes the patch, and
+  notes whether it could see the canary.
+- The stub's main profile answers `lab:butler tag=<word>` with `kanban_create` for the claude bot;
+  the bot's worker reads the card, runs `claude -p` over SSH and finishes the card with where the
+  patch is; the main profile, woken by Hermes when the card is done, runs
+  `ssh workbox cat <patch> | git apply`, which the hook makes Hermes ask about.
+
+It holds that the card is made and done; that Claude Code ran on Workbox; that the canary was in
+neither its environment nor its reach, nor in anything Hermes copied over; that the Dashboard
+client is asked before the patch goes in, and that approved once it goes in byte for byte as
+written, denied not at all; and that over the Hermes API the turn Hermes starts when the card is
+done has no one to ask, so the command is refused. Found on the way: a kanban worker runs
+unattended, so a command Hermes counts as dangerous (`rm -rf`) is refused there outright, never
+asked about. `--app` then runs `EchoTests/HermesLabButlerTests`: the app's open conversation gets
+the question of the turn Hermes starts in it, and approved from the card, the patch goes in.
+
 ## Phone tools
 
 `device` runs the `push` scenario on each release (the plugin from this repository, a Dashboard

@@ -302,10 +302,16 @@ nonisolated protocol HermesTransport: Sendable {
     /// was closed while the agent worked, or the turn was started somewhere else. Nil when
     /// nothing is running or waiting there. Only the Dashboard keeps a turn that can be joined.
     func rejoin(stored: String) async throws -> RejoinedTurn?
+    /// Calls `started` when the host starts a turn of its own in a stored session the app has
+    /// open and isn't following: a kanban card the agent made, finished, waking it, say. The app
+    /// then joins it as `rejoin` does, so a question it asks is put at once. Returns what ends the
+    /// watch; nil where the host starts no turns the app could join (only the Dashboard does).
+    func watchHost(stored: String, started: @escaping @MainActor @Sendable () -> Void) async -> (@MainActor @Sendable () -> Void)?
 }
 
 extension HermesTransport {
     func rejoin(stored: String) async throws -> RejoinedTurn? { nil }
+    func watchHost(stored: String, started: @escaping @MainActor @Sendable () -> Void) async -> (@MainActor @Sendable () -> Void)? { nil }
 }
 
 /// A turn the app joins part-way (`HermesTransport.rejoin`).

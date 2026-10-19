@@ -13,12 +13,12 @@ final class Conversation {
     private(set) var id = UUID()
     private(set) var createdAt = Date.now
     private(set) var messages: [Message] = [] { didSet { refreshHeader() } }
-    private(set) var isStreaming = false
+    private(set) var isStreaming = false { didSet { if isStreaming != oldValue { watchHostTurns() } } }
     private(set) var statusLine: String?
     private(set) var lastError: String?
 
     /// Hermes ledger session id (sessions transport) or stored session id (hermes serve).
-    private(set) var serverSessionID: String?
+    private(set) var serverSessionID: String? { didSet { if serverSessionID != oldValue { watchHostTurns() } } }
     /// The project a new conversation starts in (a project's New Conversation, on the Dashboard):
     /// its first turn opens the session in the project's folder. Gone when it becomes another.
     private(set) var startsIn: ProjectPlace?
@@ -623,6 +623,45 @@ final class Conversation {
         await initialLoad?.value   // at launch the conversation may still be coming off the disk
         guard settings.transport.hasLedger, endsUnanswered, let stored = serverSessionID else { return }
         try? await open(serverSession: stored)
+    }
+
+    /// The open Dashboard conversation's watch, while nothing is being followed, for a turn the
+    /// host starts in it (`HermesTransport.watchHost`).
+    private var hostWatch: (stored: String, stop: @MainActor @Sendable () -> Void)?
+    private var joiningHostTurn = false
+
+    /// Watches the open Dashboard conversation, while no turn is being followed, for one the host
+    /// starts in it itself: a kanban card the agent made, finished, wakes it, and it may ask before
+    /// a command. Joined as it starts, so its question gets its card at once rather than when the
+    /// chat is next opened. Started and stopped as the conversation and its turns change.
+    private func watchHostTurns() {
+        guard settings.transport == .hermesServe, let stored = serverSessionID, !isStreaming else {
+            stopWatchingHost()
+            return
+        }
+        guard hostWatch?.stored != stored else { return }
+        stopWatchingHost()
+        guard let transport = makeTransport() else { return }
+        Task { [weak self] in
+            let stop = await transport.watchHost(stored: stored) { [weak self] in self?.hostTurnStarted(stored) }
+            guard let stop else { return }
+            guard let self, self.serverSessionID == stored, !self.isStreaming, self.hostWatch == nil else { stop(); return }
+            self.hostWatch = (stored, stop)
+        }
+    }
+
+    private func stopWatchingHost() {
+        hostWatch?.stop()
+        hostWatch = nil
+    }
+
+    private func hostTurnStarted(_ stored: String) {
+        guard !isStreaming, !joiningHostTurn, serverSessionID == stored else { return }
+        joiningHostTurn = true
+        Task {
+            await rejoinIfWaiting()
+            joiningHostTurn = false
+        }
     }
 
     private func follow(_ joined: RejoinedTurn, stored: String) {

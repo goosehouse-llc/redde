@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+"""A stand-in for Claude Code's `claude -p` in the Hermes lab (lab.sh butler).
+
+    claude -p "<what to do>" [--any --other flags]
+
+Run in a git checkout (the task's copy of the lab repo): it makes the change the lab asks for
+(a line added to hello.py, naming the prompt's tag=<word>), writes the change as a patch to ../change.patch, and prints a short
+report, as `claude -p` prints its answer.
+
+It also looks for what it should not see, and writes what it found to ../claude-saw.json:
+whether the lab's canary secret (LAB_CANARY_KEY, kept in the main profile's .env only) is in its
+environment, and whether it can read it from the main profile's .env on disk. It never prints
+or copies a secret, only says yes or no, and it looks only inside the lab's own run folder.
+"""
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+prompt = sys.argv[sys.argv.index("-p") + 1] if "-p" in sys.argv else ""
+here = Path.cwd()
+canary = os.environ.get("LAB_CANARY_NAME", "LAB_CANARY_KEY")
+
+# What it can see. The lab's run folder holds every Hermes home of the lab: the main profile's
+# .env is at <run>/.hermes/.env. It is found from HERMES_HOME (a profile's home is inside it) or
+# from LAB_RUN, and only looked at if it is under a folder named like a lab run.
+saw = {"env_has_canary": any(canary in name for name in os.environ),
+       "env_secret_names": sorted(n for n in os.environ if any(w in n for w in ("KEY", "TOKEN", "SECRET", "PASSWORD"))),
+       "main_env_readable": False, "main_env_has_canary": False, "checked": []}
+candidates = []
+home = os.environ.get("HERMES_HOME")
+if home:
+    p = Path(home).resolve()
+    candidates += [p / ".env"] + [a / ".env" for a in p.parents if a.name == ".hermes"]
+if os.environ.get("LAB_RUN"):
+    candidates.append(Path(os.environ["LAB_RUN"]) / ".hermes" / ".env")
+for path in dict.fromkeys(candidates):
+    if "redde-hermes-lab/run-" not in str(path) and "/lab-run/" not in str(path):
+        continue
+    saw["checked"].append(str(path))
+    try:
+        text = path.read_text()
+    except OSError:
+        continue
+    saw["main_env_readable"] = True
+    saw["main_env_has_canary"] = saw["main_env_has_canary"] or canary in text
+(here.parent / "claude-saw.json").write_text(json.dumps(saw, indent=1))
+
+# The change: one line, so a check can tell it arrived exactly as written.
+target = here / "hello.py"
+if not target.exists():
+    print("claude (lab): no hello.py here", file=sys.stderr)
+    sys.exit(1)
+import re
+tag = (re.search(r"tag=(\w+)", prompt) or [None, "one"])[1]
+target.write_text(target.read_text() + f'print("changed by the claude bot: {tag}")\n')
+patch = subprocess.run(["git", "diff"], cwd=here, capture_output=True, text=True, check=True).stdout
+(here.parent / "change.patch").write_text(patch)
+print(f"Done. Added one line to hello.py. Patch at {here.parent / 'change.patch'} ({len(patch.splitlines())} lines).")

@@ -33,6 +33,15 @@ speech API does, with a 440 Hz tone at 24 kHz, 50 ms for each character of the i
 can tell from the length and loudness of what it heard that nothing was lost or misread. `pcm`
 streams it in odd-sized pieces (a sample split across two); `wav` is a file; `mp3` needs ffmpeg.
 
+And the butler (lab.sh butler, with LAB_BUTLER the lab's run folder): "lab:butler tag=<word>" to
+the main profile makes it hand a coding task to the "claude" bot on the kanban board
+(kanban_create). The claude bot's worker reads the task (kanban_show), runs Claude Code on
+"Workbox" through its SSH terminal (the lab's stand-in, fakebin/claude, in a clone there), and
+finishes the card with where the patch is (kanban_complete, "lab-patch workbox:<path>"). When the
+main profile is woken with that, it applies the patch as it is (`ssh workbox cat <path> | git apply`),
+a command Hermes asks the person about (ask_before_writes.py), and says "[applied]" or
+"[not applied]" by looking at the repository.
+
 And one for attachments: a message with "lab:file" in it is answered "[file seen]" when what
 reached the model also holds "lab-file-token" (a text file's contents, as Hermes inlines them)
 or "lab-clip.mp4" (how it names a file it can't inline), and "[file missing]" when it doesn't.
@@ -82,6 +91,98 @@ FAILURES = {
     "lab:refused": (401, {"error": {"message": "Incorrect API key provided.", "type": "invalid_request_error", "code": "invalid_api_key"}}),
     "lab:outage": (500, {"error": {"message": "The server had an error while processing your request.", "type": "server_error"}}),
 }
+
+
+BUTLER = os.environ.get("LAB_BUTLER", "")
+# Steps of a check kept elsewhere (LAB_STUB_EXTRA, a Python file with flow(messages, body, call)):
+# asked first; None hands the conversation on to the steps here.
+EXTRA = None
+if os.environ.get("LAB_STUB_EXTRA"):
+    import importlib.util
+    _spec = importlib.util.spec_from_file_location("lab_stub_extra", os.environ["LAB_STUB_EXTRA"])
+    EXTRA = importlib.util.module_from_spec(_spec)
+    _spec.loader.exec_module(EXTRA)
+
+
+def text_of(message):
+    content = message.get("content")
+    return content if isinstance(content, str) else " ".join(p.get("text", "") for p in content or [] if isinstance(p, dict))
+
+
+def tool_call(body, name, arguments):
+    """How the model calls a tool it may be offered only through tool search."""
+    offered = [tool.get("function", {}).get("name") for tool in body.get("tools") or []]
+    if name in offered or "tool_call" not in offered:
+        return "", (name, arguments)
+    bridge = next(t.get("function", {}) for t in body.get("tools") or [] if t.get("function", {}).get("name") == "tool_call")
+    batched = "calls" in (bridge.get("parameters") or {}).get("properties", {})
+    return "", ("tool_call", {"calls": [{"name": name, "arguments": arguments}]} if batched else {"name": name, "arguments": arguments})
+
+
+def butler(messages, body):
+    """The butler's steps (lab.sh butler): what the model says or calls next, or None if this
+    conversation isn't one of them. (text, (tool, arguments) or None)."""
+    import re
+    offered = [tool.get("function", {}).get("name") for tool in body.get("tools") or []]
+    last = messages[-1] if messages else {}
+    users = [text_of(m) for m in messages if m.get("role") == "user"]
+    called = [c.get("function", {}).get("name") for m in messages if m.get("role") == "assistant" for c in m.get("tool_calls") or []]
+    def call(name, arguments):
+        if name in offered or "tool_call" not in offered:
+            return "", (name, arguments)
+        bridge = next(t.get("function", {}) for t in body.get("tools") or [] if t.get("function", {}).get("name") == "tool_call")
+        batched = "calls" in (bridge.get("parameters") or {}).get("properties", {})
+        return "", ("tool_call", {"calls": [{"name": name, "arguments": arguments}]} if batched else {"name": name, "arguments": arguments})
+    said = text_of(last)
+    # The claude bot's worker: "work kanban task t_…".
+    if users and users[0].startswith("work kanban task"):
+        if last.get("role") == "user":
+            return call("kanban_show", {})
+        if last.get("role") != "tool":
+            return None
+        step = called[-1] if called else ""
+        if step == "kanban_show" or (step == "tool_call" and len(called) == 1):
+            tag = (re.search(r"tag=(\w+)", said) or re.search(r"tag=(\w+)", " ".join(users)))
+            tag = tag.group(1) if tag else "one"
+            # (Nothing Hermes counts as dangerous, rm -rf say: a kanban worker has no one to ask,
+            # so Hermes refuses it outright.)
+            work = f"~/work/{tag}"
+            return call("terminal", {"command": f"mkdir -p {work} && cd {work} && git clone -q {BUTLER}/workbox/origin repo "
+                                                f"&& cd repo && claude -p 'Add one line to hello.py. tag={tag}' --permission-mode acceptEdits"})
+        if step == "terminal" or (step == "tool_call" and len(called) == 2):
+            done = re.search(r"Patch at (\S+change\.patch)", said)
+            tag = (re.search(r"tag=(\w+)", " ".join(text_of(m) for m in messages if m.get("role") == "tool")) or [None, "one"])[1]
+            if not done:
+                return call("kanban_block", {"reason": f"lab-failed: Claude Code didn't finish: {said[:200]}"})
+            return call("kanban_complete", {"summary": f"lab-patch workbox:{done.group(1)} one line added to hello.py (tag={tag})",
+                                            "metadata": {"changed_files": ["hello.py"], "tag": tag}})
+        return "[worker done]", None
+    # The main profile.
+    if any("lab:butler" in u for u in users):
+        if last.get("role") == "user" and "lab:butler" in said:
+            tag = (re.search(r"tag=(\w+)", said) or [None, "one"])[1]
+            return call("kanban_create", {"title": f"Lab change {tag}", "assignee": "claude",
+                                          "body": f"lab:claude-work tag={tag}: add one line to hello.py",
+                                          "workspace_kind": "dir", "workspace_path": f"{BUTLER}/kanban-work/{tag}"})
+        if last.get("role") == "user" and "lab-patch workbox:" in said:
+            path = re.search(r"lab-patch workbox:(\S+)", said).group(1)
+            # The lab's own ssh by its path: a login shell puts the system's first, and "workbox" may
+            # name a real machine on the network. (A real server uses `ssh workbox` and its ~/.ssh/config.)
+            return call("terminal", {"command": f"{BUTLER}/bin/ssh workbox cat {path} | git -C {BUTLER}/host/repo apply --whitespace=nowarn -"})
+        if last.get("role") == "tool":
+            asked = called[-1] if called else ""
+            if asked == "kanban_create" or (asked == "tool_call" and "kanban" in said.lower() and "lab-patch" not in said):
+                return "[queued]", None
+            tags = re.findall(r"tag=(\w+)", " ".join(text_of(m) for m in messages if m.get("role") == "user"))
+            try:
+                code = open(f"{BUTLER}/host/repo/hello.py").read()
+            except OSError:
+                code = ""
+            return ("[applied]" if tags and f"changed by the claude bot: {tags[-1]}" in code else "[not applied]"), None
+        if last.get("role") == "user":
+            # Any other news (a card blocked, say): noted, nothing done.
+            return "[noted]", None
+    return None
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -157,6 +258,15 @@ class Handler(BaseHTTPRequestHandler):
                                 "mention": "[@mentions resolved from the Bot Mode roster" in last_user}) + "\n")
         text, call = f"[{NAME}:{model}]", None
         last = messages[-1] if messages else {}
+        planned = EXTRA.flow(messages, body, tool_call) if EXTRA else None
+        if planned is None and BUTLER:
+            planned = butler(messages, body)
+        if planned is not None:
+            text, step = planned
+            if step:
+                text, call = "", {"index": 0, "id": f"call_{int(time.time() * 1000)}", "type": "function",
+                                  "function": {"name": step[0], "arguments": json.dumps(step[1])}}
+            messages = []   # the rest below is for the other checks
         if last.get("role") == "user" and "lab:slow" in json.dumps(last.get("content")):
             time.sleep(8)
             text = "[slow done]"

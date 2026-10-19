@@ -1206,6 +1206,15 @@ When it comes forward, a Hermes conversation that ends on an unanswered question
 (`Conversation.catchUp`). On the Dashboard, opening a conversation whose turn is still under way
 joins it (`HermesTransport.rejoin`): the reply so far, what follows, and the card for whatever
 the agent is waiting on. Stop stops a joined turn; leaving the conversation only stops listening.
+While a Dashboard conversation is open and nothing is being followed, the app also watches its
+session for a turn the host starts in it itself (`HermesTransport.watchHost`): a kanban card the
+agent made, finished, wakes it there, or a bot's reply comes back to it. The first event only a
+turn sends (`message.start`, text, a tool, a question) makes the conversation join it as opening
+would, so a question it asks before a command gets its card at once; before, the card came only
+when the chat was next opened, and an unanswered approval times out into a refusal. A question
+asked before the join is put again from the session's open requests (`replayOpenRequests`,
+`includingKnown`). Checked with the app's own conversation by `lab.sh butler --app`
+(`HermesLabButlerTests`), which fails without the watch.
 
 **Leaving a conversation while the agent works in it** (opening another one, or starting a new
 one) lets go of the turn without stopping it, on both Hermes connections (GitHub issue 12): the

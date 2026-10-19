@@ -1969,3 +1969,53 @@ struct HermesLabGroupsTests {
         HermesLabApprovalTests.report(!after.contains { $0.id == room.id }, "an ended group chat leaves the list")
     }
 }
+
+/// The butler with the app's own conversation (lab.sh butler --app, after butler_check.py): a
+/// message in an open Dashboard conversation makes the main profile hand a coding task to the
+/// claude bot; when the card is done Hermes wakes the agent in that conversation itself, a turn
+/// the app didn't start, and its question before applying the patch gets its card in the open
+/// conversation at once; approved, the patch goes in.
+@MainActor
+struct HermesLabButlerTests {
+    @Test func aQuestionInATurnTheHostStartsReachesTheOpenConversation() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        guard (try await client.bots()).bots.contains(where: { $0.name == "claude" }) else {
+            print("LAB SKIP: not the butler lab (scripts/hermes-lab/lab.sh butler --app)")
+            return
+        }
+        let settings = Settings(defaults: UserDefaults(suiteName: "lab-butler-\(UUID().uuidString)")!)
+        settings.transport = .hermesServe
+        settings.serveURL = "http://127.0.0.1:19119"
+        let conversation = Conversation(settings: settings, store: .shared, transportOverride: HermesServeTransport(client: client))
+        conversation.reset()
+        _ = conversation.send("lab:butler tag=app Please add a line to hello.py.")
+        for _ in 0 ..< 120 where conversation.isStreaming || !(conversation.messages.last?.text.contains("[queued]") ?? false) {
+            try await Task.sleep(for: .milliseconds(500))
+        }
+        let queued = conversation.messages.last?.text ?? ""
+        HermesLabApprovalTests.report(queued.contains("[queued]"), "the agent hands the task to the claude bot", queued)
+
+        // The card is done by the claude bot, the agent woken in this conversation: nothing here
+        // started that turn, and its question comes to the open conversation.
+        for _ in 0 ..< 300 where conversation.pendingInterrupt == nil {
+            try await Task.sleep(for: .milliseconds(500))
+        }
+        guard let pending = conversation.pendingInterrupt, case let .approval(request) = pending.interrupt else {
+            HermesLabApprovalTests.report(false, "the turn the host starts asks in the open conversation", "no card in 150 s")
+            return
+        }
+        HermesLabApprovalTests.report(conversation.isStreaming && "\(request.command) \(request.description ?? "")".contains("apply"),
+                                      "the turn the host starts asks in the open conversation, and the app follows it",
+                                      "\(request.command) \(request.description ?? "")")
+        try await client.respondApproval(runtimeSession: pending.runtimeSession, requestID: request.id, choice: "once")
+        for _ in 0 ..< 120 where conversation.isStreaming || !(conversation.messages.last?.text.contains("applied]") ?? false) {
+            try await Task.sleep(for: .milliseconds(500))
+        }
+        let reply = conversation.messages.last?.text ?? ""
+        HermesLabApprovalTests.report(reply.contains("[applied]") && !conversation.isStreaming, "approved from the card, the patch goes in", reply)
+        if let stored = conversation.serverSessionID {
+            for record in ConversationStore.shared.summaries where record.serverSessionID == stored { conversation.delete(id: record.id) }
+        }
+    }
+}

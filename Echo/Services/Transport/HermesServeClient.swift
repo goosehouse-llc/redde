@@ -597,12 +597,14 @@ final class HermesServeClient {
     ///
     /// Hermes 0.21.0 has no such list, but says which approval is pending; that one is put the
     /// way that release asks (and is answered by `approval.respond`, having no frame to answer).
+    /// `includingKnown` puts again those this connection heard already: for a turn being joined,
+    /// whose listener wasn't there when they came.
     @discardableResult
-    func replayOpenRequests(in resumed: JSONValue) -> Int {
+    func replayOpenRequests(in resumed: JSONValue, includingKnown: Bool = false) -> Int {
         let session = resumed["session_id"]?.string
         let open = resumed["open_requests"]?.array ?? []
         for request in open {
-            guard let id = request["id"], let key = Self.key(id), openRequests[key] == nil, let method = request["method"]?.string,
+            guard let id = request["id"], let key = Self.key(id), includingKnown || openRequests[key] == nil, let method = request["method"]?.string,
                   var event = Self.prompt(method: method, id: key, params: request["params"] ?? .null) else { continue }
             event.sessionID = session ?? event.sessionID
             openRequests[key] = (id, method)
@@ -793,6 +795,12 @@ final class HermesServeClient {
     }
 
     func removeListener(_ id: UUID) { listeners[id] = nil }
+
+    /// An event is about this stored session: by that id, or by the one it runs under here.
+    func isSession(_ sessionID: String?, stored: String) -> Bool {
+        guard let sessionID else { return false }
+        return sessionID == stored || runtimeIDs[stored] == sessionID
+    }
 
     // MARK: - Sessions
 

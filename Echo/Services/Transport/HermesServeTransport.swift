@@ -107,6 +107,19 @@ nonisolated struct HermesServeTransport: HermesTransport {
         }
     }
 
+    /// A turn the host starts in the session, heard as it begins (`HermesTransport.watchHost`):
+    /// anything only a turn under way sends, about this session.
+    func watchHost(stored: String, started: @escaping @MainActor @Sendable () -> Void) async -> (@MainActor @Sendable () -> Void)? {
+        let client = self.client
+        return await MainActor.run {
+            let id = client.addListener { event in
+                guard Self.turnEvents.contains(event.type), client.isSession(event.sessionID, stored: stored) else { return }
+                started()
+            }
+            return { client.removeListener(id) }
+        }
+    }
+
     /// What only a turn under way sends.
     private static let turnEvents: Set<String> = [
         "message.start", "message.delta", "reasoning.delta", "reasoning.available", "tool.start", "tool.complete",
@@ -242,7 +255,8 @@ nonisolated struct HermesServeTransport: HermesTransport {
         // From here on events are heard as they come; first the ones that came during the call.
         let early = turn.early ?? []
         turn.early = nil
-        let waiting = client.replayOpenRequests(in: info)
+        // Asked before this listener was here (the turn began while no one followed it): put again.
+        let waiting = client.replayOpenRequests(in: info, includingKnown: true)
         guard info["running"]?.bool == true || waiting > 0 else {
             client.removeListener(listener)
             continuation.finish()
