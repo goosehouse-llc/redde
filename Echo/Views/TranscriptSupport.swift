@@ -152,6 +152,8 @@ extension EnvironmentValues {
     @Entry var asksAboutSelection = false
     /// Who the replies are from, when not the agent by its own name: a bot, in its chat.
     @Entry var replySpeaker: String?
+    /// That bot's face, beside its name on each reply.
+    @Entry var replyFace: BotFace?
 }
 
 

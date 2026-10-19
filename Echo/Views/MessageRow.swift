@@ -42,6 +42,7 @@ struct MessageRow: View, Equatable {
     @Environment(\.theme) private var theme
     /// A bot's name, in its chat; else the agent's (`settings.headerTitle`).
     @Environment(\.replySpeaker) private var replySpeaker
+    @Environment(\.replyFace) private var replyFace
     @State private var settings = Settings.shared
     /// What the person chose for each fold, once they have tapped it; until then each is open
     /// while it is what the agent is doing, and folded after.
@@ -158,6 +159,7 @@ struct MessageRow: View, Equatable {
     private var speakerLine: some View {
         HStack(spacing: 6) {
             if isLive { LiveMark(color: theme.accent) }
+            if let replyFace { BotAvatar(face: replyFace, size: 20) }
             Text(replySpeaker ?? settings.headerTitle).font(.subheadline.weight(.semibold))
             if isLive {
                 // The one place that shimmers while the reply is being worked on.

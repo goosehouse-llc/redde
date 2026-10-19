@@ -54,6 +54,10 @@ struct ContentView: View {
     @State private var showServers = false
     /// Dev hooks: `-echo.screen gateway` and `files` open those screens of Settings (screenshots).
     @State private var showGateway = false
+    #if DEBUG
+    /// `-echo.screen botGallery`: every bot creature, large, to look them over.
+    @State private var showBotGallery = false
+    #endif
     @State private var showFiles = false
     #endif
 
@@ -91,6 +95,9 @@ struct ContentView: View {
         .sheet(isPresented: $showServers) { NavigationStack { ServersView() } }
         .sheet(isPresented: $showPush) { NavigationStack { PushSettingsView() } }
         .sheet(isPresented: $showGateway) { NavigationStack { GatewayView() } }
+        #if DEBUG
+        .fullScreenCover(isPresented: $showBotGallery) { BotGallery() }
+        #endif
         .sheet(isPresented: $showFiles) { NavigationStack { FilesView() } }
         #endif
         .fullScreenCover(isPresented: $showVoice) {
@@ -212,6 +219,7 @@ struct ContentView: View {
     private func transcriptScreen(showListButton: Bool) -> some View {
         TranscriptView(showSetup: $showSetup, showSearch: $showSearch, onEdit: beginEditing, onEditQueued: editQueued)
             .environment(\.replySpeaker, conversation.bot?.name)
+            .environment(\.replyFace, botFace)
             .chatTextSize()
             .background(theme.pageColor)
             .foregroundStyle(theme.textColor)
@@ -240,11 +248,22 @@ struct ContentView: View {
                     // full the model's context is, which opens its own explanation.
                     VStack(spacing: 1) {
                         Button { showModelPicker = true } label: {
-                            TypedTitle(title: headerTitle, conversationID: conversation.id,
-                                       isPlaceholder: !conversation.hasMessages && conversation.outbox.isEmpty)
-                                .font(.headline)
-                                .foregroundStyle(theme.textColor)
-                                .contentShape(Rectangle())
+                            Group {
+                                if let botFace {
+                                    // A bot's chat: whose it is, by its face and name, side by side.
+                                    HStack(spacing: 6) {
+                                        BotAvatar(face: botFace, size: 22)
+                                        Text(headerTitle).lineLimit(1)
+                                    }
+                                    .fixedSize(horizontal: true, vertical: false)
+                                } else {
+                                    TypedTitle(title: headerTitle, conversationID: conversation.id,
+                                               isPlaceholder: !conversation.hasMessages && conversation.outbox.isEmpty)
+                                }
+                            }
+                            .font(.headline)
+                            .foregroundStyle(theme.textColor)
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("\(headerTitle). Model: \(modelChipLabel)")
@@ -428,6 +447,13 @@ struct ContentView: View {
         let name = renameText
         Task {
             do { try await conversation.rename(to: name) } catch { renameError = error.localizedDescription }
+        }
+    }
+
+    /// In a bot's chat, the bot's face, as the chat list draws it.
+    private var botFace: BotFace? {
+        conversation.bot.map { bot in
+            (BotDirectory.shared.key == settings.connectionKey ? BotDirectory.shared.roster?.faces[bot.profile] : nil) ?? BotFace(seed: bot.profile)
         }
     }
 
@@ -655,6 +681,9 @@ struct ContentView: View {
         case "push": showPush = true
         case "gateway": showGateway = true
         case "files": showFiles = true
+        #if DEBUG
+        case "botGallery": showBotGallery = true
+        #endif
         default: break
         }
         if let text = DevHooks.value("-echo.draft") {

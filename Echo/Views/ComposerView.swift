@@ -297,14 +297,15 @@ struct ComposerView: View {
 
     /// Bots to tag in a bot's chat: tap one to finish the tag. The bot it is sent to asks that one.
     private func mentionMenu(_ bots: [HermesBot]) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let faces = BotDirectory.shared.roster?.faces ?? [:]
+        return VStack(alignment: .leading, spacing: 0) {
             ForEach(bots) { bot in
                 Button {
                     draft = BotMentions.complete(draft, with: bot)
                     focused = true
                 } label: {
                     HStack(spacing: 10) {
-                        BotAvatar(name: bot.label(mainName: settings.headerTitle), seed: bot.name, size: 22)
+                        BotAvatar(face: faces[bot.name] ?? BotFace(seed: bot.name), size: 22)
                         Text("@" + BotMentions.tag(for: bot)).font(.callout.weight(.medium)).lineLimit(1)
                         Text(bot.label(mainName: settings.headerTitle)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                         Spacer(minLength: 0)

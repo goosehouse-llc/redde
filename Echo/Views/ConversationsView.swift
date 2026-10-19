@@ -63,6 +63,10 @@ struct ConversationsList: View {
     @State private var openingBot: String?
     /// "Let bots message each other", being asked about.
     @State private var askingBotMessaging = false
+    /// The server's group chats (Hermes's bot rooms), the one open, and a new one being made.
+    @State private var groups = GroupDirectory.shared
+    @State private var openRoom: GroupRoom?
+    @State private var makingGroup = false
     @AppStorage("sessions.showScheduled") private var showScheduled = false
     @State private var shareItem: ShareItem?
     @State private var selecting = false
@@ -141,6 +145,16 @@ struct ConversationsList: View {
         .onAppear { if let tab = DevHooks.value("-echo.section").flatMap(Tab.init(rawValue:)) { section = tab } }
         #endif
         .sheet(isPresented: $showSettings) { SettingsView() }
+        // Group chats, from the Bots section: here, not on the section, which a list builds lazily.
+        .sheet(isPresented: $makingGroup) {
+            NewGroupChatView(bots: listedBots, mainName: settings.headerTitle) { room in
+                Task { await groups.refresh() }
+                openRoom = room
+            }
+        }
+        .fullScreenCover(item: $openRoom) { room in
+            GroupChatView(room: room) { groups.forget(room.id) }
+        }
         .background {
             Group {
                 Button("Sessions") { section = .sessions }.keyboardShortcut("1", modifiers: .command)
@@ -336,9 +350,26 @@ struct ConversationsList: View {
     private var botsSection: some View {
         let bots = listedBots
         if !bots.isEmpty {
+            let faces = botDirectory.roster?.faces ?? [:]
             Section {
                 if showBotRows {
-                    ForEach(bots) { botRow($0) }
+                    ForEach(bots) { botRow($0, face: faces[$0.name] ?? BotFace(seed: $0.name)) }
+                    if groups.key == settings.connectionKey, groups.supported {
+                        ForEach(groups.rooms) { groupRow($0, faces: faces) }
+                        if groups.writable {
+                            Button { makingGroup = true } label: {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "person.3")
+                                        .foregroundStyle(Settings.shared.resolvedTheme.accent)
+                                        .frame(width: 32, height: 32)
+                                    Text("New Group Chat").font(.body)
+                                }
+                                .contentShape(.rect)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityHint("Starts a chat with several bots at once")
+                        }
+                    }
                     if botDirectory.roster?.messagingIsOn == false {
                         Button { askingBotMessaging = true } label: {
                             HStack(spacing: 12) {
@@ -364,12 +395,12 @@ struct ConversationsList: View {
         }
     }
 
-    private func botRow(_ bot: HermesBot) -> some View {
+    private func botRow(_ bot: HermesBot, face: BotFace) -> some View {
         let name = bot.label(mainName: settings.headerTitle)
         let isOpen = conversation.bot?.profile == bot.name
         return Button { openBot(bot) } label: {
             HStack(spacing: 12) {
-                BotAvatar(name: name, seed: bot.name)
+                BotAvatar(face: face)
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(name).font(.body.weight(.semibold)).lineLimit(1)
@@ -393,6 +424,30 @@ struct ConversationsList: View {
         .disabled(opening != nil || openingBot != nil)
         .accessibilityElement(children: .combine)
         .accessibilityHint("Opens your chat with this bot")
+    }
+
+    /// A group chat's row: its bots' faces, its name, and who is in it.
+    private func groupRow(_ room: GroupRoom, faces: [String: BotFace]) -> some View {
+        Button { openRoom = room } label: {
+            HStack(spacing: 12) {
+                FaceStack(faces: room.members.prefix(2).map { faces[$0.profile] ?? BotFace(seed: $0.profile) }, size: 24)
+                    .frame(width: 32, alignment: .leading)
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text(room.name).font(.body.weight(.semibold)).lineLimit(1)
+                        Spacer(minLength: 8)
+                        if let when = room.updatedAt { Text(DateGroup.rowTime(when)).font(.caption).foregroundStyle(.secondary) }
+                    }
+                    Text(room.members.map(\.label).formatted(.list(type: .and)))
+                        .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
+                }
+            }
+            .padding(.vertical, 2)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Opens this group chat")
     }
 
     private func openBot(_ bot: HermesBot) {
@@ -987,7 +1042,12 @@ struct ConversationsList: View {
             projects = Self.demoProjects
             folders = Self.demoProjects
             ledger = Self.demoProjects.flatMap { $0.lanes.flatMap(\.sessions) } + Self.demoScheduledRuns
-            if DevHooks.demoBots { botDirectory.set(Self.demoBots, key: settings.connectionKey) }
+            if DevHooks.demoBots {
+                botDirectory.set(Self.demoBots, key: settings.connectionKey)
+                groups.set(rooms: [.demo], supported: true, writable: true, key: settings.connectionKey)
+                // `-echo.openGroup`: that group chat open (screenshots).
+                if DevHooks.has("-echo.openGroup") { openRoom = .demo }
+            }
             if DevHooks.demoMarks {
                 ledger += Self.demoMarkedRows
                 activity.showDemo(["demo-1": .working, "demo-marks-2": .needsYou])
@@ -1008,7 +1068,10 @@ struct ConversationsList: View {
             conversation.noteServerTitles(sessions)
             if viaServe {
                 // Bots and projects are a bonus; a failure here must not hide the flat list.
-                if settings.showBots { _ = try? await botDirectory.refresh() }
+                if settings.showBots {
+                    _ = try? await botDirectory.refresh()
+                    await groups.refresh()
+                }
                 let all = (try? await HermesServeClient.shared.projectTree()) ?? []
                 let tree = HermesServeClient.Project.listed(all)
                 guard current else { return }

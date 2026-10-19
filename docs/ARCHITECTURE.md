@@ -274,7 +274,15 @@ Hermes's Bot Mode, as Hermes Desktop has it, on the Dashboard connection (`Serve
 bot is a Hermes profile with one conversation of its own: the session titled exactly "Bot Chat" on
 that profile. Hermes counts every profile as one, so the chat list shows a **Bots** section once
 the server has a profile besides the main one (Settings → Hermes server → Bots in the chat list
-turns it off). Rows come from `profiles.list` (every release from 0.21.0): the bot's name (its
+turns it off). Each bot is a little creature of its own (`BotAvatar.swift`): a speech bubble at
+heart (each has a bubble's tail) in one of eight shapes, white eyes glancing somewhere, on some a
+small mouth or a mark (an antenna, a sparkle, freckles, blush), in a gradient of its own. All of it
+comes from the profile's name, except the main profile's, which is always Redde's blue round bubble
+(`BotFace.main`); `BotFace.faces(for:)` keeps any two bots on a server apart, with a shape and a
+colour each while there are some left. Kept clear of other Hermes apps' looks on purpose (Cadu's
+clouds, flowers, ghosts, hearts, pears, cats and bears; plain dark oval eyes). The creature is in
+the list, the @ menu, the chat's header and beside its replies; `-echo.screen botGallery` (DEBUG)
+shows a dozen large. Rows come from `profiles.list` (every release from 0.21.0): the bot's name (its
 Hermes Desktop title, its profile's display name, or the profile's name; the main profile goes by
 the name in Settings → Name), and its chat's last line and time (`canonical_session`).
 
@@ -306,8 +314,20 @@ the name in Settings → Name), and its chat's last line and time (`canonical_se
   the instructions about it. Ordinary conversations get neither.
 - `scripts/hermes-lab/lab.sh bots` checks all of it on each release: what Hermes does
   (`bots_check.py`), then the app's own client (`HermesLabBotsTests`). Not on the Hermes API
-  connection, whose bots would need the Dashboard's socket. Group chats (Hermes's rooms) aren't in
-  Redde.
+  connection, whose bots would need the Dashboard's socket.
+- **Group chats** (`ServerGroups.swift`, `GroupChatView.swift`): Hermes's hosted bot rooms
+  (`groups.*`, the same methods on 0.21.0 to 0.22.2), listed under the bots with their members'
+  creatures stacked, and made with New Group Chat (two to six bots). Hermes runs a room itself:
+  a message goes to the bots it @tags, or to all of them, one after another; a bot that a reply
+  tags may answer in turn, for three rounds or ten replies at most; one with nothing to add
+  passes. A room's worker (`driver` in `groups.capabilities`) starts a moment after the Dashboard;
+  without it a room can be read but not sent to. Hermes pushes nothing about rooms: the screen reads
+  the room's log after its last entry (`groups.log`) and its state (`groups.state`: working,
+  waiting, approvals) every second while bots are talking and every five otherwise, so replies come
+  whole. Stop sends a fresh `cancel_id` each time (one used before stops nothing new); approvals in
+  a room take "once" or "deny" (`groups.approve`); End Group Chat disbands it, tried again while
+  its bots are still stopping. Rooms Hermes Desktop runs from its own side aren't in `groups.list`
+  and don't show. `lab.sh groups` checks it on each release.
 
 ### Reply language
 

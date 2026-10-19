@@ -23,6 +23,7 @@
 #   scripts/hermes-lab/lab.sh speech [tag ...]     replies read out with the voice Hermes is set up with, streamed and whole (issue 7)
 #   scripts/hermes-lab/lab.sh status [tag ...]     the chat list's marks: working, waiting on a person, unread, on both connections
 #   scripts/hermes-lab/lab.sh bots [tag ...]       bots: each profile's own chat, hidden from the list, and bots messaging bots
+#   scripts/hermes-lab/lab.sh groups [tag ...]     group chats: a room of bots made, talked to, a bot tagged, stopped, renamed, disbanded
 #   scripts/hermes-lab/lab.sh runs [tag ...]       Hermes API turns as runs: left, taken up again, stopped, sent twice (app check)
 #   scripts/hermes-lab/lab.sh up <tag> <scenario>  leave one lab running (API :18642, Dashboard :19119)
 #   scripts/hermes-lab/lab.sh down
@@ -236,6 +237,25 @@ todos() {
     echo "===== Hermes $tag / approval"
     if ! up "$tag" approval; then failed+=("$tag (lab)"); continue; fi
     app_check || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
+# Group chats (Hermes's hosted bot rooms): what Hermes does with a room (groups_check.py), then the
+# app's own client and room following (HermesLabGroupsTests). LAB_HOST_ONLY=1 skips the app.
+groups() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  [[ -n "${LAB_HOST_ONLY:-}" ]] || app_prepare HermesLabGroupsTests || exit 1
+  for tag in $tags; do
+    echo "===== Hermes $tag / approval"
+    if ! up "$tag" approval; then failed+=("$tag (lab)"); continue; fi
+    (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" groups_check.py) || failed+=("$tag (host)")
+    if [[ -z "${LAB_HOST_ONLY:-}" ]]; then
+      up "$tag" approval || { failed+=("$tag (lab)"); continue; }
+      app_check || failed+=("$tag")
+    fi
   done
   down
   if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
@@ -544,6 +564,7 @@ case "${1:-}" in
   projects) shift; projects "$@" ;;
   bots) shift; bots "$@" ;;
   runs) shift; runs "$@" ;;
+  groups) shift; groups "$@" ;;
   search) shift; search "$@" ;;
   context) shift; context "$@" ;;
   speech) shift; speech "$@" ;;

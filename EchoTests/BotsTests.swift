@@ -34,7 +34,7 @@ struct BotsTests {
         #expect(scout.chatID == "s-tip", "the chat's latest part, when Hermes has compressed it")
         #expect(scout.preview == "Here's what I found" && scout.lastActive == Date(timeIntervalSince1970: 1792000000))
         let main = try #require(roster.bots.first { $0.isDefault })
-        #expect(main.handle == "hermes" && main.label() == "Hermes" && main.label(mainName: "Redde") == "Redde")
+        #expect(main.handle == "hermes" && main.label() == "Redde" && main.label(mainName: "Ada") == "Ada")
         #expect(roster.bots.first { $0.name == "writer" }?.label() == "Quill")
         #expect(roster.messagingIsOn, "a profile set up as a bot turns messaging on")
     }
@@ -102,6 +102,24 @@ struct BotsTests {
         #expect(BotMentions.suggestions(for: "q", roster: bots, to: "scout").map(\.name) == ["writer"])
         let scout = try #require(bots.first { $0.name == "scout" })
         #expect(BotMentions.complete("ask @res", with: scout) == "ask @research-buddy ")
+    }
+
+    @Test func everyBotHasACreatureOfItsOwnAndKeepsIt() {
+        let names = ["default", "scout", "writer", "fixit", "coder", "research", "work", "personal", "home", "garden"]
+        let faces = BotFace.faces(for: names)
+        #expect(faces.count == names.count)
+        let features = { (all: [BotFace]) in Set(all.map { "\($0.shape)-\($0.eyes)-\($0.mouth)-\($0.mark)" }) }
+        #expect(features(Array(faces.values)).count == names.count, "no two bots share a creature")
+        #expect(Set(faces.values.map(\.color)).count == names.count, "nor a colour, while there are colours left")
+        let firstEight = names.sorted().prefix(8).compactMap { faces[$0] }
+        #expect(Set(firstEight.map { "\($0.shape)" }).count == 8, "nor a shape, while there are shapes left")
+        #expect(BotFace.faces(for: names.reversed()) == faces, "the same creatures whatever order they come in")
+        #expect(BotFace.faces(for: ["scout"])["scout"] == BotFace(seed: "scout"), "a bot alone has the creature its name gives")
+        #expect(faces["default"] == BotFace.main && BotFace(seed: "default") == BotFace.main, "the main agent is always Redde's blue bubble")
+        #expect(!faces.filter { $0.key != "default" }.values.contains { $0.shape == .round && $0.color == BotFace.main.color },
+                "and no other bot looks like it")
+        let fourteen = BotFace.faces(for: names + ["eleven", "twelve", "thirteen", "fourteen"])
+        #expect(features(Array(fourteen.values)).count == 14, "creatures stay apart past the shapes and colours")
     }
 
     // MARK: - A bot's chat as a conversation

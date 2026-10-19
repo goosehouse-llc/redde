@@ -1871,3 +1871,57 @@ struct HermesLabRunsTests {
         for record in ConversationStore.shared.summaries where record.serverSessionID == stored { conversation.delete(id: record.id) }
     }
 }
+
+/// Group chats with the app's own client and room feed (lab.sh groups, after groups_check.py): a
+/// room of the main profile and one more made, a message to both answered by both, one tagging a
+/// bot answered by it alone, renamed, stopped and ended.
+@MainActor
+struct HermesLabGroupsTests {
+    private static func until(_ feed: GroupFeed, seconds: Int = 60, _ done: () -> Bool) async {
+        for _ in 0 ..< seconds * 2 {
+            await feed.look()
+            if done() { return }
+            try? await Task.sleep(for: .milliseconds(500))
+        }
+    }
+
+    @Test func aGroupOfBotsTalks() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        _ = try? await client.call("profiles.create", params: .object(["name": .string("scout"), "clone_from": .string("default"),
+                                                                       "no_alias": .bool(true)]))
+        var support = (supported: false, writable: false)
+        for _ in 0 ..< 20 where !support.writable {
+            support = try await client.groupSupport()
+            if !support.writable { try await Task.sleep(for: .seconds(1)) }
+        }
+        HermesLabApprovalTests.report(support.supported && support.writable, "this Hermes runs group chats", "\(support)")
+        let roster = try await client.bots()
+        let bots = roster.bots.filter { $0.isDefault || $0.name == "scout" }
+        let room = try await client.createGroup(named: "Lab group", bots: bots, mainName: "Redde")
+        HermesLabApprovalTests.report(room.members.map(\.handle).sorted() == ["hermes", "scout"], "a group chat is made of two bots",
+                                      "\(room.members.map(\.handle))")
+
+        let feed = GroupFeed(room: room, client: client)
+        feed.send("hello both")
+        await Self.until(feed) { !feed.discussing && feed.events.contains { $0.kind == "message.member" } }
+        let answered = Set(feed.events.filter { $0.kind == "message.member" }.compactMap(\.actorID))
+        HermesLabApprovalTests.report(answered == ["default", "scout"] && feed.sending.isEmpty && !feed.discussing,
+                                      "a message to the group: both answer, and the round is over", "\(answered), discussing \(feed.discussing)")
+
+        let before = feed.events.count
+        feed.send("@scout just you")
+        await Self.until(feed) { !feed.discussing && feed.events.count > before + 1 }
+        let second = feed.events.dropFirst(before).filter { $0.kind == "message.member" }.compactMap(\.actorID)
+        HermesLabApprovalTests.report(second == ["scout"], "a message tagging one bot: that one answers", "\(second)")
+
+        try await feed.rename(to: "Renamed group")
+        let rooms = try await client.groupRooms()
+        HermesLabApprovalTests.report(rooms.contains { $0.id == room.id && $0.name == "Renamed group" } && feed.room.name == "Renamed group",
+                                      "the group chat is renamed")
+        try await client.stopGroup(room.id)
+        try await client.disbandGroup(room.id)
+        let after = try await client.groupRooms()
+        HermesLabApprovalTests.report(!after.contains { $0.id == room.id }, "an ended group chat leaves the list")
+    }
+}

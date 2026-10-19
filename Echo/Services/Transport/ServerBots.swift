@@ -32,7 +32,7 @@ nonisolated struct HermesBot: Identifiable, Equatable, Sendable {
 
     /// What it is called: its bot name, its profile's display name, or the profile's name. The
     /// main profile with neither goes by `mainName` (what the person calls their agent).
-    func label(mainName: String = "Hermes") -> String {
+    func label(mainName: String = "Redde") -> String {
         title?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
             ?? displayName?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
             ?? (isDefault ? mainName : name)
@@ -89,6 +89,9 @@ nonisolated struct BotRoster: Equatable, Sendable {
     /// Some profile is set up as a bot: Hermes then gives each bot's chat the tool to message the
     /// others (`message_agent`) and tells it who they are.
     var messagingIsOn: Bool { bots.contains(where: \.isSetUp) }
+
+    /// Each bot's face, no two alike on the server.
+    var faces: [String: BotFace] { BotFace.faces(for: bots.map(\.name)) }
 
     /// The bots the chat list shows: none while the main profile is the only one (there is no one
     /// else to talk to), else every bot not hidden in Hermes Desktop, the main one first, then the
