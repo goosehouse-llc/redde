@@ -341,6 +341,9 @@ struct KanbanCardDetail: View {
     @Environment(Conversation.self) private var conversation
     @State private var task: KanbanTask?
     @State private var comments: [KanbanComment] = []
+    /// The change the card carries (a worker's patch, as the claude bot leaves it), once read.
+    @State private var change: KanbanClient.CardChange?
+    @State private var showingChange = false
     @State private var status = ""
     @State private var newComment = ""
     @State private var error: String?
@@ -365,6 +368,7 @@ struct KanbanCardDetail: View {
                     if let r = task.result, !r.isEmpty { Section("Result") { MarkdownView(text: r) } }
                     else if let s = task.latestSummary, !s.isEmpty { Section("Latest") { Text(s).font(.callout) } }
                     if let f = task.lastFailure, !f.isEmpty { Section("Last failure") { Text(f).font(.footnote).foregroundStyle(.red) } }
+                    if let change { changeSection(change, task: task) }
                     Section("Comments") {
                         ForEach(comments) { c in
                             VStack(alignment: .leading, spacing: 2) {
@@ -406,6 +410,9 @@ struct KanbanCardDetail: View {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
             .task { await load() }
+            .sheet(isPresented: $showingChange) {
+                if let change { PatchView(title: change.task.title, patch: change.patch, notes: change.notes, notesTitle: "Steps left with it") }
+            }
             .sheet(isPresented: $editing) {
                 if let task { KanbanCardEditor(task: task, assignees: assignees) { await load(); await onChange() } }
             }
@@ -452,9 +459,41 @@ struct KanbanCardDetail: View {
 
     private func load() async {
         do {
-            let (t, c) = try await KanbanClient.task(taskID)
+            let (t, c, attachments) = try await KanbanClient.task(taskID)
             task = t; comments = c; status = t.status; error = nil
+            if attachments.contains(where: \.isPatch) { change = try? await KanbanClient.change(of: taskID) }
         } catch { self.error = error.localizedDescription }
+    }
+
+    /// A card done with a change on it: the change, and asking the agent to put it in place (it
+    /// does so with its own tools, so whatever asks before a write asks here too).
+    private func changeSection(_ change: KanbanClient.CardChange, task: KanbanTask) -> some View {
+        let files = Patch.files(change.patch)
+        return Section {
+            Button { showingChange = true } label: {
+                LabeledContent {
+                    Text(Patch.summary(files)).monospacedDigit()
+                } label: {
+                    Label("View Changes", systemImage: "plus.forwardslash.minus")
+                }
+            }
+            if ["done", "review"].contains(task.status) {
+                Button("Ask \(Settings.shared.headerTitle) to Apply It", systemImage: "checkmark.seal") { askToApply(task) }
+            }
+        } header: {
+            Text("Changes")
+        } footer: {
+            if change.notes != nil { Text("Steps were left with it, for whoever puts it in place.") }
+        }
+    }
+
+    /// In a new conversation with the agent: the card's own summary says how (the claude bot's
+    /// names the tool that puts its work in place).
+    private func askToApply(_ task: KanbanTask) {
+        dismiss()
+        if conversation.hasMessages || !conversation.outbox.isEmpty || conversation.bot != nil { conversation.reset() }
+        let summary = (task.result ?? task.latestSummary)?.nilIfEmpty.map { "\n\nThe card says: \($0)" } ?? ""
+        conversation.send("Put the change from kanban card “\(task.title)” (\(task.id)) in place, exactly as it is.\(summary)")
     }
 
     private func post() {

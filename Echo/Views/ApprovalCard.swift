@@ -4,6 +4,9 @@ import SwiftUI
 struct ApprovalCard: View {
     let request: ApprovalRequest
     let respond: (String) -> Void
+    /// A request that names a kanban card (the agent putting the claude bot's work in place): its
+    /// change, looked at before answering.
+    @State private var showingChange = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -18,6 +21,10 @@ struct ApprovalCard: View {
             if let description = request.description, !description.isEmpty {
                 Text(description).font(.footnote).foregroundStyle(.secondary)
             }
+            if request.kanbanCard != nil, KanbanClient.isAvailable {
+                Button("View Changes", systemImage: "plus.forwardslash.minus") { showingChange = true }
+                    .font(.footnote)
+            }
             HStack {
                 ForEach(request.choices, id: \.self) { choice in
                     Button(label(for: choice)) { respond(choice) }
@@ -29,6 +36,9 @@ struct ApprovalCard: View {
         }
         .padding(12)
         .background(Color.orange.opacity(0.12), in: .rect(cornerRadius: 14))
+        .sheet(isPresented: $showingChange) {
+            if let card = request.kanbanCard { CardChangeSheet(cardID: card) }
+        }
     }
 
     private func label(for choice: String) -> String {

@@ -264,6 +264,49 @@ struct BotsTests {
         #expect(activity.kind(of: scout, open: conversation, settings: settings) == nil)
     }
 
+    // MARK: - Coding work on a card
+
+    @Test func aCardsPatchReadsAsFilesWithWhatEachAddsAndTakesAway() {
+        let git = """
+            diff --git a/hello.py b/hello.py
+            index 3b18e51..a2b3c4d 100644
+            --- a/hello.py
+            +++ b/hello.py
+            @@ -1,2 +1,3 @@
+             print("hello")
+            -print("old")
+            +print("new")
+            +print("one more")
+            diff --git a/notes/new.md b/notes/new.md
+            new file mode 100644
+            --- /dev/null
+            +++ b/notes/new.md
+            @@ -0,0 +1 @@
+            +# Notes
+            \\ No newline at end of file
+            """
+        let files = Patch.files(git)
+        #expect(files.map(\.path) == ["hello.py", "notes/new.md"])
+        #expect(files[0].added == 2 && files[0].removed == 1 && files[0].lines.first?.kind == .hunk)
+        #expect(files[1].added == 1 && files[1].removed == 0)
+        #expect(Patch.summary(files) == "2 files · +3 −1")
+
+        // Python's difflib, as the butler writes the lanes' change: no "diff --git" lines.
+        let lanes = Patch.files("--- a/home/h/skills/x.md\n+++ b/home/h/skills/x.md\n@@ -1 +1 @@\n-old\n+new\n--- /dev/null\n+++ b/home/h/docs/y.md\n@@ -0,0 +1 @@\n+y\n")
+        #expect(lanes.map(\.path) == ["home/h/skills/x.md", "home/h/docs/y.md"] && lanes[0].added == 1 && lanes[1].added == 1)
+    }
+
+    @Test func anApprovalNamingACardOffersItsChange() throws {
+        let asked = ApprovalRequest(id: "r1", command: "<apply_claude_work> (plugin approval rule)",
+                                    description: "Sol wants to put Claude's change in place to demo: 1 file(s), +1 −0 lines (hello.py). Card t_2bf1f5db.",
+                                    choices: ["once", "deny"])
+        #expect(asked.kanbanCard == "t_2bf1f5db")
+        #expect(ApprovalRequest(id: "r2", command: "rm -rf /tmp/x", description: nil, choices: ["once"]).kanbanCard == nil)
+        let patch = try #require(KanbanAttachment(.object(["id": .number(3), "filename": .string("change.patch"), "content_type": .string("text/x-diff")])))
+        let notes = try #require(KanbanAttachment(.object(["id": .number(4), "filename": .string("HANDOFF.md")])))
+        #expect(patch.isPatch && !patch.isNotes && notes.isNotes && !notes.isPatch)
+    }
+
     // MARK: - A bot's chat as a conversation
 
     final class RecordingTransport: HermesTransport, @unchecked Sendable {

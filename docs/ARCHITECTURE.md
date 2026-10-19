@@ -816,8 +816,13 @@ schedule grammar), delivery targets, and blueprints on the Dashboard. Works over
 to move a card, edit, comment, and ask Redde about the card, in a new conversation or the open
 one (GitHub issue 21; a Hermes turn under way in the one left goes on). Moving to Blocked or Scheduled asks
 for a reason, Review or Done for a summary. It updates live over the plugin's events socket and
-falls back to polling. `Services/HermesAutomation.swift`, `Views/CronView.swift`,
-`Views/KanbanView.swift`.
+falls back to polling. A card with a patch on it (Hermes's card attachments: the claude bot's
+plugin attaches its change, and any notes of steps that need a key, as it finishes) has View
+Changes, the change as a diff (`PatchView`: each file with what it adds and takes away), and, once
+done, Ask … to Apply It, which asks the agent in a new conversation to put it in place with its own
+tools (so whatever asks before a write asks then). An approval that names a card (`t_…`, as the
+agent putting that work in place does) has View Changes too, to look before answering.
+`Services/HermesAutomation.swift`, `Views/CronView.swift`, `Views/KanbanView.swift`.
 
 ## Rendering
 

@@ -1222,6 +1222,11 @@ final class HermesServeClient {
         return data
     }
 
+    /// A Dashboard GET's answer as it comes: a file, not JSON.
+    func restData(_ path: String, timeout: TimeInterval = 30) async throws -> Data {
+        try await rest("GET", path, body: nil, timeout: timeout)
+    }
+
     /// Deletes a profile and everything in it (Dashboard REST: Hermes has no socket call for it).
     /// Hermes stops what runs for it first, waiting up to 10 seconds.
     func deleteProfile(_ name: String) async throws {

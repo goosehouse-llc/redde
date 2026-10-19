@@ -284,6 +284,32 @@ nonisolated struct KanbanComment: Identifiable, Sendable {
     }
 }
 
+/// A file on a card (Hermes's kanban attachments): one a person added, or a worker's work, as the
+/// claude bot leaves its patch.
+nonisolated struct KanbanAttachment: Identifiable, Equatable, Sendable {
+    var id: Int
+    var filename: String
+    var contentType: String?
+    var size: Int
+
+    init?(_ j: JSONValue) {
+        guard let id = j["id"]?.int, let name = j["filename"]?.string else { return nil }
+        self.id = id
+        filename = name
+        contentType = j["content_type"]?.string
+        size = j["size"]?.int ?? 0
+    }
+
+    /// A change in patch form, shown as a diff.
+    var isPatch: Bool {
+        let name = filename.lowercased(), type = (contentType ?? "").lowercased()
+        return name.hasSuffix(".patch") || name.hasSuffix(".diff") || type.contains("diff") || type.contains("patch")
+    }
+
+    /// Notes left with a change (the claude bot's HANDOFF.md: steps that need a key).
+    var isNotes: Bool { filename.lowercased() == "handoff.md" }
+}
+
 nonisolated struct KanbanColumn: Identifiable, Sendable {
     var name: String
     var tasks: [KanbanTask]
@@ -373,13 +399,34 @@ struct KanbanClient {
         try await patch(id, fields)
     }
 
-    static func task(_ id: String) async throws -> (KanbanTask, [KanbanComment]) {
+    static func task(_ id: String) async throws -> (KanbanTask, [KanbanComment], [KanbanAttachment]) {
         #if DEBUG
-        if isDemo, let card = demoBoard().columns.flatMap(\.tasks).first(where: { $0.id == id }) { return (card, []) }
+        if isDemo, let card = demoBoard().columns.flatMap(\.tasks).first(where: { $0.id == id }) { return (card, [], []) }
         #endif
         let json = try await HermesServeClient.shared.restJSON("GET", "\(base)/tasks/\(id)")
         guard let t = json["task"].flatMap(KanbanTask.init) else { throw TransportError.malformed("no task") }
-        return (t, (json["comments"]?.array ?? []).compactMap(KanbanComment.init))
+        return (t, (json["comments"]?.array ?? []).compactMap(KanbanComment.init), (json["attachments"]?.array ?? []).compactMap(KanbanAttachment.init))
+    }
+
+    /// An attachment's contents, as text.
+    static func attachmentText(_ id: Int) async throws -> String {
+        String(decoding: try await HermesServeClient.shared.restData("\(base)/attachments/\(id)"), as: UTF8.self)
+    }
+
+    /// The change a card carries: its newest patch, and the notes left with it.
+    nonisolated struct CardChange: Equatable, Sendable {
+        var task: KanbanTask
+        var patch: String
+        var notes: String?
+    }
+
+    /// A card's change, or nil when it has no patch on it.
+    static func change(of id: String) async throws -> CardChange? {
+        let (task, _, attachments) = try await self.task(id)
+        guard let patch = attachments.last(where: \.isPatch) else { return nil }
+        var notes: String?
+        if let note = attachments.last(where: \.isNotes) { notes = try? await attachmentText(note.id) }
+        return CardChange(task: task, patch: try await attachmentText(patch.id), notes: notes)
     }
 
     static func create(title: String, body: String?, priority: Int, assignee: String?, ready: Bool) async throws -> String? {

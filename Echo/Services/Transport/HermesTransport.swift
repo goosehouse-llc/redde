@@ -537,6 +537,12 @@ nonisolated struct ApprovalRequest: Identifiable, Equatable, Sendable, Codable {
 }
 
 nonisolated extension ApprovalRequest {
+    /// The kanban card the request names (`t_…`), as the claude bot's work does when the agent
+    /// wants to put it in place: its change can be looked at before answering.
+    var kanbanCard: String? {
+        "\(command) \(description ?? "")".firstMatch(of: /\b(t_[0-9a-f]{6,})\b/).map { String($0.output.1) }
+    }
+
     /// An `approval.request` as Hermes sends it, on the Dashboard's socket and in a Hermes API run's
     /// events. The choices are listed when the host lists them; a request that sends none says
     /// with two flags whether "this session" and "always" are on offer.

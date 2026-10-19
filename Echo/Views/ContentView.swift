@@ -67,6 +67,7 @@ struct ContentView: View {
     #if DEBUG
     /// `-echo.screen botGallery`: every bot creature, large, to look them over.
     @State private var showBotGallery = false
+    @State private var showDemoPatch = false
     #endif
     @State private var showFiles = false
     #endif
@@ -107,6 +108,7 @@ struct ContentView: View {
         .sheet(isPresented: $showGateway) { NavigationStack { GatewayView() } }
         #if DEBUG
         .fullScreenCover(isPresented: $showBotGallery) { BotGallery() }
+        .sheet(isPresented: $showDemoPatch) { PatchView(title: "Lab change one", patch: PatchView.demo, notes: PatchView.demoNotes, notesTitle: "Steps left with it") }
         #endif
         .sheet(isPresented: $showFiles) { NavigationStack { FilesView() } }
         #endif
@@ -745,6 +747,7 @@ struct ContentView: View {
         case "files": showFiles = true
         #if DEBUG
         case "botGallery": showBotGallery = true
+        case "patch": showDemoPatch = true
         #endif
         default: break
         }
