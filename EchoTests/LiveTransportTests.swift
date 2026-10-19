@@ -207,9 +207,9 @@ struct HermesLabApprovalTests {
         }
     }
 
-    /// The same over the Hermes API. Stock Hermes asks there from 0.21.6 (`approval.request` on
-    /// the session stream, answered at `/v1/runs/{run}/approval`); before that only a patched
-    /// Hermes did, and the agent was told the command waits. That is said, not failed.
+    /// The same over the Hermes API. A turn there is a run (from 1.10), which asks on every
+    /// release (`approval.request` in the run's events, answered at `/v1/runs/{run}/approval`);
+    /// the chat stream asked only from 0.21.6. A release that doesn't ask is said, not failed.
     @Test func theHermesAPIAsksBeforeACommandRuns() async throws {
         let api = URL(string: "http://127.0.0.1:18642")!, key = "labkey-labkey-labkey"
         var probe = URLRequest(url: Self.dashboard.appending(path: "api/status"))
@@ -1670,5 +1670,159 @@ struct HermesLabBotsTests {
         HermesLabApprovalTests.report(roster.messagingIsOn && roster.bots.first(where: \.isDefault)?.isSetUp == true, "the bots let message each other",
                "\(roster.bots.map { "\($0.name): \($0.isSetUp)" })")
         try await fresh.letBotsMessageEachOther(roster)   // already on: nothing to do
+    }
+}
+
+/// Hermes API turns as runs (lab.sh runs), with the app's own transport: a turn is a run and is
+/// answered; left mid-reply it goes on and its reply lands in the conversation; taken up again it
+/// gives its reply (word by word on 0.22, whole on 0.21.x); stopped, it stops; sent again with the
+/// same key, it is the same run.
+@MainActor
+struct HermesLabRunsTests {
+    private static let api = URL(string: "http://127.0.0.1:18642")!
+    private static let key = "labkey-labkey-labkey"
+    private static let drip = "lab:drip, please"
+
+    /// What a turn said, gathered from a `@Sendable` closure.
+    nonisolated final class Heard: @unchecked Sendable {
+        private let lock = NSLock()
+        private var _text = ""
+        private var _run: String?
+        private var _deltas = 0
+        var text: String { lock.withLock { _text } }
+        var run: String? { lock.withLock { _run } }
+        var deltas: Int { lock.withLock { _deltas } }
+        func take(_ event: TurnEvent) {
+            lock.withLock {
+                switch event {
+                case let .textDelta(delta): _text += delta; _deltas += 1
+                case let .textFinal(text): _text = text
+                case let .runID(id): _run = id
+                default: break
+                }
+            }
+        }
+    }
+
+    private static func ledger() async -> HermesSessionsAPI? {
+        var probe = URLRequest(url: api.appending(path: "health"))
+        probe.timeoutInterval = 2
+        guard (try? await URLSession.shared.data(for: probe)) != nil else {
+            print("LAB SKIP: no Hermes lab on 127.0.0.1:18642 (scripts/hermes-lab/lab.sh up <tag> approval)")
+            return nil
+        }
+        return HermesSessionsAPI(baseURL: api, apiKey: key)
+    }
+
+    private static func said(in session: String, _ ledger: HermesSessionsAPI) async -> [String] {
+        ((try? await ledger.messages(sessionID: session)) ?? []).compactMap { $0.role == "assistant" ? $0.content?.text : nil }
+    }
+
+    /// Starts a slow, streaming turn, and lets go of it after `after` seconds: left (it goes on)
+    /// or stopped. Returns the run.
+    private static func startAndLetGo(in session: String, leaving: Bool, after: Double = 2.5) async throws -> String? {
+        let transport = HermesSessionsTransport(baseURL: api, apiKey: key)
+        let departure = TurnDeparture()
+        var request = TurnRequest(userText: drip, turnKey: UUID().uuidString, history: [], sessionID: session, model: nil, instructions: nil)
+        request.departure = departure
+        let heard = Heard()
+        let task = Task { for try await event in transport.stream(request) { heard.take(event) } }
+        try await Task.sleep(for: .seconds(after))
+        if leaving { departure.leave() }
+        task.cancel()
+        return heard.run
+    }
+
+    @Test func aTurnIsARunThatOutlivesTheApp() async throws {
+        guard let ledger = await Self.ledger() else { return }
+        let report = { (ok: Bool, what: String, detail: String) in HermesLabApprovalTests.report(ok, what, detail) }
+        let transport = HermesSessionsTransport(baseURL: Self.api, apiKey: Self.key)
+
+        // An ordinary turn.
+        let first = try await ledger.createSession(title: "lab runs \(UUID().uuidString.prefix(6))")
+        let heard = Heard()
+        for try await event in transport.stream(TurnRequest(userText: "hi", turnKey: UUID().uuidString, history: [],
+                                                            sessionID: first.id, model: nil, instructions: nil)) { heard.take(event) }
+        report(heard.run?.hasPrefix("run_") == true && heard.text.hasPrefix("["), "a turn is a run, and is answered", "\(heard.run ?? "no run") \(heard.text)")
+        let again = Heard()
+        for try await event in transport.stream(TurnRequest(userText: "and again", turnKey: UUID().uuidString, history: [],
+                                                            sessionID: first.id, model: nil, instructions: nil)) { again.take(event) }
+        let firstSaid = await Self.said(in: first.id, ledger)
+        report(firstSaid.count == 2, "the next turn is in the same conversation", "\(firstSaid)")
+
+        // Left mid-reply: it goes on.
+        let left = try await ledger.createSession(title: "lab runs left")
+        _ = try await Self.startAndLetGo(in: left.id, leaving: true)
+        var kept: [String] = []
+        for _ in 0 ..< 25 where !kept.contains(where: { $0.contains("[drip done]") }) {
+            try await Task.sleep(for: .seconds(1))
+            kept = await Self.said(in: left.id, ledger)
+        }
+        report(kept.contains { $0.contains("[drip done]") }, "left mid-reply, the run goes on and its reply is kept", "\(kept)")
+
+        // Taken up again.
+        let taken = try await ledger.createSession(title: "lab runs taken up")
+        guard let run = try await Self.startAndLetGo(in: taken.id, leaving: true) else {
+            report(false, "a run to take up again", "no run id"); return
+        }
+        let followed = Heard()
+        let runs = HermesRuns(baseURL: Self.api, apiKey: Self.key)
+        try await runs.follow(run) { followed.take($0) }
+        report(followed.text.contains("[drip done]"), "taken up again, the run gives its reply", followed.text)
+        print("  info  taken up: \(followed.deltas > 0 ? "replayed word by word (\(followed.deltas) pieces)" : "whole, from its status")")
+
+        // Stopped mid-reply: it stops.
+        let stopped = try await ledger.createSession(title: "lab runs stopped")
+        let stoppedRun = try await Self.startAndLetGo(in: stopped.id, leaving: false)
+        try await Task.sleep(for: .seconds(12))
+        var status: String?
+        if let stoppedRun { status = try await ledger.runStatus(stoppedRun) }
+        let stoppedSaid = await Self.said(in: stopped.id, ledger)
+        report(!stoppedSaid.contains { $0.contains("[drip done]") } && status != "completed", "stopped mid-reply, the run stops",
+               "status \(status ?? "?"), said \(stoppedSaid)")
+
+        // The same message sent twice (its answer lost the first time): one run.
+        let twice = try await ledger.createSession(title: "lab runs twice")
+        let body = try HermesSessionsTransport.runBody(TurnRequest(userText: "hi", history: [], sessionID: twice.id, model: nil, instructions: nil),
+                                                       sessionID: twice.id)
+        let key = UUID().uuidString
+        let one = try await runs.start(body, key: key)
+        let two = try await runs.start(body, key: key)
+        report(one != nil && one == two, "sent again with its key, it is the same run", "\(one ?? "-") / \(two ?? "-")")
+    }
+
+    /// The conversation as the app has it: a turn left for another conversation, then the
+    /// conversation opened again, takes its run up again and shows its reply. On the app's own
+    /// store and run notes (the only ones a run is noted in), so what it saved goes again after.
+    @Test func aRunLeftIsTakenUpAgainWhenTheConversationIsOpened() async throws {
+        guard await Self.ledger() != nil else { return }
+        let settings = Settings(defaults: UserDefaults(suiteName: "lab-runs-\(UUID().uuidString)")!)
+        settings.transport = .hermesSessions
+        settings.gatewayURL = Self.api.absoluteString
+        let account = Keychain.account(.gatewayAPIKey)
+        let before = Keychain.read(account: account)
+        Keychain.write(account: account, value: Self.key)
+        defer { if let before { Keychain.write(account: account, value: before) } else { Keychain.delete(account: account) } }
+
+        let conversation = Conversation(settings: settings, store: .shared, transportOverride: HermesSessionsTransport(baseURL: Self.api, apiKey: Self.key))
+        conversation.reset()   // not whatever the app had open last
+        _ = conversation.send(Self.drip)
+        try await Task.sleep(for: .seconds(3))
+        guard let stored = conversation.serverSessionID else {
+            HermesLabApprovalTests.report(false, "a run left is taken up again", "the conversation got no session"); return
+        }
+        let noted = ChatActivity.shared.run(of: stored, settings: settings)
+        conversation.reset()   // left for a new conversation
+        try await conversation.open(serverSession: stored)
+        let following = conversation.isStreaming
+        for _ in 0 ..< 60 where conversation.isStreaming || !(conversation.messages.last?.text.contains("[drip done]") ?? false) {
+            try await Task.sleep(for: .milliseconds(500))
+        }
+        let reply = conversation.messages.last?.text ?? ""
+        HermesLabApprovalTests.report(noted != nil && following && reply.contains("[drip done]") && !conversation.isStreaming
+                                      && ChatActivity.shared.run(of: stored, settings: settings) == nil,
+                                      "a conversation opened again takes its run up again, and shows its reply",
+                                      "noted: \(noted ?? "no"), following: \(following), reply: \(reply.suffix(60)), still noted: \(ChatActivity.shared.run(of: stored, settings: settings) ?? "no")")
+        for record in ConversationStore.shared.summaries where record.serverSessionID == stored { conversation.delete(id: record.id) }
     }
 }

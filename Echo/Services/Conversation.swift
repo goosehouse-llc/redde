@@ -266,6 +266,8 @@ final class Conversation {
             brief: brief
         )
         if settings.transport == .hermesServe, serverSessionID == nil { request.folder = startsIn?.path }
+        // The Hermes API's run for this message, should it go again after a dropped connection.
+        request.turnKey = userID.uuidString
         // A bot's chat: the other bots the message tags, and the note that says which they are.
         if settings.transport == .hermesServe, let bot {
             let mentioned = BotMentions.mentioned(in: trimmed, roster: BotDirectory.shared.bots(for: settings.connectionKey), to: bot.profile)
@@ -384,6 +386,10 @@ final class Conversation {
                 } else {
                     fail(replyID, error.localizedDescription)
                 }
+            }
+            // Seen through, failed or stopped here: the run needn't be asked after. Left, it is.
+            if transportKind == .hermesSessions, !departure.hasLeft, let stored = request.sessionID, store === ConversationStore.shared {
+                ChatActivity.shared.turnEnded(sessionID: stored, settings: settings)
             }
             // Only the current turn may reset shared state; a cancelled turn's tail must not
             // clobber the turn that replaced it.
@@ -505,6 +511,11 @@ final class Conversation {
             }
         case let .runID(id):
             currentRunID = id
+            // A run goes on on the host whatever becomes of the app: noted, so it can be taken up
+            // again if the app doesn't see it through.
+            if settings.transport == .hermesSessions, store === ConversationStore.shared, let stored = serverSessionID {
+                ChatActivity.shared.noteRun(sessionID: stored, runID: id, settings: settings)
+            }
         case let .interrupt(interrupt, runtime):
             flushDeltas()
             pendingInterrupt = (interrupt, runtime)
@@ -613,10 +624,14 @@ final class Conversation {
                     fail(replyID, error.localizedDescription)
                 }
             }
+            if settings.transport == .hermesSessions, store === ConversationStore.shared, serverSessionID == stored {
+                ChatActivity.shared.turnEnded(sessionID: stored, settings: settings)
+            }
             if myTurn == turnSerial {
                 clearStatus()
                 isStreaming = false
                 joinedStop = nil
+                currentRunID = nil
                 settleWaiting()
                 publishContext()
                 BackgroundTurn.shared.end(success: completed)
@@ -1087,7 +1102,38 @@ final class Conversation {
         guard let api = ledgerAPI() else { throw TransportError.missingAPIKey }
         let stored = try await api.messages(sessionID: summary.id)
         adopt(serverSession: summary, messages: Self.mapStored(stored))
-        watchForLedgerReply()
+        // A run the app let go of before it ended (another conversation opened, the app closed):
+        // taken up again. Over by now, its reply is in the transcript.
+        let run = store === ConversationStore.shared ? ChatActivity.shared.run(of: summary.id, settings: settings) : nil
+        if let run, endsUnanswered {
+            rejoin(run: run, stored: summary.id, api: api)
+        } else {
+            if run != nil { ChatActivity.shared.turnEnded(sessionID: summary.id, settings: settings) }
+            watchForLedgerReply()
+        }
+    }
+
+    /// Takes up a Hermes API run the app let go of (`HermesRuns`) as the turn on screen: what it
+    /// waits on a person for is put to them again, and on Hermes 0.22 the reply plays from its
+    /// start; on 0.21.x it comes whole when the run ends. Stop stops the run; leaving lets it go on.
+    private func rejoin(run: String, stored: String, api: HermesSessionsAPI) {
+        let runs = HermesRuns(baseURL: api.baseURL, apiKey: api.apiKey, headers: api.headers)
+        let events = AsyncThrowingStream<TurnEvent, Error> { continuation in
+            let task = Task {
+                do {
+                    try await runs.follow(run) { continuation.yield($0) }
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: Task.isCancelled ? CancellationError() : error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+        let question = messages.last { $0.role == .user && !$0.isSteer }?.text ?? ""
+        follow(RejoinedTurn(question: question, events: events, stop: { runs.stop(run) },
+                            transcript: { Self.mapStored(try await api.messages(sessionID: stored)) }),
+               stored: stored)
+        currentRunID = run   // to steer it, and to note it again if it is left
     }
 
     /// How long after its question a Hermes API conversation without a reply is taken to have

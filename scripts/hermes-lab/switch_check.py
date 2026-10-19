@@ -10,9 +10,12 @@ it the way the app leaves a conversation, starts a turn in conversation B, and t
                         reply should not come (the control, so the first check means something).
   Dashboard, closed     the socket closed altogether right after A's turn starts (the app
                         closed): is the reply in A's history once a new socket looks?
+  API, run left         A's turn as a run (POST /v1/runs, as the app starts one from 1.10), its
+                        events dropped while the reply streams: the reply must be in A's history.
   API, hang up          A's turn on /api/sessions/{id}/chat/stream, the request dropped after a
                         second (the app leaving a conversation on the Hermes API): is the reply in
-                        A's history afterwards?
+                        A's history afterwards? Once with a turn that says nothing until the end,
+                        once with one that streams all along ("lab:drip"), as a model's does.
 
 Run against a lab that is up with the approval scenario (lab.sh switch does both).
 """
@@ -26,6 +29,7 @@ import check
 from check import API, KEY, Dashboard, api, api_session, report
 
 SLOW = "lab:slow, please"
+DRIP = "lab:drip, please"
 WANT = "[slow done]"
 
 
@@ -90,16 +94,37 @@ async def dashboard_closed():
     return kept
 
 
-def api_hang_up():
+def api_hang_up(text=SLOW):
     sid = api_session()
     host, port = API.removeprefix("http://").split(":")
     connection = http.client.HTTPConnection(host, int(port), timeout=10)
-    connection.request("POST", f"/api/sessions/{sid}/chat/stream", body=json.dumps({"input": SLOW}),
+    connection.request("POST", f"/api/sessions/{sid}/chat/stream", body=json.dumps({"input": text}),
                        headers={"Authorization": f"Bearer {KEY}", "Content-Type": "application/json"})
     response = connection.getresponse()
     time.sleep(1.0)
     response.read1(1024) if hasattr(response, "read1") else None
     connection.sock.close()     # the app leaving: the request dropped mid-reply
+    time.sleep(14)
+    status, text = api("GET", f"/api/sessions/{sid}/messages")
+    rows = json.loads(text).get("data") or json.loads(text).get("messages") or [] if status < 300 else []
+    return status, said(rows)
+
+
+def api_run_left():
+    """A turn as the app starts it from 1.10: a run in the session, its events read for a moment
+    and dropped (the app leaving, or iOS cutting it off), while the reply streams."""
+    sid = api_session()
+    status, text = api("POST", "/v1/runs", {"input": DRIP, "session_id": sid})
+    if status >= 300:
+        return status, [f"HTTP {status} {text[:120]}"]
+    run = json.loads(text)["run_id"]
+    host, port = API.removeprefix("http://").split(":")
+    connection = http.client.HTTPConnection(host, int(port), timeout=10)
+    connection.request("GET", f"/v1/runs/{run}/events", headers={"Authorization": f"Bearer {KEY}"})
+    response = connection.getresponse()
+    time.sleep(2.5)
+    response.read1(4096) if hasattr(response, "read1") else None
+    connection.sock.close()
     time.sleep(14)
     status, text = api("GET", f"/api/sessions/{sid}/messages")
     rows = json.loads(text).get("data") or json.loads(text).get("messages") or [] if status < 300 else []
@@ -118,6 +143,13 @@ async def main():
     print(f"  (info) Dashboard, closed: A's history afterwards {kept}")
     status, kept = api_hang_up()
     print(f"  (info) API, hang up: HTTP {status}, A's history afterwards {kept}")
+    # The same with a reply that streams all along, as a model's does: Hermes writes to the
+    # dropped request, finds it gone and stops the run (all of 0.21.0 to 0.22.2).
+    status, kept = api_hang_up(DRIP)
+    print(f"  (info) API, hang up while it streams: HTTP {status}, A's history afterwards {kept}")
+    status, kept = api_run_left()
+    report(any("[drip done]" in k for k in kept), "API, a run left while it streams: it goes on, its reply kept",
+           f"HTTP {status}, A's history {kept}")
 
 
 if __name__ == "__main__":

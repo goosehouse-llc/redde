@@ -288,36 +288,11 @@ nonisolated struct HermesServeTransport: HermesTransport {
     /// Single form `{question, choices, multi_select?}` or batch `{questions: [{qid, …}]}`.
     /// `subagent.*` frames arrive on the parent session; the child is identified by `subagent_id`.
     nonisolated static func parseSubagent(_ type: String, _ p: JSONValue) -> SubagentUpdate? {
-        guard let id = p["subagent_id"]?.string ?? p["child_session_id"]?.string else { return nil }
-        let phase: SubagentUpdate.Phase
-        switch type {
-        case "subagent.start": phase = .started
-        case "subagent.tool": phase = .tool(p["tool_name"]?.string ?? "tool")
-        case "subagent.progress": phase = .progress(p["text"]?.string ?? "")
-        case "subagent.complete":
-            let status = p["status"]?.string ?? "success"
-            phase = .completed(succeeded: !(status == "error" || status == "failed" || status == "timeout"),
-                               summary: p["summary"]?.string ?? p["text"]?.string, duration: p["duration_seconds"]?.number)
-        default: return nil
-        }
-        return SubagentUpdate(id: id, goal: p["goal"]?.string ?? "", taskIndex: p["task_index"]?.int ?? 0,
-                              taskCount: p["task_count"]?.int ?? 1, depth: p["depth"]?.int ?? 0,
-                              toolCount: p["tool_count"]?.int, childSessionID: p["child_session_id"]?.string,
-                              model: p["model"]?.string, phase: phase)
+        SubagentUpdate(event: type, p)
     }
 
-    /// The choices are listed when the host lists them; a request that sends none says with two
-    /// flags whether "this session" and "always" are on offer.
     nonisolated static func parseApproval(_ p: JSONValue) -> ApprovalRequest {
-        var choices = p["choices"]?.array?.compactMap(\.string) ?? []
-        if choices.isEmpty {
-            choices = ["once"]
-            if p["allow_session"]?.bool ?? true { choices.append("session") }
-            if p["allow_permanent"]?.bool ?? true { choices.append("always") }
-            choices.append("deny")
-        }
-        return ApprovalRequest(id: p["request_id"]?.string ?? "", command: p["command"]?.string ?? "",
-                               description: p["description"]?.string, choices: choices)
+        ApprovalRequest(payload: p)
     }
 
     nonisolated static func parseClarify(_ p: JSONValue) -> ClarifyRequest {

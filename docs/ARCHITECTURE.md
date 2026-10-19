@@ -22,7 +22,7 @@ Three, chosen under Settings → Connection:
 | Connection | Endpoint | Auth | What you get |
 | --- | --- | --- | --- |
 | Hermes Dashboard | `hermes serve`, `ws://…:9119/api/ws` | Dashboard username + password (cookie login), or a browser sign-in (bearer tokens); then a 30 s WebSocket ticket | The desktop-gateway protocol: JSON-RPC over one WebSocket. Live `reasoning.delta`, tool events, approvals, and slash commands (`slash.exec` / `command.dispatch`) |
-| Hermes API | The gateway's API server, `https://…:8642/api/sessions/{id}/chat/stream` | Bearer `API_SERVER_KEY` | The shared session ledger: every gateway session from Telegram, Discord, the CLI and Redde, resumable from the list. Streams reasoning (`tool.progress` with `_thinking`), tool starts and results, and usage |
+| Hermes API | The gateway's API server, `https://…:8642`: each turn a run in the conversation's session (`POST /v1/runs`, followed at `/v1/runs/{id}/events`; `/api/sessions/{id}/chat/stream` where there are no runs) | Bearer `API_SERVER_KEY` | The shared session ledger: every gateway session from Telegram, Discord, the CLI and Redde, resumable from the list. Streams reasoning, tool starts and results, subagents, approvals and usage |
 | OpenAI-compatible | `…/v1/chat/completions` (llama.cpp, llama-swap, vLLM, Ollama, a provider) | Optional API key | Straight to a model, no agent: no tools, lowest latency, works when the gateway is down. History is sent each turn and never rewritten, so a llama.cpp prefix cache stays warm |
 
 Both Hermes connections write to the same `state.db`, so a session started by voice shows up in the
@@ -1144,15 +1144,35 @@ the agent is waiting on. Stop stops a joined turn; leaving the conversation only
 **Leaving a conversation while the agent works in it** (opening another one, or starting a new
 one) lets go of the turn without stopping it, on both Hermes connections (GitHub issue 12): the
 Dashboard's turn is not sent `session.interrupt` (`TurnDeparture` on the request tells the
-transport it was left, not stopped), and the Hermes API's stream is simply dropped. Hermes
-finishes a turn nobody listens to and records its reply (0.21.0, 0.21.3 and 0.21.5,
-`scripts/hermes-lab/lab.sh switch`). Coming back, the Dashboard joins the turn if it is still
-under way; the Hermes API can't be listened to again, so a conversation that ends on a question
-asked in the last ten minutes says "Your agent is still working on this…" and is fetched every
-four seconds until the reply is in it (`Conversation.watchForLedgerReply`). Stop, deleting the
-conversation, and anything on the OpenAI-compatible connection (no host to go on) still stop the
-turn. Over the Hermes API, Stop has never reached the host: the app stops listening and the
-agent finishes there.
+transport it was left, not stopped), and Hermes finishes it and records its reply
+(`scripts/hermes-lab/lab.sh switch`). Coming back, the Dashboard joins the turn if it is still
+under way.
+
+**On the Hermes API every turn is a run** (`HermesRuns`, from 1.10), because Hermes stops the chat
+stream's turn the moment its stream is cut: on its next write to a request that has gone, so a
+reply that was streaming ended when the app left the conversation, iOS suspended the app or the
+network changed (found 2026-10-18 from a report; the first `lab.sh switch` missed it, its slow
+turn wrote nothing until the end). A run (`POST /v1/runs` with the conversation's `session_id`,
+one message, the model and provider every turn since a run reads neither the session's stored
+model nor its lock) goes on whatever becomes of the app, and is followed through its events
+(`/v1/runs/{id}/events`, `data: {"event": …}`). When those stop short the run is looked at again:
+Hermes 0.22 keeps its events for whoever asks, from where they left off (`seq`, sent back as
+`Last-Event-ID`); 0.21.x keeps them for the first listener only, so then its status is asked
+(`GET /v1/runs/{id}`, kept an hour) until it ends, and the reply comes whole. Trouble reaching the
+host is waited out for half an hour. Each run carries the message's id as its `Idempotency-Key`:
+a message sent again because its answer was lost finds its run (Hermes keeps the keys for a day,
+restarts or not). The run is noted as soon as it starts (`ChatActivity.noteRun`), so a
+conversation opened again, after the app was closed too, takes it up as a joined turn
+(`Conversation.rejoin(run:)`): on 0.22 the reply plays from its start. Stop stops the run
+(`POST /v1/runs/{id}/stop`); leaving lets it go on. Runs also bring approvals and subagent steps to
+the Hermes API on every release (the chat stream has approvals only from 0.22). What they don't
+do is put the agent's pictures (`MEDIA:` tags) into the reply: the app fetches those through the
+Dashboard when its login is saved, as it does for a conversation opened again. A gateway without
+runs gets the chat stream. `lab.sh runs` checks all of it on each release, and `lab.sh run` that
+picked models still reach the endpoint that serves them. A conversation that ends on an
+unanswered question with no run noted is fetched every four seconds for ten minutes
+(`Conversation.watchForLedgerReply`). Deleting the conversation, and anything on the
+OpenAI-compatible connection (no host to go on), still stop the turn.
 
 **The chat list's marks** (`Services/ChatActivity.swift`) show what became of conversations left
 like that: a spinner where the time goes while the agent works, "Needs you" while it waits on an

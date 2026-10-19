@@ -149,6 +149,29 @@ nonisolated struct SubagentUpdate: Equatable, Sendable {
     var phase: Phase
 }
 
+nonisolated extension SubagentUpdate {
+    /// A child agent's event as Hermes words it, on the Dashboard's socket and in a Hermes API
+    /// run's events alike (`subagent.start`, `.tool`, `.progress`, `.complete`).
+    init?(event type: String, _ p: JSONValue) {
+        guard let id = p["subagent_id"]?.string ?? p["child_session_id"]?.string else { return nil }
+        let phase: Phase
+        switch type {
+        case "subagent.start": phase = .started
+        case "subagent.tool": phase = .tool(p["tool_name"]?.string ?? "tool")
+        case "subagent.progress": phase = .progress(p["text"]?.string ?? "")
+        case "subagent.complete":
+            let status = p["status"]?.string ?? "success"
+            phase = .completed(succeeded: !(status == "error" || status == "failed" || status == "timeout"),
+                               summary: p["summary"]?.string ?? p["text"]?.string, duration: p["duration_seconds"]?.number)
+        default: return nil
+        }
+        self.init(id: id, goal: p["goal"]?.string ?? "", taskIndex: p["task_index"]?.int ?? 0,
+                  taskCount: p["task_count"]?.int ?? 1, depth: p["depth"]?.int ?? 0,
+                  toolCount: p["tool_count"]?.int, childSessionID: p["child_session_id"]?.string,
+                  model: p["model"]?.string, phase: phase)
+    }
+}
+
 nonisolated struct TokenUsage: Equatable, Sendable, Codable {
     /// Prompt tokens. On the fast lane this is the context the model saw for the one call. On the
     /// Hermes backends it is the session's running total across every API call, so it must not
@@ -177,6 +200,10 @@ nonisolated final class TurnDeparture: Sendable {
 /// What the client sends for one turn.
 nonisolated struct TurnRequest: Sendable {
     var userText: String
+    /// The message's own id: the Hermes API takes it as the run's idempotency key, so sending
+    /// the same message again (after a connection that dropped while it went) finds the run it
+    /// started rather than starting another.
+    var turnKey: String? = nil
     /// Prior turns, oldest first, for stateless backends. Ignored when threading by id.
     var history: [Message]
     /// Hermes ledger session id (sessions transport). Created on first turn when nil.
@@ -501,6 +528,21 @@ nonisolated struct ApprovalRequest: Identifiable, Equatable, Sendable, Codable {
 }
 
 nonisolated extension ApprovalRequest {
+    /// An `approval.request` as Hermes sends it, on the Dashboard's socket and in a Hermes API run's
+    /// events. The choices are listed when the host lists them; a request that sends none says
+    /// with two flags whether "this session" and "always" are on offer.
+    init(payload p: JSONValue) {
+        var choices = p["choices"]?.array?.compactMap(\.string) ?? []
+        if choices.isEmpty {
+            choices = ["once"]
+            if p["allow_session"]?.bool ?? true { choices.append("session") }
+            if p["allow_permanent"]?.bool ?? true { choices.append("always") }
+            choices.append("deny")
+        }
+        self.init(id: p["request_id"]?.string ?? "", command: p["command"]?.string ?? "",
+                  description: p["description"]?.string, choices: choices)
+    }
+
     /// The two answers a pair of buttons can give: run it this once, or don't. Nil when the
     /// request doesn't offer both; then only the full card in the app can answer it.
     var yesNo: (approve: String, deny: String)? {

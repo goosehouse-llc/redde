@@ -192,6 +192,27 @@ final class ChatActivity {
         save()
     }
 
+    /// A Hermes API turn under way here, from the moment its run starts: if the app doesn't see
+    /// it through (iOS closes the app, say), the run can be taken up again when the conversation
+    /// is next opened, and the row shows it working meanwhile.
+    func noteRun(sessionID: String, runID: String, settings: Settings = .shared) {
+        noteLeft(sessionID: sessionID, runID: runID, settings: settings)
+    }
+
+    /// The run of a Hermes API turn the app let go of before it ended, if it is still noted.
+    func run(of sessionID: String, settings: Settings = .shared) -> String? {
+        guard let turn = left[settings.connectionKey]?[sessionID], Date.now.timeIntervalSince(turn.leftAt) <= Self.leftTurnsLast else { return nil }
+        return turn.runID
+    }
+
+    /// The app saw that conversation's turn through: nothing more to ask after.
+    func turnEnded(sessionID: String, settings: Settings = .shared) {
+        let key = settings.connectionKey
+        guard left[key]?[sessionID] != nil else { return }
+        forget(sessionID, key: key)
+        if liveKey == key { live[sessionID] = nil }
+    }
+
     /// The list as loaded. On the Hermes API a conversation seen for the first time counts as
     /// read up to its last activity, so the first look at the list doesn't light all of it up.
     func listed(_ rows: [HermesSessionsAPI.SessionSummary], settings: Settings = .shared) {

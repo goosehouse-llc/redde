@@ -23,6 +23,7 @@
 #   scripts/hermes-lab/lab.sh speech [tag ...]     replies read out with the voice Hermes is set up with, streamed and whole (issue 7)
 #   scripts/hermes-lab/lab.sh status [tag ...]     the chat list's marks: working, waiting on a person, unread, on both connections
 #   scripts/hermes-lab/lab.sh bots [tag ...]       bots: each profile's own chat, hidden from the list, and bots messaging bots
+#   scripts/hermes-lab/lab.sh runs [tag ...]       Hermes API turns as runs: left, taken up again, stopped, sent twice (app check)
 #   scripts/hermes-lab/lab.sh up <tag> <scenario>  leave one lab running (API :18642, Dashboard :19119)
 #   scripts/hermes-lab/lab.sh down
 #
@@ -234,6 +235,23 @@ todos() {
   for tag in $tags; do
     echo "===== Hermes $tag / approval"
     if ! up "$tag" approval; then failed+=("$tag (lab)"); continue; fi
+    app_check || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
+# Hermes API turns as runs (the API half of GitHub issue 12): what Hermes does with a run whose
+# events are dropped, and with the chat stream's (switch_check.py), then the app's own transport
+# leaving, taking up, stopping and sending a run again (HermesLabRunsTests).
+runs() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  app_prepare HermesLabRunsTests || exit 1
+  for tag in $tags; do
+    echo "===== Hermes $tag / approval"
+    if ! up "$tag" approval; then failed+=("$tag (lab)"); continue; fi
+    (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" switch_check.py) || failed+=("$tag (host)")
     app_check || failed+=("$tag")
   done
   down
@@ -525,6 +543,7 @@ case "${1:-}" in
   status) shift; list_status "$@" ;;
   projects) shift; projects "$@" ;;
   bots) shift; bots "$@" ;;
+  runs) shift; runs "$@" ;;
   search) shift; search "$@" ;;
   context) shift; context "$@" ;;
   speech) shift; speech "$@" ;;

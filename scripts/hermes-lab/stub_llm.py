@@ -25,7 +25,8 @@ that follows in the same conversation is an ordinary one):
                    down without running the tool (0.21.0 takes it)
 
 And one for a long turn: a message with "lab:slow" in it is answered "[slow done]" after eight
-seconds, for a check that leaves a turn under way (switching to another conversation).
+seconds, for a check that leaves a turn under way (switching to another conversation). "lab:drip"
+takes as long but streams all the while, a word a second, then "[drip done]".
 
 And a voice, for the speech scenario (`lab.sh speech`): `/v1/audio/speech` answers as OpenAI's
 speech API does, with a 440 Hz tone at 24 kHz, 50 ms for each character of the input, so a check
@@ -230,6 +231,14 @@ class Handler(BaseHTTPRequestHandler):
         if call:
             chunk({"tool_calls": [call]})
             chunk({}, "tool_calls", {"usage": usage})
+        elif last.get("role") == "user" and "lab:drip" in json.dumps(last.get("content")):
+            # A reply that streams as a model's does, a word a second, so Hermes writes to its
+            # client all along: what it does when that client has gone (lab.sh switch).
+            for i in range(8):
+                chunk({"content": f"word{i} "})
+                time.sleep(1)
+            chunk({"content": "[drip done]"})
+            chunk({}, "stop", {"usage": usage})
         else:
             chunk({"content": text})
             chunk({}, "stop", {"usage": usage})

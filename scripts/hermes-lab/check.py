@@ -7,7 +7,7 @@ usage: check.py [dashboard|api|both]
 Mirrors, and must stay in step with:
   - Conversation.liveProvider                     -> live_provider()
   - HermesServeClient.openSession / modelSwitchValue -> session.create, config.set "<m> --provider <p>"
-  - HermesSessionsTransport (chat body, lock route, isLockBucketMismatch) -> ApiCheck
+  - HermesSessionsTransport / HermesRuns (a run per turn, lock route, isLockBucketMismatch) -> check_api
 """
 import asyncio
 import itertools
@@ -216,6 +216,28 @@ def api_turn(sid, model=None, provider=None):
     return first_hit() + error
 
 
+def run_turn(sid, model=None, provider=None):
+    """One turn as the app sends it from 1.10: a run in the session (`POST /v1/runs`), a picked model
+    with its provider, followed to its end through the run's status (HermesRuns)."""
+    body = {"input": "hi", "session_id": sid}
+    if model:
+        body.update(model=model, provider=provider)
+    clear_hits()
+    status, text = api("POST", "/v1/runs", body)
+    if status >= 300:
+        return f"HTTP {status} {text[:120]}"
+    run = json.loads(text)["run_id"]
+    deadline, state = time.time() + 90, {}
+    while time.time() < deadline:
+        state = json.loads(api("GET", f"/v1/runs/{run}")[1])
+        if state.get("status") in ("completed", "failed", "cancelled", "interrupted"):
+            break
+        time.sleep(0.5)
+    error = state.get("error") or ""
+    failed = state.get("status") != "completed" and not is_lock_bucket_mismatch(error)
+    return first_hit() + (f" then: {state.get('status')} {error[:120]}" if failed else "")
+
+
 def check_api():
     print("Hermes API (api_server)")
     pairs = local_pairs(json.loads(api("GET", "/api/model/options")[1]))
@@ -223,13 +245,16 @@ def check_api():
         provider, want = live_provider(model, picked, pairs), f"{WANT[model]}:{model}"
         label = f"{model} picked under {picked!r}" + (f", sent as {provider!r}" if provider != picked else "")
         sid = api_session(model=model, provider=provider)
-        got = [api_turn(sid, model, provider) for _ in range(2)]
+        got = [run_turn(sid, model, provider) for _ in range(2)]
         report(all(g == want for g in got), f"new conversation: {label}", str(got))
         sid = api_session()
-        api_turn(sid)
+        run_turn(sid)
         status, text = api("POST", f"/api/sessions/{sid}/model", {"model": model, "provider": provider})
-        got = [api_turn(sid, model, provider) for _ in range(2)]
+        got = [run_turn(sid, model, provider) for _ in range(2)]
         report(status < 300 and all(g == want for g in got), f"live switch:      {label}", f"lock HTTP {status} {got}")
+        # Picked once, then nothing sent: the conversation keeps the model it was switched to.
+        got = run_turn(sid)
+        print(f"  info  live switch, then a turn with no pick: {got} (wanted {want})")
 
 
 async def main():
