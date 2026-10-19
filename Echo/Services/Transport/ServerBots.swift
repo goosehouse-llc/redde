@@ -233,10 +233,14 @@ nonisolated enum BotChat {
         /// The roster says the bot has a chat and the lookup found none: a server mid-restart can
         /// answer that way. Making another would leave the real one behind, so Redde doesn't.
         case unconfirmed(String)
+        /// Hermes before 0.22 can't set a bot's chat aside: no `session.archive`, and a bot's chat
+        /// can't be renamed (lab, 0.21.0 to 0.21.5).
+        case cantStartFresh
 
         var errorDescription: String? {
             switch self {
             case let .unconfirmed(name): "Couldn't find \(name)'s chat on the server just now. Try again in a moment."
+            case .cantStartFresh: "Starting a bot's chat over needs Hermes 0.22 or later. On this server, send /compress in the chat to make it shorter."
             }
         }
     }
@@ -288,6 +292,28 @@ extension HermesServeClient {
             "profile": .string(bot.name), "title": .string(BotChat.title), "include_hidden": .bool(true), "limit": .number(200)]))
         guard let row = (result["sessions"]?.array ?? []).first(where: { $0["title"]?.string == BotChat.title }) else { return nil }
         return row["resolved_id"]?.string?.nilIfEmpty ?? row["id"]?.string
+    }
+
+    /// Starts a bot's chat over. Hermes keeps a bot's chat as one long conversation, condensed as it
+    /// fills (`/compress` does that at once); this is the clean slate. The chat it has is archived,
+    /// kept on the server with its messages but no longer the bot's: Hermes then names no chat for
+    /// the bot, and the next open makes a new one as the first did. (Hermes 0.22 refuses to rename
+    /// a bot's chat: its title is what makes it the bot's.) What the bot saved to its memory stays.
+    /// Nothing to do if it has none. Read the roster again before opening the bot: the old one
+    /// still names the chat put aside.
+    func startFresh(_ bot: HermesBot) async throws {
+        try await ensureConnected()
+        let result = try await call("session.list", params: .object([
+            "profile": .string(bot.name), "title": .string(BotChat.title), "include_hidden": .bool(true), "limit": .number(200)]))
+        // The title is the first part's, when Hermes has compressed the chat into more.
+        guard let row = (result["sessions"]?.array ?? []).first(where: { $0["title"]?.string == BotChat.title }),
+              let root = row["id"]?.string else { return }
+        noteProfile(bot.name, forStored: root)
+        do {
+            try await call("session.archive", params: .object(["session_id": .string(root), "profile": .string(bot.name), "archived": .bool(true)]))
+        } catch let error as RPCError where error.code == -32601 {
+            throw BotChat.Problem.cantStartFresh
+        }
     }
 
     /// Lets the bots message each other: sets the main profile up as a bot, as Hermes Desktop does

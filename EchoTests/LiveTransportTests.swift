@@ -1622,13 +1622,57 @@ struct HermesLabBotsTests {
         return reply
     }
 
+    /// Start Fresh: the bot's chat is put aside under a dated title and the next open makes a new
+    /// one; `/compress` condenses a chat in place (slash.exec on the Dashboard).
+    @Test func aBotsChatStartsFreshOrIsCondensed() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        _ = try? await client.call("profiles.create", params: .object(["name": .string("pip"), "clone_from": .string("default"),
+                                                                       "no_alias": .bool(true)]))
+        guard let pip = try await client.bots().bots.first(where: { $0.name == "pip" }) else { return }
+        let first = try await client.botChat(for: pip)
+        _ = try await Self.say("hello pip", in: first.stored, client)
+        _ = try await Self.say("and again", in: first.stored, client)
+        // /compress, as the composer sends a slash command on the Dashboard.
+        var compressed = ""
+        for try await event in HermesServeTransport(client: client).stream(TurnRequest(userText: "/compress", history: [], sessionID: first.stored,
+                                                                                          model: nil, instructions: nil)) {
+            switch event {
+            case let .textDelta(delta): compressed += delta
+            case let .textFinal(text): compressed = text
+            default: break
+            }
+        }
+        print("  info  /compress said: \(compressed.prefix(160))")
+        HermesLabApprovalTests.report(!compressed.isEmpty, "/compress in a bot's chat is answered", compressed)
+
+        guard let current = try await client.bots().bots.first(where: { $0.name == "pip" }) else { return }
+        do {
+            try await client.startFresh(current)
+        } catch BotChat.Problem.cantStartFresh {
+            // Hermes before 0.22: said so, and the chat left as it was.
+            let still = try await client.botChat(for: current)
+            HermesLabApprovalTests.report(still.stored == first.stored, "a release that can't set a bot's chat aside says so, and leaves it")
+            return
+        }
+        guard let after = try await client.bots().bots.first(where: { $0.name == "pip" }) else { return }
+        let fresh = try await client.botChat(for: after)
+        let history = try await client.history(stored: fresh.stored)
+        HermesLabApprovalTests.report(after.chatID == nil && fresh.isNew && fresh.stored != first.stored && history.isEmpty,
+                                      "Start Fresh: the bot gets a new, empty chat", "chat \(after.chatID ?? "none"), \(fresh), \(history.count) rows")
+        client.noteProfile("pip", forStored: first.stored)
+        let old = try await client.history(stored: first.stored)
+        HermesLabApprovalTests.report(old.count >= 4, "and the old one stays on the server with its messages", "\(old.count) rows")
+    }
+
     @Test func aBotHasOneChatOfItsOwn() async throws {
         guard let client = await HermesLabApprovalTests.client() else { return }
         defer { client.disconnect() }
         _ = try? await client.call("profiles.create", params: .object(["name": .string("scout"), "clone_from": .string("default"),
                                                                        "no_alias": .bool(true)]))
         var roster = try await client.bots()
-        HermesLabApprovalTests.report(roster.listed.map(\.name).sorted() == ["default", "scout"] && !roster.messagingIsOn,
+        // (Other tests here make bots of their own.)
+        HermesLabApprovalTests.report(Set(["default", "scout"]).isSubset(of: roster.listed.map(\.name)) && !roster.messagingIsOn,
                "the roster lists the main profile and the new one", "\(roster.bots.map(\.name)), on: \(roster.messagingIsOn)")
         guard let scout = roster.bots.first(where: { $0.name == "scout" }), let main = roster.bots.first(where: \.isDefault) else { return }
 

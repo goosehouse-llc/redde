@@ -303,6 +303,16 @@ Settings → Name), and its chat's last line and time (`canonical_session`).
   the roster says there is a chat, refuses rather than make a second one. It is hidden from the
   profile's conversation list, runs on the bot's own model and settings, and is never renamed in
   Redde (the title is what finds it). A new conversation from it is with the agent again.
+- **Its length:** Hermes keeps a bot's chat as one long conversation and condenses it as it fills
+  (from three quarters of a window under 512K; the newest part word for word, the rest as a
+  summary, then on in a linked part, which the roster's `canonical_session.resolved_id` names);
+  `/compress` in the chat does it at once. **Start Fresh…** (the chat's ••• menu) is the clean
+  slate: the chat is archived, kept on the server with its messages (`startFresh`,
+  `session.archive`, Hermes 0.22 and later), Hermes then names no chat for the bot, the roster is
+  read again, and the next open makes a new chat as the first did. Hermes refuses to rename a
+  bot's chat ("its name is its identity"), and before 0.22 has no way to set one aside, so there
+  Start Fresh says so and points to `/compress`. What the bot saved to its memory stays with it.
+  `HermesLabBotsTests` checks both on 0.21.0 to 0.22.2.
 - **Its profile, on every call:** whichever profile Redde is set to, a bot's chat is a session of
   the bot's profile, and Hermes only finds it when told which. `Conversation.bot` (kept in the
   saved copy) has the client note it (`HermesServeClient.noteProfile`), and from then on every

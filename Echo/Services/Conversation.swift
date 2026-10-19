@@ -1323,6 +1323,20 @@ final class Conversation {
                                    isNew: isNew)
     }
 
+    /// Starts this bot's chat over (`HermesServeClient.startFresh`) and opens the new one, empty.
+    func startBotChatFresh(mainName: String) async throws {
+        guard let ref = bot, !isStreaming else { return }
+        let client = HermesServeClient.shared
+        guard let current = try await client.bots().bots.first(where: { $0.name == ref.profile }) else {
+            throw TransportError.malformed("\(ref.name) isn't on this server any more")
+        }
+        try await client.startFresh(current)
+        // Read again: the roster no longer names the chat put aside, so the bot gets a new one.
+        let roster = try await BotDirectory.shared.refresh()
+        guard let fresh = roster.bots.first(where: { $0.name == ref.profile }) else { return }
+        try await openBot(fresh, mainName: mainName)
+    }
+
     /// Opens the conversation a Hermes session id names, from the server the app is on: what a
     /// tapped notification from a paired Hermes asks for. The transcript comes from the server,
     /// since the reply being announced arrived while the app wasn't running.

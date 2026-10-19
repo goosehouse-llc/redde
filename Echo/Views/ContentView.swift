@@ -30,6 +30,9 @@ struct ContentView: View {
     @State private var projectProblem: String?
     /// "Change Face…" in a bot's chat: that bot, its face being picked.
     @State private var facingBot: HermesBot?
+    /// "Start Fresh…" in a bot's chat: being asked about, and what went wrong.
+    @State private var confirmingFresh = false
+    @State private var freshProblem: String?
     @State private var showSetup = false
     /// A setup link that was opened, up for confirmation.
     @State private var setupCode: SetupCodeOffer?
@@ -344,6 +347,10 @@ struct ContentView: View {
                         if let bot = chatBot, !bot.isDefault {
                             Button("Change Face…", systemImage: "face.smiling") { facingBot = bot }
                         }
+                        if conversation.bot != nil {
+                            Button("Start Fresh…", systemImage: "arrow.counterclockwise") { confirmingFresh = true }
+                                .disabled(conversation.isStreaming)
+                        }
                         if settings.transport.hasLedger {
                             Button("Terminal", systemImage: "apple.terminal") { showTerminal = true }
                         }
@@ -373,6 +380,20 @@ struct ContentView: View {
                                                          : "The session is renamed on your server too.")
             }
             .modifier(ChatProjectPrompt(naming: $namingProject, problem: $projectProblem))
+            .confirmationDialog("Start a fresh chat with \(conversation.bot?.name ?? "this bot")?", isPresented: $confirmingFresh, titleVisibility: .visible) {
+                Button("Start Fresh") {
+                    Task {
+                        do { try await conversation.startBotChatFresh(mainName: settings.headerTitle) } catch { freshProblem = error.localizedDescription }
+                    }
+                }
+            } message: {
+                Text("This chat is archived on your server with its messages, and the new one starts with no history. What the bot saved to its memory stays. To make this chat shorter instead, send /compress.")
+            }
+            .alert("Couldn't start fresh", isPresented: Binding(get: { freshProblem != nil }, set: { if !$0 { freshProblem = nil } })) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(freshProblem ?? "")
+            }
             .sheet(item: $facingBot) { bot in
                 BotFacePicker(bot: bot, name: bot.label(mainName: settings.headerTitle), current: botFace ?? BotFace(seed: bot.name)) {
                     Task { _ = try? await BotDirectory.shared.refresh() }
