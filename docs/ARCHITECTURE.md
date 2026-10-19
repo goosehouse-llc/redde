@@ -353,8 +353,29 @@ Settings → Name), and its chat's last line and time (`canonical_session`).
   (`profiles.configure`, compare-and-swap on its revision). Hermes then gives each bot's chat the
   tool and a list of the others; a chat begun before has the tool from its next message, but not
   the instructions about it. Ordinary conversations get neither.
+- **What a bot is doing**, on its row as on a conversation's (`ChatActivity`): a spinner while
+  Hermes runs a turn in its chat (`session.active_list`, which lists every profile's) or one of
+  its workers (a kanban card it was given) was heard from in the last 150 seconds
+  (`worker_session` in `profiles.list`, Hermes Desktop's measure); "Needs you" when the gateway
+  says its turn waits on the person; a dot for something in its chat since it was last on screen
+  here. Hermes lists no read mark for a bot's chat, so that last one is kept on the phone, by the
+  bot (its chat's id changes as Hermes condenses it), against the chat's last activity; a bot seen
+  for the first time counts as read. Mark as Read and Unread are on its row. While the list is on
+  screen the bots are read again every 15 seconds.
+- **Bots talking to each other** in a transcript (`BotMessages`, `Delivered` on a message): Hermes
+  files what one bot sends another (`message_agent`) as a user row in the other's chat ("Message
+  from 🤖 Scout (@scout): …"; 0.21.0 and 0.21.3 give the handle twice), and the reply comes back to
+  the first as a background process finishing (`display_kind: process_complete`, the delivery's
+  command naming the bot with `-p`, its output the reply: JSON from a chat held open in the
+  gateway, plain words after any "⚠" warnings Hermes's command line prints from one run on its
+  own). Redde shows the first as "Message from Scout", the second as "Scout replied", each with
+  the bot's creature and its words in a quiet bubble on the bots' side, not as the person's; any
+  other finished process as one line whose output opens on a tap; a `message_agent` step as
+  "Messaged @scout"; and on a bot's row, the line "Scout: …". A turn Hermes starts for such a
+  message in an open chat shows the message before the reply as it comes.
 - `scripts/hermes-lab/lab.sh bots` checks all of it on each release: what Hermes does
-  (`bots_check.py`), then the app's own client (`HermesLabBotsTests`). Not on the Hermes API
+  (`bots_check.py`), then the app's own client (`HermesLabBotsTests`), down to one bot messaging
+  another with Hermes's own tool and both chats read back. Not on the Hermes API
   connection, whose bots would need the Dashboard's socket.
 - **Group chats** (`ServerGroups.swift`, `GroupChatView.swift`): Hermes's hosted bot rooms
   (`groups.*`, the same methods on 0.21.0 to 0.22.2), listed under the bots with their members'

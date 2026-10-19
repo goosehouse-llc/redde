@@ -32,6 +32,9 @@ nonisolated struct HermesBot: Identifiable, Equatable, Sendable {
     var face: BotFace?
     /// The revision Hermes keeps of Redde's settings for it; a write says which it expects.
     var reddeRevision: Int
+    /// When a worker of the bot's (a kanban card it was given) was last heard from
+    /// (`worker_session`): one heard from lately is at work.
+    var workerActive: Date?
 
     var id: String { name }
 
@@ -48,7 +51,8 @@ nonisolated struct HermesBot: Identifiable, Equatable, Sendable {
 
     init(name: String, displayName: String? = nil, title: String? = nil, description: String = "", isDefault: Bool = false,
          model: String? = nil, isHidden: Bool = false, isSetUp: Bool = false, setUpRevision: Int = 0, chatID: String? = nil,
-         lastActive: Date? = nil, preview: String? = nil, previousNames: [String] = [], face: BotFace? = nil, reddeRevision: Int = 0) {
+         lastActive: Date? = nil, preview: String? = nil, previousNames: [String] = [], face: BotFace? = nil, reddeRevision: Int = 0,
+         workerActive: Date? = nil) {
         self.name = name
         self.displayName = displayName
         self.title = title
@@ -64,6 +68,7 @@ nonisolated struct HermesBot: Identifiable, Equatable, Sendable {
         self.previousNames = previousNames
         self.face = face
         self.reddeRevision = reddeRevision
+        self.workerActive = workerActive
     }
 
     /// A row of `profiles.list`.
@@ -81,7 +86,8 @@ nonisolated struct HermesBot: Identifiable, Equatable, Sendable {
                   preview: chat?["preview"]?.string?.nilIfEmpty,
                   previousNames: (row["previous_names"]?.array ?? []).compactMap(\.string),
                   face: (row["ui_meta"]?["redde"]?["face"]?.string).flatMap(BotFace.init(code:)),
-                  reddeRevision: row["ui_meta_revisions"]?["redde"]?.int ?? 0)
+                  reddeRevision: row["ui_meta_revisions"]?["redde"]?.int ?? 0,
+                  workerActive: (row["worker_session"]?["last_active"]?.number).flatMap { $0 > 0 ? Date(timeIntervalSince1970: $0) : nil })
     }
 }
 

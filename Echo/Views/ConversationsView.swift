@@ -170,6 +170,10 @@ struct ConversationsList: View {
             BotEditor(mode: mode, mainName: settings.headerTitle) { botEdited($0) }
         }
         .sheet(isPresented: $showingHiddenBots) { HiddenBotsView(mainName: settings.headerTitle) }
+        // A bot's chat opened, or left: seen up to now.
+        .onChange(of: conversation.bot?.profile) { old, new in
+            for name in [old, new].compactMap(\.self) { activity.botSeen(name) }
+        }
         .background {
             Group {
                 Button("Sessions") { section = .sessions }.keyboardShortcut("1", modifiers: .command)
@@ -423,9 +427,13 @@ struct ConversationsList: View {
         .accessibilityHint(hint)
     }
 
+    /// A bot's row: its creature, its name and its chat's last line, marked as a conversation's
+    /// row is (at work, waiting on the person, or something not yet seen).
     private func botRow(_ bot: HermesBot, face: BotFace) -> some View {
         let name = bot.label(mainName: settings.headerTitle)
         let isOpen = conversation.bot?.profile == bot.name
+        let marks = ChatMarks(kind: activity.kind(of: bot, open: conversation), unread: activity.isUnread(bot, open: conversation))
+        let roster = botDirectory.roster?.bots ?? []
         return Button { openBot(bot) } label: {
             HStack(spacing: 12) {
                 BotAvatar(face: face)
@@ -433,24 +441,37 @@ struct ConversationsList: View {
                     HStack(spacing: 6) {
                         Text(name).font(.body.weight(.semibold)).lineLimit(1)
                         Spacer(minLength: 8)
-                        if openingBot == bot.name {
+                        if openingBot == bot.name || marks.kind == .working {
                             ProgressView().controlSize(.small)
                         } else if let when = bot.lastActive {
                             Text(DateGroup.rowTime(when)).font(.caption).foregroundStyle(.secondary)
                         }
                     }
-                    Text(bot.preview ?? bot.description.nilIfEmpty ?? "@\(bot.handle)")
-                        .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
+                    HStack(spacing: 6) {
+                        if marks.kind == .needsYou { NeedsYouTag() }
+                        Text(BotMessages.rowPreview(bot.preview, roster: roster, mainName: settings.headerTitle)
+                             ?? bot.description.nilIfEmpty ?? "@\(bot.handle)")
+                            .lineLimit(1)
+                    }
+                    .font(.subheadline).foregroundStyle(.secondary)
                 }
             }
             .padding(.vertical, 2)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .unreadDot(marks.unread)
         .opensConversation()
         .listRowBackground(isOpen ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
         .disabled(opening != nil || openingBot != nil)
         .contextMenu {
+            if bot.chatID != nil, !isOpen {
+                if marks.unread {
+                    Button("Mark as Read", systemImage: "envelope.open") { activity.botSeen(bot.name) }
+                } else {
+                    Button("Mark as Unread", systemImage: "envelope.badge") { activity.markUnread(bot: bot.name) }
+                }
+            }
             Button("Edit Bot…", systemImage: "slider.horizontal.3") { editingBot = .edit(bot) }
             // Redde's own bubble is the main agent's alone.
             if !bot.isDefault {
@@ -459,6 +480,7 @@ struct ConversationsList: View {
             }
         }
         .accessibilityElement(children: .combine)
+        .accessibilityValue(marks.spoken)
         .accessibilityHint("Opens your chat with this bot")
     }
 
@@ -1121,7 +1143,7 @@ struct ConversationsList: View {
             }
             if DevHooks.demoMarks {
                 ledger += Self.demoMarkedRows
-                activity.showDemo(["demo-1": .working, "demo-marks-2": .needsYou])
+                activity.showDemo(["demo-1": .working, "demo-marks-2": .needsYou], bots: ["scout": .working, "fixit": .needsYou], unreadBots: ["writer"])
             }
             ledgerError = nil
             return
@@ -1140,7 +1162,7 @@ struct ConversationsList: View {
             if viaServe {
                 // Bots and projects are a bonus; a failure here must not hide the flat list.
                 if settings.showBots {
-                    _ = try? await botDirectory.refresh()
+                    if let roster = try? await botDirectory.refresh() { activity.listed(roster.bots) }
                     await groups.refresh()
                 }
                 let all = (try? await HermesServeClient.shared.projectTree()) ?? []
@@ -1207,6 +1229,7 @@ struct ConversationsList: View {
         if DevHooks.demoProjects { return }
         #endif
         var fetchedAt = Date.now
+        var botsAt = Date.now
         var changes = activity.changes
         while !Task.isCancelled {
             let before = Set(activity.live.keys)
@@ -1216,7 +1239,13 @@ struct ConversationsList: View {
             if ended || changed {
                 changes = activity.changes
                 fetchedAt = .now
+                botsAt = .now
                 await refresh()
+            } else if viaServe, settings.showBots, Date.now.timeIntervalSince(botsAt) >= 15 {
+                // The bots' chats and workers, which the gateway's list doesn't all show (a bot's
+                // worker runs on its own): their last activity, now and then.
+                botsAt = .now
+                if let roster = try? await botDirectory.refresh() { activity.listed(roster.bots) }
             }
             // A host that can't be asked is asked less often.
             try? await Task.sleep(for: reached ? .seconds(4) : .seconds(30))

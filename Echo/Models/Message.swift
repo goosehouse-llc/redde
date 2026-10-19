@@ -24,6 +24,9 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
     var attachments: [Attachment] = []
     /// A nudge sent into a running turn rather than a new question.
     var isSteer: Bool = false
+    /// Filed as the person's, but not theirs: another bot's message, a bot's reply, or a
+    /// background process reporting back (`BotMessages`).
+    var delivered: Delivered?
 
     init(id: UUID = UUID(), role: Role, text: String, createdAt: Date = .now) {
         self.id = id
@@ -34,6 +37,7 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
 
     private enum CodingKeys: String, CodingKey {
         case id, role, text, createdAt, metrics, error, reasoning, reasoningStartedAt, reasoningEndedAt, tools, todos, subagents, attachments, isSteer
+        case delivered
     }
 
     init(from decoder: Decoder) throws {
@@ -52,7 +56,22 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
         subagents = try c.decodeIfPresent([SubagentActivity].self, forKey: .subagents) ?? []
         attachments = try c.decodeIfPresent([Attachment].self, forKey: .attachments) ?? []
         isSteer = try c.decodeIfPresent(Bool.self, forKey: .isSteer) ?? false
+        delivered = try c.decodeIfPresent(Delivered.self, forKey: .delivered)
     }
+}
+
+/// A message the person didn't write, though Hermes files it as theirs (a user row): another
+/// bot's, delivered into this bot's chat (Bot Mode's `message_agent`); a bot's reply to one this
+/// bot sent, which comes back as a background process finishing; or another background process
+/// reporting back. Read out of transcripts by `BotMessages`.
+nonisolated struct Delivered: Codable, Equatable, Sendable {
+    enum Kind: String, Codable, Sendable { case message, reply, process }
+    var kind: Kind
+    /// The bot it is from: its profile, and what it called itself.
+    var profile: String?
+    var name: String?
+    /// A process notice's one line (`display_text`).
+    var title: String?
 }
 
 /// How much of the model's context window a conversation fills, in tokens.

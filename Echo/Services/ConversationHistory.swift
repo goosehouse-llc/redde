@@ -15,7 +15,10 @@ extension Conversation {
             case "user":
                 waiting = []   // the tools of a turn that never got its reply
                 let text = ReplyLanguage.stripNote(text)   // the Dashboard's reply-language note
-                if !text.isEmpty { out.append(Message(role: .user, text: text, createdAt: when)) }
+                if let message = BotMessages.userMessage(text: text, displayKind: row["display_kind"]?.string,
+                                                         displayText: row["display_metadata"]?["display_text"]?.string, at: when) {
+                    out.append(message)
+                }
             case "assistant":
                 var m = Message(role: .assistant, text: text, createdAt: when)
                 m.reasoning = row["reasoning"]?.string ?? ""
@@ -49,8 +52,8 @@ extension Conversation {
             switch row.role {
             case "user":
                 let text = ReplyLanguage.stripNote(row.content?.text ?? "")   // a Dashboard turn's note
-                guard !text.isEmpty else { continue }
-                out.append(Message(role: .user, text: text, createdAt: when))
+                guard let message = BotMessages.userMessage(text: text, displayKind: row.display_kind, displayText: nil, at: when) else { continue }
+                out.append(message)
             case "assistant":
                 var message = Message(role: .assistant, text: row.content?.text ?? "", createdAt: when)
                 message.reasoning = row.reasoning ?? row.reasoning_content ?? ""

@@ -199,6 +199,61 @@ final class ChatActivity {
         noteLeft(sessionID: sessionID, runID: runID, settings: settings)
     }
 
+    // MARK: - Bots' chats
+
+    /// A worker heard from this lately is at work (Hermes Desktop's measure: a worker reports at
+    /// least once a minute).
+    nonisolated static let workerLive: TimeInterval = 150
+
+    /// What a bot's row shows of it: Hermes running a turn in its chat (the gateway's own list,
+    /// which also says when one waits on the person), the bot's chat open here and at work, or
+    /// one of its workers (a kanban card) heard from lately.
+    func kind(of bot: HermesBot, open conversation: Conversation, settings: Settings = .shared) -> Kind? {
+        if conversation.bot?.profile == bot.name {
+            if conversation.pendingInterrupt != nil { return .needsYou }
+            if conversation.isStreaming { return .working }
+        }
+        if let chat = bot.chatID, liveKey == settings.connectionKey, let kind = live[chat] { return kind }
+        #if DEBUG
+        if let kind = demoBots[bot.name] { return kind }
+        #endif
+        if let worker = bot.workerActive, Date.now.timeIntervalSince(worker) < Self.workerLive { return .working }
+        return nil
+    }
+
+    /// A bot's chat with something in it since it was last seen here. Kept on the phone, by the
+    /// bot (its chat's id changes as Hermes condenses it), against the time its chat was last
+    /// active: Hermes lists no read mark for a bot's chat.
+    func isUnread(_ bot: HermesBot, open conversation: Conversation, settings: Settings = .shared) -> Bool {
+        #if DEBUG
+        if demoUnreadBots.contains(bot.name) { return true }
+        #endif
+        guard bot.chatID != nil else { return false }
+        return Self.unread(server: nil, lastActive: bot.lastActive?.timeIntervalSince1970, seen: seen[Self.botsKey(settings)]?[bot.name],
+                           isOpen: conversation.bot?.profile == bot.name, busy: kind(of: bot, open: conversation, settings: settings) != nil)
+    }
+
+    /// The bots as read: one seen for the first time counts as read up to its chat's last activity.
+    func listed(_ bots: [HermesBot], settings: Settings = .shared) {
+        let key = Self.botsKey(settings)
+        let fresh = bots.filter { seen[key]?[$0.name] == nil }
+        guard !fresh.isEmpty else { return }
+        for bot in fresh { seen[key, default: [:]][bot.name] = bot.lastActive?.timeIntervalSince1970 ?? Date.now.timeIntervalSince1970 }
+        save()
+    }
+
+    /// The bot's chat was on screen until now (opened, or left).
+    func botSeen(_ name: String, settings: Settings = .shared) {
+        mark(name, seenAt: Date.now.timeIntervalSince1970, key: Self.botsKey(settings))
+    }
+
+    /// A bot's row's Mark as Unread.
+    func markUnread(bot name: String, settings: Settings = .shared) {
+        mark(name, seenAt: 0, key: Self.botsKey(settings))
+    }
+
+    private static func botsKey(_ settings: Settings) -> String { "bots|" + settings.connectionKey }
+
     /// The run of a Hermes API turn the app let go of before it ended, if it is still noted.
     func run(of sessionID: String, settings: Settings = .shared) -> String? {
         guard let turn = left[settings.connectionKey]?[sessionID], Date.now.timeIntervalSince(turn.leftAt) <= Self.leftTurnsLast else { return nil }
@@ -272,9 +327,14 @@ final class ChatActivity {
 
     #if DEBUG
     /// Dev hook (`-echo.demoMarks`): the demo list's rows as marked, for screenshots.
-    func showDemo(_ marks: [String: Kind], settings: Settings = .shared) {
+    func showDemo(_ marks: [String: Kind], bots: [String: Kind] = [:], unreadBots: Set<String> = [], settings: Settings = .shared) {
         live = marks
         liveKey = settings.connectionKey
+        demoBots = bots
+        demoUnreadBots = unreadBots
     }
+
+    private var demoBots: [String: Kind] = [:]
+    private var demoUnreadBots: Set<String> = []
     #endif
 }

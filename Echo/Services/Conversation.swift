@@ -733,6 +733,12 @@ final class Conversation {
     private func settle(_ replyID: UUID, stored: String, transcript: @Sendable () async throws -> [Message]) async {
         guard let recorded = try? await transcript(), serverSessionID == stored,
               let last = recorded.last, last.role == .assistant else { return }
+        // A turn the host started for something delivered into the chat (another bot's message,
+        // a bot's reply, a background task done): that, before the reply, as the host has it.
+        if recorded.count >= 2, recorded[recorded.count - 2].delivered != nil, let i = messages.firstIndex(where: { $0.id == replyID }),
+           !(i > 0 && messages[i - 1].text == recorded[recorded.count - 2].text) {
+            messages.insert(recorded[recorded.count - 2], at: i)
+        }
         update(replyID) { reply in
             if last.text.count > reply.text.count { reply.text = last.text }
             if reply.tools.isEmpty { reply.tools = last.tools }

@@ -522,7 +522,23 @@ extension Conversation {
 
                 It drops the weather report and starts on the trail. Want me to carry that through the next paragraph?
                 """),
-        ], bot: BotRef(profile: "writer", name: "Quill"))
+        ] + (DevHooks.demoMarks ? Self.botExchangeDemo : []), bot: BotRef(profile: "writer", name: "Quill"))
+    }
+
+    /// With `-echo.demoMarks`: Scout messages Quill, Quill asks Scout back, and Scout's reply
+    /// comes in, for the screenshots of bots talking.
+    private static var botExchangeDemo: [Message] {
+        var asked = Message(role: .user, text: "Sam wants the post to mention Lost Lake. Can you work it into the second paragraph?")
+        asked.delivered = Delivered(kind: .message, profile: "scout", name: "Scout")
+        var reply = Message(role: .assistant, text: "Happy to. I've asked Scout which trailhead it starts from, so the line is right.")
+        reply.tools = [ToolActivity(name: "message_agent", preview: "@scout", status: .completed, args: "message: Which trailhead for Lost Lake?\ntarget: scout")]
+        var answer = Message(role: .user, text: "From the Gold Creek trailhead: 4.2 miles, about 1,100 ft of climbing.")
+        answer.delivered = Delivered(kind: .reply, profile: "scout", name: "Scout")
+        var done = Message(role: .assistant, text: "Added: *By noon we'd reached Lost Lake, 4.2 miles up from Gold Creek.*")
+        done.tools = []
+        var notice = Message(role: .user, text: "built in 3.1 s")
+        notice.delivered = Delivered(kind: .process, title: "Background task finished: npm run build")
+        return [asked, reply, answer, done, notice]
     }
 
     /// Dev hook (`-echo.demoPhoneShot`): the agent having used the phone four times, short, for

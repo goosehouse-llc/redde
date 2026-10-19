@@ -1716,6 +1716,48 @@ struct HermesLabBotsTests {
         try await fresh.letBotsMessageEachOther(roster)   // already on: nothing to do
     }
 
+    /// A bot messaging another with Hermes's own tool (`message_agent`): what lands in the other
+    /// bot's chat reads as a message from the first, and the reply that comes back reads as the
+    /// other bot's, in each chat as Redde shows it (`BotMessages`).
+    @Test func aBotsMessageToAnotherReadsAsThatBots() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        let before = try await client.bots()
+        let handle = try #require(BotNames.handle(for: "Lab Relay", taken: Set(before.bots.map(\.name))))
+        _ = try await client.makeBot(NewBot(title: "Lab Relay", handle: handle, description: "Answers other bots", soul: "", model: nil, face: nil))
+        var roster = try await client.bots()
+        guard let relay = roster.bots.first(where: { $0.name == handle }), let main = roster.bots.first(where: \.isDefault) else {
+            return HermesLabApprovalTests.report(false, "the bot to message is made", "\(roster.bots.map(\.name))")
+        }
+        let relayChat = try await client.botChat(for: relay)
+        let home = try await client.botChat(for: main)
+        let said = try await Self.say("lab:dm:\(handle) ask it about the trail", in: home.stored, client)
+        print("  info  the main bot said: \(said.prefix(120))")
+
+        // The message goes off in the background, and the reply comes back the same way.
+        var inbound: Message?
+        var reply: Message?
+        for _ in 0 ..< 90 where inbound == nil || reply == nil {
+            try await Task.sleep(for: .seconds(1))
+            client.noteProfile(handle, forStored: relayChat.stored)
+            inbound = Conversation.messages(fromServeRows: (try? await client.history(stored: relayChat.stored)) ?? []).first { $0.delivered != nil }
+            reply = Conversation.messages(fromServeRows: (try? await client.history(stored: home.stored)) ?? []).first { $0.delivered?.kind == .reply }
+        }
+        let raw = (try? await client.history(stored: relayChat.stored))?.compactMap { $0["text"]?.string ?? $0["content"]?.displayText } ?? []
+        print("  info  in its chat: \(raw.map { String($0.prefix(100)) })")
+        HermesLabApprovalTests.report(inbound?.delivered?.kind == .message && inbound?.delivered?.profile == "default" && inbound?.text == "Which trailhead for Lost Lake?",
+                                      "the message lands in the other bot's chat as one from the main bot", "\(String(describing: inbound))")
+        let homeRaw = (try? await client.history(stored: home.stored))?.compactMap { $0["text"]?.string ?? $0["content"]?.displayText } ?? []
+        print("  info  back home: \(homeRaw.suffix(3).map { String($0.prefix(160)) })")
+        HermesLabApprovalTests.report(reply?.delivered?.profile == handle && reply?.text.hasPrefix("[") == true,
+                                      "and its reply comes back as that bot's", "\(String(describing: reply))")
+        roster = try await client.bots()
+        if let row = roster.bots.first(where: { $0.name == handle }) {
+            print("  info  its row: \(BotMessages.rowPreview(row.preview, roster: roster.bots, mainName: "Redde") ?? "none")")
+            try await client.deleteBot(row)
+        }
+    }
+
     /// Making, changing and deleting bots as BotEditor does, Hermes Desktop's way (a copy of the
     /// main profile): one with a model of its own and the personality written for it, one with the
     /// main model and a personality of the person's; renamed and hidden without losing what Hermes

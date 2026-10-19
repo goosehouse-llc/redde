@@ -42,6 +42,9 @@ main profile is woken with that, it applies the patch as it is (`ssh workbox cat
 a command Hermes asks the person about (ask_before_writes.py), and says "[applied]" or
 "[not applied]" by looking at the repository.
 
+And one for bots messaging bots (lab.sh bots): "lab:dm:<bot>" makes the model message that bot
+with Bot Mode's own tool (`message_agent`): "Which trailhead for Lost Lake?".
+
 And one for attachments: a message with "lab:file" in it is answered "[file seen]" when what
 reached the model also holds "lab-file-token" (a text file's contents, as Hermes inlines them)
 or "lab-clip.mp4" (how it names a file it can't inline), and "[file missing]" when it doesn't.
@@ -50,6 +53,7 @@ usage: stub_llm.py <port> <name> <model,model,...>
 """
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -299,6 +303,9 @@ class Handler(BaseHTTPRequestHandler):
                     batched = "calls" in (bridge.get("parameters") or {}).get("properties", {})
                     planned = ("tool_call", {"calls": [{"name": names[0], "arguments": arguments}]} if batched else {"name": names[0], "arguments": arguments})
                 break
+            dm = re.search(r"lab:dm:([a-z0-9][a-z0-9_-]*)", just_said)
+            if dm and planned is None and "message_agent" in offered:
+                planned = ("message_agent", {"target": dm.group(1), "message": "Which trailhead for Lost Lake?"})
             if "lab:file" in just_said:
                 text = "[file seen]" if "lab-file-token" in just_said or "lab-clip.mp4" in just_said else "[file missing]"
             if messages[-1].get("role") == "tool":

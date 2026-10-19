@@ -62,6 +62,14 @@ struct MessageRow: View, Equatable {
     @Environment(Toaster.self) private var toaster: Toaster?
 
     var body: some View {
+        if message.role == .user, let delivered = message.delivered {
+            DeliveredMessage(message: message, delivered: delivered)
+        } else {
+            ownBody
+        }
+    }
+
+    private var ownBody: some View {
         VStack(alignment: message.role == .user && !promptStyled ? .trailing : .leading, spacing: 8) {
             if message.role == .assistant, theme.promptPrefix == nil { speakerLine }
             if message.role == .assistant, !message.reasoning.isEmpty || !message.tools.isEmpty {
@@ -269,7 +277,7 @@ struct MessageRow: View, Equatable {
                                 HStack(alignment: .center, spacing: 12) {
                                     StepMark(status: tool.status, animated: isLive)
                                     VStack(alignment: .leading, spacing: 1) {
-                                        Text(tool.name).font(.subheadline)
+                                        Text(BotMessages.stepName(tool) ?? tool.name).font(.subheadline)
                                             .foregroundStyle(tool.status == .running ? .primary : .secondary)
                                         if let preview = tool.preview, !preview.isEmpty {
                                             Text(preview).font(.caption).foregroundStyle(.secondary).lineLimit(1)
@@ -602,4 +610,74 @@ nonisolated private struct CheckShape: Shape {
     ContentView()
         .environment(conversation)
         .environment(VoiceSession(conversation: conversation))
+}
+
+/// A message Hermes files as the person's that isn't theirs (`Delivered`): another bot's, with its
+/// creature and name, its words in a quiet bubble on the bots' side; a bot's reply to one this bot
+/// sent, the same way; a background task done, as one line whose output opens on a tap.
+struct DeliveredMessage: View {
+    let message: Message
+    let delivered: Delivered
+    @Environment(\.theme) private var theme
+    @State private var settings = Settings.shared
+    @State private var directory = BotDirectory.shared
+    @State private var showingOutput = false
+
+    private var bot: HermesBot? {
+        guard let profile = delivered.profile, directory.key == settings.connectionKey else { return nil }
+        return directory.roster?.bots.first { $0.name == profile }
+    }
+
+    private var name: String {
+        bot?.label(mainName: settings.headerTitle) ?? (delivered.profile == "default" ? settings.headerTitle : delivered.name ?? "A bot")
+    }
+
+    private var face: BotFace {
+        guard let profile = delivered.profile else { return BotFace(seed: "bot") }
+        return (directory.key == settings.connectionKey ? directory.roster?.faces[profile] : nil) ?? (profile == "default" ? .main : BotFace(seed: profile))
+    }
+
+    var body: some View {
+        switch delivered.kind {
+        case .process: processLine
+        case .message, .reply: botMessage
+        }
+    }
+
+    private var botMessage: some View {
+        let heading = delivered.kind == .reply ? "\(name) replied" : "Message from \(name)"
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                BotAvatar(face: face, size: 20)
+                Text(heading).font(.subheadline.weight(.semibold))
+            }
+            MarkdownView(text: message.text, isLive: false)
+                .padding(.horizontal, 14)
+                .padding(.vertical, theme.bubbleVerticalPadding)
+                .background(RoundedRectangle(cornerRadius: theme.bubbleRadius).fill(theme.surfaceColor.opacity(0.6)))
+                .overlay(RoundedRectangle(cornerRadius: theme.bubbleRadius).strokeBorder(.quaternary))
+                .foregroundStyle(theme.textColor)
+                .contextMenu {
+                    Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = message.text }
+                }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(heading)
+    }
+
+    private var processLine: some View {
+        Button { showingOutput = true } label: {
+            Label(delivered.title ?? "A background task finished", systemImage: "gearshape.2")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .accessibilityHint("Shows what it said")
+        .sheet(isPresented: $showingOutput) {
+            SelectableTextSheet(text: message.text, title: delivered.title ?? "Background task", monospaced: true)
+        }
+    }
 }
