@@ -1,23 +1,25 @@
 import SwiftUI
 
-/// A bot's picture: a little creature, a speech bubble at heart (each has a bubble's tail), in a
-/// colour of its own, with white eyes glancing somewhere, and on some a small mouth or a mark of its
-/// own. Shape, eyes, mouth, mark and colour come from the bot's profile name, so a bot keeps its
-/// creature when it is renamed in Hermes Desktop, and `BotFace.faces(for:)` gives every bot on a
-/// server one no other has there (a shape and a colour of its own too, while there are some left).
-/// The main agent is Redde itself: the app's own message bubble, in the theme's bubble colour.
+/// A bot's picture: a little creature, a speech bubble at heart (the corner nearest its bottom
+/// left drawn sharp, as a message bubble's is, for its tail), in a colour of its own, with white
+/// eyes glancing somewhere, and on some a small mouth or a mark of its own. Shape, eyes, mouth, mark
+/// and colour come from the bot's profile name, so a bot keeps its creature when it is renamed in
+/// Hermes Desktop, and `BotFace.faces(for:picked:)` gives every bot on a server one no other has
+/// there (a shape and a colour of its own too, while there are some left), unless the person picked
+/// one for it (`HermesBot.face`, kept on the server). The main agent is Redde itself: the app's own
+/// message bubble, in the theme's bubble colour.
 nonisolated struct BotFace: Equatable, Hashable, Sendable {
-    enum Shape: CaseIterable, Sendable {
-        case round, squircle, pill, capsule, burst, pick, hex, diamond
+    enum Shape: String, CaseIterable, Sendable {
+        case round, egg, pill, capsule, burst, pick, hex, diamond
         /// Redde's own: the message bubble, its tucked corner on the left. No other bot gets it.
         case bubble
 
-        /// The shapes a bot's name can give.
+        /// The shapes a bot can have.
         static let given = allCases.filter { $0 != .bubble }
     }
-    enum Eyes: CaseIterable, Sendable { case round, mismatched, sleepy, happy, sparkle }
-    enum Mouth: CaseIterable, Sendable { case none, smile, oh, grin }
-    enum Mark: CaseIterable, Sendable { case none, antenna, spark, freckles, blush }
+    enum Eyes: String, CaseIterable, Sendable { case round, mismatched, sleepy, happy, sparkle }
+    enum Mouth: String, CaseIterable, Sendable { case none, smile, oh, grin }
+    enum Mark: String, CaseIterable, Sendable { case none, antenna, spark, freckles, blush }
 
     var shape: Shape
     var eyes: Eyes
@@ -68,7 +70,7 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
         tilt = Double(Int((hash >> 32) % 13) - 6)
     }
 
-    private init(shape: Shape, eyes: Eyes, mouth: Mouth, mark: Mark, glance: Int, tilt: Double, color: Int) {
+    init(shape: Shape, eyes: Eyes, mouth: Mouth, mark: Mark, glance: Int, tilt: Double, color: Int) {
         self.shape = shape
         self.eyes = eyes
         self.mouth = mouth
@@ -78,10 +80,24 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
         self.color = color
     }
 
-    /// A face for each name, no two alike: each takes the face its name gives unless one before it
-    /// (in name order) has it, then the next free one; its shape one of those used least so far, and
-    /// a colour of its own while there are colours no one has yet.
-    static func faces(for names: [String]) -> [String: BotFace] {
+    /// How a picked face is kept on the server (the profile's `ui_meta.redde.face`): every part by
+    /// name, so a part this version doesn't know leaves the face unread rather than wrong.
+    var code: String { "1:\(shape.rawValue):\(eyes.rawValue):\(mouth.rawValue):\(mark.rawValue):\(color):\(glance):\(Int(tilt))" }
+
+    init?(code: String) {
+        let parts = code.split(separator: ":").map(String.init)
+        guard parts.count == 8, parts[0] == "1", let shape = Shape(rawValue: parts[1]), shape != .bubble,
+              let eyes = Eyes(rawValue: parts[2]), let mouth = Mouth(rawValue: parts[3]), let mark = Mark(rawValue: parts[4]),
+              let color = Int(parts[5]), let glance = Int(parts[6]), let tilt = Int(parts[7]) else { return nil }
+        self.init(shape: shape, eyes: eyes, mouth: mouth, mark: mark, glance: ((glance % 4) + 4) % 4,
+                  tilt: Double(max(-8, min(8, tilt))), color: ((color % Self.palette.count) + Self.palette.count) % Self.palette.count)
+    }
+
+    /// A face for each name, no two alike: the ones the person picked as they are, then each
+    /// other takes the face its name gives unless one before it (in name order) has it, then the
+    /// next free one; its shape one of those used least so far, and a colour of its own while
+    /// there are colours no one has yet. The main profile's is always Redde's.
+    static func faces(for names: [String], picked: [String: BotFace] = [:]) -> [String: BotFace] {
         var taken: [BotFace] = []
         var out: [String: BotFace] = [:]
         // The main profile first: Redde's bubble is its own, and the others go round it.
@@ -90,6 +106,11 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
             out["default"] = main
         }
         for name in Set(names).subtracting(["default"]).sorted() {
+            guard let face = picked[name] else { continue }
+            taken.append(face)
+            out[name] = face
+        }
+        for name in Set(names).subtracting(["default"]).subtracting(picked.keys).sorted() {
             let given = BotFace(seed: name)
             let start = all.firstIndex { $0.sameFeatures(as: given) } ?? 0
             // The shapes used least so far are the ones open to it: every shape once before any twice.
@@ -122,9 +143,22 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
     }
 }
 
+/// A moment of a face that moves (Redde's in voice mode): where it looks, how far its eyes are
+/// shut, how wide its mouth is open. What is nil stays the face's own.
+nonisolated struct BotPose: Equatable, Sendable {
+    /// -1…1 each way: right and down are positive.
+    var look: CGPoint?
+    /// 0 open … 1 shut.
+    var blink: CGFloat = 0
+    /// 0 … 1: a mouth that talks. Nil keeps the face's own mouth (Redde's has none).
+    var mouth: CGFloat?
+    var tilt: Double?
+}
+
 struct BotAvatar: View {
     var face: BotFace
     var size: CGFloat = 32
+    var pose: BotPose? = nil
     /// Redde's bubble takes its colour and corners from the theme, as a message does.
     @Environment(\.theme) private var theme
 
@@ -134,24 +168,35 @@ struct BotAvatar: View {
             .accessibilityHidden(true)
     }
 
-    /// Where each shape's body is, its eyes, and where its tail leaves it, in a 100-point box.
+    /// The face as a picture, for what isn't SwiftUI (CarPlay's voice card), in the theme the app
+    /// is in.
+    static func picture(of face: BotFace, side: CGFloat, pose: BotPose? = nil, scale: CGFloat) -> UIImage? {
+        let renderer = ImageRenderer(content: BotAvatar(face: face, size: side, pose: pose).environment(\.theme, Settings.shared.resolvedTheme))
+        renderer.scale = scale
+        return renderer.uiImage
+    }
+
+    /// Where each shape's body is, its eyes and its top, in a 100-point box.
     private struct Layout {
         var body: Path
         var eyeY: CGFloat
         var eyeGap: CGFloat
-        var tail: CGPoint
         var top: CGPoint
     }
 
+    /// The tail's corner: the radius of the one corner drawn sharp.
+    private static let tailCorner: CGFloat = 6.5
+
     private func layout(_ shape: BotFace.Shape) -> Layout {
-        func rounded(_ points: [CGPoint], softness: CGFloat = 0.22) -> Path {
-            // A polygon with soft corners: each corner cut by a curve through it.
+        func rounded(_ points: [CGPoint], softness: CGFloat = 0.22, sharp: Int = -1, sharpness: CGFloat = 0.05) -> Path {
+            // A polygon with soft corners: each corner cut by a curve through it; the tail's, less.
             var path = Path()
             let n = points.count
             for i in 0 ..< n {
                 let p = points[i], next = points[(i + 1) % n], prev = points[(i + n - 1) % n]
-                let a = CGPoint(x: p.x + (prev.x - p.x) * softness, y: p.y + (prev.y - p.y) * softness)
-                let b = CGPoint(x: p.x + (next.x - p.x) * softness, y: p.y + (next.y - p.y) * softness)
+                let soft = i == sharp ? sharpness : softness
+                let a = CGPoint(x: p.x + (prev.x - p.x) * soft, y: p.y + (prev.y - p.y) * soft)
+                let b = CGPoint(x: p.x + (next.x - p.x) * soft, y: p.y + (next.y - p.y) * soft)
                 if i == 0 { path.move(to: a) } else { path.addLine(to: a) }
                 path.addQuadCurve(to: b, control: p)
             }
@@ -165,26 +210,67 @@ struct BotAvatar: View {
                 return CGPoint(x: c.x + r * cos(a), y: c.y + r * sin(a))
             }
         }
+        /// The corner nearest the bottom left: the tail.
+        func nearestBottomLeft(_ points: [CGPoint], outerOnly: Bool = false) -> Int {
+            points.indices.filter { !outerOnly || $0.isMultiple(of: 2) }
+                .min { hypot(points[$0].x, 100 - points[$0].y) < hypot(points[$1].x, 100 - points[$1].y) } ?? 0
+        }
+        /// A rounded box whose bottom left corner is the tail.
+        func tucked(_ rect: CGRect, radius: CGFloat) -> Path {
+            UnevenRoundedRectangle(topLeadingRadius: radius, bottomLeadingRadius: Self.tailCorner, bottomTrailingRadius: radius,
+                                   topTrailingRadius: radius, style: .circular).path(in: rect)
+        }
+        /// Round above and on the right, and at the bottom left a corner, the tail, where a
+        /// quarter of it would be: an oval (`left`…`right`, `top`…`bottom`, widest at `middle`).
+        func cornered(left: CGFloat, right: CGFloat, top: CGFloat, bottom: CGFloat, middle: CGFloat) -> Path {
+            let k: CGFloat = 0.5523, cx = (left + right) / 2, rx = (right - left) / 2, t = Self.tailCorner
+            var p = Path()
+            p.move(to: CGPoint(x: cx, y: top))
+            p.addCurve(to: CGPoint(x: right, y: middle), control1: CGPoint(x: cx + rx * k, y: top), control2: CGPoint(x: right, y: middle - (middle - top) * k))
+            p.addCurve(to: CGPoint(x: cx, y: bottom), control1: CGPoint(x: right, y: middle + (bottom - middle) * k), control2: CGPoint(x: cx + rx * k, y: bottom))
+            p.addLine(to: CGPoint(x: left + t, y: bottom))
+            p.addQuadCurve(to: CGPoint(x: left, y: bottom - t), control: CGPoint(x: left, y: bottom))
+            p.addLine(to: CGPoint(x: left, y: middle))
+            p.addCurve(to: CGPoint(x: cx, y: top), control1: CGPoint(x: left, y: middle - (middle - top) * k), control2: CGPoint(x: cx - rx * k, y: top))
+            p.closeSubpath()
+            return p
+        }
         switch shape {
         case .round:
-            return Layout(body: Path(ellipseIn: CGRect(x: 17, y: 14, width: 68, height: 66)), eyeY: 44, eyeGap: 11, tail: CGPoint(x: 30, y: 72), top: CGPoint(x: 51, y: 14))
-        case .squircle:
-            return Layout(body: Path(roundedRect: CGRect(x: 17, y: 16, width: 68, height: 62), cornerRadius: 23), eyeY: 44, eyeGap: 11, tail: CGPoint(x: 29, y: 72), top: CGPoint(x: 51, y: 16))
+            return Layout(body: cornered(left: 17, right: 85, top: 14, bottom: 80, middle: 47), eyeY: 44, eyeGap: 11, top: CGPoint(x: 51, y: 14))
+        case .egg:
+            // Narrower above than below.
+            var p = Path()
+            let t = Self.tailCorner
+            p.move(to: CGPoint(x: 51, y: 10))
+            p.addCurve(to: CGPoint(x: 84, y: 55), control1: CGPoint(x: 70, y: 10), control2: CGPoint(x: 84, y: 33))
+            p.addCurve(to: CGPoint(x: 51, y: 86), control1: CGPoint(x: 84, y: 75), control2: CGPoint(x: 70, y: 86))
+            p.addLine(to: CGPoint(x: 19 + t, y: 86))
+            p.addQuadCurve(to: CGPoint(x: 19, y: 86 - t), control: CGPoint(x: 19, y: 86))
+            p.addLine(to: CGPoint(x: 19, y: 55))
+            p.addCurve(to: CGPoint(x: 51, y: 10), control1: CGPoint(x: 19, y: 33), control2: CGPoint(x: 32, y: 10))
+            p.closeSubpath()
+            return Layout(body: p, eyeY: 47, eyeGap: 11, top: CGPoint(x: 51, y: 10))
         case .pill:
-            return Layout(body: Path(roundedRect: CGRect(x: 10, y: 24, width: 82, height: 50), cornerRadius: 25), eyeY: 47, eyeGap: 13, tail: CGPoint(x: 26, y: 70), top: CGPoint(x: 51, y: 24))
+            return Layout(body: tucked(CGRect(x: 10, y: 24, width: 82, height: 50), radius: 25), eyeY: 47, eyeGap: 13, top: CGPoint(x: 51, y: 24))
         case .capsule:
-            return Layout(body: Path(roundedRect: CGRect(x: 27, y: 9, width: 50, height: 76), cornerRadius: 25), eyeY: 36, eyeGap: 10, tail: CGPoint(x: 34, y: 80), top: CGPoint(x: 52, y: 9))
+            return Layout(body: tucked(CGRect(x: 27, y: 9, width: 50, height: 76), radius: 25), eyeY: 36, eyeGap: 10, top: CGPoint(x: 52, y: 9))
         case .burst:
-            return Layout(body: rounded(ring(11, center: CGPoint(x: 51, y: 47), outer: 38, inner: 31)), eyeY: 45, eyeGap: 11, tail: CGPoint(x: 31, y: 72), top: CGPoint(x: 51, y: 10))
+            // Its bottom-left point a little longer, and sharp.
+            var points = ring(11, center: CGPoint(x: 51, y: 47), outer: 38, inner: 31)
+            let tip = nearestBottomLeft(points, outerOnly: true)
+            points[tip] = CGPoint(x: 51 + (points[tip].x - 51) * 1.14, y: 47 + (points[tip].y - 47) * 1.14)
+            return Layout(body: rounded(points, sharp: tip, sharpness: 0.04), eyeY: 45, eyeGap: 11, top: CGPoint(x: 51, y: 10))
         case .pick:
-            // A rounded triangle, its point down: a plectrum.
-            return Layout(body: rounded([CGPoint(x: 8, y: 14), CGPoint(x: 94, y: 14), CGPoint(x: 51, y: 94)], softness: 0.36),
-                          eyeY: 38, eyeGap: 11, tail: CGPoint(x: 35, y: 62), top: CGPoint(x: 51, y: 18))
+            // A rounded triangle, its point down and to the left: a plectrum.
+            return Layout(body: rounded([CGPoint(x: 8, y: 14), CGPoint(x: 94, y: 14), CGPoint(x: 32, y: 93)], softness: 0.36, sharp: 2, sharpness: 0.08),
+                          eyeY: 38, eyeGap: 11, top: CGPoint(x: 51, y: 18))
         case .hex:
-            return Layout(body: rounded(ring(3, center: CGPoint(x: 51, y: 47), outer: 39, inner: 39, turn: -90)), eyeY: 45, eyeGap: 11, tail: CGPoint(x: 29, y: 70), top: CGPoint(x: 51, y: 8))
+            let points = ring(3, center: CGPoint(x: 51, y: 47), outer: 39, inner: 39, turn: -90)
+            return Layout(body: rounded(points, sharp: nearestBottomLeft(points)), eyeY: 45, eyeGap: 11, top: CGPoint(x: 51, y: 8))
         case .diamond:
-            return Layout(body: rounded([CGPoint(x: 51, y: 7), CGPoint(x: 91, y: 47), CGPoint(x: 51, y: 87), CGPoint(x: 11, y: 47)]),
-                          eyeY: 46, eyeGap: 11, tail: CGPoint(x: 36, y: 72), top: CGPoint(x: 51, y: 9))
+            return Layout(body: rounded([CGPoint(x: 51, y: 7), CGPoint(x: 91, y: 47), CGPoint(x: 45, y: 88), CGPoint(x: 11, y: 47)], sharp: 2, sharpness: 0.06),
+                          eyeY: 46, eyeGap: 11, top: CGPoint(x: 51, y: 9))
         case .bubble:
             // Nearly square, its corners the theme's, scaled up, the bottom left one tucked in as the
             // bottom right of your own messages is (`userBubbleShape`).
@@ -193,7 +279,7 @@ struct BotAvatar: View {
             let bubble = UnevenRoundedRectangle(topLeadingRadius: radius, bottomLeadingRadius: tucked,
                                                 bottomTrailingRadius: radius, topTrailingRadius: radius)
             return Layout(body: bubble.path(in: CGRect(x: 12, y: 13, width: 78, height: 74)), eyeY: 45, eyeGap: 12,
-                          tail: CGPoint(x: 12, y: 87), top: CGPoint(x: 51, y: 13))
+                          top: CGPoint(x: 51, y: 13))
         }
     }
 
@@ -218,18 +304,10 @@ struct BotAvatar: View {
         }
         // A slight lean, about the middle.
         context.translateBy(x: 50, y: 50)
-        context.rotate(by: .degrees(face.tilt))
+        context.rotate(by: .degrees(pose?.tilt ?? face.tilt))
         context.translateBy(x: -50, y: -50)
 
-        // The body and its tail: a speech bubble. Filled one after the other: as one path, where they
-        // overlap the winding cancels and leaves a hole.
-        let outline = shape.body
-        let t = shape.tail
-        var tail = Path()
-        tail.move(to: CGPoint(x: t.x - 3, y: t.y - 6))
-        tail.addQuadCurve(to: CGPoint(x: t.x - 13, y: t.y + 16), control: CGPoint(x: t.x - 4, y: t.y + 9))
-        tail.addQuadCurve(to: CGPoint(x: t.x + 12, y: t.y + 1), control: CGPoint(x: t.x + 3, y: t.y + 13))
-        tail.closeSubpath()
+        let body = shape.body
         let fill = GraphicsContext.Shading.linearGradient(Gradient(colors: [colors.light, colors.deep]),
                                                            startPoint: CGPoint(x: 18, y: 12), endPoint: CGPoint(x: 84, y: 90))
 
@@ -241,9 +319,7 @@ struct BotAvatar: View {
             context.stroke(stalk, with: .color(colors.deep), style: StrokeStyle(lineWidth: 3.6, lineCap: .round))
             context.fill(Path(ellipseIn: CGRect(x: shape.top.x + 4.5, y: shape.top.y - 15, width: 9, height: 9)), with: .color(colors.deep))
         }
-        // Redde's bubble has no tail of its own: its tucked corner is one.
-        if face.shape != .bubble { context.fill(tail, with: fill) }
-        context.fill(outline, with: fill)
+        context.fill(body, with: fill)
         if face.mark == .spark {
             // A small four-pointed sparkle by its top right.
             let c = CGPoint(x: 74, y: shape.top.y + 12)
@@ -260,22 +336,26 @@ struct BotAvatar: View {
 
         // A little gloss on its top left.
         var gloss = context
-        gloss.clip(to: outline)
+        gloss.clip(to: body)
         gloss.translateBy(x: shape.top.x - 17, y: shape.top.y + 13)
         gloss.rotate(by: .degrees(-28))
         gloss.fill(Path(ellipseIn: CGRect(x: -9, y: -5, width: 18, height: 10)), with: .color(.white.opacity(0.28)))
 
-        // The eyes: white, with pupils looking its way.
-        let look = [CGPoint(x: -1.8, y: 0.6), CGPoint(x: 1.8, y: 0.6), CGPoint(x: -1.4, y: -1.2), CGPoint(x: 1.4, y: -1.2)][face.glance % 4]
+        // The eyes: white, with pupils looking its way (or where the pose says), open as far as it says.
+        let glanced = [CGPoint(x: -1.8, y: 0.6), CGPoint(x: 1.8, y: 0.6), CGPoint(x: -1.4, y: -1.2), CGPoint(x: 1.4, y: -1.2)][face.glance % 4]
+        let look = pose?.look.map { CGPoint(x: max(-1, min(1, $0.x)) * 1.9, y: max(-1, min(1, $0.y)) * 1.4) } ?? glanced
+        let open = 1 - max(0, min(1, pose?.blink ?? 0)) * 0.9
         let left = CGPoint(x: 51 - shape.eyeGap, y: shape.eyeY), right = CGPoint(x: 51 + shape.eyeGap, y: shape.eyeY)
         func eye(_ c: CGPoint, white r: CGFloat, pupil p: CGFloat, sparkle: Bool = false) {
-            let white = Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r * 1.06, width: r * 2, height: r * 2.12))
+            let white = Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r * 1.06 * open, width: r * 2, height: r * 2.12 * open))
             context.fill(white, with: .color(.white))
             if pale { context.stroke(white, with: .color(ink.opacity(0.32)), lineWidth: 1.4) }
+            var inside = context
+            inside.clip(to: white)
             let pc = CGPoint(x: c.x + look.x * r / 7, y: c.y + look.y * r / 7)
-            context.fill(Path(ellipseIn: CGRect(x: pc.x - p, y: pc.y - p, width: p * 2, height: p * 2)), with: .color(ink))
+            inside.fill(Path(ellipseIn: CGRect(x: pc.x - p, y: pc.y - p, width: p * 2, height: p * 2)), with: .color(ink))
             if sparkle {
-                context.fill(Path(ellipseIn: CGRect(x: pc.x + p * 0.15, y: pc.y - p * 0.75, width: p * 0.7, height: p * 0.7)), with: .color(.white))
+                inside.fill(Path(ellipseIn: CGRect(x: pc.x + p * 0.15, y: pc.y - p * 0.75, width: p * 0.7, height: p * 0.7)), with: .color(.white))
             }
         }
         switch face.eyes {
@@ -326,8 +406,16 @@ struct BotAvatar: View {
             break
         }
 
-        // The mouth, on some.
+        // The mouth: one that talks, when the pose has one; else the face's own, on some.
         let mouthY = shape.eyeY + (face.mark == .freckles || face.mark == .blush ? 15 : 13)
+        if let talking = pose?.mouth {
+            let open = max(0, min(1, talking))
+            if open > 0.03 {
+                let w = 7 + open * 3, h = 1.6 + open * 8
+                context.fill(Path(roundedRect: CGRect(x: 51 - w / 2, y: mouthY - 1, width: w, height: h), cornerRadius: min(w, h) / 2), with: .color(ink))
+            }
+            return
+        }
         switch face.mouth {
         case .none:
             break

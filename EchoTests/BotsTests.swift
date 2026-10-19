@@ -122,6 +122,37 @@ struct BotsTests {
         #expect(features(Array(fourteen.values)).count == 14, "creatures stay apart past the shapes and colours")
     }
 
+    @Test func aFacePickedForABotIsKeptOnTheServerAndTheOthersGoRoundIt() throws {
+        let picked = BotFace(shape: .egg, eyes: .sparkle, mouth: .grin, mark: .spark, glance: 2, tilt: -4, color: 5)
+        #expect(BotFace(code: picked.code) == picked, "a picked face reads back as it was written")
+        #expect(BotFace(code: "1:bubble:round:none:none:0:1:-3") == nil, "Redde's own bubble can't be picked for a bot")
+        #expect(BotFace(code: "2:egg:round:none:none:0:1:0") == nil && BotFace(code: "1:cloud:round:none:none:0:1:0") == nil,
+                "a face from a later Redde isn't misread")
+
+        let names = ["default", "scout", "writer", "fixit", "coder"]
+        let given = BotFace.faces(for: names)
+        let writers = try #require(given["writer"])
+        let faces = BotFace.faces(for: names, picked: ["scout": writers])
+        #expect(faces["scout"] == writers, "the bot has the face picked for it")
+        #expect(faces["writer"].map { "\($0.shape)\($0.eyes)\($0.mouth)\($0.mark)" } != "\(writers.shape)\(writers.eyes)\(writers.mouth)\(writers.mark)",
+                "and the bot whose face it was gets another")
+        #expect(faces["default"] == BotFace.main, "the main agent stays Redde's bubble")
+
+        let listing = """
+            {"profiles": [
+              {"name": "default", "is_default": true, "ui_meta_revisions": {}},
+              {"name": "scout", "is_default": false, "ui_meta_revisions": {"redde": 2, "hermes-bots": 1},
+               "ui_meta": {"redde": {"face": "\(picked.code)"}, "hermes-bots": {}}},
+              {"name": "writer", "is_default": false, "ui_meta_revisions": {}, "ui_meta": {"redde": {"face": "nonsense"}}}
+            ]}
+            """
+        let roster = try roster(listing)
+        let scout = try #require(roster.bots.first { $0.name == "scout" })
+        #expect(scout.face == picked && scout.reddeRevision == 2, "the roster reads the face Redde kept in the profile")
+        #expect(roster.bots.first { $0.name == "writer" }?.face == nil, "one it can't read is the face its name gives")
+        #expect(roster.faces["scout"] == picked)
+    }
+
     // MARK: - A bot's chat as a conversation
 
     final class RecordingTransport: HermesTransport, @unchecked Sendable {

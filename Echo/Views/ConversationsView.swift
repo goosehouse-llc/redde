@@ -67,6 +67,8 @@ struct ConversationsList: View {
     @State private var groups = GroupDirectory.shared
     @State private var openRoom: GroupRoom?
     @State private var makingGroup = false
+    /// The bot whose face is being picked.
+    @State private var facing: HermesBot?
     @AppStorage("sessions.showScheduled") private var showScheduled = false
     @State private var shareItem: ShareItem?
     @State private var selecting = false
@@ -154,6 +156,12 @@ struct ConversationsList: View {
         }
         .fullScreenCover(item: $openRoom) { room in
             GroupChatView(room: room) { groups.forget(room.id) }
+        }
+        .sheet(item: $facing) { bot in
+            BotFacePicker(bot: bot, name: bot.label(mainName: settings.headerTitle),
+                          current: botDirectory.roster?.faces[bot.name] ?? BotFace(seed: bot.name)) {
+                Task { _ = try? await botDirectory.refresh() }
+            }
         }
         .background {
             Group {
@@ -422,6 +430,12 @@ struct ConversationsList: View {
         .opensConversation()
         .listRowBackground(isOpen ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
         .disabled(opening != nil || openingBot != nil)
+        .contextMenu {
+            // Redde's own bubble is the main agent's alone.
+            if !bot.isDefault {
+                Button("Change Face…", systemImage: "face.smiling") { facing = bot }
+            }
+        }
         .accessibilityElement(children: .combine)
         .accessibilityHint("Opens your chat with this bot")
     }

@@ -27,6 +27,11 @@ nonisolated struct HermesBot: Identifiable, Equatable, Sendable {
     var preview: String?
     /// Profile names it had before a rename: an old @tag still finds it.
     var previousNames: [String]
+    /// The face the person picked for it in Redde, kept on the server so every Redde there shows it
+    /// (`ui_meta.redde.face` in its profile.yaml); nil: the one its name gives.
+    var face: BotFace?
+    /// The revision Hermes keeps of Redde's settings for it; a write says which it expects.
+    var reddeRevision: Int
 
     var id: String { name }
 
@@ -43,7 +48,7 @@ nonisolated struct HermesBot: Identifiable, Equatable, Sendable {
 
     init(name: String, displayName: String? = nil, title: String? = nil, description: String = "", isDefault: Bool = false,
          model: String? = nil, isHidden: Bool = false, isSetUp: Bool = false, setUpRevision: Int = 0, chatID: String? = nil,
-         lastActive: Date? = nil, preview: String? = nil, previousNames: [String] = []) {
+         lastActive: Date? = nil, preview: String? = nil, previousNames: [String] = [], face: BotFace? = nil, reddeRevision: Int = 0) {
         self.name = name
         self.displayName = displayName
         self.title = title
@@ -57,6 +62,8 @@ nonisolated struct HermesBot: Identifiable, Equatable, Sendable {
         self.lastActive = lastActive
         self.preview = preview
         self.previousNames = previousNames
+        self.face = face
+        self.reddeRevision = reddeRevision
     }
 
     /// A row of `profiles.list`.
@@ -72,7 +79,9 @@ nonisolated struct HermesBot: Identifiable, Equatable, Sendable {
                   chatID: (chat?["resolved_id"]?.string?.nilIfEmpty ?? chat?["id"]?.string?.nilIfEmpty),
                   lastActive: (chat?["last_active"]?.number).flatMap { $0 > 0 ? Date(timeIntervalSince1970: $0) : nil },
                   preview: chat?["preview"]?.string?.nilIfEmpty,
-                  previousNames: (row["previous_names"]?.array ?? []).compactMap(\.string))
+                  previousNames: (row["previous_names"]?.array ?? []).compactMap(\.string),
+                  face: (row["ui_meta"]?["redde"]?["face"]?.string).flatMap(BotFace.init(code:)),
+                  reddeRevision: row["ui_meta_revisions"]?["redde"]?.int ?? 0)
     }
 }
 
@@ -90,8 +99,10 @@ nonisolated struct BotRoster: Equatable, Sendable {
     /// others (`message_agent`) and tells it who they are.
     var messagingIsOn: Bool { bots.contains(where: \.isSetUp) }
 
-    /// Each bot's face, no two alike on the server.
-    var faces: [String: BotFace] { BotFace.faces(for: bots.map(\.name)) }
+    /// Each bot's face: the one picked for it, else one its name gives, no two alike on the server.
+    var faces: [String: BotFace] {
+        BotFace.faces(for: bots.map(\.name), picked: Dictionary(bots.compactMap { bot in bot.face.map { (bot.name, $0) } }, uniquingKeysWith: { a, _ in a }))
+    }
 
     /// The bots the chat list shows: none while the main profile is the only one (there is no one
     /// else to talk to), else every bot not hidden in Hermes Desktop, the main one first, then the
@@ -294,6 +305,33 @@ extension HermesServeClient {
         // Someone set it up meanwhile (Hermes Desktop): it's on either way.
         if applied?["ui_meta_conflicts"] != nil { return }
         guard applied?["ui_meta"]?.bool == true else { throw TransportError.malformed("Hermes didn't take the bot settings") }
+    }
+}
+
+extension HermesServeClient {
+    /// Gives a bot the face picked for it, or (nil) the one its name gives: kept in its profile's
+    /// `ui_meta` under "redde", Redde's own entry, which Hermes keeps as it is (0.21.0 to 0.22.2)
+    /// and other apps leave alone. The write names the revision it read: changed meanwhile (by
+    /// Redde on another device), it is refused and the roster is read again.
+    func setFace(_ face: BotFace?, for bot: HermesBot) async throws {
+        try await ensureConnected()
+        let value: JSONValue = face.map { .object(["face": .string($0.code)]) } ?? .null
+        let result = try await call("profiles.configure", params: .object([
+            "name": .string(bot.name), "ui_meta": .object(["redde": value]),
+            "ui_meta_expected_revisions": .object(["redde": .number(Double(bot.reddeRevision))])]))
+        let applied = result["applied"]
+        if applied?["ui_meta_conflicts"] != nil { throw BotFaceProblem.changedElsewhere }
+        guard applied?["ui_meta"]?.bool == true else { throw TransportError.malformed("Hermes didn't keep the face") }
+    }
+}
+
+nonisolated enum BotFaceProblem: LocalizedError {
+    case changedElsewhere
+
+    var errorDescription: String? {
+        switch self {
+        case .changedElsewhere: "This bot's face was changed somewhere else just now. Look again and pick once more."
+        }
     }
 }
 

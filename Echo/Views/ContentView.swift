@@ -28,6 +28,8 @@ struct ContentView: View {
     /// "Add to Project" from the header's menu: the New Project prompt, and what went wrong.
     @State private var namingProject = false
     @State private var projectProblem: String?
+    /// "Change Face…" in a bot's chat: that bot, its face being picked.
+    @State private var facingBot: HermesBot?
     @State private var showSetup = false
     /// A setup link that was opened, up for confirmation.
     @State private var setupCode: SetupCodeOffer?
@@ -338,6 +340,10 @@ struct ContentView: View {
                         if settings.transport == .hermesServe, conversation.serverSessionID != nil, conversation.bot == nil {
                             ChatProjectMenu(naming: $namingProject, problem: $projectProblem)
                         }
+                        // A bot's chat: its face, but Redde's own bubble stays the main agent's.
+                        if let bot = chatBot, !bot.isDefault {
+                            Button("Change Face…", systemImage: "face.smiling") { facingBot = bot }
+                        }
                         if settings.transport.hasLedger {
                             Button("Terminal", systemImage: "apple.terminal") { showTerminal = true }
                         }
@@ -367,6 +373,11 @@ struct ContentView: View {
                                                          : "The session is renamed on your server too.")
             }
             .modifier(ChatProjectPrompt(naming: $namingProject, problem: $projectProblem))
+            .sheet(item: $facingBot) { bot in
+                BotFacePicker(bot: bot, name: bot.label(mainName: settings.headerTitle), current: botFace ?? BotFace(seed: bot.name)) {
+                    Task { _ = try? await BotDirectory.shared.refresh() }
+                }
+            }
             .alert("Couldn't rename", isPresented: Binding(get: { renameError != nil }, set: { if !$0 { renameError = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -456,6 +467,12 @@ struct ContentView: View {
         Task {
             do { try await conversation.rename(to: name) } catch { renameError = error.localizedDescription }
         }
+    }
+
+    /// In a bot's chat, the bot as the roster has it (for its face, and whether it is the main one).
+    private var chatBot: HermesBot? {
+        guard let profile = conversation.bot?.profile, BotDirectory.shared.key == settings.connectionKey else { return nil }
+        return BotDirectory.shared.roster?.bots.first { $0.name == profile }
     }
 
     /// In a bot's chat, the bot's face, as the chat list draws it.
