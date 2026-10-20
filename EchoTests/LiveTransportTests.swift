@@ -2107,6 +2107,21 @@ struct HermesLabGroupsTests {
         await feed.lookAtDrafts()
         HermesLabApprovalTests.report(feed.drafts.isEmpty, "once the room has the reply, the one being written goes", "\(feed.drafts.map(\.text))")
 
+        // A file to the group: a room takes text alone, so the file goes to the server through the
+        // Dashboard and the message names it, for the bots to read with their tools.
+        let beforeFile = feed.events.count
+        let notes = Attachment(kind: .text, filename: "lab-notes.txt", mimeType: "text/plain", data: Data("the lab's notes".utf8))
+        feed.send("what's in this file?", attachments: [notes])
+        await Self.until(feed) { feed.sending.isEmpty && feed.events.dropFirst(beforeFile).contains { $0.kind == "message.user" } }
+        let withFile = feed.events.dropFirst(beforeFile).first { $0.kind == "message.user" }?.text ?? ""
+        let paths = AttachedFileNote.paths(in: withFile)
+        var kept = ""
+        if let path = paths.first { kept = (try? await client.text(of: ServerFile(name: ServerFiles.name(of: path), path: path, isDirectory: false)).text) ?? "" }
+        HermesLabApprovalTests.report(paths.count == 1 && kept == "the lab's notes" && AttachedFileNote.strip(withFile) == "what's in this file?"
+                                      && feed.problem == nil, "a file sent to the group is put on the server, and the message names it",
+                                      "\(paths), kept \(kept.debugDescription), problem \(feed.problem ?? "none")")
+        await Self.until(feed) { !feed.discussing }
+
         // A bot's command in the group: its card, answered from the feed; answered again (as from
         // another device), the room is read again and there is nothing to fix.
         let asked = feed.events.count

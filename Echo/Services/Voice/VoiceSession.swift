@@ -74,6 +74,9 @@ final class VoiceSession {
     private(set) var lastMetrics: VoiceMetrics?
     /// When true, the mic reopens automatically after each reply (hands-free mode, M2).
     var continuous = false
+    /// A group chat's voice (`GroupVoice`): what is said goes there instead of the conversation,
+    /// and the group chat reads its bots' replies and opens the mic again.
+    var sendsTo: ((String) -> Void)?
     /// The mic is held shut in the middle of a conversation (the car screen's Pause while Redde
     /// listens): the session is idle but not over. `unmute()`, or the mic by any other route,
     /// listens again.
@@ -565,6 +568,13 @@ final class VoiceSession {
             output.beginReply()
             output.append("Okay.")
             output.endReply()
+            return
+        }
+        if let sendsTo, !isCapturing {
+            log.info("said to a group chat")
+            sendsTo(text)
+            phase = .idle
+            releaseAudioAfterCue()
             return
         }
         if isCapturing {

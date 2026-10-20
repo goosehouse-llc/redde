@@ -431,6 +431,21 @@ where a new conversation is in the ••• menu, and ⌘N as anywhere) is the 
   room is leased to one process, and Hermes's gateway runs rooms too); otherwise replies show
   when finished, as before. `lab.sh groups` checks it on each release with a reply the stub
   streams a word a second.
+- **The conversation's tools.** A room's field is the conversation's, made smaller
+  (`GroupComposer`): Add (Files, the photo library, the camera), the pictures and files waiting
+  to go, dictation, and Talk in an empty field. A room takes text alone (`groups.send` refuses
+  any field but `text` and `thread_id`, on every release), so what is attached goes to "Redde
+  attachments" in the server's home through the Dashboard's file manager (`ServerFiles.place`,
+  shared with the Hermes API's files) and the message names it in a note (`AttachedFileNote`, "a
+  picture … look at it with your tools" or "a file … read it with your tools"): a bot opens it
+  with its own tools (Hermes's vision tool takes a local path). Redde hides the note and shows
+  the files under the message, fetched from the server on a tap. Bots' replies have the
+  conversation's copy, read aloud, share and select; Find in Chat looks through the whole room,
+  earlier pages too. Talk is hands-free with the room (`GroupVoice`): the voice session hands what
+  is heard to the room (`VoiceSession.sendsTo`) instead of the conversation, each bot's reply is
+  read aloud as it lands, one after another under its face, and the mic opens again once the
+  round is over, unless a bot waits on the person. Tapping the mic while a reply is read
+  listens at once; the replies not yet read stay on screen. All bots speak with the one voice.
 - **Order.** Bots and group chats are one run in the Bots section. Reorder Bots, in any of their
   menus, shows only them, with handles (edit mode; outside it a long press is the row's menu,
   which a drag can't get past), and the order is kept per server in `Settings.botOrder`

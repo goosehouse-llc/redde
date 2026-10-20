@@ -47,21 +47,39 @@ nonisolated enum ReplyLanguage {
     }
 }
 
-/// A file other than a picture, sent over the Hermes API, which takes text and pictures only: it
-/// goes to the server through the Dashboard's login, and the message says where it is for the
-/// agent to read with its own tools (`Conversation.placingFiles`). Redde hides the note.
+/// A file sent where only text can go: over the Hermes API, which takes text and pictures only,
+/// anything but a picture, and in a group chat, which takes text alone, a picture too. It goes to
+/// the server through the Dashboard's login (`ServerFiles.place`), and the message says where it
+/// is, for the agent to read or look at with its own tools. Redde hides the note, and a group
+/// chat shows the files it names.
 nonisolated enum AttachedFileNote {
     static let opening = "\n\n[The user attached a file, saved on your machine at "
+    static let pictureOpening = "\n\n[The user attached a picture, saved on your machine at "
 
     static func note(path: String) -> String { opening + path + " — read it with your tools.]" }
+    static func note(picture path: String) -> String { pictureOpening + path + " — look at it with your tools.]" }
 
     /// A message loaded back from the server, without the notes (one per file).
-    static func strip(_ text: String) -> String {
-        var text = text
-        while text.hasSuffix("]"), let range = text.range(of: opening, options: .backwards), !text[range.upperBound...].contains("\n") {
-            text = String(text[..<range.lowerBound])
+    static func strip(_ text: String) -> String { split(text).text }
+
+    /// The files a message's notes name, by their paths on the server, in the order sent.
+    static func paths(in text: String) -> [String] { split(text).paths }
+
+    /// What was typed, and the paths its notes name. A message that was only files begins with a
+    /// note, the blank line before it trimmed away by Hermes.
+    static func split(_ text: String) -> (text: String, paths: [String]) {
+        var text = text, paths: [String] = []
+        let openings = [opening, pictureOpening]
+        while text.hasSuffix("]") {
+            // The last note: after a blank line, or at the very start.
+            let after = openings.compactMap { text.range(of: $0, options: .backwards) }
+            let first = openings.compactMap { o in text.hasPrefix(o.dropFirst(2)) ? text.range(of: String(o.dropFirst(2))) : nil }
+            guard let note = (after + first).max(by: { $0.lowerBound < $1.lowerBound }), !text[note.upperBound...].contains("\n"),
+                  let end = text[note.upperBound...].range(of: " — ", options: .backwards) else { break }
+            paths.insert(String(text[note.upperBound ..< end.lowerBound]), at: 0)
+            text = String(text[..<note.lowerBound])
         }
-        return text
+        return (text, paths)
     }
 }
 

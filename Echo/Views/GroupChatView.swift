@@ -14,7 +14,16 @@ struct GroupChatView: View {
     /// The room was ended here: the list lets it go.
     var onEnded: () -> Void = {}
     @Environment(\.theme) private var theme
-    @State private var draft = ""
+    @Environment(VoiceSession.self) private var voiceSession
+    /// The reply being read aloud.
+    @State private var readingID: UUID?
+    /// Talking with the group by voice.
+    @State private var voice = GroupVoice()
+    /// Find in this chat: open, what is looked for, and which match is the one shown.
+    @State private var finding = false
+    @State private var findText = ""
+    @State private var findIndex = 0
+    @FocusState private var findFocused: Bool
     @State private var renaming = false
     @State private var renameText = ""
     @State private var confirmingEnd = false
@@ -65,7 +74,7 @@ struct GroupChatView: View {
                         }
                         if feed.events.isEmpty, feed.sending.isEmpty { opening }
                         ForEach(page.shown) { row($0).id($0.id) }
-                        ForEach(feed.sending, id: \.id) { mine($0.text, id: $0.id, waiting: true) }
+                        ForEach(feed.sending) { mine($0.text, files: $0.files, id: $0.id, waiting: true) }
                         // Replies being written, under their bots, until the room has them.
                         ForEach(feed.drafts.filter { !$0.text.isEmpty }) { writing($0) }
                         if feed.state.waitsOnPerson || (feed.discussing || feed.state.working) && !someoneIsWriting { talking }
@@ -95,6 +104,7 @@ struct GroupChatView: View {
                 // Something new is followed only from the end: reading back isn't pulled away.
                 .onChange(of: feed.events.count) {
                     settleShown()
+                    voice.roomChanged()
                     if atEnd { withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo("bottom", anchor: .bottom) } }
                 }
                 .onChange(of: feed.sending.count) { proxy.scrollTo("bottom", anchor: .bottom) }
@@ -102,12 +112,30 @@ struct GroupChatView: View {
                 .onChange(of: feed.drafts.count) { if atEnd { proxy.scrollTo("bottom", anchor: .bottom) } }
                 .onChange(of: feed.state.approvals.count + feed.state.retries.count) { withAnimation { proxy.scrollTo("bottom", anchor: .bottom) } }
                 .onAppear { settleShown() }
+                .safeAreaInset(edge: .top, spacing: 0) { if finding { findBar(proxy) } }
+                .onChange(of: findText) { findIndex = 0; goToMatch(0, proxy) }
+                .onChange(of: finding) { _, on in
+                    if on { findFocused = findText.isEmpty } else { findText = ""; findIndex = 0 }
+                }
+                #if DEBUG
+                // `-echo.groupFind <words>`: Find open on those words (screenshots).
+                .onAppear { if let words = DevHooks.value("-echo.groupFind") { findText = words; finding = true } }
+                #endif
             }
             .chatTextSize()
             .background(theme.pageColor)
             .foregroundStyle(theme.textColor)
             .safeAreaInset(edge: .bottom) {
-                Group { if feed.room.inDesktop { desktopNote } else { composer } }
+                Group {
+                    if feed.room.inDesktop {
+                        desktopNote
+                    } else if voice.isOn {
+                        GroupVoiceBar(voice: voice, feed: feed, face: face)
+                    } else {
+                        GroupComposer(feed: feed, focused: focused, face: face) { voice.start(feed, session: voiceSession) }
+                    }
+                }
+                .animation(.snappy(duration: 0.3), value: voice.isOn)
                     .frame(maxWidth: 820).frame(maxWidth: .infinity)
                     // As under a conversation: solid themes have no glass to hide what scrolls past.
                     .background(theme.usesGlass ? AnyShapeStyle(.clear) : AnyShapeStyle(theme.pageColor))
@@ -122,9 +150,7 @@ struct GroupChatView: View {
                             .keyboardShortcut("k", modifiers: .command)
                     }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    if !feed.room.inDesktop { menu }
-                }
+                ToolbarItem(placement: .topBarTrailing) { menu }
             }
             .alert("Rename group chat", isPresented: $renaming) {
                 TextField("Name", text: $renameText)
@@ -146,6 +172,11 @@ struct GroupChatView: View {
                 Text("The bots stop and the group chat goes, on the server too. The bots' own chats stay.")
             }
             .task { await feed.follow() }
+            .onChange(of: feed.state) { voice.roomChanged() }
+            .onChange(of: voiceSession.phase) { voice.sessionChanged() }
+            .onChange(of: voiceSession.continuous) { voice.sessionChanged() }
+            // Leaving the group chat ends talking with it: the voice session is the app's.
+            .onDisappear { voice.stop() }
         }
     }
 
@@ -180,10 +211,82 @@ struct GroupChatView: View {
 
     private var menu: some View {
         Menu {
-            Button("Rename", systemImage: "pencil") { renameText = feed.room.name; renaming = true }
-            Divider()
-            Button("End Group Chat", systemImage: "xmark.bin", role: .destructive) { confirmingEnd = true }
+            Button("Find in Chat", systemImage: "magnifyingglass") { withAnimation { finding = true } }
+                .keyboardShortcut("f", modifiers: .command)
+            // Hermes Desktop's are its own to name and end.
+            if !feed.room.inDesktop {
+                Button("Rename", systemImage: "pencil") { renameText = feed.room.name; renaming = true }
+                Divider()
+                Button("End Group Chat", systemImage: "xmark.bin", role: .destructive) { confirmingEnd = true }
+            }
         } label: { Label("More", systemImage: "ellipsis") }
+    }
+
+    // MARK: Find
+
+    /// The messages the words are in, by their numbers in the log, oldest first.
+    private var matches: [Int] {
+        let words = findText.trimmingCharacters(in: .whitespaces)
+        guard finding, !words.isEmpty else { return [] }
+        return rows.filter { $0.isMessage && AttachedFileNote.strip($0.text).localizedCaseInsensitiveContains(words) }.map(\.seq)
+    }
+
+    private func highlight(_ seq: Int) -> MessageRow.Highlight {
+        let found = matches
+        guard let at = found.firstIndex(of: seq) else { return .none }
+        return at == findIndex ? .current : .match
+    }
+
+    /// To a match, the earlier messages shown first when it is among them.
+    private func goToMatch(_ index: Int, _ proxy: ScrollViewProxy) {
+        let found = matches
+        guard !found.isEmpty else { return }
+        findIndex = (index % found.count + found.count) % found.count
+        let seq = found[findIndex]
+        if let from = shownFrom, seq < from { shownFrom = seq }
+        Task { withAnimation { proxy.scrollTo(seq, anchor: .center) } }
+    }
+
+    private func findBar(_ proxy: ScrollViewProxy) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            TextField("Find in chat", text: $findText)
+                .textFieldStyle(.plain)
+                .autocorrectionDisabled()
+                .focused($findFocused)
+                .onSubmit { goToMatch(findIndex + 1, proxy) }
+                .submitLabel(.search)
+            if !findText.isEmpty {
+                let count = matches.count
+                Text(count == 0 ? "0" : "\(findIndex + 1) of \(count)")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel(count == 0 ? "No matches" : "Match \(findIndex + 1) of \(count)")
+            }
+            Button("Previous match", systemImage: "chevron.up") { goToMatch(findIndex - 1, proxy) }
+                .disabled(matches.count < 2)
+            Button("Next match", systemImage: "chevron.down") { goToMatch(findIndex + 1, proxy) }
+                .disabled(matches.count < 2)
+            Button("Done") { withAnimation { finding = false } }
+                .font(.body.weight(.semibold))
+        }
+        .labelStyle(.iconOnly)
+        .padding(.horizontal, 14).padding(.vertical, 8)
+        .background(.bar)
+        .transition(.move(edge: .top).combined(with: .opacity))
+    }
+
+    /// The speaker button under a reply: read it, or stop if it's the one being read.
+    private func readAloud(_ id: UUID, _ text: String) {
+        if voiceSession.phase == .speaking {
+            let wasThis = readingID == id
+            voiceSession.stopSpeaking()
+            readingID = nil
+            if wasThis { return }
+        }
+        guard voiceSession.phase == .idle || { if case .error = voiceSession.phase { true } else { false } }() else { return }
+        readingID = id
+        voiceSession.readAloud(text)
     }
 
     /// In place of the field, for a room Hermes Desktop runs: Desktop answers its messages, and
@@ -220,13 +323,16 @@ struct GroupChatView: View {
     @ViewBuilder
     private func row(_ event: GroupEvent) -> some View {
         if event.kind == "message.user" {
-            mine(event.text, id: "seq-\(event.seq)", waiting: false)
+            let said = AttachedFileNote.split(event.text)
+            mine(said.text, paths: said.paths, id: "seq-\(event.seq)", waiting: false, highlight: highlight(event.seq))
         } else if event.kind == "message.member" {
             let member = feed.room.member(event.actorID)
             // Its seq makes the reply's id: the same message keeps its row as the log is read again.
-            MessageRow(message: Message(id: UUID(uuidString: String(format: "00000000-0000-4000-8000-%012d", event.seq)) ?? UUID(),
-                                        role: .assistant, text: event.text, createdAt: event.createdAt),
-                       showActions: false)
+            let id = UUID(uuidString: String(format: "00000000-0000-4000-8000-%012d", event.seq)) ?? UUID()
+            // Copy, read aloud, share and select, as under a conversation's reply.
+            MessageRow(message: Message(id: id, role: .assistant, text: event.text, createdAt: event.createdAt),
+                       onReadAloud: { @MainActor @Sendable in readAloud(id, event.text) },
+                       isReading: readingID == id && voiceSession.phase == .speaking, highlight: highlight(event.seq))
                 .equatable()
                 .environment(\.replySpeaker, member?.label ?? "A bot")
                 .environment(\.replyFace, face(member))
@@ -248,11 +354,29 @@ struct GroupChatView: View {
             .environment(\.replyFace, face(member))
     }
 
-    /// The person's message, as the conversation draws one (the theme's bubble, its text colour).
-    private func mine(_ text: String, id: String, waiting: Bool) -> some View {
-        MessageRow(message: Message(id: Self.rowID(id), role: .user, text: text), showActions: false)
-            .equatable()
-            .opacity(waiting ? 0.6 : 1)
+    /// The person's message, as the conversation draws one (the theme's bubble, its text colour),
+    /// with the files it named under it: by their paths on the server once it is in the room,
+    /// tapped to open; by their names while it is on its way.
+    private func mine(_ text: String, paths: [String] = [], files: [String] = [], id: String, waiting: Bool,
+                      highlight: MessageRow.Highlight = .none) -> some View {
+        VStack(alignment: .trailing, spacing: 6) {
+            if !text.isEmpty {
+                MessageRow(message: Message(id: Self.rowID(id), role: .user, text: text), showActions: false, highlight: highlight)
+                    .equatable()
+            }
+            if !paths.isEmpty || !files.isEmpty {
+                VStack(alignment: .trailing, spacing: 6) {
+                    ForEach(paths, id: \.self) { GroupFileChip(path: $0) }
+                    ForEach(Array(files.enumerated()), id: \.offset) { _, name in
+                        Label(name, systemImage: "arrow.up.circle").font(.footnote).lineLimit(1)
+                            .padding(.horizontal, 10).padding(.vertical, 6)
+                            .background(.quaternary, in: .capsule)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .trailing)
+        .opacity(waiting ? 0.6 : 1)
     }
 
     /// A row's message id, the same each time the log is read (a send's id is a UUID already).
@@ -291,66 +415,6 @@ struct GroupChatView: View {
         .background(Color.orange.opacity(0.12), in: .rect(cornerRadius: 14))
     }
 
-    /// The other bots a tag being typed could be.
-    private var tagSuggestions: [GroupMember] {
-        guard let typed = BotMentions.typing(in: draft)?.lowercased() else { return [] }
-        return feed.room.members.filter {
-            typed.isEmpty || $0.handle.lowercased().hasPrefix(typed) || $0.label.lowercased().hasPrefix(typed)
-        }
-    }
-
-    private var composer: some View {
-        VStack(spacing: 8) {
-            let suggestions = tagSuggestions
-            if !suggestions.isEmpty {
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(suggestions) { member in
-                        Button {
-                            if let typed = BotMentions.typing(in: draft) { draft = String(draft.dropLast(typed.count + 1)) + "@" + member.handle + " " }
-                            focused.wrappedValue = true
-                        } label: {
-                            HStack(spacing: 10) {
-                                BotAvatar(face: face(member), size: 22)
-                                Text("@" + member.handle).font(.callout.weight(.medium))
-                                Text(member.label).font(.caption).foregroundStyle(.secondary)
-                                Spacer(minLength: 0)
-                            }
-                            .padding(.horizontal, 12).padding(.vertical, 8)
-                            .contentShape(.rect)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .background(theme.surfaceColor, in: .rect(cornerRadius: 14))
-                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.quaternary))
-            }
-            // The conversation's field and buttons: glass or the theme's surface, and the
-            // buttons' symbols in the theme's text-on-accent colour.
-            HStack(alignment: .bottom, spacing: 10) {
-                TextField("Message the group", text: $draft, axis: .vertical)
-                    .font(theme.userFont)
-                    .lineLimit(1 ... 6)
-                    .focused(focused)
-                    .padding(.horizontal, 14).padding(.vertical, 11)
-                    .background(theme.usesGlass ? AnyShapeStyle(.clear) : AnyShapeStyle(theme.surfaceColor), in: .rect(cornerRadius: 22))
-                    .glassEffect(theme.usesGlass ? .regular : .identity, in: .rect(cornerRadius: 22))
-                if feed.discussing || feed.state.working, draft.isEmpty {
-                    ComposerButton(symbol: "stop.fill", label: "Stop", tint: .red, size: 44) { feed.stop() }
-                        .transition(.scale(scale: 0.4).combined(with: .opacity))
-                } else {
-                    ComposerButton(symbol: "arrow.up", label: "Send", tint: .accentColor, size: 44) {
-                        feed.send(draft)
-                        draft = ""
-                    }
-                    .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    .opacity(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.5 : 1)
-                    .transition(.scale(scale: 0.4).combined(with: .opacity))
-                }
-            }
-            .animation(.snappy(duration: 0.3, extraBounce: 0.15), value: feed.discussing || feed.state.working)
-        }
-        .padding(.horizontal).padding(.vertical, 8)
-    }
 }
 
 /// A few bots' faces overlapping, for a group chat.

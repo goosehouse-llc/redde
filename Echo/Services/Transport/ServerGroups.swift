@@ -543,7 +543,9 @@ extension GroupFeed {
     /// finished (the room's live reply, for screenshots and recording).
     func playDemoDraft() async {
         events.append(GroupEvent(seq: 8, kind: "message.user", actorKind: "user", actorID: nil,
-                                 payload: .object(["text": .string("@scout is Falls Loop open this weekend?")]), createdAt: .now))
+                                 payload: .object(["text": .string("@scout is Falls Loop open this weekend? This was posted at the trailhead."
+                                                                   + AttachedFileNote.note(picture: "/home/redde/Redde attachments/2026-10-20 091500 trailhead sign.jpg"))]),
+                                 createdAt: .now))
         cursor = 8
         try? await Task.sleep(for: .seconds(1))
         state = GroupState(working: true)
@@ -613,8 +615,18 @@ final class GroupFeed {
     private(set) var room: GroupRoom
     private(set) var events: [GroupEvent] = []
     private(set) var state = GroupState()
-    /// Messages sent and not in the log yet, by their event id.
-    private(set) var sending: [(id: String, text: String)] = []
+    /// A message of the person's on its way: what was typed and the files with it, by name.
+    struct Sending: Identifiable, Equatable {
+        /// Its event id.
+        var id: String
+        var text: String
+        var files: [String] = []
+        /// What goes to the room: the text, and a note for each file once it is on the server.
+        var said: String?
+    }
+
+    /// Messages sent and not in the log yet.
+    private(set) var sending: [Sending] = []
     /// Approvals and retries answered here and not yet gone from the state: their cards hide.
     private(set) var answering: Set<String> = []
     private(set) var problem: String?
@@ -710,9 +722,10 @@ final class GroupFeed {
             if !fresh.isEmpty {
                 events += fresh
                 cursor = fresh.last?.seq ?? cursor
-                // A message of the person's that is now in the log isn't waiting any more.
-                let said = Set(fresh.filter { $0.kind == "message.user" }.map(\.text))
-                sending.removeAll { said.contains($0.text) }
+                // A message of the person's that is now in the log isn't waiting any more (Hermes
+                // trims what it is given).
+                let said = Set(fresh.filter { $0.kind == "message.user" }.map { $0.text.trimmingCharacters(in: .whitespacesAndNewlines) })
+                sending.removeAll { said.contains(($0.said ?? $0.text).trimmingCharacters(in: .whitespacesAndNewlines)) }
                 if let renamed = fresh.last(where: { $0.kind == "room.renamed" })?.payload["name"]?.string { room.name = renamed }
             }
             let (current, state) = try await client.groupState(room.id)
@@ -756,14 +769,25 @@ final class GroupFeed {
         }
     }
 
-    func send(_ text: String) {
+    /// Says something to the room. A room takes text alone, so pictures and files go to the
+    /// server first ("Redde attachments", `ServerFiles.place`) and the message names them, for the
+    /// bots to look at or read with their tools (`AttachedFileNote`).
+    func send(_ text: String, attachments: [Attachment] = []) {
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
+        guard !text.isEmpty || !attachments.isEmpty else { return }
         let id = UUID().uuidString
-        sending.append((id, text))
+        sending.append(Sending(id: id, text: text, files: attachments.map(\.filename)))
         Task {
             do {
-                try await client.sendToGroup(room.id, text: text, eventID: id)
+                var said = text
+                if !attachments.isEmpty {
+                    let placed = try await ServerFiles.place(attachments, client: client)
+                    for (attachment, file) in zip(attachments, placed) {
+                        said += attachment.kind == .image ? AttachedFileNote.note(picture: file.path) : AttachedFileNote.note(path: file.path)
+                    }
+                }
+                if let index = sending.firstIndex(where: { $0.id == id }) { sending[index].said = said }
+                try await client.sendToGroup(room.id, text: said, eventID: id)
                 await look()
             } catch {
                 sending.removeAll { $0.id == id }

@@ -307,6 +307,29 @@ struct BotsTests {
         #expect(stopping.stopping && stopping.blocked && !stopping.waitsOnPerson, "a stop under way is not a question for the person")
     }
 
+    /// A room takes text alone: pictures and files go to the server and the message names them,
+    /// in notes the screen reads back as files and hides as text, a message of files alone too.
+    @Test func filesSentToARoomAreNamedInTheMessage() async throws {
+        let server = DemoServerFiles()
+        let picture = Attachment(kind: .image, filename: "photo.jpg", mimeType: "image/jpeg", data: Data(count: 2_000))
+        let notes = Attachment(kind: .text, filename: "notes.txt", mimeType: "text/plain", data: Data("lab notes".utf8))
+        let placed = try await ServerFiles.place([picture, notes], client: server)
+        #expect(placed.count == 2 && placed.allSatisfy { $0.path.hasPrefix(DemoServerFiles.home + "/Redde attachments/") })
+        #expect(placed.map { ServerFiles.sentName(of: $0.path) } == ["photo.jpg", "notes.txt"], "named as sent, without the time")
+        // The same file again in the same second: a name of its own.
+        let again = try await ServerFiles.place([notes], client: server)
+        #expect(again.first?.path != placed[1].path && again.first.map { ServerFiles.sentName(of: $0.path) } == "notes.txt")
+
+        let said = "What do you make of these?" + AttachedFileNote.note(picture: placed[0].path) + AttachedFileNote.note(path: placed[1].path)
+        #expect(AttachedFileNote.split(said).text == "What do you make of these?")
+        #expect(AttachedFileNote.paths(in: said) == placed.map(\.path), "both files, in order")
+        // Only files: Hermes trims the blank line before the first note.
+        let only = (AttachedFileNote.note(picture: placed[0].path) + AttachedFileNote.note(path: placed[1].path))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        #expect(AttachedFileNote.split(only).text.isEmpty && AttachedFileNote.paths(in: only).count == 2)
+        #expect(AttachedFileNote.strip("No files here [just brackets]") == "No files here [just brackets]")
+    }
+
     /// A bot's reply in a room as it is written, from its session's events: started over at each
     /// start and beside a tool call, grown by each piece, whole at the end.
     @Test func aReplyInARoomIsReadAsItIsWritten() throws {

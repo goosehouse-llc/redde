@@ -232,6 +232,47 @@ nonisolated final class TransferWatch: NSObject, URLSessionTaskDelegate, @unchec
     }
 }
 
+extension ServerFiles {
+    /// Files put in "Redde attachments" in the server's home through the Dashboard, for a message
+    /// that can't carry them to name instead (`AttachedFileNote`), each under the time it went
+    /// and its own name; in the order given.
+    static func place(_ attachments: [Attachment], client: some ServerFileBrowsing) async throws -> [ServerFile] {
+        let home = try await client.folder(at: nil).path
+        let folder: String
+        do {
+            folder = try await client.makeFolder("Redde attachments", in: home).path
+        } catch {
+            folder = try await client.folder(at: join(home, "Redde attachments")).path   // there already
+        }
+        let stamp = Date.now.formatted(.verbatim("\(year: .defaultDigits)-\(month: .twoDigits)-\(day: .twoDigits) \(hour: .twoDigits(clock: .twentyFourHour, hourCycle: .zeroBased))\(minute: .twoDigits)\(second: .twoDigits)",
+                                                 timeZone: .current, calendar: .current))
+        var placed: [ServerFile] = []
+        for attachment in attachments {
+            let local = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+            try attachment.data.write(to: local)
+            defer { try? FileManager.default.removeItem(at: local) }
+            var file: ServerFile?
+            for copy in 1 ... 9 where file == nil {
+                // The same name in the same second (the file sent twice): a number of its own.
+                let name = copy == 1 ? "\(stamp) \(attachment.filename)" : "\(stamp) \(copy) \(attachment.filename)"
+                do {
+                    file = try await client.upload(local, as: name, into: folder, replacing: false, watch: nil)
+                } catch TransportError.http(409, _) where copy < 9 {
+                    continue
+                }
+            }
+            if let file { placed.append(file) }
+        }
+        return placed
+    }
+
+    /// A placed file's name as it was sent, without the time it went (`place`).
+    static func sentName(of path: String) -> String {
+        let name = self.name(of: path)
+        return name.replacing(#/^\d{4}-\d{2}-\d{2} \d{6}( \d)? /#, with: "", maxReplacements: 1)
+    }
+}
+
 /// What the file browser asks of a server. `HermesServeClient` in the app; a made-up tree for
 /// the screen's own look and its UI test.
 protocol ServerFileBrowsing: AnyObject {

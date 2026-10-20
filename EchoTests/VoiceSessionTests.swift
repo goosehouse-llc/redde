@@ -187,6 +187,26 @@ struct VoiceSessionTests {
         #expect(h.audio.activations == 1)
     }
 
+    /// A group chat's voice: what is said goes to the group chat, not the conversation, and the
+    /// session is quiet again for the group chat to read its bots' replies, each to the end.
+    @Test func whatIsSaidToAGroupChatGoesThere() async throws {
+        let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport([]))
+        var said: [String] = []
+        h.session.sendsTo = { said.append($0) }
+        h.session.continuous = true
+        h.session.beginListening()
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        h.recognizer.deliver("Is Falls Loop open?")
+        try await waitUntil("sent") { !said.isEmpty }
+        #expect(said == ["Is Falls Loop open?"] && h.conversation.messages.isEmpty, "the room's, not the conversation's")
+        #expect(h.session.phase == .idle && h.session.continuous)
+        h.session.readAloud("Yes, it's open.")
+        #expect(h.session.phase == .speaking && h.speaker.spoken.joined() == "Yes, it's open.")
+        h.speaker.finishSpeaking()
+        try await waitUntil("quiet again") { h.session.phase == .idle }
+        #expect(h.recognizer.starts == 1, "the group chat opens the mic, once the round is over")
+    }
+
     @Test func deniedPermissionLandsInError() async throws {
         let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport([]))
         let session = VoiceSession(conversation: h.conversation, recognizer: h.recognizer, output: h.speaker,

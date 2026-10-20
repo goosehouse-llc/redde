@@ -427,34 +427,10 @@ final class Conversation {
     /// instead (`AttachedFileNote`): the agent reads them there with its own tools.
     static func placingFiles(_ request: TurnRequest, client: some ServerFileBrowsing = HermesServeClient.shared) async throws -> TurnRequest {
         var request = request
-        let home = try await client.folder(at: nil).path
-        let folder: String
-        do {
-            folder = try await client.makeFolder("Redde attachments", in: home).path
-        } catch {
-            folder = try await client.folder(at: ServerFiles.join(home, "Redde attachments")).path   // there already
-        }
-        let stamp = Date.now.formatted(.verbatim("\(year: .defaultDigits)-\(month: .twoDigits)-\(day: .twoDigits) \(hour: .twoDigits(clock: .twentyFourHour, hourCycle: .zeroBased))\(minute: .twoDigits)\(second: .twoDigits)",
-                                                 timeZone: .current, calendar: .current))
-        var kept: [Attachment] = []
-        for attachment in request.attachments {
-            guard attachment.kind == .pdf || attachment.kind == .other else { kept.append(attachment); continue }
-            let local = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
-            try attachment.data.write(to: local)
-            defer { try? FileManager.default.removeItem(at: local) }
-            var placed: ServerFile?
-            for copy in 1 ... 9 where placed == nil {
-                // The same name in the same second (the file sent twice): a number of its own.
-                let name = copy == 1 ? "\(stamp) \(attachment.filename)" : "\(stamp) \(copy) \(attachment.filename)"
-                do {
-                    placed = try await client.upload(local, as: name, into: folder, replacing: false, watch: nil)
-                } catch TransportError.http(409, _) where copy < 9 {
-                    continue
-                }
-            }
-            if let placed { request.userText += AttachedFileNote.note(path: placed.path) }
-        }
-        request.attachments = kept
+        let files = request.attachments.filter { $0.kind == .pdf || $0.kind == .other }
+        guard !files.isEmpty else { return request }
+        for placed in try await ServerFiles.place(files, client: client) { request.userText += AttachedFileNote.note(path: placed.path) }
+        request.attachments.removeAll { $0.kind == .pdf || $0.kind == .other }
         return request
     }
 
