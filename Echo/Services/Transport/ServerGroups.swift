@@ -472,6 +472,9 @@ final class GroupDirectory {
     private(set) var supported = false
     private(set) var writable = false
     private(set) var key = ""
+    /// The group chat in the chat's place, where a conversation would be: until a conversation
+    /// is opened (from the list or anywhere else), or the group chat is ended.
+    var open: GroupRoom?
 
     func refresh(client: HermesServeClient = .shared, settings: Settings = .shared) async {
         let key = settings.connectionKey
@@ -493,7 +496,10 @@ final class GroupDirectory {
         self.key = key
     }
 
-    func forget(_ room: String) { rooms.removeAll { $0.id == room } }
+    func forget(_ room: String) {
+        rooms.removeAll { $0.id == room }
+        if open?.id == room { open = nil }
+    }
 }
 
 /// One room as it is followed on screen: what was said, read from its log, and what it waits on,
@@ -548,9 +554,10 @@ final class GroupFeed {
                 if let renamed = fresh.last(where: { $0.kind == "room.renamed" })?.payload["name"]?.string { room.name = renamed }
             }
             let (current, state) = try await client.groupState(room.id)
-            if let current { room.members = current.members.isEmpty ? room.members : current.members }
-            self.state = state
-            problem = nil
+            // Written only when changed: each write redraws the room, every second while bots talk.
+            if let current, !current.members.isEmpty, current.members != room.members { room.members = current.members }
+            if state != self.state { self.state = state }
+            if problem != nil { problem = nil }
         } catch {
             problem = error.localizedDescription
         }
@@ -566,9 +573,11 @@ final class GroupFeed {
                 problem = "This group chat was ended in Hermes Desktop."
                 return
             }
-            room = current.naming(with: BotDirectory.shared.roster, mainName: Settings.shared.headerTitle)
-            events = Self.events(of: room, numbering: &desktopSeqs)
-            problem = nil
+            let named = current.naming(with: BotDirectory.shared.roster, mainName: Settings.shared.headerTitle)
+            if named != room { room = named }
+            let fresh = Self.events(of: room, numbering: &desktopSeqs)
+            if fresh != events { events = fresh }
+            if problem != nil { problem = nil }
         } catch {
             problem = error.localizedDescription
         }

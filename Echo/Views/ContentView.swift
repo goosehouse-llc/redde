@@ -53,6 +53,7 @@ struct ContentView: View {
     @State private var editing: Message?
     @State private var pendingAttachments: [Attachment] = []
     @FocusState private var composerFocused: Bool
+    @State private var groups = GroupDirectory.shared
     /// The update's highlights, shown once per version.
     @State private var whatsNew: WhatsNew.Release?
     #if DEBUG
@@ -202,6 +203,9 @@ struct ContentView: View {
                 if sizeClass == .regular { section = .sessions } else if showConversations { setDrawer(open: false) }
             }
         }
+        // Another conversation opened (Siri, a notification, the list): it takes the group chat's place.
+        .onChange(of: conversation.id) { groups.open = nil }
+        .onChange(of: settings.connectionKey) { groups.open = nil }
         .onChange(of: conversation.id) {
             // A fresh conversation: have llama-swap load its model before the first message.
             if conversation.messages.isEmpty { ModelWarmer.warm(conversation) }
@@ -236,6 +240,18 @@ struct ContentView: View {
             consumeSharedItems()
             guard Settings.shared.listenOnOpen, router.pendingVoice == nil, !voiceSession.mightBeBusy else { return }
             Task { await launchVoice(handsFree: showVoice ? voiceSession.continuous : settings.handsFreeByDefault, fromOutside: true) }
+        }
+    }
+
+    /// The chat's place: the conversation, or a group chat opened from the list.
+    @ViewBuilder
+    private func chatScreen(showListButton: Bool) -> some View {
+        if let room = groups.open {
+            GroupChatView(room: room, focused: $composerFocused,
+                          openList: showListButton ? { setDrawer(open: true) } : nil) { groups.forget(room.id) }
+                .id(room.id)
+        } else {
+            transcriptScreen(showListButton: showListButton)
         }
     }
 
@@ -450,7 +466,7 @@ struct ContentView: View {
     @ViewBuilder private var padDetail: some View {
         switch section {
         case .sessions:
-            transcriptScreen(showListButton: false)
+            chatScreen(showListButton: false)
         case .cron:
             NavigationStack { CronView().navigationTitle("Cron").navigationBarTitleDisplayMode(.inline) }
                 .id(settings.connectionKey)
@@ -466,7 +482,7 @@ struct ContentView: View {
     private var phoneLayout: some View {
         SidePanel(isOpen: $showConversations, openingFrom: $openingFromRow, openingTitle: headerTitle,
                   onOpening: { composerFocused = false }) {
-            NavigationStack { transcriptScreen(showListButton: true) }
+            NavigationStack { chatScreen(showListButton: true) }
         } panel: {
             ConversationsView(isShowing: showConversations, onOpened: { conversationOpened() })
         }

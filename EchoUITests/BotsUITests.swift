@@ -62,6 +62,31 @@ final class BotsUITests: XCTestCase {
         }
     }
 
+    /// iPhone: a group chat takes the chat's place, so a swipe to the right opens the list from
+    /// it as from a conversation, and a conversation picked there takes its place again.
+    func testAGroupChatIsASwipeFromTheList() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.openGroup", "-echo.clearDrafts", "-displayName", "Redde",
+                               "-echo.screen", "sessions"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launch()
+        try XCTSkipIf(app.windows.firstMatch.frame.width > 600, "iPad keeps the list in the sidebar")
+        XCTAssertTrue(app.textFields["Message the group"].waitForExistence(timeout: 20), "the group chat didn't open")
+        XCTAssertFalse(app.buttons["Done"].exists, "the group chat is still a cover with Done")
+
+        let window = app.windows.firstMatch
+        window.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.45))
+            .press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.47)),
+                   withVelocity: .fast, thenHoldForDuration: 0)
+        XCTAssertTrue(app.navigationBars["Conversations"].waitForExistence(timeout: 5), "swiping right didn't open the list")
+
+        let quill = app.collectionViews.firstMatch.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Quill,")).firstMatch
+        XCTAssertTrue(quill.waitForExistence(timeout: 5))
+        quill.tap()
+        XCTAssertTrue(app.text(containing: "tighten the opening").waitForExistence(timeout: 10), "Quill's chat didn't take the group chat's place")
+        XCTAssertFalse(app.textFields["Message the group"].exists)
+    }
+
     override func tearDownWithError() throws {
         // What was typed is a draft, and drafts outlast the app.
         MainActor.assumeIsolated {

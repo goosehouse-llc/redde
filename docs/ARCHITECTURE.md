@@ -409,6 +409,13 @@ where a new conversation is in the ••• menu, and ⌘N as anywhere) is the 
   seconds, its messages numbered by id (else time, author and text) so rows keep their place as
   the window moves. Nothing is written back: a message added to the copy would be merged by
   Desktop but no round would run for it. Likewise Desktop never shows rooms made in Redde.
+- **The room's screen** is a plain stack, not a lazy one, holding the newest 30 rows, with Show
+  earlier for the rest (the first row shown is kept by its number from the front, so a message
+  added at the end never takes rows off the top). It is anchored to the bottom when it opens,
+  and on changes of size only while the end is in view. A new message is followed only from
+  the end. The feed writes members, state and problem only when they changed: each write
+  redraws the room, every second while bots talk. Lazy rows and a blanket bottom anchor made it
+  jump about when scrolled, as the transcript's once did.
 
 ### Reply language
 

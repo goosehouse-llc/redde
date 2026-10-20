@@ -2,45 +2,70 @@ import SwiftUI
 
 /// A group chat: the room's conversation, each bot's reply under its face and name, and a field to
 /// say something to all of them or, with an @tag, to one. Hermes runs the room (`ServerGroups.swift`);
-/// this screen reads what was said and says what the person types.
+/// this screen reads what was said and says what the person types. It takes the chat's place
+/// (`GroupDirectory.open`), so the list is a swipe away as it is from a conversation, and its
+/// bubbles and buttons are the conversation's own.
 struct GroupChatView: View {
     @State private var feed: GroupFeed
+    /// The composer's focus, the chat's: the list closes the keyboard as it slides in.
+    var focused: FocusState<Bool>.Binding
+    /// iPhone: opens the conversation list (the button the chat has there).
+    var openList: (() -> Void)?
     /// The room was ended here: the list lets it go.
     var onEnded: () -> Void = {}
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.theme) private var theme
     @State private var draft = ""
     @State private var renaming = false
     @State private var renameText = ""
     @State private var confirmingEnd = false
-    @FocusState private var focused: Bool
+    /// The first message shown, by its number in the log: set once from the front, so a message
+    /// added at the end never takes rows off the top. Earlier ones wait behind "Show earlier".
+    @State private var shownFrom: Int?
+    /// The newest message is on screen: a new one is followed, and rows growing keep the end in place.
+    @State private var atEnd = true
+    /// How many messages a page holds. The stack isn't lazy (lazy rows taking their real heights
+    /// as they came into view made the scroll jump; see TranscriptView), so it is kept short.
+    static let pageSize = 30
 
-    init(room: GroupRoom, onEnded: @escaping () -> Void = {}) {
+    init(room: GroupRoom, focused: FocusState<Bool>.Binding, openList: (() -> Void)?, onEnded: @escaping () -> Void = {}) {
+        self.focused = focused
+        self.openList = openList
+        self.onEnded = onEnded
         #if DEBUG
         if room.id == GroupRoom.demo.id || room.id == GroupRoom.demoDesktop.id {
             _feed = State(initialValue: GroupFeed.demo(room))
-            self.onEnded = onEnded
             return
         }
         #endif
         _feed = State(initialValue: GroupFeed(room: room))
-        self.onEnded = onEnded
     }
 
     private var faces: [String: BotFace] { BotDirectory.shared.roster?.faces ?? [:] }
     private func face(_ member: GroupMember?) -> BotFace { faces[member?.profile ?? ""] ?? BotFace(seed: member?.profile ?? "bot") }
 
     var body: some View {
-        NavigationStack {
+        Group {
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 18) {
+                    let page = shownRows
+                    VStack(alignment: .leading, spacing: 18) {
                         if feed.room.omitted > 0 {
                             Text("Earlier messages are in Hermes Desktop.").font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity)
                         }
+                        if page.hidden > 0 {
+                            Button {
+                                let anchor = page.shown.first?.id
+                                showEarlier()
+                                if let anchor { Task { proxy.scrollTo(anchor, anchor: .top) } }
+                            } label: {
+                                Label("Show earlier messages (\(page.hidden))", systemImage: "arrow.up.circle").font(.footnote)
+                            }
+                            .buttonStyle(.bordered)
+                            .frame(maxWidth: .infinity)
+                        }
                         if feed.events.isEmpty, feed.sending.isEmpty { opening }
-                        ForEach(feed.events.filter { $0.isMessage || $0.note(in: feed.room) != nil }) { row($0) }
-                        ForEach(feed.sending, id: \.id) { mine($0.text, waiting: true) }
+                        ForEach(page.shown) { row($0).id($0.id) }
+                        ForEach(feed.sending, id: \.id) { mine($0.text, id: $0.id, waiting: true) }
                         if feed.discussing || feed.state.working || feed.state.waitsOnPerson { talking }
                         ForEach(feed.state.approvals.filter { !feed.answering.contains($0.id) }) { approval in
                             VStack(alignment: .leading, spacing: 6) {
@@ -60,20 +85,39 @@ struct GroupChatView: View {
                     }
                     .padding()
                 }
-                // Opened at the latest, as a chat is.
-                .defaultScrollAnchor(.bottom)
-                .onChange(of: feed.events.count) { withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo("bottom", anchor: .bottom) } }
+                // Opened at the latest, as a chat is. A blanket bottom anchor would also re-aim on
+                // every change of size, pulling the page about while reading back.
+                .defaultScrollAnchor(.bottom, for: .initialOffset)
+                .defaultScrollAnchor(atEnd ? .bottom : nil, for: .sizeChanges)
+                .onScrollGeometryChange(for: Bool.self) { TranscriptEnd.isReached($0) } action: { _, reached in atEnd = reached }
+                // Something new is followed only from the end: reading back isn't pulled away.
+                .onChange(of: feed.events.count) {
+                    settleShown()
+                    if atEnd { withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo("bottom", anchor: .bottom) } }
+                }
                 .onChange(of: feed.sending.count) { proxy.scrollTo("bottom", anchor: .bottom) }
                 .onChange(of: feed.state.approvals.count + feed.state.retries.count) { withAnimation { proxy.scrollTo("bottom", anchor: .bottom) } }
+                .onAppear { settleShown() }
             }
+            .chatTextSize()
             .background(theme.pageColor)
+            .foregroundStyle(theme.textColor)
             .safeAreaInset(edge: .bottom) {
-                if feed.room.inDesktop { desktopNote } else { composer }
+                Group { if feed.room.inDesktop { desktopNote } else { composer } }
+                    .frame(maxWidth: 820).frame(maxWidth: .infinity)
+                    // As under a conversation: solid themes have no glass to hide what scrolls past.
+                    .background(theme.usesGlass ? AnyShapeStyle(.clear) : AnyShapeStyle(theme.pageColor))
             }
+            .navigationTitle(feed.room.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) { title }
-                ToolbarItem(placement: .topBarLeading) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .topBarLeading) {
+                    if let openList {
+                        Button("Conversations", systemImage: "list.bullet") { openList() }
+                            .keyboardShortcut("k", modifiers: .command)
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     if !feed.room.inDesktop { menu }
                 }
@@ -92,7 +136,6 @@ struct GroupChatView: View {
                     Task {
                         try? await HermesServeClient.shared.disbandGroup(feed.room.id)
                         onEnded()
-                        dismiss()
                     }
                 }
             } message: {
@@ -100,6 +143,33 @@ struct GroupChatView: View {
             }
             .task { await feed.follow() }
         }
+    }
+
+    // MARK: Paging
+
+    /// What the log shows: its messages and the notes on turns.
+    private var rows: [GroupEvent] { feed.events.filter { $0.isMessage || $0.note(in: feed.room) != nil } }
+
+    /// The rows from `shownFrom` on (the newest page until it is set), and how many come before.
+    private var shownRows: (shown: [GroupEvent], hidden: Int) {
+        let all = rows
+        let start = shownFrom.map { from in all.firstIndex { $0.seq >= from } ?? all.count } ?? max(0, all.count - Self.pageSize)
+        return (Array(all[start...]), start)
+    }
+
+    /// The first time there is a log, the page starts at its newest messages.
+    private func settleShown() {
+        guard shownFrom == nil else { return }
+        let all = rows
+        guard !all.isEmpty else { return }
+        shownFrom = all[max(0, all.count - Self.pageSize)].seq
+    }
+
+    private func showEarlier() {
+        let all = rows
+        let start = shownFrom.map { from in all.firstIndex { $0.seq >= from } ?? all.count } ?? all.count
+        guard start > 0 else { return }
+        shownFrom = all[max(0, start - Self.pageSize)].seq
     }
 
     // MARK: Parts
@@ -120,7 +190,6 @@ struct GroupChatView: View {
             .font(.footnote).foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal).padding(.vertical, 12)
-            .background(.bar)
     }
 
     private var title: some View {
@@ -147,13 +216,14 @@ struct GroupChatView: View {
     @ViewBuilder
     private func row(_ event: GroupEvent) -> some View {
         if event.kind == "message.user" {
-            mine(event.text, waiting: false)
+            mine(event.text, id: "seq-\(event.seq)", waiting: false)
         } else if event.kind == "message.member" {
             let member = feed.room.member(event.actorID)
             // Its seq makes the reply's id: the same message keeps its row as the log is read again.
             MessageRow(message: Message(id: UUID(uuidString: String(format: "00000000-0000-4000-8000-%012d", event.seq)) ?? UUID(),
                                         role: .assistant, text: event.text, createdAt: event.createdAt),
                        showActions: false)
+                .equatable()
                 .environment(\.replySpeaker, member?.label ?? "A bot")
                 .environment(\.replyFace, face(member))
         } else if let note = event.note(in: feed.room) {
@@ -161,13 +231,19 @@ struct GroupChatView: View {
         }
     }
 
-    private func mine(_ text: String, waiting: Bool) -> some View {
-        Text(text)
-            .padding(.horizontal, 14).padding(.vertical, 10)
-            .background(theme.accent, in: .rect(cornerRadius: 20))
-            .foregroundStyle(.white)
+    /// The person's message, as the conversation draws one (the theme's bubble, its text colour).
+    private func mine(_ text: String, id: String, waiting: Bool) -> some View {
+        MessageRow(message: Message(id: Self.rowID(id), role: .user, text: text), showActions: false)
+            .equatable()
             .opacity(waiting ? 0.6 : 1)
-            .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+
+    /// A row's message id, the same each time the log is read (a send's id is a UUID already).
+    private static func rowID(_ key: String) -> UUID {
+        if let uuid = UUID(uuidString: key) { return uuid }
+        var hash: UInt64 = 1469598103934665603
+        for byte in key.utf8 { hash = (hash ^ UInt64(byte)) &* 1099511628211 }
+        return UUID(uuidString: String(format: "00000000-0000-4000-8001-%012llx", hash & 0xFFFF_FFFF_FFFF)) ?? UUID()
     }
 
     private var talking: some View {
@@ -214,7 +290,7 @@ struct GroupChatView: View {
                     ForEach(suggestions) { member in
                         Button {
                             if let typed = BotMentions.typing(in: draft) { draft = String(draft.dropLast(typed.count + 1)) + "@" + member.handle + " " }
-                            focused = true
+                            focused.wrappedValue = true
                         } label: {
                             HStack(spacing: 10) {
                                 BotAvatar(face: face(member), size: 22)
@@ -231,34 +307,32 @@ struct GroupChatView: View {
                 .background(theme.surfaceColor, in: .rect(cornerRadius: 14))
                 .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.quaternary))
             }
-            HStack(alignment: .bottom, spacing: 8) {
+            // The conversation's field and buttons: glass or the theme's surface, and the
+            // buttons' symbols in the theme's text-on-accent colour.
+            HStack(alignment: .bottom, spacing: 10) {
                 TextField("Message the group", text: $draft, axis: .vertical)
+                    .font(theme.userFont)
                     .lineLimit(1 ... 6)
-                    .focused($focused)
-                    .padding(.horizontal, 14).padding(.vertical, 10)
-                    .background(theme.surfaceColor, in: .rect(cornerRadius: 22))
+                    .focused(focused)
+                    .padding(.horizontal, 14).padding(.vertical, 11)
+                    .background(theme.usesGlass ? AnyShapeStyle(.clear) : AnyShapeStyle(theme.surfaceColor), in: .rect(cornerRadius: 22))
+                    .glassEffect(theme.usesGlass ? .regular : .identity, in: .rect(cornerRadius: 22))
                 if feed.discussing || feed.state.working, draft.isEmpty {
-                    Button("Stop", systemImage: "stop.fill") { feed.stop() }
-                        .labelStyle(.iconOnly)
-                        .font(.title3)
-                        .frame(width: 44, height: 44)
-                        .background(theme.surfaceColor, in: .circle)
+                    ComposerButton(symbol: "stop.fill", label: "Stop", tint: .red, size: 44) { feed.stop() }
+                        .transition(.scale(scale: 0.4).combined(with: .opacity))
                 } else {
-                    Button("Send", systemImage: "arrow.up") {
+                    ComposerButton(symbol: "arrow.up", label: "Send", tint: .accentColor, size: 44) {
                         feed.send(draft)
                         draft = ""
                     }
-                    .labelStyle(.iconOnly)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 44, height: 44)
-                    .background(theme.accent, in: .circle)
                     .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .opacity(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.5 : 1)
+                    .transition(.scale(scale: 0.4).combined(with: .opacity))
                 }
             }
+            .animation(.snappy(duration: 0.3, extraBounce: 0.15), value: feed.discussing || feed.state.working)
         }
         .padding(.horizontal).padding(.vertical, 8)
-        .background(.bar)
     }
 }
 

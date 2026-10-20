@@ -63,9 +63,9 @@ struct ConversationsList: View {
     @State private var openingBot: String?
     /// "Let bots message each other", being asked about.
     @State private var askingBotMessaging = false
-    /// The server's group chats (Hermes's bot rooms), the one open, and a new one being made.
+    /// The server's group chats (Hermes's bot rooms; the one open in the chat's place is
+    /// `groups.open`), and a new one being made.
     @State private var groups = GroupDirectory.shared
-    @State private var openRoom: GroupRoom?
     @State private var makingGroup = false
     /// The bot whose face is being picked.
     @State private var facing: HermesBot?
@@ -122,8 +122,10 @@ struct ConversationsList: View {
         return section == .sessions || wideDetail ? "Conversations" : section.title
     }
 
-    /// A conversation opened (or a new one started): on iPad, the chat takes the wide pane again.
-    private func opened() {
+    /// A conversation opened (or a new one started), or with `room` a group chat: it takes the
+    /// chat's place (on iPad, the wide pane again).
+    private func opened(room: GroupRoom? = nil) {
+        groups.open = room
         if wideDetail { section = .sessions }
         onOpened()
     }
@@ -154,11 +156,8 @@ struct ConversationsList: View {
         .sheet(isPresented: $makingGroup) {
             NewGroupChatView(bots: listedBots, mainName: settings.headerTitle) { room in
                 Task { await groups.refresh() }
-                openRoom = room
+                opened(room: room)
             }
-        }
-        .fullScreenCover(item: $openRoom) { room in
-            GroupChatView(room: room) { groups.forget(room.id) }
         }
         .sheet(item: $facing) { bot in
             BotFacePicker(bot: bot, name: bot.label(mainName: settings.headerTitle),
@@ -431,7 +430,7 @@ struct ConversationsList: View {
     /// row is (at work, waiting on the person, or something not yet seen).
     private func botRow(_ bot: HermesBot, face: BotFace) -> some View {
         let name = bot.label(mainName: settings.headerTitle)
-        let isOpen = conversation.bot?.profile == bot.name
+        let isOpen = groups.open == nil && conversation.bot?.profile == bot.name
         let marks = ChatMarks(kind: activity.kind(of: bot, open: conversation), unread: activity.isUnread(bot, open: conversation))
         let roster = botDirectory.roster?.bots ?? []
         return Button { openBot(bot) } label: {
@@ -485,7 +484,7 @@ struct ConversationsList: View {
 
     /// A group chat's row: its bots' faces, its name, and who is in it.
     private func groupRow(_ room: GroupRoom, faces: [String: BotFace]) -> some View {
-        Button { openRoom = room } label: {
+        Button { opened(room: room) } label: {
             HStack(spacing: 12) {
                 FaceStack(faces: room.members.prefix(2).map { faces[$0.profile] ?? BotFace(seed: $0.profile) }, size: 24)
                     .frame(width: 32, alignment: .leading)
@@ -508,11 +507,14 @@ struct ConversationsList: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .listRowBackground(groups.open?.id == room.id ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
         .accessibilityElement(children: .combine)
         .accessibilityHint(room.inDesktop ? "Shows this Hermes Desktop group chat's last messages" : "Opens this group chat")
     }
 
     private func openBot(_ bot: HermesBot) {
+        // Its chat is the conversation under the group chat: back to it, as it was.
+        if groups.open != nil, conversation.bot?.profile == bot.name { return opened() }
         openingBot = bot.name
         Task {
             do {
@@ -911,7 +913,7 @@ struct ConversationsList: View {
             .buttonStyle(.plain)
             .opensConversation()
             .tag(session.id)
-            .listRowBackground(session.id == conversation.serverSessionID ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
+            .listRowBackground(groups.open == nil && session.id == conversation.serverSessionID ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
             .disabled(opening != nil)
             .swipeActions(edge: .leading, allowsFullSwipe: true) {
                 if canMark {
@@ -1139,7 +1141,10 @@ struct ConversationsList: View {
                 botDirectory.set(Self.demoBots, key: settings.connectionKey)
                 groups.set(rooms: [.demo, .demoDesktop], supported: true, writable: true, key: settings.connectionKey)
                 // `-echo.openGroup [desktop]`: that group chat open, or the Hermes Desktop one (screenshots).
-                if DevHooks.has("-echo.openGroup") { openRoom = DevHooks.value("-echo.openGroup") == "desktop" ? .demoDesktop : .demo }
+                if DevHooks.has("-echo.openGroup"), !Self.openedDemoGroup {
+                    Self.openedDemoGroup = true   // once: the list loads again each time it opens
+                    opened(room: DevHooks.value("-echo.openGroup") == "desktop" ? .demoDesktop : .demo)
+                }
                 // `-echo.botEditor new|<bot>`: New Bot, or that bot's settings, open (screenshots).
                 if let which = DevHooks.value("-echo.botEditor") {
                     editingBot = which == "new" ? .new : Self.demoBots.bots.first { $0.name == which }.map { .edit($0) }
@@ -1731,6 +1736,9 @@ extension View {
 
 #if DEBUG
 extension ConversationsList {
+    /// `-echo.openGroup` has opened its group chat.
+    static var openedDemoGroup = false
+
     /// One project Hermes found, with one lane and two sessions (enough to reach
     /// ProjectSessionsView and tap a row), and one someone made, still empty.
     static var demoBots: BotRoster {
