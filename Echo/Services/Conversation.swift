@@ -1380,6 +1380,22 @@ final class Conversation {
         return bot
     }
 
+    /// A spoken prefix's bot ("Home, …"): its chat opened, or the main agent's for "default"; nothing
+    /// to do when it is open already. False when it can't be (not on the Dashboard, Bots off, no
+    /// such bot on the server): the message goes where the person already is.
+    func goToBot(_ profile: String, mainName: String) async throws -> Bool {
+        if bot?.profile == profile { return true }
+        guard settings.transport == .hermesServe, settings.showBots else { return false }
+        var roster = BotDirectory.shared.key == settings.connectionKey ? BotDirectory.shared.roster : nil
+        func find(_ roster: BotRoster?) -> HermesBot? {
+            profile == "default" ? roster?.bots.first(where: \.isDefault) : roster?.asked(profile)
+        }
+        if find(roster) == nil { roster = try? await BotDirectory.shared.refresh() }
+        guard let bot = find(roster) else { return false }
+        try await openBot(bot, mainName: mainName)
+        return true
+    }
+
     /// The open bot's chat goes by what `roster` calls its bot now: renamed in Redde or in Hermes
     /// Desktop, the header, the composer and its replies say the new name.
     func followBotName(in roster: BotRoster, mainName: String) {

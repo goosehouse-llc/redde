@@ -595,6 +595,21 @@ final class VoiceSession {
         // message is what the person said, the model is a preference.
         let route = VoiceRouting.route(text, rules: Settings.shared.spokenPrefixes)
         let outgoing = route?.text ?? text
+        // A rule that names a bot ("Home, …") goes to its chat first, and voice stays there. A bot
+        // that can't be reached is said, rather than the message going somewhere else.
+        if let bot = route?.bot {
+            do {
+                if try await !conversation.goToBot(bot, mainName: Settings.shared.headerTitle) {
+                    log.error("spoken prefix: no bot \(bot, privacy: .public) to go to here")
+                }
+            } catch {
+                log.error("spoken prefix: couldn't open \(bot, privacy: .public): \(error.localizedDescription)")
+                output.endReply()
+                phase = .error("Couldn't open that bot's chat: \(error.localizedDescription)")
+                output.releaseAudio(); audio.deactivate()
+                return
+            }
+        }
         if let model = route?.model {
             do { try await conversation.switchModel(model, provider: route?.provider) } catch {
                 log.error("spoken prefix: model switch to \(model, privacy: .public) failed: \(error.localizedDescription)")

@@ -41,6 +41,9 @@ struct BotEditor: View {
     /// Changing: the bot as the server had it, so only what changed is written.
     @State private var original: Original?
     @State private var loading = true
+    /// Read once per opening: the screen appears again each time Personality or Model is closed,
+    /// and reading again then put the server's back over what had been changed.
+    @State private var loaded = false
     @State private var working = false
     @State private var problem: String?
     @State private var modelQuestion: String?
@@ -253,10 +256,12 @@ struct BotEditor: View {
     // MARK: - Server
 
     private func load() async {
+        guard !loaded else { return }
         let client = HermesServeClient.shared
         defer { loading = false }
         guard let editing else {
             models = (try? await client.modelOptions(forProfile: "default")) ?? []
+            loaded = !models.isEmpty
             return
         }
         do {
@@ -274,6 +279,7 @@ struct BotEditor: View {
             model = start.model
             shown = start.shown
             original = start
+            loaded = true
         } catch {
             problem = "Couldn't read this bot: \(error.localizedDescription)"
         }

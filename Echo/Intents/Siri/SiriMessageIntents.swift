@@ -239,6 +239,13 @@ enum SiriTurn {
         // names a model moves the conversation there first; typed text never comes through here.
         // A failed switch still sends.
         let route = VoiceRouting.route(text, rules: Settings.shared.spokenPrefixes)
+        // A rule that names a bot ("Home, …") goes to its chat first; one that can't be opened
+        // says so, rather than sending it somewhere else.
+        if let bot = route?.bot {
+            do { _ = try await live.goToBot(bot, mainName: Settings.shared.headerTitle) } catch {
+                return Outcome(sent: [], reply: .failed("Couldn't open that bot's chat."))
+            }
+        }
         if let model = route?.model { try? await live.switchModel(model, provider: route?.provider) }
         let events = live.send(route?.text ?? text, attachments: attachments)
         if live.lastSendWasHeld { return Outcome(sent: [], reply: .queued) }

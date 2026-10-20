@@ -9,9 +9,12 @@ nonisolated struct SpokenPrefix: Codable, Hashable, Identifiable, Sendable {
     /// so rules saved before this field existed decode as text-only rules.
     var model: String? = nil
     var provider: String? = nil
+    /// Talk to this bot (its profile; "default" for the main agent): its chat opens before sending,
+    /// and voice stays there (sticky, as a model is). On the Dashboard only.
+    var bot: String? = nil
 
-    /// A rule does something: rewrites the text, switches the model, or both.
-    var isActive: Bool { !prefix.isEmpty || !(model ?? "").isEmpty }
+    /// A rule does something: rewrites the text, switches the model, goes to a bot, or several.
+    var isActive: Bool { !prefix.isEmpty || !(model ?? "").isEmpty || !(bot ?? "").isEmpty }
 }
 
 /// Voice-only routing. Apply to finalized voice and Siri transcripts, never to typed text.
@@ -22,6 +25,8 @@ nonisolated enum VoiceRouting {
         var text: String
         var model: String?
         var provider: String?
+        /// The bot to talk to first (its profile).
+        var bot: String?
     }
 
     /// The text to send, or nil when no rule matches. Kept for callers that only rewrite.
@@ -45,7 +50,8 @@ nonisolated enum VoiceRouting {
                   !rest.isEmpty
             else { continue }
             let model = (rule.model ?? "").isEmpty ? nil : rule.model
-            return Route(text: rule.prefix + rest, model: model, provider: model == nil ? nil : rule.provider?.nilIfEmpty)
+            return Route(text: rule.prefix + rest, model: model, provider: model == nil ? nil : rule.provider?.nilIfEmpty,
+                         bot: rule.bot?.nilIfEmpty)
         }
         return nil
     }

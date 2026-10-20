@@ -98,4 +98,15 @@ struct VoiceRoutingTests {
         #expect(rules.first?.model == nil)
         #expect(VoiceRouting.routed("Klaud, hi", rules: rules) == "C hi")
     }
+
+    @Test func aRuleThatNamesABotSaysWhichAndKeepsTheRest() throws {
+        let home = SpokenPrefix(word: "Home", prefix: "", bot: "home")
+        #expect(home.isActive, "a bot alone is something to do")
+        let route = try #require(VoiceRouting.route("Home, turn off the porch light", rules: [home]))
+        #expect(route == VoiceRouting.Route(text: "turn off the porch light", model: nil, provider: nil, bot: "home"))
+        #expect(VoiceRouting.route("Homework is due Friday", rules: [home]) == nil, "a word that only starts with it isn't it")
+        // A rule saved before bots existed reads as one without a bot.
+        let old = #"{"id":"0E8C3B0A-1F2E-4D5C-8B7A-6E5D4C3B2A10","word":"Claude","aliases":[],"prefix":"C "}"#
+        #expect(try JSONDecoder().decode(SpokenPrefix.self, from: Data(old.utf8)).bot == nil)
+    }
 }

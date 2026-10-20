@@ -25,10 +25,23 @@ struct SpokenPrefixesView: View {
                 } label: {
                     Label("Add prefix", systemImage: "plus")
                 }
+                // A rule for a bot in one go: its name as the word ("Home, turn off the lights").
+                let unruled = Self.botsWithoutRules(settings)
+                if !unruled.isEmpty {
+                    Menu {
+                        ForEach(unruled, id: \.name) { bot in
+                            Button(bot.label(mainName: settings.headerTitle)) {
+                                settings.spokenPrefixes.append(SpokenPrefix(word: bot.label(mainName: settings.headerTitle), prefix: "", bot: bot.name))
+                            }
+                        }
+                    } label: {
+                        Label("Add a bot", systemImage: "person.2")
+                    }
+                }
             } header: {
                 Text("Prefixes")
             } footer: {
-                Text("Applies to voice mode and Siri only: when a message starts with one of these words, the word is replaced with its prefix before sending, and the conversation switches to the rule's model if it names one. Typed messages are never changed. The first matching prefix wins.")
+                Text("Applies to voice mode and Siri only: when a message starts with one of these words, the word is replaced with its prefix before sending, the conversation goes to the rule's bot if it names one (and stays with it), and switches to the rule's model if it names one. Typed messages are never changed. The first matching prefix wins.")
             }
         }
         .navigationTitle("Spoken prefixes")
@@ -41,15 +54,26 @@ struct SpokenPrefixesView: View {
         prefix.isEmpty ? "—" : prefix.replacingOccurrences(of: " ", with: "␣")
     }
 
-    /// The row's right side: the prefix, the model, or both.
+    /// The row's right side: the bot, the prefix, the model, as the rule has them.
     static func summary(_ rule: SpokenPrefix) -> String {
         let model = (rule.model ?? "").isEmpty ? nil : rule.model
-        switch (rule.prefix.isEmpty, model) {
-        case (true, nil): return "—"
-        case (true, let model?): return "→ \(model)"
-        case (false, nil): return shown(rule.prefix)
-        case (false, let model?): return "\(shown(rule.prefix)) → \(model)"
-        }
+        let bot = (rule.bot ?? "").isEmpty ? nil : "@" + (botName(rule.bot ?? "") ?? rule.bot ?? "")
+        let text = rule.prefix.isEmpty ? nil : shown(rule.prefix)
+        let parts = [bot, text, model.map { "→ \($0)" }].compactMap(\.self)
+        return parts.isEmpty ? "—" : parts.joined(separator: " ")
+    }
+
+    /// A bot's name by its profile, as the roster last had it.
+    static func botName(_ profile: String) -> String? {
+        BotDirectory.shared.roster?.bots.first { $0.name == profile }?.label(mainName: Settings.shared.headerTitle)
+    }
+
+    /// The bots on this server (the main agent too) that no rule goes to yet.
+    static func botsWithoutRules(_ settings: Settings) -> [HermesBot] {
+        guard settings.transport == .hermesServe, settings.showBots, BotDirectory.shared.key == settings.connectionKey,
+              let bots = BotDirectory.shared.roster?.bots else { return [] }
+        let ruled = Set(settings.spokenPrefixes.compactMap(\.bot))
+        return bots.filter { !$0.isHidden && !ruled.contains($0.name) }.sorted { a, b in a.isDefault != b.isDefault ? a.isDefault : a.name < b.name }
     }
 }
 
@@ -97,6 +121,22 @@ struct SpokenPrefixEditor: View {
                 Text("What replaces the word. Spaces count, including a space at the end. Leave it empty to only switch the model.")
             }
             Section {
+                Picker("Bot", selection: Binding(get: { rule.bot ?? "" }, set: { rule.bot = $0.isEmpty ? nil : $0 })) {
+                    Text("Stay where I am").tag("")
+                    ForEach(BotDirectory.shared.roster?.bots.filter { !$0.isHidden } ?? []) { bot in
+                        Text(bot.label(mainName: Settings.shared.headerTitle)).tag(bot.name)
+                    }
+                    // A rule kept for a bot not on this server now.
+                    if let bot = rule.bot, !bot.isEmpty, BotDirectory.shared.roster?.bots.contains(where: { $0.name == bot }) != true {
+                        Text(bot).tag(bot)
+                    }
+                }
+            } header: {
+                Text("Bot")
+            } footer: {
+                Text("Goes to this bot's chat before sending, and voice stays with it until another rule moves it. On the Dashboard connection.")
+            }
+            Section {
                 NavigationLink {
                     SpokenPrefixModelPicker(rule: $rule)
                 } label: {
@@ -113,10 +153,11 @@ struct SpokenPrefixEditor: View {
             Section("Preview") {
                 Text("\u{201C}\(example)\u{201D}").foregroundStyle(.secondary)
                 if let route = VoiceRouting.route(example, rules: [rule]) {
+                    if let bot = route.bot { Text("To \(SpokenPrefixesView.botName(bot) ?? bot)").font(.callout).foregroundStyle(.secondary) }
                     Text(route.text).font(.body.monospaced())
                     if let model = route.model { Text("Model → \(model)").font(.callout).foregroundStyle(.secondary) }
                 } else {
-                    Text("Unchanged: add a word, then a prefix or a model.").foregroundStyle(.secondary)
+                    Text("Unchanged: add a word, then a bot, a prefix or a model.").foregroundStyle(.secondary)
                 }
             }
         }
