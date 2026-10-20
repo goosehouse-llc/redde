@@ -587,6 +587,7 @@ final class BotDirectory {
         if let roster, key == Settings.shared.connectionKey {
             ProfileCatalog.keep(bots: roster)
             WatchLink.shared.botsChanged()
+            Mutes.publish()   // a bot's chat may be another session now (Start Fresh)
         }
     }
 }

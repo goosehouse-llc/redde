@@ -244,6 +244,7 @@ struct GroupChatView: View {
             // Hermes Desktop's are its own to name and end.
             if !feed.room.inDesktop {
                 Button("Rename", systemImage: "pencil") { renameText = feed.room.name; renaming = true }
+                MuteMenu(item: "room:" + feed.room.id)
                 Divider()
                 Button("End Group Chat", systemImage: "xmark.bin", role: .destructive) { confirmingEnd = true }
             }

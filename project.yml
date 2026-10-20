@@ -327,6 +327,8 @@ targets:
       - path: Shared/PlainText.swift
       - path: Shared/ReplyMedia.swift
       - path: Shared/Attachment.swift
+      # A muted chat's notification is delivered quietly.
+      - path: Shared/MutedChats.swift
     entitlements:
       path: EchoPush/EchoPush.entitlements
       properties:

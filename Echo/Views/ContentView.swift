@@ -391,6 +391,9 @@ struct ContentView: View {
                         if let bot = chatBot, !bot.isDefault {
                             Button("Voice…", systemImage: "waveform") { voicingBot = bot }
                         }
+                        if let bot = conversation.bot, !conversation.isIncognito {
+                            MuteMenu(item: "bot:" + bot.profile)
+                        }
                         // A bot's chat: Start Fresh has the toolbar's button, and a new conversation
                         // with the agent is here.
                         if conversation.bot != nil {

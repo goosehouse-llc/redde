@@ -310,18 +310,49 @@ class Store:
         finally:
             handle.close()      # (and the lock with it)
 
+    # What each phone has muted (the app's Mute…): "s:<session>" for a bot's chat, "g:<room>"
+    # for a group chat, each until when (seconds since 1970; 0, until the phone says otherwise).
+
+    def set_mutes(self, device_ids: list[str], mutes: dict[str, int]) -> list[str]:
+        """What these phones have muted, all of it: what they said before goes. Returns the ones
+        that are paired here."""
+        with self._lock:
+            known = {d.get("id") for d in self.devices}
+            mine = [i for i in device_ids if i in known]
+            if not mine:
+                return []
+            data = dict(self._read("mutes.json").get("devices") or {})
+            for device in mine:
+                if mutes:
+                    data[device] = dict(mutes)
+                else:
+                    data.pop(device, None)
+            self._write("mutes.json", {"devices": {d: m for d, m in data.items() if d in known}})
+            return mine
+
+    def muted(self, device_id: str, key: str, now: float | None = None) -> bool:
+        """Whether this phone has this chat muted now."""
+        with self._lock:
+            until = (self._read("mutes.json").get("devices") or {}).get(device_id, {}).get(key)
+            if until is None:
+                return False
+            return int(until) == 0 or int(until) > (time.time() if now is None else now)
+
+    def unmuted(self, devices: list[dict], key: str) -> list[dict]:
+        return [d for d in devices if not self.muted(d.get("id", ""), key)]
+
     def targets(self, session: str, platform: str) -> list[dict]:
         """The phones a note about this conversation goes to: the ones following it, and every
         paired phone for a turn that came in over the Hermes API (whose only client here is the
-        phone) or when everything is to notify."""
+        phone) or when everything is to notify; less those that have it muted."""
         with self._lock:
             devices = self.devices
             if not devices:
                 return []
             if platform == "api_server" or self.notify_all:
-                return devices
+                return self.unmuted(devices, "s:" + session)
             following = set(self._sessions().get(session) or [])
-            return [d for d in devices if d.get("id") in following]
+            return self.unmuted([d for d in devices if d.get("id") in following], "s:" + session)
 
 
 # ---- Notes ------------------------------------------------------------------------------------

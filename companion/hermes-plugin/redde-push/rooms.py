@@ -181,7 +181,7 @@ class Rooms:
             self.store.set_room_waits(announced)
         sent = 0
         for devices, made in outgoing:
-            targets = [d for d in self.store.devices if d.get("id") in devices]
+            targets = self.store.unmuted([d for d in self.store.devices if d.get("id") in devices], "g:" + made.get("g", ""))
             if targets:
                 sent += self.send(targets, made)
         return sent

@@ -11,7 +11,8 @@ and `core.py` for how a note is sealed and sent.
 The app itself uses the slash command `/redde-push`, over the Dashboard: `watch <session>
 <device,...>` says which conversations it has taken part in (only those notify, and every turn
 over the Hermes API), `rooms <device,...> <room,...>` which group chats it follows (`rooms.py`),
-and `offer` then `accept <offer> <key> <box>` pair it without a code.
+`mutes <device,...> <key=until,...>` which chats it has muted, and `offer` then `accept <offer>
+<key> <box>` pair it without a code.
 
 The plugin also offers the agent phone tools, carried out by the app on the iPhone (the calendar,
 reminders, contacts, photos, a folder of files): see `device.py`. They need no pairing, and the
@@ -353,6 +354,14 @@ def _slash(raw_args: str = "") -> str:
         if following and store.rooms_followed():
             _group_chats().start()
         return f"redde-push following {len(following)}"
+    if len(words) in (2, 3) and words[0] == "mutes":
+        # What the phone has muted, all of it: "s:<session>=<until>,g:<room>=<until>" (0: until it says).
+        mutes = {}
+        for pair in (words[2] if len(words) == 3 else "").split(","):
+            key, _, until = pair.rpartition("=")
+            if key and until.isdigit():
+                mutes[key] = int(until)
+        return f"redde-push muted {len(store.set_mutes([w for w in words[1].split(',') if w], mutes))}"
     if words == ["status"]:
         return f"redde-push status {len(store.devices)}"
     if words == ["offer"]:

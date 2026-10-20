@@ -43,6 +43,39 @@ final class BotsUITests: XCTestCase {
         XCTAssertFalse(fixit.exists, "the bots are still offered once the tag is finished")
     }
 
+    /// Mute from a bot's row: for an hour, its row then reads as muted, and Unmute, from the same
+    /// menu, lifts it. The same for a group chat's row.
+    func testABotAndAGroupChatCanBeMutedFromTheirRows() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.clearDrafts", "-displayName", "Redde",
+                               "-echo.screen", "sessions", "-mutes", "<>"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launch()
+        let list = app.collectionViews.firstMatch
+        func row(_ name: String) -> XCUIElement { list.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name + ",")).firstMatch }
+        for name in ["Scout", "Weekend hike"] {
+            let target = row(name)
+            XCTAssertTrue(target.waitForExistence(timeout: 20), "no \(name) row")
+            XCTAssertFalse((target.value as? String ?? "").contains("Muted"), "\(name) is muted already")
+            target.press(forDuration: 1.0)
+            let mute = app.buttons["Mute"].firstMatch
+            XCTAssertTrue(mute.waitForExistence(timeout: 5), "no Mute in \(name)'s menu")
+            mute.tap()
+            let hour = app.buttons["For 1 Hour"].firstMatch
+            XCTAssertTrue(hour.waitForExistence(timeout: 5), "Mute offers no spans")
+            hour.tap()
+            XCTAssertTrue(NSPredicate(format: "value CONTAINS %@", "Muted").evaluate(with: row(name)) || {
+                sleep(1); return (row(name).value as? String ?? "").contains("Muted")
+            }(), "\(name)'s row doesn't read as muted")
+            row(name).press(forDuration: 1.0)
+            let unmute = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Unmute")).firstMatch
+            XCTAssertTrue(unmute.waitForExistence(timeout: 5), "no Unmute once muted")
+            unmute.tap()
+            sleep(1)
+            XCTAssertFalse((row(name).value as? String ?? "").contains("Muted"), "\(name) is still muted")
+        }
+    }
+
     /// Change Face in New Bot, in a bot's settings and in the main agent's opens the face picker.
     func testChangeFaceInTheBotEditorOpensThePicker() {
         continueAfterFailure = false

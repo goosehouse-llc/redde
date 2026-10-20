@@ -482,6 +482,20 @@ where a new conversation is in the ••• menu, and ⌘N as anywhere) is the 
   the Dashboard's, so this needs its login on either connection; an older plugin answers `rooms`
   with its usage line, and Settings offers to update it (`PushPlugin.version`). `lab.sh grouppush` passes on 0.21.0, 0.21.3,
   0.21.5 and 0.22.2.
+- **Mute** (asked 2026-10-20; `Mutes`, `MuteMenu`). A bot's chat or a group chat is muted from
+  its row's menu or the chat's ••• menu: for an hour, eight hours, until eight tomorrow morning,
+  or until turned back on (`MuteSpan`), kept per server by the row's id (`Settings.mutes`,
+  synced). A muted row wears a crossed-out bell and no unread dot; that it works or waits on the
+  person still shows. Its notifications stop where they start: the plugin is told what is muted
+  and until when, as sessions ("s:<id>": a bot's chat on the roster and any the phone keeps for
+  it, on either connection) and rooms ("g:<id>"), over the Dashboard (`PushService.sayMutes`,
+  `mutes <devices> <key=until,…>`, plugin 1.4.1), and leaves those phones out. What comes anyway
+  (a Hermes API turn notifies every paired phone, and there is no Dashboard to tell without its
+  login) arrives quietly, in the list only: the app writes the same keys to the app group
+  (`MutedChats`), which the notification extension reads, and the app's own banners and those
+  arriving with it in front follow it too. Hiding a notification outright would take the
+  filtering entitlement. Published again when a mute changes, when the server's bots are read
+  (Start Fresh gives a bot's chat a new session) and when the app comes forward.
 - **Order.** Bots and group chats are one run in the Bots section. Reorder Bots, in any of their
   menus, shows only them, with handles (edit mode; outside it a long press is the row's menu,
   which a drag can't get past), and the order is kept per server in `Settings.botOrder`

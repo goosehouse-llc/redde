@@ -144,6 +144,40 @@ class RoomsTests(unittest.TestCase):
         finally:
             plugin._store = plugin._pusher = plugin._rooms = None
 
+    def test_a_phone_that_muted_a_room_hears_nothing_from_it(self):
+        self.store.follow_rooms(["phone-1", "phone-2"], ["room-a"])
+        self.store.set_mutes(["phone-1"], {"g:room-a": 0})
+        self.watch.look()
+        self.hermes.say("room-a", "message.member", "scout", "Only phone-2 hears this.")
+        self.watch.look()
+        self.assertEqual([devices for devices, _ in self.sent], [["phone-2"]])
+
+    def test_a_mute_runs_out_and_a_new_list_replaces_the_old(self):
+        self.store.set_mutes(["phone-1"], {"s:chat-1": 2000, "g:room-a": 0})
+        self.assertTrue(self.store.muted("phone-1", "s:chat-1", now=1000))
+        self.assertFalse(self.store.muted("phone-1", "s:chat-1", now=3000), "ran out")
+        self.assertTrue(self.store.muted("phone-1", "g:room-a", now=10**12), "until the phone says otherwise")
+        self.assertFalse(self.store.muted("phone-2", "g:room-a"))
+        self.store.set_mutes(["phone-1"], {})
+        self.assertFalse(self.store.muted("phone-1", "g:room-a"), "all of it, each time")
+
+    def test_a_muted_conversation_is_left_out_of_its_targets(self):
+        self.store.watch("chat-1", ["phone-1", "phone-2"])
+        self.store.set_mutes(["phone-2"], {"s:chat-1": 0})
+        self.assertEqual([d["id"] for d in self.store.targets("chat-1", "desktop")], ["phone-1"])
+        self.assertEqual([d["id"] for d in self.store.targets("chat-1", "api_server")], ["phone-1"])
+
+    def test_the_app_says_what_it_muted(self):
+        plugin._store = self.store
+        try:
+            self.assertEqual(plugin._slash("mutes phone-1 s:chat-1=0,g:redde-abc=1791330000"), "redde-push muted 1")
+            self.assertTrue(self.store.muted("phone-1", "s:chat-1"))
+            self.assertTrue(self.store.muted("phone-1", "g:redde-abc", now=1791329999))
+            self.assertEqual(plugin._slash("mutes phone-1"), "redde-push muted 1")
+            self.assertFalse(self.store.muted("phone-1", "s:chat-1"), "none muted now")
+        finally:
+            plugin._store = None
+
     def test_each_message_and_each_wait_keeps_its_own_notification(self):
         device = {"id": "phone-1", "key": core.b64u(b"k" * 32)}
         one = core.room_note("group", "room-a", "Weekend hike", body="Yes.", detail="Scout")

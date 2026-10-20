@@ -513,7 +513,10 @@ struct ConversationsList: View {
     private func botRow(_ bot: HermesBot, face: BotFace) -> some View {
         let name = bot.label(mainName: settings.headerTitle)
         let isOpen = groups.open == nil && conversation.bot?.profile == bot.name
-        let marks = ChatMarks(kind: activity.kind(of: bot, open: conversation), unread: activity.isUnread(bot, open: conversation))
+        // Muted: no unread dot (at work, or waiting on the person, still shows).
+        let muted = Mutes.isMuted("bot:" + bot.name, settings: settings)
+        let marks = ChatMarks(kind: activity.kind(of: bot, open: conversation), unread: !muted && activity.isUnread(bot, open: conversation),
+                              muted: muted)
         let roster = botDirectory.roster?.bots ?? []
         return Button { openBot(bot) } label: {
             HStack(spacing: 12) {
@@ -521,6 +524,7 @@ struct ConversationsList: View {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(name).font(.body.weight(.semibold)).lineLimit(1)
+                        if muted { MutedMark() }
                         Spacer(minLength: 8)
                         if openingBot == bot.name || marks.kind == .working {
                             ProgressView().controlSize(.small)
@@ -556,6 +560,7 @@ struct ConversationsList: View {
             if !bot.isDefault {
                 Button("Voice…", systemImage: "waveform") { voicing = bot }
             }
+            MuteMenu(item: "bot:" + bot.name)
             if bot.viaAPI {
                 // Added here for the Hermes API: its settings and face are the Dashboard's.
                 if !bot.isDefault {
@@ -580,7 +585,8 @@ struct ConversationsList: View {
     /// is (a bot at work in it, one waiting on the person, or something not yet seen).
     private func groupRow(_ room: GroupRoom, faces: [String: BotFace]) -> some View {
         let isOpen = groups.open?.id == room.id
-        let marks = ChatMarks(kind: activity.kind(of: room), unread: activity.isUnread(room, isOpen: isOpen))
+        let muted = Mutes.isMuted("room:" + room.id, settings: settings)
+        let marks = ChatMarks(kind: activity.kind(of: room), unread: !muted && activity.isUnread(room, isOpen: isOpen), muted: muted)
         return Button { opened(room: room) } label: {
             HStack(spacing: 12) {
                 FaceStack(faces: room.members.prefix(2).map { faces[$0.profile] ?? BotFace(seed: $0.profile) }, size: 24)
@@ -588,6 +594,7 @@ struct ConversationsList: View {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(room.name).font(.body.weight(.semibold)).lineLimit(1)
+                        if muted { MutedMark() }
                         Spacer(minLength: 8)
                         if marks.kind == .working {
                             ProgressView().controlSize(.small)
@@ -618,8 +625,10 @@ struct ConversationsList: View {
                 } else {
                     Button("Mark as Unread", systemImage: "envelope.badge") { activity.markUnread(room: room.id) }
                 }
-                Divider()
             }
+            // Hermes Desktop's group chats never notify: nothing to mute.
+            if !room.inDesktop { MuteMenu(item: "room:" + room.id) }
+            Divider()
             orderingBots
         }
         .accessibilityElement(children: .combine)
@@ -1268,6 +1277,11 @@ struct ConversationsList: View {
                     Self.openedDemoGroup = true   // once: the list loads again each time it opens
                     opened(room: DevHooks.value("-echo.openGroup") == "desktop" ? .demoDesktop : .demo)
                 }
+                // `-echo.demoMuted`: Scout and the demo group chat muted (screenshots).
+                if DevHooks.has("-echo.demoMuted"), !Mutes.isMuted("bot:scout") {
+                    Mutes.mute("bot:scout", for: .untilUnmuted)
+                    Mutes.mute("room:" + GroupRoom.demo.id, for: .eightHours)
+                }
                 // `-echo.botVoice <bot>`: that bot's voice being picked (screenshots).
                 if let which = DevHooks.value("-echo.botVoice") { voicing = Self.demoBots.bots.first { $0.name == which } }
                 // `-echo.botEditor new|<bot>`: New Bot, or that bot's settings, open (screenshots).
@@ -1837,10 +1851,12 @@ private struct WatchingActivity: ViewModifier {
 struct ChatMarks: Equatable {
     var kind: ChatActivity.Kind?
     var unread: Bool
+    /// A bot's chat or a group chat the person muted (`Mutes`).
+    var muted = false
 
     /// Read out with the row.
     var spoken: String {
-        [unread ? "Unread" : nil,
+        [unread ? "Unread" : nil, muted ? "Muted" : nil,
          kind == .working ? "Agent working" : kind == .needsYou ? "Needs you" : nil].compactMap(\.self).joined(separator: ", ")
     }
 }

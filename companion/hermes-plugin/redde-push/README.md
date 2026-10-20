@@ -83,8 +83,9 @@ one that came out of a folder of a repository.)
 All of them only for conversations your phone has taken part in: over the Dashboard the app tells
 the plugin which those are, and over the Hermes API every turn counts. A session at the terminal
 or in Hermes Desktop stays quiet unless you choose `notify all`. Group chats notify for the ones
-Redde lists (less any you mute there), which it tells the plugin over the Dashboard; Hermes
-Desktop's own group chats aren't on the server, so they don't.
+Redde lists, which it tells the plugin over the Dashboard; Hermes Desktop's own group chats
+aren't on the server, so they don't. A bot's chat or a group chat you mute in Redde sends that
+phone nothing while it is muted.
 
 Hermes has no hook for a bot's message in a group chat, so the plugin reads the group chats' own
 log every four seconds, from whichever of Hermes's processes has it loaded (several reading at
@@ -107,8 +108,8 @@ never sent the key, and it stores nothing that passes.
 
 `$HERMES_HOME/redde-push/`, readable only by you: `devices.json` (each phone's relay id, relay
 secret and key), `watch.json` (which sessions each phone follows), `rooms.json` (which group
-chats), and `room-cursors.json` and `room-waits.json` (how far each group chat has been read, and
-what it has been said to wait on). Delete the folder and nothing is paired.
+chats), `mutes.json` (what each phone has muted, until when), and `room-cursors.json` and
+`room-waits.json` (how far each group chat has been read, and what it has been said to wait on). Delete the folder and nothing is paired.
 
 ## Phone tools
 

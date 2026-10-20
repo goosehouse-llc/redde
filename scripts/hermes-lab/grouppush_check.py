@@ -11,6 +11,8 @@ the push scenario, which has the plugin and the Dashboard's login):
   approval  "@scout danger": the bot's command waiting in the room reaches the phone as a
             "group_wait" note (`w` approval, `h` the digest of the command the room's state shows,
             which is what the app answers by), once; denied, nothing more is said of it.
+  mute      `mutes <device> g:<room>=0` (the app's Mute…): the room's next message is not sent;
+            `mutes <device>` with none: it is again.
   unfollow  `rooms <device>` with no rooms: the next message in the room is not sent.
 
 usage: grouppush_check.py <hermes executable>   (the lab's Python: websockets, cryptography)
@@ -117,6 +119,20 @@ async def main():
     _, cursor = await round_ends(dash, room, cursor)
     time.sleep(6)
     report(len([m for m in phone.notes() if m["k"] == "group_wait"]) == 1, "answered, nothing more is said of it")
+
+    # Muted on the phone (Mute… in Redde): the plugin sends nothing for the room; unmuted, again.
+    answer = await plugin(dash, f"mutes {phone.id} g:{room}=0")
+    count = len([m for m in phone.notes() if m["k"] == "group"])
+    await dash.call("groups.send", {"room_id": room, "event_id": uuid.uuid4().hex, "payload": {"text": f"@{BOT} while muted", "thread_id": "main"}})
+    _, cursor = await round_ends(dash, room, cursor)
+    time.sleep(8)
+    report(answer == "redde-push muted 1" and len([m for m in phone.notes() if m["k"] == "group"]) == count,
+           "a room the phone muted sends nothing", answer)
+    await plugin(dash, f"mutes {phone.id}")
+    await dash.call("groups.send", {"room_id": room, "event_id": uuid.uuid4().hex, "payload": {"text": f"@{BOT} unmuted", "thread_id": "main"}})
+    _, cursor = await round_ends(dash, room, cursor)
+    report(len(wait_notes(phone, lambda m: m["k"] == "group" and m.get("g") == room, count + 1)) == count + 1,
+           "unmuted, it is heard again")
 
     answer = await plugin(dash, f"rooms {phone.id}")
     count = len([m for m in phone.notes() if m["k"] == "group"])

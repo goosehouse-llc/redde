@@ -250,6 +250,8 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         if let sessionID, sessionID == conversation?.serverSessionID, PushNote.Kind(rawValue: kind) != .paired { return [] }
         // The group chat on screen shows it already.
         if let room, room == GroupDirectory.shared.open?.id { return [] }
+        // A chat the person muted: in the list, not over the screen.
+        if MutedChats.isMuted(session: sessionID, room: room) { return [.list] }
         if PushNote.Kind(rawValue: kind) == .widget { return [] }   // it is on the widget; nothing to say with Redde in front
         return shown
     }
@@ -580,6 +582,8 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         if let category { content.categoryIdentifier = category }
         content.userInfo = userInfo
         if let messageEntityID { SiriHooks.annotateReply(content, messageEntityID: messageEntityID) }
+        // A bot's chat the person muted: quietly, in the list only.
+        if let bot = conversation?.bot, Mutes.isMuted(bot: bot.profile, settings: settings) { MutedChats.quiet(content) }
         // Distinct per request so two approvals in one turn both show; replies/failures replace their kind.
         let suffix = userInfo["requestID"].map { ".\($0)" } ?? ""
         let request = UNNotificationRequest(identifier: "redde.\(kind.rawValue)\(suffix)", content: content, trigger: nil)

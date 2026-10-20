@@ -211,6 +211,16 @@ final class Settings: ServeEndpoint {
     var botVoices: [String: [String: BotVoice]] {
         didSet { store(try? JSONEncoder().encode(botVoices), forKey: Keys.botVoices) }
     }
+    /// Bots and group chats muted, per server (its id), then `BotListItem` id: until when
+    /// (`Date.distantFuture`: until turned back on). See `Mutes`.
+    var mutes: [String: [String: Date]] {
+        didSet { store(try? JSONEncoder().encode(mutes), forKey: Keys.mutes) }
+    }
+    /// `mutes` for the server in use.
+    var mutesHere: [String: Date] {
+        get { mutes[activeServerID.uuidString] ?? [:] }
+        set { mutes[activeServerID.uuidString] = newValue.isEmpty ? nil : newValue }
+    }
     /// `botVoices` for the server in use.
     var botVoicesHere: [String: BotVoice] {
         get { botVoices[activeServerID.uuidString] ?? [:] }
@@ -495,6 +505,7 @@ final class Settings: ServeEndpoint {
         static let botOrder = "botOrder"
         static let apiBots = "apiBots"
         static let botVoices = "botVoices"
+        static let mutes = "mutes"
         static let contextWindow = "contextWindow"
         static let theme = "theme"
         static let themeColors = "themeColors"
@@ -572,6 +583,8 @@ final class Settings: ServeEndpoint {
             .flatMap { try? JSONDecoder().decode([String: [APIBot]].self, from: $0) } ?? [:]
         botVoices = defaults.data(forKey: Keys.botVoices)
             .flatMap { try? JSONDecoder().decode([String: [String: BotVoice]].self, from: $0) } ?? [:]
+        mutes = defaults.data(forKey: Keys.mutes)
+            .flatMap { try? JSONDecoder().decode([String: [String: Date]].self, from: $0) } ?? [:]
         appearance = Appearance(rawValue: defaults.string(forKey: Keys.appearance) ?? "") ?? .system
         // Redde's own face unless another was picked; a still orb picked in an earlier version
         // falls back to it too (they are gone).
@@ -661,7 +674,7 @@ final class Settings: ServeEndpoint {
         Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopPhrases,
         Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.replyVoice, Keys.kokoroURL,
         Keys.kokoroVoice, Keys.voiceSpeed, Keys.speechLanguage, Keys.matchReplyLanguage, Keys.spokenPrefixes,
-        Keys.botOrder, Keys.apiBots, Keys.botVoices,
+        Keys.botOrder, Keys.apiBots, Keys.botVoices, Keys.mutes,
     ]
 
     /// A synced setting as it is saved here, for `CloudSync` to send.
@@ -714,6 +727,7 @@ final class Settings: ServeEndpoint {
         case Keys.botOrder: botOrder = decoded([:])
         case Keys.apiBots: apiBots = decoded([:])
         case Keys.botVoices: botVoices = decoded([:])
+        case Keys.mutes: mutes = decoded([:])
         default: break
         }
     }
@@ -926,6 +940,7 @@ final class Settings: ServeEndpoint {
         botOrder = [:]
         apiBots = [:]
         botVoices = [:]
+        mutes = [:]
         theme = .standard
         themeColors = [:]
         appearance = .system

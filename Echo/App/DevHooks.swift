@@ -23,7 +23,8 @@ import WidgetKit
 ///   `-echo.openGroup` its group chat is open, and `-echo.demoDraft` plays a bot's reply there as
 ///   it is written; `-echo.groupFind <words>` opens Find in Chat on those words, and
 ///   `-echo.groupVoice [bot]` the voice screen on the room (with that bot's reply being read; with
-///   `-echo.demoDraft`, the sample reply read as it is written).
+///   `-echo.demoDraft`, the sample reply read as it is written). `-echo.demoMuted` mutes Scout and
+///   the group chat.
 /// - `-echo.demoHosts`: replace any real endpoints with example hosts.
 /// - `-echo.incognito`: open on a new incognito chat.
 /// - `-echo.demoKanban`: a sample Kanban board instead of the server's.

@@ -1,5 +1,5 @@
 name: redde-push
-version: 1.4.0
+version: 1.4.1
 description: "Notifications on your iPhone from Redde when the agent finishes a reply, waits for you (an approval, a question, a password) or gives up on a turn, and when a bot speaks or waits for you in a group chat, encrypted between this Hermes and the phone. And phone tools: with them turned on in Redde, the agent can use the iPhone's calendar, reminders, contacts, photos and a folder of files, set alarms and timers there, write on a widget, and start a call or a message for you to send, through the app."
 author: "Goosehouse"
 provides_hooks:

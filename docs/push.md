@@ -93,6 +93,11 @@ before this answers "offer" with its usage line, which the app reads as "update 
   list it shows, less the muted ones, whenever it reads it (`command.dispatch redde-push "rooms
   <device ids> <room ids>"`, `PushService.followRooms`), and the plugin follows exactly those.
   Hermes Desktop's rooms are kept by the Desktop app, not the server, and don't.
+- **Muted** chats don't notify that phone: the app sends all of what it has muted whenever that
+  changes (`command.dispatch redde-push "mutes <device ids> <key=until,...>"`, keys `s:<session>`
+  and `g:<room>`, until in seconds since 1970, 0 for until it says otherwise; `Store.set_mutes`,
+  `mutes.json`), and `targets` and the room notes leave it out while a mute holds. A note that
+  comes anyway is delivered quietly by the phone (`MutedChats`).
 
 Approvals notify when a person is asked (`pre_approval_request` with a surface other than
 `smart`). Over the Hermes API a stock Hermes doesn't hold a command for a person at all; the agent

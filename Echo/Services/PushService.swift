@@ -157,6 +157,8 @@ final class PushService {
     @ObservationIgnored private var deaf: Set<String> = []
     /// The group chats last said to be followed, per server (`followRooms`).
     @ObservationIgnored private var roomsSaid: [String: String] = [:]
+    /// What was last said to be muted, per server (`sayMutes`).
+    @ObservationIgnored private var mutesSaid: [String: String] = [:]
 
     private static let uploadedKey = "push.uploaded"
     private static let relayKey = "push.relay"
@@ -417,6 +419,36 @@ final class PushService {
                 self?.deaf.insert(server)
             } catch {
                 self?.roomsSaid[server] = nil   // couldn't be said: say it next time
+            }
+        }
+    }
+
+    /// The plugin command that says what this phone has muted on a server (`Mutes`), all of it,
+    /// each key until when in seconds since 1970 (0: until turned back on), or nil when there is
+    /// nothing new to say.
+    func muteCommand(_ keys: [String: Date], server: String) -> String? {
+        let ids = pairings.filter(\.isPaired).map(\.id)
+        guard !ids.isEmpty, !deaf.contains(server) else { return nil }
+        let listed = keys.sorted { $0.key < $1.key }.map { key, until in
+            "\(key)=\(until == .distantFuture ? 0 : Int(until.timeIntervalSince1970))"
+        }
+        let command = "mutes \(ids.joined(separator: ",")) \(listed.joined(separator: ","))".trimmingCharacters(in: .whitespaces)
+        guard mutesSaid[server] != command else { return nil }
+        mutesSaid[server] = command
+        return command
+    }
+
+    /// Tells the plugin what is muted, so it sends nothing for those: over the Dashboard, which
+    /// a Hermes API connection without its login can't reach (there the phone quiets them).
+    func sayMutes(_ keys: [String: Date], client: HermesServeClient, server: String, settings: Settings = .shared) {
+        guard settings.serveBaseURL != nil, let command = muteCommand(keys, server: server) else { return }
+        Task { [weak self] in
+            do {
+                _ = try await Self.command(over: client)(command)   // (an older plugin: the phone quiets them)
+            } catch PushError.noPlugin {
+                self?.deaf.insert(server)
+            } catch {
+                self?.mutesSaid[server] = nil
             }
         }
     }

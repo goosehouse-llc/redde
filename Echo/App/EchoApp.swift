@@ -83,6 +83,8 @@ struct EchoApp: App {
                     // Which phone tools the agent is offered is this phone's to say, and the
                     // server may have been restarted, or reached for the first time, since it did.
                     if Settings.shared.phoneTools.on { Task { await DeviceToolsService.shared.publish() } }
+                    // A timed mute may have run out meanwhile, or one been set on another device.
+                    Mutes.publish()
                     // With Photos among them, the library is looked through while Redde is open,
                     // so that the agent can find a picture by what it shows.
                     PhotoLooking.shared.resume()
