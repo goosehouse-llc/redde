@@ -1858,6 +1858,18 @@ unlocked once (the session cookie usually spares it the need). The order of pref
 phone on a Hermes connection is the Hermes API, since the watch can then ask with the phone out
 of reach, then through the phone, then the fast lane.
 
+**Bots on the watch.** A bot lives on the Dashboard, so the watch always asks one through the
+phone, whichever road its own questions take. The phone hands over the bots it can reach with the
+connection (`WatchConnection.bots`: name, profile and a 40-point picture of the creature, drawn on
+the phone; the main agent and hidden bots left out, eight at most), only with the Dashboard
+signed in and Bots on, and again whenever the roster changes (`WatchLink.botsChanged`). The
+watch's Chats screen has a Bots section; picking one points the watch at it (its name at the
+top), and its questions go to the phone with the bot's profile (`WatchRelay.Request.bot`). The
+phone asks in the bot's own chat (`Backend.botChat`), which it never renames nor keeps as the
+watch's session. New Chat or a picked conversation goes back to the agent. The hint a watch's
+question carries ("…read aloud…") is taken off where a transcript shows it
+(`WatchConnection.withoutHint`).
+
 The phone pushes on launch, when it comes to the front, when Settings or Setup close and on a
 server switch (`Services/WatchLink.swift`); the watch asks for a copy when it has none
 (`Watch/PhoneLink.swift`). The key goes into the watch's Keychain, the rest into its defaults.

@@ -404,7 +404,10 @@ final class BotDirectory {
     func set(_ roster: BotRoster?, key: String) {
         self.roster = roster
         self.key = key
-        // Their names, for Siri ("Ask Claude in Redde").
-        if let roster, key == Settings.shared.connectionKey { ProfileCatalog.keep(bots: roster) }
+        // Their names, for Siri ("Ask Claude in Redde"), and for the watch.
+        if let roster, key == Settings.shared.connectionKey {
+            ProfileCatalog.keep(bots: roster)
+            WatchLink.shared.botsChanged()
+        }
     }
 }

@@ -20,8 +20,8 @@ struct AskView: View {
             .navigationTitle(store.agentName)
             .toolbar {
                 if store.connection != nil {
-                    // The server's conversations, to carry one on; where they can be listed.
-                    if store.canListChats {
+                    // The server's conversations, to carry one on, where they can be listed; and the bots.
+                    if store.canListChats || !store.bots.isEmpty {
                         ToolbarItem(placement: .topBarLeading) {
                             NavigationLink { ChatsView() } label: { Label("Chats", systemImage: "list.bullet") }
                         }

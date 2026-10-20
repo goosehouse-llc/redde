@@ -154,6 +154,17 @@ struct CustomHeaderTests {
         let plain = WatchLink.connection(settings, gatewayKey: { "key" }, dashboardPassword: { nil }, dashboardSignedIn: { false },
                                          customHeaders: { [:] })
         #expect(plain?.headers == nil)
+        // The bots go along only when the phone can reach them (the Dashboard) and Bots are on.
+        let bots = [WatchBot(profile: "home", name: "Home", face: nil)]
+        #expect(WatchLink.connection(settings, gatewayKey: { "key" }, dashboardPassword: { nil }, dashboardSignedIn: { false },
+                                     customHeaders: { [:] }, bots: { bots })?.bots == nil, "no Dashboard: no bots")
+        settings.serveURL = "https://serve.example"
+        let withBots = WatchLink.connection(settings, gatewayKey: { "key" }, dashboardPassword: { nil }, dashboardSignedIn: { true },
+                                            customHeaders: { [:] }, bots: { bots })
+        #expect(withBots?.kind == .hermesAPI && withBots?.bots == bots, "the watch's own road stays the API; the bots go through the phone")
+        settings.showBots = false
+        #expect(WatchLink.connection(settings, gatewayKey: { "key" }, dashboardPassword: { nil }, dashboardSignedIn: { true },
+                                     customHeaders: { [:] }, bots: { bots })?.bots == nil, "Bots off: none")
         // A copy from before headers existed still reads.
         let old = #"{"kind":"hermesAPI","url":"https://hermes.example","apiKey":"","model":"","provider":"","reasoningEffort":"","replyLanguage":"","agentName":"Redde"}"#
         #expect((try? JSONDecoder().decode(WatchConnection.self, from: Data(old.utf8)))?.headers == nil)

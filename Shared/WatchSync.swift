@@ -41,6 +41,9 @@ nonisolated struct WatchConnection: Codable, Equatable, Sendable {
     /// The person's own headers for a server behind a reverse proxy, sent with each Hermes API
     /// request. Optional like the rest: an older copy has none.
     var headers: [String: String]?
+    /// The bots the phone can talk to for the watch (Hermes's Bot Mode, on the Dashboard): absent
+    /// when it can't (no Dashboard sign-in, Bots off) or there are none.
+    var bots: [WatchBot]?
 
     /// The application-context key the connection travels under.
     static let contextKey = "connection"
@@ -54,6 +57,13 @@ nonisolated struct WatchConnection: Codable, Equatable, Sendable {
         gist and say the rest is on their phone.
         """
 
+    /// A message as the person wrote it: the hint the phone adds for a watch's question taken
+    /// back off, as a transcript shows it.
+    static func withoutHint(_ text: String) -> String {
+        let hint = "\n\n(" + spokenHint + ")"
+        return text.hasSuffix(hint) ? String(text.dropLast(hint.count)) : text
+    }
+
     /// Property-list form for WatchConnectivity (JSON inside a Data value).
     func asContext() -> [String: Any] {
         guard let data = try? JSONEncoder().encode(self) else { return [:] }
@@ -64,4 +74,17 @@ nonisolated struct WatchConnection: Codable, Equatable, Sendable {
         guard let data = context[contextKey] as? Data else { return nil }
         return try? JSONDecoder().decode(WatchConnection.self, from: data)
     }
+}
+
+/// A bot the watch can talk to: the phone asks for it, in the bot's own chat (`WatchRelay`), since
+/// a bot lives on the Dashboard, which a watch can't open.
+nonisolated struct WatchBot: Codable, Equatable, Sendable, Identifiable {
+    /// Its profile on the server: what the phone is asked to talk to.
+    var profile: String
+    /// What it is called.
+    var name: String
+    /// Its creature as a small picture, drawn on the phone: the watch draws none of its own.
+    var face: Data?
+
+    var id: String { profile }
 }

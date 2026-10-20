@@ -79,6 +79,8 @@ final class WatchAsker {
     }
 
     private func run(_ text: String) async throws {
+        // A bot lives on the Dashboard: the phone asks it, whatever road the watch takes itself.
+        if let bot = store.bot { return try await askThroughPhone(text, bot: bot.profile) }
         if connection.kind == .phone { return try await askThroughPhone(text) }
         guard let base = URL(string: connection.url) else { throw TransportError.badURL }
         let transport: any HermesTransport
@@ -143,11 +145,11 @@ final class WatchAsker {
 
     /// The phone has only the Dashboard, which a watch can't use: it runs the question, and the
     /// watch follows it by asking how far it has got.
-    private func askThroughPhone(_ text: String) async throws {
+    private func askThroughPhone(_ text: String, bot: String? = nil) async throws {
         let relay = WatchRelayClient(send: { try await PhoneLink.shared.relay($0) })
         self.relay = relay
         let store = store
-        _ = try await relay.ask(text) { snapshot in
+        _ = try await relay.ask(text, bot: bot) { snapshot in
             store.replace(snapshot.text)
             switch snapshot.state {
             case .working, .done, .failed: store.working()

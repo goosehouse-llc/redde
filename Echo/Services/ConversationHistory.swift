@@ -14,7 +14,8 @@ extension Conversation {
             switch row["role"]?.string {
             case "user":
                 waiting = []   // the tools of a turn that never got its reply
-                let text = ReplyLanguage.stripNote(text)   // the Dashboard's reply-language note
+                // The Dashboard's reply-language note, and the hint a watch's question carries.
+                let text = WatchConnection.withoutHint(ReplyLanguage.stripNote(text))
                 if let message = BotMessages.userMessage(text: text, displayKind: row["display_kind"]?.string,
                                                          displayText: row["display_metadata"]?["display_text"]?.string, at: when) {
                     out.append(message)
@@ -51,7 +52,7 @@ extension Conversation {
             let when = row.timestamp.map { Date(timeIntervalSince1970: $0) } ?? .now
             switch row.role {
             case "user":
-                let text = ReplyLanguage.stripNote(row.content?.text ?? "")   // a Dashboard turn's note
+                let text = WatchConnection.withoutHint(ReplyLanguage.stripNote(row.content?.text ?? ""))   // a Dashboard turn's note, a watch's hint
                 guard let message = BotMessages.userMessage(text: text, displayKind: row.display_kind, displayText: nil, at: when) else { continue }
                 out.append(message)
             case "assistant":

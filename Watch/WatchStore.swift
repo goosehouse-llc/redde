@@ -52,6 +52,15 @@ final class WatchStore {
     private(set) var chatTitle: String? {
         didSet { defaults.set(chatTitle, forKey: Self.chatTitleKey) }
     }
+    /// The bot the watch is talking to, picked from the list: its questions go to the bot, in its
+    /// own chat, through the phone. Nil for the agent.
+    private(set) var bot: WatchBot? {
+        didSet { defaults.set(bot?.profile, forKey: Self.botKey) }
+    }
+    private static let botKey = "watch.bot"
+
+    /// The bots the phone offers to talk to.
+    var bots: [WatchBot] { connection?.bots ?? [] }
 
     enum ChatsState: Equatable { case idle, loading, failed(String) }
     /// The server's recent conversations, for the list; filled when it is opened.
@@ -81,12 +90,14 @@ final class WatchStore {
         _ = Keychain.delete(account: Self.headersAccount)
         sessionID = defaults.string(forKey: Self.sessionKey)
         chatTitle = sessionID == nil ? nil : defaults.string(forKey: Self.chatTitleKey)
+        bot = defaults.string(forKey: Self.botKey).flatMap { profile in connection?.bots?.first { $0.profile == profile } }
         speaker.onFinished = { [weak self] in
             if self?.status == .speaking { self?.status = .idle }
         }
     }
 
-    var agentName: String { connection?.agentName ?? "Redde" }
+    /// Who the questions go to: the bot picked, or the agent.
+    var agentName: String { bot?.name ?? connection?.agentName ?? "Redde" }
 
     /// The agent has stopped for an answer the watch can give.
     var isWaitingOnWrist: Bool {
@@ -104,6 +115,8 @@ final class WatchStore {
         guard new != connection else { return }
         if new?.url != connection?.url || new?.kind != connection?.kind { sessionID = nil; history = []; chats = [] }
         connection = new
+        // A bot the phone no longer offers is no longer talked to.
+        if let bot, !(new?.bots ?? []).contains(where: { $0.profile == bot.profile }) { self.bot = nil }
         if let new {
             var stored = new
             stored.apiKey = ""
@@ -148,6 +161,7 @@ final class WatchStore {
     func open(_ chat: WatchChat) {
         stop()
         opening += 1
+        bot = nil
         let mine = opening
         sessionID = chat.id
         chatTitle = chat.title
@@ -168,7 +182,17 @@ final class WatchStore {
     func newChat() {
         stop()
         opening += 1
+        bot = nil
         sessionID = nil
+        question = ""
+        reply = ""
+    }
+
+    /// Talks to a bot from now: the questions go to it, through the phone.
+    func talk(to bot: WatchBot) {
+        stop()
+        opening += 1
+        self.bot = bot
         question = ""
         reply = ""
     }

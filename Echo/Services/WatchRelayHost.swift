@@ -27,6 +27,8 @@ final class WatchRelayHost {
         var isStaleSession: (Error) -> Bool
         /// A new session is named after where it came from.
         var nameSession: (_ stored: String, _ title: String) async -> Void
+        /// A bot's own chat, by its profile (found on the server, or made the first time).
+        var botChat: (_ profile: String) async throws -> String = { _ in throw WatchRelay.Failure.phone("Your iPhone can't reach bots.") }
 
         static var dashboard: Backend {
             Backend(transport: { HermesServeTransport() },
@@ -34,12 +36,20 @@ final class WatchRelayHost {
                     respondClarify: { try await HermesServeClient.shared.respondClarify(runtimeSession: $0, requestID: $1, questionID: nil, answer: $2) },
                     interrupt: { HermesServeClient.shared.interrupt(runtimeSession: $0) },
                     isStaleSession: { $0 is HermesServeClient.RPCError },
-                    nameSession: { try? await HermesServeClient.shared.updateSession(stored: $0, title: $1) })
+                    nameSession: { try? await HermesServeClient.shared.updateSession(stored: $0, title: $1) },
+                    botChat: { profile in
+                        guard let bot = try await HermesServeClient.shared.bots().bots.first(where: { $0.name == profile }) else {
+                            throw WatchRelay.Failure.phone("That bot isn't on your server any more.")
+                        }
+                        return try await HermesServeClient.shared.botChat(for: bot).stored
+                    })
         }
     }
 
     private final class Turn {
         let id: String
+        /// A bot's profile, when the question is for a bot, in its own chat.
+        var bot: String?
         var snapshot: WatchRelay.Snapshot
         var task: Task<Void, Never>?
         /// The Dashboard's runtime session, once the turn has stopped for something.
@@ -83,7 +93,7 @@ final class WatchRelayHost {
     func handle(_ request: WatchRelay.Request) -> WatchRelay.Snapshot {
         switch request.op {
         case .ask:
-            return start(id: request.id, text: request.text ?? "")
+            return start(id: request.id, text: request.text ?? "", bot: request.bot)
         case .poll:
             guard let turn = current, turn.id == request.id else { return Self.lost(request.id) }
             if turn.snapshot.state != .done, turn.snapshot.state != .failed { keepAwake() }
@@ -119,12 +129,13 @@ final class WatchRelayHost {
 
     // MARK: - The turn
 
-    private func start(id: String, text: String) -> WatchRelay.Snapshot {
+    private func start(id: String, text: String, bot: String? = nil) -> WatchRelay.Snapshot {
         if let previous = current {
             previous.task?.cancel()
             if let runtime = previous.runtime { backend.interrupt(runtime) }
         }
         let turn = Turn(id: id)
+        turn.bot = bot
         current = turn
         keepAwake()
         turn.task = Task { [weak self] in await self?.run(turn, text: text) }
@@ -132,6 +143,7 @@ final class WatchRelayHost {
     }
 
     private func run(_ turn: Turn, text: String) async {
+        if let bot = turn.bot { return await runForBot(turn, bot: bot, text: text) }
         // The Dashboard's prompt takes no instructions: the hint rides on the message.
         var request = TurnRequest(userText: text + "\n\n(" + WatchConnection.spokenHint + ")", history: [],
                                   sessionID: storedSession,
@@ -168,13 +180,40 @@ final class WatchRelayHost {
         endBackground()
     }
 
+    /// A question for a bot, in the bot's own chat: the one the chat list opens, so it is never
+    /// renamed and never becomes the watch's session. Its own model and settings answer.
+    private func runForBot(_ turn: Turn, bot: String, text: String) async {
+        do {
+            let stored = try await backend.botChat(bot)
+            let request = TurnRequest(userText: text + "\n\n(" + WatchConnection.spokenHint + ")", history: [], sessionID: stored,
+                                      model: nil, instructions: nil, replyLanguage: settings.replyLanguage.nilIfEmpty)
+            try await stream(turn, request)
+            try Task.checkCancellation()
+            guard current === turn else { return }
+            turn.snapshot.state = .done
+            turn.snapshot.approval = nil
+            turn.snapshot.question = nil
+            turn.snapshot.note = nil
+        } catch is CancellationError {
+            return
+        } catch {
+            guard current === turn else { return }
+            log.error("watch relay to a bot failed: \(error.localizedDescription, privacy: .public)")
+            turn.snapshot.state = .failed
+            turn.snapshot.note = Self.explain(error)
+        }
+        deliver(turn.snapshot)
+        endBackground()
+    }
+
     private func stream(_ turn: Turn, _ request: TurnRequest) async throws {
         for try await event in backend.transport().stream(request) {
             try Task.checkCancellation()
             guard current === turn else { throw CancellationError() }
             switch event {
             case let .sessionID(id):
-                storedSession = id
+                // A bot's chat is the bot's: never kept as the watch's own session.
+                if turn.bot == nil { storedSession = id }
             case let .textDelta(delta):
                 turn.snapshot.text += delta
             case let .textFinal(text):

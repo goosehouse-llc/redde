@@ -14,6 +14,32 @@ struct ChatsView: View {
             } label: {
                 Label("New Chat", systemImage: "square.and.pencil")
             }
+            // The bots the phone offers: a question goes to the one picked, in its own chat.
+            if !store.bots.isEmpty {
+                Section("Bots") {
+                    ForEach(store.bots) { bot in
+                        Button {
+                            store.talk(to: bot)
+                            dismiss()
+                        } label: {
+                            HStack(spacing: 8) {
+                                if let face = bot.face.flatMap(UIImage.init(data:)) {
+                                    Image(uiImage: face).resizable().frame(width: 26, height: 26).accessibilityHidden(true)
+                                } else {
+                                    Image(systemName: "person.crop.circle").frame(width: 26, height: 26)
+                                }
+                                Text(bot.name).lineLimit(1)
+                                Spacer(minLength: 4)
+                                if store.bot?.profile == bot.profile {
+                                    Image(systemName: "checkmark").font(.caption.weight(.semibold)).foregroundStyle(.tint)
+                                        .accessibilityLabel("The one you're talking to")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if store.canListChats {
             switch store.chatsState {
             case .loading:
                 HStack {
@@ -43,12 +69,13 @@ struct ChatsView: View {
                             }
                         }
                         Spacer(minLength: 4)
-                        if chat.id == store.sessionID {
+                        if chat.id == store.sessionID, store.bot == nil {
                             Image(systemName: "checkmark").font(.caption.weight(.semibold)).foregroundStyle(.tint)
                                 .accessibilityLabel("The one you're in")
                         }
                     }
                 }
+            }
             }
         }
         .navigationTitle("Chats")

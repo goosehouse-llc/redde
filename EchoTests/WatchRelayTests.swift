@@ -73,6 +73,8 @@ struct WatchRelayTests {
         var answers: [[String]] = []
         var delivered: [WatchRelay.Snapshot] = []
         var named: [String] = []
+        /// The bots whose chats were looked up.
+        var botChats: [String] = []
         private(set) var host: WatchRelayHost!
         private(set) var watch: WatchRelayClient!
 
@@ -86,7 +88,8 @@ struct WatchRelayTests {
                 respondClarify: { [unowned self] in answers.append([$0, $1, $2]); dashboard.release() },
                 interrupt: { _ in },
                 isStaleSession: { $0 is Stale },
-                nameSession: { [unowned self] stored, _ in named.append(stored) })
+                nameSession: { [unowned self] stored, _ in named.append(stored) },
+                botChat: { [unowned self] profile in botChats.append(profile); return "bot-chat-\(profile)" })
             host = WatchRelayHost(backend: backend, settings: settings, defaults: defaults, deliver: { [unowned self] in delivered.append($0) })
             watch = WatchRelayClient(send: { [unowned self] in host.handle($0) }, pollEvery: .milliseconds(10))
         }
@@ -105,6 +108,23 @@ struct WatchRelayTests {
         #expect(asked.sessionID == nil)
         #expect(rig.named == ["s1"], "a new session is named for the watch")
         #expect(rig.delivered.last?.state == .done, "the finished reply is also sent without being asked for")
+    }
+
+    /// A question for a bot goes into the bot's own chat: never renamed, and never the watch's
+    /// own session, which the next question to the agent still uses.
+    @Test func aQuestionForABotGoesIntoItsOwnChat() async throws {
+        let rig = Rig(Dashboard([.sessionID("watch-1"), .textDelta("Yes."), .done]))
+        _ = try await rig.watch.ask("One?") { _ in }
+        let reply = try await rig.watch.ask("Is the porch light on?", bot: "home") { _ in }
+        #expect(reply.state == .done && reply.text == "Yes.")
+        _ = try await rig.watch.ask("Two?") { _ in }
+        #expect(rig.botChats == ["home"])
+        #expect(rig.dashboard.requests.map(\.sessionID) == [nil, "bot-chat-home", "watch-1"],
+                "the bot's chat for its question; the watch's own session before and after")
+        #expect(rig.dashboard.requests[1].userText.hasPrefix("Is the porch light on?"))
+        #expect(rig.named == ["watch-1"], "only the watch's own session is named")
+        #expect(WatchConnection.withoutHint(rig.dashboard.requests[1].userText) == "Is the porch light on?",
+                "and the hint comes off where a transcript shows it")
     }
 
     @Test func theNextQuestionGoesIntoTheSameSession() async throws {

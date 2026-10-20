@@ -34,6 +34,8 @@ nonisolated enum WatchRelay {
         var text: String?
         var requestID: String?
         var choice: String?
+        /// Asked of a bot, in its own chat (its profile); nil for the agent, in the watch's session.
+        var bot: String?
     }
 
     /// The turn as it stands, whole: a later one replaces an earlier one.
@@ -127,13 +129,13 @@ final class WatchRelayClient {
 
     /// Asks, and returns the finished reply. `onUpdate` sees every state on the way, the last
     /// included. Throws `WatchRelay.Failure`, or `CancellationError` when stopped.
-    func ask(_ text: String, onUpdate: @escaping (WatchRelay.Snapshot) -> Void) async throws -> WatchRelay.Snapshot {
+    func ask(_ text: String, bot: String? = nil, onUpdate: @escaping (WatchRelay.Snapshot) -> Void) async throws -> WatchRelay.Snapshot {
         id = UUID().uuidString
         self.onUpdate = onUpdate
         handed = nil
         var snapshot: WatchRelay.Snapshot
         do {
-            snapshot = try await send(.init(op: .ask, id: id, text: text))
+            snapshot = try await send(.init(op: .ask, id: id, text: text, bot: bot))
         } catch is CancellationError {
             throw CancellationError()
         } catch {

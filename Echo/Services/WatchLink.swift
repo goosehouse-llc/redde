@@ -31,7 +31,8 @@ final class WatchLink: NSObject, WCSessionDelegate {
     static func connection(_ settings: Settings = .shared, gatewayKey: (() -> String?)? = nil,
                            dashboardPassword: () -> String? = { Keychain.read(.serveDashboardPassword) },
                            dashboardSignedIn: (() -> Bool)? = nil,
-                           customHeaders: (() -> [String: String])? = nil) -> WatchConnection? {
+                           customHeaders: (() -> [String: String])? = nil,
+                           bots: (() -> [WatchBot])? = nil) -> WatchConnection? {
         func made(_ kind: WatchConnection.Kind, url: String = "", key: String = "", model: String, provider: String = "") -> WatchConnection {
             WatchConnection(kind: kind, url: url, apiKey: key, model: model, provider: provider,
                             reasoningEffort: settings.reasoningEffort, replyLanguage: settings.replyLanguage,
@@ -60,8 +61,35 @@ final class WatchLink: NSObject, WCSessionDelegate {
             connection.kokoroVoice = settings.kokoroVoice
             connection.voiceSpeed = settings.voiceSpeed
         }
+        // The bots, which the phone talks to for the watch over the Dashboard, whichever road the
+        // watch's own questions take: only with the Dashboard reachable and Bots on.
+        if viaPhone != nil, settings.showBots {
+            let offered = bots?() ?? watchBots(settings)
+            if !offered.isEmpty { connection.bots = offered }
+        }
         return connection
     }
+
+    /// The server's bots as the watch lists them: not the main agent (the watch asks it anyway),
+    /// not the hidden ones, a few at most (the handover has a size limit), each with its creature.
+    static func watchBots(_ settings: Settings = .shared, directory: BotDirectory = .shared) -> [WatchBot] {
+        guard directory.key == settings.connectionKey, let roster = directory.roster else { return [] }
+        let faces = roster.faces
+        return roster.listed.filter { !$0.isDefault }.prefix(8).map { bot in
+            WatchBot(profile: bot.name, name: bot.label(mainName: settings.headerTitle),
+                     face: BotAvatar.picture(of: faces[bot.name] ?? BotFace(seed: bot.name), side: 40, scale: 2)?.pngData())
+        }
+    }
+
+    /// The bots changed (read again, named, picked a face): the watch hears of it, once.
+    func botsChanged() {
+        let signature = Self.watchBots().map { "\($0.profile)|\($0.name)|\($0.face?.count ?? 0)" }
+        guard signature != lastBots else { return }
+        lastBots = signature
+        push()
+    }
+
+    private var lastBots: [String] = []
 
     /// Send the current connection over; an empty context tells the watch there is none.
     func push() {
