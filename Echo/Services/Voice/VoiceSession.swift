@@ -142,14 +142,16 @@ final class VoiceSession {
     /// Speak the last reply again. Works from idle; tapping the mic while it plays interrupts.
     func replayLastReply() {
         guard let text = lastReplyText else { return }
-        readAloud(text, resumeHandsFree: true)
+        readAloud(text, resumeHandsFree: true, speaker: conversation.bot?.profile)
     }
 
     /// Speak any reply: the transcript's "Read aloud", and Replay. Works from idle; `stopSpeaking`
     /// or tapping the mic ends it. Only the voice screen's Replay reopens the mic afterwards in
     /// hands-free; reading from the transcript never starts listening.
-    func readAloud(_ text: String, resumeHandsFree: Bool = false) {
+    /// `speaker`: whose words they are, a bot's profile, read in that bot's voice (`BotVoices`).
+    func readAloud(_ text: String, resumeHandsFree: Bool = false, speaker: String? = nil) {
         guard phase == .idle || isErrored, !text.isEmpty else { return }
+        output.speaker = speaker
         do { try audio.activateForPlayback() } catch {
             phase = .error(error.localizedDescription); return
         }
@@ -565,6 +567,7 @@ final class VoiceSession {
             continuous = false
             acknowledging = true
             phase = .speaking
+            output.speaker = conversation.bot?.profile
             output.beginReply()
             output.append("Okay.")
             output.endReply()
@@ -585,6 +588,7 @@ final class VoiceSession {
             takeNote(text)
             acknowledging = true
             phase = .speaking
+            output.speaker = conversation.bot?.profile
             output.beginReply()
             output.append("Noted.")
             output.endReply()
@@ -598,6 +602,7 @@ final class VoiceSession {
         phase = .thinking
         activeTool = nil
         metrics.requestSentAt = .now
+        output.speaker = conversation.bot?.profile
         output.beginReply()
         // Spoken prefixes: a leading "Claude, …" becomes its text prefix, and a rule that names a
         // model moves the conversation there first (sticky). Only here, on the final endpointed
@@ -625,6 +630,8 @@ final class VoiceSession {
                 log.error("spoken prefix: model switch to \(model, privacy: .public) failed: \(error.localizedDescription)")
             }
         }
+        // The reply is the chat's bot's, after a prefix may have moved there: read in its voice.
+        output.speaker = conversation.bot?.profile
         // In a car (its CarPlay, or its Bluetooth alone), if Settings says so: a short answer.
         let events = conversation.send(outgoing, attachments: seen.map { [$0] } ?? [],
                                        brief: shortInCar() && (carConnected() || audio.route == .car))
@@ -893,6 +900,7 @@ final class VoiceSession {
         unclearAnswers += 1
         guard unclearAnswers < 2 else { leaveForTheScreen(saying: true); return }
         phase = .speaking
+        output.speaker = conversation.bot?.profile
         output.beginReply()
         output.append(request.reminder)
         output.endReply()
@@ -904,6 +912,7 @@ final class VoiceSession {
         respond(answer)
         // Said back, so a mishearing is heard; the reply carries on behind it.
         phase = .speaking
+        output.speaker = conversation.bot?.profile
         output.beginReply()
         output.append(request.confirmation(of: answer) + " ")
         if canBeTalkedOver() { micStaysOpen = true; startMonitor() }
@@ -945,6 +954,7 @@ final class VoiceSession {
         guard saying else { phase = .thinking; return }
         leftForScreen = true
         phase = .speaking
+        output.speaker = conversation.bot?.profile
         output.beginReply()
         output.append("It's waiting for you on your iPhone.")
         output.endReply()
@@ -957,6 +967,7 @@ final class VoiceSession {
         asking = nil
         if phase == .listening { recognizer.cancel() }
         output.stop()
+        output.speaker = conversation.bot?.profile
         output.beginReply()
         phase = .thinking
     }
@@ -1107,6 +1118,7 @@ final class VoiceSession {
         if conversation.isStreaming { conversation.cancel() }
         continuous = false
         acknowledging = true
+        output.speaker = conversation.bot?.profile
         output.beginReply()   // (drops what was left of the reply)
         output.append("Okay.")
         output.endReply()

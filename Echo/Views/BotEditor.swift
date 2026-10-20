@@ -1,3 +1,4 @@
+import AVFoundation
 import SwiftUI
 
 /// Making a bot, or changing one (the chat list's Bots, and a bot's chat's ••• menu): what it is
@@ -50,6 +51,15 @@ struct BotEditor: View {
     @State private var madeNotes: MadeBot?
     @State private var confirmingDelete = false
     @State private var pickingFace = false
+    @State private var pickingVoice = false
+
+    /// A picked voice, in a word: its name, or Redde's own.
+    static func voiceSummary(_ voice: BotVoice) -> String {
+        if voice.sameAsMain == true { return "Same as the main agent" }
+        if let id = voice.kokoro { return BotVoicePicker.kokoroName(id) }
+        if let id = voice.onDevice { return AVSpeechSynthesisVoice(identifier: id)?.name ?? "A built-in voice" }
+        return "Automatic"
+    }
 
     private struct Original: Equatable {
         var title: String
@@ -127,6 +137,17 @@ struct BotEditor: View {
                     } footer: {
                         nameFooter
                     }
+                }
+                if let editing, !isMain {
+                    Section {
+                        Button { pickingVoice = true } label: {
+                            LabeledContent("Voice", value: Settings.shared.botVoicesHere[editing.name].map(Self.voiceSummary) ?? "Automatic")
+                        }
+                        .foregroundStyle(.primary)
+                    } footer: {
+                        Text("What its replies are read in, in voice mode, group chats and the car.")
+                    }
+                    .sheet(isPresented: $pickingVoice) { BotVoicePicker(bot: editing, mainName: mainName) }
                 }
                 Section {
                     TextField("What it's for", text: $about, axis: .vertical)

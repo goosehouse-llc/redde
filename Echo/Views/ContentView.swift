@@ -30,6 +30,8 @@ struct ContentView: View {
     @State private var projectProblem: String?
     /// "Change Face…" in a bot's chat: that bot, its face being picked.
     @State private var facingBot: HermesBot?
+    /// In a bot's chat, its voice being picked.
+    @State private var voicingBot: HermesBot?
     /// "Edit Bot…" in a bot's chat.
     @State private var editingBot: HermesBot?
     /// "Start Fresh…" in a bot's chat: being asked about, and what went wrong.
@@ -379,6 +381,9 @@ struct ContentView: View {
                             Button("Edit Bot…", systemImage: "slider.horizontal.3") { editingBot = bot }
                             Button("Change Face…", systemImage: "face.smiling") { facingBot = bot }
                         }
+                        if let bot = chatBot, !bot.isDefault {
+                            Button("Voice…", systemImage: "waveform") { voicingBot = bot }
+                        }
                         // A bot's chat: Start Fresh has the toolbar's button, and a new conversation
                         // with the agent is here.
                         if conversation.bot != nil {
@@ -432,6 +437,7 @@ struct ContentView: View {
             } message: {
                 Text(freshProblem ?? "")
             }
+            .sheet(item: $voicingBot) { BotVoicePicker(bot: $0, mainName: settings.headerTitle) }
             .sheet(item: $facingBot) { bot in
                 BotFacePicker(bot: bot, name: bot.label(mainName: settings.headerTitle), current: botFace ?? BotFace(seed: bot.name)) {
                     Task { _ = try? await BotDirectory.shared.refresh() }

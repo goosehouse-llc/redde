@@ -72,7 +72,8 @@ final class GroupVoice {
         if !queue.isEmpty {
             let reply = queue.removeFirst()
             speaker = reply.actorID
-            session.readAloud(reply.text)
+            // In that bot's voice (`BotVoices`): who speaks is heard as well as seen.
+            session.readAloud(reply.text, speaker: feed.room.member(reply.actorID)?.profile ?? reply.actorID)
             return
         }
         speaker = nil

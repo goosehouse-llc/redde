@@ -78,6 +78,7 @@ struct VoiceSessionTests {
     final class FakeSpeaker: VoiceSpeaking {
         var onFirstSpeech: (() -> Void)?
         var onFinished: (() -> Void)?
+        var speaker: String?
         private(set) var spoken: [String] = []
         private(set) var begins = 0
         private(set) var ends = 0
@@ -205,6 +206,22 @@ struct VoiceSessionTests {
         h.speaker.finishSpeaking()
         try await waitUntil("quiet again") { h.session.phase == .idle }
         #expect(h.recognizer.starts == 1, "the group chat opens the mic, once the round is over")
+    }
+
+    /// In a bot's chat, voice mode reads the reply as that bot (its voice, `BotVoices`), and read
+    /// aloud reads as whoever is named.
+    @Test func aBotsReplyIsReadInItsVoice() async throws {
+        let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport(reply(["Three trails."])))
+        h.conversation.replaceForDemo(messages: [], bot: BotRef(profile: "scout", name: "Scout"))
+        h.session.beginListening()
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        h.recognizer.deliver("Any trails?")
+        try await waitUntil("speaking") { !h.speaker.spoken.isEmpty }
+        #expect(h.speaker.speaker == "scout")
+        h.speaker.finishSpeaking()
+        try await waitUntil("idle") { h.session.phase == VoiceSession.Phase.idle }
+        h.session.readAloud("Falls Loop is open.", speaker: "writer")
+        #expect(h.speaker.speaker == "writer")
     }
 
     @Test func deniedPermissionLandsInError() async throws {

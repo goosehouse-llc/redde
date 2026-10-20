@@ -281,7 +281,7 @@ struct GroupChatView: View {
     }
 
     /// The speaker button under a reply: read it, or stop if it's the one being read.
-    private func readAloud(_ id: UUID, _ text: String) {
+    private func readAloud(_ id: UUID, _ text: String, speaker: String?) {
         if voiceSession.phase == .speaking {
             let wasThis = readingID == id
             voiceSession.stopSpeaking()
@@ -290,7 +290,7 @@ struct GroupChatView: View {
         }
         guard voiceSession.phase == .idle || { if case .error = voiceSession.phase { true } else { false } }() else { return }
         readingID = id
-        voiceSession.readAloud(text)
+        voiceSession.readAloud(text, speaker: speaker)
     }
 
     /// In place of the field, for a room Hermes Desktop runs: Desktop answers its messages, and
@@ -335,7 +335,7 @@ struct GroupChatView: View {
             let id = UUID(uuidString: String(format: "00000000-0000-4000-8000-%012d", event.seq)) ?? UUID()
             // Copy, read aloud, share and select, as under a conversation's reply.
             MessageRow(message: Message(id: id, role: .assistant, text: event.text, createdAt: event.createdAt),
-                       onReadAloud: { @MainActor @Sendable in readAloud(id, event.text) },
+                       onReadAloud: { @MainActor @Sendable in readAloud(id, event.text, speaker: member?.profile) },
                        isReading: readingID == id && voiceSession.phase == .speaking, highlight: highlight(event.seq))
                 .equatable()
                 .environment(\.replySpeaker, member?.label ?? "A bot")

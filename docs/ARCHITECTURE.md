@@ -475,6 +475,20 @@ where a new conversation is in the ••• menu, and ⌘N as anywhere) is the 
   New or Edit Bot, no @mentions, and no group chats. `lab.sh apibots` checks it on each release,
   and `lab.sh bots` the first way.
 
+**Voices.** A bot reads its replies in a voice of its own (`BotVoices`, `BotVoicePicker`): in voice
+mode in its chat, Read aloud, a group chat's Talk, and the car. The voice session says whose words
+it speaks (`VoiceSpeaking.speaker`: the conversation's bot, set again after a spoken prefix moves
+there, or whoever Read aloud names), and `SpeechOutput` reads them in that bot's voice: one picked
+for it (Voice… in its row's menu, its chat's ••• menu and Edit Bot; kept per server in
+`Settings.botVoices`, synced), else Automatic, one of the voices Redde reads with now in the
+language of Redde's voice and never Redde's: the Kokoro server's (British and American both
+count as English), or the built-in ones installed (enhanced and premium first, then the others,
+novelty voices never), given out by name (FNV-1a) through the roster in name order, so no two bots
+share while there are voices enough. "Same as Redde" reads in Redde's own; the main agent always
+does. A reply clearly in another language still goes to a voice for it. Hermes's own voice is
+the server's, one for every bot.
+
+
 ### Reply language
 
 Settings → Voice → Reply language asks the agent to answer in one language (`Models/ReplyLanguage.swift`;

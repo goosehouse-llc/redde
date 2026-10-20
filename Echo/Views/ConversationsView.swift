@@ -73,6 +73,8 @@ struct ConversationsList: View {
     @State private var editingBot: BotEditor.Mode?
     /// A bot being added for the Hermes API alone.
     @State private var addingAPIBot = false
+    /// The bot whose voice is being picked.
+    @State private var voicing: HermesBot?
     @State private var showingHiddenBots = false
     @AppStorage("sessions.showScheduled") private var showScheduled = false
     @State private var shareItem: ShareItem?
@@ -168,6 +170,7 @@ struct ConversationsList: View {
                 opened(room: room)
             }
         }
+        .sheet(item: $voicing) { BotVoicePicker(bot: $0, mainName: settings.headerTitle) }
         .sheet(item: $facing) { bot in
             BotFacePicker(bot: bot, name: bot.label(mainName: settings.headerTitle),
                           current: botDirectory.roster?.faces[bot.name] ?? BotFace(seed: bot.name)) {
@@ -545,6 +548,9 @@ struct ConversationsList: View {
                 } else {
                     Button("Mark as Unread", systemImage: "envelope.badge") { activity.markUnread(bot: bot.name) }
                 }
+            }
+            if !bot.isDefault {
+                Button("Voice…", systemImage: "waveform") { voicing = bot }
             }
             if bot.viaAPI {
                 // Added here for the Hermes API: its settings and face are the Dashboard's.
@@ -1258,6 +1264,8 @@ struct ConversationsList: View {
                     Self.openedDemoGroup = true   // once: the list loads again each time it opens
                     opened(room: DevHooks.value("-echo.openGroup") == "desktop" ? .demoDesktop : .demo)
                 }
+                // `-echo.botVoice <bot>`: that bot's voice being picked (screenshots).
+                if let which = DevHooks.value("-echo.botVoice") { voicing = Self.demoBots.bots.first { $0.name == which } }
                 // `-echo.botEditor new|<bot>`: New Bot, or that bot's settings, open (screenshots).
                 if let which = DevHooks.value("-echo.botEditor") {
                     editingBot = which == "new" ? .new : Self.demoBots.bots.first { $0.name == which }.map { .edit($0) }

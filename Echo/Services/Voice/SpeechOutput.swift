@@ -98,6 +98,46 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         await withCheckedContinuation { utteranceWaiters[ObjectIdentifier(utterance)] = $0 }
     }
 
+    /// Whose words the next reply is: a bot's profile, read in that bot's voice (`BotVoices`); nil
+    /// or "default", Redde's own. Set before `beginReply`.
+    var speaker: String?
+    /// A voice to read in whatever `speaker` says (Settings' preview of a bot's voice).
+    var voiceOverride: BotVoice?
+
+    /// The Kokoro voice the reply under way starts from: the bot's, or the one Settings picks.
+    private var replyKokoroVoice: String {
+        if let id = voiceOverride?.kokoro { return id }
+        guard voiceOverride == nil else { return Settings.shared.kokoroVoice }
+        return BotVoices.kokoro(for: speaker, picked: Settings.shared.botVoicesHere, main: Settings.shared.kokoroVoice,
+                                available: kokoroVoiceIDs?.ids ?? [], names: botNames) ?? Settings.shared.kokoroVoice
+    }
+
+    /// The bot's own built-in voice for `language`, when it has one there: looked up once a reply
+    /// (the installed voices are slow to list, and each sentence waits on it).
+    private func botVoice(for language: String) -> AVSpeechSynthesisVoice? {
+        if let id = voiceOverride?.onDevice { return AVSpeechSynthesisVoice(identifier: id) }
+        guard voiceOverride == nil, let speaker, speaker != "default" else { return nil }
+        let key = "\(speaker)|\(language)"
+        if let cached = botVoiceCache[key] { return cached }
+        let found = lookUpBotVoice(speaker, language)
+        botVoiceCache[key] = found
+        return found
+    }
+    private var botVoiceCache: [String: AVSpeechSynthesisVoice?] = [:]
+
+    private func lookUpBotVoice(_ speaker: String, _ language: String) -> AVSpeechSynthesisVoice? {
+        let installed = AVSpeechSynthesisVoice.speechVoices().map {
+            SpokenLanguage.AppleVoice(identifier: $0.identifier, language: $0.language, quality: $0.quality.rawValue,
+                                      novelty: $0.voiceTraits.contains(.isNoveltyVoice))
+        }
+        return BotVoices.onDevice(for: speaker, picked: Settings.shared.botVoicesHere, language: language,
+                                  main: voice(for: language)?.identifier, installed: installed, names: botNames)
+            .flatMap(AVSpeechSynthesisVoice.init(identifier:))
+    }
+
+    /// The bots on the server, for no two alike.
+    private var botNames: [String] { BotDirectory.shared.bots(for: Settings.shared.connectionKey).map(\.name) }
+
     /// Resolved once per language: speechVoices() enumerates every installed voice asset and
     /// sat on the first-audio latency path for each sentence.
     private var cachedVoices: [String: AVSpeechSynthesisVoice?] = [:]
@@ -144,7 +184,7 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
 
     /// The Kokoro voice for `language`, or nil when the server has none for it.
     private func kokoroVoice(for language: String) -> String? {
-        let current = Settings.shared.kokoroVoice
+        let current = replyKokoroVoice
         // Your pick until the reply's language is clear (and always with "Listening language",
         // which never detects), or when its name doesn't say what it speaks. After that, a voice
         // for that language: yours if it is one, so listening in Spanish with an English voice
@@ -178,12 +218,14 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         detectedLanguage = nil
         heard = ""
         hermesServer = nil
+        botVoiceCache = [:]   // a voice picked since is the one
         switch Settings.shared.replyVoice {
         case .kokoro:
             usingPlayer = Settings.shared.kokoroBaseURL != nil
             if let server = Settings.shared.kokoroBaseURL {
                 player.begin(baseURL: server)
-                if Settings.shared.matchReplyLanguage { loadKokoroVoices(server) }
+                // The server's voices: for the reply's language, and for a bot's voice of its own.
+                loadKokoroVoices(server)
             }
         case .hermes:
             // Without a Dashboard to speak through, the built-in voice reads it.
@@ -267,7 +309,7 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
             if voice != nil || sentToKokoro {
                 isSpeaking = true
                 sentToKokoro = true
-                player.enqueue(spoken, baseURL: base, voice: voice ?? Settings.shared.kokoroVoice,
+                player.enqueue(spoken, baseURL: base, voice: voice ?? replyKokoroVoice,
                                speed: Settings.shared.voiceSpeed)
                 return
             }
@@ -282,7 +324,8 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
     @discardableResult
     private func speakLocally(_ spoken: String) -> AVSpeechUtterance {
         let utterance = AVSpeechUtterance(string: spoken)
-        utterance.voice = voice(for: detectedLanguage ?? SpokenLanguage.base(listeningLanguage))
+        let language = detectedLanguage ?? SpokenLanguage.base(listeningLanguage)
+        utterance.voice = botVoice(for: language) ?? voice(for: language)
         utteranceEpochs[ObjectIdentifier(utterance)] = epoch
         utterance.prefersAssistiveTechnologySettings = false
         // The same speed slider as Kokoro, scaled around the system default rate.

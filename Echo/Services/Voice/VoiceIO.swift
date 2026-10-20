@@ -41,6 +41,8 @@ extension VoiceRecognizing {
 @MainActor
 protocol VoiceSpeaking: AnyObject {
     var onFirstSpeech: (() -> Void)? { get set }
+    /// Whose words the next reply is (a bot's profile), for its voice of its own (`BotVoices`).
+    var speaker: String? { get set }
     var onFinished: (() -> Void)? { get set }
     func beginReply()
     func append(_ delta: String)

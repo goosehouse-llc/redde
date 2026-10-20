@@ -351,7 +351,7 @@ struct TranscriptView: View {
         }
         guard voiceSession.phase == .idle || { if case .error = voiceSession.phase { true } else { false } }() else { return }
         readingID = message.id
-        voiceSession.readAloud(message.text)
+        voiceSession.readAloud(message.text, speaker: conversation.bot?.profile)
     }
 
     /// Something has come in below since the reader scrolled away: a reply still being written,
