@@ -377,6 +377,9 @@ private struct OrbFace: View {
     @Environment(\.theme) private var theme
     /// In a bot's chat: the bot's creature, which stands in for the orb.
     @Environment(\.replyFace) private var replyFace
+    /// That bot's name: which face is up.
+    @Environment(\.replySpeaker) private var replySpeaker
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// The `-echo.voiceDemo` pose: a level that moves like speech (two beating waves, never
     /// quite silent), so screenshots and the promo video show a live waveform.
@@ -406,80 +409,100 @@ private struct OrbFace: View {
                 // At rest: one faint, slow ring now and then, so it never looks switched off.
                 Halos(color: phaseColor, subtle: true, diameter: orb.isDrawn ? GlassOrb.haloDiameter : 198)
             }
-            if let face = replyFace ?? (orb == .reddeFace ? BotDirectory.shared.mainFace : nil) {
-                // Redde's own face (the orb picked), or the bot being talked to, whichever orb is picked.
-                ReddeVoiceFace(face: face, phase: phase, phaseColor: phaseColor, level: meter)
-                    .scaleEffect(listening ? 1 + level * 0.06 : 1)
-                    .accessibilityHidden(true)
-            } else if orb.isDrawn {
-                GlassOrb(light: Settings.shared.orbLight, phase: phase, phaseColor: phaseColor, accent: theme.accent)
-                    .overlay { LiveWaveform(phase: phase, level: meter, color: orb.waveColor, shadowed: false) }
-                    // The same ring outside the face as the picture orbs wear, in the phase
-                    // colour and gone at rest, and the thinking arc on it.
-                    .overlay {
-                        Circle().strokeBorder(phaseColor.opacity(phase == .idle ? 0 : 0.8), lineWidth: 3).padding(-GlassOrb.ringOutset)
-                    }
-                    .overlay {
-                        if phase == .thinking { ThinkingArc(color: phaseColor).padding(-GlassOrb.ringOutset) }
-                    }
-                    .scaleEffect(listening ? 1 + level * 0.06 : 1)
-                    .accessibilityHidden(true)
-            } else {
-            orb.voiceImage
-                .resizable()
-                .scaledToFit()
-                .frame(width: 172, height: 172)
-                .overlay {
-                    // Colour moving inside the orb, under the bars, so it looks liquid rather than
-                    // printed. Masked by the orb's own picture, so it fills a bubble's shape, tail
-                    // and all, as well as a circle. Brighter while live, swelling with your voice
-                    // (or the reply's).
-                    let live = phase == .listening || phase == .speaking
-                    // The light is the mood, the bars are the signal. Three patches added together
-                    // went near-white exactly where the bars sit, so the light eases off toward
-                    // the middle: gently and smoothly, about half strength behind the bars. A
-                    // deeper cut read as a hole, a ring of light round a dark disc, not an orb.
-                    let strength: CGFloat = live ? 0.8 + level * 0.35 : phase == .idle ? 0.42 : 0.62
-                    Group {
-                        switch Settings.shared.orbLight {
-                        case .nebula: DriftingBlobs(color: phaseColor, strength: strength, swirling: phase == .thinking)
-                        case .aurora: AuroraLight(color: phaseColor, strength: strength, swirling: phase == .thinking)
-                        case .core: CoreLight(color: phaseColor, strength: strength, swirling: phase == .thinking)
-                        }
-                    }
-                    .offset(orb.waveOffset)
-                    .mask {
-                        RadialGradient(stops: [.init(color: .black.opacity(0.48), location: 0),
-                                               .init(color: .black.opacity(0.56), location: 0.3),
-                                               .init(color: .black.opacity(0.76), location: 0.62),
-                                               .init(color: .black, location: 1)],
-                                       center: .center, startRadius: 0, endRadius: 88)
+            // Whose face it is: a spoken prefix that moves the talk to another bot (or back to the
+            // main agent) hands it over, the one there stepping aside as the new one comes in, so
+            // the change is seen, not only heard. Under Reduce Motion they cross-fade.
+            ZStack {
+                Group {
+                    if let face = replyFace ?? (orb == .reddeFace ? BotDirectory.shared.mainFace : nil) {
+                        // Redde's own face (the orb picked), or the bot being talked to, whichever orb is picked.
+                        ReddeVoiceFace(face: face, phase: phase, phaseColor: phaseColor, level: meter)
+                            .scaleEffect(listening ? 1 + level * 0.06 : 1)
+                            .accessibilityHidden(true)
+                    } else if orb.isDrawn {
+                        GlassOrb(light: Settings.shared.orbLight, phase: phase, phaseColor: phaseColor, accent: theme.accent)
+                            .overlay { LiveWaveform(phase: phase, level: meter, color: orb.waveColor, shadowed: false) }
+                            // The same ring outside the face as the picture orbs wear, in the phase
+                            // colour and gone at rest, and the thinking arc on it.
+                            .overlay {
+                                Circle().strokeBorder(phaseColor.opacity(phase == .idle ? 0 : 0.8), lineWidth: 3).padding(-GlassOrb.ringOutset)
+                            }
+                            .overlay {
+                                if phase == .thinking { ThinkingArc(color: phaseColor).padding(-GlassOrb.ringOutset) }
+                            }
+                            .scaleEffect(listening ? 1 + level * 0.06 : 1)
+                            .accessibilityHidden(true)
+                    } else {
+                    orb.voiceImage
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 172, height: 172)
+                        .overlay {
+                            // Colour moving inside the orb, under the bars, so it looks liquid rather than
+                            // printed. Masked by the orb's own picture, so it fills a bubble's shape, tail
+                            // and all, as well as a circle. Brighter while live, swelling with your voice
+                            // (or the reply's).
+                            let live = phase == .listening || phase == .speaking
+                            // The light is the mood, the bars are the signal. Three patches added together
+                            // went near-white exactly where the bars sit, so the light eases off toward
+                            // the middle: gently and smoothly, about half strength behind the bars. A
+                            // deeper cut read as a hole, a ring of light round a dark disc, not an orb.
+                            let strength: CGFloat = live ? 0.8 + level * 0.35 : phase == .idle ? 0.42 : 0.62
+                            Group {
+                                switch Settings.shared.orbLight {
+                                case .nebula: DriftingBlobs(color: phaseColor, strength: strength, swirling: phase == .thinking)
+                                case .aurora: AuroraLight(color: phaseColor, strength: strength, swirling: phase == .thinking)
+                                case .core: CoreLight(color: phaseColor, strength: strength, swirling: phase == .thinking)
+                                }
+                            }
                             .offset(orb.waveOffset)
+                            .mask {
+                                RadialGradient(stops: [.init(color: .black.opacity(0.48), location: 0),
+                                                       .init(color: .black.opacity(0.56), location: 0.3),
+                                                       .init(color: .black.opacity(0.76), location: 0.62),
+                                                       .init(color: .black, location: 1)],
+                                               center: .center, startRadius: 0, endRadius: 88)
+                                    .offset(orb.waveOffset)
+                            }
+                            .mask { orb.voiceImage.resizable().scaledToFit().padding(orb.isRound ? 6 : 3) }
+                        }
+                        .overlay {
+                            LiveWaveform(phase: phase, level: meter, color: orb.waveColor)
+                                .offset(orb.waveOffset)
+                        }
+                        .overlay {
+                            if orb.isRound {
+                                Circle().strokeBorder(phaseColor.opacity(phase == .idle ? 0 : 0.8), lineWidth: 3).padding(-4)
+                            }
+                        }
+                        .overlay {
+                            // Thinking: a short arc chasing round the rim.
+                            if phase == .thinking { ThinkingArc(color: phaseColor).padding(-4) }
+                        }
+                        .shadow(color: orb.isRound || phase == .idle ? .clear : phaseColor.opacity(0.9), radius: 10)
+                        .shadow(color: .black.opacity(0.35), radius: 22, y: 12)
+                        .scaleEffect(listening ? 1 + level * 0.06 : 1)
+                        .accessibilityHidden(true)
                     }
-                    .mask { orb.voiceImage.resizable().scaledToFit().padding(orb.isRound ? 6 : 3) }
                 }
-                .overlay {
-                    LiveWaveform(phase: phase, level: meter, color: orb.waveColor)
-                        .offset(orb.waveOffset)
-                }
-                .overlay {
-                    if orb.isRound {
-                        Circle().strokeBorder(phaseColor.opacity(phase == .idle ? 0 : 0.8), lineWidth: 3).padding(-4)
-                    }
-                }
-                .overlay {
-                    // Thinking: a short arc chasing round the rim.
-                    if phase == .thinking { ThinkingArc(color: phaseColor).padding(-4) }
-                }
-                .shadow(color: orb.isRound || phase == .idle ? .clear : phaseColor.opacity(0.9), radius: 10)
-                .shadow(color: .black.opacity(0.35), radius: 22, y: 12)
-                .scaleEffect(listening ? 1 + level * 0.06 : 1)
-                .accessibilityHidden(true)
+                .id(replySpeaker ?? "")
+                .transition(reduceMotion ? .opacity : .handoff)
             }
+            .animation(reduceMotion ? .easeInOut(duration: 0.35) : .spring(duration: 0.6, bounce: 0.3), value: replySpeaker)
+            .sensoryFeedback(.impact(weight: .light), trigger: replySpeaker)
         }
         // One animation for everything the level drives (aura size and orb scale).
         .animation(.easeOut(duration: 0.12), value: level)
         .animation(.easeOut(duration: 0.3), value: listening)
+    }
+}
+
+private extension AnyTransition {
+    /// One face handing over to another in voice mode: the one there steps out to the left,
+    /// shrinking and fading, as the new one comes in from the right.
+    static var handoff: AnyTransition {
+        .asymmetric(insertion: .offset(x: 150).combined(with: .scale(scale: 0.55)).combined(with: .opacity),
+                    removal: .offset(x: -150).combined(with: .scale(scale: 0.55)).combined(with: .opacity))
     }
 }
 

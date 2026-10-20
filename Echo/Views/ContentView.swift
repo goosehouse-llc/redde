@@ -151,6 +151,14 @@ struct ContentView: View {
             #if DEBUG
             if DevHooks.has("-echo.voiceView") { openVoice(fromOutside: true) }
             if DevHooks.has("-echo.autoVoice") { await launchVoice(handsFree: false, fromOutside: true) }
+            // `-echo.voiceHandoff`: the voice screen's face handed to Scout, back, then to Quill, as
+            // a spoken prefix does it (recording the transition).
+            if DevHooks.has("-echo.voiceHandoff") {
+                for bot in [BotRef(profile: "scout", name: "Scout"), nil, BotRef(profile: "writer", name: "Quill")] {
+                    try? await Task.sleep(for: .seconds(2.5))
+                    conversation.replaceForDemo(messages: conversation.messages, bot: bot)
+                }
+            }
             #endif
         }
         .onOpenURL { url in

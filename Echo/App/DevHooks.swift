@@ -66,6 +66,7 @@ import WidgetKit
 ///   conversation with `-siriDraftsInNewConversation YES`).
 /// - `-echo.voiceView`: open voice mode without listening. `-echo.voiceDemo ["<words>"]` poses it mid-listen;
 ///   `-echo.autoVoice` opens it and starts listening.
+///   `-echo.voiceHandoff` hands its face to other bots and back, as spoken prefixes do.
 /// - `-echo.demoBoard [clear]`: write on the agent's widget as its phone tool does (a day's plan
 ///   now, and a line that takes over in a minute), to look at it on the Home Screen.
 /// - `-echo.demoAlarm [seconds]`: set a timer as the phone tool does (thirty seconds by default;
