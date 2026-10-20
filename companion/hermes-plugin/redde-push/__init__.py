@@ -10,7 +10,8 @@ and `core.py` for how a note is sealed and sent.
 
 The app itself uses the slash command `/redde-push`, over the Dashboard: `watch <session>
 <device,...>` says which conversations it has taken part in (only those notify, and every turn
-over the Hermes API), and `offer` then `accept <offer> <key> <box>` pair it without a code.
+over the Hermes API), `rooms <device,...> <room,...>` which group chats it follows (`rooms.py`),
+and `offer` then `accept <offer> <key> <box>` pair it without a code.
 
 The plugin also offers the agent phone tools, carried out by the app on the iPhone (the calendar,
 reminders, contacts, photos, a folder of files): see `device.py`. They need no pairing, and the
@@ -27,7 +28,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import core, qr
+from . import core, qr, rooms
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
 
 log = logging.getLogger("redde_push")
@@ -36,12 +37,16 @@ _store: core.Store | None = None
 _pusher: core.Pusher | None = None
 _turns: core.Turns | None = None
 _waiting: core.Waiting | None = None
+_rooms: rooms.Rooms | None = None
 _offers = core.Offers()
 #: The platforms a turn over the Dashboard runs on: the ones that can put a question to a client.
 DASHBOARD = ("desktop", "tui")
 #: session id -> the platform its turns run on ("desktop" or "tui" for the Dashboard, "api_server",
 #: "cli", a messaging platform). The approval hook isn't told, so the turn's earlier hooks remember.
 _platforms: dict[str, str] = {}
+#: Turns no person is waiting on as such: a subagent's goes to the agent that asked, and a bot's in
+#: a group chat to the room, whose notes come from the room itself (`rooms.py`).
+NOBODYS = ("subagent", "bot_room")
 
 
 def _home() -> Path:
@@ -89,6 +94,24 @@ def _watchers() -> tuple[core.Turns, core.Waiting]:
     return _turns, _waiting
 
 
+def _group_chats() -> rooms.Rooms:
+    """The group chats the paired phones follow, read for what is new (`rooms.py`)."""
+    global _rooms
+    if _rooms is None:
+        store, pusher = _state()
+        _rooms = rooms.Rooms(store, pusher.send)
+    return _rooms
+
+
+def _follow_group_chats_if_any() -> None:
+    """At load: a phone follows some group chat here, so this process reads them too."""
+    try:
+        if _state()[0].rooms_followed():
+            _group_chats().start()
+    except Exception:
+        log.debug("redde-push: couldn't start reading the group chats", exc_info=True)
+
+
 #: Set as the process exits: what is said from then on is sent at once (`core.Pusher.submit`).
 _leaving = False
 
@@ -120,6 +143,8 @@ def _on_approval(command: str = "", description: str = "", session_id: str = "",
         if surface == "smart":
             return
         session = session_id or session_key
+        if _platforms.get(session, "") == "bot_room":   # the room says so, to those following it
+            return
         _state()[1].submit("approval", session, _platforms.get(session, ""), body=command, detail=description)
     except Exception:
         log.debug("redde-push: approval hook failed", exc_info=True)
@@ -133,7 +158,7 @@ _replied: dict[str, str] = {}
 def _on_reply(session_id: str = "", assistant_response: str = "", platform: str = "", turn_id: str = "", **_) -> None:
     try:
         platform = platform or _platforms.get(session_id, "")
-        if platform == "subagent":      # a subagent's answer goes to the agent that asked, not to a person
+        if platform in NOBODYS:
             return
         turns, waiting = _watchers()
         turns.ended(session_id)
@@ -155,7 +180,7 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", **_) -
     """`pre_llm_call`: a turn starts."""
     try:
         _remember_platform(session_id, platform)
-        if platform != "subagent":
+        if platform not in NOBODYS:
             _watchers()[0].began(session_id, turn_id)
     except Exception:
         log.debug("redde-push: turn hook failed", exc_info=True)
@@ -184,7 +209,7 @@ def _on_answer(session_id: str = "", platform: str = "", assistant_message=None,
         turns, waiting = _watchers()
         turns.moved(session_id)
         platform = platform or _platforms.get(session_id, "")
-        if platform == "subagent" or not session_id:
+        if platform in NOBODYS or not session_id:
             return
         calls = core.tool_calls(assistant_message)
         if not calls:
@@ -209,7 +234,7 @@ def _on_request_error(session_id: str = "", platform: str = "", retryable=None, 
     says neither (`core.Turns`)."""
     try:
         platform = platform or _platforms.get(session_id, "")
-        if platform == "subagent" or not _state()[0].targets(session_id, platform):
+        if platform in NOBODYS or not _state()[0].targets(session_id, platform):
             return
         _watchers()[0].request_failed(session_id, platform, retryable, reason, core.failure(status_code, error))
     except Exception:
@@ -232,7 +257,7 @@ def _on_turn_end(session_id: str = "", platform: str = "", turn_id: str = "", fa
         waiting.forget(session_id)
         # Failed, and no reply went out for it: most turns Hermes calls failed still end on a
         # few words about what went wrong, and those have been sent as the reply.
-        if failed is True and platform != "subagent" and _replied.get(session_id) != turn_id:
+        if failed is True and platform not in NOBODYS and _replied.get(session_id) != turn_id:
             why = core.clipped(str(turn_exit_reason or "").replace("_", " "), 120)
             _failed(session_id, platform, f"The turn ended with an error ({why})." if why else "The turn ended with an error.")
     except Exception:
@@ -321,6 +346,13 @@ def _slash(raw_args: str = "") -> str:
     if len(words) == 3 and words[0] == "watch":
         following = store.watch(words[1], [w for w in words[2].split(",") if w])
         return f"redde-push watching {len(following)}"
+    if len(words) in (2, 3) and words[0] == "rooms":
+        # The group chats the phone lists (less those it has muted): those notify, no others.
+        following = store.follow_rooms([w for w in words[1].split(",") if w],
+                                       [r for r in (words[2] if len(words) == 3 else "").split(",") if r])
+        if following and store.rooms_followed():
+            _group_chats().start()
+        return f"redde-push following {len(following)}"
     if words == ["status"]:
         return f"redde-push status {len(store.devices)}"
     if words == ["offer"]:
@@ -449,7 +481,9 @@ def register(ctx) -> None:
         known = False
     if known:
         ctx.register_hook("agent_loop_stopped", _on_stopped)
-    ctx.register_command("redde-push", _slash, description="Used by the Redde app to follow a conversation", args_hint="watch <session> <device>")
+    ctx.register_command("redde-push", _slash, description="Used by the Redde app to follow a conversation",
+                         args_hint="watch <session> <device> | rooms <device> <room,...>")
     # Phone tools (device.py): offered to the agent only for what the phone has turned on.
     phone_tools.register(ctx, lambda: phone_tools.Phone(_home()), to_widget=_to_widget)
     ctx.register_cli_command("redde-push", "Notifications on your iPhone from Redde", _cli_setup, _cli)
+    _follow_group_chats_if_any()

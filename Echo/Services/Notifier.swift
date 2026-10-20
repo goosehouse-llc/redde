@@ -124,7 +124,12 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         // under a category of its own that the notification extension registers on the spot
         // (`PushNote.choiceCategory`); this one is what it falls back on.
         let pushedQuestion = UNNotificationCategory(identifier: PushNote.questionCategory, actions: [PushNote.replyField], intentIdentifiers: [])
-        fixedCategories = [category, clarifyText, replied, pushed, pushedApproval, pushedQuestion]
+        // A group chat's, from a paired Hermes: Reply to the room, a bot's command, a turn to retry.
+        let groupReplied = UNNotificationCategory(identifier: PushNote.groupRepliedCategory, actions: [pushedFollowUp], intentIdentifiers: [])
+        let groupApproval = UNNotificationCategory(identifier: PushNote.groupApprovalCategory, actions: [pushedApprove, pushedDeny], intentIdentifiers: [])
+        let retry = UNNotificationAction(identifier: PushNote.retryAction, title: "Retry", options: [.authenticationRequired])
+        let groupRetry = UNNotificationCategory(identifier: PushNote.groupRetryCategory, actions: [retry], intentIdentifiers: [])
+        fixedCategories = [category, clarifyText, replied, pushed, pushedApproval, pushedQuestion, groupReplied, groupApproval, groupRetry]
         center.setNotificationCategories(fixedCategories)
     }
 
@@ -186,12 +191,14 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let sessionID = info[PushNote.sessionKey] as? String
         let digest = info[PushNote.approvalKey] as? String
         let asked = info[PushNote.questionKey] as? String
+        let room = info[PushNote.roomKey] as? String
+        let task = info[PushNote.taskKey] as? String
         let userText = (response as? UNTextInputNotificationResponse)?.userText
         nonisolated(unsafe) let handled = completionHandler   // iOS's own; only ever called below
         Task { @MainActor in
             let work = self.route(action: action, requestID: requestID, questionID: questionID, approve: approve, deny: deny,
                                   userText: userText, conversationID: conversationID, sessionID: sessionID, approvalDigest: digest,
-                                  questionDigest: asked)
+                                  questionDigest: asked, room: room, task: task)
             // The app may have been started just for this: iOS keeps it running until it is told.
             await work?.value
             handled()
@@ -206,10 +213,15 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let info = notification.request.content.userInfo
         let kind = info[PushNote.kindKey] as? String
         let sessionID = info[PushNote.sessionKey] as? String
+        let room = info[PushNote.roomKey] as? String
         let sealed = info[PushNote.sealedKey] as? String
         nonisolated(unsafe) let show = completionHandler
         Task { @MainActor in
-            if kind == nil, let sealed { show(self.presentUnopened(sealed)) } else { show(self.presentation(pushKind: kind, sessionID: sessionID)) }
+            if kind == nil, let sealed {
+                show(self.presentUnopened(sealed))
+            } else {
+                show(self.presentation(pushKind: kind, sessionID: sessionID, room: room))
+            }
         }
     }
 
@@ -225,17 +237,19 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let content = UNMutableNotificationContent()
         content.sound = sound
         guard note.fill(content) else { return shown }
-        guard !presentation(pushKind: note.k, sessionID: note.s).isEmpty else { return [] }
+        guard !presentation(pushKind: note.k, sessionID: note.s, room: note.g).isEmpty else { return [] }
         center.add(UNNotificationRequest(identifier: "redde.push.\(UUID().uuidString)", content: content, trigger: nil)) { [weak self] error in
             if let error { Task { @MainActor in self?.log.error("notify failed: \(error.localizedDescription)") } }
         }
         return []
     }
 
-    func presentation(pushKind kind: String?, sessionID: String?) -> UNNotificationPresentationOptions {
+    func presentation(pushKind kind: String?, sessionID: String?, room: String? = nil) -> UNNotificationPresentationOptions {
         guard let kind else { return [] }
         PushService.shared.reload()   // the first note from a pairing confirms it
         if let sessionID, sessionID == conversation?.serverSessionID, PushNote.Kind(rawValue: kind) != .paired { return [] }
+        // The group chat on screen shows it already.
+        if let room, room == GroupDirectory.shared.open?.id { return [] }
         if PushNote.Kind(rawValue: kind) == .widget { return [] }   // it is on the widget; nothing to say with Redde in front
         return shown
     }
@@ -251,7 +265,11 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     @discardableResult
     func route(action: String, requestID: String?, questionID: String?,
                approve: String?, deny: String?, userText: String?, conversationID: String? = nil, sessionID: String? = nil,
-               approvalDigest: String? = nil, questionDigest: String? = nil) -> Task<Void, Never>? {
+               approvalDigest: String? = nil, questionDigest: String? = nil, room: String? = nil, task: String? = nil) -> Task<Void, Never>? {
+        // A group chat's, from a paired Hermes: opened, answered or replied to in the room.
+        if let room {
+            return routeGroupNote(action: action, room: room, digest: approvalDigest, task: task, text: userText)
+        }
         if action == Self.followUpAction {
             guard let userText else { return nil }
             if let sessionID { followUp(userText, sessionID: sessionID) } else { followUp(userText, conversationID: conversationID) }
@@ -283,6 +301,65 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
             answerClarify(requestID: requestID, questionID: questionID, answer: answer)
         }
         return nil
+    }
+
+    /// The group chat's own calls, over the Dashboard, for answering from a notification. Tests
+    /// put stand-ins here.
+    var groupCalls = GroupCalls()
+    struct GroupCalls {
+        var state: (_ room: String) async throws -> GroupState = { try await HermesServeClient.shared.groupState($0).state }
+        var approve: (_ room: String, _ approval: GroupApproval, _ choice: String) async throws -> Void = {
+            try await HermesServeClient.shared.answerGroupApproval($0, $1, choice: $2)
+        }
+        var retry: (_ room: String, _ task: String) async throws -> Void = { try await HermesServeClient.shared.retryGroupTask($0, task: $1) }
+        var send: (_ room: String, _ text: String) async throws -> Void = {
+            try await HermesServeClient.shared.sendToGroup($0, text: $1, eventID: UUID().uuidString)
+        }
+    }
+
+    /// A group chat's notification from a paired Hermes: a tap opens the room; Reply says the
+    /// words there; Approve or Deny answers the command a bot waits on, provided it is still the
+    /// one the notification showed (the room is asked what it waits on); Retry runs the turn
+    /// again. One that couldn't be given says so, as for a conversation's.
+    @discardableResult
+    func routeGroupNote(action: String, room: String, digest: String?, task: String?, text: String?) -> Task<Void, Never>? {
+        let calls = groupCalls
+        switch action {
+        case Self.followUpAction:
+            guard let text = text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return nil }
+            return givePushedAnswer("pushed-group-reply", sessionID: "", room: room, kind: .group, notGiven: "Your message wasn't sent",
+                                    reaching: "send your message") {
+                try await calls.send(room, text)
+                return nil
+            }
+        case Self.approveAction, Self.denyAction:
+            guard let digest else { return nil }
+            let approve = action == Self.approveAction
+            return givePushedAnswer("pushed-group-approval", sessionID: "", room: room, kind: .groupWait, notGiven: "The approval wasn't answered",
+                                    reaching: "\(approve ? "approve" : "deny") the command") {
+                guard let waiting = try await calls.state(room).approvals.first(where: { PushNote.digest(of: $0.request.command) == digest }) else {
+                    return "That approval is no longer waiting. It was answered somewhere else, or it timed out."
+                }
+                do {
+                    try await calls.approve(room, waiting, approve ? "once" : "deny")
+                } catch let error as HermesServeClient.RPCError where [5118, 5119].contains(error.code) {
+                    return "That approval is no longer waiting. It was answered somewhere else, or it timed out."
+                }
+                return nil
+            }
+        case PushNote.retryAction:
+            guard let task else { return nil }
+            return givePushedAnswer("pushed-group-retry", sessionID: "", room: room, kind: .groupWait, notGiven: "The reply wasn't retried",
+                                    reaching: "retry the reply") {
+                try await calls.retry(room, task)
+                return nil
+            }
+        case UNNotificationDefaultActionIdentifier:
+            LaunchRouter.shared.requestRoom(room)
+            return nil
+        default:
+            return nil
+        }
     }
 
     /// How an approval is answered when there is no card for it: by the Dashboard, for a session
@@ -323,8 +400,8 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     /// for. `give` returns why it couldn't be given, or nil when it was; `reaching` is what the
     /// app was trying to do, for when Hermes can't be reached at all. The app may have been
     /// started just for this, so it asks for the time to finish.
-    private func givePushedAnswer(_ name: String, sessionID: String, kind: PushNote.Kind, notGiven title: String, reaching: String,
-                                  _ give: @escaping () async throws -> String?) -> Task<Void, Never> {
+    private func givePushedAnswer(_ name: String, sessionID: String, room: String? = nil, kind: PushNote.Kind, notGiven title: String,
+                                  reaching: String, _ give: @escaping () async throws -> String?) -> Task<Void, Never> {
         let background = UIApplication.shared.beginBackgroundTask(withName: name)
         return Task {
             defer { UIApplication.shared.endBackgroundTask(background) }
@@ -340,9 +417,10 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
             content.title = title
             content.body = problem
             content.sound = sound
-            // Opens the conversation when tapped, like the notification it follows.
-            content.userInfo = [PushNote.sessionKey: sessionID, PushNote.kindKey: kind.rawValue]
-            center.add(UNNotificationRequest(identifier: "redde.unanswered.\(sessionID)", content: content, trigger: nil), withCompletionHandler: nil)
+            // Opens the conversation (or the group chat) when tapped, like the notification it follows.
+            content.userInfo = room.map { [PushNote.roomKey: $0, PushNote.kindKey: kind.rawValue] }
+                ?? [PushNote.sessionKey: sessionID, PushNote.kindKey: kind.rawValue]
+            center.add(UNNotificationRequest(identifier: "redde.unanswered.\(room ?? sessionID)", content: content, trigger: nil), withCompletionHandler: nil)
         }
     }
 

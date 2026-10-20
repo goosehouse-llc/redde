@@ -100,4 +100,14 @@ final class LaunchRouter {
         defer { pendingSession = nil }
         return pendingSession
     }
+
+    /// A group chat's notification was tapped: open that room.
+    private(set) var pendingRoom: String?
+
+    func requestRoom(_ id: String) { pendingRoom = id }
+
+    func consumeRoom() -> String? {
+        defer { pendingRoom = nil }
+        return pendingRoom
+    }
 }

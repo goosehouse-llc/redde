@@ -80,7 +80,7 @@ struct PhoneToolsSettingsView: View {
                 } header: {
                     Text("On your Hermes")
                 } footer: {
-                    Text("The tools are offered to your agent by Redde's plugin on your Hermes, the one that also sends notifications, from version \(PushPlugin.version). Redde talks to it through the Hermes Dashboard login. Phone tools work while Redde is open and following the conversation: a request made from somewhere else gets no answer.")
+                    Text("The tools are offered to your agent by Redde's plugin on your Hermes, the one that also sends notifications, from version 1.3.0. Redde talks to it through the Hermes Dashboard login. Phone tools work while Redde is open and following the conversation: a request made from somewhere else gets no answer.")
                 }
 
                 Section {

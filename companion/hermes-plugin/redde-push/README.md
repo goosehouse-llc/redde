@@ -75,10 +75,21 @@ one that came out of a folder of a repository.)
   after all, it takes the notification's place.
 - **A task handed to a subagent came back**: what the agent says about it, or, over the Hermes
   API on 0.21.3 and later, where Hermes starts no turn for it, the task's own summary.
+- **A bot said something in a group chat**: the group chat's name, the bot's, and the message.
+  Reply on the notification answers in the group chat.
+- **A bot waits on you in a group chat**: a command to approve (Approve and Deny on the
+  notification), or a reply that didn't finish and waits for you to retry it (Retry).
 
 All of them only for conversations your phone has taken part in: over the Dashboard the app tells
 the plugin which those are, and over the Hermes API every turn counts. A session at the terminal
-or in Hermes Desktop stays quiet unless you choose `notify all`.
+or in Hermes Desktop stays quiet unless you choose `notify all`. Group chats notify for the ones
+Redde lists (less any you mute there), which it tells the plugin over the Dashboard; Hermes
+Desktop's own group chats aren't on the server, so they don't.
+
+Hermes has no hook for a bot's message in a group chat, so the plugin reads the group chats' own
+log every four seconds, from whichever of Hermes's processes has it loaded (several reading at
+once send each message once). A bot waiting on you is known to the process running the group
+chat: the Dashboard's, which is also where Redde answers it.
 
 Hermes has a hook for a plugin when a reply finishes and when a command needs approval. For the
 rest the plugin reads what Hermes hands every plugin after each answer from the model: a call to
@@ -95,8 +106,9 @@ never sent the key, and it stores nothing that passes.
 ## What it keeps
 
 `$HERMES_HOME/redde-push/`, readable only by you: `devices.json` (each phone's relay id, relay
-secret and key) and `watch.json` (which sessions each phone follows). Delete the folder and
-nothing is paired.
+secret and key), `watch.json` (which sessions each phone follows), `rooms.json` (which group
+chats), and `room-cursors.json` and `room-waits.json` (how far each group chat has been read, and
+what it has been said to wait on). Delete the folder and nothing is paired.
 
 ## Phone tools
 

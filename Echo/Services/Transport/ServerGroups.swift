@@ -597,6 +597,8 @@ final class GroupDirectory {
         supported = support.supported
         writable = support.writable
         self.key = key
+        // Those the plugin can read notify (Hermes Desktop's are kept by the Desktop app).
+        if support.supported { PushService.shared.followRooms(hosted.map(\.id), client: client, server: key) }
     }
 
     func set(rooms: [GroupRoom], supported: Bool, writable: Bool, key: String) {

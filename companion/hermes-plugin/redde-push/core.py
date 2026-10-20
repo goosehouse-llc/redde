@@ -21,6 +21,7 @@ Nothing here imports Hermes, so it can be tested alone. `__init__.py` wires it t
 from __future__ import annotations
 
 import base64
+import contextlib
 import hashlib
 import json
 import logging
@@ -215,6 +216,8 @@ class Store:
             self._write("devices.json", data)
             sessions = {s: [i for i in ids if i != device_id] for s, ids in self._sessions().items()}
             self._write("watch.json", {"sessions": {s: ids for s, ids in sessions.items() if ids}})
+            rooms = {r: [i for i in ids if i != device_id] for r, ids in self._rooms().items()}
+            self._write("rooms.json", {"rooms": {r: ids for r, ids in rooms.items() if ids}})
             return True
 
     def _sessions(self) -> dict[str, list[str]]:
@@ -241,6 +244,71 @@ class Store:
         from the phone's notification."""
         with self._lock:
             return bool(session) and bool(self._sessions().get(session))
+
+    # Group chats (`rooms.py`): which each phone follows, how far each has been read, and what
+    # each has been said to wait on.
+
+    def _rooms(self) -> dict[str, list[str]]:
+        return dict(self._read("rooms.json").get("rooms") or {})
+
+    def follow_rooms(self, device_ids: list[str], rooms: list[str]) -> list[str]:
+        """Has these phones follow these group chats, and no others (the app says which it lists,
+        less any it has muted). Returns the ones that are paired here."""
+        with self._lock:
+            known = {d.get("id") for d in self.devices}
+            mine = [i for i in device_ids if i in known]
+            if not mine:
+                return []
+            following = {r: [i for i in ids if i not in mine] for r, ids in self._rooms().items()}
+            for room in dict.fromkeys(r for r in rooms if r):
+                following[room] = following.get(room, []) + mine
+            self._write("rooms.json", {"rooms": {r: ids for r, ids in following.items() if ids}})
+            return mine
+
+    def rooms_followed(self) -> dict[str, list[str]]:
+        """room id -> the paired phones following it."""
+        with self._lock:
+            known = {d.get("id") for d in self.devices}
+            followed = {r: [i for i in ids if i in known] for r, ids in self._rooms().items()}
+            return {r: ids for r, ids in followed.items() if ids}
+
+    def room_cursors(self) -> dict[str, int]:
+        with self._lock:
+            return {r: int(c) for r, c in (self._read("room-cursors.json").get("rooms") or {}).items()}
+
+    def set_room_cursors(self, cursors: dict[str, int]) -> None:
+        with self._lock:
+            self._write("room-cursors.json", {"rooms": cursors})
+
+    def room_waits(self) -> dict[str, int]:
+        """What a room has been said to wait on, by key, and since when: each is said once."""
+        with self._lock:
+            day_ago = time.time() - 86400
+            return {k: int(t) for k, t in (self._read("room-waits.json").get("waits") or {}).items() if t > day_ago}
+
+    def set_room_waits(self, waits: dict[str, int]) -> None:
+        with self._lock:
+            self._write("room-waits.json", {"waits": waits})
+
+    @contextlib.contextmanager
+    def rooms_lock(self):
+        """Held while the rooms are read: across Hermes's processes (a lock on a file), so two
+        reading at once don't both send what is new (two threads of one process too: each opens
+        the file of its own). Yields False when another holds it now."""
+        self.dir.mkdir(parents=True, exist_ok=True)
+        handle = open(os.open(self.dir / "rooms.lock", os.O_WRONLY | os.O_CREAT, 0o600), "w")
+        try:
+            try:
+                import fcntl
+                fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except ImportError:
+                pass            # no such locks here: one process at a time is all there is
+            except OSError:
+                yield False
+                return
+            yield True
+        finally:
+            handle.close()      # (and the lock with it)
 
     def targets(self, session: str, platform: str) -> list[dict]:
         """The phones a note about this conversation goes to: the ones following it, and every
@@ -283,7 +351,7 @@ PASSWORD = "su" + "do"
 #: Hermes waits for the answer. Anything else: an hour.
 #: How long Apple keeps trying a phone that is off. What is on the widget is good for longer than
 #: a notification about a turn: half a day.
-TTL = {"approval": 600, "question": 600, "secret": 300, PASSWORD: 180, "widget": 43200}
+TTL = {"approval": 600, "question": 600, "secret": 300, PASSWORD: 180, "widget": 43200, "group_wait": 600}
 
 
 def note(kind: str, session: str = "", body: str = "", title: str = "", detail: str = "", answerable: bool = False,
@@ -322,6 +390,29 @@ def note(kind: str, session: str = "", body: str = "", title: str = "", detail: 
     return made
 
 
+def room_note(kind: str, room: str, name: str = "", body: str = "", detail: str = "", waits: str = "",
+              asked: str = "", task: str = "") -> dict:
+    """A note about a group chat (`rooms.py`): `g` the room's id, `t` its name, `d` the bot it is
+    about. By kind:
+
+        group       a bot's message in it: `b` the message
+        group_wait  a bot waits on the person there: `w` what for, "approval" (`b` the command,
+                    `r` why it needs approval, `h` the command's digest, so the phone can answer
+                    it from the notification) or "retry" (`x` the turn's task, to try it again)
+    """
+    made = {"v": 1, "k": kind, "at": int(time.time()), "n": host_name(), "g": clipped(room, 120)}
+    for key, value, limit in (("t", name, 80), ("d", detail, 80), ("w", waits, 20), ("r", asked, 200), ("x", task, 120)):
+        if value:
+            made[key] = clipped(value, limit)
+    if waits == "approval" and body:
+        made["h"] = digest(body)
+    if body:
+        made["b"] = clipped(body, BODY_LIMIT, lines=True)
+    while len(json.dumps(made, ensure_ascii=False).encode()) > NOTE_LIMIT and len(made.get("b", "")) > 20:
+        made["b"] = clipped(made["b"], len(made["b"]) * 2 // 3, lines=True)
+    return made
+
+
 def widget_note(title: str = "", text: str = "", start: str = "", end: str = "") -> dict:
     """What the agent wrote for its widget on the phone, for a phone that isn't following the
     turn: `t` the heading, `b` the lines, `f` and `u` from and until when, as the agent wrote
@@ -347,6 +438,11 @@ def collapse_id(device: dict, made: dict) -> str:
     """Lets a later note about the same thing replace the earlier one on the phone. A hash, so the
     relay learns only that two notes belong together."""
     about = made.get("b", "") if made.get("k") == "approval" else ""
+    # A group chat's: each message its own, each wait its own.
+    if made.get("k") == "group":
+        about = f"{made.get('g', '')}|{made.get('at', '')}|{digest(made.get('b', ''))}"
+    elif made.get("k") == "group_wait":
+        about = f"{made.get('g', '')}|{made.get('w', '')}|{made.get('h') or made.get('x', '')}"
     # How a turn ended is one thing, whichever way it ended: a reply that arrives after all
     # takes the place of "couldn't reply".
     kind = "reply" if made.get("k") in ("failed", "task") else made.get("k")

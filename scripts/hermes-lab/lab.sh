@@ -13,6 +13,7 @@
 #   scripts/hermes-lab/lab.sh files [tag ...]      the file browser: list, upload, download, edit text, make folders, delete
 #   scripts/hermes-lab/lab.sh plugin [tag ...]     the notification plugin installed through the Dashboard (fetches it from GitHub)
 #   scripts/hermes-lab/lab.sh push [tag ...]       the push plugin: pairing, and a note for everything it announces
+#   scripts/hermes-lab/lab.sh grouppush [tag ...]  the push plugin's group chat notes: bots' messages and waits
 #   scripts/hermes-lab/lab.sh push --app [tag ...] the same, then the app pairs both ways and reads a notification
 #   scripts/hermes-lab/lab.sh device [tag ...]     phone tools: the agent calls one, a stand-in phone answers, on both connections
 #   scripts/hermes-lab/lab.sh device --app [tag ...] the same, then the app's own service carries one out
@@ -623,6 +624,21 @@ push() {
   echo "\nAll checks passed."
 }
 
+# Group chat notes from the push plugin (rooms.py): a stand-in phone follows a room the way the app
+# says it does, and each bot's message there, and a bot's command waiting there, reach it once
+# (grouppush_check.py). In a home of the lab's own: Hermes 0.21.0 writes a command per profile in ~/.local/bin.
+grouppush() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  for tag in $tags; do
+    echo "===== Hermes $tag / group chat notes"
+    if ! LAB_OWN_HOME=1 up "$tag" push; then failed+=("$tag (lab)"); continue; fi
+    (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" grouppush_check.py "$LAB_HOME/hermes-$tag/.venv/bin/hermes") || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
 # Phone tools inside each release: the agent calls one, a stand-in phone answers it over the
 # Dashboard, and the answer has to reach the model, over both connections.
 device() {
@@ -684,6 +700,7 @@ case "${1:-}" in
   runs) shift; runs "$@" ;;
   butler) shift; butler "$@" ;;
   groups) shift; groups "$@" ;;
+  grouppush) shift; grouppush "$@" ;;
   apibots) shift; apibots "$@" ;;
   search) shift; search "$@" ;;
   context) shift; context "$@" ;;

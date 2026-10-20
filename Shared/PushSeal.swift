@@ -43,6 +43,12 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
         /// are the title and the text, `f` and `u` from and until when; neither `t` nor `b`
         /// clears it). Sent only to a phone that has the widget's phone tool turned on.
         case widget
+        /// A bot's message in a group chat the phone follows (`g` the room, `t` its name, `d` the
+        /// bot, `b` the message).
+        case group
+        /// A bot waits on the person in a group chat: `w` "approval" (`b` the command, `r` why it
+        /// needs approval, `h` its digest) or "retry" (`x` the turn's task).
+        case groupWait = "group_wait"
     }
 
     var v = 1
@@ -67,6 +73,12 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
     /// said, as the agent wrote them (`DeviceDates`), so a time without a zone is the phone's.
     var f: String?
     var u: String?
+    /// On a group chat's note: the room, what it waits on ("approval", "retry"), why a command
+    /// needs approval, and the task of a turn to try again.
+    var g: String?
+    var w: String?
+    var r: String?
+    var x: String?
 
     /// Nil for a kind a newer plugin sends and this build doesn't know.
     var kind: Kind? { Kind(rawValue: k) }
@@ -286,12 +298,21 @@ nonisolated extension PushNote {
     static let questionCategory = "redde.question.push"
     /// Reply, on a question's notification: typed, or with a choice's words after a dot.
     static let replyAction = "redde.reply"
+    /// A bot's message in a group chat: Reply, to the room. A command a bot waits on there:
+    /// Approve and Deny. A turn there to try again: Retry.
+    static let groupRepliedCategory = "redde.group.replied.push"
+    static let groupApprovalCategory = "redde.group.approval.push"
+    static let groupRetryCategory = "redde.group.retry.push"
+    static let retryAction = "redde.group.retry"
     /// `userInfo` keys on a notification that came this way. `session` is also how the app tells
     /// one from a banner it posted itself. `approval` and `question` are the note's `h`.
     static let sessionKey = "session"
     static let kindKey = "kind"
     static let approvalKey = "approval"
     static let questionKey = "question"
+    /// On a group chat's: the room, and the task of a turn to try again.
+    static let roomKey = "room"
+    static let taskKey = "task"
     /// The sealed note, as the relay hands it to Apple. Gone once the note has been opened.
     static let sealedKey = "e"
 
@@ -347,12 +368,34 @@ nonisolated extension PushNote {
             content.threadIdentifier = "redde.widget"
             content.sound = nil
             content.interruptionLevel = .passive
+        case .group:
+            // As a group chat's message in Messages: the chat, then who, then what.
+            content.title = t.flatMap { $0.isEmpty ? nil : $0 } ?? "Group chat"
+            if let d, !d.isEmpty { content.subtitle = d }
+            content.body = String(PlainText.display(b ?? "").prefix(300))
+            content.threadIdentifier = "redde.group.\(g ?? "")"
+            if let g, !g.isEmpty { content.categoryIdentifier = Self.groupRepliedCategory }
+        case .groupWait:
+            let who = d.flatMap { $0.isEmpty ? nil : $0 } ?? "A bot"
+            if let t, !t.isEmpty { content.subtitle = t }
+            content.threadIdentifier = "redde.group.\(g ?? "")"
+            if w == "retry" {
+                content.title = "A reply didn't finish"
+                content.body = "Hermes isn't sure how far it got. Retry runs it again."
+                if let g, !g.isEmpty, let x, !x.isEmpty { content.categoryIdentifier = Self.groupRetryCategory }
+            } else {
+                content.title = "\(who) needs your approval"
+                content.body = [r, b].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n")
+                if let g, !g.isEmpty, let h, !h.isEmpty { content.categoryIdentifier = Self.groupApprovalCategory }
+            }
         }
         if content.body.isEmpty { content.body = "Open Redde to see it." }
         var info: [AnyHashable: Any] = [Self.kindKey: k]
         if let s, !s.isEmpty { info[Self.sessionKey] = s }
-        if kind == .approval, let h, !h.isEmpty { info[Self.approvalKey] = h }
+        if kind == .approval || kind == .groupWait, let h, !h.isEmpty { info[Self.approvalKey] = h }
         if kind == .question, let h, !h.isEmpty { info[Self.questionKey] = h }
+        if let g, !g.isEmpty { info[Self.roomKey] = g }
+        if let x, !x.isEmpty { info[Self.taskKey] = x }
         content.userInfo = info
         return true
     }

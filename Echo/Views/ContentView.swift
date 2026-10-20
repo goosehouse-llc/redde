@@ -189,6 +189,7 @@ struct ContentView: View {
         .onChange(of: router.pendingSetupCode) { handleSetupCode() }
         .onChange(of: router.pendingPushOffer) { handlePushRequests() }
         .onChange(of: router.pendingSession) { handlePushRequests() }
+        .onChange(of: router.pendingRoom) { handlePushRequests() }
         .onChange(of: lock.isLocked) { _, locked in
             // A Siri / control / share request that arrived while locked runs once unlocked.
             if !locked { consumeControlRequest(); handleLaunchRequest(); handleCaptureRequest(); consumeSharedItems(); handleDraftRequest(); handleSetupCode(); handlePushRequests() }
@@ -693,6 +694,16 @@ struct ContentView: View {
             // A conversation on another server than the one the app is on can't be fetched: the
             // app then stays where it was.
             Task { try? await conversation.open(serverSession: session) }
+        }
+        if let room = router.consumeRoom() {
+            if sizeClass != .regular, showConversations { setDrawer(open: false) }
+            // In the chat's place, as from the list; read again first when the app was started
+            // for it. A room on another server than the one the app is on isn't there: it stays.
+            Task {
+                let groups = GroupDirectory.shared
+                if !groups.rooms.contains(where: { $0.id == room }) { await groups.refresh() }
+                if let found = groups.rooms.first(where: { $0.id == room }) { groups.open = found }
+            }
         }
     }
 

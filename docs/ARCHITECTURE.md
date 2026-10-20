@@ -467,6 +467,21 @@ where a new conversation is in the ••• menu, and ⌘N as anywhere) is the 
   the reading, the listening and the bots' round if one is going (as the chat's Stop), and holds
   the mic shut until the orb is tapped: without the hold, the quiet session read as the round's
   end and the mic opened again, so Stop never stopped. Once stopped it is the ✕ that leaves.
+- **Notifications** (asked 2026-10-20, plugin 1.4.0; `docs/push.md`, "Group chats"). A paired
+  phone hears of each bot's message in a group chat it follows, and of a bot waiting on the
+  person there, also with Redde closed: the plugin reads the rooms' own log (no Hermes has a hook
+  for it) and the Dashboard's room service, and sends `group` and `group_wait` notes (`PushNote`:
+  `g` the room, `t` its name, `d` the bot). The app follows the hosted rooms it lists
+  (`GroupDirectory.refresh` → `PushService.followRooms`, a `rooms` command over the Dashboard,
+  each launch and whenever the list changes); Hermes Desktop's rooms aren't on the server. On the
+  phone they read as a group chat's do in Messages (the room, then the bot, then the words,
+  stacked per room); a tap opens the room in the chat's place (`LaunchRouter.requestRoom`);
+  Reply says the words in the room, Approve or Deny answers the command whose digest the note
+  carries, found in the room's state (`Notifier.routeGroupNote`; one no longer waiting says so),
+  and Retry runs a turn again. One about the room on screen isn't shown over it. Group chats are
+  the Dashboard's, so this needs its login on either connection; an older plugin answers `rooms`
+  with its usage line, and Settings offers to update it (`PushPlugin.version`). `lab.sh grouppush` passes on 0.21.0, 0.21.3,
+  0.21.5 and 0.22.2.
 - **Order.** Bots and group chats are one run in the Bots section. Reorder Bots, in any of their
   menus, shows only them, with handles (edit mode; outside it a long press is the row's menu,
   which a drag can't get past), and the order is kept per server in `Settings.botOrder`

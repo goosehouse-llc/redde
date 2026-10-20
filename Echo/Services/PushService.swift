@@ -155,6 +155,8 @@ final class PushService {
     /// plugin (or none paired with this phone): neither is asked again until the next launch.
     @ObservationIgnored private var followed: Set<String> = []
     @ObservationIgnored private var deaf: Set<String> = []
+    /// The group chats last said to be followed, per server (`followRooms`).
+    @ObservationIgnored private var roomsSaid: [String: String] = [:]
 
     private static let uploadedKey = "push.uploaded"
     private static let relayKey = "push.relay"
@@ -387,6 +389,36 @@ final class PushService {
         let ids = pairings.filter(\.isPaired).map(\.id)
         guard !ids.isEmpty, !session.isEmpty, !deaf.contains(server), followed.insert("\(server)|\(session)").inserted else { return nil }
         return "watch \(session) \(ids.joined(separator: ","))"
+    }
+
+    /// The plugin command that has this phone follow these group chats on a server, and no
+    /// others, or nil when there is nothing to say: no pairing the plugin has, the same said
+    /// already since launch, or a server known not to listen.
+    func followRoomsCommand(_ rooms: [String], server: String) -> String? {
+        let ids = pairings.filter(\.isPaired).map(\.id)
+        guard !ids.isEmpty, !deaf.contains(server) else { return nil }
+        let command = "rooms \(ids.joined(separator: ",")) \(rooms.sorted().joined(separator: ","))".trimmingCharacters(in: .whitespaces)
+        guard roomsSaid[server] != command else { return nil }
+        roomsSaid[server] = command
+        return command
+    }
+
+    /// The group chats this phone lists on a Hermes (`GroupDirectory`): the plugin reads them and
+    /// notifies of a bot's message in one, or a bot waiting on the person there (`rooms.py`).
+    /// Said over the Dashboard each launch, and whenever the list changes.
+    func followRooms(_ rooms: [String], client: HermesServeClient, server: String) {
+        guard let command = followRoomsCommand(rooms, server: server) else { return }
+        Task { [weak self] in
+            do {
+                // An older plugin answers with its usage line: it reads no group chats, and
+                // Settings › Voice › Notify when Redde is closed offers to bring it up to date.
+                _ = try await Self.command(over: client)(command)
+            } catch PushError.noPlugin {
+                self?.deaf.insert(server)
+            } catch {
+                self?.roomsSaid[server] = nil   // couldn't be said: say it next time
+            }
+        }
     }
 
     /// A Dashboard turn is starting in `stored`: tell the plugin this phone takes part in that

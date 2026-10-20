@@ -89,12 +89,34 @@ before this answers "offer" with its usage line, which the app reads as "update 
   (`command.dispatch redde-push "watch <session> <device ids>"`), once per conversation per
   launch. A turn typed at the terminal or in Hermes Desktop stays quiet.
 - `hermes redde-push notify all` makes every conversation on that Hermes notify.
+- **Group chats** (Hermes's hosted rooms) notify the phones following them: the app sends the
+  list it shows, less the muted ones, whenever it reads it (`command.dispatch redde-push "rooms
+  <device ids> <room ids>"`, `PushService.followRooms`), and the plugin follows exactly those.
+  Hermes Desktop's rooms are kept by the Desktop app, not the server, and don't.
 
 Approvals notify when a person is asked (`pre_approval_request` with a surface other than
 `smart`). Over the Hermes API a stock Hermes doesn't hold a command for a person at all; the agent
 is told it needs approval and says so in its reply.
 
 ## What notifies, and how the plugin knows
+
+**Group chats** (`rooms.py`, 2026-10-20). No release has a hook for a bot's message in a room:
+0.21.3's `on_room_member_activity` streams a turn's frames (deltas, tools, the approval's
+`request.opened`), not the message the room keeps, and every hook in a bot's turn fires in the
+plugin manager of the bot's own profile, which may not have the plugin. So a thread of the
+plugin's reads each followed room's log every four seconds (`gateway.hosted_rooms.read_events` on
+`default_db_path()`: `state.db` on 0.21.0, `shared-state.db` from 0.21.3), in whichever process
+has the main profile's plugin loaded: the Dashboard's once the app has sent `rooms`, the
+gateway's once it has run a turn; a load with rooms followed starts it. How far each room has
+been read is on disk under an `flock`, taken without waiting, so processes reading at once send
+each `message.member` once; a room first seen starts at its latest event. A pass is never in the
+log. What a bot waits on (an approval, a turn to retry) is in the memory of the process running
+the room, `tui_gateway.methods_groups._service.status(room)["pending_actions"]`, read only where
+it is already loaded; that is the Dashboard's, which is where `groups.state` and so the app's
+cards come from, so what is announced is what the app can answer. Each is announced once
+(`room-waits.json`) until it is gone. The bots' own turns in a room run on platform `bot_room`:
+the reply, approval and failure hooks leave those to the room. `lab.sh grouppush` checks all of it
+on 0.21.0, 0.21.3, 0.21.5 and 0.22.2.
 
 Hermes has a plugin hook for two of these, a finished reply and an approval. The rest are read
 from what it does tell a plugin. All of it was measured on unmodified Hermes 0.21.0, 0.21.3 and
@@ -250,8 +272,12 @@ opens only for the pairing it was sealed to. Inside:
 {"v": 1, "k": "reply", "s": "<session id>", "t": "<title>", "b": "<text>", "d": "<detail>", "n": "<machine>", "at": 1791330000}
 ```
 
-`k` is `reply`, `task`, `approval`, `question`, `sudo`, `secret`, `failed`, `paired`, `test` or
-`widget`; what `b` and `d` hold for each is listed at `core.note`. A kind the app doesn't know
+`k` is `reply`, `task`, `approval`, `question`, `sudo`, `secret`, `failed`, `paired`, `test`,
+`widget`, `group` or `group_wait`; what `b` and `d` hold for each is listed at `core.note` and
+`core.room_note`. The group chat's two (plugin 1.4.0) have no `s`: `g` is the room, `t` its name,
+`d` the bot; `group` has the message in `b`; `group_wait` has `w`, "approval" (`b` the command,
+`r` why, `h` its digest, which the app answers by, finding that command in `groups.state`) or
+"retry" (`x` the task for `groups.retry`). Each has a collapse id of its own. A kind the app doesn't know
 leaves the relay's words in place. `widget` (plugin 1.3.0, `core.widget_note`) is not about a
 turn: it is what the agent wrote for its widget on the phone while no phone was following the
 conversation, with `t` the heading, `b` the lines, and `f` and `u` from and until when, as the
