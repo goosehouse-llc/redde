@@ -208,6 +208,19 @@ struct VoiceSessionTests {
         #expect(h.recognizer.starts == 1, "the group chat opens the mic, once the round is over")
     }
 
+    /// A lone letter heard is noise ("Q" from a car's hum, which a bot made a whole turn of): it
+    /// isn't sent, and the session goes quiet as for nothing heard. A digit, or a word, is sent.
+    @Test func aLoneLetterHeardIsNotSent() async throws {
+        #expect(VoiceSession.isLoneLetter("Q") && VoiceSession.isLoneLetter(" q. ") && VoiceSession.isLoneLetter("É"))
+        #expect(!VoiceSession.isLoneLetter("5") && !VoiceSession.isLoneLetter("OK") && !VoiceSession.isLoneLetter("") && !VoiceSession.isLoneLetter("I'm"))
+        let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport(reply(["Hello."])))
+        h.session.beginListening()
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        h.recognizer.deliver("Q")
+        try await waitUntil("quiet") { h.session.phase == .idle }
+        #expect(h.conversation.messages.isEmpty, "nothing went to the agent")
+    }
+
     /// A reply read as it is written (a group chat's bot): spoken from its first words, quiet only
     /// once it has ended and been heard; once cut short, nothing more of it goes to the voice.
     @Test func wordsStillBeingWrittenAreReadAsTheyCome() async throws {
@@ -679,7 +692,7 @@ struct VoiceSessionTests {
         let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport([.textDelta("stream")], hang: true))
         h.session.beginListening()
         try await waitUntil("listening") { h.recognizer.starts == 1 }
-        h.recognizer.deliver("q")
+        h.recognizer.deliver("what time is it")
         try await waitUntil("speaking") { h.session.phase == .speaking }
         h.audio.onOutputDeviceLost?()
         #expect(h.session.phase == .idle)
@@ -694,7 +707,7 @@ struct VoiceSessionTests {
         h.session.continuous = true
         h.session.beginListening()
         try await waitUntil("listening") { h.recognizer.starts == 1 }
-        h.recognizer.deliver("q")
+        h.recognizer.deliver("what time is it")
         try await waitUntil("speaking") { h.session.phase == .speaking }
         h.audio.onOutputDeviceLost?()
         let heard = h.speaker.spoken.count
@@ -855,7 +868,7 @@ struct VoiceSessionTests {
         let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport(reply(["The answer."])))
         h.session.beginListening()
         try await waitUntil("listening") { h.recognizer.starts == 1 }
-        h.recognizer.deliver("q")
+        h.recognizer.deliver("what time is it")
         try await waitUntil("done") { h.speaker.ends >= 1 }
         h.speaker.finishSpeaking()
         try await waitUntil("idle") { h.session.phase == .idle }

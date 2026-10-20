@@ -574,13 +574,22 @@ final class VoiceSession {
         }
     }
 
+    /// What was heard is one letter and nothing else ("Q", "a.", " K "): a digit is a number someone said.
+    nonisolated static func isLoneLetter(_ text: String) -> Bool {
+        let kept = text.unicodeScalars.filter { !CharacterSet.whitespacesAndNewlines.contains($0) && !CharacterSet.punctuationCharacters.contains($0) }
+        return kept.count == 1 && kept.allSatisfy { CharacterSet.letters.contains($0) }
+    }
+
     private func handleUtterance(_ text: String) async {
         guard phase == .listening else { return }
         if let asking { heardAnswer(text, to: asking); return }
         metrics.speechEndedAt = .now
         liveTranscript = text
-        guard !text.isEmpty else {
-            log.info("empty utterance")
+        // A lone letter is noise the recogniser made words of (a car's hum came out as "Q", which a
+        // bot took for a whole question and made up a turn around): not sent, as nothing heard is.
+        // An answer to a question being asked was taken above, a letter for a choice included.
+        guard !text.isEmpty, !Self.isLoneLetter(text) else {
+            log.info("empty utterance\(text.isEmpty ? "" : " (a lone letter, dropped)")")
             isCapturing = false
             phase = .idle
             releaseAudioAfterCue()
