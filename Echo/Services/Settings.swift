@@ -559,8 +559,9 @@ final class Settings: ServeEndpoint {
         apiBots = defaults.data(forKey: Keys.apiBots)
             .flatMap { try? JSONDecoder().decode([String: [APIBot]].self, from: $0) } ?? [:]
         appearance = Appearance(rawValue: defaults.string(forKey: Keys.appearance) ?? "") ?? .system
-        // A still orb picked in an earlier version falls back to the default; they are gone.
-        voiceOrb = VoiceOrb(rawValue: defaults.string(forKey: Keys.voiceOrb) ?? "") ?? .waveform
+        // Redde's own face unless another was picked; a still orb picked in an earlier version
+        // falls back to it too (they are gone).
+        voiceOrb = VoiceOrb(rawValue: defaults.string(forKey: Keys.voiceOrb) ?? "") ?? .reddeFace
         orbLight = OrbLight(rawValue: defaults.string(forKey: Keys.orbLight) ?? "") ?? .nebula
         carPlayCards = CarPlayCardLook(rawValue: defaults.string(forKey: Keys.carPlayCards) ?? "") ?? .color
         carPlayVoice = CarPlayVoiceLook(rawValue: defaults.string(forKey: Keys.carPlayVoice) ?? "") ?? .bars
@@ -666,7 +667,7 @@ final class Settings: ServeEndpoint {
         case Keys.appearance: appearance = pick(Appearance.system)
         case Keys.chatTextSize: chatTextSize = min(max(value as? Int ?? 0, Self.chatTextSizes.lowerBound), Self.chatTextSizes.upperBound)
         case Keys.returnSends: returnSends = flag()
-        case Keys.voiceOrb: voiceOrb = pick(VoiceOrb.waveform)
+        case Keys.voiceOrb: voiceOrb = pick(VoiceOrb.reddeFace)
         case Keys.orbLight: orbLight = pick(OrbLight.nebula)
         case Keys.carPlayCards: carPlayCards = pick(CarPlayCardLook.color)
         case Keys.carPlayVoice: carPlayVoice = pick(CarPlayVoiceLook.bars)
@@ -912,7 +913,7 @@ final class Settings: ServeEndpoint {
         theme = .standard
         themeColors = [:]
         appearance = .system
-        voiceOrb = .waveform
+        voiceOrb = .reddeFace
         orbLight = .nebula
         carPlayCards = .color
         carPlayVoice = .bars

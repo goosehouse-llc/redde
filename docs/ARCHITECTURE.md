@@ -1069,8 +1069,8 @@ phase (`BotPose`), no breathing, and still under Reduce Motion.
   arc chasing round it while thinking (`ThinkingArc`), and ripples widening out while listening
   and speaking, one faint one every few seconds at rest (`Halos`).
 
-Every orb has live bars; the still ones were removed, and a saved still choice falls back to
-Softer Glass. **Dark Glass** is the one orb drawn in code rather than from a picture (`GlassOrb`,
+Redde's own face is the default, and first in the picker. Every orb has live bars; the still
+ones were removed, and a saved still choice falls back to the default. **Dark Glass** is the one orb drawn in code rather than from a picture (`GlassOrb`,
 with `GlassNebula`, `GlassAurora` and `GlassCore`): a 190 pt dark face whose shade goes with the
 light, a faint rim at the edge, and the light at full strength, blended normally and unmasked,
 built to the three examples on the design canvas point for pixel. The canvas drew it listening,
