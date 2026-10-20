@@ -307,6 +307,25 @@ struct BotsTests {
         #expect(stopping.stopping && stopping.blocked && !stopping.waitsOnPerson, "a stop under way is not a question for the person")
     }
 
+    /// A bot's reply in a room as it is written, from its session's events: started over at each
+    /// start and beside a tool call, grown by each piece, whole at the end.
+    @Test func aReplyInARoomIsReadAsItIsWritten() throws {
+        func event(_ type: String, _ text: String? = nil) -> JSONValue {
+            .object(["type": .string(type), "payload": .object(text.map { ["text": .string($0)] } ?? [:])])
+        }
+        var draft = GroupDraft(id: "live-1", after: 4)
+        // The session's earlier turn is still among its last events: only this one's words count.
+        let started = draft.read([event("message.start"), event("message.delta", "Old reply."), event("message.complete", "Old reply."),
+                                  event("message.start"), event("message.delta", "Let me "), event("message.interim", "Let me look."),
+                                  event("message.delta", "Falls Loop "), event("message.delta", "is open")])
+        #expect(started)
+        #expect(draft.text == "Falls Loop is open" && draft.finishedAt == nil, "what came beside the tool call is left out")
+        let startedAgain = draft.read([event("message.delta", "."), event("message.complete", "Falls Loop is open.")])
+        #expect(!startedAgain)
+        #expect(draft.text == "Falls Loop is open." && draft.finishedAt != nil)
+        #expect(GroupDraft.sessionTitle("redde-room-1") == "Group: redde-room-1")
+    }
+
     /// Hermes Desktop's copy of its rooms, version 3, as group-chat.ts writes it into the main
     /// profile's ui_meta: rooms by "id:" key, a tombstone under `deleted`, the last messages.
     @Test func hermesDesktopsRoomsAreReadFromItsCopy() throws {

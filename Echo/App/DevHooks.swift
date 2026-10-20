@@ -19,7 +19,9 @@ import WidgetKit
 ///   transcript lays out (`TranscriptPage`); 0 lifts the limit.
 /// - `-echo.demoProjects`: fill the conversation list's Projects from a fixture (Dashboard connection).
 ///   Add `-echo.demoMarks` for rows marked working, needing you and unread (`ChatActivity`), and
-///   `-echo.demoBots` for the Bots section, with a bot's chat open (Quill's).
+///   `-echo.demoBots` for the Bots section, with a bot's chat open (Quill's); with
+///   `-echo.openGroup` its group chat is open, and `-echo.demoDraft` plays a bot's reply there as
+///   it is written.
 /// - `-echo.demoHosts`: replace any real endpoints with example hosts.
 /// - `-echo.demoKanban`: a sample Kanban board instead of the server's.
 /// - `-echo.demoGateway`: Settings → Gateway on sample data, with no server (and the row unlocked).

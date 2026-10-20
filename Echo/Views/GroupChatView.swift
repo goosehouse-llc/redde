@@ -66,7 +66,9 @@ struct GroupChatView: View {
                         if feed.events.isEmpty, feed.sending.isEmpty { opening }
                         ForEach(page.shown) { row($0).id($0.id) }
                         ForEach(feed.sending, id: \.id) { mine($0.text, id: $0.id, waiting: true) }
-                        if feed.discussing || feed.state.working || feed.state.waitsOnPerson { talking }
+                        // Replies being written, under their bots, until the room has them.
+                        ForEach(feed.drafts.filter { !$0.text.isEmpty }) { writing($0) }
+                        if feed.state.waitsOnPerson || (feed.discussing || feed.state.working) && !someoneIsWriting { talking }
                         ForEach(feed.state.approvals.filter { !feed.answering.contains($0.id) }) { approval in
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("\(feed.room.member(approval.memberID)?.label ?? "A bot") wants to run a command")
@@ -96,6 +98,8 @@ struct GroupChatView: View {
                     if atEnd { withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo("bottom", anchor: .bottom) } }
                 }
                 .onChange(of: feed.sending.count) { proxy.scrollTo("bottom", anchor: .bottom) }
+                // A reply starting to be written, from the end: its row in view (it grows in place).
+                .onChange(of: feed.drafts.count) { if atEnd { proxy.scrollTo("bottom", anchor: .bottom) } }
                 .onChange(of: feed.state.approvals.count + feed.state.retries.count) { withAnimation { proxy.scrollTo("bottom", anchor: .bottom) } }
                 .onAppear { settleShown() }
             }
@@ -229,6 +233,19 @@ struct GroupChatView: View {
         } else if let note = event.note(in: feed.room) {
             Text(note).font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity)
         }
+    }
+
+    /// A bot writes a reply now: the room's "talking" line gives way to it.
+    private var someoneIsWriting: Bool { feed.drafts.contains { !$0.text.isEmpty && $0.finishedAt == nil } }
+
+    /// A reply being written, drawn as the conversation draws its live reply, under its bot.
+    private func writing(_ draft: GroupDraft) -> some View {
+        let member = feed.room.member(draft.memberID)
+        return MessageRow(message: Message(id: Self.rowID("draft-" + draft.id), role: .assistant, text: draft.text, createdAt: draft.began),
+                          isLive: draft.finishedAt == nil, showActions: false)
+            .equatable()
+            .environment(\.replySpeaker, member?.label ?? "A bot")
+            .environment(\.replyFace, face(member))
     }
 
     /// The person's message, as the conversation draws one (the theme's bubble, its text colour).

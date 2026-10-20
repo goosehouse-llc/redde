@@ -223,6 +223,54 @@ nonisolated struct GroupState: Equatable, Sendable {
     var waitsOnPerson: Bool { !approvals.isEmpty || !retries.isEmpty }
 }
 
+/// A bot's reply in a room as it is being written. Hermes writes a reply to the room only once it
+/// is finished; meanwhile it is in the bot's own session for the room, a hidden one on the bot's
+/// profile titled "Group: <room>", whose last events Hermes keeps for a client that reconnects
+/// (`session.events.since`, every release). That is where it is read. The session is never resumed
+/// or activated: either would tie it to this phone, and Hermes puts away a session whose phone has
+/// gone, mid-reply. It is in the Dashboard's list of live sessions only while the Dashboard's
+/// process runs the room (Hermes's gateway can run it instead); then replies show when finished.
+nonisolated struct GroupDraft: Identifiable, Equatable, Sendable {
+    /// The live session's id.
+    var id: String
+    /// The bot writing it, once its session is found on its profile.
+    var memberID: String?
+    var text = ""
+    /// When the bot's session finished the reply: it shows until the room has it.
+    var finishedAt: Date?
+    /// The room log's last event when it began: the bot's message after that takes its place.
+    var after: Int
+    var began = Date.now
+
+    /// The title Hermes gives a bot's session for a room.
+    static func sessionTitle(_ room: String) -> String { "Group: " + room }
+
+    /// `events` (from `session.events.since`, oldest first) read onto the draft: a reply starts over
+    /// at each `message.start`, and at each `message.interim` (what a bot wrote beside a tool call,
+    /// which the reply in the room leaves out), grows by each `message.delta`, and is whole at
+    /// `message.complete`. True when a reply's start was among them.
+    @discardableResult
+    mutating func read(_ events: [JSONValue]) -> Bool {
+        var started = false
+        for event in events {
+            switch event["type"]?.string {
+            case "message.start":
+                (text, finishedAt, started) = ("", nil, true)
+            case "message.interim":
+                text = ""
+            case "message.delta":
+                text += event["payload"]?["text"]?.string ?? ""
+            case "message.complete":
+                if let whole = event["payload"]?["text"]?.string, !whole.isEmpty { text = whole }
+                finishedAt = .now
+            default:
+                break
+            }
+        }
+        return started
+    }
+}
+
 /// A command a bot in a room waits to have approved.
 nonisolated struct GroupApproval: Identifiable, Equatable, Sendable {
     var memberID: String
@@ -315,6 +363,37 @@ extension HermesServeClient {
         let result = try await call("profiles.list", params: .object(["include_sessions": .bool(false)]))
         let main = result["profiles"]?.array?.first { $0["name"]?.string == "default" || $0["is_default"]?.bool == true }
         return GroupRoom.desktopRooms(in: main?["ui_meta"]?["hermes-bots-groups"])
+    }
+
+    /// The live sessions a room's bots are run in (`GroupDraft`), with their state ("working",
+    /// "starting", "waiting", "idle"): from `session.active_list`, which lists every live session in
+    /// the Dashboard's process, hidden ones too.
+    func groupLiveSessions(_ room: String) async throws -> [(id: String, key: String, status: String)] {
+        try await ensureConnected()
+        let result = try await call("session.active_list", params: .object([:]), timeout: 15)
+        let title = GroupDraft.sessionTitle(room)
+        return (result["sessions"]?.array ?? []).compactMap { row in
+            guard row["title"]?.string == title, let id = row["id"]?.string else { return nil }
+            return (id, row["session_key"]?.string ?? "", row["status"]?.string ?? "")
+        }
+    }
+
+    /// A bot's session for a room, by its title on the bot's profile: its stored id (the latest
+    /// part, once Hermes has compressed it), which its live session goes by.
+    func groupMemberSession(_ room: String, profile: String) async throws -> String? {
+        let title = GroupDraft.sessionTitle(room)
+        let result = try await call("session.list", params: .object([
+            "profile": .string(profile), "title": .string(title), "include_hidden": .bool(true), "limit": .number(20)]))
+        guard let row = (result["sessions"]?.array ?? []).first(where: { $0["title"]?.string == title }) else { return nil }
+        return row["resolved_id"]?.string?.nilIfEmpty ?? row["id"]?.string
+    }
+
+    /// What a live session has sent after event `since`, as Hermes keeps it for a client that
+    /// reconnects: `truncated` when some in between are gone (it keeps the last 512).
+    func sessionEvents(_ session: String, since: Int) async throws -> (events: [JSONValue], latest: Int, truncated: Bool) {
+        let result = try await call("session.events.since", params: .object([
+            "session_id": .string(session), "last_seen": .number(Double(since))]))
+        return (result["events"]?.array ?? [], result["latest_seq"]?.int ?? since, result["truncated"]?.bool ?? false)
     }
 
     /// The room's log after `since` (a sequence number), all of it.
@@ -459,6 +538,31 @@ extension GroupFeed {
         }
         return feed
     }
+
+    /// `-echo.demoDraft`: Scout's reply written into the demo room a few words at a time, then
+    /// finished (the room's live reply, for screenshots and recording).
+    func playDemoDraft() async {
+        events.append(GroupEvent(seq: 8, kind: "message.user", actorKind: "user", actorID: nil,
+                                 payload: .object(["text": .string("@scout is Falls Loop open this weekend?")]), createdAt: .now))
+        cursor = 8
+        try? await Task.sleep(for: .seconds(1))
+        state = GroupState(working: true)
+        var draft = GroupDraft(id: "demo-draft", memberID: "scout", after: cursor)
+        let words = "Yes. The ranger update from this morning says Falls Loop is open; it's muddy past the second footbridge, so wear boots. Parking fills by 9 on Saturdays.".split(separator: " ")
+        for word in words {
+            try? await Task.sleep(for: .milliseconds(220))
+            draft.text += (draft.text.isEmpty ? "" : " ") + word
+            drafts = [draft]
+        }
+        try? await Task.sleep(for: .seconds(1))
+        events.append(GroupEvent(seq: 9, kind: "message.member", actorKind: "member", actorID: "scout",
+                                 payload: .object(["text": .string(draft.text)]), createdAt: .now))
+        // The round's end, as Hermes writes it.
+        events.append(GroupEvent(seq: 10, kind: "room.activity", actorKind: "system", actorID: nil,
+                                 payload: .object(["status": .string("settled")]), createdAt: .now))
+        drafts = []
+        state = GroupState()
+    }
 }
 #endif
 
@@ -514,6 +618,13 @@ final class GroupFeed {
     /// Approvals and retries answered here and not yet gone from the state: their cards hide.
     private(set) var answering: Set<String> = []
     private(set) var problem: String?
+    /// Replies being written now (`GroupDraft`), each until the room has it.
+    private(set) var drafts: [GroupDraft] = []
+    /// Each live session's last event read.
+    private var draftSeen: [String: Int] = [:]
+    /// The bots' sessions for this room, by stored id: whose a live one is.
+    private var memberSessions: [String: String] = [:]
+    private var lookedForMembers: Date?
     private var cursor = 0
     private let client: HermesServeClient
     /// Sample data that isn't followed (screenshots).
@@ -534,10 +645,61 @@ final class GroupFeed {
 
     /// Follows the room until the task is cancelled (the screen goes).
     func follow() async {
-        guard !isDemo else { return }
+        guard !isDemo else {
+            #if DEBUG
+            if DevHooks.has("-echo.demoDraft") { await playDemoDraft() }
+            #endif
+            return
+        }
+        // While bots talk: the replies being written twice a second, the room once a second.
+        var tick = 0
         while !Task.isCancelled {
-            await look()
-            try? await Task.sleep(for: .seconds(discussing || state.working ? 1 : 5))
+            let busy = discussing || state.working
+            if !busy || tick.isMultiple(of: 2) { await look() }
+            await lookAtDrafts()
+            tick += 1
+            try? await Task.sleep(for: busy ? .milliseconds(500) : .seconds(5))
+        }
+    }
+
+    /// The bots' replies as they are written (`GroupDraft`), while the room is at work.
+    func lookAtDrafts() async {
+        guard !room.inDesktop else { return }
+        let busy = discussing || state.working
+        // A reply goes once the room has it; a finished one the room never wrote (a bot that
+        // passed), after a while; one still being written, when the room stops.
+        let kept = drafts.filter { draft in
+            if events.contains(where: { $0.kind == "message.member" && $0.seq > draft.after && (draft.memberID == nil || $0.actorID == draft.memberID) }) { return false }
+            if let done = draft.finishedAt { return Date.now.timeIntervalSince(done) < 20 }
+            return busy
+        }
+        if kept != drafts { drafts = kept }
+        guard busy, let live = try? await client.groupLiveSessions(room.id) else { return }
+        var next = drafts
+        for session in live {
+            let index = next.firstIndex { $0.id == session.id }
+            // A session at work, or one whose reply is still being followed.
+            guard ["working", "starting"].contains(session.status) || index.map({ next[$0].finishedAt == nil }) == true else { continue }
+            if memberSessions[session.key] == nil { await findMemberSessions() }
+            let first = draftSeen[session.id] == nil
+            guard let read = try? await client.sessionEvents(session.id, since: draftSeen[session.id] ?? 0) else { continue }
+            draftSeen[session.id] = read.latest
+            var draft = index.map { next[$0] } ?? GroupDraft(id: session.id, after: cursor)
+            draft.memberID = memberSessions[session.key]
+            // Read first after its start was let go (Hermes keeps the last 512 events): the rest of it.
+            if !draft.read(read.events), first, read.truncated, !draft.text.isEmpty { draft.text = "…" + draft.text }
+            if let index { next[index] = draft } else if draft.finishedAt == nil || !draft.text.isEmpty { next.append(draft) }
+        }
+        if next != drafts { drafts = next }
+    }
+
+    /// Which bot each of the room's live sessions is: each bot's session for the room, by its title
+    /// on the bot's profile. Not more than once every few seconds.
+    private func findMemberSessions() async {
+        if let last = lookedForMembers, Date.now.timeIntervalSince(last) < 5 { return }
+        lookedForMembers = .now
+        for member in room.members {
+            if let key = try? await client.groupMemberSession(room.id, profile: member.profile) { memberSessions[key] = member.id }
         }
     }
 

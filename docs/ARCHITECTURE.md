@@ -416,6 +416,21 @@ where a new conversation is in the ••• menu, and ⌘N as anywhere) is the 
   the end. The feed writes members, state and problem only when they changed: each write
   redraws the room, every second while bots talk. Lazy rows and a blanket bottom anchor made it
   jump about when scrolled, as the transcript's once did.
+- **Replies as they are written.** Hermes writes a bot's reply to the room's log only once it is
+  finished (`message.member`, the whole text at settle), and pushes nothing about rooms. It runs
+  each bot of a room in a hidden session on the bot's profile titled `Group: <room>`, and keeps
+  every session's last 512 events for a client that reconnects. While the room is at work, the
+  feed reads them twice a second (`GroupFeed.lookAtDrafts`): `session.active_list` gives the
+  room's sessions at work, `session.events.since` their events after the last one read
+  (`GroupDraft.read`: a reply starts over at `message.start` and at `message.interim`, grows by
+  `message.delta`, is whole at `message.complete`), and `session.list` on each bot's profile, by
+  that title, says whose each session is. The reply shows as the conversation's live one does,
+  under its bot, until the room has the bot's message. The sessions are never resumed or
+  activated: either ties a session to the phone, and Hermes puts away a session whose phone has
+  gone, mid-turn. They are in the Dashboard's list only while its process runs the room (each
+  room is leased to one process, and Hermes's gateway runs rooms too); otherwise replies show
+  when finished, as before. `lab.sh groups` checks it on each release with a reply the stub
+  streams a word a second.
 - **Order.** Bots and group chats are one run in the Bots section. Reorder Bots, in any of their
   menus, shows only them, with handles (edit mode; outside it a long press is the row's menu,
   which a drag can't get past), and the order is kept per server in `Settings.botOrder`

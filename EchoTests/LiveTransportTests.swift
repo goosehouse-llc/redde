@@ -2089,6 +2089,24 @@ struct HermesLabGroupsTests {
         let second = feed.events.dropFirst(before).filter { $0.kind == "message.member" }.compactMap(\.actorID)
         HermesLabApprovalTests.report(second == ["scout"], "a message tagging one bot: that one answers", "\(second)")
 
+        // A reply as it is written (the stub's, a word a second): read from the bot's own session
+        // for the room before the room has it, under the bot's name, and gone once the room has it.
+        let beforeDrip = feed.events.count
+        feed.send("@scout lab:drip")
+        var written = "", whose: String?
+        for _ in 0 ..< 120 {
+            await feed.look()
+            await feed.lookAtDrafts()
+            if let draft = feed.drafts.first(where: { !$0.text.isEmpty }), draft.finishedAt == nil { (written, whose) = (draft.text, draft.memberID) }
+            if feed.events.dropFirst(beforeDrip).contains(where: { $0.kind == "message.member" }) { break }
+            try? await Task.sleep(for: .milliseconds(500))
+        }
+        HermesLabApprovalTests.report(written.contains("word2") && whose == "scout", "a bot's reply in the room shows as it is written, under its name",
+                                      "\(whose ?? "nobody"): \(written.prefix(60))")
+        await Self.until(feed) { !feed.discussing }
+        await feed.lookAtDrafts()
+        HermesLabApprovalTests.report(feed.drafts.isEmpty, "once the room has the reply, the one being written goes", "\(feed.drafts.map(\.text))")
+
         // A bot's command in the group: its card, answered from the feed; answered again (as from
         // another device), the room is read again and there is nothing to fix.
         let asked = feed.events.count
