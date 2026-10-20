@@ -228,6 +228,7 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
 
     func beginReply() {
         stop()
+        madeUpTurn = false
         epoch += 1
         chunker = SentenceChunker()
         queued = 0
@@ -314,7 +315,17 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
     /// session can actually deactivate once a reply has finished playing.
     func releaseAudio() { player.release() }
 
+    /// The reply went on to write a message as if from the person (`BotMessages.inventedTurn`):
+    /// nothing more of it is read.
+    private var madeUpTurn = false
+
     private func enqueue(_ text: String) {
+        guard !madeUpTurn else { return }
+        var text = text
+        if let frame = text.range(of: "[out-of-band", options: .caseInsensitive) {
+            madeUpTurn = true
+            text = String(text[..<frame.lowerBound])
+        }
         let spoken = PlainText.spoken(text)
         guard !spoken.isEmpty else { return }
         let language = replyLanguage(adding: spoken)

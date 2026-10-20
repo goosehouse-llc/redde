@@ -88,6 +88,20 @@ nonisolated enum BotMessages {
         return (BotRoutines.untagged(String(match.output.1)), String(match.output.2).trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
+    /// A reply that goes on to write a message as if from the person (a model carrying on past
+    /// its answer: "Q\n\n[Out-of-band message from Alex, delivered as a new user message]\n\nTurn
+    /// the office", 2026-10-20): what it said before that, and the made-up rest, or nil for an
+    /// ordinary reply. Starts at Hermes's frames for a message sent in, in any case. A lone letter
+    /// left before it is part of the same slip.
+    static func inventedTurn(in text: String) -> (said: String, invented: String)? {
+        guard let start = text.range(of: "[out-of-band", options: .caseInsensitive) else { return nil }
+        var said = String(text[..<start.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+        if VoiceSession.isLoneLetter(said.components(separatedBy: .newlines).last ?? "") {
+            said = said.components(separatedBy: .newlines).dropLast().joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return (said, String(text[start.lowerBound...]).trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
     /// A user row as it should show: the person's own, or one delivered (its text the message
     /// alone, its sender kept beside it).
     static func userMessage(text: String, displayKind: String?, displayText: String?, roster: [HermesBot] = [], at when: Date) -> Message? {
@@ -124,6 +138,7 @@ nonisolated enum BotMessages {
         guard let preview = preview?.nilIfEmpty else { return nil }
         if preview.hasPrefix("[IMPORTANT: Background process") { return "A background task finished" }
         if let (title, _) = routine(preview) { return "\(title) ran" }
+        if let (said, _) = inventedTurn(in: preview) { return said.nilIfEmpty ?? "…" }
         guard let inbound = inbound(preview) else { return preview }
         let ref = sender(name: inbound.name, handle: inbound.handle, roster: roster)
         let name = roster.first { $0.name == ref.profile }?.label(mainName: mainName) ?? inbound.name

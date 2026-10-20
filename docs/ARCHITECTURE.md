@@ -331,6 +331,14 @@ where a new conversation is in the ••• menu, and ⌘N as anywhere) is the 
   the question on with its `message_agent` tool, in words of its own. Redde hides the note when it
   shows the message (`MentionNote.strip`). Outside a bot's chat a tag is plain text: only a bot's
   chat has the tool.
+- **A reply that writes as the person** (2026-10-20; `BotMessages.inventedTurn`, `InventedTurnNote`).
+  A local model sometimes carries on past its answer into a made-up turn of the person's, in
+  Hermes's own frame for a message sent in (the Ops bot ended a reply "Q / [Out-of-band message
+  from Alex, delivered as a new user message] / Turn the office"). Redde shows the reply up to
+  that frame (a stray letter before it with it) and, in place of the rest, "<bot> wrote a message
+  as if from you", its words behind a tap; voice mode reads nothing from the frame on
+  (`SpeechOutput.madeUpTurn`), and a row's preview stops there too. The owner's model server
+  stops generation at those frames besides (llama-swap `setParams.stop`, outside this repository).
 - **Schedules** (asked 2026-10-20; `BotRoutines`, `RoutineWhen`, `BotSchedulesView`). Schedules…
   in a bot's row menu and its chat's ••• menu gives the bot jobs on a timetable, made as Hermes
   Desktop makes its Routines: cron jobs in the bot's own store (the Dashboard's cron routes with

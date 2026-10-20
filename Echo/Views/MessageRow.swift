@@ -93,14 +93,22 @@ struct MessageRow: View, Equatable {
                     .background(flatReply ? AnyShapeStyle(.clear) : bubble, in: .rect(cornerRadius: theme.bubbleRadius))
                     .accessibilityLabel("Waiting for reply")
             } else if message.role == .assistant, message.error == nil, hasTextBubble {
-                MarkdownView(text: message.text, isLive: isLive)
-                    .padding(.horizontal, flatReply ? 2 : 14)
-                    .padding(.vertical, flatReply ? 0 : theme.bubbleVerticalPadding)
-                    .background(flatReply ? AnyShapeStyle(.clear) : bubble, in: .rect(cornerRadius: theme.bubbleRadius))
-                    .foregroundStyle(theme.textColor)
-                    .contextMenu { replyMenu }
-                    .overlay(highlightRing)
-                    .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
+                // A reply that went on to write a message as if from the person: what it said,
+                // then a warning in place of the made-up rest.
+                let invented = BotMessages.inventedTurn(in: message.text)
+                if invented?.said.isEmpty != true {
+                    MarkdownView(text: invented?.said ?? message.text, isLive: isLive)
+                        .padding(.horizontal, flatReply ? 2 : 14)
+                        .padding(.vertical, flatReply ? 0 : theme.bubbleVerticalPadding)
+                        .background(flatReply ? AnyShapeStyle(.clear) : bubble, in: .rect(cornerRadius: theme.bubbleRadius))
+                        .foregroundStyle(theme.textColor)
+                        .contextMenu { replyMenu }
+                        .overlay(highlightRing)
+                        .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
+                }
+                if let invented {
+                    InventedTurnNote(name: replySpeaker ?? settings.headerTitle, invented: invented.invented)
+                }
             } else if message.isSteer {
                 Label(message.text, systemImage: "arrow.turn.down.right")
                     .font(.footnote)
@@ -716,5 +724,44 @@ struct DeliveredMessage: View {
         .sheet(isPresented: $showingOutput) {
             SelectableTextSheet(text: message.text, title: delivered.title ?? "Background task", monospaced: true)
         }
+    }
+}
+
+
+/// In place of what a reply made up as if the person had said it (`BotMessages.inventedTurn`): a
+/// warning, so nobody reads it as their own, and the words behind a tap.
+struct InventedTurnNote: View {
+    let name: String
+    let invented: String
+    @State private var open = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Button {
+                withAnimation(.snappy(duration: 0.25)) { open.toggle() }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.bubble")
+                    Text("\(name) wrote a message as if from you").font(.footnote.weight(.medium))
+                    Image(systemName: "chevron.right").font(.caption2.weight(.semibold)).rotationEffect(.degrees(open ? 90 : 0))
+                }
+                .foregroundStyle(.orange)
+                .padding(.vertical, 4)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(open ? "Hides it" : "Shows what it wrote. You didn't send it.")
+            if open {
+                Text(invented)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.orange.opacity(0.08), in: .rect(cornerRadius: 10))
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
