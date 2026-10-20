@@ -137,7 +137,10 @@ up() {
   unset OPENROUTER_API_KEY OPENAI_API_KEY ANTHROPIC_API_KEY HERMES_INFERENCE_PROVIDER 2>/dev/null || true
   (cd "$run"
    # A home of the lab's own for the checks that write to ~ on the server (projects in ~/Projects).
-   if [[ -n "${LAB_OWN_HOME:-}" ]]; then export HOME="$run/home"; mkdir -p "$HOME"; fi
+   # LAB_OWN_HOME=run: the run itself is home, so ~/.hermes is the lab's Hermes as on a real install
+   # (what `hermes -p <bot>` finds when Hermes hands a bot's schedule to its Bot Chat).
+   if [[ "${LAB_OWN_HOME:-}" == run ]]; then export HOME="$run"
+   elif [[ -n "${LAB_OWN_HOME:-}" ]]; then export HOME="$run/home"; mkdir -p "$HOME"; fi
    nohup python3 "$HERE/stub_llm.py" 18801 A alpha,beta > stubA.log 2>&1 & echo $! > "$LAB_HOME/pids"
    nohup python3 "$HERE/stub_llm.py" 18802 B gamma > stubB.log 2>&1 & echo $! >> "$LAB_HOME/pids"
    if [[ "$scenario" == push ]]; then
@@ -624,6 +627,21 @@ push() {
   echo "\nAll checks passed."
 }
 
+# A bot's schedules (routines_check.py): made in the bot's own store for its Bot Chat, run there and
+# answered by the bot, a stand-in phone told of the run by the push plugin, changed, paused and
+# deleted, over the Dashboard. The push scenario: it has the plugin and the Dashboard's login.
+routines() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  for tag in $tags; do
+    echo "===== Hermes $tag / bot schedules"
+    if ! LAB_OWN_HOME=run up "$tag" push; then failed+=("$tag (lab)"); continue; fi
+    (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" routines_check.py "$LAB_HOME/hermes-$tag/.venv/bin/hermes") || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
 # Bot templates (templates_check.py): a bot made from one has the template's toolsets and no others,
 # in its chat and in a group chat, and the main profile keeps its own.
 templates() {
@@ -716,6 +734,7 @@ case "${1:-}" in
   groups) shift; groups "$@" ;;
   grouppush) shift; grouppush "$@" ;;
   templates) shift; templates "$@" ;;
+  routines) shift; routines "$@" ;;
   apibots) shift; apibots "$@" ;;
   search) shift; search "$@" ;;
   context) shift; context "$@" ;;

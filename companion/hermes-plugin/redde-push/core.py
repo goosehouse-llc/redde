@@ -290,13 +290,22 @@ class Store:
         with self._lock:
             self._write("room-waits.json", {"waits": waits})
 
+    def routine_runs(self) -> dict[str, str]:
+        """Each bot's schedule ("<profile>|<job>") and the last run of it seen (`routines.py`)."""
+        with self._lock:
+            return dict(self._read("routine-runs.json").get("runs") or {})
+
+    def set_routine_runs(self, runs: dict[str, str]) -> None:
+        with self._lock:
+            self._write("routine-runs.json", {"runs": runs})
+
     @contextlib.contextmanager
-    def rooms_lock(self):
-        """Held while the rooms are read: across Hermes's processes (a lock on a file), so two
-        reading at once don't both send what is new (two threads of one process too: each opens
-        the file of its own). Yields False when another holds it now."""
+    def rooms_lock(self, name: str = "rooms"):
+        """Held while the rooms (or the schedules) are read: across Hermes's processes (a lock on a
+        file), so two reading at once don't both send what is new (two threads of one process
+        too: each opens the file of its own). Yields False when another holds it now."""
         self.dir.mkdir(parents=True, exist_ok=True)
-        handle = open(os.open(self.dir / "rooms.lock", os.O_WRONLY | os.O_CREAT, 0o600), "w")
+        handle = open(os.open(self.dir / f"{name}.lock", os.O_WRONLY | os.O_CREAT, 0o600), "w")
         try:
             try:
                 import fcntl
@@ -382,7 +391,7 @@ PASSWORD = "su" + "do"
 #: Hermes waits for the answer. Anything else: an hour.
 #: How long Apple keeps trying a phone that is off. What is on the widget is good for longer than
 #: a notification about a turn: half a day.
-TTL = {"approval": 600, "question": 600, "secret": 300, PASSWORD: 180, "widget": 43200, "group_wait": 600}
+TTL = {"approval": 600, "question": 600, "secret": 300, PASSWORD: 180, "widget": 43200, "group_wait": 600, "routine": 21600}
 
 
 def note(kind: str, session: str = "", body: str = "", title: str = "", detail: str = "", answerable: bool = False,
@@ -444,6 +453,22 @@ def room_note(kind: str, room: str, name: str = "", body: str = "", detail: str 
     return made
 
 
+def routine_note(profile: str, bot: str, title: str, body: str = "", failed: bool = False) -> dict:
+    """One of a bot's schedules ran (`routines.py`): `p` the bot's profile, `d` what it is called,
+    `t` the schedule's name, `b` what it came up with (or why it didn't finish, `w` "failed")."""
+    made = {"v": 1, "k": "routine", "at": int(time.time()), "n": host_name(), "p": clipped(profile, 64)}
+    for key, value, limit in (("d", bot, 80), ("t", title, 80)):
+        if value:
+            made[key] = clipped(value, limit)
+    if failed:
+        made["w"] = "failed"
+    if body:
+        made["b"] = clipped(body, BODY_LIMIT, lines=True)
+    while len(json.dumps(made, ensure_ascii=False).encode()) > NOTE_LIMIT and len(made.get("b", "")) > 20:
+        made["b"] = clipped(made["b"], len(made["b"]) * 2 // 3, lines=True)
+    return made
+
+
 def widget_note(title: str = "", text: str = "", start: str = "", end: str = "") -> dict:
     """What the agent wrote for its widget on the phone, for a phone that isn't following the
     turn: `t` the heading, `b` the lines, `f` and `u` from and until when, as the agent wrote
@@ -474,6 +499,8 @@ def collapse_id(device: dict, made: dict) -> str:
         about = f"{made.get('g', '')}|{made.get('at', '')}|{digest(made.get('b', ''))}"
     elif made.get("k") == "group_wait":
         about = f"{made.get('g', '')}|{made.get('w', '')}|{made.get('h') or made.get('x', '')}"
+    elif made.get("k") == "routine":
+        about = f"{made.get('p', '')}|{made.get('t', '')}|{made.get('at', '')}"
     # How a turn ended is one thing, whichever way it ended: a reply that arrives after all
     # takes the place of "couldn't reply".
     kind = "reply" if made.get("k") in ("failed", "task") else made.get("k")

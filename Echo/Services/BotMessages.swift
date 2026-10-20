@@ -81,9 +81,21 @@ nonisolated enum BotMessages {
         return String(match.output.1)
     }
 
+    /// What one of a bot's schedules came up with, as Hermes puts it into the bot's chat
+    /// (`deliver: bot-chat`): its name (less Hermes Desktop's tag) and the output.
+    static func routine(_ text: String) -> (title: String, output: String)? {
+        guard let match = text.wholeMatch(of: /\[Cronjob "([^"\n]*)" output[^\]\n]*\]\s*([\s\S]*)/) else { return nil }
+        return (BotRoutines.untagged(String(match.output.1)), String(match.output.2).trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
     /// A user row as it should show: the person's own, or one delivered (its text the message
     /// alone, its sender kept beside it).
     static func userMessage(text: String, displayKind: String?, displayText: String?, roster: [HermesBot] = [], at when: Date) -> Message? {
+        if let (title, output) = routine(text) {
+            var message = Message(role: .user, text: output, createdAt: when)
+            message.delivered = Delivered(kind: .routine, title: title)
+            return message
+        }
         if displayKind == "process_complete" || text.hasPrefix("[IMPORTANT: Background process") {
             if let (delivered, body) = processNotice(text, title: displayText, roster: roster) {
                 var message = Message(role: .user, text: body, createdAt: when)
@@ -111,6 +123,7 @@ nonisolated enum BotMessages {
     static func rowPreview(_ preview: String?, roster: [HermesBot], mainName: String) -> String? {
         guard let preview = preview?.nilIfEmpty else { return nil }
         if preview.hasPrefix("[IMPORTANT: Background process") { return "A background task finished" }
+        if let (title, _) = routine(preview) { return "\(title) ran" }
         guard let inbound = inbound(preview) else { return preview }
         let ref = sender(name: inbound.name, handle: inbound.handle, roster: roster)
         let name = roster.first { $0.name == ref.profile }?.label(mainName: mainName) ?? inbound.name

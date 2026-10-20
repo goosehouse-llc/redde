@@ -12,6 +12,8 @@ nonisolated enum MutedChats {
 
     static func key(session: String) -> String { "s:" + session }
     static func key(room: String) -> String { "g:" + room }
+    /// A bot itself, for what isn't one of its chats: its schedules' runs.
+    static func key(bot profile: String) -> String { "b:" + profile }
 
     /// Every muted key and until when (`Date.distantFuture`: until it is turned back on).
     static func load(_ defaults: UserDefaults? = NeedsYou.shared) -> [String: Date] {
@@ -24,9 +26,10 @@ nonisolated enum MutedChats {
     }
 
     /// The chat a note is about is muted now.
-    static func isMuted(session: String?, room: String?, now: Date = .now, in defaults: UserDefaults? = NeedsYou.shared) -> Bool {
+    static func isMuted(session: String?, room: String?, bot: String? = nil, now: Date = .now, in defaults: UserDefaults? = NeedsYou.shared) -> Bool {
         let muted = load(defaults)
-        let keys = [session.flatMap { $0.isEmpty ? nil : key(session: $0) }, room.flatMap { $0.isEmpty ? nil : key(room: $0) }]
+        let keys = [session.flatMap { $0.isEmpty ? nil : key(session: $0) }, room.flatMap { $0.isEmpty ? nil : key(room: $0) },
+                    bot.flatMap { $0.isEmpty ? nil : key(bot: $0) }]
         return keys.compactMap(\.self).contains { (muted[$0] ?? .distantPast) > now }
     }
 

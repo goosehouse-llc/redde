@@ -26,7 +26,7 @@ final class NotificationService: UNNotificationServiceExtension {
             if AgentBoard.take(note) { WidgetCenter.shared.reloadTimelines(ofKind: AgentBoard.widgetKind) }
             choices = note.choiceCategory
             // A chat the person muted (Mute… in Redde): in the list, without a sound or a banner.
-            if MutedChats.isMuted(session: note.s, room: note.g) { MutedChats.quiet(content) }
+            if MutedChats.isMuted(session: note.s, room: note.g, bot: note.p) { MutedChats.quiet(content) }
             if note.repeatsTheApp() {
                 // The app said so when it happened. This takes its banner's place without
                 // sounding or lighting the screen a second time.

@@ -49,6 +49,10 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
         /// A bot waits on the person in a group chat: `w` "approval" (`b` the command, `r` why it
         /// needs approval, `h` its digest) or "retry" (`x` the turn's task).
         case groupWait = "group_wait"
+        /// One of a bot's schedules ran (`p` the bot's profile, `d` its name, `t` the schedule's,
+        /// `b` what it came up with; `w` "failed" when it didn't finish). Its answer is in the
+        /// bot's chat.
+        case routine
     }
 
     var v = 1
@@ -79,6 +83,8 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
     var w: String?
     var r: String?
     var x: String?
+    /// On a bot's schedule's: the bot's profile.
+    var p: String?
 
     /// Nil for a kind a newer plugin sends and this build doesn't know.
     var kind: Kind? { Kind(rawValue: k) }
@@ -310,8 +316,9 @@ nonisolated extension PushNote {
     static let kindKey = "kind"
     static let approvalKey = "approval"
     static let questionKey = "question"
-    /// On a group chat's: the room, and the task of a turn to try again.
+    /// On a group chat's: the room, and the task of a turn to try again. On a bot's schedule's: the bot.
     static let roomKey = "room"
+    static let botKey = "bot"
     static let taskKey = "task"
     /// The sealed note, as the relay hands it to Apple. Gone once the note has been opened.
     static let sealedKey = "e"
@@ -375,6 +382,12 @@ nonisolated extension PushNote {
             content.body = String(PlainText.display(b ?? "").prefix(300))
             content.threadIdentifier = "redde.group.\(g ?? "")"
             if let g, !g.isEmpty { content.categoryIdentifier = Self.groupRepliedCategory }
+        case .routine:
+            let name = t.flatMap { $0.isEmpty ? nil : $0 } ?? "A schedule"
+            content.title = w == "failed" ? "\(name) didn't finish" : name
+            if let d, !d.isEmpty { content.subtitle = d }
+            content.body = String(PlainText.display(b ?? "").prefix(300))
+            content.threadIdentifier = "redde.routine.\(p ?? "")"
         case .groupWait:
             let who = d.flatMap { $0.isEmpty ? nil : $0 } ?? "A bot"
             if let t, !t.isEmpty { content.subtitle = t }
@@ -395,6 +408,7 @@ nonisolated extension PushNote {
         if kind == .approval || kind == .groupWait, let h, !h.isEmpty { info[Self.approvalKey] = h }
         if kind == .question, let h, !h.isEmpty { info[Self.questionKey] = h }
         if let g, !g.isEmpty { info[Self.roomKey] = g }
+        if kind == .routine, let p, !p.isEmpty { info[Self.botKey] = p }
         if let x, !x.isEmpty { info[Self.taskKey] = x }
         content.userInfo = info
         return true

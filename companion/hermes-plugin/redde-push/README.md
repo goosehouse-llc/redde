@@ -79,6 +79,9 @@ one that came out of a folder of a repository.)
   Reply on the notification answers in the group chat.
 - **A bot waits on you in a group chat**: a command to approve (Approve and Deny on the
   notification), or a reply that didn't finish and waits for you to retry it (Retry).
+- **One of a bot's schedules ran**: the schedule's name, the bot's, and what it came up with;
+  opening it shows the bot's answer in its chat. The plugin reads every profile's cron jobs on
+  this machine each half minute for it (`routines.py`).
 
 All of them only for conversations your phone has taken part in: over the Dashboard the app tells
 the plugin which those are, and over the Hermes API every turn counts. A session at the terminal
@@ -108,8 +111,9 @@ never sent the key, and it stores nothing that passes.
 
 `$HERMES_HOME/redde-push/`, readable only by you: `devices.json` (each phone's relay id, relay
 secret and key), `watch.json` (which sessions each phone follows), `rooms.json` (which group
-chats), `mutes.json` (what each phone has muted, until when), and `room-cursors.json` and
-`room-waits.json` (how far each group chat has been read, and what it has been said to wait on). Delete the folder and nothing is paired.
+chats), `mutes.json` (what each phone has muted, until when), `room-cursors.json` and `room-waits.json`
+(how far each group chat has been read, and what it has been said to wait on), and
+`routine-runs.json` (the last run of each bot's schedule it has told of). Delete the folder and nothing is paired.
 
 ## Phone tools
 

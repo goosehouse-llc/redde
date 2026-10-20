@@ -642,17 +642,21 @@ struct DeliveredMessage: View {
     var body: some View {
         switch delivered.kind {
         case .process: processLine
-        case .message, .reply: botMessage
+        case .message, .reply, .routine: botMessage
         }
     }
 
     private var botMessage: some View {
         // A relay that came back with nothing in it: the bot's turn failed, or gave no words.
         let unanswered = delivered.kind == .reply && message.text.isEmpty
-        let heading = unanswered ? "\(name) didn't answer" : delivered.kind == .reply ? "\(name) replied" : "Message from \(name)"
+        let heading = unanswered ? "\(name) didn't answer"
+            : delivered.kind == .reply ? "\(name) replied"
+            : delivered.kind == .routine ? "\(delivered.title?.nilIfEmpty ?? "A schedule") ran"
+            : "Message from \(name)"
         // A bot's reply to one this bot sent folds away as the thinking does: what the person
-        // reads (and hears) is this bot's answer, which follows it.
-        let folds = delivered.kind == .reply && !unanswered
+        // reads (and hears) is this bot's answer, which follows it. So does what a schedule came
+        // up with, which the bot answers next.
+        let folds = (delivered.kind == .reply || delivered.kind == .routine) && !unanswered
         return VStack(alignment: .leading, spacing: 6) {
             if folds {
                 Button {
@@ -662,7 +666,11 @@ struct DeliveredMessage: View {
                         Image(systemName: "chevron.right")
                             .font(.caption2.weight(.semibold))
                             .rotationEffect(.degrees(open ? 90 : 0))
-                        BotAvatar(face: face, size: 20)
+                        if delivered.kind == .routine {
+                            Image(systemName: "clock").frame(width: 20)
+                        } else {
+                            BotAvatar(face: face, size: 20)
+                        }
                         Text(heading).font(.subheadline.weight(.medium))
                     }
                     .foregroundStyle(.secondary)

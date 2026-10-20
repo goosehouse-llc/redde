@@ -101,6 +101,16 @@ final class LaunchRouter {
         return pendingSession
     }
 
+    /// A bot's schedule's notification was tapped: open that bot's chat.
+    private(set) var pendingBot: String?
+
+    func requestBot(_ profile: String) { pendingBot = profile }
+
+    func consumeBot() -> String? {
+        defer { pendingBot = nil }
+        return pendingBot
+    }
+
     /// A group chat's notification was tapped: open that room.
     private(set) var pendingRoom: String?
 

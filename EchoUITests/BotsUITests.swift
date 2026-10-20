@@ -101,6 +101,30 @@ final class BotsUITests: XCTestCase {
         XCTAssertEqual(name.value as? String, "Researcher Bee", "a name the person typed went")
     }
 
+    /// A bot's schedules: listed in words, one opened shows what it does and when, and a new one
+    /// offers each kind of when.
+    func testABotsSchedulesOpenAndANewOneOffersWhen() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.clearDrafts", "-displayName", "Redde",
+                               "-echo.screen", "sessions", "-echo.botSchedules", "scout"] + XCUIApplication.chatsSection
+        app.launch()
+        let wear = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "What to wear")).firstMatch
+        XCTAssertTrue(wear.waitForExistence(timeout: 20), "Scout's schedules aren't listed")
+        XCTAssertTrue(app.text(containing: "Weekdays at").exists, "when isn't in words")
+        wear.tap()
+        let name = app.textFields.matching(NSPredicate(format: "placeholderValue == %@", "What to wear")).firstMatch
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        XCTAssertEqual(name.value as? String, "What to wear", "the schedule didn't open with its name")
+        app.buttons["Cancel"].firstMatch.tap()
+        app.buttons["New Schedule"].firstMatch.tap()
+        XCTAssertTrue(app.text(containing: "Repeat").waitForExistence(timeout: 5), "no Repeat for a new schedule")
+        // (In the sheet's own bar: the chat behind it has an Add button of its own.)
+        let add = app.navigationBars["New Schedule"].buttons["Add"]
+        XCTAssertTrue(add.exists, "no Add in New Schedule")
+        XCTAssertFalse(add.isEnabled, "it can be added with nothing to do")
+    }
+
     /// Change Face in New Bot, in a bot's settings and in the main agent's opens the face picker.
     func testChangeFaceInTheBotEditorOpensThePicker() {
         continueAfterFailure = false

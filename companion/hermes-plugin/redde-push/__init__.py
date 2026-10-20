@@ -29,7 +29,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import core, qr, rooms
+from . import core, qr, rooms, routines
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
 
 log = logging.getLogger("redde_push")
@@ -39,6 +39,7 @@ _pusher: core.Pusher | None = None
 _turns: core.Turns | None = None
 _waiting: core.Waiting | None = None
 _rooms: rooms.Rooms | None = None
+_routines: routines.Routines | None = None
 _offers = core.Offers()
 #: The platforms a turn over the Dashboard runs on: the ones that can put a question to a client.
 DASHBOARD = ("desktop", "tui")
@@ -102,6 +103,23 @@ def _group_chats() -> rooms.Rooms:
         store, pusher = _state()
         _rooms = rooms.Rooms(store, pusher.send)
     return _rooms
+
+
+def _watch_schedules() -> None:
+    """The bots' schedules on this machine, read for runs (`routines.py`). Only from the main
+    profile's home, whose store has the phones."""
+    global _routines
+    try:
+        home = _home()
+        if home.parent.name == "profiles":
+            return
+        if _routines is None:
+            store, pusher = _state()
+            _routines = routines.Routines(store, pusher.send, routines.Stores(home))
+        if _routines.store.devices:
+            _routines.start()
+    except Exception:
+        log.debug("redde-push: couldn't start reading the schedules", exc_info=True)
 
 
 def _follow_group_chats_if_any() -> None:
@@ -353,6 +371,7 @@ def _slash(raw_args: str = "") -> str:
                                        [r for r in (words[2] if len(words) == 3 else "").split(",") if r])
         if following and store.rooms_followed():
             _group_chats().start()
+        _watch_schedules()
         return f"redde-push following {len(following)}"
     if len(words) in (2, 3) and words[0] == "mutes":
         # What the phone has muted, all of it: "s:<session>=<until>,g:<room>=<until>" (0: until it says).
@@ -496,3 +515,4 @@ def register(ctx) -> None:
     phone_tools.register(ctx, lambda: phone_tools.Phone(_home()), to_widget=_to_widget)
     ctx.register_cli_command("redde-push", "Notifications on your iPhone from Redde", _cli_setup, _cli)
     _follow_group_chats_if_any()
+    _watch_schedules()

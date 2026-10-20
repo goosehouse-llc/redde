@@ -94,8 +94,11 @@ struct CronView: View {
         HStack(alignment: .top, spacing: 10) {
             Circle().fill(color(job.state)).frame(width: 9, height: 9).padding(.top, 6)
             VStack(alignment: .leading, spacing: 3) {
-                Text(job.name.isEmpty ? job.prompt : job.name).font(.body.weight(.medium)).lineLimit(2)
-                Text(job.schedule).font(.footnote).foregroundStyle(.secondary)
+                Text(job.name.isEmpty ? job.prompt : job.title).font(.body.weight(.medium)).lineLimit(2)
+                // A bot's: whose, and when in words.
+                Text([job.profile.flatMap(BotRoutines.botName), RoutineWhen(schedule: job.schedule)?.summary ?? job.schedule]
+                    .compactMap(\.self).joined(separator: " · "))
+                    .font(.footnote).foregroundStyle(.secondary)
                 HStack(spacing: 6) {
                     if job.state == .paused { Text("Paused") }
                     else if job.state == .completed { Text("Completed") }
@@ -151,9 +154,10 @@ struct CronView: View {
         }
     }
 
-    private func setPaused(_ job: CronJob, _ paused: Bool) { perform(job) { try await $0.setPaused(job.id, paused) } }
-    private func runNow(_ job: CronJob) { perform(job, "Run finished") { try await $0.runNow(job.id) }; show("Running…") }
-    private func delete(_ job: CronJob) { perform(job) { try await $0.delete(job.id) } }
+    // (In the job's own store: a bot's is found only there.)
+    private func setPaused(_ job: CronJob, _ paused: Bool) { perform(job) { try await $0.setPaused(job.id, paused, profile: job.profile) } }
+    private func runNow(_ job: CronJob) { perform(job, "Run finished") { try await $0.runNow(job.id, profile: job.profile) }; show("Running…") }
+    private func delete(_ job: CronJob) { perform(job) { try await $0.delete(job.id, profile: job.profile) } }
 
     private func show(_ text: String) { toast = text }
 }
@@ -244,7 +248,7 @@ struct CronJobEditor: View {
             do {
                 let n = name.trimmingCharacters(in: .whitespaces)
                 let title = n.isEmpty ? String(prompt.prefix(50)) : n
-                if let job { try await backend.update(job.id, name: title, schedule: schedule, prompt: prompt, deliver: deliverValue) }
+                if let job { try await backend.update(job.id, name: title, schedule: schedule, prompt: prompt, deliver: deliverValue, profile: job.profile) }
                 else { try await backend.create(name: title, schedule: schedule, prompt: prompt, deliver: deliverValue) }
                 await onSave()
                 dismiss()
@@ -305,7 +309,7 @@ struct CronJobDetail: View {
             .navigationTitle(job.name.isEmpty ? "Job" : job.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
-            .task { runs = (try? await backend?.runs(job.id)) ?? [] }
+            .task { runs = (try? await backend?.runs(job.id, profile: job.profile)) ?? [] }
         }
     }
 }

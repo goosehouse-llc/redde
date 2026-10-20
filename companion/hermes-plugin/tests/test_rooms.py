@@ -132,9 +132,13 @@ class RoomsTests(unittest.TestCase):
         class Started:
             count = 0
             def start(self): Started.count += 1
+        class Watching:
+            store = self.store
+            def start(self): pass
         plugin._store = self.store
         plugin._pusher = core.Pusher(self.store)
         plugin._rooms = Started()
+        plugin._routines = Watching()
         try:
             self.assertEqual(plugin._slash("rooms phone-1,phone-9 room-a,room-b"), "redde-push following 1")
             self.assertEqual(self.store.rooms_followed(), {"room-a": ["phone-1"], "room-b": ["phone-1"]})
@@ -142,7 +146,7 @@ class RoomsTests(unittest.TestCase):
             self.assertEqual(plugin._slash("rooms phone-1"), "redde-push following 1")
             self.assertEqual(self.store.rooms_followed(), {}, "none: every one muted")
         finally:
-            plugin._store = plugin._pusher = plugin._rooms = None
+            plugin._store = plugin._pusher = plugin._rooms = plugin._routines = None
 
     def test_a_phone_that_muted_a_room_hears_nothing_from_it(self):
         self.store.follow_rooms(["phone-1", "phone-2"], ["room-a"])

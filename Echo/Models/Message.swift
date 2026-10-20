@@ -62,15 +62,16 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
 
 /// A message the person didn't write, though Hermes files it as theirs (a user row): another
 /// bot's, delivered into this bot's chat (Bot Mode's `message_agent`); a bot's reply to one this
-/// bot sent, which comes back as a background process finishing; or another background process
-/// reporting back. Read out of transcripts by `BotMessages`.
+/// bot sent, which comes back as a background process finishing; another background process
+/// reporting back; or what one of the bot's schedules came up with (`BotRoutines`), which the
+/// bot then answers. Read out of transcripts by `BotMessages`.
 nonisolated struct Delivered: Codable, Equatable, Sendable {
-    enum Kind: String, Codable, Sendable { case message, reply, process }
+    enum Kind: String, Codable, Sendable { case message, reply, process, routine }
     var kind: Kind
     /// The bot it is from: its profile, and what it called itself.
     var profile: String?
     var name: String?
-    /// A process notice's one line (`display_text`).
+    /// A process notice's one line (`display_text`), or the schedule's name.
     var title: String?
 }
 

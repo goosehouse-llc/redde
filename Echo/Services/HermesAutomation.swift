@@ -20,6 +20,14 @@ nonisolated struct CronJob: Identifiable, Equatable, Sendable {
     var lastError: String?
     var deliver: String?
     var model: String?
+    /// The profile whose store it is in, as the Dashboard lists every profile's (`?profile=all`);
+    /// nil for the one the server runs as, or a backend that doesn't say.
+    var profile: String?
+
+    /// A bot's schedule (`BotRoutines`): its answer goes into a bot's Bot Chat.
+    var isBotRoutine: Bool { deliver?.hasPrefix("bot-chat") == true }
+    /// Its name less Hermes Desktop's tag for a bot's ("[bot:scout] What to wear").
+    var title: String { BotRoutines.untagged(name) }
 
     init?(_ j: JSONValue) {
         guard let id = j["id"]?.string ?? j["job_id"]?.string else { return nil }
@@ -37,6 +45,7 @@ nonisolated struct CronJob: Identifiable, Equatable, Sendable {
         lastError = j["last_error"]?.string
         deliver = j["deliver"]?.string
         model = j["model"]?.string
+        profile = j["profile"]?.string?.nilIfEmpty
     }
 
     /// ISO8601DateFormatter is expensive to create; three fixed instances cover the shapes seen.
@@ -134,15 +143,24 @@ enum CronBackend {
     case serve            // hermes serve dashboard REST, /api/cron/jobs
     case apiServer(HermesSessionsAPI)   // API server, /api/jobs
 
-    /// Prefer the dashboard when its credentials exist; otherwise the ledger API key.
+    /// The Dashboard whenever its login is kept, on either connection: it has every profile's
+    /// jobs, their runs and the blueprints, which the Hermes API's jobs routes don't. Otherwise the
+    /// Hermes API by its key.
     static func current() -> CronBackend? {
         let settings = Settings.shared
-        if settings.transport == .hermesServe, HermesServeClient.shared.hasCredentials { return .serve }
+        if HermesServeClient.shared.hasCredentials, settings.serveBaseURL != nil { return .serve }
         if let url = settings.gatewayBaseURL, let key = settings.gatewayAPIKey, !key.isEmpty {
             return .apiServer(HermesSessionsAPI(baseURL: url, apiKey: key, headers: settings.customHeaderFields))
         }
-        if HermesServeClient.shared.hasCredentials, settings.serveBaseURL != nil { return .serve }
         return nil
+    }
+
+    /// A Dashboard path in the store of `profile` (a job listed from another profile's is only
+    /// found there).
+    static func scoped(_ path: String, _ profile: String?) -> String {
+        guard let profile, !profile.isEmpty else { return path }
+        let encoded = profile.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? profile
+        return path + (path.contains("?") ? "&" : "?") + "profile=" + encoded
     }
 
     var supportsRunHistory: Bool { if case .serve = self { return true } else { return false } }
@@ -181,53 +199,61 @@ enum CronBackend {
         _ = try await HermesServeClient.shared.restJSON("POST", "api/cron/blueprints/instantiate", body: body)
     }
 
-    func create(name: String, schedule: String, prompt: String, deliver: String? = nil) async throws {
+    /// Makes a job; on the Dashboard, in `profile`'s store when one is named (a bot's).
+    func create(name: String, schedule: String, prompt: String, deliver: String? = nil, profile: String? = nil) async throws {
         var fields: [String: JSONValue] = ["name": .string(name), "schedule": .string(schedule), "prompt": .string(prompt)]
         if let deliver, !deliver.isEmpty { fields["deliver"] = .string(deliver) }
         let body: JSONValue = .object(fields)
         switch self {
-        case .serve: _ = try await HermesServeClient.shared.restJSON("POST", "api/cron/jobs", body: body)
+        case .serve: _ = try await HermesServeClient.shared.restJSON("POST", Self.scoped("api/cron/jobs", profile), body: body)
         case let .apiServer(api): _ = try await api.requestJSON("POST", "api/jobs", body: body)
         }
     }
 
-    func update(_ id: String, name: String, schedule: String, prompt: String, deliver: String? = nil) async throws {
+    func update(_ id: String, name: String, schedule: String, prompt: String, deliver: String? = nil, profile: String? = nil) async throws {
         var dict: [String: JSONValue] = ["name": .string(name), "schedule": .string(schedule), "prompt": .string(prompt)]
         if let deliver, !deliver.isEmpty { dict["deliver"] = .string(deliver) }
         let fields: JSONValue = .object(dict)
         switch self {
-        case .serve: _ = try await HermesServeClient.shared.restJSON("PUT", "api/cron/jobs/\(id)", body: .object(["updates": fields]))
+        case .serve: _ = try await HermesServeClient.shared.restJSON("PUT", Self.scoped("api/cron/jobs/\(id)", profile), body: .object(["updates": fields]))
         case let .apiServer(api): _ = try await api.requestJSON("PATCH", "api/jobs/\(id)", body: fields)
         }
     }
 
-    func setPaused(_ id: String, _ paused: Bool) async throws {
+    func setPaused(_ id: String, _ paused: Bool, profile: String? = nil) async throws {
         let verb = paused ? "pause" : "resume"
         switch self {
-        case .serve: _ = try await HermesServeClient.shared.restJSON("POST", "api/cron/jobs/\(id)/\(verb)")
+        case .serve: _ = try await HermesServeClient.shared.restJSON("POST", Self.scoped("api/cron/jobs/\(id)/\(verb)", profile))
         case let .apiServer(api): _ = try await api.requestJSON("POST", "api/jobs/\(id)/\(verb)")
         }
     }
 
     /// Runs the job now. On serve this blocks until the run finishes.
-    func runNow(_ id: String) async throws {
+    func runNow(_ id: String, profile: String? = nil) async throws {
         switch self {
-        case .serve: _ = try await HermesServeClient.shared.restJSON("POST", "api/cron/jobs/\(id)/trigger", timeout: 600)   // blocks until the run ends
+        case .serve: _ = try await HermesServeClient.shared.restJSON("POST", Self.scoped("api/cron/jobs/\(id)/trigger", profile), timeout: 600)   // blocks until the run ends
         case let .apiServer(api): _ = try await api.requestJSON("POST", "api/jobs/\(id)/run")
         }
     }
 
-    func delete(_ id: String) async throws {
+    func delete(_ id: String, profile: String? = nil) async throws {
         switch self {
-        case .serve: _ = try await HermesServeClient.shared.restJSON("DELETE", "api/cron/jobs/\(id)")
+        case .serve: _ = try await HermesServeClient.shared.restJSON("DELETE", Self.scoped("api/cron/jobs/\(id)", profile))
         case let .apiServer(api): _ = try await api.requestJSON("DELETE", "api/jobs/\(id)")
         }
     }
 
-    func runs(_ id: String, limit: Int = 20) async throws -> [CronRun] {
+    func runs(_ id: String, limit: Int = 20, profile: String? = nil) async throws -> [CronRun] {
         guard case .serve = self else { return [] }
-        let json = try await HermesServeClient.shared.restJSON("GET", "api/cron/jobs/\(id)/runs?limit=\(limit)")
+        let json = try await HermesServeClient.shared.restJSON("GET", Self.scoped("api/cron/jobs/\(id)/runs?limit=\(limit)", profile))
         return (json["runs"]?.array ?? []).compactMap(CronRun.init)
+    }
+
+    /// One profile's jobs (the Dashboard's), a bot's included.
+    func list(profile: String) async throws -> [CronJob] {
+        guard case .serve = self else { return [] }
+        let json = try await HermesServeClient.shared.restJSON("GET", Self.scoped("api/cron/jobs", profile))
+        return (json.array ?? json["jobs"]?.array ?? []).compactMap(CronJob.init)
     }
 }
 

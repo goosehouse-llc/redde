@@ -43,7 +43,8 @@ struct MutesTests {
                                       "bot:writer": noon.addingTimeInterval(-60)],
                               now: noon, botChats: ["scout": "bot-chat-1", "writer": "bot-chat-2"],
                               kept: [("scout", "api-chat-9"), ("default", "chat-3")])
-        #expect(keys == ["s:bot-chat-1": .distantFuture, "s:api-chat-9": .distantFuture, "g:redde-1": noon.addingTimeInterval(60)])
+        #expect(keys == ["s:bot-chat-1": .distantFuture, "s:api-chat-9": .distantFuture, "b:scout": .distantFuture,
+                         "g:redde-1": noon.addingTimeInterval(60)], "and the bot itself, for its schedules' runs")
     }
 
     @Test func theExtensionKnowsWhatIsMutedAndDeliversItQuietly() {

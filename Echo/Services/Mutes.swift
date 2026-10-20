@@ -85,6 +85,7 @@ enum Mutes {
                 let profile = String(item.dropFirst(4))
                 let sessions = [botChats[profile]].compactMap(\.self) + kept.filter { $0.profile == profile }.map(\.session)
                 for session in sessions { keys[MutedChats.key(session: session)] = until }
+                keys[MutedChats.key(bot: profile)] = until   // (its schedules' runs)
             }
         }
         return keys

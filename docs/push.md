@@ -279,7 +279,10 @@ opens only for the pairing it was sealed to. Inside:
 
 `k` is `reply`, `task`, `approval`, `question`, `sudo`, `secret`, `failed`, `paired`, `test`,
 `widget`, `group` or `group_wait`; what `b` and `d` hold for each is listed at `core.note` and
-`core.room_note`. The group chat's two (plugin 1.4.0) have no `s`: `g` is the room, `t` its name,
+`core.room_note`; `routine` (plugin 1.5.0, `core.routine_note`) says one of a bot's schedules
+ran: `p` the bot's profile, `d` its name, `t` the schedule's, `b` what it came up with (`w`
+"failed" when it didn't finish), from `routines.py`, which reads every profile's cron store each
+half minute. The group chat's two (plugin 1.4.0) have no `s`: `g` is the room, `t` its name,
 `d` the bot; `group` has the message in `b`; `group_wait` has `w`, "approval" (`b` the command,
 `r` why, `h` its digest, which the app answers by, finding that command in `groups.state`) or
 "retry" (`x` the task for `groups.retry`). Each has a collapse id of its own. A kind the app doesn't know

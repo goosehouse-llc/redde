@@ -32,6 +32,7 @@ struct ContentView: View {
     @State private var facingBot: HermesBot?
     /// In a bot's chat, its voice being picked.
     @State private var voicingBot: HermesBot?
+    @State private var schedulingBot: HermesBot?
     /// "Edit Bot…" in a bot's chat.
     @State private var editingBot: HermesBot?
     /// "Start Fresh…" in a bot's chat: being asked about, and what went wrong.
@@ -190,6 +191,7 @@ struct ContentView: View {
         .onChange(of: router.pendingPushOffer) { handlePushRequests() }
         .onChange(of: router.pendingSession) { handlePushRequests() }
         .onChange(of: router.pendingRoom) { handlePushRequests() }
+        .onChange(of: router.pendingBot) { handlePushRequests() }
         .onChange(of: lock.isLocked) { _, locked in
             // A Siri / control / share request that arrived while locked runs once unlocked.
             if !locked { consumeControlRequest(); handleLaunchRequest(); handleCaptureRequest(); consumeSharedItems(); handleDraftRequest(); handleSetupCode(); handlePushRequests() }
@@ -390,6 +392,9 @@ struct ContentView: View {
                         }
                         if let bot = chatBot, !bot.isDefault {
                             Button("Voice…", systemImage: "waveform") { voicingBot = bot }
+                            if !bot.viaAPI {
+                                Button("Schedules…", systemImage: "clock") { schedulingBot = bot }
+                            }
                         }
                         if let bot = conversation.bot, !conversation.isIncognito {
                             MuteMenu(item: "bot:" + bot.profile)
@@ -452,6 +457,7 @@ struct ContentView: View {
                 Text(freshProblem ?? "")
             }
             .sheet(item: $voicingBot) { BotVoicePicker(bot: $0, mainName: settings.headerTitle) }
+            .sheet(item: $schedulingBot) { BotSchedulesView(bot: $0, mainName: settings.headerTitle) }
             .sheet(item: $facingBot) { bot in
                 BotFacePicker(bot: bot, name: bot.label(mainName: settings.headerTitle), current: botFace ?? BotFace(seed: bot.name)) {
                     Task { _ = try? await BotDirectory.shared.refresh() }
@@ -697,6 +703,17 @@ struct ContentView: View {
             // A conversation on another server than the one the app is on can't be fetched: the
             // app then stays where it was.
             Task { try? await conversation.open(serverSession: session) }
+        }
+        if let profile = router.consumeBot(), !conversation.isStreaming {
+            if sizeClass != .regular, showConversations { setDrawer(open: false) }
+            // Its chat, where the schedule's answer is; read again first when the app was started for it.
+            Task {
+                let bots = BotDirectory.shared
+                if !bots.bots(for: settings.connectionKey).contains(where: { $0.name == profile }) { _ = try? await bots.refresh() }
+                guard let bot = bots.bots(for: settings.connectionKey).first(where: { $0.name == profile }) else { return }
+                GroupDirectory.shared.open = nil
+                try? await conversation.openBot(bot, mainName: settings.headerTitle)
+            }
         }
         if let room = router.consumeRoom() {
             if sizeClass != .regular, showConversations { setDrawer(open: false) }

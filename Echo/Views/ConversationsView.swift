@@ -75,6 +75,8 @@ struct ConversationsList: View {
     @State private var addingAPIBot = false
     /// The bot whose voice is being picked.
     @State private var voicing: HermesBot?
+    /// The bot whose schedules are open (`BotSchedulesView`).
+    @State private var scheduling: HermesBot?
     @State private var showingHiddenBots = false
     @AppStorage("sessions.showScheduled") private var showScheduled = false
     @State private var shareItem: ShareItem?
@@ -171,6 +173,7 @@ struct ConversationsList: View {
             }
         }
         .sheet(item: $voicing) { BotVoicePicker(bot: $0, mainName: settings.headerTitle) }
+        .sheet(item: $scheduling) { BotSchedulesView(bot: $0, mainName: settings.headerTitle) }
         .sheet(item: $facing) { bot in
             BotFacePicker(bot: bot, name: bot.label(mainName: settings.headerTitle),
                           current: botDirectory.roster?.faces[bot.name] ?? BotFace(seed: bot.name)) {
@@ -561,6 +564,10 @@ struct ConversationsList: View {
                 Button("Voice…", systemImage: "waveform") { voicing = bot }
             }
             MuteMenu(item: "bot:" + bot.name)
+            // Its schedules are kept on the server through the Dashboard, delivered into its Bot Chat.
+            if !bot.viaAPI {
+                Button("Schedules…", systemImage: "clock") { scheduling = bot }
+            }
             if bot.viaAPI {
                 // Added here for the Hermes API: its settings and face are the Dashboard's.
                 if !bot.isDefault {
@@ -1284,6 +1291,8 @@ struct ConversationsList: View {
                 }
                 // `-echo.botVoice <bot>`: that bot's voice being picked (screenshots).
                 if let which = DevHooks.value("-echo.botVoice") { voicing = Self.demoBots.bots.first { $0.name == which } }
+                // `-echo.botSchedules <bot>`: that bot's schedules open (screenshots).
+                if let which = DevHooks.value("-echo.botSchedules") { scheduling = Self.demoBots.bots.first { $0.name == which } }
                 // `-echo.botEditor new|<bot>`: New Bot, or that bot's settings, open (screenshots).
                 if let which = DevHooks.value("-echo.botEditor") {
                     editingBot = which == "new" ? .new : Self.demoBots.bots.first { $0.name == which }.map { .edit($0) }

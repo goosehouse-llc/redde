@@ -193,12 +193,13 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let asked = info[PushNote.questionKey] as? String
         let room = info[PushNote.roomKey] as? String
         let task = info[PushNote.taskKey] as? String
+        let bot = info[PushNote.botKey] as? String
         let userText = (response as? UNTextInputNotificationResponse)?.userText
         nonisolated(unsafe) let handled = completionHandler   // iOS's own; only ever called below
         Task { @MainActor in
             let work = self.route(action: action, requestID: requestID, questionID: questionID, approve: approve, deny: deny,
                                   userText: userText, conversationID: conversationID, sessionID: sessionID, approvalDigest: digest,
-                                  questionDigest: asked, room: room, task: task)
+                                  questionDigest: asked, room: room, task: task, bot: bot)
             // The app may have been started just for this: iOS keeps it running until it is told.
             await work?.value
             handled()
@@ -214,13 +215,14 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let kind = info[PushNote.kindKey] as? String
         let sessionID = info[PushNote.sessionKey] as? String
         let room = info[PushNote.roomKey] as? String
+        let bot = info[PushNote.botKey] as? String
         let sealed = info[PushNote.sealedKey] as? String
         nonisolated(unsafe) let show = completionHandler
         Task { @MainActor in
             if kind == nil, let sealed {
                 show(self.presentUnopened(sealed))
             } else {
-                show(self.presentation(pushKind: kind, sessionID: sessionID, room: room))
+                show(self.presentation(pushKind: kind, sessionID: sessionID, room: room, bot: bot))
             }
         }
     }
@@ -237,21 +239,21 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let content = UNMutableNotificationContent()
         content.sound = sound
         guard note.fill(content) else { return shown }
-        guard !presentation(pushKind: note.k, sessionID: note.s, room: note.g).isEmpty else { return [] }
+        guard !presentation(pushKind: note.k, sessionID: note.s, room: note.g, bot: note.p).isEmpty else { return [] }
         center.add(UNNotificationRequest(identifier: "redde.push.\(UUID().uuidString)", content: content, trigger: nil)) { [weak self] error in
             if let error { Task { @MainActor in self?.log.error("notify failed: \(error.localizedDescription)") } }
         }
         return []
     }
 
-    func presentation(pushKind kind: String?, sessionID: String?, room: String? = nil) -> UNNotificationPresentationOptions {
+    func presentation(pushKind kind: String?, sessionID: String?, room: String? = nil, bot: String? = nil) -> UNNotificationPresentationOptions {
         guard let kind else { return [] }
         PushService.shared.reload()   // the first note from a pairing confirms it
         if let sessionID, sessionID == conversation?.serverSessionID, PushNote.Kind(rawValue: kind) != .paired { return [] }
         // The group chat on screen shows it already.
         if let room, room == GroupDirectory.shared.open?.id { return [] }
         // A chat the person muted: in the list, not over the screen.
-        if MutedChats.isMuted(session: sessionID, room: room) { return [.list] }
+        if MutedChats.isMuted(session: sessionID, room: room, bot: bot) { return [.list] }
         if PushNote.Kind(rawValue: kind) == .widget { return [] }   // it is on the widget; nothing to say with Redde in front
         return shown
     }
@@ -267,7 +269,13 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     @discardableResult
     func route(action: String, requestID: String?, questionID: String?,
                approve: String?, deny: String?, userText: String?, conversationID: String? = nil, sessionID: String? = nil,
-               approvalDigest: String? = nil, questionDigest: String? = nil, room: String? = nil, task: String? = nil) -> Task<Void, Never>? {
+               approvalDigest: String? = nil, questionDigest: String? = nil, room: String? = nil, task: String? = nil,
+               bot: String? = nil) -> Task<Void, Never>? {
+        // A bot's schedule ran: its chat, where its answer is.
+        if let bot, action == UNNotificationDefaultActionIdentifier {
+            LaunchRouter.shared.requestBot(bot)
+            return nil
+        }
         // A group chat's, from a paired Hermes: opened, answered or replied to in the room.
         if let room {
             return routeGroupNote(action: action, room: room, digest: approvalDigest, task: task, text: userText)

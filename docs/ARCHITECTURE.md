@@ -331,6 +331,31 @@ where a new conversation is in the ••• menu, and ⌘N as anywhere) is the 
   the question on with its `message_agent` tool, in words of its own. Redde hides the note when it
   shows the message (`MentionNote.strip`). Outside a bot's chat a tag is plain text: only a bot's
   chat has the tool.
+- **Schedules** (asked 2026-10-20; `BotRoutines`, `RoutineWhen`, `BotSchedulesView`). Schedules…
+  in a bot's row menu and its chat's ••• menu gives the bot jobs on a timetable, made as Hermes
+  Desktop makes its Routines: cron jobs in the bot's own store (the Dashboard's cron routes with
+  `?profile=<bot>`), named with Desktop's tag ("[bot:scout] What to wear") so Desktop lists them
+  as the bot's too, delivering into its Bot Chat (`deliver: bot-chat:<bot>`, the form that names
+  the bot, which every release reads the same). A run is the bot's (its personality, model and
+  cron tools); Hermes puts its output into the Bot Chat under a banner ("[Cronjob "…" output —
+  scheduled job, not the user …]"), and the bot answers it there, a second turn. Redde shows that
+  row as the schedule's, folded ("What to wear ran", `Delivered.routine`), never as the
+  person's, and the bot's answer after it. When is picked in words (every day, weekdays,
+  weekends, some days, every few hours, once) and sent as Hermes takes it (a cron expression in
+  the server's time zone, "every 3h", a moment with its offset); one made elsewhere is kept as
+  it is. Pause and resume, run now, change, delete. Hermes 0.21.5 and later fire a bot's on their
+  own (the gateway ticks every profile's store); 0.21.0 and 0.21.3 only with
+  `gateway.multiplex_profiles` on, and 0.21.3 also fails to run one as the bot ("No LLM provider
+  configured", from the Dashboard's run-now): a schedule due five minutes ago that hasn't run
+  says the server isn't running them (`BotRoutines.missed`). A run notifies a paired phone (plugin
+  1.5.0, `routines.py`: no release has a hook for a cron run finishing, so every profile's
+  `cron/jobs.json` is read each half minute and a job whose last run moved on is announced, with
+  the answer from its saved output), a `routine` note that opens the bot's chat; a muted bot's
+  don't come (`b:<profile>`). The Dashboard's login is needed: a bot added by its own key has no
+  Bot Chat. `lab.sh routines` checks it all on the four releases. The Cron tab now uses the
+  Dashboard whenever its login is kept, on either connection (it had the Hermes API's jobs routes
+  then, without runs or blueprints), and acts on a job in its own profile's store (a bot's job it
+  listed couldn't be paused or deleted from there).
 - **Templates and tools** (asked 2026-10-20; `BotTemplate`, `BotToolsList`). New Bot starts from
   Blank or one of five templates (Researcher, Writer, Coder, Home, Planner), each a name, what it
   does, a personality, a face and the toolsets it needs, all changeable before it is made; picking
