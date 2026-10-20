@@ -603,7 +603,7 @@ struct ComposerView: View {
             Task { await conversation.resend(replacing: editing.id, text: text, attachments: attachments) }
         } else {
             conversation.send(text, attachments: attachments)
-            SiriHooks.donateSend(text)
+            if !conversation.isIncognito { SiriHooks.donateSend(text) }
         }
     }
 

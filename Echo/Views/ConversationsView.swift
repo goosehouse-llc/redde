@@ -370,7 +370,11 @@ struct ConversationsList: View {
 
     private func filterLedger() {
         let q = query.trimmingCharacters(in: .whitespaces).lowercased()
-        let filtered = q.isEmpty ? ledger : ledger.filter {
+        // Incognito chats aren't listed, here or (hidden on the Dashboard) by any app, until they go.
+        let incognito = Incognito.sessions(on: settings.activeServerID.uuidString)
+            .union(conversation.isIncognito ? [conversation.serverSessionID].compactMap(\.self) : [])
+        let listed = incognito.isEmpty ? ledger : ledger.filter { !incognito.contains($0.id) }
+        let filtered = q.isEmpty ? listed : listed.filter {
             $0.displayTitle.lowercased().contains(q) || ($0.preview ?? "").lowercased().contains(q) || $0.sourceLabel.lowercased().contains(q)
         }
         visibleLedger = filtered.sorted { a, b in

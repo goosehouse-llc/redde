@@ -807,8 +807,9 @@ final class HermesServeClient {
     /// Runtime session id for a stored session (resuming it), or a fresh session when nil.
     /// Returns (runtime id, stored id). A fresh session works in `folder` when one is given (a
     /// project's): that is what puts it in the project.
+    /// `hidden`: a fresh session no app lists (an incognito chat's).
     func openSession(stored: String?, model: String? = nil, provider: String? = nil, reasoningEffort: String? = nil,
-                     folder: String? = nil) async throws -> (runtime: String, stored: String) {
+                     folder: String? = nil, hidden: Bool = false) async throws -> (runtime: String, stored: String) {
         if let stored {
             let runtime: String
             if let cached = runtimeIDs[stored] {
@@ -841,6 +842,7 @@ final class HermesServeClient {
         if let provider, !provider.isEmpty { params["provider"] = .string(provider) }
         if let reasoningEffort, !reasoningEffort.isEmpty { params["reasoning_effort"] = .string(reasoningEffort) }
         if let folder, !folder.isEmpty { params["cwd"] = .string(folder) }
+        if hidden { params["hidden"] = .bool(true) }
         let result = try await call("session.create", params: .object(params))
         guard let runtime = result["session_id"]?.string else { throw TransportError.malformed("create: no session id") }
         let storedID = result["stored_session_id"]?.string ?? runtime
@@ -1362,6 +1364,16 @@ final class HermesServeClient {
 
     /// Branch a session (`session.branch`). Needs the session open on this connection.
     func deleteSession(stored: String) async throws {
+        try await call("session.delete", params: .object(["session_id": .string(stored)]))
+    }
+
+    /// Deletes a session this connection may still have live (an incognito chat): closed here
+    /// first, as Hermes refuses to delete a live one.
+    func closeAndDeleteSession(stored: String) async throws {
+        try await ensureConnected()
+        if let runtime = runtimeIDs.removeValue(forKey: stored) {
+            _ = try? await call("session.close", params: .object(["session_id": .string(runtime)]))
+        }
         try await call("session.delete", params: .object(["session_id": .string(stored)]))
     }
 

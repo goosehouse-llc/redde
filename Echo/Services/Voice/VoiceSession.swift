@@ -635,7 +635,7 @@ final class VoiceSession {
         // In a car (its CarPlay, or its Bluetooth alone), if Settings says so: a short answer.
         let events = conversation.send(outgoing, attachments: seen.map { [$0] } ?? [],
                                        brief: shortInCar() && (carConnected() || audio.route == .car))
-        SiriHooks.donateSend(outgoing)
+        if !conversation.isIncognito { SiriHooks.donateSend(outgoing) }
         if micStaysOpen { startMonitor() }
         replySerial += 1
         let serial = replySerial

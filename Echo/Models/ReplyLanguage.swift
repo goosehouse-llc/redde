@@ -38,7 +38,7 @@ nonisolated enum ReplyLanguage {
     /// from the car carries after it (`CarBrevity`), nor the one that says who an @mention is
     /// (`MentionNote`), which comes before both.
     static func stripNote(_ text: String) -> String {
-        var text = CarBrevity.strip(text)
+        var text = CarBrevity.strip(IncognitoNote.strip(text))
         if text.hasSuffix(".)"), let range = text.range(of: "\n\n(Reply in ", options: .backwards),
            !text[range.upperBound...].contains("\n") {
             text = String(text[..<range.lowerBound])
@@ -81,6 +81,25 @@ nonisolated enum AttachedFileNote {
         }
         return (text, paths)
     }
+}
+
+/// What an incognito chat (`Incognito`) tells the agent, and the words that stand in for its own
+/// outside the app.
+nonisolated enum IncognitoNote {
+    /// What the agent is told: over the Hermes API, among the turn's instructions; on the
+    /// Dashboard, which takes none, on the message, where Redde hides it (`strip`).
+    static let instruction = "This is an incognito chat: it is deleted when the person leaves it. Don't save anything from it to memory, notes, files or skills, and don't bring it up in other conversations."
+    static let note = "\n\n[Incognito chat: deleted when the person leaves it. Save nothing from it to memory, notes, files or skills.]"
+    /// What the Lock Screen, a notification and the header say in its words' place.
+    static let title = "Incognito chat"
+    static let replied = "Your reply is ready."
+
+    /// A message loaded back from the server, without the note.
+    static func strip(_ text: String) -> String {
+        guard text.hasSuffix("]"), let range = text.range(of: note, options: .backwards), range.upperBound == text.endIndex else { return text }
+        return String(text[..<range.lowerBound])
+    }
+
 }
 
 /// A message to a bot that @mentions another bot carries a note after it saying which bot each

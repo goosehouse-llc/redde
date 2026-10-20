@@ -239,6 +239,7 @@ struct ContentView: View {
             HermesServeClient.shared.reconnectIfNeeded()
             ModelWarmer.warm(conversation)
             conversation.retryOutbox()   // back in the foreground: try anything still waiting to send
+            conversation.deleteLeftIncognitoChats()   // ones the app couldn't delete as they were left
             consumeSharedItems()
             guard Settings.shared.listenOnOpen, router.pendingVoice == nil, !voiceSession.mightBeBusy else { return }
             Task { await launchVoice(handsFree: showVoice ? voiceSession.continuous : settings.handsFreeByDefault, fromOutside: true) }
@@ -297,6 +298,11 @@ struct ContentView: View {
                                         Text(headerTitle).lineLimit(1)
                                     }
                                     .fixedSize(horizontal: true, vertical: false)
+                                } else if conversation.isIncognito {
+                                    // Kept nowhere: said where the title goes, its words not used for one.
+                                    Label(IncognitoNote.title, systemImage: "eyeglasses")
+                                        .labelStyle(.titleAndIcon)
+                                        .fixedSize(horizontal: true, vertical: false)
                                 } else {
                                     TypedTitle(title: headerTitle, conversationID: conversation.id,
                                                isPlaceholder: !conversation.hasMessages && conversation.outbox.isEmpty)
@@ -359,7 +365,7 @@ struct ContentView: View {
                         Button("Find in conversation", systemImage: "magnifyingglass") { withAnimation { showSearch.toggle() } }
                             .disabled(!conversation.hasMessages)
                         // A bot's chat goes by its bot.
-                        if conversation.bot == nil {
+                        if conversation.bot == nil, !conversation.isIncognito {
                             Button("Rename", systemImage: "pencil") {
                                 renameText = conversation.name ?? conversation.title
                                 showRename = true
@@ -373,7 +379,7 @@ struct ContentView: View {
                         }
                         .disabled(!conversation.hasMessages)
                         // The Dashboard's projects, for a conversation on the server (a bot's chat is its bot's).
-                        if settings.transport == .hermesServe, conversation.serverSessionID != nil, conversation.bot == nil {
+                        if settings.transport == .hermesServe, conversation.serverSessionID != nil, conversation.bot == nil, !conversation.isIncognito {
                             ChatProjectMenu(naming: $namingProject, problem: $projectProblem)
                         }
                         // (A bot added for the Hermes API alone has its settings and face on the Dashboard.)
@@ -388,6 +394,10 @@ struct ContentView: View {
                         // with the agent is here.
                         if conversation.bot != nil {
                             Button("New Conversation with \(settings.headerTitle)", systemImage: "square.and.pencil") { conversation.reset() }
+                        }
+                        if !conversation.isIncognito {
+                            Button("New Incognito Chat", systemImage: "eyeglasses") { conversation.startIncognito() }
+                                .keyboardShortcut("n", modifiers: [.command, .shift])
                         }
                         if settings.transport.hasLedger {
                             Button("Terminal", systemImage: "apple.terminal") { showTerminal = true }
@@ -405,7 +415,7 @@ struct ContentView: View {
                         Button("New conversation", systemImage: "square.and.pencil") {
                             conversation.reset()
                         }
-                        .disabled(!conversation.hasMessages)
+                        .disabled(!conversation.hasMessages && !conversation.isIncognito)
                         .keyboardShortcut("n", modifiers: .command)
                     }
                 }
@@ -562,6 +572,7 @@ struct ContentView: View {
 
     private var headerTitle: String {
         if let bot = conversation.bot { return bot.name }
+        if conversation.isIncognito { return IncognitoNote.title }
         return !conversation.hasMessages && conversation.outbox.isEmpty ? "New conversation" : conversation.title
     }
 

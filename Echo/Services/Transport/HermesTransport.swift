@@ -231,6 +231,8 @@ nonisolated struct TurnRequest: Sendable {
     /// In a bot's chat, a message that @mentions other bots: the note saying which bot each tag
     /// means (`BotMentions.note`), sent after the message (the Dashboard only).
     var mentionNote: String? = nil
+    /// An incognito chat (`Incognito`): the agent is told so; on the Dashboard its session is hidden.
+    var incognito = false
 }
 
 /// One selectable model as the gateway lists it.

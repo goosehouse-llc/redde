@@ -46,13 +46,14 @@ nonisolated struct HermesServeTransport: HermesTransport {
                     try await client.ensureConnected()
                     let (runtime, stored) = try await client.openSession(
                         stored: request.sessionID, model: request.model, provider: request.provider,
-                        reasoningEffort: request.reasoningEffort, folder: request.folder)
+                        reasoningEffort: request.reasoningEffort, folder: request.folder, hidden: request.incognito)
                     let turn = TurnState(runtime: runtime, stored: stored)
                     state = turn
                     continuation.yield(.sessionID(stored))
                     #if !os(watchOS)
                     // A paired Hermes notifies this phone about the conversations it takes part in.
-                    if client === HermesServeClient.shared {
+                    // (Not an incognito chat's: what it says isn't put on the Lock Screen.)
+                    if client === HermesServeClient.shared, !request.incognito {
                         PushService.shared.follow(stored: stored, runtime: runtime, client: client,
                                                   server: Settings.shared.activeServerID.uuidString)
                     }
@@ -81,6 +82,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
                     // A bot's chat: who the message's @tags are, before the other notes.
                     let text = Self.prompt(request.userText, naming: references) + (request.mentionNote ?? "")
                         + (request.replyLanguage.map(ReplyLanguage.note) ?? "") + (request.brief ? CarBrevity.note : "")
+                        + (request.incognito ? IncognitoNote.note : "")
                     let submit = try await client.call("prompt.submit", params: .object([
                         "session_id": .string(runtime), "text": .string(text)]))
                     if submit["status"]?.string == "queued" { continuation.yield(.status("queued behind a running turn…")) }

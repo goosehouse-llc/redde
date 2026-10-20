@@ -2094,6 +2094,76 @@ struct HermesLabRunsTests {
         for record in ConversationStore.shared.summaries where record.serverSessionID == stored { conversation.delete(id: record.id) }
     }
 
+    /// An incognito chat on each connection: on the Dashboard its session is hidden from every
+    /// list and the agent is told on the message; on the Hermes API, in the turn's instructions;
+    /// and once the chat is left its session is deleted from the server, on both.
+    @Test func anIncognitoChatIsDeletedFromTheServerWhenLeft() async throws {
+        guard let ledger = await Self.ledger(), let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        func temp() -> ConversationStore {
+            ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "lab-incognito-\(UUID().uuidString)"))
+        }
+        func settle(_ c: Conversation) async {
+            for _ in 0 ..< 120 where c.isStreaming || c.messages.last?.role != .assistant || (c.messages.last?.text.isEmpty ?? true) {
+                try? await Task.sleep(for: .milliseconds(500))
+            }
+        }
+        // The Dashboard.
+        let serve = Settings(defaults: UserDefaults(suiteName: "lab-incognito-serve-\(UUID().uuidString)")!)
+        serve.transport = .hermesServe
+        serve.serveURL = "http://127.0.0.1:19119"
+        serve.serveUsername = "lab"
+        let onDashboard = Conversation(settings: serve, store: temp(), dashboard: client)
+        onDashboard.startIncognito()
+        _ = onDashboard.send("hello, incognito")
+        await settle(onDashboard)
+        guard let dashboardSession = onDashboard.serverSessionID else {
+            HermesLabApprovalTests.report(false, "an incognito chat on the Dashboard gets a session"); return
+        }
+        let listed = (try? await client.call("session.list", params: .object(["limit": .number(200)])))?["sessions"]?.array?
+            .compactMap { $0["id"]?.string } ?? []
+        let asked = ((try? await client.history(stored: dashboardSession)) ?? [])
+            .compactMap { $0["content"]?.string ?? $0["text"]?.string }.joined(separator: "\n")
+        HermesLabApprovalTests.report(!listed.contains(dashboardSession) && asked.contains("Incognito chat:"),
+                                      "on the Dashboard it is listed by no app, and the agent is told it is incognito",
+                                      "listed \(listed.contains(dashboardSession)), told \(asked.contains("Incognito chat:"))")
+        onDashboard.reset()
+        var goneFromDashboard = false
+        for _ in 0 ..< 30 where !goneFromDashboard {
+            try? await Task.sleep(for: .milliseconds(500))
+            let all = (try? await client.call("session.list", params: .object(["limit": .number(200), "include_hidden": .bool(true)])))?["sessions"]?.array?
+                .compactMap { $0["id"]?.string }
+            goneFromDashboard = all.map { !$0.contains(dashboardSession) } ?? false
+        }
+        HermesLabApprovalTests.report(goneFromDashboard, "left, its Dashboard session is deleted from the server")
+
+        // The Hermes API.
+        let apiSettings = Settings(defaults: UserDefaults(suiteName: "lab-incognito-api-\(UUID().uuidString)")!)
+        apiSettings.transport = .hermesSessions
+        apiSettings.gatewayURL = Self.api.absoluteString
+        let account = Keychain.account(.gatewayAPIKey)
+        let before = Keychain.read(account: account)
+        Keychain.write(account: account, value: Self.key)
+        defer { if let before { Keychain.write(account: account, value: before) } else { Keychain.delete(account: account) } }
+        let onAPI = Conversation(settings: apiSettings, store: temp())
+        onAPI.startIncognito()
+        _ = onAPI.send("hello, incognito")
+        await settle(onAPI)
+        guard let apiSession = onAPI.serverSessionID else {
+            HermesLabApprovalTests.report(false, "an incognito chat on the Hermes API gets a session"); return
+        }
+        let answered = onAPI.messages.last?.role == .assistant && onAPI.messages.last?.error == nil
+        onAPI.reset()
+        var goneFromAPI = false
+        for _ in 0 ..< 30 where !goneFromAPI {
+            try? await Task.sleep(for: .milliseconds(500))
+            do { _ = try await ledger.messages(sessionID: apiSession) } catch TransportError.http(404, _) { goneFromAPI = true } catch {}
+        }
+        HermesLabApprovalTests.report(answered && goneFromAPI, "on the Hermes API it is answered, and deleted from the server once left",
+                                      "answered \(answered), gone \(goneFromAPI)")
+        Incognito.setPending(Incognito.pending().filter { ![dashboardSession, apiSession].contains($0.session) })
+    }
+
     /// Two chats left with a command each waiting to be approved (asked on Reddit for 2.0): chat
     /// A asks, the app goes to a new chat B, which asks too; then each is opened again, A as a
     /// switch back, B by an app opened afresh (as after the phone was locked and Redde put away).

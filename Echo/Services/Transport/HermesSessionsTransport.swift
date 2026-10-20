@@ -132,7 +132,7 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
     /// reply language and the car's request for a short answer.
     static func instructions(for request: TurnRequest) -> String {
         ([clientHint] + [request.instructions?.nilIfEmpty, request.replyLanguage.map(ReplyLanguage.instruction),
-                         request.brief ? CarBrevity.instruction : nil].compactMap { $0 })
+                         request.brief ? CarBrevity.instruction : nil, request.incognito ? IncognitoNote.instruction : nil].compactMap { $0 })
             .joined(separator: "\n\n")
     }
 

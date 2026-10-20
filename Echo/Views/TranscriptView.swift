@@ -248,6 +248,7 @@ struct TranscriptView: View {
             .environment(toaster)
             .animation(.easeOut(duration: 0.2), value: offersJump)
             .safeAreaInset(edge: .top, spacing: 0) { reconnectBanner }
+            .safeAreaInset(edge: .top, spacing: 0) { if conversation.isIncognito { incognitoBanner } }
             .safeAreaInset(edge: .top, spacing: 0) { if showSearch { searchBar(proxy) } }
             .onChange(of: showSearch) { _, on in
                 // Opened from a message search, Find already has its words: no keyboard over the
@@ -422,6 +423,17 @@ struct TranscriptView: View {
         .padding(.horizontal, 14).padding(.vertical, 8)
         .background(.bar)
         .transition(.move(edge: .top).combined(with: .opacity))
+    }
+
+    /// What an incognito chat is, in sight while it is open.
+    private var incognitoBanner: some View {
+        Label("Incognito: kept nowhere. It's deleted from your server when you leave it, and your agent is asked to save nothing from it.",
+              systemImage: "eyeglasses")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 14).padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.bar)
     }
 
     /// Reconnect strip for hermes serve; disappears on its own.

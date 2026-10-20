@@ -488,6 +488,22 @@ share while there are voices enough. "Same as Redde" reads in Redde's own; the m
 does. A reply clearly in another language still goes to a voice for it. Hermes's own voice is
 the server's, one for every bot.
 
+### Incognito chats
+
+New Incognito Chat (the chat's ••• menu, ⇧⌘N) opens a conversation kept nowhere
+(`Services/Incognito.swift`, `Conversation.isIncognito`), on both Hermes connections. It isn't
+saved on the phone or listed; its words stay off the Lock Screen (Live Activity and background
+task say "Incognito chat"), the Last reply widget, notifications ("Your reply is ready.") and
+Siri's donations, and the Dashboard isn't asked to push about it. On the Dashboard its session is
+made `hidden`, so no app lists it while it lasts; on the Hermes API, which has no such flag,
+Redde leaves it out of its own list. Hermes has no switch for one session's memory, so the agent
+is told the chat is incognito and to save nothing from it: in the turn's instructions on the API,
+in a note on each message on the Dashboard, which Redde hides (`IncognitoNote`). Leaving it (New
+conversation, another chat) stops a reply still under way and deletes its session from the
+server, closed first on the Dashboard, which refuses to delete a live one. Its session is noted
+from the moment it has one (`Incognito.Pending`), so one the app couldn't delete as it was left
+(closed, the server away) is deleted when Redde next comes forward. Rename, Add to Project and
+the like aren't offered in it. `lab.sh runs` checks both connections on each release.
 
 ### Reply language
 

@@ -282,6 +282,7 @@ final class Conversation {
             brief: brief
         )
         if connection == .hermesServe, serverSessionID == nil { request.folder = startsIn?.path }
+        request.incognito = isIncognito
         // The Hermes API's run for this message, should it go again after a dropped connection.
         request.turnKey = userID.uuidString
         // The conversation's fast mode: the Hermes API keeps none for a session, so each turn asks.
@@ -305,8 +306,9 @@ final class Conversation {
         }
 
         isStreaming = true
-        TurnActivity.shared.start(question: trimmed)
-        BackgroundTurn.shared.begin(question: trimmed)
+        // An incognito chat's words stay in the app: not on the Lock Screen or in a widget.
+        TurnActivity.shared.start(question: isIncognito ? IncognitoNote.title : trimmed)
+        BackgroundTurn.shared.begin(question: isIncognito ? IncognitoNote.title : trimmed)
         turnSerial += 1
         let myTurn = turnSerial
         let transportKind = connection
@@ -343,6 +345,7 @@ final class Conversation {
                                                               reasoningEffort: request.reasoningEffort)
                     serverSessionID = created.id
                     request.sessionID = created.id
+                    if isIncognito { Incognito.add(.init(session: created.id, server: settings.activeServerID.uuidString, transport: .hermesSessions)) }
                 }
                 // The Hermes API takes text and pictures: other files go to the server through the
                 // Dashboard's login, and the message says where they are.
@@ -380,12 +383,13 @@ final class Conversation {
                     if message.reasoningStartedAt != nil, message.reasoningEndedAt == nil { message.reasoningEndedAt = .now }
                 }
                 let replyText = messages.last { $0.id == replyID }?.text ?? ""
-                TurnActivity.shared.finish(reply: replyText)
-                if !replyText.isEmpty, !settings.requireBiometrics {   // a locked app shouldn't print replies on the Home Screen
+                TurnActivity.shared.finish(reply: isIncognito ? IncognitoNote.replied : replyText)
+                if !replyText.isEmpty, !settings.requireBiometrics, !isIncognito {   // a locked app shouldn't print replies on the Home Screen
                     WidgetSnapshot.save(question: trimmed, reply: replyText)
                     WidgetCenter.shared.reloadTimelines(ofKind: "com.goosehouse.echo.lastreply")
                 }
-                Notifier.shared.notify(.replied, title: "Redde replied", body: PlainText.display(replyText),   // autoclosure: only stripped when a banner will post
+                let incognito = isIncognito
+                Notifier.shared.notify(.replied, title: "Redde replied", body: incognito ? IncognitoNote.replied : PlainText.display(replyText),   // autoclosure: only stripped when a banner will post
                                        category: Notifier.repliedCategory, userInfo: [Notifier.conversationKey: self.id.uuidString],
                                        messageEntityID: SiriID.message(self.id, replyID))
                 persist()
@@ -542,6 +546,8 @@ final class Conversation {
             }
         case let .sessionID(id):
             serverSessionID = id
+            // An incognito chat's session, to be deleted however the app goes (`Incognito`).
+            if isIncognito { Incognito.add(.init(session: id, server: settings.activeServerID.uuidString, transport: connection)) }
             // Saved as soon as the host has a session for it, not only with the reply: if the app
             // doesn't live to see the reply, it can find its way back to it (`catchUp`).
             if questionSavedFor != replyID {
@@ -977,6 +983,49 @@ final class Conversation {
         become()
     }
 
+    /// An incognito chat (`Incognito`): a new conversation, kept nowhere, with the agent told so.
+    private(set) var isIncognito = false
+
+    /// New Incognito Chat: the conversation that was open is left as any is, and a new one begins
+    /// that is kept nowhere.
+    func startIncognito() {
+        reset()
+        isIncognito = true
+    }
+
+    /// Leaving an incognito chat: its reply, if one is under way, stopped, and its session deleted
+    /// (closed first on the Dashboard). One that can't be deleted now stays noted until it can.
+    private func endIncognito() {
+        guard isIncognito else { return }
+        isIncognito = false
+        guard let stored = serverSessionID, connection != .chatCompletions else { return }
+        let entry = Incognito.Pending(session: stored, server: settings.activeServerID.uuidString, transport: connection)
+        Incognito.add(entry)
+        let api = ledgerAPI()
+        if connection == .hermesSessions, let run = currentRunID, let api {
+            HermesRuns(baseURL: api.baseURL, apiKey: api.apiKey, headers: api.headers).stop(run)
+        }
+        let dashboard = dashboard
+        Task { if await Incognito.delete(entry, dashboard: dashboard, api: api) { Incognito.remove(entry) } }
+    }
+
+    /// Incognito chats left before they could be deleted (the app closed, the server away): when
+    /// Redde comes forward, on the server it is on. Not the one open.
+    func deleteLeftIncognitoChats() {
+        let server = settings.activeServerID.uuidString
+        let open = isIncognito ? serverSessionID : nil
+        for entry in Incognito.pending() where entry.server == server && entry.session != open && !Self.deletingIncognito.contains(entry.session) {
+            Self.deletingIncognito.insert(entry.session)
+            let api = entry.transport == .hermesSessions ? ledgerAPI(for: nil) : nil
+            let dashboard = dashboard
+            Task {
+                if await Incognito.delete(entry, dashboard: dashboard, api: api) { Incognito.remove(entry) }
+                Self.deletingIncognito.remove(entry.session)
+            }
+        }
+    }
+    private static var deletingIncognito: Set<String> = []
+
     /// Start a fresh conversation in a project: it works in the project's folder.
     func startNew(in place: ProjectPlace) {
         reset()
@@ -1012,6 +1061,7 @@ final class Conversation {
 
     private func become(id: UUID = UUID(), createdAt: Date = .now, messages: [Message] = [],
                         outbox: [OutboxItem] = [], serverSessionID: String? = nil, name: String? = nil, bot: BotRef? = nil) {
+        endIncognito()   // the one being left, if it was one, goes
         noteSeen()   // the one being left
         identity += 1
         ledgerWatch?.cancel()
@@ -1035,6 +1085,8 @@ final class Conversation {
     }
 
     private func persist() {
+        // An incognito chat is kept nowhere on the phone.
+        guard !isIncognito else { return }
         let kept = messages.filter { $0.error == nil && !($0.text.isEmpty && $0.attachments.isEmpty && $0.tools.isEmpty && $0.reasoning.isEmpty) }
         guard kept.contains(where: { $0.role == .user }) || !outbox.isEmpty else {
             // Truncated to nothing: the saved copy must not outlive the transcript.

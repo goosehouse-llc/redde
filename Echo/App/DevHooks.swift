@@ -23,6 +23,7 @@ import WidgetKit
 ///   `-echo.openGroup` its group chat is open, and `-echo.demoDraft` plays a bot's reply there as
 ///   it is written; `-echo.groupFind <words>` opens Find in Chat on those words.
 /// - `-echo.demoHosts`: replace any real endpoints with example hosts.
+/// - `-echo.incognito`: open on a new incognito chat.
 /// - `-echo.demoKanban`: a sample Kanban board instead of the server's.
 /// - `-echo.demoGateway`: Settings → Gateway on sample data, with no server (and the row unlocked).
 /// - `-echo.demoFiles`: Settings → Files on sample folders, with no server (and the row unlocked).
@@ -158,6 +159,7 @@ enum DevHooks {
             BotDirectory.shared.set(ConversationsList.demoBots, key: settings.connectionKey)
         }
         if has("-echo.demoLong") { conversation.seedLongDemo() }
+        if has("-echo.incognito") { conversation.startIncognito() }
         if has("-echo.demoTodos") { conversation.seedTodoDemo() }
         if has("-echo.demoPhoneShot") { conversation.seedPhoneShotDemo() }
         if has("-echo.demoPhone") {
