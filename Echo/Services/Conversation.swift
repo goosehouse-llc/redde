@@ -643,9 +643,16 @@ final class Conversation {
     private func follow(_ joined: RejoinedTurn, stored: String) {
         lastError = nil
         clearFollowUps()
-        let reply = Message(role: .assistant, text: "")
-        messages.append(reply)
-        let replyID = reply.id
+        // A turn under way may have put some of itself in the host's transcript already (a tool
+        // call waiting on an approval): the reply goes on from it instead of beside it.
+        let replyID: UUID
+        if let last = messages.last, last.role == .assistant, last.text.isEmpty, last.error == nil {
+            replyID = last.id
+        } else {
+            let reply = Message(role: .assistant, text: "")
+            messages.append(reply)
+            replyID = reply.id
+        }
         isStreaming = true
         joinedStop = joined.stop
         TurnActivity.shared.start(question: joined.question)
@@ -1173,7 +1180,17 @@ final class Conversation {
         // A run the app let go of before it ended (another conversation opened, the app closed):
         // taken up again. Over by now, its reply is in the transcript.
         let run = store === ConversationStore.shared ? ChatActivity.shared.run(of: summary.id, settings: settings) : nil
-        if let run, endsUnanswered {
+        // Still going by its status, or (the host not saying) by a question left unanswered. A run
+        // waiting on an approval has its tool call in the transcript already: the transcript ends
+        // on the agent, yet the run waits on the person.
+        let going: Bool
+        if let run {
+            let status = try? await api.runStatus(run)
+            going = status.map { ["queued", "running", "waiting_for_approval", "stopping"].contains($0) } ?? endsUnanswered
+        } else {
+            going = false
+        }
+        if let run, going, !isStreaming {
             rejoin(run: run, stored: summary.id, api: api)
         } else {
             if run != nil { ChatActivity.shared.turnEnded(sessionID: summary.id, settings: settings) }

@@ -1348,7 +1348,11 @@ host is waited out for half an hour. Each run carries the message's id as its `I
 a message sent again because its answer was lost finds its run (Hermes keeps the keys for a day,
 restarts or not). The run is noted as soon as it starts (`ChatActivity.noteRun`), so a
 conversation opened again, after the app was closed too, takes it up as a joined turn
-(`Conversation.rejoin(run:)`): on 0.22 the reply plays from its start. Stop stops the run
+(`Conversation.rejoin(run:)`): on 0.22 the reply plays from its start. Whether it is still going
+is what its status says (queued, running, waiting for approval, stopping), not the transcript
+alone: a run waiting on an approval has its tool call in the transcript already, and the reply
+goes on from that row. Two conversations each left waiting on an approval each show their own
+again, answered to their own run, and neither question is sent twice. Stop stops the run
 (`POST /v1/runs/{id}/stop`); leaving lets it go on. Runs also bring approvals and subagent steps to
 the Hermes API on every release (the chat stream has approvals only from 0.22). What they don't
 do is put the agent's pictures (`MEDIA:` tags) into the reply: the app fetches those through the

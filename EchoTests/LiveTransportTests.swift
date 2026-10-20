@@ -2043,6 +2043,82 @@ struct HermesLabRunsTests {
                                       "noted: \(noted ?? "no"), following: \(following), reply: \(reply.suffix(60)), still noted: \(ChatActivity.shared.run(of: stored, settings: settings) ?? "no")")
         for record in ConversationStore.shared.summaries where record.serverSessionID == stored { conversation.delete(id: record.id) }
     }
+
+    /// Two chats left with a command each waiting to be approved (asked on Reddit for 2.0): chat
+    /// A asks, the app goes to a new chat B, which asks too; then each is opened again, A as a
+    /// switch back, B by an app opened afresh (as after the phone was locked and Redde put away).
+    /// Each shows its own run's question, each answer goes to that run (A's approved: the command
+    /// runs; B's denied: it doesn't), and each question was sent to the host once.
+    @Test func twoRunsLeftWaitingOnApprovalsEachKeepTheirOwn() async throws {
+        guard let ledger = await Self.ledger() else { return }
+        let settings = Settings(defaults: UserDefaults(suiteName: "lab-runs-\(UUID().uuidString)")!)
+        settings.transport = .hermesSessions
+        settings.gatewayURL = Self.api.absoluteString
+        let account = Keychain.account(.gatewayAPIKey)
+        let before = Keychain.read(account: account)
+        Keychain.write(account: account, value: Self.key)
+        defer { if let before { Keychain.write(account: account, value: before) } else { Keychain.delete(account: account) } }
+        func conversation() -> Conversation {
+            Conversation(settings: settings, store: .shared, transportOverride: HermesSessionsTransport(baseURL: Self.api, apiKey: Self.key))
+        }
+        /// The question the conversation shows, with the run it belongs to.
+        func asked(_ c: Conversation, seconds: Int = 90) async -> (run: String, id: String)? {
+            for _ in 0 ..< seconds * 2 {
+                if let pending = c.pendingInterrupt, case let .approval(request) = pending.interrupt { return (pending.runtimeSession, request.id) }
+                try? await Task.sleep(for: .milliseconds(500))
+            }
+            return nil
+        }
+        func reply(_ c: Conversation, containing word: String, seconds: Int = 90) async -> String {
+            for _ in 0 ..< seconds * 2 {
+                if let last = c.messages.last, last.role == .assistant, last.text.contains(word), !c.isStreaming { return last.text }
+                try? await Task.sleep(for: .milliseconds(500))
+            }
+            return c.messages.last?.text ?? ""
+        }
+
+        let app = conversation()
+        app.reset()
+        _ = app.send("Do the danger thing (chat A).")
+        let firstA = await asked(app)
+        let storedA = app.serverSessionID
+        app.reset()   // a new chat, A's run left waiting
+        _ = app.send("Do the danger thing (chat B).")
+        let firstB = await asked(app)
+        let storedB = app.serverSessionID
+        guard let firstA, let firstB, let storedA, let storedB else {
+            HermesLabApprovalTests.report(false, "two chats each wait on an approval", "A \(firstA.debugDescription), B \(firstB.debugDescription)"); return
+        }
+        HermesLabApprovalTests.report(firstA.run != firstB.run && storedA != storedB, "two chats each wait on an approval, each in a run of its own",
+                                      "A \(firstA.run), B \(firstB.run)")
+
+        // Back to A: its own question, answered to its own run.
+        app.reset()
+        try await app.open(serverSession: storedA)
+        let againA = await asked(app)
+        HermesLabApprovalTests.report(againA?.run == firstA.run && againA?.id == firstA.id, "chat A, opened again, shows its own run's question",
+                                      "\(againA.debugDescription) for \(firstA)")
+
+        // B from an app opened afresh: its question, not A's, and B's answer to B's run. (B is
+        // answered first: the stub's command removes one folder for both, and says what it found.)
+        let reopened = conversation()
+        try await reopened.open(serverSession: storedB)
+        let againB = await asked(reopened)
+        HermesLabApprovalTests.report(againB?.run == firstB.run && againB?.id == firstB.id, "chat B, opened by the app afresh, shows its own run's question",
+                                      "\(againB.debugDescription) for \(firstB)")
+        reopened.respond(approval: "deny")
+        let saidB = await reply(reopened, containing: "[kept]")
+        app.respond(approval: "once")
+        let saidA = await reply(app, containing: "[gone]")
+        HermesLabApprovalTests.report(saidA.contains("[gone]") && saidB.contains("[kept]"), "each answer went to its own run: A's command ran, B's didn't",
+                                      "A: \(saidA.suffix(40)), B: \(saidB.suffix(40))")
+
+        // Each question went to the host once, opening again and all.
+        let askedA = (try? await ledger.messages(sessionID: storedA))?.filter { $0.role == "user" }.count ?? -1
+        let askedB = (try? await ledger.messages(sessionID: storedB))?.filter { $0.role == "user" }.count ?? -1
+        HermesLabApprovalTests.report(askedA == 1 && askedB == 1, "reconnecting sent neither question again", "A asked \(askedA)×, B \(askedB)×")
+        for record in ConversationStore.shared.summaries where [storedA, storedB].contains(record.serverSessionID) { app.delete(id: record.id) }
+    }
 }
 
 /// Group chats with the app's own client and room feed (lab.sh groups, after groups_check.py): a
