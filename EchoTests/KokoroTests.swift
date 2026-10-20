@@ -204,3 +204,46 @@ struct KokoroFailureTests {
         #expect(!KokoroPlayer.worthAskingAgain(CancellationError()))
     }
 }
+
+/// A group chat's next bot: its first sentence is fetched while another is read, and played from
+/// what was fetched when its turn comes (`KokoroPlayer.prefetch`).
+struct KokoroPrefetchTests {
+    /// Plays one sentence to the end; false when it never drained.
+    private func play(_ player: KokoroPlayer, _ text: String, server: URL, voice: String) async -> Bool {
+        await withCheckedContinuation { done in
+            var resumed = false
+            player.onDrained = {
+                guard !resumed else { return }
+                resumed = true
+                done.resume(returning: true)
+            }
+            player.begin()   // as a reply's start does: a stop, which leaves what was fetched ahead
+            player.enqueue(text, baseURL: server, voice: voice)
+            player.finish()
+            Task {
+                try? await Task.sleep(for: .seconds(10))
+                guard !resumed else { return }
+                resumed = true
+                done.resume(returning: false)
+            }
+        }
+    }
+
+    @Test func aSentenceFetchedAheadIsNotAskedForAgain() async throws {
+        let server = try await DroppingSpeechServer.start(drops: 0)
+        defer { server.stop() }
+        let player = KokoroPlayer()
+        player.prefetch("Falls Loop is open.", baseURL: server.baseURL, voice: "am_adam")
+        player.prefetch("Falls Loop is open.", baseURL: server.baseURL, voice: "am_adam")   // the same again: left as it is
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(server.connections == 1)
+        #expect(await play(player, "Falls Loop is open.", server: server.baseURL, voice: "am_adam"))
+        #expect(server.connections == 1, "played from what was fetched")
+        // In another voice it is another sentence.
+        player.prefetch("Bring layers.", baseURL: server.baseURL, voice: "am_adam")
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(await play(player, "Bring layers.", server: server.baseURL, voice: "bf_emma"))
+        #expect(server.connections == 3)
+        player.release()
+    }
+}

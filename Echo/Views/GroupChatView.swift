@@ -177,6 +177,8 @@ struct GroupChatView: View {
             }
             .task { await feed.follow() }
             .onChange(of: feed.state) { voice.roomChanged() }
+            // A reply being written is read as it is (`GroupVoice`).
+            .onChange(of: feed.drafts) { voice.roomChanged() }
             .onChange(of: voiceSession.phase) { voice.sessionChanged() }
             .onChange(of: voiceSession.continuous) { voice.sessionChanged() }
             // The voice screen, as a conversation's, with the room's bots on it.

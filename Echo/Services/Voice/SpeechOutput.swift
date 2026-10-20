@@ -108,8 +108,28 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
     private var replyKokoroVoice: String {
         if let id = voiceOverride?.kokoro { return id }
         guard voiceOverride == nil else { return Settings.shared.kokoroVoice }
-        return BotVoices.kokoro(for: speaker, picked: Settings.shared.botVoicesHere, main: Settings.shared.kokoroVoice,
-                                available: kokoroVoiceIDs?.ids ?? [], names: botNames) ?? Settings.shared.kokoroVoice
+        return kokoroVoice(of: speaker)
+    }
+
+    /// The Kokoro voice `speaker`'s words are read in (`BotVoices`), Redde's own for nil.
+    private func kokoroVoice(of speaker: String?) -> String {
+        BotVoices.kokoro(for: speaker, picked: Settings.shared.botVoicesHere, main: Settings.shared.kokoroVoice,
+                         available: kokoroVoiceIDs?.ids ?? [], names: botNames) ?? Settings.shared.kokoroVoice
+    }
+
+    /// The first sentence of what will be read next, in `speaker`'s voice: asked of Kokoro now,
+    /// while something else is read (a group chat's next bot), so it starts the moment its turn
+    /// comes instead of after the server has made it. Only a sentence the reading will cut the
+    /// same way: a whole one, or all of `text` when `whole`. In a language other than Redde's it
+    /// gets another voice then, and is simply asked for again. nil lets it go.
+    func prefetch(_ text: String?, whole: Bool, speaker: String?) {
+        guard let text else { player.dropPrefetch(); return }
+        guard Settings.shared.replyVoice == .kokoro, let base = Settings.shared.kokoroBaseURL else { return }
+        var chunker = SentenceChunker()
+        guard let first = chunker.append(text).first ?? (whole ? chunker.flush() : nil) else { return }
+        let spoken = PlainText.spoken(first)
+        guard !spoken.isEmpty else { return }
+        player.prefetch(spoken, baseURL: base, voice: kokoroVoice(of: speaker), speed: Settings.shared.voiceSpeed)
     }
 
     /// The bot's own built-in voice for `language`, when it has one there: looked up once a reply

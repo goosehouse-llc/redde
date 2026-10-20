@@ -150,17 +150,43 @@ final class VoiceSession {
     /// hands-free; reading from the transcript never starts listening.
     /// `speaker`: whose words they are, a bot's profile, read in that bot's voice (`BotVoices`).
     func readAloud(_ text: String, resumeHandsFree: Bool = false, speaker: String? = nil) {
-        guard phase == .idle || isErrored, !text.isEmpty else { return }
+        guard !text.isEmpty, beginReading(resumeHandsFree: resumeHandsFree, speaker: speaker) else { return }
+        output.append(text)
+        output.endReply()
+    }
+
+    /// Reads words still being written (a group chat's bot, as it writes): `readAloud` with the
+    /// text to come, given by `continueReading` and ended by `endReading`. Speaking until then,
+    /// and until the last of it has been heard. False when something else is going on.
+    @discardableResult
+    func beginReading(resumeHandsFree: Bool = false, speaker: String? = nil) -> Bool {
+        guard phase == .idle || isErrored else { return false }
         output.speaker = speaker
         do { try audio.activateForPlayback() } catch {
-            phase = .error(error.localizedDescription); return
+            phase = .error(error.localizedDescription); return false
         }
         replaying = true
         replayResumesHandsFree = resumeHandsFree
         phase = .speaking
         output.beginReply()
+        return true
+    }
+
+    /// More of what `beginReading` reads; nothing once that has been stopped.
+    func continueReading(_ text: String) {
+        guard replaying, phase == .speaking, !text.isEmpty else { return }
         output.append(text)
+    }
+
+    /// No more of it is coming.
+    func endReading() {
+        guard replaying, phase == .speaking else { return }
         output.endReply()
+    }
+
+    /// The first sentence of what will be read next, fetched now (`VoiceSpeaking.prefetch`).
+    func prefetch(_ text: String?, whole: Bool = false, speaker: String? = nil) {
+        output.prefetch(text, whole: whole, speaker: speaker)
     }
 
     /// Set when an interruption cut a live turn short; listening restarts when it ends.

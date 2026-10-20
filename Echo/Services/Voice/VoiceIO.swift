@@ -54,6 +54,9 @@ protocol VoiceSpeaking: AnyObject {
     /// Hold the reply where it is, and carry on from there. Default: no-op.
     func pause()
     func resume()
+    /// The first sentence of what will be read next, as `speaker`'s, fetched now (`whole`: the
+    /// text is all there is of it); nil lets it go. Default: no-op.
+    func prefetch(_ text: String?, whole: Bool, speaker: String?)
 }
 extension SpeechOutput: VoiceSpeaking {}
 
@@ -61,6 +64,7 @@ extension VoiceSpeaking {
     var meterLevel: Float { 0 }
     func pause() {}
     func resume() {}
+    func prefetch(_ text: String?, whole: Bool, speaker: String?) {}
 }
 
 /// The head-movement side (HeadGestures in production): a nod or a shake, from AirPods.

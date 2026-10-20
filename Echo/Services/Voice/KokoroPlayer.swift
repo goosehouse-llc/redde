@@ -51,6 +51,10 @@ final class KokoroPlayer {
     /// Sentences fetched ahead of the one playing. More only compete with it for the server's
     /// GPU, which lengthens the wait for the sentence that is actually due.
     private static let lookahead = 2
+    /// The first sentence of what will be read next (a group chat's next bot, while another is
+    /// read), fetched before it is asked for (`prefetch`): the `enqueue` asking for the same words
+    /// in the same voice takes it, already in hand. A stop leaves it; one at a time.
+    private var prefetched: Sentence?
 
     /// Who speaks a sentence.
     private enum Source {
@@ -64,6 +68,11 @@ final class KokoroPlayer {
     private final class Sentence {
         let text: String
         let source: Source
+        /// What a prefetched sentence is matched by: its words, voice, speed and server.
+        var key: String? {
+            guard case let .kokoro(baseURL, voice, speed) = source else { return nil }
+            return "\(baseURL.absoluteString)|\(voice)|\(speed)|\(text)"
+        }
         let chunks: AsyncThrowingStream<AVAudioPCMBuffer, Error>
         let continuation: AsyncThrowingStream<AVAudioPCMBuffer, Error>.Continuation
         var fetch: Task<Void, Never>?
@@ -136,7 +145,29 @@ final class KokoroPlayer {
     }
 
     func enqueue(_ text: String, baseURL: URL, voice: String, speed: Double = 1.0) {
-        enqueue(Sentence(text: text, source: .kokoro(baseURL: baseURL, voice: voice, speed: speed)))
+        let sentence = Sentence(text: text, source: .kokoro(baseURL: baseURL, voice: voice, speed: speed))
+        if let early = prefetched, early.key == sentence.key {
+            prefetched = nil
+            enqueue(early)
+            return
+        }
+        enqueue(sentence)
+    }
+
+    /// Fetches a sentence now that will be enqueued later, so it plays the moment it is (see
+    /// `prefetched`). The same one again is left as it is; another lets the last one go.
+    func prefetch(_ text: String, baseURL: URL, voice: String, speed: Double = 1.0) {
+        let sentence = Sentence(text: text, source: .kokoro(baseURL: baseURL, voice: voice, speed: speed))
+        guard prefetched?.key != sentence.key else { return }
+        prefetched?.fetch?.cancel()
+        prefetched = sentence
+        startFetch(sentence)
+    }
+
+    /// Lets a prefetched sentence go unplayed.
+    func dropPrefetch() {
+        prefetched?.fetch?.cancel()
+        prefetched = nil
     }
 
     /// A sentence for the person's Hermes to say, through the Dashboard at `server`.

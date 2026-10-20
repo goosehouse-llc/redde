@@ -444,9 +444,20 @@ where a new conversation is in the ••• menu, and ⌘N as anywhere) is the 
   earlier pages too. Talk opens the voice screen on the room (`VoiceView.group`, a
   `GroupVoiceScene`; asked 2026-10-20), hands-free (`GroupVoice`): the voice session hands what
   is heard to the room (`VoiceSession.sendsTo`) instead of the conversation, each bot's reply is
-  read aloud as it lands, one after another, in that bot's voice (`BotVoices`), and the mic opens
+  read aloud as it is written (asked 2026-10-20: the bots had seemed slow, but it was the wait for
+  each whole reply), from its live session (`GroupDraft`, through `VoiceSession.beginReading` /
+  `continueReading` / `endReading`), or once it lands where replies aren't followed live, one
+  after another in the order they began, in that bot's voice (`BotVoices`), and the mic opens
   again once the round is over, unless a bot waits on the person (then the screen says to answer
-  in the chat). In the orb's place are all the room's faces while none speaks (`GroupVoiceFaces`,
+  in the chat). `GroupReplies` (pure, `GroupRepliesTests`) decides what is read: each reply once
+  (a draft and its message are one), none from before voice began, never a bot passing (Hermes
+  takes "pass", "(pass)" or "Pass." as silence on every release, so a draft waits until it can't
+  be one), a reply stopped midway cut where it got and one not begun dropped; a reply written
+  over (the words beside a tool call, which the room's message leaves out) carries on with the
+  new words. While one is read, the next one's first sentence is fetched from Kokoro
+  (`SpeechOutput.prefetch` → `KokoroPlayer.prefetch`, kept through the stop at the next reply's
+  start and taken by the `enqueue` asking for the same words, voice and speed), so the next bot
+  starts when the one before ends. In the orb's place are all the room's faces while none speaks (`GroupVoiceFaces`,
   up to six, level round the centre: two side by side, three as two over one), and the one being
   read while it is, handing over to the next as the voice screen does between bots; the header
   is the room's faces and name, the status says who is speaking or writing, the captions are the
@@ -1130,7 +1141,12 @@ Replies are spoken sentence by sentence while they stream, by AVSpeechSynthesize
 or the user's Hermes (Settings → Voice: On-device, Kokoro, Hermes; `Settings.replyVoice`, which
 took over the old Kokoro switch). Kokoro: one PCM streaming request per sentence, decoded ~100 ms
 at a time onto an `AVAudioPlayerNode`, fetched ahead and played in order, with the built-in voice
-as the fallback. The replay button speaks the last reply again without a new turn. The speech model
+as the fallback. Measured 2026-10-20 on a 64 GB Mac (Kokoro-FastAPI 0.7.2-rc1 on MPS, the same
+GPU as the agent's model): a 5-second sentence in ~0.45 s alone and ~0.85 s while the model writes,
+and about a second more the first time a sentence of a new length is made (MPS compiles a program
+for each input shape). Left running for days that server grew to 26 GB (19 GB compressed), and one
+request in five stalled ~7 s while it was unpacked: 0.7.2 never empties the MPS cache (its memory
+check is CUDA's only), and the compiled programs pile up besides, so it wants a restart now and then. The replay button speaks the last reply again without a new turn. The speech model
 is downloaded in the background at launch.
 
 **Hermes's own voice** (GitHub issue 7, `Services/Voice/HermesSpeech.swift`). The Dashboard speaks

@@ -208,6 +208,26 @@ struct VoiceSessionTests {
         #expect(h.recognizer.starts == 1, "the group chat opens the mic, once the round is over")
     }
 
+    /// A reply read as it is written (a group chat's bot): spoken from its first words, quiet only
+    /// once it has ended and been heard; once cut short, nothing more of it goes to the voice.
+    @Test func wordsStillBeingWrittenAreReadAsTheyCome() async throws {
+        let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport([]))
+        #expect(h.session.beginReading(speaker: "scout"))
+        #expect(h.session.phase == .speaking && h.speaker.speaker == "scout")
+        h.session.continueReading("Falls Loop ")
+        h.session.continueReading("is open.")
+        #expect(h.speaker.spoken.joined() == "Falls Loop is open." && h.speaker.ends == 0)
+        h.session.endReading()
+        #expect(h.speaker.ends == 1 && h.session.phase == .speaking)
+        h.speaker.finishSpeaking()
+        try await waitUntil("quiet") { h.session.phase == .idle }
+        #expect(h.recognizer.starts == 0, "a reading never opens the mic itself")
+        #expect(h.session.beginReading(speaker: "writer"))
+        h.session.cancel()
+        h.session.continueReading("Saturday at eight.")
+        #expect(h.speaker.spoken.joined() == "Falls Loop is open.")
+    }
+
     /// Stop on a group chat's voice screen stops: the reading and the listening end, and the mic
     /// stays shut (the round over or not) until the person opens it again.
     @Test func stopInAGroupChatsVoiceKeepsTheMicShut() async throws {
