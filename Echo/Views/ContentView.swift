@@ -123,6 +123,9 @@ struct ContentView: View {
             .environment(conversation)
             .environment(voiceSession)
             .environment(\.theme, theme)
+            // In a bot's chat, voice mode is with the bot: its name, and its creature as the orb.
+            .environment(\.replySpeaker, conversation.bot?.name)
+            .environment(\.replyFace, botFace)
             .tint(theme.accent)
         }
         .task {
@@ -350,8 +353,7 @@ struct ContentView: View {
                         if let bot = chatBot {
                             Button("Edit Bot…", systemImage: "slider.horizontal.3") { editingBot = bot }
                         }
-                        // A bot's chat: its face, but Redde's own bubble stays the main agent's.
-                        if let bot = chatBot, !bot.isDefault {
+                        if let bot = chatBot {
                             Button("Change Face…", systemImage: "face.smiling") { facingBot = bot }
                         }
                         // A bot's chat: Start Fresh has the toolbar's button, and a new conversation
@@ -705,13 +707,35 @@ struct ContentView: View {
     private func handleLaunchRequest() {
         guard !lock.isLocked, let request = router.consumeVoiceRequest() else { return }
         Logger(subsystem: "com.goosehouse.echo", category: "intent").info("UI consuming voice request handsFree=\(request.handsFree)")
-        // "Ask Work in Redde": be on that profile first. Here and not in the intent, so it waits
-        // for the app lock like the listening does. A name the phone doesn't know changes nothing.
-        if let asked = request.profile, let profile = ProfileCatalog.find(asked, in: ProfileCatalog.known()),
-           ProfileCatalog.use(profile, conversation: conversation), showVoice {
-            voiceSession.cancel()   // voice mode was open on the other profile: what it was saying is over
+        // "Ask Claude in Redde": on the Dashboard, a bot is talked to in its own chat; else (and
+        // for the main profile) the app moves to that profile first. Here and not in the intent,
+        // so it waits for the app lock like the listening does. A name the phone doesn't know
+        // changes nothing.
+        guard let asked = request.profile else {
+            Task { await launchVoice(handsFree: request.handsFree, fromOutside: true) }
+            return
         }
-        Task { await launchVoice(handsFree: request.handsFree, fromOutside: true) }
+        Task {
+            if conversation.bot?.profile != asked {
+                if showVoice { voiceSession.cancel() }   // what voice mode was saying in another chat is over
+                do {
+                    if try await conversation.openBot(asked: asked, mainName: settings.headerTitle) != nil {
+                        // In the bot's chat now: carry on in it, never a fresh conversation.
+                        await launchVoice(handsFree: request.handsFree, fromOutside: false)
+                        return
+                    }
+                } catch {
+                    Logger(subsystem: "com.goosehouse.echo", category: "intent").error("couldn't open the bot's chat: \(error.localizedDescription)")
+                }
+            } else {
+                await launchVoice(handsFree: request.handsFree, fromOutside: false)
+                return
+            }
+            if let profile = ProfileCatalog.find(asked, in: ProfileCatalog.known()), ProfileCatalog.use(profile, conversation: conversation), showVoice {
+                voiceSession.cancel()   // voice mode was open on the other profile: what it was saying is over
+            }
+            await launchVoice(handsFree: request.handsFree, fromOutside: true)
+        }
     }
 
     /// Voice mode asked for in a specific mode (the Talk button, Siri, a control): that mode wins

@@ -8,6 +8,8 @@ struct VoiceView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(Conversation.self) private var conversation
     @Environment(\.theme) private var theme
+    /// In a bot's chat: the bot's name.
+    @Environment(\.replySpeaker) private var replySpeaker
     @Bindable var session: VoiceSession
     /// The keyboard button: leave voice mode with the composer focused, ready to type. (The red
     /// ✕ just ends voice mode.)
@@ -296,7 +298,7 @@ struct VoiceView: View {
         switch phase {
         case .idle: "Ready"
         case .listening: "Listening"
-        case .thinking: "\(Settings.shared.headerTitle) is thinking"
+        case .thinking: "\(replySpeaker ?? Settings.shared.headerTitle) is thinking"
         case .speaking: "Speaking"
         case .error: "Something went wrong"
         }
@@ -373,6 +375,8 @@ private struct OrbFace: View {
     let phaseColor: Color
     let demo: Bool
     @Environment(\.theme) private var theme
+    /// In a bot's chat: the bot's creature, which stands in for the orb.
+    @Environment(\.replyFace) private var replyFace
 
     /// The `-echo.voiceDemo` pose: a level that moves like speech (two beating waves, never
     /// quite silent), so screenshots and the promo video show a live waveform.
@@ -402,8 +406,9 @@ private struct OrbFace: View {
                 // At rest: one faint, slow ring now and then, so it never looks switched off.
                 Halos(color: phaseColor, subtle: true, diameter: orb.isDrawn ? GlassOrb.haloDiameter : 198)
             }
-            if orb == .reddeFace {
-                ReddeVoiceFace(phase: phase, phaseColor: phaseColor, level: meter)
+            if let face = replyFace ?? (orb == .reddeFace ? BotDirectory.shared.mainFace : nil) {
+                // Redde's own face (the orb picked), or the bot being talked to, whichever orb is picked.
+                ReddeVoiceFace(face: face, phase: phase, phaseColor: phaseColor, level: meter)
                     .scaleEffect(listening ? 1 + level * 0.06 : 1)
                     .accessibilityHidden(true)
             } else if orb.isDrawn {
@@ -484,6 +489,7 @@ private struct OrbFace: View {
 /// you talk it looks at you; while it thinks it looks up and away, eyes circling; while the reply
 /// is read out its mouth opens with the voice. Small moves, no breathing; still under Reduce Motion.
 private struct ReddeVoiceFace: View {
+    var face: BotFace = .main
     let phase: VoiceSession.Phase
     let phaseColor: Color
     /// The mic's level, or the reply's while it is read out.
@@ -494,8 +500,8 @@ private struct ReddeVoiceFace: View {
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 30, paused: reduceMotion)) { timeline in
-            BotAvatar(face: .main, size: Self.size, pose: Self.pose(at: timeline.date.timeIntervalSinceReferenceDate, phase: phase,
-                                                                    level: CGFloat(level())))
+            BotAvatar(face: face, size: Self.size, pose: Self.pose(at: timeline.date.timeIntervalSinceReferenceDate, phase: phase,
+                                                                   level: CGFloat(level()), tilt: face.tilt))
         }
         .shadow(color: phase == .idle ? .clear : phaseColor.opacity(0.9), radius: 10)
         .shadow(color: .black.opacity(0.35), radius: 22, y: 12)
@@ -503,7 +509,7 @@ private struct ReddeVoiceFace: View {
     }
 
     /// Where the face looks, how shut its eyes are and how open its mouth, at a moment.
-    static func pose(at t: TimeInterval, phase: VoiceSession.Phase, level: CGFloat) -> BotPose {
+    static func pose(at t: TimeInterval, phase: VoiceSession.Phase, level: CGFloat, tilt: Double = BotFace.main.tilt) -> BotPose {
         // A blink about every four seconds and a half, now and then a double one.
         func blink(_ t: TimeInterval, every period: TimeInterval, offset: TimeInterval) -> CGFloat {
             let at = (t + offset).truncatingRemainder(dividingBy: period)
@@ -531,7 +537,7 @@ private struct ReddeVoiceFace: View {
             look = CGPoint(x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased)
         }
         let mouth: CGFloat = phase == .speaking ? min(1, max(0, level * 1.8)) : 0
-        return BotPose(look: look, blink: shut, mouth: mouth, tilt: -3 + Double(look.x) * 2.5)
+        return BotPose(look: look, blink: shut, mouth: mouth, tilt: tilt + Double(look.x) * 2.5)
     }
 }
 

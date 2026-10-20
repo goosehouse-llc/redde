@@ -1368,6 +1368,18 @@ final class Conversation {
                                    isNew: isNew)
     }
 
+    /// "Ask Claude in Redde": the bot that name means on this server, its chat opened. Nil when it
+    /// means none (the main profile, a profile with no bot here, the Hermes API, the Bots turned
+    /// off): the caller moves the app to that profile instead. The roster as last read, else read now.
+    func openBot(asked name: String, mainName: String) async throws -> HermesBot? {
+        guard settings.transport == .hermesServe, settings.showBots else { return nil }
+        var roster = BotDirectory.shared.key == settings.connectionKey ? BotDirectory.shared.roster : nil
+        if roster?.asked(name) == nil { roster = try? await BotDirectory.shared.refresh() }
+        guard let bot = roster?.asked(name) else { return nil }
+        try await openBot(bot, mainName: mainName)
+        return bot
+    }
+
     /// The open bot's chat goes by what `roster` calls its bot now: renamed in Redde or in Hermes
     /// Desktop, the header, the composer and its replies say the new name.
     func followBotName(in roster: BotRoster, mainName: String) {

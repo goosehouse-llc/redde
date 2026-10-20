@@ -13,9 +13,14 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
         case round, egg, pill, capsule, burst, pick, hex, diamond
         /// Redde's own: the message bubble, its tucked corner on the left. No other bot gets it.
         case bubble
+        /// Shapes only picked, never given by a name (adding them to what a name gives would
+        /// change every bot's creature): a ghost, a rounded square, a star, a blob.
+        case ghost, square, star, blob
 
-        /// The shapes a bot can have.
+        /// The shapes a bot can be picked to have.
         static let given = allCases.filter { $0 != .bubble }
+        /// The shapes a name gives, in their first order: never to change.
+        static let seeded: [Shape] = [.round, .egg, .pill, .capsule, .burst, .pick, .hex, .diamond]
     }
     enum Eyes: String, CaseIterable, Sendable { case round, mismatched, sleepy, happy, sparkle }
     enum Mouth: String, CaseIterable, Sendable { case none, smile, oh, grin }
@@ -46,8 +51,8 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
         (Color(red: 0.92, green: 0.97, blue: 0.63), Color(red: 0.70, green: 0.80, blue: 0.17)),   // lime
     ]
 
-    /// Every face there is (colour, glance and lean aside), in a fixed order.
-    private static let all: [BotFace] = Shape.given.flatMap { shape in
+    /// Every face a name can give (colour, glance and lean aside), in a fixed order.
+    private static let all: [BotFace] = Shape.seeded.flatMap { shape in
         Eyes.allCases.flatMap { eyes in
             Mouth.allCases.flatMap { mouth in
                 Mark.allCases.map { BotFace(shape: shape, eyes: eyes, mouth: mouth, mark: $0, glance: 0, tilt: 0, color: 0) }
@@ -55,9 +60,10 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
         }
     }
 
-    /// The main agent's, whatever its profile is called: Redde's own bubble, the shape of a message
-    /// in the app with its tucked corner on the left (a reply's side), in the theme's bubble colour.
-    /// Its colour number only keeps the other bots off blue, the colour of the standard theme.
+    /// The main agent's, whatever its profile is called, unless one was picked for it: Redde's own
+    /// bubble, the shape of a message in the app with its tucked corner on the left (a reply's
+    /// side), in the theme's bubble colour. Its colour number only keeps the other bots off blue,
+    /// the colour of the standard theme.
     static let main = BotFace(shape: .bubble, eyes: .round, mouth: .none, mark: .none, glance: 1, tilt: -3, color: 0)
 
     /// The face a name gives, on its own. The main profile's is always Redde's (`main`).
@@ -86,7 +92,7 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
 
     init?(code: String) {
         let parts = code.split(separator: ":").map(String.init)
-        guard parts.count == 8, parts[0] == "1", let shape = Shape(rawValue: parts[1]), shape != .bubble,
+        guard parts.count == 8, parts[0] == "1", let shape = Shape(rawValue: parts[1]),
               let eyes = Eyes(rawValue: parts[2]), let mouth = Mouth(rawValue: parts[3]), let mark = Mark(rawValue: parts[4]),
               let color = Int(parts[5]), let glance = Int(parts[6]), let tilt = Int(parts[7]) else { return nil }
         self.init(shape: shape, eyes: eyes, mouth: mouth, mark: mark, glance: ((glance % 4) + 4) % 4,
@@ -96,17 +102,20 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
     /// A face for each name, no two alike: the ones the person picked as they are, then each
     /// other takes the face its name gives unless one before it (in name order) has it, then the
     /// next free one; its shape one of those used least so far, and a colour of its own while
-    /// there are colours no one has yet. The main profile's is always Redde's.
+    /// there are colours no one has yet. The main profile's is Redde's, or the one picked for it;
+    /// Redde's bubble is never another bot's, picked or not.
     static func faces(for names: [String], picked: [String: BotFace] = [:]) -> [String: BotFace] {
         var taken: [BotFace] = []
         var out: [String: BotFace] = [:]
-        // The main profile first: Redde's bubble is its own, and the others go round it.
+        let picked = picked.filter { $0.key == "default" || $0.value.shape != .bubble }
+        // The main profile first: the others go round its face.
         if names.contains("default") {
-            taken.append(main)
-            out["default"] = main
+            let face = picked["default"] ?? main
+            taken.append(face)
+            out["default"] = face
         }
         for name in Set(names).subtracting(["default"]).sorted() {
-            guard let face = picked[name] else { continue }
+            guard let face = picked[name] else { continue }   // (the main profile's is in already)
             taken.append(face)
             out[name] = face
         }
@@ -115,7 +124,7 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
             let start = all.firstIndex { $0.sameFeatures(as: given) } ?? 0
             // The shapes used least so far are the ones open to it: every shape once before any twice.
             let uses = Dictionary(grouping: taken, by: \.shape).mapValues(\.count)
-            let fewest = Shape.given.map { uses[$0] ?? 0 }.min() ?? 0
+            let fewest = Shape.seeded.map { uses[$0] ?? 0 }.min() ?? 0
             var face = given
             for step in 0 ..< all.count {
                 var candidate = all[(start + step) % all.count]
@@ -271,6 +280,38 @@ struct BotAvatar: View {
         case .diamond:
             return Layout(body: rounded([CGPoint(x: 51, y: 7), CGPoint(x: 91, y: 47), CGPoint(x: 45, y: 88), CGPoint(x: 11, y: 47)], sharp: 2, sharpness: 0.06),
                           eyeY: 46, eyeGap: 11, top: CGPoint(x: 51, y: 9))
+        case .ghost:
+            // A dome above, straight sides, and a hem of three scallops whose left end is the tail.
+            var p = Path()
+            p.move(to: CGPoint(x: 18, y: 50))
+            p.addCurve(to: CGPoint(x: 51, y: 11), control1: CGPoint(x: 18, y: 28), control2: CGPoint(x: 32, y: 11))
+            p.addCurve(to: CGPoint(x: 84, y: 50), control1: CGPoint(x: 70, y: 11), control2: CGPoint(x: 84, y: 28))
+            p.addLine(to: CGPoint(x: 84, y: 82))
+            p.addQuadCurve(to: CGPoint(x: 73, y: 82), control: CGPoint(x: 78.5, y: 91))
+            p.addQuadCurve(to: CGPoint(x: 62, y: 82), control: CGPoint(x: 67.5, y: 74))
+            p.addQuadCurve(to: CGPoint(x: 51, y: 82), control: CGPoint(x: 56.5, y: 91))
+            p.addQuadCurve(to: CGPoint(x: 40, y: 82), control: CGPoint(x: 45.5, y: 74))
+            p.addQuadCurve(to: CGPoint(x: 29, y: 82), control: CGPoint(x: 34.5, y: 91))
+            p.addQuadCurve(to: CGPoint(x: 18, y: 90), control: CGPoint(x: 23, y: 76))
+            p.closeSubpath()
+            return Layout(body: p, eyeY: 43, eyeGap: 11, top: CGPoint(x: 51, y: 11))
+        case .square:
+            // A square with gently rounded corners; the bottom left one the tail.
+            return Layout(body: tucked(CGRect(x: 14, y: 12, width: 74, height: 74), radius: 13), eyeY: 45, eyeGap: 12, top: CGPoint(x: 51, y: 12))
+        case .star:
+            // Five soft points; the one at the bottom left a little sharper.
+            let points = ring(5, center: CGPoint(x: 51, y: 52), outer: 45, inner: 27)
+            return Layout(body: rounded(points, softness: 0.3, sharp: nearestBottomLeft(points, outerOnly: true), sharpness: 0.12),
+                          eyeY: 50, eyeGap: 9.5, top: CGPoint(x: 51, y: 9))
+        case .blob:
+            // Seven lumps of no two sizes, run smooth, and a corner at the bottom left.
+            let radii: [CGFloat] = [37, 33, 39, 34, 38, 41, 35]
+            let points = radii.indices.map { i -> CGPoint in
+                let a = (-90 + Double(i) * 360 / Double(radii.count)) * .pi / 180
+                return CGPoint(x: 51 + radii[i] * cos(a), y: 49 + radii[i] * sin(a))
+            }
+            return Layout(body: rounded(points, softness: 0.5, sharp: nearestBottomLeft(points), sharpness: 0.12),
+                          eyeY: 46, eyeGap: 11, top: CGPoint(x: 51, y: 12))
         case .bubble:
             // Nearly square, its corners the theme's, scaled up, the bottom left one tucked in as the
             // bottom right of your own messages is (`userBubbleShape`).
@@ -453,6 +494,14 @@ struct BotGallery: View {
                 }
             }
             .padding()
+            // The shapes only picked, never given by a name.
+            HStack(spacing: 14) {
+                ForEach(Array([BotFace.Shape.ghost, .square, .star, .blob].enumerated()), id: \.offset) { i, shape in
+                    BotAvatar(face: BotFace(shape: shape, eyes: [.round, .happy, .sparkle, .mismatched][i], mouth: [.smile, .none, .grin, .oh][i],
+                                            mark: [.none, .blush, .spark, .freckles][i], glance: i, tilt: Double(i * 2 - 3), color: [8, 4, 1, 5][i]), size: 72)
+                }
+            }
+            .padding(.vertical, 8)
             HStack(spacing: 10) {
                 ForEach(Self.names, id: \.self) { BotAvatar(face: faces[$0] ?? BotFace(seed: $0), size: 26) }
             }

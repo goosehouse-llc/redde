@@ -216,7 +216,7 @@ enum CarPlayArtwork {
                                 movingAt scale: CGFloat? = nil) -> UIImage {
         // Redde's face is in the theme's bubble colour: another theme, another picture.
         let settings = Settings.shared
-        let theme = look == .redde ? " \(settings.theme.rawValue) \(String(describing: settings.themeColors[settings.theme.rawValue]))" : ""
+        let theme = look == .redde ? " \(settings.theme.rawValue) \(String(describing: settings.themeColors[settings.theme.rawValue])) \(BotDirectory.shared.mainFace.code)" : ""
         let key = "\(look.rawValue) \(state.rawValue) \(side) \(scale ?? 0)\(theme)"
         if let made = voicePictures[key] { return made }
         let picture = voicePicture(state, look: look, side: side, movingAt: scale)
@@ -604,7 +604,7 @@ enum CarPlayArtwork {
                    centre: CGPoint(x: rect.midX, y: rect.midY), radii: CGSize(width: 50 * u, height: 50 * u))
         }
         let side = 84 * u
-        if let image = BotAvatar.picture(of: .main, side: side, pose: reddePose(state, at: p), scale: max(1, abs(ctx.ctm.a))) {
+        if let image = BotAvatar.picture(of: BotDirectory.shared.mainFace, side: side, pose: reddePose(state, at: p), scale: max(1, abs(ctx.ctm.a))) {
             image.draw(in: CGRect(x: rect.midX - side / 2, y: rect.midY - side / 2 - (state == .phone ? 6 * u : 0), width: side, height: side))
         }
         if state == .phone {

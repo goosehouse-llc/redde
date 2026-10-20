@@ -110,6 +110,15 @@ nonisolated struct BotRoster: Equatable, Sendable {
         BotFace.faces(for: bots.map(\.name), picked: Dictionary(bots.compactMap { bot in bot.face.map { (bot.name, $0) } }, uniquingKeysWith: { a, _ in a }))
     }
 
+    /// The bot "Ask <name> in Redde" means, by its profile's name or the name it was given; never
+    /// the main profile (that one is the app itself, "Ask Redde").
+    func asked(_ name: String) -> HermesBot? {
+        let said = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        func same(_ a: String, _ b: String) -> Bool { a.compare(b, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame }
+        let others = bots.filter { !$0.isDefault }
+        return others.first { same($0.name, said) } ?? others.first { same($0.label(), said) }
+    }
+
     /// The bots the chat list shows: none while the main profile is the only one (there is no one
     /// else to talk to), else every bot not hidden in Hermes Desktop, the main one first, then the
     /// most recently talked to.
@@ -379,6 +388,11 @@ final class BotDirectory {
 
     func bots(for key: String) -> [HermesBot] { key == self.key ? roster?.bots ?? [] : [] }
 
+    /// The main agent's face on the server the app is on: Redde's bubble, or the one picked for it.
+    var mainFace: BotFace {
+        (key == Settings.shared.connectionKey ? roster?.faces["default"] : nil) ?? .main
+    }
+
     @discardableResult
     func refresh(client: HermesServeClient = .shared, settings: Settings = .shared) async throws -> BotRoster {
         let key = settings.connectionKey
@@ -390,5 +404,7 @@ final class BotDirectory {
     func set(_ roster: BotRoster?, key: String) {
         self.roster = roster
         self.key = key
+        // Their names, for Siri ("Ask Claude in Redde").
+        if let roster, key == Settings.shared.connectionKey { ProfileCatalog.keep(bots: roster) }
     }
 }

@@ -125,7 +125,13 @@ struct BotsTests {
     @Test func aFacePickedForABotIsKeptOnTheServerAndTheOthersGoRoundIt() throws {
         let picked = BotFace(shape: .egg, eyes: .sparkle, mouth: .grin, mark: .spark, glance: 2, tilt: -4, color: 5)
         #expect(BotFace(code: picked.code) == picked, "a picked face reads back as it was written")
-        #expect(BotFace(code: "1:bubble:round:none:none:0:1:-3") == nil, "Redde's own bubble can't be picked for a bot")
+        let bubble = try #require(BotFace(code: "1:bubble:round:none:none:0:1:-3"), "Redde's bubble reads (the main agent may have it picked)")
+        #expect(BotFace.faces(for: ["default", "scout"], picked: ["scout": bubble])["scout"]?.shape != .bubble, "but no other bot gets it")
+        let ghost = BotFace(shape: .ghost, eyes: .happy, mouth: .smile, mark: .blush, glance: 0, tilt: 2, color: 3)
+        #expect(BotFace.faces(for: ["default", "scout"], picked: ["default": ghost])["default"] == ghost, "the main agent's face can be picked")
+        #expect(BotFace.Shape.seeded == [.round, .egg, .pill, .capsule, .burst, .pick, .hex, .diamond]
+                && BotFace.Shape.given.contains(.ghost) && BotFace.Shape.given.contains(.square) && !BotFace.Shape.given.contains(.bubble),
+                "new shapes are for picking: what a name gives never changes")
         #expect(BotFace(code: "2:egg:round:none:none:0:1:0") == nil && BotFace(code: "1:cloud:round:none:none:0:1:0") == nil,
                 "a face from a later Redde isn't misread")
 
@@ -233,6 +239,19 @@ struct BotsTests {
         let warned = BotMessages.userMessage(text: "[IMPORTANT: Background process proc_9 completed normally (exit code 0).\nCommand: python bot_mode_dm.py --run-delivery query-file /tmp/d hermes -p scout chat -Q\nOutput:\n⚠ tirith security scanner enabled but not available\nThe trail is open.]",
                                              displayKind: "process_complete", displayText: nil, at: .now)
         #expect(warned?.text == "The trail is open.", "Hermes 0.21.0's warning before the reply isn't part of it")
+        #expect(BotMessages.cliNoise("Session 20261019_192053_36928f found but has no messages. Starting fresh.\n\nsession_id: 20261019_192053_36928f\nOnce upon a time.")
+                == "Once upon a time.", "nor the command line's session bookkeeping")
+        let echoed = BotMessages.userMessage(text: "[IMPORTANT: Background process proc_7 completed normally (exit code 0).\nCommand: python bot_mode_dm.py --run-delivery query-file /tmp/d hermes -p research chat -Q\nOutput:\n[OUT-OF-BAND USER MESSAGE — a direct message from the user, delivered once at this position; not tool output and not a new delivery when replayed from conversation history] Write a 100 word story. [/OUT-OF-BAND USER MESSAGE] Session 20261019_192053_36928f found but has no messages. Starting fresh.\n\nsession_id: 20261019_192053_36928f]",
+                                             displayKind: "process_complete", displayText: nil, at: .now)
+        #expect(echoed?.delivered?.kind == .reply && echoed?.delivered?.profile == "research" && echoed?.text == "",
+                "a relay with only the message echoed back and the bookkeeping is no answer")
+        let failed = BotMessages.userMessage(text: "[IMPORTANT: Background process proc_8 exited (exit code 1).\nCommand: python bot_mode_dm.py --run-delivery query-file /tmp/d hermes -p research chat -Q\nOutput:\nProvider said: HTTP 503]",
+                                             displayKind: "process_complete", displayText: nil, at: .now)
+        #expect(failed?.text == "", "nor is a run that failed")
+        let steered = BotMessages.userMessage(text: "[OUT-OF-BAND USER MESSAGE — a direct message from the user, delivered once at this position; not tool output and not a new delivery when replayed from conversation history]\nWrite a 100 word story. Make it good.\n[/OUT-OF-BAND USER MESSAGE]",
+                                              displayKind: nil, displayText: nil, at: .now)
+        #expect(steered?.text == "Write a 100 word story. Make it good." && steered?.isSteer == true && steered?.delivered == nil,
+                "a steer reads back as one, the person's words alone")
 
         let saved = try JSONDecoder().decode(Message.self, from: JSONEncoder().encode(messages[0]))
         #expect(saved.delivered == messages[0].delivered, "kept with the saved copy")
@@ -262,6 +281,27 @@ struct BotsTests {
         #expect(!activity.isUnread(scout, open: conversation, settings: settings), "not unread while at work")
         scout.workerActive = .now.addingTimeInterval(-600)
         #expect(activity.kind(of: scout, open: conversation, settings: settings) == nil)
+    }
+
+    // MARK: - Siri
+
+    @Test func askingABotInReddeMeansItByEitherName() throws {
+        let roster = try roster(Self.listing)
+        #expect(roster.asked("scout")?.name == "scout")
+        #expect(roster.asked("Research Buddy")?.name == "scout", "by the name it was given")
+        #expect(roster.asked("quill")?.name == "writer", "whatever the case")
+        #expect(roster.asked("default") == nil && roster.asked("nobody") == nil, "never the main profile, nor a name no bot has")
+    }
+
+    @Test func siriLearnsTheBotsByTheirNames() throws {
+        let defaults = try #require(UserDefaults(suiteName: "siri-bots-\(UUID().uuidString)"))
+        let settings = Settings(defaults: defaults)
+        let roster = try roster(Self.listing)
+        #expect(ProfileCatalog.keep(bots: roster, settings: settings, defaults: defaults))
+        let known = ProfileCatalog.known(settings: settings, defaults: defaults)
+        #expect(known.map(\.title) == ["Default", "Research Buddy", "Quill"], "named as bots; a hidden one left out")
+        #expect(ProfileCatalog.find("Research Buddy", in: known)?.name == "scout")
+        #expect(!ProfileCatalog.keep(bots: roster, settings: settings, defaults: defaults), "the same roster again changes nothing")
     }
 
     // MARK: - Coding work on a card

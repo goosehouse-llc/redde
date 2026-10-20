@@ -40,10 +40,10 @@ final class BotsUITests: XCTestCase {
         XCTAssertFalse(fixit.exists, "the bots are still offered once the tag is finished")
     }
 
-    /// Change Face in New Bot and in a bot's settings opens the face picker.
+    /// Change Face in New Bot, in a bot's settings and in the main agent's opens the face picker.
     func testChangeFaceInTheBotEditorOpensThePicker() {
         continueAfterFailure = false
-        for which in ["new", "scout"] {
+        for which in ["new", "scout", "default"] {
             let app = XCUIApplication()
             app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.clearDrafts", "-displayName", "Redde",
                                    "-echo.screen", "sessions", "-echo.botEditor", which] + XCUIApplication.chatsSection
@@ -52,6 +52,9 @@ final class BotsUITests: XCTestCase {
             XCTAssertTrue(change.waitForExistence(timeout: 20), "\(which): no Change Face")
             change.tap()
             XCTAssertTrue(app.staticTexts["Shape"].firstMatch.waitForExistence(timeout: 5), "\(which): Change Face opened nothing")
+            // Redde's own bubble is offered to the main agent alone; the ghost to everyone.
+            XCTAssertEqual(app.buttons["Bubble"].firstMatch.exists, which == "default", "\(which): the bubble offered wrongly")
+            XCTAssertTrue(app.buttons["Ghost"].firstMatch.exists, "\(which): no ghost")
             app.terminate()
         }
     }

@@ -74,7 +74,8 @@ struct EchoShortcuts: AppShortcutsProvider {
             shortTitle: "Take a Note",
             systemImageName: "square.and.pencil"
         )
-        // One phrase per Hermes profile the phone knows of (`ProfileCatalog`): "Ask Work in Redde".
+        // One phrase per bot or profile the phone knows of (`ProfileCatalog`), by the name it was
+        // given as a bot: "Ask Claude in Redde" talks to Claude in its own chat.
         AppShortcut(
             intent: AskProfileIntent(),
             phrases: [
@@ -82,8 +83,8 @@ struct EchoShortcuts: AppShortcutsProvider {
                 "Talk to \(\.$profile) in \(.applicationName)",
                 "Open \(.applicationName) on \(\.$profile)",
             ],
-            shortTitle: "Ask a Profile",
-            systemImageName: "person.crop.circle"
+            shortTitle: "Ask a Bot",
+            systemImageName: "bubble.left.and.text.bubble.right"
         )
     }
 

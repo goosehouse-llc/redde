@@ -79,7 +79,7 @@ struct BotEditor: View {
     }
 
     private var shownFace: BotFace {
-        if isMain { return .main }
+        if isMain { return BotDirectory.shared.mainFace }
         if let editing { return BotDirectory.shared.roster?.faces[editing.name] ?? BotFace(seed: editing.name) }
         if let face { return face }
         guard let handle else { return BotFace(seed: "new bot") }
@@ -213,10 +213,8 @@ struct BotEditor: View {
         VStack(spacing: 8) {
             BotAvatar(face: shownFace, size: 96)
                 .accessibilityLabel("Its face")
-            if !isMain {
-                Button("Change Face") { pickingFace = true }
-                    .font(.subheadline)
-            }
+            Button("Change Face") { pickingFace = true }
+                .font(.subheadline)
         }
         .frame(maxWidth: .infinity)
     }

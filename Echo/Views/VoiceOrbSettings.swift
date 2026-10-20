@@ -60,7 +60,7 @@ struct VoiceOrbPicture: View {
 
     var body: some View {
         if orb == .reddeFace {
-            BotAvatar(face: .main, size: size)
+            BotAvatar(face: BotDirectory.shared.mainFace, size: size)
         } else {
             orb.image.resizable().scaledToFit().frame(width: size, height: size)
         }

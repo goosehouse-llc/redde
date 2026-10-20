@@ -25,14 +25,50 @@ enum ProfileCatalog {
     nonisolated static let most = 12
 
     private static func key(_ settings: Settings) -> String { "knownProfiles.\(settings.activeServerID.uuidString)" }
+    private static func botsKey(_ settings: Settings) -> String { "knownBots.\(settings.activeServerID.uuidString)" }
 
-    /// The server's main profile first, then the ones kept, then the one in use if it is neither.
+    /// The server's main profile first, then the ones kept, then the one in use if it is neither;
+    /// each that is a bot by the name it was given as a bot ("Claude", not "claude"), so Siri
+    /// learns that name.
     static func known(settings: Settings = .shared, defaults: UserDefaults = .standard) -> [KnownProfile] {
         var all = [main] + kept(settings: settings, defaults: defaults)
         if let current = settings.profileName, !all.contains(where: { same($0.name, current) }) {
             all.append(KnownProfile(name: current, title: current, path: settings.hermesProfileHome))
         }
-        return Array(all.prefix(most))
+        let names = botNames(settings: settings, defaults: defaults)
+        return Array(all.prefix(most)).map { profile in
+            var profile = profile
+            if let name = names[profile.name] { profile.title = name }
+            return profile
+        }
+    }
+
+    /// The bots' names, by profile, as the Dashboard's roster last gave them.
+    static func botNames(settings: Settings = .shared, defaults: UserDefaults = .standard) -> [String: String] {
+        guard let data = defaults.data(forKey: botsKey(settings)) else { return [:] }
+        return (try? JSONDecoder().decode([String: String].self, from: data)) ?? [:]
+    }
+
+    /// The Dashboard's bots, read: their names kept for Siri, and any not kept yet (a bot made
+    /// since the profiles were last listed) kept beside the others. True when that changed what
+    /// is known.
+    @discardableResult
+    static func keep(bots roster: BotRoster, settings: Settings = .shared, defaults: UserDefaults = .standard) -> Bool {
+        let bots = roster.bots.filter { !$0.isDefault && !$0.isHidden }
+        let names = Dictionary(bots.map { ($0.name, $0.label()) }, uniquingKeysWith: { a, _ in a })
+        var changed = false
+        if names != botNames(settings: settings, defaults: defaults) {
+            if let data = try? JSONEncoder().encode(names) { defaults.set(data, forKey: botsKey(settings)) }
+            changed = true
+        }
+        var all = kept(settings: settings, defaults: defaults)
+        for bot in bots where !all.contains(where: { same($0.name, bot.name) }) {
+            all.append(KnownProfile(name: bot.name, title: bot.label()))
+        }
+        // (save tells Siri itself when the list changed.)
+        if save(all, settings: settings, defaults: defaults) { return true }
+        if changed, settings === Settings.shared { EchoShortcuts.updateAppShortcutParameters() }
+        return changed
     }
 
     /// The ones kept that aren't the main profile.
@@ -118,7 +154,7 @@ enum ProfileCatalog {
 
 /// A profile as Siri and Shortcuts name it.
 struct ReddeProfileEntity: AppEntity {
-    static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Profile")
+    static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Bot or Profile")
     static let defaultQuery = ReddeProfileQuery()
 
     let id: String
@@ -160,14 +196,16 @@ nonisolated struct ReddeProfileQuery: EntityStringQuery {
     }
 }
 
-/// "Ask Work in Redde": voice mode on a named Hermes profile. Like "Ask Redde", Siri is only the
-/// trigger: the app opens, moves to that profile if it is on another, and listens.
+/// "Ask Claude in Redde": voice mode with a bot or on a named Hermes profile. Like "Ask Redde",
+/// Siri is only the trigger: the app opens and listens. On the Dashboard, with the Bots on, a
+/// bot is talked to in its own chat (the one the chat list opens); otherwise the app moves to
+/// that profile, as before Bot Mode.
 struct AskProfileIntent: AppIntent {
-    static let title: LocalizedStringResource = "Ask a Redde Profile"
-    static let description = IntentDescription("Opens Redde on one of your Hermes profiles and starts listening.")
+    static let title: LocalizedStringResource = "Ask a Redde Bot"
+    static let description = IntentDescription("Opens one of your bots' chats in Redde (or Redde on one of your Hermes profiles) and starts listening.")
     static let supportedModes: IntentModes = .foreground
 
-    @Parameter(title: "Profile", requestValueDialog: "Which profile?")
+    @Parameter(title: "Bot", requestValueDialog: "Which bot?")
     var profile: ReddeProfileEntity
 
     @Parameter(title: "Hands-free",

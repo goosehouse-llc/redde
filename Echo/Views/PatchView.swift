@@ -117,38 +117,32 @@ struct PatchView: View {
 
 }
 
-/// A file's lines, scrolling sideways together, each line's colour across the whole row however
-/// short the file's lines are.
+/// A file's lines, each wrapping down the screen (a long line reads on, rather than scrolling
+/// sideways), its colour across the whole row.
 private struct PatchFileLines: View {
     let file: PatchFile
     let cap: Int
-    @State private var width: CGFloat = 0
 
     var body: some View {
-        ScrollView(.horizontal) {
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(file.lines.prefix(cap).enumerated()), id: \.offset) { _, line in
-                    Text(line.text.isEmpty ? " " : line.text)
-                        .font(.system(.caption, design: .monospaced))
-                        .foregroundStyle(line.kind == .hunk ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
-                        .fixedSize()
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 1)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Self.colour(line.kind))
-                }
-                if file.lines.count > cap {
-                    Text("… \(file.lines.count - cap) more lines")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(6)
-                }
+        LazyVStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(file.lines.prefix(cap).enumerated()), id: \.offset) { _, line in
+                Text(line.text.isEmpty ? " " : line.text)
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundStyle(line.kind == .hunk ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Self.colour(line.kind))
             }
-            .frame(minWidth: width, alignment: .leading)
-            .textSelection(.enabled)
+            if file.lines.count > cap {
+                Text("… \(file.lines.count - cap) more lines")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(6)
+            }
         }
-        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        .textSelection(.enabled)
     }
 
     private static func colour(_ kind: PatchFile.Line.Kind) -> Color {
@@ -214,6 +208,7 @@ extension PatchView {
          
         -print(os.environ.get("USER"))
         +print(greet(os.environ.get("USER", "there")))
+        +LOG.info("greeted %s from %s at %s with the settings in %s", user, host, when, os.path.expanduser("~/.config/hello/settings.toml"))
         diff --git a/README.md b/README.md
         --- a/README.md
         +++ b/README.md

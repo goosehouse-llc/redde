@@ -473,9 +473,8 @@ struct ConversationsList: View {
                 }
             }
             Button("Edit Bot…", systemImage: "slider.horizontal.3") { editingBot = .edit(bot) }
-            // Redde's own bubble is the main agent's alone.
+            Button("Change Face…", systemImage: "face.smiling") { facing = bot }
             if !bot.isDefault {
-                Button("Change Face…", systemImage: "face.smiling") { facing = bot }
                 Button("Hide", systemImage: "eye.slash") { hide(bot) }
             }
         }

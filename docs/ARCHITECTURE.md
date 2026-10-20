@@ -285,7 +285,11 @@ reply's side), in the theme's bubble colour (the prompt line's in Terminal and A
 whites of its eyes rimmed when that colour is pale. A bot's face can be picked instead (Change Face…
 on its row, or in its chat's ••• menu; `BotFacePicker`): shape, eyes, mouth, mark and colour, kept
 on the server in the profile's `ui_meta` under `redde` (`face`, a short code; compare-and-swap on
-its revision), so every Redde there shows it; Redde's bubble can't be picked.
+its revision), so every Redde there shows it. Four shapes are for picking only (a ghost, a rounded
+square, a star, a blob): what a name gives is drawn from the first eight (`Shape.seeded`), so no
+bot's creature changes when shapes are added. The main agent's face can be picked too (Redde's
+bubble is offered to it alone, and "Its Own Face" goes back to it); `BotDirectory.mainFace` is what
+the voice orb, CarPlay's Redde look and the list then draw.
 `BotFace.faces(for:picked:)` keeps the picked ones and keeps the others apart, with a shape and a
 colour each while there are some left (none gets Redde's shape, nor the standard theme's blue). Kept
 clear of other Hermes apps' looks on purpose (Cadu's clouds, flowers, ghosts, hearts, pears, cats
@@ -1635,7 +1639,8 @@ thing uses that one: asked for a reminder, the one tried used its own reminders 
 
 ## CarPlay
 
-A CarPlay scene in the voice-based conversational category (iOS 26.4+). A tab bar with two tabs.
+A CarPlay scene in the voice-based conversational category (iOS 26.4+). A tab bar with two tabs
+(three on the Dashboard: see Bots below).
 **Ask** is a list holding one row of three cards (`CPListImageRowItem` with card elements): **Ask**
 and **Talk** carry on the conversation the phone has open, **New Chat** starts another. Above them
 the row names that conversation ("Now in …"), and that line leads to the other tab; under them
@@ -1643,8 +1648,13 @@ are the four conversations last carried on besides that one. **Chats** is
 a list of the phone's conversations to pick one from (`CarPlay/CarPlayChats.swift`: the phone's
 list in its order, as names and times; a session nobody named is "Untitled chat", never the
 preview of its last message), the open one marked with a check at the trailing edge. The list is
-read when the car connects, when the tab is opened and when the open conversation changes. New
-Chat and a picked chat listen in the mode Settings → Voice gives the phone's voice button. Each of
+read when the car connects, when the tab is opened and when the open conversation changes. On the
+Dashboard connection, with Bots on, a third tab, **Bots**, lists the server's bots (the chat list's
+Bots: the main agent first, then the most recently talked to): each row the bot's creature
+(`BotAvatar.picture`), its name, and what it is doing ("Working…", "Needs you on your iPhone") or
+when it was last talked to, never what it said. Picking one opens its own chat and listens, as
+picking a chat does. New Chat, a picked chat and a picked bot listen in the mode Settings → Voice
+gives the phone's voice button. Each of
 them ends on a voice-control card (Listening, Thinking, Speaking, Paused, Needs your phone) with
 **Stop** and **Pause** in its bar while Redde listens, thinks or speaks. Stop ends whatever
 Redde is doing, hands-free with it, and closes the card. Pause holds it and keeps the

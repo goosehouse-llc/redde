@@ -44,18 +44,41 @@ nonisolated enum BotMessages {
         var output = String(match.output.4).trimmingCharacters(in: .whitespacesAndNewlines)
         if command.contains("bot_mode_dm.py"), let profile = command.firstMatch(of: /(?:^|\s)-p\s+'?([A-Za-z0-9][A-Za-z0-9_-]*)/)?.output.1 {
             // The bot's chat open in the gateway answers as JSON; one run on its own, as its words,
-            // after any warnings Hermes's command line prints first ("⚠ …", Hermes 0.21.0).
+            // after any warnings and bookkeeping Hermes's command line prints. What is left of the
+            // message itself (echoed back in a steer's frame) isn't an answer either.
             if let json = try? JSONValue.parse(Data(output.utf8)), let reply = json["reply"]?.string {
                 output = reply
-            } else {
-                output = output.split(separator: "\n", omittingEmptySubsequences: false).drop { $0.hasPrefix("⚠") }
-                    .joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
             }
+            output = cliNoise(output.replacing(/\[OUT-OF-BAND USER MESSAGE[^\]]*\][\s\S]*?(\[\/OUT-OF-BAND USER MESSAGE\]|$)/, with: "\n"))
+            // With nothing left, or a run that failed, the bot didn't answer.
+            let status = String(match.output.2)
+            if !status.contains("exit code 0") { output = "" }
             let bot = roster.first { $0.name == String(profile) }
             return (Delivered(kind: .reply, profile: String(profile), name: bot?.label() ?? String(profile)), output)
         }
         let line = title?.nilIfEmpty ?? "Background process \(match.output.2)"
         return (Delivered(kind: .process, title: line), output)
+    }
+
+    /// What Hermes's command line prints besides a bot's words, on every run: warnings first
+    /// ("⚠ …", Hermes 0.21.0), and its session bookkeeping ("Session … found but has no messages.
+    /// Starting fresh.", "session_id: …"). Taken out of a relayed reply.
+    static func cliNoise(_ output: String) -> String {
+        output.split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { line in
+                let line = line.trimmingCharacters(in: .whitespaces)
+                return !line.hasPrefix("⚠") && line.wholeMatch(of: /session_id: \S+/) == nil
+                    && line.wholeMatch(of: /Session \S+ found but has no messages\. Starting fresh\./) == nil
+                    && line.wholeMatch(of: /Resum(ed|ing) session \S+.*/) == nil
+            }
+            .joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// A steer (a message sent into a turn under way), as Hermes keeps it: the person's words in
+    /// its own frame. The words alone, or nil when the row is no steer.
+    static func steer(_ text: String) -> String? {
+        guard let match = text.wholeMatch(of: /\s*\[OUT-OF-BAND USER MESSAGE[^\]]*\]\s*([\s\S]*?)\s*(?:\[\/OUT-OF-BAND USER MESSAGE\])?\s*/) else { return nil }
+        return String(match.output.1)
     }
 
     /// A user row as it should show: the person's own, or one delivered (its text the message
@@ -67,6 +90,11 @@ nonisolated enum BotMessages {
                 message.delivered = delivered
                 return message
             }
+        }
+        if let words = steer(text) {
+            var message = Message(role: .user, text: words, createdAt: when)
+            message.isSteer = true
+            return words.isEmpty ? nil : message
         }
         if let inbound = inbound(text) {
             var message = Message(role: .user, text: inbound.body, createdAt: when)

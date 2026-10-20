@@ -348,6 +348,43 @@ struct CarPlayTests {
         try await waitUntil("listening") { h.recognizer.starts == 1 }
     }
 
+    // MARK: Bots
+
+    @MainActor final class Opened {
+        var bots: [String] = []
+    }
+
+    /// On the Dashboard, a Bots tab: each bot by its name and its creature, what it is doing or
+    /// when it was last talked to (never what was said), and picking one opens its chat and listens.
+    @Test func onTheDashboardABotsTabListsTheBotsAndPickingOneTalksToIt() async throws {
+        let h = Harness()
+        #expect(h.delegate.rootTemplate().templates.count == 2, "no Bots tab off the Dashboard")
+        h.settings.transport = .hermesServe
+        h.settings.showBots = true
+        let directory = BotDirectory()
+        directory.set(BotRoster(bots: [
+            HermesBot(name: "default", isDefault: true, lastActive: .now.addingTimeInterval(-3_600)),
+            HermesBot(name: "scout", title: "Scout", chatID: "s-scout", lastActive: .now.addingTimeInterval(-600), preview: "Three trails under two hours"),
+            HermesBot(name: "writer", displayName: "Quill"),
+        ]), key: h.settings.connectionKey)
+        h.delegate.bots = directory
+        let opened = Opened()
+        h.delegate.openBot = { opened.bots.append($0.name) }
+
+        let tabs = h.delegate.rootTemplate()
+        #expect(tabs.templates.count == 3 && tabs.templates.count <= CPTabBarTemplate.maximumTabCount)
+        #expect((tabs.templates.last as? CPListTemplate)?.title == "Bots")
+        let rows = await h.delegate.botRows()
+        #expect(rows.map(\.text) == [h.settings.headerTitle, "Scout", "Quill"], "the main agent first, then the most recently talked to")
+        #expect(rows.allSatisfy { $0.image != nil }, "each with its creature")
+        #expect(rows[1].detailText?.hasPrefix("Last talked") == true && rows[2].detailText == "No chat yet")
+        #expect(!rows.contains { ($0.detailText ?? "").contains("trails") }, "never what was said")
+
+        try await press(rows[1])
+        #expect(opened.bots == ["scout"])
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+    }
+
     // MARK: The voice card
 
     /// Settings → Appearance → CarPlay voice screen: the card shows its five states in the look

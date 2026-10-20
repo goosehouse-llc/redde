@@ -622,6 +622,8 @@ struct DeliveredMessage: View {
     @State private var settings = Settings.shared
     @State private var directory = BotDirectory.shared
     @State private var showingOutput = false
+    /// A bot's reply, opened.
+    @State private var open = false
 
     private var bot: HermesBot? {
         guard let profile = delivered.profile, directory.key == settings.connectionKey else { return nil }
@@ -645,24 +647,51 @@ struct DeliveredMessage: View {
     }
 
     private var botMessage: some View {
-        let heading = delivered.kind == .reply ? "\(name) replied" : "Message from \(name)"
+        // A relay that came back with nothing in it: the bot's turn failed, or gave no words.
+        let unanswered = delivered.kind == .reply && message.text.isEmpty
+        let heading = unanswered ? "\(name) didn't answer" : delivered.kind == .reply ? "\(name) replied" : "Message from \(name)"
+        // A bot's reply to one this bot sent folds away as the thinking does: what the person
+        // reads (and hears) is this bot's answer, which follows it.
+        let folds = delivered.kind == .reply && !unanswered
         return VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                BotAvatar(face: face, size: 20)
-                Text(heading).font(.subheadline.weight(.semibold))
-            }
-            MarkdownView(text: message.text, isLive: false)
-                .padding(.horizontal, 14)
-                .padding(.vertical, theme.bubbleVerticalPadding)
-                .background(RoundedRectangle(cornerRadius: theme.bubbleRadius).fill(theme.surfaceColor.opacity(0.6)))
-                .overlay(RoundedRectangle(cornerRadius: theme.bubbleRadius).strokeBorder(.quaternary))
-                .foregroundStyle(theme.textColor)
-                .contextMenu {
-                    Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = message.text }
+            if folds {
+                Button {
+                    withAnimation(.snappy(duration: 0.25)) { open.toggle() }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "chevron.right")
+                            .font(.caption2.weight(.semibold))
+                            .rotationEffect(.degrees(open ? 90 : 0))
+                        BotAvatar(face: face, size: 20)
+                        Text(heading).font(.subheadline.weight(.medium))
+                    }
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 4)
+                    .contentShape(.rect)
                 }
+                .buttonStyle(.plain)
+                .accessibilityHint(open ? "Hides what \(name) said" : "Shows what \(name) said")
+            } else {
+                HStack(spacing: 6) {
+                    BotAvatar(face: face, size: 20)
+                    Text(heading).font(.subheadline.weight(.semibold))
+                }
+            }
+            if !unanswered, !folds || open {
+                MarkdownView(text: message.text, isLive: false)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, theme.bubbleVerticalPadding)
+                    .background(RoundedRectangle(cornerRadius: theme.bubbleRadius).fill(theme.surfaceColor.opacity(0.6)))
+                    .overlay(RoundedRectangle(cornerRadius: theme.bubbleRadius).strokeBorder(.quaternary))
+                    .foregroundStyle(theme.textColor)
+                    .contextMenu {
+                        Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = message.text }
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
         .accessibilityLabel(heading)
     }
 

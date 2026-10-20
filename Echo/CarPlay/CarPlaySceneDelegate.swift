@@ -13,6 +13,10 @@ import UIKit
 /// ends the card closes back onto the tab it came from. Requires the entitlement; inert without
 /// it.
 ///
+/// On the Dashboard connection, with Bots on, a third tab, Bots, lists the server's bots (Hermes's
+/// Bot Mode): picking one opens its own chat and listens, as picking a chat does. Each row is the
+/// bot's creature, its name and what it is doing, never what it said.
+///
 /// What CarPlay makes of a template can be drawn without a car: see `scripts/carplay-preview.sh`.
 /// Two things learned that way shape this file. A grid button's picture is 40 points on every
 /// screen, so the Ask tab is cards, the largest buttons there are. And a voice state that has
@@ -24,8 +28,10 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private var tabs: CPTabBarTemplate?
     private var askTab: CPListTemplate?
     private var chatsTab: CPListTemplate?
+    private var botsTab: CPListTemplate?
     /// Counts the loads of the Chats tab, so that a slow one can't write over a later one.
     private var chatsLoad = 0
+    private var botsLoad = 0
     /// The phone's conversations as last read, for the few the Ask tab shows under its cards.
     private var chats: [CarPlayChat] = []
     private var observing = false
@@ -38,6 +44,11 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     var store = ConversationStore.shared
     /// Quick capture's notes, for the row that takes one and says how many are waiting.
     var notes = CaptureInbox.shared
+    /// The server's bots, for the Bots tab.
+    var bots = BotDirectory.shared
+    var activity = ChatActivity.shared
+    /// How a picked bot's chat is opened; the tests put their own here.
+    var openBot: ((HermesBot) async throws -> Void)?
 
     private var session: VoiceSession? { sessionOverride ?? VoiceSession.current }
     private var conversation: Conversation? { conversationOverride ?? Conversation.current }
@@ -55,6 +66,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             interfaceController.setRootTemplate(tabs, animated: false, completion: nil)
             observe()
             reloadChats()
+            reloadBots()
             // Draw the voice card's pictures now, not at the first press.
             _ = voiceTemplate()
             #if DEBUG
@@ -72,6 +84,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             tabs = nil
             askTab = nil
             chatsTab = nil
+            botsTab = nil
             chats = []
             CarPlayArtwork.forget()
         }
@@ -126,16 +139,27 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         chats.emptyViewTitleVariants = ["Loading…"]
         chats.showsSpinnerWhileEmpty = true
         chatsTab = chats
-        let tabs = CPTabBarTemplate(templates: [ask, chats])
+        var templates: [CPTemplate] = [ask, chats]
+        // Bots live on the Dashboard: only there, and while the chat list shows them.
+        if settings.transport == .hermesServe, settings.showBots {
+            let bots = CPListTemplate(title: "Bots", sections: [])
+            bots.tabImage = UIImage(systemName: "person.2.fill")
+            bots.emptyViewTitleVariants = ["Loading…"]
+            bots.showsSpinnerWhileEmpty = true
+            botsTab = bots
+            templates.append(bots)
+        }
+        let tabs = CPTabBarTemplate(templates: templates)
         self.tabs = tabs
         return tabs
     }
 
-    /// The Chats tab was opened: the phone may have been used since the list was read.
+    /// The Chats or Bots tab was opened: the phone, or the server, may have moved on since.
     nonisolated func tabBarTemplate(_ tabBarTemplate: CPTabBarTemplate, didSelect selectedTemplate: CPTemplate) {
         let selected = ObjectIdentifier(selectedTemplate)
         Task { @MainActor in
             if let chatsTab, ObjectIdentifier(chatsTab) == selected { reloadChats() }
+            if let botsTab, ObjectIdentifier(botsTab) == selected { reloadBots() }
         }
     }
 
@@ -340,6 +364,88 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             return
         }
         if !chat.isCurrent { reloadChats() }
+        listenAsSet()
+    }
+
+    // MARK: - Bots
+
+    /// Reads the server's bots into the Bots tab: the ones the phone has, at once, then the
+    /// server's own word.
+    private func reloadBots() {
+        guard let list = botsTab else { return }
+        botsLoad += 1
+        let load = botsLoad
+        if let rows = cachedBotRows() { list.updateSections([CPListSection(items: rows)]) }
+        Task {
+            let rows = await botRows()
+            guard load == botsLoad else { return }
+            list.emptyViewTitleVariants = rows.isEmpty ? ["No bots yet"] : []
+            list.emptyViewSubtitleVariants = rows.isEmpty ? ["Make one in Redde on your iPhone"] : []
+            list.showsSpinnerWhileEmpty = false
+            list.updateSections([CPListSection(items: rows)])
+        }
+    }
+
+    /// The bots the phone last read for this connection, as rows; nil when it has none.
+    private func cachedBotRows() -> [CPListItem]? {
+        guard bots.key == settings.connectionKey, let roster = bots.roster, !roster.listed.isEmpty else { return nil }
+        return botRows(roster)
+    }
+
+    /// The server's bots as rows, read again first (the phone's as they were if that fails). Not
+    /// private, for the tests.
+    func botRows() async -> [CPListItem] {
+        var roster = bots.key == settings.connectionKey ? bots.roster : nil
+        if let fresh = try? await bots.refresh(settings: settings) { roster = fresh }
+        return roster.map(botRows) ?? []
+    }
+
+    private func botRows(_ roster: BotRoster) -> [CPListItem] {
+        let faces = roster.faces
+        let side = CPListItem.maximumImageSize.width
+        let scale = controller?.carTraitCollection.displayScale ?? 2
+        let most = Int(CPListTemplate.maximumItemCount)
+        return roster.listed.prefix(most > 0 ? most : 12).map { bot in
+            let isOpen = conversation?.bot?.profile == bot.name
+            let row = CPListItem(text: bot.label(mainName: settings.headerTitle), detailText: botDetail(bot),
+                                 image: BotAvatar.picture(of: faces[bot.name] ?? BotFace(seed: bot.name), side: side, scale: scale),
+                                 accessoryImage: isOpen ? CarPlayArtwork.openChatMark : nil, accessoryType: .none)
+            row.handler = { [weak self] _, completion in
+                Task { @MainActor in
+                    await self?.talk(to: bot)
+                    completion()
+                }
+            }
+            return row
+        }
+    }
+
+    /// What a bot is doing, or when it was last talked to: never what was said (the category's rule).
+    private func botDetail(_ bot: HermesBot) -> String {
+        guard let conversation else { return "" }
+        switch activity.kind(of: bot, open: conversation, settings: settings) {
+        case .working: return "Working…"
+        case .needsYou: return "Needs you on your iPhone"
+        case nil:
+            guard let when = bot.lastActive else { return "No chat yet" }
+            return "Last talked \(DateGroup.rowTime(when))"
+        }
+    }
+
+    /// A bot was picked: its chat becomes the conversation the phone has open, and Redde listens.
+    private func talk(to bot: HermesBot) async {
+        guard let conversation else { return }
+        stopVoice()
+        do {
+            if conversation.bot?.profile != bot.name {
+                if let openBot { try await openBot(bot) } else { try await conversation.openBot(bot, mainName: settings.headerTitle) }
+            }
+        } catch {
+            alert("Couldn't open \(bot.label(mainName: settings.headerTitle))'s chat")
+            return
+        }
+        reloadChats()
+        reloadBots()
         listenAsSet()
     }
 

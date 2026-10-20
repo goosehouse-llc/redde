@@ -39,7 +39,8 @@ struct BotFacePicker: View {
                         .accessibilityLabel("\(name)'s face: \(Self.describe(face))")
                 }
                 .listRowBackground(Color.clear)
-                Section("Shape") { row(BotFace.Shape.given, \.shape) }
+                // Redde's own bubble is the main agent's alone.
+                Section("Shape") { row(bot.isDefault ? [.bubble] + BotFace.Shape.given : BotFace.Shape.given, \.shape) }
                 Section("Eyes") { row(BotFace.Eyes.allCases, \.eyes) }
                 Section("Mouth") { row(BotFace.Mouth.allCases, \.mouth) }
                 Section("Mark") { row(BotFace.Mark.allCases, \.mark) }
