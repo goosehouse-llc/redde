@@ -405,7 +405,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         let side = CPListItem.maximumImageSize.width
         let scale = controller?.carTraitCollection.displayScale ?? 2
         let most = Int(CPListTemplate.maximumItemCount)
-        return roster.listed.prefix(most > 0 ? most : 12).map { bot in
+        return roster.listed(in: settings.botOrderHere).prefix(most > 0 ? most : 12).map { bot in
             let isOpen = conversation?.bot?.profile == bot.name
             let row = CPListItem(text: bot.label(mainName: settings.headerTitle), detailText: botDetail(bot),
                                  image: BotAvatar.picture(of: faces[bot.name] ?? BotFace(seed: bot.name), side: side, scale: scale),

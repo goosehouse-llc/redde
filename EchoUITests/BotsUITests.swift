@@ -62,6 +62,60 @@ final class BotsUITests: XCTestCase {
         }
     }
 
+    /// Reorder Bots, from a bot's menu: a bot dragged above the others stays there, the next
+    /// launch too, a group chat goes among the bots, and Sort Bots by Recent puts the list back.
+    func testBotsAndGroupChatsCanBeDraggedIntoAnOrder() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.clearDrafts", "-displayName", "Redde",
+                               "-echo.screen", "sessions"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        // No order left from an earlier run: an empty one, for this launch only.
+        app.launchArguments += ["-botOrder", "<>"]
+        app.launch()
+        let list = app.collectionViews.firstMatch
+        // Matched on the row's own label: a group chat's names its bots ("Fix-it and Scout").
+        func row(_ name: String) -> XCUIElement { list.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name + ",")).firstMatch }
+        /// Drags a row by its handle onto another's place.
+        func drag(_ name: String, onto other: String) {
+            let from = list.buttons["Reorder " + name].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            let to = list.buttons["Reorder " + other].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
+            from.press(forDuration: 0.4, thenDragTo: to, withVelocity: .slow, thenHoldForDuration: 0.5)
+            sleep(1)
+        }
+        let fixit = row("Fix-it"), quill = row("Quill"), garage = row("Garage project")
+        XCTAssertTrue(fixit.waitForExistence(timeout: 20), "no Fix-it row")
+        XCTAssertTrue(garage.exists, "no group chat row")
+        XCTAssertLessThan(quill.frame.minY, fixit.frame.minY, "the most recent bot isn't above one never talked to")
+
+        fixit.press(forDuration: 1.0)
+        let reorder = app.buttons["Reorder Bots"].firstMatch
+        XCTAssertTrue(reorder.waitForExistence(timeout: 5), "no Reorder Bots in a bot's menu")
+        reorder.tap()
+        XCTAssertTrue(app.text(containing: "into the order you want").waitForExistence(timeout: 5), "Reorder Bots didn't start")
+        XCTAssertFalse(app.text(containing: "New Bot").exists, "the section's actions show while reordering")
+        drag("Fix-it", onto: "Quill")
+        XCTAssertLessThan(fixit.frame.minY, quill.frame.minY, "Fix-it didn't move above Quill")
+        drag("Garage project", onto: "Fix-it")
+        XCTAssertLessThan(garage.frame.minY, fixit.frame.minY, "the group chat didn't move among the bots")
+        app.buttons["Done"].firstMatch.tap()
+        XCTAssertTrue(app.text(containing: "New Bot").waitForExistence(timeout: 5), "Done didn't end reordering")
+
+        app.terminate()
+        app.launchArguments.removeLast(2)
+        app.launch()
+        XCTAssertTrue(fixit.waitForExistence(timeout: 20))
+        XCTAssertLessThan(garage.frame.minY, fixit.frame.minY, "the order wasn't kept")
+        XCTAssertLessThan(fixit.frame.minY, quill.frame.minY, "the order wasn't kept")
+
+        quill.press(forDuration: 1.0)
+        let sort = app.buttons["Sort Bots by Recent"].firstMatch
+        XCTAssertTrue(sort.waitForExistence(timeout: 5), "no Sort Bots by Recent")
+        sort.tap()
+        sleep(1)
+        XCTAssertLessThan(quill.frame.minY, fixit.frame.minY, "the list didn't go back to the most recent first")
+        XCTAssertLessThan(fixit.frame.minY, garage.frame.minY, "the group chats didn't go back after the bots")
+    }
+
     /// iPhone: a group chat takes the chat's place, so a swipe to the right opens the list from
     /// it as from a conversation, and a conversation picked there takes its place again.
     func testAGroupChatIsASwipeFromTheList() throws {

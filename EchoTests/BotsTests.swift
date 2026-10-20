@@ -386,6 +386,26 @@ struct BotsTests {
         #expect(conversation.bot == BotRef(profile: "scout", name: "Research Buddy"), "the open chat's sends go to the renamed profile")
     }
 
+    @Test func theBotsSectionKeepsTheOrderItWasPutIn() throws {
+        let roster = try roster(Self.listing)
+        let bots = roster.listed
+        let rooms = [GroupRoom.demo]
+        let first = BotListItem.arranged(bots: bots, rooms: rooms, order: [])
+        #expect(first.map(\.id) == bots.map { "bot:" + $0.name } + ["room:demo-room"], "unordered: the bots as listed, then the group chats")
+
+        // The group chat dragged to the top; the order names a bot by the name it had before a
+        // rename, and a bot hidden since.
+        let order = BotListItem.order(after: IndexSet(integer: first.count - 1), to: 0, in: first, kept: ["bot:hidden-one"])
+        #expect(order.first == "room:demo-room" && order.last == "bot:hidden-one")
+        let renamed = order.map { $0 == "bot:scout" ? "bot:finder" : $0 }
+        let again = BotListItem.arranged(bots: bots, rooms: rooms, order: renamed)
+        #expect(again.map(\.id) == Array(order.dropLast()), "kept, the renamed bot in its place, the hidden one left out")
+
+        // A bot made since goes at the end.
+        let newcomer = HermesBot(name: "newbie", title: "Newbie")
+        #expect(BotListItem.arranged(bots: bots + [newcomer], rooms: rooms, order: order).last?.id == "bot:newbie")
+    }
+
     @Test func siriLearnsTheBotsByTheirNames() throws {
         let defaults = try #require(UserDefaults(suiteName: "siri-bots-\(UUID().uuidString)"))
         let settings = Settings(defaults: defaults)

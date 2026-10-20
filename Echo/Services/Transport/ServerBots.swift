@@ -127,6 +127,11 @@ nonisolated struct BotRoster: Equatable, Sendable {
         bots.first { $0.name == profile } ?? bots.first { $0.previousNames.contains(profile) }
     }
 
+    /// `listed` in the order the person put the chat list's Bots section in (`BotListItem`).
+    func listed(in order: [String]) -> [HermesBot] {
+        BotListItem.arranged(bots: listed, rooms: [], order: order).compactMap { if case .bot(let bot) = $0 { bot } else { nil } }
+    }
+
     /// The bots the chat list shows: none while the main profile is the only one (there is no one
     /// else to talk to), else every bot not hidden in Hermes Desktop, the main one first, then the
     /// most recently talked to.
@@ -138,6 +143,45 @@ nonisolated struct BotRoster: Equatable, Sendable {
             if a.lastActive != b.lastActive { return (a.lastActive ?? .distantPast) > (b.lastActive ?? .distantPast) }
             return a.name < b.name
         }
+    }
+}
+
+/// A row of the Bots section: a bot's chat or a group chat. The person can put them in any order.
+nonisolated enum BotListItem: Identifiable, Equatable, Sendable {
+    case bot(HermesBot)
+    case room(GroupRoom)
+
+    var id: String {
+        switch self {
+        case .bot(let bot): "bot:" + bot.name
+        case .room(let room): "room:" + room.id
+        }
+    }
+
+    /// The Bots section's rows: the bots, then the group chats, as they come (`BotRoster.listed`,
+    /// the server's rooms), unless the person put them in an order. Then those in it come in it,
+    /// a bot followed through a rename by its old name, and any new since go at the end.
+    static func arranged(bots: [HermesBot], rooms: [GroupRoom], order: [String]) -> [BotListItem] {
+        let items = bots.map(BotListItem.bot) + rooms.map(BotListItem.room)
+        guard !order.isEmpty else { return items }
+        var byID = Dictionary(items.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        for bot in bots { for old in bot.previousNames where byID["bot:" + old] == nil { byID["bot:" + old] = .bot(bot) } }
+        var taken = Set<String>()
+        var arranged: [BotListItem] = []
+        for id in order {
+            guard let item = byID[id], taken.insert(item.id).inserted else { continue }
+            arranged.append(item)
+        }
+        return arranged + items.filter { !taken.contains($0.id) }
+    }
+
+    /// The order to keep after a row is dragged: every row's id as now shown, and those kept
+    /// that aren't shown now (a hidden bot, a group chat not read yet) after them.
+    static func order(after moving: IndexSet, to destination: Int, in shown: [BotListItem], kept: [String]) -> [String] {
+        var ids = shown.map(\.id)
+        ids.move(fromOffsets: moving, toOffset: destination)
+        let showing = Set(ids)
+        return ids + kept.filter { !showing.contains($0) }
     }
 }
 

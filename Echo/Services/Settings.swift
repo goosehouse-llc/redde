@@ -195,6 +195,16 @@ final class Settings: ServeEndpoint {
     var spokenPrefixes: [SpokenPrefix] {
         didSet { store(try? JSONEncoder().encode(spokenPrefixes), forKey: Keys.spokenPrefixes) }
     }
+    /// The Bots section's rows in the order the person put them, per server (its id): `BotListItem`
+    /// ids. Empty for a server: the main bot first, then the most recently talked to.
+    var botOrder: [String: [String]] {
+        didSet { store(try? JSONEncoder().encode(botOrder), forKey: Keys.botOrder) }
+    }
+    /// `botOrder` for the server in use.
+    var botOrderHere: [String] {
+        get { botOrder[activeServerID.uuidString] ?? [] }
+        set { botOrder[activeServerID.uuidString] = newValue.isEmpty ? nil : newValue }
+    }
     var theme: Theme {
         didSet { store(theme.rawValue, forKey: Keys.theme) }
     }
@@ -442,6 +452,7 @@ final class Settings: ServeEndpoint {
         static let speechLanguage = "speechLanguage"
         static let matchReplyLanguage = "matchReplyLanguage"
         static let spokenPrefixes = "spokenPrefixes"
+        static let botOrder = "botOrder"
         static let contextWindow = "contextWindow"
         static let theme = "theme"
         static let themeColors = "themeColors"
@@ -513,6 +524,8 @@ final class Settings: ServeEndpoint {
             .flatMap { try? JSONDecoder().decode([String: ThemeColors].self, from: $0) } ?? [:]
         spokenPrefixes = defaults.data(forKey: Keys.spokenPrefixes)
             .flatMap { try? JSONDecoder().decode([SpokenPrefix].self, from: $0) } ?? []
+        botOrder = defaults.data(forKey: Keys.botOrder)
+            .flatMap { try? JSONDecoder().decode([String: [String]].self, from: $0) } ?? [:]
         appearance = Appearance(rawValue: defaults.string(forKey: Keys.appearance) ?? "") ?? .system
         // A still orb picked in an earlier version falls back to the default; they are gone.
         voiceOrb = VoiceOrb(rawValue: defaults.string(forKey: Keys.voiceOrb) ?? "") ?? .waveform
@@ -601,6 +614,7 @@ final class Settings: ServeEndpoint {
         Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopPhrases,
         Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.replyVoice, Keys.kokoroURL,
         Keys.kokoroVoice, Keys.voiceSpeed, Keys.speechLanguage, Keys.matchReplyLanguage, Keys.spokenPrefixes,
+        Keys.botOrder,
     ]
 
     /// A synced setting as it is saved here, for `CloudSync` to send.
@@ -650,6 +664,7 @@ final class Settings: ServeEndpoint {
         case Keys.speechLanguage: speechLanguage = text()
         case Keys.matchReplyLanguage: matchReplyLanguage = flag(true)
         case Keys.spokenPrefixes: spokenPrefixes = decoded([])
+        case Keys.botOrder: botOrder = decoded([:])
         default: break
         }
     }
@@ -859,6 +874,7 @@ final class Settings: ServeEndpoint {
         speechLanguage = ""
         matchReplyLanguage = true
         spokenPrefixes = []
+        botOrder = [:]
         theme = .standard
         themeColors = [:]
         appearance = .system

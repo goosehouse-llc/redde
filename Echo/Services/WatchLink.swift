@@ -75,7 +75,7 @@ final class WatchLink: NSObject, WCSessionDelegate {
     static func watchBots(_ settings: Settings = .shared, directory: BotDirectory = .shared) -> [WatchBot] {
         guard directory.key == settings.connectionKey, let roster = directory.roster else { return [] }
         let faces = roster.faces
-        return roster.listed.filter { !$0.isDefault }.prefix(8).map { bot in
+        return roster.listed(in: settings.botOrderHere).filter { !$0.isDefault }.prefix(8).map { bot in
             WatchBot(profile: bot.name, name: bot.label(mainName: settings.headerTitle),
                      face: BotAvatar.picture(of: faces[bot.name] ?? BotFace(seed: bot.name), side: 40, scale: 2)?.pngData())
         }

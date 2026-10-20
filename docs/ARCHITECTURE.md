@@ -416,6 +416,12 @@ where a new conversation is in the ••• menu, and ⌘N as anywhere) is the 
   the end. The feed writes members, state and problem only when they changed: each write
   redraws the room, every second while bots talk. Lazy rows and a blanket bottom anchor made it
   jump about when scrolled, as the transcript's once did.
+- **Order.** Bots and group chats are one run in the Bots section. Reorder Bots, in any of their
+  menus, shows only them, with handles (edit mode; outside it a long press is the row's menu,
+  which a drag can't get past), and the order is kept per server in `Settings.botOrder`
+  (`BotListItem` ids, synced by iCloud): a bot renamed keeps its place by its old name, and one
+  new since goes at the end. CarPlay's Bots tab and the watch follow it. Sort Bots by Recent
+  forgets it.
 
 ### Reply language
 
@@ -1671,7 +1677,8 @@ list in its order, as names and times; a session nobody named is "Untitled chat"
 preview of its last message), the open one marked with a check at the trailing edge. The list is
 read when the car connects, when the tab is opened and when the open conversation changes. On the
 Dashboard connection, with Bots on, a third tab, **Bots**, lists the server's bots (the chat list's
-Bots: the main agent first, then the most recently talked to): each row the bot's creature
+Bots, in the order the person put them there, else the main agent first, then the most recently
+talked to): each row the bot's creature
 (`BotAvatar.picture`), its name, and what it is doing ("Working…", "Needs you on your iPhone") or
 when it was last talked to, never what it said. Picking one opens its own chat and listens, as
 picking a chat does. New Chat, a picked chat and a picked bot listen in the mode Settings → Voice

@@ -75,6 +75,8 @@ struct ConversationsList: View {
     @AppStorage("sessions.showScheduled") private var showScheduled = false
     @State private var shareItem: ShareItem?
     @State private var selecting = false
+    /// The Bots section being put in order: only its bots and group chats show, with handles.
+    @State private var arrangingBots = false
     @State private var selected: Set<String> = []
     @State private var confirmBulkDelete = false
     @State private var showSettings = false
@@ -118,7 +120,7 @@ struct ConversationsList: View {
     /// "Chats": what the sidebar lists, whichever section the wide pane shows. And nothing while
     /// selecting, when Cancel and Deselect all need the room.
     private var listTitle: String {
-        if #available(iOS 27.0, *), wideDetail { return selecting ? "" : "Chats" }
+        if #available(iOS 27.0, *), wideDetail { return selecting || arrangingBots ? "" : "Chats" }
         return section == .sessions || wideDetail ? "Conversations" : section.title
     }
 
@@ -234,14 +236,18 @@ struct ConversationsList: View {
         // one treats a row tap as selection and swallows the NavigationLink, so project folders
         // never push on iPad.
         List(selection: selecting ? $selected : nil) {
-            topRow
-            if query.isEmpty, !selecting { waitingNotesSection }
-            if usesLedger {
-                if viaServe, query.isEmpty, !selecting { botsSection; projectsSection }
-                ledgerSection
-                if searchesMessages, !selecting { messageHitsSection }
+            if arrangingBots {
+                botsSection
             } else {
-                localSection
+                topRow
+                if query.isEmpty, !selecting { waitingNotesSection }
+                if usesLedger {
+                    if viaServe, query.isEmpty, !selecting { botsSection; projectsSection }
+                    ledgerSection
+                    if searchesMessages, !selecting { messageHitsSection }
+                } else {
+                    localSection
+                }
             }
         }
         .listStyle(.plain)
@@ -251,18 +257,21 @@ struct ConversationsList: View {
                                     startNew: { startNew(in: $0) })
             }
         }
-        .environment(\.editMode, .constant(selecting ? .active : .inactive))
+        .environment(\.editMode, .constant(selecting || arrangingBots ? .active : .inactive))
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 if selecting {
                     Button("Cancel") { selecting = false; selected = [] }
-                } else {
+                } else if !arrangingBots {
                     Button("Settings", systemImage: "gearshape") { showSettings = true }
                         .keyboardShortcut(",", modifiers: .command)
                 }
             }
             ToolbarItemGroup(placement: .topBarTrailing) {
-                if selecting {
+                if arrangingBots {
+                    Button("Done") { withAnimation { arrangingBots = false } }
+                        .fontWeight(.semibold)
+                } else if selecting {
                     Button(selected.count == visibleIDs.count ? "Deselect all" : "Select all") {
                         selected = selected.count == visibleIDs.count ? [] : visibleIDs
                     }
@@ -305,6 +314,7 @@ struct ConversationsList: View {
             ledgerError = nil
             selecting = false
             selected = []
+            arrangingBots = false
         }
         .refreshable { if usesLedger { await refresh() } }
         .onChange(of: isShowing) { _, showing in
@@ -378,14 +388,30 @@ struct ConversationsList: View {
             let bots = listedBots
             let hidden = all.filter { $0.isHidden && !$0.isDefault }
             let faces = botDirectory.roster?.faces ?? [:]
+            let hasRooms = !bots.isEmpty && groups.key == settings.connectionKey && groups.supported
+            let items = BotListItem.arranged(bots: bots, rooms: hasRooms ? groups.rooms : [], order: botOrder)
             Section {
-                if showBotRows {
-                    ForEach(bots) { botRow($0, face: faces[$0.name] ?? BotFace(seed: $0.name)) }
-                    if !bots.isEmpty, groups.key == settings.connectionKey, groups.supported {
-                        ForEach(groups.rooms) { groupRow($0, faces: faces) }
-                        if groups.writable {
-                            sectionAction("New Group Chat", systemImage: "person.3", hint: "Starts a chat with several bots at once") { makingGroup = true }
+                if showBotRows || arrangingBots {
+                    // Bots and group chats in one run, in the order they were put in (Reorder Bots).
+                    ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                        Group {
+                            switch item {
+                            case .bot(let bot): botRow(bot, face: faces[bot.name] ?? BotFace(seed: bot.name))
+                            case .room(let room): groupRow(room, faces: faces)
+                            }
                         }
+                        // Being put in order, a row moves by its handle and opens nothing.
+                        .allowsHitTesting(!arrangingBots)
+                        .accessibilityAction(named: "Move up") { if index > 0 { moveBotRows(IndexSet(integer: index), to: index - 1, in: items) } }
+                        .accessibilityAction(named: "Move down") { if index < items.count - 1 { moveBotRows(IndexSet(integer: index), to: index + 2, in: items) } }
+                    }
+                    // Only in Reorder Bots: elsewhere a long press is the row's menu, which a drag
+                    // from it can't get past.
+                    .onMove(perform: arrangingBots ? { moveBotRows($0, to: $1, in: items) } : nil)
+                }
+                if showBotRows, !arrangingBots {
+                    if hasRooms, groups.writable {
+                        sectionAction("New Group Chat", systemImage: "person.3", hint: "Starts a chat with several bots at once") { makingGroup = true }
                     }
                     sectionAction("New Bot", systemImage: "plus.bubble", hint: "Makes a bot on your server, with a chat of its own") { editingBot = .new }
                     if !bots.isEmpty, botDirectory.roster?.messagingIsOn == false {
@@ -397,12 +423,39 @@ struct ConversationsList: View {
                     }
                 }
             } header: {
-                foldingHeader("Bots", count: bots.count, isOpen: $showBotRows)
+                if arrangingBots { Text("Bots") } else { foldingHeader("Bots", count: bots.count, isOpen: $showBotRows) }
+            } footer: {
+                if arrangingBots {
+                    Text("Drag bots and group chats by their handles into the order you want.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
             }
             .confirmationDialog("Let bots message each other?", isPresented: $askingBotMessaging, titleVisibility: .visible) {
                 Button("Let Them") { letBotsMessageEachOther() }
             } message: {
                 Text("Hermes gives each bot's chat a tool to message the other bots, so you can say \u{201C}@scout, what do you think?\u{201D} in one bot's chat and have it ask. Redde turns this on the way Hermes Desktop does, by setting your main profile up as a bot on the server. Chats with your agent stay as they are.")
+            }
+        }
+    }
+
+    /// The order the Bots section's rows were put in on this server; empty, none.
+    private var botOrder: [String] { settings.botOrderHere }
+
+    /// A bot or group chat dragged to another place: the section keeps that order from now on.
+    private func moveBotRows(_ moving: IndexSet, to destination: Int, in items: [BotListItem]) {
+        withAnimation {
+            settings.botOrderHere = BotListItem.order(after: moving, to: destination, in: items, kept: botOrder)
+        }
+    }
+
+    /// In a bot's or group chat's menu: put the section in order, or (once it is) back to the most
+    /// recent first.
+    @ViewBuilder
+    private var orderingBots: some View {
+        Button("Reorder Bots", systemImage: "arrow.up.arrow.down") { withAnimation { arrangingBots = true } }
+        if !botOrder.isEmpty {
+            Button("Sort Bots by Recent", systemImage: "clock.arrow.circlepath") {
+                withAnimation { settings.botOrderHere = [] }
             }
         }
     }
@@ -476,6 +529,8 @@ struct ConversationsList: View {
             if !bot.isDefault {
                 Button("Hide", systemImage: "eye.slash") { hide(bot) }
             }
+            Divider()
+            orderingBots
         }
         .accessibilityElement(children: .combine)
         .accessibilityValue(marks.spoken)
@@ -508,6 +563,7 @@ struct ConversationsList: View {
         }
         .buttonStyle(.plain)
         .listRowBackground(groups.open?.id == room.id ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
+        .contextMenu { orderingBots }
         .accessibilityElement(children: .combine)
         .accessibilityHint(room.inDesktop ? "Shows this Hermes Desktop group chat's last messages" : "Opens this group chat")
     }
