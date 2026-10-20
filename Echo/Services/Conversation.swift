@@ -1384,7 +1384,7 @@ final class Conversation {
     /// to do when it is open already. False when it can't be (not on the Dashboard, Bots off, no
     /// such bot on the server): the message goes where the person already is.
     func goToBot(_ profile: String, mainName: String) async throws -> Bool {
-        if bot?.profile == profile { return true }
+        if let open = bot?.profile, open == profile || BotDirectory.shared.roster?.named(profile)?.name == open { return true }
         guard settings.transport == .hermesServe, settings.showBots else { return false }
         var roster = BotDirectory.shared.key == settings.connectionKey ? BotDirectory.shared.roster : nil
         func find(_ roster: BotRoster?) -> HermesBot? {
@@ -1397,13 +1397,18 @@ final class Conversation {
     }
 
     /// The open bot's chat goes by what `roster` calls its bot now: renamed in Redde or in Hermes
-    /// Desktop, the header, the composer and its replies say the new name.
+    /// Desktop, the header, the composer and its replies say the new name; its profile renamed on
+    /// the server (the chat goes with it), what is sent goes to the new one.
     func followBotName(in roster: BotRoster, mainName: String) {
-        guard var ref = bot, let current = roster.bots.first(where: { $0.name == ref.profile }) else { return }
+        guard var ref = bot, let current = roster.named(ref.profile) else { return }
         let name = current.label(mainName: mainName)
-        guard name != ref.name else { return }
+        guard name != ref.name || current.name != ref.profile else { return }
         if title == ref.name { title = name }
         ref.name = name
+        if current.name != ref.profile, let serverSessionID {
+            HermesServeClient.shared.noteProfile(current.name, forStored: serverSessionID)
+        }
+        ref.profile = current.name
         bot = ref
         persist()
     }

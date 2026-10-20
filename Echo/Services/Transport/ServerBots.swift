@@ -110,13 +110,21 @@ nonisolated struct BotRoster: Equatable, Sendable {
         BotFace.faces(for: bots.map(\.name), picked: Dictionary(bots.compactMap { bot in bot.face.map { (bot.name, $0) } }, uniquingKeysWith: { a, _ in a }))
     }
 
-    /// The bot "Ask <name> in Redde" means, by its profile's name or the name it was given; never
-    /// the main profile (that one is the app itself, "Ask Redde").
+    /// The bot "Ask <name> in Redde" means, by its profile's name or the name it was given, else by
+    /// a name its profile had before a rename; never the main profile (that one is the app itself,
+    /// "Ask Redde").
     func asked(_ name: String) -> HermesBot? {
         let said = name.trimmingCharacters(in: .whitespacesAndNewlines)
         func same(_ a: String, _ b: String) -> Bool { a.compare(b, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame }
         let others = bots.filter { !$0.isDefault }
         return others.first { same($0.name, said) } ?? others.first { same($0.label(), said) }
+            ?? others.first { $0.previousNames.contains { same($0, said) } }
+    }
+
+    /// The bot with this profile, or the one it became when renamed (Hermes keeps a profile's old
+    /// names, 0.21.5 and later): what Redde kept by profile (a chat, a spoken prefix) follows it.
+    func named(_ profile: String) -> HermesBot? {
+        bots.first { $0.name == profile } ?? bots.first { $0.previousNames.contains(profile) }
     }
 
     /// The bots the chat list shows: none while the main profile is the only one (there is no one

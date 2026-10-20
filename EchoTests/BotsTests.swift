@@ -329,6 +329,21 @@ struct BotsTests {
         #expect(roster.asked("Research Buddy")?.name == "scout", "by the name it was given")
         #expect(roster.asked("quill")?.name == "writer", "whatever the case")
         #expect(roster.asked("default") == nil && roster.asked("nobody") == nil, "never the main profile, nor a name no bot has")
+        #expect(roster.asked("Finder")?.name == "scout", "by a name its profile had before a rename")
+    }
+
+    @Test func whatWasKeptByProfileFollowsARename() throws {
+        let roster = try roster(Self.listing)
+        #expect(roster.named("scout")?.name == "scout" && roster.named("default")?.isDefault == true)
+        #expect(roster.named("finder")?.name == "scout", "a spoken prefix or a chat kept by the old name")
+        #expect(roster.named("nobody") == nil)
+
+        let settings = Settings(defaults: try #require(UserDefaults(suiteName: "bot-rename-\(UUID().uuidString)")))
+        let conversation = Conversation(settings: settings, store: ConversationStore(directory: FileManager.default.temporaryDirectory
+            .appending(path: "bot-rename-\(UUID().uuidString)")))
+        conversation.replaceForDemo(messages: [], bot: BotRef(profile: "finder", name: "Finder"))
+        conversation.followBotName(in: roster, mainName: "Redde")
+        #expect(conversation.bot == BotRef(profile: "scout", name: "Research Buddy"), "the open chat's sends go to the renamed profile")
     }
 
     @Test func siriLearnsTheBotsByTheirNames() throws {

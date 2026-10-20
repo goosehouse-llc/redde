@@ -65,14 +65,14 @@ struct SpokenPrefixesView: View {
 
     /// A bot's name by its profile, as the roster last had it.
     static func botName(_ profile: String) -> String? {
-        BotDirectory.shared.roster?.bots.first { $0.name == profile }?.label(mainName: Settings.shared.headerTitle)
+        BotDirectory.shared.roster?.named(profile)?.label(mainName: Settings.shared.headerTitle)
     }
 
     /// The bots on this server (the main agent too) that no rule goes to yet.
     static func botsWithoutRules(_ settings: Settings) -> [HermesBot] {
         guard settings.transport == .hermesServe, settings.showBots, BotDirectory.shared.key == settings.connectionKey,
               let bots = BotDirectory.shared.roster?.bots else { return [] }
-        let ruled = Set(settings.spokenPrefixes.compactMap(\.bot))
+        let ruled = Set(settings.spokenPrefixes.compactMap { $0.bot.flatMap { BotDirectory.shared.roster?.named($0)?.name ?? $0 } })
         return bots.filter { !$0.isHidden && !ruled.contains($0.name) }.sorted { a, b in a.isDefault != b.isDefault ? a.isDefault : a.name < b.name }
     }
 }
