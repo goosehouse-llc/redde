@@ -26,7 +26,7 @@ struct BotFacePicker: View {
         _face = State(initialValue: current)
     }
 
-    static let colorNames = ["Blue", "Amber", "Pink", "Indigo", "Teal", "Violet", "Green", "Orange", "Sky", "Coral", "Lime"]
+    static let colorNames = ["Blue", "Amber", "Pink", "Indigo", "Teal", "Violet", "Green", "Orange", "Sky", "Coral", "Lime", "White", "Black"]
 
     var body: some View {
         NavigationStack {
@@ -111,6 +111,8 @@ struct BotFacePicker: View {
                         Circle()
                             .fill(LinearGradient(colors: [BotFace.palette[index].light, BotFace.palette[index].deep], startPoint: .topLeading, endPoint: .bottomTrailing))
                             .frame(width: 34, height: 34)
+                            // White and black would vanish on a page of their own colour.
+                            .overlay(Circle().strokeBorder(.quaternary, lineWidth: index >= BotFace.seededColors ? 1 : 0))
                             .padding(4)
                             .overlay(Circle().strokeBorder(picked ? Color.accentColor : .clear, lineWidth: 2.5))
                             .frame(width: 44, height: 44)

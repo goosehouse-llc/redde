@@ -49,7 +49,15 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
         (Color(red: 0.66, green: 0.91, blue: 1.00), Color(red: 0.18, green: 0.68, blue: 0.90)),   // sky
         (Color(red: 1.00, green: 0.73, blue: 0.66), Color(red: 0.93, green: 0.42, blue: 0.37)),   // coral
         (Color(red: 0.92, green: 0.97, blue: 0.63), Color(red: 0.70, green: 0.80, blue: 0.17)),   // lime
+        // For picking only, after `seededColors`.
+        (Color(white: 1.0), Color(white: 0.86)),   // white
+        (Color(white: 0.34), Color(white: 0.07)),  // black
     ]
+    /// What a name gives is one of the first eleven colours, so no bot's colour changes when
+    /// colours are added for picking (as with `Shape.seeded`).
+    static let seededColors = 11
+    /// The white one: drawn with a faint outline, or it would vanish on a white page.
+    static let white = 11
 
     /// Every face a name can give (colour, glance and lean aside), in a fixed order.
     private static let all: [BotFace] = Shape.seeded.flatMap { shape in
@@ -71,7 +79,7 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
         guard seed != "default" else { self = Self.main; return }
         let hash = Self.hash(seed)
         self = Self.all[Int(hash % UInt64(Self.all.count))]
-        color = Int((hash >> 20) % UInt64(Self.palette.count))
+        color = Int((hash >> 20) % UInt64(Self.seededColors))
         glance = Int((hash >> 28) % 4)
         tilt = Double(Int((hash >> 32) % 13) - 6)
     }
@@ -133,8 +141,8 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
                 face = candidate
                 break
             }
-            if taken.count < palette.count {
-                while taken.contains(where: { $0.color == face.color }) { face.color = (face.color + 1) % palette.count }
+            if taken.count < seededColors {
+                while taken.contains(where: { $0.color == face.color }) { face.color = (face.color + 1) % seededColors }
             }
             taken.append(face)
             out[name] = face
@@ -333,7 +341,11 @@ struct BotAvatar: View {
         let ink = Color(red: 0.09, green: 0.09, blue: 0.13)
         // On a body nearly white (a theme's pale bubble) the white of the eyes gets a rim, or it'd vanish.
         let skin = colors.deep.resolve(in: context.environment)
-        let pale = 0.2126 * skin.linearRed + 0.7152 * skin.linearGreen + 0.0722 * skin.linearBlue > 0.62
+        let lightness = 0.2126 * skin.linearRed + 0.7152 * skin.linearGreen + 0.0722 * skin.linearBlue
+        let pale = lightness > 0.62
+        // On a black body the mouth and freckles are drawn light, or they'd vanish.
+        let dark = lightness < 0.03
+        let features = dark ? Color.white.opacity(0.9) : ink
         let shape = layout(face.shape)
         let u = s / 100
         context.scaleBy(x: u, y: u)
@@ -361,6 +373,9 @@ struct BotAvatar: View {
             context.fill(Path(ellipseIn: CGRect(x: shape.top.x + 4.5, y: shape.top.y - 15, width: 9, height: 9)), with: .color(colors.deep))
         }
         context.fill(body, with: fill)
+        if face.shape != .bubble, face.color == BotFace.white {
+            context.stroke(body, with: .color(ink.opacity(0.2)), lineWidth: 1.6)
+        }
         if face.mark == .spark {
             // A small four-pointed sparkle by its top right.
             let c = CGPoint(x: 74, y: shape.top.y + 12)
@@ -372,7 +387,7 @@ struct BotAvatar: View {
                 if i == 0 { star.move(to: p) } else { star.addLine(to: p) }
             }
             star.closeSubpath()
-            context.fill(star, with: .color(.white.opacity(0.92)))
+            context.fill(star, with: .color(pale ? ink.opacity(0.4) : .white.opacity(0.92)))
         }
 
         // A little gloss on its top left.
@@ -436,7 +451,8 @@ struct BotAvatar: View {
         case .freckles:
             for base in [left.x, right.x] {
                 for (dx, dy) in [(-3.0, 0.0), (0.5, 2.2), (3.6, -0.4)] {
-                    context.fill(Path(ellipseIn: CGRect(x: base + dx - 0.9, y: cheekY + dy - 0.9, width: 1.8, height: 1.8)), with: .color(colors.deep.opacity(0.9)))
+                    context.fill(Path(ellipseIn: CGRect(x: base + dx - 0.9, y: cheekY + dy - 0.9, width: 1.8, height: 1.8)),
+                                 with: .color(dark ? .white.opacity(0.55) : colors.deep.opacity(0.9)))
                 }
             }
         case .blush:
@@ -453,7 +469,7 @@ struct BotAvatar: View {
             let open = max(0, min(1, talking))
             if open > 0.03 {
                 let w = 7 + open * 3, h = 1.6 + open * 8
-                context.fill(Path(roundedRect: CGRect(x: 51 - w / 2, y: mouthY - 1, width: w, height: h), cornerRadius: min(w, h) / 2), with: .color(ink))
+                context.fill(Path(roundedRect: CGRect(x: 51 - w / 2, y: mouthY - 1, width: w, height: h), cornerRadius: min(w, h) / 2), with: .color(features))
             }
             return
         }
@@ -464,15 +480,15 @@ struct BotAvatar: View {
             var smile = Path()
             smile.move(to: CGPoint(x: 51 - 5, y: mouthY))
             smile.addQuadCurve(to: CGPoint(x: 51 + 5, y: mouthY), control: CGPoint(x: 51, y: mouthY + 5))
-            context.stroke(smile, with: .color(ink), style: StrokeStyle(lineWidth: 2.6, lineCap: .round))
+            context.stroke(smile, with: .color(features), style: StrokeStyle(lineWidth: 2.6, lineCap: .round))
         case .oh:
-            context.fill(Path(ellipseIn: CGRect(x: 51 - 2.6, y: mouthY - 1.5, width: 5.2, height: 6)), with: .color(ink))
+            context.fill(Path(ellipseIn: CGRect(x: 51 - 2.6, y: mouthY - 1.5, width: 5.2, height: 6)), with: .color(features))
         case .grin:
             var grin = Path()
             grin.move(to: CGPoint(x: 51 - 6, y: mouthY - 1))
             grin.addQuadCurve(to: CGPoint(x: 51, y: mouthY), control: CGPoint(x: 51 - 3, y: mouthY + 4))
             grin.addQuadCurve(to: CGPoint(x: 51 + 6, y: mouthY - 1), control: CGPoint(x: 51 + 3, y: mouthY + 4))
-            context.stroke(grin, with: .color(ink), style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round))
+            context.stroke(grin, with: .color(features), style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round))
         }
     }
 }
@@ -502,6 +518,16 @@ struct BotGallery: View {
                 }
             }
             .padding(.vertical, 8)
+            // The colours only picked, white and black, on white and on black.
+            HStack(spacing: 14) {
+                ForEach(Array([(BotFace.Shape.round, BotFace.Mark.spark, BotFace.Mouth.smile), (.egg, .freckles, .grin)].enumerated()), id: \.offset) { i, part in
+                    ForEach([BotFace.white, BotFace.white + 1], id: \.self) { color in
+                        BotAvatar(face: BotFace(shape: part.0, eyes: .round, mouth: part.2, mark: part.1, glance: i, tilt: 0, color: color), size: 56)
+                            .padding(6)
+                            .background(i == 0 ? Color.white : Color.black, in: .rect(cornerRadius: 10))
+                    }
+                }
+            }
             HStack(spacing: 10) {
                 ForEach(Self.names, id: \.self) { BotAvatar(face: faces[$0] ?? BotFace(seed: $0), size: 26) }
             }
