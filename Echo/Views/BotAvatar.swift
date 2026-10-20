@@ -7,7 +7,7 @@ import SwiftUI
 /// Hermes Desktop, and `BotFace.faces(for:picked:)` gives every bot on a server one no other has
 /// there (a shape and a colour of its own too, while there are some left), unless the person picked
 /// one for it (`HermesBot.face`, kept on the server). The main agent is Redde itself: the app's own
-/// message bubble, in the theme's bubble colour.
+/// message bubble, in the Code theme's pale sky whatever the theme.
 nonisolated struct BotFace: Equatable, Hashable, Sendable {
     enum Shape: String, CaseIterable, Sendable {
         case round, egg, pill, capsule, burst, pick, hex, diamond
@@ -70,8 +70,8 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
 
     /// The main agent's, whatever its profile is called, unless one was picked for it: Redde's own
     /// bubble, the shape of a message in the app with its tucked corner on the left (a reply's
-    /// side), in the theme's bubble colour. Its colour number only keeps the other bots off blue,
-    /// the colour of the standard theme.
+    /// side), in the Code theme's pale sky in every theme (asked 2026-10-20). Its colour
+    /// number only keeps the other bots off blue, the colour of the standard theme.
     static let main = BotFace(shape: .bubble, eyes: .round, mouth: .none, mark: .none, glance: 1, tilt: -3, color: 0)
 
     /// The face a name gives, on its own. The main profile's is always Redde's (`main`).
@@ -332,8 +332,9 @@ struct BotAvatar: View {
         }
     }
 
-    /// The colour of a message bubble in this theme: the prompt line's in a theme without bubbles.
-    private var bubbleColor: Color { theme.promptPrefix != nil ? theme.promptColor : theme.userBubble }
+    /// Redde's colour: the Code theme's bubble (#CBF0FF), whichever theme is on, and whatever
+    /// colour was picked for that theme's bubbles.
+    private var bubbleColor: Color { Theme.claudeCode.userBubble }
 
     private func draw(in context: inout GraphicsContext, size s: CGFloat) {
         let colors = face.shape == .bubble ? (light: bubbleColor.mix(with: .white, by: 0.14), deep: bubbleColor)

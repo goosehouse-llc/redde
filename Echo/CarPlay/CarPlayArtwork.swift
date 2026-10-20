@@ -8,8 +8,8 @@ import UIKit
 /// Rider: three bars of light, low while you are heard and swelling while Redde speaks, and one
 /// light going to and fro while it thinks. Solid bars in mist and gold, the same as stacks of
 /// small lamps, and the lamps in the car's own red on black. The fourth is a ring of light
-/// around Redde's marks, and the fifth Redde's own face (`BotFace.main`, in the theme's bubble
-/// colour) doing what the voice orb's does. They move slowly and in one piece: nothing here can follow a real
+/// around Redde's marks, and the fifth Redde's own face (`BotFace.main`, in the Code theme's pale
+/// sky) doing what the voice orb's does. They move slowly and in one piece: nothing here can follow a real
 /// voice, and lights that leapt about as if they did looked odd. CarPlay owns layout and type,
 /// so these images are where the brand shows.
 /// Everything is drawn in code so it stays sharp on any car display, and every picture carries
@@ -214,9 +214,8 @@ enum CarPlayArtwork {
     /// That is why they are slow: see `speakingLevel`.
     static func voiceStateImage(_ state: VoiceState, look: CarPlayVoiceLook = .bars, side: CGFloat = voiceImageSide,
                                 movingAt scale: CGFloat? = nil) -> UIImage {
-        // Redde's face is in the theme's bubble colour: another theme, another picture.
-        let settings = Settings.shared
-        let theme = look == .redde ? " \(settings.theme.rawValue) \(String(describing: settings.themeColors[settings.theme.rawValue])) \(BotDirectory.shared.mainFace.code)" : ""
+        // Redde's face has the theme's corners: another theme, another picture.
+        let theme = look == .redde ? " \(Settings.shared.theme.rawValue) \(BotDirectory.shared.mainFace.code)" : ""
         let key = "\(look.rawValue) \(state.rawValue) \(side) \(scale ?? 0)\(theme)"
         if let made = voicePictures[key] { return made }
         let picture = voicePicture(state, look: look, side: side, movingAt: scale)

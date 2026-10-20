@@ -282,8 +282,8 @@ egg, pill, capsule, burst, pick, hex, diamond), white eyes glancing somewhere, o
 or a mark (an antenna, a sparkle, freckles, blush), in a gradient of its own. All of it comes from
 the profile's name, except the main profile's, which is always Redde's own bubble (`BotFace.main`):
 a message bubble, nearly square, its corners the theme's and the bottom left one tucked in (a
-reply's side), in the theme's bubble colour (the prompt line's in Terminal and Amber CRT), the
-whites of its eyes rimmed when that colour is pale. A bot's face can be picked instead (Change Face…
+reply's side), in the Code theme's pale sky (#CBF0FF) whatever the theme and whatever bubble
+colour was picked (asked 2026-10-20), the whites of its eyes rimmed, as that colour is pale. A bot's face can be picked instead (Change Face…
 on its row, or in its chat's ••• menu; `BotFacePicker`): shape, eyes, mouth, mark and colour, kept
 on the server in the profile's `ui_meta` under `redde` (`face`, a short code; compare-and-swap on
 its revision), so every Redde there shows it. Four shapes are for picking only (a ghost, a rounded
@@ -1099,7 +1099,7 @@ on and around it:
   faster while the model thinks. Animated offsets, scales and rotations only.
 
 One orb is no picture: **Redde** (`ReddeVoiceFace`) is Redde's own bot face, its bubble in the
-theme's bubble colour, glowing along its outline in the phase colour. It has no bars or light; its
+Code theme's pale sky, glowing along its outline in the phase colour. It has no bars or light; its
 eyes say what is happening instead. It blinks about every four and a half seconds (now and then
 twice); at rest it holds a look, then glances quickly to the next; while you talk it looks at you;
 while it thinks it looks up and away, its eyes circling; while the reply is read out its mouth opens
@@ -1883,7 +1883,7 @@ move: a state's image is an animation to CarPlay (a loop of 0.3 to 5 seconds, 15
 most). They come in five looks, picked in Settings → Appearance → CarPlay voice screen
 (`CarPlayVoiceLook`, `Settings.carPlayVoice`; asked 2026-10-13): Bars, Lamps, KITT, Orb and
 Redde. Redde (asked 2026-10-19) is Redde's own bot face (`BotFace.main`, drawn by `BotAvatar` in
-the theme's bubble colour through `BotAvatar.picture`), with no disc, in a soft light of the
+the Code theme's pale sky through `BotAvatar.picture`), with no disc, in a soft light of the
 state's colour: listening it looks at you, eyes drifting, and blinks once in a 4-second loop;
 thinking its eyes go round, up and away (2.4 s); speaking its mouth says two syllables twice
 (2.4 s, half of the pictures kept); paused its eyes are shut; waiting on the phone it looks down
