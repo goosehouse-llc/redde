@@ -7,8 +7,9 @@ import SwiftUI
 /// design/icons/orbs/darkGlass.swift. Redde's own face has no picture either: it is Redde's bot
 /// creature (`BotFace.main`), drawn live in voice mode (`ReddeVoiceFace`) and in the picker.
 enum VoiceOrb: String, CaseIterable, Identifiable {
-    case darkGlass
+    // In the picker's order: Redde's own face first.
     case reddeFace
+    case darkGlass
     case waveform, glassWave, matteWave, flatWave, bubbleWave, bubbleMatteWave, navyGlassWave, navyMatteWave, steelGlassWave, inkWave, goldWave
 
     var id: String { rawValue }
