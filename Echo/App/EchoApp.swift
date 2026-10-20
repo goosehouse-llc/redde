@@ -13,6 +13,7 @@ struct EchoApp: App {
         _voiceSession = State(initialValue: voice)
         VoiceSession.current = voice
         Conversation.current = conversation   // Siri AI's intents send through it
+        CloudSync.shared.start()   // with Sync with iCloud on, what other devices changed meanwhile
         Notifier.shared.attach(conversation: conversation)   // the delegate must exist before launch finishes
         // Approve and Deny on the Live Activity run here, in the app, and answer the same way.
         ApprovalAnswer.deliver = { Notifier.shared.answerApproval(requestID: $0, choice: $1) }
@@ -73,6 +74,7 @@ struct EchoApp: App {
                     PhotoLooking.shared.pause()
                 case .active:
                     lock.appDidBecomeActive()
+                    CloudSync.shared.cameForward()
                     WatchLink.shared.push()   // settings may have changed since the watch last heard
                     // The app may have been closed while the agent worked: a conversation left
                     // without its reply fetches it, or picks the turn up where it stands.

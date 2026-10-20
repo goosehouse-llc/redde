@@ -49,24 +49,24 @@ final class Settings: ServeEndpoint {
     nonisolated static let defaultFastLaneModel = ""
 
     var transport: Transport {
-        didSet { defaults.set(transport.rawValue, forKey: Keys.transport); syncActiveServer() }
+        didSet { store(transport.rawValue, forKey: Keys.transport); syncActiveServer() }
     }
     var gatewayURL: String {
-        didSet { defaults.set(gatewayURL, forKey: Keys.gatewayURL); syncActiveServer() }
+        didSet { store(gatewayURL, forKey: Keys.gatewayURL); syncActiveServer() }
     }
     var fastLaneURL: String {
-        didSet { defaults.set(fastLaneURL, forKey: Keys.fastLaneURL) }
+        didSet { store(fastLaneURL, forKey: Keys.fastLaneURL) }
     }
     var fastLaneModel: String {
-        didSet { defaults.set(fastLaneModel, forKey: Keys.fastLaneModel) }
+        didSet { store(fastLaneModel, forKey: Keys.fastLaneModel) }
     }
     /// Model for the Hermes transports. Empty = the gateway's default.
     var gatewayModel: String {
-        didSet { defaults.set(gatewayModel, forKey: Keys.gatewayModel); syncActiveServer() }
+        didSet { store(gatewayModel, forKey: Keys.gatewayModel); syncActiveServer() }
     }
     /// Provider slug that goes with `gatewayModel` (Hermes routes by both). Empty = default.
     var gatewayProvider: String {
-        didSet { defaults.set(gatewayProvider, forKey: Keys.gatewayProvider); syncActiveServer() }
+        didSet { store(gatewayProvider, forKey: Keys.gatewayProvider); syncActiveServer() }
     }
     /// The effort levels offered, lowest first; "" leaves it to the gateway, "none" turns
     /// reasoning off. X-High and Max are for frontier models (Claude, GPT); the values are the
@@ -82,7 +82,7 @@ final class Settings: ServeEndpoint {
 
     /// Ask the agent to answer in this language (an ISO code). Empty = Automatic.
     var replyLanguage: String {
-        didSet { defaults.set(replyLanguage, forKey: Keys.replyLanguage) }
+        didSet { store(replyLanguage, forKey: Keys.replyLanguage) }
     }
 
     /// Fresh installs start with reasoning off: a phone wants quick answers, and the gateway's
@@ -91,17 +91,17 @@ final class Settings: ServeEndpoint {
 
     /// "" (gateway default) or one of `reasoningEfforts`.
     var reasoningEffort: String {
-        didSet { defaults.set(reasoningEffort, forKey: Keys.reasoningEffort) }
+        didSet { store(reasoningEffort, forKey: Keys.reasoningEffort) }
     }
     /// Start listening every time the app comes to the foreground. Makes the built-in
     /// "Hey Siri, open Redde" behave like the App Shortcut.
     var listenOnOpen: Bool {
-        didSet { defaults.set(listenOnOpen, forKey: Keys.listenOnOpen) }
+        didSet { store(listenOnOpen, forKey: Keys.listenOnOpen) }
     }
     /// Voice mode opens with Hands-free switched on. Requests that ask for a mode themselves (the
     /// hands-free button, Siri, the controls) keep theirs.
     var handsFreeByDefault: Bool {
-        didSet { defaults.set(handsFreeByDefault, forKey: Keys.handsFreeByDefault) }
+        didSet { store(handsFreeByDefault, forKey: Keys.handsFreeByDefault) }
     }
     /// Whether a spoken reply can be interrupted by talking over it (`VoiceSession`). With
     /// headphones nothing of the reply reaches the microphone, so that is on from the start. On
@@ -109,55 +109,55 @@ final class Settings: ServeEndpoint {
     /// the reply at call volume: that is a choice.
     enum TalkOver: String, CaseIterable, Sendable { case off, headphones, everywhere }
     var talkOver: TalkOver {
-        didSet { defaults.set(talkOver.rawValue, forKey: Keys.talkOver) }
+        didSet { store(talkOver.rawValue, forKey: Keys.talkOver) }
     }
     /// What it takes to interrupt a reply that can be talked over: anything said, or the word
     /// "stop" alone. With the second, whatever else is said near the microphone, a room full of
     /// people included, the reply goes on.
     enum Interruption: String, CaseIterable, Sendable { case speech, stopWord }
     var interruption: Interruption {
-        didSet { defaults.set(interruption.rawValue, forKey: Keys.interruption) }
+        didSet { store(interruption.rawValue, forKey: Keys.interruption) }
     }
     /// The person's own ways of saying "that's all" in voice mode, heard beside the built-in
     /// English ones (`StopPhrase`): another language's, or a word of the household's. They also
     /// stop a reply where only "stop" does.
     var stopPhrases: [String] {
-        didSet { defaults.set(stopPhrases, forKey: Keys.stopPhrases) }
+        didSet { store(stopPhrases, forKey: Keys.stopPhrases) }
     }
     /// In voice mode a command that waits for approval, or a question from the agent, is read
     /// out and answered by voice (`SpokenRequest`). Off until asked for: whoever is in earshot
     /// can answer, and what the agent wants to run is said aloud.
     var answerRequestsByVoice: Bool {
-        didSet { defaults.set(answerRequestsByVoice, forKey: Keys.answerRequestsByVoice) }
+        didSet { store(answerRequestsByVoice, forKey: Keys.answerRequestsByVoice) }
     }
     /// A question asked by voice in a car asks the agent for a short answer (`CarBrevity`). Off
     /// until asked for: on the Dashboard connection the request is a line added to the message,
     /// which other clients of the same server show.
     var shortAnswersInCar: Bool {
-        didSet { defaults.set(shortAnswersInCar, forKey: Keys.shortAnswersInCar) }
+        didSet { store(shortAnswersInCar, forKey: Keys.shortAnswersInCar) }
     }
     /// Voice mode fills the silence while the agent works with a quiet sound
     /// (`ThinkingSoundPlayer`): never, only with a car connected, or always. Off until chosen.
     enum ThinkingSound: String, CaseIterable, Sendable { case off, car, always }
     var thinkingSound: ThinkingSound {
-        didSet { defaults.set(thinkingSound.rawValue, forKey: Keys.thinkingSound) }
+        didSet { store(thinkingSound.rawValue, forKey: Keys.thinkingSound) }
     }
     /// With that on, a nod of the head approves and a shake denies, with AirPods that sense
     /// movement (`HeadGestures`). Off until asked for: iOS has to be asked for Motion & Fitness.
     var answerRequestsByNod: Bool {
-        didSet { defaults.set(answerRequestsByNod, forKey: Keys.answerRequestsByNod) }
+        didSet { store(answerRequestsByNod, forKey: Keys.answerRequestsByNod) }
     }
     /// Coming into voice mode from outside the chat (Siri, the Action button, a control, opening
     /// Redde) starts a new conversation, unless the current one is empty or busy. The Talk button
     /// in a chat carries that chat on.
     var newConversationForVoice: Bool {
-        didSet { defaults.set(newConversationForVoice, forKey: Keys.newConversationForVoice) }
+        didSet { store(newConversationForVoice, forKey: Keys.newConversationForVoice) }
     }
     /// What Redde shows when it starts: the last conversation, the conversation list (iPhone's
     /// panel, open on its last tab), or the voice screen (listening only with `listenOnOpen`).
     enum LaunchScreen: String, CaseIterable, Sendable { case conversation, conversations, voice }
     var launchScreen: LaunchScreen {
-        didSet { defaults.set(launchScreen.rawValue, forKey: Keys.launchScreen) }
+        didSet { store(launchScreen.rawValue, forKey: Keys.launchScreen) }
     }
     /// Launch straight into the voice screen. (Once its own switch; now one of `launchScreen`.)
     var openToVoiceScreen: Bool { launchScreen == .voice }
@@ -165,43 +165,43 @@ final class Settings: ServeEndpoint {
     /// with the voice it is set up with (`HermesSpeech`, over the Dashboard).
     enum ReplyVoice: String, CaseIterable, Sendable { case onDevice, kokoro, hermes }
     var replyVoice: ReplyVoice {
-        didSet { defaults.set(replyVoice.rawValue, forKey: Keys.replyVoice) }
+        didSet { store(replyVoice.rawValue, forKey: Keys.replyVoice) }
     }
     /// Speak replies with a Kokoro server instead of the on-device voice.
     var useKokoro: Bool { replyVoice == .kokoro }
     var kokoroURL: String {
-        didSet { defaults.set(kokoroURL, forKey: Keys.kokoroURL) }
+        didSet { store(kokoroURL, forKey: Keys.kokoroURL) }
     }
     /// Spoken-reply speed multiplier — Kokoro's `speed` field, and the fallback
     /// synthesizer's rate scaled around the system default.
     var voiceSpeed: Double {
-        didSet { defaults.set(voiceSpeed, forKey: Keys.voiceSpeed) }
+        didSet { store(voiceSpeed, forKey: Keys.voiceSpeed) }
     }
     var kokoroVoice: String {
-        didSet { defaults.set(kokoroVoice, forKey: Keys.kokoroVoice) }
+        didSet { store(kokoroVoice, forKey: Keys.kokoroVoice) }
     }
     /// The language Redde listens for, as a locale id ("es-MX"). Empty = the iPhone's language.
     var speechLanguage: String {
-        didSet { defaults.set(speechLanguage, forKey: Keys.speechLanguage) }
+        didSet { store(speechLanguage, forKey: Keys.speechLanguage) }
     }
     /// Read each reply with a voice for the language it's written in, not only `speechLanguage`.
     var matchReplyLanguage: Bool {
-        didSet { defaults.set(matchReplyLanguage, forKey: Keys.matchReplyLanguage) }
+        didSet { store(matchReplyLanguage, forKey: Keys.matchReplyLanguage) }
     }
     /// What Redde listens for: `speechLanguage`, or the iPhone's language.
     var speechLocale: Locale { speechLanguage.isEmpty ? .current : Locale(identifier: speechLanguage) }
     /// Spoken prefixes: a leading word in a voice or Siri message ("Claude, …") becomes a text
     /// prefix ("C ") before sending. Empty by default, and typed text is never touched.
     var spokenPrefixes: [SpokenPrefix] {
-        didSet { defaults.set(try? JSONEncoder().encode(spokenPrefixes), forKey: Keys.spokenPrefixes) }
+        didSet { store(try? JSONEncoder().encode(spokenPrefixes), forKey: Keys.spokenPrefixes) }
     }
     var theme: Theme {
-        didSet { defaults.set(theme.rawValue, forKey: Keys.theme) }
+        didSet { store(theme.rawValue, forKey: Keys.theme) }
     }
     /// Your accent and bubble colors, per theme (keyed by `Theme.rawValue`). A theme with no
     /// entry uses its own colors, so switching themes never carries one theme's picks to another.
     var themeColors: [String: ThemeColors] {
-        didSet { defaults.set(try? JSONEncoder().encode(themeColors), forKey: Keys.themeColors) }
+        didSet { store(try? JSONEncoder().encode(themeColors), forKey: Keys.themeColors) }
     }
     /// The active theme with your colors applied: what the app renders.
     var resolvedTheme: ResolvedTheme { resolved(theme) }
@@ -214,76 +214,76 @@ final class Settings: ServeEndpoint {
         var colorScheme: ColorScheme? { switch self { case .system: nil; case .light: .light; case .dark: .dark } }
     }
     var appearance: Appearance {
-        didSet { defaults.set(appearance.rawValue, forKey: Keys.appearance) }
+        didSet { store(appearance.rawValue, forKey: Keys.appearance) }
     }
     /// The orb at the centre of voice mode.
     var voiceOrb: VoiceOrb {
-        didSet { defaults.set(voiceOrb.rawValue, forKey: Keys.voiceOrb) }
+        didSet { store(voiceOrb.rawValue, forKey: Keys.voiceOrb) }
     }
     /// What moves inside the orb's face in voice mode.
     var orbLight: OrbLight {
-        didSet { defaults.set(orbLight.rawValue, forKey: Keys.orbLight) }
+        didSet { store(orbLight.rawValue, forKey: Keys.orbLight) }
     }
     /// How CarPlay's Ask tab draws its three cards.
     var carPlayCards: CarPlayCardLook {
-        didSet { defaults.set(carPlayCards.rawValue, forKey: Keys.carPlayCards) }
+        didSet { store(carPlayCards.rawValue, forKey: Keys.carPlayCards) }
     }
     /// How CarPlay's voice screen shows Redde listening, thinking and speaking.
     var carPlayVoice: CarPlayVoiceLook {
-        didSet { defaults.set(carPlayVoice.rawValue, forKey: Keys.carPlayVoice) }
+        didSet { store(carPlayVoice.rawValue, forKey: Keys.carPlayVoice) }
     }
     /// Settings → Phone tools: which of the phone's own things the agent may use (`DeviceTool`).
     /// Everything off until turned on.
     var phoneTools: PhoneToolsSettings {
-        didSet { if phoneTools != oldValue { defaults.set(try? JSONEncoder().encode(phoneTools), forKey: Keys.phoneTools) } }
+        didSet { if phoneTools != oldValue { store(try? JSONEncoder().encode(phoneTools), forKey: Keys.phoneTools) } }
     }
     /// What the app renders in: the appearance choice, nil meaning follow the system.
     var effectiveColorScheme: ColorScheme? { appearance.colorScheme }
     /// Local notifications for approvals / replies / failures while the app is in the background.
     var notifyInBackground: Bool {
-        didSet { defaults.set(notifyInBackground, forKey: Keys.notifyInBackground) }
+        didSet { store(notifyInBackground, forKey: Keys.notifyInBackground) }
     }
     /// Dynamic Island / Lock Screen activity while a turn runs.
     var showLiveActivity: Bool {
-        didSet { defaults.set(showLiveActivity, forKey: Keys.showLiveActivity) }
+        didSet { store(showLiveActivity, forKey: Keys.showLiveActivity) }
     }
     /// Three follow-up questions under each reply, written by the OpenAI-compatible model.
     var suggestFollowUps: Bool {
-        didSet { defaults.set(suggestFollowUps, forKey: Keys.suggestFollowUps) }
+        didSet { store(suggestFollowUps, forKey: Keys.suggestFollowUps) }
     }
     /// Route replies to the earpiece when the proximity sensor says the phone is at your ear.
     /// Redde's background alerts are time-sensitive, so Siri can read them on AirPods (Announce
     /// Notifications) and they can break through a Focus.
     var announceOnAirPods: Bool {
-        didSet { defaults.set(announceOnAirPods, forKey: Keys.announceOnAirPods) }
+        didSet { store(announceOnAirPods, forKey: Keys.announceOnAirPods) }
     }
     /// Return in the composer sends the message; off, it starts a new line, and the Send button
     /// (or ⌘Return) sends. With it on, Shift-Return on a keyboard starts the new line.
     var returnSends: Bool {
-        didSet { defaults.set(returnSends, forKey: Keys.returnSends) }
+        didSet { store(returnSends, forKey: Keys.returnSends) }
     }
     /// How much larger or smaller than the iPhone's own text size the conversation is set, in
     /// steps of that scale: `chatTextSizes`. Zero follows the system.
     var chatTextSize: Int {
-        didSet { defaults.set(chatTextSize, forKey: Keys.chatTextSize) }
+        didSet { store(chatTextSize, forKey: Keys.chatTextSize) }
     }
     static let chatTextSizes = -2 ... 2
     /// Whether Redde's notifications make a sound. Kept in the app group as well: the
     /// notification extension decides for the ones a paired Hermes sends (`NotificationSound`).
     var notificationSound: Bool {
         didSet {
-            defaults.set(notificationSound, forKey: Keys.notificationSound)
+            store(notificationSound, forKey: Keys.notificationSound)
             if self === Settings.shared { NotificationSound.isOn = notificationSound }
         }
     }
     var earpieceAtEar: Bool {
-        didSet { defaults.set(earpieceAtEar, forKey: Keys.earpieceAtEar) }
+        didSet { store(earpieceAtEar, forKey: Keys.earpieceAtEar) }
     }
     /// Face ID / Touch ID / passcode gate on the app. Kept in the app group as well: the status
     /// widgets leave out a command, a question and a title while it is on (`NeedsYou.hidesWords`).
     var requireBiometrics: Bool {
         didSet {
-            defaults.set(requireBiometrics, forKey: Keys.requireBiometrics)
+            store(requireBiometrics, forKey: Keys.requireBiometrics)
             if self === Settings.shared {
                 SiriHooks.indexInputsChanged()   // App Lock indexes titles only
                 StatusWidgets.lockChanged(requireBiometrics)
@@ -294,27 +294,27 @@ final class Settings: ServeEndpoint {
     /// Apple Intelligence then reads what you say to Siri, the one path that leaves the tailnet.
     var siriAIEnabled: Bool {
         didSet {
-            defaults.set(siriAIEnabled, forKey: Keys.siriAIEnabled)
+            store(siriAIEnabled, forKey: Keys.siriAIEnabled)
             if self === Settings.shared, oldValue != siriAIEnabled { SiriHooks.accessChanged(siriAIEnabled) }
         }
     }
     /// A message Siri drafts for Redde waits in a new conversation's composer, not the open
     /// one's (GitHub issue 21). Unless the open one is empty anyway.
     var siriDraftsInNewConversation: Bool {
-        didSet { defaults.set(siriDraftsInNewConversation, forKey: Keys.siriDraftsInNewConversation) }
+        didSet { store(siriDraftsInNewConversation, forKey: Keys.siriDraftsInNewConversation) }
     }
     /// The chat list shows the server's bots (Hermes's Bot Mode, on the Dashboard), once it has
     /// any besides the main profile. Off, Redde is as it was without them.
     var showBots: Bool {
-        didSet { defaults.set(showBots, forKey: Keys.showBots) }
+        didSet { store(showBots, forKey: Keys.showBots) }
     }
     /// How long the app may be in the background before it locks again.
     var lockGraceSeconds: Double {
-        didSet { defaults.set(lockGraceSeconds, forKey: Keys.lockGraceSeconds) }
+        didSet { store(lockGraceSeconds, forKey: Keys.lockGraceSeconds) }
     }
     /// What the header calls the assistant. Empty means "Redde".
     var displayName: String {
-        didSet { defaults.set(displayName, forKey: Keys.displayName) }
+        didSet { store(displayName, forKey: Keys.displayName) }
     }
     var headerTitle: String {
         let trimmed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -323,20 +323,20 @@ final class Settings: ServeEndpoint {
 
     // hermes serve (desktop gateway). Password lives in the Keychain.
     var serveURL: String {
-        didSet { defaults.set(serveURL, forKey: Keys.serveURL); syncActiveServer() }
+        didSet { store(serveURL, forKey: Keys.serveURL); syncActiveServer() }
     }
     var serveUsername: String {
-        didSet { defaults.set(serveUsername, forKey: Keys.serveUsername); syncActiveServer() }
+        didSet { store(serveUsername, forKey: Keys.serveUsername); syncActiveServer() }
     }
     /// The Hermes profile Redde talks to; empty means the server's default profile. Nothing
     /// profile-related is sent for the default, so servers without profile support keep working.
     var hermesProfile: String {
-        didSet { defaults.set(hermesProfile, forKey: Keys.hermesProfile); syncActiveServer() }
+        didSet { store(hermesProfile, forKey: Keys.hermesProfile); syncActiveServer() }
     }
     /// That profile's home directory on the server (from the dashboard's profile list), where
     /// its context and memory files live. Empty: the default `~/.hermes`.
     var hermesProfileHome: String {
-        didSet { defaults.set(hermesProfileHome, forKey: Keys.hermesProfileHome); syncActiveServer() }
+        didSet { store(hermesProfileHome, forKey: Keys.hermesProfileHome); syncActiveServer() }
     }
     /// The profile to name in requests, or nil for the default profile.
     var profileName: String? {
@@ -366,7 +366,7 @@ final class Settings: ServeEndpoint {
 
     /// Cloudflare Access service-token id (`CF-Access-Client-Id`); the secret lives in the Keychain.
     var cfAccessClientID: String {
-        didSet { defaults.set(cfAccessClientID, forKey: Keys.cfAccessClientID); syncActiveServer() }
+        didSet { store(cfAccessClientID, forKey: Keys.cfAccessClientID); syncActiveServer() }
     }
 
     /// Headers Cloudflare Access expects in front of hermes serve, or empty when not configured.
@@ -396,12 +396,12 @@ final class Settings: ServeEndpoint {
 
     /// Fallback when the backend doesn't report its window (the gateway doesn't). 131072 suits most local models.
     var contextWindow: Int {
-        didSet { defaults.set(contextWindow, forKey: Keys.contextWindow) }
+        didSet { store(contextWindow, forKey: Keys.contextWindow) }
     }
 
     /// Push relay (companion/push-relay): hermes webhooks become APNs alerts. Empty = off.
     var pushRelayURL: String {
-        didSet { defaults.set(pushRelayURL, forKey: Keys.pushRelayURL) }
+        didSet { store(pushRelayURL, forKey: Keys.pushRelayURL) }
     }
     nonisolated static let defaultContextWindow = 131_072
     nonisolated static let defaultKokoroURL = ""
@@ -574,6 +574,137 @@ final class Settings: ServeEndpoint {
         scopeShortcutSessionKeys()
     }
 
+    // MARK: - iCloud
+
+    /// Saves a setting, and tells `CloudSync` which one.
+    private func store(_ value: Any?, forKey key: String) {
+        defaults.set(value, forKey: key)
+        onStore?(key)
+    }
+
+    /// Called with each setting's key as it is saved: `CloudSync`, while Sync with iCloud is on.
+    @ObservationIgnored var onStore: ((String) -> Void)?
+
+    /// The key the server list is saved under, which `onStore` names when it changes.
+    static var serversKey: String { Keys.hermesServers }
+
+    /// The settings Sync with iCloud carries to the person's other devices, by their keys here.
+    /// Each device keeps its own: the connection in use and the server it is on (and, in each
+    /// server's record, the profile and model it is on), what Redde does on opening, App Lock,
+    /// Siri, Phone tools, what needs a permission of the device (notifications, motion), and the
+    /// push relay.
+    static let syncedKeys: [String] = [
+        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.returnSends,
+        Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.showBots,
+        Keys.fastLaneURL, Keys.fastLaneModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.contextWindow,
+        Keys.suggestFollowUps, Keys.showLiveActivity, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
+        Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopPhrases,
+        Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.replyVoice, Keys.kokoroURL,
+        Keys.kokoroVoice, Keys.voiceSpeed, Keys.speechLanguage, Keys.matchReplyLanguage, Keys.spokenPrefixes,
+    ]
+
+    /// A synced setting as it is saved here, for `CloudSync` to send.
+    func storedValue(_ key: String) -> Any? { defaults.object(forKey: key) }
+
+    /// A synced setting changed on another device: it takes the value saved there, or (nil) its
+    /// default. Saving it calls `onStore`, which finds iCloud holding the same and sends nothing.
+    func applySynced(_ key: String, _ value: Any?) {
+        func text(_ fallback: String = "") -> String { value as? String ?? fallback }
+        func flag(_ fallback: Bool = false) -> Bool { value as? Bool ?? fallback }
+        func pick<T: RawRepresentable>(_ fallback: T) -> T where T.RawValue == String { (value as? String).flatMap(T.init(rawValue:)) ?? fallback }
+        func decoded<T: Decodable>(_ fallback: T) -> T { (value as? Data).flatMap { try? JSONDecoder().decode(T.self, from: $0) } ?? fallback }
+        switch key {
+        case Keys.displayName: displayName = text()
+        case Keys.theme: theme = pick(Theme.standard)
+        case Keys.themeColors: themeColors = decoded([:])
+        case Keys.appearance: appearance = pick(Appearance.system)
+        case Keys.chatTextSize: chatTextSize = min(max(value as? Int ?? 0, Self.chatTextSizes.lowerBound), Self.chatTextSizes.upperBound)
+        case Keys.returnSends: returnSends = flag()
+        case Keys.voiceOrb: voiceOrb = pick(VoiceOrb.waveform)
+        case Keys.orbLight: orbLight = pick(OrbLight.nebula)
+        case Keys.carPlayCards: carPlayCards = pick(CarPlayCardLook.color)
+        case Keys.carPlayVoice: carPlayVoice = pick(CarPlayVoiceLook.bars)
+        case Keys.showBots: showBots = flag(true)
+        case Keys.fastLaneURL: fastLaneURL = text(Self.defaultFastLaneURL)
+        case Keys.fastLaneModel: fastLaneModel = text(Self.defaultFastLaneModel)
+        case Keys.reasoningEffort: reasoningEffort = text(Self.defaultReasoningEffort)
+        case Keys.replyLanguage: replyLanguage = text()
+        case Keys.contextWindow: contextWindow = (value as? Int).flatMap { $0 > 0 ? $0 : nil } ?? Self.defaultContextWindow
+        case Keys.suggestFollowUps: suggestFollowUps = flag()
+        case Keys.showLiveActivity: showLiveActivity = flag(true)
+        case Keys.notificationSound: notificationSound = flag(true)
+        case Keys.announceOnAirPods: announceOnAirPods = flag()
+        case Keys.earpieceAtEar: earpieceAtEar = flag(true)
+        case Keys.handsFreeByDefault: handsFreeByDefault = flag()
+        case Keys.newConversationForVoice: newConversationForVoice = flag()
+        case Keys.talkOver: talkOver = pick(TalkOver.headphones)
+        case Keys.interruption: interruption = pick(Interruption.speech)
+        case Keys.stopPhrases: stopPhrases = value as? [String] ?? []
+        case Keys.answerRequestsByVoice: answerRequestsByVoice = flag()
+        case Keys.shortAnswersInCar: shortAnswersInCar = flag()
+        case Keys.thinkingSound: thinkingSound = pick(ThinkingSound.off)
+        case Keys.replyVoice: replyVoice = pick(ReplyVoice.onDevice)
+        case Keys.kokoroURL: kokoroURL = text(Self.defaultKokoroURL)
+        case Keys.kokoroVoice: kokoroVoice = text(Self.defaultKokoroVoice)
+        case Keys.voiceSpeed: voiceSpeed = (value as? Double).flatMap { $0 > 0 ? $0 : nil } ?? 1.0
+        case Keys.speechLanguage: speechLanguage = text()
+        case Keys.matchReplyLanguage: matchReplyLanguage = flag(true)
+        case Keys.spokenPrefixes: spokenPrefixes = decoded([])
+        default: break
+        }
+    }
+
+    /// Servers from another device: each in `remote` added, or brought up to date keeping what
+    /// this device chose on it (the profile and model it is on); each in `removed` taken away,
+    /// unless this device is on it. True when the active server's connection changed, so the
+    /// caller connects again.
+    @discardableResult
+    func mergeSyncedServers(_ remote: [HermesServer], removed: Set<UUID>) -> Bool {
+        var list = servers
+        for server in remote where !removed.contains(server.id) {
+            guard let i = list.firstIndex(where: { $0.id == server.id }) else {
+                list.append(server)
+                continue
+            }
+            var merged = server
+            merged.hermesProfile = list[i].hermesProfile
+            merged.hermesProfileHome = list[i].hermesProfileHome
+            merged.gatewayModel = list[i].gatewayModel
+            merged.gatewayProvider = list[i].gatewayProvider
+            list[i] = merged
+        }
+        list.removeAll { removed.contains($0.id) && $0.id != activeServerID }
+        for gone in servers where !list.contains(where: { $0.id == gone.id }) { removeShortcutSessions(server: gone.id) }
+        let before = activeServer
+        guard list != servers else { return false }
+        servers = list
+        guard let after = activeServer, after != before else { return false }
+        // The working copy follows the active server's record.
+        loadingServer = true
+        defer { loadingServer = false }
+        gatewayURL = after.gatewayURL
+        serveURL = after.serveURL
+        serveUsername = after.serveUsername
+        cfAccessClientID = after.cfAccessClientID
+        if transport != .chatCompletions { transport = after.transport }
+        return true
+    }
+
+    /// The server this device is on was never set up (a new install that skipped setup): servers
+    /// from another device can take its place.
+    var activeServerIsBlank: Bool {
+        guard let server = activeServer else { return true }
+        return server.name.isEmpty && server.serveURL.isEmpty && server.gatewayURL.isEmpty
+    }
+
+    /// Takes away a server this device isn't on, its secrets left alone (the other devices still
+    /// use the ones in iCloud Keychain): a blank one after synced servers arrived.
+    func forgetServerRecord(_ id: UUID) {
+        guard id != activeServerID else { return }
+        servers.removeAll { $0.id == id }
+        removeShortcutSessions(server: id)
+    }
+
     // MARK: - Servers
 
     /// Shortcuts keep their own session per server and profile under keys with this prefix
@@ -608,10 +739,10 @@ final class Settings: ServeEndpoint {
     /// Saved Hermes servers. The connection fields above are the active server's working copy:
     /// editing them updates its record, and switching loads another record into them.
     private(set) var servers: [HermesServer] {
-        didSet { defaults.set(try? JSONEncoder().encode(servers), forKey: Keys.hermesServers) }
+        didSet { store(try? JSONEncoder().encode(servers), forKey: Keys.hermesServers) }
     }
     private(set) var activeServerID: UUID {
-        didSet { defaults.set(activeServerID.uuidString, forKey: Keychain.activeServerKey) }
+        didSet { store(activeServerID.uuidString, forKey: Keychain.activeServerKey) }
     }
     var activeServer: HermesServer? { servers.first { $0.id == activeServerID } }
     /// Changes whenever requests would go somewhere else: another server or another profile.
@@ -780,7 +911,7 @@ final class Settings: ServeEndpoint {
 
     /// Set after the first-run setup completes (or is skipped).
     var setupDone: Bool {
-        didSet { defaults.set(setupDone, forKey: Keys.setupDone) }
+        didSet { store(setupDone, forKey: Keys.setupDone) }
     }
 
     /// Personal builds: prefill from a bundled, git-ignored LocalDefaults.json on first launch.

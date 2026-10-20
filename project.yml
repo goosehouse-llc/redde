@@ -93,6 +93,9 @@ targets:
         # Remote notifications from the push relay (Push Notifications is enabled on the App ID).
         # "development" is what the source carries; the App Store export rewrites it to production.
         aps-environment: development
+        # Sync with iCloud (CloudSync): settings and servers in iCloud's key-value store. Their
+        # secrets go in iCloud Keychain, which needs nothing more.
+        com.apple.developer.ubiquity-kvstore-identifier: $(TeamIdentifierPrefix)$(CFBundleIdentifier)
     info:
       path: Echo/Info.plist
       properties:

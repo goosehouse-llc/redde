@@ -11,7 +11,8 @@ How Redde works, for contributors. For what it is and how to build it, see the [
   server the user runs and the user's own Hermes, which speaks with the voice it is set up with
   (so the reply's text may go on from it to the provider chosen there; Settings says which).
 - **Secrets in the Keychain.** Keys and passwords are stored `WhenUnlockedThisDeviceOnly`, never in
-  UserDefaults, source or config files.
+  UserDefaults, source or config files; with Sync with iCloud turned on, a server's keys and
+  passwords go in iCloud Keychain instead (end-to-end encrypted; see [Sync with iCloud](#sync-with-icloud)).
 - **One opt-in exception:** Settings → Siri → "Let Siri use Redde" (iOS 27) lets Apple Intelligence
   hear messages and see recent conversations. Off by default; see [Siri AI](#siri-ai-ios-27-opt-in).
 
@@ -1952,6 +1953,39 @@ the handover itself is tested on a real watch.
   voice mode, behind the lock or from Siri skip it. Settings → About reopens it.
 - **First run:** no server is built in. The setup sheet takes a connection and credentials and tests
   them the way the transport will.
+
+### Sync with iCloud
+
+Settings → iCloud → Sync with iCloud (`Services/CloudSync.swift`): the person's settings and Hermes
+servers on every device signed in to the same Apple Account. Off until turned on, on each device.
+
+- **Where:** the settings in `Settings.syncedKeys` and each server's record go in iCloud's
+  key-value store (`NSUbiquitousKeyValueStore`; entitlement `ubiquity-kvstore-identifier`), one key
+  apiece (`setting.<key>`, `server.<id>`), so two devices changing different things never undo
+  each other. A server's keys and passwords (`Keychain.syncable`: API keys and per-profile keys,
+  Dashboard password, Cloudflare Access secret, custom headers, and the OpenAI-compatible key) go in
+  iCloud Keychain: synchronizable, `WhenUnlocked`, each account in one place or the other. Never a
+  browser sign-in (each device refreshes its own tokens), the push secret or the SSH key.
+- **Each device's own:** the connection in use and the server it is on; on each server, the profile
+  and model it is on (kept from the device's record when another's arrives); what Redde does on
+  opening, App Lock, Siri, Phone tools, permissions (notifications, motion) and the push relay.
+- **Following:** every setting is saved through `Settings.store`, which calls `onStore`; CloudSync
+  sends the synced ones whose value differs from iCloud's. Another device's values arrive as
+  `didChangeExternallyNotification` and are taken through `Settings.applySynced` and
+  `mergeSyncedServers`, with `applying` set so nothing is sent back. At launch, iCloud's values are
+  taken (its local copy is never behind this device's, as every change here goes there at once).
+- **Servers removed:** a server removed on one device leaves a tombstone (`servers.removed`) and its
+  iCloud Keychain secrets are deleted; the others drop it, unless they are on it. A device keeps the
+  ids it has seen in iCloud, so one missing from its list was removed there.
+- **Turning on:** where iCloud has nothing (no `redde.sync` marker), the device waits a few seconds
+  for a first answer from iCloud (a new device's store fills moments after launch), then sends
+  the settings it has set and its servers. Where another device's are there, it takes them, adds its
+  servers, and moves from a blank server (a new install that skipped setup) to theirs.
+  Local secrets move to iCloud Keychain, unless another device put one there for the same account.
+- **Turning off,** and Erase everything (which turns it off first): a copy of each secret comes back
+  to the device; what is in iCloud stays for the other devices.
+- **Keychain cache:** iCloud Keychain says nothing when another device changes a secret, so the
+  cache is dropped on coming to the foreground and when servers arrive.
 
 ## Release notes for maintainers
 

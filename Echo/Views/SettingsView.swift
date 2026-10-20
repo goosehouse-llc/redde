@@ -41,16 +41,18 @@ struct SettingsView: View {
                 VoiceSettings()
                 if #available(iOS 27.0, *) { SiriSettings() }
                 MetricsSettings()
+                ICloudSettings()
                 LockSettings()
                 AboutSettings()
                 ResetSettings()
             }
             #if DEBUG
-            // Dev hook: `-echo.settingsAnchor files` scrolls to the context and memory files (screenshots).
+            // Dev hook: `-echo.settingsAnchor` scrolls to the context and memory files, and
+            // `-echo.settingsAnchor icloud` to Sync with iCloud (screenshots).
             .task {
                 guard DevHooks.settingsAnchor else { return }
                 try? await Task.sleep(for: .milliseconds(600))
-                proxy.scrollTo("agentFiles", anchor: .top)
+                proxy.scrollTo(DevHooks.value("-echo.settingsAnchor") == "icloud" ? "icloud" : "agentFiles", anchor: .top)
             }
             #endif
             }

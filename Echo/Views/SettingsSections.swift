@@ -581,6 +581,40 @@ struct MetricsSettings: View {
     }
 }
 
+/// Sync with iCloud (`CloudSync`): this device's settings and servers, and the others'.
+struct ICloudSettings: View {
+    @State private var sync = CloudSync.shared
+
+    var body: some View {
+        Section {
+            Toggle(isOn: Binding(
+                get: { sync.phase == .on || sync.phase == .looking },
+                set: { on in
+                    if on { Task { await sync.turnOn() } } else { sync.turnOff() }
+                })) {
+                HStack {
+                    Text("Sync with iCloud")
+                    if sync.phase == .looking { ProgressView().controlSize(.small) }
+                }
+            }
+            .disabled(sync.phase == .looking)
+        } header: {
+            Text("iCloud")
+        } footer: {
+            switch sync.phase {
+            case .noAccount:
+                Text("Sign in to iCloud in the Settings app first, with iCloud Drive on.")
+                    .foregroundStyle(.orange)
+            case .looking:
+                Text("Looking in iCloud for what your other devices put there…")
+            default:
+                Text("Your servers with their keys and passwords, and your settings, on every iPhone, iPad and Mac signed in to your Apple Account. Keys and passwords go through iCloud Keychain, end-to-end encrypted. Which server and profile each device is on, App Lock, Siri, Phone tools, notifications and browser sign-ins stay on each device. Turn it on first where your settings are as you want them.")
+            }
+        }
+        .id("icloud")
+    }
+}
+
 struct LockSettings: View {
     @State private var settings = Settings.shared
 
@@ -618,7 +652,7 @@ struct AboutSettings: View {
 
     var body: some View {
         Section("Privacy invariant") {
-            Text("On-device speech recognition and synthesis. No analytics. Every request goes only to the servers you configured. The two exceptions are opt-in: with “Let Siri use Redde” on, Apple Intelligence handles what you say to Siri, and with a Hermes paired under “Notify when Redde is closed”, its notifications pass through Goosehouse's relay, encrypted.")
+            Text("On-device speech recognition and synthesis. No analytics. Every request goes only to the servers you configured. The exceptions are opt-in: with “Let Siri use Redde” on, Apple Intelligence handles what you say to Siri; with a Hermes paired under “Notify when Redde is closed”, its notifications pass through Goosehouse's relay, encrypted; and with “Sync with iCloud” on, your settings and servers are kept in your own iCloud, their keys and passwords in iCloud Keychain, end-to-end encrypted.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
@@ -657,7 +691,7 @@ struct ResetSettings: View {
         Section {
             Button("Erase everything…", role: .destructive) { confirming = true }
         } footer: {
-            Text("Deletes every conversation and attachment on this device, forgets all servers, keys and passwords, and returns the settings to their defaults. Nothing on your servers is touched.")
+            Text("Deletes every conversation and attachment on this device, forgets all servers, keys and passwords, and returns the settings to their defaults. Nothing on your servers is touched, and Sync with iCloud turns off first, so your other devices keep theirs.")
         }
         .confirmationDialog("Erase everything on this device?", isPresented: $confirming, titleVisibility: .visible) {
             Button("Erase everything", role: .destructive) { eraseEverything() }
@@ -668,6 +702,8 @@ struct ResetSettings: View {
     }
 
     private func eraseEverything() {
+        // First, so what is in iCloud stays for the other devices: only this device's copies go.
+        CloudSync.shared.turnOff()
         HermesServeClient.shared.disconnect()
         // Dashboard logins (every server's), which disconnect() leaves in the cookie store.
         HTTPCookieStorage.shared.removeCookies(since: .distantPast)
