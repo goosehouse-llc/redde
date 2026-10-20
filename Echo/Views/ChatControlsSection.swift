@@ -20,7 +20,8 @@ struct ChatControlsSection: View {
         #if DEBUG
         if DevHooks.demoChatControls { return DemoChatControls() }
         #endif
-        return Settings.shared.transport == .hermesSessions ? RunChatControls.shared : HermesServeClient.shared
+        // A bot's chat goes by the Dashboard on either Hermes connection (`Conversation.connection`).
+        return (Conversation.current?.connection ?? Settings.shared.transport) == .hermesSessions ? RunChatControls.shared : HermesServeClient.shared
     }
 
     var body: some View {

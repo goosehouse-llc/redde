@@ -307,6 +307,65 @@ struct BotsTests {
         #expect(stopping.stopping && stopping.blocked && !stopping.waitsOnPerson, "a stop under way is not a question for the person")
     }
 
+    /// Bots can be reached on the Dashboard, and on the Hermes API with the Dashboard's address
+    /// and login saved; a bot's chat then goes by the Dashboard, the app's own conversations by
+    /// the API.
+    @Test func onTheHermesAPIBotsGoByTheDashboardsLogin() throws {
+        let settings = Settings(defaults: try #require(UserDefaults(suiteName: "api-bots-\(UUID().uuidString)")))
+        let noLogin = HermesServeClient(settings: settings, password: { nil }, tokens: HermesServeClientTests.TokenBox().store)
+        let login = HermesServeClient(settings: settings, password: { "secret" }, tokens: HermesServeClientTests.TokenBox().store)
+        settings.transport = .hermesServe
+        #expect(BotDirectory.reachable(settings, dashboard: noLogin), "the Dashboard connection has them")
+        settings.transport = .hermesSessions
+        #expect(!BotDirectory.reachable(settings, dashboard: login), "no Dashboard address")
+        settings.serveURL = "https://home.example:9119"
+        settings.serveUsername = "admin"
+        #expect(!BotDirectory.reachable(settings, dashboard: noLogin), "no Dashboard login")
+        #expect(BotDirectory.reachable(settings, dashboard: login))
+        settings.showBots = false
+        #expect(!BotDirectory.available(settings, dashboard: login), "Bots in the chat list off")
+        settings.transport = .chatCompletions
+        #expect(!BotDirectory.reachable(settings, dashboard: login))
+
+        settings.transport = .hermesSessions
+        let conversation = Conversation(settings: settings, store: ConversationStore(directory: FileManager.default.temporaryDirectory
+            .appending(path: "api-bots-\(UUID().uuidString)")), dashboard: login)
+        #expect(conversation.connection == .hermesSessions)
+        conversation.replaceForDemo(messages: [], bot: BotRef(profile: "scout", name: "Scout"))
+        #expect(conversation.connection == .hermesServe, "a bot's chat goes by the Dashboard")
+    }
+
+    /// On the Hermes API alone a bot is a profile added by its own key: its chat goes by the API
+    /// at /p/<profile>/ with that key, the main profile's at the API itself with the main key.
+    @Test func aBotAddedForTheHermesAPIGoesByItsOwnAddressAndKey() throws {
+        let settings = Settings(defaults: try #require(UserDefaults(suiteName: "api-only-bots-\(UUID().uuidString)")))
+        settings.transport = .hermesSessions
+        settings.gatewayURL = "https://home.example:8642/v1"
+        let server = settings.activeServerID.uuidString
+        let main = Keychain.account(.gatewayAPIKey, server: server), scout = Keychain.profileAccount("scout", server: server)
+        Keychain.write(account: main, value: "main-key")
+        Keychain.write(account: scout, value: "scout-key")
+        defer { Keychain.delete(account: main); Keychain.delete(account: scout) }
+        #expect(settings.gatewayEndpoint(profile: "scout").map { "\($0.url.absoluteString) \($0.key)" } == "https://home.example:8642/p/scout scout-key")
+        #expect(settings.gatewayEndpoint(profile: "default").map { "\($0.url.absoluteString) \($0.key)" } == "https://home.example:8642 main-key")
+        #expect(settings.gatewayEndpoint(profile: "quill").map { "\($0.url.absoluteString) \($0.key)" } == "https://home.example:8642/p/quill main-key",
+                "no key of its own kept here: the main one, which a profile often has in its .env")
+
+        let noDashboard = HermesServeClient(settings: settings, password: { nil }, tokens: HermesServeClientTests.TokenBox().store)
+        #expect(BotDirectory.apiOnly(settings, dashboard: noDashboard) && BotDirectory.available(settings, dashboard: noDashboard))
+        let conversation = Conversation(settings: settings, store: ConversationStore(directory: FileManager.default.temporaryDirectory
+            .appending(path: "api-only-bots-\(UUID().uuidString)")), dashboard: noDashboard)
+        conversation.replaceForDemo(messages: [], bot: BotRef(profile: "scout", name: "Scout", viaAPI: true))
+        #expect(conversation.connection == .hermesSessions && conversation.ledgerAPI()?.baseURL.absoluteString == "https://home.example:8642/p/scout"
+                && conversation.ledgerAPI()?.apiKey == "scout-key")
+
+        // A bot's chat kept before this, with no word of how it goes: by the Dashboard, as it did.
+        let old = try JSONDecoder().decode(BotRef.self, from: Data(#"{"profile":"writer","name":"Quill"}"#.utf8))
+        #expect(old.viaAPI == nil)
+        settings.apiBotsHere = [APIBot(profile: "scout", title: "Scout")]
+        #expect(settings.apiBots[server]?.map(\.profile) == ["scout"], "kept for this server")
+    }
+
     /// A room takes text alone: pictures and files go to the server and the message names them,
     /// in notes the screen reads back as files and hides as text, a message of files alone too.
     @Test func filesSentToARoomAreNamedInTheMessage() async throws {

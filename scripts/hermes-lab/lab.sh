@@ -25,6 +25,7 @@
 #   scripts/hermes-lab/lab.sh bots [tag ...]       bots: each profile's own chat, hidden from the list, and bots messaging bots
 #   scripts/hermes-lab/lab.sh groups [tag ...]     group chats: a room of bots made, talked to, a bot tagged, stopped, renamed, disbanded
 #   scripts/hermes-lab/lab.sh runs [tag ...]       Hermes API turns as runs: left, taken up again, stopped, sent twice (app check)
+#   scripts/hermes-lab/lab.sh apibots [tag ...]    a bot on the Hermes API alone: a profile with its own key at /p/<name>/ (app check)
 #   scripts/hermes-lab/lab.sh butler [--app] [tag ...]  the main profile hands coding to a claude bot (kanban), Claude Code
 #                                                  runs on another machine over SSH, the patch comes back and is applied
 #                                                  after asking; --app: the app's open conversation gets that question
@@ -115,6 +116,21 @@ up() {
     export LAB_BUTLER="$run" LAB_HOOK_LOG="$run/hook.jsonl" PATH="$run/bin:$PATH"
   else
     unset LAB_BUTLER LAB_HOOK_LOG 2>/dev/null || true
+  fi
+  # A bot that answers over the Hermes API by itself (LAB_API_BOT=<name>): a profile made before
+  # the gateway starts (which settles then whether it serves other profiles, at /p/<name>/), with
+  # an API key of its own, "<name>key-<name>key-<name>key", and nothing else in its .env. In a
+  # home of its own: Hermes 0.21.0 writes a command for each new profile in ~/.local/bin.
+  if [[ -n "${LAB_API_BOT:-}" ]]; then
+    (export HOME="$run/home"; mkdir -p "$HOME"; "$hermes" profile create "$LAB_API_BOT" --clone --no-alias > "$run/profile.log" 2>&1)
+    print "API_SERVER_KEY=${LAB_API_BOT}key-${LAB_API_BOT}key-${LAB_API_BOT}key" > "$HERMES_HOME/profiles/$LAB_API_BOT/.env"
+  fi
+  # And one with the main profile's key (LAB_API_BOT_SHARED=<name>): cloned, and the main key put in
+  # its .env, as a person does for it (0.21.0's clone copies it; 0.21.3 and later leave it out).
+  if [[ -n "${LAB_API_BOT_SHARED:-}" ]]; then
+    (export HOME="$run/home"; mkdir -p "$HOME"; "$hermes" profile create "$LAB_API_BOT_SHARED" --clone --no-alias >> "$run/profile.log" 2>&1)
+    grep -q "^API_SERVER_KEY=" "$HERMES_HOME/profiles/$LAB_API_BOT_SHARED/.env" 2>/dev/null \
+      || print "API_SERVER_KEY=labkey-labkey-labkey" >> "$HERMES_HOME/profiles/$LAB_API_BOT_SHARED/.env"
   fi
   # No real keys may leak in: the point is to see where an unkeyed fallback goes.
   unset OPENROUTER_API_KEY OPENAI_API_KEY ANTHROPIC_API_KEY HERMES_INFERENCE_PROVIDER 2>/dev/null || true
@@ -269,6 +285,25 @@ groups() {
       LAB_OWN_HOME=1 up "$tag" approval || { failed+=("$tag (lab)"); continue; }
       app_check || failed+=("$tag")
     fi
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
+# Bots on the Hermes API alone, with no Dashboard login: a profile "scout" with an API key of its
+# own (LAB_API_BOT) and one "pip" with the main key in its .env (LAB_API_BOT_SHARED), which
+# the gateway serves at /p/<name>/ (0.21.3 and earlier only with
+# gateway.multiplex_profiles on, here GATEWAY_MULTIPLEX_PROFILES), and the app's own client adding
+# it, talking in its chat, answering a command's approval there, and taking a run left mid-reply
+# up again by the bot's own address and key (HermesLabAPIBotsTests).
+apibots() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  app_prepare HermesLabAPIBotsTests || exit 1
+  for tag in $tags; do
+    echo "===== Hermes $tag / approval, a bot with its own API key"
+    if ! LAB_API_BOT=scout LAB_API_BOT_SHARED=pip GATEWAY_MULTIPLEX_PROFILES=true LAB_OWN_HOME=1 up "$tag" approval; then failed+=("$tag (lab)"); continue; fi
+    app_check || failed+=("$tag")
   done
   down
   if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
@@ -649,6 +684,7 @@ case "${1:-}" in
   runs) shift; runs "$@" ;;
   butler) shift; butler "$@" ;;
   groups) shift; groups "$@" ;;
+  apibots) shift; apibots "$@" ;;
   search) shift; search "$@" ;;
   context) shift; context "$@" ;;
   speech) shift; speech "$@" ;;

@@ -31,8 +31,18 @@ final class Conversation {
     /// API-server run id of the turn in flight (sessions transport).
     private(set) var currentRunID: String?
 
+    /// The connection this conversation goes by: the app's, but a bot's chat goes by the Dashboard
+    /// on either Hermes connection (on the Hermes API with the Dashboard's login saved,
+    /// `BotDirectory.reachable`): a bot is a profile of its own, which the Hermes API serves only
+    /// with that profile's own key.
+    var connection: Transport {
+        guard let bot, settings.transport == .hermesSessions else { return settings.transport }
+        // One added for the Hermes API alone (`APIBot`) goes by the API, at /p/<profile>/.
+        return bot.viaAPI == true ? .hermesSessions : .hermesServe
+    }
+
     /// Steering is possible while a Hermes turn is streaming.
-    var canSteer: Bool { isStreaming && settings.transport.hasLedger }
+    var canSteer: Bool { isStreaming && connection.hasLedger }
 
     /// Nudge the running turn without cancelling it. Shows in the transcript as a steer note.
     func steer(_ text: String) {
@@ -44,15 +54,16 @@ final class Conversation {
         // Keep the streaming reply last so the live row stays live.
         let insertAt = messages.lastIndex(where: { $0.role == .assistant }) ?? messages.endIndex
         messages.insert(note, at: insertAt)
-        let transport = settings.transport
+        let transport = connection
         let stored = serverSessionID
         let runID = currentRunID
+        let dashboard = dashboard
         run { [weak self] in
             let accepted: Bool
             switch transport {
             case .hermesServe:
                 guard let stored else { throw TransportError.malformed("no session to steer") }
-                accepted = try await HermesServeClient.shared.steer(stored: stored, text: trimmed)
+                accepted = try await dashboard.steer(stored: stored, text: trimmed)
             case .hermesSessions:
                 guard let runID, let api = self?.ledgerAPI() else { throw TransportError.malformed("no run to steer") }
                 accepted = try await api.steer(runID: runID, text: trimmed)
@@ -112,11 +123,16 @@ final class Conversation {
 
     /// Tests inject a scripted transport here; production resolves one from Settings per turn.
     private let transportOverride: (any HermesTransport)?
+    /// The Dashboard this conversation's Dashboard turns, bots and questions go by: the app's,
+    /// unless a test gives one of its own.
+    let dashboard: HermesServeClient
 
-    init(settings: Settings = .shared, store: ConversationStore = .shared, transportOverride: (any HermesTransport)? = nil) {
+    init(settings: Settings = .shared, store: ConversationStore = .shared, transportOverride: (any HermesTransport)? = nil,
+         dashboard: HermesServeClient = .shared) {
         self.settings = settings
         self.store = store
         self.transportOverride = transportOverride
+        self.dashboard = dashboard
         // Pick up where the last session left off, like Messages does. A record already in memory
         // loads now; one on disk decodes off the main actor so the first frame isn't waiting on it.
         // Only the active server's: another server's session can't be continued from here.
@@ -241,7 +257,7 @@ final class Conversation {
         lastError = nil
         clearFollowUps()
         // Only the fast lane sends history; the ledger transports keep theirs on the server.
-        let history = settings.transport == .chatCompletions ? messages.filter { $0.error == nil } : []
+        let history = connection == .chatCompletions ? messages.filter { $0.error == nil } : []
         var userMessage = outgoing
         userMessage.createdAt = .now   // a held message is stamped when it actually goes out
         let trimmed = userMessage.text
@@ -256,7 +272,7 @@ final class Conversation {
         var request = TurnRequest(
             userText: trimmed,
             history: history,
-            sessionID: settings.transport.hasLedger ? serverSessionID : nil,
+            sessionID: connection.hasLedger ? serverSessionID : nil,
             model: settings.transport == .chatCompletions ? settings.fastLaneModel : settings.gatewayModel.nilIfEmpty,
             provider: settings.transport == .chatCompletions ? nil : settings.gatewayProvider.nilIfEmpty,
             reasoningEffort: settings.reasoningEffort.nilIfEmpty,
@@ -265,15 +281,15 @@ final class Conversation {
             replyLanguage: settings.replyLanguage.nilIfEmpty,
             brief: brief
         )
-        if settings.transport == .hermesServe, serverSessionID == nil { request.folder = startsIn?.path }
+        if connection == .hermesServe, serverSessionID == nil { request.folder = startsIn?.path }
         // The Hermes API's run for this message, should it go again after a dropped connection.
         request.turnKey = userID.uuidString
         // The conversation's fast mode: the Hermes API keeps none for a session, so each turn asks.
-        if settings.transport == .hermesSessions, let stored = serverSessionID, store === ConversationStore.shared {
+        if connection == .hermesSessions, let stored = serverSessionID, store === ConversationStore.shared {
             request.fast = RunChatControls.shared.isFast(stored)
         }
         // A bot's chat: the other bots the message tags, and the note that says which they are.
-        if settings.transport == .hermesServe, let bot {
+        if connection == .hermesServe, let bot {
             let mentioned = BotMentions.mentioned(in: trimmed, roster: BotDirectory.shared.bots(for: settings.connectionKey), to: bot.profile)
             request.mentionNote = BotMentions.note(for: mentioned)
         }
@@ -293,7 +309,7 @@ final class Conversation {
         BackgroundTurn.shared.begin(question: trimmed)
         turnSerial += 1
         let myTurn = turnSerial
-        let transportKind = settings.transport
+        let transportKind = connection
         let fastLaneBase = transportKind == .chatCompletions ? settings.activeBaseURL : nil
         let fastLaneModel = settings.fastLaneModel
         let fallbackWindow = settings.contextWindow
@@ -331,7 +347,7 @@ final class Conversation {
                 // The Hermes API takes text and pictures: other files go to the server through the
                 // Dashboard's login, and the message says where they are.
                 if transportKind == .hermesSessions, request.attachments.contains(where: { $0.kind == .pdf || $0.kind == .other }),
-                   HermesServeClient.shared.hasCredentials {
+                   dashboard.hasCredentials {
                     statusLine = "putting the file on the server…"
                     request = try await Self.placingFiles(request)
                 }
@@ -347,7 +363,7 @@ final class Conversation {
                 // file API can fetch what either transport left as a bare path. Runs before the
                 // reply is persisted, notified, and mirrored to the widget.
                 if transportKind == .hermesServe
-                    || (transportKind == .hermesSessions && HermesServeClient.shared.hasCredentials) {
+                    || (transportKind == .hermesSessions && dashboard.hasCredentials) {
                     await resolveServeMedia(replyID)
                     try Task.checkCancellation()   // Stop during the fetch must not finish the turn
                 }
@@ -536,8 +552,8 @@ final class Conversation {
             currentRunID = id
             // A run goes on on the host whatever becomes of the app: noted, so it can be taken up
             // again if the app doesn't see it through.
-            if settings.transport == .hermesSessions, store === ConversationStore.shared, let stored = serverSessionID {
-                ChatActivity.shared.noteRun(sessionID: stored, runID: id, settings: settings)
+            if connection == .hermesSessions, store === ConversationStore.shared, let stored = serverSessionID {
+                ChatActivity.shared.noteRun(sessionID: stored, runID: id, profile: bot?.viaAPI == true ? bot?.profile : nil, settings: settings)
             }
         case let .interrupt(interrupt, runtime):
             flushDeltas()
@@ -576,7 +592,7 @@ final class Conversation {
     /// agent is waiting on a person for gets its card back. That is how an approval announced by
     /// a notification can be answered after the app was closed.
     func rejoinIfWaiting() async {
-        guard settings.transport == .hermesServe, !isStreaming, let stored = serverSessionID, let transport = makeTransport() else { return }
+        guard connection == .hermesServe, !isStreaming, let stored = serverSessionID, let transport = makeTransport() else { return }
         let identity = identity
         guard let joined = try? await transport.rejoin(stored: stored) else { return }
         // Another conversation was opened, or a message sent, while the host answered: let go.
@@ -597,7 +613,7 @@ final class Conversation {
     /// on the Dashboard the turn is joined if it is still under way or waiting for an answer.
     func catchUp() async {
         await initialLoad?.value   // at launch the conversation may still be coming off the disk
-        guard settings.transport.hasLedger, endsUnanswered, let stored = serverSessionID else { return }
+        guard connection.hasLedger, endsUnanswered, let stored = serverSessionID else { return }
         try? await open(serverSession: stored)
     }
 
@@ -611,7 +627,7 @@ final class Conversation {
     /// a command. Joined as it starts, so its question gets its card at once rather than when the
     /// chat is next opened. Started and stopped as the conversation and its turns change.
     private func watchHostTurns() {
-        guard settings.transport == .hermesServe, let stored = serverSessionID, !isStreaming else {
+        guard connection == .hermesServe, let stored = serverSessionID, !isStreaming else {
             stopWatchingHost()
             return
         }
@@ -693,7 +709,7 @@ final class Conversation {
                     fail(replyID, error.localizedDescription)
                 }
             }
-            if settings.transport == .hermesSessions, store === ConversationStore.shared, serverSessionID == stored {
+            if connection == .hermesSessions, store === ConversationStore.shared, serverSessionID == stored {
                 ChatActivity.shared.turnEnded(sessionID: stored, settings: settings)
             }
             if myTurn == turnSerial {
@@ -874,13 +890,13 @@ final class Conversation {
         let wasStreaming = isStreaming
         let joined = joinedStop
         joinedStop = nil
-        let lettingGo = leaving && settings.transport.hasLedger
+        let lettingGo = leaving && connection.hasLedger
         if lettingGo { departure?.leave() }
         // The chat list shows it working until it ends: on the Hermes API by its run, which is
         // all there is to ask after (the Dashboard lists its own turns).
-        if lettingGo, wasStreaming, settings.transport == .hermesSessions, store === ConversationStore.shared,
+        if lettingGo, wasStreaming, connection == .hermesSessions, store === ConversationStore.shared,
            let stored = serverSessionID, let run = currentRunID {
-            ChatActivity.shared.noteLeft(sessionID: stored, runID: run, settings: settings)
+            ChatActivity.shared.noteLeft(sessionID: stored, runID: run, profile: bot?.viaAPI == true ? bot?.profile : nil, settings: settings)
         }
         departure = nil
         if !leaving { joined?() }
@@ -915,9 +931,9 @@ final class Conversation {
         let stillUsed = Set(messages.flatMap(\.attachments).map(\.id)).union(outbox.flatMap(\.message.attachments).map(\.id))
         for id in dropped.subtracting(stillUsed) { AttachmentFiles.delete(id: id) }
         lastError = nil
-        if settings.transport == .hermesServe, let stored = serverSessionID, removedTurns > 0 {
+        if connection == .hermesServe, let stored = serverSessionID, removedTurns > 0 {
             do {
-                let client = HermesServeClient.shared
+                let client = dashboard
                 try await client.ensureConnected()
                 let (runtime, _) = try await client.openSession(stored: stored)
                 for _ in 0 ..< removedTurns {
@@ -1012,7 +1028,7 @@ final class Conversation {
         self.serverSessionID = serverSessionID
         self.bot = bot
         // Every call about a bot's chat names the bot's profile, from the first one.
-        if let bot, let serverSessionID { HermesServeClient.shared.noteProfile(bot.profile, forStored: serverSessionID) }
+        if let bot, let serverSessionID { dashboard.noteProfile(bot.profile, forStored: serverSessionID) }
         startsIn = nil
         lastError = nil
         publishContext()
@@ -1049,13 +1065,13 @@ final class Conversation {
     /// the fast lane, where the model goes on every request, or before a session exists.
     func pinOpenSessionModel(_ model: String, provider: String?) async throws {
         guard let sid = serverSessionID else { return }
-        switch settings.transport {
+        switch connection {
         case .hermesSessions:
             guard let api = ledgerAPI() else { return }
             try await api.lockSessionModel(id: sid, model: model, provider: provider)
         case .hermesServe:
-            try await HermesServeClient.shared.withLiveSession(stored: sid) { runtime in
-                try await HermesServeClient.shared.setSessionModel(runtimeSession: runtime, model: model, provider: provider)
+            try await dashboard.withLiveSession(stored: sid) { runtime in
+                try await dashboard.setSessionModel(runtimeSession: runtime, model: model, provider: provider)
             }
         case .chatCompletions:
             break
@@ -1116,9 +1132,13 @@ final class Conversation {
         }
     }
 
-    func ledgerAPI() -> HermesSessionsAPI? {
-        guard let url = settings.gatewayBaseURL, let key = settings.gatewayAPIKey, !key.isEmpty else { return nil }
-        return HermesSessionsAPI(baseURL: url, apiKey: key, headers: settings.customHeaderFields)
+    func ledgerAPI() -> HermesSessionsAPI? { ledgerAPI(for: bot) }
+
+    /// The Hermes API as this conversation reaches it: the app's, or an API bot's at
+    /// /p/<profile>/ with that profile's own key.
+    func ledgerAPI(for bot: BotRef?) -> HermesSessionsAPI? {
+        guard let endpoint = settings.gatewayEndpoint(profile: bot?.viaAPI == true ? bot?.profile : nil) else { return nil }
+        return HermesSessionsAPI(baseURL: endpoint.url, apiKey: endpoint.key, headers: settings.customHeaderFields)
     }
 
     // MARK: Name
@@ -1173,10 +1193,10 @@ final class Conversation {
 
     /// Resume a session from the Hermes ledger: pull its transcript and continue it here.
     /// Loads a session from the Hermes API server's ledger.
-    func loadLedgerSession(_ summary: HermesSessionsAPI.SessionSummary) async throws {
-        guard let api = ledgerAPI() else { throw TransportError.missingAPIKey }
+    func loadLedgerSession(_ summary: HermesSessionsAPI.SessionSummary, bot: BotRef? = nil) async throws {
+        guard let api = ledgerAPI(for: bot) else { throw TransportError.missingAPIKey }
         let stored = try await api.messages(sessionID: summary.id)
-        adopt(serverSession: summary, messages: Self.mapStored(stored))
+        adopt(serverSession: summary, messages: Self.mapStored(stored), bot: bot)
         // A run the app let go of before it ended (another conversation opened, the app closed):
         // taken up again. Over by now, its reply is in the transcript.
         let run = store === ConversationStore.shared ? ChatActivity.shared.run(of: summary.id, settings: settings) : nil
@@ -1233,7 +1253,7 @@ final class Conversation {
     /// seconds while the conversation stays open, until the reply is in it.
     func watchForLedgerReply() {
         ledgerWatch?.cancel()
-        guard settings.transport == .hermesSessions, endsUnanswered, let stored = serverSessionID,
+        guard connection == .hermesSessions, endsUnanswered, let stored = serverSessionID,
               let asked = messages.last?.createdAt, Date.now.timeIntervalSince(asked) < Self.replyStillComing else { return }
         let identity = identity
         statusLine = "Your agent is still working on this…"
@@ -1262,9 +1282,12 @@ final class Conversation {
         if let transportOverride { return transportOverride }
         guard let url = settings.activeBaseURL else { return nil }
         let key = settings.gatewayAPIKey
-        switch settings.transport {
-        case .hermesSessions: return HermesSessionsTransport(baseURL: url, apiKey: key, headers: settings.customHeaderFields)
-        case .hermesServe: return HermesServeTransport()
+        switch connection {
+        case .hermesSessions:
+            // The app's API, or an API bot's at /p/<profile>/ with its own key.
+            guard let api = ledgerAPI() else { return HermesSessionsTransport(baseURL: url, apiKey: key, headers: settings.customHeaderFields) }
+            return HermesSessionsTransport(baseURL: api.baseURL, apiKey: api.apiKey, headers: api.headers)
+        case .hermesServe: return HermesServeTransport(client: dashboard)
         case .chatCompletions: return ChatCompletionsTransport(baseURL: url, apiKey: Keychain.read(.fastLaneAPIKey))
         }
     }
@@ -1274,14 +1297,14 @@ final class Conversation {
     func respond(approval choice: String) {
         guard let pendingInterrupt, case let .approval(request) = pendingInterrupt.interrupt else { return }
         clearInterrupt()
-        if settings.transport == .hermesSessions {
+        if connection == .hermesSessions {
             let api = ledgerAPI()
             run {
                 guard let api else { throw TransportError.missingAPIKey }
                 try await api.respondApproval(runID: pendingInterrupt.runtimeSession, requestID: request.id, choice: choice)
             }
         } else {
-            run { try await HermesServeClient.shared.respondApproval(runtimeSession: pendingInterrupt.runtimeSession, requestID: request.id, choice: choice) }
+            run { [dashboard] in try await dashboard.respondApproval(runtimeSession: pendingInterrupt.runtimeSession, requestID: request.id, choice: choice) }
         }
     }
 
@@ -1289,13 +1312,13 @@ final class Conversation {
     func respond(clarify answers: [String: String]) {
         guard let pendingInterrupt, case let .clarify(request) = pendingInterrupt.interrupt else { return }
         clearInterrupt()
-        run {
+        run { [dashboard] in
             if request.isBatch {
                 for (qid, answer) in answers {
-                    try await HermesServeClient.shared.respondClarify(runtimeSession: pendingInterrupt.runtimeSession, requestID: request.id, questionID: qid, answer: answer)
+                    try await dashboard.respondClarify(runtimeSession: pendingInterrupt.runtimeSession, requestID: request.id, questionID: qid, answer: answer)
                 }
             } else {
-                try await HermesServeClient.shared.respondClarify(runtimeSession: pendingInterrupt.runtimeSession, requestID: request.id, questionID: nil, answer: answers[""] ?? answers.values.first ?? "")
+                try await dashboard.respondClarify(runtimeSession: pendingInterrupt.runtimeSession, requestID: request.id, questionID: nil, answer: answers[""] ?? answers.values.first ?? "")
             }
         }
     }
@@ -1303,13 +1326,13 @@ final class Conversation {
     func respond(sudoPassword password: String) {
         guard let pendingInterrupt, case let .sudo(id) = pendingInterrupt.interrupt else { return }
         clearInterrupt()
-        run { try await HermesServeClient.shared.respondSudo(runtimeSession: pendingInterrupt.runtimeSession, requestID: id, password: password) }
+        run { [dashboard] in try await dashboard.respondSudo(runtimeSession: pendingInterrupt.runtimeSession, requestID: id, password: password) }
     }
 
     func respond(secret value: String) {
         guard let pendingInterrupt, case let .secret(request) = pendingInterrupt.interrupt else { return }
         clearInterrupt()
-        run { try await HermesServeClient.shared.respondSecret(runtimeSession: pendingInterrupt.runtimeSession, requestID: request.id, value: value) }
+        run { [dashboard] in try await dashboard.respondSecret(runtimeSession: pendingInterrupt.runtimeSession, requestID: request.id, value: value) }
     }
 
     /// The stream moved on while an interrupt card was up: someone else answered it (another
@@ -1340,14 +1363,14 @@ final class Conversation {
     /// its bot; one this iPhone has kept (opened from a notification, say) is known from its copy.
     func loadServeSession(_ summary: HermesSessionsAPI.SessionSummary, bot: BotRef? = nil, isNew: Bool = false) async throws {
         let bot = bot ?? store.summaries.first { $0.serverSessionID == summary.id }?.bot
-        if let bot { HermesServeClient.shared.noteProfile(bot.profile, forStored: summary.id) }
+        if let bot { dashboard.noteProfile(bot.profile, forStored: summary.id) }
         // A chat made just now has nothing to fetch, and resuming it would start a second agent on it.
         var messages: [Message] = []
-        if !isNew { messages = Self.messages(fromServeRows: try await HermesServeClient.shared.history(stored: summary.id)) }
+        if !isNew { messages = Self.messages(fromServeRows: try await dashboard.history(stored: summary.id)) }
         // The agent's task list: replayed from the transcript's to-do calls, then set against
         // what the host says the list is now.
         TodoList.resolve(&messages)
-        TodoList.reconcile(&messages, with: HermesServeClient.shared.hostTodos[summary.id])
+        TodoList.reconcile(&messages, with: dashboard.hostTodos[summary.id])
         adopt(serverSession: summary, messages: messages, bot: bot)
         // The agent may still be at work in it, or waiting for an answer.
         if !isNew { await rejoinIfWaiting() }
@@ -1356,16 +1379,29 @@ final class Conversation {
     /// Opens a bot's chat (the Dashboard's Bots): its one conversation, found on the server or
     /// made there the first time. `mainName` is what the main profile goes by when it has no name.
     func openBot(_ bot: HermesBot, mainName: String) async throws {
-        let (stored, isNew) = try await HermesServeClient.shared.botChat(for: bot)
+        if bot.viaAPI { return try await openAPIBot(bot, mainName: mainName) }
+        let (stored, isNew) = try await dashboard.botChat(for: bot)
         try await loadServeSession(HermesSessionsAPI.SessionSummary(id: stored), bot: BotRef(profile: bot.name, name: bot.label(mainName: mainName)),
                                    isNew: isNew)
+    }
+
+    /// An API bot's chat (`APIBot`): its profile's "Bot Chat" at /p/<profile>/, found by its title or
+    /// made the first time, as Hermes Desktop and the Dashboard keep a bot's chat, and the same one
+    /// they show.
+    private func openAPIBot(_ bot: HermesBot, mainName: String) async throws {
+        let ref = BotRef(profile: bot.name, name: bot.label(mainName: mainName), viaAPI: true)
+        guard let api = ledgerAPI(for: ref) else { throw APIBotProblem.noKey(bot.label(mainName: mainName)) }
+        var summary = try await APIBotChat.find(api)
+        if summary == nil { summary = try await api.createSession(title: BotChat.title) }
+        guard let summary else { return }
+        try await loadLedgerSession(summary, bot: ref)
     }
 
     /// "Ask Claude in Redde": the bot that name means on this server, its chat opened. Nil when it
     /// means none (the main profile, a profile with no bot here, the Hermes API, the Bots turned
     /// off): the caller moves the app to that profile instead. The roster as last read, else read now.
     func openBot(asked name: String, mainName: String) async throws -> HermesBot? {
-        guard settings.transport == .hermesServe, settings.showBots else { return nil }
+        guard BotDirectory.available(settings) else { return nil }
         var roster = BotDirectory.shared.key == settings.connectionKey ? BotDirectory.shared.roster : nil
         if roster?.asked(name) == nil { roster = try? await BotDirectory.shared.refresh() }
         guard let bot = roster?.asked(name) else { return nil }
@@ -1378,7 +1414,7 @@ final class Conversation {
     /// such bot on the server): the message goes where the person already is.
     func goToBot(_ profile: String, mainName: String) async throws -> Bool {
         if let open = bot?.profile, open == profile || BotDirectory.shared.roster?.named(profile)?.name == open { return true }
-        guard settings.transport == .hermesServe, settings.showBots else { return false }
+        guard BotDirectory.available(settings) else { return false }
         var roster = BotDirectory.shared.key == settings.connectionKey ? BotDirectory.shared.roster : nil
         func find(_ roster: BotRoster?) -> HermesBot? {
             profile == "default" ? roster?.bots.first(where: \.isDefault) : roster?.asked(profile)
@@ -1399,7 +1435,7 @@ final class Conversation {
         if title == ref.name { title = name }
         ref.name = name
         if current.name != ref.profile, let serverSessionID {
-            HermesServeClient.shared.noteProfile(current.name, forStored: serverSessionID)
+            dashboard.noteProfile(current.name, forStored: serverSessionID)
         }
         ref.profile = current.name
         bot = ref
@@ -1409,7 +1445,14 @@ final class Conversation {
     /// Starts this bot's chat over (`HermesServeClient.startFresh`) and opens the new one, empty.
     func startBotChatFresh(mainName: String) async throws {
         guard let ref = bot, !isStreaming else { return }
-        let client = HermesServeClient.shared
+        if ref.viaAPI == true {
+            // Over the API: the chat archived (kept, with its messages), and a new one made.
+            guard let api = ledgerAPI(for: ref), let stored = serverSessionID else { return }
+            try await api.updateSession(id: stored, archived: true)
+            let fresh = try await api.createSession(title: BotChat.title)
+            return try await loadLedgerSession(fresh, bot: ref)
+        }
+        let client = dashboard
         guard let current = try await client.bots().bots.first(where: { $0.name == ref.profile }) else {
             throw TransportError.malformed("\(ref.name) isn't on this server any more")
         }
@@ -1571,7 +1614,7 @@ final class Conversation {
     /// as they were when they first arrived, newest first; older ones stay as they are written.
     func resolveReopenedMedia() {
         reopenedMedia?.cancel()
-        guard settings.transport == .hermesServe || (settings.transport == .hermesSessions && HermesServeClient.shared.hasCredentials) else { return }
+        guard settings.transport == .hermesServe || (settings.transport == .hermesSessions && dashboard.hasCredentials) else { return }
         let opened = id
         let replies = messages.reversed().lazy.filter { $0.role == .assistant && !ServeMedia.candidates(in: $0.text).isEmpty }
             .prefix(Self.reopenedMediaReach).map(\.id)

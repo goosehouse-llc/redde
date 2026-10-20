@@ -70,7 +70,7 @@ struct SpokenPrefixesView: View {
 
     /// The bots on this server (the main agent too) that no rule goes to yet.
     static func botsWithoutRules(_ settings: Settings) -> [HermesBot] {
-        guard settings.transport == .hermesServe, settings.showBots, BotDirectory.shared.key == settings.connectionKey,
+        guard BotDirectory.available(settings), BotDirectory.shared.key == settings.connectionKey,
               let bots = BotDirectory.shared.roster?.bots else { return [] }
         let ruled = Set(settings.spokenPrefixes.compactMap { $0.bot.flatMap { BotDirectory.shared.roster?.named($0)?.name ?? $0 } })
         return bots.filter { !$0.isHidden && !ruled.contains($0.name) }.sorted { a, b in a.isDefault != b.isDefault ? a.isDefault : a.name < b.name }
@@ -134,7 +134,7 @@ struct SpokenPrefixEditor: View {
             } header: {
                 Text("Bot")
             } footer: {
-                Text("Goes to this bot's chat before sending, and voice stays with it until another rule moves it. On the Dashboard connection.")
+                Text("Goes to this bot's chat before sending, and voice stays with it until another rule moves it. On the Dashboard connection, or the Hermes API with the Dashboard's login saved.")
             }
             Section {
                 NavigationLink {

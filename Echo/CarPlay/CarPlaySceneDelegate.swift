@@ -140,8 +140,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         chats.showsSpinnerWhileEmpty = true
         chatsTab = chats
         var templates: [CPTemplate] = [ask, chats]
-        // Bots live on the Dashboard: only there, and while the chat list shows them.
-        if settings.transport == .hermesServe, settings.showBots {
+        // Bots live on the Dashboard (on the Hermes API, through its login), while the chat list shows them.
+        if BotDirectory.available(settings) {
             let bots = CPListTemplate(title: "Bots", sections: [])
             bots.tabImage = UIImage(systemName: "person.2.fill")
             bots.emptyViewTitleVariants = ["Loading…"]

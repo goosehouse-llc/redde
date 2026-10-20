@@ -35,6 +35,9 @@ nonisolated struct HermesBot: Identifiable, Equatable, Sendable {
     /// When a worker of the bot's (a kanban card it was given) was last heard from
     /// (`worker_session`): one heard from lately is at work.
     var workerActive: Date?
+    /// Added on this phone for the Hermes API alone (`APIBot`): its chat goes by the API at
+    /// /p/<profile>/, with the profile's own key, not by the Dashboard.
+    var viaAPI = false
 
     var id: String { name }
 
@@ -185,12 +188,89 @@ nonisolated enum BotListItem: Identifiable, Equatable, Sendable {
     }
 }
 
+/// A bot added on this phone for the Hermes API alone, where no Dashboard login lists the
+/// server's: its profile, and what it is called here. Its key is the profile's own, in the
+/// Keychain (`Keychain.profileAccount`); its chat is the profile's "Bot Chat", as on the Dashboard.
+nonisolated struct APIBot: Codable, Equatable, Identifiable, Sendable {
+    var profile: String
+    var title: String?
+    var id: String { profile }
+}
+
+/// An API bot's chat: the session titled "Bot Chat" on its profile, as on the Dashboard.
+nonisolated enum APIBotChat {
+    static func find(_ api: HermesSessionsAPI) async throws -> HermesSessionsAPI.SessionSummary? {
+        try await api.listSessions(limit: 200).first { $0.title == BotChat.title }
+    }
+}
+
+/// Adding an API bot (Add Bot): the profile tried over the API before it is kept, with the key
+/// given, else the main one. Hermes takes the API_SERVER_KEY in the profile's own .env; Hermes
+/// 0.21.0 copies the main one's into a clone, 0.21.3 and later leave it out (with the messaging
+/// channels), so there it is added by hand, and the main key will do.
+@MainActor
+enum APIBots {
+    static func add(profile: String, title: String?, key: String?, settings: Settings = .shared) async throws {
+        let profile = profile.trimmingCharacters(in: .whitespacesAndNewlines)
+        let own = key?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+        guard !profile.isEmpty, profile != "default" else { throw APIBotProblem.isMain }
+        let server = settings.activeServerID.uuidString
+        guard let base = Settings.normalizedBase(settings.gatewayURL),
+              let tried = own ?? Keychain.read(account: Keychain.account(.gatewayAPIKey, server: server))?.nilIfEmpty else {
+            throw APIBotProblem.noAPI
+        }
+        do {
+            _ = try await HermesSessionsAPI(baseURL: base.appending(path: "p/\(profile)"), apiKey: tried, headers: settings.customHeaderFields)
+                .listSessions(limit: 1)
+        } catch TransportError.http(404, _) {
+            throw APIBotProblem.notServed(profile)
+        } catch TransportError.http(401, _) {
+            throw own == nil ? APIBotProblem.needsKey(profile) : APIBotProblem.wrongKey(profile)
+        }
+        let account = Keychain.profileAccount(profile, server: server)
+        if let own {
+            guard Keychain.write(account: account, value: own) else { throw APIBotProblem.notKept }
+        } else {
+            Keychain.delete(account: account)   // the main key, as it is when it changes
+        }
+        let added = APIBot(profile: profile, title: title?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty)
+        settings.apiBotsHere = settings.apiBotsHere.filter { $0.profile != profile } + [added]
+    }
+}
+
+nonisolated enum APIBotProblem: LocalizedError, Equatable {
+    case noKey(String)
+    case isMain
+    case noAPI
+    case notKept
+    /// Refused with the main key: the profile has a key of its own.
+    case needsKey(String)
+    /// Hermes doesn't serve the profile over the API (no such profile, or a release before 0.21.5
+    /// with `gateway.multiplex_profiles` off).
+    case notServed(String)
+    case wrongKey(String)
+
+    var errorDescription: String? {
+        switch self {
+        case let .noKey(name): "There's no API key for \(name) on this iPhone. Add the bot again with its profile's key."
+        case .isMain: "The main profile is there already."
+        case .noAPI: "Set the Hermes API's address and key in Settings first."
+        case .notKept: "The key couldn't be kept in the Keychain."
+        case let .needsKey(name): "Hermes refused your main API key for \(name). Put API_SERVER_KEY in that profile's .env on the server (your main key will do, and it takes effect at once), then add it again; or enter the key it has below."
+        case let .notServed(name): "Hermes doesn't serve the profile \(name) over its API. Check the name; on Hermes 0.21.3 and earlier, set gateway.multiplex_profiles: true in config.yaml and restart the gateway."
+        case let .wrongKey(name): "Hermes refused that key for \(name). It takes the API_SERVER_KEY in that profile's own .env."
+        }
+    }
+}
+
 /// A conversation that is a bot's chat: which bot, as the conversation keeps it.
 nonisolated struct BotRef: Codable, Equatable, Sendable {
     /// The bot's profile.
     var profile: String
     /// What it was called when the chat was opened.
     var name: String
+    /// The chat goes by the Hermes API at /p/<profile>/ (an `APIBot`), not by the Dashboard.
+    var viaAPI: Bool?
 
     /// The @handle Hermes knows it by.
     var handle: String { profile == "default" ? "hermes" : profile }
@@ -433,6 +513,53 @@ nonisolated enum BotFaceProblem: LocalizedError {
 @Observable
 final class BotDirectory {
     static let shared = BotDirectory()
+
+    /// The server's bots can be reached: on the Dashboard connection, and on the Hermes API one
+    /// with the Dashboard's address and login saved too. Bots, their chats and group chats are
+    /// the Dashboard's (profiles, `groups.*`), and the Hermes API serves another profile only
+    /// with that profile's own key, so on the API connection they go by the Dashboard.
+    static func reachable(_ settings: Settings = .shared, dashboard: HermesServeClient = .shared) -> Bool {
+        switch settings.transport {
+        case .hermesServe: true
+        case .hermesSessions: settings.serveBaseURL != nil && dashboard.hasCredentials
+        case .chatCompletions: false
+        }
+    }
+
+    /// On the Hermes API with no Dashboard login: bots are the ones added on this phone, each by its
+    /// profile's own API key (`APIBot`), their chats at /p/<profile>/; no group chats.
+    static func apiOnly(_ settings: Settings = .shared, dashboard: HermesServeClient = .shared) -> Bool {
+        settings.transport == .hermesSessions && !reachable(settings, dashboard: dashboard)
+    }
+
+    /// Bots can be had, one way or the other, and Settings has them in the chat list.
+    static func available(_ settings: Settings = .shared, dashboard: HermesServeClient = .shared) -> Bool {
+        settings.showBots && (reachable(settings, dashboard: dashboard) || apiOnly(settings, dashboard: dashboard))
+    }
+
+    /// The bots added for the Hermes API alone, as a roster: the main profile, and each added one,
+    /// with its chat's last line and time read from its "Bot Chat" (at /p/<profile>/, by its own
+    /// key). One that can't be reached is still listed, as it was added.
+    @discardableResult
+    func refreshAPI(settings: Settings = .shared) async -> BotRoster {
+        let key = settings.connectionKey
+        let mains = [APIBot(profile: "default", title: nil)]
+        var bots: [HermesBot] = []
+        for added in mains + settings.apiBotsHere {
+            var bot = HermesBot(name: added.profile, title: added.title, isDefault: added.profile == "default")
+            bot.viaAPI = true
+            if let endpoint = settings.gatewayEndpoint(profile: added.profile),
+               let chat = try? await APIBotChat.find(HermesSessionsAPI(baseURL: endpoint.url, apiKey: endpoint.key, headers: settings.customHeaderFields)) {
+                bot.chatID = chat.id
+                bot.lastActive = chat.lastActiveDate
+                bot.preview = chat.preview
+            }
+            bots.append(bot)
+        }
+        let roster = BotRoster(bots: bots)
+        if key == settings.connectionKey { set(roster, key: key) }
+        return roster
+    }
 
     private(set) var roster: BotRoster?
     /// The connection it is from (`Settings.connectionKey`): another server's or profile's bots are no one here.

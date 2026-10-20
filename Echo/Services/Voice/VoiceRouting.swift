@@ -10,7 +10,7 @@ nonisolated struct SpokenPrefix: Codable, Hashable, Identifiable, Sendable {
     var model: String? = nil
     var provider: String? = nil
     /// Talk to this bot (its profile; "default" for the main agent): its chat opens before sending,
-    /// and voice stays there (sticky, as a model is). On the Dashboard only.
+    /// and voice stays there (sticky, as a model is). Where bots can be reached (`BotDirectory.reachable`).
     var bot: String? = nil
 
     /// A rule does something: rewrites the text, switches the model, goes to a bot, or several.

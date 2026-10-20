@@ -271,8 +271,8 @@ reloads the conversation list.
 
 ### Bots
 
-Hermes's Bot Mode, as Hermes Desktop has it, on the Dashboard connection (`ServerBots.swift`). A
-bot is a Hermes profile with one conversation of its own: the session titled exactly "Bot Chat" on
+Hermes's Bot Mode, as Hermes Desktop has it, on the Dashboard connection and on the Hermes API
+(below; `ServerBots.swift`). A bot is a Hermes profile with one conversation of its own: the session titled exactly "Bot Chat" on
 that profile. Hermes counts every profile as one. The chat list's **Bots** section lists them once
 the server has a profile besides the main one, and has New Bot either way (Settings → Hermes server
 → Bots in the chat list turns it off). Each bot is a little creature of its own (`BotAvatar.swift`): a speech bubble at
@@ -452,6 +452,28 @@ where a new conversation is in the ••• menu, and ⌘N as anywhere) is the 
   (`BotListItem` ids, synced by iCloud): a bot renamed keeps its place by its old name, and one
   new since goes at the end. CarPlay's Bots tab and the watch follow it. Sort Bots by Recent
   forgets it.
+
+**On the Hermes API connection**, two ways (`BotDirectory.reachable`, `.apiOnly`):
+- With the Dashboard's address and login saved too, everything here is there as on the Dashboard
+  connection: the roster, faces, New and Edit Bot, group chats, live replies, marks. A bot's chat
+  goes by the Dashboard (`Conversation.connection`: the app's connection, except a bot's chat),
+  as Kanban, Files and phone tools already do on the API: a bot is a profile of its own, which
+  the API serves only with that profile's own key. Its approvals, questions and Stop go that way
+  too; the app's own conversations stay on the API.
+- With no Dashboard login, bots are added on the phone (Add Bot, `APIBot`): a profile by its name,
+  tried before it is kept, kept per server and synced with iCloud. Hermes takes the
+  `API_SERVER_KEY` in the profile's own `.env` at `/p/<profile>/` and never falls back to the main
+  one's; 0.21.0 copies it into a clone, 0.21.3 and later leave it out (with the messaging
+  channels), so it is put there by hand, at once in effect. The main key is tried first, so a
+  profile given the main key needs only its name; one with a key of its own is asked for it, kept
+  in the Keychain beside the profile picker's. Its chat is the profile's "Bot Chat" at `/p/<profile>/` (found by title, made
+  the first time; the same session the Dashboard and Desktop show), and goes as any API chat does:
+  runs, approvals, a run left asked after and taken up again by the bot's own address
+  (`ChatActivity.LeftTurn.profile`), Start Fresh by archiving it. Hermes 0.21.5 and later serve
+  every profile at `/p/<name>/`; 0.21.3 and earlier only with `gateway.multiplex_profiles: true`.
+  The API lists no profiles and keeps no faces, so there are no faces picked on the server, no
+  New or Edit Bot, no @mentions, and no group chats. `lab.sh apibots` checks it on each release,
+  and `lab.sh bots` the first way.
 
 ### Reply language
 

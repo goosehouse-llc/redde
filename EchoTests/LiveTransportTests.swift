@@ -1665,6 +1665,56 @@ struct HermesLabBotsTests {
         HermesLabApprovalTests.report(old.count >= 4, "and the old one stays on the server with its messages", "\(old.count) rows")
     }
 
+    /// On the Hermes API connection, with the Dashboard's login saved too, the bots are there: a
+    /// bot's chat goes by the Dashboard (a bot is a profile, which the API serves only with its
+    /// own key), answers, and a command it runs asks first, answered from the conversation; the
+    /// app's own conversations stay on the API.
+    @Test func onTheHermesAPIBotsGoByTheDashboardsLogin() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        _ = try? await client.call("profiles.create", params: .object(["name": .string("ranger"), "clone_from": .string("default"),
+                                                                       "no_alias": .bool(true)]))
+        let settings = Settings(defaults: UserDefaults(suiteName: "lab-api-bots-\(UUID().uuidString)")!)
+        settings.transport = .hermesSessions
+        settings.gatewayURL = "http://127.0.0.1:18642"
+        settings.serveURL = "http://127.0.0.1:19119"
+        settings.serveUsername = "lab"
+        let account = Keychain.account(.gatewayAPIKey)
+        let before = Keychain.read(account: account)
+        Keychain.write(account: account, value: "labkey-labkey-labkey")
+        defer { if let before { Keychain.write(account: account, value: before) } else { Keychain.delete(account: account) } }
+        HermesLabApprovalTests.report(BotDirectory.reachable(settings, dashboard: client), "on the Hermes API with the Dashboard's login, bots can be reached")
+
+        let store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "lab-api-bots-\(UUID().uuidString)"))
+        let conversation = Conversation(settings: settings, store: store, dashboard: client)
+        guard let ranger = try await client.bots().bots.first(where: { $0.name == "ranger" }) else {
+            HermesLabApprovalTests.report(false, "the lab has a bot to talk to"); return
+        }
+        try await conversation.openBot(ranger, mainName: "Redde")
+        HermesLabApprovalTests.report(conversation.bot?.profile == "ranger" && conversation.connection == .hermesServe,
+                                      "a bot's chat on the Hermes API goes by the Dashboard", "\(conversation.bot.debugDescription), \(conversation.connection)")
+        func settle(_ done: () -> Bool) async {
+            for _ in 0 ..< 120 where !done() { try? await Task.sleep(for: .milliseconds(500)) }
+        }
+        _ = conversation.send("hello ranger")
+        await settle { !conversation.isStreaming && conversation.messages.last?.role == .assistant && !(conversation.messages.last?.text.isEmpty ?? true) }
+        let said = conversation.messages.last?.text ?? ""
+        HermesLabApprovalTests.report(!said.isEmpty && conversation.messages.last?.error == nil, "the bot answers there", said.prefix(80).description)
+
+        _ = conversation.send("Do the danger thing.")
+        await settle { conversation.pendingInterrupt != nil }
+        var asked = false
+        if let pending = conversation.pendingInterrupt, case .approval = pending.interrupt { asked = true }
+        conversation.respond(approval: "deny")
+        await settle { !conversation.isStreaming && (conversation.messages.last?.text.contains("[kept]") ?? false) }
+        HermesLabApprovalTests.report(asked && conversation.messages.last?.text.contains("[kept]") == true,
+                                      "a command in the bot's chat asks first, and the answer from the conversation is taken",
+                                      "asked \(asked), reply \(conversation.messages.last?.text.suffix(40) ?? "")")
+
+        conversation.reset()
+        HermesLabApprovalTests.report(conversation.bot == nil && conversation.connection == .hermesSessions, "the app's own conversations stay on the Hermes API")
+    }
+
     @Test func aBotHasOneChatOfItsOwn() async throws {
         guard let client = await HermesLabApprovalTests.client() else { return }
         defer { client.disconnect() }
@@ -2118,6 +2168,111 @@ struct HermesLabRunsTests {
         let askedB = (try? await ledger.messages(sessionID: storedB))?.filter { $0.role == "user" }.count ?? -1
         HermesLabApprovalTests.report(askedA == 1 && askedB == 1, "reconnecting sent neither question again", "A asked \(askedA)×, B \(askedB)×")
         for record in ConversationStore.shared.summaries where [storedA, storedB].contains(record.serverSessionID) { app.delete(id: record.id) }
+    }
+}
+
+/// A bot on the Hermes API alone, with no Dashboard login (lab.sh apibots): the lab's profile
+/// "scout" has an API key of its own, and the gateway serves it at /p/scout/. Added here by that
+/// key, it is in the roster; its chat goes by the API there, answers, asks before a command and
+/// takes the answer; opened again by an app started afresh it is the same chat; and a run left
+/// mid-reply is asked after, and taken up again, by the bot's own address and key.
+@MainActor
+struct HermesLabAPIBotsTests {
+    private static let api = "http://127.0.0.1:18642"
+    private static let mainKey = "labkey-labkey-labkey"
+    private static let botKey = "scoutkey-scoutkey-scoutkey"
+
+    @Test func aBotAddedForTheHermesAPIAloneTalksThere() async throws {
+        var probe = URLRequest(url: URL(string: Self.api + "/p/scout/api/sessions?limit=1")!)
+        probe.setValue("Bearer \(Self.botKey)", forHTTPHeaderField: "Authorization")
+        probe.timeoutInterval = 3
+        guard let (_, response) = try? await URLSession.shared.data(for: probe), (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("LAB SKIP: no lab bot with its own API key at /p/scout/ (scripts/hermes-lab/lab.sh apibots)")
+            return
+        }
+        let settings = Settings(defaults: UserDefaults(suiteName: "lab-api-only-bots-\(UUID().uuidString)")!)
+        settings.transport = .hermesSessions
+        settings.gatewayURL = Self.api
+        let server = settings.activeServerID.uuidString
+        let mainAccount = Keychain.account(.gatewayAPIKey, server: server), botAccount = Keychain.profileAccount("scout", server: server)
+        Keychain.write(account: mainAccount, value: Self.mainKey)
+        Keychain.write(account: botAccount, value: Self.botKey)
+        defer { Keychain.delete(account: mainAccount); Keychain.delete(account: botAccount) }
+        let noDashboard = HermesServeClient(settings: settings, password: { nil }, tokens: HermesServeClientTests.TokenBox().store)
+        // Added as Add Bot adds them: pip, whose .env has the main key, by name alone; scout, which
+        // has a key of its own, refused that way and then taken with it.
+        Keychain.delete(account: botAccount)
+        var addedPip = false
+        do { try await APIBots.add(profile: "pip", title: "Pip", key: nil, settings: settings); addedPip = true } catch {}
+        var askedForKey = false
+        do { try await APIBots.add(profile: "scout", title: "Scout", key: nil, settings: settings) } catch APIBotProblem.needsKey { askedForKey = true }
+        try await APIBots.add(profile: "scout", title: "Scout", key: Self.botKey, settings: settings)
+        HermesLabApprovalTests.report(addedPip && askedForKey && settings.apiBotsHere.map(\.profile) == ["pip", "scout"],
+                                      "a bot with the main key in its .env is added by its name; one with a key of its own asks for it",
+                                      "pip \(addedPip), scout asked \(askedForKey), \(settings.apiBotsHere.map(\.profile))")
+        let pipChat = Conversation(settings: settings, store: ConversationStore(directory: FileManager.default.temporaryDirectory
+            .appending(path: "lab-api-pip-\(UUID().uuidString)")), dashboard: noDashboard)
+        let roster0 = await BotDirectory().refreshAPI(settings: settings)
+        if let pip = roster0.bots.first(where: { $0.name == "pip" }) {
+            try await pipChat.openBot(pip, mainName: "Redde")
+            _ = pipChat.send("hello pip")
+            for _ in 0 ..< 120 where pipChat.isStreaming || pipChat.messages.last?.role != .assistant { try? await Task.sleep(for: .milliseconds(500)) }
+        }
+        HermesLabApprovalTests.report(pipChat.ledgerAPI()?.apiKey == Self.mainKey && pipChat.messages.last?.role == .assistant
+                                      && pipChat.messages.last?.error == nil, "pip's chat goes by the main key, and pip answers",
+                                      pipChat.messages.last?.error ?? "")
+        HermesLabApprovalTests.report(BotDirectory.apiOnly(settings, dashboard: noDashboard) && BotDirectory.available(settings, dashboard: noDashboard),
+                                      "on the Hermes API with no Dashboard login, the bots are the ones added here")
+
+        let roster = await BotDirectory().refreshAPI(settings: settings)
+        guard let scout = roster.bots.first(where: { $0.name == "scout" }) else {
+            HermesLabApprovalTests.report(false, "the added bot is in the roster", "\(roster.bots.map(\.name))"); return
+        }
+        HermesLabApprovalTests.report(scout.viaAPI && scout.label() == "Scout" && roster.listed.map(\.name).contains("scout"),
+                                      "the added bot is in the roster, by the name it was given")
+
+        func settle(_ c: Conversation, _ done: () -> Bool) async {
+            for _ in 0 ..< 120 where !done() { try? await Task.sleep(for: .milliseconds(500)) }
+        }
+        let conversation = Conversation(settings: settings, store: .shared, dashboard: noDashboard)
+        conversation.reset()
+        try await conversation.openBot(scout, mainName: "Redde")
+        let stored = conversation.serverSessionID
+        HermesLabApprovalTests.report(conversation.connection == .hermesSessions && conversation.ledgerAPI()?.baseURL.path.hasSuffix("/p/scout") == true,
+                                      "its chat goes by the Hermes API, at /p/scout/", "\(conversation.connection), \(conversation.ledgerAPI()?.baseURL.absoluteString ?? "none")")
+        _ = conversation.send("hello scout")
+        await settle(conversation) { !conversation.isStreaming && conversation.messages.last?.role == .assistant && !(conversation.messages.last?.text.isEmpty ?? true) }
+        HermesLabApprovalTests.report(!(conversation.messages.last?.text.isEmpty ?? true) && conversation.messages.last?.error == nil,
+                                      "the bot answers there", conversation.messages.last?.error ?? "")
+
+        _ = conversation.send("Do the danger thing.")
+        await settle(conversation) { conversation.pendingInterrupt != nil }
+        var asked = false
+        if let pending = conversation.pendingInterrupt, case .approval = pending.interrupt { asked = true }
+        conversation.respond(approval: "deny")
+        await settle(conversation) { !conversation.isStreaming && (conversation.messages.last?.text.contains("[kept]") ?? false) }
+        HermesLabApprovalTests.report(asked && conversation.messages.last?.text.contains("[kept]") == true,
+                                      "a command in its chat asks first, and the answer reaches its run", "asked \(asked)")
+
+        // An app started afresh: the same chat, with what was said.
+        let again = Conversation(settings: settings, store: .shared, dashboard: noDashboard)
+        try await again.openBot(scout, mainName: "Redde")
+        HermesLabApprovalTests.report(again.serverSessionID == stored && again.messages.count >= 4, "opened again, it is the same chat",
+                                      "\(again.serverSessionID ?? "none") for \(stored ?? "none"), \(again.messages.count) messages")
+
+        // A run left mid-reply: asked after by the bot's address, taken up again when it opens.
+        _ = again.send("lab:drip, please")
+        try await Task.sleep(for: .seconds(3))
+        again.reset()
+        await ChatActivity.shared.look(again, settings: settings, dashboard: noDashboard)
+        let marked = stored.map { ChatActivity.shared.kind(of: $0, open: again, settings: settings) } ?? nil
+        try await again.openBot(scout, mainName: "Redde")
+        let following = again.isStreaming
+        await settle(again) { !again.isStreaming && (again.messages.last?.text.contains("[drip done]") ?? false) }
+        HermesLabApprovalTests.report(marked == .working && following && again.messages.last?.text.contains("[drip done]") == true,
+                                      "a run left is asked after, and taken up again, by the bot's own address",
+                                      "marked \(String(describing: marked)), following \(following), \(again.messages.last?.text.suffix(40) ?? "")")
+        for record in ConversationStore.shared.summaries where record.serverSessionID == stored { again.delete(id: record.id) }
     }
 }
 

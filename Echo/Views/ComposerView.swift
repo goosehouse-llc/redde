@@ -59,12 +59,12 @@ struct ComposerView: View {
 
     /// The "/" menu is a hermes serve feature; other backends get the text as typed.
     private var slashMenuActive: Bool {
-        settings.transport == .hermesServe && draft.hasPrefix("/") && !draft.contains("\n") && !conversation.isStreaming
+        conversation.connection == .hermesServe && draft.hasPrefix("/") && !draft.contains("\n") && !conversation.isStreaming
     }
 
     /// In a bot's chat, the other bots a tag being typed ("@sc") could be.
     private var mentionSuggestions: [HermesBot] {
-        guard settings.transport == .hermesServe, let bot = conversation.bot, !draft.contains("\n"),
+        guard conversation.connection == .hermesServe, let bot = conversation.bot, !draft.contains("\n"),
               let typed = BotMentions.typing(in: draft) else { return [] }
         let roster = BotDirectory.shared.roster?.listed ?? []
         return Array(BotMentions.suggestions(for: typed, roster: BotDirectory.shared.key == settings.connectionKey ? roster : [],
@@ -446,7 +446,7 @@ struct ComposerView: View {
                     if CameraPicker.isAvailable {
                         Button("Camera", systemImage: "camera") { showCamera = true }
                     }
-                    if settings.transport == .hermesServe {
+                    if conversation.connection == .hermesServe {
                         Divider()
                         Button("Commands", systemImage: "terminal") { draft = "/"; focused = true }
                             .disabled(conversation.isStreaming)

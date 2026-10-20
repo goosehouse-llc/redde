@@ -374,10 +374,9 @@ struct ContentView: View {
                         if settings.transport == .hermesServe, conversation.serverSessionID != nil, conversation.bot == nil {
                             ChatProjectMenu(naming: $namingProject, problem: $projectProblem)
                         }
-                        if let bot = chatBot {
+                        // (A bot added for the Hermes API alone has its settings and face on the Dashboard.)
+                        if let bot = chatBot, !bot.viaAPI {
                             Button("Edit Bot…", systemImage: "slider.horizontal.3") { editingBot = bot }
-                        }
-                        if let bot = chatBot {
                             Button("Change Face…", systemImage: "face.smiling") { facingBot = bot }
                         }
                         // A bot's chat: Start Fresh has the toolbar's button, and a new conversation
@@ -879,7 +878,7 @@ struct ContentView: View {
     /// This conversation runs its commands without asking (the model menu's switch, or the
     /// server's own setting): worth a mark that stays in sight.
     private var runsWithoutAsking: Bool {
-        var session = settings.transport == .hermesServe ? conversation.serverSessionID : nil
+        var session = conversation.connection == .hermesServe ? conversation.serverSessionID : nil
         #if DEBUG
         if DevHooks.demoChatControls { session = DemoChatControls.session }
         #endif

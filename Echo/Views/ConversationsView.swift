@@ -71,6 +71,8 @@ struct ConversationsList: View {
     @State private var facing: HermesBot?
     /// A bot being made or changed, and the hidden ones being looked at.
     @State private var editingBot: BotEditor.Mode?
+    /// A bot being added for the Hermes API alone.
+    @State private var addingAPIBot = false
     @State private var showingHiddenBots = false
     @AppStorage("sessions.showScheduled") private var showScheduled = false
     @State private var shareItem: ShareItem?
@@ -90,6 +92,11 @@ struct ConversationsList: View {
 
     private var usesLedger: Bool { settings.transport.hasLedger }
     private var viaServe: Bool { settings.transport == .hermesServe }
+    /// The server's bots can be reached: on the Dashboard, and on the Hermes API through the
+    /// Dashboard's login (`BotDirectory.reachable`).
+    private var botsHere: Bool { BotDirectory.reachable(settings) || apiBotsOnly }
+    /// The Hermes API with no Dashboard login: the bots are the ones added here (`APIBot`).
+    private var apiBotsOnly: Bool { BotDirectory.apiOnly(settings) }
     /// Searching inside messages takes the Dashboard (only it has the route), on either connection.
     private var searchesMessages: Bool { usesLedger && settings.serveBaseURL != nil }
 
@@ -242,7 +249,10 @@ struct ConversationsList: View {
                 topRow
                 if query.isEmpty, !selecting { waitingNotesSection }
                 if usesLedger {
-                    if viaServe, query.isEmpty, !selecting { botsSection; projectsSection }
+                    if query.isEmpty, !selecting {
+                        if botsHere { botsSection }
+                        if viaServe { projectsSection }
+                    }
                     ledgerSection
                     if searchesMessages, !selecting { messageHitsSection }
                 } else {
@@ -388,7 +398,8 @@ struct ConversationsList: View {
             let bots = listedBots
             let hidden = all.filter { $0.isHidden && !$0.isDefault }
             let faces = botDirectory.roster?.faces ?? [:]
-            let hasRooms = !bots.isEmpty && groups.key == settings.connectionKey && groups.supported
+            // (Group chats are the Dashboard's: none on the Hermes API alone, whatever was read before.)
+            let hasRooms = !apiBotsOnly && !bots.isEmpty && groups.key == settings.connectionKey && groups.supported
             let items = BotListItem.arranged(bots: bots, rooms: hasRooms ? groups.rooms : [], order: botOrder)
             Section {
                 if showBotRows || arrangingBots {
@@ -413,8 +424,13 @@ struct ConversationsList: View {
                     if hasRooms, groups.writable {
                         sectionAction("New Group Chat", systemImage: "person.3", hint: "Starts a chat with several bots at once") { makingGroup = true }
                     }
-                    sectionAction("New Bot", systemImage: "plus.bubble", hint: "Makes a bot on your server, with a chat of its own") { editingBot = .new }
-                    if !bots.isEmpty, botDirectory.roster?.messagingIsOn == false {
+                    if apiBotsOnly {
+                        // No Dashboard to make or list them: a profile on the server, by its own key.
+                        sectionAction("Add Bot", systemImage: "plus.bubble", hint: "Adds one of your server's profiles as a bot, with its own API key") { addingAPIBot = true }
+                    } else {
+                        sectionAction("New Bot", systemImage: "plus.bubble", hint: "Makes a bot on your server, with a chat of its own") { editingBot = .new }
+                    }
+                    if !apiBotsOnly, !bots.isEmpty, botDirectory.roster?.messagingIsOn == false {
                         sectionAction("Let bots message each other", systemImage: "bubble.left.and.text.bubble.right",
                                       hint: "Sets your main profile up as a bot on the server, as Hermes Desktop does") { askingBotMessaging = true }
                     }
@@ -428,7 +444,13 @@ struct ConversationsList: View {
                 if arrangingBots {
                     Text("Drag bots and group chats by their handles into the order you want.")
                         .font(.footnote).foregroundStyle(.secondary)
+                } else if apiBotsOnly, showBotRows, bots.isEmpty {
+                    Text("Bots are your server's other profiles. On the Hermes API, add each by its name and its own API key; with the Dashboard login saved in Settings, Redde lists them and has group chats too.")
+                        .font(.footnote).foregroundStyle(.secondary)
                 }
+            }
+            .sheet(isPresented: $addingAPIBot) {
+                APIBotEditor { Task { _ = await botDirectory.refreshAPI() } }
             }
             .confirmationDialog("Let bots message each other?", isPresented: $askingBotMessaging, titleVisibility: .visible) {
                 Button("Let Them") { letBotsMessageEachOther() }
@@ -524,10 +546,17 @@ struct ConversationsList: View {
                     Button("Mark as Unread", systemImage: "envelope.badge") { activity.markUnread(bot: bot.name) }
                 }
             }
-            Button("Edit Bot…", systemImage: "slider.horizontal.3") { editingBot = .edit(bot) }
-            Button("Change Face…", systemImage: "face.smiling") { facing = bot }
-            if !bot.isDefault {
-                Button("Hide", systemImage: "eye.slash") { hide(bot) }
+            if bot.viaAPI {
+                // Added here for the Hermes API: its settings and face are the Dashboard's.
+                if !bot.isDefault {
+                    Button("Remove from Redde", systemImage: "minus.circle", role: .destructive) { removeAPIBot(bot) }
+                }
+            } else {
+                Button("Edit Bot…", systemImage: "slider.horizontal.3") { editingBot = .edit(bot) }
+                Button("Change Face…", systemImage: "face.smiling") { facing = bot }
+                if !bot.isDefault {
+                    Button("Hide", systemImage: "eye.slash") { hide(bot) }
+                }
             }
             Divider()
             orderingBots
@@ -621,6 +650,14 @@ struct ConversationsList: View {
                 ledgerError = error.localizedDescription
             }
         }
+    }
+
+    /// An API bot taken off this iPhone: its key goes, its chat and profile stay on the server.
+    private func removeAPIBot(_ bot: HermesBot) {
+        settings.apiBotsHere.removeAll { $0.profile == bot.name }
+        Keychain.delete(account: Keychain.profileAccount(bot.name, server: settings.activeServerID.uuidString))
+        if conversation.bot?.profile == bot.name { conversation.reset() }
+        Task { _ = await botDirectory.refreshAPI() }
     }
 
     private func hide(_ bot: HermesBot) {
@@ -1245,13 +1282,17 @@ struct ConversationsList: View {
             ledger = sessions
             activity.listed(sessions)
             conversation.noteServerTitles(sessions)
-            if viaServe {
-                // Bots and projects are a bonus; a failure here must not hide the flat list.
-                if settings.showBots {
+            // Bots and projects are a bonus; a failure here must not hide the flat list.
+            if botsHere, settings.showBots {
+                if apiBotsOnly {
+                    activity.listed(await botDirectory.refreshAPI().bots)
+                } else {
                     if let roster = try? await botDirectory.refresh() { activity.listed(roster.bots) }
                     await groups.refresh()
                     activity.listed(groups.rooms)
                 }
+            }
+            if viaServe {
                 let all = (try? await HermesServeClient.shared.projectTree()) ?? []
                 let tree = HermesServeClient.Project.listed(all)
                 guard current else { return }
@@ -1330,14 +1371,18 @@ struct ConversationsList: View {
                 fetchedAt = .now
                 botsAt = .now
                 await refresh()
-            } else if viaServe, settings.showBots, Date.now.timeIntervalSince(botsAt) >= 15 {
+            } else if botsHere, settings.showBots, Date.now.timeIntervalSince(botsAt) >= 15 {
                 // The bots' chats and workers, which the gateway's list doesn't all show (a bot's
                 // worker runs on its own): their last activity, now and then.
                 botsAt = .now
-                if let roster = try? await botDirectory.refresh() { activity.listed(roster.bots) }
-                // The group chats' latest events, for what is new in them.
-                await groups.refresh()
-                activity.listed(groups.rooms)
+                if apiBotsOnly {
+                    activity.listed(await botDirectory.refreshAPI().bots)
+                } else {
+                    if let roster = try? await botDirectory.refresh() { activity.listed(roster.bots) }
+                    // The group chats' latest events, for what is new in them.
+                    await groups.refresh()
+                    activity.listed(groups.rooms)
+                }
             }
             // A host that can't be asked is asked less often.
             try? await Task.sleep(for: reached ? .seconds(4) : .seconds(30))

@@ -100,6 +100,7 @@ import WidgetKit
 /// value deletes): `ECHO_TEST_SERVE_PASSWORD`, `ECHO_TEST_GATEWAY_KEY`, `ECHO_TEST_PROFILE_KEY`
 /// (the selected profile's Hermes API key). `ECHO_TEST_SERVE_SIGNIN`, empty, forgets a browser
 /// sign-in to the Dashboard (there is nothing to set it to: signing in takes the browser).
+/// `ECHO_TEST_API_BOT`, "<profile>:<its API key>", adds a bot for the Hermes API alone.
 ///
 /// Settings can also be set for one launch with their UserDefaults keys, e.g. `-transport hermesServe`.
 ///
@@ -270,6 +271,12 @@ enum DevHooks {
         if let v = env["ECHO_TEST_GATEWAY_KEY"] { Keychain.write(.gatewayAPIKey, value: v) }
         if let v = env["ECHO_TEST_PROFILE_KEY"], let profile = settings.profileName {
             Keychain.write(account: Keychain.profileAccount(profile), value: v)
+        }
+        // A bot for the Hermes API alone, "<profile>:<its API key>" (`APIBot`).
+        if let v = env["ECHO_TEST_API_BOT"], let colon = v.firstIndex(of: ":") {
+            let profile = String(v[..<colon])
+            Keychain.write(account: Keychain.profileAccount(profile, server: settings.activeServerID.uuidString), value: String(v[v.index(after: colon)...]))
+            if !settings.apiBotsHere.contains(where: { $0.profile == profile }) { settings.apiBotsHere.append(APIBot(profile: profile, title: profile.capitalized)) }
         }
 
         if let i = args.firstIndex(of: "-echo.testServer"), i + 3 < args.count {

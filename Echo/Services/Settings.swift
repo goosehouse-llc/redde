@@ -200,6 +200,35 @@ final class Settings: ServeEndpoint {
     var botOrder: [String: [String]] {
         didSet { store(try? JSONEncoder().encode(botOrder), forKey: Keys.botOrder) }
     }
+    /// Bots added on this phone for the Hermes API alone, per server (its id): where there is no
+    /// Dashboard login to list the server's, each by its profile and that profile's own API key
+    /// (`Keychain.profileAccount`).
+    var apiBots: [String: [APIBot]] {
+        didSet { store(try? JSONEncoder().encode(apiBots), forKey: Keys.apiBots) }
+    }
+    /// `apiBots` for the server in use.
+    var apiBotsHere: [APIBot] {
+        get { apiBots[activeServerID.uuidString] ?? [] }
+        set { apiBots[activeServerID.uuidString] = newValue.isEmpty ? nil : newValue }
+    }
+
+    /// The Hermes API as a profile has it: the app's own address and key (nil, or the profile the
+    /// app is on), the main profile's ("default"), or another profile's at /p/<profile>/. Hermes
+    /// takes the API_SERVER_KEY in that profile's own .env there, often the main key put there too,
+    /// so the main key is used unless one of the profile's own was kept here.
+    func gatewayEndpoint(profile: String?) -> (url: URL, key: String)? {
+        guard let profile, profile != profileName else {
+            guard let url = gatewayBaseURL, let key = gatewayAPIKey, !key.isEmpty else { return nil }
+            return (url, key)
+        }
+        guard let base = Self.normalizedBase(gatewayURL) else { return nil }
+        let server = activeServerID.uuidString
+        let main = Keychain.read(account: Keychain.account(.gatewayAPIKey, server: server))?.nilIfEmpty
+        if profile == "default" { return main.map { (base, $0) } }
+        guard let key = Keychain.read(account: Keychain.profileAccount(profile, server: server))?.nilIfEmpty ?? main else { return nil }
+        return (base.appending(path: "p/\(profile)"), key)
+    }
+
     /// `botOrder` for the server in use.
     var botOrderHere: [String] {
         get { botOrder[activeServerID.uuidString] ?? [] }
@@ -453,6 +482,7 @@ final class Settings: ServeEndpoint {
         static let matchReplyLanguage = "matchReplyLanguage"
         static let spokenPrefixes = "spokenPrefixes"
         static let botOrder = "botOrder"
+        static let apiBots = "apiBots"
         static let contextWindow = "contextWindow"
         static let theme = "theme"
         static let themeColors = "themeColors"
@@ -526,6 +556,8 @@ final class Settings: ServeEndpoint {
             .flatMap { try? JSONDecoder().decode([SpokenPrefix].self, from: $0) } ?? []
         botOrder = defaults.data(forKey: Keys.botOrder)
             .flatMap { try? JSONDecoder().decode([String: [String]].self, from: $0) } ?? [:]
+        apiBots = defaults.data(forKey: Keys.apiBots)
+            .flatMap { try? JSONDecoder().decode([String: [APIBot]].self, from: $0) } ?? [:]
         appearance = Appearance(rawValue: defaults.string(forKey: Keys.appearance) ?? "") ?? .system
         // A still orb picked in an earlier version falls back to the default; they are gone.
         voiceOrb = VoiceOrb(rawValue: defaults.string(forKey: Keys.voiceOrb) ?? "") ?? .waveform
@@ -614,7 +646,7 @@ final class Settings: ServeEndpoint {
         Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopPhrases,
         Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.replyVoice, Keys.kokoroURL,
         Keys.kokoroVoice, Keys.voiceSpeed, Keys.speechLanguage, Keys.matchReplyLanguage, Keys.spokenPrefixes,
-        Keys.botOrder,
+        Keys.botOrder, Keys.apiBots,
     ]
 
     /// A synced setting as it is saved here, for `CloudSync` to send.
@@ -665,6 +697,7 @@ final class Settings: ServeEndpoint {
         case Keys.matchReplyLanguage: matchReplyLanguage = flag(true)
         case Keys.spokenPrefixes: spokenPrefixes = decoded([])
         case Keys.botOrder: botOrder = decoded([:])
+        case Keys.apiBots: apiBots = decoded([:])
         default: break
         }
     }
@@ -875,6 +908,7 @@ final class Settings: ServeEndpoint {
         matchReplyLanguage = true
         spokenPrefixes = []
         botOrder = [:]
+        apiBots = [:]
         theme = .standard
         themeColors = [:]
         appearance = .system

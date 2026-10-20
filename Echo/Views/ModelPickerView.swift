@@ -76,7 +76,7 @@ struct ModelPickerView: View {
 
             if let stored = controlledSession {
                 ChatControlsSection(stored: stored, source: ChatControlsSection.defaultSource,
-                                    offersAutoApprove: settings.transport != .hermesSessions)
+                                    offersAutoApprove: conversation.connection != .hermesSessions)
             }
 
             Section {
@@ -200,7 +200,7 @@ struct ModelPickerView: View {
     /// "back to whatever config.yaml says" for a live session, only levels, so the open
     /// conversation stays where it is and new ones pick up the gateway default.
     private func applyEffortToOpenConversation(_ effort: String) {
-        guard !effort.isEmpty, settings.transport == .hermesServe, let sid = conversation.serverSessionID else { return }
+        guard !effort.isEmpty, conversation.connection == .hermesServe, let sid = conversation.serverSessionID else { return }
         Task {
             do {
                 try await HermesServeClient.shared.withLiveSession(stored: sid) { runtime in

@@ -427,7 +427,7 @@ struct TranscriptView: View {
     /// Reconnect strip for hermes serve; disappears on its own.
     @ViewBuilder
     private var reconnectBanner: some View {
-        if Settings.shared.transport == .hermesServe, let text = reconnectText {
+        if conversation.connection == .hermesServe, let text = reconnectText {
             Label(text, systemImage: "wifi.exclamationmark")
                 .font(.caption.weight(.medium))
                 .padding(.horizontal, 12).padding(.vertical, 6)

@@ -31,6 +31,8 @@ final class ChatActivity {
     nonisolated struct LeftTurn: Codable, Equatable, Sendable {
         var runID: String
         var leftAt: Date
+        /// An API bot's run: its profile, whose own address and key ask after it (`APIBot`).
+        var profile: String?
     }
 
     /// Conversations with a turn under way, by their id on the server, as last looked at.
@@ -116,15 +118,28 @@ final class ChatActivity {
             liveKey = key
             return true
         case .hermesSessions:
-            guard let api = conversation.ledgerAPI() else { return false }
+            guard let main = settings.gatewayEndpoint(profile: nil) else { return false }
+            /// Where a left run is asked after: the app's API, or an API bot's own (`APIBot`).
+            func api(_ turn: LeftTurn) -> HermesSessionsAPI? {
+                guard let endpoint = turn.profile.map({ settings.gatewayEndpoint(profile: $0) }) ?? main else { return nil }
+                return HermesSessionsAPI(baseURL: endpoint.url, apiKey: endpoint.key, headers: settings.customHeaderFields)
+            }
             var found: [String: Kind] = [:]
             var reached = true
+            // The bots' chats and group chats go by the Dashboard here too, when its login is
+            // saved: what it says of them, beside the runs this phone left.
+            var rooms: [String: Kind] = [:]
+            if settings.showBots, BotDirectory.reachable(settings, dashboard: dashboard), let dashboardSays = try? await dashboard.liveActivity() {
+                found = dashboardSays.sessions
+                rooms = dashboardSays.rooms
+            }
             for (session, turn) in left[key] ?? [:] {
                 if Date.now.timeIntervalSince(turn.leftAt) > Self.leftTurnsLast {
                     forget(session, key: key)
                     continue
                 }
                 do {
+                    guard let api = api(turn) else { forget(session, key: key); continue }
                     if let status = try await api.runStatus(turn.runID), let kind = Self.kind(runStatus: status) {
                         found[session] = kind
                     } else {
@@ -140,6 +155,7 @@ final class ChatActivity {
             }
             guard key == settings.connectionKey else { return true }
             live = found
+            if liveRooms != rooms { liveRooms = rooms }
             liveKey = key
             return reached
         case .chatCompletions:
@@ -205,9 +221,9 @@ final class ChatActivity {
 
     /// A turn the app left mid-way on the Hermes API (another conversation was opened): asked
     /// after until it ends, and working meanwhile.
-    func noteLeft(sessionID: String, runID: String, settings: Settings = .shared) {
+    func noteLeft(sessionID: String, runID: String, profile: String? = nil, settings: Settings = .shared) {
         let key = settings.connectionKey
-        left[key, default: [:]][sessionID] = LeftTurn(runID: runID, leftAt: .now)
+        left[key, default: [:]][sessionID] = LeftTurn(runID: runID, leftAt: .now, profile: profile)
         if liveKey != key {
             live = [:]
             liveKey = key
@@ -219,8 +235,8 @@ final class ChatActivity {
     /// A Hermes API turn under way here, from the moment its run starts: if the app doesn't see
     /// it through (iOS closes the app, say), the run can be taken up again when the conversation
     /// is next opened, and the row shows it working meanwhile.
-    func noteRun(sessionID: String, runID: String, settings: Settings = .shared) {
-        noteLeft(sessionID: sessionID, runID: runID, settings: settings)
+    func noteRun(sessionID: String, runID: String, profile: String? = nil, settings: Settings = .shared) {
+        noteLeft(sessionID: sessionID, runID: runID, profile: profile, settings: settings)
     }
 
     // MARK: - Bots' chats
