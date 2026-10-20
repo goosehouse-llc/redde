@@ -624,6 +624,20 @@ push() {
   echo "\nAll checks passed."
 }
 
+# Bot templates (templates_check.py): a bot made from one has the template's toolsets and no others,
+# in its chat and in a group chat, and the main profile keeps its own.
+templates() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  for tag in $tags; do
+    echo "===== Hermes $tag / bot templates"
+    if ! LAB_OWN_HOME=1 up "$tag" approval; then failed+=("$tag (lab)"); continue; fi
+    (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" templates_check.py) || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
 # Group chat notes from the push plugin (rooms.py): a stand-in phone follows a room the way the app
 # says it does, and each bot's message there, and a bot's command waiting there, reach it once
 # (grouppush_check.py). In a home of the lab's own: Hermes 0.21.0 writes a command per profile in ~/.local/bin.
@@ -701,6 +715,7 @@ case "${1:-}" in
   butler) shift; butler "$@" ;;
   groups) shift; groups "$@" ;;
   grouppush) shift; grouppush "$@" ;;
+  templates) shift; templates "$@" ;;
   apibots) shift; apibots "$@" ;;
   search) shift; search "$@" ;;
   context) shift; context "$@" ;;

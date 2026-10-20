@@ -255,6 +255,7 @@ class Handler(BaseHTTPRequestHandler):
         with open(HITS, "a") as f:
             f.write(json.dumps({"stub": NAME, "model": model, "stream": bool(body.get("stream")),
                                 "phone": sorted(name for name in tools if name.startswith("phone_")), "tools": len(tools),
+                                "names": sorted(tools),
                                 "search": "tool_call" in tools,
                                 # Bot Mode (lab.sh bots): the teammate protocol in the system prompt,
                                 # its tool, and the @mention note on the message.

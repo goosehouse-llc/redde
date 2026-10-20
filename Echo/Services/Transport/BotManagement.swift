@@ -19,6 +19,8 @@ nonisolated struct NewBot: Equatable, Sendable {
     /// Its model; nil: the main profile's.
     var model: ModelChoice?
     var face: BotFace?
+    /// The toolsets it has (a template's, or picked); nil: every one the main profile has.
+    var toolsets: [String]? = nil
 }
 
 /// What making a bot came to: its profile, and what went wrong after Hermes made it.
@@ -33,19 +35,35 @@ nonisolated struct BotDetails: Equatable, Sendable {
     var description: String
     var model: String?
     var provider: String?
+    /// The toolsets the server has, each marked whether this profile has it.
+    var toolsets: [BotToolset]
+    /// The profile has a list of its own (not every toolset).
+    var toolsetsPinned: Bool
 
-    init(soul: String = "", description: String = "", model: String? = nil, provider: String? = nil) {
+    init(soul: String = "", description: String = "", model: String? = nil, provider: String? = nil,
+         toolsets: [BotToolset] = [], toolsetsPinned: Bool = false) {
         self.soul = soul
         self.description = description
         self.model = model
         self.provider = provider
+        self.toolsets = toolsets
+        self.toolsetsPinned = toolsetsPinned
     }
 
     init(_ result: JSONValue) {
         let model = result["model"]
         self.init(soul: result["soul"]?.string ?? "", description: result["description"]?.string ?? "",
                   model: (model?.string ?? model?["default"]?.string ?? model?["model"]?.string)?.nilIfEmpty,
-                  provider: model?["provider"]?.string?.nilIfEmpty ?? result["provider"]?.string?.nilIfEmpty)
+                  provider: model?["provider"]?.string?.nilIfEmpty ?? result["provider"]?.string?.nilIfEmpty,
+                  toolsets: (result["toolsets"]?.array ?? []).compactMap(BotToolset.init),
+                  toolsetsPinned: result["toolsets_pinned"]?.bool ?? false)
+    }
+
+    /// The toolsets it has. With no list of its own and none marked as had, every one: 0.21.5 works
+    /// out the unpinned ones in a way that can fail quietly, and then marks them all off.
+    var enabledToolsets: Set<String> {
+        let on = Set(toolsets.filter(\.enabled).map(\.name))
+        return !toolsetsPinned && on.isEmpty ? Set(toolsets.map(\.name)) : on
     }
 }
 
@@ -58,8 +76,11 @@ nonisolated struct BotChange: Equatable, Sendable {
     var model: ModelChoice?
     /// Said yes to a model Hermes asks about first (an expensive one).
     var modelConfirmed = false
+    /// The toolsets it has from now on (Hermes 0.21.5 and later keep a bot to them). Never an
+    /// empty list: Hermes takes that for its own defaults on some releases and for none on 0.21.5.
+    var toolsets: [String]?
 
-    var isEmpty: Bool { title == nil && hidden == nil && description == nil && soul == nil && model == nil }
+    var isEmpty: Bool { title == nil && hidden == nil && description == nil && soul == nil && model == nil && toolsets == nil }
 }
 
 nonisolated enum BotChangeOutcome: Equatable, Sendable {
@@ -159,11 +180,23 @@ extension HermesServeClient {
         if let face = bot.face {
             do { try await setFace(face, for: HermesBot(name: bot.handle)) } catch { notes.append("Its face wasn't kept: \(error.localizedDescription)") }
         }
+        if let toolsets = bot.toolsets, !toolsets.isEmpty {
+            let applied = try? await call("profiles.configure", params: .object([
+                "name": .string(bot.handle), "enabled_toolsets": .array(toolsets.map(JSONValue.string))]), timeout: 30)["applied"]
+            if applied?["toolsets"]?.bool != true { notes.append("Its tools weren't set: it has all of your agent's for now.") }
+        }
         if let problem = await botProblem(bot.handle) { notes.append(problem) }
         return MadeBot(name: bot.handle, notes: notes)
     }
 
-    /// What the roster leaves out about a bot: its personality and its model.
+    /// The toolsets a bot can be given, and which the main profile has (`enabledToolsets`): the
+    /// server's, as `profiles.describe` lists them for the main profile.
+    func toolsetsOffered() async throws -> BotDetails {
+        try await ensureConnected()
+        return BotDetails(try await call("profiles.describe", params: .object(["name": .string("default")]), timeout: 30))
+    }
+
+    /// What the roster leaves out about a bot: its personality, its model and its toolsets.
     func botDetails(_ bot: HermesBot) async throws -> BotDetails {
         try await ensureConnected()
         return BotDetails(try await call("profiles.describe", params: .object(["name": .string(bot.name)]), timeout: 30))
@@ -193,10 +226,12 @@ extension HermesServeClient {
         var sections: [String: JSONValue] = [:]
         if let description = change.description { sections["description"] = .string(description.trimmingCharacters(in: .whitespacesAndNewlines)) }
         if let soul = change.soul { sections["soul"] = .string(soul) }
+        if let toolsets = change.toolsets, !toolsets.isEmpty { sections["enabled_toolsets"] = .array(toolsets.map(JSONValue.string)) }
         if !sections.isEmpty {
             sections["name"] = .string(bot.name)
             let applied = try await call("profiles.configure", params: .object(sections), timeout: 30)["applied"]
             if applied?["soul"]?.bool == false { throw BotManagementProblem.notKept("personality") }
+            if applied?["toolsets"]?.bool == false { throw BotManagementProblem.notKept("tools") }
             if applied?["description"]?.bool == false { throw BotManagementProblem.notKept("description") }
         }
         if change.title != nil || change.hidden != nil {

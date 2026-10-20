@@ -331,9 +331,25 @@ where a new conversation is in the ••• menu, and ⌘N as anywhere) is the 
   the question on with its `message_agent` tool, in words of its own. Redde hides the note when it
   shows the message (`MentionNote.strip`). Outside a bot's chat a tag is plain text: only a bot's
   chat has the tool.
+- **Templates and tools** (asked 2026-10-20; `BotTemplate`, `BotToolsList`). New Bot starts from
+  Blank or one of five templates (Researcher, Writer, Coder, Home, Planner), each a name, what it
+  does, a personality, a face and the toolsets it needs, all changeable before it is made; picking
+  another keeps a name the person typed. A bot's tools (its Tools row, in New Bot and Edit Bot) are
+  the toolsets the server lists in `profiles.describe`, the main agent's by default (a new bot is
+  a copy of it, so it has them without being told); a list of its own goes with
+  `profiles.configure enabled_toolsets` after `profiles.create` (a template's, less any the server
+  hasn't: no Home Assistant, no Home tools), and "Same as" the main agent sends the main agent's
+  list as it stands. An empty list is never sent: 0.21.0, 0.21.3 and 0.22.2 take it for Hermes's
+  own defaults, and 0.21.5 for no tools at all (measured). Fewer tools make a turn quicker to
+  start on a model on the person's own machine. Hermes 0.21.5 and later keep a bot to its list
+  (some behind `tool_search`), and the bot keeps `message_agent` and answers in group chats; 0.21.0
+  and 0.21.3 take the list and give the bot every tool all the same, their Dashboard's chats
+  reading the cli platform's toolsets, which only a whole-config write could change (the Tools
+  screen says so). `lab.sh templates` checks it on all four releases; `HermesLabBotsTests` makes a
+  bot from the Writer template with the app's own client.
 - **Making and changing bots** (`BotManagement.swift`, `BotEditor.swift`), as Hermes Desktop does:
   New Bot asks for a name, what it does, a personality (empty: one written from the name and what
-  it does, Desktop's wording), a model and a face. The profile is made with `profiles.create`
+  it does, Desktop's wording), a model, a face and its tools. The profile is made with `profiles.create`
   under a handle from the name (`BotNames.handle`: Hermes's rule for a profile's name, never a
   reserved word or one in use) and no command of its own on the server (`no_alias`; 0.21.0 makes
   one anyway), as a copy of the main profile, its keys and sign-ins included (`clone_from:

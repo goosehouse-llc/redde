@@ -1844,6 +1844,28 @@ struct HermesLabBotsTests {
         let reply = try await Self.say("hello helper", in: chat.stored, client)
         HermesLabApprovalTests.report(reply.hasPrefix("["), "it answers in its chat", reply)
 
+        // From a template (New Bot's Writer): its tools, and every one again once let go.
+        let mainAgent = try await client.toolsetsOffered()
+        let writer = try #require(BotTemplate.all.first { $0.id == "writer" })
+        let tools = writer.toolsets(offered: mainAgent.toolsets) ?? []
+        let writerHandle = try #require(BotNames.handle(for: "Lab Writer", taken: taken.union([handle])))
+        let tooled = try await client.makeBot(NewBot(title: "Lab Writer", handle: writerHandle, description: writer.about, soul: writer.soul,
+                                                     model: nil, face: writer.face, toolsets: tools))
+        let writerBot = HermesBot(name: tooled.name)
+        let pinned = try await client.botDetails(writerBot)
+        HermesLabApprovalTests.report(tooled.notes.isEmpty && !tools.isEmpty && pinned.enabledToolsets == Set(tools)
+                                      && !pinned.enabledToolsets.contains("terminal"),
+                                      "a bot made from a template has the template's tools", "\(tooled.notes) \(tools) \(pinned.enabledToolsets)")
+        // "Same as" the main agent: its list as it is, never an empty one (0.21.5 takes that for none).
+        let mainTools = mainAgent.enabledToolsets
+        print("  info  the main agent's toolsets: \(mainTools.sorted()) (pinned: \(mainAgent.toolsetsPinned))")
+        _ = try await client.changeBot(writerBot, BotChange(toolsets: mainTools.sorted()))
+        let again = try await client.botDetails(writerBot)
+        HermesLabApprovalTests.report(again.enabledToolsets == mainTools, "and the main agent's tools again", "\(again.enabledToolsets) vs \(mainTools)")
+        _ = try await client.changeBot(writerBot, BotChange(toolsets: []))
+        HermesLabApprovalTests.report(try await client.botDetails(writerBot).enabledToolsets == mainTools,
+                                      "an empty list is never sent", "")
+
         // Renamed, described, a personality of the person's own; Hermes Desktop's look kept.
         let row = try await client.call("profiles.list", params: .object(["include_sessions": .bool(false)]))["profiles"]?.array?
             .first { $0["name"]?.string == handle }

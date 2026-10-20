@@ -76,6 +76,31 @@ final class BotsUITests: XCTestCase {
         }
     }
 
+    /// New Bot from a template: its name and what it does are filled in; another template replaces
+    /// a name a template gave, and Blank keeps a name the person typed.
+    func testNewBotFromATemplateFillsItIn() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.clearDrafts", "-displayName", "Redde",
+                               "-echo.screen", "sessions", "-echo.botEditor", "new"] + XCUIApplication.chatsSection
+        app.launch()
+        let writer = app.buttons["Writer"].firstMatch
+        XCTAssertTrue(writer.waitForExistence(timeout: 20), "no templates in New Bot")
+        writer.tap()
+        // (The Name field, by its placeholder: the chat's own field is behind the sheet.)
+        let name = app.textFields.matching(NSPredicate(format: "placeholderValue == %@", "Scout")).firstMatch
+        XCTAssertEqual(name.value as? String, "Writer", "the template didn't name it")
+        XCTAssertTrue(app.textViews.containing(NSPredicate(format: "value CONTAINS %@", "in your voice")).firstMatch.exists
+                      || app.textFields.matching(NSPredicate(format: "value CONTAINS %@", "in your voice")).firstMatch.exists,
+                      "what it does isn't filled in")
+        app.buttons["Researcher"].firstMatch.tap()
+        XCTAssertEqual(name.value as? String, "Researcher", "a name the template gave stays")
+        name.tap()
+        name.typeText(" Bee")
+        app.buttons["Blank"].firstMatch.tap()
+        XCTAssertEqual(name.value as? String, "Researcher Bee", "a name the person typed went")
+    }
+
     /// Change Face in New Bot, in a bot's settings and in the main agent's opens the face picker.
     func testChangeFaceInTheBotEditorOpensThePicker() {
         continueAfterFailure = false

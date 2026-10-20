@@ -39,6 +39,13 @@ struct BotEditor: View {
     /// New: the face picked for it, until it is made.
     @State private var face: BotFace?
     @State private var models: [ModelChoice] = []
+    /// The toolsets the server has, the ones the main agent has, and the ones the bot has (nil:
+    /// the main agent's).
+    @State private var offered: [BotToolset] = []
+    @State private var mainToolsets: Set<String> = []
+    @State private var toolsets: Set<String>?
+    /// The template New Bot started from (`BotTemplate`).
+    @State private var template = BotTemplate.blank.id
     /// Changing: the bot as the server had it, so only what changed is written.
     @State private var original: Original?
     @State private var loading = true
@@ -67,6 +74,7 @@ struct BotEditor: View {
         var soul: String
         var model: ModelChoice?
         var shown: Bool
+        var toolsets: Set<String>?
     }
 
     private var editing: HermesBot? {
@@ -113,6 +121,8 @@ struct BotEditor: View {
         if soul != original.soul { change.soul = soul }
         if !isMain, let model, model.id != original.model?.id { change.model = model }
         if !isMain, shown != original.shown { change.hidden = !shown }
+        // The main agent's again: its list as it is now (an empty one means something else to each release).
+        if !isMain, toolsets != original.toolsets { change.toolsets = (toolsets ?? mainToolsets).sorted() }
         return change
     }
 
@@ -127,6 +137,15 @@ struct BotEditor: View {
             Form {
                 Section { faceHeader }
                     .listRowBackground(Color.clear)
+                if editing == nil {
+                    Section {
+                        templates
+                    } header: {
+                        Text("Start from")
+                    } footer: {
+                        Text("Its name, what it does, its personality, face and tools filled in. Change any of them before you make it.")
+                    }
+                }
                 if !isMain {
                     Section {
                         TextField("Scout", text: $title)
@@ -176,6 +195,12 @@ struct BotEditor: View {
                         } label: {
                             LabeledContent("Model", value: model?.name ?? (editing == nil ? "Same as \(mainName)" : loading ? "…" : "Not set"))
                         }
+                        NavigationLink {
+                            BotToolsList(offered: offered, selection: $toolsets, main: mainToolsets, mainName: mainName)
+                        } label: {
+                            LabeledContent("Tools", value: toolsSummary)
+                        }
+                        .disabled(offered.isEmpty)
                     }
                 } footer: {
                     if isMain {
@@ -255,6 +280,55 @@ struct BotEditor: View {
         }
     }
 
+    /// The templates, as faces in a row: Blank first.
+    private var templates: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 14) {
+                ForEach([BotTemplate.blank] + BotTemplate.all) { choice in
+                    let picked = template == choice.id
+                    Button { use(choice) } label: {
+                        VStack(spacing: 6) {
+                            if choice.id == BotTemplate.blank.id {
+                                Image(systemName: "plus").font(.title2.weight(.medium)).frame(width: 52, height: 52)
+                                    .background(.quaternary, in: .circle)
+                            } else {
+                                BotAvatar(face: choice.face, size: 52)
+                            }
+                            Text(choice.id == BotTemplate.blank.id ? "Blank" : choice.title).font(.caption)
+                        }
+                        .padding(6)
+                        .background(picked ? AnyShapeStyle(.tint.opacity(0.15)) : AnyShapeStyle(.clear), in: .rect(cornerRadius: 12))
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(choice.id == BotTemplate.blank.id ? "Blank" : choice.title)
+                    .accessibilityHint(choice.about)
+                    .accessibilityAddTraits(picked ? .isSelected : [])
+                }
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
+    /// Fills the form from a template. A name the person typed stays; one a template gave goes
+    /// with it.
+    private func use(_ choice: BotTemplate) {
+        let previous = ([BotTemplate.blank] + BotTemplate.all).first { $0.id == template }
+        template = choice.id
+        if typedTitle.isEmpty || typedTitle == previous?.title { title = choice.title }
+        about = choice.about
+        soul = choice.soul
+        face = choice.id == BotTemplate.blank.id ? nil : choice.face
+        toolsets = choice.toolsets(offered: offered).map(Set.init)
+    }
+
+    private var toolsSummary: String {
+        if loading { return "…" }
+        guard let toolsets, toolsets != mainToolsets else { return "Same as \(mainName)" }
+        let names = offered.filter { toolsets.contains($0.name) }.map(\.title)
+        return names.count <= 2 ? (names.isEmpty ? "None" : names.joined(separator: ", ")) : "\(names.count) of \(offered.count)"
+    }
+
     private var soulSummary: String {
         if loading && editing != nil { return "…" }
         let text = soul.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -281,19 +355,29 @@ struct BotEditor: View {
         let client = HermesServeClient.shared
         defer { loading = false }
         guard let editing else {
+            async let tools = client.toolsetsOffered()
             models = (try? await client.modelOptions(forProfile: "default")) ?? []
+            let main = try? await tools
+            offered = main?.toolsets ?? []
+            mainToolsets = main?.enabledToolsets ?? []
             loaded = !models.isEmpty
             return
         }
         do {
             async let details = client.botDetails(editing)
+            async let tools = client.toolsetsOffered()
             let options = isMain ? [] : ((try? await client.modelOptions(forProfile: editing.name)) ?? [])
             let read = try await details
+            let main = (try? await tools)?.enabledToolsets ?? []
             models = options
             let current = options.first(where: \.isCurrent)
                 ?? read.model.map { ModelChoice(provider: read.provider ?? "", providerName: read.provider ?? "", model: $0, name: $0, isCurrent: true) }
             let start = Original(title: editing.title ?? editing.displayName ?? "", about: read.description, soul: read.soul,
-                                 model: current, shown: !editing.isHidden)
+                                 model: current, shown: !editing.isHidden,
+                                 toolsets: read.enabledToolsets == main ? nil : read.enabledToolsets)
+            offered = read.toolsets
+            mainToolsets = main
+            toolsets = start.toolsets
             title = start.title
             about = start.about
             soul = start.soul
@@ -325,7 +409,8 @@ struct BotEditor: View {
                     }
                 } else if let handle {
                     let made = try await client.makeBot(
-                        NewBot(title: typedTitle, handle: handle, description: about, soul: soul, model: model, face: face))
+                        NewBot(title: typedTitle, handle: handle, description: about, soul: soul, model: model, face: face,
+                               toolsets: toolsets.map { set in offered.map(\.name).filter(set.contains) }))
                     if made.notes.isEmpty {
                         dismiss()
                         onDone(.made(made.name))
@@ -515,5 +600,57 @@ struct HiddenBotsView: View {
                 problem = error.localizedDescription
             }
         }
+    }
+}
+
+
+/// The toolsets a bot has: any of those the server offers, or the main agent's. Hermes 0.21.5 and
+/// later keep a bot to its list; earlier ones give every bot all of them.
+struct BotToolsList: View {
+    let offered: [BotToolset]
+    @Binding var selection: Set<String>?
+    /// The main agent's toolsets.
+    let main: Set<String>
+    let mainName: String
+
+    var body: some View {
+        Form {
+            Section {
+                Button { selection = nil } label: {
+                    HStack {
+                        Text("Same as \(mainName)")
+                        Spacer()
+                        if selection == nil { Image(systemName: "checkmark").foregroundStyle(.tint).fontWeight(.semibold) }
+                    }
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selection == nil ? .isSelected : [])
+            } footer: {
+                Text("The tools \(mainName) has.")
+            }
+            Section {
+                ForEach(offered) { toolset in
+                    Toggle(isOn: Binding(
+                        get: { (selection ?? main).contains(toolset.name) },
+                        set: { on in
+                            var set = selection ?? main
+                            if on { set.insert(toolset.name) } else { set.remove(toolset.name) }
+                            selection = set
+                        })) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(toolset.title)
+                            if !toolset.description.isEmpty {
+                                Text(toolset.description).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                            }
+                        }
+                    }
+                }
+            } footer: {
+                Text("Fewer tools make a bot's every turn quicker to start on a model running on your own machine. Hermes 0.21.5 and later keep a bot to these; earlier ones give every bot all of \(mainName)'s.")
+            }
+        }
+        .navigationTitle("Tools")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
