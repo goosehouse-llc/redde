@@ -48,6 +48,12 @@ nonisolated struct GroupRoom: Identifiable, Equatable, Sendable {
     var members: [GroupMember]
     var updatedAt: Date?
     var latestSeq: Int?
+    /// One Hermes Desktop runs itself, shown here from its copy (`desktopRooms(in:)`): read only.
+    var inDesktop = false
+    /// That copy's messages, the last 16 at most, oldest first.
+    var desktopMessages: [DesktopMessage] = []
+    /// How many earlier ones the copy leaves out.
+    var omitted = 0
 
     init?(_ json: JSONValue) {
         guard let id = json["room_id"]?.string else { return nil }
@@ -59,6 +65,74 @@ nonisolated struct GroupRoom: Identifiable, Equatable, Sendable {
     }
 
     func member(_ id: String?) -> GroupMember? { members.first { $0.id == id } }
+
+    /// One message of a Hermes Desktop room's copy.
+    nonisolated struct DesktopMessage: Equatable, Sendable {
+        /// Its id, else when it was said and by whom: the same message keeps it as the copy moves on.
+        var key: String
+        var at: Date
+        /// The person's (any Desktop's), or a bot's.
+        var fromPerson: Bool
+        /// A bot's profile.
+        var profile: String?
+        var text: String
+    }
+
+    /// Its bots called as the roster calls them where the copy gives no name (the main agent, as a
+    /// rule: Redde's name for it).
+    func naming(with roster: BotRoster?, mainName: String) -> GroupRoom {
+        var room = self
+        for i in room.members.indices where room.members[i].displayName == nil {
+            room.members[i].displayName = roster?.named(room.members[i].profile)?.label(mainName: mainName)
+                ?? (room.members[i].profile == "default" ? mainName : nil)
+        }
+        return room
+    }
+
+    /// The rooms Hermes Desktop runs itself. Its Bot Mode never uses `groups.*`: it runs a room on
+    /// the Mac or PC it is open on and keeps a copy of each, with the last 16 messages (1,200
+    /// characters each), in the main profile's `ui_meta["hermes-bots-groups"]`, version 3, "so
+    /// mobile can show the same messages" (apps/desktop/src/plugins/hermes-bots/group-chat.ts, the
+    /// same on 0.21.0 to 0.22.2). Rooms it ended are kept as tombstones under `deleted`.
+    static func desktopRooms(in copy: JSONValue?) -> [GroupRoom] {
+        guard let copy, (copy["version"]?.int ?? 0) >= 3, let rooms = copy["rooms"]?.object else { return [] }
+        let deleted = copy["deleted"]?.object ?? [:]
+        return rooms.compactMap { key, room -> GroupRoom? in
+            let revision = room["revision"]?.int ?? 0
+            if let gone = deleted[key]?.int, gone >= revision { return nil }
+            return GroupRoom(desktopKey: key, room)
+        }
+        .sorted { ($0.updatedAt ?? .distantPast) > ($1.updatedAt ?? .distantPast) }
+    }
+
+    private init?(desktopKey key: String, _ json: JSONValue) {
+        guard json.object != nil else { return nil }
+        id = "desktop:" + key
+        name = json["name"]?.string?.nilIfEmpty ?? String(key.drop { $0 != ":" }.dropFirst())
+        members = (json["members"]?.array ?? []).compactMap { member -> GroupMember? in
+            guard let profile = member["name"]?.string?.nilIfEmpty else { return nil }
+            return GroupMember(id: profile, profile: profile, handle: member["handle"]?.string?.nilIfEmpty ?? profile,
+                               displayName: member["title"]?.string?.nilIfEmpty ?? member["display_name"]?.string?.nilIfEmpty)
+        }
+        desktopMessages = (json["log"]?.array ?? []).compactMap { entry -> DesktopMessage? in
+            guard let text = entry["text"]?.string, !text.isEmpty else { return nil }
+            let millis = entry["at"]?.number ?? 0
+            let person = entry["from"]?["kind"]?.string != "member"
+            let name = entry["from"]?["name"]?.string
+            return DesktopMessage(key: entry["id"]?.string ?? "\(Int(millis))|\(name ?? "")|\(text.prefix(40))",
+                                  at: Date(timeIntervalSince1970: millis / 1000), fromPerson: person,
+                                  profile: person ? nil : name, text: text)
+        }
+        // A copy without its members (an older Desktop's) still shows who spoke.
+        if members.isEmpty {
+            var seen = Set<String>()
+            members = desktopMessages.compactMap(\.profile).filter { seen.insert($0).inserted }
+                .map { GroupMember(id: $0, profile: $0, handle: $0) }
+        }
+        omitted = json["omitted"]?.int ?? 0
+        updatedAt = desktopMessages.last?.at
+        inDesktop = true
+    }
 }
 
 /// One entry of a room's log.
@@ -75,6 +149,15 @@ nonisolated struct GroupEvent: Identifiable, Equatable, Sendable {
 
     var id: Int { seq }
     var text: String { payload["text"]?.string ?? "" }
+
+    init(seq: Int, kind: String, actorKind: String, actorID: String?, payload: JSONValue, createdAt: Date) {
+        self.seq = seq
+        self.kind = kind
+        self.actorKind = actorKind
+        self.actorID = actorID
+        self.payload = payload
+        self.createdAt = createdAt
+    }
 
     init?(_ json: JSONValue) {
         guard let seq = json["seq"]?.int, let kind = json["kind"]?.string else { return nil }
@@ -226,6 +309,14 @@ extension HermesServeClient {
             "payload": .object(["text": .string(text), "thread_id": .string("main")])]))
     }
 
+    /// Hermes Desktop's rooms, from its copy in the main profile (`GroupRoom.desktopRooms(in:)`).
+    func desktopRooms() async throws -> [GroupRoom] {
+        try await ensureConnected()
+        let result = try await call("profiles.list", params: .object(["include_sessions": .bool(false)]))
+        let main = result["profiles"]?.array?.first { $0["name"]?.string == "default" || $0["is_default"]?.bool == true }
+        return GroupRoom.desktopRooms(in: main?["ui_meta"]?["hermes-bots-groups"])
+    }
+
     /// The room's log after `since` (a sequence number), all of it.
     func groupLog(_ room: String, since: Int) async throws -> [GroupEvent] {
         try await ensureConnected()
@@ -296,11 +387,39 @@ extension GroupRoom {
     ]))!
 }
 
+extension GroupRoom {
+    /// `-echo.demoBots`: a room Hermes Desktop runs, as its copy has it.
+    static let demoDesktop: GroupRoom = {
+        let now = Date.now.timeIntervalSince1970 * 1000
+        func said(_ ago: Double, _ kind: String, _ name: String, _ text: String) -> JSONValue {
+            .object(["at": .number(now - ago * 1000), "from": .object(["kind": .string(kind), "name": .string(name)]), "text": .string(text)])
+        }
+        return desktopRooms(in: .object([
+            "version": .number(3),
+            "rooms": .object(["id:demo-desk": .object([
+                "name": .string("Garage project"), "roomId": .string("demo-desk"), "revision": .number(3), "omitted": .number(6),
+                "members": .array([.object(["name": .string("fixit"), "title": .string("Fix-it")]),
+                                   .object(["name": .string("scout"), "title": .string("Scout")])]),
+                "log": .array([
+                    said(5400, "user", "You", "Can the bench go along the back wall, under the window?"),
+                    said(5340, "member", "fixit", "Yes, if it's 60 cm deep at most: the door swings 70 cm in. I'd put the outlets at 110 cm."),
+                    said(5300, "member", "scout", "Back-wall benches in single garages are usually 50 to 60 cm deep. Pegboard above the window line keeps the light."),
+                ]),
+            ])]),
+        ])).first!
+    }()
+}
+
 extension GroupFeed {
     /// The demo room with a short exchange in it, not followed.
-    static func demo() -> GroupFeed {
-        let feed = GroupFeed(room: .demo)
+    static func demo(_ room: GroupRoom = .demo) -> GroupFeed {
+        let feed = GroupFeed(room: room)
         feed.isDemo = true
+        if room.inDesktop {
+            var seqs: [String: Int] = [:]
+            feed.events = events(of: room, numbering: &seqs)
+            return feed
+        }
         func event(_ seq: Int, _ kind: String, _ actor: String, _ text: String, extra: [String: JSONValue] = [:]) -> GroupEvent {
             var payload: [String: JSONValue] = ["text": .string(text), "member_id": .string(actor)]
             payload.merge(extra) { $1 }
@@ -357,9 +476,11 @@ final class GroupDirectory {
     func refresh(client: HermesServeClient = .shared, settings: Settings = .shared) async {
         let key = settings.connectionKey
         guard let support = try? await client.groupSupport() else { return }
-        let rooms = support.supported ? ((try? await client.groupRooms()) ?? []) : []
+        let hosted = support.supported ? ((try? await client.groupRooms()) ?? []) : []
+        let desktop = ((try? await client.desktopRooms()) ?? [])
+            .map { $0.naming(with: BotDirectory.shared.key == key ? BotDirectory.shared.roster : nil, mainName: settings.headerTitle) }
         guard key == settings.connectionKey else { return }
-        self.rooms = rooms.sorted { ($0.updatedAt ?? .distantPast) > ($1.updatedAt ?? .distantPast) }
+        self.rooms = (hosted + desktop).sorted { ($0.updatedAt ?? .distantPast) > ($1.updatedAt ?? .distantPast) }
         supported = support.supported
         writable = support.writable
         self.key = key
@@ -398,7 +519,9 @@ final class GroupFeed {
     }
 
     /// Bots are talking: a message of the person's has had no end of discussion after it yet.
+    /// (Hermes Desktop's copy says nothing of that.)
     var discussing: Bool {
+        guard !room.inDesktop else { return false }
         guard let lastAsk = events.last(where: { $0.kind == "message.user" })?.seq else { return !sending.isEmpty }
         return !sending.isEmpty || !events.contains { $0.seq > lastAsk && $0.endsDiscussion }
     }
@@ -413,6 +536,7 @@ final class GroupFeed {
     }
 
     func look() async {
+        guard !room.inDesktop else { return await lookInDesktop() }
         do {
             let fresh = try await client.groupLog(room.id, since: cursor)
             if !fresh.isEmpty {
@@ -429,6 +553,35 @@ final class GroupFeed {
             problem = nil
         } catch {
             problem = error.localizedDescription
+        }
+    }
+
+    /// Each Hermes Desktop message's number here, by its key: the same message keeps its row.
+    private var desktopSeqs: [String: Int] = [:]
+
+    /// A Hermes Desktop room: its copy read again (Desktop writes it a moment after each message).
+    private func lookInDesktop() async {
+        do {
+            guard let current = try await client.desktopRooms().first(where: { $0.id == room.id }) else {
+                problem = "This group chat was ended in Hermes Desktop."
+                return
+            }
+            room = current.naming(with: BotDirectory.shared.roster, mainName: Settings.shared.headerTitle)
+            events = Self.events(of: room, numbering: &desktopSeqs)
+            problem = nil
+        } catch {
+            problem = error.localizedDescription
+        }
+    }
+
+    /// A Hermes Desktop room's copy as the log's entries the screen shows.
+    static func events(of room: GroupRoom, numbering seqs: inout [String: Int]) -> [GroupEvent] {
+        room.desktopMessages.map { message in
+            let seq = seqs[message.key] ?? ((seqs.values.max() ?? 0) + 1)
+            seqs[message.key] = seq
+            return GroupEvent(seq: seq, kind: message.fromPerson ? "message.user" : "message.member",
+                              actorKind: message.fromPerson ? "user" : "member", actorID: message.profile,
+                              payload: .object(["text": .string(message.text)]), createdAt: message.at)
         }
     }
 

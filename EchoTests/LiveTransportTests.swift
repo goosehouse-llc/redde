@@ -2107,6 +2107,38 @@ struct HermesLabGroupsTests {
             HermesLabApprovalTests.report(feed.problem == nil && feed.answering.isEmpty, "answered again, nothing to fix", feed.problem ?? "")
         }
 
+        // A room Hermes Desktop runs: its copy written into the main profile as Desktop writes
+        // it (profiles.configure, compare-and-swap on the key's revision), read back read-only.
+        let listed = try await client.call("profiles.list", params: .object(["include_sessions": .bool(false)]))
+        let main = listed["profiles"]?.array?.first { $0["name"]?.string == "default" }
+        let revision = main?["ui_meta_revisions"]?["hermes-bots-groups"]?.int ?? 0
+        let copy: JSONValue = .object([
+            "version": .number(3), "updatedAt": .number(Date.now.timeIntervalSince1970 * 1000),
+            "rooms": .object(["id:lab-desk": .object([
+                "name": .string("Desk room"), "roomId": .string("lab-desk"), "revision": .number(1),
+                "members": .array([.object(["name": .string("default")]), .object(["name": .string("scout"), "title": .string("Scout")])]),
+                "log": .array([
+                    .object(["at": .number(Date.now.timeIntervalSince1970 * 1000 - 5000), "from": .object(["kind": .string("user"), "name": .string("You")]),
+                             "text": .string("Which trail?")]),
+                    .object(["at": .number(Date.now.timeIntervalSince1970 * 1000), "from": .object(["kind": .string("member"), "name": .string("scout")]),
+                             "text": .string("Falls Loop."), "id": .string("lab-m2")]),
+                ]),
+            ])]),
+        ])
+        _ = try await client.call("profiles.configure", params: .object([
+            "name": .string("default"), "ui_meta": .object(["hermes-bots-groups": copy]),
+            "ui_meta_expected_revisions": .object(["hermes-bots-groups": .number(Double(revision))])]))
+        let desk = try await client.desktopRooms().first { $0.name == "Desk room" }
+        HermesLabApprovalTests.report(desk?.inDesktop == true && desk?.desktopMessages.count == 2,
+                                      "a Hermes Desktop room is read from its copy", "\(String(describing: desk?.desktopMessages.map(\.text)))")
+        if let desk {
+            let deskFeed = GroupFeed(room: desk, client: client)
+            await deskFeed.look()
+            HermesLabApprovalTests.report(deskFeed.events.map(\.kind) == ["message.user", "message.member"] && deskFeed.events.last?.actorID == "scout"
+                                          && !deskFeed.discussing && deskFeed.problem == nil,
+                                          "its room shows the messages, read only", "\(deskFeed.events.map(\.text)) \(deskFeed.problem ?? "")")
+        }
+
         try await feed.rename(to: "Renamed group")
         let rooms = try await client.groupRooms()
         HermesLabApprovalTests.report(rooms.contains { $0.id == room.id && $0.name == "Renamed group" } && feed.room.name == "Renamed group",

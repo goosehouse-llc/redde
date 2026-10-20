@@ -17,8 +17,8 @@ struct GroupChatView: View {
 
     init(room: GroupRoom, onEnded: @escaping () -> Void = {}) {
         #if DEBUG
-        if room.id == GroupRoom.demo.id {
-            _feed = State(initialValue: GroupFeed.demo())
+        if room.id == GroupRoom.demo.id || room.id == GroupRoom.demoDesktop.id {
+            _feed = State(initialValue: GroupFeed.demo(room))
             self.onEnded = onEnded
             return
         }
@@ -35,6 +35,9 @@ struct GroupChatView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 18) {
+                        if feed.room.omitted > 0 {
+                            Text("Earlier messages are in Hermes Desktop.").font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity)
+                        }
                         if feed.events.isEmpty, feed.sending.isEmpty { opening }
                         ForEach(feed.events.filter { $0.isMessage || $0.note(in: feed.room) != nil }) { row($0) }
                         ForEach(feed.sending, id: \.id) { mine($0.text, waiting: true) }
@@ -64,17 +67,15 @@ struct GroupChatView: View {
                 .onChange(of: feed.state.approvals.count + feed.state.retries.count) { withAnimation { proxy.scrollTo("bottom", anchor: .bottom) } }
             }
             .background(theme.pageColor)
-            .safeAreaInset(edge: .bottom) { composer }
+            .safeAreaInset(edge: .bottom) {
+                if feed.room.inDesktop { desktopNote } else { composer }
+            }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) { title }
                 ToolbarItem(placement: .topBarLeading) { Button("Done") { dismiss() } }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Button("Rename", systemImage: "pencil") { renameText = feed.room.name; renaming = true }
-                        Divider()
-                        Button("End Group Chat", systemImage: "xmark.bin", role: .destructive) { confirmingEnd = true }
-                    } label: { Label("More", systemImage: "ellipsis") }
+                    if !feed.room.inDesktop { menu }
                 }
             }
             .alert("Rename group chat", isPresented: $renaming) {
@@ -103,6 +104,25 @@ struct GroupChatView: View {
 
     // MARK: Parts
 
+    private var menu: some View {
+        Menu {
+            Button("Rename", systemImage: "pencil") { renameText = feed.room.name; renaming = true }
+            Divider()
+            Button("End Group Chat", systemImage: "xmark.bin", role: .destructive) { confirmingEnd = true }
+        } label: { Label("More", systemImage: "ellipsis") }
+    }
+
+    /// In place of the field, for a room Hermes Desktop runs: Desktop answers its messages, and
+    /// shares only a copy of the last few, so this one is read here and talked in there.
+    private var desktopNote: some View {
+        Label("This group chat runs in Hermes Desktop. Its last messages show here; to talk in it, use Desktop.",
+              systemImage: "desktopcomputer")
+            .font(.footnote).foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal).padding(.vertical, 12)
+            .background(.bar)
+    }
+
     private var title: some View {
         HStack(spacing: 8) {
             FaceStack(faces: feed.room.members.prefix(3).map { face($0) }, size: 22)
@@ -116,7 +136,8 @@ struct GroupChatView: View {
             FaceStack(faces: feed.room.members.map { face($0) }, size: 44)
             Text(feed.room.members.map(\.label).formatted(.list(type: .and)))
                 .font(.headline).multilineTextAlignment(.center)
-            Text("Say something to all of them, or start with @ and a name to ask one. A bot that has nothing to add stays quiet.")
+            Text(feed.room.inDesktop ? "Nothing said yet in Hermes Desktop."
+                 : "Say something to all of them, or start with @ and a name to ask one. A bot that has nothing to add stays quiet.")
                 .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)

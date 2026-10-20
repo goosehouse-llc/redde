@@ -393,9 +393,22 @@ where a new conversation is in the ••• menu, and ⌘N as anywhere) is the 
   the room's log after its last entry (`groups.log`) and its state (`groups.state`: working,
   waiting, approvals) every second while bots are talking and every five otherwise, so replies come
   whole. Stop sends a fresh `cancel_id` each time (one used before stops nothing new); approvals in
-  a room take "once" or "deny" (`groups.approve`); End Group Chat disbands it, tried again while
-  its bots are still stopping. Rooms Hermes Desktop runs from its own side aren't in `groups.list`
-  and don't show. `lab.sh groups` checks it on each release.
+  a room take "once" or "deny" (`groups.approve`), and one answered elsewhere or timed out is
+  refused (5119) and the state read again. `pending_actions` of kind "retry" are replies Hermes
+  lost track of (a restart mid-reply, a bot it couldn't reach): they get a Retry card
+  (`groups.retry`). `blocked` means a stop or a recovery under way, never a question for the
+  person. Lines about a bot's turn are written by Hermes as the gateway, with the bot in
+  `payload.member_id`. End Group Chat disbands a room, tried again while its bots are still
+  stopping. `lab.sh groups` checks it on each release.
+- **Hermes Desktop's rooms** never go through `groups.*`: Desktop runs them itself, on the
+  machine it is open on, and keeps a copy of each in the main profile's
+  `ui_meta["hermes-bots-groups"]` (version 3: rooms keyed `id:<room>` with name, members and
+  the last 16 messages of at most 1,200 characters, `omitted` for earlier ones, tombstones under
+  `deleted`). Redde lists those rooms too, marked with a computer, and shows them read-only
+  (`GroupRoom.desktopRooms(in:)`, `GroupFeed.lookInDesktop`): the copy read again every five
+  seconds, its messages numbered by id (else time, author and text) so rows keep their place as
+  the window moves. Nothing is written back: a message added to the copy would be merged by
+  Desktop but no round would run for it. Likewise Desktop never shows rooms made in Redde.
 
 ### Reply language
 

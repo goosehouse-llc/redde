@@ -307,6 +307,46 @@ struct BotsTests {
         #expect(stopping.stopping && stopping.blocked && !stopping.waitsOnPerson, "a stop under way is not a question for the person")
     }
 
+    /// Hermes Desktop's copy of its rooms, version 3, as group-chat.ts writes it into the main
+    /// profile's ui_meta: rooms by "id:" key, a tombstone under `deleted`, the last messages.
+    @Test func hermesDesktopsRoomsAreReadFromItsCopy() throws {
+        let copy = try JSONDecoder().decode(JSONValue.self, from: Data("""
+            {"version": 3, "updatedAt": 1792000300000,
+             "deleted": {"id:old-room": 4},
+             "rooms": {
+               "id:hike-1": {"name": "Hike plans", "roomId": "hike-1", "revision": 7, "holdDetection": true, "omitted": 3,
+                 "members": [{"name": "default"}, {"name": "scout", "handle": "scout", "title": "Scout"}],
+                 "log": [
+                   {"at": 1792000100000, "from": {"kind": "user", "name": "You"}, "text": "Saturday?", "thread": "main"},
+                   {"at": 1792000200000, "from": {"kind": "member", "name": "scout", "source": "Local"}, "text": "Falls Loop… [truncated]",
+                    "truncated": true, "id": "m-2"}]},
+               "id:old-room": {"name": "Gone", "roomId": "old-room", "revision": 4, "log": []},
+               "name:Legacy": {"revision": 1, "log": [{"at": 1792000000000, "from": {"kind": "member", "name": "writer"}, "text": "Hi"}]}}}
+            """.utf8))
+        let rooms = GroupRoom.desktopRooms(in: copy)
+        #expect(rooms.map(\.name) == ["Hike plans", "Legacy"], "newest first, the ended one left out")
+        let hike = try #require(rooms.first)
+        #expect(hike.id == "desktop:id:hike-1" && hike.inDesktop && hike.omitted == 3)
+        #expect(hike.members.map(\.label) == ["default", "Scout"])
+        #expect(hike.desktopMessages.map(\.fromPerson) == [true, false] && hike.desktopMessages[1].profile == "scout")
+        #expect(hike.updatedAt == Date(timeIntervalSince1970: 1_792_000_200))
+        #expect(rooms[1].members.map(\.profile) == ["writer"], "who spoke, when the copy names no members")
+        #expect(GroupRoom.desktopRooms(in: .object(["version": .number(2), "rooms": .object([:])])).isEmpty, "an older copy isn't guessed at")
+
+        let roster = try roster(Self.listing)
+        #expect(hike.naming(with: roster, mainName: "Redde").members.map(\.label) == ["Redde", "Scout"])
+
+        // The same message keeps its number as the copy moves on.
+        var seqs: [String: Int] = [:]
+        let first = GroupFeed.events(of: hike, numbering: &seqs)
+        var later = hike
+        later.desktopMessages.removeFirst()
+        later.desktopMessages.append(.init(key: "m-3", at: .now, fromPerson: true, profile: nil, text: "Great"))
+        let second = GroupFeed.events(of: later, numbering: &seqs)
+        #expect(first.map(\.seq) == [1, 2] && second.map(\.seq) == [2, 3])
+        #expect(second.first?.kind == "message.member" && second.first?.actorID == "scout" && second.last?.kind == "message.user")
+    }
+
     /// A turn's end is written by Hermes (the gateway), the bot named in the payload.
     @Test func aRoomsTurnLinesNameTheBot() throws {
         let room = GroupRoom.demo

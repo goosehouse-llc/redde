@@ -18,7 +18,10 @@ final class BotsUITests: XCTestCase {
         app.buttons["Conversations"].firstMatch.tap()
         XCTAssertTrue(app.text(containing: "Three trails under two hours").waitForExistence(timeout: 10), "Scout's row isn't listed")
         XCTAssertTrue(app.text(containing: "Fix-it").exists, "a bot without a chat yet isn't listed")
-        XCTAssertTrue(app.text(containing: "Let bots message each other").exists, "nothing offers to let them message each other")
+        // Below the bots and the group chats: scrolled to, as a list only builds the rows on screen.
+        let letThem = app.text(containing: "Let bots message each other")
+        if !letThem.exists { app.collectionViews.firstMatch.swipeUp() }
+        XCTAssertTrue(letThem.waitForExistence(timeout: 3), "nothing offers to let them message each other")
         // The chat beside the panel closes it.
         let close = app.otherElements["Close conversations"].firstMatch
         if close.exists { close.tap() } else { app.buttons["Close conversations"].firstMatch.tap() }

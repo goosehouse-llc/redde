@@ -495,8 +495,13 @@ struct ConversationsList: View {
                         Spacer(minLength: 8)
                         if let when = room.updatedAt { Text(DateGroup.rowTime(when)).font(.caption).foregroundStyle(.secondary) }
                     }
-                    Text(room.members.map(\.label).formatted(.list(type: .and)))
-                        .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
+                    HStack(spacing: 5) {
+                        if room.inDesktop {
+                            Image(systemName: "desktopcomputer").accessibilityLabel("Runs in Hermes Desktop")
+                        }
+                        Text(room.members.map(\.label).formatted(.list(type: .and)))
+                    }
+                    .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
                 }
             }
             .padding(.vertical, 2)
@@ -504,7 +509,7 @@ struct ConversationsList: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityHint("Opens this group chat")
+        .accessibilityHint(room.inDesktop ? "Shows this Hermes Desktop group chat's last messages" : "Opens this group chat")
     }
 
     private func openBot(_ bot: HermesBot) {
@@ -1132,9 +1137,9 @@ struct ConversationsList: View {
             ledger = Self.demoProjects.flatMap { $0.lanes.flatMap(\.sessions) } + Self.demoScheduledRuns
             if DevHooks.demoBots {
                 botDirectory.set(Self.demoBots, key: settings.connectionKey)
-                groups.set(rooms: [.demo], supported: true, writable: true, key: settings.connectionKey)
-                // `-echo.openGroup`: that group chat open (screenshots).
-                if DevHooks.has("-echo.openGroup") { openRoom = .demo }
+                groups.set(rooms: [.demo, .demoDesktop], supported: true, writable: true, key: settings.connectionKey)
+                // `-echo.openGroup [desktop]`: that group chat open, or the Hermes Desktop one (screenshots).
+                if DevHooks.has("-echo.openGroup") { openRoom = DevHooks.value("-echo.openGroup") == "desktop" ? .demoDesktop : .demo }
                 // `-echo.botEditor new|<bot>`: New Bot, or that bot's settings, open (screenshots).
                 if let which = DevHooks.value("-echo.botEditor") {
                     editingBot = which == "new" ? .new : Self.demoBots.bots.first { $0.name == which }.map { .edit($0) }
