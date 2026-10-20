@@ -38,14 +38,18 @@ struct GroupChatView: View {
                         if feed.events.isEmpty, feed.sending.isEmpty { opening }
                         ForEach(feed.events.filter { $0.isMessage || $0.note(in: feed.room) != nil }) { row($0) }
                         ForEach(feed.sending, id: \.id) { mine($0.text, waiting: true) }
-                        if feed.discussing || feed.state.working { talking }
-                        ForEach(feed.state.approvals) { approval in
+                        if feed.discussing || feed.state.working || feed.state.waitsOnPerson { talking }
+                        ForEach(feed.state.approvals.filter { !feed.answering.contains($0.id) }) { approval in
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("\(feed.room.member(approval.memberID)?.label ?? "A bot") wants to run a command")
                                     .font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
                                 ApprovalCard(request: approval.request) { feed.answer(approval, $0) }
+                                // Hermes's approvals.timeout, 300 s unless changed; unanswered, the command isn't run.
+                                Text("Not answered in about 5 minutes, it isn't run.")
+                                    .font(.caption).foregroundStyle(.secondary)
                             }
                         }
+                        ForEach(feed.state.retries.filter { !feed.answering.contains($0) }, id: \.self) { retryCard($0) }
                         if let problem = feed.problem {
                             Label(problem, systemImage: "exclamationmark.triangle").font(.footnote).foregroundStyle(.orange)
                         }
@@ -53,8 +57,11 @@ struct GroupChatView: View {
                     }
                     .padding()
                 }
+                // Opened at the latest, as a chat is.
+                .defaultScrollAnchor(.bottom)
                 .onChange(of: feed.events.count) { withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo("bottom", anchor: .bottom) } }
                 .onChange(of: feed.sending.count) { proxy.scrollTo("bottom", anchor: .bottom) }
+                .onChange(of: feed.state.approvals.count + feed.state.retries.count) { withAnimation { proxy.scrollTo("bottom", anchor: .bottom) } }
             }
             .background(theme.pageColor)
             .safeAreaInset(edge: .bottom) { composer }
@@ -145,8 +152,29 @@ struct GroupChatView: View {
     private var talking: some View {
         HStack(spacing: 8) {
             ProgressView().controlSize(.small)
-            Text(feed.state.blocked ? "Waiting on you" : "The bots are talking…").font(.footnote).foregroundStyle(.secondary)
+            Text(feed.state.waitsOnPerson ? "Waiting on you"
+                 : feed.state.stopping ? "Stopping…"
+                 : feed.state.blocked ? "Sorting out a reply that was cut off…"
+                 : "The bots are talking…")
+                .font(.footnote).foregroundStyle(.secondary)
         }
+    }
+
+    /// A reply that stopped partway (Hermes restarted mid-reply, or couldn't reach the bot): it
+    /// runs again only when asked to, since Hermes can't tell how far it got.
+    private func retryCard(_ task: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("\(feed.member(forTask: task).map { "\($0.label)'s reply" } ?? "A reply") didn't finish", systemImage: "arrow.clockwise")
+                .font(.subheadline.weight(.semibold))
+            Text("It stopped partway, and Hermes can't tell how far it got. Run it again?")
+                .font(.footnote).foregroundStyle(.secondary)
+            Button("Retry") { feed.retry(task) }
+                .buttonStyle(.bordered)
+                .font(.footnote)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.orange.opacity(0.12), in: .rect(cornerRadius: 14))
     }
 
     /// The other bots a tag being typed could be.

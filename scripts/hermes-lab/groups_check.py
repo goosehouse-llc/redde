@@ -7,6 +7,11 @@
                 member answers, and the log (`groups.log`, read since a cursor) has the message,
                 both replies by member, and the round's end (`room.activity`).
   mention       a message tagging one member: only that one answers.
+  approval      "@scout danger": the bot's command (the stub's rm -rf) waits in the room's state
+                (`driver_status.pending_actions`, kind "approval", with what `groups.approve`
+                needs), and only for the person (`blocked` is a stop or recovery, not this);
+                denied with `groups.approve`, the command isn't run and the reply lands; answered
+                again, it is refused as no longer pending (5119).
   stop          `groups.stop` with a fresh `cancel_id` is taken.
   rename        `groups.rename` changes the name `groups.list` gives.
   disband       `groups.disband`: the room leaves the list.
@@ -16,6 +21,7 @@ Run against a lab that is up with the approval scenario.
 """
 import asyncio
 import json
+import os
 import time
 import uuid
 
@@ -78,6 +84,34 @@ async def main():
     replies = [e for e in events if e["kind"] == "message.member"]
     report([(e.get("actor") or {}).get("id") for e in replies] == [BOT], "a message tagging one bot: only that one answers",
            json.dumps(said(events))[:300])
+
+    await dash.call("groups.send", {"room_id": room, "event_id": uuid.uuid4().hex, "payload": {"text": f"@{BOT} danger", "thread_id": "main"}})
+    pending, status = None, {}
+    for _ in range(60):
+        status = (await dash.call("groups.state", {"room_id": room})).get("driver_status") or {}
+        pending = next((a for a in status.get("pending_actions") or [] if a.get("kind") == "approval"), None)
+        if pending:
+            break
+        await asyncio.sleep(1)
+    choices = set(((pending or {}).get("approval") or {}).get("choices") or [])
+    report(bool(pending) and pending.get("member_id") == BOT and bool(pending.get("request_id")) and bool(pending.get("task_id"))
+           and isinstance(pending.get("execution_generation"), int) and choices and choices <= {"once", "deny"},
+           "a bot's command in a room waits for the person's approval", json.dumps(pending)[:300])
+    print(f"  info  while it waits: working {status.get('working')}, blocked {status.get('blocked')}, counts {status.get('counts')}")
+    if pending:
+        answer = {"room_id": room, "member_id": pending["member_id"], "task_id": pending["task_id"],
+                  "execution_generation": pending["execution_generation"], "request_id": pending["request_id"], "choice": "deny"}
+        await dash.call("groups.approve", answer)
+        try:
+            await dash.call("groups.approve", answer)
+            stale = "taken twice"
+        except RuntimeError as error:
+            stale = str(error)
+        report("no longer pending" in stale, "answered again, it is refused as no longer pending", stale)
+        events, cursor = await log_until(dash, room, cursor, lambda es: any(e["kind"] == "room.activity" for e in es))
+        said_now = [str((e.get("payload") or {}).get("text") or "") for e in events if e["kind"] == "message.member"]
+        report(any("[kept]" in t for t in said_now) and os.path.isdir(os.environ["LAB_TARGET"]),
+               "denied, the command isn't run, and the bot's reply lands", json.dumps(said_now)[:200])
 
     state = await dash.call("groups.state", {"room_id": room})
     print(f"  info  state: latest_seq {state.get('room', {}).get('latest_seq')}, driver_status {json.dumps(state.get('driver_status'))[:160]}")

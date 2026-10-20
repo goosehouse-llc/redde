@@ -262,10 +262,11 @@ groups() {
   [[ -n "${LAB_HOST_ONLY:-}" ]] || app_prepare HermesLabGroupsTests || exit 1
   for tag in $tags; do
     echo "===== Hermes $tag / approval"
-    if ! up "$tag" approval; then failed+=("$tag (lab)"); continue; fi
+    # (A home of the lab's own: Hermes 0.21.0 puts a command for each new profile in ~/.local/bin.)
+    if ! LAB_OWN_HOME=1 up "$tag" approval; then failed+=("$tag (lab)"); continue; fi
     (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" groups_check.py) || failed+=("$tag (host)")
     if [[ -z "${LAB_HOST_ONLY:-}" ]]; then
-      up "$tag" approval || { failed+=("$tag (lab)"); continue; }
+      LAB_OWN_HOME=1 up "$tag" approval || { failed+=("$tag (lab)"); continue; }
       app_check || failed+=("$tag")
     fi
   done

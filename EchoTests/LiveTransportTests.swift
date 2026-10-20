@@ -2047,7 +2047,8 @@ struct HermesLabRunsTests {
 
 /// Group chats with the app's own client and room feed (lab.sh groups, after groups_check.py): a
 /// room of the main profile and one more made, a message to both answered by both, one tagging a
-/// bot answered by it alone, renamed, stopped and ended.
+/// bot answered by it alone, a bot's command approved from the room's card, renamed, stopped and
+/// ended.
 @MainActor
 struct HermesLabGroupsTests {
     private static func until(_ feed: GroupFeed, seconds: Int = 60, _ done: () -> Bool) async {
@@ -2087,6 +2088,24 @@ struct HermesLabGroupsTests {
         await Self.until(feed) { !feed.discussing && feed.events.count > before + 1 }
         let second = feed.events.dropFirst(before).filter { $0.kind == "message.member" }.compactMap(\.actorID)
         HermesLabApprovalTests.report(second == ["scout"], "a message tagging one bot: that one answers", "\(second)")
+
+        // A bot's command in the group: its card, answered from the feed; answered again (as from
+        // another device), the room is read again and there is nothing to fix.
+        let asked = feed.events.count
+        feed.send("@scout danger")
+        await Self.until(feed) { !feed.state.approvals.isEmpty }
+        let approval = feed.state.approvals.first
+        HermesLabApprovalTests.report(approval?.memberID == "scout" && approval?.request.choices == ["once", "deny"] && feed.state.waitsOnPerson,
+                                      "a bot's command in the group waits on the person", "\(String(describing: approval))")
+        if let approval {
+            feed.answer(approval, "once")
+            await Self.until(feed) { feed.state.approvals.isEmpty && feed.answering.isEmpty && !feed.discussing && feed.events.count > asked + 1 }
+            let reply = feed.events.dropFirst(asked).last { $0.kind == "message.member" }?.text ?? ""
+            HermesLabApprovalTests.report(reply.contains("[gone]"), "approved from the group's card, the command runs and the reply lands", reply)
+            feed.answer(approval, "once")
+            for _ in 0 ..< 40 where !feed.answering.isEmpty { try await Task.sleep(for: .milliseconds(250)) }
+            HermesLabApprovalTests.report(feed.problem == nil && feed.answering.isEmpty, "answered again, nothing to fix", feed.problem ?? "")
+        }
 
         try await feed.rename(to: "Renamed group")
         let rooms = try await client.groupRooms()

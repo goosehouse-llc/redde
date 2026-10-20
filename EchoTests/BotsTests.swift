@@ -283,6 +283,44 @@ struct BotsTests {
         #expect(activity.kind(of: scout, open: conversation, settings: settings) == nil)
     }
 
+    // MARK: - Group chats
+
+    /// `groups.state`'s driver_status as Hermes 0.21.0 to 0.22.2 give it (hosted_room_service.status).
+    @Test func aRoomSaysWhatItWaitsOn() throws {
+        let status = try JSONDecoder().decode(JSONValue.self, from: Data("""
+            {"running": true, "working": true, "blocked": true, "counts": {"running": 1, "indeterminate": 1},
+             "pending_actions": [
+               {"kind": "retry", "task_id": "dtask:aa"},
+               {"kind": "approval", "task_id": "dtask:bb", "execution_generation": 2, "run_id": "r1", "session_id": "rt1",
+                "request_id": "q1", "member_id": "scout",
+                "approval": {"command": "rm -rf build", "description": "Deletes a folder", "choices": ["once", "deny"]}}],
+             "peer_routes": []}
+            """.utf8))
+        let state = GroupState(status)
+        #expect(state.retries == ["dtask:aa"])
+        let approval = try #require(state.approvals.first)
+        #expect(state.approvals.count == 1 && approval.memberID == "scout" && approval.taskID == "dtask:bb" && approval.executionGeneration == 2)
+        #expect(approval.request.id == "q1" && approval.request.command == "rm -rf build" && approval.request.choices == ["once", "deny"])
+        #expect(state.waitsOnPerson && state.blocked && !state.stopping)
+
+        let stopping = GroupState(try JSONDecoder().decode(JSONValue.self, from: Data(#"{"working": true, "blocked": true, "counts": {"stopping": 1}, "pending_actions": []}"#.utf8)))
+        #expect(stopping.stopping && stopping.blocked && !stopping.waitsOnPerson, "a stop under way is not a question for the person")
+    }
+
+    /// A turn's end is written by Hermes (the gateway), the bot named in the payload.
+    @Test func aRoomsTurnLinesNameTheBot() throws {
+        let room = GroupRoom.demo
+        func event(_ json: String) throws -> GroupEvent { try #require(GroupEvent(try JSONDecoder().decode(JSONValue.self, from: Data(json.utf8)))) }
+        let passed = try event(#"{"seq": 4, "kind": "turn.settled", "actor": {"kind": "gateway", "id": "gw-1"}, "payload": {"member_id": "scout", "task_id": "dtask:cc", "passed": true}}"#)
+        #expect(passed.actorID == "scout" && passed.note(in: room) == "Scout passed")
+        let deferred = try event(#"{"seq": 5, "kind": "turn.deferred", "actor": {"kind": "gateway", "id": "gw-1"}, "payload": {"member_id": "writer", "task_id": "dtask:dd", "reason": "member_unavailable"}}"#)
+        #expect(deferred.note(in: room) == "Quill didn't finish")
+        let said = try event(#"{"seq": 6, "kind": "message.member", "actor": {"kind": "member", "id": "writer"}, "payload": {"member_id": "writer", "text": "Hi"}}"#)
+        #expect(said.actorID == "writer" && said.text == "Hi")
+        let mine = try event(#"{"seq": 7, "kind": "message.user", "actor": {"kind": "user", "id": "desktop"}, "payload": {"text": "Hello"}}"#)
+        #expect(mine.actorID == nil, "the person isn't a bot of the room")
+    }
+
     // MARK: - Siri
 
     @Test func askingABotInReddeMeansItByEitherName() throws {

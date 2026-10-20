@@ -67,7 +67,8 @@ nonisolated struct GroupEvent: Identifiable, Equatable, Sendable {
     var kind: String
     /// "user" or "member" (or "system", "gateway").
     var actorKind: String
-    /// The member's id, for a member's entry.
+    /// The member it is about: the one who spoke, or whose turn it was (Hermes writes a turn's end
+    /// as itself, the gateway, with the member in the payload).
     var actorID: String?
     var payload: JSONValue
     var createdAt: Date
@@ -80,7 +81,7 @@ nonisolated struct GroupEvent: Identifiable, Equatable, Sendable {
         self.seq = seq
         self.kind = kind
         actorKind = json["actor"]?["kind"]?.string ?? ""
-        actorID = json["actor"]?["id"]?.string ?? json["payload"]?["member_id"]?.string
+        actorID = json["payload"]?["member_id"]?.string ?? (actorKind == "member" ? json["actor"]?["id"]?.string : nil)
         payload = json["payload"] ?? .null
         createdAt = json["created_at"]?.number.map { Date(timeIntervalSince1970: $0) } ?? .now
     }
@@ -93,11 +94,12 @@ nonisolated struct GroupEvent: Identifiable, Equatable, Sendable {
 
     /// A line about the room rather than something said, or nil when it isn't worth a line.
     func note(in room: GroupRoom) -> String? {
-        let who = room.member(actorID ?? payload["member_id"]?.string)?.label ?? "A bot"
+        let who = room.member(actorID)?.label ?? "A bot"
         switch kind {
         case "turn.settled": return payload["passed"]?.bool == true ? "\(who) passed" : nil
         case "turn.failed": return "\(who) couldn't answer" + (payload["error"]?.string.map { ": \($0)" } ?? "")
         case "turn.cancelled": return payload["reason"]?.string == "superseded_by_newer_user_event" ? nil : "\(who) was stopped"
+        case "turn.deferred": return "\(who) didn't finish"
         case "room.activity": return payload["status"]?.string == "bounded" ? "That's as long as a round goes. Say something to carry on." : nil
         case "room.renamed": return payload["name"]?.string.map { "Renamed “\($0)”" }
         default: return nil
@@ -108,20 +110,34 @@ nonisolated struct GroupEvent: Identifiable, Equatable, Sendable {
 /// What a room waits on, and whether a bot is at work.
 nonisolated struct GroupState: Equatable, Sendable {
     var working = false
+    /// A stop under way, or a reply Hermes lost track of being sorted out: not a question for the
+    /// person (those are `approvals` and `retries`).
     var blocked = false
+    /// Bots stopping after Stop.
+    var stopping = false
     var approvals: [GroupApproval] = []
+    /// Replies that stopped partway, Hermes unsure how far they got (a restart mid-reply, a bot it
+    /// couldn't reach): their tasks, each run again only when the person says so (`groups.retry`).
+    var retries: [String] = []
 
-    init(working: Bool = false, blocked: Bool = false, approvals: [GroupApproval] = []) {
+    init(working: Bool = false, blocked: Bool = false, approvals: [GroupApproval] = [], retries: [String] = []) {
         self.working = working
         self.blocked = blocked
         self.approvals = approvals
+        self.retries = retries
     }
 
     init(_ status: JSONValue?) {
         working = status?["working"]?.bool ?? false
         blocked = status?["blocked"]?.bool ?? false
-        approvals = (status?["pending_actions"]?.array ?? []).compactMap(GroupApproval.init)
+        stopping = (status?["counts"]?["stopping"]?.int ?? 0) > 0
+        let pending = status?["pending_actions"]?.array ?? []
+        approvals = pending.compactMap(GroupApproval.init)
+        retries = pending.compactMap { $0["kind"]?.string == "retry" ? $0["task_id"]?.string : nil }
     }
+
+    /// Something only the person can settle: a command to approve, or a reply to try again.
+    var waitsOnPerson: Bool { !approvals.isEmpty || !retries.isEmpty }
 }
 
 /// A command a bot in a room waits to have approved.
@@ -250,6 +266,14 @@ extension HermesServeClient {
         }
     }
 
+    /// Runs a reply that stopped partway again (`GroupState.retries`).
+    func retryGroupTask(_ room: String, task: String) async throws {
+        try await ensureConnected()
+        _ = try await call("groups.retry", params: .object(["room_id": .string(room), "task_id": .string(task)]))
+    }
+
+    /// Answers a bot's command: "once" or "deny". One answered meanwhile (on another device, or
+    /// it waited too long) is refused with 5119, nothing for the person to fix.
     func answerGroupApproval(_ room: String, _ approval: GroupApproval, choice: String) async throws {
         try await ensureConnected()
         _ = try await call("groups.approve", params: .object([
@@ -296,6 +320,24 @@ extension GroupFeed {
                                                "actor": .object(["kind": .string("system"), "id": .string("room")]),
                                                "payload": .object(["status": .string("settled"), "reason_code": .string("silent_round")])]))!)
         feed.cursor = 7
+        // With -echo.demoMarks, the room waits on the person: Scout's command to approve, and a
+        // reply of Quill's that stopped partway, to try again.
+        if DevHooks.demoMarks {
+            feed.events.append(event(8, "message.user", "desktop", "@scout check the trail report and save it to my notes"))
+            feed.events.append(event(9, "turn.deferred", "writer", "", extra: ["task_id": .string("dtask:demo-writer"), "reason": .string("member_unavailable")]))
+            feed.cursor = 9
+            feed.state = GroupState(.object([
+                "working": .bool(true),
+                "pending_actions": .array([
+                    .object(["kind": .string("approval"), "member_id": .string("scout"), "task_id": .string("dtask:demo-scout"),
+                             "execution_generation": .number(1), "request_id": .string("demo-approval"),
+                             "approval": .object(["command": .string("curl -s https://trails.example.org/falls-loop > ~/notes/falls-loop.md"),
+                                                  "description": .string("Writes a file outside the working folder"),
+                                                  "choices": .array([.string("once"), .string("deny")])])]),
+                    .object(["kind": .string("retry"), "task_id": .string("dtask:demo-writer")]),
+                ]),
+            ]))
+        }
         return feed
     }
 }
@@ -342,6 +384,8 @@ final class GroupFeed {
     private(set) var state = GroupState()
     /// Messages sent and not in the log yet, by their event id.
     private(set) var sending: [(id: String, text: String)] = []
+    /// Approvals and retries answered here and not yet gone from the state: their cards hide.
+    private(set) var answering: Set<String> = []
     private(set) var problem: String?
     private var cursor = 0
     private let client: HermesServeClient
@@ -416,14 +460,34 @@ final class GroupFeed {
     }
 
     func answer(_ approval: GroupApproval, _ choice: String) {
+        settle(approval.id) { try await $0.answerGroupApproval(self.room.id, approval, choice: choice) }
+    }
+
+    func retry(_ task: String) {
+        settle(task) { try await $0.retryGroupTask(self.room.id, task: task) }
+    }
+
+    /// Answers one of the room's questions, its card hidden meanwhile. Refused as no longer
+    /// pending (answered elsewhere, or it timed out), the room is read again and the card goes.
+    private func settle(_ id: String, _ call: @escaping (HermesServeClient) async throws -> Void) {
+        guard !answering.contains(id) else { return }
+        answering.insert(id)
         Task {
             do {
-                try await client.answerGroupApproval(room.id, approval, choice: choice)
+                try await call(client)
+                await look()
+            } catch let error as HermesServeClient.RPCError where error.code == 5119 || error.code == 5118 {
                 await look()
             } catch {
                 problem = error.localizedDescription
             }
+            answering.remove(id)
         }
+    }
+
+    /// The bot whose task this is, by the room's log (a turn's end names it), if it has said.
+    func member(forTask task: String) -> GroupMember? {
+        events.last { $0.payload["task_id"]?.string == task && $0.actorID != nil }.flatMap { room.member($0.actorID) }
     }
 
     func rename(to name: String) async throws {
