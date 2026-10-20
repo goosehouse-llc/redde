@@ -8,7 +8,7 @@ import UIKit
 /// (hands-free) carry on the conversation the phone has open, "New Chat" starts another. Chats
 /// lists the phone's conversations, the open one marked, and picking one carries it on. Each of
 /// them ends in listening, on a voice-control card that shows Listening, Thinking, Speaking, with
-/// Stop and Pause in its bar. Replies are spoken only: Apple's rules for the category allow no text
+/// Stop and Pause in its bar (both keep the card up; Done, once stopped or paused, closes it). Replies are spoken only: Apple's rules for the category allow no text
 /// or imagery in responses, so the list is names and times, never what was said. When a reply
 /// ends the card closes back onto the tab it came from. Requires the entitlement; inert without
 /// it.
@@ -23,7 +23,7 @@ import UIKit
 /// action buttons gets a third of what height is left for its picture, a speck on most screens
 /// and nothing on a short one, so the card's controls are in its bar.
 @MainActor
-final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate, CPTabBarTemplateDelegate {
+final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate, CPTabBarTemplateDelegate, CPInterfaceControllerDelegate {
     private var controller: CPInterfaceController?
     private var tabs: CPTabBarTemplate?
     private var askTab: CPListTemplate?
@@ -61,6 +61,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     nonisolated func templateApplicationScene(_ scene: CPTemplateApplicationScene, didConnect interfaceController: CPInterfaceController) {
         Task { @MainActor in
             controller = interfaceController
+            interfaceController.delegate = self
             let tabs = rootTemplate()
             tabs.delegate = self
             interfaceController.setRootTemplate(tabs, animated: false, completion: nil)
@@ -456,12 +457,43 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     private func showVoiceCard() {
         guard voiceCard == nil else { return }
+        barShown = nil
         present(voiceTemplate()) { [weak self] in self?.phaseChanged() }
     }
 
     private func hideVoiceCard() {
         guard let controller, voiceCard != nil else { return }
+        closingCard = true
         controller.dismissTemplate(animated: true, completion: nil)
+    }
+
+    /// Stopped on the card (Stop): nothing going on, the card up on Paused until Resume listens
+    /// again or Done closes it.
+    private(set) var stopped = false
+    /// When one of the card's own buttons was last pressed, and whether Redde is taking the card
+    /// down itself.
+    private var pressedAt: Date?
+    private var closingCard = false
+    /// The card's bar as last set, so it is set only when it changes.
+    private var barShown: [CardButton]?
+
+    /// The car took a template down. The voice card, gone a moment after one of its own buttons
+    /// (which all mean "stay", but Done) and not by Redde, is put back as the voice session
+    /// stands: a press on the card's bar was taking it down ("Pause and Stop both kick me out").
+    /// Gone any other way (the car's own Back), it stays gone.
+    nonisolated func templateDidDisappear(_ aTemplate: CPTemplate, animated: Bool) {
+        guard aTemplate is CPVoiceControlTemplate else { return }
+        Task { @MainActor in self.voiceCardWentAway() }
+    }
+
+    private func voiceCardWentAway() {
+        barShown = nil
+        if closingCard { closingCard = false; return }
+        guard let pressedAt, Date.now.timeIntervalSince(pressedAt) < 2, let session, voiceCard == nil else { return }
+        if case .showing = Self.card(phase: session.phase, waitingOnPhone: session.activeTool == "waiting for you",
+                                     muted: session.isMuted, paused: session.isPaused, stopped: stopped) {
+            showVoiceCard()
+        }
     }
 
     /// The card: one state per thing the voice session can be doing, with Stop and Pause in its
@@ -497,17 +529,17 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         return template
     }
 
-    enum CardButton: Equatable { case pause, resume, stop }
+    enum CardButton: Equatable { case pause, resume, stop, done }
 
-    /// What the card's bar offers in a state: Stop always, and Pause while Redde listens, thinks
-    /// or speaks, which Resume undoes. Stop is at the leading edge, where a card that offers
-    /// nothing there gets a close button from the car, and that one takes the card down without
-    /// telling anybody: the conversation would carry on unseen. (The car's own Back button still
-    /// does that.)
+    /// What the card's bar offers in a state: Stop and Pause while Redde listens, thinks or
+    /// speaks, Done and Resume once it is held or stopped. Something is always at the leading
+    /// edge, where a card that offers nothing gets a close button from the car, and that one
+    /// takes the card down without telling anybody: the conversation would carry on unseen. (The
+    /// car's own Back button still does that.)
     static func barButtons(for state: CarPlayArtwork.VoiceState) -> (leading: [CardButton], trailing: [CardButton]) {
         switch state {
         case .listening, .thinking, .speaking: ([.stop], [.pause])
-        case .paused: ([.stop], [.resume])
+        case .paused: ([.done], [.resume])
         case .phone: ([.stop], [])
         }
     }
@@ -525,6 +557,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         case .pause: "Pause"
         case .resume: "Resume"
         case .stop: "Stop"
+        case .done: "Done"
         }
         return CPBarButton(title: title) { [weak self] _ in self?.pressed(kind) }
     }
@@ -532,14 +565,29 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// Pause holds whatever Redde is at and keeps the conversation: the mic is shut while it
     /// listens, so nothing said in the car is taken for a question, and the reply is held while
     /// it thinks or speaks. The agent works on behind a held reply, which is said from where it
-    /// was, or from its start, on Resume. Stop ends whatever Redde is doing, hands-free with it,
-    /// and goes back to the tabs.
+    /// was, or from its start, on Resume. Stop ends whatever Redde is doing (the reply, the
+    /// agent's turn, the listening) and keeps the card up, as the phone's Stop keeps its voice
+    /// screen: Resume listens again, hands-free still on if it was. Done ends it all, hands-free
+    /// with it, and goes back to the tabs.
     func pressed(_ kind: CardButton) {
         guard let session else { return }
+        pressedAt = .now
         switch kind {
         case .pause: if session.phase == .listening { session.mute() } else { session.pauseSpeaking() }
-        case .resume: if session.isMuted { session.unmute() } else { session.resumeSpeaking() }
+        case .resume:
+            if stopped {
+                stopped = false
+                session.beginListening()
+            } else if session.isMuted {
+                session.unmute()
+            } else {
+                session.resumeSpeaking()
+            }
         case .stop:
+            stopped = true
+            session.cancel()
+        case .done:
+            stopped = false
             session.continuous = false
             session.cancel()
             hideVoiceCard()
@@ -549,15 +597,15 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// What the card does for where the voice session stands.
     enum Card: Equatable { case showing(CarPlayArtwork.VoiceState), closed, failed }
 
-    static func card(phase: VoiceSession.Phase, waitingOnPhone: Bool, muted: Bool, paused: Bool) -> Card {
+    static func card(phase: VoiceSession.Phase, waitingOnPhone: Bool, muted: Bool, paused: Bool, stopped: Bool = false) -> Card {
         switch phase {
         case .listening: .showing(.listening)
         // An approval request parks the turn on the phone, paused or not.
         case .thinking: .showing(waitingOnPhone ? .phone : paused ? .paused : .thinking)
         case .speaking: .showing(paused ? .paused : .speaking)
         // Reply finished, or the question was dropped: back to the tabs, unless the mic is only
-        // shut for a while (Pause while listening).
-        case .idle: muted ? .showing(.paused) : .closed
+        // shut for a while (Pause while listening), or Stop was pressed (the card waits).
+        case .idle: muted || stopped ? .showing(.paused) : .closed
         case .error: .failed
         }
     }
@@ -648,12 +696,20 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     }
 
     private func phaseChanged() {
-        guard let session, let voiceCard else { return }
+        guard let session else { return }
+        // Going again from wherever it was asked to (the phone, a card): no longer stopped.
+        if session.phase != .idle { stopped = false }
+        guard let voiceCard else { return }
         switch Self.card(phase: session.phase, waitingOnPhone: session.activeTool == "waiting for you", muted: session.isMuted,
-                         paused: session.isPaused) {
+                         paused: session.isPaused, stopped: stopped) {
         case .showing(let state):
             voiceCard.activateVoiceControlState(withIdentifier: state.rawValue)
-            setBar(of: voiceCard, for: state)
+            // The bar only when its buttons change: Listening, Thinking and Speaking share one.
+            let buttons = Self.barButtons(for: state)
+            if barShown != buttons.leading + buttons.trailing {
+                barShown = buttons.leading + buttons.trailing
+                setBar(of: voiceCard, for: state)
+            }
         case .closed: hideVoiceCard()
         case .failed: alert("Couldn't reach Redde")
         }
@@ -679,6 +735,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         if controller.presentedTemplate == nil {
             show()
         } else {
+            if controller.presentedTemplate is CPVoiceControlTemplate { closingCard = true }   // (Redde's doing: it stays down)
             controller.dismissTemplate(animated: true) { _, _ in
                 Task { @MainActor in show() }
             }

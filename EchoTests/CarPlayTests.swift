@@ -56,7 +56,7 @@ struct CarPlayTests {
         /// What the car's card shows for where the voice session stands now.
         var card: CarPlaySceneDelegate.Card {
             CarPlaySceneDelegate.card(phase: session.phase, waitingOnPhone: session.activeTool == "waiting for you",
-                                      muted: session.isMuted, paused: session.isPaused)
+                                      muted: session.isMuted, paused: session.isPaused, stopped: delegate.stopped)
         }
     }
 
@@ -417,7 +417,7 @@ struct CarPlayTests {
         #expect(states.count <= 5, "a voice-control template drops any state past its fifth")
         typealias D = CarPlaySceneDelegate
         for state in CarPlayArtwork.VoiceState.allCases {
-            #expect(D.barButtons(for: state).leading == [.stop], "\(state) has no way out")
+            #expect(D.barButtons(for: state).leading == (state == .paused ? [.done] : [.stop]), "\(state) has no way out")
         }
         // Pause whatever Redde is at, and Resume once it is held.
         for state in [CarPlayArtwork.VoiceState.listening, .thinking, .speaking] {
@@ -551,11 +551,13 @@ struct CarPlayTests {
         #expect(!h.session.isPaused && h.speaker.resumes == 1)
         #expect(h.card == .showing(.speaking))
 
-        // Stop ends a held reply like any other.
+        // Stop ends a held reply like any other, and the card waits.
         h.delegate.pressed(.pause)
         h.delegate.pressed(.stop)
         #expect(h.session.phase == .idle)
         #expect(!h.session.isPaused)
+        #expect(h.card == .showing(.paused))
+        h.delegate.pressed(.done)
         #expect(h.card == .closed)
     }
 
@@ -573,15 +575,41 @@ struct CarPlayTests {
         #expect(h.conversation.messages.isEmpty, "it did not go to the agent as a question")
     }
 
-    @Test func stopEndsEverythingIncludingHandsFree() async throws {
+    /// Stop ends what Redde is doing and keeps the card up, as the phone's Stop keeps its voice
+    /// screen ("the pause and stop buttons both kick me out of the screen"): Resume listens
+    /// again, hands-free still on; Done ends everything, hands-free with it.
+    @Test func stopKeepsTheCardAndDoneEndsEverything() async throws {
         let h = Harness()
         try await press(card: 1, of: h.delegate)
         try await waitUntil("listening") { h.recognizer.starts == 1 }
-        h.delegate.pressed(.pause)
         h.delegate.pressed(.stop)
+        #expect(h.session.phase == .idle && !h.session.isMuted)
+        #expect(h.card == .showing(.paused), "stopped, the card waits")
+        #expect(CarPlaySceneDelegate.barButtons(for: .paused) == ([.done], [.resume]))
+        #expect(h.session.continuous)
+        h.delegate.pressed(.resume)
+        try await waitUntil("listening again") { h.recognizer.starts == 2 }
+        #expect(h.card == .showing(.listening) && !h.delegate.stopped)
+
+        h.delegate.pressed(.pause)
+        h.delegate.pressed(.done)
         #expect(h.session.phase == .idle)
         #expect(!h.session.isMuted)
         #expect(!h.session.continuous)
+        #expect(h.card == .closed)
+    }
+
+    @Test func stopWhileSpeakingEndsTheReplyAndWaits() async throws {
+        let h = Harness()
+        try await press(card: 0, of: h.delegate)
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        h.recognizer.deliver("What's the weather in Lisbon?")
+        try await waitUntil("the reply") { h.session.phase == .speaking }
+        h.delegate.pressed(.stop)
+        #expect(h.session.phase == .idle && h.speaker.stops > 0)
+        #expect(h.card == .showing(.paused))
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(h.recognizer.starts == 1, "nothing listens until Resume")
     }
 
     @Test func theCardFollowsTheVoiceSession() {

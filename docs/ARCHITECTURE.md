@@ -1816,9 +1816,16 @@ when it was last talked to, never what it said. Picking one opens its own chat a
 picking a chat does. New Chat, a picked chat and a picked bot listen in the mode Settings → Voice
 gives the phone's voice button. Each of
 them ends on a voice-control card (Listening, Thinking, Speaking, Paused, Needs your phone) with
-**Stop** and **Pause** in its bar while Redde listens, thinks or speaks. Stop ends whatever
-Redde is doing, hands-free with it, and closes the card. Pause holds it and keeps the
-conversation, and the card says Paused, with Resume where Pause was. While Redde listens, Pause
+**Stop** and **Pause** in its bar while Redde listens, thinks or speaks. Neither closes the card
+(asked 2026-10-20, "the pause and stop buttons both kick me out of the screen"): Stop ends
+whatever Redde is doing (the reply, the agent's turn, the listening) and the card says Paused,
+as the phone's Stop keeps its voice screen; Pause holds it and keeps the conversation, and the
+card says Paused too. Paused, the bar has **Done** where Stop was, which ends everything,
+hands-free with it, and closes the card, and **Resume** where Pause was, which listens again
+after a Stop (hands-free still on if it was). The bar is set only when its buttons change, and
+a card the car takes down within two seconds of one of its own buttons is put back as the voice
+session stands (`templateDidDisappear`); one taken down any other way, by the car's own Back,
+stays down. While Redde listens, Pause
 shuts the mic (`VoiceSession.mute`, which also gives the car its audio back), so nothing said
 in the car is taken for a question. While it speaks, the reply stops where it is. While it
 still thinks, the agent works on and its reply waits, whole, until Resume
