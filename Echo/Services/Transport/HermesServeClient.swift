@@ -1354,9 +1354,10 @@ final class HermesServeClient {
     /// The conversations with a turn under way in this Dashboard, by stored id: working, or
     /// waiting on a person (`session.active_list`, every release; an approval counts as waiting
     /// from 0.21.3). Turns run elsewhere (cron, a messaging app, the Hermes API) aren't listed.
-    func liveActivity() async throws -> [String: ChatActivity.Kind] {
+    func liveActivity() async throws -> (sessions: [String: ChatActivity.Kind], rooms: [String: ChatActivity.Kind]) {
         try await ensureConnected()
-        return ChatActivity.kinds(activeList: try await call("session.active_list", params: .object([:]), timeout: 15))
+        let list = try await call("session.active_list", params: .object([:]), timeout: 15)
+        return (ChatActivity.kinds(activeList: list), ChatActivity.roomKinds(activeList: list))
     }
 
     /// Branch a session (`session.branch`). Needs the session open on this connection.

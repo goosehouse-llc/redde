@@ -1378,7 +1378,12 @@ and doesn't return `unread`: a turn the app left mid-way is asked after by its r
 one), and what was last seen of each conversation is kept on the phone, against the time of its
 last activity; the read mark still goes to the host for the other apps. The list is fetched again
 when a turn ends, and at most every thirty seconds when the Dashboard says its conversations
-changed (`sessions.changed`). Mark as Read / Unread is in a row's swipe and menu.
+changed (`sessions.changed`). Mark as Read / Unread is in a row's swipe and menu. Group chats
+are marked too: their bots' hidden sessions are in `session.active_list` (titled `Group: <room>`,
+Hermes Desktop's `Group: <room> · <thread>`), so a room's row is working while a bot answers and
+Needs you while one asks the person (`ChatActivity.roomKinds`). Hermes keeps no read mark for a
+room: what is new is kept on the phone, the room's latest event (its number in the log, a
+Desktop room's last message time) against the one seen there.
 `scripts/hermes-lab/lab.sh status` checks what each release says, and the app's own
 `ChatActivity` against it (`HermesLabStatusTests`).
 

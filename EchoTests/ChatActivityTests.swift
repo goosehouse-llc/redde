@@ -41,6 +41,38 @@ struct ChatActivityTests {
         #expect(ChatActivity.kinds(activeList: .object([:])).isEmpty)
     }
 
+    /// A group chat's bots run in hidden sessions titled after the room: one at work makes the
+    /// room's row working, one asking the person makes it Needs you, which outranks working.
+    /// Hermes Desktop names its own "Group: <room> · <thread>".
+    @Test func aGroupChatsBotsAtWorkMarkItsRow() throws {
+        let answer = try JSONValue.parse(Data("""
+        {"sessions":[{"id":"rt-1","session_key":"s-1","status":"working","title":"Group: redde-room-1"},
+                     {"id":"rt-2","session_key":"s-2","status":"waiting","title":"Group: redde-room-1"},
+                     {"id":"rt-3","session_key":"s-3","status":"working","title":"Group: redde-room-2"},
+                     {"id":"rt-4","session_key":"s-4","status":"idle","title":"Group: redde-room-3"},
+                     {"id":"rt-5","session_key":"s-5","status":"working","title":"Group: desk-9 · main"},
+                     {"id":"rt-6","session_key":"s-6","status":"working","title":"Weekend plans"}]}
+        """.utf8))
+        #expect(ChatActivity.roomKinds(activeList: answer) == ["redde-room-1": .needsYou, "redde-room-2": .working, "desktop:id:desk-9": .working])
+    }
+
+    /// A group chat is new since it was seen when its latest event is past the one seen there;
+    /// one listed for the first time is read, and Mark as Unread holds until it is seen again.
+    @Test func aGroupChatIsUnreadWhenSomethingCameAfterItWasSeen() {
+        let s = setup(.hermesServe)
+        var room = GroupRoom.demo
+        room.latestSeq = 7
+        s.activity.listed([room], settings: s.settings)
+        #expect(!s.activity.isUnread(room, isOpen: false, settings: s.settings), "first listed: read")
+        room.latestSeq = 9
+        #expect(s.activity.isUnread(room, isOpen: false, settings: s.settings), "a reply since")
+        #expect(!s.activity.isUnread(room, isOpen: true, settings: s.settings), "not the open one")
+        s.activity.roomSeen(room.id, upTo: 9, settings: s.settings)
+        #expect(!s.activity.isUnread(room, isOpen: false, settings: s.settings), "seen up to it")
+        s.activity.markUnread(room: room.id, settings: s.settings)
+        #expect(s.activity.isUnread(room, isOpen: false, settings: s.settings), "marked unread")
+    }
+
     @Test func aRunsStatusBecomesAMark() {
         #expect(ChatActivity.kind(runStatus: "running") == .working)
         #expect(ChatActivity.kind(runStatus: "queued") == .working)

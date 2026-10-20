@@ -105,6 +105,7 @@ struct GroupChatView: View {
                 .onChange(of: feed.events.count) {
                     settleShown()
                     voice.roomChanged()
+                    ChatActivity.shared.roomSeen(feed.room.id, upTo: feed.seenMark)
                     if atEnd { withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo("bottom", anchor: .bottom) } }
                 }
                 .onChange(of: feed.sending.count) { proxy.scrollTo("bottom", anchor: .bottom) }
@@ -176,7 +177,10 @@ struct GroupChatView: View {
             .onChange(of: voiceSession.phase) { voice.sessionChanged() }
             .onChange(of: voiceSession.continuous) { voice.sessionChanged() }
             // Leaving the group chat ends talking with it: the voice session is the app's.
-            .onDisappear { voice.stop() }
+            .onDisappear {
+                voice.stop()
+                ChatActivity.shared.roomSeen(feed.room.id, upTo: feed.seenMark)
+            }
         }
     }
 

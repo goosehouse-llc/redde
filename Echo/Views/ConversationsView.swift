@@ -537,9 +537,12 @@ struct ConversationsList: View {
         .accessibilityHint("Opens your chat with this bot")
     }
 
-    /// A group chat's row: its bots' faces, its name, and who is in it.
+    /// A group chat's row: its bots' faces, its name, and who is in it, marked as a bot's row
+    /// is (a bot at work in it, one waiting on the person, or something not yet seen).
     private func groupRow(_ room: GroupRoom, faces: [String: BotFace]) -> some View {
-        Button { opened(room: room) } label: {
+        let isOpen = groups.open?.id == room.id
+        let marks = ChatMarks(kind: activity.kind(of: room), unread: activity.isUnread(room, isOpen: isOpen))
+        return Button { opened(room: room) } label: {
             HStack(spacing: 12) {
                 FaceStack(faces: room.members.prefix(2).map { faces[$0.profile] ?? BotFace(seed: $0.profile) }, size: 24)
                     .frame(width: 32, alignment: .leading)
@@ -547,9 +550,14 @@ struct ConversationsList: View {
                     HStack(spacing: 6) {
                         Text(room.name).font(.body.weight(.semibold)).lineLimit(1)
                         Spacer(minLength: 8)
-                        if let when = room.updatedAt { Text(DateGroup.rowTime(when)).font(.caption).foregroundStyle(.secondary) }
+                        if marks.kind == .working {
+                            ProgressView().controlSize(.small)
+                        } else if let when = room.updatedAt {
+                            Text(DateGroup.rowTime(when)).font(.caption).foregroundStyle(.secondary)
+                        }
                     }
                     HStack(spacing: 5) {
+                        if marks.kind == .needsYou { NeedsYouTag() }
                         if room.inDesktop {
                             Image(systemName: "desktopcomputer").accessibilityLabel("Runs in Hermes Desktop")
                         }
@@ -562,9 +570,21 @@ struct ConversationsList: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .listRowBackground(groups.open?.id == room.id ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
-        .contextMenu { orderingBots }
+        .unreadDot(marks.unread)
+        .listRowBackground(isOpen ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
+        .contextMenu {
+            if !isOpen, room.activityMark != nil {
+                if marks.unread {
+                    Button("Mark as Read", systemImage: "envelope.open") { activity.roomSeen(room.id, upTo: room.activityMark) }
+                } else {
+                    Button("Mark as Unread", systemImage: "envelope.badge") { activity.markUnread(room: room.id) }
+                }
+                Divider()
+            }
+            orderingBots
+        }
         .accessibilityElement(children: .combine)
+        .accessibilityValue(marks.spoken)
         .accessibilityHint(room.inDesktop ? "Shows this Hermes Desktop group chat's last messages" : "Opens this group chat")
     }
 
@@ -1208,7 +1228,8 @@ struct ConversationsList: View {
             }
             if DevHooks.demoMarks {
                 ledger += Self.demoMarkedRows
-                activity.showDemo(["demo-1": .working, "demo-marks-2": .needsYou], bots: ["scout": .working, "fixit": .needsYou], unreadBots: ["writer"])
+                activity.showDemo(["demo-1": .working, "demo-marks-2": .needsYou], bots: ["scout": .working, "fixit": .needsYou], unreadBots: ["writer"],
+                                  rooms: [GroupRoom.demo.id: .needsYou], unreadRooms: [GroupRoom.demoDesktop.id])
             }
             ledgerError = nil
             return
@@ -1229,6 +1250,7 @@ struct ConversationsList: View {
                 if settings.showBots {
                     if let roster = try? await botDirectory.refresh() { activity.listed(roster.bots) }
                     await groups.refresh()
+                    activity.listed(groups.rooms)
                 }
                 let all = (try? await HermesServeClient.shared.projectTree()) ?? []
                 let tree = HermesServeClient.Project.listed(all)
@@ -1299,6 +1321,8 @@ struct ConversationsList: View {
         while !Task.isCancelled {
             let before = Set(activity.live.keys)
             let reached = await activity.look(conversation)
+            // (A group chat's bots are among these, each in a hidden session: a room going quiet
+            // fetches the list again too, and with it what is new in the room.)
             let ended = !before.subtracting(activity.live.keys).isEmpty
             let changed = activity.changes != changes && Date.now.timeIntervalSince(fetchedAt) >= 30
             if ended || changed {
@@ -1311,6 +1335,9 @@ struct ConversationsList: View {
                 // worker runs on its own): their last activity, now and then.
                 botsAt = .now
                 if let roster = try? await botDirectory.refresh() { activity.listed(roster.bots) }
+                // The group chats' latest events, for what is new in them.
+                await groups.refresh()
+                activity.listed(groups.rooms)
             }
             // A host that can't be asked is asked less often.
             try? await Task.sleep(for: reached ? .seconds(4) : .seconds(30))

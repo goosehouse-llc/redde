@@ -35,6 +35,8 @@ final class ChatActivity {
 
     /// Conversations with a turn under way, by their id on the server, as last looked at.
     private(set) var live: [String: Kind] = [:]
+    /// Group chats a bot is at work in, or waiting on the person in, by room id (`roomKinds`).
+    private(set) var liveRooms: [String: Kind] = [:]
     /// The connection `live` belongs to.
     private var liveKey = ""
     /// Bumped when the Dashboard says its conversations changed (`sessions.changed`): the list
@@ -109,7 +111,8 @@ final class ChatActivity {
             listenForChanges(dashboard)
             guard let found = try? await dashboard.liveActivity() else { return false }
             guard key == settings.connectionKey else { return true }
-            live = found
+            live = found.sessions
+            if liveRooms != found.rooms { liveRooms = found.rooms }
             liveKey = key
             return true
         case .hermesSessions:
@@ -155,6 +158,27 @@ final class ChatActivity {
             case "waiting": found[key] = .needsYou
             default: break
             }
+        }
+        return found
+    }
+
+    /// The group chats `session.active_list` shows at work: Hermes runs each bot of a room in a
+    /// hidden session titled "Group: <room>" (Hermes Desktop, "Group: <room> · <thread>"), working
+    /// while it answers and waiting while it asks the person. Keyed by room id: a hosted room's
+    /// own, a Desktop one's as Redde names it ("desktop:id:<room>"). Waiting outranks working.
+    nonisolated static func roomKinds(activeList result: JSONValue) -> [String: Kind] {
+        var found: [String: Kind] = [:]
+        for item in result["sessions"]?.array ?? [] {
+            guard let title = item["title"]?.string, title.hasPrefix(GroupDraft.sessionTitle("")) else { continue }
+            let rest = title.dropFirst(GroupDraft.sessionTitle("").count)
+            let kind: Kind
+            switch item["status"]?.string {
+            case "working", "starting": kind = .working
+            case "waiting": kind = .needsYou
+            default: continue
+            }
+            let id = rest.range(of: " · ").map { "desktop:id:" + rest[..<$0.lowerBound] } ?? String(rest)
+            if found[id] != .needsYou { found[id] = kind }
         }
         return found
     }
@@ -254,6 +278,50 @@ final class ChatActivity {
 
     private static func botsKey(_ settings: Settings) -> String { "bots|" + settings.connectionKey }
 
+    // MARK: - Group chats
+
+    /// What a group chat's row shows of it: a bot at work in it, or one waiting on the person
+    /// (Hermes's list of live sessions; where Hermes's gateway runs the room instead of the
+    /// Dashboard, it isn't in that list, and the row shows neither).
+    func kind(of room: GroupRoom, settings: Settings = .shared) -> Kind? {
+        if let kind = demoRooms[room.id] { return kind }
+        return liveKey == settings.connectionKey ? liveRooms[room.id] : nil
+    }
+
+    /// A group chat with something in it since it was last seen here: its latest event (a
+    /// hosted room's number in its log, a Desktop one's time) past the one seen. Kept on the
+    /// phone; Hermes keeps no read mark for a room.
+    func isUnread(_ room: GroupRoom, isOpen: Bool, settings: Settings = .shared) -> Bool {
+        if demoUnreadRooms.contains(room.id) { return true }
+        guard !isOpen, kind(of: room, settings: settings) == nil, let mark = room.activityMark,
+              let seen = seen[Self.roomsKey(settings)]?[room.id] else { return false }
+        return seen == 0 || mark > seen
+    }
+
+    /// The group chats as listed: one seen for the first time counts as read up to now.
+    func listed(_ rooms: [GroupRoom], settings: Settings = .shared) {
+        let key = Self.roomsKey(settings)
+        let fresh = rooms.filter { seen[key]?[$0.id] == nil && $0.activityMark != nil }
+        guard !fresh.isEmpty else { return }
+        for room in fresh { seen[key, default: [:]][room.id] = room.activityMark }
+        save()
+    }
+
+    /// The group chat was on screen up to `latest` (its latest event seen there).
+    func roomSeen(_ id: String, upTo latest: Double?, settings: Settings = .shared) {
+        guard let latest else { return }
+        let key = Self.roomsKey(settings)
+        guard seen[key]?[id] != latest else { return }
+        mark(id, seenAt: latest, key: key)
+    }
+
+    /// A group chat's row's Mark as Unread.
+    func markUnread(room id: String, settings: Settings = .shared) {
+        mark(id, seenAt: 0, key: Self.roomsKey(settings))
+    }
+
+    private static func roomsKey(_ settings: Settings) -> String { "rooms|" + settings.connectionKey }
+
     /// The run of a Hermes API turn the app let go of before it ended, if it is still noted.
     func run(of sessionID: String, settings: Settings = .shared) -> String? {
         guard let turn = left[settings.connectionKey]?[sessionID], Date.now.timeIntervalSince(turn.leftAt) <= Self.leftTurnsLast else { return nil }
@@ -327,7 +395,10 @@ final class ChatActivity {
 
     #if DEBUG
     /// Dev hook (`-echo.demoMarks`): the demo list's rows as marked, for screenshots.
-    func showDemo(_ marks: [String: Kind], bots: [String: Kind] = [:], unreadBots: Set<String> = [], settings: Settings = .shared) {
+    func showDemo(_ marks: [String: Kind], bots: [String: Kind] = [:], unreadBots: Set<String> = [], rooms: [String: Kind] = [:],
+                  unreadRooms: Set<String> = [], settings: Settings = .shared) {
+        demoRooms = rooms
+        demoUnreadRooms = unreadRooms
         live = marks
         liveKey = settings.connectionKey
         demoBots = bots
@@ -335,6 +406,8 @@ final class ChatActivity {
     }
 
     private var demoBots: [String: Kind] = [:]
+    private var demoRooms: [String: Kind] = [:]
+    private var demoUnreadRooms: Set<String> = []
     private var demoUnreadBots: Set<String> = []
     #endif
 }

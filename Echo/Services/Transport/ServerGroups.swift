@@ -48,6 +48,10 @@ nonisolated struct GroupRoom: Identifiable, Equatable, Sendable {
     var members: [GroupMember]
     var updatedAt: Date?
     var latestSeq: Int?
+    /// Where the room has got to, to tell what is new since it was seen (`ChatActivity`): a hosted
+    /// room's latest event number, a Hermes Desktop one's latest message time.
+    var activityMark: Double? { inDesktop ? updatedAt?.timeIntervalSince1970 : latestSeq.map(Double.init) }
+
     /// One Hermes Desktop runs itself, shown here from its copy (`desktopRooms(in:)`): read only.
     var inDesktop = false
     /// That copy's messages, the last 16 at most, oldest first.
@@ -646,6 +650,9 @@ final class GroupFeed {
         self.room = room
         self.client = client
     }
+
+    /// The room's latest event read here, as `GroupRoom.activityMark` counts: what has been seen.
+    var seenMark: Double? { room.inDesktop ? room.updatedAt?.timeIntervalSince1970 : (cursor > 0 ? Double(cursor) : nil) }
 
     /// Bots are talking: a message of the person's has had no end of discussion after it yet.
     /// (Hermes Desktop's copy says nothing of that.)
