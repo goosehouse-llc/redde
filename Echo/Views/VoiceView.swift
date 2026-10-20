@@ -14,6 +14,10 @@ struct VoiceView: View {
     /// The keyboard button: leave voice mode with the composer focused, ready to type. (The red
     /// ✕ just ends voice mode.)
     var onSwitchToTyping: () -> Void = {}
+    /// Talking with a group chat (`GroupVoice`): the screen is the room's. All its bots' faces
+    /// while none is speaking; the one speaking, handing over to the next as each reply is read;
+    /// what was said in the round under them.
+    var group: GroupVoiceScene?
 
     /// Dev hook: `-echo.voiceDemo` shows voice mode mid-listen — raised waveform, the Listening
     /// label, a spoken caption — for store screenshots, where the simulator has no microphone.
@@ -50,7 +54,12 @@ struct VoiceView: View {
             captionArea
                 .padding(.top, 14)
                 .frame(maxHeight: .infinity, alignment: .top)
-            if let pending = conversation.pendingInterrupt {
+            if let group {
+                if group.feed.state.waitsOnPerson {
+                    Label("A bot needs you: answer in the chat.", systemImage: "hand.raised")
+                        .font(.footnote.weight(.medium)).foregroundStyle(.orange)
+                }
+            } else if let pending = conversation.pendingInterrupt {
                 InterruptCard(interrupt: pending.interrupt)
             }
             footer
@@ -65,7 +74,22 @@ struct VoiceView: View {
         .onDisappear { session.detachHeadsetControls(); session.cancel(); session.setLooking(false) }
     }
 
+    @ViewBuilder
     private var header: some View {
+        if let group {
+            // Always hands-free with a room, and no camera: a question to it is words alone.
+            HStack(spacing: 8) {
+                FaceStack(faces: group.feed.room.members.prefix(3).map(group.face), size: 22)
+                Text(group.feed.room.name).font(.footnote.weight(.semibold)).lineLimit(1)
+                Spacer(minLength: 0)
+            }
+            .padding(.top, 8)
+        } else {
+            soloHeader
+        }
+    }
+
+    private var soloHeader: some View {
         HStack(spacing: 12) {
             Toggle(isOn: $session.continuous) {
                 Label("Hands-free", systemImage: "waveform")
@@ -105,7 +129,11 @@ struct VoiceView: View {
             } else {
                 // Its own view: the mic level ticks ten times a second while listening, and only the
                 // face should re-evaluate for it, not this whole screen.
-                OrbFace(session: session, phase: phase, phaseColor: phaseColor, demo: Self.demo)
+                OrbFace(session: session, phase: phase, phaseColor: phaseColor, demo: Self.demo,
+                        groupFaces: group.map { scene in scene.feed.room.members.map(scene.face) })
+                    // A room's: the bot whose reply is being read, else none (all of them).
+                    .environment(\.replySpeaker, group == nil ? replySpeaker : groupSpeaker?.label)
+                    .environment(\.replyFace, group == nil ? replyFaceHere : groupSpeaker.flatMap { member in group.map { $0.face(member) } })
                     // Fixed footprint; the aura spills past it without pushing the text below around
                     // with each syllable.
                     .frame(width: 233, height: 233)
@@ -141,7 +169,9 @@ struct VoiceView: View {
         case let .error(message):
             Text(message).font(.title3).multilineTextAlignment(.center).foregroundStyle(.red)
         case .idle, .thinking, .speaking:
-            if lastExchange.isEmpty {
+            if let group {
+                groupExchange(group)
+            } else if lastExchange.isEmpty {
                 Text("Tap the orb and talk.")
                     .font(.title3)
                     .foregroundStyle(.secondary)
@@ -150,6 +180,57 @@ struct VoiceView: View {
             }
         }
     }
+
+    /// A room's round: what the person said last, and the bots' replies after it, the ones still
+    /// being written too, each under its bot.
+    @ViewBuilder
+    private func groupExchange(_ group: GroupVoiceScene) -> some View {
+        let events = group.feed.events
+        let lastAsk = events.lastIndex { $0.kind == "message.user" }
+        let round = lastAsk.map { Array(events[$0...]).filter { $0.kind == "message.user" || $0.kind == "message.member" } } ?? []
+        if round.isEmpty, group.feed.drafts.isEmpty {
+            Text("Tap the orb and talk to the group.")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+        } else {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 14) {
+                        ForEach(round) { event in
+                            let member = group.feed.room.member(event.actorID)
+                            MessageRow(message: Message(id: UUID(uuidString: String(format: "00000000-0000-4000-8000-%012d", event.seq)) ?? UUID(),
+                                                        role: event.kind == "message.user" ? .user : .assistant,
+                                                        text: ReplyLanguage.stripNote(event.text), createdAt: event.createdAt),
+                                       showActions: false)
+                                .environment(\.replySpeaker, member?.label)
+                                .environment(\.replyFace, member.map(group.face))
+                        }
+                        ForEach(group.feed.drafts.filter { !$0.text.isEmpty }) { draft in
+                            let member = group.feed.room.member(draft.memberID)
+                            MessageRow(message: Message(role: .assistant, text: draft.text, createdAt: draft.began), isLive: draft.finishedAt == nil,
+                                       showActions: false)
+                                .environment(\.replySpeaker, member?.label ?? "A bot")
+                                .environment(\.replyFace, member.map(group.face))
+                        }
+                        Color.clear.frame(height: 1).id("voice-bottom")
+                    }
+                    .padding(.horizontal, 4)
+                }
+                .scrollIndicators(.hidden)
+                .onChange(of: events.count) { proxy.scrollTo("voice-bottom", anchor: .bottom) }
+                .onChange(of: group.feed.drafts.map(\.text.count).reduce(0, +)) { proxy.scrollTo("voice-bottom", anchor: .bottom) }
+            }
+        }
+    }
+
+    /// The bot whose reply is being read, in a room.
+    private var groupSpeaker: GroupMember? {
+        guard let group, let id = group.voice.speaker else { return nil }
+        return group.feed.room.member(id)
+    }
+
+    /// The face of the conversation's bot (the environment's), outside a room.
+    @Environment(\.replyFace) private var replyFaceHere
 
     /// The most recent user turn and its reply.
     private var lastExchange: [Message] {
@@ -236,6 +317,13 @@ struct VoiceView: View {
                 } else {
                     roundButton("Pause", "pause.fill") { session.pauseSpeaking() }
                 }
+            } else if let group {
+                // A room's: the last bot's reply again, in its voice.
+                let last = group.feed.events.last { $0.kind == "message.member" && !$0.text.isEmpty }
+                roundButton("Replay the last answer", "arrow.counterclockwise") {
+                    if let last { session.readAloud(last.text, speaker: group.feed.room.member(last.actorID)?.profile ?? last.actorID) }
+                }
+                .disabled(!canReplay || last == nil)
             } else {
                 roundButton("Replay the last answer", "arrow.counterclockwise") { session.replayLastReply() }
                     .disabled(!canReplay || session.lastReplyText == nil)
@@ -245,7 +333,8 @@ struct VoiceView: View {
             Button {
                 // cancel() idles the phase synchronously. In the demo pose nothing runs, so it leaves.
                 let wasWorking = solIsWorking && !Self.demo
-                session.cancel()
+                // A room's stops the reading, the mic and the round, and keeps the mic shut.
+                if let group { group.voice.halt() } else { session.cancel() }
                 if !wasWorking { dismiss() }
             } label: {
                 Image(systemName: solIsWorking ? "stop.fill" : "xmark")
@@ -277,7 +366,9 @@ struct VoiceView: View {
     /// Something is running: Sol listening, thinking or reading its reply aloud (or the reply
     /// is still streaming).
     private var solIsWorking: Bool {
-        phase == .listening || phase == .thinking || phase == .speaking || conversation.isStreaming
+        // In a room, once stopped the bots finishing up don't keep the button a stop: it leaves.
+        if let group { return phase == .listening || phase == .speaking || (group.isTalking && !group.voice.isHeld) }
+        return phase == .listening || phase == .thinking || phase == .speaking || conversation.isStreaming
     }
 
     private var canReplay: Bool {
@@ -295,7 +386,14 @@ struct VoiceView: View {
     }
 
     private var phaseTitle: String {
-        switch phase {
+        if let group {
+            switch phase {
+            case .speaking: return "\(groupSpeaker?.label ?? "A bot") is speaking"
+            case .idle where group.isTalking: return group.writer.map { "\($0.label) is writing" } ?? "The bots are talking"
+            default: break
+            }
+        }
+        return switch phase {
         case .idle: "Ready"
         case .listening: "Listening"
         case .thinking: "\(replySpeaker ?? Settings.shared.headerTitle) is thinking"
@@ -305,7 +403,8 @@ struct VoiceView: View {
     }
 
     private var phaseColor: Color {
-        switch phase {
+        if let group, phase == .idle, group.isTalking { return .orange }
+        return switch phase {
         case .listening: theme.accent
         case .thinking: .orange
         case .speaking: .green
@@ -374,6 +473,8 @@ private struct OrbFace: View {
     let phase: VoiceSession.Phase
     let phaseColor: Color
     let demo: Bool
+    /// A room's bots, all of them while none speaks (`GroupVoiceFaces`).
+    var groupFaces: [BotFace]? = nil
     @Environment(\.theme) private var theme
     /// In a bot's chat: the bot's creature, which stands in for the orb.
     @Environment(\.replyFace) private var replyFace
@@ -414,7 +515,11 @@ private struct OrbFace: View {
             // the change is seen, not only heard. Under Reduce Motion they cross-fade.
             ZStack {
                 Group {
-                    if let face = replyFace ?? (orb == .reddeFace ? BotDirectory.shared.mainFace : nil) {
+                    if replyFace == nil, let groupFaces {
+                        GroupVoiceFaces(faces: groupFaces, phase: phase, phaseColor: phaseColor, level: meter)
+                            .scaleEffect(listening ? 1 + level * 0.04 : 1)
+                            .accessibilityHidden(true)
+                    } else if let face = replyFace ?? (orb == .reddeFace ? BotDirectory.shared.mainFace : nil) {
                         // Redde's own face (the orb picked), or the bot being talked to, whichever orb is picked.
                         ReddeVoiceFace(face: face, phase: phase, phaseColor: phaseColor, level: meter)
                             .scaleEffect(listening ? 1 + level * 0.06 : 1)
@@ -497,6 +602,31 @@ private struct OrbFace: View {
     }
 }
 
+/// A room's bots together in the orb's place while none of them speaks: each its own face, alive
+/// as Redde's is (looking at you while you talk), in a cluster that fits the orb's footprint.
+private struct GroupVoiceFaces: View {
+    let faces: [BotFace]
+    let phase: VoiceSession.Phase
+    let phaseColor: Color
+    let level: () -> Float
+
+    var body: some View {
+        let shown = Array(faces.prefix(6))
+        let size: CGFloat = shown.count <= 2 ? 104 : shown.count <= 4 ? 88 : 74
+        let radius: CGFloat = shown.count <= 1 ? 0 : shown.count == 2 ? 56 : 66
+        ZStack {
+            ForEach(Array(shown.enumerated()), id: \.offset) { index, face in
+                // Evenly round the centre, level: two side by side, three as two over one, four a square.
+                let step = 2 * Double.pi / Double(shown.count)
+                let angle = Double.pi / 2 + (shown.count.isMultiple(of: 2) ? step / 2 : 0) + Double(index) * step
+                ReddeVoiceFace(face: face, phase: phase, phaseColor: phaseColor, level: { 0 }, size: size)
+                    .offset(x: radius * cos(angle), y: radius * sin(angle))
+            }
+        }
+        .frame(width: 233, height: 233)
+    }
+}
+
 private extension AnyTransition {
     /// One face handing over to another in voice mode: the one there steps out to the left,
     /// shrinking and fading, as the new one comes in from the right.
@@ -517,13 +647,14 @@ private struct ReddeVoiceFace: View {
     let phaseColor: Color
     /// The mic's level, or the reply's while it is read out.
     let level: () -> Float
+    var size: CGFloat = Self.size
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     static let size: CGFloat = 196
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 30, paused: reduceMotion)) { timeline in
-            BotAvatar(face: face, size: Self.size, pose: Self.pose(at: timeline.date.timeIntervalSinceReferenceDate, phase: phase,
+            BotAvatar(face: face, size: size, pose: Self.pose(at: timeline.date.timeIntervalSinceReferenceDate, phase: phase,
                                                                    level: CGFloat(level()), tilt: face.tilt))
         }
         .shadow(color: phase == .idle ? .clear : phaseColor.opacity(0.9), radius: 10)

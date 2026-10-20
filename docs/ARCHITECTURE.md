@@ -441,11 +441,21 @@ where a new conversation is in the ••• menu, and ⌘N as anywhere) is the 
   with its own tools (Hermes's vision tool takes a local path). Redde hides the note and shows
   the files under the message, fetched from the server on a tap. Bots' replies have the
   conversation's copy, read aloud, share and select; Find in Chat looks through the whole room,
-  earlier pages too. Talk is hands-free with the room (`GroupVoice`): the voice session hands what
+  earlier pages too. Talk opens the voice screen on the room (`VoiceView.group`, a
+  `GroupVoiceScene`; asked 2026-10-20), hands-free (`GroupVoice`): the voice session hands what
   is heard to the room (`VoiceSession.sendsTo`) instead of the conversation, each bot's reply is
-  read aloud as it lands, one after another under its face, and the mic opens again once the
-  round is over, unless a bot waits on the person. Tapping the mic while a reply is read
-  listens at once; the replies not yet read stay on screen. All bots speak with the one voice.
+  read aloud as it lands, one after another, in that bot's voice (`BotVoices`), and the mic opens
+  again once the round is over, unless a bot waits on the person (then the screen says to answer
+  in the chat). In the orb's place are all the room's faces while none speaks (`GroupVoiceFaces`,
+  up to six, level round the centre: two side by side, three as two over one), and the one being
+  read while it is, handing over to the next as the voice screen does between bots; the header
+  is the room's faces and name, the status says who is speaking or writing, the captions are the
+  round so far (the person's last message and the replies after it, drafts as they are written),
+  and Replay reads the last reply again in its bot's voice. Tapping the mic while a reply is read
+  listens at once; the replies not yet read stay on screen. The red Stop (`GroupVoice.halt`) ends
+  the reading, the listening and the bots' round if one is going (as the chat's Stop), and holds
+  the mic shut until the orb is tapped: without the hold, the quiet session read as the round's
+  end and the mic opened again, so Stop never stopped. Once stopped it is the ✕ that leaves.
 - **Order.** Bots and group chats are one run in the Bots section. Reorder Bots, in any of their
   menus, shows only them, with handles (edit mode; outside it a long press is the row's menu,
   which a drag can't get past), and the order is kept per server in `Settings.botOrder`

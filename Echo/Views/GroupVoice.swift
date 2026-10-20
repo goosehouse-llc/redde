@@ -1,15 +1,19 @@
 import SwiftUI
 
-/// Talking with a group chat, hands-free: what the person says goes to the room (through the app's
-/// voice session, `VoiceSession.sendsTo`), each bot's reply is read aloud as it lands, one after
-/// another under that bot's face, and once the round is over the mic opens again. Tapping the mic
-/// while a bot is read stops it and listens; the replies not yet read stay on the screen. A bot
-/// waiting on the person (a command to approve) holds the mic shut: that is answered on screen.
+/// Talking with a group chat, hands-free, on the voice screen (`VoiceView.group`): what the person
+/// says goes to the room (through the app's voice session, `VoiceSession.sendsTo`), each bot's
+/// reply is read aloud as it lands, one after another, its face up while it is, and once the
+/// round is over the mic opens again. Tapping the mic while a bot is read stops it and listens;
+/// the replies not yet read stay on the screen. A bot waiting on the person (a command to
+/// approve) holds the mic shut: that is answered in the chat. Stop (`halt`) ends all of it until
+/// the person taps the mic: the reading, the listening, and the bots' round if one is going.
 @Observable
 final class GroupVoice {
     private(set) var isOn = false
     /// The bot being read now.
     private(set) var speaker: String?
+    /// Stopped: nothing is read and the mic stays shut until the person opens it.
+    private(set) var isHeld = false
     /// Replies landed and not read yet, oldest first.
     private var queue: [GroupEvent] = []
     /// The log's last event when voice began, or the last reply read: what follows is read.
@@ -22,6 +26,7 @@ final class GroupVoice {
         self.feed = feed
         self.session = session
         isOn = true
+        isHeld = false
         queue = []
         readThrough = feed.events.last?.seq ?? 0
         session.cancel()
@@ -30,9 +35,21 @@ final class GroupVoice {
         session.beginListening()
     }
 
+    #if DEBUG
+    /// `-echo.groupVoice <bot>`: that bot's last reply read aloud, for a look at the screen.
+    func demoSpeaking(_ member: String) {
+        guard let session, let feed, let id = feed.room.members.first(where: { $0.profile == member || $0.id == member })?.id else { return }
+        let text = feed.events.last { $0.kind == "message.member" && $0.actorID == id }?.text ?? "Here's what I found."
+        session.cancel()
+        speaker = id
+        session.readAloud(text, speaker: feed.room.member(id)?.profile ?? id)
+    }
+    #endif
+
     func stop() {
         guard isOn else { return }
         isOn = false
+        isHeld = false
         speaker = nil
         queue = []
         session?.sendsTo = nil
@@ -40,13 +57,15 @@ final class GroupVoice {
         session?.cancel()
     }
 
-    /// The mic: end what is being said, or (a bot being read, or nothing going on) listen now.
-    func mic() {
+    /// Stop on the voice screen: the reply being read and those waiting, the listening, and the
+    /// bots' round if one is going (as the chat's Stop), and then quiet until the mic is opened.
+    func halt() {
         guard isOn, let session else { return }
-        if session.phase == .listening { session.endListening(); return }
+        isHeld = true
         queue = []
         speaker = nil
-        session.beginListening()
+        if let feed, feed.discussing || feed.state.working { feed.stop() }
+        session.cancel()
     }
 
     /// The room changed: replies to read, or the person's turn.
@@ -54,7 +73,8 @@ final class GroupVoice {
         guard isOn, let feed else { return }
         let landed = feed.events.filter { $0.kind == "message.member" && $0.seq > readThrough && !$0.text.isEmpty }
         if let last = landed.last { readThrough = last.seq }
-        queue += landed
+        // Stopped: what lands now is on the screen, not read.
+        if !isHeld { queue += landed }
         next()
     }
 
@@ -63,12 +83,13 @@ final class GroupVoice {
         guard isOn, let session else { return }
         // A stop phrase ends hands-free: voice ends with it.
         if !session.continuous { stop(); return }
-        if session.phase == .listening { queue = []; speaker = nil }
+        // Listening again (the person opened the mic): no longer stopped.
+        if session.phase == .listening { queue = []; speaker = nil; isHeld = false }
         if session.phase == .idle { next() }
     }
 
     private func next() {
-        guard let session, let feed, session.phase == .idle else { return }
+        guard let session, let feed, session.phase == .idle, !isHeld else { return }
         if !queue.isEmpty {
             let reply = queue.removeFirst()
             speaker = reply.actorID
@@ -83,72 +104,17 @@ final class GroupVoice {
     }
 }
 
-/// In place of the field while talking with the group: who is speaking (the bot's face, handed
-/// over as the next one is read), what is going on, what is being heard, and the mic and End.
-struct GroupVoiceBar: View {
+/// A room on the voice screen (`VoiceView.group`): its talk, its log, and its bots' faces.
+struct GroupVoiceScene {
     let voice: GroupVoice
     let feed: GroupFeed
     let face: (GroupMember?) -> BotFace
-    @Environment(VoiceSession.self) private var session
-    @Environment(\.theme) private var theme
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var speaking: GroupMember? { voice.speaker.flatMap { feed.room.member($0) } }
+    /// The bots are at work: a round under way, or a message on its way to it.
+    var isTalking: Bool { feed.discussing || feed.state.working || !feed.sending.isEmpty }
+
     /// A bot whose reply is being written now.
-    private var writer: GroupMember? {
+    var writer: GroupMember? {
         feed.drafts.first { !$0.text.isEmpty && $0.finishedAt == nil }.flatMap { feed.room.member($0.memberID) }
-    }
-
-    private var status: String {
-        switch session.phase {
-        case .listening: return session.liveTranscript.isEmpty ? "Listening…" : session.liveTranscript
-        case .speaking: return speaking.map { "\($0.label) is speaking" } ?? "Speaking…"
-        case .error(let problem): return problem
-        default:
-            if feed.state.waitsOnPerson { return "A bot needs you: answer on screen" }
-            if let writer { return "\(writer.label) is writing…" }
-            if feed.discussing || feed.state.working || !feed.sending.isEmpty { return "The bots are talking…" }
-            return "Tap the mic to talk"
-        }
-    }
-
-    var body: some View {
-        HStack(spacing: 12) {
-            ZStack {
-                Group {
-                    if let speaking = speaking ?? writer {
-                        BotAvatar(face: face(speaking), size: 40)
-                    } else {
-                        FaceStack(faces: feed.room.members.prefix(3).map { face($0) }, size: 26)
-                    }
-                }
-                .id(speaking?.id ?? writer?.id ?? "")
-                .transition(reduceMotion ? .opacity : .asymmetric(
-                    insertion: .offset(x: 40).combined(with: .scale(scale: 0.6)).combined(with: .opacity),
-                    removal: .offset(x: -40).combined(with: .scale(scale: 0.6)).combined(with: .opacity)))
-            }
-            .frame(width: 64, height: 44)
-            .animation(reduceMotion ? .easeInOut(duration: 0.3) : .spring(duration: 0.5, bounce: 0.3), value: speaking?.id ?? writer?.id)
-            Text(status)
-                .font(.subheadline)
-                .foregroundStyle(session.phase == .listening && !session.liveTranscript.isEmpty ? AnyShapeStyle(theme.textColor) : AnyShapeStyle(.secondary))
-                .lineLimit(2)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentTransition(.opacity)
-                .animation(.easeOut(duration: 0.2), value: status)
-            ComposerButton(symbol: session.phase == .listening ? "arrow.up" : "mic.fill",
-                           label: session.phase == .listening ? "Done talking" : "Talk", tint: .accentColor, size: 44) { voice.mic() }
-                .symbolEffect(.variableColor.iterative, isActive: session.phase == .listening)
-            Button("End voice", systemImage: "xmark") { voice.stop() }
-                .labelStyle(.iconOnly)
-                .font(.body.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .frame(width: 36, height: 44)
-                .contentShape(.rect)
-                .buttonStyle(.plain)
-        }
-        .padding(.horizontal).padding(.vertical, 8)
-        .accessibilityElement(children: .contain)
-        .sensoryFeedback(.impact(weight: .light), trigger: voice.speaker)
     }
 }

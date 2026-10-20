@@ -208,6 +208,34 @@ struct VoiceSessionTests {
         #expect(h.recognizer.starts == 1, "the group chat opens the mic, once the round is over")
     }
 
+    /// Stop on a group chat's voice screen stops: the reading and the listening end, and the mic
+    /// stays shut (the round over or not) until the person opens it again.
+    @Test func stopInAGroupChatsVoiceKeepsTheMicShut() async throws {
+        let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport([]))
+        let voice = GroupVoice()
+        let feed = GroupFeed(room: .demo)   // the screen's: the voice holds it weakly
+        voice.start(feed, session: h.session)
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        voice.halt()
+        voice.sessionChanged()
+        #expect(h.session.phase == .idle && voice.isHeld)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(h.recognizer.starts == 1, "stopped, not listening again")
+        // A reply being read: Stop silences it, and still nothing listens.
+        h.session.readAloud("Falls Loop is open.", speaker: "scout")
+        voice.halt()
+        voice.sessionChanged()
+        #expect(h.session.phase == .idle && h.speaker.stops > 0)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(h.recognizer.starts == 1)
+        // The orb opens the mic again, and the loop goes on.
+        h.session.primaryAction()
+        try await waitUntil("listening again") { h.recognizer.starts == 2 }
+        voice.sessionChanged()
+        #expect(!voice.isHeld)
+        voice.stop()
+    }
+
     /// In a bot's chat, voice mode reads the reply as that bot (its voice, `BotVoices`), and read
     /// aloud reads as whoever is named.
     @Test func aBotsReplyIsReadInItsVoice() async throws {

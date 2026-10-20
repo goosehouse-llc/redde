@@ -17,8 +17,10 @@ struct GroupChatView: View {
     @Environment(VoiceSession.self) private var voiceSession
     /// The reply being read aloud.
     @State private var readingID: UUID?
-    /// Talking with the group by voice.
+    /// Talking with the group by voice, on the voice screen.
     @State private var voice = GroupVoice()
+    @State private var showingVoice = false
+    @Environment(Conversation.self) private var conversation
     /// Find in this chat: open, what is looked for, and which match is the one shown.
     @State private var finding = false
     @State private var findText = ""
@@ -120,7 +122,11 @@ struct GroupChatView: View {
                 }
                 #if DEBUG
                 // `-echo.groupFind <words>`: Find open on those words (screenshots).
-                .onAppear { if let words = DevHooks.value("-echo.groupFind") { findText = words; finding = true } }
+                .onAppear {
+                    if let words = DevHooks.value("-echo.groupFind") { findText = words; finding = true }
+                    // `-echo.groupVoice [bot]`: the voice screen open on the room (with that bot's reply being read).
+                    if DevHooks.has("-echo.groupVoice") { showingVoice = true }
+                }
                 #endif
             }
             .chatTextSize()
@@ -130,13 +136,10 @@ struct GroupChatView: View {
                 Group {
                     if feed.room.inDesktop {
                         desktopNote
-                    } else if voice.isOn {
-                        GroupVoiceBar(voice: voice, feed: feed, face: face)
                     } else {
-                        GroupComposer(feed: feed, focused: focused, face: face) { voice.start(feed, session: voiceSession) }
+                        GroupComposer(feed: feed, focused: focused, face: face) { showingVoice = true }
                     }
                 }
-                .animation(.snappy(duration: 0.3), value: voice.isOn)
                     .frame(maxWidth: 820).frame(maxWidth: .infinity)
                     // As under a conversation: solid themes have no glass to hide what scrolls past.
                     .background(theme.usesGlass ? AnyShapeStyle(.clear) : AnyShapeStyle(theme.pageColor))
@@ -176,6 +179,25 @@ struct GroupChatView: View {
             .onChange(of: feed.state) { voice.roomChanged() }
             .onChange(of: voiceSession.phase) { voice.sessionChanged() }
             .onChange(of: voiceSession.continuous) { voice.sessionChanged() }
+            // The voice screen, as a conversation's, with the room's bots on it.
+            .fullScreenCover(isPresented: $showingVoice) {
+                VoiceView(session: voiceSession, onSwitchToTyping: {
+                    Task { try? await Task.sleep(for: .milliseconds(450)); focused.wrappedValue = true }
+                }, group: GroupVoiceScene(voice: voice, feed: feed, face: face))
+                // Handed over by hand: a full-screen cover on a Mac doesn't inherit the environment.
+                .environment(conversation)
+                .environment(voiceSession)
+                .environment(\.theme, theme)
+                .onAppear {
+                    voice.start(feed, session: voiceSession)
+                    #if DEBUG
+                    if let who = DevHooks.value("-echo.groupVoice"), !who.hasPrefix("-") {
+                        Task { try? await Task.sleep(for: .seconds(1.5)); voice.demoSpeaking(who) }
+                    }
+                    #endif
+                }
+            }
+            .onChange(of: showingVoice) { _, open in if !open { voice.stop() } }
             // Leaving the group chat ends talking with it: the voice session is the app's.
             .onDisappear {
                 voice.stop()
