@@ -249,6 +249,12 @@ final class KokoroPlayer {
         let t = Date()
         do { try engine.start() } catch { log.error("engine \(reason) failed: \(error.localizedDescription)"); return }
         log.info("engine \(reason) \(Date().timeIntervalSince(t), format: .fixed(precision: 3))s")
+        // An engine starting puts voice mode's output back on the earpiece. Voice mode's switch out
+        // of voice-chat mode, a moment after listening ends, stops the engine warmed for the reply,
+        // so it starts again as the reply's first words come, after the speaker was chosen: a
+        // reply read at the ear with the phone on the table (2026-10-21). So the speaker, or the
+        // ear if it is at one, again. (Nothing outside voice mode's play-and-record session.)
+        AudioSessionController.shared.refreshRoute()
     }
 
     /// The server's voice ids ("af_heart", "ef_dora", …), sorted.
