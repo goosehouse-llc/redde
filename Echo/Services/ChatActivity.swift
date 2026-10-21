@@ -300,7 +300,9 @@ final class ChatActivity {
     /// (Hermes's list of live sessions; where Hermes's gateway runs the room instead of the
     /// Dashboard, it isn't in that list, and the row shows neither).
     func kind(of room: GroupRoom, settings: Settings = .shared) -> Kind? {
+        #if DEBUG
         if let kind = demoRooms[room.id] { return kind }
+        #endif
         return liveKey == settings.connectionKey ? liveRooms[room.id] : nil
     }
 
@@ -308,7 +310,9 @@ final class ChatActivity {
     /// hosted room's number in its log, a Desktop one's time) past the one seen. Kept on the
     /// phone; Hermes keeps no read mark for a room.
     func isUnread(_ room: GroupRoom, isOpen: Bool, settings: Settings = .shared) -> Bool {
+        #if DEBUG
         if demoUnreadRooms.contains(room.id) { return true }
+        #endif
         guard !isOpen, kind(of: room, settings: settings) == nil, let mark = room.activityMark,
               let seen = seen[Self.roomsKey(settings)]?[room.id] else { return false }
         return seen == 0 || mark > seen
