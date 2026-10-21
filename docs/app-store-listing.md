@@ -9,55 +9,54 @@ Redde for Hermes
 Talk, chat and run your agent
 
 ## Promotional text (170, editable without a new build)
-New: search inside your messages, open a terminal on your server, and start a conversation in a Hermes project. Scheduled runs now fold away at the end of the list.
+New in 2.0: bots. Give each of your Hermes agents a face, a voice and a job, put them in a group chat, and talk with the whole crew, hands-free.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name)
-voice,assistant,ai,agent,carplay,self-hosted,llm,ollama,llama,watch,siri,shortcuts,private,openai
+voice,assistant,ai,agent,carplay,self-hosted,llm,ollama,bots,watch,siri,shortcuts,private,openai
 
 ## Description (4000)
 
-Redde is a complete iPhone and iPad client for Hermes, the open-source AI agent, with CarPlay and an Apple Watch app. Talk to it or type, watch it think and use tools, approve what it wants to run, and manage its sessions, projects, profiles, scheduled jobs and Kanban board. It also talks straight to any OpenAI-compatible model server for a fast answer.
+Redde is a complete iPhone and iPad client for Hermes, the open-source AI agent, with CarPlay and an Apple Watch app. Talk or type, watch it think and use tools, approve what it runs, and give it a crew: bots with faces and voices of their own, alone or in group chats.
 
 You bring the backend. Redde has no account and no analytics, and your conversations go only to the server you configured.
 
+BOTS
+• Each Hermes profile is a bot with a face, a voice and a chat of its own. Start one from a template (Researcher, Writer, Coder, Home, Planner) and make its job, personality, model, face and tools your own.
+• Type @ to hand work to another bot. Put two to six in a group chat and they answer in turn; talk to the room and each answers in its own voice.
+• Give a bot a schedule and its answer arrives in its chat, with a notification, even with Redde closed. Mute any chat for a while.
+• Ask a bot from Siri, CarPlay, the Apple Watch or a spoken word.
+
 TALK, DON'T TYPE
-• Tap the mic, ask, hear the answer. Speech is recognized on your iPhone; the reply is spoken by the built-in voice, a Kokoro server or your Hermes.
-• Hands-free mode keeps the conversation going until you say "that's all".
-• Interrupt mid-answer: talk, tap the mic, or type to steer the reply.
-• In CarPlay, ask through the car's mic and speakers, in a new chat or a recent one. On Apple Watch, raise your wrist and ask.
+• Tap the mic, ask, hear the answer, or show it what the camera sees. Speech is recognized on your iPhone; the reply is spoken by the built-in voice, a Kokoro server or your Hermes.
+• Hands-free mode keeps the conversation going until you say "that's all". Talk over an answer, or type, to steer it.
+• In CarPlay, ask through the car's mic and speakers, in a new chat, a recent one or a bot's. On Apple Watch, raise your wrist and ask.
 • "Hey Siri, ask Redde…" works from the Lock Screen and AirPods. A Control Center button, a widget or the Action Button starts listening.
-• On iOS 27, Siri can message your agent in your own words and read the reply back (opt-in).
-• Pause, replay, or have any reply read aloud.
-• Spoken prefixes: a word you chose adds a text prefix or switches model: "Opus, review this diff".
-• "Hey Siri, take a note in Redde" files a thought with your agent. Shortcuts can ask and get the answer as text.
-• Show your agent things with the camera in voice mode.
+• Spoken prefixes: a word you chose adds a text prefix, switches model or goes to a bot: "Opus, review this diff".
+• Siri takes a note for your agent; Shortcuts can ask and get the answer as text.
 
 SEE THE AGENT WORK
-• Watch reasoning and tool calls live, with a Live Activity for progress; lock the phone and the reply carries on.
+• Watch reasoning and tool calls live, with a Live Activity for progress; lock the phone or leave the chat and the reply carries on.
+• The list shows what's working, what needs you and what's unread.
 • Approve a risky command or answer the agent's question from a notification, out loud, or with a nod in AirPods. Pair your Hermes and notifications arrive with Redde closed, encrypted end to end.
-• Subagents get their own rows: follow, steer or stop one.
 
 A FULL CLIENT, NOT JUST A MIC
-• Conversations live in your gateway's session ledger: start on the phone, continue on the desktop, Telegram or the CLI. Search inside them, pin, rename, fork, archive.
-• Projects with their folders, scheduled jobs with delivery targets, the Kanban board.
+• Conversations live in your gateway's session ledger: start on the phone, continue on the desktop, Telegram or the CLI. Search inside them, pin, rename, fork, archive, or go incognito.
+• Projects, scheduled jobs and the Kanban board.
 • Phone tools: your agent can use your iPhone's calendar, reminders, contacts, photos and files, set alarms, write on a widget, and start calls and texts, each only if you allow it.
-• Rich replies: Markdown, code, tables, task lists, Mermaid diagrams and math. Pictures, charts, PDFs and audio from the agent open in place.
+• Rich replies: Markdown, code, tables, task lists, Mermaid diagrams and math. Pictures, charts, PDFs and audio open in place.
 • Select part of a reply and ask about it. Regenerate, edit and resend, or switch models with /model.
-• Attach photos, videos and files, paste or drop them in, or dictate. Attach a day's calendar in one tap.
-• Share text, links, photos or files to Redde from any app. Export chats as Markdown.
-• Widgets: last answer, what needs you, context.
-• Skills and tool sets, on or off. Edit memory and context files; create or draft skills.
-• The server too: MCP servers, logs, restart, update, files and an SSH terminal.
+• Attach photos, videos, files or a day's calendar; share to Redde from any app.
+• Skills, tool sets, memory and context files. The server too: MCP servers, logs, restart, update, files and an SSH terminal.
 
 YOUR BACKEND, YOUR RULES
-• Connect to Hermes through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access or a reverse proxy. Save several servers. Sign in with a password, or in a browser with Google or another provider.
+• Connect to Hermes through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access or a reverse proxy. Save several servers and sync them with iCloud. Sign in with a password or a browser.
 • Or go straight to any OpenAI-compatible endpoint: llama.cpp, llama-swap, vLLM or Ollama on your hardware, or a hosted provider with your key.
-• Set up by QR code or link, and pass it on to your other devices. Credentials stay in the Keychain.
+• Set up by QR code or link. Credentials stay in the Keychain.
 • Face ID lock, seven themes with your own colors, app icons and voice orbs, iPad split view, keyboard shortcuts.
-• No account, no analytics, no tracking. The one service we run is an optional relay for notifications, which it can't read.
+• The one service we run is an optional relay for notifications, which can't read them.
 
 REQUIRES
-A Hermes agent (github.com/NousResearch/hermes-agent) or an OpenAI-compatible endpoint. Redde includes no model and no AI service of its own.
+A Hermes agent (github.com/NousResearch/hermes-agent) or an OpenAI-compatible endpoint; bots need Hermes. Redde includes no model and no AI service of its own.
 
 Hermes is an open-source project by Nous Research. Redde is an independent client, not affiliated with it.
 
@@ -68,6 +67,45 @@ Two pictures App Store Connect has taken since October 2026, on the version page
 - Search results (`search-3840x2560.png`, 3:2): "Talk to your own AI agent. Voice and chat for Hermes." beside voice mode and a chat. Shown with the app in search in place of the first screenshots.
 
 The words in both sit inside the "art safe area" of Apple's templates. Use Preview in App Store Connect before submitting: it shows each on iPhone and iPad, both ways up.
+
+## What's New in 2.0 (4000)
+Bots: a crew for your agent. Each Hermes profile is now a bot, with a face, a voice and a chat of its own, and bots can work together in group chats.
+
+• Bots. Under Bots in the conversation list, each profile on your Hermes has a chat of its own. New Bot starts from Blank or a template (Researcher, Writer, Coder, Home, Planner) and fills in its name, job, personality, face and tools, all yours to change. Edit Bot changes them later, Hide puts one away and Reorder Bots sets their order. Type @ in a bot's chat to hand work to another; what bots send each other reads as theirs.
+• Faces. Each bot is a little creature of its own. Change Face picks its shape, eyes, mouth, mark and color, kept on your server for every Redde there.
+• Group chats. New Group Chat puts two to six bots in a room your Hermes runs: they answer in turn, or only the one you tag. Replies show as they are written, files and pictures go with your messages, and a reply that stopped partway can be retried. Hermes Desktop's rooms are listed too, to read.
+• Talk to the whole crew. Talk in a group chat opens the voice screen on the room. The bots answer one after another, each read as it writes, in a voice of its own, its face up while it speaks.
+• A voice for each bot, from your Kokoro server or your iPhone's voices. Voice… picks another.
+• Schedules. Schedules… gives a bot something to do at a time: every day, on weekdays, on some days, every few hours, or once. Its answer comes into its chat, and with your Hermes paired a notification comes too, even with Redde closed.
+• Notifications and mute. A paired phone hears from group chats: each bot's message, and a bot waiting on you, with Reply, Approve and Deny. Mute… quiets a bot's chat or a group chat for an hour, eight hours, until morning, or until you turn it back on.
+• Bots wherever you ask. "Hey Siri, ask Home in Redde" opens Home's chat and listens. CarPlay has a Bots tab, the Apple Watch a Bots section, and a spoken prefix can go to a bot: "Home, turn off the porch light."
+• On either connection. Bots, their faces and group chats come with the Hermes Dashboard's login, on the Dashboard or the Hermes API connection. With the Hermes API alone, Add Bot adds a profile by its name.
+• Redde has a face. The new app icon is Redde's own face, and so is the voice orb: it blinks, looks at you while you talk and speaks with the reply. An icon or orb you picked stays.
+• Incognito chats. New Incognito Chat is kept nowhere: not on the phone, in notifications or in widgets, and it is deleted from your server when you leave it. Your agent is asked to save nothing from it.
+• Sync with iCloud. Settings → iCloud → Sync with iCloud brings your servers, their keys and your settings to your other iPhones, iPads and Macs. Keys and passwords go in iCloud Keychain, end-to-end encrypted. Off until you turn it on.
+• At a glance. The conversation list shows a spinner while your agent works, Needs you while it waits on you, and a dot for a reply you haven't seen, with Mark as Read and Mark as Unread.
+• The Hermes API, further. A reply now runs on your server and carries on when you leave the chat or lock the phone; it is there when you come back. Fast mode works there too, and with the Dashboard's login, subagent transcripts and files.
+• Kanban and projects. View Changes shows a card's attached change, and Ask to Apply It has your agent put it in place. Add to Project is in a conversation's ••• menu.
+• Fixes. A reply read by Kokoro or your Hermes no longer goes on in two voices (GitHub issue 11). A card's question, a share or a Siri draft can start a new conversation (issue 21). A noise heard as one letter isn't sent. Where a model wrote a message as if it came from you, the reply says so in its place. In CarPlay, Stop and Pause keep the voice card up. A Hermes API chat left waiting on an approval shows it again.
+
+## Before submitting 2.0
+Written ahead of the release. What a phone has shown is said where it has.
+
+In App Store Connect and on the web:
+- 1.9 was approved on 2026-10-18.
+- The build is 2.0 (267). Archive it from a clean build of origin/main once this is committed and pushed (and `xcodegen generate` after pulling).
+- The promotional text, the keywords ("llama" gave way to "bots"; "ollama" stays), the description (a BOTS section; widgets, subagents, Siri's iOS 27 drafts and the sign-in providers left out to make room) and What's New all changed. `scripts/app-store-push.py all` makes the 2.0 version and sends them; then `notes` for the review notes, which have BOTS and ICLOUD sections and the car's Bots tab.
+- Screenshots: two bot slots after the panorama on both sets (`03-bots`, `04-crew`, the iPad's `03-ipad-bots`, `04-ipad-crew`), made 2026-10-20; the later ones renumbered by renaming, unchanged; "Make it yours" and the server's screens left out. `all` sends the new pictures and puts them in order.
+- The app icon is new: Redde Face is the primary icon in this build, and the App Store takes the icon from the build. The website still shows the old one.
+- App Privacy stays "Data Not Collected". Sync with iCloud keeps the servers and settings in the user's own iCloud (the key-value store, and iCloud Keychain for keys and passwords); none of it reaches us. Incognito chats send nothing new anywhere.
+- The privacy manifest needs nothing new: iCloud's key-value store is not a required-reason API, and UserDefaults (CA92.1) and file timestamps (C617.1) are declared already.
+- Export compliance: the answer stays as it is. iCloud Keychain's encryption is Apple's.
+- First release with the iCloud key-value storage entitlement (`com.apple.developer.ubiquity-kvstore-identifier`): the distribution profile has to carry it. Development builds on Marta have had it since 2026-10-19.
+- Group chat notifications and a schedule's notes need the push plugin 1.5.0, on GitHub main since 2026-10-20. Pairing installs it; a Hermes with an older one is offered the update.
+- A bot's schedules run by themselves on Hermes 0.21.5 and later; 0.21.0 and 0.21.3 need `gateway.multiplex_profiles` on. The Schedules screen says so.
+- The website says "coming soon in 1.9" and nothing of bots.
+
+Not known to have been tried on a device: Sync with iCloud on a real Apple Account, group chat notifications and schedule notes (the plugin on the Hermes they were built against is older than 1.5.0), Add Bot on the Hermes API alone, and the Apple Watch's Bots section.
 
 ## What's New in 1.9 (4000)
 Search inside your messages, a terminal on your server, Hermes projects, and replies in your Hermes's voice.

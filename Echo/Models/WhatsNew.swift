@@ -22,6 +22,26 @@ nonisolated enum WhatsNew {
 
     /// Newest first. Keep each to a handful of lines a person reads in ten seconds.
     static let releases: [Release] = [
+        Release(version: "2.0", items: [
+            Item(symbol: "face.smiling", title: "Bots",
+                 detail: "Each profile on your Hermes is a bot, with a face, a voice and a chat of its own, under Bots in the conversation list. New Bot starts from a template (Researcher, Writer, Coder, Home, Planner) or from nothing, and its job, personality, model, face and tools are yours to change. Type @ in a bot's chat to hand something to another."),
+            Item(symbol: "bubble.left.and.bubble.right", title: "Group chats",
+                 detail: "New Group Chat puts two to six bots in a room, where they answer in turn, or only the one you tag. Their replies show as they are written, files go with your messages, and Hermes Desktop's rooms are there to read."),
+            Item(symbol: "waveform", title: "Talk to the whole crew",
+                 detail: "Talk in a group chat opens the voice screen on the room. The bots answer one after another, each in a voice of its own, its face up while it speaks."),
+            Item(symbol: "clock", title: "Schedules, and quiet",
+                 detail: "Schedules… gives a bot something to do at a time, such as every weekday at 7, and its answer comes into its chat with a notification, while your phone is off. Mute… quiets a bot's chat or a group chat for an hour, until morning, or until you turn it back on."),
+            Item(symbol: "car", title: "Bots wherever you ask",
+                 detail: "Say “Ask Home in Redde” to Siri, pick a bot in the car's Bots tab or on the Apple Watch, or give one a spoken word in Settings → Voice → Spoken prefixes: “Home, turn off the porch light.”"),
+            Item(symbol: "face.smiling.inverse", title: "Redde has a face",
+                 detail: "The new app icon, and the voice orb: Redde's face blinks, looks at you while you talk and speaks with the reply. If you picked another icon or orb, you keep it."),
+            Item(symbol: "eyeglasses", title: "Incognito, and iCloud",
+                 detail: "New Incognito Chat, in a chat's ••• menu, is kept nowhere and deleted from your server when you leave it. Settings → iCloud → Sync with iCloud brings your servers, their keys and your settings to your other devices."),
+            Item(symbol: "ellipsis.bubble", title: "At a glance",
+                 detail: "The conversation list shows what your agent is doing: a spinner while it works, Needs you while it waits on you, and a dot for a reply you haven't seen. On the Hermes API, a reply now carries on on your server when you leave it."),
+            Item(symbol: "checkmark.seal", title: "Fixes",
+                 detail: "A reply read by Kokoro or your Hermes no longer goes on in two voices. A noise heard as one letter isn't sent. A card's question, a share or a Siri draft can start a new conversation."),
+        ]),
         Release(version: "1.9", items: [
             Item(symbol: "text.magnifyingglass", title: "Search inside messages",
                  detail: "Search in the conversation list now looks inside your messages too. Matches are listed under In messages with the words around them, and opening one goes to the word. It uses the Hermes Dashboard address."),
