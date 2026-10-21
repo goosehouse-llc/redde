@@ -1314,7 +1314,10 @@ final class Conversation {
             while Date.now < until {
                 try? await Task.sleep(for: Self.replyLookEvery)
                 guard let self, !Task.isCancelled, self.identity == identity, !self.isStreaming else { return }
-                guard let rows = try? await self.ledgerAPI()?.messages(sessionID: stored) else { continue }
+                // The end of the transcript first; the whole of it only once the reply is there.
+                guard let api = self.ledgerAPI(), let end = try? await api.newestMessages(sessionID: stored, limit: 2),
+                      let newest = Self.mapStored(end).last, newest.role == .assistant, !newest.text.isEmpty,
+                      let rows = try? await api.messages(sessionID: stored) else { continue }
                 guard !Task.isCancelled, self.identity == identity, !self.isStreaming else { return }
                 let fetched = Self.mapStored(rows)
                 guard let last = fetched.last, last.role == .assistant, !last.text.isEmpty else { continue }

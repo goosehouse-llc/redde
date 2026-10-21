@@ -406,8 +406,8 @@ nonisolated struct HermesSessionsAPI: Sendable {
         var id: String { name }
     }
 
-    private struct ListEnvelope<T: Decodable>: Decodable { var data: [T]; var has_more: Bool? }
-    private struct SessionEnvelope: Decodable { var session: SessionSummary }
+    private struct ListEnvelope<T: Decodable & Sendable>: Decodable, Sendable { var data: [T]; var has_more: Bool? }
+    private struct SessionEnvelope: Decodable, Sendable { var session: SessionSummary }
     private static let encoder = JSONEncoder()
     private static let decoder = JSONDecoder()
 
@@ -416,9 +416,11 @@ nonisolated struct HermesSessionsAPI: Sendable {
                       query: [.init(name: "limit", value: String(limit)), .init(name: "offset", value: String(offset))]).data
     }
 
+    /// A session's transcript, oldest first: its newest 500 messages, Hermes's most for a page
+    /// (`latest` pages back from the newest and still answers in order, 0.21.0 to 0.22.2). It
+    /// asked for the oldest 500, which left a longer conversation without its end.
     func messages(sessionID: String) async throws -> [StoredMessage] {
-        try await get(ListEnvelope<StoredMessage>.self, "api/sessions/\(sessionID)/messages",
-                      query: [.init(name: "order", value: "oldest"), .init(name: "limit", value: "500")]).data
+        try await newestMessages(sessionID: sessionID, limit: 500)
     }
 
     /// The newest stored messages of a session, oldest first: the end of its transcript.
@@ -523,8 +525,10 @@ nonisolated struct HermesSessionsAPI: Sendable {
         return out
     }
 
-    /// Generic JSON call against the API server (bearer-authenticated).
-    func requestJSON(_ method: String, _ path: String, query: [URLQueryItem] = [], body: JSONValue? = nil) async throws -> JSONValue {
+    /// Generic JSON call against the API server (bearer-authenticated). It and `get` are
+    /// `@concurrent` so a long transcript is decoded off the main actor: with approachable
+    /// concurrency a plain nonisolated async function runs on its caller's actor.
+    @concurrent func requestJSON(_ method: String, _ path: String, query: [URLQueryItem] = [], body: JSONValue? = nil) async throws -> JSONValue {
         let data = try await send(method, path, query: query, body: try body.map { try Self.encoder.encode($0) },
                                   timeout: method == "POST" && path.hasSuffix("/run") ? 600 : 20)
         if data.isEmpty { return .null }
@@ -548,7 +552,7 @@ nonisolated struct HermesSessionsAPI: Sendable {
         try await get(ListEnvelope<Skill>.self, "v1/skills").data
     }
 
-    private func get<T: Decodable>(_ type: T.Type, _ path: String, query: [URLQueryItem] = []) async throws -> T {
+    @concurrent private func get<T: Decodable & Sendable>(_ type: T.Type, _ path: String, query: [URLQueryItem] = []) async throws -> T {
         try Self.decoder.decode(type, from: try await send("GET", path, query: query, timeout: 15))
     }
 
@@ -639,7 +643,8 @@ nonisolated struct HermesRuns: Sendable {
     /// Follows a run to its end, handing on what it says: its events while they last; when they
     /// stop short, its events again from where they were (0.22), else its status until it ends.
     /// Returns when the run is over, or when the host no longer knows it; throws when it failed.
-    func follow(_ run: String, yield: @escaping @Sendable (TurnEvent) -> Void) async throws {
+    /// Off the main actor: its events, parsed here, are many and can be the whole reply again.
+    @concurrent func follow(_ run: String, yield: @escaping @Sendable (TurnEvent) -> Void) async throws {
         let progress = RunProgress(yield: yield)
         var replayable = true
         var troubleSince: Date?
