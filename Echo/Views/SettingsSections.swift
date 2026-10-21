@@ -72,6 +72,13 @@ struct AppearanceSettings: View {
                 }
             }
 
+            Toggle(isOn: $settings.botFaces) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Bot faces")
+                    Text("Off, each bot, Redde too, is its initial on a circle of its color, and voice mode shows the Bubble orb in place of a face. The bots work the same either way.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
             Toggle(isOn: $settings.botColors) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Bot colors in their chats")

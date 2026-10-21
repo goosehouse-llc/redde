@@ -336,7 +336,7 @@ struct GroupChatView: View {
 
     private var title: some View {
         HStack(spacing: 8) {
-            FaceStack(faces: feed.room.members.prefix(3).map { face($0) }, size: 22)
+            FaceStack(faces: feed.room.members.prefix(3).map { (face($0), $0.label) }, size: 22)
             Text(feed.room.name).font(.headline).lineLimit(1)
         }
         .accessibilityElement(children: .combine)
@@ -344,7 +344,7 @@ struct GroupChatView: View {
 
     private var opening: some View {
         VStack(spacing: 12) {
-            FaceStack(faces: feed.room.members.map { face($0) }, size: 44)
+            FaceStack(faces: feed.room.members.map { (face($0), $0.label) }, size: 44)
             Text(feed.room.members.map(\.label).formatted(.list(type: .and)))
                 .font(.headline).multilineTextAlignment(.center)
             Text(feed.room.inDesktop ? "Nothing said yet in Hermes Desktop."
@@ -454,15 +454,15 @@ struct GroupChatView: View {
 
 }
 
-/// A few bots' faces overlapping, for a group chat.
+/// A few bots' faces overlapping, for a group chat: each bot's face and name.
 struct FaceStack: View {
-    var faces: [BotFace]
+    var faces: [(face: BotFace, name: String)]
     var size: CGFloat = 22
 
     var body: some View {
         HStack(spacing: -size * 0.35) {
-            ForEach(Array(faces.enumerated()), id: \.offset) { _, face in
-                BotAvatar(face: face, size: size)
+            ForEach(Array(faces.enumerated()), id: \.offset) { _, bot in
+                BotAvatar(face: bot.face, name: bot.name, size: size)
                     .background(Circle().fill(Color(.systemBackground)).padding(-1.5))
             }
         }
@@ -494,7 +494,7 @@ struct NewGroupChatView: View {
                             if let i = picked.firstIndex(of: bot.name) { picked.remove(at: i) } else if picked.count < 6 { picked.append(bot.name) }
                         } label: {
                             HStack(spacing: 12) {
-                                BotAvatar(face: faces[bot.name] ?? BotFace(seed: bot.name), size: 30)
+                                BotAvatar(face: faces[bot.name] ?? BotFace(seed: bot.name), name: bot.label(mainName: mainName), size: 30)
                                 Text(bot.label(mainName: mainName))
                                 Spacer()
                                 if picked.contains(bot.name) { Image(systemName: "checkmark").foregroundStyle(.tint).fontWeight(.semibold) }

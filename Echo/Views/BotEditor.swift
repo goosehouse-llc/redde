@@ -260,7 +260,7 @@ struct BotEditor: View {
 
     private var faceHeader: some View {
         VStack(spacing: 8) {
-            BotAvatar(face: shownFace, size: 96)
+            BotAvatar(face: shownFace, name: typedTitle.nilIfEmpty ?? (isMain ? mainName : ""), size: 96)
                 .accessibilityLabel("Its face")
             Button("Change Face") { pickingFace = true }
                 .font(.subheadline)
@@ -292,7 +292,7 @@ struct BotEditor: View {
                                 Image(systemName: "plus").font(.title2.weight(.medium)).frame(width: 52, height: 52)
                                     .background(.quaternary, in: .circle)
                             } else {
-                                BotAvatar(face: choice.face, size: 52)
+                                BotAvatar(face: choice.face, name: choice.title, size: 52)
                             }
                             Text(choice.id == BotTemplate.blank.id ? "Blank" : choice.title).font(.caption)
                         }
@@ -557,7 +557,7 @@ struct HiddenBotsView: View {
                 Section {
                     ForEach(bots) { bot in
                         HStack(spacing: 12) {
-                            BotAvatar(face: BotDirectory.shared.roster?.faces[bot.name] ?? BotFace(seed: bot.name), size: 30)
+                            BotAvatar(face: BotDirectory.shared.roster?.faces[bot.name] ?? BotFace(seed: bot.name), name: bot.label(mainName: mainName), size: 30)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(bot.label(mainName: mainName))
                                 if !bot.description.isEmpty {

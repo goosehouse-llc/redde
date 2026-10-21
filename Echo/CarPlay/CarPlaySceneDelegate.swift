@@ -409,7 +409,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         return roster.listed(in: settings.botOrderHere).prefix(most > 0 ? most : 12).map { bot in
             let isOpen = conversation?.bot?.profile == bot.name
             let row = CPListItem(text: bot.label(mainName: settings.headerTitle), detailText: botDetail(bot),
-                                 image: BotAvatar.picture(of: faces[bot.name] ?? BotFace(seed: bot.name), side: side, scale: scale),
+                                 image: BotAvatar.picture(of: faces[bot.name] ?? BotFace(seed: bot.name), named: bot.label(mainName: settings.headerTitle),
+                                                         side: side, scale: scale),
                                  accessoryImage: isOpen ? CarPlayArtwork.openChatMark : nil, accessoryType: .none)
             row.handler = { [weak self] _, completion in
                 Task { @MainActor in

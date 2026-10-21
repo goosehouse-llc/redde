@@ -193,6 +193,21 @@ struct BotsTests {
         #expect(tinted.userBubble != Theme.standard.resolved(with: nil).userBubble && tinted.accent != Theme.standard.resolved(with: nil).accent)
     }
 
+    @Test func withBotFacesOffABotIsItsInitialAndVoiceModeShowsNoFace() {
+        #expect(BotAvatar.initial(of: "scout") == "S")
+        #expect(BotAvatar.initial(of: "@research-buddy") == "R", "the first letter, past marks")
+        #expect(BotAvatar.initial(of: "3PO") == "3")
+        #expect(BotAvatar.initial(of: "🏡") == "🏡", "an emoji name stands as itself")
+        #expect(BotAvatar.initial(of: "  ") == "" && BotAvatar.initial(of: "") == "")
+
+        let settings = Settings(defaults: UserDefaults(suiteName: "bot-faces-\(UUID().uuidString)")!)
+        #expect(settings.botFaces && VoiceOrb.shown(settings) == .reddeFace, "faces on, and Redde's face the orb, unless changed")
+        settings.botFaces = false
+        #expect(VoiceOrb.shown(settings) == .bubbleWave, "Redde's face gives way to the Bubble")
+        settings.voiceOrb = .goldWave
+        #expect(VoiceOrb.shown(settings) == .goldWave, "any other orb stays as picked")
+    }
+
     // MARK: - Making and changing bots
 
     @Test func aNewBotsHandleComesFromItsNameAsHermesTakesIt() {

@@ -207,23 +207,37 @@ nonisolated struct BotPose: Equatable, Sendable {
 
 struct BotAvatar: View {
     var face: BotFace
+    /// Whose it is, as the bot is shown: with Settings → Appearance → Bot faces off, it is drawn
+    /// as its initial on a circle of its colour instead. Without one, the face is always drawn
+    /// (where a face is picked, and voice mode's, which shows the orb instead).
+    var name: String? = nil
     var size: CGFloat = 32
     var pose: BotPose? = nil
     /// Redde's bubble takes its colour and corners from the theme, as a message does.
     @Environment(\.theme) private var theme
 
     var body: some View {
-        Canvas { context, canvas in draw(in: &context, size: canvas.width) }
-            .frame(width: size, height: size)
-            .accessibilityHidden(true)
+        let initial = name.flatMap { Settings.shared.botFaces ? nil : Self.initial(of: $0) }
+        Canvas { context, canvas in
+            if let initial { monogram(initial, in: &context, size: canvas.width) } else { draw(in: &context, size: canvas.width) }
+        }
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
     }
 
     /// The face as a picture, for what isn't SwiftUI (CarPlay's voice card), in the theme the app
     /// is in.
-    static func picture(of face: BotFace, side: CGFloat, pose: BotPose? = nil, scale: CGFloat) -> UIImage? {
-        let renderer = ImageRenderer(content: BotAvatar(face: face, size: side, pose: pose).environment(\.theme, Settings.shared.resolvedTheme))
+    static func picture(of face: BotFace, named name: String? = nil, side: CGFloat, pose: BotPose? = nil, scale: CGFloat) -> UIImage? {
+        let renderer = ImageRenderer(content: BotAvatar(face: face, name: name, size: side, pose: pose).environment(\.theme, Settings.shared.resolvedTheme))
         renderer.scale = scale
         return renderer.uiImage
+    }
+
+    /// What stands for a name with Bot faces off: its first letter or digit as a capital
+    /// ("@scout" is S), or its first character if it has neither (an emoji); none for no name.
+    static func initial(of name: String) -> String {
+        let first = name.first { $0.isLetter || $0.isNumber } ?? name.first { !$0.isWhitespace && !$0.isPunctuation }
+        return first.map { String($0).uppercased() } ?? ""
     }
 
     /// Where each shape's body is, its eyes and its top, in a 100-point box.
@@ -375,6 +389,23 @@ struct BotAvatar: View {
         default: return BotFace.palette[face.color % BotFace.palette.count]
         }
         return (own.mix(with: .white, by: 0.14), own)
+    }
+
+    /// With Bot faces off: a circle in the face's colour, the initial on it in white, or in ink
+    /// on a light colour (amber, lime, white, a pale theme's bubble), the white one outlined.
+    private func monogram(_ initial: String, in context: inout GraphicsContext, size s: CGFloat) {
+        let deep = colors.deep
+        let ink = Color(red: 0.09, green: 0.09, blue: 0.13)
+        let skin = deep.resolve(in: context.environment)
+        let lightness = 0.2126 * skin.linearRed + 0.7152 * skin.linearGreen + 0.0722 * skin.linearBlue
+        let disc = Path(ellipseIn: CGRect(x: 0, y: 0, width: s, height: s).insetBy(dx: s * 0.04, dy: s * 0.04))
+        context.fill(disc, with: .linearGradient(Gradient(colors: [deep.mix(with: .white, by: 0.18), deep]),
+                                                 startPoint: CGPoint(x: s * 0.2, y: 0), endPoint: CGPoint(x: s * 0.8, y: s)))
+        if lightness > 0.62 { context.stroke(disc, with: .color(ink.opacity(0.2)), lineWidth: max(1, s / 60)) }
+        guard !initial.isEmpty else { return }
+        context.draw(Text(initial).font(.system(size: s * 0.46, weight: .semibold, design: .rounded))
+                        .foregroundStyle(lightness > 0.45 ? ink : .white),
+                     at: CGPoint(x: s / 2, y: s / 2))
     }
 
     private func draw(in context: inout GraphicsContext, size s: CGFloat) {
@@ -574,6 +605,14 @@ struct BotGallery: View {
             }
             .padding(10)
             .background(Color.white, in: .rect(cornerRadius: 12))
+            // The same by name, as initials with Bot faces off (`-botFaces NO`), on white and black.
+            ForEach([Color.white, .black], id: \.self) { page in
+                HStack(spacing: 6) {
+                    ForEach(Self.names, id: \.self) { BotAvatar(face: faces[$0] ?? BotFace(seed: $0), name: $0, size: 26) }
+                }
+                .padding(10)
+                .background(page, in: .rect(cornerRadius: 12))
+            }
             // Redde in every theme, on that theme's page.
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 10) {
                 ForEach(Theme.allCases) { theme in

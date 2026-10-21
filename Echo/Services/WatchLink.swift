@@ -77,18 +77,20 @@ final class WatchLink: NSObject, WCSessionDelegate {
         let faces = roster.faces
         return roster.listed(in: settings.botOrderHere).filter { !$0.isDefault }.prefix(8).map { bot in
             WatchBot(profile: bot.name, name: bot.label(mainName: settings.headerTitle),
-                     face: BotAvatar.picture(of: faces[bot.name] ?? BotFace(seed: bot.name), side: 40, scale: 2)?.pngData())
+                     face: BotAvatar.picture(of: faces[bot.name] ?? BotFace(seed: bot.name), named: bot.label(mainName: settings.headerTitle),
+                                             side: 40, scale: 2)?.pngData())
         }
     }
 
     /// The bots changed (read again, named, picked a face): the watch hears of it, once.
     func botsChanged() {
-        // Without drawing them: a creature's picture changes only with its face.
+        // Without drawing them: a creature's picture changes only with its face (or its initial,
+        // with Bot faces off).
         // None (another server, or none read): the watch is told that too.
         let settings = Settings.shared, directory = BotDirectory.shared
         let roster = directory.key == settings.connectionKey ? directory.roster : nil
         let signature = (roster?.listed(in: settings.botOrderHere) ?? []).filter { !$0.isDefault }.prefix(8).map { bot in
-            "\(bot.name)|\(bot.label(mainName: settings.headerTitle))|\((roster?.faces[bot.name] ?? BotFace(seed: bot.name)).code)"
+            "\(bot.name)|\(bot.label(mainName: settings.headerTitle))|\((roster?.faces[bot.name] ?? BotFace(seed: bot.name)).code)|\(settings.botFaces)"
         }
         guard signature != lastBots else { return }
         lastBots = signature

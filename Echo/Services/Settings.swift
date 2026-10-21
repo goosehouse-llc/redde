@@ -328,6 +328,16 @@ final class Settings: ServeEndpoint {
     var botColors: Bool {
         didSet { store(botColors, forKey: Keys.botColors) }
     }
+    /// Settings → Appearance → Bot faces: off, every bot (Redde too) is drawn as a circle in its
+    /// colour with its initial instead of a creature, and voice mode shows the voice orb (the
+    /// Bubble one in place of Redde's face). The faces stay on the server. Asked 2026-10-21, for
+    /// people who'd rather not have faces; on unless turned off.
+    var botFaces: Bool {
+        didSet {
+            store(botFaces, forKey: Keys.botFaces)
+            if self === Settings.shared { WatchLink.shared.botsChanged() }   // the watch's bot pictures
+        }
+    }
     /// How much larger or smaller than the iPhone's own text size the conversation is set, in
     /// steps of that scale: `chatTextSizes`. Zero follows the system.
     var chatTextSize: Int {
@@ -530,6 +540,7 @@ final class Settings: ServeEndpoint {
         static let returnSends = "returnSends"
         static let chatTextSize = "chatTextSize"
         static let botColors = "botColors"
+        static let botFaces = "botFaces"
         static let requireBiometrics = "requireBiometrics"
         static let siriAIEnabled = "siriAIEnabled"
         static let siriDraftsInNewConversation = "siriDraftsInNewConversation"
@@ -611,6 +622,7 @@ final class Settings: ServeEndpoint {
         returnSends = defaults.bool(forKey: Keys.returnSends)
         chatTextSize = min(max(defaults.integer(forKey: Keys.chatTextSize), Self.chatTextSizes.lowerBound), Self.chatTextSizes.upperBound)
         botColors = defaults.object(forKey: Keys.botColors) as? Bool ?? true
+        botFaces = defaults.object(forKey: Keys.botFaces) as? Bool ?? true
         requireBiometrics = defaults.bool(forKey: Keys.requireBiometrics)
         siriAIEnabled = defaults.bool(forKey: Keys.siriAIEnabled)
         siriDraftsInNewConversation = defaults.bool(forKey: Keys.siriDraftsInNewConversation)
@@ -675,7 +687,7 @@ final class Settings: ServeEndpoint {
     /// Siri, Phone tools, what needs a permission of the device (notifications, motion), and the
     /// push relay.
     static let syncedKeys: [String] = [
-        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.botColors, Keys.returnSends,
+        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.botColors, Keys.botFaces, Keys.returnSends,
         Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.showBots,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
@@ -702,6 +714,7 @@ final class Settings: ServeEndpoint {
         case Keys.appearance: appearance = pick(Appearance.system)
         case Keys.chatTextSize: chatTextSize = min(max(value as? Int ?? 0, Self.chatTextSizes.lowerBound), Self.chatTextSizes.upperBound)
         case Keys.botColors: botColors = flag(true)
+        case Keys.botFaces: botFaces = flag(true)
         case Keys.returnSends: returnSends = flag()
         case Keys.voiceOrb: voiceOrb = pick(VoiceOrb.reddeFace)
         case Keys.orbLight: orbLight = pick(OrbLight.nebula)
@@ -966,6 +979,7 @@ final class Settings: ServeEndpoint {
         returnSends = false
         chatTextSize = 0
         botColors = true
+        botFaces = true
         requireBiometrics = false
         siriAIEnabled = false
         siriDraftsInNewConversation = false

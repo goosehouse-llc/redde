@@ -79,7 +79,7 @@ struct VoiceView: View {
         if let group {
             // Always hands-free with a room, and no camera: a question to it is words alone.
             HStack(spacing: 8) {
-                FaceStack(faces: group.feed.room.members.prefix(3).map(group.face), size: 22)
+                FaceStack(faces: group.feed.room.members.prefix(3).map { (group.face($0), $0.label) }, size: 22)
                 Text(group.feed.room.name).font(.footnote.weight(.semibold)).lineLimit(1)
                 Spacer(minLength: 0)
             }
@@ -503,7 +503,9 @@ private struct OrbFace: View {
                 .animation(.easeOut(duration: 0.3), value: listening)
             // The orb picked in Settings → Appearance (design/icons/orbs/): a round one is ringed
             // in the phase color; a speech bubble glows in it along its own outline instead.
-            let orb = Settings.shared.voiceOrb
+            let orb = VoiceOrb.shown()
+            // With Bot faces off, the orb stands in for the bots' faces too.
+            let faces = Settings.shared.botFaces
             let meter: () -> Float = { demo ? Self.demoLevel() : session.phase == .speaking ? session.output.meterLevel : session.recognizer.meterLevel }
             if listening || phase == .speaking {
                 Halos(color: phaseColor, diameter: orb.isDrawn ? GlassOrb.haloDiameter : 198)
@@ -516,11 +518,11 @@ private struct OrbFace: View {
             // the change is seen, not only heard. Under Reduce Motion they cross-fade.
             ZStack {
                 Group {
-                    if replyFace == nil, let groupFaces {
+                    if faces, replyFace == nil, let groupFaces {
                         GroupVoiceFaces(faces: groupFaces, phase: phase, phaseColor: phaseColor, level: meter)
                             .scaleEffect(listening ? 1 + level * 0.04 : 1)
                             .accessibilityHidden(true)
-                    } else if let face = replyFace ?? (orb == .reddeFace ? BotDirectory.shared.mainFace : nil) {
+                    } else if let face = (faces ? replyFace : nil) ?? (orb == .reddeFace ? BotDirectory.shared.mainFace : nil) {
                         // Redde's own face (the orb picked), or the bot being talked to, whichever orb is picked.
                         ReddeVoiceFace(face: face, phase: phase, phaseColor: phaseColor, level: meter)
                             .scaleEffect(listening ? 1 + level * 0.06 : 1)

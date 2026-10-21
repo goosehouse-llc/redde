@@ -296,7 +296,7 @@ struct ContentView: View {
                                 if let botFace {
                                     // A bot's chat: whose it is, by its face and name, side by side.
                                     HStack(spacing: 6) {
-                                        BotAvatar(face: botFace, size: 22)
+                                        BotAvatar(face: botFace, name: headerTitle, size: 22)
                                         Text(headerTitle).lineLimit(1)
                                     }
                                     .fixedSize(horizontal: true, vertical: false)

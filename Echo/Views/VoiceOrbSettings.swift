@@ -14,6 +14,12 @@ enum VoiceOrb: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// The orb voice mode shows: the one picked, but with Settings → Appearance → Bot faces off,
+    /// the Bubble in place of Redde's face (which is the default), so no face is shown there.
+    static func shown(_ settings: Settings = .shared) -> VoiceOrb {
+        settings.voiceOrb == .reddeFace && !settings.botFaces ? .bubbleWave : settings.voiceOrb
+    }
+
     var label: String {
         switch self {
         case .darkGlass: "Dark Glass"

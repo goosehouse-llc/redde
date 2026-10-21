@@ -300,6 +300,12 @@ colour each while there are some left (none gets Redde's shape, nor the standard
 clear of other Hermes apps' looks on purpose (Cadu's clouds, flowers, ghosts, hearts, pears, cats
 and bears; plain dark oval eyes). The creature is in the list, the @ menu, the chat's header and
 beside its replies; `-echo.screen botGallery` (DEBUG) shows a dozen large, and Redde in every theme.
+Settings → Appearance → Bot faces (`Settings.botFaces`, synced, on unless turned off; asked
+2026-10-21 for people who'd rather not have faces) draws every bot, Redde too, as its initial on a
+circle of its colour (`BotAvatar` with a `name`; without one, where a face is picked, the face is
+drawn all the same), on CarPlay's Bots tab and the watch's too; voice mode then shows the voice orb
+for a bot and a room, with the Bubble in place of Redde's face (`VoiceOrb.shown`). The faces stay
+on the server, so turning it back on shows them again.
 Rows come from `profiles.list` (every release from 0.21.0): the bot's name (its Hermes Desktop
 title, its profile's display name, or the profile's name; the main profile goes by the name in
 Settings → Name), and its chat's last line and time (`canonical_session`).

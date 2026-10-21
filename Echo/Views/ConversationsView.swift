@@ -523,7 +523,7 @@ struct ConversationsList: View {
         let roster = botDirectory.roster?.bots ?? []
         return Button { openBot(bot) } label: {
             HStack(spacing: 12) {
-                BotAvatar(face: face)
+                BotAvatar(face: face, name: name)
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(name).font(.body.weight(.semibold)).lineLimit(1)
@@ -596,7 +596,7 @@ struct ConversationsList: View {
         let marks = ChatMarks(kind: activity.kind(of: room), unread: !muted && activity.isUnread(room, isOpen: isOpen), muted: muted)
         return Button { opened(room: room) } label: {
             HStack(spacing: 12) {
-                FaceStack(faces: room.members.prefix(2).map { faces[$0.profile] ?? BotFace(seed: $0.profile) }, size: 24)
+                FaceStack(faces: room.members.prefix(2).map { (faces[$0.profile] ?? BotFace(seed: $0.profile), $0.label) }, size: 24)
                     .frame(width: 32, alignment: .leading)
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {

@@ -175,7 +175,7 @@ struct MessageRow: View, Equatable {
     private var speakerLine: some View {
         HStack(spacing: 6) {
             if isLive { LiveMark(color: theme.accent) }
-            if let replyFace { BotAvatar(face: replyFace, size: 20) }
+            if let replyFace { BotAvatar(face: replyFace, name: replySpeaker ?? settings.headerTitle, size: 20) }
             Text(replySpeaker ?? settings.headerTitle).font(.subheadline.weight(.semibold))
             if isLive {
                 // The one place that shimmers while the reply is being worked on.
@@ -682,7 +682,7 @@ struct DeliveredMessage: View {
                         if delivered.kind == .routine {
                             Image(systemName: "clock").frame(width: 20)
                         } else {
-                            BotAvatar(face: face, size: 20)
+                            BotAvatar(face: face, name: name, size: 20)
                         }
                         Text(heading).font(.subheadline.weight(.medium))
                     }
@@ -694,7 +694,7 @@ struct DeliveredMessage: View {
                 .accessibilityHint(open ? "Hides what \(name) said" : "Shows what \(name) said")
             } else {
                 HStack(spacing: 6) {
-                    BotAvatar(face: face, size: 20)
+                    BotAvatar(face: face, name: name, size: 20)
                     Text(heading).font(.subheadline.weight(.semibold))
                 }
             }
