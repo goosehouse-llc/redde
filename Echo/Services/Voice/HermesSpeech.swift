@@ -38,7 +38,7 @@ nonisolated enum HermesSpeech {
 
     /// Streams one sentence's audio into `chunks`, in `format` (the player's), ~100 ms a buffer.
     /// Returns whether it completed; a failure finishes `chunks` with the error.
-    static func fetch(_ text: String, client: HermesServeClient, server: URL, format: AVAudioFormat,
+    @concurrent static func fetch(_ text: String, client: HermesServeClient, server: URL, format: AVAudioFormat,
                       into chunks: AsyncThrowingStream<AVAudioPCMBuffer, Error>.Continuation) async -> Bool {
         let key = server.absoluteString
         do {
@@ -125,7 +125,7 @@ nonisolated enum HermesSpeech {
 
     /// One sentence spoken whole (`POST api/audio/speak`): its samples in `format`, a quarter of
     /// a second at a time, and the provider Hermes says spoke it ("elevenlabs", "edge"…).
-    static func whole(_ text: String, client: HermesServeClient, format: AVAudioFormat) async throws -> (samples: [[Float]], provider: String?) {
+    @concurrent static func whole(_ text: String, client: HermesServeClient, format: AVAudioFormat) async throws -> (samples: [[Float]], provider: String?) {
         let answer = try await client.restJSON("POST", "api/audio/speak", body: .object(["text": .string(text)]), timeout: 60)
         guard let dataURL = answer["data_url"]?.string, let audio = decodeDataURL(dataURL) else {
             throw TransportError.malformed("Hermes sent no audio")

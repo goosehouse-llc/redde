@@ -273,7 +273,9 @@ final class KokoroPlayer {
         switch sentence.source {
         case let .kokoro(baseURL, voice, speed):
             sentence.fetch = Task { [weak self] in
-                // The bytes are decoded off the main actor; only the bookkeeping hops back.
+                // The bytes are decoded off the main actor (`@concurrent`: with approachable
+                // concurrency a plain nonisolated async function runs on its caller's actor, here
+                // the main one); only the bookkeeping hops back.
                 if await Self.fetch(text, baseURL: baseURL, voice: voice, speed: speed, into: continuation) {
                     self?.lastRequestAt = .now
                 }
@@ -289,7 +291,7 @@ final class KokoroPlayer {
     }
 
     /// Streams one sentence's PCM into `chunks`, ~100 ms per buffer. Returns whether it completed.
-    nonisolated private static func fetch(_ text: String, baseURL: URL, voice: String, speed: Double,
+    @concurrent nonisolated private static func fetch(_ text: String, baseURL: URL, voice: String, speed: Double,
                                           into chunks: AsyncThrowingStream<AVAudioPCMBuffer, Error>.Continuation) async -> Bool {
         struct Body: Encodable {
             var model = "kokoro"; var input: String; var voice: String
