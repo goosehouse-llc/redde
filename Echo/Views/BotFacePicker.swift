@@ -26,7 +26,11 @@ struct BotFacePicker: View {
         _face = State(initialValue: current)
     }
 
-    static let colorNames = ["Blue", "Amber", "Pink", "Indigo", "Teal", "Violet", "Green", "Orange", "Sky", "Coral", "Lime", "White", "Black"]
+    static let colorNames = ["Blue", "Amber", "Pink", "Indigo", "Teal", "Violet", "Green", "Orange", "Sky", "Coral", "Lime", "White", "Black",
+                             "Theme", "Code Blue"]
+    /// The colours offered: Redde's own two first for the main agent (`BotFace.themed`, `codeBlue`).
+    private var offered: [Int] { (bot.isDefault ? [BotFace.themed, BotFace.codeBlue] : []) + Array(BotFace.palette.indices) }
+    @Environment(\.theme) private var theme
 
     var body: some View {
         NavigationStack {
@@ -105,18 +109,25 @@ struct BotFacePicker: View {
     private var colours: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 10) {
-                ForEach(BotFace.palette.indices, id: \.self) { index in
+                ForEach(offered, id: \.self) { index in
                     let picked = face.color == index
                     Button { face.color = index } label: {
-                        Circle()
-                            .fill(LinearGradient(colors: [BotFace.palette[index].light, BotFace.palette[index].deep], startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .frame(width: 34, height: 34)
-                            // White and black would vanish on a page of their own colour.
-                            .overlay(Circle().strokeBorder(.quaternary, lineWidth: index >= BotFace.seededColors ? 1 : 0))
-                            .padding(4)
-                            .overlay(Circle().strokeBorder(picked ? Color.accentColor : .clear, lineWidth: 2.5))
-                            .frame(width: 44, height: 44)
-                            .contentShape(.circle)
+                        VStack(spacing: 2) {
+                            Circle()
+                                .fill(swatch(index))
+                                .frame(width: 34, height: 34)
+                                // White, black and a pale bubble would vanish on a page of their own colour.
+                                .overlay(Circle().strokeBorder(.quaternary, lineWidth: index >= BotFace.seededColors ? 1 : 0))
+                                .padding(4)
+                                .overlay(Circle().strokeBorder(picked ? Color.accentColor : .clear, lineWidth: 2.5))
+                                .frame(width: 44, height: 44)
+                            Text(Self.colorNames[index])
+                                .font(.caption2)
+                                .foregroundStyle(picked ? .primary : .secondary)
+                                .lineLimit(1)
+                        }
+                        .frame(minWidth: 52)
+                        .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(Self.colorNames[index])
@@ -125,6 +136,22 @@ struct BotFacePicker: View {
             }
             .padding(.vertical, 4)
         }
+    }
+
+    /// A colour's circle: the palette's gradient, or for Redde's own two their colour as the face
+    /// has it (the theme's here, whichever theme is on).
+    private func swatch(_ index: Int) -> LinearGradient {
+        let pair: (light: Color, deep: Color)
+        switch index {
+        case BotFace.themed:
+            let own = theme.promptPrefix != nil ? theme.promptColor : theme.userBubble
+            pair = (own.mix(with: .white, by: 0.14), own)
+        case BotFace.codeBlue:
+            pair = (Theme.claudeCode.userBubble.mix(with: .white, by: 0.14), Theme.claudeCode.userBubble)
+        default:
+            pair = BotFace.palette[index]
+        }
+        return LinearGradient(colors: [pair.light, pair.deep], startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 
     private func save(_ picked: BotFace?) {

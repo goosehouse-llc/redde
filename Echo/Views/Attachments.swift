@@ -82,10 +82,10 @@ struct AudioBubble: View {
                 Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                     .font(.body.weight(.semibold))
                     .frame(width: 36, height: 36)
-                    .background(Color.accentColor.opacity(0.16), in: .circle)
+                    .background(.tint.opacity(0.16), in: .circle)
             }
             .buttonStyle(.plain)
-            .foregroundStyle(Color.accentColor)
+            .foregroundStyle(.tint)
             .disabled(duration == nil)
             .accessibilityLabel(isPlaying ? "Pause" : "Play")
             // The clock only runs while this one is playing; at rest the bar costs nothing.

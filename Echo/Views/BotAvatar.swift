@@ -7,7 +7,7 @@ import SwiftUI
 /// Hermes Desktop, and `BotFace.faces(for:picked:)` gives every bot on a server one no other has
 /// there (a shape and a colour of its own too, while there are some left), unless the person picked
 /// one for it (`HermesBot.face`, kept on the server). The main agent is Redde itself: the app's own
-/// message bubble, in the Code theme's pale sky whatever the theme.
+/// message bubble, in the theme's bubble colour, or the Code theme's pale sky if that is picked.
 nonisolated struct BotFace: Equatable, Hashable, Sendable {
     enum Shape: String, CaseIterable, Sendable {
         case round, egg, pill, capsule, burst, pick, hex, diamond
@@ -58,6 +58,14 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
     static let seededColors = 11
     /// The white one: drawn with a faint outline, or it would vanish on a white page.
     static let white = 11
+    /// Redde's own two, past the palette: the theme's bubble colour, which follows the theme (its
+    /// face's unless another is picked), and the Code theme's pale sky (#CBF0FF) in every theme.
+    /// Asked 2026-10-21, after a day of the Code blue everywhere: the theme's, with the Code blue
+    /// still to be had.
+    static let themed = 13
+    static let codeBlue = 14
+    /// Every colour a face can be: the palette's, then Redde's two.
+    static let colorCount = 15
 
     /// Every face a name can give (colour, glance and lean aside), in a fixed order.
     private static let all: [BotFace] = Shape.seeded.flatMap { shape in
@@ -68,11 +76,33 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
         }
     }
 
+    /// The colours a chat with this bot takes with Settings → Appearance → Bot colors on, as the
+    /// reader's own colour picks would: your bubbles and the accent in the deep end of its colour
+    /// (white and black colour the bubbles alone: an accent in either would vanish on one of the
+    /// pages), the Code blue as the Code theme has it. None for a face in the theme's colour,
+    /// which is the theme's already.
+    var chatColors: ThemeColors? {
+        switch color {
+        case Self.themed:
+            return nil
+        case Self.codeBlue:
+            // #CBF0FF, the Code theme's accent and bubble.
+            let blue = ThemeColors.RGB(red: 0.796, green: 0.941, blue: 1.0)
+            return ThemeColors(accent: blue, bubble: blue)
+        case Self.white:
+            return ThemeColors(accent: nil, bubble: ThemeColors.RGB(Self.palette[color].light))
+        case Self.white + 1:
+            return ThemeColors(accent: nil, bubble: ThemeColors.RGB(Self.palette[color].deep))
+        default:
+            let own = ThemeColors.RGB(Self.palette[color % Self.palette.count].deep)
+            return ThemeColors(accent: own, bubble: own)
+        }
+    }
+
     /// The main agent's, whatever its profile is called, unless one was picked for it: Redde's own
     /// bubble, the shape of a message in the app with its tucked corner on the left (a reply's
-    /// side), in the Code theme's pale sky in every theme (asked 2026-10-20). Its colour
-    /// number only keeps the other bots off blue, the colour of the standard theme.
-    static let main = BotFace(shape: .bubble, eyes: .round, mouth: .none, mark: .none, glance: 1, tilt: -3, color: 0)
+    /// side), in the theme's bubble colour. The other bots keep off blue, the standard theme's.
+    static let main = BotFace(shape: .bubble, eyes: .round, mouth: .none, mark: .none, glance: 1, tilt: -3, color: themed)
 
     /// The face a name gives, on its own. The main profile's is always Redde's (`main`).
     init(seed: String) {
@@ -104,7 +134,7 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
               let eyes = Eyes(rawValue: parts[2]), let mouth = Mouth(rawValue: parts[3]), let mark = Mark(rawValue: parts[4]),
               let color = Int(parts[5]), let glance = Int(parts[6]), let tilt = Int(parts[7]) else { return nil }
         self.init(shape: shape, eyes: eyes, mouth: mouth, mark: mark, glance: ((glance % 4) + 4) % 4,
-                  tilt: Double(max(-8, min(8, tilt))), color: ((color % Self.palette.count) + Self.palette.count) % Self.palette.count)
+                  tilt: Double(max(-8, min(8, tilt))), color: ((color % Self.colorCount) + Self.colorCount) % Self.colorCount)
     }
 
     /// A face for each name, no two alike: the ones the person picked as they are, then each
@@ -119,7 +149,10 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
         // The main profile first: the others go round its face.
         if names.contains("default") {
             let face = picked["default"] ?? main
-            taken.append(face)
+            // In a colour of its own (the theme's, the Code blue), it keeps the others off blue.
+            var held = face
+            if held.color >= palette.count { held.color = 0 }
+            taken.append(held)
             out["default"] = face
         }
         for name in Set(names).subtracting(["default"]).sorted() {
@@ -332,13 +365,20 @@ struct BotAvatar: View {
         }
     }
 
-    /// Redde's colour: the Code theme's bubble (#CBF0FF), whichever theme is on, and whatever
-    /// colour was picked for that theme's bubbles.
-    private var bubbleColor: Color { Theme.claudeCode.userBubble }
+    /// The face's colour as a gradient, light to deep. Redde's own two: the colour of a message
+    /// bubble in this theme (the prompt line's in a theme without bubbles), or the Code theme's.
+    private var colors: (light: Color, deep: Color) {
+        let own: Color
+        switch face.color {
+        case BotFace.themed: own = theme.promptPrefix != nil ? theme.promptColor : theme.userBubble
+        case BotFace.codeBlue: own = Theme.claudeCode.userBubble
+        default: return BotFace.palette[face.color % BotFace.palette.count]
+        }
+        return (own.mix(with: .white, by: 0.14), own)
+    }
 
     private func draw(in context: inout GraphicsContext, size s: CGFloat) {
-        let colors = face.shape == .bubble ? (light: bubbleColor.mix(with: .white, by: 0.14), deep: bubbleColor)
-                                           : BotFace.palette[face.color % BotFace.palette.count]
+        let colors = colors
         let ink = Color(red: 0.09, green: 0.09, blue: 0.13)
         // On a body nearly white (a theme's pale bubble) the white of the eyes gets a rim, or it'd vanish.
         let skin = colors.deep.resolve(in: context.environment)

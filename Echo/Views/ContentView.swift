@@ -126,11 +126,11 @@ struct ContentView: View {
             // "No Observable object of type Conversation found". Sheets do inherit it.
             .environment(conversation)
             .environment(voiceSession)
-            .environment(\.theme, theme)
+            .environment(\.theme, chatTheme)
             // In a bot's chat, voice mode is with the bot: its name, and its creature as the orb.
             .environment(\.replySpeaker, conversation.bot?.name)
             .environment(\.replyFace, botFace)
-            .tint(theme.accent)
+            .tint(chatTheme.accent)
         }
         .task {
             settings.applyLocalDefaultsIfPresent()
@@ -326,7 +326,7 @@ struct ContentView: View {
                                     Text(projectName.count > 16 ? projectName.prefix(15) + "…" : projectName)
                                         .font(.caption.weight(.medium)).lineLimit(1)
                                 }
-                                .foregroundStyle(theme.accent)
+                                .foregroundStyle(chatTheme.accent)
                                 .fixedSize()
                                 .accessibilityElement(children: .ignore)
                                 .accessibilityLabel("Project: \(projectName)")
@@ -428,6 +428,10 @@ struct ContentView: View {
                     }
                 }
             }
+            // A bot's colours, with Bot colors on: the transcript, the composer and the toolbar
+            // above (not the sheets below, which aren't the chat).
+            .environment(\.theme, chatTheme)
+            .tint(chatTheme.accent)
             .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
             .fullScreenCover(isPresented: $showTerminal) { TerminalScreen(folderLookup: terminalFolder) }
             .alert("Rename conversation", isPresented: $showRename) {
@@ -577,6 +581,14 @@ struct ContentView: View {
         conversation.bot.map { bot in
             (BotDirectory.shared.key == settings.connectionKey ? BotDirectory.shared.roster?.faces[bot.profile] : nil) ?? BotFace(seed: bot.profile)
         }
+    }
+
+    /// The chat's colours: the theme's, or with Settings → Appearance → Bot colors on, the bot's,
+    /// and Redde's in a chat with it when its face has a colour of its own. (A group chat isn't
+    /// this screen, and keeps the theme's.)
+    private var chatTheme: ResolvedTheme {
+        guard settings.botColors, let colors = (botFace ?? BotDirectory.shared.mainFace).chatColors else { return theme }
+        return settings.theme.resolved(with: colors)
     }
 
     private var headerTitle: String {

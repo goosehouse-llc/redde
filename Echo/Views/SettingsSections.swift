@@ -72,6 +72,13 @@ struct AppearanceSettings: View {
                 }
             }
 
+            Toggle(isOn: $settings.botColors) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Bot colors in their chats")
+                    Text("Your bubbles and the buttons in a bot's chat take its color, and Redde's own chats take its face's if it has one. Group chats keep the theme's.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
             Picker("Chat text size", selection: $settings.chatTextSize) {
                 ForEach(Array(Settings.chatTextSizes), id: \.self) { Text(ChatTextSize.label($0)).tag($0) }
             }

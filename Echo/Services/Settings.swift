@@ -322,6 +322,12 @@ final class Settings: ServeEndpoint {
     var returnSends: Bool {
         didSet { store(returnSends, forKey: Keys.returnSends) }
     }
+    /// Settings → Appearance → Bot colors: a bot's chat takes its face's colour for your bubbles
+    /// and the accent (`BotFace.chatColors`), and so does Redde's when its face has a colour of its
+    /// own. Group chats keep the theme's colours. Asked 2026-10-21; on unless turned off.
+    var botColors: Bool {
+        didSet { store(botColors, forKey: Keys.botColors) }
+    }
     /// How much larger or smaller than the iPhone's own text size the conversation is set, in
     /// steps of that scale: `chatTextSizes`. Zero follows the system.
     var chatTextSize: Int {
@@ -523,6 +529,7 @@ final class Settings: ServeEndpoint {
         static let notificationSound = "notificationSound"
         static let returnSends = "returnSends"
         static let chatTextSize = "chatTextSize"
+        static let botColors = "botColors"
         static let requireBiometrics = "requireBiometrics"
         static let siriAIEnabled = "siriAIEnabled"
         static let siriDraftsInNewConversation = "siriDraftsInNewConversation"
@@ -603,6 +610,7 @@ final class Settings: ServeEndpoint {
         notificationSound = defaults.object(forKey: Keys.notificationSound) as? Bool ?? true
         returnSends = defaults.bool(forKey: Keys.returnSends)
         chatTextSize = min(max(defaults.integer(forKey: Keys.chatTextSize), Self.chatTextSizes.lowerBound), Self.chatTextSizes.upperBound)
+        botColors = defaults.object(forKey: Keys.botColors) as? Bool ?? true
         requireBiometrics = defaults.bool(forKey: Keys.requireBiometrics)
         siriAIEnabled = defaults.bool(forKey: Keys.siriAIEnabled)
         siriDraftsInNewConversation = defaults.bool(forKey: Keys.siriDraftsInNewConversation)
@@ -667,7 +675,7 @@ final class Settings: ServeEndpoint {
     /// Siri, Phone tools, what needs a permission of the device (notifications, motion), and the
     /// push relay.
     static let syncedKeys: [String] = [
-        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.returnSends,
+        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.botColors, Keys.returnSends,
         Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.showBots,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
@@ -693,6 +701,7 @@ final class Settings: ServeEndpoint {
         case Keys.themeColors: themeColors = decoded([:])
         case Keys.appearance: appearance = pick(Appearance.system)
         case Keys.chatTextSize: chatTextSize = min(max(value as? Int ?? 0, Self.chatTextSizes.lowerBound), Self.chatTextSizes.upperBound)
+        case Keys.botColors: botColors = flag(true)
         case Keys.returnSends: returnSends = flag()
         case Keys.voiceOrb: voiceOrb = pick(VoiceOrb.reddeFace)
         case Keys.orbLight: orbLight = pick(OrbLight.nebula)
@@ -956,6 +965,7 @@ final class Settings: ServeEndpoint {
         notificationSound = true
         returnSends = false
         chatTextSize = 0
+        botColors = true
         requireBiometrics = false
         siriAIEnabled = false
         siriDraftsInNewConversation = false

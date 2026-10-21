@@ -116,8 +116,8 @@ struct BotsTests {
         #expect(BotFace.faces(for: names.reversed()) == faces, "the same creatures whatever order they come in")
         #expect(BotFace.faces(for: ["scout"])["scout"] == BotFace(seed: "scout"), "a bot alone has the creature its name gives")
         #expect(faces["default"] == BotFace.main && BotFace(seed: "default") == BotFace.main, "the main agent is always Redde's bubble")
-        #expect(!faces.filter { $0.key != "default" }.values.contains { $0.shape == .bubble || $0.color == BotFace.main.color },
-                "and no other bot has its shape, nor the standard theme's blue")
+        #expect(!faces.filter { $0.key != "default" }.values.contains { $0.shape == .bubble || $0.color == 0 || $0.color >= BotFace.palette.count },
+                "and no other bot has its shape, nor the standard theme's blue, nor its colours")
         let fourteen = BotFace.faces(for: names + ["eleven", "twelve", "thirteen", "fourteen"])
         #expect(features(Array(fourteen.values)).count == 14, "creatures stay apart past the shapes and colours")
     }
@@ -157,6 +157,40 @@ struct BotsTests {
         #expect(scout.face == picked && scout.reddeRevision == 2, "the roster reads the face Redde kept in the profile")
         #expect(roster.bots.first { $0.name == "writer" }?.face == nil, "one it can't read is the face its name gives")
         #expect(roster.faces["scout"] == picked)
+    }
+
+    /// Asked 2026-10-21: Redde's face in the theme's colour, with the Code blue one to pick.
+    @Test func reddesFaceIsTheThemesColourWithTheCodeBlueToPick() throws {
+        #expect(BotFace.main.color == BotFace.themed, "unpicked, Redde's face is the theme's colour")
+        var blue = BotFace.main
+        blue.color = BotFace.codeBlue
+        #expect(BotFace(code: blue.code) == blue && BotFace(code: BotFace.main.code) == BotFace.main, "both of its colours read back as written")
+        let faces = BotFace.faces(for: ["default", "scout", "writer", "fixit"], picked: ["default": blue])
+        #expect(faces["default"] == blue)
+        #expect(!faces.filter { $0.key != "default" }.values.contains { $0.color == 0 || $0.color >= BotFace.palette.count },
+                "the other bots keep off blue, and off its colours")
+    }
+
+    /// Asked 2026-10-21: with Bot colors on, a bot's chat in its colour; Redde's in the theme's
+    /// unless its face has one of its own.
+    @Test func aBotsChatTakesItsColourAndReddesThemeColourIsTheThemes() throws {
+        #expect(BotFace.main.chatColors == nil, "Redde in the theme's colour leaves the theme as it is")
+        var redde = BotFace.main
+        redde.color = BotFace.codeBlue
+        let blue = try #require(redde.chatColors)
+        let code = ThemeColors.RGB(Theme.claudeCode.userBubble)
+        #expect(blue.accent == blue.bubble && abs((blue.bubble?.red ?? 0) - code.red) + abs((blue.bubble?.green ?? 0) - code.green)
+                + abs((blue.bubble?.blue ?? 0) - code.blue) < 0.003, "the Code blue as the Code theme has it")
+        let scout = BotFace(shape: .burst, eyes: .sleepy, mouth: .none, mark: .none, glance: 0, tilt: 0, color: 3)
+        let indigo = try #require(scout.chatColors)
+        #expect(indigo.accent != nil && indigo.accent == indigo.bubble, "a bot's colour for the bubbles and the accent")
+        for pale in [BotFace.white, BotFace.white + 1] {
+            var face = scout
+            face.color = pale
+            #expect(face.chatColors?.accent == nil && face.chatColors?.bubble != nil, "white and black colour the bubbles alone")
+        }
+        let tinted = Theme.standard.resolved(with: indigo)
+        #expect(tinted.userBubble != Theme.standard.resolved(with: nil).userBubble && tinted.accent != Theme.standard.resolved(with: nil).accent)
     }
 
     // MARK: - Making and changing bots

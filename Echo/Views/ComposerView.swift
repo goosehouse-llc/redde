@@ -549,7 +549,7 @@ struct ComposerView: View {
                         }
                         .transition(Self.buttonSwap)
                     }
-                    ComposerButton(symbol: "text.line.last.and.arrowtriangle.forward", label: "Send after this reply", tint: .accentColor, size: buttonSize) {
+                    ComposerButton(symbol: "text.line.last.and.arrowtriangle.forward", label: "Send after this reply", tint: theme.accent, size: buttonSize) {
                         send()
                     }
                     .transition(Self.buttonSwap)
@@ -560,12 +560,12 @@ struct ComposerView: View {
                     .transition(Self.buttonSwap)
                 }
             } else if hasDraft {
-                ComposerButton(symbol: "arrow.up", label: "Send", tint: .accentColor, size: buttonSize) {
+                ComposerButton(symbol: "arrow.up", label: "Send", tint: theme.accent, size: buttonSize) {
                     send()
                 }
                 .transition(Self.buttonSwap)
             } else {
-                ComposerButton(symbol: "waveform", label: settings.handsFreeByDefault ? "Talk hands-free" : "Talk", tint: .accentColor, size: buttonSize, waveform: true) {
+                ComposerButton(symbol: "waveform", label: settings.handsFreeByDefault ? "Talk hands-free" : "Talk", tint: theme.accent, size: buttonSize, waveform: true) {
                     openHandsFree()
                 }
                 .accessibilityHint(settings.handsFreeByDefault ? "Opens voice mode and keeps listening after each reply"

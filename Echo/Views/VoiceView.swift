@@ -638,7 +638,8 @@ private extension AnyTransition {
 }
 
 /// Redde's own face as the voice orb (Settings → Appearance → Voice orb → Redde): its bubble in the
-/// Code theme's pale sky, glowing along its outline in the phase colour while it is doing anything.
+/// theme's bubble colour (or the one picked for it), glowing along its outline in the phase colour
+/// while it is doing anything.
 /// It blinks now and then; at rest it glances about, a look held a moment before the next; while
 /// you talk it looks at you; while it thinks it looks up and away, eyes circling; while the reply
 /// is read out its mouth opens with the voice. Small moves, no breathing; still under Reduce Motion.
