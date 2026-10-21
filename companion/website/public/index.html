@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Redde — your agent, in your pocket</title>
-<meta name="description" content="Redde is an iPhone, iPad, CarPlay and Apple Watch client for your self-hosted Hermes agent — or any OpenAI-compatible model. Talk or type, watch it work, approve, and run sessions, cron jobs and the Kanban board. No account, no cloud, no tracking.">
+<title>Redde — your agent and its crew, in your pocket</title>
+<meta name="description" content="Redde is an iPhone, iPad, CarPlay and Apple Watch client for your self-hosted Hermes agent — or any OpenAI-compatible model. New in 2.0: bots, each with a face, a voice and a job, in group chats you can talk to. No account, no cloud, no tracking.">
 <meta name="theme-color" content="#0c1230">
-<meta property="og:title" content="Redde — your agent, in your pocket">
-<meta property="og:description" content="Voice and chat for your self-hosted AI agent, on iPhone, iPad, CarPlay and Apple Watch. No account. No cloud. No tracking.">
-<meta property="og:image" content="https://redde.goosehouse.org/assets/chat.jpg">
+<meta property="og:title" content="Redde 2.0 — your agent has a crew">
+<meta property="og:description" content="Bots with faces and voices, group chats you can talk to, schedules: voice and chat for your self-hosted Hermes agent, on iPhone, iPad, CarPlay and Apple Watch.">
+<meta property="og:image" content="https://redde.goosehouse.org/assets/crew.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/png" href="assets/icon.png">
 <link rel="apple-touch-icon" href="assets/icon.png">
@@ -231,6 +231,53 @@
     .term-body { padding: 16px; font-size: .78rem; }
   }
 
+  /* ── the crew (2.0) ── */
+  .face { display: block; flex: none; }
+  .bob { animation: bob 2.6s ease-in-out infinite; }
+  @keyframes bob { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-7px) rotate(2deg); } }
+  .hop:hover { animation: hop .55s cubic-bezier(.3, 1.6, .5, 1); }
+  @keyframes hop { 0% { transform: translateY(0) scale(1); } 40% { transform: translateY(-16px) scale(1.08, .94); } 100% { transform: translateY(0) scale(1); } }
+  .hero-side { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .crew-row { display: flex; justify-content: center; align-items: flex-end; gap: clamp(6px, 1.4vw, 14px); padding: 0 8px 6px; }
+  .crew-row .face { width: clamp(40px, 5.4vw, 62px); height: auto; filter: drop-shadow(0 8px 12px rgba(0,0,0,.45)); }
+  .crew-row .face.lead { width: clamp(64px, 8.4vw, 96px); }
+  .msg { display: flex; gap: 10px; align-items: flex-start; }
+  .msg .face { width: 24px; height: 24px; margin-top: 2px; }
+  .msg .who { font-weight: 700; }
+  .who.redde { color: #a9dcf2; } .who.scout { color: #9aa3f5; } .who.quill { color: #6fd8b9; }
+  .tag-at { color: #6fd8b9; font-weight: 700; }
+  .bots { padding-top: 90px; }
+  .bots-head { display: flex; flex-direction: column; gap: 14px; margin-bottom: 30px; }
+  .crew-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .crew-card {
+    border: 1px solid var(--line); border-radius: 18px; padding: 20px; background: rgba(24,36,80,.35);
+    display: flex; gap: 16px; align-items: center; transition: border-color .2s ease, background .2s ease;
+  }
+  .crew-card:hover { border-color: rgba(232,176,75,.45); background: rgba(24,36,80,.6); }
+  .crew-card .face { width: 76px; height: 76px; filter: drop-shadow(0 8px 14px rgba(0,0,0,.4)); }
+  .crew-card h4 { margin: 0 0 4px; font-size: 1.08rem; }
+  .crew-card h4 small { font-family: var(--mono); font-weight: 500; font-size: .72rem; color: var(--gold); margin-left: 6px; }
+  .crew-card p { margin: 0; color: var(--mist); font-size: .88rem; line-height: 1.5; }
+  .crew-card.yours { border-style: dashed; }
+  .crew-card .stack { display: flex; flex: none; }
+  .crew-card .stack .face { width: 44px; height: 44px; margin-right: -12px; }
+  .reel { margin-top: 56px; display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 56px; align-items: center; }
+  .reel video {
+    width: 100%; max-width: 330px; justify-self: center; border-radius: 26px; background: #080b16;
+    box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 0 90px rgba(111,216,185,.14); border: 1px solid rgba(200,214,240,.12);
+  }
+  .reel .scopy h3 { font-size: clamp(1.6rem, 3vw, 2.2rem); }
+  @media (max-width: 960px) {
+    .crew-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .reel { grid-template-columns: 1fr; gap: 34px; }
+    .reel video { order: 2; max-width: 300px; }
+  }
+  @media (max-width: 640px) {
+    .crew-grid { grid-template-columns: 1fr; }
+    .crew-card .face { width: 60px; height: 60px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .bob, .hop:hover { animation: none; } }
+
   /* Feed the Goose: tips via Buy Me a Coffee */
   .feed { padding-top: 90px; }
   .feed .kicker { display: block; }
@@ -259,6 +306,7 @@
       <div class="name">Redde</div>
     </a>
     <nav>
+      <a class="plain" href="#bots">/bots</a>
       <a class="plain" href="#new">/new</a>
       <a class="plain" href="#features">/features</a>
       <a class="plain" href="#privacy">/privacy</a>
@@ -271,11 +319,11 @@
 <div class="wrap" id="top">
   <div class="hero">
     <div class="hero-copy">
-      <div class="kicker">$ your model · your server · your rules</div>
-      <h1>Your agent,<br><em>in your pocket.</em></h1>
+      <div class="kicker">$ new in 2.0 · bots</div>
+      <h1>Your agent<br><em>has a crew.</em></h1>
       <p class="sub">An iPhone, iPad, CarPlay and Apple Watch client for your self-hosted Hermes
-      agent — or any OpenAI-compatible model. Talk or type, watch it work, approve what it runs.
-      No account. No cloud. No tracking.</p>
+      agent — and now for its whole crew. Every profile is a bot with a face, a voice and a job,
+      and they work together in group chats you can talk to. No account. No cloud. No tracking.</p>
       <div class="cta">
         <a class="store" href="https://apps.apple.com/app/id6810900557">
           <svg width="19" height="23" viewBox="0 0 384 512" fill="#0b0b0c" aria-hidden="true"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
@@ -285,23 +333,30 @@
       </div>
     </div>
 
-    <div class="term" role="img" aria-label="A sample Redde session: a spoken question, the agent working with a seconds counter, a tool call, an approval prompt with Allow and Deny buttons, and a spoken reply">
-      <div class="term-bar">
-        <i style="background:#e8604b"></i><i style="background:#e8b04b"></i><i style="background:#4be87e"></i>
-        <i class="title">redde — session 0x2f · hermes @ homelab</i>
+    <div class="hero-side">
+      <div class="crew-row" aria-hidden="true">
+        <img class="face bob hop" style="animation-delay:-.2s" src="assets/faces/researcher.png" alt="" width="62" height="62">
+        <img class="face bob hop" style="animation-delay:-1.1s" src="assets/faces/coder.png" alt="" width="62" height="62">
+        <img class="face bob hop" style="animation-delay:-.6s" src="assets/faces/scout.png" alt="" width="62" height="62">
+        <img class="face lead bob hop" style="animation-delay:-1.6s" src="assets/faces/redde.png" alt="" width="96" height="96">
+        <img class="face bob hop" style="animation-delay:-.9s" src="assets/faces/quill.png" alt="" width="62" height="62">
+        <img class="face bob hop" style="animation-delay:-2s" src="assets/faces/home.png" alt="" width="62" height="62">
+        <img class="face bob hop" style="animation-delay:-1.4s" src="assets/faces/planner.png" alt="" width="62" height="62">
       </div>
-      <div class="term-body" aria-hidden="true">
-        <div><span class="you">you ›</span> "is the greenhouse fan still running?" <span class="note">· spoken</span></div>
-        <div><span class="agent">sol</span> <span class="timer">is working · 4 s</span></div>
-        <div class="think">thinking… checking Home Assistant for fan.greenhouse state</div>
-        <div class="tool-call"><span class="t">[tool]</span> ha.get_state("fan.greenhouse")<br><span class="r">→ on · 640 rpm · 26 min</span></div>
-        <div><span class="agent">sol ›</span> Still running — 26 minutes at low speed. Want me to shut it off?</div>
-        <div><span class="you">you ›</span> "yes, and lock the shed"</div>
-        <div class="approval">
-          <div><span class="agent">[approval]</span> lock.shed → lock</div>
-          <div class="btns"><span class="allow">Allow</span><span class="deny">Deny</span></div>
+      <div class="term" role="img" aria-label="A sample group chat in Redde: a spoken question to a room of three bots, Redde, Scout and Quill, each answering in turn">
+        <div class="term-bar">
+          <i style="background:#e8604b"></i><i style="background:#e8b04b"></i><i style="background:#4be87e"></i>
+          <i class="title">redde — weekend hike · Redde, Scout and Quill</i>
         </div>
-        <div><span class="agent">sol ›</span> Done. Fan off, shed locked.<span class="cursor"></span></div>
+        <div class="term-body" aria-hidden="true">
+          <div><span class="you">you ›</span> "We're doing Falls Loop on Saturday. Who's on what?" <span class="note">· spoken, to the room</span></div>
+          <div class="msg"><img class="face" src="assets/faces/redde.png" alt="" width="24" height="24"><div><span class="who redde">redde ›</span> On it. Saturday at 8 is on your calendar, with an alarm at 6:45.</div></div>
+          <div class="msg"><img class="face" src="assets/faces/scout.png" alt="" width="24" height="24"><div><span class="who scout">scout</span> <span class="timer">is working · 3 s</span></div></div>
+          <div class="tool-call"><span class="t">[tool]</span> web.search("Falls Loop trail conditions")<br><span class="r">→ open · muddy past the second footbridge</span></div>
+          <div class="msg"><img class="face" src="assets/faces/scout.png" alt="" width="24" height="24"><div><span class="who scout">scout ›</span> The trail's open, but it's muddy past the second footbridge. Boots, not sneakers.</div></div>
+          <div><span class="you">you ›</span> <span class="tag-at">@quill</span> a two-line invite for the group chat?</div>
+          <div class="msg"><img class="face" src="assets/faces/quill.png" alt="" width="24" height="24"><div><span class="who quill">quill ›</span> Falls Loop, Saturday, 8 am sharp. Bring layers; coffee's on me after.<span class="cursor"></span></div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -309,25 +364,62 @@
 
 <div class="marquee" aria-hidden="true">
   <div class="marquee-track">
-    <div><span>Talk</span><span class="sep">·</span><span>Type</span><span class="sep">·</span><span>Watch it work</span><span class="sep">·</span><span>Approve</span><span class="sep">·</span><span>Run your agent</span><span class="sep">·</span><span>Continue anywhere</span><span class="sep">·</span></div>
-    <div><span>Talk</span><span class="sep">·</span><span>Type</span><span class="sep">·</span><span>Watch it work</span><span class="sep">·</span><span>Approve</span><span class="sep">·</span><span>Run your agent</span><span class="sep">·</span><span>Continue anywhere</span><span class="sep">·</span></div>
+    <div><span>Meet the crew</span><span class="sep">·</span><span>Group chats</span><span class="sep">·</span><span>Talk to the room</span><span class="sep">·</span><span>Schedules</span><span class="sep">·</span><span>Talk</span><span class="sep">·</span><span>Type</span><span class="sep">·</span><span>Watch it work</span><span class="sep">·</span><span>Approve</span><span class="sep">·</span><span>Continue anywhere</span><span class="sep">·</span></div>
+    <div><span>Meet the crew</span><span class="sep">·</span><span>Group chats</span><span class="sep">·</span><span>Talk to the room</span><span class="sep">·</span><span>Schedules</span><span class="sep">·</span><span>Talk</span><span class="sep">·</span><span>Type</span><span class="sep">·</span><span>Watch it work</span><span class="sep">·</span><span>Approve</span><span class="sep">·</span><span>Continue anywhere</span><span class="sep">·</span></div>
   </div>
 </div>
 
 <section class="new wrap" id="new">
   <div class="new-card">
     <div>
-      <div class="kicker">## coming soon in 1.9</div>
-      <h2>Find it, open a shell, start a project.</h2>
+      <div class="kicker">## new in 2.0</div>
+      <h2>Bots! A crew for your agent.</h2>
     </div>
     <ul>
-      <li><b>Search inside messages.</b> The search above your conversations looks inside them too, shows the words around each match, and opens the chat at the word.</li>
-      <li><b>A terminal on your server.</b> A shell over SSH from Settings or from a chat, starting in the chat’s folder. The key is made on your iPhone and stays there.</li>
-      <li><b>Projects with folders.</b> Make a Hermes project over a folder in ~/Projects and start conversations that work in it. The chat’s header names the project.</li>
-      <li><b>Scheduled runs, out of the way.</b> Each run of a cron job is a conversation of its own. They fold away at the end of the list instead of burying the rest.</li>
-      <li><b>Leave while it works.</b> Open another conversation and your agent keeps going on the server. The reply is there when you come back.</li>
-      <li><b>Files where Hermes keeps them.</b> SOUL.md and the memory files open in Docker and anywhere else Hermes lives, and the Talk button in a chat keeps that chat.</li>
+      <li><b>Every profile is a bot</b>, with a chat of its own under Bots. Start one from a template and make its job, personality, model and tools your own.</li>
+      <li><b>A face for each.</b> Every bot is a little creature: pick its shape, eyes, mouth, mark and color. Faces are kept on your server, so every Redde shows the same crew.</li>
+      <li><b>Group chats.</b> Two to six bots in a room: they answer in turn, or only the one you tag. Type @ in any chat to hand work to another bot.</li>
+      <li><b>Talk to the room.</b> The voice screen opens on the crew, and each bot answers in a voice of its own, its face up while it speaks.</li>
+      <li><b>Schedules.</b> “What to wear, every weekday at 7.” The answer lands in the bot’s chat, and on your Lock Screen with Redde closed.</li>
+      <li><b>Everywhere you ask.</b> “Hey Siri, ask Home in Redde”, a Bots tab in CarPlay, a Bots section on the Apple Watch, or say its name first.</li>
+      <li><b>Redde has a face.</b> The new app icon, and a voice orb that blinks, looks at you while you talk and speaks with the reply.</li>
+      <li><b>Also new:</b> incognito chats kept nowhere, Sync with iCloud for your servers and settings, and a list that shows what’s working, what needs you and what’s unread.</li>
     </ul>
+  </div>
+</section>
+
+<section class="bots wrap" id="bots">
+  <div class="bots-head">
+    <div class="kicker">## meet the crew</div>
+    <h2>Bots with faces, voices and jobs.</h2>
+    <p class="lede">Each Hermes profile on your server is a bot. Make one in seconds from a template, or from
+    nothing, then give it a face and a voice of its own.</p>
+  </div>
+  <div class="crew-grid">
+    <div class="crew-card"><img class="face bob hop" style="animation-delay:-.4s" src="assets/faces/redde.png" alt="" width="76" height="76"><div><h4>Redde <small>your agent</small></h4><p>The one in charge: your main Hermes profile, with Redde’s own face.</p></div></div>
+    <div class="crew-card"><img class="face bob hop" style="animation-delay:-1.3s" src="assets/faces/researcher.png" alt="" width="76" height="76"><div><h4>Researcher <small>template</small></h4><p>Looks things up on the web and comes back with what it found, and where it found it.</p></div></div>
+    <div class="crew-card"><img class="face bob hop" style="animation-delay:-.8s" src="assets/faces/writer.png" alt="" width="76" height="76"><div><h4>Writer <small>template</small></h4><p>Drafts, edits and tightens writing, in your voice.</p></div></div>
+    <div class="crew-card"><img class="face bob hop" style="animation-delay:-2.1s" src="assets/faces/coder.png" alt="" width="76" height="76"><div><h4>Coder <small>template</small></h4><p>Reads and changes code, runs it, and says what it did.</p></div></div>
+    <div class="crew-card"><img class="face bob hop" style="animation-delay:-1.7s" src="assets/faces/home.png" alt="" width="76" height="76"><div><h4>Home <small>template</small></h4><p>Looks after the house: lights, heating, sensors and routines.</p></div></div>
+    <div class="crew-card"><img class="face bob hop" style="animation-delay:-.1s" src="assets/faces/planner.png" alt="" width="76" height="76"><div><h4>Planner <small>template</small></h4><p>Keeps your plans, lists and reminders, and nudges you on time.</p></div></div>
+    <div class="crew-card yours"><div class="stack"><img class="face hop" src="assets/faces/scout.png" alt="" width="44" height="44"><img class="face hop" src="assets/faces/fixit.png" alt="" width="44" height="44"></div><div style="margin-left:12px"><h4>Yours <small>blank</small></h4><p>Name it, give it a job, a personality, a face and a voice.</p></div></div>
+  </div>
+
+  <div class="reel">
+    <video src="assets/crew.mp4" poster="assets/crew-poster.jpg" autoplay muted loop playsinline controls preload="metadata"
+           aria-label="Redde 2.0 in 30 seconds: the crew, a bot made from a template, bots messaging each other, a group chat, three bots talking in turn, mute and schedules"></video>
+    <div class="scopy">
+      <div class="num">THE CREW AT WORK</div>
+      <h3>Ask the room. Everyone pitches in.</h3>
+      <p>Put bots in a group chat and talk to them like a team. Each answers in turn, in its own voice, or
+      only the one you tag.</p>
+      <ul class="ticks">
+        <li><b>Hand-offs you can follow.</b> @ another bot from any chat; what bots send each other reads as theirs.</li>
+        <li><b>Hands-free with the whole crew.</b> Ask once in voice mode and hear them answer one after another.</li>
+        <li><b>Bots that work while you don’t.</b> Schedules every day, on weekdays, every few hours or once.</li>
+        <li><b>Quiet when you need it.</b> Mute a bot or a room for an hour, until morning, or until you say so.</li>
+      </ul>
+    </div>
   </div>
 </section>
 
@@ -340,13 +432,41 @@
   </div>
 
   <div class="srow">
+    <div class="shot glow"><img src="assets/bots.jpg" alt="The conversation list's Bots: Redde, Quill, Scout and Fix-it, each with its face, and two group chats" loading="lazy" width="828" height="1799"></div>
+    <div class="scopy">
+      <div class="num">01 · BOTS</div>
+      <h3>A crew in your conversation list.</h3>
+      <p>Every bot has a chat of its own, under its face. The list says who’s working, who needs you and what you haven’t read.</p>
+      <ul class="ticks">
+        <li><b>New Bot</b> from Researcher, Writer, Coder, Home or Planner, or from nothing.</li>
+        <li><b>Edit, hide and reorder</b> bots, and change a face whenever you like.</li>
+        <li><b>On either connection:</b> the Hermes Dashboard, or the Hermes API with the Dashboard’s login.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="srow flip">
+    <div class="shot glow"><img src="assets/crew.jpg" alt="A group chat's voice screen: Quill is speaking, under Redde's and Scout's answers to a question about Saturday's hike" loading="lazy" width="828" height="1799"></div>
+    <div class="scopy">
+      <div class="num">02 · GROUP CHATS</div>
+      <h3>Talk to the whole crew.</h3>
+      <p>Ask a room of bots out loud. Redde puts it on your calendar, Scout checks the trail, Quill writes the invite, each in a voice of its own.</p>
+      <ul class="ticks">
+        <li><b>Two to six bots</b> in a room your Hermes runs; replies show as they’re written.</li>
+        <li><b>Files and pictures</b> go along with your messages.</li>
+        <li><b>Notifications</b> from the room with your Hermes paired: Reply, Approve and Deny from the Lock Screen.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="srow">
     <div class="shot glow"><img src="assets/voice.jpg" alt="Voice mode listening: a glass orb lit from inside, and the words as you say them" loading="lazy" width="828" height="1800"></div>
     <div class="scopy">
-      <div class="num">01 · VOICE</div>
+      <div class="num">03 · VOICE</div>
       <h3>Talk, don’t type.</h3>
       <p>Tap the mic, ask, hear the answer. Or go hands-free and keep talking until you say “that’s all.”</p>
       <ul class="ticks">
-        <li><b>On-device speech recognition</b>, with replies in the built-in voice or your own Kokoro server.</li>
+        <li><b>On-device speech recognition</b>, with replies in the built-in voice, your own Kokoro server, or your Hermes’s voice.</li>
         <li><b>Cut in any time.</b> Start talking over a reply, tap to interrupt, or type while it’s replying to steer.</li>
         <li><b>CarPlay and Apple Watch:</b> ask through the car’s mic and hear it through the speakers, or raise your wrist and ask.</li>
         <li><b>Siri, AirPods, Action Button, Control Center.</b> Start listening from wherever you are.</li>
@@ -358,7 +478,7 @@
   <div class="srow flip">
     <div class="shot"><img src="assets/type.jpg" alt="Typing a follow-up to the kitchen project reply, with the keyboard up" loading="lazy" width="828" height="1800"></div>
     <div class="scopy">
-      <div class="num">02 · TYPE</div>
+      <div class="num">04 · TYPE</div>
       <h3>Or just type.</h3>
       <p>In a meeting or on the train, it’s a full chat app. Switch between talking and typing in the same conversation, any time.</p>
       <ul class="ticks">
@@ -373,7 +493,7 @@
   <div class="srow">
     <div class="shot"><img src="assets/work.jpg" alt="Two replies in the Paper theme: a calendar summary with a copyable shell command, and a checklist with a cost table" loading="lazy" width="828" height="1800"></div>
     <div class="scopy">
-      <div class="num">03 · WATCH IT WORK</div>
+      <div class="num">05 · WATCH IT WORK</div>
       <h3>See what your agent is doing.</h3>
       <p>No black box. Reasoning streams as it thinks, tools show up as they run, and a timer tells you how long it’s been at it.</p>
       <ul class="ticks">
@@ -388,7 +508,7 @@
   <div class="srow flip">
     <div class="shot"><img src="assets/chat.jpg" alt="A dark chat with a cost table, a Mermaid flowchart and a formula" loading="lazy" width="828" height="1800"></div>
     <div class="scopy">
-      <div class="num">04 · RICH ANSWERS</div>
+      <div class="num">06 · RICH ANSWERS</div>
       <h3>Answers with substance.</h3>
       <p>Everything your agent sends renders properly, and everything it makes lands in the chat.</p>
       <div class="chips"><span>Markdown</span><span>highlighted code</span><span>tables</span><span>task lists</span><span>Mermaid diagrams</span><span>math</span><span>images</span><span>PDFs</span></div>
@@ -403,13 +523,13 @@
   <div class="srow">
     <div class="shot"><img src="assets/icons.jpg" alt="Settings with the app icon picker open" loading="lazy" width="828" height="1800"></div>
     <div class="scopy">
-      <div class="num">05 · MAKE IT YOURS</div>
+      <div class="num">07 · MAKE IT YOURS</div>
       <h3>Your agent, your look.</h3>
       <p>Name it, theme it, pick its face.</p>
       <ul class="ticks">
         <li><b>Seven themes</b>: Messages, Paper, Slate, a green-phosphor Terminal, Amber CRT, Hermes gold and Code.</li>
         <li><b>Your own accent and bubble colors</b> in every theme.</li>
-        <li><b>13 app icons</b> and <b>12 voice orbs</b>.</li>
+        <li><b>14 app icons</b> and <b>13 voice orbs</b>, Redde’s own face first in both.</li>
         <li><b>Give it a name</b>. It shows in the header and the message box.</li>
       </ul>
     </div>
@@ -418,7 +538,7 @@
   <div class="srow flip">
     <div class="shot"><img src="assets/setup.jpg" alt="Setup: paste a setup code, or choose how Redde reaches your server" loading="lazy" width="828" height="1800"></div>
     <div class="scopy">
-      <div class="num">06 · YOUR BACKEND</div>
+      <div class="num">08 · YOUR BACKEND</div>
       <h3>Plugs into what you already run.</h3>
       <p>Connect to a Hermes gateway on your LAN, over a tailnet or behind Cloudflare Access. Or skip the agent and talk straight to a model.</p>
       <div class="chips"><span>Hermes API</span><span>Hermes Dashboard (WebSocket)</span><span>llama.cpp</span><span>llama-swap</span><span>vLLM</span><span>Ollama</span><span>hosted providers</span></div>
@@ -434,7 +554,7 @@
   <div class="srow">
     <div class="shot"><img src="assets/kanban.jpg" alt="The Kanban board's To do column, with priorities, assignees and comment counts" loading="lazy" width="828" height="1800"></div>
     <div class="scopy">
-      <div class="num">07 · KANBAN</div>
+      <div class="num">09 · KANBAN</div>
       <h3>Hand it the to-do list.</h3>
       <p>Your agent’s task board, in your pocket and updating live. Drop a card in, mark it ready, and Redde picks it up.</p>
       <ul class="ticks">
@@ -453,7 +573,7 @@
   <p class="lede" style="margin-top:14px">Everything your Hermes agent does, managed from your phone.</p>
   <div class="cards">
     <div class="card"><div class="tag">sessions</div><h4>Continue anywhere</h4><p>Conversations live in your gateway’s ledger. Start on the phone, pick up on the desktop, Telegram or the CLI. Search, pin, rename, fork, archive.</p></div>
-    <div class="card"><div class="tag">projects</div><h4>Grouped by project</h4><p>Sessions sorted into project folders, so the kitchen remodel doesn’t get lost in the greenhouse.</p></div>
+    <div class="card"><div class="tag">projects</div><h4>Projects with folders</h4><p>A Hermes project over a folder on your server: conversations started in it work in that folder.</p></div>
     <div class="card"><div class="tag">kanban</div><h4>The board, live</h4><p>Your agent’s Kanban board, live. Create, edit and move cards, comment on them, or ask Redde about one.</p></div>
     <div class="card"><div class="tag">cron</div><h4>Scheduled jobs</h4><p>Create, edit and run cron jobs with delivery targets, or start from a ready-made blueprint.</p></div>
     <div class="card"><div class="tag">skills</div><h4>Skills and tools</h4><p>Turn skills and tool sets on or off. Create and edit skills, or describe one and let Redde draft it.</p></div>
@@ -468,6 +588,10 @@
     <div class="card"><div class="tag">notify</div><h4>Hears from it when closed</h4><p>Pair your Hermes and it tells your iPhone when a reply is ready or it’s waiting for you, encrypted on the way.</p></div>
     <div class="card"><div class="tag">server</div><h4>The server too</h4><p>MCP servers, logs, restart and update, and the server’s files: look, edit, upload.</p></div>
     <div class="card"><div class="tag">notes</div><h4>Just a note</h4><p>“Hey Siri, take a note in Redde.” Your agent files it in Notes, and nothing is read back.</p></div>
+    <div class="card"><div class="tag">search</div><h4>Search inside</h4><p>Search looks inside your conversations, shows the words around each match and opens the chat at the word.</p></div>
+    <div class="card"><div class="tag">terminal</div><h4>A shell on your server</h4><p>SSH from Settings or from a chat, starting in its folder. The key is made on your iPhone and stays there.</p></div>
+    <div class="card"><div class="tag">incognito</div><h4>Kept nowhere</h4><p>An incognito chat isn’t saved on the phone, in notifications or in widgets, and is deleted from your server when you leave.</p></div>
+    <div class="card"><div class="tag">icloud</div><h4>On all your devices</h4><p>Sync with iCloud brings your servers, keys and settings to your other iPhones, iPads and Macs, end-to-end encrypted.</p></div>
   </div>
 </section>
 
@@ -505,7 +629,7 @@
 
 <section class="closer wrap">
   <img src="assets/icon.png" alt="The Redde app icon" width="96" height="96" loading="lazy">
-  <h2>Talk to your own agent.</h2>
+  <h2>Talk to your own agent. And its crew.</h2>
   <a class="store" href="https://apps.apple.com/app/id6810900557">
     <svg width="19" height="23" viewBox="0 0 384 512" fill="#0b0b0c" aria-hidden="true"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
     <span><small>Download on the</small>App Store</span>
