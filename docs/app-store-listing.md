@@ -93,8 +93,9 @@ Written ahead of the release. What a phone has shown is said where it has.
 
 In App Store Connect and on the web:
 - 1.9 was approved on 2026-10-18.
-- The build is 2.0 (267). Archive it from a clean build of origin/main once this is committed and pushed (and `xcodegen generate` after pulling).
+- The build is 2.0 (267), archived 2026-10-20 from a clean build of main at 4cb9b2d (`~/Library/Developer/Xcode/Archives/2026-10-20/Redde 2.0 (267).xcarchive`) and uploaded the same night.
 - The promotional text, the keywords ("llama" gave way to "bots"; "ollama" stays), the description (a BOTS section; widgets, subagents, Siri's iOS 27 drafts and the sign-in providers left out to make room) and What's New all changed. `scripts/app-store-push.py all` makes the 2.0 version and sends them; then `notes` for the review notes, which have BOTS and ICLOUD sections and the car's Bots tab.
+- Sent 2026-10-20 with `all`, `notes` and the new `previews` (the bots App Preview, `design/video/redde-app-preview-bots.mp4`, as the first iPhone 6.9" preview; the iPad keeps its own).
 - Screenshots: two bot slots after the panorama on both sets (`03-bots`, `04-crew`, the iPad's `03-ipad-bots`, `04-ipad-crew`), made 2026-10-20; the later ones renumbered by renaming, unchanged; "Make it yours" and the server's screens left out. `all` sends the new pictures and puts them in order.
 - The app icon is new: Redde Face is the primary icon in this build, and the App Store takes the icon from the build. The website still shows the old one.
 - App Privacy stays "Data Not Collected". Sync with iCloud keeps the servers and settings in the user's own iCloud (the key-value store, and iCloud Keychain for keys and passwords); none of it reaches us. Incognito chats send nothing new anywhere.

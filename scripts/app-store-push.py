@@ -6,6 +6,7 @@
     scripts/app-store-push.py copy [--dry-run]       promotional text, keywords, description, What's New
     scripts/app-store-push.py screenshots [--dry-run]  the iPhone and iPad sets; only pictures that differ are sent
     scripts/app-store-push.py notes [--dry-run]      the notes for App Review, with the test key put in
+    scripts/app-store-push.py previews [--dry-run]   the App Preview videos (made by design/video, not in git)
     scripts/app-store-push.py all [--dry-run]        copy and screenshots (not the notes)
 
 The copy is read from docs/app-store-listing.md (the sections named for those four fields, the
@@ -41,6 +42,9 @@ SETS = [
                                           '06-ipad-rich', '07-ipad-backend', '08-ipad-tools', '09-ipad-privacy']),
 ]
 LIMITS = {'promotionalText': 170, 'keywords': 100, 'description': 4000, 'whatsNew': 4000}
+# The App Preview videos, by the type App Store Connect files them under: each file (rendered by
+# design/video/make_preview.py, not kept in git) and the frame shown before it plays.
+PREVIEWS = [('IPHONE_67', [('design/video/redde-app-preview-bots.mp4', '00:00:02:00')])]
 
 
 def credentials():
@@ -284,6 +288,43 @@ def review_key(app):
     sys.exit('No test key: set ASC_REVIEW_KEY, or put one into the notes in App Store Connect once.')
 
 
+def push_previews(loc, dry):
+    """Makes each preview set in App Store Connect the videos listed in PREVIEWS, told by their
+    checksums; a type whose videos aren't rendered here is left as it is."""
+    sets = {s['attributes']['previewType']: s for s in every(f"/v1/appStoreVersionLocalizations/{loc['id']}/appPreviewSets")}
+    for kind, files in PREVIEWS:
+        paths = [os.path.join(ROOT, f) for f, _ in files]
+        if not all(os.path.exists(p) for p in paths):
+            print(f'  {kind} previews: not rendered here, left as they are')
+            continue
+        sums = [hashlib.md5(open(p, 'rb').read()).hexdigest() for p in paths]
+        current = sets.get(kind)
+        held = every(f"/v1/appPreviewSets/{current['id']}/appPreviews") if current else []
+        if [h['attributes'].get('sourceFileChecksum') for h in held] == sums:
+            print(f'  {kind} previews: already there')
+            continue
+        print(f"  {kind} previews: {', '.join(os.path.basename(p) for p in paths)} to send")
+        if dry:
+            continue
+        if current is None:
+            current = api('POST', '/v1/appPreviewSets', {'data': {'type': 'appPreviewSets', 'attributes': {'previewType': kind},
+                          'relationships': {'appStoreVersionLocalization': {'data': {'type': 'appStoreVersionLocalizations', 'id': loc['id']}}}}})['data']
+        for old in held:
+            api('DELETE', f"/v1/appPreviews/{old['id']}")
+        for (path, frame), digest in zip([(p, f) for p, (_, f) in zip(paths, files)], sums):
+            data = open(path, 'rb').read()
+            made = api('POST', '/v1/appPreviews', {'data': {'type': 'appPreviews',
+                       'attributes': {'fileName': os.path.basename(path), 'fileSize': len(data), 'mimeType': 'video/mp4', 'previewFrameTimeCode': frame},
+                       'relationships': {'appPreviewSet': {'data': {'type': 'appPreviewSets', 'id': current['id']}}}}})['data']
+            for part in made['attributes']['uploadOperations']:
+                request = urllib.request.Request(part['url'], data=data[part['offset']: part['offset'] + part['length']], method=part['method'],
+                                                 headers={h['name']: h['value'] for h in part['requestHeaders']})
+                urllib.request.urlopen(request, timeout=600).read()
+            api('PATCH', f"/v1/appPreviews/{made['id']}", {'data': {'type': 'appPreviews', 'id': made['id'],
+                'attributes': {'uploaded': True, 'sourceFileChecksum': digest}}})
+            print(f'    {os.path.basename(path)}')
+
+
 def push_notes(app, version, dry):
     text = open(os.path.join(ROOT, 'docs', 'app-review-notes.md')).read()
     start = text.index('```text\n') + len('```text\n')
@@ -309,7 +350,7 @@ def main():
     args = [a for a in sys.argv[1:] if not a.startswith('-')]
     dry = '--dry-run' in sys.argv
     what = args[0] if args else ''
-    if what not in ('check', 'status', 'copy', 'screenshots', 'notes', 'all'):
+    if what not in ('check', 'status', 'copy', 'screenshots', 'notes', 'previews', 'all'):
         sys.exit(__doc__)
     wanted = project_version()
     fields = copy_fields(wanted)
@@ -332,6 +373,7 @@ def main():
         loc = localization(version)
         push_copy(loc, fields, dry=True)
         push_screenshots(loc, dry=True)
+        push_previews(loc, dry=True)
         push_notes(app, version, dry=True)
         return
     version = editable_version(app, wanted, make=not dry)
@@ -346,6 +388,8 @@ def main():
         push_screenshots(loc, dry)
     if what == 'notes':
         push_notes(app, version, dry)
+    if what == 'previews':
+        push_previews(loc, dry)
 
 
 if __name__ == '__main__':
