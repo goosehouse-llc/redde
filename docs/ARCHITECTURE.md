@@ -880,9 +880,12 @@ item, so one is attached and the other typed. The providers' callbacks come on q
 own and are made in nonisolated helpers for that reason. `-echo.dropHint` shows the outline a
 drag brings up, since the simulator can't drag between apps.
 
-"Select text" in a reply's menu opens a plain copy of it that selects by the word
-(`SelectableTextSheet`, a `UITextView`: SwiftUI's selectable `Text` has no say in the selection's
-menu). In the transcript that menu starts with "Ask about this", which closes the sheet and puts
+"Select text" in a reply's menu (and in your own message's) opens a plain copy of it that
+selects by the word (`SelectableTextSheet`, a `UITextView`: SwiftUI's selectable `Text` has no say
+in the selection's menu). The transcript's own text isn't selectable: each selectable paragraph is
+a UIKit text interaction with its menus, built as a conversation opens and torn down as it
+closes, and that was half of what opening a long one cost (2026-10-21, `MarkdownView.selectable`).
+In the transcript that menu starts with "Ask about this", which closes the sheet and puts
 the selection in the composer as a Markdown quote with room for the question (`Quote`), through
 the same hand-over Siri's "draft a message" uses (`LaunchRouter.requestDraft`).
 

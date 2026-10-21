@@ -7,6 +7,11 @@ struct MarkdownView: View {
     /// While streaming, the trailing diagram/math block stays a plain code block until its
     /// fence closes, so a WebView isn't reloaded on every token.
     var isLive = false
+    /// Selectable where it stands. Not in the transcript: a selectable text is a UIKit text
+    /// interaction and its menus for each paragraph, and that was half of what opening a long
+    /// conversation cost (2026-10-21: 400 → 190 ms without it). A reply's "Select text" opens
+    /// a selectable copy instead, with "Ask about this".
+    var selectable = true
     /// Parsed once per text change, not on every body evaluation: a streaming reply re-rendering
     /// at 20 fps must not re-parse the whole document each time.
     @State private var blocks: [MarkdownBlock] = []
@@ -17,7 +22,7 @@ struct MarkdownView: View {
                 MarkdownBlockView(block: block, trailing: isLive && i == blocks.count - 1).equatable()
             }
         }
-        .textSelection(.enabled)
+        .modifier(SelectableText(on: selectable))
         .onChange(of: text, initial: true) { blocks = MarkdownParser.parse(text) }
     }
 
@@ -38,6 +43,16 @@ struct MarkdownView: View {
             }
         }
         return Text(attributed)
+    }
+}
+
+/// `.textSelection(.enabled)` when `on`, chosen once for a view and never switched: the two are
+/// different modifiers, and switching would build the text again.
+private struct SelectableText: ViewModifier {
+    let on: Bool
+
+    func body(content: Content) -> some View {
+        if on { content.textSelection(.enabled) } else { content }
     }
 }
 

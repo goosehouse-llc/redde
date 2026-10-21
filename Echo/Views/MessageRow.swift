@@ -97,7 +97,7 @@ struct MessageRow: View, Equatable {
                 // then a warning in place of the made-up rest.
                 let invented = BotMessages.inventedTurn(in: message.text)
                 if invented?.said.isEmpty != true {
-                    MarkdownView(text: invented?.said ?? message.text, isLive: isLive)
+                    MarkdownView(text: invented?.said ?? message.text, isLive: isLive, selectable: false)
                         .padding(.horizontal, flatReply ? 2 : 14)
                         .padding(.vertical, flatReply ? 0 : theme.bubbleVerticalPadding)
                         .background(flatReply ? AnyShapeStyle(.clear) : bubble, in: .rect(cornerRadius: theme.bubbleRadius))
@@ -119,17 +119,16 @@ struct MessageRow: View, Equatable {
             } else if hasTextBubble, promptStyled, let prompt = theme.promptPrefix {
                 Text("\(Text(prompt).bold())\(message.text)")
                     .font(theme.messageFont)
-                    .textSelection(.enabled)
                     .foregroundStyle(theme.promptColor)
                     // The ❯ is decoration; VoiceOver (and UI tests) should get the words alone.
                     .accessibilityLabel(message.text)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .overlay(highlightRing)
                     .contextMenu { userMenu }
+                    .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
             } else if hasTextBubble {
                 Text(message.text)
                     .font(theme.userFont)
-                    .textSelection(.enabled)
                     .padding(.horizontal, 14)
                     .padding(.vertical, theme.bubbleVerticalPadding)
                     .background {
@@ -142,6 +141,7 @@ struct MessageRow: View, Equatable {
                     .foregroundStyle(message.role == .user ? theme.userBubbleText : theme.textColor)
                     .overlay(highlightRing)
                     .contextMenu { userMenu }
+                    .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
             }
             if showActions, message.role == .assistant, !isLive, message.error == nil, !message.text.isEmpty {
                 actionRow
@@ -484,6 +484,8 @@ struct MessageRow: View, Equatable {
     @ViewBuilder
     private var userMenu: some View {
         Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = message.text }
+        // Selected in a copy of its own, as a reply is: the transcript's text isn't selectable.
+        Button("Select text", systemImage: "text.cursor") { selecting = true }
         if let onEdit, message.role == .user {
             Button("Edit & resend", systemImage: "pencil", action: onEdit).disabled(isLive)
         }
