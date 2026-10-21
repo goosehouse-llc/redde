@@ -1573,8 +1573,14 @@ final class Conversation {
     // alone goes at 5: it is a few grey lines that scroll by, a model can think for minutes, and
     // every update costs the same as one of reply text.
 
-    private static let textFlushInterval: Duration = .milliseconds(50)
     private static let reasoningFlushInterval: Duration = .milliseconds(200)
+
+    /// Reply text goes at 20 fps while the reply is short, and less often as it grows: each
+    /// update lays the whole reply out again (SwiftUI's graph and text layout, not Redde's code,
+    /// measured 2026-10-20), so a long one cost the same per update and twice as much a second.
+    nonisolated static func textFlushInterval(forLength bytes: Int) -> Duration {
+        bytes < 4_000 ? .milliseconds(50) : bytes < 16_000 ? .milliseconds(100) : .milliseconds(150)
+    }
     /// The waiting flush was scheduled for thinking only.
     private var flushIsSlow = false
 
@@ -1600,8 +1606,10 @@ final class Conversation {
         if flushIsSlow, !slow { flushTask?.cancel(); flushTask = nil }
         guard flushTask == nil else { return }
         flushIsSlow = slow
+        let wait = slow ? Self.reasoningFlushInterval
+            : Self.textFlushInterval(forLength: messages.last(where: { $0.id == id })?.text.utf8.count ?? 0)
         flushTask = Task { [weak self] in
-            try? await Task.sleep(for: slow ? Self.reasoningFlushInterval : Self.textFlushInterval)
+            try? await Task.sleep(for: wait)
             guard !Task.isCancelled else { return }
             self?.flushTask = nil
             self?.flushDeltas()

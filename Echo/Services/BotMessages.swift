@@ -94,7 +94,9 @@ nonisolated enum BotMessages {
     /// ordinary reply. Starts at Hermes's frames for a message sent in, in any case. A lone letter
     /// left before it is part of the same slip.
     static func inventedTurn(in text: String) -> (said: String, invented: String)? {
-        guard let start = text.range(of: "[out-of-band", options: .caseInsensitive) else { return nil }
+        // A byte scan first: the streaming reply is asked on every update, and most have no "[".
+        guard text.utf8.contains(UInt8(ascii: "[")),
+              let start = text.range(of: "[out-of-band", options: .caseInsensitive) else { return nil }
         var said = String(text[..<start.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
         if VoiceSession.isLoneLetter(said.components(separatedBy: .newlines).last ?? "") {
             said = said.components(separatedBy: .newlines).dropLast().joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)

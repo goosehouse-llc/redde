@@ -440,8 +440,11 @@ struct MessageRow: View, Equatable {
 
     /// The last `maxCharacters` of `text`, starting at a word, with "…" in front when cut.
     nonisolated static func tail(of text: String, maxCharacters: Int) -> String {
-        guard text.count > maxCharacters else { return text }
+        // Without counting the whole of it, which a long thinking was on every update: `suffix`
+        // walks back only as far as it needs, and is all of it when the text is short enough.
+        guard text.utf8.count > maxCharacters else { return text }
         var cut = text.suffix(maxCharacters)
+        guard cut.startIndex > text.startIndex else { return text }
         if let space = cut.firstIndex(where: \.isWhitespace) { cut = cut[cut.index(after: space)...] }
         return "…" + cut
     }

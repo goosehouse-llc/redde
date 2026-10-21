@@ -73,6 +73,15 @@ struct TranscriptView: View {
         matches = showSearch && !q.isEmpty ? conversation.messages.filter { $0.text.localizedCaseInsensitiveContains(q) }.map(\.id) : []
     }
 
+    /// The streaming reply grew: only it can have come to match, or (written over) stopped.
+    private func recomputeLastMatch() {
+        let q = searchText.trimmingCharacters(in: .whitespaces)
+        guard showSearch, !q.isEmpty, let last = conversation.messages.last else { return }
+        let matched = last.text.localizedCaseInsensitiveContains(q)
+        if matched, matches.last != last.id { matches.append(last.id) }
+        if !matched, matches.last == last.id { matches.removeLast() }
+    }
+
     private func highlight(for id: UUID) -> MessageRow.Highlight {
         guard let i = matches.firstIndex(of: id) else { return .none }
         return i == matchIndex ? .current : .match
@@ -163,8 +172,10 @@ struct TranscriptView: View {
                         .frame(maxWidth: .infinity)
                         .accessibilityHint("Loads the previous \(earlier) messages")
                     }
+                    // Asked once a pass, not once a row: it reads the settings and the Keychain.
+                    let canLoadTools = conversation.canLoadToolDetails
                     ForEach(visibleMessages) { message in
-                        messageCell(message)
+                        messageCell(message, canLoadTools: canLoadTools)
                     }
                     if let pending = conversation.pendingInterrupt {
                         InterruptCard(interrupt: pending.interrupt)
@@ -279,13 +290,14 @@ struct TranscriptView: View {
             // go of earlier messages loaded for reading.
             .onChange(of: conversation.userSendCount) { settlePage(reset: true); jumpToEnd(proxy) }
             // The streaming reply grows without changing the count; its matches append at the end.
-            .onChange(of: conversation.messages.last?.text) { if showSearch { recomputeMatches() }; scrollToBottom(proxy) }
+            .onChange(of: conversation.messages.last?.text) { recomputeLastMatch(); scrollToBottom(proxy) }
             .onChange(of: conversation.outbox.count) { old, new in
                 if new > old { following = true }
                 scrollToBottom(proxy)
             }
             .animation(.easeOut(duration: 0.2), value: conversation.outbox)
-            .onChange(of: conversation.messages.last?.reasoning.count) { scrollToBottom(proxy) }
+            // (Bytes, not characters: counting characters walks the whole of the thinking.)
+            .onChange(of: conversation.messages.last?.reasoning.utf8.count) { scrollToBottom(proxy) }
             // Keyboard rising: keep the newest message in view above the composer, unless the
             // reader has scrolled up on purpose. Re-check once the system's own animation ends.
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { note in
@@ -308,14 +320,14 @@ struct TranscriptView: View {
 
     /// For a reply with tools, where the gateway's stored transcript can be asked: the fetch a
     /// step runs when it is opened without its result.
-    private func toolDetailsLoader(for message: Message) -> (@MainActor @Sendable () async -> Void)? {
-        guard message.role == .assistant, !message.tools.isEmpty, conversation.canLoadToolDetails else { return nil }
+    private func toolDetailsLoader(for message: Message, canLoad: Bool) -> (@MainActor @Sendable () async -> Void)? {
+        guard message.role == .assistant, !message.tools.isEmpty, canLoad else { return nil }
         let (conversation, id) = (conversation, message.id)
         return { await conversation.loadToolDetails(for: id) }
     }
 
     @ViewBuilder
-    private func messageCell(_ message: Message) -> some View {
+    private func messageCell(_ message: Message, canLoadTools: Bool) -> some View {
         if let day = dayLabels[message.id] {
             Text(day).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
                 .padding(.horizontal, 10).padding(.vertical, 4)
@@ -332,7 +344,7 @@ struct TranscriptView: View {
                        ? { @MainActor @Sendable in onEdit(message) } : nil,
                    onReadAloud: message.role == .assistant
                        ? { @MainActor @Sendable in readAloud(message) } : nil,
-                   onLoadToolDetails: toolDetailsLoader(for: message),
+                   onLoadToolDetails: toolDetailsLoader(for: message, canLoad: canLoadTools),
                    isReading: reading,
                    highlight: highlight(for: message.id))
             .equatable()
