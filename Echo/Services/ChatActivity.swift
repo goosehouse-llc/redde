@@ -164,10 +164,13 @@ final class ChatActivity {
         }
     }
 
-    /// `session.active_list`'s answer, by stored id. "starting" is a turn on its way.
+    /// `session.active_list`'s answer, by stored id. "starting" is a turn on its way. Not a group
+    /// chat's bots' hidden sessions: those count for their room (`roomKinds`), and one ending is
+    /// a bot's turn over, not a conversation's.
     nonisolated static func kinds(activeList result: JSONValue) -> [String: Kind] {
         var found: [String: Kind] = [:]
         for item in result["sessions"]?.array ?? [] {
+            if item["title"]?.string?.hasPrefix(GroupDraft.sessionTitle("")) == true { continue }
             guard let key = item["session_key"]?.string ?? item["id"]?.string else { continue }
             switch item["status"]?.string {
             case "working", "starting": found[key] = .working

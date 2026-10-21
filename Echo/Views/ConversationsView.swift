@@ -1402,10 +1402,8 @@ struct ConversationsList: View {
         var botsAt = Date.now
         var changes = activity.changes
         while !Task.isCancelled {
-            let before = Set(activity.live.keys)
+            let before = Set(activity.live.keys), roomsBefore = Set(activity.liveRooms.keys)
             let reached = await activity.look(conversation)
-            // (A group chat's bots are among these, each in a hidden session: a room going quiet
-            // fetches the list again too, and with it what is new in the room.)
             let ended = !before.subtracting(activity.live.keys).isEmpty
             let changed = activity.changes != changes && Date.now.timeIntervalSince(fetchedAt) >= 30
             if ended || changed {
@@ -1413,6 +1411,11 @@ struct ConversationsList: View {
                 fetchedAt = .now
                 botsAt = .now
                 await refresh()
+            } else if !roomsBefore.subtracting(activity.liveRooms.keys).isEmpty {
+                // A group chat went quiet: the group chats alone again, for what is new in it (the
+                // whole list was fetched again for each bot's turn, some seven calls a time).
+                await groups.refresh()
+                activity.listed(groups.rooms)
             } else if botsHere, settings.showBots, Date.now.timeIntervalSince(botsAt) >= 15 {
                 // The bots' chats and workers, which the gateway's list doesn't all show (a bot's
                 // worker runs on its own): their last activity, now and then.

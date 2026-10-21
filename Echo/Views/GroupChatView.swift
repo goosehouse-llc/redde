@@ -15,6 +15,7 @@ struct GroupChatView: View {
     var onEnded: () -> Void = {}
     @Environment(\.theme) private var theme
     @Environment(VoiceSession.self) private var voiceSession
+    @Environment(\.scenePhase) private var scenePhase
     /// The reply being read aloud.
     @State private var readingID: UUID?
     /// Talking with the group by voice, on the voice screen.
@@ -76,7 +77,7 @@ struct GroupChatView: View {
                         }
                         if feed.events.isEmpty, feed.sending.isEmpty { opening }
                         ForEach(page.shown) { row($0).id($0.id) }
-                        ForEach(feed.sending) { mine($0.text, files: $0.files, id: $0.id, waiting: true) }
+                        ForEach(feed.sending) { mine($0.text, files: $0.files, id: $0.id, waiting: true, when: .distantPast) }
                         // Replies being written, under their bots, until the room has them.
                         ForEach(feed.drafts.filter { !$0.text.isEmpty }) { writing($0) }
                         if feed.state.waitsOnPerson || (feed.discussing || feed.state.working) && !someoneIsWriting { talking }
@@ -175,7 +176,12 @@ struct GroupChatView: View {
             } message: {
                 Text("The bots stop and the group chat goes, on the server too. The bots' own chats stay.")
             }
-            .task { await feed.follow() }
+            // Read while the app is in front, or while its voice screen reads the room aloud
+            // (the phone locked, or in the car); not, as it was, through every background minute.
+            .task(id: scenePhase == .active || voice.isOn) {
+                guard scenePhase == .active || voice.isOn else { return }
+                await feed.follow()
+            }
             .onChange(of: feed.state) { voice.roomChanged() }
             // A reply being written is read as it is (`GroupVoice`).
             .onChange(of: feed.drafts) { voice.roomChanged() }
@@ -353,7 +359,7 @@ struct GroupChatView: View {
     private func row(_ event: GroupEvent) -> some View {
         if event.kind == "message.user" {
             let said = AttachedFileNote.split(event.text)
-            mine(said.text, paths: said.paths, id: "seq-\(event.seq)", waiting: false, highlight: highlight(event.seq))
+            mine(said.text, paths: said.paths, id: "seq-\(event.seq)", waiting: false, when: event.createdAt, highlight: highlight(event.seq))
         } else if event.kind == "message.member" {
             let member = feed.room.member(event.actorID)
             // Its seq makes the reply's id: the same message keeps its row as the log is read again.
@@ -386,11 +392,13 @@ struct GroupChatView: View {
     /// The person's message, as the conversation draws one (the theme's bubble, its text colour),
     /// with the files it named under it: by their paths on the server once it is in the room,
     /// tapped to open; by their names while it is on its way.
+    /// `when` is fixed, so the row is the same row each pass and isn't drawn again (`.equatable()`):
+    /// a message made with today's date never was.
     private func mine(_ text: String, paths: [String] = [], files: [String] = [], id: String, waiting: Bool,
-                      highlight: MessageRow.Highlight = .none) -> some View {
+                      when: Date, highlight: MessageRow.Highlight = .none) -> some View {
         VStack(alignment: .trailing, spacing: 6) {
             if !text.isEmpty {
-                MessageRow(message: Message(id: Self.rowID(id), role: .user, text: text), showActions: false, highlight: highlight)
+                MessageRow(message: Message(id: Self.rowID(id), role: .user, text: text, createdAt: when), showActions: false, highlight: highlight)
                     .equatable()
             }
             if !paths.isEmpty || !files.isEmpty {

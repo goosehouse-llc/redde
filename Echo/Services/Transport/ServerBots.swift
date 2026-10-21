@@ -96,22 +96,28 @@ nonisolated struct HermesBot: Identifiable, Equatable, Sendable {
 
 /// The bots on a server (`profiles.list`).
 nonisolated struct BotRoster: Equatable, Sendable {
-    var bots: [HermesBot]
+    var bots: [HermesBot] { didSet { faces = Self.faces(of: bots) } }
+    /// Each bot's face: the one picked for it, else one its name gives, no two alike on the server.
+    /// Worked out when the bots are set, not on each look: a group chat asks it for every row,
+    /// twice a second while its bots write.
+    private(set) var faces: [String: BotFace]
 
-    init(bots: [HermesBot]) { self.bots = bots }
+    init(bots: [HermesBot]) {
+        self.bots = bots
+        faces = Self.faces(of: bots)
+    }
 
     init(_ result: JSONValue) {
-        bots = (result["profiles"]?.array ?? []).compactMap(HermesBot.init)
+        self.init(bots: (result["profiles"]?.array ?? []).compactMap(HermesBot.init))
+    }
+
+    private static func faces(of bots: [HermesBot]) -> [String: BotFace] {
+        BotFace.faces(for: bots.map(\.name), picked: Dictionary(bots.compactMap { bot in bot.face.map { (bot.name, $0) } }, uniquingKeysWith: { a, _ in a }))
     }
 
     /// Some profile is set up as a bot: Hermes then gives each bot's chat the tool to message the
     /// others (`message_agent`) and tells it who they are.
     var messagingIsOn: Bool { bots.contains(where: \.isSetUp) }
-
-    /// Each bot's face: the one picked for it, else one its name gives, no two alike on the server.
-    var faces: [String: BotFace] {
-        BotFace.faces(for: bots.map(\.name), picked: Dictionary(bots.compactMap { bot in bot.face.map { (bot.name, $0) } }, uniquingKeysWith: { a, _ in a }))
-    }
 
     /// The bot "Ask <name> in Redde" means, by its profile's name or the name it was given, else by
     /// a name its profile had before a rename; never the main profile (that one is the app itself,
@@ -581,13 +587,18 @@ final class BotDirectory {
     }
 
     func set(_ roster: BotRoster?, key: String) {
+        let unchanged = roster == self.roster && key == self.key
         self.roster = roster
         self.key = key
-        // Their names, for Siri ("Ask Claude in Redde"), and for the watch.
-        if let roster, key == Settings.shared.connectionKey {
-            ProfileCatalog.keep(bots: roster)
-            WatchLink.shared.botsChanged()
-            Mutes.publish()   // a bot's chat may be another session now (Start Fresh)
-        }
+        // Their names, for Siri ("Ask Claude in Redde"), and for the watch, when they changed: they
+        // are read again every 15 seconds, and mostly they haven't.
+        guard let roster, key == Settings.shared.connectionKey, !(unchanged && told == key) else { return }
+        told = key
+        ProfileCatalog.keep(bots: roster)
+        WatchLink.shared.botsChanged()
+        Mutes.publish()   // a bot's chat may be another session now (Start Fresh)
     }
+
+    /// The connection whose bots Siri, the watch and the mutes were last told of.
+    private var told: String?
 }

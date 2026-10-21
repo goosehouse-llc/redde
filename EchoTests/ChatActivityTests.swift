@@ -54,6 +54,7 @@ struct ChatActivityTests {
                      {"id":"rt-6","session_key":"s-6","status":"working","title":"Weekend plans"}]}
         """.utf8))
         #expect(ChatActivity.roomKinds(activeList: answer) == ["redde-room-1": .needsYou, "redde-room-2": .working, "desktop:id:desk-9": .working])
+        #expect(ChatActivity.kinds(activeList: answer) == ["s-6": .working], "the rooms' sessions count for the rooms alone")
     }
 
     /// A group chat is new since it was seen when its latest event is past the one seen there;

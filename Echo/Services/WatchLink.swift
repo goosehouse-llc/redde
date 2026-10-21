@@ -83,7 +83,13 @@ final class WatchLink: NSObject, WCSessionDelegate {
 
     /// The bots changed (read again, named, picked a face): the watch hears of it, once.
     func botsChanged() {
-        let signature = Self.watchBots().map { "\($0.profile)|\($0.name)|\($0.face?.count ?? 0)" }
+        // Without drawing them: a creature's picture changes only with its face.
+        // None (another server, or none read): the watch is told that too.
+        let settings = Settings.shared, directory = BotDirectory.shared
+        let roster = directory.key == settings.connectionKey ? directory.roster : nil
+        let signature = (roster?.listed(in: settings.botOrderHere) ?? []).filter { !$0.isDefault }.prefix(8).map { bot in
+            "\(bot.name)|\(bot.label(mainName: settings.headerTitle))|\((roster?.faces[bot.name] ?? BotFace(seed: bot.name)).code)"
+        }
         guard signature != lastBots else { return }
         lastBots = signature
         push()
