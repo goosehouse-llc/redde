@@ -14,11 +14,15 @@ import UIKit
 final class EarconPlayer {
     static let shared = EarconPlayer()
     private var players: [VoiceSession.Earcon: AVAudioPlayer] = [:]
+    private var waiting: [VoiceSession.Earcon: Task<Void, Never>] = [:]
     /// A cue starts this long after it is asked for, so that what changed in the audio just before
     /// it has settled: the route forced as the mic opens, the voice-processing unit going off as it
-    /// closes (the recogniser's teardown runs a moment after a tap's stop cue is asked for).
-    /// Started at once, its first part was lost under the change, and it came out as a chirp.
-    static let lead: TimeInterval = 0.1
+    /// closes (the recogniser's teardown runs a moment after a tap's stop cue is asked for), the
+    /// reply voice's engine warming up as the question goes. Started at once, its first part was
+    /// lost under the change, and it came out as a chirp. Timed on the clock, not the output
+    /// device's (`play(atTime:)`): those changes restart the device, and its clock with it, and
+    /// a stop cue timed on it was never heard.
+    static let lead: Duration = .milliseconds(100)
 
     private init() {
         for (cue, name) in [(VoiceSession.Earcon.listening, "listen-start"), (.stopped, "listen-stop")] {
@@ -30,9 +34,17 @@ final class EarconPlayer {
 
     func play(_ cue: VoiceSession.Earcon) {
         guard let player = players[cue] else { return }
+        waiting[cue]?.cancel()
         player.stop()
         player.currentTime = 0
-        player.play(atTime: player.deviceCurrentTime + Self.lead)
+        waiting[cue] = Task { [weak self] in
+            try? await Task.sleep(for: Self.lead)
+            guard !Task.isCancelled else { return }
+            self?.waiting[cue] = nil
+            if !player.play() {
+                Logger(subsystem: "com.goosehouse.echo", category: "voice").error("the \(cue == .listening ? "start" : "stop", privacy: .public) cue didn't play")
+            }
+        }
     }
 }
 
