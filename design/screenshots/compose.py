@@ -145,25 +145,27 @@ def compose_car(shots, dst, headline, sub, bg, fg, subfg):
 
 BLUE = (30, 111, 217); NAVY = (16, 24, 56); PAPER = (239, 235, 226); INK = (27, 29, 58); CHAR = (29, 28, 27); BONE = (237, 232, 208)
 WHITE = (255, 255, 255); MIST = (200, 214, 240); SAND = (100, 96, 88); ASH = (170, 165, 158)
+PLUM = (44, 30, 78); LILAC = (206, 192, 246)
 os.makedirs(f'{OUT}/iphone-6.9', exist_ok=True); os.makedirs(f'{OUT}/ipad-13', exist_ok=True)
 phone = [
   ('ph-chat-dark', '01-hero',    'Your agent, in your pocket.',  'Voice or text, on your own server. Nothing in between.', BLUE, WHITE, MIST),
   ('ph-voice',    '02-voice',    'Just talk.',                   'An orb that moves with your voice. On-device speech, hands-free if you like.', (24, 32, 46), WHITE, MIST),
-  ('ph-work',     '03-work',     'Watch it think and work.',     'Live reasoning, tool calls, and subagents you can steer.', PAPER, INK, SAND),
-  ('ph-diagram',  '04-rich',     'Answers with substance.',      'Code, tables, diagrams and math, rendered on the spot.', CHAR, BONE, ASH),
-  ('ph-settings', '05-backend',  'Your backend, your rules.',    'Hermes, or any OpenAI-compatible model server. A setup code fills in the address and keys for you.', BLUE, WHITE, MIST),
-  ('ph-chat',     '06-light',    'Make it yours.',               'Seven themes, your own colors, 13 app icons and 12 voice orbs. Face ID lock included.', (236, 238, 243), INK, SAND),
-  ('ph-gateway',  '08-server',   'Your server, from your phone.', 'What Hermes is running, its MCP servers, logs and files. Restart it without a terminal.', NAVY, WHITE, MIST),
+  # 2.0: the bots. Raw shots from PromoVideoUITests.testBotsShots (see README).
+  ('ph-bots',     '03-bots',     'Meet the crew.',               'Each Hermes profile is a bot, with a face, a voice and a chat of its own. Start one from a template.', PLUM, WHITE, LILAC),
+  ('ph-crew',     '04-crew',     'Talk to the whole crew.',      'Put bots in a group chat and they answer in turn, each in a voice of its own.', (24, 32, 46), WHITE, MIST),
+  ('ph-work',     '05-work',     'Watch it think and work.',     'Live reasoning, tool calls, and subagents you can steer.', PAPER, INK, SAND),
+  ('ph-diagram',  '06-rich',     'Answers with substance.',      'Code, tables, diagrams and math, rendered on the spot.', CHAR, BONE, ASH),
+  ('ph-settings', '07-backend',  'Your backend, your rules.',    'Hermes, or any OpenAI-compatible model server. A setup code fills in the address and keys for you.', BLUE, WHITE, MIST),
   ('ph-phone',    '09-tools',    'Your agent can use your iPhone.', 'Calendar, reminders, photos, alarms, its own widget, calls and texts. Each one off until you turn it on.', CHAR, BONE, ASH),
 ]
 pad = [
   ('pad-default-dark', '01-ipad',      'Built for iPad.',              'Sessions, scheduled jobs and the Kanban board beside the conversation.', BLUE, WHITE, MIST),
   ('pad-voice',        '02-ipad-voice','Just talk.',                   'An orb that moves with your voice. On-device speech, spoken replies, hands-free if you like.', (24, 32, 46), WHITE, MIST),
-  ('pad-work',         '03-ipad-work', 'Watch it think and work.',     'Live reasoning, tool calls, and subagents you can steer.', PAPER, INK, SAND),
-  ('pad-dark',         '04-ipad-rich', 'Answers with substance.',      'Code, tables, diagrams and math, rendered on the spot.', CHAR, BONE, ASH),
-  ('pad-settings',     '05-ipad-backend', 'Your backend, your rules.', 'Hermes, or any OpenAI-compatible model server. A setup code fills in the address and keys for you.', BLUE, WHITE, MIST),
-  ('pad-split',        '06-ipad-light','Make it yours.',               'Seven themes, your own colors, 13 app icons and 12 voice orbs.', (236, 238, 243), INK, SAND),
-  ('pad-gateway',      '07-ipad-server', 'Your server, from your iPad.', 'What Hermes is running, its MCP servers, logs and files. Restart it without a terminal.', NAVY, WHITE, MIST),
+  ('pad-bots',         '03-ipad-bots', 'Meet the crew.',               'Each Hermes profile is a bot, with a face, a voice and a chat of its own. Start one from a template.', PLUM, WHITE, LILAC),
+  ('pad-crew',         '04-ipad-crew', 'Talk to the whole crew.',      'Put bots in a group chat and they answer in turn, each in a voice of its own.', (24, 32, 46), WHITE, MIST),
+  ('pad-work',         '05-ipad-work', 'Watch it think and work.',     'Live reasoning, tool calls, and subagents you can steer.', PAPER, INK, SAND),
+  ('pad-dark',         '06-ipad-rich', 'Answers with substance.',      'Code, tables, diagrams and math, rendered on the spot.', CHAR, BONE, ASH),
+  ('pad-settings',     '07-ipad-backend', 'Your backend, your rules.', 'Hermes, or any OpenAI-compatible model server. A setup code fills in the address and keys for you.', BLUE, WHITE, MIST),
   ('pad-phone',        '08-ipad-tools', 'Your agent can use your iPad.', 'Calendar, reminders, contacts, photos, files and its own widget. Each one off until you turn it on.', CHAR, BONE, ASH),
 ]
 for kind, slots in (('iphone-6.9', phone), ('ipad-13', pad)):
@@ -172,7 +174,7 @@ for kind, slots in (('iphone-6.9', phone), ('ipad-13', pad)):
         draw = compose_tools if name.endswith('-tools') else compose
         draw(f'{SHOTS}/{src}.png', f'{OUT}/{kind}/{name}.png', h, s, bg, fg, sfg, kind == 'ipad-13')
 # iPhone only: CarPlay runs from the phone.
-if not ONLY or '07-car' in ONLY:
-  compose_car([f'{SHOTS}/car-ask.png', f'{SHOTS}/car-voice.png', f'{SHOTS}/car-speaking.png'], f'{OUT}/iphone-6.9/07-car.png',
+if not ONLY or '08-car' in ONLY:
+  compose_car([f'{SHOTS}/car-ask.png', f'{SHOTS}/car-voice.png', f'{SHOTS}/car-speaking.png'], f'{OUT}/iphone-6.9/08-car.png',
               'In the car, by voice.', 'CarPlay: tap Ask or Talk, take a note, or pause a reply. Answers are spoken, so your eyes stay on the road.',
               (24, 32, 46), WHITE, MIST)

@@ -91,6 +91,9 @@ shot "$PAD" pad-phone        -echo.demoPhoneShot -echo.demoLibrary -theme standa
 shot "$PAD" pad-gateway      -echo.demo -echo.demoLibrary -echo.demoGateway -echo.screen gateway -theme standard -appearance dark "${FAST[@]}" "${CHATS[@]}"
 fi
 
+# 2.0's bot slots (ph-bots, ph-crew, pad-bots, pad-crew) come from PromoVideoUITests.testBotsShots, which
+# waits for the round on a group chat's voice screen: see README.
+
 # The car's screens, as CarPlay's own views draw them (scripts/carplay-preview.sh), at the shape
 # of a wide dashboard display.
 if [[ "${ONLY:-}" != pad ]]; then
