@@ -150,7 +150,7 @@ struct VoiceSessionTests {
         let awake = AwakeLog()
 
         init(transport: any HermesTransport, talkOver: Settings.TalkOver = .off, interruption: Settings.Interruption = .speech,
-             stopPhrases: [String] = []) {
+             stopPhrases: [String] = [], cueSettle: Duration = .zero) {
             let suite = UserDefaults(suiteName: "voice-\(UUID().uuidString)")!
             let settings = Settings(defaults: suite)
             settings.transport = .chatCompletions
@@ -161,7 +161,7 @@ struct VoiceSessionTests {
             conversation.retryDelays = [30]
             let (cues, awake) = (cues, awake)
             session = VoiceSession(conversation: conversation, recognizer: recognizer, output: speaker,
-                                   audio: audio, requestPermissions: { true }, earcon: { cues.record($0) },
+                                   audio: audio, requestPermissions: { true }, earcon: { cues.record($0) }, cueSettle: cueSettle,
                                    keepAwake: { awake.record($0) }, talkOver: { talkOver }, interruption: { interruption },
                                    stopPhrases: { stopPhrases })
         }
@@ -316,6 +316,22 @@ struct VoiceSessionTests {
         h.recognizer.deliver("hi")
         try await waitUntil("stopped cue") { h.cues.cues.count == 2 }
         #expect(h.cues.cues == [.listening, .stopped], "leaving listening must sound the close")
+    }
+
+    /// Leaving voice-chat mode restarts the audio, and under the stop cue it clipped the tone to a
+    /// chirp: the mode and the route change once the cue has been heard, a change meanwhile with them.
+    @Test func theModeChangesOnlyOnceTheStopCueIsHeard() async throws {
+        let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport(reply(["Hello", " there."])), cueSettle: .milliseconds(600))
+        h.session.beginListening()
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        let modes = h.audio.replying.count
+        h.recognizer.deliver("hi")
+        try await waitUntil("stopped cue") { h.cues.cues == [.listening, .stopped] }
+        try await waitUntil("speaking") { h.session.phase == .speaking }
+        #expect(h.audio.replying.count == modes, "nothing changed under the cue, through thinking and into speaking")
+        #expect(h.audio.earRouting.last == false)
+        try await waitUntil("the reply's mode, after the cue") { h.audio.replying.last == true }
+        #expect(h.audio.earRouting.last == true)
     }
 
     @Test func interruptionWhileListeningSoundsTheClose() async throws {

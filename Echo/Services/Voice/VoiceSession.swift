@@ -14,6 +14,11 @@ import UIKit
 final class EarconPlayer {
     static let shared = EarconPlayer()
     private var players: [VoiceSession.Earcon: AVAudioPlayer] = [:]
+    /// A cue starts this long after it is asked for, so that what changed in the audio just before
+    /// it has settled: the route forced as the mic opens, the voice-processing unit going off as it
+    /// closes (the recogniser's teardown runs a moment after a tap's stop cue is asked for).
+    /// Started at once, its first part was lost under the change, and it came out as a chirp.
+    static let lead: TimeInterval = 0.1
 
     private init() {
         for (cue, name) in [(VoiceSession.Earcon.listening, "listen-start"), (.stopped, "listen-stop")] {
@@ -25,8 +30,9 @@ final class EarconPlayer {
 
     func play(_ cue: VoiceSession.Earcon) {
         guard let player = players[cue] else { return }
+        player.stop()
         player.currentTime = 0
-        player.play()
+        player.play(atTime: player.deviceCurrentTime + Self.lead)
     }
 }
 
@@ -51,24 +57,37 @@ final class VoiceSession {
             guard phase != oldValue else { return }
             // A reply held while it was being thought about is still held at its first word.
             if !(oldValue == .thinking && phase == .speaking) { isPaused = false }
-            // Voice-chat mode (and its call-volume buttons) only while the mic is open, which it
-            // stays behind a reply that can be talked over.
-            audio.setReplying((phase == .thinking || phase == .speaking) && !micStaysOpen)
-            // The at-ear sensor only while speaking: it blanks the screen whenever it's covered.
-            audio.setEarRouting(phase == .speaking)
-            if headsetControlsOn { publishNowPlaying() }
-            updateScreenAwake()
             // Every path OUT of listening funnels through here: utterance end, tap,
             // interruption, AirPods coming out. The start cue plays in startRecognizer
             // instead — at phase-set time the audio session isn't active or routed yet,
             // which made the tone land on the earpiece or the silent-switch session.
             if oldValue == .listening { earcon(.stopped) }
+            // The session's mode and route follow the phase, but not under the stop cue: switching
+            // out of voice-chat mode, or the output, restarts the audio under a sound just begun,
+            // which clipped the cue to a chirp. They wait until it has been heard (and a change
+            // meanwhile waits with them), except for listening again, which needs them now.
+            if oldValue == .listening, cueSettle > .zero {
+                settling?.cancel()
+                settling = Task { [weak self, cueSettle] in
+                    try? await Task.sleep(for: cueSettle)
+                    guard !Task.isCancelled, let self else { return }
+                    settling = nil
+                    audioForPhase()
+                }
+            } else if settling == nil || phase == .listening {
+                settling?.cancel(); settling = nil
+                audioForPhase()
+            }
+            if headsetControlsOn { publishNowPlaying() }
+            updateScreenAwake()
             watchIfSpeaking()
             watchForQuiet()
             if phase == .idle || isErrored { stopMonitor() }
         }
     }
     private var headsetControlsOn = false
+    /// The session's mode and route waiting on the stop cue (`cueSettle`).
+    private var settling: Task<Void, Never>?
     private(set) var liveTranscript = ""
     private(set) var activeTool: String?
     private(set) var lastMetrics: VoiceMetrics?
@@ -90,6 +109,9 @@ final class VoiceSession {
     private let requestPermissions: () async -> Bool
     /// Injectable so tests observe the cues instead of playing sounds.
     private let earcon: (Earcon) -> Void
+    /// How long the stop cue takes to be heard out once asked for (`EarconPlayer.lead` and the
+    /// tone): the mode and route changes leaving listening wait this long. Zero in tests.
+    private let cueSettle: Duration
     /// Holds auto-lock off (true) or lets it be (false). Injectable so tests see it asked for.
     private let keepAwake: (Bool) -> Void
     /// Settings → Voice → Talk over replies, and what it takes. Injectable so tests choose.
@@ -200,6 +222,7 @@ final class VoiceSession {
          eye: any VoiceLooking = VoiceCamera.forApp,
          requestPermissions: @escaping () async -> Bool = { await SpeechRecognizer.requestPermissions() },
          earcon: @escaping (Earcon) -> Void = { EarconPlayer.shared.play($0) },
+         cueSettle: Duration = .milliseconds(450),
          keepAwake: @escaping (Bool) -> Void = { UIApplication.shared.isIdleTimerDisabled = $0 },
          talkOver: @escaping () -> Settings.TalkOver = { Settings.shared.talkOver },
          interruption: @escaping () -> Settings.Interruption = { Settings.shared.interruption },
@@ -236,6 +259,7 @@ final class VoiceSession {
         self.audio = audio
         self.requestPermissions = requestPermissions
         self.earcon = earcon
+        self.cueSettle = cueSettle
         self.keepAwake = keepAwake
         output.onFirstSpeech = { [weak self] in
             self?.metrics.firstSpokenAt = .now
@@ -515,14 +539,22 @@ final class VoiceSession {
     /// finish before handing the session back (other audio resumes ~half a second later).
     private func releaseAudioAfterCue() {
         output.releaseAudio()
-        Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(450))
+        Task { [weak self, cueSettle] in
+            try? await Task.sleep(for: cueSettle + .milliseconds(100))
             guard let self, phase == .idle || isErrored else { return }
             audio.deactivate()
         }
     }
 
     // MARK: - Pipeline
+
+    /// Voice-chat mode (and its call-volume buttons) only while the mic is open, which it stays
+    /// behind a reply that can be talked over; the at-ear sensor only while speaking, as it blanks
+    /// the screen whenever it's covered.
+    private func audioForPhase() {
+        audio.setReplying((phase == .thinking || phase == .speaking) && !micStaysOpen)
+        audio.setEarRouting(phase == .speaking)
+    }
 
     private func startRecognizer() async {
         do {
