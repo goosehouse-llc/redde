@@ -653,13 +653,15 @@ private struct ReddeVoiceFace: View {
     static let size: CGFloat = 196
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: reduceMotion)) { timeline in
-            BotAvatar(face: face, size: size, pose: Self.pose(at: timeline.date.timeIntervalSinceReferenceDate, phase: phase,
-                                                                   level: CGFloat(level()), tilt: face.tilt))
-        }
+        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: reduceMotion)) { posed(at: $0.date) }
         .shadow(color: phase == .idle ? .clear : phaseColor.opacity(0.9), radius: 10)
         .shadow(color: .black.opacity(0.35), radius: 22, y: 12)
         .animation(.easeOut(duration: 0.3), value: phase)
+    }
+
+    private func posed(at date: Date) -> some View {
+        BotAvatar(face: face, size: size, pose: Self.pose(at: date.timeIntervalSinceReferenceDate, phase: phase,
+                                                          level: CGFloat(level()), tilt: face.tilt))
     }
 
     /// Where the face looks, how shut its eyes are and how open its mouth, at a moment.
@@ -916,6 +918,10 @@ private struct GlassOrb: View {
         let tint = idle ? accent : phaseColor
         Circle()
             .fill(face)
+            // The glow, from the plain circle, before the light goes on: on the whole orb, its
+            // moving light had the 30-point blur worked out again every frame. Same shape, so
+            // the same shadow.
+            .shadow(color: tint.opacity(0.25), radius: 30, y: 20)
             // A faint rim to give the glass an edge, under the light. The canvas drew a blue
             // ring here; in the app that ring is the one outside the face, as on every orb.
             .overlay { Circle().strokeBorder(.white.opacity(0.16), lineWidth: 1.5) }
@@ -932,7 +938,6 @@ private struct GlassOrb: View {
                 .clipShape(Circle())
             }
             .frame(width: Self.diameter, height: Self.diameter)
-            .shadow(color: tint.opacity(0.25), radius: 30, y: 20)
             .animation(.easeOut(duration: 0.4), value: phase)
     }
 }
@@ -1266,7 +1271,8 @@ private struct LiveWaveform: View {
                 ForEach(Self.weights.indices, id: \.self) { i in
                     Capsule()
                         .fill(color)
-                        .shadow(color: .black.opacity(shadowed ? 0.45 : 0), radius: 3, y: 1)
+                        // No radius without the shadow: a clear one was blurred all the same.
+                        .shadow(color: .black.opacity(0.45), radius: shadowed ? 3 : 0, y: shadowed ? 1 : 0)
                         .frame(width: 10, height: height(i, drive) + (drive == nil && !reduceMotion ? ripple(i, t) : 0))
                 }
             }

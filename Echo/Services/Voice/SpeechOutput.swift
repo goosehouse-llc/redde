@@ -59,7 +59,7 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         voicesObserver = NotificationCenter.default.addObserver(
             forName: AVSpeechSynthesizer.availableVoicesDidChangeNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.cachedVoices = [:] }
+            MainActor.assumeIsolated { self?.cachedVoices = [:]; self?.installedVoices = nil }
         }
         // Ready before the first reply, so it isn't read by the wrong voice while the list loads.
         if Settings.shared.replyVoice == .kokoro, let server = Settings.shared.kokoroBaseURL { loadKokoroVoices(server) }
@@ -146,10 +146,11 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
     private var botVoiceCache: [String: AVSpeechSynthesisVoice?] = [:]
 
     private func lookUpBotVoice(_ speaker: String, _ language: String) -> AVSpeechSynthesisVoice? {
-        let installed = AVSpeechSynthesisVoice.speechVoices().map {
+        let installed = installedVoices ?? AVSpeechSynthesisVoice.speechVoices().map {
             SpokenLanguage.AppleVoice(identifier: $0.identifier, language: $0.language, quality: $0.quality.rawValue,
                                       novelty: $0.voiceTraits.contains(.isNoveltyVoice))
         }
+        installedVoices = installed
         return BotVoices.onDevice(for: speaker, picked: Settings.shared.botVoicesHere, language: language,
                                   main: voice(for: language)?.identifier, installed: installed, names: botNames)
             .flatMap(AVSpeechSynthesisVoice.init(identifier:))
@@ -161,6 +162,9 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
     /// Resolved once per language: speechVoices() enumerates every installed voice asset and
     /// sat on the first-audio latency path for each sentence.
     private var cachedVoices: [String: AVSpeechSynthesisVoice?] = [:]
+    /// The installed voices a bot's is picked from, kept until iOS's change: the pick itself is
+    /// made again for each reply (a voice picked since is the one), the slow listing wasn't needed.
+    private var installedVoices: [SpokenLanguage.AppleVoice]?
 
     /// The language Redde listens in ("en-US"); replies are read in it unless they're clearly
     /// in another.
