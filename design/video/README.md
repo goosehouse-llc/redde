@@ -141,6 +141,18 @@ schedules, and the closing page with the bot taking the icon's place on the last
 fade in, centred, without emoji; the deep song under it. Upload it by hand as the first iPhone
 preview: the store script sends no video.
 
+`make_cool.py` cuts the same takes to the beat instead (`redde-app-preview-bots-cool.mp4`, 29.4 s,
+made 2026-10-20): a shot to each 2.5 s bar of the deep song, each sliding in to land on its first
+beat over a dark ground the bots' colours drift through, with a big caption (The crew, Build one,
+@ each other, Group chats, They talk, Shhh., On schedule) in the story preview's bold and medium,
+and the footage held still; the title puts "your agent has a crew." on the beats with the crew
+bursting out from Redde's face, and the voice round gives each bot a bar of its line, cut where it
+pauses (`lay_voices` takes how much of a line to keep). The closing page has the bot take the
+icon's place on the last chord. `make_cool.py long` is the longer cut (`redde-bots-cool-long.mp4`,
+54.4 s, over Apple's 30 s, so for anywhere but the store): Redde says hello in a bubble first, most
+shots get two bars, a bot passing work on gets one, and each bot says its whole line in the round,
+laid where its face says it.
+
 The spoken lines are Kokoro's, in the voices the app gives those bots by default (Redde's
 `am_onyx(2)+bm_george(1)`, Scout `bf_v0isabella`, Quill `am_liam`, by `BotVoices.assign`):
 `KOKORO_URL=http://<host>:8880 /usr/bin/python3 bot_voices.py` writes `voice-*.wav`. The take

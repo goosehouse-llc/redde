@@ -667,4 +667,5 @@ def main():
          '-c:a', 'aac', '-b:a', '256k', '-ar', '44100', '-ac', '2', '-shortest', '-movflags', '+faststart', out])
     print(f'{out}  {total:.2f}s')
 
-main()
+if __name__ == '__main__':
+    main()

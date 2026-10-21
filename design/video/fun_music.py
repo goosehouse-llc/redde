@@ -189,7 +189,14 @@ def lay_voices(track, voices):
     speaks (a tenth of a second either side, eased), and each line as loud as the music's loudest."""
     if not voices: return
     s, music = track.s, max(1e-6, max(abs(v) for v in track.s))
-    lines = [(at, spoken(path)) for at, path in voices]
+    # (at, path), or (at, path, seconds) for the line's first seconds only, faded at the cut.
+    lines = []
+    for at, path, *keep in voices:
+        line = spoken(path)
+        if keep:
+            n = int(keep[0] * RATE)
+            line = [v * min(1, (n - j) / (0.03 * RATE)) for j, v in enumerate(line[:n])]
+        lines.append((at, line))
     spans = [(at - 0.12, at + len(line) / RATE + 0.1) for at, line in lines]
     for i in range(track.n):
         t = i / RATE
@@ -407,7 +414,13 @@ def room(dry, mix=0.2):
     return out
 
 
-def render_deep(seconds, out, pops, lands, boings, voices=(), cues=None):
+def swish(loud, length=0.32):
+    """Air moving past: noise swelling and gone, for a shot sliding in."""
+    hiss = noise(1.0, 1e9, 0.9)
+    return lambda t: loud * hiss(t) * math.sin(math.pi * min(1, t / length)) ** 3
+
+
+def render_deep(seconds, out, pops, lands, boings, voices=(), cues=None, swishes=()):
     """The BOTS! song on the cut's `cues`, as `render_chip`'s, with its own bar: the pad swelling
     and the bass and kick coming in over the title, a tom fill into the drop, the beat, bass and
     keys with the tune over the features, the pad and a light beat while the bots talk (kick, rim,
@@ -471,7 +484,7 @@ def render_deep(seconds, out, pops, lands, boings, voices=(), cues=None):
             track.add(step(0), 0.6, deep_kick(0.6)); track.add(step(8), 0.6, deep_kick(0.55))
             track.add(step(4), 0.05, rim(0.08)); track.add(step(12), 0.4, deep_snare(0.2))
             for i in range(0, 12, 2): track.add(step(i), 0.03, noise(0.022, 0.016, 0.88))
-            fill()
+            if k == -1: fill()          # (only into the drop, when the title is longer than a bar)
             continue
         if part == 'outro':
             if n == 0:
@@ -516,6 +529,8 @@ def render_deep(seconds, out, pops, lands, boings, voices=(), cues=None):
         track.add(at, 0.6, boing(0.16))
     for at in pops:
         track.add(at, 0.3, bloop(0.11))
+    for at in swishes:
+        track.add(at, 0.34, swish(0.09))
     for i, v in enumerate(room(wet.s, 0.28)):
         track.s[i] += v
     lay_voices(track, voices)
@@ -526,9 +541,11 @@ def bar_length(song):
     """The song's bar in seconds: what its turns are counted in."""
     return DEEP_BAR if song == 'bots' else CHIP_BAR
 
-def render(seconds, out, pops=(), song='phone', lands=(), boings=(), voices=(), cues=None):
-    if song in ('bots', 'chip'):
-        return (render_deep if song == 'bots' else render_chip)(seconds, out, pops, lands, boings, voices, cues)
+def render(seconds, out, pops=(), song='phone', lands=(), boings=(), voices=(), cues=None, swishes=()):
+    if song == 'bots':
+        return render_deep(seconds, out, pops, lands, boings, voices, cues, swishes)
+    if song == 'chip':
+        return render_chip(seconds, out, pops, lands, boings, voices, cues)
     track = Track(seconds)
     bars = int(seconds / BAR) + 1
     for b in range(bars):
