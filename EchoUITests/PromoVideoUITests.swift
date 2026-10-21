@@ -432,6 +432,7 @@ final class PromoVideoUITests: XCTestCase {
         let app = try launch(["-echo.demoPhone", "settings", "-echo.screen", "settings", "-echo.demoPlugin", "there",
                               "-theme", "claudeCode", "-appearance", "dark"])
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20))
+        app.openSettingsPage("Agent")
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Phone tools'")).firstMatch
         for _ in 0 ..< 14 where !(row.exists && row.isHittable) { app.swipeUp() }
         hold(0.6)
@@ -465,7 +466,7 @@ final class PromoVideoUITests: XCTestCase {
     /// Make it yours: Settings with the app icons open, scrolled gently.
     func testMakeItYours() throws {
         let app = try launch(["-echo.demo", "-echo.screen", "settings", "-echo.expandAppIcons", "-theme", "standard", "-appearance", "light"])
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.navigationBars["Appearance"].waitForExistence(timeout: 20), "Settings → Appearance didn't open on the icons")
         hold(2)
         mark("start")
         hold(1.2)

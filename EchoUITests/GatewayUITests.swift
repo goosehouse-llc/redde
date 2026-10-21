@@ -10,6 +10,7 @@ final class GatewayUITests: XCTestCase {
         app.launchArguments = XCUIApplication.straightToChat + ["-echo.demoGateway", "-echo.screen", "settings"]
         app.launch()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20), "Settings didn't open")
+        app.openSettingsPage("Agent")
         let row = app.buttons["Gateway"]
         for _ in 0 ..< 12 where !(row.exists && row.isHittable) { app.swipeUp() }
         XCTAssertTrue(row.exists && row.isHittable, "No Gateway row in Settings")

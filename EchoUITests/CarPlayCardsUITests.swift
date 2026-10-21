@@ -22,6 +22,7 @@ final class CarPlayCardsUITests: XCTestCase {
         app.launchArguments = XCUIApplication.straightToChat + ["-echo.screen", "settings"]
         app.launch()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20), "Settings didn't open")
+        app.openSettingsPage("Appearance")
         let row = app.staticTexts["CarPlay cards"]
         reach(row, in: app, "The CarPlay cards row")
         row.tap()
@@ -30,7 +31,9 @@ final class CarPlayCardsUITests: XCTestCase {
         let glow = look("Glow"), color = look("Color")
         reach(glow, in: app, "Glow")
         XCTAssertTrue(color.exists, "The looks aren't listed")
-        for name in ["Orb", "Gold", "Graphite", "Marks"] { XCTAssertTrue(look(name).exists, "\(name) isn't listed") }
+        // Further down, each one scrolled to (a row below the screen isn't made until it's near).
+        for name in ["Orb", "Gold", "Graphite", "Marks"] { reach(look(name), in: app, "\(name)") }
+        for _ in 0 ..< 8 where !glow.isHittable { app.swipeDown() }
         glow.tap()
         XCTAssertTrue(glow.isSelected, "Glow wasn't picked")
         XCTAssertFalse(color.isSelected)
@@ -49,6 +52,7 @@ final class CarPlayCardsUITests: XCTestCase {
         app.launchArguments = XCUIApplication.straightToChat + ["-echo.screen", "settings"]
         app.launch()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20), "Settings didn't open")
+        app.openSettingsPage("Appearance")
         let row = app.staticTexts["CarPlay voice screen"]
         reach(row, in: app, "The CarPlay voice screen row")
         row.tap()

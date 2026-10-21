@@ -83,7 +83,7 @@ final class SetupCodeUITests: XCTestCase {
         XCTAssertTrue(app.images["setup-code"].waitForExistence(timeout: 5), "No QR code")
         // Without the passwords until they are asked for (which takes the passcode).
         XCTAssertTrue(app.text(containing: "Passwords and keys are left out").exists, "The code should start without secrets")
-        XCTAssertEqual(app.switches.firstMatch.value as? String, "0")
+        XCTAssertEqual(app.switches["Include passwords and keys"].value as? String, "0")
         // (Copy link is left alone: the Simulator app mirrors its clipboard to the Mac's.)
         app.navigationBars["Set up another device"].buttons["Done"].tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))

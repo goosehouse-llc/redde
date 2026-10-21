@@ -22,6 +22,7 @@ final class VoiceOptionsUITests: XCTestCase {
         app.launchArguments = XCUIApplication.straightToChat + ["-echo.screen", "settings"]
         app.launch()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20), "Settings didn't open")
+        app.openSettingsPage("Voice")
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Stop phrases'")).firstMatch
         reach(row, in: app, "The Stop phrases row")
         row.tap()
@@ -66,6 +67,7 @@ final class VoiceOptionsUITests: XCTestCase {
         app.launchArguments = XCUIApplication.straightToChat + ["-echo.screen", "settings"]
         app.launch()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20), "Settings didn't open")
+        app.openSettingsPage("Voice")
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Thinking sound'")).firstMatch
         reach(row, in: app, "The Thinking sound row")
         func shows(_ choice: String) -> Bool {
@@ -96,6 +98,7 @@ final class VoiceOptionsUITests: XCTestCase {
         app.launchArguments = XCUIApplication.straightToChat + ["-echo.screen", "settings"]
         app.launch()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20), "Settings didn't open")
+        app.openSettingsPage("Voice")
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Listening language'")).firstMatch
         reach(row, in: app, "The Listening language row")
         row.tap()
@@ -116,6 +119,7 @@ final class VoiceOptionsUITests: XCTestCase {
         app.launchArguments = XCUIApplication.straightToChat + ["-echo.screen", "settings", "-echo.headGestures"]
         app.launch()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20), "Settings didn't open")
+        app.openSettingsPage("Voice")
         let aloud = app.switches["Answer requests by voice"]
         reach(aloud, in: app, "The Answer requests by voice switch")
         func flip(_ row: XCUIElement) {

@@ -9,6 +9,7 @@ final class NotificationSoundUITests: XCTestCase {
         app.launchArguments = XCUIApplication.straightToChat + ["-echo.screen", "settings"]
         app.launch()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20), "Settings didn't open")
+        app.openSettingsPage("Voice")
         let sound = app.switches["Notification sound"]
         for _ in 0 ..< 12 where !(sound.exists && sound.isHittable) { app.swipeUp() }
         XCTAssertTrue(sound.exists && sound.isHittable, "No Notification sound switch in Settings")

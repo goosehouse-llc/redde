@@ -16,6 +16,7 @@ final class ReadingUITests: XCTestCase {
         app.buttons["More"].firstMatch.tap()
         app.buttons["Settings"].firstMatch.tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10), "Settings didn't open")
+        app.openSettingsPage("Appearance")
         let picker = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Chat text size")).firstMatch
         for _ in 0 ..< 6 where !(picker.exists && picker.isHittable) { app.swipeUp() }
         XCTAssertTrue(picker.exists && picker.isHittable, "No Chat text size in Settings")
@@ -23,6 +24,7 @@ final class ReadingUITests: XCTestCase {
         let choice = app.buttons[size]
         XCTAssertTrue(choice.waitForExistence(timeout: 5), "Chat text size doesn't offer \(size)")
         choice.tap()
+        app.navigationBars["Appearance"].buttons.firstMatch.tap()   // back to Settings
         app.navigationBars["Settings"].buttons["Done"].tap()
     }
 

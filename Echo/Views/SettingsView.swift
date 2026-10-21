@@ -1,7 +1,10 @@
 import SwiftUI
 
-/// The settings form. Each section is its own view, so typing in one field re-evaluates that
-/// section rather than the whole form. The two Keychain flags several sections gate on live here.
+/// Settings: the connection and a few switches on the first screen, and the long sections on
+/// pages of their own (`SettingsPage`). It was one form of fourteen sections, every row of it
+/// built as the sheet came up: half a second, the slowest thing in the app (2026-10-21). Each
+/// section is its own view, so typing in one field re-evaluates that section rather than the
+/// whole form. The two Keychain flags several sections gate on live here.
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showSetup = false
@@ -9,6 +12,8 @@ struct SettingsView: View {
     @State private var hasServePassword = false
     /// Toggled whenever a secret is saved; drives the success haptic.
     @State private var secretSaved = false
+    /// The page open over the first screen, if any.
+    @State private var path: [SettingsPage] = []
 
     static var versionLine: String {
         let info = Bundle.main.infoDictionary
@@ -18,17 +23,17 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollViewReader { proxy in
             Form {
                 NameSettings()
                 ProfileSettings()
-                AppearanceSettings()
-                ComposerSettings()
                 TransportSettings(showSetup: $showSetup)
                 ModelSettings()
-                AgentSettings(canReachGateway: hasStoredKey || hasServePassword, canEditFiles: hasServePassword) {
-                    ConnectionDetailsView(hasStoredKey: $hasStoredKey, hasServePassword: $hasServePassword, saved: $secretSaved)
+                Section {
+                    ForEach(SettingsPage.offered) { page in
+                        NavigationLink(value: page) { Label(page.title, systemImage: page.symbol) }
+                    }
                 }
                 Section {
                     NavigationLink {
@@ -38,8 +43,6 @@ struct SettingsView: View {
                 } footer: {
                     Text("URLs, keys and logins for every connection, including ones you aren't using right now. The Hermes Dashboard login also unlocks the context and memory files, and files the agent sends, while you chat over the Hermes API.")
                 }
-                VoiceSettings()
-                if #available(iOS 27.0, *) { SiriSettings() }
                 MetricsSettings()
                 ICloudSettings()
                 LockSettings()
@@ -47,14 +50,23 @@ struct SettingsView: View {
                 ResetSettings()
             }
             #if DEBUG
-            // Dev hook: `-echo.settingsAnchor` scrolls to the context and memory files, and
-            // `-echo.settingsAnchor icloud` to Sync with iCloud (screenshots).
+            // Dev hooks: `-echo.settingsAnchor` opens Agent on the context and memory files, and
+            // `-echo.settingsAnchor icloud` scrolls to Sync with iCloud; `-echo.expandAppIcons`
+            // opens Appearance on the app icons (screenshots).
             .task {
+                if DevHooks.expandAppIcons { path = [.appearance] }
                 guard DevHooks.settingsAnchor else { return }
                 try? await Task.sleep(for: .milliseconds(600))
-                proxy.scrollTo(DevHooks.value("-echo.settingsAnchor") == "icloud" ? "icloud" : "agentFiles", anchor: .top)
+                if DevHooks.value("-echo.settingsAnchor") == "icloud" {
+                    proxy.scrollTo("icloud", anchor: .top)
+                } else {
+                    path = [.agent]
+                }
             }
             #endif
+            }
+            .navigationDestination(for: SettingsPage.self) { page in
+                SettingsPageForm(page: page) { pageContent(page) }
             }
             .sheet(isPresented: $showSetup) { SetupView() }
             // Keychain reads once when the screen appears, not per parent render.
@@ -69,6 +81,74 @@ struct SettingsView: View {
             }
             .sensoryFeedback(.success, trigger: secretSaved)
         }
+    }
+
+    @ViewBuilder
+    private func pageContent(_ page: SettingsPage) -> some View {
+        switch page {
+        case .appearance: AppearanceSettings()
+        case .writing: ComposerSettings()
+        case .voice: VoiceSettings()
+        case .siri: if #available(iOS 27.0, *) { SiriSettings() }
+        case .agent:
+            AgentSettings(canReachGateway: hasStoredKey || hasServePassword, canEditFiles: hasServePassword) {
+                ConnectionDetailsView(hasStoredKey: $hasStoredKey, hasServePassword: $hasServePassword, saved: $secretSaved)
+            }
+        }
+    }
+}
+
+/// A page of Settings: what was a section of the one long form.
+enum SettingsPage: String, CaseIterable, Identifiable, Hashable {
+    case appearance, writing, voice, siri, agent
+
+    var id: String { rawValue }
+
+    /// The pages this device has: Siri's needs iOS 27.
+    static var offered: [SettingsPage] {
+        if #available(iOS 27.0, *) { return allCases }
+        return allCases.filter { $0 != .siri }
+    }
+
+    var title: String {
+        switch self {
+        case .appearance: "Appearance"
+        case .writing: "Writing"
+        case .voice: "Voice"
+        case .siri: "Siri"
+        case .agent: "Agent"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .appearance: "paintbrush"
+        case .writing: "keyboard"
+        case .voice: "waveform"
+        case .siri: "sparkles"
+        case .agent: "brain.head.profile"
+        }
+    }
+}
+
+/// A page's form, titled; on Agent, the dev hook that shows the context and memory files.
+private struct SettingsPageForm<Content: View>: View {
+    let page: SettingsPage
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            Form { content() }
+                #if DEBUG
+                .task {
+                    guard page == .agent, DevHooks.settingsAnchor else { return }
+                    try? await Task.sleep(for: .milliseconds(500))
+                    proxy.scrollTo("agentFiles", anchor: .top)
+                }
+                #endif
+        }
+        .navigationTitle(page.title)
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

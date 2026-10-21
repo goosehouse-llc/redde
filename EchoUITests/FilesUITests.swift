@@ -27,6 +27,7 @@ final class FilesUITests: XCTestCase {
         app.launchArguments = XCUIApplication.straightToChat + ["-echo.demoFiles", "-echo.screen", "settings"]
         app.launch()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 30), "Settings didn't open")
+        app.openSettingsPage("Agent")
         let files = app.buttons["Files"]
         for _ in 0 ..< 14 where !(files.exists && files.isHittable) { app.swipeUp() }
         XCTAssertTrue(files.exists && files.isHittable, "No Files row in Settings")

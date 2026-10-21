@@ -44,3 +44,15 @@ extension XCUIApplication {
         return rows.count < before
     }
 }
+
+extension XCUIApplication {
+    /// Opens one of Settings' pages (Appearance, Writing, Voice, Siri, Agent) from its first
+    /// screen, which is open already.
+    func openSettingsPage(_ title: String, file: StaticString = #filePath, line: UInt = #line) {
+        let row = buttons.matching(NSPredicate(format: "label == %@", title)).firstMatch
+        for _ in 0 ..< 6 where !(row.exists && row.isHittable) { swipeUp() }
+        XCTAssertTrue(row.exists && row.isHittable, "No \(title) in Settings", file: file, line: line)
+        row.tap()
+        XCTAssertTrue(navigationBars[title].waitForExistence(timeout: 5), "Settings → \(title) didn't open", file: file, line: line)
+    }
+}
