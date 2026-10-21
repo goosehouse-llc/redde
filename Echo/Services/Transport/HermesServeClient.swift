@@ -967,7 +967,6 @@ final class HermesServeClient {
         var description: String?
         var category: String?
         var enabled: Bool?
-        var provenance: String?
         var id: String { name }
     }
 

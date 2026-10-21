@@ -123,19 +123,7 @@ struct ComposerView: View {
                 ComposerPaste.shared.teachFocusedField()
             }
         }
-        .onChange(of: dictation.heard) { _, heard in
-            if let base = dictationBase { draft = Dictation.joined(base, heard) }
-        }
-        .onChange(of: dictation.phase) { _, phase in
-            guard phase == .idle, let base = dictationBase else { return }
-            draft = Dictation.joined(base, dictation.heard)
-            dictationBase = nil
-        }
-        .onChange(of: dictation.problem) { _, problem in
-            if let problem { attachmentError = problem }
-        }
-        .onDisappear { stopDictating() }
-        .sensoryFeedback(.selection, trigger: dictation.isActive)
+        .dictating(dictation, base: $dictationBase, draft: $draft, problem: $attachmentError)
         .sheet(isPresented: $showEditor) {
             ComposerEditor(draft: $draft, sendLabel: conversation.isStreaming ? "Send after this reply" : "Send", send: send)
                 .tint(theme.accent)
@@ -305,7 +293,7 @@ struct ComposerView: View {
                     focused = true
                 } label: {
                     HStack(spacing: 10) {
-                        BotAvatar(face: faces[bot.name] ?? BotFace(seed: bot.name), size: 22)
+                        BotAvatar(face: faces[bot.name] ?? BotFace(seed: bot.name), name: bot.label(mainName: settings.headerTitle), size: 22)
                         Text("@" + BotMentions.tag(for: bot)).font(.callout.weight(.medium)).lineLimit(1)
                         Text(bot.label(mainName: settings.headerTitle)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                         Spacer(minLength: 0)
@@ -488,17 +476,8 @@ struct ComposerView: View {
                         .accessibilityHint("Shows the message on a page of its own")
                         .transition(.opacity)
                 }
-                Button(dictation.isActive ? "Stop dictating" : "Dictate", systemImage: dictation.isActive ? "waveform" : "mic") {
-                    toggleDictation()
-                }
-                .font(.body.weight(.medium))
-                .symbolEffect(.variableColor.iterative, isActive: dictation.phase == .listening)
-                .foregroundStyle(dictation.isActive ? AnyShapeStyle(.red) : AnyShapeStyle(.secondary))
-                .frame(width: 34, height: 38)
-                .contentShape(.rect)
-                .buttonStyle(.plain)
-                .disabled(voiceSession.mightBeBusy)
-                .accessibilityHint(dictation.isActive ? "Ends dictation; what was said stays in the message" : "Speak your message; it is written here, not sent")
+                DictateButton(dictation: dictation, toggle: toggleDictation)
+                    .disabled(voiceSession.mightBeBusy)
             }
             .animation(.easeOut(duration: 0.2), value: draftIsLong)
             .onGeometryChange(for: CGFloat.self) { $0.size.height + 10 } action: { height in

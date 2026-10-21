@@ -371,7 +371,6 @@ final class VoiceSession {
         HeadsetControls.shared.setNowPlaying(status: status, active: phase == .listening || phase == .speaking)
     }
 
-    var isListening: Bool { phase == .listening }
     var mightBeBusy: Bool { phase != .idle }
 
     // MARK: - Public actions

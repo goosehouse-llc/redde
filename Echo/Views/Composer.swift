@@ -31,6 +31,47 @@ struct ComposerButton: View {
     }
 }
 
+/// The microphone in both composers (a chat's and a group chat's): the draft is written as it
+/// is heard, nothing sent.
+struct DictateButton: View {
+    let dictation: Dictation
+    let toggle: () -> Void
+
+    var body: some View {
+        Button(dictation.isActive ? "Stop dictating" : "Dictate", systemImage: dictation.isActive ? "waveform" : "mic", action: toggle)
+            .labelStyle(.iconOnly)
+            .font(.body.weight(.medium))
+            .symbolEffect(.variableColor.iterative, isActive: dictation.phase == .listening)
+            .foregroundStyle(dictation.isActive ? AnyShapeStyle(.red) : AnyShapeStyle(.secondary))
+            .frame(width: 34, height: 38)
+            .contentShape(.rect)
+            .buttonStyle(.plain)
+            .accessibilityHint(dictation.isActive ? "Ends dictation; what was said stays in the message" : "Speak your message; it is written here, not sent")
+    }
+}
+
+extension View {
+    /// A composer's draft following `dictation`: what it hears goes after `base` (the draft as it
+    /// was when it began), a problem goes to `problem`, and it stops when the composer goes.
+    func dictating(_ dictation: Dictation, base: Binding<String?>, draft: Binding<String>, problem: Binding<String?>) -> some View {
+        onChange(of: dictation.heard) { _, heard in
+            if let start = base.wrappedValue { draft.wrappedValue = Dictation.joined(start, heard) }
+        }
+        .onChange(of: dictation.phase) { _, phase in
+            guard phase == .idle, let start = base.wrappedValue else { return }
+            draft.wrappedValue = Dictation.joined(start, dictation.heard)
+            base.wrappedValue = nil
+        }
+        .onChange(of: dictation.problem) { _, new in
+            if let new { problem.wrappedValue = new }
+        }
+        .onDisappear {
+            base.wrappedValue = nil
+            dictation.cancel()
+        }
+        .sensoryFeedback(.selection, trigger: dictation.isActive)
+    }
+}
 
 /// Five bars rising and falling out of phase, like the icon come to life. Sits still under
 /// Reduce Motion.

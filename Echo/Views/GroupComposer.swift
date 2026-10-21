@@ -59,19 +59,7 @@ struct GroupComposer: View {
             .animation(.snappy(duration: 0.3, extraBounce: 0.15), value: hasDraft)
         }
         .padding(.horizontal).padding(.vertical, 8)
-        .onChange(of: dictation.heard) { _, heard in
-            if let base = dictationBase { draft = Dictation.joined(base, heard) }
-        }
-        .onChange(of: dictation.phase) { _, phase in
-            guard phase == .idle, let base = dictationBase else { return }
-            draft = Dictation.joined(base, dictation.heard)
-            dictationBase = nil
-        }
-        .onChange(of: dictation.problem) { _, problem in
-            if let problem { self.problem = problem }
-        }
-        .onDisappear { stopDictating() }
-        .sensoryFeedback(.selection, trigger: dictation.isActive)
+        .dictating(dictation, base: $dictationBase, draft: $draft, problem: $problem)
         .fullScreenCover(isPresented: $showCamera) {
             CameraPicker { image in
                 if let image, let att = Attachment.image(image) { attachments.append(att) }
@@ -128,17 +116,7 @@ struct GroupComposer: View {
                 .textFieldStyle(.plain)
                 .padding(.vertical, 9)
                 .focused(focused)
-            Button(dictation.isActive ? "Stop dictating" : "Dictate", systemImage: dictation.isActive ? "waveform" : "mic") {
-                toggleDictation()
-            }
-            .labelStyle(.iconOnly)
-            .font(.body.weight(.medium))
-            .symbolEffect(.variableColor.iterative, isActive: dictation.phase == .listening)
-            .foregroundStyle(dictation.isActive ? AnyShapeStyle(.red) : AnyShapeStyle(.secondary))
-            .frame(width: 34, height: 38)
-            .contentShape(.rect)
-            .buttonStyle(.plain)
-            .accessibilityHint(dictation.isActive ? "Ends dictation; what was said stays in the message" : "Speak your message; it is written here, not sent")
+            DictateButton(dictation: dictation, toggle: toggleDictation)
         }
         .padding(.horizontal, 4)
         .background(theme.usesGlass ? AnyShapeStyle(.clear) : AnyShapeStyle(theme.surfaceColor), in: .rect(cornerRadius: 22))
@@ -186,7 +164,7 @@ struct GroupComposer: View {
                     focused.wrappedValue = true
                 } label: {
                     HStack(spacing: 10) {
-                        BotAvatar(face: face(member), size: 22)
+                        BotAvatar(face: face(member), name: member.label, size: 22)
                         Text("@" + member.handle).font(.callout.weight(.medium))
                         Text(member.label).font(.caption).foregroundStyle(.secondary)
                         Spacer(minLength: 0)

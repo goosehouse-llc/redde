@@ -301,13 +301,6 @@ nonisolated struct GroupApproval: Identifiable, Equatable, Sendable {
 }
 
 extension HermesServeClient {
-    nonisolated enum GroupProblem: LocalizedError {
-        case unavailable
-        var errorDescription: String? {
-            "Group chats are run by a worker in Hermes that isn't running right now. Try again in a moment."
-        }
-    }
-
     /// Whether this Dashboard has group chats, and can start or send to one now (its room
     /// worker runs; it starts a moment after the Dashboard does).
     func groupSupport() async throws -> (supported: Bool, writable: Bool) {
