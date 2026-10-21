@@ -157,10 +157,12 @@ final class BotsUITests: XCTestCase {
         let list = app.collectionViews.firstMatch
         // Matched on the row's own label: a group chat's names its bots ("Fix-it and Scout").
         func row(_ name: String) -> XCUIElement { list.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name + ",")).firstMatch }
-        /// Drags a row by its handle onto another's place.
+        /// Drags a row by its handle onto another's place. (A handle is named for the whole row:
+        /// "Reorder Fix-it, Looks after the home server".)
+        func handle(_ name: String) -> XCUIElement { list.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Reorder " + name + ",")).firstMatch }
         func drag(_ name: String, onto other: String) {
-            let from = list.buttons["Reorder " + name].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-            let to = list.buttons["Reorder " + other].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
+            let from = handle(name).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            let to = handle(other).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
             from.press(forDuration: 0.4, thenDragTo: to, withVelocity: .slow, thenHoldForDuration: 0.5)
             sleep(1)
         }
