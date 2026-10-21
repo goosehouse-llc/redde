@@ -218,7 +218,7 @@ struct VoiceView: View {
                 }
                 .scrollIndicators(.hidden)
                 .onChange(of: events.count) { proxy.scrollTo("voice-bottom", anchor: .bottom) }
-                .onChange(of: group.feed.drafts.map(\.text.count).reduce(0, +)) { proxy.scrollTo("voice-bottom", anchor: .bottom) }
+                .onChange(of: group.feed.drafts.map(\.text.utf8.count).reduce(0, +)) { proxy.scrollTo("voice-bottom", anchor: .bottom) }
             }
         }
     }
@@ -261,7 +261,8 @@ struct VoiceView: View {
             }
             .scrollIndicators(.hidden)
             .onChange(of: conversation.messages.last?.text) { proxy.scrollTo("voice-bottom", anchor: .bottom) }
-            .onChange(of: conversation.messages.last?.reasoning.count) { proxy.scrollTo("voice-bottom", anchor: .bottom) }
+            // (Bytes, not characters: counting characters walks the whole of the thinking.)
+            .onChange(of: conversation.messages.last?.reasoning.utf8.count) { proxy.scrollTo("voice-bottom", anchor: .bottom) }
         }
     }
 

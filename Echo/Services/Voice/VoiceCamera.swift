@@ -1,5 +1,6 @@
 import AVFoundation
 import CoreImage
+import Observation
 import UIKit
 import os
 
@@ -10,6 +11,7 @@ import os
 ///
 /// Not run on a phone yet: the simulator has no camera. Whether the camera and voice mode's
 /// microphone get along there is to be seen.
+@Observable
 final class VoiceCamera {
     static let shared = VoiceCamera()
 
@@ -21,10 +23,23 @@ final class VoiceCamera {
         return shared
     }
 
-    private let feed = CameraFeed()
-    private let log = Logger(subsystem: "com.goosehouse.echo", category: "voice")
+    @ObservationIgnored private let feed = CameraFeed()
+    @ObservationIgnored private let log = Logger(subsystem: "com.goosehouse.echo", category: "voice")
 
-    var isAvailable: Bool { AVCaptureDevice.default(for: .video) != nil }
+    /// Whether there is a camera at all: asked once, off the main thread, as the app starts. The
+    /// first ask is a round trip to the camera service, a third of a second on the simulator
+    /// (2026-10-21), and asked from the voice screen's body it froze the screen as it opened and
+    /// went again with every pass of it. Observed, so the camera button shows once it's known.
+    private(set) var isAvailable = false
+
+    private init() {
+        Task { [weak self] in
+            let found = await Self.cameraExists()
+            self?.isAvailable = found
+        }
+    }
+
+    @concurrent private static func cameraExists() async -> Bool { AVCaptureDevice.default(for: .video) != nil }
     var viewfinder: AVCaptureSession? { feed.session }
 
     func open() async -> Bool {
