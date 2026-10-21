@@ -26,10 +26,12 @@ final class TurnActivity {
     private var approval: EchoTurnAttributes.ContentState.Approval?
     /// How far the agent is down its task list, carried on every update once it has said.
     private var progress: EchoTurnAttributes.ContentState.Progress?
-
-    private var enabled: Bool {
-        Settings.shared.showLiveActivity && ActivityAuthorizationInfo().areActivitiesEnabled
-    }
+    /// The turn whose activity is being asked for (off the main actor: the first request of a
+    /// launch held a send's frame ~45 ms on the simulator). What happens meanwhile waits in
+    /// `pending`; a turn over before its activity arrives ends it with its last word, if it had one.
+    private var requesting: UUID?
+    private var endedWhileRequesting: [UUID: EchoTurnAttributes.ContentState?] = [:]
+    private var turnStartedAt: Date?
 
     /// Ends activities this object isn't driving: left by a run of the app that crashed or was
     /// closed mid-reply. Called at launch, when nothing can be in flight, and before each turn.
@@ -43,16 +45,40 @@ final class TurnActivity {
     func start(question: String) {
         end(final: nil)
         clearStrays()
-        guard enabled else { return }
+        guard Settings.shared.showLiveActivity else { return }
         preview = ""
         let attributes = EchoTurnAttributes(question: String(question.prefix(120)))
         let state = EchoTurnAttributes.ContentState(phase: .thinking, detail: "", startedAt: .now)
-        do {
-            activity = try Activity.request(attributes: attributes, content: content(state), pushType: nil)
-            lastState = state
+        let turn = UUID()
+        (requesting, turnStartedAt, lastState) = (turn, state.startedAt, state)
+        let content = content(state)
+        Task {
+            let made = await Self.request(attributes, content, log: log)
+            let final = endedWhileRequesting.removeValue(forKey: turn)
+            guard requesting == turn else {
+                // Over already, or another turn began: it goes with its last word, if any.
+                if let made { Self.end(made.activity, final: final ?? nil) }
+                return
+            }
+            requesting = nil
+            guard let made else { (lastState, pending) = (nil, nil); return }
+            activity = made.activity
             startHeartbeat()
+            if let pending { flush(pending) }
+        }
+    }
+
+    /// `Activity` isn't Sendable (see `flush`): handed back from the request in this.
+    private nonisolated struct Made: @unchecked Sendable { let activity: Activity<EchoTurnAttributes> }
+
+    @concurrent private static func request(_ attributes: EchoTurnAttributes, _ content: ActivityContent<EchoTurnAttributes.ContentState>,
+                                            log: Logger) async -> Made? {
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return nil }
+        do {
+            return Made(activity: try Activity.request(attributes: attributes, content: content, pushType: nil))
         } catch {
             log.info("live activity unavailable: \(error.localizedDescription)")
+            return nil
         }
     }
 
@@ -61,7 +87,7 @@ final class TurnActivity {
     /// A command is waiting for a yes or no: the activity shows it with Approve and Deny
     /// (`ApproveRequestIntent`, `DenyRequestIntent`). Only when the request offers both.
     func needsApproval(_ request: ApprovalRequest) {
-        guard activity != nil, let choices = request.yesNo else { return }
+        guard isOn, let choices = request.yesNo else { return }
         approval = .init(id: request.id, command: String(request.command.prefix(160)),
                          approve: choices.approve, deny: choices.deny)
         refresh()
@@ -79,7 +105,7 @@ final class TurnActivity {
     /// quick question about something else would wear another job's count.)
     func tasks(_ items: [TodoItem]) {
         let now = TodoList.progress(items)
-        guard activity != nil, now != progress else { return }
+        guard isOn, now != progress else { return }
         progress = now
         refresh()
     }
@@ -112,7 +138,10 @@ final class TurnActivity {
 
     // MARK: - Internals
 
-    private var startedAt: Date { activity?.content.state.startedAt ?? .now }
+    /// A turn has an activity, or one is being asked for.
+    private var isOn: Bool { activity != nil || requesting != nil }
+
+    private var startedAt: Date { turnStartedAt ?? .now }
 
     /// A live state, good until a little after the next heartbeat is due.
     private func content(_ state: EchoTurnAttributes.ContentState) -> ActivityContent<EchoTurnAttributes.ContentState> {
@@ -133,11 +162,13 @@ final class TurnActivity {
     }
 
     private func push(_ phase: EchoTurnAttributes.ContentState.Phase, _ detail: String) {
-        guard let activity else { return }
-        var state = EchoTurnAttributes.ContentState(phase: phase, detail: detail, startedAt: activity.content.state.startedAt)
+        guard isOn else { return }
+        var state = EchoTurnAttributes.ContentState(phase: phase, detail: detail, startedAt: startedAt)
         state.approval = approval
         state.progress = progress
-        if Date.now.timeIntervalSince(lastFlush) > 1 {
+        if activity == nil {
+            pending = state   // sent when the activity arrives
+        } else if Date.now.timeIntervalSince(lastFlush) > 1 {
             flush(state)
         } else {
             // One pending flush at a time: it picks up whatever is newest when it fires,
@@ -160,7 +191,10 @@ final class TurnActivity {
     private var updateChain: Task<Void, Never>?
 
     private func flush(_ state: EchoTurnAttributes.ContentState) {
-        guard let current = activity else { return }
+        guard let current = activity else {
+            if requesting != nil { pending = state }
+            return
+        }
         nonisolated(unsafe) let activity = current
         pending = nil
         lastFlush = .now
@@ -174,6 +208,9 @@ final class TurnActivity {
     }
 
     private func end(final: EchoTurnAttributes.ContentState?) {
+        if let requesting { endedWhileRequesting[requesting] = .some(final) }
+        requesting = nil
+        turnStartedAt = nil
         flushTask?.cancel()
         flushTask = nil
         heartbeat?.cancel()
@@ -183,9 +220,13 @@ final class TurnActivity {
         approval = nil
         progress = nil
         guard let current = activity else { return }
-        nonisolated(unsafe) let activity = current
         self.activity = nil
-        let previous = updateChain
+        Self.end(current, final: final, after: updateChain)
+    }
+
+    /// The last word stays two minutes; without one the activity goes at once.
+    private static func end(_ current: Activity<EchoTurnAttributes>, final: EchoTurnAttributes.ContentState?, after previous: Task<Void, Never>? = nil) {
+        nonisolated(unsafe) let activity = current
         Task {
             await previous?.value
             if let final {

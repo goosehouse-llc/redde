@@ -889,6 +889,14 @@ struct ContentView: View {
             await monitor.report("tour: streaming to the end") {
                 for _ in 0 ..< 600 where conversation.isStreaming { await wait(0.1) }
             }
+            // Another in the same launch: a reply's start once the app has drawn one already.
+            await monitor.report("tour: send again") {
+                conversation.send("And if it rains?")
+                await wait(1)
+            }
+            await monitor.report("tour: second reply") {
+                for _ in 0 ..< 600 where conversation.isStreaming { await wait(0.1) }
+            }
         } else {
             draft = unsent
         }

@@ -137,3 +137,30 @@ struct LiveMark: View {
         .accessibilityHidden(true)
     }
 }
+
+/// What a reply draws as it starts (the edge's faint, lifted and blurred letters, the shimmer on
+/// "Thinking", the live dot), drawn once at launch, all but invisible, then gone. The first time
+/// a process draws each of them their rendering is set up, and a reply's first words waited on
+/// that: ~390 ms of late frames on the simulator (~110 ms of it the blur), none for the next
+/// reply in the same launch (`-echo.tour send`, 2026-10-21). In the launch's first frames
+/// instead, where nothing is moving yet.
+struct ReplyDrawingWarmUp: View {
+    @State private var done = false
+
+    var body: some View {
+        if !done {
+            HStack(spacing: 4) {
+                Text("Redde").textRenderer(StreamingTail(dot: .gray))
+                ShimmerText(text: "Thinking")
+                LiveMark(color: .gray)
+            }
+            .opacity(0.01)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .task {
+                try? await Task.sleep(for: .seconds(1))
+                done = true
+            }
+        }
+    }
+}

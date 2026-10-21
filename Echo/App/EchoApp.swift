@@ -38,6 +38,9 @@ struct EchoApp: App {
             ZStack {
                 ContentView()
                     .accessibilityHidden(lock.isLocked || lock.isCovered)
+                ReplyDrawingWarmUp()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .allowsHitTesting(false)
                 if lock.isLocked || lock.isCovered {
                     LockScreenView()
                         .transition(.opacity)
