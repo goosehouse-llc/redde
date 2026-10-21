@@ -40,8 +40,9 @@ final class GroupVoice {
         session.continuous = true
         session.sendsTo = { [weak feed] in feed?.send($0) }
         #if DEBUG
-        // `-echo.demoDraft`: the sample reply is read as it is written, with no listening.
-        if DevHooks.has("-echo.demoDraft") { listens = false; return }
+        // `-echo.demoDraft` (`-echo.demoRound`): the sample replies are read as they are written,
+        // with no listening.
+        if DevHooks.has("-echo.demoDraft") || DevHooks.has("-echo.demoRound") { listens = false; return }
         #endif
         session.beginListening()
     }

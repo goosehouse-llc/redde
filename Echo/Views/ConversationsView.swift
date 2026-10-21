@@ -1282,7 +1282,14 @@ struct ConversationsList: View {
                 // `-echo.openGroup [desktop]`: that group chat open, or the Hermes Desktop one (screenshots).
                 if DevHooks.has("-echo.openGroup"), !Self.openedDemoGroup {
                     Self.openedDemoGroup = true   // once: the list loads again each time it opens
-                    opened(room: DevHooks.value("-echo.openGroup") == "desktop" ? .demoDesktop : .demo)
+                    // After the launch's conversation has loaded: a change of conversation closes
+                    // a group chat, and the iPad's sidebar gets here before that load is done.
+                    let room: GroupRoom = DevHooks.value("-echo.openGroup") == "desktop" ? .demoDesktop : .demo
+                    Task {
+                        await conversation.initialLoad?.value
+                        try? await Task.sleep(for: .milliseconds(300))
+                        opened(room: room)
+                    }
                 }
                 // `-echo.demoMuted`: Scout and the demo group chat muted (screenshots).
                 if DevHooks.has("-echo.demoMuted"), !Mutes.isMuted("bot:scout") {

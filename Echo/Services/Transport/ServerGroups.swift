@@ -569,6 +569,40 @@ extension GroupFeed {
         drafts = []
         state = GroupState()
     }
+
+    /// `-echo.demoRound`: one question, and the room's three bots answering it in turn, each reply
+    /// written a few words at a time (for the voice screen, where they are read one after another).
+    func playDemoRound() async {
+        try? await Task.sleep(for: .seconds(2.5))
+        var seq = cursor + 1
+        events.append(GroupEvent(seq: seq, kind: "message.user", actorKind: "user", actorID: nil,
+                                 payload: .object(["text": .string("We're doing Falls Loop on Saturday. Who's on what?")]), createdAt: .now))
+        cursor = seq
+        state = GroupState(working: true)
+        let round = [("default", "On it. Saturday at 8 is on your calendar, with an alarm at 6:45."),
+                     ("scout", "The trail's open, but it's muddy past the second footbridge. Boots, not sneakers."),
+                     ("writer", "And here's your invite: Falls Loop, Saturday at 8. Bring layers. Coffee's on me after.")]
+        for (member, text) in round {
+            try? await Task.sleep(for: .seconds(0.8))
+            var draft = GroupDraft(id: "demo-round-\(member)", memberID: member, after: cursor)
+            for word in text.split(separator: " ") {
+                try? await Task.sleep(for: .milliseconds(160))
+                draft.text += (draft.text.isEmpty ? "" : " ") + word
+                drafts = [draft]
+            }
+            try? await Task.sleep(for: .seconds(0.4))
+            seq += 1
+            events.append(GroupEvent(seq: seq, kind: "message.member", actorKind: "member", actorID: member,
+                                     payload: .object(["text": .string(text)]), createdAt: .now))
+            cursor = seq
+            drafts = []
+        }
+        seq += 1
+        events.append(GroupEvent(seq: seq, kind: "room.activity", actorKind: "system", actorID: nil,
+                                 payload: .object(["status": .string("settled")]), createdAt: .now))
+        cursor = seq
+        state = GroupState()
+    }
 }
 #endif
 
@@ -668,7 +702,7 @@ final class GroupFeed {
     func follow() async {
         guard !isDemo else {
             #if DEBUG
-            if DevHooks.has("-echo.demoDraft") { await playDemoDraft() }
+            if DevHooks.has("-echo.demoRound") { await playDemoRound() } else if DevHooks.has("-echo.demoDraft") { await playDemoDraft() }
             #endif
             return
         }

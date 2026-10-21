@@ -451,7 +451,10 @@ struct TranscriptView: View {
     }
 
     private var reconnectText: String? {
-        switch serve.state {
+        #if DEBUG
+        if DevHooks.demoBots { return nil }   // (the sample bots have no Dashboard login to fail on)
+        #endif
+        return switch serve.state {
         case let .reconnecting(attempt): "Reconnecting to the Hermes Dashboard… (try \(attempt))"
         case let .failed(reason): "Hermes Dashboard: \(reason)"
         default: nil

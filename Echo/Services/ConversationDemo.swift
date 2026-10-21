@@ -528,7 +528,7 @@ extension Conversation {
     /// With `-echo.demoMarks`: Scout messages Quill, Quill asks Scout back, and Scout's reply
     /// comes in, for the screenshots of bots talking.
     private static var botExchangeDemo: [Message] {
-        var asked = Message(role: .user, text: "Sam wants the post to mention Lost Lake. Can you work it into the second paragraph?")
+        var asked = Message(role: .user, text: "Dana wants the post to mention Lost Lake. Can you work it into the second paragraph?")
         asked.delivered = Delivered(kind: .message, profile: "scout", name: "Scout")
         var reply = Message(role: .assistant, text: "Happy to. I've asked Scout which trailhead it starts from, so the line is right.")
         reply.tools = [ToolActivity(name: "message_agent", preview: "@scout", status: .completed, args: "message: Which trailhead for Lost Lake?\ntarget: scout")]

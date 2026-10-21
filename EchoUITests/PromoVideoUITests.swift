@@ -24,6 +24,132 @@ final class PromoVideoUITests: XCTestCase {
             .press(forDuration: 0.05, thenDragTo: w.coordinate(withNormalizedOffset: to), withVelocity: velocity, thenHoldForDuration: 0.1)
     }
 
+    // MARK: BOTS! (design/video, `make_preview.py bots`)
+
+    /// The demo bots in the Code theme, dark, as every BOTS! take is.
+    private func bots(_ extra: [String]) throws -> XCUIApplication {
+        try launch(["-echo.demoProjects", "-echo.demoBots", "-echo.clearDrafts", "-displayName", "Redde",
+                    "-theme", "claudeCode", "-appearance", "dark"] + extra)
+    }
+
+    /// New Bot from a template: Researcher, then Writer, then Coder fill it in; then its face,
+    /// changed with Surprise Me.
+    func testBotsTemplate() throws {
+        let app = try bots(["-echo.screen", "sessions", "-echo.botEditor", "new"])
+        let researcher = app.buttons["Researcher"].firstMatch
+        XCTAssertTrue(researcher.waitForExistence(timeout: 20))
+        mark("start")
+        hold(1.2)
+        for name in ["Researcher", "Writer", "Coder"] {
+            app.buttons[name].firstMatch.tap()
+            mark(name.lowercased())
+            hold(1.7)
+        }
+        app.buttons["Change Face"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["Shape"].firstMatch.waitForExistence(timeout: 5))
+        mark("faces")
+        hold(1.0)
+        // The parts at the top of the picker, each drawn as the bot with it.
+        for part in ["Star", "Blob", "Ghost", "Sparkle", "Happy"] {
+            let button = app.buttons[part].firstMatch
+            if button.exists { button.tap(); hold(0.75) }
+        }
+        mark("end")
+        hold(1.0)
+    }
+
+    /// In a bot's chat, Scout and Quill having messaged each other; then an @ offers the other
+    /// bots, and one picked, the question goes on.
+    func testBotsMention() throws {
+        let app = try bots(["-echo.demoMarks"])
+        XCTAssertTrue(app.text(containing: "Lost Lake").waitForExistence(timeout: 20))
+        let field = app.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        mark("start")
+        hold(1.0)
+        field.tap()
+        hold(0.5)
+        field.typeText("Ask @")
+        let scout = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "@scout")).firstMatch
+        XCTAssertTrue(scout.waitForExistence(timeout: 5))
+        mark("offered")
+        hold(1.6)
+        scout.tap()
+        field.typeText("which trails are open this weekend")
+        mark("end")
+        hold(1.5)
+    }
+
+    /// The group's voice screen: one question, and Redde, Scout and Quill answering it in turn,
+    /// each in its own voice (Kokoro's, at `TEST_RUNNER_KOKORO_URL`, when given). Marks as each begins.
+    func testBotsVoiceRound() throws {
+        var voice: [String] = []
+        if let url = ProcessInfo.processInfo.environment["KOKORO_URL"], !url.isEmpty {
+            voice = ["-replyVoice", "kokoro", "-kokoroURL", url, "-voiceSpeed", "1"]
+        }
+        let app = try bots(["-echo.screen", "sessions", "-conversations.section", "sessions", "-mutes", "<>",
+                            "-echo.openGroup", "-echo.demoRound", "-echo.groupVoice"] + voice)
+        var label: XCUIElement?
+        for name in ["Redde", "Scout", "Quill"] {
+            label = app.staticTexts.matching(NSPredicate(format: "label ==[c] %@", "\(name) is speaking")).firstMatch
+            XCTAssertTrue(label!.waitForExistence(timeout: 40), "\(name) never spoke")
+            mark(name.lowercased())
+        }
+        if let label { wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: label)], timeout: 30) }
+        mark("end")
+        hold(1.5)
+    }
+
+    /// The 2.0 store screenshots' raw shots, as pictures in SHOT_DIR (`ph-` or `pad-` by the
+    /// device; design/screenshots): the chat list's Bots, and a group chat's voice screen once the
+    /// round has come to Quill, the third bot, with the others' answers above it.
+    func testBotsShots() throws {
+        let dir = URL(fileURLWithPath: try XCTUnwrap(ProcessInfo.processInfo.environment["SHOT_DIR"], "SHOT_DIR is where they go"))
+        let kind = UIDevice.current.userInterfaceIdiom == .pad ? "pad" : "ph"
+        var voice: [String] = []
+        if let url = ProcessInfo.processInfo.environment["KOKORO_URL"], !url.isEmpty {
+            voice = ["-replyVoice", "kokoro", "-kokoroURL", url, "-voiceSpeed", "1"]
+        }
+        // The iPad's sidebar shows the library under the bots: the sample one, as its other shots.
+        let screen = kind == "ph" ? ["-echo.screen", "sessions"] : ["-echo.demoLibrary"]
+        let list = try bots(screen + ["-conversations.section", "sessions", "-echo.demoMarks", "-mutes", "<>"])
+        XCTAssertTrue(list.staticTexts["Weekend hike"].firstMatch.waitForExistence(timeout: 20))
+        hold(3)
+        try XCUIScreen.main.screenshot().pngRepresentation.write(to: dir.appending(path: "\(kind)-bots.png"))
+        let room = try bots(screen + ["-conversations.section", "sessions", "-mutes", "<>",
+                                      "-echo.openGroup", "-echo.demoRound", "-echo.groupVoice"] + voice)
+        let quill = room.staticTexts.matching(NSPredicate(format: "label ==[c] %@", "Quill is speaking")).firstMatch
+        XCTAssertTrue(quill.waitForExistence(timeout: 60), "the round never came to Quill")
+        hold(1.5)
+        try XCUIScreen.main.screenshot().pngRepresentation.write(to: dir.appending(path: "\(kind)-crew.png"))
+    }
+
+    /// Scout muted from its row, then its schedules, one opened.
+    func testBotsMuteAndSchedules() throws {
+        let app = try bots(["-echo.screen", "sessions", "-mutes", "<>"])
+        let list = app.collectionViews.firstMatch
+        let scout = list.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Scout,")).firstMatch
+        XCTAssertTrue(scout.waitForExistence(timeout: 20))
+        mark("start")
+        hold(1.0)
+        scout.press(forDuration: 1.0)
+        app.buttons["Mute"].firstMatch.tap()
+        hold(0.6)
+        app.buttons["For 8 Hours"].firstMatch.tap()
+        mark("muted")
+        hold(1.8)
+        scout.press(forDuration: 1.0)
+        app.buttons["Schedules…"].firstMatch.tap()
+        let wear = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "What to wear")).firstMatch
+        XCTAssertTrue(wear.waitForExistence(timeout: 10))
+        mark("schedules")
+        hold(1.8)
+        wear.tap()
+        mark("opened")
+        hold(2.2)
+        mark("end")
+    }
+
     /// Answers with substance: read up through the checklist, table, diagram and math.
     func testRichAnswers() throws {
         let app = try launch(["-echo.demo", "-echo.demoLibrary", "-theme", "claudeCode", "-appearance", "dark"])

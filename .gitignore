@@ -22,6 +22,7 @@ design/video/*.mov
 design/video/*.png
 design/video/*.log
 design/video/*.wav
+design/video/faces/
 
 # Python caches from the Hermes plugin and the lab scripts
 __pycache__/

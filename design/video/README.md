@@ -107,6 +107,63 @@ before a change, the timer and its Lock Screen, the widget and its Home Screen, 
 the plant, quicker, with the same soundtrack, and no call or text scene, which in a simulator
 show only the conversation. The script stops if it comes out over 29.8 s.
 
+## The BOTS! cut
+
+`redde-bots.mp4` (886×1920, about 54 s, with sound; not in git): made 2026-10-20 for a post about
+the bots. "BOTS!" drops in a letter at a time in the bots' colours while the Redde bot drops onto
+the app icon, squashes it out of its place, and says "Hi! I'm Redde. Meet my crew!" in a speech
+bubble; the crew pops up under it and bobs. Then: the chat list (meet the crew), New Bot filled
+from the Researcher, Writer and Coder templates (the face picker's shot was taken out at his word), Quill's chat where
+Scout and Quill have messaged each other, an @ offering the other bots, the group chat with Scout's
+reply coming in, the group's voice screen with Redde, Scout and Quill answering one question in
+turn, heard, Scout muted for 8 hours, and Scout's schedules with one opened. The closing page
+lists what bots do, with the faces along the bottom, and on the song's last chord the bot drops
+onto the icon there too and takes its place. The captions drop in as in the fun cut.
+
+The soundtrack is `fun_music.py`'s `song='bots'`, a funk band at 120 bpm with the drums up front
+(swung sixteenths, ghost notes, tom fills into each part, claps and a tambourine later on), a
+plucked bass and muted guitar (Karplus-Strong), electric piano and a whistled tune over C–G–Am–F,
+laid out on the cut by the cues `make_preview.py` hands it: the keys and a strum over the title,
+the drums coming in with a fill into the drop on the first shot, the band and tune over the
+features, a light beat (kick, rim, hats) under the keys while the bots talk, a snare roll and
+fill back into the tune once the last line is said, and a closing phrase and last chord on the
+closing page; a note as each letter lands and a boing as the bot does. `make_preview.py bots chip`
+makes the same cut with a chiptune song on the same plan (`redde-bots-chip.mp4`). (Before these:
+the fun cut's marimba made into a song, whose busiest part was under the voices, and a bouncy
+electro-pop one, too electronic.)
+
+`make_preview.py story` cuts the same takes into the bots App Preview, `redde-app-preview-bots.mp4`
+(27 s, made 2026-10-20 for 2.0), calmer and with a small story: Redde's face comes forward and says
+"Hi! I'm Redde. Meet my crew!" over "Redde 2.0", the Bots list, the person's question about
+Saturday's hike answered by Redde, Scout and Quill in turn on the voice screen (three cuts of
+`b7-round`, timed so about 0.4 s of quiet falls between voices across each cross-fade), Scout's
+schedules, and the closing page with the bot taking the icon's place on the last chord. Captions
+fade in, centred, without emoji; the deep song under it. Upload it by hand as the first iPhone
+preview: the store script sends no video.
+
+The spoken lines are Kokoro's, in the voices the app gives those bots by default (Redde's
+`am_onyx(2)+bm_george(1)`, Scout `bf_v0isabella`, Quill `am_liam`, by `BotVoices.assign`):
+`KOKORO_URL=http://<host>:8880 /usr/bin/python3 bot_voices.py` writes `voice-*.wav`. The take
+itself is silent, so each line is laid where its bot's turn ends (the app goes to the next bot
+when one is heard to the end; the turns were read from the frames), the music dipping under it.
+
+The footage is the demo bots (`-echo.demoBots`) in the Code theme, dark, on the iOS 27 simulator
+with the status bar at 9:41. With `B="-echo.demoProjects -echo.demoBots -echo.screen sessions
+-conversations.section sessions -theme claudeCode -appearance dark"`:
+
+    ./record.sh b1-list 8 ${=B} -echo.demoMarks -mutes "<>"
+    ./record.sh b5-group 15 ${=B} -echo.openGroup -echo.demoDraft
+    ./record.sh --test b2-template testBotsTemplate
+    ./record.sh --test b3-mention testBotsMention
+    ./record.sh --test b4-mute testBotsMuteAndSchedules
+    TEST_RUNNER_KOKORO_URL=http://<host>:8880 ./record.sh --test b7-round testBotsVoiceRound
+
+(`-mutes "<>"` because the mute take leaves Scout muted. The round speaks through Kokoro, so its
+turns are as long as the lines; xcodebuild didn't exit after it passed and was stopped by hand.) The faces on the two pages are drawn by
+the app: `TEST_RUNNER_BOT_FACES=$PWD/design/video/faces xcodebuild test … -only-testing:EchoTests/PromoFacesTests`
+writes `faces/face-<name>.png`. Then `cfr-` each take as above and
+`/usr/bin/python3 make_preview.py bots` (`bots pages` draws only the two pages).
+
 The simulator writes a frame only when the screen changes, so a take that ends on a still
 screen ends early: the Home Screen shot holds its last frame. Cut points were set by looking at
 frames, not from the marks alone. xcodebuild sometimes doesn't exit after a passing take, and
