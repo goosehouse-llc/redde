@@ -219,8 +219,7 @@ struct ContentView: View {
         }
         // Each conversation's draft: kept as it is typed, swapped when another one opens.
         .onChange(of: Drafts.key(for: conversation), initial: true) { _, key in bindDraft(to: key) }
-        .onChange(of: draft) { if editing == nil { Drafts.shared.set(text: draft, for: draftKey) } }
-        .onChange(of: pendingAttachments) { if editing == nil { Drafts.shared.set(attachments: pendingAttachments, for: draftKey) } }
+        .background { DraftKeeper(draft: $draft, attachments: $pendingAttachments, key: draftKey, editing: editing != nil) }
         .onChange(of: editing?.id) { _, now in
             // Edit & resend is over, sent or cancelled: back to what was being written before it.
             guard now == nil, let before = draftBeforeEditing else { return }
@@ -979,5 +978,23 @@ struct ContentView: View {
         draft = message.text
         pendingAttachments = message.attachments
         composerFocused = true
+    }
+}
+
+/// Keeps the composer's draft for its conversation as it is typed (`Drafts`). A view of its own,
+/// handed the draft as a binding, so that a key pressed evaluates only it (and the composer)
+/// again: read in the chat screen's body, the draft had the whole screen, the transcript and the
+/// hidden conversation list with it, evaluated again on every letter.
+private struct DraftKeeper: View {
+    @Binding var draft: String
+    @Binding var attachments: [Attachment]
+    let key: String
+    /// Edit & resend has the composer: what it holds isn't the draft.
+    let editing: Bool
+
+    var body: some View {
+        Color.clear
+            .onChange(of: draft) { if !editing { Drafts.shared.set(text: draft, for: key) } }
+            .onChange(of: attachments) { if !editing { Drafts.shared.set(attachments: attachments, for: key) } }
     }
 }
