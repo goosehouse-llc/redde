@@ -330,7 +330,7 @@ final class SpeechRecognizer {
         // the format, which changes when it's on.
         let wantsEchoCancellation = !AudioSessionController.shared.onHeadphones
         if input.isVoiceProcessingEnabled != wantsEchoCancellation {
-            do { try input.setVoiceProcessingEnabled(wantsEchoCancellation) } catch { log.error("voice processing toggle failed: \(error.localizedDescription)") }
+            do { try await Self.setVoiceProcessing(wantsEchoCancellation, of: input) } catch { log.error("voice processing toggle failed: \(error.localizedDescription)") }
         }
         if input.isVoiceProcessingEnabled {
             // Voice processing ducks all other audio by default, and the reply is other audio (Kokoro's
@@ -515,6 +515,20 @@ final class SpeechRecognizer {
     /// hundredths of a second.
     private static let resultsGrace: Duration = .seconds(2)
 
+    /// Echo cancellation on or off, off the main actor: each listen turns it on and off again,
+    /// and each takes a while (on a Mac, 2026-10-21: 1.1–1.4 s on, a quarter of a second off),
+    /// which held the screen still every time. A start and a teardown never overlap (`start`
+    /// waits for `finalizeTask`), so nothing else touches the engine meanwhile.
+    private static func setVoiceProcessing(_ on: Bool, of input: AVAudioInputNode) async throws {
+        try await toggle(on, InputUnit(node: input))
+    }
+
+    private nonisolated struct InputUnit: @unchecked Sendable { let node: AVAudioInputNode }
+
+    @concurrent private static func toggle(_ on: Bool, _ unit: InputUnit) async throws {
+        try unit.node.setVoiceProcessingEnabled(on)
+    }
+
     private func teardownAndFinalize() async -> String {
         state = .finalizing
         engine.inputNode.removeTap(onBus: 0)
@@ -523,7 +537,7 @@ final class SpeechRecognizer {
         // and the reply plays at a level the volume buttons don't fully control (still loud at
         // zero). start() turns it back on for the next utterance.
         if engine.inputNode.isVoiceProcessingEnabled {
-            do { try engine.inputNode.setVoiceProcessingEnabled(false) } catch { log.error("voice processing off failed: \(error.localizedDescription)") }
+            do { try await Self.setVoiceProcessing(false, of: engine.inputNode) } catch { log.error("voice processing off failed: \(error.localizedDescription)") }
             // Toggling the voice-processing unit puts the output back on the earpiece.
             AudioSessionController.shared.refreshRoute()
         }
