@@ -662,7 +662,7 @@ final class VoiceSession {
             return
         }
         // What the camera sees as the question ends, before anything below takes its time.
-        let seen = isLooking ? eye.still() : nil
+        let seen = isLooking ? await eye.still() : nil
         await conversation.initialLoad?.value   // cold launch: the latest transcript may still be decoding
         guard phase == .listening else { return }
         micStaysOpen = canBeTalkedOver()

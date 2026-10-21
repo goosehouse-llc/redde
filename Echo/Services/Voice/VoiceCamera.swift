@@ -40,9 +40,12 @@ final class VoiceCamera {
 
     func close() { feed.stop() }
 
-    func still() -> Attachment? {
+    func still() async -> Attachment? {
         guard let (frame, angle) = feed.newest(within: CameraStill.freshness) else { return nil }
-        return CameraStill.attachment(from: frame, angle: angle)
+        // Turned and made a JPEG off the main actor: a 1080p frame took tens of milliseconds
+        // there, between the question's end and its going. The feed is done with the buffer.
+        nonisolated(unsafe) let pixels = frame
+        return await Task.detached(priority: .userInitiated) { CameraStill.attachment(from: pixels, angle: angle) }.value
     }
 }
 

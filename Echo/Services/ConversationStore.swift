@@ -115,16 +115,29 @@ final class ConversationStore {
         if self === Self.shared { SiriHooks.conversationChanged(record.id) }
     }
 
+    /// Gone from the list and the store at once. What it held (its attachments, its messages for
+    /// Siri) is read off the main actor, unless it is in memory: a long transcript is a big file,
+    /// and deleting thirty of them decoded each on the main actor first.
     func delete(id: UUID) {
-        let record = record(id: id)
-        if let record {
-            for message in record.messages { for att in message.attachments { AttachmentFiles.delete(id: att.id) } }
-        }
-        if self === Self.shared { SiriHooks.conversationDeleted(id, messageIDs: record?.messages.map(\.id) ?? []) }
+        let held = cache[id] ?? pending[id]
         cache[id] = nil
         pending[id] = nil
         summaries.removeAll { $0.id == id }
-        try? FileManager.default.removeItem(at: Self.recordURL(id, in: directory))
+        let file = Self.recordURL(id, in: directory)
+        var aside: URL?
+        if held == nil {
+            let moved = FileManager.default.temporaryDirectory.appending(path: "deleting-\(UUID().uuidString).json")
+            if (try? FileManager.default.moveItem(at: file, to: moved)) != nil { aside = moved }
+        } else {
+            try? FileManager.default.removeItem(at: file)
+        }
+        let siri = self === Self.shared
+        Task.detached(priority: .utility) { [aside] in
+            let record = held ?? aside.flatMap(Self.read(at:))
+            if let aside { try? FileManager.default.removeItem(at: aside) }
+            for message in record?.messages ?? [] { for att in message.attachments { AttachmentFiles.delete(id: att.id) } }
+            if siri { await SiriHooks.conversationDeleted(id, messageIDs: record?.messages.map(\.id) ?? []) }
+        }
         scheduleSave()
     }
 
@@ -214,12 +227,17 @@ final class ConversationStore {
     }
 
     nonisolated private static func read(_ id: UUID, in directory: URL) -> ConversationRecord? {
-        guard let data = try? Data(contentsOf: recordURL(id, in: directory)) else { return nil }
+        read(at: recordURL(id, in: directory))
+    }
+
+    nonisolated private static func read(at url: URL) -> ConversationRecord? {
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        let id = url.deletingPathExtension().lastPathComponent
         do {
             return try decoder().decode(ConversationRecord.self, from: data)
         } catch {
             Logger(subsystem: "com.goosehouse.echo", category: "store")
-                .error("could not read conversation \(id.uuidString): \(error.localizedDescription)")
+                .error("could not read conversation \(id): \(error.localizedDescription)")
             return nil
         }
     }

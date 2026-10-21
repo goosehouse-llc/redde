@@ -61,12 +61,16 @@ struct StartScreen: View {
         if let last = store.sorted.first(where: { $0.id != conversation.id && $0.turnCount > 0 }) {
             cards.append(Card(id: "continue", symbol: "bubble.left.and.text.bubble.right", title: "Continue: \(last.title)",
                               subtitle: last.updatedAt.relativeLabel, hint: "Opens your most recent conversation") {
-                guard let record = store.record(id: last.id) else { return }
-                let (conversation, frame) = (conversation, continueFrame)
-                if let openFromCard, !reduceMotion, frame != .zero {
-                    openFromCard(frame, "Continue: \(last.title)") { conversation.load(record) }
-                } else {
-                    conversation.load(record)
+                let (conversation, frame, store) = (conversation, continueFrame, store)
+                let (openFromCard, reduceMotion) = (openFromCard, reduceMotion)
+                Task {
+                    // Decoded off the main actor: a long transcript is a big file.
+                    guard let record = await store.loadRecord(id: last.id) else { return }
+                    if let openFromCard, !reduceMotion, frame != .zero {
+                        openFromCard(frame, "Continue: \(last.title)") { conversation.load(record) }
+                    } else {
+                        conversation.load(record)
+                    }
                 }
             })
         }

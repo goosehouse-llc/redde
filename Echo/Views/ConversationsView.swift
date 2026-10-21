@@ -1524,10 +1524,13 @@ struct ConversationsList: View {
     }
 
     private func openSaved(_ copy: ConversationSummary) {
-        guard !selecting, let full = store.record(id: copy.id) else { return }
-        conversation.load(full)
-        savedCopyOffered = nil
-        opened()
+        guard !selecting else { return }
+        Task {
+            guard let full = await store.loadRecord(id: copy.id) else { return }
+            conversation.load(full)
+            savedCopyOffered = nil
+            opened()
+        }
     }
 
     // MARK: - Local (fast lane)
@@ -1547,8 +1550,12 @@ struct ConversationsList: View {
     private func localButton(_ record: ConversationSummary) -> some View {
             Button {
                 if selecting { return }
-                if let full = store.record(id: record.id) { conversation.load(full) }
-                opened()
+                // Decoded off the main actor (a long transcript is a big file), and opened once it
+                // is, so the conversation before doesn't show in the meantime.
+                Task {
+                    if let full = await store.loadRecord(id: record.id) { conversation.load(full) }
+                    opened()
+                }
             } label: {
                 localRow(record)
             }

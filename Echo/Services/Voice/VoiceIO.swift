@@ -87,7 +87,7 @@ protocol VoiceLooking: AnyObject {
     func open() async -> Bool
     func close()
     /// What the camera sees right now, as a picture to send; nil when it has shown nothing lately.
-    func still() -> Attachment?
+    func still() async -> Attachment?
     /// The live picture for the voice screen; nil for a stand-in, which has none.
     var viewfinder: AVCaptureSession? { get }
 }
