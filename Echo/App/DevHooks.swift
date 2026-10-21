@@ -17,6 +17,12 @@ import WidgetKit
 /// - `-echo.demoHeavy [turns]`: a thread of long replies (32 turns of about 10,000 characters by
 ///   default), for measuring. `-echo.pageBudget <characters>` overrides how much of a thread the
 ///   transcript lays out (`TranscriptPage`); 0 lifts the limit.
+/// - `-echo.hitches`: log every frame the main thread made late (`FrameMonitor`). With `-echo.tour device`
+///   the tour sends nothing, changes no setting and deletes the conversations the launch seeded. With
+///   `-echo.autoScroll [seconds]`, the transcript (or list) scrolls up and back by itself, to measure;
+///   with `-echo.autoOpen [times]`, the conversation and the shortest other one are opened in turn;
+///   with `-echo.autoType "text"`, the text is typed into the composer a letter at a time; with
+///   `-echo.tour`, the app goes through what people do in it by itself, each step measured.
 /// - `-echo.demoProjects`: fill the conversation list's Projects from a fixture (Dashboard connection).
 ///   Add `-echo.demoMarks` for rows marked working, needing you and unread (`ChatActivity`), and
 ///   `-echo.demoBots` for the Bots section, with a bot's chat open (Quill's); with
@@ -136,10 +142,14 @@ enum DevHooks {
     static var voiceDemo: Bool { has("-echo.voiceDemo") }
     static var settingsAnchor: Bool { has("-echo.settingsAnchor") }
 
+    /// The conversations there were before any hook seeded one: what `-echo.tour device` leaves.
+    @MainActor static var conversationsAtLaunch: Set<UUID> = []
+
     /// The launch-time hooks that don't touch a view's own state: demo content, example hosts,
     /// test credentials and the delayed profile switch.
     @MainActor
     static func applyAtLaunch(conversation: Conversation, settings: Settings) {
+        conversationsAtLaunch = Set(conversation.storeForContext.summaries.map(\.id))
         if has("-echo.demo") { conversation.seedDemo() }
         if has("-echo.demoShort") { conversation.keepFirstMessages(2) }
         if has("-echo.demoTwo") { conversation.keepFirstMessages(4) }

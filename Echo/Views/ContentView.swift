@@ -842,8 +842,84 @@ struct ContentView: View {
     #if DEBUG
     /// The launch hooks that open this view's own sheets or fill its composer; the rest live in
     /// `DevHooks` (see there for every flag).
+    /// `-echo.tour` (with `-echo.hitches`): what people do in the app, done by the app itself, each
+    /// step measured (`FrameMonitor.report`): a new conversation, the composer focused, a question
+    /// typed and sent and its reply streamed and scrolled through as it streams (from the fast
+    /// lane: `scripts/smooth-model.py`), the list opened and closed, the long thread opened from
+    /// it, a short one, the long one again, voice
+    /// mode opened and closed, Settings opened and closed. Start it on a long thread
+    /// (`-echo.demoHeavy`) with others in the list (`-echo.demoLibrary`).
+    private func runTour() async {
+        let monitor = FrameMonitor.shared
+        func wait(_ seconds: Double) async { try? await Task.sleep(for: .seconds(seconds)) }
+        let long = conversation.id
+        let store = ConversationStore.shared
+        let short = store.summaries.filter { $0.id != long }.min { $0.turnCount < $1.turnCount }?.id
+        func open(_ id: UUID?) async {
+            guard let id, let full = await store.loadRecord(id: id) else { return }
+            conversation.load(full)
+            conversationOpened()
+        }
+        // `-echo.tour device`, on someone's own phone: nothing is sent and no setting is changed;
+        // what is typed is cleared again. Otherwise a question goes first, on the fast lane the
+        // launch names (settings synced from elsewhere can have put another there), and before
+        // the long thread, a Hermes session, is opened.
+        let mode = DevHooks.value("-echo.tour")
+        let sends = mode != "device"
+        if sends, let lane = DevHooks.value("-fastLaneURL") { settings.fastLaneURL = lane; settings.transport = .chatCompletions }
+        await monitor.report("tour: new conversation") { conversation.reset(); await wait(1) }
+        await monitor.report("tour: focus the composer") { composerFocused = true; await wait(1.5) }
+        let unsent = draft   // a draft of the person's own, put back after
+        let field = FrameMonitor.focusedTextInput()
+        await monitor.report("tour: type") {
+            for character in "Plan a hike for Saturday morning, with what to bring." {
+                if let field { field.insertText(String(character)) } else { draft.append(character) }
+                try? await Task.sleep(for: .milliseconds(90))
+            }
+        }
+        if sends {
+            await monitor.report("tour: send") {
+                conversation.send("Plan a hike for Saturday morning, with what to bring.")
+                draft = ""
+                await wait(1)
+            }
+            await monitor.report("tour: thinking") { await wait(3) }
+            await monitor.report("tour: streaming") { await wait(4) }
+            await monitor.report("tour: scroll while streaming") { monitor.autoScroll(for: 3); await wait(3.2) }
+            await monitor.report("tour: streaming to the end") {
+                for _ in 0 ..< 600 where conversation.isStreaming { await wait(0.1) }
+            }
+        } else {
+            draft = unsent
+        }
+        await monitor.report("tour: dismiss the keyboard") { composerFocused = false; await wait(1) }
+        // `-echo.tour send`: only as far as the reply.
+        if mode == "send" { await monitor.report("tour: done") {}; return }
+        await monitor.report("tour: open the list") { setDrawer(open: true); await wait(1) }
+        await monitor.report("tour: close the list") { setDrawer(open: false); await wait(1) }
+        setDrawer(open: true); await wait(1)
+        await monitor.report("tour: open the long one from the list") { await open(long); await wait(1.5) }
+        setDrawer(open: true); await wait(1)
+        await monitor.report("tour: open a short conversation from the list") { await open(short); await wait(1.5) }
+        await monitor.report("tour: back to the long one") { await open(long); await wait(1.5) }
+        await monitor.report("tour: scroll the long one") { monitor.autoScroll(for: 4); await wait(4.3) }
+        await monitor.report("tour: open voice mode") { openVoice(fromOutside: false); await wait(2) }
+        await monitor.report("tour: close voice mode") { showVoice = false; await wait(1.5) }
+        await monitor.report("tour: open Settings") { showSettings = true; await wait(1.5) }
+        await monitor.report("tour: close Settings") { showSettings = false; await wait(1.5) }
+        await monitor.report("tour: done") {}
+        if !sends {
+            // Left as it was found: the conversations the launch's demo hooks made go again.
+            for made in store.summaries where !DevHooks.conversationsAtLaunch.contains(made.id) { conversation.delete(id: made.id) }
+            if !DevHooks.conversationsAtLaunch.contains(conversation.id) { conversation.reset() }
+        }
+    }
+
     private func applyDevHooks() {
         DevHooks.applyAtLaunch(conversation: conversation, settings: settings)
+        if DevHooks.has("-echo.tour") {
+            Task { try? await Task.sleep(for: .seconds(6)); await runTour() }
+        }
         if DevHooks.has("-echo.clearDrafts") {
             draft = ""
             pendingAttachments = []
@@ -868,6 +944,22 @@ struct ContentView: View {
         if let text = DevHooks.value("-echo.draft") {
             draft = text
             Task { try? await Task.sleep(for: .milliseconds(450)); composerFocused = true }
+        }
+        if let text = DevHooks.value("-echo.autoType") {
+            Task {
+                try? await Task.sleep(for: .seconds(6))
+                composerFocused = true
+                try? await Task.sleep(for: .seconds(1.5))
+                // Into the focused field, as the keyboard puts it there: set from outside, the
+                // text would go back into the field on every letter, which typing never does.
+                let field = FrameMonitor.focusedTextInput()
+                await FrameMonitor.shared.report("autotype") {
+                    for character in text {
+                        if let field { field.insertText(String(character)) } else { draft.append(character) }
+                        try? await Task.sleep(for: .milliseconds(90))
+                    }
+                }
+            }
         }
         if let link = DevHooks.value("-echo.setupCode"), let url = URL(string: link), let offer = SetupCodeOffer(url: url) {
             router.requestSetup(offer)

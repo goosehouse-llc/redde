@@ -25,6 +25,7 @@ struct EchoApp: App {
         WatchLink.shared.activate()
         #if DEBUG
         AlarmTrace.watch()   // what iOS does with Redde's alarms, kept in a file to read off a phone
+        if DevHooks.has("-echo.hitches") { FrameMonitor.shared.start() }
         #endif
     }
 
