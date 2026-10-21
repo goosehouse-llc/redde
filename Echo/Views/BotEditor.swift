@@ -333,7 +333,9 @@ struct BotEditor: View {
         if loading && editing != nil { return "…" }
         let text = soul.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return editing == nil ? "Written for it from its name and what it does" : "None" }
-        let lines = text.split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "#* ")) }.filter { !$0.isEmpty }
+        let lines = text.split(whereSeparator: \.isNewline)
+            .map { $0.replacingOccurrences(of: "**", with: "").trimmingCharacters(in: CharacterSet(charactersIn: "#* ")) }   // ("**Mission:** …")
+            .filter { !$0.isEmpty }
         return lines.prefix(2).joined(separator: " · ")
     }
 
