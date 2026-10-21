@@ -63,20 +63,29 @@ extension TranscriptPage {
     struct Window: Equatable, Sendable {
         /// Messages before the page; nil until it is first settled.
         private(set) var hidden: Int?
+        /// The first message of the transcript the page was settled for (nil, an empty one).
+        /// Another transcript, whether another conversation or this one's history arriving after
+        /// it opened empty, is paged afresh: a count kept from a short chat put the whole of a
+        /// long one on the page for the pass before it was settled, 48 long replies laid out to
+        /// show 5, two seconds frozen.
+        private(set) var first: UUID?
         /// The reader loaded earlier messages, or a search took them there: the page starts where
         /// they put it until they send again or open another conversation.
         private(set) var held = false
 
         func hiddenCount(in messages: [Message], budget: Int = TranscriptPage.budget) -> Int {
-            min(hidden ?? messages.count - TranscriptPage.count(messages, budget: budget), messages.count)
+            guard let hidden, first == messages.first?.id else { return messages.count - TranscriptPage.count(messages, budget: budget) }
+            return min(hidden, messages.count)
         }
 
         /// Sizes the page for the conversation as it is now. A page the reader is holding stays
         /// as it is; `release` lets go of what they loaded.
         mutating func settle(_ messages: [Message], release: Bool = false, budget: Int = TranscriptPage.budget) {
             if release { held = false }
-            guard !held else { return }
+            guard !held || first != messages.first?.id else { return }
+            held = false
             hidden = messages.count - TranscriptPage.count(messages, budget: budget)
+            first = messages.first?.id
         }
 
         /// How many messages one more page of what comes before would add.
@@ -87,6 +96,7 @@ extension TranscriptPage {
 
         mutating func showEarlier(_ messages: [Message], budget: Int = TranscriptPage.budget) {
             hidden = hiddenCount(in: messages, budget: budget) - earlierCount(in: messages, budget: budget)
+            first = messages.first?.id
             held = true
         }
 
@@ -94,6 +104,7 @@ extension TranscriptPage {
         mutating func reveal(_ index: Int, in messages: [Message], budget: Int = TranscriptPage.budget) {
             guard index < hiddenCount(in: messages, budget: budget) else { return }
             hidden = max(0, index - 2)
+            first = messages.first?.id
             held = true
         }
     }

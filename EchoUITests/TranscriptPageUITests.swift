@@ -19,9 +19,12 @@ final class TranscriptPageUITests: XCTestCase {
         let firstShown = try XCTUnwrap((1 ... 6).first { question($0).exists })
         XCTAssertGreaterThan(firstShown, 1, "The whole thread is laid out: the page isn't bounding it")
 
-        // Up to the top of the page, where the button is.
+        // Up to the top of the page, where the button is: the thread opens on its newest message,
+        // three long replies below. (It opened at the page's top until 2026-10-21, when the first
+        // pass laid out the whole thread and then took the top of it away.)
         let earlier = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Show earlier messages")).firstMatch
-        for _ in 0 ..< 14 where !earlier.isHittable { transcript.swipeDown(velocity: .fast) }
+        XCTAssertFalse(earlier.isHittable, "The thread should open at its newest message, not the top of the page")
+        for _ in 0 ..< 40 where !earlier.isHittable { transcript.swipeDown(velocity: .fast) }
         XCTAssertTrue(earlier.isHittable, "No way to earlier messages at the top of the page")
         XCTAssertEqual(earlier.label, "Show earlier messages (\(2 * (firstShown - 1)))")
         XCTAssertTrue(question(firstShown).isHittable, "The page should open on a question, at its top")

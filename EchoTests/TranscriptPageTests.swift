@@ -117,11 +117,38 @@ struct TranscriptPageTests {
 
     /// Messages can go as well as come (a reply regenerated, a message edited and resent).
     @Test func theWindowNeverStartsPastTheEnd() {
+        let messages = thread(6, replyLength: 10_000)
         var window = TranscriptPage.Window()
-        window.settle(thread(6, replyLength: 10_000), budget: 30_000)
-        let fewer = thread(2, replyLength: 10_000)
-        #expect(window.hiddenCount(in: fewer, budget: 30_000) == 4)
-        #expect(window.earlierCount(in: thread(1, replyLength: 100), budget: 30_000) >= 1)
+        window.settle(messages, budget: 30_000)
+        #expect(window.hiddenCount(in: Array(messages.prefix(4)), budget: 30_000) == 4)
+        #expect(window.earlierCount(in: Array(messages.prefix(2)), budget: 30_000) >= 1)
+    }
+
+    /// The bug this guards against: a page settled for a short chat kept its count (nothing before
+    /// the page) for the long one opened after it, which laid the whole of it out for the pass
+    /// before the page was settled: two seconds frozen for 48 long replies, to show five.
+    @Test func anotherConversationIsPagedAfresh() {
+        var window = TranscriptPage.Window()
+        window.settle(thread(1, replyLength: 200), budget: 30_000)
+        #expect(window.hiddenCount(in: thread(24, replyLength: 10_000), budget: 30_000) == 44)
+    }
+
+    /// A conversation from the server opens empty and its history comes after.
+    @Test func historyArrivingAfterAnEmptyOpenIsPagedAfresh() {
+        var window = TranscriptPage.Window()
+        window.settle([], budget: 30_000)
+        #expect(window.hiddenCount(in: thread(24, replyLength: 10_000), budget: 30_000) == 44)
+    }
+
+    @Test func earlierMessagesLoadedInOneConversationAreLetGoForAnother() {
+        let first = thread(6, replyLength: 10_000)
+        var window = TranscriptPage.Window()
+        window.settle(first, budget: 30_000)
+        window.showEarlier(first, budget: 30_000)
+        let other = thread(6, replyLength: 10_000)
+        #expect(window.hiddenCount(in: other, budget: 30_000) == 8)
+        window.settle(other, budget: 30_000)
+        #expect(window.hiddenCount(in: other, budget: 30_000) == 8)
     }
 
     @Test func nothingEarlierMeansNothingToShow() {
