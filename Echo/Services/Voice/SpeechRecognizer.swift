@@ -20,6 +20,8 @@ final class SpeechRecognizer {
         case unavailable
         case assetsUnavailable
         case audioFormat
+        /// The route has no microphone just now (AirPods between their modes, a headset going away).
+        case noMicrophone
         case busy
 
         var errorDescription: String? {
@@ -30,6 +32,7 @@ final class SpeechRecognizer {
             case .unavailable: "On-device transcription isn't available on this device, so Redde can't listen here. Typing works as usual."
             case .assetsUnavailable: "The on-device speech model isn't installed yet."
             case .audioFormat: "Couldn't set up the microphone audio format."
+            case .noMicrophone: "No microphone is ready just now. Tap the orb to try again."
             }
         }
     }
@@ -339,6 +342,19 @@ final class SpeechRecognizer {
                 AVAudioVoiceProcessingOtherAudioDuckingConfiguration(enableAdvancedDucking: false, duckingLevel: .min)
         }
         let micFormat = input.outputFormat(forBus: 0)
+        let hardware = input.inputFormat(forBus: 0)
+        let route = AVAudioSession.sharedInstance().currentRoute
+        Self.log.notice("listen: in \(route.inputs.map(\.portType.rawValue).joined(separator: ","), privacy: .public) out \(route.outputs.map(\.portType.rawValue).joined(separator: ","), privacy: .public) mic \(micFormat.sampleRate)Hz×\(micFormat.channelCount) hw \(hardware.sampleRate)Hz×\(hardware.channelCount) vp \(input.isVoiceProcessingEnabled)")
+        // installTap raises an Objective-C exception for a microphone it can't tap, which ended
+        // the app (with AirPods, 2026-10-22): a route with no microphone has no format at all, an
+        // engine last run on another route can give the old rate, and a tap left on the bus by a
+        // listen that didn't end cleanly is in the way. The first and last are seen to here; any
+        // exception is caught below and said as an error.
+        input.removeTap(onBus: 0)
+        guard micFormat.sampleRate > 0, micFormat.channelCount > 0 else {
+            Self.log.error("no microphone on the route; not listening")
+            abandon(); throw Failure.noMicrophone
+        }
         guard let converter = AVAudioConverter(from: micFormat, to: analyzerFormat),
               let tap = TapProcessor(converter: converter, targetFormat: analyzerFormat, continuation: continuation,
                                      onVoice: TapProcessor.report(to: self)) else {
@@ -346,7 +362,13 @@ final class SpeechRecognizer {
         }
         self.tap = tap
         if held { tap.hold() }   // before any audio flows: nothing of a reply may reach the analyzer
-        tap.install(on: input, format: micFormat)
+        if let raised = ObjCExceptions.catching({ tap.install(on: input, format: micFormat) }) {
+            Self.log.error("the microphone refused its tap: \(raised.reason ?? raised.name.rawValue, privacy: .public)")
+            continuation.finish()
+            inputContinuation = nil
+            self.tap = nil; self.analyzer = nil; self.transcriber = nil
+            abandon(); throw Failure.noMicrophone
+        }
 
         resultsTask = Task { [weak self] in
             do {

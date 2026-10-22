@@ -116,4 +116,16 @@ import Testing
     }
 
     private final class Marker {}
+
+    /// AVFAudio's exceptions are caught, not the end of the app: a second tap on the same bus
+    /// raises, as a microphone it can't tap does (with AirPods, 2026-10-22).
+    @Test func aTapAVFAudioRefusesIsCaught() {
+        #expect(ObjCExceptions.catching { NSException(name: .genericException, reason: "boom", userInfo: nil).raise() }?.reason == "boom")
+        #expect(ObjCExceptions.catching {} == nil)
+        let engine = AVAudioEngine()
+        let mixer = engine.mainMixerNode
+        mixer.installTap(onBus: 0, bufferSize: 512, format: nil) { _, _ in }
+        defer { mixer.removeTap(onBus: 0) }
+        #expect(ObjCExceptions.catching { mixer.installTap(onBus: 0, bufferSize: 512, format: nil) { _, _ in } } != nil)
+    }
 }

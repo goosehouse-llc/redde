@@ -179,6 +179,7 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         SWIFT_APPROACHABLE_CONCURRENCY: true
         SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+        SWIFT_OBJC_BRIDGING_HEADER: Echo/App/Echo-Bridging-Header.h
       configs:
         # The personal prefill never rides along in a Release / App Store build.
         Release:
