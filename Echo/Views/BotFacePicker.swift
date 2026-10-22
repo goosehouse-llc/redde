@@ -27,9 +27,9 @@ struct BotFacePicker: View {
     }
 
     static let colorNames = ["Blue", "Amber", "Pink", "Indigo", "Teal", "Violet", "Green", "Orange", "Sky", "Coral", "Lime", "White", "Black",
-                             "Theme", "Code Blue"]
+                             "Theme", "Code Blue", "Soft Pink"]
     /// The colours offered: Redde's own two first for the main agent (`BotFace.themed`, `codeBlue`).
-    private var offered: [Int] { (bot.isDefault ? [BotFace.themed, BotFace.codeBlue] : []) + Array(BotFace.palette.indices) }
+    private var offered: [Int] { (bot.isDefault ? [BotFace.themed, BotFace.codeBlue] : []) + BotFace.pickable }
     @Environment(\.theme) private var theme
 
     var body: some View {
@@ -149,7 +149,7 @@ struct BotFacePicker: View {
         case BotFace.codeBlue:
             pair = (Theme.claudeCode.userBubble.mix(with: .white, by: 0.14), Theme.claudeCode.userBubble)
         default:
-            pair = BotFace.palette[index]
+            pair = BotFace.pair(index)
         }
         return LinearGradient(colors: [pair.light, pair.deep], startPoint: .topLeading, endPoint: .bottomTrailing)
     }
@@ -191,6 +191,6 @@ struct BotFacePicker: View {
     nonisolated static func random(keeping face: BotFace) -> BotFace {
         BotFace(shape: BotFace.Shape.given.randomElement() ?? .round, eyes: BotFace.Eyes.allCases.randomElement() ?? .round,
                 mouth: BotFace.Mouth.allCases.randomElement() ?? .none, mark: BotFace.Mark.allCases.randomElement() ?? .none,
-                glance: face.glance, tilt: face.tilt, color: Int.random(in: 0 ..< BotFace.palette.count))
+                glance: face.glance, tilt: face.tilt, color: BotFace.pickable.randomElement() ?? 0)
     }
 }

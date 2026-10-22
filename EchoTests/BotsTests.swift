@@ -193,6 +193,27 @@ struct BotsTests {
         #expect(tinted.userBubble != Theme.standard.resolved(with: nil).userBubble && tinted.accent != Theme.standard.resolved(with: nil).accent)
     }
 
+    /// Asked 2026-10-22: a softer pink to pick, next to Pink, past Redde's own two so no colour
+    /// kept on a server changes.
+    @Test func aSoftPinkToPickByPinkAndNothingElseMoves() throws {
+        var face = BotFace(shape: .round, eyes: .happy, mouth: .smile, mark: .blush, glance: 1, tilt: 2, color: BotFace.softPink)
+        #expect(BotFace(code: face.code) == face, "it reads back as written")
+        #expect(BotFace.softPink >= BotFace.codeBlue + 1 && BotFace.themed == 13 && BotFace.codeBlue == 14, "kept colours keep their numbers")
+        let offered = BotFace.pickable
+        #expect(offered.firstIndex(of: BotFace.softPink) == offered.firstIndex(of: 2).map { $0 + 1 }, "offered right after Pink")
+        #expect(!offered.contains(BotFace.themed) && !offered.contains(BotFace.codeBlue))
+        #expect(BotFacePicker.colorNames[BotFace.softPink] == "Soft Pink")
+        let soft = try #require(face.chatColors)
+        face.color = 2
+        let pink = try #require(face.chatColors)
+        #expect(soft.accent != nil && soft.accent != pink.accent, "its chat in its own colour")
+        // Picked for Redde, it still keeps the other bots off its colour, not off blue.
+        var redde = BotFace.main
+        redde.color = BotFace.softPink
+        let faces = BotFace.faces(for: ["default", "scout"], picked: ["default": redde])
+        #expect(faces["default"]?.color == BotFace.softPink && faces["scout"]?.color != BotFace.softPink)
+    }
+
     @Test func withBotFacesOffABotIsItsInitialAndVoiceModeShowsNoFace() {
         #expect(BotAvatar.initial(of: "scout") == "S")
         #expect(BotAvatar.initial(of: "@research-buddy") == "R", "the first letter, past marks")

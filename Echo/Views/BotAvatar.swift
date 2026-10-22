@@ -64,8 +64,26 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
     /// still to be had.
     static let themed = 13
     static let codeBlue = 14
-    /// Every colour a face can be: the palette's, then Redde's two.
-    static let colorCount = 15
+    /// Colours added for picking after Redde's own two, from `laterColors` on, so no colour kept on
+    /// a server changes: a soft pink (asked 2026-10-22).
+    static let laterPalette: [(light: Color, deep: Color)] = [
+        (Color(red: 1.00, green: 0.87, blue: 0.93), Color(red: 0.96, green: 0.64, blue: 0.80)),   // soft pink
+    ]
+    static let laterColors = 15
+    static let softPink = 15
+    /// Every colour a face can be: the palette's, Redde's two, then the later ones.
+    static let colorCount = 16
+    /// The colours any bot can be picked to have, in the order they are offered (Soft Pink by Pink).
+    static let pickable: [Int] = {
+        var colors = Array(palette.indices) + (0 ..< laterPalette.count).map { laterColors + $0 }
+        if let pink = colors.firstIndex(of: 2) { colors.removeLast(); colors.insert(softPink, at: pink + 1) }
+        return colors
+    }()
+
+    /// A colour's gradient, light to deep (any but Redde's two, which follow the theme).
+    static func pair(_ color: Int) -> (light: Color, deep: Color) {
+        color >= laterColors && color - laterColors < laterPalette.count ? laterPalette[color - laterColors] : palette[color % palette.count]
+    }
 
     /// Every face a name can give (colour, glance and lean aside), in a fixed order.
     private static let all: [BotFace] = Shape.seeded.flatMap { shape in
@@ -94,7 +112,7 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
         case Self.white + 1:
             return ThemeColors(accent: nil, bubble: ThemeColors.RGB(Self.palette[color].deep))
         default:
-            let own = ThemeColors.RGB(Self.palette[color % Self.palette.count].deep)
+            let own = ThemeColors.RGB(Self.pair(color).deep)
             return ThemeColors(accent: own, bubble: own)
         }
     }
@@ -151,7 +169,7 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
             let face = picked["default"] ?? main
             // In a colour of its own (the theme's, the Code blue), it keeps the others off blue.
             var held = face
-            if held.color >= palette.count { held.color = 0 }
+            if held.color == themed || held.color == codeBlue { held.color = 0 }
             taken.append(held)
             out["default"] = face
         }
@@ -386,7 +404,7 @@ struct BotAvatar: View {
         switch face.color {
         case BotFace.themed: own = theme.promptPrefix != nil ? theme.promptColor : theme.userBubble
         case BotFace.codeBlue: own = Theme.claudeCode.userBubble
-        default: return BotFace.palette[face.color % BotFace.palette.count]
+        default: return BotFace.pair(face.color)
         }
         return (own.mix(with: .white, by: 0.14), own)
     }
