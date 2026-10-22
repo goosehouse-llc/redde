@@ -1,4 +1,5 @@
 import SwiftUI
+import WebKit
 
 /// Renders a reply's Markdown with the current theme's type. Re-parses on every change, which is
 /// cheap at chat sizes and keeps streaming replies rendering as they arrive.
@@ -127,6 +128,8 @@ struct MarkdownBlockView: View, Equatable {
             MarkdownTable(header: header, rows: rows, alignments: alignments)
         case let .image(alt, url):
             MarkdownImage(alt: alt, url: url)
+        case let .preview(file):
+            GatewayPreviewLink(file: file)
         }
     }
 
@@ -134,6 +137,108 @@ struct MarkdownBlockView: View, Equatable {
 
     private func inline(_ text: String) -> Text {
         MarkdownView.styledInline(text, codeFont: theme.codeFont, accent: theme.linkColor)
+    }
+}
+
+/// Hermes preview directives name files on the gateway. Resolve them with the active session
+/// scope, then show HTML in a dismissible browser sheet.
+private struct GatewayPreviewLink: View {
+    let file: String
+    @Environment(Conversation.self) private var conversation
+    @Environment(\.theme) private var theme
+    @State private var presenting = false
+
+    var body: some View {
+        Button { presenting = true } label: {
+            Label(URL(fileURLWithPath: file).lastPathComponent.isEmpty ? file : URL(fileURLWithPath: file).lastPathComponent,
+                  systemImage: "safari")
+                .font(theme.messageFont)
+                .foregroundStyle(theme.linkColor)
+                .padding(.horizontal, 12).padding(.vertical, 9)
+                .background(theme.linkColor.opacity(0.09), in: .rect(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Opens a preview from the Hermes gateway")
+        .sheet(isPresented: $presenting) {
+            GatewayHTMLPreview(file: file, sessionID: conversation.serverSessionID)
+        }
+    }
+}
+
+private struct GatewayHTMLPreview: View {
+    let file: String
+    let sessionID: String?
+    @Environment(\.dismiss) private var dismiss
+    @State private var html: String?
+    @State private var markdown: String?
+    @State private var error: String?
+    @State private var loading = true
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if let markdown {
+                    ScrollView {
+                        MarkdownView(text: markdown)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                    }
+                } else if let html {
+                    GatewayHTMLWebView(html: html, baseURL: Settings.shared.serveBaseURL)
+                        .ignoresSafeArea(edges: .bottom)
+                } else if loading {
+                    ProgressView("Loading preview…")
+                } else {
+                    ContentUnavailableView("Preview unavailable", systemImage: "doc.questionmark",
+                                           description: Text(error ?? "The gateway could not read this file."))
+                }
+            }
+            .navigationTitle(URL(fileURLWithPath: file).lastPathComponent)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+            }
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+        .task {
+            do {
+                guard let value = try await HermesServeClient.shared.readDataURL(path: file, sessionID: sessionID),
+                      let comma = value.firstIndex(of: ","),
+                      let data = Data(base64Encoded: String(value[value.index(after: comma)...])),
+                      let decoded = String(data: data, encoding: .utf8) else {
+                    error = "The gateway returned no readable preview for this file."
+                    loading = false
+                    return
+                }
+                if ["md", "markdown"].contains(URL(fileURLWithPath: file).pathExtension.lowercased()) {
+                    markdown = decoded
+                } else if value[..<comma].lowercased().contains("text/html") {
+                    html = decoded
+                } else {
+                    error = "The gateway returned a file type this preview cannot display."
+                }
+            } catch {
+                self.error = error.localizedDescription
+            }
+            loading = false
+        }
+    }
+}
+
+private struct GatewayHTMLWebView: UIViewRepresentable {
+    let html: String
+    let baseURL: URL?
+
+    func makeUIView(context: Context) -> WKWebView {
+        let view = WKWebView()
+        view.loadHTMLString(html, baseURL: baseURL)
+        return view
+    }
+
+    func updateUIView(_ view: WKWebView, context: Context) {
+        guard view.url == nil else { return }
+        view.loadHTMLString(html, baseURL: baseURL)
     }
 }
 

@@ -1139,10 +1139,11 @@ final class HermesServeClient {
 
     /// Reads a file on the gateway host as a `data:` URL (`/api/fs/read-data-url`). Nil when the
     /// file is missing or over the server's size cap.
-    func readDataURL(path: String) async throws -> String? {
+    func readDataURL(path: String, sessionID: String? = nil) async throws -> String? {
         var comps = URLComponents()
         comps.path = "api/fs/read-data-url"
         comps.queryItems = [.init(name: "path", value: path)]
+        if let sessionID { comps.queryItems?.append(.init(name: "session_id", value: sessionID)) }
         do {
             let data = try await rest("GET", comps.string ?? "api/fs/read-data-url", body: nil as Data?)
             struct Envelope: Decodable { var dataUrl: String }

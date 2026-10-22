@@ -13,6 +13,8 @@ nonisolated indirect enum MarkdownBlock: Equatable, Sendable {
     case table(header: [String], rows: [[String]], alignments: [ColumnAlignment])
     /// A paragraph that is only an image: `![alt](url)`.
     case image(alt: String, url: String)
+    /// A Hermes gateway file preview directive: `::preview{file="path.html"}`.
+    case preview(file: String)
     /// Display math: `$$ … $$` or `\[ … \]`, LaTeX source without the delimiters.
     case math(String)
 
@@ -51,6 +53,7 @@ nonisolated enum MarkdownParser {
             if !text.isEmpty {
                 if let code = loneInlineCode(text) { blocks.append(code) }
                 else if let image = parseImage(text) { blocks.append(image) }
+                else if let preview = parsePreview(text) { blocks.append(preview) }
                 else { blocks.append(contentsOf: splitEmbeddedImages(text)) }
             }
             paragraph = []
@@ -75,6 +78,10 @@ nonisolated enum MarkdownParser {
             }
 
             if trimmed.isEmpty { flushParagraph(); i += 1; continue }
+
+            if let preview = parsePreview(trimmed) {
+                flushParagraph(); blocks.append(preview); i += 1; continue
+            }
 
             // Display math. Single line `$$ x $$`, or an opening `$$` / `\[` closed on a later line.
             if let math = parseMathStart(trimmed) {
@@ -172,6 +179,17 @@ nonisolated enum MarkdownParser {
         while idx < line.endIndex, line[idx] == "#", level < 6 { level += 1; idx = line.index(after: idx) }
         guard level > 0, idx < line.endIndex, line[idx] == " " else { return nil }
         return .heading(level: level, text: String(line[idx...]).trimmingCharacters(in: .whitespaces))
+    }
+
+    private static func parsePreview(_ text: String) -> MarkdownBlock? {
+        let prefix = "::preview{file=\""
+        guard text.hasPrefix(prefix), text.hasSuffix("}") else { return nil }
+        let start = text.index(text.startIndex, offsetBy: prefix.count)
+        let end = text.index(before: text.endIndex)
+        guard start < end, text[text.index(before: end)] == "\"" else { return nil }
+        let file = String(text[start..<text.index(before: end)])
+        guard !file.isEmpty else { return nil }
+        return .preview(file: file)
     }
 
     private struct MathStart { var closer: String; var firstLine: String; var closedBody: String? }

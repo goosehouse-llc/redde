@@ -64,7 +64,7 @@ struct AudioBubble: View {
             if duration == 0 {
                 AttachmentTile(attachment: attachment, size: 64)
                     .onTapGesture { previewing = true }
-                    .sheet(isPresented: $previewing) { DocumentPreview(attachment: attachment).ignoresSafeArea() }
+                    .sheet(isPresented: $previewing) { AttachmentPreviewSheet(attachment: attachment) }
             } else {
                 player
             }
@@ -111,7 +111,7 @@ struct AudioBubble: View {
         .contextMenu {
             Button("Open", systemImage: "arrow.up.forward.square") { previewing = true }
         }
-        .sheet(isPresented: $previewing) { DocumentPreview(attachment: attachment).ignoresSafeArea() }
+        .sheet(isPresented: $previewing) { AttachmentPreviewSheet(attachment: attachment) }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Audio: \(attachment.filename)")
     }
@@ -144,7 +144,7 @@ private struct AttachmentTiles: View {
                 }
             }
         }
-        .sheet(item: $previewingDoc) { DocumentPreview(attachment: $0).ignoresSafeArea() }
+        .sheet(item: $previewingDoc) { AttachmentPreviewSheet(attachment: $0) }
     }
 }
 
@@ -292,6 +292,43 @@ struct DocumentPreview: UIViewControllerRepresentable {
         return controller
     }
     func updateUIViewController(_ controller: QLPreviewController, context: Context) {}
+}
+
+/// Quick Look is embedded in a SwiftUI sheet rather than presented by UIKit, so it doesn't
+/// reliably provide its own dismissal control. Keep an explicit Done button in the sheet chrome.
+private struct AttachmentPreviewSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let attachment: Attachment
+
+    private var markdownText: String? {
+        guard ["md", "markdown"].contains(URL(fileURLWithPath: attachment.filename).pathExtension.lowercased()) else { return nil }
+        return String(data: attachment.data, encoding: .utf8)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if let markdownText {
+                    ScrollView {
+                        MarkdownView(text: markdownText)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                    }
+                } else {
+                    DocumentPreview(attachment: attachment)
+                }
+            }
+            .navigationTitle(attachment.filename)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+    }
 }
 
 /// The system camera for one photo. PhotosPicker can't take pictures, so this wraps
