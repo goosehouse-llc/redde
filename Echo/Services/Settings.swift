@@ -273,6 +273,18 @@ final class Settings: ServeEndpoint {
         var label: String { switch self { case .system: "System"; case .light: "Light"; case .dark: "Dark" } }
         var colorScheme: ColorScheme? { switch self { case .system: nil; case .light: .light; case .dark: .dark } }
     }
+    /// How bot chats appear in the conversations list.
+    enum BotLayout: String, CaseIterable, Identifiable {
+        case horizontal, vertical
+        var id: String { rawValue }
+        var label: String { switch self { case .horizontal: "Horizontal"; case .vertical: "Vertical" } }
+    }
+    /// How much vertical room conversation rows and their date groups use.
+    enum ChatListDensity: String, CaseIterable, Identifiable {
+        case roomy, tight
+        var id: String { rawValue }
+        var label: String { switch self { case .roomy: "Roomy"; case .tight: "Tight" } }
+    }
     var appearance: Appearance {
         didSet { store(appearance.rawValue, forKey: Keys.appearance) }
     }
@@ -383,6 +395,12 @@ final class Settings: ServeEndpoint {
     /// any besides the main profile. Off, Redde is as it was without them.
     var showBots: Bool {
         didSet { store(showBots, forKey: Keys.showBots) }
+    }
+    var botLayout: BotLayout {
+        didSet { store(botLayout.rawValue, forKey: Keys.botLayout) }
+    }
+    var chatListDensity: ChatListDensity {
+        didSet { store(chatListDensity.rawValue, forKey: Keys.chatListDensity) }
     }
     /// How long the app may be in the background before it locks again.
     var lockGraceSeconds: Double {
@@ -545,6 +563,8 @@ final class Settings: ServeEndpoint {
         static let siriAIEnabled = "siriAIEnabled"
         static let siriDraftsInNewConversation = "siriDraftsInNewConversation"
         static let showBots = "showBots"
+        static let botLayout = "botLayout"
+        static let chatListDensity = "chatListDensity"
         static let lockGraceSeconds = "lockGraceSeconds"
         static let displayName = "displayName"
         static let setupDone = "setupDone"
@@ -627,6 +647,8 @@ final class Settings: ServeEndpoint {
         siriAIEnabled = defaults.bool(forKey: Keys.siriAIEnabled)
         siriDraftsInNewConversation = defaults.bool(forKey: Keys.siriDraftsInNewConversation)
         showBots = defaults.object(forKey: Keys.showBots) as? Bool ?? true
+        botLayout = BotLayout(rawValue: defaults.string(forKey: Keys.botLayout) ?? "") ?? .horizontal
+        chatListDensity = ChatListDensity(rawValue: defaults.string(forKey: Keys.chatListDensity) ?? "") ?? .roomy
         lockGraceSeconds = defaults.object(forKey: Keys.lockGraceSeconds) as? Double ?? 60
         displayName = defaults.string(forKey: Keys.displayName) ?? ""
         setupDone = defaults.bool(forKey: Keys.setupDone)
@@ -688,7 +710,7 @@ final class Settings: ServeEndpoint {
     /// push relay.
     static let syncedKeys: [String] = [
         Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.botColors, Keys.botFaces, Keys.returnSends,
-        Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.showBots,
+        Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.showBots, Keys.botLayout, Keys.chatListDensity,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
         Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopPhrases,
@@ -721,6 +743,8 @@ final class Settings: ServeEndpoint {
         case Keys.carPlayCards: carPlayCards = pick(CarPlayCardLook.color)
         case Keys.carPlayVoice: carPlayVoice = pick(CarPlayVoiceLook.bars)
         case Keys.showBots: showBots = flag(true)
+        case Keys.botLayout: botLayout = pick(BotLayout.horizontal)
+        case Keys.chatListDensity: chatListDensity = pick(ChatListDensity.roomy)
         case Keys.fastLaneURL: fastLaneURL = text(Self.defaultFastLaneURL)
         case Keys.fastLaneModel: fastLaneModel = text(Self.defaultFastLaneModel)
         case Keys.reasoningEffort: reasoningEffort = text(Self.defaultReasoningEffort)
@@ -984,6 +1008,8 @@ final class Settings: ServeEndpoint {
         siriAIEnabled = false
         siriDraftsInNewConversation = false
         showBots = true
+        botLayout = .horizontal
+        chatListDensity = .roomy
         lockGraceSeconds = 60
         displayName = ""
         serveURL = Self.defaultServeURL
