@@ -1,4 +1,41 @@
 import SwiftUI
+import UIKit
+
+@MainActor
+private final class TranscriptScrollMotion {
+    weak var scrollView: UIScrollView?
+
+    func stop() {
+        guard let scrollView else { return }
+        scrollView.setContentOffset(scrollView.contentOffset, animated: false)
+    }
+}
+
+/// Captures the transcript's enclosing UIScrollView so a jump can cancel UIKit deceleration
+/// before ScrollViewReader changes the target position.
+private struct TranscriptScrollProbe: UIViewRepresentable {
+    let controller: TranscriptScrollMotion
+
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView(frame: .zero)
+        view.isUserInteractionEnabled = false
+        return view
+    }
+
+    func updateUIView(_ view: UIView, context: Context) {
+        DispatchQueue.main.async { [weak view, weak controller] in
+            guard let view else { return }
+            var ancestor = view.superview
+            while let current = ancestor {
+                if let scrollView = current as? UIScrollView {
+                    controller?.scrollView = scrollView
+                    return
+                }
+                ancestor = current.superview
+            }
+        }
+    }
+}
 
 struct TranscriptView: View {
     @Environment(Conversation.self) private var conversation
@@ -28,6 +65,7 @@ struct TranscriptView: View {
     @State private var following = true
     @State private var atBottom = true
     @State private var scrollPhase: ScrollPhase = .idle
+    @State private var scrollMotion = TranscriptScrollMotion()
     /// The visible bottom edge is below the end of the content: blank space after the last
     /// message, left behind when rows shrink after a jump.
     @State private var pastEnd = false
@@ -111,6 +149,9 @@ struct TranscriptView: View {
     /// loading async content (images, diagrams) can still grow after the jump and leave it
     /// short, so keep jumping until the end is on screen (or the reader touches the list again).
     private func jumpToEnd(_ proxy: ScrollViewProxy) {
+        // SwiftUI's proxy jump can race the scroll view's current deceleration. Stop that motion
+        // synchronously first, then issue the jump against a stable content offset.
+        scrollMotion.stop()
         following = true
         if scrollPhase == .idle {
             withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
@@ -202,6 +243,10 @@ struct TranscriptView: View {
                 .padding()
                 .frame(maxWidth: 820)
                 .frame(maxWidth: .infinity)
+                .background {
+                    TranscriptScrollProbe(controller: scrollMotion)
+                        .frame(width: 0, height: 0)
+                }
             }
             .defaultScrollAnchor(conversation.messages.isEmpty ? .top : .bottom, for: .initialOffset)
             // A blanket bottom anchor also re-aims on every content-size change. Scrolling back
