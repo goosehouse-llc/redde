@@ -561,6 +561,15 @@ where a new conversation is in the ••• menu, and ⌘N as anywhere) is the 
   arriving with it in front follow it too. Hiding a notification outright would take the
   filtering entitlement. Published again when a mute changes, when the server's bots are read
   (Start Fresh gives a bot's chat a new session) and when the app comes forward.
+- **Faces in a grid** (2026-10-21/22, a Reddit suggestion and his picks). The chat list shows the bots
+  as faces with their names under them, five to a row, with no sideways scroll (`botGrid`).
+  - New Bot (Add Bot on the Hermes API alone) and the hidden ones come after the bots. The group
+    chats are rows under the grid.
+  - More than six bots fold to one row: four faces and "N more". A small Fewer button under the grid
+    folds them again, and the choice is kept (`sessions.botsExpanded`).
+  - Each face is a `Menu` with a primary action: a tap opens the chat, a long press opens its menu.
+    A `.contextMenu` inside a List row opened the row's first menu, whichever face was pressed.
+  - `-echo.demoBotCount n` adds bots to the demo roster.
 - **Order.** Bots and group chats are one run in the Bots section. Reorder Bots, in any of their
   menus, shows only them, with handles (edit mode; outside it a long press is the row's menu,
   which a drag can't get past), and the order is kept per server in `Settings.botOrder`

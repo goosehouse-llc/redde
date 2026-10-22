@@ -16,8 +16,14 @@ final class BotsUITests: XCTestCase {
         XCTAssertTrue(app.text(containing: "@writer").exists, "the header doesn't give the bot's handle")
 
         app.buttons["Conversations"].firstMatch.tap()
-        XCTAssertTrue(app.text(containing: "Three trails under two hours").waitForExistence(timeout: 10), "Scout's row isn't listed")
-        XCTAssertTrue(app.text(containing: "Fix-it").exists, "a bot without a chat yet isn't listed")
+        // The bots as faces, side by side, New Bot after them.
+        let list = app.collectionViews.firstMatch
+        XCTAssertTrue(list.buttons["Scout"].waitForExistence(timeout: 10), "Scout isn't in the bots' row")
+        XCTAssertTrue(list.buttons["Fix-it"].exists, "a bot without a chat yet isn't listed")
+        XCTAssertTrue(list.buttons["New Bot"].exists, "no New Bot at the end of the row")
+        XCTAssertLessThan(list.buttons["Scout"].frame.minX, list.buttons["New Bot"].frame.minX, "New Bot isn't after the bots")
+        XCTAssertEqual(list.buttons["Scout"].frame.midY, list.buttons["Fix-it"].frame.midY, accuracy: 2, "the bots aren't in one row")
+        XCTAssertFalse(app.text(containing: "Three trails under two hours").exists, "a bot's last line still shows")
         // Below the bots and the group chats: scrolled to, as a list only builds the rows on screen.
         let letThem = app.text(containing: "Let bots message each other")
         if !letThem.exists { app.collectionViews.firstMatch.swipeUp() }
@@ -43,8 +49,8 @@ final class BotsUITests: XCTestCase {
         XCTAssertFalse(fixit.exists, "the bots are still offered once the tag is finished")
     }
 
-    /// Mute from a bot's row: for an hour, its row then reads as muted, and Unmute, from the same
-    /// menu, lifts it. The same for a group chat's row.
+    /// Mute from a bot's face in the bots' row: for an hour, it then reads as muted, and Unmute,
+    /// from the same menu, lifts it. The same for a group chat's row.
     func testABotAndAGroupChatCanBeMutedFromTheirRows() {
         continueAfterFailure = false
         let app = XCUIApplication()
@@ -52,7 +58,10 @@ final class BotsUITests: XCTestCase {
                                "-echo.screen", "sessions", "-mutes", "<>"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
         app.launch()
         let list = app.collectionViews.firstMatch
-        func row(_ name: String) -> XCUIElement { list.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name + ",")).firstMatch }
+        // A bot's face in the row is named for the bot; a group chat's row starts with its name.
+        func row(_ name: String) -> XCUIElement {
+            list.buttons.matching(NSPredicate(format: "label == %@ OR label BEGINSWITH %@", name, name + ",")).firstMatch
+        }
         for name in ["Scout", "Weekend hike"] {
             let target = row(name)
             XCTAssertTrue(target.waitForExistence(timeout: 20), "no \(name) row")
@@ -125,6 +134,42 @@ final class BotsUITests: XCTestCase {
         XCTAssertFalse(add.isEnabled, "it can be added with nothing to do")
     }
 
+    /// More than six bots: one row, the first four and "more", which shows them all, and Fewer
+    /// folds them again; folded or not is kept for the next launch.
+    func testMoreThanSixBotsFoldAndStayAsLeft() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.demoBotCount", "9", "-echo.clearDrafts", "-displayName", "Redde",
+                               "-echo.screen", "sessions", "-botOrder", "<>"]
+            + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launch()
+        let list = app.collectionViews.firstMatch
+        // (Folded or not as an earlier run left it: an argument would hold it for the launch.)
+        XCTAssertTrue(list.buttons["Redde"].waitForExistence(timeout: 20), "no bots")
+        if list.buttons["Fewer"].exists { list.buttons["Fewer"].tap() }
+        let more = list.buttons["5 more"]
+        XCTAssertTrue(more.waitForExistence(timeout: 5), "nine bots didn't fold to four and \"5 more\"")
+        XCTAssertFalse(list.buttons["New Bot"].exists, "New Bot shows while the bots are folded")
+        XCTAssertEqual(list.buttons["Redde"].frame.midY, more.frame.midY, accuracy: 2, "the folded bots aren't one row")
+        more.tap()
+        let fewer = list.buttons["Fewer"]
+        XCTAssertTrue(fewer.waitForExistence(timeout: 5), "\"more\" didn't show them all")
+        for name in ["Home", "Chef", "Coach", "Atlas", "Penny", "New Bot"] {
+            XCTAssertTrue(list.buttons[name].exists, "\(name) isn't shown with them all")
+        }
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = "nine bots"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+
+        // Kept: the next launch shows them all still.
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(list.buttons["Fewer"].waitForExistence(timeout: 20), "showing them all wasn't kept")
+        list.buttons["Fewer"].tap()
+        XCTAssertTrue(list.buttons["5 more"].waitForExistence(timeout: 5), "Fewer didn't fold them")
+    }
+
     /// Change Face in New Bot, in a bot's settings and in the main agent's opens the face picker.
     func testChangeFaceInTheBotEditorOpensThePicker() {
         continueAfterFailure = false
@@ -145,7 +190,8 @@ final class BotsUITests: XCTestCase {
     }
 
     /// Reorder Bots, from a bot's menu: a bot dragged above the others stays there, the next
-    /// launch too, a group chat goes among the bots, and Sort Bots by Recent puts the list back.
+    /// launch too (first in the bots' row), a group chat goes among the bots, and Sort Bots by
+    /// Recent puts the row back.
     func testBotsAndGroupChatsCanBeDraggedIntoAnOrder() {
         continueAfterFailure = false
         let app = XCUIApplication()
@@ -155,11 +201,16 @@ final class BotsUITests: XCTestCase {
         app.launchArguments += ["-botOrder", "<>"]
         app.launch()
         let list = app.collectionViews.firstMatch
-        // Matched on the row's own label: a group chat's names its bots ("Fix-it and Scout").
-        func row(_ name: String) -> XCUIElement { list.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name + ",")).firstMatch }
-        /// Drags a row by its handle onto another's place. (A handle is named for the whole row:
-        /// "Reorder Fix-it, Looks after the home server".)
-        func handle(_ name: String) -> XCUIElement { list.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Reorder " + name + ",")).firstMatch }
+        // Matched on the row's own label: a group chat's names its bots ("Fix-it and Scout"). A bot
+        // is its face in the bots' row, named for it, and a row of its own while being put in order.
+        func row(_ name: String) -> XCUIElement {
+            list.buttons.matching(NSPredicate(format: "label == %@ OR label BEGINSWITH %@", name, name + ",")).firstMatch
+        }
+        /// Drags a row by its handle onto another's place. (A handle is named for its row:
+        /// "Reorder Fix-it", or for the whole row, "Reorder Fix-it, Looks after the home server".)
+        func handle(_ name: String) -> XCUIElement {
+            list.buttons.matching(NSPredicate(format: "label == %@ OR label BEGINSWITH %@", "Reorder " + name, "Reorder " + name + ",")).firstMatch
+        }
         func drag(_ name: String, onto other: String) {
             let from = handle(name).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
             let to = handle(other).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
@@ -167,9 +218,9 @@ final class BotsUITests: XCTestCase {
             sleep(1)
         }
         let fixit = row("Fix-it"), quill = row("Quill"), garage = row("Garage project")
-        XCTAssertTrue(fixit.waitForExistence(timeout: 20), "no Fix-it row")
+        XCTAssertTrue(fixit.waitForExistence(timeout: 20), "no Fix-it in the bots' row")
         XCTAssertTrue(garage.exists, "no group chat row")
-        XCTAssertLessThan(quill.frame.minY, fixit.frame.minY, "the most recent bot isn't above one never talked to")
+        XCTAssertLessThan(quill.frame.minX, fixit.frame.minX, "the most recent bot isn't before one never talked to")
 
         fixit.press(forDuration: 1.0)
         let reorder = app.buttons["Reorder Bots"].firstMatch
@@ -188,16 +239,20 @@ final class BotsUITests: XCTestCase {
         app.launchArguments.removeLast(2)
         app.launch()
         XCTAssertTrue(fixit.waitForExistence(timeout: 20))
+        XCTAssertLessThan(fixit.frame.minX, quill.frame.minX, "the order wasn't kept in the bots' row")
+        fixit.press(forDuration: 1.0)
+        app.buttons["Reorder Bots"].firstMatch.tap()
+        XCTAssertTrue(app.text(containing: "into the order you want").waitForExistence(timeout: 5))
         XCTAssertLessThan(garage.frame.minY, fixit.frame.minY, "the order wasn't kept")
         XCTAssertLessThan(fixit.frame.minY, quill.frame.minY, "the order wasn't kept")
+        app.buttons["Done"].firstMatch.tap()
 
         quill.press(forDuration: 1.0)
         let sort = app.buttons["Sort Bots by Recent"].firstMatch
         XCTAssertTrue(sort.waitForExistence(timeout: 5), "no Sort Bots by Recent")
         sort.tap()
         sleep(1)
-        XCTAssertLessThan(quill.frame.minY, fixit.frame.minY, "the list didn't go back to the most recent first")
-        XCTAssertLessThan(fixit.frame.minY, garage.frame.minY, "the group chats didn't go back after the bots")
+        XCTAssertLessThan(quill.frame.minX, fixit.frame.minX, "the row didn't go back to the most recent first")
     }
 
     /// iPhone: a group chat takes the chat's place, so a swipe to the right opens the list from
@@ -218,7 +273,7 @@ final class BotsUITests: XCTestCase {
                    withVelocity: .fast, thenHoldForDuration: 0)
         XCTAssertTrue(app.navigationBars["Conversations"].waitForExistence(timeout: 5), "swiping right didn't open the list")
 
-        let quill = app.collectionViews.firstMatch.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Quill,")).firstMatch
+        let quill = app.collectionViews.firstMatch.buttons["Quill"].firstMatch
         XCTAssertTrue(quill.waitForExistence(timeout: 5))
         quill.tap()
         XCTAssertTrue(app.text(containing: "tighten the opening").waitForExistence(timeout: 10), "Quill's chat didn't take the group chat's place")

@@ -59,6 +59,8 @@ struct ConversationsList: View {
     /// The server's bots (Hermes's Bot Mode), for the Bots section.
     @State private var botDirectory = BotDirectory.shared
     @AppStorage("sessions.showBots") private var showBotRows = true
+    /// More than six bots: all of them showing, or the first few and "more".
+    @AppStorage("sessions.botsExpanded") private var botsExpanded = false
     /// The bot whose chat is being found or made.
     @State private var openingBot: String?
     /// "Let bots message each other", being asked about.
@@ -412,7 +414,7 @@ struct ConversationsList: View {
             let hasRooms = !apiBotsOnly && !bots.isEmpty && groups.key == settings.connectionKey && groups.supported
             let items = BotListItem.arranged(bots: bots, rooms: hasRooms ? groups.rooms : [], order: botOrder)
             Section {
-                if showBotRows || arrangingBots {
+                if arrangingBots {
                     // Bots and group chats in one run, in the order they were put in (Reorder Bots).
                     ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                         Group {
@@ -422,30 +424,25 @@ struct ConversationsList: View {
                             }
                         }
                         // Being put in order, a row moves by its handle and opens nothing.
-                        .allowsHitTesting(!arrangingBots)
+                        .allowsHitTesting(false)
                         .accessibilityAction(named: "Move up") { if index > 0 { moveBotRows(IndexSet(integer: index), to: index - 1, in: items) } }
                         .accessibilityAction(named: "Move down") { if index < items.count - 1 { moveBotRows(IndexSet(integer: index), to: index + 2, in: items) } }
                     }
-                    // Only in Reorder Bots: elsewhere a long press is the row's menu, which a drag
-                    // from it can't get past.
-                    .onMove(perform: arrangingBots ? { moveBotRows($0, to: $1, in: items) } : nil)
-                }
-                if showBotRows, !arrangingBots {
+                    .onMove { moveBotRows($0, to: $1, in: items) }
+                } else if showBotRows {
+                    // The bots as faces, five to a row (a Reddit suggestion, 2026-10-21: a line of
+                    // context under each took a screen's worth), New Bot after them; the group
+                    // chats under them.
+                    botGrid(items.compactMap { if case .bot(let bot) = $0 { bot } else { nil } }, faces: faces, hidden: hidden.count)
+                    ForEach(items.compactMap { if case .room(let room) = $0 { room } else { nil } }) { room in
+                        groupRow(room, faces: faces)
+                    }
                     if hasRooms, groups.writable {
                         sectionAction("New Group Chat", systemImage: "person.3", hint: "Starts a chat with several bots at once") { makingGroup = true }
-                    }
-                    if apiBotsOnly {
-                        // No Dashboard to make or list them: a profile on the server, by its own key.
-                        sectionAction("Add Bot", systemImage: "plus.bubble", hint: "Adds one of your server's profiles as a bot, with its own API key") { addingAPIBot = true }
-                    } else {
-                        sectionAction("New Bot", systemImage: "plus.bubble", hint: "Makes a bot on your server, with a chat of its own") { editingBot = .new }
                     }
                     if !apiBotsOnly, !bots.isEmpty, botDirectory.roster?.messagingIsOn == false {
                         sectionAction("Let bots message each other", systemImage: "bubble.left.and.text.bubble.right",
                                       hint: "Sets your main profile up as a bot on the server, as Hermes Desktop does") { askingBotMessaging = true }
-                    }
-                    if !hidden.isEmpty {
-                        sectionAction("Hidden Bots", systemImage: "eye.slash", count: hidden.count, hint: "Shows the bots hidden from this list") { showingHiddenBots = true }
                     }
                 }
             } header: {
@@ -492,18 +489,14 @@ struct ConversationsList: View {
         }
     }
 
-    /// A row that does something in its section (New Bot, New Group Chat), drawn as New Project is.
-    private func sectionAction(_ title: String, systemImage: String, count: Int? = nil, hint: String, action: @escaping () -> Void) -> some View {
+    /// A row that does something in its section (New Group Chat), drawn as New Project is.
+    private func sectionAction(_ title: String, systemImage: String, hint: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: systemImage)
                     .foregroundStyle(Settings.shared.resolvedTheme.accent)
                     .frame(width: 32, height: 32)
                 Text(title).font(.body)
-                if let count {
-                    Spacer()
-                    Text("\(count)").foregroundStyle(.secondary).monospacedDigit()
-                }
             }
             .contentShape(.rect)
         }
@@ -511,8 +504,176 @@ struct ConversationsList: View {
         .accessibilityHint(hint)
     }
 
-    /// A bot's row: its creature, its name and its chat's last line, marked as a conversation's
-    /// row is (at work, waiting on the person, or something not yet seen).
+    /// The bots side by side, five to a row, each its face over its name, and after them New Bot
+    /// (Add Bot on the Hermes API alone) and the hidden ones: every bot in sight, nothing to scroll
+    /// sideways. More than six fold to one row, the first four and "more", open or folded as last
+    /// left.
+    private func botGrid(_ bots: [HermesBot], faces: [String: BotFace], hidden: Int) -> some View {
+        let folds = bots.count > Self.foldsAfter
+        let shown = folds && !botsExpanded ? Array(bots.prefix(Self.gridColumns - 1)) : bots
+        return VStack(spacing: 2) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2, alignment: .top), count: Self.gridColumns), spacing: 6) {
+                ForEach(shown, id: \.name) { bot in
+                    botTile(bot, face: faces[bot.name] ?? BotFace(seed: bot.name))
+                }
+                if folds, !botsExpanded {
+                    gridAction("\(bots.count - shown.count) more", systemImage: "chevron.down", hint: "Shows all your bots") {
+                        withAnimation { botsExpanded = true }
+                    }
+                } else {
+                    if apiBotsOnly {
+                        // No Dashboard to make or list them: a profile on the server, by its own key.
+                        gridAction("Add Bot", systemImage: "plus", hint: "Adds one of your server's profiles as a bot, with its own API key") { addingAPIBot = true }
+                    } else {
+                        gridAction("New Bot", systemImage: "plus", hint: "Makes a bot on your server, with a chat of its own") { editingBot = .new }
+                    }
+                    if hidden > 0 {
+                        gridAction("Hidden", systemImage: "eye.slash", hint: "Shows the \(hidden) bots hidden from this list") { showingHiddenBots = true }
+                    }
+                }
+            }
+            // Under them, small: a whole row of its own for it was a row of nothing.
+            if folds, botsExpanded {
+                Button { withAnimation { botsExpanded = false } } label: {
+                    Label("Fewer", systemImage: "chevron.up")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Settings.shared.resolvedTheme.accent)
+                        .padding(.horizontal, 12).padding(.vertical, 4)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Fewer")
+                .accessibilityHint("Shows only the first of your bots")
+            }
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 6)
+        .listRowInsets(EdgeInsets())
+    }
+
+    /// Bots to a row in the Bots section, and how many there can be before they fold to one row.
+    private static let gridColumns = 5
+    private static let foldsAfter = 6
+    /// The size of a face there.
+    private static let tileFace: CGFloat = 52
+
+    /// A bot there: its face, always (never its initial on a disc), and its name under it,
+    /// marked as a conversation's row is (at work, waiting on the person, something not yet seen).
+    /// A tap opens its chat; a long press, its menu (a menu of its own: in a list row a context
+    /// menu opens the row's first one, whichever bot was pressed).
+    private func botTile(_ bot: HermesBot, face: BotFace) -> some View {
+        let name = bot.label(mainName: settings.headerTitle)
+        let isOpen = groups.open == nil && conversation.bot?.profile == bot.name
+        let muted = Mutes.isMuted("bot:" + bot.name, settings: settings)
+        let marks = ChatMarks(kind: activity.kind(of: bot, open: conversation), unread: !muted && activity.isUnread(bot, open: conversation),
+                              muted: muted)
+        let accent = Settings.shared.resolvedTheme.accent
+        return Menu {
+            botMenu(bot, unread: marks.unread, isOpen: isOpen)
+        } label: {
+            VStack(spacing: 3) {
+                BotAvatar(face: face, size: Self.tileFace)
+                    .overlay(alignment: .topTrailing) {
+                        if openingBot == bot.name || marks.kind == .working {
+                            ProgressView().controlSize(.mini)
+                                .padding(2)
+                                .background(.background, in: .rect(cornerRadius: 6))
+                                .offset(x: 8, y: -4)
+                        } else if marks.kind == .needsYou {
+                            Image(systemName: "exclamationmark.circle.fill")
+                                .font(.caption).foregroundStyle(.orange)
+                                .background(.background, in: .circle)
+                                .offset(x: 6, y: -4)
+                        } else if marks.unread {
+                            Circle().fill(accent).frame(width: 9, height: 9).offset(x: 4, y: -2)
+                        }
+                    }
+                    .overlay(alignment: .bottomTrailing) {
+                        if muted {
+                            Image(systemName: "bell.slash.fill")
+                                .font(.system(size: 9)).foregroundStyle(.secondary)
+                                .padding(2)
+                                .background(.background, in: .circle)
+                                .offset(x: 5, y: 3)
+                        }
+                    }
+                Text(name).lineLimit(1).truncationMode(.tail)
+                    .font(.caption.weight(isOpen ? .semibold : .regular))
+                    .foregroundStyle(isOpen ? accent : .primary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 4)
+            .background(isOpen ? accent.opacity(0.1) : .clear, in: .rect(cornerRadius: 10))
+            .contentShape(.rect)
+        } primaryAction: {
+            openBot(bot)
+        }
+        .menuIndicator(.hidden)
+        .buttonStyle(.plain)
+        .opensConversation()
+        .disabled(opening != nil || openingBot != nil)
+        .accessibilityLabel(name)
+        .accessibilityValue(marks.spoken)
+        .accessibilityHint("Opens your chat with this bot")
+    }
+
+    /// What follows the bots (New Bot, the hidden ones, "more"): a symbol where a face goes, and
+    /// its name.
+    private func gridAction(_ title: String, systemImage: String, hint: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 3) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 24, weight: .medium))
+                    .foregroundStyle(Settings.shared.resolvedTheme.accent)
+                    .frame(width: Self.tileFace, height: Self.tileFace)
+                Text(title).font(.caption).lineLimit(1)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 4)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityHint(hint)
+    }
+
+    /// A bot's menu, on its face in the row and on its row while the bots are put in order.
+    @ViewBuilder
+    private func botMenu(_ bot: HermesBot, unread: Bool, isOpen: Bool) -> some View {
+        if bot.chatID != nil, !isOpen {
+            if unread {
+                Button("Mark as Read", systemImage: "envelope.open") { activity.botSeen(bot.name) }
+            } else {
+                Button("Mark as Unread", systemImage: "envelope.badge") { activity.markUnread(bot: bot.name) }
+            }
+        }
+        if !bot.isDefault {
+            Button("Voice…", systemImage: "waveform") { voicing = bot }
+        }
+        MuteMenu(item: "bot:" + bot.name)
+        // Its schedules are kept on the server through the Dashboard, delivered into its Bot Chat.
+        if !bot.viaAPI {
+            Button("Schedules…", systemImage: "clock") { scheduling = bot }
+        }
+        if bot.viaAPI {
+            // Added here for the Hermes API: its settings and face are the Dashboard's.
+            if !bot.isDefault {
+                Button("Remove from Redde", systemImage: "minus.circle", role: .destructive) { removeAPIBot(bot) }
+            }
+        } else {
+            Button("Edit Bot…", systemImage: "slider.horizontal.3") { editingBot = .edit(bot) }
+            Button("Change Face…", systemImage: "face.smiling") { facing = bot }
+            if !bot.isDefault {
+                Button("Hide", systemImage: "eye.slash") { hide(bot) }
+            }
+        }
+        Divider()
+        orderingBots
+    }
+
+    /// A bot's row while the bots are put in order: its creature, its name and its chat's last
+    /// line, marked as a conversation's row is (at work, waiting on the person, or something not
+    /// yet seen).
     private func botRow(_ bot: HermesBot, face: BotFace) -> some View {
         let name = bot.label(mainName: settings.headerTitle)
         let isOpen = groups.open == nil && conversation.bot?.profile == bot.name
@@ -552,37 +713,7 @@ struct ConversationsList: View {
         .opensConversation()
         .listRowBackground(isOpen ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
         .disabled(opening != nil || openingBot != nil)
-        .contextMenu {
-            if bot.chatID != nil, !isOpen {
-                if marks.unread {
-                    Button("Mark as Read", systemImage: "envelope.open") { activity.botSeen(bot.name) }
-                } else {
-                    Button("Mark as Unread", systemImage: "envelope.badge") { activity.markUnread(bot: bot.name) }
-                }
-            }
-            if !bot.isDefault {
-                Button("Voice…", systemImage: "waveform") { voicing = bot }
-            }
-            MuteMenu(item: "bot:" + bot.name)
-            // Its schedules are kept on the server through the Dashboard, delivered into its Bot Chat.
-            if !bot.viaAPI {
-                Button("Schedules…", systemImage: "clock") { scheduling = bot }
-            }
-            if bot.viaAPI {
-                // Added here for the Hermes API: its settings and face are the Dashboard's.
-                if !bot.isDefault {
-                    Button("Remove from Redde", systemImage: "minus.circle", role: .destructive) { removeAPIBot(bot) }
-                }
-            } else {
-                Button("Edit Bot…", systemImage: "slider.horizontal.3") { editingBot = .edit(bot) }
-                Button("Change Face…", systemImage: "face.smiling") { facing = bot }
-                if !bot.isDefault {
-                    Button("Hide", systemImage: "eye.slash") { hide(bot) }
-                }
-            }
-            Divider()
-            orderingBots
-        }
+        .contextMenu { botMenu(bot, unread: marks.unread, isOpen: isOpen) }
         .accessibilityElement(children: .combine)
         .accessibilityValue(marks.spoken)
         .accessibilityHint("Opens your chat with this bot")
@@ -1931,7 +2062,14 @@ extension ConversationsList {
             HermesBot(name: "writer", displayName: "Quill", description: "Edits and drafts", lastActive: .now.addingTimeInterval(-120),
                       preview: "Want me to carry that through the next paragraph?"),
             HermesBot(name: "fixit", title: "Fix-it", description: "Looks after the home server"),
-        ])
+        ] + extraDemoBots)
+    }
+
+    /// `-echo.demoBotCount n`: the sample bots, and more up to n (for when they fold).
+    private static var extraDemoBots: [HermesBot] {
+        let names = ["Home", "Chef", "Coach", "Atlas", "Penny", "Tutor", "Ledger", "Nova"]
+        let count = DevHooks.value("-echo.demoBotCount").flatMap(Int.init) ?? 0
+        return names.prefix(max(0, count - 4)).map { HermesBot(name: $0.lowercased(), title: $0) }
     }
 
     static var demoProjects: [HermesServeClient.Project] {

@@ -128,7 +128,7 @@ final class PromoVideoUITests: XCTestCase {
     func testBotsMuteAndSchedules() throws {
         let app = try bots(["-echo.screen", "sessions", "-mutes", "<>"])
         let list = app.collectionViews.firstMatch
-        let scout = list.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Scout,")).firstMatch
+        let scout = list.buttons["Scout"].firstMatch
         XCTAssertTrue(scout.waitForExistence(timeout: 20))
         mark("start")
         hold(1.0)
