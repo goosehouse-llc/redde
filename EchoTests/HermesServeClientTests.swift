@@ -151,6 +151,32 @@ struct HermesServeClientTests {
         #expect(ServeStub.log == ["GET /api/sessions", "POST /auth/password-login"])
     }
 
+    /// A Dashboard with no password on it (or a login's cookie still good once the login was gone):
+    /// usable with nothing stored, as chats already found; Settings → Agent, files and the rest
+    /// said there was no login (his report, 2026-10-22).
+    @Test func aDashboardThatLetsThePhoneInCountsAsALogin() async throws {
+        let settings = Settings(defaults: UserDefaults(suiteName: "serve-test-\(UUID().uuidString)")!)
+        settings.serveURL = "http://serve.test:9119"
+        ServeStub.reset()
+        ServeStub.handler = { request, _ in
+            request.url?.path() == "/api/sessions" ? (200, Data("[]".utf8)) : (404, Data())
+        }
+        let client = HermesServeClient(settings: settings, password: { nil }, tokens: TokenBox().store, protocolClasses: [ServeStub.self])
+        #expect(!client.hasCredentials, "nothing stored, nothing asked yet")
+        #expect(await client.canUse())
+        #expect(client.hasCredentials, "known from then on")
+
+        // One that wants a login, with none stored: not usable.
+        ServeStub.handler = { _, _ in (401, Data()) }
+        let locked = HermesServeClient(settings: settings, password: { nil }, tokens: TokenBox().store, protocolClasses: [ServeStub.self])
+        #expect(await !locked.canUse())
+        #expect(!locked.hasCredentials)
+
+        // Another server: what the last one allowed counts for nothing there.
+        settings.serveURL = "http://other.test:9119"
+        #expect(!client.hasCredentials)
+    }
+
     // MARK: - Browser sign-in
 
     /// Tokens kept in memory, as the Keychain keeps them for the app.

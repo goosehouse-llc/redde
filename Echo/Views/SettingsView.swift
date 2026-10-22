@@ -73,6 +73,8 @@ struct SettingsView: View {
             .task {
                 hasStoredKey = Keychain.read(.gatewayAPIKey) != nil
                 hasServePassword = Keychain.read(.serveDashboardPassword) != nil || HermesServeClient.shared.isSignedIn
+                // A Dashboard with no password on it lets the phone in all the same.
+                if !hasServePassword { hasServePassword = await HermesServeClient.shared.canUse() }
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)

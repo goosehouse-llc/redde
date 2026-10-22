@@ -363,7 +363,7 @@ final class Conversation {
                 // The Hermes API takes text and pictures: other files go to the server through the
                 // Dashboard's login, and the message says where they are.
                 if transportKind == .hermesSessions, request.attachments.contains(where: { $0.kind == .pdf || $0.kind == .other }),
-                   dashboard.hasCredentials {
+                   await dashboard.canUse() {
                     statusLine = "putting the file on the server…"
                     request = try await Self.placingFiles(request)
                 }
@@ -378,8 +378,10 @@ final class Conversation {
                 // inlines small images — both daemons share the Hermes host's filesystem, so the serve
                 // file API can fetch what either transport left as a bare path. Runs before the
                 // reply is persisted, notified, and mirrored to the widget.
-                if transportKind == .hermesServe
-                    || (transportKind == .hermesSessions && dashboard.hasCredentials) {
+                // (On the Hermes API, the Dashboard is asked only when the reply names a file.)
+                var fetchesFiles = transportKind == .hermesServe
+                if !fetchesFiles, transportKind == .hermesSessions, replyNamesFiles(replyID) { fetchesFiles = await dashboard.canUse() }
+                if fetchesFiles {
                     await resolveServeMedia(replyID)
                     try Task.checkCancellation()   // Stop during the fetch must not finish the turn
                     if let fromPage { await refreshPage(fromPage) }
@@ -1644,6 +1646,12 @@ final class Conversation {
     /// A reply that delivers a file carries a bare server path (`MEDIA:` tag, markdown image,
     /// or "[IMAGE: …]"). Fetch each over the serve dashboard file API and attach it — photos
     /// for images, document chips for the rest. Paths that fail to fetch stay in the text.
+    /// Whether a reply names a file for the phone to fetch: on the Hermes API the Dashboard is only
+    /// asked whether it lets this phone in when there is something to fetch.
+    private func replyNamesFiles(_ id: UUID) -> Bool {
+        messages.first(where: { $0.id == id }).map { ServeMedia.mayName(in: $0.text) } ?? false
+    }
+
     private func resolveServeMedia(_ id: UUID) async {
         guard let text = messages.first(where: { $0.id == id })?.text else { return }
         let candidates = ServeMedia.candidates(in: text)

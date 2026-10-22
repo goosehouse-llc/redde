@@ -176,6 +176,8 @@ final class HermesServeClient {
         // A refresh still in flight belongs to the server being left: its answer must not be
         // filed under the next one.
         refreshTask?.cancel(); refreshTask = nil
+        authenticatedAt = nil
+        letInWithoutLogin = nil
         ChatControlStore.shared.removeAll()
         disconnect()
         if let host, let cookies = HTTPCookieStorage.shared.cookies {
@@ -248,6 +250,11 @@ final class HermesServeClient {
     /// entirely (one round trip instead of two); a 401 clears it and the call retries once.
     private var authenticatedAt: Date?
     private let authTTL: TimeInterval = 10 * 60
+    /// The Dashboard that let this phone in at the last look with no stored login: one with no
+    /// password on it, or a login's cookie still good after the login itself was gone. Chats
+    /// worked through it while Settings → Agent, files and the rest said there was no login
+    /// (his report, 2026-10-22).
+    private var letInWithoutLogin: URL?
 
     private func login(baseURL: URL) async throws {
         syncAccessHeaders()
@@ -263,8 +270,10 @@ final class HermesServeClient {
         if let probeURL = comps.url, let (_, r) = try? await session.data(for: URLRequest(url: probeURL)),
            (r as? HTTPURLResponse)?.statusCode == 200 {
             authenticatedAt = .now
+            if !hasStoredLogin { letInWithoutLogin = baseURL }
             return
         }
+        letInWithoutLogin = nil
 
         let username = settings.serveUsername
         guard !username.isEmpty, let password = password(), !password.isEmpty else {
@@ -330,6 +339,7 @@ final class HermesServeClient {
             try await refreshTokens(baseURL: baseURL, spent: used)
         } else if authenticatedAt != nil {
             authenticatedAt = nil
+            letInWithoutLogin = nil
             try await login(baseURL: baseURL)
         } else {
             return first
@@ -1045,9 +1055,24 @@ final class HermesServeClient {
         _ = try await rest("PUT", "api/tools/toolsets/\(name)", body: try JSONEncoder().encode(Body(enabled: enabled)))
     }
 
-    /// True when a dashboard login is configured: a browser sign-in, or a username and stored password.
+    /// True when the Dashboard can be used: a browser sign-in, a username and stored password, or
+    /// it let this phone in without either at the last look (`letInWithoutLogin`).
     var hasCredentials: Bool {
+        hasStoredLogin || (letInWithoutLogin != nil && letInWithoutLogin == baseURL)
+    }
+
+    /// A browser sign-in, or a username and stored password.
+    private var hasStoredLogin: Bool {
         isSignedIn || (!settings.serveUsername.isEmpty && password() != nil)
+    }
+
+    /// Whether the Dashboard can be used, finding out now if nothing has asked it yet: with no
+    /// stored login it may still let this phone in.
+    func canUse() async -> Bool {
+        if hasCredentials { return true }
+        guard let baseURL else { return false }
+        try? await login(baseURL: baseURL)
+        return hasCredentials
     }
 
     func skillContent(name: String) async throws -> String {

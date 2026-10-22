@@ -68,7 +68,7 @@ struct DeliveredFileChip: View {
     /// phone, or why there isn't one.
     static func fetch(_ path: String, in source: FileSource?) async -> Result<URL, Problem> {
         let dashboard = HermesServeClient.shared
-        guard dashboard.hasCredentials else {
+        guard await dashboard.canUse() else {
             return .failure(Problem(text: "Files your agent sends come through the Hermes Dashboard. Add its login in Settings → Connection details."))
         }
         do {

@@ -71,6 +71,12 @@ every skill the agent knows. With the Dashboard login they also get switches: a 
 changes its platform setting in Hermes's config (`PUT /api/tools/toolsets/{name}`), and a skill
 switch stops Redde loading that skill (`PUT /api/skills/toggle`).
 
+**"The Dashboard login"** counts a Dashboard that lets the phone in with nothing stored: one with no
+password, or a login's cookie still good (`HermesServeClient.canUse`, `letInWithoutLogin`). The chat
+connection already got in that way, by its `api/sessions` probe. Settings → Agent, files the agent
+sends, and pages ask `canUse` before saying a login is missing (2026-10-22: everything there was grey
+while chats worked).
+
 Memory opens `memories/MEMORY.md` (agent notes) and `memories/USER.md` (facts about you); Context
 files edit `SOUL.md` (persona) and `ENVIRONMENT.md`, all in the profile's Hermes home, through the
 dashboard's file API (`/api/fs/read-text`, `/api/fs/write-text`). The Hermes API server has no file
