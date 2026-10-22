@@ -46,4 +46,21 @@ struct TranscriptEndTests {
         // One point more than fits has somewhere to scroll.
         #expect(!TranscriptEnd.fits(geometry(offset: -158, content: 700)))
     }
+
+    /// Jump to latest stops a fling first, through the UIKit scroll view under the SwiftUI one:
+    /// the probe in the transcript's content finds it once it is on screen.
+    @MainActor @Test func theTranscriptsScrollViewIsFoundToStopAFling() async throws {
+        let handle = ScrollHandle()
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        window.rootViewController = UIHostingController(rootView: ScrollView {
+            Color.clear.frame(height: 3000).background(ScrollHandle.Finder(handle: handle))
+        })
+        window.makeKeyAndVisible()
+        for _ in 0 ..< 20 where !handle.isAttached { try await Task.sleep(for: .milliseconds(50)) }
+        #expect(handle.isAttached)
+        handle.stopCoasting()   // not coasting: nothing to do, and nothing breaks
+        window.isHidden = true
+    }
 }

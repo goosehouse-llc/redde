@@ -33,6 +33,8 @@ struct TranscriptView: View {
     @State private var pastEnd = false
     /// Keeps the jump to the end going until the newest message is actually on screen.
     @State private var jumpTask: Task<Void, Never>?
+    /// The UIKit scroll view under the transcript: a jump stops its coasting first.
+    @State private var scrollHandle = ScrollHandle()
     /// How much conversation there was when the reader scrolled away: messages, and the length of
     /// the last one.
     @State private var leftAt: (messages: Int, lastLength: Int)?
@@ -113,6 +115,9 @@ struct TranscriptView: View {
     /// short, so keep jumping until the end is on screen (or the reader touches the list again).
     private func jumpToEnd(_ proxy: ScrollViewProxy) {
         following = true
+        // A fling still coasting carried on past the jump, and the corrections below waited for it
+        // to end: stopped where it is first (Reddit, 2026-10-22: "a signal to terminate scroll").
+        scrollHandle.stopCoasting()
         proxy.scrollTo("bottom", anchor: .bottom)
         jumpTask?.cancel()
         jumpTask = Task {
@@ -195,6 +200,7 @@ struct TranscriptView: View {
                             .id(item.rowID)
                     }
                     Color.clear.frame(height: 1).id("bottom")
+                        .background(ScrollHandle.Finder(handle: scrollHandle))
                 }
                 .padding()
                 .frame(maxWidth: 820)
@@ -523,5 +529,47 @@ private struct NewBelowDot: View {
                 withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) { dim = true }
             }
             .accessibilityHidden(true)
+    }
+}
+
+/// The UIKit scroll view a SwiftUI one is drawn with, found from a view inside its content: SwiftUI
+/// has no way to stop a fling, and a jump has to.
+@MainActor
+final class ScrollHandle {
+    fileprivate weak var view: UIScrollView?
+    /// It has found its scroll view.
+    var isAttached: Bool { view != nil }
+
+    /// Stops a fling where it is (a non-animated offset ends UIKit's deceleration).
+    func stopCoasting() {
+        guard let view, view.isDecelerating else { return }
+        view.setContentOffset(view.contentOffset, animated: false)
+    }
+
+    /// Placed in the scroll view's content: once in a window, it finds the scroll view above it.
+    struct Finder: UIViewRepresentable {
+        let handle: ScrollHandle
+
+        func makeUIView(context: Context) -> Probe { Probe(handle: handle) }
+        func updateUIView(_ probe: Probe, context: Context) { probe.handle = handle }
+
+        final class Probe: UIView {
+            var handle: ScrollHandle
+
+            init(handle: ScrollHandle) {
+                self.handle = handle
+                super.init(frame: .zero)
+                isUserInteractionEnabled = false
+            }
+
+            required init?(coder: NSCoder) { nil }
+
+            override func didMoveToWindow() {
+                super.didMoveToWindow()
+                var up = superview
+                while let view = up, !(view is UIScrollView) { up = view.superview }
+                handle.view = up as? UIScrollView
+            }
+        }
     }
 }
