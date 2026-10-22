@@ -496,10 +496,10 @@ struct ContentView: View {
         case .sessions:
             chatScreen(showListButton: false)
         case .cron:
-            NavigationStack { CronView().navigationTitle("Cron").navigationBarTitleDisplayMode(.inline) }
+            NavigationStack { CronView() }
                 .id(settings.connectionKey)
         case .kanban:
-            NavigationStack { KanbanView().navigationTitle("Kanban").navigationBarTitleDisplayMode(.inline) }
+            NavigationStack { KanbanView() }
                 .id(settings.connectionKey)
         }
     }

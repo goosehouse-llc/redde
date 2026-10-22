@@ -40,6 +40,9 @@ struct ConversationsList: View {
     @State private var ledgerError: String?
     @State private var loading = false
     @State private var opening: String?
+    @State private var searchHeaderVisible = false
+    @State private var listAtTop = true
+    @State private var skipRefreshAfterSearchPull = false
     /// A conversation the server wouldn't hand over just now, of which this iPhone has a copy.
     @State private var savedCopyOffered: UUID?
     @State private var query = ""
@@ -67,6 +70,7 @@ struct ConversationsList: View {
     /// `groups.open`), and a new one being made.
     @State private var groups = GroupDirectory.shared
     @State private var makingGroup = false
+    @AppStorage("sessions.showGroupChats") private var showGroupChats = true
     /// The bot whose face is being picked.
     @State private var facing: HermesBot?
     /// A bot being made or changed, and the hidden ones being looked at.
@@ -125,16 +129,6 @@ struct ConversationsList: View {
     /// shows: the chat, the cron jobs or the Kanban board (ContentView). Here it's always the chats.
     var wideDetail = false
 
-    /// The bar's title. "Conversations" over the chats; Cron and Kanban name themselves.
-    /// On iPad from iPadOS 27 the sidebar's title is no longer drawn large under the bar but in
-    /// it, beside four buttons, where "Conversations" was cut to "Conversa…". There it is
-    /// "Chats": what the sidebar lists, whichever section the wide pane shows. And nothing while
-    /// selecting, when Cancel and Deselect all need the room.
-    private var listTitle: String {
-        if #available(iOS 27.0, *), wideDetail { return selecting || arrangingBots ? "" : "Chats" }
-        return section == .sessions || wideDetail ? "Conversations" : section.title
-    }
-
     /// A conversation opened (or a new one started), or with `room` a group chat: it takes the
     /// chat's place (on iPad, the wide pane again).
     private func opened(room: GroupRoom? = nil) {
@@ -157,9 +151,13 @@ struct ConversationsList: View {
         // From inside the navigation stack: hiding the whole panel doesn't reach UIKit's list,
         // and VoiceOver could swipe into rows parked off screen.
         .accessibilityHidden(panelParked)
-        .navigationTitle(listTitle)
         .toolbarVisibility(panelParked ? .hidden : .automatic, for: .navigationBar)
-        .navigationBarTitleDisplayMode(section == .sessions || wideDetail ? .large : .inline)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                if !selecting, !arrangingBots { sectionMenu }
+            }
+        }
         #if DEBUG
         // Dev hook: `-echo.section cron|kanban` opens on that tab (screenshots).
         .onAppear { if let tab = DevHooks.value("-echo.section").flatMap(Tab.init(rawValue:)) { section = tab } }
@@ -219,14 +217,11 @@ struct ConversationsList: View {
         .accessibilityValue(settings.activeServer?.title ?? "")
     }
 
-    /// The server switch (once there's more than one) and Chats, Cron and Kanban, as the first
-    /// row of whichever list is showing: they move with it when you pull to refresh or scroll.
-    /// Full width: in the bar, next to Settings, Select and New, they were squeezed to "Kanb…".
+    /// The server switch (once there's more than one), as the first row of whichever list is showing.
     private var topRow: some View {
-        VStack(spacing: 8) {
+        Group {
             // Not on the OpenAI-compatible connection, which belongs to no server (as in Settings).
             if settings.servers.count > 1, settings.transport != .chatCompletions { serverMenu }
-            sectionPicker
         }
         .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 8, trailing: 16))
         .listRowSeparator(.hidden)
@@ -235,13 +230,45 @@ struct ConversationsList: View {
         .accessibilityHidden(panelParked)   // UIKit's segmented control ignores it from further out
     }
 
-    private var sectionPicker: some View {
+    /// Hidden initially; pulling down at the top of the list reveals it.
+    private var searchHeader: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            TextField("Search conversations", text: $query)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+            Button { query = ""; searchHeaderVisible = false } label: {
+                Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Hide search")
+        }
+        .padding(.horizontal, 12).padding(.vertical, 9)
+        .background(.quaternary.opacity(0.55), in: .rect(cornerRadius: 12))
+        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 8, trailing: 16))
+        .listRowSeparator(.hidden)
+        .listRowBackground(Color.clear)
+        .transition(.move(edge: .top).combined(with: .opacity))
+    }
+
+    private var sectionMenu: some View {
         // Through its own binding, not `$section`: with the stored one, the first tap after the
         // panel opened blinked and didn't switch (seen on device, never in the simulator).
-        Picker("Section", selection: Binding(get: { section }, set: { section = $0 })) {
-            ForEach(Tab.allCases) { s in Text(s.title).tag(s) }
+        Menu {
+            Picker("Section", selection: Binding(get: { section }, set: { section = $0 })) {
+                ForEach(Tab.allCases) { s in Label(s.title, systemImage: s.icon).tag(s) }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: section.icon)
+                Text(section.title)
+                .font(.subheadline.weight(.semibold))
+                Image(systemName: "chevron.down").font(.caption2.weight(.semibold))
+            }
         }
-        .pickerStyle(.segmented)
+        .accessibilityLabel("Section")
+        .accessibilityValue(section.title)
     }
 
     private var sessionsList: some View {
@@ -253,10 +280,12 @@ struct ConversationsList: View {
                 botsSection
             } else {
                 topRow
+                if searchHeaderVisible { searchHeader }
                 if query.isEmpty, !selecting { waitingNotesSection }
                 if usesLedger {
                     if query.isEmpty, !selecting {
                         if botsHere { botsSection }
+                        if viaServe { groupChatsSection }
                         if viaServe { projectsSection }
                     }
                     ledgerSection
@@ -267,6 +296,21 @@ struct ConversationsList: View {
             }
         }
         .listStyle(.plain)
+        .modifier(ChatListSpacing(density: settings.chatListDensity))
+        .onScrollGeometryChange(for: Bool.self) { geometry in
+            geometry.contentOffset.y <= -geometry.contentInsets.top + 1
+        } action: { _, atTop in
+            listAtTop = atTop
+        }
+        .simultaneousGesture(DragGesture(minimumDistance: 12).onChanged { value in
+            guard listAtTop, value.translation.height > 48, !searchHeaderVisible else { return }
+            searchHeaderVisible = true
+            skipRefreshAfterSearchPull = true
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(1))
+                skipRefreshAfterSearchPull = false
+            }
+        })
         .navigationDestination(for: ProjectRoute.self) { route in
             if let project = projects.first(where: { $0.id == route.id }) {
                 ProjectSessionsView(project: project, open: load, currentID: conversation.serverSessionID,
@@ -318,7 +362,6 @@ struct ConversationsList: View {
             Text(usesLedger ? "They are removed from the Redde ledger for every client." : "This only removes them from this phone.")
         }
         .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
-        .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search conversations")
         // Keyed on the server and profile: a switch reloads the list (and the iPad sidebar,
         // which stays up).
         // Not while the iPhone's panel is closed: it loads when it opens (isShowing below).
@@ -332,7 +375,10 @@ struct ConversationsList: View {
             selected = []
             arrangingBots = false
         }
-        .refreshable { if usesLedger { await refresh() } }
+        .refreshable {
+            if skipRefreshAfterSearchPull { skipRefreshAfterSearchPull = false }
+            else if usesLedger { await refresh() }
+        }
         .onChange(of: isShowing) { _, showing in
             if showing, usesLedger { Task { await refresh() } }
         }
@@ -413,32 +459,67 @@ struct ConversationsList: View {
             let items = BotListItem.arranged(bots: bots, rooms: hasRooms ? groups.rooms : [], order: botOrder)
             Section {
                 if showBotRows || arrangingBots {
-                    // Bots and group chats in one run, in the order they were put in (Reorder Bots).
-                    ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                        Group {
-                            switch item {
-                            case .bot(let bot): botRow(bot, face: faces[bot.name] ?? BotFace(seed: bot.name))
-                            case .room(let room): groupRow(room, faces: faces)
+                    if arrangingBots {
+                        // Keep the reorder list while the person is arranging bot and room order.
+                        ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                            Group {
+                                switch item {
+                                case .bot(let bot): botRow(bot, face: faces[bot.name] ?? BotFace(seed: bot.name))
+                                case .room(let room): groupRow(room, faces: faces)
+                                }
                             }
+                            .allowsHitTesting(false)
+                            .accessibilityAction(named: "Move up") { if index > 0 { moveBotRows(IndexSet(integer: index), to: index - 1, in: items) } }
+                            .accessibilityAction(named: "Move down") { if index < items.count - 1 { moveBotRows(IndexSet(integer: index), to: index + 2, in: items) } }
                         }
-                        // Being put in order, a row moves by its handle and opens nothing.
-                        .allowsHitTesting(!arrangingBots)
-                        .accessibilityAction(named: "Move up") { if index > 0 { moveBotRows(IndexSet(integer: index), to: index - 1, in: items) } }
-                        .accessibilityAction(named: "Move down") { if index < items.count - 1 { moveBotRows(IndexSet(integer: index), to: index + 2, in: items) } }
+                        .onMove(perform: { moveBotRows($0, to: $1, in: items) })
+                    } else if settings.botLayout == .horizontal {
+                        // Bot chats take one compact, horizontally scrolling icon row; creation
+                        // stays at the end where it is easy to find.
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 16) {
+                                ForEach(items, id: \.id) { item in
+                                    if case .bot(let bot) = item {
+                                        VStack(spacing: 4) {
+                                            Text(bot.label(mainName: settings.headerTitle))
+                                                .font(.caption).lineLimit(1).frame(maxWidth: 80)
+                                            botRow(bot, face: faces[bot.name] ?? BotFace(seed: bot.name), iconOnly: true)
+                                        }
+                                    }
+                                }
+                                Button {
+                                    if apiBotsOnly { addingAPIBot = true } else { editingBot = .new }
+                                } label: {
+                                    Image(systemName: "plus")
+                                        .font(.title3.weight(.semibold))
+                                        .foregroundStyle(Settings.shared.resolvedTheme.accent)
+                                        .frame(width: 56, height: 56)
+                                        .background(Settings.shared.resolvedTheme.accent.opacity(0.1), in: Circle())
+                                        .overlay(Circle().strokeBorder(Settings.shared.resolvedTheme.accent.opacity(0.35), style: StrokeStyle(lineWidth: 1, dash: [4])))
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(opening != nil || openingBot != nil)
+                                .accessibilityLabel(apiBotsOnly ? "Add Bot" : "New Bot")
+                                .accessibilityHint(apiBotsOnly ? "Adds a server profile as a bot" : "Creates a bot on your server")
+                            }
+                            .padding(.vertical, 6)
+                        }
+                        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+
+                    } else {
+                        // Vertical keeps the named, full-width bot rows.
+                        ForEach(bots, id: \.name) { bot in
+                            botRow(bot, face: faces[bot.name] ?? BotFace(seed: bot.name))
+                        }
                     }
-                    // Only in Reorder Bots: elsewhere a long press is the row's menu, which a drag
-                    // from it can't get past.
-                    .onMove(perform: arrangingBots ? { moveBotRows($0, to: $1, in: items) } : nil)
                 }
                 if showBotRows, !arrangingBots {
-                    if hasRooms, groups.writable {
-                        sectionAction("New Group Chat", systemImage: "person.3", hint: "Starts a chat with several bots at once") { makingGroup = true }
-                    }
-                    if apiBotsOnly {
-                        // No Dashboard to make or list them: a profile on the server, by its own key.
-                        sectionAction("Add Bot", systemImage: "plus.bubble", hint: "Adds one of your server's profiles as a bot, with its own API key") { addingAPIBot = true }
-                    } else {
-                        sectionAction("New Bot", systemImage: "plus.bubble", hint: "Makes a bot on your server, with a chat of its own") { editingBot = .new }
+                    if settings.botLayout == .vertical {
+                        if apiBotsOnly {
+                            sectionAction("Add Bot", systemImage: "plus.bubble", hint: "Adds one of your server's profiles as a bot, with its own API key") { addingAPIBot = true }
+                        } else {
+                            sectionAction("New Bot", systemImage: "plus.bubble", hint: "Makes a bot on your server, with a chat of its own") { editingBot = .new }
+                        }
                     }
                     if !apiBotsOnly, !bots.isEmpty, botDirectory.roster?.messagingIsOn == false {
                         sectionAction("Let bots message each other", systemImage: "bubble.left.and.text.bubble.right",
@@ -449,7 +530,11 @@ struct ConversationsList: View {
                     }
                 }
             } header: {
-                if arrangingBots { Text("Bots") } else { foldingHeader("Bots", count: bots.count, isOpen: $showBotRows) }
+                if arrangingBots {
+                    Text("Bots")
+                } else if settings.botLayout == .vertical {
+                    foldingHeader("Bots", count: bots.count, isOpen: $showBotRows)
+                }
             } footer: {
                 if arrangingBots {
                     Text("Drag bots and group chats by their handles into the order you want.")
@@ -466,6 +551,26 @@ struct ConversationsList: View {
                 Button("Let Them") { letBotsMessageEachOther() }
             } message: {
                 Text("Hermes gives each bot's chat a tool to message the other bots, so you can say \u{201C}@scout, what do you think?\u{201D} in one bot's chat and have it ask. Redde turns this on the way Hermes Desktop does, by setting your main profile up as a bot on the server. Chats with your agent stay as they are.")
+            }
+        }
+    }
+
+    /// Group chats have their own foldable section, independent of the bot display layout.
+    @ViewBuilder
+    private var groupChatsSection: some View {
+        let canShow = !arrangingBots && !apiBotsOnly && groups.key == settings.connectionKey && groups.supported
+        let rooms = groups.rooms
+        let faces = botDirectory.roster?.faces ?? [:]
+        if canShow, !rooms.isEmpty || (canShow && groups.writable && !listedBots.isEmpty) {
+            Section {
+                if showGroupChats {
+                    ForEach(rooms) { room in groupRow(room, faces: faces) }
+                    if groups.writable, !listedBots.isEmpty {
+                        sectionAction("New Group Chat", systemImage: "person.3", hint: "Starts a chat with several bots at once") { makingGroup = true }
+                    }
+                }
+            } header: {
+                foldingHeader("Group Chats", count: rooms.count, isOpen: $showGroupChats)
             }
         }
     }
@@ -513,7 +618,7 @@ struct ConversationsList: View {
 
     /// A bot's row: its creature, its name and its chat's last line, marked as a conversation's
     /// row is (at work, waiting on the person, or something not yet seen).
-    private func botRow(_ bot: HermesBot, face: BotFace) -> some View {
+    private func botRow(_ bot: HermesBot, face: BotFace, iconOnly: Bool = false) -> some View {
         let name = bot.label(mainName: settings.headerTitle)
         let isOpen = groups.open == nil && conversation.bot?.profile == bot.name
         // Muted: no unread dot (at work, or waiting on the person, still shows).
@@ -522,35 +627,56 @@ struct ConversationsList: View {
                               muted: muted)
         let roster = botDirectory.roster?.bots ?? []
         return Button { openBot(bot) } label: {
-            HStack(spacing: 12) {
-                BotAvatar(face: face, name: name)
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        Text(name).font(.body.weight(.semibold)).lineLimit(1)
-                        if muted { MutedMark() }
-                        Spacer(minLength: 8)
-                        if openingBot == bot.name || marks.kind == .working {
-                            ProgressView().controlSize(.small)
-                        } else if let when = bot.lastActive {
-                            Text(DateGroup.rowTime(when)).font(.caption).foregroundStyle(.secondary)
+            Group {
+                if iconOnly {
+                    BotAvatar(face: face, name: name, size: 56)
+                        .overlay(alignment: .bottomTrailing) {
+                            if openingBot == bot.name || marks.kind == .working {
+                                ProgressView().controlSize(.mini)
+                                    .padding(3).background(.regularMaterial, in: Circle())
+                            } else if marks.kind == .needsYou {
+                                Image(systemName: "exclamationmark.circle.fill")
+                                    .font(.caption.weight(.bold)).foregroundStyle(.orange)
+                                    .background(.background, in: Circle())
+                            } else if marks.unread {
+                                Circle().fill(Settings.shared.resolvedTheme.accent)
+                                    .frame(width: 11, height: 11).overlay(Circle().stroke(.background, lineWidth: 2))
+                            }
+                        }
+                        .accessibilityLabel(name)
+                } else {
+                    HStack(spacing: 12) {
+                        BotAvatar(face: face, name: name)
+                        VStack(alignment: .leading, spacing: 3) {
+                            HStack(spacing: 6) {
+                                Text(name).font(.body.weight(.semibold)).lineLimit(1)
+                                if muted { MutedMark() }
+                                Spacer(minLength: 8)
+                                if openingBot == bot.name || marks.kind == .working {
+                                    ProgressView().controlSize(.small)
+                                } else if let when = bot.lastActive {
+                                    Text(DateGroup.rowTime(when)).font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
+                            HStack(spacing: 6) {
+                                if marks.kind == .needsYou { NeedsYouTag() }
+                                Text(BotMessages.rowPreview(bot.preview, roster: roster, mainName: settings.headerTitle)
+                                     ?? bot.description.nilIfEmpty ?? "@\(bot.handle)")
+                                    .lineLimit(1)
+                            }
+                            .font(.subheadline).foregroundStyle(.secondary)
                         }
                     }
-                    HStack(spacing: 6) {
-                        if marks.kind == .needsYou { NeedsYouTag() }
-                        Text(BotMessages.rowPreview(bot.preview, roster: roster, mainName: settings.headerTitle)
-                             ?? bot.description.nilIfEmpty ?? "@\(bot.handle)")
-                            .lineLimit(1)
-                    }
-                    .font(.subheadline).foregroundStyle(.secondary)
+                    .padding(.vertical, settings.chatListDensity == .tight ? 0 : 2)
                 }
             }
-            .padding(.vertical, 2)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .unreadDot(marks.unread)
+        .unreadDot(!iconOnly && marks.unread)
         .opensConversation()
         .listRowBackground(isOpen ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
+        .modifier(TightChatRowInsets(isTight: settings.chatListDensity == .tight && !iconOnly))
         .disabled(opening != nil || openingBot != nil)
         .contextMenu {
             if bot.chatID != nil, !isOpen {
@@ -619,12 +745,13 @@ struct ConversationsList: View {
                     .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
                 }
             }
-            .padding(.vertical, 2)
+            .padding(.vertical, settings.chatListDensity == .tight ? 0 : 2)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
         .unreadDot(marks.unread)
         .listRowBackground(isOpen ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
+        .modifier(TightChatRowInsets(isTight: settings.chatListDensity == .tight))
         .contextMenu {
             if !isOpen, room.activityMark != nil {
                 if marks.unread {
@@ -923,7 +1050,8 @@ struct ConversationsList: View {
     /// Title and when, then who said it and the matching words, marked.
     private func messageHitRow(_ hit: MessageSearchHit) -> some View {
         let session = hit.session
-        return VStack(alignment: .leading, spacing: 3) {
+        let tight = settings.chatListDensity == .tight
+        return VStack(alignment: .leading, spacing: tight ? 1 : 3) {
             HStack(spacing: 6) {
                 Text(session.displayTitle).font(.body.weight(.semibold)).lineLimit(1)
                 Spacer(minLength: 8)
@@ -944,7 +1072,7 @@ struct ConversationsList: View {
                 }
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, tight ? 0 : 2)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityHint("Opens this conversation at the match")
@@ -1053,6 +1181,7 @@ struct ConversationsList: View {
             .opensConversation()
             .tag(session.id)
             .listRowBackground(groups.open == nil && session.id == conversation.serverSessionID ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
+            .modifier(TightChatRowInsets(isTight: settings.chatListDensity == .tight))
             .disabled(opening != nil)
             .swipeActions(edge: .leading, allowsFullSwipe: true) {
                 if canMark {
@@ -1212,7 +1341,8 @@ struct ConversationsList: View {
     /// Title and when on the first line, the last thing said beneath; where it came from when
     /// it wasn't this app.
     private func rowBody(_ session: HermesSessionsAPI.SessionSummary, hasDraft: Bool, marks: ChatMarks) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
+        let tight = settings.chatListDensity == .tight
+        return VStack(alignment: .leading, spacing: tight ? 1 : 3) {
             HStack(spacing: 6) {
                 if session.pinned == true {
                     Image(systemName: "pin.fill").font(.caption2).foregroundStyle(.orange).accessibilityLabel("Pinned")
@@ -1240,7 +1370,7 @@ struct ConversationsList: View {
             .font(.subheadline)
             .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, tight ? 0 : 2)
         .contentShape(Rectangle())
     }
 
@@ -1566,6 +1696,7 @@ struct ConversationsList: View {
             .opensConversation()
             .tag(record.id.uuidString)
             .listRowBackground(record.id == conversation.id ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
+            .modifier(TightChatRowInsets(isTight: settings.chatListDensity == .tight))
             .contextMenu {
                 Button("Export as Markdown", systemImage: "square.and.arrow.up") {
                     Task {
@@ -1589,7 +1720,8 @@ struct ConversationsList: View {
     /// A conversation kept on this iPhone, as a row: its title and when it was last used, then
     /// the "Draft" mark if it has one and what there is to say about it.
     private func keptRow(_ record: ConversationSummary, caption: String) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
+        let tight = settings.chatListDensity == .tight
+        return VStack(alignment: .leading, spacing: tight ? 1 : 3) {
             HStack(spacing: 6) {
                 Text(record.title).font(.body.weight(.semibold)).lineLimit(1)
                 Spacer(minLength: 8)
@@ -1603,13 +1735,37 @@ struct ConversationsList: View {
             }
             .font(.subheadline)
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, tight ? 0 : 2)
         .contentShape(Rectangle())
     }
 
     /// "1 turn", "12 turns".
     private static func turns(_ record: ConversationSummary) -> String {
         "\(record.turnCount) turn\(record.turnCount == 1 ? "" : "s")"
+    }
+}
+
+private struct ChatListSpacing: ViewModifier {
+    let density: Settings.ChatListDensity
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if density == .tight {
+            content.listRowSpacing(0).listSectionSpacing(0)
+        } else {
+            content
+        }
+    }
+}
+
+private struct TightChatRowInsets: ViewModifier {
+    let isTight: Bool
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if isTight {
+            content.listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+        } else {
+            content
+        }
     }
 }
 

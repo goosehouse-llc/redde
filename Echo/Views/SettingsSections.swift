@@ -86,10 +86,23 @@ struct AppearanceSettings: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
+            if BotDirectory.reachable(settings) {
+                Toggle(isOn: $settings.showBots) { Label("Bots in the chat list", systemImage: "at") }
+            }
+            if (BotDirectory.reachable(settings) || BotDirectory.apiOnly(settings)), settings.showBots {
+                Picker("Bot display", selection: $settings.botLayout) {
+                    ForEach(Settings.BotLayout.allCases) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.segmented)
+            }
             Picker("Chat text size", selection: $settings.chatTextSize) {
                 ForEach(Array(Settings.chatTextSizes), id: \.self) { Text(ChatTextSize.label($0)).tag($0) }
             }
             .pickerStyle(.menu)
+            Picker("Chat list spacing", selection: $settings.chatListDensity) {
+                ForEach(Settings.ChatListDensity.allCases) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.segmented)
             AppIconSettings()
             VoiceOrbSettings()
             // An iPad has no CarPlay.
@@ -171,9 +184,6 @@ struct ProfileSettings: View {
                     } label: {
                         Label("Profile", systemImage: "person.2")
                     }
-                }
-                if BotDirectory.reachable(settings) {
-                    Toggle(isOn: $settings.showBots) { Label("Bots in the chat list", systemImage: "at") }
                 }
             } header: {
                 Text("Hermes server")
