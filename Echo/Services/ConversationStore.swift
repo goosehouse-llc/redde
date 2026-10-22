@@ -23,6 +23,8 @@ nonisolated struct ConversationRecord: Identifiable, Codable, Equatable, Sendabl
     var name: String? = nil
     /// The bot, when the conversation is a bot's chat (`Conversation.bot`). Absent in older files.
     var bot: BotRef? = nil
+    /// Another profile it lives in (`Conversation.elsewhere`). Absent in older files.
+    var elsewhere: ProfileRoute? = nil
 
     var turnCount: Int { messages.filter { $0.role == .user && !$0.isSteer }.count }
 }
@@ -38,10 +40,12 @@ nonisolated struct ConversationSummary: Identifiable, Codable, Equatable, Sendab
     var turnCount: Int
     var serverID: UUID?
     var bot: BotRef?
+    var elsewhere: ProfileRoute?
 
     init(_ record: ConversationRecord) {
         serverID = record.serverID
         bot = record.bot
+        elsewhere = record.elsewhere
         id = record.id
         title = record.title
         createdAt = record.createdAt

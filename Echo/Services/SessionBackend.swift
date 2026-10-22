@@ -13,6 +13,71 @@ enum SessionBackend {
         settings.transport == .hermesServe ? .serve(.shared) : conversation.ledgerAPI().map(SessionBackend.ledger)
     }
 
+    /// The chat list's: the selected profile's sessions, whichever conversation is open (one of a
+    /// bot's, or another profile's, goes by its own).
+    static func list(_ conversation: Conversation, settings: Settings = .shared) -> SessionBackend? {
+        settings.transport == .hermesServe ? .serve(.shared) : conversation.ledgerAPI(profile: nil).map(SessionBackend.ledger)
+    }
+
+    /// For a row of the list: its own profile's, when it is another's. On the Dashboard the row's
+    /// profile was noted for its id when it was listed, so every call about it names it.
+    static func owning(_ session: HermesSessionsAPI.SessionSummary, _ conversation: Conversation, settings: Settings = .shared) -> SessionBackend? {
+        guard let route = session.elsewhere else { return list(conversation, settings: settings) }
+        return route.viaAPI ? conversation.ledgerAPI(profile: route.profile).map(SessionBackend.ledger) : .serve(.shared)
+    }
+
+    /// Every profile's chats, newest first, for the list with All Profiles on (his ask
+    /// 2026-10-22, after a Reddit request: Hermes Desktop shows them all at once). From the
+    /// Dashboard's list of every profile when it can be used, on either connection; on the Hermes
+    /// API alone, each profile this phone knows asked at /p/<profile>/ (its own key, else the main
+    /// one: a profile that takes neither is left out). Another profile's bot chat and group chat
+    /// sessions are its bot's, in the Bots section, not rows.
+    static func everyProfile(_ conversation: Conversation, settings: Settings = .shared,
+                             dashboard: HermesServeClient = .shared, bots: BotRoster? = nil) async throws -> [HermesSessionsAPI.SessionSummary] {
+        let selected = settings.profileName ?? ProfileCatalog.defaultID
+        let botChats = Set((bots?.bots ?? []).compactMap(\.chatID))
+        func isBots(_ row: HermesSessionsAPI.SessionSummary) -> Bool {
+            botChats.contains(row.id) || row.title == BotChat.title || (row.title ?? "").hasPrefix("Group: ")
+        }
+        var rows: [HermesSessionsAPI.SessionSummary] = []
+        var viaDashboard = settings.transport == .hermesServe
+        if !viaDashboard { viaDashboard = await dashboard.canUse() }
+        if viaDashboard {
+            for var row in try await dashboard.allProfileSessions() {
+                if let profile = row.profile, profile != selected {
+                    guard !isBots(row) else { continue }
+                    row.elsewhere = ProfileRoute(profile: profile, viaAPI: false)
+                    dashboard.noteProfile(profile, forStored: row.id)
+                }
+                rows.append(row)
+            }
+        } else {
+            guard let own = conversation.ledgerAPI(profile: nil) else { return [] }
+            rows = try await own.listSessions()
+            var others = ProfileCatalog.known(settings: settings).map(\.name) + settings.apiBotsHere.map(\.profile)
+            others = others.reduce(into: []) { if !$0.contains($1), $1 != selected { $0.append($1) } }
+            let apis = others.compactMap { name in conversation.ledgerAPI(profile: name).map { (name, $0) } }
+            let listed = await withTaskGroup(of: [HermesSessionsAPI.SessionSummary].self) { group in
+                for (name, api) in apis {
+                    group.addTask {
+                        guard let found = try? await api.listSessions() else { return [] }
+                        return found.map { row in
+                            var row = row
+                            row.profile = name
+                            row.elsewhere = ProfileRoute(profile: name, viaAPI: true)
+                            return row
+                        }
+                    }
+                }
+                var all: [HermesSessionsAPI.SessionSummary] = []
+                for await found in group { all += found }
+                return all
+            }
+            rows += listed.filter { !isBots($0) }
+        }
+        return rows.sorted { ($0.lastActiveDate ?? .distantPast) > ($1.lastActiveDate ?? .distantPast) }
+    }
+
     /// What to show when neither Hermes connection has credentials (`available` came back empty).
     static let notConfiguredMessage = "Add the Hermes API key or the Hermes Dashboard login in Settings."
 

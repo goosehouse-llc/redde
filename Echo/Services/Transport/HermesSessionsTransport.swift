@@ -1,5 +1,14 @@
 import Foundation
 
+/// The profile a conversation lives in when it is neither the selected profile's nor a bot's
+/// chat: one opened from the chat list with All Profiles on (his ask 2026-10-22, after a Reddit
+/// request: Hermes Desktop shows every profile's sessions at once).
+nonisolated struct ProfileRoute: Codable, Equatable, Sendable {
+    var profile: String
+    /// Reached by the Hermes API at /p/<profile>/ with that profile's own key, not the Dashboard.
+    var viaAPI: Bool
+}
+
 /// Hermes gateway sessions API: `/api/sessions/{id}/chat/stream`. This is the shared ledger every
 /// Hermes platform writes to, so a conversation started here shows up next to Telegram and CLI
 /// sessions, and any of theirs can be resumed here. Streams reasoning and tool activity live.
@@ -309,6 +318,11 @@ nonisolated struct HermesSessionsAPI: Sendable {
         /// A reply here since it was last marked read (`PATCH … {"unread": false}`), as Hermes
         /// keeps it for every app. Only the Dashboard's list says; the Hermes API's leaves it out.
         var unread: Bool?
+        /// The profile it belongs to, where the list says (the Dashboard's does).
+        var profile: String?
+        /// Another profile than the selected one, and how to reach it: set by the chat list with All
+        /// Profiles on (`SessionBackend.everyProfile`), never by the server.
+        var elsewhere: ProfileRoute?
 
         var totalTokens: Int { (input_tokens ?? 0) + (output_tokens ?? 0) }
         var cost: Double? { actual_cost_usd ?? estimated_cost_usd }

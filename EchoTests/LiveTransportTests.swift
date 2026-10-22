@@ -1746,6 +1746,67 @@ struct HermesLabBotsTests {
         return reply
     }
 
+    /// All Profiles (his ask 2026-10-22): another profile's ordinary chat is listed with its
+    /// profile, its bot chat isn't, and it opens and goes on in that profile, on the Dashboard and
+    /// on the Hermes API with the Dashboard's login.
+    @Test func anotherProfilesChatIsListedAndGoesOnInItsProfile() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        // A profile of its own: the other tests make and change theirs at the same time.
+        _ = try? await client.call("profiles.create", params: .object(["name": .string("wren"), "clone_from": .string("default"),
+                                                                       "no_alias": .bool(true)]))
+        let roster = try await client.bots()
+        guard let ranger = roster.bots.first(where: { $0.name == "wren" }) else {
+            return HermesLabApprovalTests.report(false, "the lab has another profile", "\(roster.bots.map(\.name))")
+        }
+        let title = "Lab elsewhere \(UUID().uuidString.prefix(6))"
+        let made = try await client.call("session.create", params: .object([
+            "profile": .string(ranger.name), "title": .string(title), "source": .string("desktop"), "close_on_disconnect": .bool(false)]))
+        let runtime = try #require(made["session_id"]?.string)
+        let stored = made["stored_session_id"]?.string ?? runtime
+        client.noteProfile(ranger.name, forStored: stored)
+        client.adopt(runtime: runtime, stored: stored)
+        _ = try await Self.say("hello from another profile", in: stored, client)
+
+        func settle(_ c: Conversation) async {
+            for _ in 0 ..< 120 where c.isStreaming || c.messages.last?.role != .assistant || (c.messages.last?.text.isEmpty ?? true) {
+                try? await Task.sleep(for: .milliseconds(500))
+            }
+        }
+        let account = Keychain.account(.gatewayAPIKey)
+        let keyBefore = Keychain.read(account: account)
+        Keychain.write(account: account, value: "labkey-labkey-labkey")
+        defer { if let keyBefore { Keychain.write(account: account, value: keyBefore) } else { Keychain.delete(account: account) } }
+
+        for connection in [Transport.hermesServe, .hermesSessions] {
+            let settings = Settings(defaults: UserDefaults(suiteName: "lab-elsewhere-\(UUID().uuidString)")!)
+            settings.transport = connection
+            settings.gatewayURL = "http://127.0.0.1:18642"
+            settings.serveURL = "http://127.0.0.1:19119"
+            settings.serveUsername = "lab"
+            let store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "lab-elsewhere-\(UUID().uuidString)"))
+            let conversation = Conversation(settings: settings, store: store, dashboard: client)
+            let rows = try await SessionBackend.everyProfile(conversation, settings: settings, dashboard: client, bots: try await client.bots())
+            let row = rows.first { $0.id == stored }
+            HermesLabApprovalTests.report(row?.elsewhere == ProfileRoute(profile: ranger.name, viaAPI: false) && row?.profile == ranger.name,
+                   "\(connection): another profile's chat is listed with its profile", "\(String(describing: row?.elsewhere)) of \(rows.count) rows")
+            HermesLabApprovalTests.report(!rows.contains { $0.elsewhere != nil && $0.title == BotChat.title },
+                   "\(connection): another profile's bot chat is its bot's, not a row")
+            guard let row else { continue }
+            try await conversation.loadServeSession(row, elsewhere: row.elsewhere)
+            HermesLabApprovalTests.report(conversation.elsewhere?.profile == ranger.name && conversation.connection == .hermesServe
+                                          && conversation.messages.contains { $0.text.contains("hello from another profile") },
+                   "\(connection): it opens in its profile, with what was said there", "\(String(describing: conversation.elsewhere)), \(conversation.messages.count) messages")
+            _ = conversation.send("and once more")
+            await settle(conversation)
+            let listed = try await client.call("session.list", params: .object(["profile": .string(ranger.name), "limit": .number(200)]))
+            let there = (listed["sessions"]?.array ?? []).first { ($0["id"]?.string ?? "") == stored || $0["resolved_id"]?.string == stored }
+            HermesLabApprovalTests.report(conversation.serverSessionID == stored && conversation.messages.last?.error == nil && there != nil,
+                   "\(connection): what is sent there is answered in the same chat, on its profile",
+                   "\(conversation.serverSessionID ?? "none") \(conversation.messages.last?.text.prefix(60) ?? "")")
+        }
+    }
+
     /// Start Fresh: the bot's chat is put aside under a dated title and the next open makes a new
     /// one; `/compress` condenses a chat in place (slash.exec on the Dashboard).
     @Test func aBotsChatStartsFreshOrIsCondensed() async throws {
@@ -2425,6 +2486,56 @@ struct HermesLabAPIBotsTests {
     private static let api = "http://127.0.0.1:18642"
     private static let mainKey = "labkey-labkey-labkey"
     private static let botKey = "scoutkey-scoutkey-scoutkey"
+
+    /// All Profiles on the Hermes API with no Dashboard (his ask 2026-10-22): another profile's
+    /// chat, reached at /p/<profile>/ with its own key, goes on there and is listed with its profile.
+    @Test func onTheHermesAPIAloneAnotherProfilesChatIsListedAndGoesOn() async throws {
+        var probe = URLRequest(url: URL(string: Self.api + "/p/scout/api/sessions?limit=1")!)
+        probe.setValue("Bearer \(Self.botKey)", forHTTPHeaderField: "Authorization")
+        probe.timeoutInterval = 3
+        guard let (_, response) = try? await URLSession.shared.data(for: probe), (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("LAB SKIP: no lab profile with its own API key at /p/scout/ (scripts/hermes-lab/lab.sh apibots)")
+            return
+        }
+        let settings = Settings(defaults: UserDefaults(suiteName: "lab-api-elsewhere-\(UUID().uuidString)")!)
+        settings.transport = .hermesSessions
+        settings.gatewayURL = Self.api
+        let server = settings.activeServerID.uuidString
+        let mainAccount = Keychain.account(.gatewayAPIKey, server: server), botAccount = Keychain.profileAccount("scout", server: server)
+        Keychain.write(account: mainAccount, value: Self.mainKey)
+        // The app's own key is read for the server the phone is on (`Keychain.activeServerID`).
+        let appAccount = Keychain.account(.gatewayAPIKey), appKeyBefore = Keychain.read(account: appAccount)
+        Keychain.write(account: appAccount, value: Self.mainKey)
+        defer {
+            Keychain.delete(account: mainAccount); Keychain.delete(account: botAccount)
+            if let appKeyBefore { Keychain.write(account: appAccount, value: appKeyBefore) } else { Keychain.delete(account: appAccount) }
+        }
+        try await APIBots.add(profile: "scout", title: "Scout", key: Self.botKey, settings: settings)
+        let noDashboard = HermesServeClient(settings: settings, password: { nil }, tokens: HermesServeClientTests.TokenBox().store)
+        let conversation = Conversation(settings: settings, store: ConversationStore(directory: FileManager.default.temporaryDirectory
+            .appending(path: "lab-api-elsewhere-\(UUID().uuidString)")), dashboard: noDashboard)
+
+        let route = ProfileRoute(profile: "scout", viaAPI: true)
+        guard let scoutAPI = conversation.ledgerAPI(profile: "scout") else { return HermesLabApprovalTests.report(false, "scout is reachable") }
+        let made = try await scoutAPI.createSession(title: "Lab elsewhere \(UUID().uuidString.prefix(6))")
+        try await conversation.loadLedgerSession(made, elsewhere: route)
+        _ = conversation.send("hello from another profile")
+        for _ in 0 ..< 120 where conversation.isStreaming || conversation.messages.last?.role != .assistant { try? await Task.sleep(for: .milliseconds(500)) }
+        HermesLabApprovalTests.report(conversation.elsewhere == route && conversation.serverSessionID == made.id && conversation.messages.last?.error == nil
+                                      && conversation.messages.last?.role == .assistant,
+                                      "a chat of another profile goes on at its /p/<profile>/ with its own key", conversation.messages.last?.error ?? "")
+        let rows = try await SessionBackend.everyProfile(conversation, settings: settings, dashboard: noDashboard)
+        let row = rows.first { $0.id == made.id }
+        HermesLabApprovalTests.report(row?.elsewhere == route && row?.profile == "scout",
+                                      "with no Dashboard, every profile's chats are asked of each, and another profile's is listed with it",
+                                      "\(String(describing: row?.elsewhere)) of \(rows.count) rows")
+        if let row, case .ledger(let api) = SessionBackend.owning(row, conversation, settings: settings) {
+            HermesLabApprovalTests.report(api.baseURL.path().hasSuffix("/p/scout") && api.apiKey == Self.botKey, "its row is looked after at its own profile")
+        } else {
+            HermesLabApprovalTests.report(false, "its row is looked after at its own profile")
+        }
+        try? await scoutAPI.deleteSession(id: made.id)
+    }
 
     @Test func aBotAddedForTheHermesAPIAloneTalksThere() async throws {
         var probe = URLRequest(url: URL(string: Self.api + "/p/scout/api/sessions?limit=1")!)

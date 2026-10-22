@@ -105,6 +105,50 @@ struct ProfileTests {
         #expect(settings.gatewayAPIKey == "profile-key")
     }
 
+    /// All Profiles (his ask 2026-10-22): every profile's chats from the Dashboard's list of them
+    /// all, another profile's marked with its profile and its calls naming it; another profile's
+    /// bot chat and group chat sessions aren't rows.
+    @Test func everyProfilesChatsAreListedWithTheirOwn() async throws {
+        let settings = settings()
+        settings.transport = .hermesServe
+        ServeStub.reset()
+        ServeStub.handler = { request, _ in
+            guard request.url?.path() == "/api/profiles/sessions" else { return (200, Data("[]".utf8)) }
+            #expect(request.url?.query()?.contains("profile=all") == true)
+            return (200, Data(#"""
+                {"sessions": [{"id": "a", "title": "Mine", "profile": "default", "last_active": 3},
+                              {"id": "b", "title": "Work plan", "profile": "work", "last_active": 5},
+                              {"id": "c", "title": "Bot Chat", "profile": "scout", "last_active": 4},
+                              {"id": "d", "title": "Group: Hike", "profile": "scout", "last_active": 6}]}
+                """#.utf8))
+        }
+        let client = HermesServeClient(settings: settings, password: { "pw" }, protocolClasses: [ServeStub.self])
+        let store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "every-\(UUID().uuidString)"))
+        let conversation = Conversation(settings: settings, store: store, dashboard: client)
+        let rows = try await SessionBackend.everyProfile(conversation, settings: settings, dashboard: client)
+        #expect(rows.map(\.id) == ["b", "a"], "newest first, without the bot's chats")
+        #expect(rows[0].elsewhere == ProfileRoute(profile: "work", viaAPI: false) && rows[1].elsewhere == nil)
+        if case .serve = SessionBackend.owning(rows[0], conversation, settings: settings) {} else { Issue.record("not by the Dashboard") }
+        #expect(HermesServeClient.scoped(method: "GET", path: "api/sessions/b", body: nil, profile: "work").0.contains("profile=work") == false,
+                "(a session's own route names no profile in its path)")
+    }
+
+    /// A chat of another profile keeps that profile: its record says so, and on the Hermes API it
+    /// goes to /p/<profile>/.
+    @Test func anotherProfilesChatGoesToItsProfile() async throws {
+        let settings = settings()
+        settings.transport = .hermesSessions
+        let store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "elsewhere-\(UUID().uuidString)"))
+        // (These settings are a server of their own: the main key is kept for it.)
+        let account = Keychain.account(.gatewayAPIKey, server: settings.activeServerID.uuidString)
+        Keychain.write(account: account, value: "main-key")
+        defer { Keychain.delete(account: account) }
+        let conversation = Conversation(settings: settings, store: store, transportOverride: ConversationLifecycleTests.ScriptedTransport([.textDelta("ok")]))
+        #expect(conversation.ledgerAPI(profile: "default").map { !$0.baseURL.path().contains("/p/") } == true, "the main profile's at the root")
+        #expect(conversation.ledgerAPI(profile: "work")?.baseURL.path().hasSuffix("/p/work") == true, "another profile's at /p/<profile>/, with the main key when it has none of its own")
+        #expect(conversation.connection == .hermesSessions)
+    }
+
     @Test func rejectedKeyPointsAtTheProfileKey() {
         let body = #"{"error": {"message": "Invalid gateway API key (API_SERVER_KEY)", "code": "gateway_auth_failed"}}"#
         #expect(TransportError.http(status: 401, body: body).localizedDescription.contains("Settings → Profile"))

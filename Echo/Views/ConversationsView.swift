@@ -61,6 +61,9 @@ struct ConversationsList: View {
     @AppStorage("sessions.showBots") private var showBotRows = true
     /// More than six bots: all of them showing, or the first few and "more".
     @AppStorage("sessions.botsExpanded") private var botsExpanded = false
+    /// Every profile's chats in the list at once, each tagged with its profile, as Hermes Desktop
+    /// can (his ask 2026-10-22, after a Reddit request); off, the selected profile's alone.
+    @AppStorage("sessions.allProfiles") private var allProfiles = false
     /// The bot whose chat is being found or made.
     @State private var openingBot: String?
     /// "Let bots message each other", being asked about.
@@ -221,6 +224,59 @@ struct ConversationsList: View {
         .accessibilityValue(settings.activeServer?.title ?? "")
     }
 
+    /// The profiles this server has, as far as the phone knows.
+    private var knownProfiles: [KnownProfile] { ProfileCatalog.known(settings: settings) }
+
+    /// The profiles the menu offers: the known ones, then any the server's bots and the list of
+    /// every profile's chats have shown.
+    private var menuProfiles: [String] {
+        var names = knownProfiles.map(\.name)
+        let roster = botDirectory.key == settings.connectionKey ? (botDirectory.roster?.bots.map(\.name) ?? []) : []
+        for name in roster + ledger.compactMap(\.elsewhere?.profile) where !names.contains(name) { names.append(name) }
+        return names
+    }
+
+    /// Which profile's chats the list shows: all of them, or one, which is then the one new chats
+    /// start in (the app's profile, as Settings → Profile picks it). One tap from the list, not
+    /// a trip to Settings (a Reddit report, 2026-10-22: moving between profiles was clunky).
+    private var profileMenu: some View {
+        let current = settings.profileName ?? ProfileCatalog.defaultID
+        let title = allProfiles ? "All Profiles" : profileLabel(current)
+        return Menu {
+            Button { allProfiles = true } label: {
+                Label("All Profiles", systemImage: allProfiles ? "checkmark" : "rectangle.stack")
+            }
+            Divider()
+            ForEach(menuProfiles, id: \.self) { name in
+                Button {
+                    allProfiles = false
+                    let known = knownProfiles.first { $0.name == name } ?? KnownProfile(name: name, title: profileLabel(name))
+                    _ = ProfileCatalog.use(known, conversation: conversation, settings: settings)
+                } label: {
+                    if !allProfiles, name == current { Label(profileLabel(name), systemImage: "checkmark") } else { Text(profileLabel(name)) }
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: allProfiles ? "rectangle.stack" : "person.crop.circle")
+                Text(title).lineLimit(1)
+                Image(systemName: "chevron.up.chevron.down").font(.caption2.weight(.semibold))
+            }
+            .font(.subheadline.weight(.medium))
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityLabel("Profile")
+        .accessibilityValue(title)
+    }
+
+    /// What a profile is called in the list: its bot's name, the name the Dashboard gave it, or its
+    /// own.
+    private func profileLabel(_ name: String) -> String {
+        if let bot = botDirectory.roster?.named(name), !bot.isDefault { return bot.label(mainName: settings.headerTitle) }
+        if name == ProfileCatalog.defaultID { return settings.headerTitle }
+        return knownProfiles.first { $0.name == name }?.title ?? name
+    }
+
     /// The server switch (once there's more than one) and Chats, Cron and Kanban, as the first
     /// row of whichever list is showing: they move with it when you pull to refresh or scroll.
     /// Full width: in the bar, next to Settings, Select and New, they were squeezed to "Kanb…".
@@ -228,6 +284,7 @@ struct ConversationsList: View {
         VStack(spacing: 8) {
             // Not on the OpenAI-compatible connection, which belongs to no server (as in Settings).
             if settings.servers.count > 1, settings.transport != .chatCompletions { serverMenu }
+            if settings.transport != .chatCompletions, allProfiles || menuProfiles.count > 1 { profileMenu }
             sectionPicker
         }
         .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 8, trailing: 16))
@@ -324,7 +381,8 @@ struct ConversationsList: View {
         // Keyed on the server and profile: a switch reloads the list (and the iPad sidebar,
         // which stays up).
         // Not while the iPhone's panel is closed: it loads when it opens (isShowing below).
-        .task(id: settings.connectionKey) { if usesLedger, isShowing { await refresh() } }
+        // (All Profiles turned on or off loads the list again too.)
+        .task(id: "\(settings.connectionKey)|\(allProfiles)") { if usesLedger, isShowing { await refresh() } }
         .onChange(of: settings.connectionKey) {
             // The old server's or profile's sessions must not linger while the new list loads.
             ledger = []
@@ -951,11 +1009,13 @@ struct ConversationsList: View {
     /// removed sessions back until the next pull.
     private func bulk(_ ids: Set<String>, _ op: @escaping (SessionBackend, String) async throws -> Void) {
         selecting = false; selected = []
+        // Each by its own profile's backend: with All Profiles on, they can be several.
+        let rows = ledger.filter { ids.contains($0.id) }
         ledger.removeAll { ids.contains($0.id) }
         Task {
-            guard let backend = SessionBackend.current(conversation) else { return }
-            for id in ids {
-                do { try await op(backend, id) } catch { ledgerError = error.localizedDescription }
+            for row in rows {
+                guard let backend = SessionBackend.owning(row, conversation) else { continue }
+                do { try await op(backend, row.id) } catch { ledgerError = error.localizedDescription }
             }
             await refresh()
         }
@@ -965,7 +1025,7 @@ struct ConversationsList: View {
     private func export(_ session: HermesSessionsAPI.SessionSummary) {
         Task {
             do {
-                guard let backend = SessionBackend.current(conversation) else { return }
+                guard let backend = SessionBackend.owning(session, conversation) else { return }
                 let messages = try await backend.messages(for: session.id)
                 shareItem = ShareItem(url: try await TranscriptExporter.export(title: session.displayTitle, messages: messages))
             } catch {
@@ -1359,6 +1419,16 @@ struct ConversationsList: View {
             HStack(spacing: 6) {
                 if marks.kind == .needsYou { NeedsYouTag() }
                 if hasDraft { draftMark }
+                // Another profile's, with All Profiles on: whose it is.
+                if let route = session.elsewhere {
+                    Text(profileLabel(route.profile))
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(Settings.shared.resolvedTheme.accent)
+                        .padding(.horizontal, 6).padding(.vertical, 1)
+                        .background(Settings.shared.resolvedTheme.accent.opacity(0.14), in: .capsule)
+                        .lineLimit(1)
+                        .fixedSize()
+                }
                 if let source = session.source, !["api_server", "api-server"].contains(source) {
                     Text(session.sourceLabel)
                         .font(.caption2.weight(.semibold))
@@ -1446,11 +1516,13 @@ struct ConversationsList: View {
         }
         #endif
         do {
-            guard let backend = SessionBackend.current(conversation) else {
+            guard let backend = SessionBackend.list(conversation) else {
                 ledgerError = "Add the gateway API key in Settings."
                 return
             }
-            let sessions = try await backend.listSessions()
+            let sessions = allProfiles
+                ? try await SessionBackend.everyProfile(conversation, bots: botDirectory.roster)
+                : try await backend.listSessions()
             guard current else { return }
             ledger = sessions
             activity.listed(sessions)
@@ -1493,13 +1565,13 @@ struct ConversationsList: View {
         renaming = nil
         let t = title.trimmingCharacters(in: .whitespaces)
         housekeeping(session) {
-            try await SessionBackend.current(conversation)?.rename(session.id, to: t)
+            try await SessionBackend.owning(session, conversation)?.rename(session.id, to: t)
         }
     }
 
     private func setPinned(_ session: HermesSessionsAPI.SessionSummary, _ pinned: Bool) {
         housekeeping(session) {
-            try await SessionBackend.current(conversation)?.setPinned(session.id, pinned)
+            try await SessionBackend.owning(session, conversation)?.setPinned(session.id, pinned)
         }
     }
 
@@ -1569,7 +1641,7 @@ struct ConversationsList: View {
     private func archive(_ session: HermesSessionsAPI.SessionSummary) {
         ledger.removeAll { $0.id == session.id }
         housekeeping(session) {
-            try await SessionBackend.current(conversation)?.archive(session.id)
+            try await SessionBackend.owning(session, conversation)?.archive(session.id)
             if session.id == conversation.serverSessionID { conversation.reset() }
         }
     }
@@ -1578,7 +1650,7 @@ struct ConversationsList: View {
     private func fork(_ session: HermesSessionsAPI.SessionSummary) {
         let title = "\(session.displayTitle) (fork)"
         housekeeping(session) {
-            if let forked = try await SessionBackend.current(conversation)?.fork(session.id, title: title) {
+            if let forked = try await SessionBackend.owning(session, conversation)?.fork(session.id, title: title) {
                 try await conversation.loadLedgerSession(forked)
                 opened()
             }
@@ -1588,14 +1660,21 @@ struct ConversationsList: View {
     private func delete(_ session: HermesSessionsAPI.SessionSummary) {
         ledger.removeAll { $0.id == session.id }
         housekeeping(session) {
-            try await SessionBackend.current(conversation)?.delete(session.id)
+            try await SessionBackend.owning(session, conversation)?.delete(session.id)
             if let local = store.summaries.first(where: { $0.serverSessionID == session.id }) { conversation.delete(id: local.id) }
         }
     }
 
     /// Swaps the transcript to this session. Throws, so callers can show what went wrong.
     private func load(_ session: HermesSessionsAPI.SessionSummary) async throws {
-        if viaServe {
+        // Another profile's opens in that profile, by the way it was listed.
+        if let route = session.elsewhere {
+            if route.viaAPI {
+                try await conversation.loadLedgerSession(session, elsewhere: route)
+            } else {
+                try await conversation.loadServeSession(session, elsewhere: route)
+            }
+        } else if viaServe {
             try await conversation.loadServeSession(session)
         } else {
             try await conversation.loadLedgerSession(session)

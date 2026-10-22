@@ -57,7 +57,7 @@ enum CarPlayChats {
         guard settings.transport.hasLedger else {
             return rows(records: store.sorted, currentID: conversation.id, limit: limit)
         }
-        guard let backend = SessionBackend.current(conversation, settings: settings) else {
+        guard let backend = SessionBackend.list(conversation, settings: settings) else {
             throw TransportError.malformed(SessionBackend.notConfiguredMessage)
         }
         let sessions = try await backend.listSessions()

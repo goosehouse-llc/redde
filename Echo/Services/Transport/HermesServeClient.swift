@@ -970,6 +970,14 @@ final class HermesServeClient {
         return env.sessions ?? env.data ?? []
     }
 
+    /// Every profile's sessions at once, each with its profile, newest first
+    /// (`GET /api/profiles/sessions`, Hermes 0.21.0 on): the chat list with All Profiles on.
+    func allProfileSessions(limit: Int = 150) async throws -> [HermesSessionsAPI.SessionSummary] {
+        let data = try await rest("GET", "api/profiles/sessions?profile=all&order=recent&limit=\(limit)", body: nil as Data?)
+        struct Page: Decodable { var sessions: [HermesSessionsAPI.SessionSummary]? }
+        return try JSONDecoder().decode(Page.self, from: data).sessions ?? []
+    }
+
     // MARK: - Skills (dashboard REST, cookie-authenticated)
 
     nonisolated struct DashboardSkill: Decodable, Identifiable, Sendable {

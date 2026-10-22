@@ -270,6 +270,31 @@ reloads the conversation list.
   stores that key per profile in the Keychain (`gateway-api-key.<profile>`). A rejected key or an
   unserved profile gets its own explanation in the conversation list.
 - The "Ask Redde a Question" Shortcut keeps one session per profile.
+- **All Profiles** (2026-10-22, after a Reddit request: Hermes Desktop shows every profile's sessions
+  at once). A profile menu sits at the top of the chat list once the server has more than one
+  profile. It lists All Profiles and each profile; picking one switches the app as Settings does,
+  in one tap. With All Profiles on, the list holds every profile's chats, newest first
+  (`SessionBackend.everyProfile`), and another profile's chats carry its name as a tinted tag.
+  - **Where the list comes from:** the Dashboard's `GET /api/profiles/sessions?profile=all` (every
+    release from 0.21.0, rows tagged with `profile`) whenever the Dashboard can be used, on either
+    connection. On the Hermes API alone there is no such list, so each profile the phone knows
+    (`ProfileCatalog`, the API bots) is asked at `/p/<profile>/` with its own key or the main key.
+    A profile that takes neither is left out.
+  - **Bots' sessions:** another profile's Bot Chat and group-chat sessions are its bot's, so they
+    stay in the Bots section and aren't rows.
+  - **How a row is reached:** it carries `elsewhere: ProfileRoute` (profile, and whether by the API).
+    A Dashboard row's profile is noted for its id (`noteProfile`), so every call about it names
+    that profile. Its housekeeping uses `SessionBackend.owning`. The list itself always uses the
+    selected profile's backend (`SessionBackend.list`), whatever chat is open.
+  - **Opening one:** the conversation keeps the route as `Conversation.elsewhere`, saved with the
+    chat in `ConversationRecord.elsewhere`. Calls go to that profile the way a bot's chat's do
+    (`routeProfile`, `apiProfile`, `connection`). The header names the profile where the agent's
+    name goes. New chats start in the selected profile.
+  - **Not covered:** message search and the project tree stay the selected profile's. Session ids
+    are assumed unique across profiles (Hermes makes them from the time plus random characters).
+  - **Lab:** `bots` runs `anotherProfilesChatIsListedAndGoesOnInItsProfile` (Dashboard, and the
+    Hermes API with the Dashboard's login). `apibots` runs
+    `onTheHermesAPIAloneAnotherProfilesChatIsListedAndGoesOn`.
 - **Siri and Shortcuts** can open voice mode on a named profile: "Ask Work in Redde"
   (`AskProfileIntent`, with its phrases in `EchoShortcuts`). Siri learns a phrase for each profile
   it is given, so the phone keeps the ones it knows of (`ProfileCatalog`, per server): what the

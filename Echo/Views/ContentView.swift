@@ -338,7 +338,7 @@ struct ContentView: View {
                             Button { showModelPicker = true } label: {
                                 HStack(spacing: 3) {
                                     // A bot's chat names the bot's handle, what another bot's chat tags it with.
-                                    Text("\(conversation.bot.map { "@" + $0.handle } ?? settings.headerTitle) · \(modelChipLabel)").font(.caption).lineLimit(1)
+                                    Text("\(conversation.bot.map { "@" + $0.handle } ?? conversation.elsewhere.map { profileTitle($0.profile) } ?? settings.headerTitle) · \(modelChipLabel)").font(.caption).lineLimit(1)
                                     Image(systemName: "chevron.down").font(.system(size: 8, weight: .bold))
                                 }
                                 .foregroundStyle(.secondary)
@@ -593,6 +593,12 @@ struct ContentView: View {
     private var chatTheme: ResolvedTheme {
         guard settings.botColors, let colors = (botFace ?? BotDirectory.shared.mainFace).chatColors else { return theme }
         return settings.theme.resolved(with: colors)
+    }
+
+    /// Another profile's chat (opened with All Profiles on) says whose it is where the agent's
+    /// name goes.
+    private func profileTitle(_ name: String) -> String {
+        ProfileCatalog.known(settings: settings).first { $0.name == name }?.title ?? name
     }
 
     private var headerTitle: String {
