@@ -82,7 +82,7 @@ struct ToolsView: View {
     }
 
     private func load() async {
-        canToggle = HermesServeClient.shared.hasCredentials
+        canToggle = await HermesServeClient.shared.canUse()
         do {
             if canToggle {
                 // Prefer the dashboard: its flags are the ones the switches change.
@@ -195,7 +195,7 @@ struct SkillsView: View {
     }
 
     private func load() async {
-        canWrite = HermesServeClient.shared.hasCredentials
+        canWrite = await HermesServeClient.shared.canUse()
         do {
             if canWrite {
                 // The dashboard list carries the enabled flag the switches change.
