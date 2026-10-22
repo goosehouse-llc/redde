@@ -233,6 +233,7 @@ extension HermesServeClient {
             if applied?["soul"]?.bool == false { throw BotManagementProblem.notKept("personality") }
             if applied?["toolsets"]?.bool == false { throw BotManagementProblem.notKept("tools") }
             if applied?["description"]?.bool == false { throw BotManagementProblem.notKept("description") }
+            if sections["enabled_toolsets"] != nil { Task { await refreshOpenChatsTools() } }
         }
         if change.title != nil || change.hidden != nil {
             try await changeBotSettings(bot.name, name: bot.label()) { settings in settings = BotNames.merged(settings, change) }

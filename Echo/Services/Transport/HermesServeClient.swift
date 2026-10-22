@@ -1062,6 +1062,20 @@ final class HermesServeClient {
     func toggleToolset(name: String, enabled: Bool) async throws {
         struct Body: Encodable { var enabled: Bool }
         _ = try await rest("PUT", "api/tools/toolsets/\(name)", body: try JSONEncoder().encode(Body(enabled: enabled)))
+        Task { await refreshOpenChatsTools() }
+    }
+
+    /// Gives the open chats their profiles' tools as they now stand: Hermes fixes a chat's tools
+    /// when it starts, so a change reached only new chats until the Dashboard restarted (his
+    /// Code Execution switch, 2026-10-22). The Dashboard's own /reload-mcp, which also reconnects
+    /// the MCP servers. Best effort.
+    func refreshOpenChatsTools() async {
+        do {
+            try await ensureConnected()
+            _ = try await call("reload.mcp", params: .object(["confirm": .bool(true)]), timeout: 90)
+        } catch {
+            log.notice("open chats' tools not refreshed: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     /// True when the Dashboard can be used: a browser sign-in, a username and stored password, or

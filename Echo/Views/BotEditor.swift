@@ -126,7 +126,7 @@ struct BotEditor: View {
         if !isMain, let model, model.id != original.model?.id { change.model = model }
         if !isMain, shown != original.shown { change.hidden = !shown }
         // The main agent's again: its list as it is now (an empty one means something else to each release).
-        if !isMain, toolsets != original.toolsets { change.toolsets = (toolsets ?? mainToolsets).sorted() }
+        if toolsets != original.toolsets { change.toolsets = (toolsets ?? mainToolsets).sorted() }
         return change
     }
 
@@ -199,20 +199,22 @@ struct BotEditor: View {
                         } label: {
                             LabeledContent("Model", value: model?.name ?? (editing == nil ? "Same as \(mainName)" : loading ? "…" : "Not set"))
                         }
-                        NavigationLink {
-                            BotToolsList(offered: offered, selection: $toolsets, main: mainToolsets, mainName: mainName)
-                        } label: {
-                            LabeledContent("Tools", value: toolsSummary)
-                        }
-                        .disabled(offered.isEmpty)
                     }
+                    // The main agent's too (his ask 2026-10-22: Code Execution off for Sol): its
+                    // list is the one the others' "Same as" follows.
+                    NavigationLink {
+                        BotToolsList(offered: offered, selection: $toolsets, main: mainToolsets, mainName: mainName, isMain: isMain)
+                    } label: {
+                        LabeledContent("Tools", value: toolsSummary)
+                    }
+                    .disabled(offered.isEmpty)
                     // Its skills, each on or off for it alone, at once (not on Save). One being made
                     // has none of its own yet.
                     if let editing {
                         NavigationLink {
                             BotSkillsList(bot: editing, name: isMain ? mainName : title.nilIfEmpty ?? editing.label(mainName: mainName),
                                           skills: $skills, alwaysLoaded: $alwaysLoaded,
-                                          hasSkillsTool: isMain || offered.isEmpty || (toolsets ?? mainToolsets).contains("skills"))
+                                          hasSkillsTool: offered.isEmpty || (toolsets ?? mainToolsets).contains("skills"))
                         } label: {
                             LabeledContent("Skills", value: skillsSummary)
                         }
@@ -349,7 +351,8 @@ struct BotEditor: View {
 
     private var toolsSummary: String {
         if loading { return "…" }
-        guard let toolsets, toolsets != mainToolsets else { return "Same as \(mainName)" }
+        guard let toolsets, isMain || toolsets != mainToolsets else { return "Same as \(mainName)" }
+        if isMain, toolsets.count > 2 { return toolsets.count == offered.count ? "All \(offered.count)" : "\(toolsets.count) of \(offered.count)" }
         let names = offered.filter { toolsets.contains($0.name) }.map(\.title)
         return names.count <= 2 ? (names.isEmpty ? "None" : names.joined(separator: ", ")) : "\(names.count) of \(offered.count)"
     }
@@ -403,7 +406,7 @@ struct BotEditor: View {
                 ?? read.model.map { ModelChoice(provider: read.provider ?? "", providerName: read.provider ?? "", model: $0, name: $0, isCurrent: true) }
             let start = Original(title: editing.title ?? editing.displayName ?? "", about: read.description, soul: read.soul,
                                  model: current, shown: !editing.isHidden,
-                                 toolsets: read.enabledToolsets == main ? nil : read.enabledToolsets)
+                                 toolsets: !isMain && read.enabledToolsets == main ? nil : read.enabledToolsets)
             offered = read.toolsets
             mainToolsets = main
             toolsets = start.toolsets
@@ -643,27 +646,32 @@ struct BotToolsList: View {
     /// The main agent's toolsets.
     let main: Set<String>
     let mainName: String
+    /// The main agent's own list: no "Same as" to fall back on.
+    var isMain = false
 
     var body: some View {
         Form {
-            Section {
-                Button { selection = nil } label: {
-                    HStack {
-                        Text("Same as \(mainName)")
-                        Spacer()
-                        if selection == nil { Image(systemName: "checkmark").foregroundStyle(.tint).fontWeight(.semibold) }
+            if !isMain {
+                Section {
+                    Button { selection = nil } label: {
+                        HStack {
+                            Text("Same as \(mainName)")
+                            Spacer()
+                            if selection == nil { Image(systemName: "checkmark").foregroundStyle(.tint).fontWeight(.semibold) }
+                        }
+                        .contentShape(.rect)
                     }
-                    .contentShape(.rect)
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(selection == nil ? .isSelected : [])
+                } footer: {
+                    Text("The tools \(mainName) has.")
                 }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selection == nil ? .isSelected : [])
-            } footer: {
-                Text("The tools \(mainName) has.")
             }
             Section {
                 ForEach(offered) { toolset in
+                    let on = (selection ?? main).contains(toolset.name)
                     Toggle(isOn: Binding(
-                        get: { (selection ?? main).contains(toolset.name) },
+                        get: { on },
                         set: { on in
                             var set = selection ?? main
                             if on { set.insert(toolset.name) } else { set.remove(toolset.name) }
@@ -676,9 +684,15 @@ struct BotToolsList: View {
                             }
                         }
                     }
+                    // Never none: Hermes takes an empty list for every tool.
+                    .disabled(on && (selection ?? main).count == 1)
                 }
             } footer: {
-                Text("Fewer tools make a bot's every turn quicker to start on a model running on your own machine. Hermes 0.21.5 and later keep a bot to these; earlier ones give every bot all of \(mainName)'s.")
+                if isMain {
+                    Text("\(mainName)'s tools over the Hermes Dashboard, its Bot Chat included, from the next message; the first reply after a change is slow on a model running on your own machine. The Hermes API server keeps its own list (platform_toolsets.api_server in config.yaml on the Hermes host).")
+                } else {
+                    Text("Fewer tools make a bot's every turn quicker to start on a model running on your own machine. Hermes 0.21.5 and later keep a bot to these; earlier ones give every bot all of \(mainName)'s.")
+                }
             }
         }
         .navigationTitle("Tools")

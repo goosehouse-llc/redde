@@ -2094,6 +2094,34 @@ struct HermesLabBotsTests {
         HermesLabApprovalTests.report(try await client.botDetails(writerBot).enabledToolsets == mainTools,
                                       "an empty list is never sent", "")
 
+        // The main agent's own list (Edit Bot → Tools on it): Code Execution off and on again, as
+        // the Dashboard's Tools page then shows it.
+        let mainBot = HermesBot(name: "default")
+        if mainTools.contains("code_execution") {
+            // A chat already open, its tools fixed at its first message: it takes the change too.
+            let (runtime, stored) = try await client.openSession(stored: nil)
+            _ = try await Self.say("hello", in: stored, client)
+            func openChatHasCodeExecution(_ wanted: Bool) async throws -> Bool {
+                for _ in 0 ..< 40 {
+                    let rows = try await client.call("toolsets.list", params: .object(["session_id": .string(runtime)]))["toolsets"]?.array ?? []
+                    if rows.first(where: { $0["name"]?.string == "code_execution" })?["enabled"]?.bool == wanted { return true }
+                    try await Task.sleep(for: .milliseconds(500))
+                }
+                return false
+            }
+            _ = try await client.changeBot(mainBot, BotChange(toolsets: mainTools.subtracting(["code_execution"]).sorted()))
+            let without = try await client.toolsetsOffered().enabledToolsets
+            let page = try await client.dashboardToolsets().first { $0.name == "code_execution" }?.enabled
+            HermesLabApprovalTests.report(without == mainTools.subtracting(["code_execution"]) && page == false,
+                                          "the main agent's tools changed from Edit Bot", "\(without.sorted()) page: \(String(describing: page))")
+            HermesLabApprovalTests.report(try await openChatHasCodeExecution(false), "and a chat already open loses Code Execution, no restart", "")
+            _ = try await client.changeBot(mainBot, BotChange(toolsets: mainTools.sorted()))
+            HermesLabApprovalTests.report(try await client.toolsetsOffered().enabledToolsets == mainTools, "and put back", "")
+            HermesLabApprovalTests.report(try await openChatHasCodeExecution(true), "and the open chat has it again", "")
+        } else {
+            HermesLabApprovalTests.report(false, "the main agent has Code Execution to switch", "\(mainTools.sorted())")
+        }
+
         // Renamed, described, a personality of the person's own; Hermes Desktop's look kept.
         let row = try await client.call("profiles.list", params: .object(["include_sessions": .bool(false)]))["profiles"]?.array?
             .first { $0["name"]?.string == handle }

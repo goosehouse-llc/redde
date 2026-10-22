@@ -452,7 +452,16 @@ where a new conversation is in the ••• menu, and ⌘N as anywhere) is the 
   and 0.21.3 take the list and give the bot every tool all the same, their Dashboard's chats
   reading the cli platform's toolsets, which only a whole-config write could change (the Tools
   screen says so). `lab.sh templates` checks it on all four releases; `HermesLabBotsTests` makes a
-  bot from the Writer template with the app's own client.
+  bot from the Writer template with the app's own client. The main agent has the Tools row too
+  (asked 2026-10-22, to take Code Execution off a butler that kept running server scripts
+  itself): no "Same as", its own list sent as `profiles.configure name: default`, which pins
+  `platform_toolsets.cli`, the list the Dashboard's chats and its Bot Chat read (the same switch
+  as Settings → Agent → Tools; the Hermes API server reads `platform_toolsets.api_server`). The
+  last switch on can't be turned off. Hermes fixes a chat's tools when its agent is built, so a
+  change reached only new chats until the Dashboard restarted: after any tool change (Edit Bot or
+  Settings → Agent → Tools) Redde sends `reload.mcp` with `confirm: true`, which gives every open
+  chat its profile's tools again (and reconnects the MCP servers). `HermesLabBotsTests` takes
+  Code Execution off the main agent and puts it back, with a chat open that follows both.
 - **Making and changing bots** (`BotManagement.swift`, `BotEditor.swift`), as Hermes Desktop does:
   New Bot asks for a name, what it does, a personality (empty: one written from the name and what
   it does, Desktop's wording), a model, a face and its tools. The profile is made with `profiles.create`
