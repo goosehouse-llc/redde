@@ -25,7 +25,8 @@ import WidgetKit
 ///   `-echo.tour`, the app goes through what people do in it by itself, each step measured.
 /// - `-echo.demoProjects`: fill the conversation list's Projects from a fixture (Dashboard connection).
 ///   Add `-echo.demoMarks` for rows marked working, needing you and unread (`ChatActivity`), and
-///   `-echo.demoBots` for the Bots section, with a bot's chat open (Quill's); with
+///   `-echo.demoBots` for the Bots section, with a bot's chat open (Quill's) (`-echo.demoBotCount n`
+///   for n bots, up to 12, where they fold; `-echo.demoPicture` gives Scout a picture from Hermes Desktop); with
 ///   `-echo.openGroup` its group chat is open, and `-echo.demoDraft` plays a bot's reply there as
 ///   it is written; `-echo.groupFind <words>` opens Find in Chat on those words, and
 ///   `-echo.groupVoice [bot]` the voice screen on the room (with that bot's reply being read; with
@@ -173,6 +174,7 @@ enum DevHooks {
         if demoBots {
             conversation.seedBotDemo()
             BotDirectory.shared.set(ConversationsList.demoBots, key: settings.connectionKey)
+            if has("-echo.demoPicture") { BotPictures.shared.seed("scout", BotPictures.demoPicture) }
         }
         if has("-echo.demoLong") { conversation.seedLongDemo() }
         if has("-echo.incognito") { conversation.startIncognito() }

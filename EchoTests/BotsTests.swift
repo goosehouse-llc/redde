@@ -193,6 +193,23 @@ struct BotsTests {
         #expect(tinted.userBubble != Theme.standard.resolved(with: nil).userBubble && tinted.accent != Theme.standard.resolved(with: nil).accent)
     }
 
+    /// Asked on Reddit 2026-10-22: a picture set in Hermes Desktop stands for the bot's face; the
+    /// face picker still shows the creature, and the picture never goes into the kept face.
+    @Test func aPictureFromHermesStandsForTheFace() throws {
+        let listed = try roster("""
+            {"profiles": [{"name": "default", "is_default": true, "has_avatar": false},
+                          {"name": "scout", "has_avatar": true}, {"name": "quill"}]}
+            """)
+        #expect(listed.bots.first { $0.name == "scout" }?.hasPicture == true)
+        #expect(listed.faces["scout"]?.picture == "scout")
+        #expect(listed.faces["quill"]?.picture == nil && listed.faces["default"]?.picture == nil)
+        let face = try #require(listed.faces["scout"])
+        #expect(BotFace(code: face.code)?.picture == nil, "kept on the server as the creature alone")
+        var creature = face
+        creature.picture = nil
+        #expect(BotFace(code: face.code) == creature, "the same creature underneath")
+    }
+
     /// Asked 2026-10-22: a softer pink to pick, next to Pink, past Redde's own two so no colour
     /// kept on a server changes.
     @Test func aSoftPinkToPickByPinkAndNothingElseMoves() throws {

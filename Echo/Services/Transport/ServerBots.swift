@@ -35,6 +35,8 @@ nonisolated struct HermesBot: Identifiable, Equatable, Sendable {
     /// When a worker of the bot's (a kanban card it was given) was last heard from
     /// (`worker_session`): one heard from lately is at work.
     var workerActive: Date?
+    /// It has a picture set in Hermes Desktop (`has_avatar`; `assets/avatar.*` in its profile).
+    var hasPicture = false
     /// Added on this phone for the Hermes API alone (`APIBot`): its chat goes by the API at
     /// /p/<profile>/, with the profile's own key, not by the Dashboard.
     var viaAPI = false
@@ -91,6 +93,7 @@ nonisolated struct HermesBot: Identifiable, Equatable, Sendable {
                   face: (row["ui_meta"]?["redde"]?["face"]?.string).flatMap(BotFace.init(code:)),
                   reddeRevision: row["ui_meta_revisions"]?["redde"]?.int ?? 0,
                   workerActive: (row["worker_session"]?["last_active"]?.number).flatMap { $0 > 0 ? Date(timeIntervalSince1970: $0) : nil })
+        hasPicture = row["has_avatar"]?.bool ?? false
     }
 }
 
@@ -112,7 +115,10 @@ nonisolated struct BotRoster: Equatable, Sendable {
     }
 
     private static func faces(of bots: [HermesBot]) -> [String: BotFace] {
-        BotFace.faces(for: bots.map(\.name), picked: Dictionary(bots.compactMap { bot in bot.face.map { (bot.name, $0) } }, uniquingKeysWith: { a, _ in a }))
+        var faces = BotFace.faces(for: bots.map(\.name), picked: Dictionary(bots.compactMap { bot in bot.face.map { (bot.name, $0) } }, uniquingKeysWith: { a, _ in a }))
+        // A picture set in Hermes Desktop stands for the face wherever it is drawn (`BotAvatar`).
+        for bot in bots where bot.hasPicture { faces[bot.name]?.picture = bot.name }
+        return faces
     }
 
     /// Some profile is set up as a bot: Hermes then gives each bot's chat the tool to message the
@@ -400,6 +406,15 @@ nonisolated enum BotChat {
 }
 
 extension HermesServeClient {
+    /// A bot's picture as set in Hermes Desktop (`profiles.get_asset`, Hermes 0.21.0 on): PNG, JPEG or
+    /// WebP, up to 2 MB; nil when it has none.
+    func botPicture(_ profile: String) async throws -> Data? {
+        try await ensureConnected()
+        let result = try await call("profiles.get_asset", params: .object(["name": .string(profile), "asset": .string("avatar")]), timeout: 30)
+        guard result["found"]?.bool == true, let url = result["data"]?.string, let comma = url.range(of: ";base64,") else { return nil }
+        return Data(base64Encoded: String(url[comma.upperBound...]))
+    }
+
     /// The server's bots (`profiles.list`, the same on Hermes 0.21.0 to 0.22.2).
     func bots() async throws -> BotRoster {
         try await ensureConnected()

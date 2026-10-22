@@ -20,6 +20,9 @@ struct BotFacePicker: View {
     init(bot: HermesBot, name: String, current: BotFace, onSaved: @escaping () -> Void = {}, choose: ((BotFace?) -> Void)? = nil) {
         self.bot = bot
         self.name = name
+        // The creature, not the picture from Hermes Desktop that may stand for it elsewhere.
+        var current = current
+        current.picture = nil
         self.current = current
         self.onSaved = onSaved
         self.choose = choose

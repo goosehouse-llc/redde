@@ -79,6 +79,13 @@ struct AppearanceSettings: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
+            Toggle(isOn: $settings.botPictures) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Pictures from Hermes")
+                    Text("A bot with a picture set in Hermes Desktop shows that picture instead of its face.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
             Toggle(isOn: $settings.botColors) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Bot colors in their chats")

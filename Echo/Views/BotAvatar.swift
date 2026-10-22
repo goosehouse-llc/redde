@@ -35,6 +35,10 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
     /// A slight lean, in degrees.
     var tilt: Double
     var color: Int
+    /// The profile whose picture from Hermes Desktop stands for this face, when it has one and
+    /// Settings → Appearance → Pictures from Hermes is on (`BotPictures`). Never kept on the server
+    /// with the face (`code`).
+    var picture: String?
 
     /// Each colour as a gradient, light to deep.
     static let palette: [(light: Color, deep: Color)] = [
@@ -235,12 +239,33 @@ struct BotAvatar: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        let initial = name.flatMap { Settings.shared.botFaces ? nil : Self.initial(of: $0) }
-        Canvas { context, canvas in
-            if let initial { monogram(initial, in: &context, size: canvas.width) } else { draw(in: &context, size: canvas.width) }
+        if let picture = shownPicture {
+            // Its picture from Hermes Desktop: a rounded square, as an app's icon is, a little inside
+            // the face's square so it stands as large as a creature beside it.
+            Image(uiImage: picture)
+                .resizable()
+                .scaledToFill()
+                .frame(width: size * 0.9, height: size * 0.9)
+                .clipShape(.rect(cornerRadius: size * 0.24, style: .continuous))
+                .frame(width: size, height: size)
+                .accessibilityHidden(true)
+        } else {
+            let initial = name.flatMap { Settings.shared.botFaces ? nil : Self.initial(of: $0) }
+            Canvas { context, canvas in
+                if let initial { monogram(initial, in: &context, size: canvas.width) } else { draw(in: &context, size: canvas.width) }
+            }
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
+            .task(id: face.picture) {
+                if let profile = face.picture, Settings.shared.botPictures { await BotPictures.shared.load(profile) }
+            }
         }
-        .frame(width: size, height: size)
-        .accessibilityHidden(true)
+    }
+
+    /// The bot's picture from Hermes Desktop, once fetched, with Pictures from Hermes on.
+    private var shownPicture: UIImage? {
+        guard let profile = face.picture, Settings.shared.botPictures else { return nil }
+        return BotPictures.shared.image(for: profile)
     }
 
     /// The face as a picture, for what isn't SwiftUI (CarPlay's voice card), in the theme the app

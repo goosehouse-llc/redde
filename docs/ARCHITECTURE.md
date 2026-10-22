@@ -301,6 +301,18 @@ square, a star, a blob): what a name gives is drawn from the first eight (`Shape
 bot's creature changes when shapes are added. The main agent's face can be picked too (Redde's
 bubble is offered to it alone, and "Its Own Face" goes back to it); `BotDirectory.mainFace` is what
 the voice orb, CarPlay's Redde look and the list then draw.
+**Pictures from Hermes Desktop** (2026-10-22, a Reddit request). A bot given a picture in Hermes
+Desktop (`assets/avatar.*` in its profile; `has_avatar` in `profiles.list`) shows that picture
+wherever its face is drawn:
+- `BotFace.picture` names the profile, and is never written into the face's `code`.
+- `BotAvatar` draws the picture as a rounded square, a little inside the face's frame.
+- `BotPictures` fetches it with `profiles.get_asset` (every release from 0.21.0), once per launch. It
+  keeps a 384-pixel copy per server under Caches, so lists show it at once.
+- Settings → Appearance → Pictures from Hermes switches it off (it is on by default).
+- The face picker still shows the creature.
+- `-echo.demoPicture` gives the demo's Scout a picture. Lab `bots` checks that a picture set as
+  Hermes Desktop sets one comes over for that bot and no other.
+
 `BotFace.faces(for:picked:)` keeps the picked ones and keeps the others apart, with a shape and a
 colour each while there are some left (none gets Redde's shape, nor the standard theme's blue). Kept
 clear of other Hermes apps' looks on purpose (Cadu's clouds, flowers, ghosts, hearts, pears, cats

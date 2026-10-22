@@ -2062,7 +2062,12 @@ extension ConversationsList {
             HermesBot(name: "writer", displayName: "Quill", description: "Edits and drafts", lastActive: .now.addingTimeInterval(-120),
                       preview: "Want me to carry that through the next paragraph?"),
             HermesBot(name: "fixit", title: "Fix-it", description: "Looks after the home server"),
-        ] + extraDemoBots)
+        ].map { bot in
+            // `-echo.demoPicture`: Scout has a picture from Hermes Desktop.
+            var bot = bot
+            bot.hasPicture = bot.name == "scout" && DevHooks.has("-echo.demoPicture")
+            return bot
+        } + extraDemoBots)
     }
 
     /// `-echo.demoBotCount n`: the sample bots, and more up to n (for when they fold).

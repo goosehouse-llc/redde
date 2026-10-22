@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import UIKit
 @testable import Echo
 
 /// Live tests against a real tailnet. They skip cleanly when the backend isn't reachable so the
@@ -1966,6 +1967,19 @@ struct HermesLabBotsTests {
         let chat = try await client.botChat(for: bot)
         let reply = try await Self.say("hello helper", in: chat.stored, client)
         HermesLabApprovalTests.report(reply.hasPrefix("["), "it answers in its chat", reply)
+
+        // A picture set for it as Hermes Desktop sets one: listed as having it, and fetched whole.
+        let png = try #require(UIImage(systemName: "star.fill")?.withTintColor(.orange).pngData())
+        _ = try await client.call("profiles.set_asset", params: .object(["name": .string(bot.name), "asset": .string("avatar"),
+                                                                          "data": .string("data:image/png;base64,\(png.base64EncodedString())")]))
+        let pictured = try await client.bots()
+        let fetched = try await client.botPicture(bot.name)
+        let mainsPicture = try await client.botPicture("default")
+        HermesLabApprovalTests.report(pictured.bots.first { $0.name == bot.name }?.hasPicture == true && pictured.faces[bot.name]?.picture == bot.name
+                                      && fetched == png && mainsPicture == nil,
+               "a picture set in Hermes Desktop comes over for its bot, and only for it",
+               "listed: \(String(describing: pictured.bots.first { $0.name == bot.name }?.hasPicture)), fetched \(fetched?.count ?? 0) of \(png.count) bytes")
+
 
         // From a template (New Bot's Writer): its tools, and every one again once let go.
         let mainAgent = try await client.toolsetsOffered()
