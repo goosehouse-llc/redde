@@ -12,9 +12,17 @@ struct MarkdownView: View {
     /// conversation cost (2026-10-21: 400 → 190 ms without it). A reply's "Select text" opens
     /// a selectable copy instead, with "Ask about this".
     var selectable = true
+    /// File paths in the text are links that open the file (`ServeMedia.linkingPaths`; the
+    /// tap is `OpensServerPaths`'s). A reply's, once it has finished.
+    var linkPaths = false
     /// Parsed once per text change, not on every body evaluation: a streaming reply re-rendering
     /// at 20 fps must not re-parse the whole document each time.
     @State private var blocks: [MarkdownBlock] = []
+
+    private struct Source: Equatable {
+        let text: String
+        let linkPaths: Bool
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -23,7 +31,12 @@ struct MarkdownView: View {
             }
         }
         .modifier(SelectableText(on: selectable))
-        .onChange(of: text, initial: true) { blocks = MarkdownParser.parse(text) }
+        .onChange(of: Source(text: text, linkPaths: linkPaths), initial: true) { blocks = Self.blocks(text, linkPaths: linkPaths) }
+    }
+
+    nonisolated static func blocks(_ text: String, linkPaths: Bool) -> [MarkdownBlock] {
+        let blocks = MarkdownParser.parse(text)
+        return linkPaths ? blocks.map { $0.mappingInline(ServeMedia.linkingPaths) } : blocks
     }
 
     /// Bold, italic, strikethrough, code spans and links via Foundation's Markdown parser, then

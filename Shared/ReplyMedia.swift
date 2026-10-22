@@ -245,6 +245,159 @@ nonisolated enum ServeMedia {
     }
 }
 
+// MARK: Paths in a reply's own words
+
+nonisolated extension ServeMedia {
+    /// Links in a reply that open a file on the server (`OpensServerPaths`).
+    static let pathLinkScheme = "redde-file"
+
+    /// What a reply can name in passing and mean as a file for the person: Hermes's delivery list
+    /// and the kinds the chat shows. Not code (`.py`, `.swift`): a coding chat names files all the
+    /// time, and those are the agent's to work on.
+    private static let linkExts: String = Set(deliveryExts).union(docExts).union(audioExts).union(imageExts)
+        .sorted { $0.count > $1.count }.joined(separator: "|")
+
+    /// A path in running text: from `/` or `~/`, from `./`, or relative with a first folder that
+    /// isn't a web address (`example.com/a.png`); no spaces; ending in one of `linkExts`, and not
+    /// a piece of something longer (a web address, `a.wav.bak`).
+    private static let plainPath: NSRegularExpression = {
+        let seg = #"[\w.+@%=&-]+"#
+        let pattern = #"(?<![\w/.:~\\@%=&+-])(?:~?/(?:SEG/)*SEG|\.{1,2}/(?:SEG/)*SEG|[\w+@%=&-]+/(?:SEG/)*SEG)\.(?i:EXTS)(?![\w/-]|\.\w)"#
+            .replacingOccurrences(of: "SEG", with: seg).replacingOccurrences(of: "EXTS", with: linkExts)
+        return try! NSRegularExpression(pattern: pattern)
+    }()
+
+    /// A code span that is a path and nothing else; inside backticks a name can have spaces.
+    private static let codePath: NSRegularExpression = {
+        let seg = #"[^/\s`](?:[^/`]*[^/\s`])?"#
+        let pattern = #"^(?:~?/(?:SEG/)*|\.{1,2}/(?:SEG/)*|[^/\s`.:]+/(?:SEG/)*)SEG\.(?i:EXTS)$"#
+            .replacingOccurrences(of: "SEG", with: seg).replacingOccurrences(of: "EXTS", with: linkExts)
+        return try! NSRegularExpression(pattern: pattern)
+    }()
+
+    /// A reply's inline Markdown (a paragraph, a list item, a table cell) with each file path it
+    /// names made a link that opens the file: an agent that says where it left a file instead of
+    /// sending it (a Reddit report, 2026-10-22). Links, images, autolinks and code that is more
+    /// than a path are left as they are; nothing is fetched until the link is tapped.
+    static func linkingPaths(_ inline: String) -> String {
+        guard inline.contains("/"), inline.contains(".") else { return inline }
+        var out = ""
+        var plain = ""
+        func flush() {
+            out += linkingPlain(plain)
+            plain = ""
+        }
+        var i = inline.startIndex
+        while i < inline.endIndex {
+            let c = inline[i]
+            let next = inline.index(after: i)
+            if c == "\\" {
+                plain.append(c)
+                if next < inline.endIndex { plain.append(inline[next]); i = inline.index(after: next) } else { i = next }
+                continue
+            }
+            if c == "`" {
+                var j = i
+                while j < inline.endIndex, inline[j] == "`" { j = inline.index(after: j) }
+                guard let close = closingRun(of: inline.distance(from: i, to: j), in: inline, from: j) else {
+                    plain += inline[i..<j]
+                    i = j
+                    continue
+                }
+                flush()
+                let span = String(inline[i..<close.upperBound])
+                let content = inline[j..<close.lowerBound].trimmingCharacters(in: .whitespaces)
+                let range = NSRange(location: 0, length: (content as NSString).length)
+                out += codePath.firstMatch(in: content, range: range) != nil ? "[\(span)](\(link(to: content)))" : span
+                i = close.upperBound
+                continue
+            }
+            if c == "[" || (c == "!" && next < inline.endIndex && inline[next] == "["), let end = linkEnd(in: inline, from: c == "!" ? next : i) {
+                flush()
+                out += inline[i..<end]
+                i = end
+                continue
+            }
+            if c == "<", let close = inline[next...].firstIndex(where: { $0 == ">" || $0.isWhitespace }), inline[close] == ">" {
+                flush()
+                out += inline[i...close]
+                i = inline.index(after: close)
+                continue
+            }
+            plain.append(c)
+            i = next
+        }
+        flush()
+        return out
+    }
+
+    /// The path a link from `linkingPaths` opens, or nil for any other link.
+    static func linkedPath(_ url: URL) -> String? {
+        guard url.scheme == pathLinkScheme else { return nil }
+        return String(url.absoluteString.dropFirst(pathLinkScheme.count + 1)).removingPercentEncoding
+    }
+
+    private static let linkSafe = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/._~-")
+
+    private static func link(to path: String) -> String {
+        "\(pathLinkScheme):\(path.addingPercentEncoding(withAllowedCharacters: linkSafe) ?? path)"
+    }
+
+    private static func linkingPlain(_ text: String) -> String {
+        guard text.contains("/") else { return text }
+        let ns = text as NSString
+        var out = ""
+        var last = 0
+        for match in plainPath.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
+            let path = ns.substring(with: match.range)
+            // Shown as it is written: nothing in it read as emphasis or an entity.
+            let shown = path.reduce(into: "") { s, ch in
+                if "\\`*_~&[]<>".contains(ch) { s.append("\\") }
+                s.append(ch)
+            }
+            out += ns.substring(with: NSRange(location: last, length: match.range.location - last)) + "[\(shown)](\(link(to: path)))"
+            last = match.range.location + match.range.length
+        }
+        return out + ns.substring(from: last)
+    }
+
+    /// The run of exactly `count` backticks that closes a code span opened just before `start`.
+    private static func closingRun(of count: Int, in text: String, from start: String.Index) -> Range<String.Index>? {
+        var i = start
+        while let tick = text[i...].firstIndex(of: "`") {
+            var j = tick
+            while j < text.endIndex, text[j] == "`" { j = text.index(after: j) }
+            if text.distance(from: tick, to: j) == count { return tick..<j }
+            i = j
+        }
+        return nil
+    }
+
+    /// Where an inline link `[text](destination)` that opens at `start` ends, or nil when the `[`
+    /// opens no link.
+    private static func linkEnd(in text: String, from start: String.Index) -> String.Index? {
+        var depth = 0
+        var i = start
+        while i < text.endIndex {
+            switch text[i] {
+            case "\\": i = text.index(after: i)
+            case "[": depth += 1
+            case "]":
+                depth -= 1
+                if depth == 0 {
+                    let open = text.index(after: i)
+                    guard open < text.endIndex, text[open] == "(",
+                          let close = MarkdownURL.closingParen(of: Substring(text), from: text.index(after: open)) else { return nil }
+                    return text.index(after: close)
+                }
+            default: break
+            }
+            if i < text.endIndex { i = text.index(after: i) }
+        }
+        return nil
+    }
+}
+
 extension ServeMedia {
     // The tag shapes, shared with PlainText's spoken/display stripping so the grammar
     // can't drift between rendering and speech.

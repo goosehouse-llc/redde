@@ -860,7 +860,13 @@ read as Hermes's desktop app reads it: quoted, with spaces up to a known extensi
 relative to the session's folder (the Dashboard is told `session_id` for those, Hermes 0.21.3
 on), any kind of file. The Hermes API's hint (`HermesSessionsTransport.clientHint`) teaches every
 kind of file, not just pictures. A Markdown file opens as it reads (`FileViewer`,
-`MarkdownDocument`), anything else in Quick Look, under Done.
+`MarkdownDocument`), anything else in Quick Look, under Done. An agent that only says where it
+left a file ("I saved it to /home/…/sample.wav", a Reddit report 2026-10-22) gets the path made a
+link once the reply has finished (`ServeMedia.linkingPaths`, through `MarkdownView.linkPaths`):
+absolute, `~/`, `./` or relative paths ending in a kind of file worth handing over (Hermes's
+delivery list and the kinds the chat shows, not code), in running text or as a whole code span,
+never inside code blocks, links or web addresses. Nothing is fetched until a tap; the tap
+(`OpensServerPaths`) fetches as `DeliveredFileChip` does and opens it, or says why under the reply.
 
 `::preview{file="page.html"}` (the desktop app's in-chat page, taught to Dashboard chats by
 Hermes's own desktop hint since 0.21.0, and to Hermes API chats by Redde's) is a web page the

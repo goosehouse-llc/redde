@@ -109,7 +109,8 @@ struct MessageRow: View, Equatable {
                 let invented = BotMessages.inventedTurn(in: message.text)
                 let said = ServeMedia.named(in: invented?.said ?? message.text).text
                 if !said.isEmpty {
-                    MarkdownView(text: said, isLive: isLive, selectable: false)
+                    // A file the reply only names in passing opens from its path.
+                    MarkdownView(text: said, isLive: isLive, selectable: false, linkPaths: !isLive)
                         .padding(.horizontal, flatReply ? 2 : 14)
                         .padding(.vertical, flatReply ? 0 : theme.bubbleVerticalPadding)
                         .background(flatReply ? AnyShapeStyle(.clear) : bubble, in: .rect(cornerRadius: theme.bubbleRadius))
@@ -117,6 +118,7 @@ struct MessageRow: View, Equatable {
                         .contextMenu { replyMenu }
                         .overlay(highlightRing)
                         .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
+                        .modifier(OpensServerPaths(source: fileSource))
                 }
                 if let invented {
                     InventedTurnNote(name: replySpeaker ?? settings.headerTitle, invented: invented.invented)

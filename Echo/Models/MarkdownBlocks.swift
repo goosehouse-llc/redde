@@ -26,6 +26,24 @@ nonisolated indirect enum MarkdownBlock: Equatable, Sendable {
         /// Task list state: nil for a plain item, true/false for `[x]` / `[ ]`.
         var checked: Bool? = nil
     }
+
+    /// The block with `transform` applied to each piece of inline text in it; code, math and
+    /// pictures are left as they are.
+    func mappingInline(_ transform: (String) -> String) -> MarkdownBlock {
+        switch self {
+        case let .heading(level, text): .heading(level: level, text: transform(text))
+        case let .paragraph(text): .paragraph(transform(text))
+        case let .list(items):
+            .list(items: items.map { item in
+                var item = item
+                item.text = transform(item.text)
+                return item
+            })
+        case let .quote(blocks): .quote(blocks.map { $0.mappingInline(transform) })
+        case let .table(header, rows, alignments): .table(header: header.map(transform), rows: rows.map { $0.map(transform) }, alignments: alignments)
+        case .code, .rule, .image, .math: self
+        }
+    }
 }
 
 nonisolated enum MarkdownParser {

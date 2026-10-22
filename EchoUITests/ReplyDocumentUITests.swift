@@ -41,4 +41,23 @@ final class ReplyDocumentUITests: XCTestCase {
         chip.tap()
         XCTAssertTrue(app.text(containing: "Settings → Connection details").waitForExistence(timeout: 5), "It doesn't say why it can't open")
     }
+
+    /// A file the reply only names by its path opens from it; with no Dashboard login, the tap
+    /// says where to add one (a Reddit report, 2026-10-22).
+    func testAPathInAReplyOpensItsFile() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demoDocument"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launch()
+        XCTAssertTrue(app.text(containing: "two voice samples").waitForExistence(timeout: 20), "The demo reply didn't appear")
+        let path = app.links["/home/hermes/voices/bm_lewis.wav"]
+        XCTAssertTrue(path.waitForExistence(timeout: 5), "The path isn't a link")
+        XCTAssertTrue(app.links["/home/hermes/voices/af heart.wav"].exists, "The path in backticks isn't a link")
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = "paths"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        path.tap()
+        XCTAssertTrue(app.text(containing: "bm_lewis.wav: Files your agent sends").waitForExistence(timeout: 5), "The tap didn't reach the file")
+    }
 }

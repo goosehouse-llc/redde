@@ -50,26 +50,82 @@ struct DeliveredFileChip: View {
 
     private func open() {
         guard !fetching else { return }
-        let dashboard = HermesServeClient.shared
-        guard dashboard.hasCredentials else {
-            problem = "Files your agent sends come through the Hermes Dashboard. Add its login in Settings → Connection details."
-            return
-        }
         fetching = true
         problem = nil
         Task {
             defer { fetching = false }
-            do {
-                let url = try await dashboard.downloadDelivered(path: file.path, in: source)
-                opened = OpenedFile(url: url)
-            } catch TransportError.http(let status, _) where status == 404 {
-                problem = file.isRelative && source?.sessionID == nil
-                    ? "It isn't on the server where the reply says, or the chat isn't on the server yet."
-                    : "It isn't on the server where the reply says."
-            } catch TransportError.http(let status, _) where status == 403 {
-                problem = "The server won't share this file."
-            } catch {
-                problem = "Couldn't fetch it: \(error.localizedDescription)"
+            switch await Self.fetch(file.path, in: source) {
+            case .success(let url): opened = OpenedFile(url: url)
+            case .failure(let why): problem = why.text
+            }
+        }
+    }
+
+    /// Why a file a reply names can't be opened, in words.
+    struct Problem: Error { let text: String }
+
+    /// Fetches a file a reply names through the Dashboard, on either connection: its copy on this
+    /// phone, or why there isn't one.
+    static func fetch(_ path: String, in source: FileSource?) async -> Result<URL, Problem> {
+        let dashboard = HermesServeClient.shared
+        guard dashboard.hasCredentials else {
+            return .failure(Problem(text: "Files your agent sends come through the Hermes Dashboard. Add its login in Settings → Connection details."))
+        }
+        do {
+            return .success(try await dashboard.downloadDelivered(path: path, in: source))
+        } catch TransportError.http(let status, _) where status == 404 {
+            let relative = !path.hasPrefix("/") && !path.hasPrefix("~")
+            return .failure(Problem(text: relative && source?.sessionID == nil
+                ? "It isn't on the server where the reply says, or the chat isn't on the server yet."
+                : "It isn't on the server where the reply says."))
+        } catch TransportError.http(let status, _) where status == 403 {
+            return .failure(Problem(text: "The server won't share this file."))
+        } catch {
+            return .failure(Problem(text: "Couldn't fetch it: \(error.localizedDescription)"))
+        }
+    }
+}
+
+/// A reply's file paths open their files (`MarkdownView.linkPaths` makes them links): a tap
+/// fetches the file through the Dashboard and opens it, or says under the reply why it can't.
+struct OpensServerPaths: ViewModifier {
+    let source: FileSource?
+    @State private var opened: OpenedFile?
+    /// The file being fetched, or the last one that couldn't be, and why.
+    @State private var fetching: String?
+    @State private var problem: (name: String, text: String)?
+
+    func body(content: Content) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            content.environment(\.openURL, OpenURLAction { url in
+                guard let path = ServeMedia.linkedPath(url) else { return .systemAction }
+                open(path)
+                return .handled
+            })
+            if let fetching {
+                HStack(spacing: 6) {
+                    ProgressView().controlSize(.mini)
+                    Text("Fetching \(fetching)…")
+                }
+                .font(.caption).foregroundStyle(.secondary)
+            } else if let problem {
+                Label("\(problem.name): \(problem.text)", systemImage: "exclamationmark.triangle")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .sheet(item: $opened) { FileViewer(file: $0) }
+    }
+
+    private func open(_ path: String) {
+        guard fetching == nil else { return }
+        let name = String(path.split(separator: "/").last ?? Substring(path))
+        fetching = name
+        problem = nil
+        Task {
+            defer { fetching = nil }
+            switch await DeliveredFileChip.fetch(path, in: source) {
+            case .success(let url): opened = OpenedFile(url: url)
+            case .failure(let why): problem = (name, why.text)
             }
         }
     }

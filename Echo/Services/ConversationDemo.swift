@@ -632,14 +632,17 @@ extension Conversation {
     }
 
     /// Dev hook (`-echo.demoDocument`): a reply that came with a Markdown file, as an agent's
-    /// `MEDIA:` delivery arrives, to open in QuickLook.
+    /// `MEDIA:` delivery arrives, to open in QuickLook; then one that names its files by path.
     func seedDocumentDemo() {
         reset()
         let markdown = "# Morning briefing\n\n- Three posts worth reading\n- Dry until three, then rain\n"
         // And one named that isn't here: with no Dashboard login it can't be fetched.
         var reply = Message(role: .assistant, text: "Here is this morning's briefing as a file.\nMEDIA:/home/hermes/briefings/week-ahead.md")
         reply.attachments = [Attachment(kind: .text, filename: "briefing.md", mimeType: "text/markdown", data: Data(markdown.utf8))]
-        replaceForDemo(messages: [Message(role: .user, text: "Send me this morning's briefing as a file."), reply])
+        // And files named only in passing: each path opens its file.
+        let samples = Message(role: .assistant, text: "I made two voice samples and left them at `/home/hermes/voices/af heart.wav` and /home/hermes/voices/bm_lewis.wav.")
+        replaceForDemo(messages: [Message(role: .user, text: "Send me this morning's briefing as a file."), reply,
+                                  Message(role: .user, text: "And a couple of voice samples?"), samples])
     }
 
     /// `-echo.demoPage`: a reply with a page the agent made (`::preview`), drawn by its own script,

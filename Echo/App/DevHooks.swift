@@ -53,7 +53,9 @@ import WidgetKit
 ///   `look` (plays once voice mode's made-up camera has been opened: add `-echo.voiceView
 ///   -echo.voiceLook`), `reach` (a call and a message). Switches set as with `-echo.demoPhone`.
 /// - `-echo.demoAudio`: a reply that came with a sound file (the player in the conversation).
-/// - `-echo.demoDocument`: a reply that came with a Markdown file (a tile that opens in QuickLook).
+/// - `-echo.demoDocument`: a reply that came with a Markdown file (a tile that opens in QuickLook),
+///   then one that names its files by path (links that open them).
+/// - `-echo.demoPage`: a reply with a page the agent made, live in the chat, with buttons that talk back.
 /// - `-echo.demoPhotos [n]`: messages with two photos, one, and n (five by default), to look at
 ///   how pictures are set out together and at the full-screen viewer.
 /// - `-echo.demoWidgets`: fill the "Needs you" and Context widgets with sample data (two requests
