@@ -107,20 +107,17 @@ struct TranscriptView: View {
         Task { withAnimation { proxy.scrollTo(id, anchor: .center) } }
     }
 
-    /// "Jump to latest". Mid-fling only an unanimated jump stops the momentum. Rows that finish
-    /// loading async content (images, diagrams) can still grow after the jump and leave it
+    /// "Jump to latest": at once, and it stops a fling where it is. An animated scroll down a long
+    /// conversation took its time, and was reported as a delay (Reddit, 2026-10-21). Rows that
+    /// finish loading async content (images, diagrams) can still grow after the jump and leave it
     /// short, so keep jumping until the end is on screen (or the reader touches the list again).
     private func jumpToEnd(_ proxy: ScrollViewProxy) {
         following = true
-        if scrollPhase == .idle {
-            withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
-        } else {
-            proxy.scrollTo("bottom", anchor: .bottom)
-        }
+        proxy.scrollTo("bottom", anchor: .bottom)
         jumpTask?.cancel()
         jumpTask = Task {
-            for _ in 0..<8 {
-                try? await Task.sleep(for: .milliseconds(300))
+            for _ in 0..<20 {
+                try? await Task.sleep(for: .milliseconds(100))
                 guard !Task.isCancelled, following else { return }
                 guard scrollPhase == .idle else { continue }
                 if atBottom { return }
