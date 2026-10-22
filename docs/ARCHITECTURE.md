@@ -858,10 +858,30 @@ limit, or saying why it can't be: no Dashboard login, not on the server, refused
 2026-10-21 (a Reddit report: an agent's Markdown files never reached the chat) a `MEDIA:` tag is
 read as Hermes's desktop app reads it: quoted, with spaces up to a known extension, from `~/`,
 relative to the session's folder (the Dashboard is told `session_id` for those, Hermes 0.21.3
-on), any kind of file; and `::preview{file="page.html"}`, Hermes 0.22's in-chat page, is its file
-for now. The Hermes API's hint (`HermesSessionsTransport.clientHint`) teaches every kind of file,
-not just pictures. A Markdown file opens as it reads (`FileViewer`, `MarkdownDocument`), anything
-else in Quick Look, under Done. Pictures and documents were fetched from the start. Sound
+on), any kind of file. The Hermes API's hint (`HermesSessionsTransport.clientHint`) teaches every
+kind of file, not just pictures. A Markdown file opens as it reads (`FileViewer`,
+`MarkdownDocument`), anything else in Quick Look, under Done.
+
+`::preview{file="page.html"}` (the desktop app's in-chat page, taught to Dashboard chats by
+Hermes's own desktop hint since 0.21.0, and to Hermes API chats by Redde's) is a web page the
+agent wrote, shown live under the reply's text as the desktop app shows it
+(`inline-preview-directive.tsx`): `AgentPage` in `Echo/Views/AgentPages.swift`. Fetched like any
+named file, it is kept as an attachment with its server path (`Attachment.page`). It runs in a
+web view of its own, nothing stored, links opened outside, the main frame never navigating away;
+the app's colours come first as `--foreground`, `--muted-foreground`, `--accent`, `--border` and
+`--card` (after the doctype, so the page keeps standards mode, with a phone viewport when the page
+names none); a script in a world of the app's own reports the content's height (120 to 1200
+points, scrolling past that) and, once, its width, so a widget of a set size sits left like a
+picture. `window.hermes.send(prompt)` and `data-hermes-send` reach the app through a handler in
+the page's world that answers with the desktop app's acks (`PageIntent`: 500 characters, one a
+second, refused with the reason, never cut). The prompt goes as a turn of its own with no message
+of the person's (`Conversation.sendFromPage`): `prompt.submit` with `display_kind: "hidden"` on
+the Dashboard (every release from 0.21.0 takes it), and on the Hermes API, which has no hidden
+messages, the text marked `[From the page in the chat]`, which a reopened chat leaves out
+(`PageTurn`, `BotMessages.userMessage`). The agent answers by writing the page again; the page is
+read again when its turn is over (`refreshPage`). Not while a reply is still coming, never as the
+first message of a conversation, and not on the fast lane; the page is told, and a toast says
+why. Lab `files` checks both connections (`aPageTalksBackUnseen`); `-echo.demoPage` shows one. Pictures and documents were fetched from the start. Sound
 was not, and a spoken reply from the agent's speech tool stood there as its path (reported
 2026-10-12): it is now, by its ending (mp3, m4a, aac, wav, ogg, oga, opus, flac, aiff, caf),
 along with the tool's `[[audio_as_voice]]` line, which goes. Stock Hermes writes MP3, and

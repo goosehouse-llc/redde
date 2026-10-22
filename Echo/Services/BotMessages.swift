@@ -107,6 +107,8 @@ nonisolated enum BotMessages {
     /// A user row as it should show: the person's own, or one delivered (its text the message
     /// alone, its sender kept beside it).
     static func userMessage(text: String, displayKind: String?, displayText: String?, roster: [HermesBot] = [], at when: Date) -> Message? {
+        // Sent by a page in a reply over the Hermes API, which keeps no hidden messages.
+        if PageTurn.isMarked(text) { return nil }
         if let (title, output) = routine(text) {
             var message = Message(role: .user, text: output, createdAt: when)
             message.delivered = Delivered(kind: .routine, title: title)

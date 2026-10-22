@@ -233,6 +233,21 @@ nonisolated struct TurnRequest: Sendable {
     var mentionNote: String? = nil
     /// An incognito chat (`Incognito`): the agent is told so; on the Dashboard its session is hidden.
     var incognito = false
+    /// Sent by a page in a reply (`AgentPage`), not typed: no message of the person's shows for it,
+    /// here or in the conversation opened again (`PageTurn`).
+    var fromPage = false
+}
+
+/// The turn a page in a reply started (`AgentPage`): which reply, and the page to read again after.
+nonisolated struct PageTurn: Sendable {
+    let message: UUID
+    let path: String
+
+    /// On the Hermes API, which keeps no hidden messages, a page's message says where it is from,
+    /// and the conversation opened again leaves it out (`BotMessages.userMessage`).
+    static let marker = "[From the page in the chat] "
+    static func text(of request: TurnRequest) -> String { request.fromPage ? marker + request.userText : request.userText }
+    static func isMarked(_ text: String) -> Bool { text.hasPrefix(marker) }
 }
 
 /// One selectable model as the gateway lists it.

@@ -195,6 +195,7 @@ enum DevHooks {
         }
         if has("-echo.demoAudio") { conversation.seedAudioDemo() }
         if has("-echo.demoDocument") { conversation.seedDocumentDemo() }
+        if has("-echo.demoPage") { conversation.seedPageDemo() }
         if has("-echo.demoPhotos") { conversation.seedPhotoDemo(count: value("-echo.demoPhotos").flatMap(Int.init) ?? 5) }
         if has("-echo.demoWidgets") {
             NeedsYou.clear()

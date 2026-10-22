@@ -242,6 +242,18 @@ final class Conversation {
         return startTurn(userMessage, brief: brief)
     }
 
+    /// What a page in a reply sends the agent (`window.hermes.send`, `data-hermes-send`): a turn
+    /// with no message of the person's to show, as the desktop app sends one. The agent answers by
+    /// writing the page again, so the page is read again once it has (`refreshPage`).
+    func sendFromPage(_ prompt: String, page: String, in messageID: UUID) -> PageSend {
+        guard connection.hasLedger else { return .unavailable }
+        guard !isStreaming, outbox.isEmpty else { return .busy }
+        // A page is the agent's, in a conversation it has: never the first message of a new one.
+        guard serverSessionID != nil else { return .unavailable }
+        startTurn(Message(role: .user, text: prompt), fromPage: PageTurn(message: messageID, path: page))
+        return .sent
+    }
+
     private static func finishedStream() -> AsyncStream<TurnEvent> {
         let (stream, continuation) = AsyncStream.makeStream(of: TurnEvent.self)
         continuation.finish()
@@ -251,7 +263,7 @@ final class Conversation {
     /// Runs one turn for a user message that isn't in the transcript yet. `heldSince` is when a
     /// message coming out of the outbox was first queued, so holding it again keeps its age.
     @discardableResult
-    private func startTurn(_ outgoing: Message, heldSince: Date? = nil, brief: Bool = false) -> AsyncStream<TurnEvent> {
+    private func startTurn(_ outgoing: Message, heldSince: Date? = nil, brief: Bool = false, fromPage: PageTurn? = nil) -> AsyncStream<TurnEvent> {
         let (mirror, mirrorContinuation) = AsyncStream.makeStream(of: TurnEvent.self)
         lastSendWasHeld = false
         lastError = nil
@@ -263,7 +275,7 @@ final class Conversation {
         let trimmed = userMessage.text
         let attachments = userMessage.attachments
         let userID = userMessage.id
-        messages.append(userMessage)
+        if fromPage == nil { messages.append(userMessage) }
         var reply = Message(role: .assistant, text: "")
         reply.metrics = TurnMetrics(sentAt: .now)
         messages.append(reply)
@@ -283,6 +295,7 @@ final class Conversation {
         )
         if connection == .hermesServe, serverSessionID == nil { request.folder = startsIn?.path }
         request.incognito = isIncognito
+        request.fromPage = fromPage != nil
         // The Hermes API's run for this message, should it go again after a dropped connection.
         request.turnKey = userID.uuidString
         // The conversation's fast mode: the Hermes API keeps none for a session, so each turn asks.
@@ -369,6 +382,7 @@ final class Conversation {
                     || (transportKind == .hermesSessions && dashboard.hasCredentials) {
                     await resolveServeMedia(replyID)
                     try Task.checkCancellation()   // Stop during the fetch must not finish the turn
+                    if let fromPage { await refreshPage(fromPage) }
                 }
                 if transportKind == .hermesSessions {
                     await settleTodos(replyID)
@@ -408,7 +422,7 @@ final class Conversation {
                     // never through fail(), which resets isStreaming/lastError and would let
                     // the UI start a second turn while the live one still streams.
                     update(replyID) { $0.error = error.localizedDescription }
-                } else if NetworkFailure.isConnectivity(error), replyIsBlank(replyID) {
+                } else if fromPage == nil, NetworkFailure.isConnectivity(error), replyIsBlank(replyID) {
                     // Never reached the server: hold the message instead of reporting a failure.
                     hold(userID: userID, replyID: replyID, queuedAt: heldSince ?? .now)
                     outcome = .held
@@ -1640,13 +1654,15 @@ final class Conversation {
         // the agent naming it as well is no reason to show it twice. Its name on the server ends
         // in the name it has here.
         let shown = messages.first(where: { $0.id == id })?.attachments.map(\.filename) ?? []
-        for c in candidates where !fetched.contains(c.path) {
+        // A page named twice, once to show and once as a file, is shown.
+        for c in candidates.filter(\.isPage) + candidates.filter({ !$0.isPage }) where !fetched.contains(c.path) {
             if ServeMedia.isFromThePhone(c.path), shown.contains(where: { c.filename.hasSuffix($0) }) {
                 fetched.insert(c.path)
                 continue
             }
             guard let dataURL = await fetchServerFile(c.path, fileSource),
-                  let att = ServeMedia.attachment(dataURL: dataURL, name: c.filename) else { continue }
+                  var att = ServeMedia.attachment(dataURL: dataURL, name: c.filename) else { continue }
+            if c.isPage { att = AgentPage.attachment(att, from: c.path) }
             fetched.insert(c.path)
             attachments.append(att)
         }
@@ -1660,6 +1676,19 @@ final class Conversation {
         // The message may have been replaced while its files were on their way (another chat opened).
         guard messages.contains(where: { $0.id == id && $0.text == text }) else { return }
         update(id) { $0.text = cleaned.trimmingCharacters(in: .whitespacesAndNewlines); $0.attachments += attachments }
+    }
+
+    /// A page read again after the turn it sent: the agent's answer is the page it wrote. Shown
+    /// anew only when it changed.
+    private func refreshPage(_ turn: PageTurn) async {
+        guard let dataURL = await fetchServerFile(turn.path, fileSource),
+              let fetched = ServeMedia.attachment(dataURL: dataURL, name: String(turn.path.split(separator: "/").last ?? "page.html")),
+              let shown = messages.first(where: { $0.id == turn.message })?.attachments.first(where: { $0.page == turn.path }),
+              fetched.data != shown.data else { return }
+        update(turn.message) { message in
+            guard let i = message.attachments.firstIndex(where: { $0.page == turn.path }) else { return }
+            message.attachments[i] = AgentPage.attachment(fetched, from: turn.path)
+        }
     }
 
     /// Who carries out a phone tool the agent calls in a turn here. Tests put their own.

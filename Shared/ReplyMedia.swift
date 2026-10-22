@@ -74,6 +74,8 @@ nonisolated enum ServeMedia {
         /// As the reply wrote it: absolute, from `~/`, or relative to the session's folder.
         var path: String
         var filename: String { String(path.split(separator: "/").last ?? "photo") }
+        /// A web page written for the chat (`::preview{file="page.html"}`), shown live in it.
+        var isPage = false
         /// Neither absolute nor from home: the server finds it from the session's folder.
         var isRelative: Bool { !path.hasPrefix("/") && !path.hasPrefix("~") }
     }
@@ -121,10 +123,11 @@ nonisolated enum ServeMedia {
         return try! NSRegularExpression(pattern: pattern)
     }()
 
-    /// `::preview{file="page.html"}`: a page the agent made, which the desktop app shows inside
-    /// the chat. Here it is the file, for now.
+    /// `::preview{file="page.html"}`: a page the agent made, shown live inside the chat as the
+    /// desktop app shows it (`AgentPage`); a file of another kind is a file like any other.
     private static let previewDirective = try! NSRegularExpression(
         pattern: #"(?<![^\s])::preview\{([^{}]{0,1024})\}"#)
+    private static let pageExts: Set<String> = ["html", "htm", "xhtml"]
     private static let previewFile = try! NSRegularExpression(pattern: #"file=(?:"([^"]*)"|'([^']*)')"#, options: [.caseInsensitive])
 
     /// Whether a reply could name a file at all, before anything costlier looks.
@@ -138,9 +141,9 @@ nonisolated enum ServeMedia {
         var found: [Candidate] = []
         var seen: Set<String> = []
         // By what is written: a path named twice over (`MEDIA:/x` and then `/x`) is stripped both times.
-        func add(_ whole: String, _ path: String) {
+        func add(_ whole: String, _ path: String, isPage: Bool = false) {
             guard seen.insert(whole).inserted else { return }
-            found.append(Candidate(whole: whole, path: path))
+            found.append(Candidate(whole: whole, path: path, isPage: isPage))
         }
         let ns = text as NSString
         for match in mediaTag.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
@@ -171,7 +174,7 @@ nonisolated enum ServeMedia {
             guard let file = previewFile.firstMatch(in: attributes, range: NSRange(location: 0, length: attrs.length)) else { continue }
             let value = file.range(at: 1).location != NSNotFound ? attrs.substring(with: file.range(at: 1)) : attrs.substring(with: file.range(at: 2))
             guard !value.isEmpty, !value.contains("://") else { continue }
-            add(ns.substring(with: match.range), value)
+            add(ns.substring(with: match.range), value, isPage: pageExts.contains((value as NSString).pathExtension.lowercased()))
         }
         return found
     }
@@ -250,4 +253,5 @@ extension ServeMedia {
     nonisolated static let voiceMarkerPattern = #"\[\[audio_as_voice\]\]\s*"#
     nonisolated static let mediaTagPattern = #"MEDIA:\s*(?:"[^"\n]+"|'[^'\n]+'|`[^`\n]+`|\S+)"#
     nonisolated static let imageTagPattern = #"\[IMAGE:[^\]]*\]"#
+    nonisolated static let previewPattern = #"(?<![^\s])::preview\{[^{}]{0,1024}\}"#
 }

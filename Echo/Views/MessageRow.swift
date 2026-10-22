@@ -85,7 +85,8 @@ struct MessageRow: View, Equatable {
                 TodoChecklist(items: todos, isLive: isLive)
             }
             if !message.subagents.isEmpty { SubagentRows(subagents: message.subagents) }
-            if !message.attachments.isEmpty { AttachmentGallery(attachments: message.attachments) }
+            let files = message.attachments.filter { $0.page == nil }
+            if !files.isEmpty { AttachmentGallery(attachments: files) }
             // Files the reply names that aren't in the chat: each to fetch and open, not a path.
             if message.role == .assistant, !isLive {
                 let named = ServeMedia.named(in: message.text).files
@@ -153,6 +154,10 @@ struct MessageRow: View, Equatable {
                     .overlay(highlightRing)
                     .contextMenu { userMenu }
                     .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
+            }
+            // Pages the agent made for the chat, live, under what it said about them.
+            if message.role == .assistant, !isLive {
+                ForEach(message.attachments.filter { $0.page != nil }) { AgentPage(attachment: $0, messageID: message.id) }
             }
             if showActions, message.role == .assistant, !isLive, message.error == nil, !message.text.isEmpty {
                 actionRow

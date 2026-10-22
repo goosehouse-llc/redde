@@ -642,6 +642,42 @@ extension Conversation {
         replaceForDemo(messages: [Message(role: .user, text: "Send me this morning's briefing as a file."), reply])
     }
 
+    /// `-echo.demoPage`: a reply with a page the agent made (`::preview`), drawn by its own script,
+    /// with buttons that send the agent a message.
+    func seedPageDemo() {
+        reset()
+        let html = """
+        <!doctype html>
+        <html><head><style>
+          .card { display: inline-block; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); }
+          h3 { margin: 0 0 2px; font-size: 15px; }
+          p { margin: 0 0 10px; color: var(--muted-foreground); font-size: 13px; }
+          .bars { display: flex; align-items: flex-end; gap: 6px; height: 72px; margin-bottom: 10px; }
+          .bar { width: 22px; border-radius: 4px 4px 0 0; background: var(--accent); }
+          button { font: inherit; font-size: 13px; padding: 6px 10px; margin-right: 6px; border-radius: 8px;
+                   border: 1px solid var(--border); background: transparent; color: var(--foreground); }
+        </style></head><body>
+        <div class="card">
+          <h3>Rain this week, Lisbon</h3>
+          <p id="note">Millimetres a day</p>
+          <div class="bars" id="bars"></div>
+          <button data-hermes-send="Show Porto instead">Porto</button><button data-hermes-send="Show Faro instead">Faro</button>
+        </div>
+        <script>
+          [2, 0, 5, 9, 3, 0, 1].forEach(function (mm) {
+            var b = document.createElement('div'); b.className = 'bar'; b.style.height = (8 + mm * 7) + 'px';
+            document.getElementById('bars').appendChild(b);
+          });
+          document.getElementById('note').textContent = 'Millimetres a day, drawn by the page';
+        </script>
+        </body></html>
+        """
+        var reply = Message(role: .assistant, text: "Here's the week's rain. Tap a city to see it there.")
+        reply.attachments = [AgentPage.attachment(Attachment(kind: .text, filename: "rain.html", mimeType: "text/html", data: Data(html.utf8)),
+                                                  from: "/home/hermes/pages/rain.html")]
+        replaceForDemo(messages: [Message(role: .user, text: "Show me how much rain is coming this week."), reply])
+    }
+
     /// Screenshot helper (`-echo.demoLibrary`): a few local conversations so the list isn't empty.
     /// `savedFrom`: as this iPhone's copies of conversations on that Hermes server instead
     /// (`-echo.demoSaved`), which is what the list falls back to when the server can't be reached.

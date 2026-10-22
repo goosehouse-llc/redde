@@ -262,7 +262,7 @@ struct WebBlock: UIViewRepresentable {
 /// appearance to light and dark to snapshot the app switcher; following that redrew every block
 /// (sometimes leaving the wrong colours) and resized rows on return. While the scene isn't
 /// active the last active appearance is kept.
-private struct StableColorScheme: ViewModifier {
+struct StableColorScheme: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
     @Binding var drawn: ColorScheme?

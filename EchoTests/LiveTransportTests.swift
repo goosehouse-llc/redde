@@ -887,6 +887,78 @@ struct HermesLabFilesTests {
         try? await client.delete(scratch)
     }
 
+    /// A page the agent made (`::preview`) is read as a chat reads it, and what the page sends
+    /// reaches the agent with no message of the person's for it, then or when the chat is opened
+    /// again: hidden on the Dashboard, marked and left out on the Hermes API.
+    @Test func aPageTalksBackUnseen() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        func report(_ ok: Bool, _ what: String, _ detail: String = "") { HermesLabApprovalTests.report(ok, what, detail) }
+        let home = try await client.folder(at: nil)
+        let labs = ServerFiles.join(home.path, ".cache/redde-hermes-lab")
+        let scratch = try await client.makeFolder("page-\(UUID().uuidString.prefix(8))", in: labs)
+        guard scratch.path.contains("/redde-hermes-lab/page-") else { return }
+        defer { Task { try? await client.delete(scratch) } }
+        let html = Data("<!doctype html><button data-hermes-send=\"Show Porto instead\">Porto</button>".utf8)
+        let page = try await client.upload(try local("rain.html", html), as: "rain.html", into: scratch.path, replacing: false, watch: nil)
+        let reply = "Here's the rain.\n\n::preview{file=\"\(page.path)\"}"
+        let found = ServeMedia.candidates(in: reply)
+        report(found.count == 1 && found.first?.isPage == true && found.first?.path == page.path, "a reply's ::preview names its page", "\(found)")
+        let fetched = try? await client.readDataURL(path: page.path)
+        report(fetched.flatMap { ServeMedia.attachment(dataURL: $0, name: "rain.html") }?.data == html, "the page comes whole")
+
+        // Dashboard: a chat with a turn in it, then the page's message.
+        var stored = ""
+        var request = TurnRequest(userText: "Hello.", history: [], sessionID: nil, model: nil, instructions: nil)
+        request.folder = scratch.path
+        for try await event in HermesServeTransport(client: client).stream(request) {
+            if case let .sessionID(id) = event { stored = id }
+        }
+        var fromPage = TurnRequest(userText: "Show Porto instead", history: [], sessionID: stored, model: nil, instructions: nil)
+        fromPage.fromPage = true
+        var answered = ""
+        for try await event in HermesServeTransport(client: client).stream(fromPage) {
+            if case let .textDelta(delta) = event { answered += delta }
+            if case let .textFinal(text) = event { answered = text }
+        }
+        report(!answered.isEmpty, "Dashboard: the agent answers what the page sent", String(answered.prefix(60)))
+        // The host never hands a hidden message back to the Dashboard; what it keeps is checked below,
+        // through the Hermes API, which reads the same store.
+        let reread = Conversation.messages(fromServeRows: try await client.history(stored: stored))
+        report(!reread.contains { $0.role == .user && $0.text.contains("Show Porto instead") } && reread.filter { $0.role == .assistant }.count == 2,
+               "Dashboard, reopened: no message for it, and both replies", reread.map { "\($0.role.rawValue): \($0.text.prefix(24))" }.joined(separator: " | "))
+
+        // The Hermes API.
+        let api = URL(string: "http://127.0.0.1:18642")!, key = "labkey-labkey-labkey"
+        var probe = URLRequest(url: api.appending(path: "health"))
+        probe.timeoutInterval = 2
+        guard (try? await URLSession.shared.data(for: probe)) != nil else {
+            print("  ----  no Hermes API on 127.0.0.1:18642; only the Dashboard was checked")
+            return
+        }
+        let ledger = HermesSessionsAPI(baseURL: api, apiKey: key)
+        let transport = HermesSessionsTransport(baseURL: api, apiKey: key)
+        let kept = try? await ledger.messages(sessionID: stored)
+        let row = kept?.first { $0.role == "user" && $0.content?.text.contains("Show Porto instead") == true }
+        report(row?.display_kind == "hidden", "Dashboard: the host keeps it, as a hidden message", row.map { "\($0.display_kind ?? "no kind")" } ?? "no row")
+        // The lab's own stub model, by its full name, as the app asks every turn.
+        let choices = (try? await ledger.modelOptions()) ?? []
+        let model = choices.first { $0.model == "alpha" }
+        let provider = model.flatMap { Conversation.liveProvider(for: $0.model, saved: $0.provider, in: choices) }
+        let session = try await ledger.createSession(title: "lab page \(UUID().uuidString.prefix(8))", model: model?.model, provider: provider)
+        for text in ["Hello.", "Show Porto instead"] {
+            var turn = TurnRequest(userText: text, history: [], sessionID: session.id, model: model?.model, provider: provider, instructions: nil)
+            turn.fromPage = text != "Hello."
+            for try await _ in transport.stream(turn) {}
+        }
+        let rows = try await ledger.messages(sessionID: session.id)
+        report(rows.contains { $0.role == "user" && $0.content?.text == PageTurn.marker + "Show Porto instead" },
+               "Hermes API: the agent is told the page sent it", rows.filter { $0.role == "user" }.map { $0.content?.text ?? "" }.joined(separator: " | "))
+        let mapped = Conversation.mapStored(rows)
+        report(!mapped.contains { $0.role == .user && $0.text.contains("Show Porto instead") } && mapped.filter { $0.role == .assistant }.count == 2,
+               "Hermes API, reopened: no message for it, and both replies", mapped.map { "\($0.role.rawValue): \($0.text.prefix(24))" }.joined(separator: " | "))
+    }
+
     @Test func theFileBrowserWorksOnAnUnmodifiedHermes() async throws {
         guard let client = await HermesLabApprovalTests.client() else { return }
         defer { client.disconnect() }

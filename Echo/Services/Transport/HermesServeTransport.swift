@@ -59,7 +59,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
                     }
                     #endif
 
-                    if request.userText.hasPrefix("/") {
+                    if request.userText.hasPrefix("/"), !request.fromPage {
                         for event in try await Self.runSlash(request.userText, runtime: runtime, client: client) {
                             continuation.yield(event)
                         }
@@ -83,8 +83,10 @@ nonisolated struct HermesServeTransport: HermesTransport {
                     let text = Self.prompt(request.userText, naming: references) + (request.mentionNote ?? "")
                         + (request.replyLanguage.map(ReplyLanguage.note) ?? "") + (request.brief ? CarBrevity.note : "")
                         + (request.incognito ? IncognitoNote.note : "")
-                    let submit = try await client.call("prompt.submit", params: .object([
-                        "session_id": .string(runtime), "text": .string(text)]))
+                    var params: [String: JSONValue] = ["session_id": .string(runtime), "text": .string(text)]
+                    // A page's message is the agent's to read, not a bubble (Hermes 0.21.0 and later).
+                    if request.fromPage { params["display_kind"] = .string("hidden") }
+                    let submit = try await client.call("prompt.submit", params: .object(params))
                     if submit["status"]?.string == "queued" { continuation.yield(.status("queued behind a running turn…")) }
 
                     for await outcome in finished.stream {

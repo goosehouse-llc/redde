@@ -16,6 +16,9 @@ nonisolated struct Attachment: Identifiable, Codable, Equatable, Sendable {
     /// transcript has no inline bytes and reads them from the attachment store instead.
     private var inline: Data?
     private var byteCount: Int
+    /// A page the agent made for the chat (`::preview{file=…}`), shown live in its reply rather
+    /// than as a file: where it is on the server, as the reply named it, to read it again from.
+    var page: String?
 
     /// The bytes, from memory or from the attachment store on disk.
     var data: Data {
@@ -34,13 +37,14 @@ nonisolated struct Attachment: Identifiable, Codable, Equatable, Sendable {
 
     static func == (a: Attachment, b: Attachment) -> Bool {
         a.id == b.id && a.kind == b.kind && a.filename == b.filename && a.mimeType == b.mimeType && a.byteCount == b.byteCount
+            && a.page == b.page
     }
 
     // MARK: - Codable
     // Transcript storage keeps only metadata and writes the bytes to AttachmentFiles; the share
     // inbox (a different process) asks for the bytes inline via `CodingUserInfoKey.inlineAttachmentData`.
 
-    private enum CodingKeys: String, CodingKey { case id, kind, filename, mimeType, data, byteCount }
+    private enum CodingKeys: String, CodingKey { case id, kind, filename, mimeType, data, byteCount, page }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -50,6 +54,7 @@ nonisolated struct Attachment: Identifiable, Codable, Equatable, Sendable {
         mimeType = try c.decode(String.self, forKey: .mimeType)
         inline = try c.decodeIfPresent(Data.self, forKey: .data)
         byteCount = try c.decodeIfPresent(Int.self, forKey: .byteCount) ?? inline?.count ?? 0
+        page = try c.decodeIfPresent(String.self, forKey: .page)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -59,6 +64,7 @@ nonisolated struct Attachment: Identifiable, Codable, Equatable, Sendable {
         try c.encode(filename, forKey: .filename)
         try c.encode(mimeType, forKey: .mimeType)
         try c.encode(byteCount, forKey: .byteCount)
+        try c.encodeIfPresent(page, forKey: .page)
         if encoder.userInfo[.inlineAttachmentData] as? Bool == true {
             try c.encode(data, forKey: .data)
         }

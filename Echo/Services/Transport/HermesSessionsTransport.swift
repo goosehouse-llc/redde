@@ -51,7 +51,15 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
         shows it: pictures and sound in the chat, other files as one to open. This works here, on \
         this endpoint. Never say you cannot display images or send files, and never print a bare \
         file path or an [IMAGE: ...] placeholder in place of a MEDIA: tag. Put runnable commands in fenced code blocks \
-        (```bash), which render with a Copy button — not inline backticks.
+        (```bash), which render with a Copy button — not inline backticks. To put something live in the chat (a chart, \
+        a widget with buttons), write a single-file HTML page, then put ::preview{file="/absolute/path/page.html"} \
+        alone on its own line. The app themes it before your styles, with var(--foreground), var(--muted-foreground), \
+        var(--accent), var(--border) and var(--card), its font, no margins and a clear background: use those vars for \
+        colour and set no background, font or margins of your own (only a standalone page, a poster or a game, \
+        overrides them). It sizes itself to the content: lay it out flush left, with no centring wrapper. A page talks \
+        back: data-hermes-send="prompt" on anything tappable, or window.hermes.send("prompt"), sends you that prompt \
+        as a message starting [From the page in the chat]; answer it by writing the page's file again, not in prose: \
+        the app reads the page again once you are done.
         """
 
     /// The API server takes text and images only (`input_text` / `input_image` parts).
@@ -115,7 +123,7 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
     }
 
     static func runBody(_ request: TurnRequest, sessionID: String) throws -> RunBody {
-        RunBody(input: try runInput(text: request.userText, attachments: request.attachments), session_id: sessionID,
+        RunBody(input: try runInput(text: PageTurn.text(of: request), attachments: request.attachments), session_id: sessionID,
                 instructions: instructions(for: request), model: request.model?.nilIfEmpty, provider: request.provider?.nilIfEmpty,
                 model_options: .asked(effort: request.reasoningEffort, fast: request.fast))
     }
@@ -146,7 +154,7 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
             try StreamingHTTP.makeRequest(
                 url: baseURL.appending(path: "api/sessions/\(sessionID)/chat/stream"),
                 apiKey: apiKey, headers: headers, body: Body(
-                    input: try Self.makeInput(text: request.userText, attachments: request.attachments),
+                    input: try Self.makeInput(text: PageTurn.text(of: request), attachments: request.attachments),
                     instructions: Self.instructions(for: request),
                     model: request.model, provider: request.provider,
                     require_model_lock: request.model?.nilIfEmpty == nil ? nil : true,

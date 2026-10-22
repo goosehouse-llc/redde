@@ -131,6 +131,7 @@ struct ContentView: View {
             .environment(\.replySpeaker, conversation.bot?.name)
             .environment(\.replyFace, botFace)
             .environment(\.fileSource, conversation.fileSource)
+            .environment(\.sendFromPage, PageSender(conversation: conversation.id, send: conversation.sendFromPage))
             .tint(chatTheme.accent)
         }
         .task {
@@ -266,6 +267,7 @@ struct ContentView: View {
             .environment(\.replySpeaker, conversation.bot?.name)
             .environment(\.replyFace, botFace)
             .environment(\.fileSource, conversation.fileSource)
+            .environment(\.sendFromPage, PageSender(conversation: conversation.id, send: conversation.sendFromPage))
             .chatTextSize()
             .background(theme.pageColor)
             .foregroundStyle(theme.textColor)
