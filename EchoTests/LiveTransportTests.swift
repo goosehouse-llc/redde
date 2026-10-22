@@ -836,6 +836,57 @@ struct HermesLabFilesTests {
         return url
     }
 
+    /// Files a reply names (`MEDIA:` tags) fetched as a chat fetches them: by their full path,
+    /// from `~/`, and relative to the chat's own folder (the session goes with the path; Hermes
+    /// 0.21.0 doesn't take it), whole for the chat and by download for a tap.
+    @Test func theFilesAReplyNamesAreFetched() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        func report(_ ok: Bool, _ what: String, _ detail: String = "") { HermesLabApprovalTests.report(ok, what, detail) }
+        let version = (try? await client.restJSON("GET", "api/status"))?["version"]?.string ?? ""
+        let home = try await client.folder(at: nil)
+        let labs = ServerFiles.join(home.path, ".cache/redde-hermes-lab")
+        let scratch = try await client.makeFolder("media-\(UUID().uuidString.prefix(8))", in: labs)
+        guard scratch.path.contains("/redde-hermes-lab/media-") else { return }
+        let words = Data("# Brief\n\n- one thing\n".utf8)
+        let up = try await client.upload(try local("brief.md", words), as: "My brief.md", into: scratch.path, replacing: false, watch: nil)
+        func whole(_ path: String, _ source: FileSource? = nil) async -> Data? {
+            guard let url = try? await client.readDataURL(path: path, in: source) else { return nil }
+            return ServeMedia.attachment(dataURL: url, name: "My brief.md")?.data
+        }
+
+        report(await whole(up.path) == words, "a file named by its full path comes whole", up.path)
+        let down = try? await client.downloadDelivered(path: up.path, in: nil)
+        report(down.flatMap { try? Data(contentsOf: $0) } == words, "and comes down whole on a tap")
+        let fromHome = "~/" + up.path.dropFirst(home.path.count + 1)
+        report(await whole(fromHome) == words, "one named from ~/ comes too", fromHome)
+        // A chat in that folder with a turn in it, as any chat whose reply names a file is: Hermes
+        // keeps a session's row (and its folder) from its first message, not from its making.
+        var stored = ""
+        var request = TurnRequest(userText: "Hello.", history: [], sessionID: nil, model: nil, instructions: nil)
+        request.folder = scratch.path
+        for try await event in HermesServeTransport(client: client).stream(request) {
+            if case let .sessionID(id) = event { stored = id }
+        }
+        let relative = await whole("My brief.md", FileSource(sessionID: stored, profile: nil))
+        if version.hasPrefix("0.21.0") {
+            print("  ----  a path relative to the chat's folder: Hermes \(version) takes no session, \(relative == words ? "found anyway" : "not found")")
+        } else {
+            report(relative == words, "one named relative to the chat's folder is found there", "session \(stored)")
+            let tapped = try? await client.downloadDelivered(path: "My brief.md", in: FileSource(sessionID: stored, profile: nil))
+            report(tapped.flatMap { try? Data(contentsOf: $0) } == words, "and comes down on a tap")
+        }
+        let missing = try? await client.readDataURL(path: ServerFiles.join(scratch.path, "gone.md"))
+        report(missing == .some(nil), "a file that isn't there is nothing, not an error")
+        do {
+            _ = try await client.downloadDelivered(path: ServerFiles.join(scratch.path, "gone.md"), in: nil)
+            report(false, "a missing file's download says it isn't there", "it went through")
+        } catch TransportError.http(let status, _) {
+            report(status == 404, "a missing file's download says it isn't there", "\(status)")
+        }
+        try? await client.delete(scratch)
+    }
+
     @Test func theFileBrowserWorksOnAnUnmodifiedHermes() async throws {
         guard let client = await HermesLabApprovalTests.client() else { return }
         defer { client.disconnect() }

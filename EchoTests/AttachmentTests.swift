@@ -81,16 +81,49 @@ struct AttachmentTests {
         Also ![front](/home/hermes/cam.png) and ![f2](file:///var/cache/x.webp)
         I saved it. [IMAGE: /tmp/snap2.jpeg]
         Documents too: MEDIA:/tmp/report.pdf ![doc](/tmp/notes.txt)
-        Not fetchable: MEDIA:/tmp/tool.bin https://example.com/pic.jpg
+        Any file, as the desktop app takes it: MEDIA:/tmp/tool.bin, not https://example.com/pic.jpg
         """
         let found = ServeMedia.candidates(in: text)
-        #expect(found.map(\.path) == ["/tmp/snap_front_door.jpg", "/tmp/report.pdf",
+        #expect(found.map(\.path) == ["/tmp/snap_front_door.jpg", "/tmp/report.pdf", "/tmp/tool.bin",
                                       "/home/hermes/cam.png", "/var/cache/x.webp", "/tmp/notes.txt",
                                       "/tmp/snap2.jpeg"])
         #expect(found[0].whole == "MEDIA:/tmp/snap_front_door.jpg")
-        #expect(found[2].whole == "![front](/home/hermes/cam.png)")
-        #expect(found[5].whole == "[IMAGE: /tmp/snap2.jpeg]")
+        #expect(found[2].whole == "MEDIA:/tmp/tool.bin", "the comma after it is the sentence's")
+        #expect(found[3].whole == "![front](/home/hermes/cam.png)")
+        #expect(found[6].whole == "[IMAGE: /tmp/snap2.jpeg]")
         #expect(found[0].filename == "snap_front_door.jpg")
+    }
+
+    /// A `MEDIA:` tag read as Hermes's desktop app reads it (a Reddit report, 2026-10-21: files
+    /// an agent sent never reached the chat): quoted, with spaces, from home, relative to the
+    /// session's folder, at the end of a sentence; and `::preview` pages.
+    @Test func filesAreFoundAsTheDesktopAppFindsThem() {
+        func paths(_ text: String) -> [String] { ServeMedia.candidates(in: text).map(\.path) }
+        #expect(paths(#"Here: MEDIA:"/tmp/My Notes/plan v2.md""#) == ["/tmp/My Notes/plan v2.md"])
+        #expect(paths("MEDIA:/tmp/My Notes/plan v2.md\nmore text") == ["/tmp/My Notes/plan v2.md"], "spaces, to a known extension")
+        #expect(paths("MEDIA:~/reports/q3.pdf") == ["~/reports/q3.pdf"])
+        #expect(paths("It's in MEDIA:out/chart.png.") == ["out/chart.png"], "relative, and the full stop is the sentence's")
+        #expect(paths("MEDIA:'/tmp/stop!.md'") == ["/tmp/stop!.md"], "quotes keep what's inside them")
+        #expect(paths("MEDIA:... and MEDIA:soon").isEmpty, "not a file")
+        #expect(paths("A chart:\n::preview{file=\"charts/week.html\"}") == ["charts/week.html"])
+        #expect(paths("::preview{file='https://example.com/x.html'}").isEmpty, "a page on the web isn't a file on the server")
+
+        let relative = ServeMedia.candidates(in: "MEDIA:out/chart.png")[0]
+        #expect(relative.isRelative && !ServeMedia.candidates(in: "MEDIA:~/a.png")[0].isRelative)
+        let named = ServeMedia.named(in: "Here is the briefing.\n[[audio_as_voice]]\nMEDIA:\"/tmp/Morning brief.md\"\n::preview{file=\"w.html\"}")
+        #expect(named.text == "Here is the briefing.", "the reply reads without its files")
+        #expect(named.files.map(\.filename) == ["Morning brief.md", "w.html"])
+        #expect(ServeMedia.named(in: "No files here, see /tmp.").files.isEmpty)
+    }
+
+    /// The Dashboard is told the session only for a relative path, and the profile only when it
+    /// isn't the default one.
+    @Test func aFetchSaysWhichSessionAndProfileOnlyWhenItMatters() {
+        let source = FileSource(sessionID: "s1", profile: "scout")
+        #expect(source.queryItems(for: "out/a.png").map(\.name) == ["session_id", "profile"])
+        #expect(source.queryItems(for: "/tmp/a.png").map(\.name) == ["profile"])
+        #expect(source.queryItems(for: "~/a.png").map(\.name) == ["profile"])
+        #expect(FileSource(sessionID: nil, profile: "default").queryItems(for: "a/b.png").isEmpty)
     }
 
     @Test func serveMediaIgnoresRemoteAndPlainText() {

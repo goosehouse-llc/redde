@@ -130,6 +130,7 @@ struct ContentView: View {
             // In a bot's chat, voice mode is with the bot: its name, and its creature as the orb.
             .environment(\.replySpeaker, conversation.bot?.name)
             .environment(\.replyFace, botFace)
+            .environment(\.fileSource, conversation.fileSource)
             .tint(chatTheme.accent)
         }
         .task {
@@ -264,6 +265,7 @@ struct ContentView: View {
         TranscriptView(showSetup: $showSetup, showSearch: $showSearch, onEdit: beginEditing, onEditQueued: editQueued)
             .environment(\.replySpeaker, conversation.bot?.name)
             .environment(\.replyFace, botFace)
+            .environment(\.fileSource, conversation.fileSource)
             .chatTextSize()
             .background(theme.pageColor)
             .foregroundStyle(theme.textColor)

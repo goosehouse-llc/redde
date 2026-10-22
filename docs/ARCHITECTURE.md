@@ -852,8 +852,16 @@ The other way round, a reply delivers a file by naming it: a line `MEDIA:/path/o
 a Markdown image of such a path, or "[IMAGE: /path]" (`ServeMedia`, `Shared/ReplyMedia.swift`).
 After a turn the app fetches each over the Dashboard's file API (`/api/fs/read-data-url`, so it
 needs the Dashboard login, also when the conversation runs over the Hermes API), attaches it
-and takes its path out of the text; one that can't be fetched stays as it was written
-(`Conversation.resolveServeMedia`). Pictures and documents were fetched from the start. Sound
+and takes its path out of the text; one that can't be fetched stays in the text, and is shown
+as a file to open (`DeliveredFileChip`: fetched on a tap through `/api/fs/download`, with no size
+limit, or saying why it can't be: no Dashboard login, not on the server, refused). Since
+2026-10-21 (a Reddit report: an agent's Markdown files never reached the chat) a `MEDIA:` tag is
+read as Hermes's desktop app reads it: quoted, with spaces up to a known extension, from `~/`,
+relative to the session's folder (the Dashboard is told `session_id` for those, Hermes 0.21.3
+on), any kind of file; and `::preview{file="page.html"}`, Hermes 0.22's in-chat page, is its file
+for now. The Hermes API's hint (`HermesSessionsTransport.clientHint`) teaches every kind of file,
+not just pictures. A Markdown file opens as it reads (`FileViewer`, `MarkdownDocument`), anything
+else in Quick Look, under Done. Pictures and documents were fetched from the start. Sound
 was not, and a spoken reply from the agent's speech tool stood there as its path (reported
 2026-10-12): it is now, by its ending (mp3, m4a, aac, wav, ogg, oga, opus, flac, aiff, caf),
 along with the tool's `[[audio_as_voice]]` line, which goes. Stock Hermes writes MP3, and

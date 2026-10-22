@@ -1645,7 +1645,7 @@ final class Conversation {
                 fetched.insert(c.path)
                 continue
             }
-            guard let dataURL = await fetchServerFile(c.path),
+            guard let dataURL = await fetchServerFile(c.path, fileSource),
                   let att = ServeMedia.attachment(dataURL: dataURL, name: c.filename) else { continue }
             fetched.insert(c.path)
             attachments.append(att)
@@ -1666,7 +1666,10 @@ final class Conversation {
     var phoneTools = DeviceToolsService.shared
 
     /// A file on the server as a data URL, over the Dashboard's file API. Tests put their own here.
-    var fetchServerFile: (String) async -> String? = { try? await HermesServeClient.shared.readDataURL(path: $0) }
+    var fetchServerFile: (String, FileSource) async -> String? = { try? await HermesServeClient.shared.readDataURL(path: $0, in: $1) }
+
+    /// Where the files this chat's replies name are on the server.
+    var fileSource: FileSource { FileSource(sessionID: serverSessionID, profile: bot?.profile ?? settings.profileName) }
 
     /// How many replies of a chat opened from the server have their files fetched again.
     static let reopenedMediaReach = 8

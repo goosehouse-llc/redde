@@ -1139,10 +1139,12 @@ final class HermesServeClient {
 
     /// Reads a file on the gateway host as a `data:` URL (`/api/fs/read-data-url`). Nil when the
     /// file is missing or over the server's size cap.
-    func readDataURL(path: String) async throws -> String? {
+    /// A file as a data URL (16 MB at most: nil over that, and when it isn't there). `in`: the
+    /// session whose folder a relative path is in, and the profile it belongs to (a bot's).
+    func readDataURL(path: String, in source: FileSource? = nil) async throws -> String? {
         var comps = URLComponents()
         comps.path = "api/fs/read-data-url"
-        comps.queryItems = [.init(name: "path", value: path)]
+        comps.queryItems = [.init(name: "path", value: path)] + (source?.queryItems(for: path) ?? [])
         do {
             let data = try await rest("GET", comps.string ?? "api/fs/read-data-url", body: nil as Data?)
             struct Envelope: Decodable { var dataUrl: String }
@@ -1150,6 +1152,18 @@ final class HermesServeClient {
         } catch let TransportError.http(status, _) where status == 404 || status == 413 {
             return nil
         }
+    }
+
+    /// A file an agent's reply named, saved to a temporary file (no size limit, unlike
+    /// `readDataURL`): the desktop app's download route, by path.
+    func downloadDelivered(path: String, in source: FileSource?) async throws -> URL {
+        var comps = URLComponents()
+        comps.path = "api/fs/download"
+        comps.queryItems = [.init(name: "path", value: path)] + (source?.queryItems(for: path) ?? [])
+        let fetched = try await restDownload(comps.string?.replacingOccurrences(of: "+", with: "%2B") ?? "api/fs/download")
+        let copy = try ServerFiles.localCopy(named: String(path.split(separator: "/").last ?? "file"))
+        try FileManager.default.moveItem(at: fetched, to: copy)
+        return copy
     }
 
     func writeText(path: String, content: String) async throws {

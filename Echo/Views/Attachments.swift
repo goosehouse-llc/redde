@@ -144,7 +144,7 @@ private struct AttachmentTiles: View {
                 }
             }
         }
-        .sheet(item: $previewingDoc) { DocumentPreview(attachment: $0).ignoresSafeArea() }
+        .sheet(item: $previewingDoc) { FileViewer(attachment: $0) }
     }
 }
 
@@ -269,29 +269,49 @@ struct PhotoGroup: View {
 }
 
 /// QuickLook for a document attachment; the bytes go to a temp file so QL can render them,
-/// and its share button covers saving to Files.
+/// and its share button covers saving to Files. In a sheet QuickLook has no bar of its own, so
+/// it had no Done: it could only be swiped away (a Reddit report, 2026-10-21). It sits in a
+/// navigation bar here, with Done.
 struct DocumentPreview: UIViewControllerRepresentable {
-    let attachment: Attachment
+    private enum Source { case attachment(Attachment), file(URL) }
+    private let source: Source
+    @Environment(\.dismiss) private var dismiss
+
+    init(attachment: Attachment) { source = .attachment(attachment) }
+    /// A file already on this phone (one a reply named, fetched from the server).
+    init(url: URL) { source = .file(url) }
 
     final class Coordinator: NSObject, QLPreviewControllerDataSource {
         let url: URL
-        init(attachment: Attachment) {
+        var dismiss: DismissAction?
+        init(url: URL) { self.url = url }
+        convenience init(attachment: Attachment) {
             let dir = FileManager.default.temporaryDirectory.appending(path: "previews")
             try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-            url = dir.appending(path: attachment.filename)
+            let url = dir.appending(path: attachment.filename)
             try? attachment.data.write(to: url)
+            self.init(url: url)
         }
         func numberOfPreviewItems(in controller: QLPreviewController) -> Int { 1 }
         func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem { url as NSURL }
     }
 
-    func makeCoordinator() -> Coordinator { Coordinator(attachment: attachment) }
-    func makeUIViewController(context: Context) -> QLPreviewController {
+    func makeCoordinator() -> Coordinator {
+        switch source {
+        case .attachment(let attachment): Coordinator(attachment: attachment)
+        case .file(let url): Coordinator(url: url)
+        }
+    }
+    func makeUIViewController(context: Context) -> UINavigationController {
         let controller = QLPreviewController()
         controller.dataSource = context.coordinator
-        return controller
+        let coordinator = context.coordinator
+        controller.navigationItem.leftBarButtonItem = UIBarButtonItem(systemItem: .done, primaryAction: UIAction { _ in coordinator.dismiss?() })
+        return UINavigationController(rootViewController: controller)
     }
-    func updateUIViewController(_ controller: QLPreviewController, context: Context) {}
+    func updateUIViewController(_ navigation: UINavigationController, context: Context) {
+        context.coordinator.dismiss = dismiss
+    }
 }
 
 /// The system camera for one photo. PhotosPicker can't take pictures, so this wraps

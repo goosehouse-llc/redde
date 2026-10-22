@@ -206,7 +206,7 @@ struct GroupFileChip: View {
         .buttonStyle(.plain)
         .accessibilityLabel(name)
         .accessibilityHint(failed ? "Couldn't be fetched from the server. Tap to try again." : "Opens it, from your server")
-        .sheet(item: $opened) { DocumentPreview(attachment: $0).ignoresSafeArea() }
+        .sheet(item: $opened) { FileViewer(attachment: $0) }
     }
 
     private func open() {

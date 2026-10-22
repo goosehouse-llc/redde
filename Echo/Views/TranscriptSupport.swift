@@ -154,6 +154,8 @@ extension EnvironmentValues {
     @Entry var replySpeaker: String?
     /// That bot's face, beside its name on each reply.
     @Entry var replyFace: BotFace?
+    /// Where the files a reply names are on the server: its chat's session and profile.
+    @Entry var fileSource: FileSource?
 }
 
 

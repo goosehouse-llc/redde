@@ -43,6 +43,7 @@ struct MessageRow: View, Equatable {
     /// A bot's name, in its chat; else the agent's (`settings.headerTitle`).
     @Environment(\.replySpeaker) private var replySpeaker
     @Environment(\.replyFace) private var replyFace
+    @Environment(\.fileSource) private var fileSource
     @State private var settings = Settings.shared
     /// What the person chose for each fold, once they have tapped it; until then each is open
     /// while it is what the agent is doing, and folded after.
@@ -85,6 +86,15 @@ struct MessageRow: View, Equatable {
             }
             if !message.subagents.isEmpty { SubagentRows(subagents: message.subagents) }
             if !message.attachments.isEmpty { AttachmentGallery(attachments: message.attachments) }
+            // Files the reply names that aren't in the chat: each to fetch and open, not a path.
+            if message.role == .assistant, !isLive {
+                let named = ServeMedia.named(in: message.text).files
+                if !named.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(named, id: \.path) { DeliveredFileChip(file: $0, source: fileSource) }
+                    }
+                }
+            }
             if isLive, message.text.isEmpty {
                 // Waiting for the first token: the app's waveform, breathing.
                 WaveformPulse(color: theme.accent)
@@ -96,8 +106,9 @@ struct MessageRow: View, Equatable {
                 // A reply that went on to write a message as if from the person: what it said,
                 // then a warning in place of the made-up rest.
                 let invented = BotMessages.inventedTurn(in: message.text)
-                if invented?.said.isEmpty != true {
-                    MarkdownView(text: invented?.said ?? message.text, isLive: isLive, selectable: false)
+                let said = ServeMedia.named(in: invented?.said ?? message.text).text
+                if !said.isEmpty {
+                    MarkdownView(text: said, isLive: isLive, selectable: false)
                         .padding(.horizontal, flatReply ? 2 : 14)
                         .padding(.vertical, flatReply ? 0 : theme.bubbleVerticalPadding)
                         .background(flatReply ? AnyShapeStyle(.clear) : bubble, in: .rect(cornerRadius: theme.bubbleRadius))

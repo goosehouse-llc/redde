@@ -380,7 +380,7 @@ struct PhoneToolsTests {
         let conversation = Conversation(settings: settings, store: ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "phone-\(UUID().uuidString)")),
                                         transportOverride: gated)
         conversation.phoneTools = service
-        conversation.fetchServerFile = { asked.append($0); return nil }
+        conversation.fetchServerFile = { path, _ in asked.append(path); return nil }
         let events = conversation.send("Show me my most recent photo")
         Task { for await _ in events {} }
         let deadline = Date().addingTimeInterval(3)
@@ -456,7 +456,7 @@ struct PhoneToolsTests {
         let conversation = Conversation(settings: settings, store: ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "phone-\(UUID().uuidString)")),
                                         transportOverride: transport)
         var asked: [String] = []
-        conversation.fetchServerFile = { asked.append($0); return "data:image/jpeg;base64,\(Data([0xFF, 0xD8, 0xFF]).base64EncodedString())" }
+        conversation.fetchServerFile = { path, _ in asked.append(path); return "data:image/jpeg;base64,\(Data([0xFF, 0xD8, 0xFF]).base64EncodedString())" }
         for await _ in conversation.send("Show me") {}
         let deadline = Date().addingTimeInterval(3)
         while conversation.isStreaming, Date() < deadline { try await Task.sleep(for: .milliseconds(10)) }

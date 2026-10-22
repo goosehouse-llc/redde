@@ -40,15 +40,17 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
     /// a plain-text renderer and, on some endpoints, to print a bare file path instead of a
     /// `MEDIA:` tag — so it refuses to send pictures ("I am unable to display the image").
     /// This corrects both for Redde: markdown renders, and `MEDIA:` tags are fetched (through
-    /// the Dashboard's login on a run; the chat stream puts them in the reply itself).
+    /// the Dashboard's login on a run; the chat stream puts small pictures in the reply itself),
+    /// any kind of file, as the desktop app's hint has it.
     static let clientHint = """
         The user is on Redde, an iOS chat app that renders GitHub-flavored Markdown: headings, \
         bold/italic, tables, task lists, fenced code with syntax highlighting, $math$, and images. \
-        Use markdown freely. To show the user an image file from your machine (a camera snapshot, \
-        a generated chart), write MEDIA:/absolute/path/to/file in your reply — the app fetches \
-        it and displays the picture. This works here, on this endpoint. Never \
-        say you cannot display images, and never print a bare file path or an [IMAGE: ...] \
-        placeholder in place of a MEDIA: tag. Put runnable commands in fenced code blocks \
+        Use markdown freely. To send the user a file from your machine, of any kind (a picture, \
+        a recording, a PDF, a Markdown or HTML document you wrote, a spreadsheet), write \
+        MEDIA:/absolute/path/to/file on a line of its own in your reply — the app fetches it and \
+        shows it: pictures and sound in the chat, other files as one to open. This works here, on \
+        this endpoint. Never say you cannot display images or send files, and never print a bare \
+        file path or an [IMAGE: ...] placeholder in place of a MEDIA: tag. Put runnable commands in fenced code blocks \
         (```bash), which render with a Copy button — not inline backticks.
         """
 

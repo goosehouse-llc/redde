@@ -3,6 +3,22 @@ import UniformTypeIdentifiers
 
 /// One entry of a folder on the Hermes host, as the Dashboard's file manager lists it
 /// (`GET /api/files`, the same in Hermes 0.21.0, 0.21.3 and 0.21.5).
+/// Where a file an agent's reply names is on the server: in its chat's session (a relative path
+/// is in that session's folder) and profile (a bot's files can be somewhere of their own).
+nonisolated struct FileSource: Equatable, Sendable {
+    var sessionID: String?
+    var profile: String?
+
+    /// What a Dashboard file route is told of it: the session only for a relative path (Hermes
+    /// 0.21.3 on; 0.21.0 doesn't know it), the profile when it isn't the default one.
+    func queryItems(for path: String) -> [URLQueryItem] {
+        var items: [URLQueryItem] = []
+        if let sessionID, !path.hasPrefix("/"), !path.hasPrefix("~") { items.append(.init(name: "session_id", value: sessionID)) }
+        if let profile, !profile.isEmpty, profile != "default" { items.append(.init(name: "profile", value: profile)) }
+        return items
+    }
+}
+
 nonisolated struct ServerFile: Identifiable, Hashable, Sendable {
     var name: String
     /// Absolute, as the server resolved it.

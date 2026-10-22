@@ -31,9 +31,10 @@ struct ReplyAudioTests {
         [[audio_as_voice]]
         MEDIA:/home/hermes/.hermes/audio_cache/tts_20261012_101500_123456.ogg
         And the recording: MEDIA:/tmp/call.mp3 MEDIA:/tmp/memo.m4a MEDIA:/tmp/take.WAV
-        Not sound, not fetched: MEDIA:/tmp/tool.bin
+        Not sound, but a file all the same: MEDIA:/tmp/tool.bin
         """
-        #expect(ServeMedia.candidates(in: text).map(\.filename) == ["tts_20261012_101500_123456.ogg", "call.mp3", "memo.m4a", "take.WAV"])
+        #expect(ServeMedia.candidates(in: text).map(\.filename) == ["tts_20261012_101500_123456.ogg", "call.mp3", "memo.m4a", "take.WAV", "tool.bin"])
+        #expect(ServeMedia.candidates(in: text).filter { ServeMedia.audioExts.contains(($0.filename as NSString).pathExtension.lowercased()) }.count == 4)
     }
 
     @Test func aFetchedSoundIsSoundWhateverTheServerCallsIt() throws {
@@ -69,7 +70,7 @@ struct ReplyAudioTests {
         settings.transport = .hermesServe
         let store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "audio-\(UUID().uuidString)"))
         let conversation = Conversation(settings: settings, store: store, transportOverride: ConversationLifecycleTests.ScriptedTransport(events))
-        conversation.fetchServerFile = { server.fetch($0) }
+        conversation.fetchServerFile = { path, _ in server.fetch(path) }
         return conversation
     }
 

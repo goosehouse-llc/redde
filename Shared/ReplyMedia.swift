@@ -71,8 +71,11 @@ nonisolated enum ServeMedia {
     struct Candidate: Equatable {
         /// The exact text to strip from the reply once the file is fetched.
         var whole: String
+        /// As the reply wrote it: absolute, from `~/`, or relative to the session's folder.
         var path: String
         var filename: String { String(path.split(separator: "/").last ?? "photo") }
+        /// Neither absolute nor from home: the server finds it from the session's folder.
+        var isRelative: Bool { !path.hasPrefix("/") && !path.hasPrefix("~") }
     }
 
     private static let imageExts: Set<String> = ["png", "jpg", "jpeg", "gif", "webp", "bmp", "heic"]
@@ -98,33 +101,124 @@ nonisolated enum ServeMedia {
         }
     }
 
+    /// Hermes's own list of what a `MEDIA:` tag delivers (`MEDIA_DELIVERY_EXTS`, which the desktop
+    /// app mirrors): the end of a path written without quotes, spaces and all, is one of these.
+    static let deliveryExts = ["png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff", "svg", "heic", "mp4", "mov", "m4v", "avi",
+                               "mkv", "webm", "3gp", "mp3", "m2a", "wav", "ogg", "opus", "m4a", "aac", "flac", "pdf", "docx",
+                               "doc", "odt", "rtf", "txt", "md", "epub", "xlsx", "xls", "ods", "csv", "tsv", "json", "xml",
+                               "yaml", "yml", "kmz", "kml", "geojson", "gpx", "pptx", "ppt", "odp", "key", "zip", "tar", "gz",
+                               "tgz", "bz2", "xz", "7z", "rar", "apk", "ipa", "html", "htm"]
+    /// A sentence's punctuation after a bare path (`open MEDIA:/tmp/a.pdf.`) isn't the path's.
+    private static let trailingPunctuation: Set<Character> = [".", ",", ";", ":", "!", "?"]
+
+    /// What the desktop app reads as a `MEDIA:` tag (its `MEDIA_TAG_RE`): a quoted path (the way to
+    /// write an odd name); one from `/` or `~/`, spaces allowed, to a known extension; else the
+    /// word that follows (a relative path, an unknown extension).
+    private static let mediaTag: NSRegularExpression = {
+        let exts = deliveryExts.sorted { $0.count > $1.count }.joined(separator: "|")
+        let anchored = #"(?:~/|/)\S+?(?:[^\S\n]+\S+?)*?\.(?i:"# + exts + #")(?=[\s`"'*_,;:)\]}]|MEDIA:|$)"#
+        let pattern = #"[`"']?MEDIA:\s*(`[^`\n]+`|"[^"\n]+"|'[^'\n]+'|"# + anchored + #"|[^\s`"]+)[`"']?"#
+        return try! NSRegularExpression(pattern: pattern)
+    }()
+
+    /// `::preview{file="page.html"}`: a page the agent made, which the desktop app shows inside
+    /// the chat. Here it is the file, for now.
+    private static let previewDirective = try! NSRegularExpression(
+        pattern: #"(?<![^\s])::preview\{([^{}]{0,1024})\}"#)
+    private static let previewFile = try! NSRegularExpression(pattern: #"file=(?:"([^"]*)"|'([^']*)')"#, options: [.caseInsensitive])
+
+    /// Whether a reply could name a file at all, before anything costlier looks.
+    static func mayName(in text: String) -> Bool {
+        text.contains("MEDIA:") || text.contains("::preview") || text.contains("[IMAGE:") || text.contains("](/")
+            || text.contains("](file://") || text.contains("/redde-push/device/files/")
+    }
+
     static func candidates(in text: String) -> [Candidate] {
-        guard text.contains("/") else { return [] }
-        // `MEDIA:/abs/path` (what every hermes platform hint teaches), `![alt](/abs/path)` and
-        // `![alt](file:///abs/path)` (a markdown image of a server file the phone can't load),
-        // and `[IMAGE: /abs/path]` (the phrasing models fall back to).
-        // And a file the phone handed over for the agent to look at (phone tools), which Redde's
-        // plugin keeps in a folder of its own on the server: named by its bare path, in
-        // backticks or not, it is shown all the same. An agent asked to "show me" the photo it
-        // was just given answered with that path.
+        guard mayName(in: text) else { return [] }
+        var found: [Candidate] = []
+        var seen: Set<String> = []
+        // By what is written: a path named twice over (`MEDIA:/x` and then `/x`) is stripped both times.
+        func add(_ whole: String, _ path: String) {
+            guard seen.insert(whole).inserted else { return }
+            found.append(Candidate(whole: whole, path: path))
+        }
+        let ns = text as NSString
+        for match in mediaTag.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
+            if let (whole, path) = tag(ns.substring(with: match.range), value: ns.substring(with: match.range(at: 1))) { add(whole, path) }
+        }
+        // `![alt](/abs/path)` and `![alt](file:///abs/path)` (a markdown image of a server file
+        // the phone can't load), `[IMAGE: /abs/path]` (the phrasing models fall back to), and a
+        // file the phone handed over for the agent to look at (phone tools), which Redde's plugin
+        // keeps in a folder of its own on the server: named by its bare path, in backticks or not,
+        // it is shown all the same. An agent asked to "show me" the photo it was just given
+        // answered with that path.
         let patterns: [Regex<(Substring, Substring)>] = [
-            /MEDIA:(\/[^\s"'()\[\]]+)/,
             /!\[[^\]]*\]\((?:file:\/\/)?(\/[^)\s]+)\)/,
             /\[IMAGE:\s*(\/[^\]\s]+)\]/,
             /`?(\/[^\s`"'()\[\]]*\/redde-push\/device\/files\/[^\s`"'()\[\]]+)`?/,
         ]
-        var found: [Candidate] = []
-        var seen: Set<String> = []
         for pattern in patterns {
             for match in text.matches(of: pattern) {
                 let path = String(match.output.1)
                 guard let ext = path.split(separator: ".").last?.lowercased(),
-                      imageExts.contains(ext) || docExts.contains(ext) || audioExts.contains(ext),
-                      seen.insert(String(match.output.0)).inserted else { continue }
-                found.append(Candidate(whole: String(match.output.0), path: path))
+                      imageExts.contains(ext) || docExts.contains(ext) || audioExts.contains(ext) else { continue }
+                add(String(match.output.0), path)
             }
         }
+        for match in previewDirective.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
+            let attributes = ns.substring(with: match.range(at: 1))
+            let attrs = attributes as NSString
+            guard let file = previewFile.firstMatch(in: attributes, range: NSRange(location: 0, length: attrs.length)) else { continue }
+            let value = file.range(at: 1).location != NSNotFound ? attrs.substring(with: file.range(at: 1)) : attrs.substring(with: file.range(at: 2))
+            guard !value.isEmpty, !value.contains("://") else { continue }
+            add(ns.substring(with: match.range), value)
+        }
         return found
+    }
+
+    /// One `MEDIA:` match: what to strip and the path, as the desktop app reads it (quotes off, a
+    /// bare path's trailing sentence punctuation left to the sentence), or nil when what follows
+    /// the tag can't be a file (`MEDIA:...`, a word with no slash or extension).
+    private static func tag(_ match: String, value: String) -> (whole: String, path: String)? {
+        var raw = value.trimmingCharacters(in: .whitespaces)
+        guard let first = raw.first else { return nil }
+        let quoted = raw.count > 1 && first == raw.last && "\"'`".contains(first)
+        var whole = match
+        // A path with spaces runs to the next known extension, which can be a web address's
+        // further along the sentence (`MEDIA:/tmp/tool.bin, not https://…/pic.jpg`): then the
+        // path is the first word.
+        if !quoted, raw.contains(" "), raw.contains("://"), let cut = raw.firstIndex(of: " "), let at = match.range(of: raw) {
+            raw = String(raw[..<cut])
+            whole = String(match[..<at.lowerBound]) + raw
+        }
+        var path = quoted ? String(raw.dropFirst().dropLast()) : raw
+        if !quoted {
+            // A trailing backtick or double quote left in the value is formatting, not the path.
+            if path.hasSuffix("`") || path.hasSuffix("\"") { path.removeLast() }
+            while let last = path.last, trailingPunctuation.contains(last), isPlausible(String(path.dropLast())) {
+                path.removeLast()
+                if whole.last == last { whole.removeLast() }
+            }
+        }
+        // A page on the web is a link, not a file on the server.
+        return isPlausible(path) && !path.contains("://") ? (whole, path) : nil
+    }
+
+    /// A path names a file when it has a folder in it or an extension (`report.md`, `../a.png`).
+    private static func isPlausible(_ path: String) -> Bool {
+        path.contains("/") || path.range(of: #"\.[^.]"#, options: .regularExpression) != nil
+    }
+
+    /// The reply as it reads without the files it names, and those files: what stays named after
+    /// they were fetched (none could be, or there was no Dashboard login to fetch with) is shown
+    /// as a file to open rather than as a path.
+    static func named(in text: String) -> (text: String, files: [Candidate]) {
+        let found = candidates(in: text)
+        guard !found.isEmpty else { return (text, []) }
+        var out = text.replacingOccurrences(of: voiceMarker, with: "")
+        for file in found { out = out.replacingOccurrences(of: file.whole, with: "") }
+        var paths: Set<String> = []
+        return (out.trimmingCharacters(in: .whitespacesAndNewlines), found.filter { paths.insert($0.path).inserted })
     }
 
     /// A path into the folder where Redde's plugin keeps what the phone handed to the agent.
@@ -154,6 +248,6 @@ extension ServeMedia {
     nonisolated static let spokenImageTagPattern = #"MEDIA:\S+\.(?i:png|jpe?g|gif|webp|bmp|heic)\S*"#
     nonisolated static let spokenAudioTagPattern = #"MEDIA:\S+\.(?i:mp3|m4a|aac|wav|ogg|oga|opus|flac|aiff?|caf)\b\S*"#
     nonisolated static let voiceMarkerPattern = #"\[\[audio_as_voice\]\]\s*"#
-    nonisolated static let mediaTagPattern = #"MEDIA:\S+"#
+    nonisolated static let mediaTagPattern = #"MEDIA:\s*(?:"[^"\n]+"|'[^'\n]+'|`[^`\n]+`|\S+)"#
     nonisolated static let imageTagPattern = #"\[IMAGE:[^\]]*\]"#
 }
