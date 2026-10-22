@@ -44,6 +44,8 @@ struct BotEditor: View {
     @State private var offered: [BotToolset] = []
     @State private var mainToolsets: Set<String> = []
     @State private var toolsets: Set<String>?
+    /// Its skills, each on or off for it; nil until read (or when they can't be).
+    @State private var skills: [HermesServeClient.DashboardSkill]?
     /// The template New Bot started from (`BotTemplate`).
     @State private var template = BotTemplate.blank.id
     /// Changing: the bot as the server had it, so only what changed is written.
@@ -202,6 +204,17 @@ struct BotEditor: View {
                         }
                         .disabled(offered.isEmpty)
                     }
+                    // Its skills, each on or off for it alone, at once (not on Save). One being made
+                    // has none of its own yet.
+                    if let editing {
+                        NavigationLink {
+                            BotSkillsList(bot: editing, name: isMain ? mainName : title.nilIfEmpty ?? editing.label(mainName: mainName),
+                                          skills: $skills)
+                        } label: {
+                            LabeledContent("Skills", value: skillsSummary)
+                        }
+                        .disabled(skills == nil)
+                    }
                 } footer: {
                     if isMain {
                         Text("Your agent's own: its model is picked in each conversation, its name in Settings.")
@@ -322,6 +335,13 @@ struct BotEditor: View {
         toolsets = choice.toolsets(offered: offered).map(Set.init)
     }
 
+    /// How many of its skills are on, or "…" until they are read.
+    private var skillsSummary: String {
+        guard let skills else { return loading ? "…" : "Can't be read" }
+        let on = skills.filter { $0.enabled ?? true }.count
+        return on == skills.count ? "All \(skills.count)" : "\(on) of \(skills.count)"
+    }
+
     private var toolsSummary: String {
         if loading { return "…" }
         guard let toolsets, toolsets != mainToolsets else { return "Same as \(mainName)" }
@@ -368,6 +388,7 @@ struct BotEditor: View {
         do {
             async let details = client.botDetails(editing)
             async let tools = client.toolsetsOffered()
+            async let ownSkills = client.dashboardSkills(profile: editing.name)
             let options = isMain ? [] : ((try? await client.modelOptions(forProfile: editing.name)) ?? [])
             let read = try await details
             let main = (try? await tools)?.enabledToolsets ?? []
@@ -380,6 +401,7 @@ struct BotEditor: View {
             offered = read.toolsets
             mainToolsets = main
             toolsets = start.toolsets
+            skills = try? await ownSkills
             title = start.title
             about = start.about
             soul = start.soul
@@ -654,5 +676,73 @@ struct BotToolsList: View {
         }
         .navigationTitle("Tools")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// A bot's skills, each on or off for it alone (`skills.disabled` in its profile; his ask
+/// 2026-10-22). On, it is listed for the bot and read only when the bot needs it; off, the bot
+/// neither sees nor loads it. A switch takes effect at once, from its next message.
+struct BotSkillsList: View {
+    let bot: HermesBot
+    let name: String
+    @Binding var skills: [HermesServeClient.DashboardSkill]?
+    @State private var busy: Set<String> = []
+    @State private var problem: String?
+    @State private var query = ""
+
+    private var byCategory: [(category: String, skills: [HermesServeClient.DashboardSkill])] {
+        let words = query.trimmingCharacters(in: .whitespaces).lowercased()
+        let shown = (skills ?? []).filter {
+            words.isEmpty || $0.name.lowercased().contains(words) || ($0.description ?? "").lowercased().contains(words)
+        }
+        let grouped = Dictionary(grouping: shown) { $0.category?.isEmpty == false ? $0.category! : "Other" }
+        return grouped.keys.sorted().compactMap { key in grouped[key].map { (key, $0.sorted { $0.name < $1.name }) } }
+    }
+
+    var body: some View {
+        List {
+            if let problem {
+                Label(problem, systemImage: "exclamationmark.triangle")
+                    .font(.footnote).foregroundStyle(.orange)
+            }
+            Section {
+            } footer: {
+                Text("On, \(name) sees a skill listed and reads it only when it needs it. Off, it doesn't see it at all. Fewer skills on make every message quicker to start on a model running on your own machine.")
+            }
+            ForEach(byCategory, id: \.category) { group in
+                Section("\(group.category.capitalized) · \(group.skills.count)") {
+                    ForEach(group.skills) { skill in
+                        Toggle(isOn: Binding(get: { skill.enabled ?? true }, set: { toggle(skill, $0) })) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(skill.name)
+                                if let description = skill.description, !description.isEmpty {
+                                    Text(description).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                                }
+                            }
+                        }
+                        .disabled(busy.contains(skill.name))
+                    }
+                }
+            }
+        }
+        .searchable(text: $query, prompt: "Find a skill")
+        .navigationTitle("Skills")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func toggle(_ skill: HermesServeClient.DashboardSkill, _ on: Bool) {
+        guard let i = skills?.firstIndex(where: { $0.name == skill.name }) else { return }
+        busy.insert(skill.name)
+        skills?[i].enabled = on
+        problem = nil
+        Task {
+            defer { busy.remove(skill.name) }
+            do {
+                try await HermesServeClient.shared.toggleSkill(name: skill.name, enabled: on, profile: bot.name)
+            } catch {
+                if let i = skills?.firstIndex(where: { $0.name == skill.name }) { skills?[i].enabled = !on }
+                problem = "Couldn't switch \(skill.name) \(on ? "on" : "off"): \(error.localizedDescription)"
+            }
+        }
     }
 }

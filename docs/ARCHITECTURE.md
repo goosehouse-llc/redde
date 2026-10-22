@@ -71,6 +71,13 @@ every skill the agent knows. With the Dashboard login they also get switches: a 
 changes its platform setting in Hermes's config (`PUT /api/tools/toolsets/{name}`), and a skill
 switch stops Redde loading that skill (`PUT /api/skills/toggle`).
 
+**Each bot's skills** are in Edit Bot → Skills (`BotSkillsList`, 2026-10-22). The list is the bot's
+own, from `GET /api/skills?profile=<bot>`, and switching one off writes the bot's `skills.disabled`
+(`PUT /api/skills/toggle?profile=<bot>`), right away rather than on Save. On, the bot sees the skill
+listed and reads it only when it needs it; off, it doesn't see it at all. Every release from 0.21.0
+takes the profile on both routes. Lab `bots` checks that a skill switched off for a bot is off for it
+alone and can be switched back on.
+
 **"The Dashboard login"** counts a Dashboard that lets the phone in with nothing stored: one with no
 password, or a login's cookie still good (`HermesServeClient.canUse`, `letInWithoutLogin`). The chat
 connection already got in that way, by its `api/sessions` probe. Settings → Agent, files the agent

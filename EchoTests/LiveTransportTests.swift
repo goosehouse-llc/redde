@@ -1980,6 +1980,21 @@ struct HermesLabBotsTests {
                "a picture set in Hermes Desktop comes over for its bot, and only for it",
                "listed: \(String(describing: pictured.bots.first { $0.name == bot.name }?.hasPicture)), fetched \(fetched?.count ?? 0) of \(png.count) bytes")
 
+        // Its skills, each on or off for it alone (Edit Bot → Skills).
+        let ownSkills = try await client.dashboardSkills(profile: bot.name)
+        if let skill = ownSkills.first(where: { $0.enabled ?? true }) {
+            try await client.toggleSkill(name: skill.name, enabled: false, profile: bot.name)
+            let off = try await client.dashboardSkills(profile: bot.name).first { $0.name == skill.name }
+            let mains = try await client.dashboardSkills(profile: "default").first { $0.name == skill.name }
+            HermesLabApprovalTests.report(off?.enabled == false && (mains?.enabled ?? true),
+                   "a skill switched off for the bot is off for it alone, and still listed to switch back on",
+                   "bot: \(String(describing: off?.enabled)), main: \(String(describing: mains?.enabled))")
+            try await client.toggleSkill(name: skill.name, enabled: true, profile: bot.name)
+            let back = try await client.dashboardSkills(profile: bot.name).first { $0.name == skill.name }
+            HermesLabApprovalTests.report(back?.enabled ?? true, "and on again", "\(String(describing: back?.enabled))")
+        } else {
+            HermesLabApprovalTests.report(false, "the bot has skills to switch", "\(ownSkills.count) listed")
+        }
 
         // From a template (New Bot's Writer): its tools, and every one again once let go.
         let mainAgent = try await client.toolsetsOffered()

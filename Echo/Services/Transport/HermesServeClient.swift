@@ -1035,8 +1035,9 @@ final class HermesServeClient {
         _ = try await rest("PUT", "api/profiles/\(profile)/soul", body: try JSONEncoder().encode(Body(content: content)))
     }
 
-    func dashboardSkills() async throws -> [DashboardSkill] {
-        let data = try await rest("GET", "api/skills", body: nil as Data?)
+    /// The skills, with whether each is on: the selected profile's, or `profile`'s (a bot's).
+    func dashboardSkills(profile: String? = nil) async throws -> [DashboardSkill] {
+        let data = try await rest("GET", Self.naming("api/skills", profile: profile), body: nil as Data?)
         if let list = try? JSONDecoder().decode([DashboardSkill].self, from: data) { return list }
         struct Envelope: Decodable { var skills: [DashboardSkill]? ; var data: [DashboardSkill]? }
         let env = try JSONDecoder().decode(Envelope.self, from: data)
@@ -1094,9 +1095,19 @@ final class HermesServeClient {
         _ = try await rest("PUT", "api/skills/content", body: try JSONEncoder().encode(Body(name: name, content: content)))
     }
 
-    func toggleSkill(name: String, enabled: Bool) async throws {
+    /// A skill on or off for the selected profile, or for `profile` (a bot's): off, the agent
+    /// neither sees it listed nor can load it (`skills.disabled` in that profile's config).
+    func toggleSkill(name: String, enabled: Bool, profile: String? = nil) async throws {
         struct Body: Encodable { var name: String; var enabled: Bool }
-        _ = try await rest("PUT", "api/skills/toggle", body: try JSONEncoder().encode(Body(name: name, enabled: enabled)))
+        _ = try await rest("PUT", Self.naming("api/skills/toggle", profile: profile),
+                           body: try JSONEncoder().encode(Body(name: name, enabled: enabled)))
+    }
+
+    /// A route for one profile in particular, whichever is selected (`scoped` keeps a path's own).
+    nonisolated static func naming(_ path: String, profile: String?) -> String {
+        guard let profile, var comps = URLComponents(string: path) else { return path }
+        comps.queryItems = (comps.queryItems ?? []) + [URLQueryItem(name: "profile", value: profile)]
+        return comps.string ?? path
     }
 
     // MARK: - Context files (SOUL.md, ENVIRONMENT.md) via the dashboard file API
