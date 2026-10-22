@@ -78,6 +78,19 @@ listed and reads it only when it needs it; off, it doesn't see it at all. Every 
 takes the profile on both routes. Lab `bots` checks that a skill switched off for a bot is off for it
 alone and can be switched back on.
 
+**Pinning a skill** makes it always loaded: the bot reads it in full at the start of every message
+(`skills.auto_load`), and Hermes needs the bot's Skills tool on for that. Use: the Home bot keeps
+its Home Assistant skills at hand and reads the rest only when needed.
+- **How it's stored:** Redde reads the list with `GET /api/config?profile=<bot>&include_defaults=false`
+  and writes it with `PUT /api/config?profile=<bot>` `{"config": {"skills": {"auto_load": [...]}}}`.
+  The Dashboard deep-merges, and a list replaces the old one, so nothing else in the config changes
+  (every release from 0.21.0).
+- **Switching a skill off** unpins it.
+- **When it takes effect:** Hermes rebuilds an ongoing Bot Chat's prompt only when its toolsets,
+  switched-off skills, skill files or SOUL change, not when `auto_load` does. So a pin applies to
+  new chats, and to the bot's chat once it starts fresh or is condensed; the screen says so.
+- **Lab:** `bots` checks that a pin is the bot's alone and that its other settings stay.
+
 **"The Dashboard login"** counts a Dashboard that lets the phone in with nothing stored: one with no
 password, or a login's cookie still good (`HermesServeClient.canUse`, `letInWithoutLogin`). The chat
 connection already got in that way, by its `api/sessions` probe. Settings → Agent, files the agent

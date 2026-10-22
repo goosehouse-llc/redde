@@ -46,6 +46,8 @@ struct BotEditor: View {
     @State private var toolsets: Set<String>?
     /// Its skills, each on or off for it; nil until read (or when they can't be).
     @State private var skills: [HermesServeClient.DashboardSkill]?
+    /// The ones it reads in full at the start of every message; nil until read.
+    @State private var alwaysLoaded: Set<String>?
     /// The template New Bot started from (`BotTemplate`).
     @State private var template = BotTemplate.blank.id
     /// Changing: the bot as the server had it, so only what changed is written.
@@ -209,7 +211,8 @@ struct BotEditor: View {
                     if let editing {
                         NavigationLink {
                             BotSkillsList(bot: editing, name: isMain ? mainName : title.nilIfEmpty ?? editing.label(mainName: mainName),
-                                          skills: $skills)
+                                          skills: $skills, alwaysLoaded: $alwaysLoaded,
+                                          hasSkillsTool: isMain || offered.isEmpty || (toolsets ?? mainToolsets).contains("skills"))
                         } label: {
                             LabeledContent("Skills", value: skillsSummary)
                         }
@@ -339,7 +342,9 @@ struct BotEditor: View {
     private var skillsSummary: String {
         guard let skills else { return loading ? "…" : "Can't be read" }
         let on = skills.filter { $0.enabled ?? true }.count
-        return on == skills.count ? "All \(skills.count)" : "\(on) of \(skills.count)"
+        let summary = on == skills.count ? "All \(skills.count)" : "\(on) of \(skills.count)"
+        let pinned = alwaysLoaded?.count ?? 0
+        return pinned == 0 ? summary : "\(summary) · \(pinned) always"
     }
 
     private var toolsSummary: String {
@@ -389,6 +394,7 @@ struct BotEditor: View {
             async let details = client.botDetails(editing)
             async let tools = client.toolsetsOffered()
             async let ownSkills = client.dashboardSkills(profile: editing.name)
+            async let preloaded = client.alwaysLoadedSkills(profile: editing.name)
             let options = isMain ? [] : ((try? await client.modelOptions(forProfile: editing.name)) ?? [])
             let read = try await details
             let main = (try? await tools)?.enabledToolsets ?? []
@@ -402,6 +408,7 @@ struct BotEditor: View {
             mainToolsets = main
             toolsets = start.toolsets
             skills = try? await ownSkills
+            alwaysLoaded = (try? await preloaded).map(Set.init)
             title = start.title
             about = start.about
             soul = start.soul
@@ -680,12 +687,16 @@ struct BotToolsList: View {
 }
 
 /// A bot's skills, each on or off for it alone (`skills.disabled` in its profile; his ask
-/// 2026-10-22). On, it is listed for the bot and read only when the bot needs it; off, the bot
-/// neither sees nor loads it. A switch takes effect at once, from its next message.
+/// 2026-10-22), and the few it reads in full at the start of every message (`skills.auto_load`:
+/// the Home bot with its Home Assistant skills always at hand, the rest read when needed). A
+/// switch or a pin takes effect at once.
 struct BotSkillsList: View {
     let bot: HermesBot
     let name: String
     @Binding var skills: [HermesServeClient.DashboardSkill]?
+    @Binding var alwaysLoaded: Set<String>?
+    /// Its Skills tool is on: without it no skill is listed for it or read, always loaded or not.
+    let hasSkillsTool: Bool
     @State private var busy: Set<String> = []
     @State private var problem: String?
     @State private var query = ""
@@ -705,29 +716,76 @@ struct BotSkillsList: View {
                 Label(problem, systemImage: "exclamationmark.triangle")
                     .font(.footnote).foregroundStyle(.orange)
             }
+            if !hasSkillsTool {
+                Label("\(name)'s Skills tool is off (Edit Bot → Tools), so it reads none of these.", systemImage: "exclamationmark.triangle")
+                    .font(.footnote).foregroundStyle(.orange)
+            }
             Section {
             } footer: {
-                Text("On, \(name) sees a skill listed and reads it only when it needs it. Off, it doesn't see it at all. Fewer skills on make every message quicker to start on a model running on your own machine.")
+                Text("On, \(name) sees a skill listed and reads it only when it needs it. Off, it doesn't see it at all. Pinned (\(Image(systemName: "pin.fill"))), it reads the skill in full at the start of every message: keep that to the few it needs every time, as each makes every message slower to start. A pin takes effect in new chats, and in \(name)'s ongoing chat once that starts fresh or is condensed.")
             }
             ForEach(byCategory, id: \.category) { group in
                 Section("\(group.category.capitalized) · \(group.skills.count)") {
-                    ForEach(group.skills) { skill in
-                        Toggle(isOn: Binding(get: { skill.enabled ?? true }, set: { toggle(skill, $0) })) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(skill.name)
-                                if let description = skill.description, !description.isEmpty {
-                                    Text(description).font(.caption).foregroundStyle(.secondary).lineLimit(2)
-                                }
-                            }
-                        }
-                        .disabled(busy.contains(skill.name))
-                    }
+                    ForEach(group.skills) { skill in row(skill) }
                 }
             }
         }
         .searchable(text: $query, prompt: "Find a skill")
         .navigationTitle("Skills")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func row(_ skill: HermesServeClient.DashboardSkill) -> some View {
+        let on = skill.enabled ?? true
+        let pinned = alwaysLoaded?.contains(skill.name) == true
+        return HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(skill.name)
+                if pinned {
+                    Label("Always loaded", systemImage: "pin.fill").font(.caption2.weight(.semibold)).foregroundStyle(.tint)
+                }
+                if let description = skill.description, !description.isEmpty {
+                    Text(description).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                }
+            }
+            Spacer(minLength: 4)
+            if on, alwaysLoaded != nil {
+                Button { pin(skill, !pinned) } label: {
+                    Image(systemName: pinned ? "pin.fill" : "pin")
+                        .foregroundStyle(pinned ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                        .frame(width: 32, height: 32)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.borderless)
+                .disabled(busy.contains(skill.name))
+                .accessibilityLabel(pinned ? "Always loaded" : "Loaded when needed")
+                .accessibilityHint(pinned ? "Reads it only when needed instead" : "Reads it in full at the start of every message")
+            }
+            Toggle("", isOn: Binding(get: { on }, set: { toggle(skill, $0) }))
+                .labelsHidden()
+                .disabled(busy.contains(skill.name))
+                .accessibilityLabel(skill.name)
+        }
+    }
+
+    /// Always loaded, or read when needed: the whole list written at once (the Dashboard merges it
+    /// into the bot's config, the list replacing the one there).
+    private func pin(_ skill: HermesServeClient.DashboardSkill, _ on: Bool) {
+        guard var set = alwaysLoaded else { return }
+        let before = set
+        if on { set.insert(skill.name) } else { set.remove(skill.name) }
+        alwaysLoaded = set
+        busy.insert(skill.name)
+        problem = nil
+        Task {
+            defer { busy.remove(skill.name) }
+            do {
+                try await HermesServeClient.shared.setAlwaysLoadedSkills(set.sorted(), profile: bot.name)
+            } catch {
+                alwaysLoaded = before
+                problem = "Couldn't \(on ? "pin" : "unpin") \(skill.name): \(error.localizedDescription)"
+            }
+        }
     }
 
     private func toggle(_ skill: HermesServeClient.DashboardSkill, _ on: Bool) {
@@ -739,6 +797,8 @@ struct BotSkillsList: View {
             defer { busy.remove(skill.name) }
             do {
                 try await HermesServeClient.shared.toggleSkill(name: skill.name, enabled: on, profile: bot.name)
+                // An off skill can't be read at all, so it is no longer always loaded either.
+                if !on, alwaysLoaded?.contains(skill.name) == true { pin(skill, false) }
             } catch {
                 if let i = skills?.firstIndex(where: { $0.name == skill.name }) { skills?[i].enabled = !on }
                 problem = "Couldn't switch \(skill.name) \(on ? "on" : "off"): \(error.localizedDescription)"

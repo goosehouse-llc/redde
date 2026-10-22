@@ -2057,6 +2057,21 @@ struct HermesLabBotsTests {
             HermesLabApprovalTests.report(false, "the bot has skills to switch", "\(ownSkills.count) listed")
         }
 
+        // Always loaded (the pin in Edit Bot → Skills): the bot's list alone, the rest of its config kept.
+        if let skill = ownSkills.first(where: { $0.enabled ?? true }) {
+            let modelBefore = try await client.botDetails(bot).model
+            try await client.setAlwaysLoadedSkills([skill.name], profile: bot.name)
+            let pinned = try await client.alwaysLoadedSkills(profile: bot.name)
+            let mains = try await client.alwaysLoadedSkills(profile: "default")
+            let modelAfter = try await client.botDetails(bot).model
+            HermesLabApprovalTests.report(pinned == [skill.name] && !mains.contains(skill.name) && modelAfter == modelBefore,
+                   "a skill pinned for the bot is always loaded for it alone, and the rest of its settings stay",
+                   "bot \(pinned), main \(mains), model \(modelBefore ?? "none") → \(modelAfter ?? "none")")
+            try await client.setAlwaysLoadedSkills([], profile: bot.name)
+            let unpinned = try await client.alwaysLoadedSkills(profile: bot.name)
+            HermesLabApprovalTests.report(unpinned.isEmpty, "and unpinned", "\(unpinned)")
+        }
+
         // From a template (New Bot's Writer): its tools, and every one again once let go.
         let mainAgent = try await client.toolsetsOffered()
         let writer = try #require(BotTemplate.all.first { $0.id == "writer" })

@@ -1111,6 +1111,20 @@ final class HermesServeClient {
                            body: try JSONEncoder().encode(Body(name: name, enabled: enabled)))
     }
 
+    /// The skills a profile reads in full at the start of every message (`skills.auto_load` in its
+    /// config), as against the rest, listed and read only when needed.
+    func alwaysLoadedSkills(profile: String) async throws -> [String] {
+        let config = try await restJSON("GET", Self.naming("api/config?include_defaults=false", profile: profile))
+        return (config["skills"]?["auto_load"]?.array ?? []).compactMap(\.string)
+    }
+
+    /// Sets them. The Dashboard merges what it is sent into the profile's config (every release from
+    /// 0.21.0), and a list replaces the one there, so nothing else in it changes.
+    func setAlwaysLoadedSkills(_ names: [String], profile: String) async throws {
+        let body: JSONValue = .object(["config": .object(["skills": .object(["auto_load": .array(names.map(JSONValue.string))])])])
+        _ = try await restJSON("PUT", Self.naming("api/config", profile: profile), body: body)
+    }
+
     /// A route for one profile in particular, whichever is selected (`scoped` keeps a path's own).
     nonisolated static func naming(_ path: String, profile: String?) -> String {
         guard let profile, var comps = URLComponents(string: path) else { return path }
