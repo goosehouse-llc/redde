@@ -47,6 +47,11 @@ final class AudioSessionController {
     private var lastAtEar = false
     /// Takes a reading once the sensor has had a moment to settle after coming on.
     private var proximitySettle: Task<Void, Never>?
+    /// Whether the device's orientation is being followed (for face down, which the sensor also
+    /// reads as near), so the calls to begin and end it stay balanced.
+    private var watchingOrientation = false
+    /// Looks at the route again once playback has started (`refreshRoute`).
+    private var routeRecheck: Task<Void, Never>?
     private var routeObserver: NSObjectProtocol?
 
     private init() {
@@ -200,6 +205,7 @@ final class AudioSessionController {
     private func applyEarRouting() {
         let atEarEnabled = earRoutingWanted && Settings.shared.earpieceAtEar
         UIDevice.current.isProximityMonitoringEnabled = atEarEnabled
+        watchOrientation(atEarEnabled)
         if !Settings.shared.earpieceAtEar { lastAtEar = false }
         proximitySettle?.cancel()
         if atEarEnabled {
@@ -225,12 +231,25 @@ final class AudioSessionController {
     }
 
     private func proximityChanged() {
-        lastAtEar = UIDevice.current.proximityState
+        // A phone face down on the table reads as near as well, and that is no ear: a reply
+        // that came after a long wait, the phone put down for it, played on the earpiece
+        // (2026-10-21 and -22).
+        let near = UIDevice.current.proximityState
+        lastAtEar = near && UIDevice.current.orientation != .faceDown
+        if near, !lastAtEar { log.notice("near, but face down: not at the ear") }
         applyOutputRoute(force: true)
+    }
+
+    private func watchOrientation(_ on: Bool) {
+        guard on != watchingOrientation else { return }
+        watchingOrientation = on
+        if on { UIDevice.current.beginGeneratingDeviceOrientationNotifications() } else { UIDevice.current.endGeneratingDeviceOrientationNotifications() }
     }
 
     private func stopProximityRouting() {
         proximitySettle?.cancel()
+        routeRecheck?.cancel()
+        watchOrientation(false)
         lastAtEar = false
         UIDevice.current.isProximityMonitoringEnabled = false
         if let proximityObserver { NotificationCenter.default.removeObserver(proximityObserver) }
@@ -244,8 +263,6 @@ final class AudioSessionController {
         let reason = rawReason.flatMap(AVAudioSession.RouteChangeReason.init(rawValue:)) ?? .unknown
         updateRouteFacts()
         switch reason {
-        case .categoryChange:
-            return
         case .oldDeviceUnavailable:
             log.notice("output device went away; pausing rather than re-routing")
             headsetSeen = false
@@ -257,8 +274,22 @@ final class AudioSessionController {
     }
 
     /// Re-asserts speaker/earpiece. The voice-processing audio unit resets the output to the
-    /// receiver when the recognizer's engine starts, after the session was already routed.
-    func refreshRoute() { applyOutputRoute(force: true) }
+    /// receiver when the recognizer's engine starts, after the session was already routed. And
+    /// looks again a moment later, once playback has really started: a reply still went to the
+    /// earpiece after this (2026-10-22), and the log says so if it was the route.
+    func refreshRoute() {
+        applyOutputRoute(force: true)
+        routeRecheck?.cancel()
+        routeRecheck = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled, let self else { return }
+            let outputs = AVAudioSession.sharedInstance().currentRoute.outputs
+            if outputs.contains(where: { $0.portType == .builtInReceiver }), !(Settings.shared.earpieceAtEar && lastAtEar) {
+                log.notice("receiver after playback started; routing again")
+            }
+            applyOutputRoute(force: false)
+        }
+    }
 
     /// `force`: apply the override even if the current route already looks right. Right after
     /// activation the reported route can still be the previous session's (replay went to the
