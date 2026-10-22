@@ -95,8 +95,51 @@ final class AttachmentAudio: NSObject, AVAudioPlayerDelegate {
         if !FileManager.default.fileExists(atPath: url.path) {
             guard (try? attachment.data.write(to: url)) != nil else { return nil }
         }
-        guard let player = try? AVAudioPlayer(contentsOf: url) else { return nil }
+        if !Self.requiresPCMDecode(kind),
+           let player = try? AVAudioPlayer(contentsOf: url), player.duration > 0 {
+            player.prepareToPlay()
+            return player
+        }
+        guard let pcmURL = makeDecodedPCM(from: url, for: attachment),
+              let player = try? AVAudioPlayer(contentsOf: pcmURL) else { return nil }
         player.prepareToPlay()
         return player
+    }
+
+    private nonisolated static func requiresPCMDecode(_ ext: String) -> Bool {
+        ["ogg", "oga", "opus", "flac"].contains(ext)
+    }
+
+    private nonisolated static func decodedURL(for attachment: Attachment) -> URL {
+        let folder = FileManager.default.temporaryDirectory.appending(path: "audio")
+        return folder.appending(path: "\(attachment.id.uuidString)-decoded.caf")
+    }
+
+    /// AVAudioPlayer doesn't open every file AVAudioFile can read (notably Ogg voice notes).
+    /// Decode those to a cached PCM CAF, then let the existing player handle controls and seeking.
+    private nonisolated static func makeDecodedPCM(from sourceURL: URL, for attachment: Attachment) -> URL? {
+        let outputURL = decodedURL(for: attachment)
+        if FileManager.default.fileExists(atPath: outputURL.path) { return outputURL }
+        do {
+            let input = try AVAudioFile(forReading: sourceURL)
+            guard input.length > 0 else { return nil }
+            let format = input.processingFormat
+            let output = try AVAudioFile(forWriting: outputURL, settings: format.settings)
+            let chunkSize: AVAudioFrameCount = 16_384
+            while input.framePosition < input.length {
+                let remaining = input.length - input.framePosition
+                let frames = AVAudioFrameCount(min(Int64(chunkSize), remaining))
+                guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames) else { return nil }
+                try input.read(into: buffer, frameCount: frames)
+                guard buffer.frameLength > 0 else { return nil }
+                try output.write(from: buffer)
+            }
+            return outputURL
+        } catch {
+            Logger(subsystem: "com.goosehouse.echo", category: "audio")
+                .error("couldn't decode audio attachment \(attachment.filename, privacy: .public) with AVAudioFile: \(error.localizedDescription, privacy: .public)")
+            try? FileManager.default.removeItem(at: outputURL)
+            return nil
+        }
     }
 }
