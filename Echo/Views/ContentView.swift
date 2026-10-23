@@ -123,7 +123,7 @@ struct ContentView: View {
             if !settings.setupDone, !settings.isConfigured { showSetup = true }
         }) { SetupCodeSheet(offer: $0) }
         .sheet(item: $pushOffer) { PushPairingSheet(offer: $0) }
-        .sheet(item: $whatsNew) { WhatsNewView(release: $0) }
+        .sheet(item: $whatsNew) { WhatsNewView(release: $0, wide: sizeClass == .regular) }
         #if DEBUG
         .sheet(isPresented: $showProfilePicker) { NavigationStack { ProfilePickerView() } }
         .sheet(isPresented: $showTips) { NavigationStack { TipJarView() } }

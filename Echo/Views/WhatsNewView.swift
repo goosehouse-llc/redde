@@ -4,6 +4,8 @@ import SwiftUI
 /// Settings → About.
 struct WhatsNewView: View {
     let release: WhatsNew.Release
+    /// Redde has the wide layout (an iPad, an iPhone Duo open): what's new there is shown too.
+    var wide = UIDevice.current.userInterfaceIdiom == .pad
     var onContinue: () -> Void = {}
     @Environment(\.theme) private var theme
     @Environment(\.dismiss) private var dismiss
@@ -22,7 +24,7 @@ struct WhatsNewView: View {
 
                 ForEach(release.items.filter { item in
                     let idiom = UIDevice.current.userInterfaceIdiom
-                    return (!item.phoneOnly || idiom == .phone) && (!item.padOnly || idiom == .pad)
+                    return (!item.phoneOnly || idiom == .phone) && (!item.padOnly || idiom == .pad || wide)
                 }) { item in
                     HStack(alignment: .top, spacing: 16) {
                         Image(systemName: item.symbol)

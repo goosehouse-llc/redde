@@ -46,7 +46,9 @@ final class VoiceOptionsUITests: XCTestCase {
         shot("stop phrases")
 
         // The Voice section counts it.
-        app.navigationBars["Stop phrases"].buttons.firstMatch.tap()
+        // By name: on an iPhone Duo closed, the bar's buttons go down the side of the screen, out of
+        // the navigation bar, and its first button there is Edit.
+        app.buttons["BackButton"].firstMatch.tap()
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Stop phrases' AND (label CONTAINS '+1' OR value CONTAINS '+1')")).firstMatch
             .waitForExistence(timeout: 5), "The row doesn't say a phrase was added")
 

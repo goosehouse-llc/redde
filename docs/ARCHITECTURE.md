@@ -2429,6 +2429,12 @@ the handover itself is tested on a real watch.
   - The keyboard, if it was up, comes back in the new composer. Cron or Kanban open in the
     panel stay open full width, and the other way round; a tab only picked in a closed panel
     doesn't take the chat's place when it opens out.
+  - Sized for the width they are drawn at: a diagram's, a formula's and an agent page's
+    remembered height is kept per width too (`WebBlockHeights`, to 40 points), so a block
+    drawn closed opens at its open height when the Duo opens, before it is drawn again; an
+    agent page measures its width again when the reply's changes. What's New shows the wide
+    layout's items whenever the layout is wide, an open Duo too, and the start screen reads
+    the window's height again when it changes.
   - Not carried: dictation stops (what it heard stays in the draft), and the photo picker,
     camera and file picker close, as do the conversation list's own sheets (New Group Chat, a
     bot's editor) and its select mode. `LayoutChangeUITests` swaps the layout mid-test with

@@ -23,6 +23,8 @@ struct AgentPage: View {
     @Environment(Toaster.self) private var toaster: Toaster?
     @State private var height: CGFloat
     @State private var width: CGFloat?
+    /// The reply's width, last seen.
+    @State private var span: CGFloat?
     @State private var html = ""
     @State private var drawnScheme: ColorScheme?
     /// Booted once on screen (or at once without a remembered height), as diagrams are.
@@ -58,6 +60,14 @@ struct AgentPage: View {
         .frame(maxWidth: width ?? .infinity, alignment: .leading)
         .frame(height: height)
         .frame(maxWidth: .infinity, alignment: .leading)
+        // The reply drawn wider or narrower (an iPhone Duo opened or closed): the page is measured
+        // again at the new width, from the height it had there before if it has been.
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { span in
+            defer { self.span = span }
+            guard let before = self.span, abs(span - before) > 1 else { return }
+            width = nil
+            if let remembered = WebBlockHeights.height(for: heightKey, width: span) { height = remembered }
+        }
         .animation(.easeOut(duration: 0.2), value: height)
         .modifier(StableColorScheme(drawn: $drawnScheme))
         .onChange(of: key, initial: true) { html = page() }
@@ -350,11 +360,12 @@ struct PageWebView: UIViewRepresentable {
             let h = min(PageChrome.maxHeight, max(PageChrome.minHeight, reported.rounded()))
             if let height, abs(h - height.wrappedValue) > PageChrome.tolerance {
                 height.wrappedValue = h
-                WebBlockHeights.store(h, for: heightKey)
+                WebBlockHeights.store(h, for: heightKey, width: view.bounds.width)
             }
             // Its width once, from the first report, at the reply's full width: a widget of a set
             // size sits to the left like a picture, a page that fills what it's given stays wide.
-            // Following it after would shrink a page made of percentages a little each time.
+            // Following it after would shrink a page made of percentages a little each time. (The
+            // reply drawn at another width starts it over: `span`.)
             if let w = (body["width"] as? NSNumber).map({ CGFloat(truncating: $0) }), w > 0, let width, width.wrappedValue == nil {
                 width.wrappedValue = w.rounded(.up)
             }

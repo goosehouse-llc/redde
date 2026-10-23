@@ -105,11 +105,14 @@ enum WebBlockAssets {
 }
 
 /// Last drawn height of each diagram and math block, kept across launches. A block opens at its
-/// real size instead of a placeholder, so the transcript doesn't jump when drawing finishes.
+/// real size instead of a placeholder, so the transcript doesn't jump when drawing finishes. Kept
+/// by width too: the same diagram is taller on a narrower screen, and an iPhone Duo is two (closed
+/// and open), so a block drawn at one width takes the height it had at the other when the width
+/// changes, before it is drawn again.
 @MainActor
 enum WebBlockHeights {
     private static let defaultsKey = "webBlockHeights"
-    private static let limit = 400
+    private static let limit = 800
     private static var heights = UserDefaults.standard.dictionary(forKey: defaultsKey) as? [String: Double] ?? [:]
     private static var saveTask: Task<Void, Never>?
 
@@ -120,12 +123,19 @@ enum WebBlockHeights {
         return "\(kind)-\(String(hash, radix: 36))"
     }
 
+    /// The height last drawn, at whatever width.
     static func height(for key: String) -> CGFloat? { heights[key].map { CGFloat($0) } }
 
-    static func store(_ height: CGFloat, for key: String) {
-        if let old = heights[key], abs(old - Double(height)) <= 1 { return }
+    /// The height last drawn at about this width (to 40 points).
+    static func height(for key: String, width: CGFloat) -> CGFloat? { heights[widthKey(key, width)].map { CGFloat($0) } }
+
+    private static func widthKey(_ key: String, _ width: CGFloat) -> String { "\(key)@\(Int((width / 40).rounded()))" }
+
+    static func store(_ height: CGFloat, for key: String, width: CGFloat? = nil) {
+        let keys = [key] + (width.flatMap { $0 > 0 ? widthKey(key, $0) : nil }.map { [$0] } ?? [])
+        guard keys.contains(where: { heights[$0].map { abs($0 - Double(height)) > 1 } ?? true }) else { return }
         if heights[key] == nil, heights.count >= limit { heights.removeAll(keepingCapacity: true) }
-        heights[key] = Double(height)
+        for key in keys { heights[key] = Double(height) }
         saveTask?.cancel()
         saveTask = Task {
             try? await Task.sleep(for: .seconds(2))
@@ -139,6 +149,20 @@ enum WebBlockHeights {
         saveTask?.cancel()
         heights = [:]
         UserDefaults.standard.removeObject(forKey: defaultsKey)
+    }
+}
+
+/// A block drawn at another width (an iPhone Duo opened or closed) takes the height it had at this
+/// one as soon as its width is known, before it is drawn again (`WebBlockHeights`).
+struct RememberedHeight: ViewModifier {
+    let key: String
+    @Binding var height: CGFloat
+
+    func body(content: Content) -> some View {
+        content.onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
+            guard let remembered = WebBlockHeights.height(for: key, width: width), abs(remembered - height) > 1 else { return }
+            height = remembered
+        }
     }
 }
 
@@ -243,7 +267,7 @@ struct WebBlock: UIViewRepresentable {
             if message.body as? String == "tap" { onTap?(); return }
             guard let n = message.body as? NSNumber else { return }
             let h = max(24, CGFloat(truncating: n))
-            if let heightKey { WebBlockHeights.store(h, for: heightKey) }
+            if let heightKey { WebBlockHeights.store(h, for: heightKey, width: message.webView?.bounds.width) }
             if abs(h - height.wrappedValue) > 1 { height.wrappedValue = h }
         }
 
@@ -448,6 +472,7 @@ struct MermaidBlock: View {
                     }
                 }
                 .frame(height: height)
+                .modifier(RememberedHeight(key: heightKey, height: $height))
                 .padding(.horizontal, 6).padding(.bottom, 6)
             }
         }
@@ -562,6 +587,7 @@ struct MathBlock: View {
             }
         }
         .frame(height: height)
+        .modifier(RememberedHeight(key: heightKey, height: $height))
         .modifier(StableColorScheme(drawn: $drawnScheme))
         .onChange(of: pageKey, initial: true) { html = page() }
         .onScrollVisibilityChange(threshold: 0.01) { if $0 { nearViewport = true } }

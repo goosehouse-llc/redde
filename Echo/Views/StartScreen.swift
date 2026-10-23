@@ -85,7 +85,7 @@ struct StartScreen: View {
 
     var body: some View {
         let cards = cards
-        AboveMiddle(lift: Self.windowHeight * 0.06) {
+        AboveMiddle(lift: windowHeight * 0.06) {
             VStack(spacing: 24) {
                 mark.modifier(Arriving(index: 0, shown: shown))
                 VStack(spacing: 6) {
@@ -114,6 +114,9 @@ struct StartScreen: View {
             .frame(maxWidth: .infinity)
         }
         .containerRelativeFrame(.vertical) { height, _ in max(0, height - 60) }
+        // Read again when the room changes: the window can change under it (an iPhone Duo opened
+        // or closed, an iPad window drawn taller).
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { _ in windowHeight = Self.currentWindowHeight }
         .task {
             upcoming = StartCards.upcoming(ComposerContext.eventsTodayAndTomorrow(), now: .now)
             // One piece every 90 ms; all at once under Reduce Motion.
@@ -127,7 +130,9 @@ struct StartScreen: View {
 
     /// The height of the app's window: what "6% higher" is 6% of, to the eye. The room the start
     /// screen is laid out in is shorter, by the title bar and the message field.
-    private static var windowHeight: CGFloat {
+    @State private var windowHeight = Self.currentWindowHeight
+
+    private static var currentWindowHeight: CGFloat {
         UIApplication.shared.connectedScenes.lazy.compactMap { ($0 as? UIWindowScene)?.keyWindow?.bounds.height }.first ?? 0
     }
 
