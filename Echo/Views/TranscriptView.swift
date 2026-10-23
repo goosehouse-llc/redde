@@ -167,7 +167,12 @@ struct TranscriptView: View {
                 try? await Task.sleep(for: .milliseconds(wait))
                 if !carried.searchText.isEmpty { matchIndex = carried.matchIndex }
                 if let from = carried.readingFrom {
+                    // Drawn at the end first, the transcript took itself to be caught up and
+                    // followed it again: it doesn't, and the place stays noted for the next change.
+                    following = false
+                    topRow.id = from
                     proxy.scrollTo(from, anchor: .top)
+                    noteForLayout()
                 } else if !carried.searchText.isEmpty {
                     goToMatch(carried.matchIndex, proxy)
                 } else {
