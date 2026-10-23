@@ -2,7 +2,7 @@
 
 # App Review notes
 
-Paste the block below into App Store Connect → App Review Information → Notes. The field takes plain text, 4,000 characters at most; this is 3,915 with the placeholder and about 3,974 with a key in its place. Replace `<<REVIEW KEY>>` first, or let `scripts/app-store-push.py notes` put the key in and send them: until 1.8 the notes went in by hand, and from 1.1 to 1.7.1 with the placeholder still in them. Keep it under the limit when adding to it: the notes for 1.6 ran to 6,600 before they were cut.
+Paste the block below into App Store Connect → App Review Information → Notes. The field takes plain text, 4,000 characters at most; this is 3,910 with the placeholder and about 3,969 with a key in its place. Replace `<<REVIEW KEY>>` first, or let `scripts/app-store-push.py notes` put the key in and send them: until 1.8 the notes went in by hand, and from 1.1 to 1.7.1 with the placeholder still in them. Keep it under the limit when adding to it: the notes for 1.6 ran to 6,600 before they were cut.
 
 ```text
 Redde is a voice and chat client for a self-hosted AI assistant. It has no account; conversations go only to the server the user configures. Our one service is an optional notification relay.
@@ -13,25 +13,28 @@ TO TEST
 3. Tap Test connection (it reports "Connected"), then Done.
 4. Type a question and tap the arrow, or tap the microphone and speak. Replies are read aloud.
 
-Hermes connections and screens (Skills, Memory, Files, and the bots and group chats new in 2.0) need a self-hosted Hermes server and say so without one.
+Hermes screens (Skills, Memory, Files, bots) need a self-hosted Hermes server.
 
 PHONE TOOLS (optional, off by default)
-Settings > Phone tools. The user's Hermes can ask for calendar events, reminders, a contact, photos, files in the app's own folder, alarms and timers (AlarmKit) and a widget it writes on, start a call (iOS confirms) or draft a text the user sends. Each area is off until the user turns it on, when iOS asks for its permission (visible without a server). Changes ask first. What is read goes only to the user's server. The tools need a plugin there, so the review endpoint can't run them.
+Settings > Phone tools. The user's Hermes can ask for calendar events, reminders, a contact, photos, files in the app's own folder, alarms and timers (AlarmKit) and a widget it writes on, start a call (iOS confirms) or draft a text the user sends. Each area is off until turned on, when iOS asks for its permission (visible without a server). Changes ask first. What is read goes only to the user's server. The tools need a plugin there, so the review endpoint can't run them.
 
 CARPLAY (voice-based conversational app entitlement)
-Connect the phone to CarPlay or the CarPlay Simulator. Ask has three cards: Ask (one question), Talk (hands-free until the user says "that's all") and New Chat, with rows for a note and short answers. Chats, and Bots with a Hermes server, list conversations and bots by name, status and time only; picking one carries it on by voice. The voice card shows Listening, Thinking and Speaking, with Stop and Pause. Answers are spoken; no reply text is shown.
+Connect the phone to CarPlay or the CarPlay Simulator. Ask has three cards: Ask (one question), Talk (hands-free until the user says "that's all") and New Chat. Chats, and Bots with a Hermes server, list conversations and bots by name, status and time only; picking one continues it by voice. The voice card shows Listening, Thinking and Speaking, with Stop and Pause. Answers are spoken; no reply text is shown.
 
 APPLE WATCH
-Open Redde on the paired watch, tap Ask and dictate; the reply is shown and read aloud. Background audio: with Bluetooth headphones a reply keeps playing after the wrist is lowered. The watch app records nothing.
+Open Redde on the paired watch, tap Ask and dictate; the reply is shown and read aloud. Background audio: with Bluetooth headphones a reply plays on after the wrist is lowered. The watch app records nothing.
 
 TERMINAL
-Settings > Terminal: a shell on the user's own server over SSH, with a key the app makes and keeps in the Keychain. It needs an SSH server.
+Settings > Terminal: a shell on the user's own server over SSH, with a key the app makes and keeps in the Keychain.
 
 ICLOUD (off by default)
 Settings > iCloud > Sync with iCloud keeps the user's servers and settings in their own iCloud (key-value store; keys in iCloud Keychain). Nothing goes to us.
 
 NOTIFICATIONS (optional, off by default)
 Settings > Voice > Notify when Redde is closed. Pairing takes a plugin on the user's Hermes server: "Install the Plugin" asks that server to install it on itself; the app downloads and runs no code. The server sends them through our relay, redde-push.goosehouse.org, to APNs, encrypted between server and iPhone with CryptoKit; the relay keeps only the push token.
+
+LINK PREVIEWS (off by default)
+Settings > Appearance > Link previews: the phone opens a linked page for its title and picture. Nothing else is sent.
 
 MICROPHONE
 Only while the user talks to the app: voice mode, dictation, and, with Talk over replies, while a reply plays. Transcription is on the device; no audio is kept or sent.

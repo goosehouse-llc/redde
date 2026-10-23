@@ -22,6 +22,24 @@ nonisolated enum WhatsNew {
 
     /// Newest first. Keep each to a handful of lines a person reads in ten seconds.
     static let releases: [Release] = [
+        Release(version: "2.1", items: [
+            Item(symbol: "rectangle.stack", title: "Every server in one list",
+                 detail: "All Servers, in the server menu at the top of the conversation list, shows every saved server's chats in one list, each tagged with its server. All Profiles does the same for your Hermes profiles."),
+            Item(symbol: "map", title: "Cards in replies",
+                 detail: "Your agent can show a map with pins or a route, a list of places and the weather under its reply. Tap a map for directions. It takes the Redde plugin 1.6.0 on your Hermes."),
+            Item(symbol: "link", title: "Link previews",
+                 detail: "Settings → Appearance → Link previews puts a linked page's title and picture under the message. Off until you turn it on: to make the card, Redde opens the page itself."),
+            Item(symbol: "square.grid.2x2", title: "Bots, further",
+                 detail: "Bots sit as faces in a grid, with their pictures from Hermes Desktop. Edit Bot switches each bot's skills and the main agent's tools, Topology maps your bots and their group chats, and there are two new colors."),
+            Item(symbol: "car", title: "CarPlay",
+                 detail: "The Bots tab shows a card for each bot, its face in its mood. The voice screen shows the bot you're talking to, and the car opens on the tab you left. With Stop and Skip in the car on (Settings → Voice), say “stop” or “skip” while a reply plays.",
+                 phoneOnly: true),
+            Item(symbol: "iphone.gen3", title: "iPhone Duo",
+                 detail: "Open or close it mid-chat and carry on where you were. Half open, the voice screen and the chat keep off the fold.",
+                 phoneOnly: true),
+            Item(symbol: "checkmark.seal", title: "Faster, and fixes",
+                 detail: "Long conversations open at once, typing is smoother, and Settings opens as pages. Voice mode's stop cue is heard again, and replies stay on the loudspeaker."),
+        ]),
         Release(version: "2.0", items: [
             Item(symbol: "face.smiling", title: "Bots",
                  detail: "Each profile on your Hermes is a bot, with a face, a voice and a chat of its own, under Bots in the conversation list. New Bot starts from a template (Researcher, Writer, Coder, Home, Planner) or from nothing, and its job, personality, model, face and tools are yours to change. Type @ in a bot's chat to hand something to another."),

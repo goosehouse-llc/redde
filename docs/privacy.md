@@ -24,6 +24,8 @@ Connections use HTTPS when the address you enter provides it. Because self-hoste
 
 Link previews (Settings → Appearance) are off unless you turn them on. With them on, when a message in a conversation contains a web link, your device opens that page itself to show its title and picture under the message, the way Messages does. The website sees a visit from your device's network address, like any visit from Safari. Nothing else from the conversation is sent to it, and nothing goes to Goosehouse LLC. The preview is kept on your device so the page is opened only once.
 
+When your assistant shows a map or places in a reply, the map is drawn by Apple Maps, and a place it names without coordinates is looked up with Apple's map search, under Apple's privacy policy, as the Maps app does. Redde does not ask for your location: directions from where you are are worked out by Maps when you open them.
+
 ## Notifications when Redde is closed (optional, off by default)
 
 iOS closes an app in the background after a few minutes, and from then on Redde cannot tell you that a reply is ready or that your assistant is waiting for you. If you want to be told anyway, you can pair your own Hermes server with your iPhone in Settings → Voice → Notify when Redde is closed. Nothing in this section happens unless you do.

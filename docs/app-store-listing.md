@@ -9,7 +9,7 @@ Redde for Hermes
 Talk, chat and run your agent
 
 ## Promotional text (170, editable without a new build)
-New in 2.0: bots. Give each of your Hermes agents a face, a voice and a job, put them in a group chat, and talk with the whole crew, hands-free.
+New in 2.1: every server in one list, maps and weather in replies, link previews, bot cards in CarPlay, and the iPhone Duo. Your agent, and its whole crew.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name)
 voice,assistant,ai,agent,carplay,self-hosted,llm,ollama,bots,watch,siri,shortcuts,private,openai
@@ -32,10 +32,10 @@ TALK, DON'T TYPE
 • In CarPlay, ask through the car's mic and speakers, in a new chat, a recent one or a bot's. On Apple Watch, raise your wrist and ask.
 • "Hey Siri, ask Redde…" works from the Lock Screen and AirPods. A Control Center button, a widget or the Action Button starts listening.
 • Spoken prefixes: a word you chose adds a text prefix, switches model or goes to a bot: "Opus, review this diff".
-• Siri takes a note for your agent; Shortcuts can ask and get the answer as text.
+• Siri takes notes for your agent; Shortcuts can ask it things.
 
 SEE THE AGENT WORK
-• Watch reasoning and tool calls live, with a Live Activity for progress; lock the phone or leave the chat and the reply carries on.
+• Watch reasoning and tool calls live, with a Live Activity; lock the phone and the reply carries on.
 • The list shows what's working, what needs you and what's unread.
 • Approve a risky command or answer the agent's question from a notification, out loud, or with a nod in AirPods. Pair your Hermes and notifications arrive with Redde closed, encrypted end to end.
 
@@ -43,16 +43,16 @@ A FULL CLIENT, NOT JUST A MIC
 • Conversations live in your gateway's session ledger: start on the phone, continue on the desktop, Telegram or the CLI. Search inside them, pin, rename, fork, archive, or go incognito.
 • Projects, scheduled jobs and the Kanban board.
 • Phone tools: your agent can use your iPhone's calendar, reminders, contacts, photos and files, set alarms, write on a widget, and start calls and texts, each only if you allow it.
-• Rich replies: Markdown, code, tables, task lists, Mermaid diagrams and math. Pictures, charts, PDFs and audio open in place.
+• Rich replies: Markdown, code, tables, Mermaid diagrams, math, and cards with maps, places and the weather. Pictures, PDFs and audio open in place.
 • Select part of a reply and ask about it. Regenerate, edit and resend, or switch models with /model.
-• Attach photos, videos, files or a day's calendar; share to Redde from any app.
-• Skills, tool sets, memory and context files. The server too: MCP servers, logs, restart, update, files and an SSH terminal.
+• Attach photos, videos, files or a day's calendar, or share from any app.
+• Skills, tools, memory and context files; on the server, MCP servers, logs, updates, files and an SSH terminal.
 
 YOUR BACKEND, YOUR RULES
-• Connect to Hermes through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access or a reverse proxy. Save several servers and sync them with iCloud. Sign in with a password or a browser.
+• Connect to Hermes through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access or a reverse proxy. Save several servers, see all their chats in one list, and sync them with iCloud. Sign in with a password or a browser.
 • Or go straight to any OpenAI-compatible endpoint: llama.cpp, llama-swap, vLLM or Ollama on your hardware, or a hosted provider with your key.
 • Set up by QR code or link. Credentials stay in the Keychain.
-• Face ID lock, seven themes with your own colors, app icons and voice orbs, iPad split view, keyboard shortcuts.
+• Face ID lock, seven themes with your own colors, app icons and voice orbs, iPad split view, iPhone Duo, keyboard shortcuts.
 • The one service we run is an optional relay for notifications, which can't read them.
 
 REQUIRES
@@ -67,6 +67,34 @@ Two pictures App Store Connect has taken since October 2026, on the version page
 - Search results (`search-3840x2560.png`, 3:2): "Talk to your own AI agent. Voice and chat for Hermes." beside voice mode and a chat. Shown with the app in search in place of the first screenshots.
 
 The words in both sit inside the "art safe area" of Apple's templates. Use Preview in App Store Connect before submitting: it shows each on iPhone and iPad, both ways up.
+
+## What's New in 2.1 (4000)
+Every server in one list, maps and weather in replies, and Redde on the iPhone Duo.
+
+• All Servers and All Profiles. The server menu at the top of the conversation list shows every saved server's chats in one list, each tagged with its server. All Profiles does the same for your Hermes profiles.
+• Cards in replies. Your agent can show a map with pins or a route, a list of places, and the weather now, by the hour and by the day. Tap a map for directions in Apple Maps. It takes the Redde plugin 1.6.0 on your Hermes; Settings → Agent → Cards in replies turns it off.
+• Link previews. Settings → Appearance → Link previews puts a linked page's title and picture under the message. Off until you turn it on: to make the card, Redde opens the page itself.
+• Pages and files from your agent. A page your agent makes is live in its reply, as in Hermes Desktop, and a file it sends, or names by its path, opens in the chat.
+• Bots. Bots sit as faces in a grid, with their pictures from Hermes Desktop. Edit Bot switches a bot's skills, pins the ones it always loads, and now sets the main agent's tools too. Topology shows your bots, their group chats and their models on one map. New colors, Soft Pink and Yellow, and the colors listed round the color wheel. Bot faces can be turned off, and a bot's chat takes its color.
+• CarPlay. The Bots tab shows a card for each bot, its face in its mood (at work, waiting on you, asleep), in five looks you pick in Settings. The voice screen shows the bot you're talking to, as big as the orb, in the glow it has on the phone. The car opens on the tab you left. Turn on Stop and Skip in the car (Settings → Voice) and say "stop" to end a reply or "skip" to jump to its end.
+• iPhone Duo. Open or close it in the middle of a chat and carry on: what you were reading, typing or saying in voice mode stays as it was. Half open, the voice screen and the chat keep off the fold, and closed, Redde stands on its side.
+• Settings in pages, and faster. Settings opens as pages. Long conversations open at once, typing is smoother, and Jump to latest goes at once, even mid-scroll.
+• Fixes. Voice mode's stop cue is heard again, and replies stay on the loudspeaker, after a long wait too, and with a headset that is only paired. A microphone iOS won't give Redde shows an error instead of closing the app. A Dashboard that lets the phone in without a login counts as signed in.
+
+## Before submitting 2.1
+Written ahead of the release. What a phone has shown is said where it has.
+
+In App Store Connect and on the web:
+- 2.0 was approved and released on 2026-10-21 (archived from 4cb9b2d).
+- The build is 2.1 (268), from main with Xcode 27.1 (27A9275), the first with the iOS 27.1 SDK: on an iPhone Duo it fills the screen, its bars go down the side, and it reads the fold. A Release build was checked on 2026-10-23.
+- The promotional text, the description (cards, All Servers, the Duo) and What's New changed. `scripts/app-store-push.py all` makes the 2.1 version and sends them; then `notes` for the review notes, which have a LINK PREVIEWS line.
+- iPhone Duo screenshots (outer 1398 × 2034, inner 2007 × 2853) are optional until April 2027; made on the Duo simulator in `design/screenshots/duo/`. The store script doesn't send them yet: upload them by hand, under iPhone.
+- The privacy policy gains two paragraphs: link previews (the phone opens a linked page when they are on) and cards in replies (Apple Maps draws the map and looks a named place up). Publish it before the release. App Privacy stays "Data Not Collected": nothing reaches us.
+- Export compliance: the answer stays as it is.
+- Cards in replies need the Redde plugin 1.6.0 on the user's Hermes (the What's New says so).
+- The website says "new in 2.0".
+
+Not known to have been tried on a device: Stop and Skip in a car, the chirp change in the car, the car opening on the tab it was left on, the bot cards on a car's screen, and the voice camera restarting after iOS takes it away. The iPhone Duo was tried on the simulator only (Device Hub: closed, open, half open); landscape on its closed screen was not, because the simulator doesn't turn when closed.
 
 ## What's New in 2.0 (4000)
 Bots: a crew for your agent. Each Hermes profile is now a bot, with a face, a voice and a chat of its own, and bots can work together in group chats.
