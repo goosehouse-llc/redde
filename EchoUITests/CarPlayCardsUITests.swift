@@ -16,6 +16,22 @@ final class CarPlayCardsUITests: XCTestCase {
         XCTAssertTrue(element.exists && element.isHittable, "\(what) isn't on the screen")
     }
 
+    /// Back up the page to it: a row scrolled away isn't kept, and the Appearance section has grown
+    /// (Link previews), so a fixed number of swipes fell short.
+    private func reachBack(_ element: XCUIElement, in app: XCUIApplication, _ what: String) {
+        for _ in 0 ..< 14 where !(element.exists && element.isHittable) { app.swipeDown() }
+        XCTAssertTrue(element.exists && element.isHittable, "\(what) isn't on the screen")
+        // Let the list come to rest: a tap on one still gliding only stops it. (The picked look's
+        // pictures move all the while, so the app never reads as idle and nothing waits for it.)
+        Thread.sleep(forTimeInterval: 0.8)
+    }
+
+    /// Picked, within a moment of the tap.
+    private func becomesSelected(_ element: XCUIElement) -> Bool {
+        let picked = expectation(for: NSPredicate(format: "isSelected == true"), evaluatedWith: element)
+        return XCTWaiter.wait(for: [picked], timeout: 3) == .completed
+    }
+
     func testALookForTheCarsCardsIsPickedInSettings() {
         continueAfterFailure = false
         let app = XCUIApplication()
@@ -40,8 +56,9 @@ final class CarPlayCardsUITests: XCTestCase {
         shot("carplay cards")
 
         // Back to the look a new install has, for whatever runs next.
+        reachBack(color, in: app, "Color")
         color.tap()
-        XCTAssertTrue(color.isSelected)
+        XCTAssertTrue(becomesSelected(color), "Color wasn't picked again")
     }
 
     /// Settings → Appearance → CarPlay voice screen: the four looks of the car's voice card,
@@ -76,9 +93,9 @@ final class CarPlayCardsUITests: XCTestCase {
         shot("carplay voice screen, orb")
 
         // Back to the look a new install has, for whatever runs next.
-        for _ in 0 ..< 6 where !(bars.exists && bars.isHittable) { app.swipeDown() }
+        reachBack(bars, in: app, "Bars")
         bars.tap()
-        XCTAssertTrue(bars.isSelected)
+        XCTAssertTrue(becomesSelected(bars), "Bars wasn't picked again")
         XCTAssertFalse(orb.exists && orb.isSelected)
     }
 }

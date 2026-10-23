@@ -37,8 +37,13 @@ import Testing
             return
         }
         #expect(Transcriber.Kind.onThisDevice == .dictation)
+        // Where it can't even make out English, asking for it names the device as the trouble. (The
+        // iOS 26.3 simulator under Xcode 27.1 lists no languages, yet finds en-US when asked for
+        // one like it: then a transcriber is made, as it would be anywhere English is known.)
+        let english = Locale(identifier: "en-US")
+        guard await Transcriber.Kind.speech.supportedLocale(equivalentTo: english) == nil else { return }
         await #expect(throws: SpeechRecognizer.Failure.unavailable) {
-            _ = try await SpeechRecognizer.makeTranscriber(for: Locale(identifier: "en-US"), with: .speech)
+            _ = try await SpeechRecognizer.makeTranscriber(for: english, with: .speech)
         }
     }
 
