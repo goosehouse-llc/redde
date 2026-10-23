@@ -266,6 +266,8 @@ nonisolated struct KanbanTask: Identifiable, Equatable, Sendable {
     var status: String
     var priority: Int
     var assignee: String?
+    /// The profile that made it (an agent's card), or "dashboard" for one made by hand.
+    var createdBy: String?
     var tenant: String?
     var createdAt: Date?
     var startedAt: Date?
@@ -284,6 +286,7 @@ nonisolated struct KanbanTask: Identifiable, Equatable, Sendable {
         status = j["status"]?.string ?? "todo"
         priority = j["priority"]?.int ?? 0
         assignee = j["assignee"]?.string
+        createdBy = j["created_by"]?.string
         tenant = j["tenant"]?.string
         createdAt = j["created_at"]?.number.map { Date(timeIntervalSince1970: $0) }
         startedAt = j["started_at"]?.number.map { Date(timeIntervalSince1970: $0) }

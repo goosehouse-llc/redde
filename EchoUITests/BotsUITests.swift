@@ -280,6 +280,74 @@ final class BotsUITests: XCTestCase {
         XCTAssertFalse(app.textFields["Message the group"].exists)
     }
 
+    /// New Bot and Topology fold into one More tile (his ask 2026-10-22), and stay folded, until More.
+    func testNewBotAndTopologyFoldIntoOneTileAndStaySo() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.clearDrafts", "-displayName", "Redde"]
+            + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        func openList() {
+            XCTAssertTrue(app.text(containing: "tighten the opening").waitForExistence(timeout: 20), "the demo bot's chat isn't open")
+            if app.windows.firstMatch.frame.width < 600 { app.buttons["Conversations"].firstMatch.tap() }
+        }
+        app.launch()
+        openList()
+        let list = app.collectionViews.firstMatch
+        XCTAssertTrue(list.buttons["Topology"].waitForExistence(timeout: 5), "New Bot and Topology aren't shown at first")
+        list.buttons["Less"].tap()
+        XCTAssertTrue(list.buttons["More"].waitForExistence(timeout: 3), "no More once folded")
+        XCTAssertFalse(list.buttons["New Bot"].exists || list.buttons["Topology"].exists, "they still show folded")
+
+        app.launch()
+        openList()
+        XCTAssertTrue(list.buttons["More"].waitForExistence(timeout: 5), "folding them wasn't kept")
+        list.buttons["More"].tap()
+        XCTAssertTrue(list.buttons["New Bot"].waitForExistence(timeout: 3) && list.buttons["Topology"].exists, "More doesn't bring them back")
+    }
+
+    /// The Topology map from the Bots section: you, the group chats, the bots with what each is
+    /// doing, the models they run on; a bot there opens its chat.
+    func testTopologyShowsTheBotsTheirGroupChatsAndModels() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.demoMarks", "-echo.demoClaudeBot", "-echo.clearDrafts", "-displayName", "Redde"]
+            + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launch()
+        XCTAssertTrue(app.text(containing: "tighten the opening").waitForExistence(timeout: 20), "the demo bot's chat isn't open")
+        if app.windows.firstMatch.frame.width < 600 { app.buttons["Conversations"].firstMatch.tap() }
+
+        let list = app.collectionViews.firstMatch
+        let topology = list.buttons["Topology"]
+        XCTAssertTrue(topology.waitForExistence(timeout: 5), "no Topology in the Bots section")
+        // Beside New Bot, a tile the size of a bot's (five bots: New Bot and it on the second row).
+        let newBot = list.buttons["New Bot"], scoutTile = list.buttons["Scout"]
+        XCTAssertEqual(topology.frame.midY, newBot.frame.midY, accuracy: 2, "Topology isn't beside New Bot")
+        XCTAssertGreaterThan(topology.frame.minX, newBot.frame.minX, "Topology isn't after New Bot")
+        XCTAssertEqual(topology.frame.width, scoutTile.frame.width, accuracy: 2, "Topology isn't a bot's size")
+        XCTAssertEqual(topology.frame.height, scoutTile.frame.height, accuracy: 4, "Topology isn't a bot's size")
+        topology.tap()
+
+        XCTAssertTrue(app.navigationBars["Topology"].waitForExistence(timeout: 5), "the map didn't open")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Weekend hike")).firstMatch.exists,
+                      "the group chat isn't on the map")
+        // (Scout on the map, not Scout's face in the list behind it.)
+        let scout = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Scout, runs on")).firstMatch
+        XCTAssertTrue(scout.exists, "Scout isn't on the map")
+        XCTAssertEqual(scout.value as? String, "Working, hands work to Quill", "Scout's work, and who it asks, aren't shown")
+        XCTAssertTrue(app.text(containing: "claude-sonnet-4.5").exists, "Quill's model isn't on the map")
+        XCTAssertTrue(app.text(containing: "qwen3.6-35b-a3b").exists, "the shared model isn't on the map")
+        XCTAssertTrue(app.text(containing: "Claude Code").exists, "the bot that works through Claude Code doesn't show it")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@ AND value CONTAINS %@", "Redde, runs on", "hands work to"))
+                        .firstMatch.exists, "Redde's handoffs aren't told")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "topology"
+        shot.lifetime = .keepAlways
+        add(shot)
+
+        scout.tap()
+        XCTAssertFalse(app.navigationBars["Topology"].waitForExistence(timeout: 2), "the map stayed open")
+    }
+
     override func tearDownWithError() throws {
         // What was typed is a draft, and drafts outlast the app.
         MainActor.assumeIsolated {

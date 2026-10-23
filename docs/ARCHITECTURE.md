@@ -467,6 +467,30 @@ where a new conversation is in the ••• menu, and ⌘N as anywhere) is the 
   servers alone, so there it reaches chats started after it. `HermesLabBotsTests` takes Code
   Execution off the main agent and puts it back, no other switch moving, with a chat open that
   follows both (0.21.3 to 0.22.2).
+- **Topology** (asked 2026-10-22, after another Hermes client's map; `BotTopology`,
+  `BotTopologyView`). Topology, a tile beside New Bot in the Bots section's grid, opens a map: you at the top, the group chats
+  under you, the bots under them with what each is doing (`ChatActivity`: working, needs you, a
+  new reply, idle), and on the right the model each runs on (`profiles.list`'s `model`, on every
+  release), one box for the bots that share it. You have a line into every bot (its own chat) and
+  every group chat along the left-most lane; each group chat has a lane of its own into its bots;
+  a bot's curve to its model is in its colour. `BotTopology` places the boxes and lines for a
+  width (no overlaps, lines into one box spread apart; `BotTopologyTests`), the view draws them
+  on a Canvas under the boxes, and a bot or group chat opens its chat. On the Hermes API alone
+  there are no group chats and no models (the roster has neither), so it shows you and the bots.
+  It reads the same directories as the list, kept fresh by the list's own watch.
+  Handoffs (`BotHandoffs`, `BotHandoffStore`) are dashed arrows from one bot's right side round
+  into another's, a step out each where they overlap (the column wider for them): a message one
+  bot sent another (`message_agent`), read from the newest 150 messages of each bot's Bot Chat
+  ("Message from …" that came in, and the answer that came back as a process notice), and a
+  kanban card one bot made for another (`created_by` → `assignee`; "dashboard" is a person's).
+  Hermes keeps no list of them. The chats are read with the Dashboard's read-only `GET
+  api/sessions/{id}/messages?profile=…&order=latest` (no chat is opened for it, every release),
+  or on the Hermes API alone at each bot's /p/<profile>/ with its key; at most once a minute.
+  Hermes has no field for a bot that does its work through Claude Code (the butler setup's
+  claude and research bots run Sol's model and call Claude Code from a tool), so
+  `HermesBot.worksThroughClaudeCode` goes by what it says it does ("… with Claude Code"), or a
+  profile "claude" on a model that isn't Claude's: a Claude Code box with a dotted line, beside
+  its model's. Lab bots checks a real message's arrow on 0.21.0 to 0.22.2.
 - **Making and changing bots** (`BotManagement.swift`, `BotEditor.swift`), as Hermes Desktop does:
   New Bot asks for a name, what it does, a personality (empty: one written from the name and what
   it does, Desktop's wording), a model, a face and its tools. The profile is made with `profiles.create`

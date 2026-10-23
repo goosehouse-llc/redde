@@ -1986,6 +1986,18 @@ struct HermesLabBotsTests {
         print("  info  back home: \(homeRaw.suffix(3).map { String($0.prefix(160)) })")
         HermesLabApprovalTests.report(reply?.delivered?.profile == handle && reply?.text.hasPrefix("[") == true,
                                       "and its reply comes back as that bot's", "\(String(describing: reply))")
+
+        // The Topology map's arrow for it, read from the bots' newest messages by the Dashboard
+        // (read only: no chat opened for it).
+        roster = try await client.bots()
+        let settings = Settings(defaults: UserDefaults(suiteName: "lab-handoffs-\(UUID().uuidString)")!)
+        settings.transport = .hermesServe
+        settings.serveURL = "http://127.0.0.1:19119"
+        settings.serveUsername = "lab"
+        let store = BotHandoffStore()
+        await store.refresh(roster.bots, settings: settings, dashboard: client, force: true)
+        HermesLabApprovalTests.report(store.handoffs[BotHandoff(from: "default", to: handle, kind: .message)].map { $0.count >= 1 } == true,
+                                      "the map knows the main bot handed work to the other", "\(store.handoffs)")
         roster = try await client.bots()
         if let row = roster.bots.first(where: { $0.name == handle }) {
             print("  info  its row: \(BotMessages.rowPreview(row.preview, roster: roster.bots, mainName: "Redde") ?? "none")")

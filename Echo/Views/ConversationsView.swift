@@ -61,6 +61,8 @@ struct ConversationsList: View {
     @AppStorage("sessions.showBots") private var showBotRows = true
     /// More than six bots: all of them showing, or the first few and "more".
     @AppStorage("sessions.botsExpanded") private var botsExpanded = false
+    /// New Bot, Topology and Hidden after the bots, or folded into one More (his ask 2026-10-22).
+    @AppStorage("sessions.botActionsShown") private var botActionsShown = true
     /// Every profile's chats in the list at once, each tagged with its profile, as Hermes Desktop
     /// can (his ask 2026-10-22, after a Reddit request); off, the selected profile's alone.
     @AppStorage("sessions.allProfiles") private var allProfiles = false
@@ -78,6 +80,8 @@ struct ConversationsList: View {
     @State private var editingBot: BotEditor.Mode?
     /// A bot being added for the Hermes API alone.
     @State private var addingAPIBot = false
+    /// The map of the bots, their group chats and models (`BotTopologyView`).
+    @State private var showingTopology = false
     /// The bot whose voice is being picked.
     @State private var voicing: HermesBot?
     /// The bot whose schedules are open (`BotSchedulesView`).
@@ -189,6 +193,7 @@ struct ConversationsList: View {
             BotEditor(mode: mode, mainName: settings.headerTitle) { botEdited($0) }
         }
         .sheet(isPresented: $showingHiddenBots) { HiddenBotsView(mainName: settings.headerTitle) }
+        .sheet(isPresented: $showingTopology) { BotTopologyView(openBot: openBot, openRoom: { opened(room: $0) }) }
         // A bot's chat opened, or left: seen up to now.
         .onChange(of: conversation.bot?.profile) { old, new in
             for name in [old, new].compactMap(\.self) { activity.botSeen(name) }
@@ -556,6 +561,8 @@ struct ConversationsList: View {
                     .frame(width: 32, height: 32)
                 Text(title).font(.body)
             }
+            // The whole row: a short title ("Topology") left most of it dead to a tap.
+            .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -578,6 +585,11 @@ struct ConversationsList: View {
                     gridAction("\(bots.count - shown.count) more", systemImage: "chevron.down", hint: "Shows all your bots") {
                         withAnimation { botsExpanded = true }
                     }
+                } else if !botActionsShown {
+                    // Folded away, one tile for them all, so they aren't always on screen.
+                    gridAction("More", systemImage: "ellipsis", hint: "Shows New Bot, Topology and the hidden bots") {
+                        withAnimation { botActionsShown = true }
+                    }
                 } else {
                     if apiBotsOnly {
                         // No Dashboard to make or list them: a profile on the server, by its own key.
@@ -585,8 +597,14 @@ struct ConversationsList: View {
                     } else {
                         gridAction("New Bot", systemImage: "plus", hint: "Makes a bot on your server, with a chat of its own") { editingBot = .new }
                     }
+                    // Beside New Bot, the same size (his ask 2026-10-22).
+                    gridAction("Topology", systemImage: "point.3.connected.trianglepath.dotted",
+                               hint: "Shows your bots, your group chats and the models they run on") { showingTopology = true }
                     if hidden > 0 {
                         gridAction("Hidden", systemImage: "eye.slash", hint: "Shows the \(hidden) bots hidden from this list") { showingHiddenBots = true }
+                    }
+                    gridAction("Less", systemImage: "chevron.left", hint: "Folds New Bot, Topology and the hidden bots into one tile") {
+                        withAnimation { botActionsShown = false }
                     }
                 }
             }
@@ -1497,6 +1515,11 @@ struct ConversationsList: View {
                     Mutes.mute("bot:scout", for: .untilUnmuted)
                     Mutes.mute("room:" + GroupRoom.demo.id, for: .eightHours)
                 }
+                // `-echo.topology`: the Topology map open (screenshots).
+                if DevHooks.has("-echo.topology"), !Self.openedDemoTopology {
+                    Self.openedDemoTopology = true
+                    showingTopology = true
+                }
                 // `-echo.botVoice <bot>`: that bot's voice being picked (screenshots).
                 if let which = DevHooks.value("-echo.botVoice") { voicing = Self.demoBots.bots.first { $0.name == which } }
                 // `-echo.botSchedules <bot>`: that bot's schedules open (screenshots).
@@ -2130,6 +2153,8 @@ extension View {
 extension ConversationsList {
     /// `-echo.openGroup` has opened its group chat.
     static var openedDemoGroup = false
+    /// `-echo.topology` has opened the map.
+    static var openedDemoTopology = false
 
     /// One project Hermes found, with one lane and two sessions (enough to reach
     /// ProjectSessionsView and tap a row), and one someone made, still empty.
@@ -2145,8 +2170,18 @@ extension ConversationsList {
             // `-echo.demoPicture`: Scout has a picture from Hermes Desktop.
             var bot = bot
             bot.hasPicture = bot.name == "scout" && DevHooks.has("-echo.demoPicture")
+            // The models they run on, for the Topology map.
+            bot.model = ["default": "qwen3.6-35b-a3b", "scout": "qwen3.6-35b-a3b", "writer": "anthropic/claude-sonnet-4.5",
+                         "fixit": "gemma-4-12b"][bot.name]
             return bot
-        } + extraDemoBots)
+        } + extraDemoBots + claudeDemoBot)
+    }
+
+    /// `-echo.demoClaudeBot`: a coding bot that works through Claude Code, as the butler setup's (Topology).
+    private static var claudeDemoBot: [HermesBot] {
+        guard DevHooks.has("-echo.demoClaudeBot") else { return [] }
+        return [HermesBot(name: "claude", title: "Claude", description: "Coding worker: does each card with Claude Code, never seeing a key.",
+                          model: "qwen3.6-35b-a3b", lastActive: .now.addingTimeInterval(-900))]
     }
 
     /// `-echo.demoBotCount n`: the sample bots, and more up to n (for when they fold).
