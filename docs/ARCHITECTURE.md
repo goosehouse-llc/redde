@@ -1594,6 +1594,18 @@ word counted; with one word that counts, what else it makes of the room is throw
 speaker, at 75% volume, it transcribed a person talking and none of a reply that said "stop" a
 dozen times over them; on headphones the reply isn't in the microphone at all.
 
+**Stop and Skip in the car** (the same screen, iPhone only, off unless turned on; asked
+2026-10-22). Talk over replies doesn't apply in a car (CarPlay connected, or the car's audio as
+the route): its speakers are near its microphone, and the radio or a passenger is no reason to
+end a reply. With this on, the mic stays open behind a reply there all the same, through the
+echo cancelling, and it always works as "only stop", whatever Interrupt with says, with one more
+word: "skip" (`StopWord.heard(_:in:)`, not "don't skip"). "Stop" ends the reply, the turn and
+hands-free, as above. "Skip" drops what is left of the reply as if it had come to its end
+(`skippedByWord`): a reply still on its way stops there, what came of it kept in the chat, and
+then whatever the end of a reply does happens, hands-free listening on the open mic with the
+listening cue, one question ending. Whether a car's own echo handling lets it hear the words
+over the reply, and nothing of the reply itself, is for a drive to tell.
+
 **Stop phrases** (Settings → Voice). Between turns in hands-free, an utterance that means "that's
 all" ends the conversation and never reaches the agent (`StopPhrase`: the whole utterance, with or
 without "okay", "Redde", "please" or "thanks" around it, so "stop by the store" is still a

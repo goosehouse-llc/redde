@@ -128,6 +128,8 @@ final class VoiceSession {
     private let keepAwake: (Bool) -> Void
     /// Settings → Voice → Talk over replies, and what it takes. Injectable so tests choose.
     private let talkOver: () -> Settings.TalkOver
+    /// Settings → Voice → Stop and Skip in the car.
+    private let commandsInCar: () -> Bool
     private let interruption: () -> Settings.Interruption
     /// Settings → Voice → Stop phrases: the person's own, heard beside the built-in ones.
     private let stopPhrases: () -> [String]
@@ -238,6 +240,7 @@ final class VoiceSession {
          keepAwake: @escaping (Bool) -> Void = { UIApplication.shared.isIdleTimerDisabled = $0 },
          talkOver: @escaping () -> Settings.TalkOver = { Settings.shared.talkOver },
          interruption: @escaping () -> Settings.Interruption = { Settings.shared.interruption },
+         commandsInCar: @escaping () -> Bool = { Settings.shared.stopAndSkipInCar },
          stopPhrases: @escaping () -> [String] = { Settings.shared.stopPhrases },
          answersAloud: @escaping () -> Bool = { Settings.shared.answerRequestsByVoice },
          answersByNod: @escaping () -> Bool = { Settings.shared.answerRequestsByNod },
@@ -248,6 +251,7 @@ final class VoiceSession {
          thinkingSound: any ThinkingSounding = ThinkingSoundPlayer.shared,
          respond: ((SpokenRequest.Answer) -> Void)? = nil) {
         self.talkOver = talkOver
+        self.commandsInCar = commandsInCar
         self.interruption = interruption
         self.stopPhrases = stopPhrases
         self.answersAloud = answersAloud
@@ -1073,9 +1077,12 @@ final class VoiceSession {
     var confirmWindow: Duration = .seconds(1.5)
 
     /// Whether talking over a reply applies to what this turn plays through (Settings → Voice).
-    /// Never in a car: its audio and its own echo handling are untested ground.
+    /// In a car, only with Stop and Skip in the car on, and then for those two words alone: its
+    /// speakers are near its microphone, and nothing else said there (the radio, a passenger)
+    /// should cut a reply short.
     private func canBeTalkedOver() -> Bool {
-        switch (talkOver(), audio.route) {
+        if inCar { return commandsInCar() }
+        return switch (talkOver(), audio.route) {
         case (.off, _), (_, .car), (.headphones, .speaker): false
         case (_, .headphones), (.everywhere, .speaker): true
         }
@@ -1146,8 +1153,11 @@ final class VoiceSession {
     /// Interrupt with.
     private func voiceOverReply() {
         guard monitoring, phase == .speaking, confirmTask == nil else { return }
-        if interruption() == .stopWord { listenForStop() } else { holdToHearWords() }
+        if inCar || interruption() == .stopWord { listenForStop() } else { holdToHearWords() }
     }
+
+    /// CarPlay connected, or the car's own audio as the route (its Bluetooth alone).
+    private var inCar: Bool { carConnected() || audio.route == .car }
 
     /// How long nothing new has to be heard before the wait for "stop" goes back to a level watch.
     var stopWordQuiet: Duration = .seconds(2.5)
@@ -1161,6 +1171,8 @@ final class VoiceSession {
         log.info("a voice over the reply: listening for \"stop\"")
         recognizer.beginTranscribing(withHeldAudio: true, endsOnSilence: false)
         let own = stopPhrases()
+        // In the car "skip" counts too: the rest of the reply isn't read.
+        let skips = inCar
         confirmTask = Task { [weak self, stopWordQuiet] in
             let clock = ContinuousClock()
             var heard = ""
@@ -1172,6 +1184,11 @@ final class VoiceSession {
                 if StopWord.heard(in: now, own: own) {
                     confirmTask = nil
                     stoppedByWord()
+                    return
+                }
+                if skips, StopWord.heard("skip", in: now) {
+                    confirmTask = nil
+                    skippedByWord()
                     return
                 }
                 if now != heard { heard = now; changedAt = clock.now }
@@ -1200,6 +1217,19 @@ final class VoiceSession {
         output.beginReply()   // (drops what was left of the reply)
         output.append("Okay.")
         output.endReply()
+    }
+
+    /// "Skip" was said over the reply, in the car: the rest of it isn't read, as if it had come to
+    /// its end. Hands-free listens for what's next; one question, and the conversation is done.
+    /// A reply still on its way stops there, what came of it kept in the chat, as when it is
+    /// talked over.
+    private func skippedByWord() {
+        log.info("\"skip\" over the reply")
+        replyTask?.cancel()
+        replyTask = nil
+        if conversation.isStreaming { conversation.cancel() }
+        output.stop()
+        replyFinishedSpeaking()
     }
 
     /// "Anything you say": hold the reply and let the recogniser listen, starting a second back,

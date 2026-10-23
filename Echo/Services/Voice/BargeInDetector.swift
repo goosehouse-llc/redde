@@ -92,6 +92,13 @@ nonisolated enum StopWord {
         }
     }
 
+    /// True when `text` has `word` in it as a word of its own, not after a "don't" ("skip", in
+    /// the car, beside "stop").
+    static func heard(_ word: String, in text: String) -> Bool {
+        let words = Self.words(text)
+        return words.indices.contains { i in words[i] == word && !(i > 0 && negations.contains(words[i - 1])) }
+    }
+
     private static func words(_ text: String) -> [String] {
         text.lowercased().folding(options: [.diacriticInsensitive, .widthInsensitive], locale: nil)
             .replacingOccurrences(of: "’", with: "'")

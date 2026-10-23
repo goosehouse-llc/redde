@@ -485,6 +485,16 @@ struct VoiceSettings: View {
                 }
                 .pickerStyle(.menu)
             }
+            // An iPad has no car.
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                Toggle(isOn: $settings.stopAndSkipInCar) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Stop and Skip in the car")
+                        Text("While Redde speaks in the car, say “stop” to end the reply, or “skip” to jump to its end.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            }
             NavigationLink {
                 StopPhrasesView()
             } label: {
@@ -558,7 +568,7 @@ struct VoiceSettings: View {
             Text("Voice")
         } footer: {
             Text(voiceFooter
-                + "“Talk over replies” lets you interrupt a spoken reply by speaking: the reply stops and what you say is your next message. With headphones it costs nothing. On the phone's speaker Redde has to cancel its own echo for as long as it speaks, so replies play at call volume, quieter than usual; that is why the speaker is a separate choice. Not in the car. “Interrupt with” says what counts: anything you say, or only the word “stop”, for when other people are talking nearby. With “Only “stop””, the reply plays on through whatever else is said, and “stop” ends it. “Stop phrases” adds your own ways of ending a hands-free conversation to the built-in ones, for another language or a word of your own; with “Only “stop””, they end a reply as well. "
+                + "“Talk over replies” lets you interrupt a spoken reply by speaking: the reply stops and what you say is your next message. With headphones it costs nothing. On the phone's speaker Redde has to cancel its own echo for as long as it speaks, so replies play at call volume, quieter than usual; that is why the speaker is a separate choice. Not in the car: there, “Stop and Skip in the car” listens for two words alone while Redde speaks, “stop”, which ends the reply as a stop phrase does, and “skip”, which jumps to its end (hands-free then listens for what's next). The car's speakers sit near its microphone, so it is off until you turn it on. “Interrupt with” says what counts: anything you say, or only the word “stop”, for when other people are talking nearby. With “Only “stop””, the reply plays on through whatever else is said, and “stop” ends it. “Stop phrases” adds your own ways of ending a hands-free conversation to the built-in ones, for another language or a word of your own; with “Only “stop””, they end a reply as well. "
                 + "“Answer requests by voice”: in voice mode and in the car, Redde reads out a command that waits for your approval, or a question from your agent, and takes your spoken answer: “approve” or “deny”, or the answer to the question. Anyone in earshot can answer, and what the agent wants to run is said aloud, so it is off until you turn it on. Passwords and secrets are only ever asked for on the screen."
                 + (HeadGestures.isAvailable
                     ? " “Nod or shake to answer” adds your head, with AirPods that sense movement (AirPods Pro, AirPods Max, AirPods 3 or later): once the request has been read out, nod a couple of times to approve, or shake your head to deny. iOS asks for Motion & Fitness when you turn it on; the movement is read on this device and kept nowhere."

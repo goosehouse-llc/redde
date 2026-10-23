@@ -118,6 +118,12 @@ final class Settings: ServeEndpoint {
     var interruption: Interruption {
         didSet { store(interruption.rawValue, forKey: Keys.interruption) }
     }
+    /// In the car, while Redde speaks: "stop" ends the reply, "skip" jumps to its end. Only those
+    /// two words, whatever `talkOver` and `interruption` say. Off until turned on: a car's
+    /// speakers sit near its microphone.
+    var stopAndSkipInCar: Bool {
+        didSet { store(stopAndSkipInCar, forKey: Keys.stopAndSkipInCar) }
+    }
     /// The person's own ways of saying "that's all" in voice mode, heard beside the built-in
     /// English ones (`StopPhrase`): another language's, or a word of the household's. They also
     /// stop a reply where only "stop" does.
@@ -558,6 +564,7 @@ final class Settings: ServeEndpoint {
         static let carPlayVoice = "carPlayVoice"
         static let carPlayBots = "carPlayBots"
         static let carPlayTab = "carPlayTab"
+        static let stopAndSkipInCar = "stopAndSkipInCar"
         static let phoneTools = "phoneTools"
         static let notifyInBackground = "notifyInBackground"
         static let showLiveActivity = "showLiveActivity"
@@ -642,6 +649,7 @@ final class Settings: ServeEndpoint {
         carPlayVoice = CarPlayVoiceLook(rawValue: defaults.string(forKey: Keys.carPlayVoice) ?? "") ?? .bars
         carPlayBots = CarPlayBotLook(rawValue: defaults.string(forKey: Keys.carPlayBots) ?? "") ?? .sticker
         carPlayTab = defaults.string(forKey: Keys.carPlayTab) ?? "ask"
+        stopAndSkipInCar = defaults.bool(forKey: Keys.stopAndSkipInCar)
         phoneTools = defaults.data(forKey: Keys.phoneTools).flatMap { try? JSONDecoder().decode(PhoneToolsSettings.self, from: $0) } ?? .init()
         notifyInBackground = defaults.bool(forKey: Keys.notifyInBackground)
         showLiveActivity = defaults.object(forKey: Keys.showLiveActivity) as? Bool ?? true
@@ -725,7 +733,7 @@ final class Settings: ServeEndpoint {
         Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
-        Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopPhrases,
+        Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopAndSkipInCar, Keys.stopPhrases,
         Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.replyVoice, Keys.kokoroURL,
         Keys.kokoroVoice, Keys.voiceSpeed, Keys.speechLanguage, Keys.matchReplyLanguage, Keys.spokenPrefixes,
         Keys.botOrder, Keys.apiBots, Keys.botVoices, Keys.mutes,
@@ -772,6 +780,7 @@ final class Settings: ServeEndpoint {
         case Keys.newConversationForVoice: newConversationForVoice = flag()
         case Keys.talkOver: talkOver = pick(TalkOver.headphones)
         case Keys.interruption: interruption = pick(Interruption.speech)
+        case Keys.stopAndSkipInCar: stopAndSkipInCar = flag()
         case Keys.stopPhrases: stopPhrases = value as? [String] ?? []
         case Keys.answerRequestsByVoice: answerRequestsByVoice = flag()
         case Keys.shortAnswersInCar: shortAnswersInCar = flag()
@@ -984,6 +993,7 @@ final class Settings: ServeEndpoint {
         newConversationForVoice = false
         talkOver = .headphones
         interruption = .speech
+        stopAndSkipInCar = false
         stopPhrases = []
         answerRequestsByVoice = false
         answerRequestsByNod = false
