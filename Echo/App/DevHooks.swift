@@ -85,6 +85,7 @@ import WidgetKit
 ///   its "New conversation" on. `-echo.siriDraft "text"`: as Siri's "draft a message" (in a new
 ///   conversation with `-siriDraftsInNewConversation YES`).
 /// - `-echo.voiceView`: open voice mode without listening. `-echo.voiceDemo ["<words>"]` poses it mid-listen;
+///   with `-echo.voiceDemoPhase speaking`, mid-reply instead (the words are the reply's), for screenshots;
 ///   `-echo.autoVoice` opens it and starts listening.
 ///   `-echo.voiceHandoff` hands its face to other bots and back, as spoken prefixes do.
 /// - `-echo.demoBoard [clear]`: write on the agent's widget as its phone tool does (a day's plan
@@ -148,6 +149,8 @@ enum DevHooks {
     static var demoFiles: Bool { has("-echo.demoFiles") }
     static var expandAppIcons: Bool { has("-echo.expandAppIcons") }
     static var voiceDemo: Bool { has("-echo.voiceDemo") }
+    /// `-echo.voiceDemoPhase speaking`: the voice demo posed speaking rather than listening.
+    static var voiceDemoSpeaking: Bool { value("-echo.voiceDemoPhase") == "speaking" }
     static var settingsAnchor: Bool { has("-echo.settingsAnchor") }
 
     /// The conversations there were before any hook seeded one: what `-echo.tour device` leaves.

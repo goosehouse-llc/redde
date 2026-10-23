@@ -26,11 +26,14 @@ struct VoiceView: View {
     private static let demo = DevHooks.voiceDemo
     private static let demoWords = DevHooks.value("-echo.voiceDemo").flatMap { $0.hasPrefix("-") ? nil : $0 }
         ?? "Okay, prune anything older than thirty days and try the media share again"
+    /// `-echo.voiceDemoPhase speaking`: posed mid-reply instead.
+    private static let demoPhase: VoiceSession.Phase = DevHooks.voiceDemoSpeaking ? .speaking : .listening
     #else
     private static let demo = false
     private static let demoWords = ""
+    private static let demoPhase: VoiceSession.Phase = .listening
     #endif
-    private var phase: VoiceSession.Phase { Self.demo ? .listening : session.phase }
+    private var phase: VoiceSession.Phase { Self.demo ? Self.demoPhase : session.phase }
 
     /// An iPhone Duo half open: where its fold lies across the screen (`Fold`).
     @State private var fold: Fold?
