@@ -373,25 +373,33 @@ enum CarPlayArtwork {
     /// many pixels a point. The card plays pictures made ahead of time, so the lights keep a
     /// rhythm of their own and not the level of anybody's voice, unlike the phone's waveform.
     /// That is why they are slow: see `speakingLevel`.
-    static func voiceStateImage(_ state: VoiceState, look: CarPlayVoiceLook = .bars, side: CGFloat = voiceImageSide,
+    static func voiceStateImage(_ state: VoiceState, look: CarPlayVoiceLook = .bars, face: BotFace? = nil, side: CGFloat = voiceImageSide,
                                 movingAt scale: CGFloat? = nil) -> UIImage {
         // Redde's face has the theme's corners and, unless another was picked, its bubble colour:
-        // another theme, or another colour picked for its bubbles, another picture.
+        // another theme, or another colour picked for its bubbles, another picture. A bot's chat
+        // shows that bot's face instead (`face`).
         let settings = Settings.shared
-        let theme = look == .redde ? " \(settings.theme.rawValue) \(String(describing: settings.themeColors[settings.theme.rawValue])) \(BotDirectory.shared.mainFace.code)" : ""
+        let shown = face ?? BotDirectory.shared.mainFace
+        let theme = look == .redde ? " \(settings.theme.rawValue) \(String(describing: settings.themeColors[settings.theme.rawValue])) \(shown.code) \(shown.picture ?? "")" : ""
         let key = "\(look.rawValue) \(state.rawValue) \(side) \(scale ?? 0)\(theme)"
         if let made = voicePictures[key] { return made }
-        let picture = voicePicture(state, look: look, side: side, movingAt: scale)
+        let picture = voicePicture(state, look: look, face: face, side: side, movingAt: scale)
         voicePictures[key] = picture
         return picture
     }
 
+    /// The face look's pictures are wider than tall (150 by 114, a whole number of pixels at any
+    /// scale): under a title on his car the card's picture is 150 by 69 points, and a square one
+    /// would cut the face's aura off at its sides.
+    static let faceLookHeight: CGFloat = 0.76
+
     /// The same picture drawn afresh and not kept: for Settings, which plays a look's loops only
     /// while its row is open.
-    static func voicePicture(_ state: VoiceState, look: CarPlayVoiceLook, side: CGFloat = voiceImageSide, movingAt scale: CGFloat? = nil) -> UIImage {
-        let size = CGSize(width: side, height: side)
+    static func voicePicture(_ state: VoiceState, look: CarPlayVoiceLook, face: BotFace? = nil, side: CGFloat = voiceImageSide,
+                             movingAt scale: CGFloat? = nil) -> UIImage {
+        let size = CGSize(width: side, height: look == .redde ? side * faceLookHeight : side)
         guard let scale, let loop = loop(state, look: look) else {
-            return render(size) { ctx, rect in draw(state, look, at: nil, ctx, rect) }
+            return render(size) { ctx, rect in draw(state, look, face: face, at: nil, ctx, rect) }
         }
         var frames: [UIImage] = []
         // A picture that looks just like one drawn already is that one again: the bars come down
@@ -402,7 +410,7 @@ enum CarPlayArtwork {
             if let twin, let same = drawn[twin] {
                 frames.append(same)
             } else {
-                let frame = render(size, scale: scale) { ctx, rect in draw(state, look, at: CGFloat(i) / CGFloat(loop.frames), ctx, rect) }
+                let frame = render(size, scale: scale) { ctx, rect in draw(state, look, face: face, at: CGFloat(i) / CGFloat(loop.frames), ctx, rect) }
                 if let twin { drawn[twin] = frame }
                 frames.append(frame)
             }
@@ -449,13 +457,13 @@ enum CarPlayArtwork {
 
     /// One picture of a state in a look. `p` is how far through its loop, 0 up to 1; nil is the
     /// picture that stands still.
-    private static func draw(_ state: VoiceState, _ look: CarPlayVoiceLook, at p: CGFloat?, _ ctx: CGContext, _ rect: CGRect) {
+    private static func draw(_ state: VoiceState, _ look: CarPlayVoiceLook, face: BotFace? = nil, at p: CGFloat?, _ ctx: CGContext, _ rect: CGRect) {
         let u = rect.width / 100
         // Mist is you and what waits on you, gold is Redde. KITT gives that up for the car's
         // red: there the height of the lights and the scanner tell the states apart.
         let colour = look == .kitt ? red : state == .thinking || state == .speaking ? gold : mist
         if look == .redde {
-            reddeFace(ctx, rect, state, at: p, colour: colour)
+            reddeFace(ctx, rect, state, face: face ?? BotDirectory.shared.mainFace, at: p, colour: colour)
             return
         }
         if look == .kitt { disc(ctx, rect, from: dashTop, to: dashBottom) } else { disc(ctx, rect) }
@@ -758,27 +766,96 @@ enum CarPlayArtwork {
         }
     }
 
-    /// The Redde look: Redde's own face, no disc behind it, in a soft light of the state's colour.
+    /// The Redde look: Redde's own face (or the bot's whose chat it is), no disc behind it, in a
+    /// soft light of the state's colour. As big as the picture lets it be: on a car the picture is
+    /// small (69 points high on a 568×263 screen with a title, 89 without), so the face fills it.
     /// While you are heard it looks at you, its eyes drifting a little, and blinks once a loop;
     /// thinking, it looks up and away, its eyes going round; speaking, its mouth opens and shuts
     /// on two syllables; paused, its eyes are shut; waiting on the phone, it looks down at one.
-    private static func reddeFace(_ ctx: CGContext, _ rect: CGRect, _ state: VoiceState, at p: CGFloat?, colour: UIColor) {
+    private static func reddeFace(_ ctx: CGContext, _ picture: CGRect, _ state: VoiceState, face: BotFace, at p: CGFloat?, colour: UIColor) {
+        // Drawn in the square in the middle of the picture, which is wider than that for the aura.
+        let rect = CGRect(x: picture.midX - picture.height / 2, y: picture.minY, width: picture.height, height: picture.height)
         let u = rect.width / 100
-        if state != .paused {
-            radial(ctx, [colour.withAlphaComponent(0.34), colour.withAlphaComponent(0)], at: [0, 1],
-                   centre: CGPoint(x: rect.midX, y: rect.midY), radii: CGSize(width: 50 * u, height: 50 * u))
+        // The face itself is as tall as the picture lets it be, its aura reaching the edges, as
+        // the orb look's disc does: on his car the picture is 69 points high under the title
+        // (asked 2026-10-22, "as big or bigger" than the orb). A face's drawing keeps a margin for
+        // its tilt and shine, and shapes and marks take different room in it (an antenna stands
+        // above the body), so the creature is measured and that is what fills the picture.
+        var side = 84 * u, centre = CGPoint(x: rect.midX, y: rect.midY - 6 * u)
+        if state != .phone {
+            let b = faceBounds(face)
+            side = min(90 / b.height, 110 / b.width) * u
+            centre = CGPoint(x: rect.midX - (b.midX - 0.5) * side, y: rect.midY - (b.midY - 0.5) * side)
         }
-        let side = 84 * u
-        if let image = BotAvatar.picture(of: BotDirectory.shared.mainFace, side: side, pose: reddePose(state, at: p), scale: max(1, abs(ctx.ctm.a))) {
-            image.draw(in: CGRect(x: rect.midX - side / 2, y: rect.midY - side / 2 - (state == .phone ? 6 * u : 0), width: side, height: side))
+        guard let image = BotAvatar.picture(of: face, side: side, pose: reddePose(state, at: p), scale: max(1, abs(ctx.ctm.a))) else { return }
+        let frame = CGRect(x: centre.x - side / 2, y: centre.y - side / 2, width: side, height: side)
+        // Its aura as the phone's voice face wears it (asked 2026-10-22, "look the same as it does
+        // on the phone"): a glow along its outline in the phase colour, the accent listening,
+        // orange thinking, green speaking, none at rest, over a soft dark shadow below. The phone's
+        // is 10 points on a face 196 across; a context's shadow is in pixels, and blurs twice the
+        // radius a view's does. (The phone's dark shadow under the face is left out: on the car's
+        // dark ground it only showed the picture's edges.)
+        let pixels = abs(ctx.ctm.a), k = side / 196
+        let aura: UIColor? = switch state {
+        case .listening: UIColor(Settings.shared.resolvedTheme.accent)
+        case .thinking: .systemOrange
+        case .speaking: .systemGreen
+        case .paused: nil
+        case .phone: colour
         }
+        if let aura {
+            // The face in its aura, faded out toward the picture's edges so that the picture's edge
+            // never cuts the aura off in a line; then the face again over it, whole. (A face drawn
+            // off the picture for its shadow alone is drawn not at all: what lies outside is skipped.)
+            ctx.saveGState()
+            ctx.beginTransparencyLayer(auxiliaryInfo: nil)
+            ctx.setShadow(offset: .zero, blur: 2 * 10 * k * pixels, color: aura.withAlphaComponent(0.9).cgColor)
+            image.draw(in: frame)
+            ctx.setShadow(offset: .zero, blur: 0, color: nil)
+            ctx.setBlendMode(.destinationIn)
+            let clear = UIColor.black.withAlphaComponent(0), solid = UIColor.black
+            linear(ctx, [clear, solid, solid, clear], from: CGPoint(x: 0, y: picture.minY), to: CGPoint(x: 0, y: picture.maxY), locations: [0, 0.12, 0.88, 1])
+            linear(ctx, [clear, solid, solid, clear], from: CGPoint(x: picture.minX, y: 0), to: CGPoint(x: picture.maxX, y: 0), locations: [0, 0.1, 0.9, 1])
+            ctx.endTransparencyLayer()
+            ctx.restoreGState()
+        }
+        image.draw(in: frame)
         if state == .phone {
             ctx.saveGState()
-            ctx.translateBy(x: 74 * u, y: 72 * u); ctx.scaleBy(x: 0.42, y: 0.42); ctx.translateBy(x: -50 * u, y: -50 * u)
+            ctx.translateBy(x: rect.minX + 74 * u, y: 72 * u); ctx.scaleBy(x: 0.42, y: 0.42); ctx.translateBy(x: -50 * u, y: -50 * u)
             phone(ctx, u, colour: colour)
             ctx.restoreGState()
         }
     }
+
+    /// Where a face's creature lies in its own square, as fractions of it: looked at once, at rest.
+    private static func faceBounds(_ face: BotFace) -> CGRect {
+        let picture = face.picture.map { Settings.shared.botPictures && BotPictures.shared.image(for: $0) != nil ? $0 : "" } ?? ""
+        let key = "\(face.code) \(picture)"
+        if let known = faceBoundsKnown[key] { return known }
+        var found = CGRect(x: 0.12, y: 0.13, width: 0.78, height: 0.74)
+        let n = 100
+        if let image = BotAvatar.picture(of: face, side: CGFloat(n), scale: 1)?.cgImage,
+           let context = CGContext(data: nil, width: n, height: n, bitsPerComponent: 8, bytesPerRow: n * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                   bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) {
+            context.draw(image, in: CGRect(x: 0, y: 0, width: n, height: n))
+            if let data = context.data?.assumingMemoryBound(to: UInt8.self) {
+                var (minX, minY, maxX, maxY) = (n, n, -1, -1)
+                // Rows from the top: a context's memory starts with its top row. The fourth byte is alpha.
+                for y in 0 ..< n { for x in 0 ..< n where data[(y * n + x) * 4 + 3] > 40 {
+                    minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
+                } }
+                if maxX >= minX, maxY >= minY {
+                    found = CGRect(x: CGFloat(minX) / CGFloat(n), y: CGFloat(minY) / CGFloat(n),
+                                   width: CGFloat(maxX - minX + 1) / CGFloat(n), height: CGFloat(maxY - minY + 1) / CGFloat(n))
+                }
+            }
+        }
+        faceBoundsKnown[key] = found
+        return found
+    }
+
+    private static var faceBoundsKnown: [String: CGRect] = [:]
 
     /// Where Redde's face looks, how shut its eyes are and how open its mouth, `p` through a loop.
     static func reddePose(_ state: VoiceState, at p: CGFloat?) -> BotPose {

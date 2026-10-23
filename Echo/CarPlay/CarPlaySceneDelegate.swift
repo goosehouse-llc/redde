@@ -644,8 +644,14 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         // The pictures move, unless Reduce Motion is on. They are drawn for the car's screen, at
         // two pixels a point at most: about a hundred of them are kept while the car is connected.
         let scale: CGFloat? = moving ? min(max(controller?.carTraitCollection.displayScale ?? 2, 1), 2) : nil
+        // The face of whoever Redde is being: the bot whose chat it is (his ask 2026-10-22, "like
+        // on the phone"), else Redde's own.
+        let face = conversation?.bot.flatMap { bot in bot.profile == "default" ? nil : BotDirectory.shared.roster?.faces[bot.profile] }
+        // Every look says what is going on over its picture, the face's too (his word 2026-10-22,
+        // "I still want it to say speaking over the bot"), though the picture is 69 points high
+        // under a title on a 568×263 car, and 89 without one.
         func state(_ id: CarPlayArtwork.VoiceState, _ titles: [String]) -> CPVoiceControlState {
-            let image = CarPlayArtwork.voiceStateImage(id, look: look, movingAt: scale)
+            let image = CarPlayArtwork.voiceStateImage(id, look: look, face: face, movingAt: scale)
             // No action buttons on a state. With them CarPlay lays the card out title, picture,
             // buttons, and the picture gets a third of the height left over: ten points on a
             // 240-point screen, where it has ninety without them. That is how "Listening…" came

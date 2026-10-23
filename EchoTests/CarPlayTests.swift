@@ -484,6 +484,26 @@ struct CarPlayTests {
 
     // MARK: The voice card
 
+    /// The face look says what is going on over the face, as the others do (his word
+    /// 2026-10-22, "I still want it to say speaking over the bot", after a round without titles).
+    @Test func theFaceLookSaysWhatIsGoingOnOverTheFace() throws {
+        let h = Harness()
+        h.settings.carPlayVoice = .redde
+        let faces = h.delegate.voiceTemplate(moving: false).voiceControlStates.map(\.titleVariants)
+        h.settings.carPlayVoice = .bars
+        let bars = h.delegate.voiceTemplate(moving: false).voiceControlStates.map(\.titleVariants)
+        #expect(faces == bars)
+        #expect(faces[2] == ["Speaking…"])
+    }
+
+    /// In a bot's chat the face look draws that bot, not Redde.
+    @Test func aBotsChatShowsTheBotsFace() throws {
+        let redde = CarPlayArtwork.voicePicture(.speaking, look: .redde, face: nil).pngData()
+        let scout = CarPlayArtwork.voicePicture(.speaking, look: .redde, face: BotFace(seed: "scout")).pngData()
+        #expect(redde != scout)
+        #expect(CarPlayArtwork.voicePicture(.speaking, look: .redde, face: BotFace(seed: "scout")).pngData() == scout)
+    }
+
     /// Settings → Appearance → CarPlay voice screen: the card shows its five states in the look
     /// picked there, and in solid bars until something else is.
     @Test func theVoiceCardIsDrawnInTheLookPickedInSettings() throws {

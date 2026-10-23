@@ -82,6 +82,7 @@ struct CarPlayVoiceSettings: View {
                     Text(settings.carPlayVoice.label)
                     Image(uiImage: CarPlayArtwork.voiceStateImage(.speaking, look: settings.carPlayVoice, side: Self.side))
                         .resizable()
+                        .aspectRatio(contentMode: .fit)
                         .frame(width: 22, height: 22)
                         .accessibilityHidden(true)
                 }
@@ -106,6 +107,7 @@ struct CarPlayVoiceSettings: View {
         } else {
             Image(uiImage: CarPlayArtwork.voiceStateImage(state, look: look, side: Self.side))
                 .resizable()
+                .aspectRatio(contentMode: .fit)
                 .frame(width: Self.side, height: Self.side)
         }
     }

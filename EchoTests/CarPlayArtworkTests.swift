@@ -32,8 +32,10 @@ struct CarPlayArtworkTests {
             #expect(image.scale == 3)
         }
         for (_, image) in square { #expect(image.size.width == image.size.height) }
-        for (_, image) in states {
-            #expect(image.size == CGSize(width: Art.voiceImageSide, height: Art.voiceImageSide))
+        for (name, image) in states {
+            // The face look's are wider than tall, for the face's aura (`faceLookHeight`).
+            let tall = name.hasPrefix("voice-redde-") ? Art.voiceImageSide * Art.faceLookHeight : Art.voiceImageSide
+            #expect(image.size == CGSize(width: Art.voiceImageSide, height: tall), "\(name)")
             #expect(image.images == nil, "a picture nobody asked to move stands still")
         }
         try write(buttons + square + states)
@@ -76,6 +78,34 @@ struct CarPlayArtworkTests {
         }
     }
 
+    /// The face look's face, with its aura, fills its picture, as the orb look's disc does, and no
+    /// face is cut off at an edge: not Redde's bubble, not an antenna (asked 2026-10-22, "as big
+    /// or bigger" than the orb).
+    @Test func theFaceFillsThePictureWithoutBeingCutOff() throws {
+        var antenna = BotFace(seed: "fixit")
+        antenna.mark = .antenna
+        var star = BotFace(seed: "star")
+        star.shape = .star
+        for face in [BotFace.main, antenna, star] {
+            for state in [Art.VoiceState.listening, .thinking, .speaking] {
+                let image = Art.voiceStateImage(state, look: .redde, face: face)
+                let cg = try #require(image.cgImage)
+                let (w, h) = (cg.width, cg.height)
+                var pixels = [UInt8](repeating: 0, count: w * h * 4)
+                let context = try #require(CGContext(data: &pixels, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                                                     space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+                context.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: h))
+                // The creature is opaque; the light behind it is faint.
+                func solid(_ x: Int, _ y: Int) -> Bool { pixels[(y * w + x) * 4 + 3] > 200 }
+                let rows = (0 ..< h).filter { y in (0 ..< w).contains { solid($0, y) } }
+                let edges = (0 ..< h).contains { solid(0, $0) || solid(w - 1, $0) } || (0 ..< w).contains { solid($0, 0) || solid($0, h - 1) }
+                let tall = Double(rows.count) / Double(h)
+                #expect(tall > 0.78, "\(face.shape) \(face.mark) \(state): the face is \(Int(tall * 100))% of the picture's height")
+                #expect(!edges, "\(face.shape) \(face.mark) \(state): cut off at an edge")
+            }
+        }
+    }
+
     /// The relative luminance of a picture (the measure contrast ratios are made of) at a point
     /// given as fractions of its width and height.
     private func relativeLuminance(of image: UIImage, at point: CGPoint) throws -> Double {
@@ -95,7 +125,8 @@ struct CarPlayArtworkTests {
         var kept = 0
         for state in Art.VoiceState.allCases {
             let image = Art.voiceStateImage(state, look: look, movingAt: 2)
-            #expect(image.size == CGSize(width: Art.voiceImageSide, height: Art.voiceImageSide), "\(state) is larger than the card takes")
+            let tall = look == .redde ? Art.voiceImageSide * Art.faceLookHeight : Art.voiceImageSide
+            #expect(image.size == CGSize(width: Art.voiceImageSide, height: tall), "\(state) is larger than the card takes")
             guard let loop = Art.loop(state, look: look) else {
                 #expect(image.images == nil, "\(state) has nothing to move")
                 continue

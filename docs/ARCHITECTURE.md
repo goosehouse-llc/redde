@@ -2205,7 +2205,22 @@ state's colour: listening it looks at you, eyes drifting, and blinks once in a 4
 thinking its eyes go round, up and away (2.4 s); speaking its mouth says two syllables twice
 (2.4 s, half of the pictures kept); paused its eyes are shut; waiting on the phone it looks down
 at one (`CarPlayArtwork.reddePose`). Its pictures are kept by theme, so another theme draws them
-again.
+again. In a bot's chat the card shows that bot's face instead (`voiceStateImage(face:)`, from
+`BotDirectory.roster.faces`; asked 2026-10-22, "like on the phone"). On a car the card's picture
+is small: 150 by 69 points under a title on a 568 by 263 screen (measured from Marta in the A6),
+150 by 89 without one. So the face is drawn a size up to fill the picture. For a round the states
+had no title and the face came out 81 points across; he wanted "Speaking…" back over it
+(2026-10-22), so every state keeps its words, as in the other looks, and the face is smaller for
+it. The face itself is measured (`faceBounds`: shapes and marks take different room in a face's
+square, an antenna standing above the body) and drawn as tall as the picture lets it be with
+room for its aura: 63 by 62 points on that car, the aura out to about 68, where the Orb look's
+disc is 69 (asked 2026-10-22, "as big or bigger"). The aura is the phone's voice face's (asked the
+same day): a glow along the face's outline in the phase colour, the theme's accent listening,
+orange thinking, green speaking, none paused, faded out toward the picture's edges so they never
+cut it in a line; the phone's dark shadow under it is left out, as on the car's dark ground it
+only showed the picture's edges. For room at the sides the look's pictures are 150 by 114
+(`faceLookHeight`), not square. The iOS 27 backdrop (`backgroundImage`) can't hold a bigger face:
+CarPlay blurs it under the card.
 Bars, the one a new install has, is described first; the others follow it. They
 are drawn after the dashboard of KITT, the car in Knight Rider (asked for
 2026-10-11), in the mist and gold the card had before. Speaking is its voice display: three
