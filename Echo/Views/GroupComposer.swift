@@ -60,6 +60,15 @@ struct GroupComposer: View {
         }
         .padding(.horizontal).padding(.vertical, 8)
         .dictating(dictation, base: $dictationBase, draft: $draft, problem: $problem)
+        // What is being typed to the room goes over to the screen built in the other layout (an
+        // iPhone Duo opened or closed), with the room (`LayoutCarry`).
+        .onAppear {
+            guard let carried = LayoutCarry.shared.group, carried.feed === feed, draft.isEmpty, attachments.isEmpty else { return }
+            draft = carried.draft
+            attachments = carried.attachments
+        }
+        .onChange(of: draft) { if LayoutCarry.shared.group?.feed === feed { LayoutCarry.shared.group?.draft = draft } }
+        .onChange(of: attachments) { if LayoutCarry.shared.group?.feed === feed { LayoutCarry.shared.group?.attachments = attachments } }
         .fullScreenCover(isPresented: $showCamera) {
             CameraPicker { image in
                 if let image, let att = Attachment.image(image) { attachments.append(att) }
@@ -111,6 +120,7 @@ struct GroupComposer: View {
             .accessibilityLabel("Add")
             .accessibilityHint("Add a photo or file to your message. It goes to your server, where the bots can open it.")
             TextField(dictation.isActive ? "Listening…" : "Message the group", text: $draft, axis: .vertical)
+                .accessibilityIdentifier("group-composer")
                 .font(theme.userFont)
                 .lineLimit(1 ... 6)
                 .textFieldStyle(.plain)

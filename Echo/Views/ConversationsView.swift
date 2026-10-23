@@ -99,6 +99,8 @@ struct ConversationsList: View {
     @State private var selected: Set<String> = []
     @State private var confirmBulkDelete = false
     @State private var showSettings = false
+    @Environment(\.showSettingsSheet) private var showSettingsSheet
+    @Environment(\.wideLayout) private var wide
     /// Pinned first, then most recent; filtered by the search field. Cached: the body reads it
     /// several times per pass and every keystroke in the search field would repeat the sort.
     @State private var visibleLedger: [HermesSessionsAPI.SessionSummary] = []
@@ -150,6 +152,12 @@ struct ConversationsList: View {
 
     /// A conversation opened (or a new one started), or with `room` a group chat: it takes the
     /// chat's place (on iPad, the wide pane again).
+    /// Settings, from the app's root where there is one (it stays up when the layout changes
+    /// under the list), else on the list.
+    private func openSettings() {
+        if let showSettingsSheet { showSettingsSheet() } else { showSettings = true }
+    }
+
     private func opened(room: GroupRoom? = nil) {
         groups.open = room
         if wideDetail { section = .sessions }
@@ -360,7 +368,7 @@ struct ConversationsList: View {
                 if selecting {
                     Button("Cancel") { selecting = false; selected = [] }
                 } else if !arrangingBots {
-                    Button("Settings", systemImage: "gearshape") { showSettings = true }
+                    Button("Settings", systemImage: "gearshape") { openSettings() }
                         .keyboardShortcut(",", modifiers: .command)
                 }
             }
@@ -400,6 +408,7 @@ struct ConversationsList: View {
         }
         .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search conversations")
+        .modifier(ListSearchCarry(query: $query, wide: wide))
         // Keyed on the server and profile: a switch reloads the list (and the iPad sidebar,
         // which stays up).
         // Not while the iPhone's panel is closed: it loads when it opens (isShowing below).
@@ -1076,7 +1085,7 @@ struct ConversationsList: View {
         if let ledgerError, ledger.isEmpty {
             ConnectionProblemCard(message: ledgerError,
                                   retry: { Task { await refresh() } },
-                                  openSettings: { showSettings = true })
+                                  openSettings: { openSettings() })
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.clear)
             // The server can't be reached: what this iPhone kept of its conversations can still be read.
@@ -2327,3 +2336,19 @@ extension ConversationsList {
     }
 }
 #endif
+
+/// The other layout's list was searching (an iPhone Duo opened or closed): so is this one
+/// (`LayoutCarry`).
+private struct ListSearchCarry: ViewModifier {
+    @Binding var query: String
+    let wide: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                if let carried = LayoutCarry.shared.listSearch, carried.wide != wide, query.isEmpty { query = carried.query }
+                LayoutCarry.shared.listSearch = .init(wide: wide, query: query)
+            }
+            .onChange(of: query) { LayoutCarry.shared.listSearch = .init(wide: wide, query: query) }
+    }
+}

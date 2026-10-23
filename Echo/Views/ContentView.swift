@@ -49,6 +49,11 @@ struct ContentView: View {
     /// What's New was up when voice mode was asked for: voice wins, and it comes back after.
     @State private var deferredWhatsNew: WhatsNew.Release?
     @State private var showVoice = false
+    /// A group chat's voice screen, and the room it talks with.
+    @State private var showGroupVoice = false
+    @State private var groupVoice: GroupVoiceScene?
+    /// When the composer last lost the keyboard: the layout changing takes it away, and gives it back.
+    @State private var focusLostAt: Date?
     @State private var showSearch = false
     @State private var showTerminal = false
     @State private var showModelPicker = false
@@ -77,7 +82,12 @@ struct ContentView: View {
     #endif
 
     var body: some View {
-        Group {
+        // One container whatever the layout, so that what hangs off it (the sheets, the voice
+        // screen, the work done as Redde opens) stays put when the layout changes under it:
+        // opening or closing an iPhone Duo swaps one layout for the other while Redde runs, as
+        // drawing an iPad window narrower does. On a Group each was the layout's own, and went
+        // with it: the voice screen closed, the opening's work ran again.
+        groupVoicePresentation(chatPresentations(ZStack {
             if sizeClass == .regular {
                 // iPad: sessions in the sidebar, transcript in the detail column.
                 NavigationSplitView {
@@ -95,6 +105,8 @@ struct ContentView: View {
                 phoneLayout
             }
         }
+        .environment(\.wideLayout, sizeClass == .regular)
+        .environment(\.showSettingsSheet, SettingsOpener { showSettings = true })))
         .sheet(isPresented: $showSettings, onDismiss: { WatchLink.shared.push() }) { SettingsView() }
         .sheet(isPresented: $showModelPicker) { NavigationStack { ModelPickerView() }.presentationDetents([.medium, .large]) }
         .sheet(isPresented: $showSetup, onDismiss: { WatchLink.shared.push() }) { SetupView() }
@@ -250,12 +262,99 @@ struct ContentView: View {
         }
     }
 
+    /// A group chat's voice screen, as the conversation's: on the root, so that it stays up when
+    /// the group chat is built again in the other layout.
+    private func groupVoicePresentation(_ content: some View) -> some View {
+        content
+            .fullScreenCover(isPresented: $showGroupVoice, onDismiss: { groupVoice?.voice.stop(); groupVoice = nil }) {
+                if let scene = groupVoice {
+                    VoiceView(session: voiceSession, onSwitchToTyping: {
+                        Task { try? await Task.sleep(for: .milliseconds(450)); composerFocused = true }
+                    }, group: scene)
+                    // Handed over by hand: a full-screen cover on a Mac doesn't inherit the environment.
+                    .environment(conversation)
+                    .environment(voiceSession)
+                    .environment(\.theme, theme)
+                    .onAppear {
+                        scene.voice.start(scene.feed, session: voiceSession)
+                        #if DEBUG
+                        if let who = DevHooks.value("-echo.groupVoice"), !who.hasPrefix("-") {
+                            Task { try? await Task.sleep(for: .seconds(1.5)); scene.voice.demoSpeaking(who) }
+                        }
+                        #endif
+                    }
+                }
+            }
+            // Another conversation took the group chat's place (Siri, a notification): its voice goes.
+            .onChange(of: groups.open?.id) { _, open in
+                if showGroupVoice, groupVoice?.feed.room.id != open { showGroupVoice = false }
+            }
+    }
+
+    /// The chat's sheets and dialogs (its menu's, the toolbar's): on the root, not on the chat
+    /// screen, so that they stay up when the layout changes and the chat screen is built again in
+    /// the other (an iPhone Duo opened or closed). The Terminal's connection with them. And what
+    /// is done when the layout changes (`layoutChanged`).
+    private func chatPresentations(_ content: some View) -> some View {
+        content
+            .onChange(of: sizeClass) { _, now in layoutChanged(wide: now == .regular) }
+            .onChange(of: composerFocused) { _, focused in if !focused { focusLostAt = .now } }
+            .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
+            .fullScreenCover(isPresented: $showTerminal) { TerminalScreen(folderLookup: terminalFolder) }
+            .alert("Rename conversation", isPresented: $showRename) {
+                TextField("Name", text: $renameText)
+                    // Return on the keyboard saves, like the button.
+                    .onSubmit { showRename = false; saveRename() }
+                Button("Save") { saveRename() }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text(conversation.serverSessionID == nil ? "Leave it empty to go back to the first question."
+                                                         : "The session is renamed on your server too.")
+            }
+            .modifier(ChatProjectPrompt(naming: $namingProject, problem: $projectProblem))
+            .confirmationDialog("Start a fresh chat with \(conversation.bot?.name ?? "this bot")?", isPresented: $confirmingFresh, titleVisibility: .visible) {
+                Button("Start Fresh") {
+                    Task {
+                        do { try await conversation.startBotChatFresh(mainName: settings.headerTitle) } catch { freshProblem = error.localizedDescription }
+                    }
+                }
+            } message: {
+                Text("This chat is archived on your server with its messages, and the new one starts with no history. What the bot saved to its memory stays. To make this chat shorter instead, send /compress.")
+            }
+            .alert("Couldn't start fresh", isPresented: Binding(get: { freshProblem != nil }, set: { if !$0 { freshProblem = nil } })) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(freshProblem ?? "")
+            }
+            .sheet(item: $voicingBot) { BotVoicePicker(bot: $0, mainName: settings.headerTitle) }
+            .sheet(item: $schedulingBot) { BotSchedulesView(bot: $0, mainName: settings.headerTitle) }
+            .sheet(item: $facingBot) { bot in
+                BotFacePicker(bot: bot, name: bot.label(mainName: settings.headerTitle), current: botFace ?? BotFace(seed: bot.name)) {
+                    Task { _ = try? await BotDirectory.shared.refresh() }
+                }
+            }
+            .sheet(item: $editingBot) { bot in
+                BotEditor(mode: .edit(bot), mainName: settings.headerTitle) { outcome in
+                    Task {
+                        _ = try? await BotDirectory.shared.refresh()
+                        if case let .deleted(name) = outcome, conversation.bot?.profile == name { conversation.reset() }
+                    }
+                }
+            }
+            .alert("Couldn't rename", isPresented: Binding(get: { renameError != nil }, set: { if !$0 { renameError = nil } })) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(renameError ?? "")
+            }
+    }
+
     /// The chat's place: the conversation, or a group chat opened from the list.
     @ViewBuilder
     private func chatScreen(showListButton: Bool) -> some View {
         if let room = groups.open {
             GroupChatView(room: room, focused: $composerFocused,
-                          openList: showListButton ? { setDrawer(open: true) } : nil) { groups.forget(room.id) }
+                          openList: showListButton ? { setDrawer(open: true) } : nil,
+                          openVoice: { groupVoice = $0; showGroupVoice = true }) { groups.forget(room.id) }
                 .id(room.id)
         } else {
             transcriptScreen(showListButton: showListButton)
@@ -433,58 +532,11 @@ struct ContentView: View {
                 }
             }
             // A bot's colours, with Bot colors on: the transcript, the composer and the toolbar
-            // above (not the sheets below, which aren't the chat).
+            // above (not its sheets, which aren't the chat: `chatPresentations`).
             .environment(\.theme, chatTheme)
             .tint(chatTheme.accent)
-            .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
-            .fullScreenCover(isPresented: $showTerminal) { TerminalScreen(folderLookup: terminalFolder) }
-            .alert("Rename conversation", isPresented: $showRename) {
-                TextField("Name", text: $renameText)
-                    // Return on the keyboard saves, like the button.
-                    .onSubmit { showRename = false; saveRename() }
-                Button("Save") { saveRename() }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text(conversation.serverSessionID == nil ? "Leave it empty to go back to the first question."
-                                                         : "The session is renamed on your server too.")
-            }
-            .modifier(ChatProjectPrompt(naming: $namingProject, problem: $projectProblem))
-            .confirmationDialog("Start a fresh chat with \(conversation.bot?.name ?? "this bot")?", isPresented: $confirmingFresh, titleVisibility: .visible) {
-                Button("Start Fresh") {
-                    Task {
-                        do { try await conversation.startBotChatFresh(mainName: settings.headerTitle) } catch { freshProblem = error.localizedDescription }
-                    }
-                }
-            } message: {
-                Text("This chat is archived on your server with its messages, and the new one starts with no history. What the bot saved to its memory stays. To make this chat shorter instead, send /compress.")
-            }
-            .alert("Couldn't start fresh", isPresented: Binding(get: { freshProblem != nil }, set: { if !$0 { freshProblem = nil } })) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(freshProblem ?? "")
-            }
-            .sheet(item: $voicingBot) { BotVoicePicker(bot: $0, mainName: settings.headerTitle) }
-            .sheet(item: $schedulingBot) { BotSchedulesView(bot: $0, mainName: settings.headerTitle) }
-            .sheet(item: $facingBot) { bot in
-                BotFacePicker(bot: bot, name: bot.label(mainName: settings.headerTitle), current: botFace ?? BotFace(seed: bot.name)) {
-                    Task { _ = try? await BotDirectory.shared.refresh() }
-                }
-            }
             .onChange(of: BotDirectory.shared.roster) { _, roster in
                 if let roster, BotDirectory.shared.key == settings.connectionKey { conversation.followBotName(in: roster, mainName: settings.headerTitle) }
-            }
-            .sheet(item: $editingBot) { bot in
-                BotEditor(mode: .edit(bot), mainName: settings.headerTitle) { outcome in
-                    Task {
-                        _ = try? await BotDirectory.shared.refresh()
-                        if case let .deleted(name) = outcome, conversation.bot?.profile == name { conversation.reset() }
-                    }
-                }
-            }
-            .alert("Couldn't rename", isPresented: Binding(get: { renameError != nil }, set: { if !$0 { renameError = nil } })) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(renameError ?? "")
             }
             .background { keyboardShortcuts }
     }
@@ -527,6 +579,25 @@ struct ContentView: View {
             openingFromRow = tap
         } else {
             setDrawer(open: false)
+        }
+    }
+
+    /// The layout changed under the chat (an iPhone Duo opened or closed, an iPad window drawn
+    /// across the line). The list's tab was the panel's on the iPhone and is the wide layout's
+    /// main column: Cron or Kanban open in the panel stay open full width, and the other way round;
+    /// one only picked in a closed panel doesn't take the chat's place. The keyboard, if it was up,
+    /// comes back in the composer the other layout has.
+    private func layoutChanged(wide: Bool) {
+        if wide {
+            if !showConversations { section = .sessions }
+            showConversations = false
+            openingFromRow = nil
+        } else if section != .sessions {
+            showConversations = true
+        }
+        let typing = composerFocused || focusLostAt.map { Date.now.timeIntervalSince($0) < 0.5 } == true
+        if typing, !showConversations {
+            Task { try? await Task.sleep(for: .milliseconds(350)); composerFocused = true }
         }
     }
 

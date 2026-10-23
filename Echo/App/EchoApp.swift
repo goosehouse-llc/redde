@@ -37,6 +37,9 @@ struct EchoApp: App {
         WindowGroup {
             ZStack {
                 ContentView()
+                    #if DEBUG
+                    .modifier(LayoutFlip())
+                    #endif
                     .accessibilityHidden(lock.isLocked || lock.isCovered)
                 ReplyDrawingWarmUp()
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

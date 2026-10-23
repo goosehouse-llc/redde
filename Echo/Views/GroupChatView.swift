@@ -18,9 +18,13 @@ struct GroupChatView: View {
     @Environment(\.scenePhase) private var scenePhase
     /// The reply being read aloud.
     @State private var readingID: UUID?
-    /// Talking with the group by voice, on the voice screen.
-    @State private var voice = GroupVoice()
-    @State private var showingVoice = false
+    /// Talking with the group by voice, on the voice screen, which the app's root puts up
+    /// (`openVoice`), so that it stays up when the layout changes under it.
+    @State private var voice: GroupVoice
+    var openVoice: (GroupVoiceScene) -> Void = { _ in }
+    /// This screen, to `LayoutCarry`: built again in the other layout (an iPhone Duo opened or
+    /// closed), the new one takes the room's feed, voice and draft over from it.
+    @State private var me = UUID()
     @Environment(Conversation.self) private var conversation
     /// Find in this chat: open, what is looked for, and which match is the one shown.
     @State private var finding = false
@@ -39,10 +43,20 @@ struct GroupChatView: View {
     /// as they came into view made the scroll jump; see TranscriptView), so it is kept short.
     static let pageSize = 30
 
-    init(room: GroupRoom, focused: FocusState<Bool>.Binding, openList: (() -> Void)?, onEnded: @escaping () -> Void = {}) {
+    init(room: GroupRoom, focused: FocusState<Bool>.Binding, openList: (() -> Void)?,
+         openVoice: @escaping (GroupVoiceScene) -> Void = { _ in }, onEnded: @escaping () -> Void = {}) {
         self.focused = focused
         self.openList = openList
+        self.openVoice = openVoice
         self.onEnded = onEnded
+        // The screen in the other layout is still up as this one is made: the room goes on here.
+        // (A view is made again on every pass of its parent; only the first one's state is kept.)
+        if let carried = LayoutCarry.shared.group, carried.room == room.id {
+            _feed = State(initialValue: carried.feed)
+            _voice = State(initialValue: carried.voice)
+            return
+        }
+        _voice = State(initialValue: GroupVoice())
         #if DEBUG
         if room.id == GroupRoom.demo.id || room.id == GroupRoom.demoDesktop.id {
             _feed = State(initialValue: GroupFeed.demo(room))
@@ -54,6 +68,8 @@ struct GroupChatView: View {
 
     private var faces: [String: BotFace] { BotDirectory.shared.roster?.faces ?? [:] }
     private func face(_ member: GroupMember?) -> BotFace { faces[member?.profile ?? ""] ?? BotFace(seed: member?.profile ?? "bot") }
+    /// The voice screen's view of the room.
+    private var voiceScene: GroupVoiceScene { GroupVoiceScene(voice: voice, feed: feed, face: face) }
 
     var body: some View {
         Group {
@@ -120,13 +136,15 @@ struct GroupChatView: View {
                 .onChange(of: findText) { findIndex = 0; goToMatch(0, proxy) }
                 .onChange(of: finding) { _, on in
                     if on { findFocused = findText.isEmpty } else { findText = ""; findIndex = 0 }
+                    LayoutCarry.shared.group?.finding = on
                 }
+                .onChange(of: findText) { LayoutCarry.shared.group?.findText = findText }
                 #if DEBUG
                 // `-echo.groupFind <words>`: Find open on those words (screenshots).
                 .onAppear {
                     if let words = DevHooks.value("-echo.groupFind") { findText = words; finding = true }
                     // `-echo.groupVoice [bot]`: the voice screen open on the room (with that bot's reply being read).
-                    if DevHooks.has("-echo.groupVoice") { showingVoice = true }
+                    if DevHooks.has("-echo.groupVoice") { openVoice(voiceScene) }
                 }
                 #endif
             }
@@ -138,7 +156,7 @@ struct GroupChatView: View {
                     if feed.room.inDesktop {
                         desktopNote
                     } else {
-                        GroupComposer(feed: feed, focused: focused, face: face) { showingVoice = true }
+                        GroupComposer(feed: feed, focused: focused, face: face) { openVoice(voiceScene) }
                     }
                 }
                     .frame(maxWidth: 820).frame(maxWidth: .infinity)
@@ -187,29 +205,29 @@ struct GroupChatView: View {
             .onChange(of: feed.drafts) { voice.roomChanged() }
             .onChange(of: voiceSession.phase) { voice.sessionChanged() }
             .onChange(of: voiceSession.continuous) { voice.sessionChanged() }
-            // The voice screen, as a conversation's, with the room's bots on it.
-            .fullScreenCover(isPresented: $showingVoice) {
-                VoiceView(session: voiceSession, onSwitchToTyping: {
-                    Task { try? await Task.sleep(for: .milliseconds(450)); focused.wrappedValue = true }
-                }, group: GroupVoiceScene(voice: voice, feed: feed, face: face))
-                // Handed over by hand: a full-screen cover on a Mac doesn't inherit the environment.
-                .environment(conversation)
-                .environment(voiceSession)
-                .environment(\.theme, theme)
-                .onAppear {
-                    voice.start(feed, session: voiceSession)
-                    #if DEBUG
-                    if let who = DevHooks.value("-echo.groupVoice"), !who.hasPrefix("-") {
-                        Task { try? await Task.sleep(for: .seconds(1.5)); voice.demoSpeaking(who) }
-                    }
-                    #endif
+            // This screen has the room now (`LayoutCarry`): its draft and Find stay with it.
+            .onAppear {
+                let carry = LayoutCarry.shared
+                if let carried = carry.group, carried.room == feed.room.id, carried.feed === feed {
+                    carry.group?.owner = me
+                    if carried.finding { finding = true; findText = carried.findText }
+                } else {
+                    carry.group = .init(room: feed.room.id, owner: me, feed: feed, voice: voice)
                 }
             }
-            .onChange(of: showingVoice) { _, open in if !open { voice.stop() } }
-            // Leaving the group chat ends talking with it: the voice session is the app's.
+            // Leaving the group chat ends talking with it: the voice session is the app's. Unless
+            // the screen was only built again in the other layout, which has taken the room over
+            // by now: a moment later, so as to know.
             .onDisappear {
-                voice.stop()
-                ChatActivity.shared.roomSeen(feed.room.id, upTo: feed.seenMark)
+                let feed = feed, voice = voice, me = me
+                Task {
+                    try? await Task.sleep(for: .milliseconds(300))
+                    let carry = LayoutCarry.shared
+                    if let carried = carry.group, carried.feed === feed, carried.owner != me { return }
+                    if carry.group?.feed === feed { carry.group = nil }
+                    voice.stop()
+                    ChatActivity.shared.roomSeen(feed.room.id, upTo: feed.seenMark)
+                }
             }
         }
     }

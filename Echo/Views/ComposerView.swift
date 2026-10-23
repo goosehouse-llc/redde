@@ -20,6 +20,7 @@ struct ComposerView: View {
     @Environment(Conversation.self) private var conversation
     @Environment(VoiceSession.self) private var voiceSession
     @Environment(\.theme) private var theme
+    @Environment(\.wideLayout) private var wide
     @State private var settings = Settings.shared
     /// The microphone in the field: speech into the draft, nothing sent.
     @State private var dictation = Dictation()
@@ -53,6 +54,11 @@ struct ComposerView: View {
     /// Attachments that came from a chip: they stay in the field as filled chips, not in the
     /// strip above it.
     @State private var contextAttached: Set<UUID> = []
+
+    private func noteForLayout() {
+        LayoutCarry.shared.composer = .init(conversation: conversation.id, wide: wide, showEditor: showEditor,
+                                            dismissedContext: dismissedContext, contextAttached: contextAttached)
+    }
 
     private var stripAttachments: [Attachment] { pendingAttachments.filter { !contextAttached.contains($0.id) } }
     private var attachedContext: [Attachment] { pendingAttachments.filter { contextAttached.contains($0.id) } }
@@ -128,6 +134,19 @@ struct ComposerView: View {
             ComposerEditor(draft: $draft, sendLabel: conversation.isStreaming ? "Send after this reply" : "Send", send: send)
                 .tint(theme.accent)
         }
+        // Built again in the other layout (an iPhone Duo opened or closed): the draft's page stays
+        // open, and the chips stay as they were (`LayoutCarry`). The draft itself is the chat's.
+        .onAppear {
+            if let carried = LayoutCarry.shared.composer(for: conversation.id, wide: wide) {
+                showEditor = carried.showEditor
+                dismissedContext = carried.dismissedContext
+                contextAttached = carried.contextAttached
+            }
+            noteForLayout()
+        }
+        .onChange(of: showEditor) { noteForLayout() }
+        .onChange(of: dismissedContext) { noteForLayout() }
+        .onChange(of: contextAttached) { noteForLayout() }
         .onChange(of: pendingAttachments.count) {
             contextAttached = contextAttached.filter { id in pendingAttachments.contains { $0.id == id } }
             refreshContext(draft)

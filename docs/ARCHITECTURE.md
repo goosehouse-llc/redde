@@ -2410,6 +2410,29 @@ the handover itself is tested on a real watch.
 - **iPhone:** the session list is a side panel (see Session list).
 - **iPad:** the session list is a `NavigationSplitView` sidebar; keyboard shortcuts (⌘N, ⌘K, ⌘1–3,
   ⌘L, ⌘↩, ⌘., ⌘⇧V, ⌘E, ⌘,; space and Esc on the voice screen).
+- **Which layout:** chosen by width, not by device (`ContentView`, `horizontalSizeClass`): regular
+  is the sidebar, compact the iPhone's panel. So an iPhone Duo (Apple's foldable, 2026-10-23) has
+  the iPhone's layout closed and the sidebar open, and opening or closing it swaps one for the
+  other while Redde runs, as drawing an iPad window narrower does. Each layout builds the chat
+  screen and the conversation list afresh, so what they were in the middle of is carried over
+  (`Views/LayoutCarry.swift`, asked 2026-10-23, "start with the open and close fix"):
+  - The root is one `ZStack` whatever the layout, and the sheets, the voice screens (a group
+    chat's too) and the chat's own menus' sheets (Terminal, Rename, Start Fresh, the bot sheets)
+    hang off it, so they stay up. On a `Group` they were the layout's: the voice screen closed
+    and ended the turn, and `.task` ran the launch's work again (open to voice, a fresh chat).
+  - The transcript notes the message at the top of the screen (`onScrollTargetVisibilityChange`),
+    the earlier messages loaded, Find's words and match, and the reply being read aloud; the
+    composer its long-draft page and chips; a group chat hands its feed, voice and draft to the
+    new screen whole (it stops talking only once no screen has taken the room over, a moment
+    after it goes); the list its search. Each takes back only what the *other* layout noted for
+    the same chat, so coming back from a group chat still starts at the end, as before.
+  - The keyboard, if it was up, comes back in the new composer. Cron or Kanban open in the
+    panel stay open full width, and the other way round; a tab only picked in a closed panel
+    doesn't take the chat's place when it opens out.
+  - Not carried: dictation stops (what it heard stays in the draft), and the photo picker,
+    camera and file picker close, as do the conversation list's own sheets (New Group Chat, a
+    bot's editor) and its select mode. `LayoutChangeUITests` swaps the layout mid-test with
+    `-echo.flipLayout` (DEBUG): reading place, typing, voice mode, a group draft, Settings, Find.
 - **App lock:** Face ID / Touch ID / passcode with a grace period; Siri, control and share requests
   wait until unlocked; background Shortcuts runs are protected by the Keychain instead.
 - **Cloudflare Access:** a service-token ID and secret sent as `CF-Access-Client-Id` /

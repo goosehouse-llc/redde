@@ -33,6 +33,8 @@ import WidgetKit
 ///   `-echo.demoDraft`, the sample reply read as it is written; with `-echo.demoRound`, a question
 ///   and the three bots answering it in turn). `-echo.demoMuted` mutes Scout and the group chat.
 /// - `-echo.demoHosts`: replace any real endpoints with example hosts.
+/// - `-echo.flipLayout [seconds]`: the layout swapped under the chat, as opening or closing an iPhone
+///   Duo swaps it, on the Darwin notification `LayoutFlip.notification` and every so many seconds.
 /// - `-echo.incognito`: open on a new incognito chat.
 /// - `-echo.demoKanban`: a sample Kanban board instead of the server's.
 /// - `-echo.demoGateway`: Settings → Gateway on sample data, with no server (and the row unlocked).

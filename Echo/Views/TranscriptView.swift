@@ -4,6 +4,7 @@ struct TranscriptView: View {
     @Environment(Conversation.self) private var conversation
     @Environment(VoiceSession.self) private var voiceSession
     @Environment(\.theme) private var theme
+    @Environment(\.wideLayout) private var wide
     @Binding var showSetup: Bool
     /// Find in conversation (⌘F / the gear menu). Owned by the parent so the toolbar can toggle it.
     @Binding var showSearch: Bool
@@ -46,6 +47,9 @@ struct TranscriptView: View {
     @State private var toaster = Toaster()
     /// The start screen's "Continue" card opening into its conversation.
     @State private var cardOpening: OpeningCover.Opening?
+    /// The message at the top of the screen, for the other layout (`LayoutCarry`). Not state: it
+    /// changes as the reader scrolls, and nothing on screen shows it.
+    @State private var topRow = TopRow()
 
     /// "Today" / "Yesterday" / a date where the day changes between messages. Computed once per
     /// message-count change rather than by searching the array from every row.
@@ -142,6 +146,37 @@ struct TranscriptView: View {
         proxy.scrollTo("bottom", anchor: .bottom)
     }
 
+    /// Notes where the reader is and what they have open, for the other layout (`LayoutCarry`).
+    private func noteForLayout() {
+        LayoutCarry.shared.transcript = .init(conversation: conversation.id, wide: wide, page: page, searchText: searchText,
+                                              matchIndex: matchIndex, readingID: readingID, readingFrom: following ? nil : topRow.id)
+    }
+
+    /// The transcript as it was in the other layout: the earlier messages loaded, Find's words and
+    /// match, the reply being read aloud, and the place, by the message at the top of the screen.
+    private func takeUp(_ carried: LayoutCarry.Transcript, _ proxy: ScrollViewProxy) {
+        page = carried.page
+        readingID = carried.readingID
+        searchText = carried.searchText
+        topRow.id = carried.readingFrom
+        if carried.readingFrom != nil { following = false } else { scrollToBottom(proxy, force: true) }
+        // After the rows are laid out at the new width, and after Find has gone to its first
+        // match for the words put back; again a moment later, for rows that grow as they load.
+        Task {
+            for wait in [80, 250] {
+                try? await Task.sleep(for: .milliseconds(wait))
+                if !carried.searchText.isEmpty { matchIndex = carried.matchIndex }
+                if let from = carried.readingFrom {
+                    proxy.scrollTo(from, anchor: .top)
+                } else if !carried.searchText.isEmpty {
+                    goToMatch(carried.matchIndex, proxy)
+                } else {
+                    scrollToBottom(proxy, force: true)
+                }
+            }
+        }
+    }
+
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -205,6 +240,8 @@ struct TranscriptView: View {
                 .padding()
                 .frame(maxWidth: 820)
                 .frame(maxWidth: .infinity)
+                // The rows as scroll targets, so the one at the top can be noted (`topRow`).
+                .scrollTargetLayout()
             }
             .defaultScrollAnchor(conversation.messages.isEmpty ? .top : .bottom, for: .initialOffset)
             // A blanket bottom anchor also re-aims on every content-size change. Scrolling back
@@ -232,6 +269,11 @@ struct TranscriptView: View {
             } action: { _, isPastEnd in
                 pastEnd = isPastEnd
                 if isPastEnd, scrollPhase == .idle { settleAtEnd(proxy) }
+            }
+            .onScrollTargetVisibilityChange(idType: UUID.self, threshold: 0.05) { ids in
+                let shown = visibleMessages
+                topRow.id = ids.compactMap { id in shown.firstIndex { $0.id == id } }.min().map { shown[$0].id }
+                noteForLayout()
             }
             .onScrollPhaseChange { _, phase in
                 scrollPhase = phase
@@ -280,8 +322,21 @@ struct TranscriptView: View {
             .onChange(of: searchText) { recomputeMatches(); matchIndex = 0; goToMatch(0, proxy) }
             .animation(.easeOut(duration: 0.25), value: reconnectText)
             .modifier(TurnFeedback(conversation: conversation))
-            // Opening the screen, or loading a session's history: start at the newest message.
-            .onAppear { scrollToBottom(proxy, force: true) }
+            // Opening the screen, or loading a session's history: start at the newest message. Built
+            // again in the other layout (an iPhone Duo opened or closed), where the reader was.
+            .onAppear {
+                if let carried = LayoutCarry.shared.transcript(for: conversation.id, wide: wide) {
+                    takeUp(carried, proxy)
+                } else {
+                    scrollToBottom(proxy, force: true)
+                }
+                noteForLayout()
+            }
+            .onChange(of: page) { noteForLayout() }
+            .onChange(of: searchText) { noteForLayout() }
+            .onChange(of: matchIndex) { noteForLayout() }
+            .onChange(of: readingID) { noteForLayout() }
+            .onChange(of: following) { noteForLayout() }
             .onChange(of: conversation.id) { settlePage(reset: true); following = true; recomputeDayLabels(); recomputeMatches(); scrollToBottom(proxy, force: true) }
             .onChange(of: conversation.messages.count, initial: true) {
                 // Earlier messages the reader loaded stay; otherwise the page is sized afresh.
@@ -572,4 +627,9 @@ final class ScrollHandle {
             }
         }
     }
+}
+
+/// The message at the top of the transcript's screen, kept where writing it redraws nothing.
+@MainActor private final class TopRow {
+    var id: UUID?
 }
