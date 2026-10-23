@@ -379,7 +379,11 @@ reply's side), in the theme's bubble colour (the prompt line's in Terminal and A
 2026-10-21, after a day of the Code theme's pale sky in every theme), the whites of its eyes rimmed
 when that colour is pale. Its face can be picked like a bot's, and two colours are its alone, past
 the palette: Theme (`BotFace.themed`, the one it has unpicked) and Code Blue (`codeBlue`, #CBF0FF
-whatever the theme); the other bots keep off blue all the same. A bot's face can be picked
+whatever the theme); the other bots keep off blue all the same. Colours added for picking go
+after those two, so no colour kept on a server changes its number (`laterPalette`: Soft Pink,
+then Yellow, both 2026-10-22), and the picker offers them round the colour wheel, Coral to Pink,
+then White and Black (`BotFace.pickable`; Theme first and Code Blue by Sky for the main agent).
+A bot's face can be picked
 instead (Change Face…
 on its row, or in its chat's ••• menu; `BotFacePicker`): shape, eyes, mouth, mark and colour, kept
 on the server in the profile's `ui_meta` under `redde` (`face`, a short code; compare-and-swap on

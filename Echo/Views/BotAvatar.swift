@@ -69,20 +69,21 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
     static let themed = 13
     static let codeBlue = 14
     /// Colours added for picking after Redde's own two, from `laterColors` on, so no colour kept on
-    /// a server changes: a soft pink (asked 2026-10-22).
+    /// a server changes: a soft pink, then a yellow, lemon rather than amber (both asked 2026-10-22).
     static let laterPalette: [(light: Color, deep: Color)] = [
         (Color(red: 1.00, green: 0.87, blue: 0.93), Color(red: 0.96, green: 0.64, blue: 0.80)),   // soft pink
+        (Color(red: 1.00, green: 0.96, blue: 0.58), Color(red: 0.98, green: 0.83, blue: 0.10)),   // yellow
     ]
     static let laterColors = 15
     static let softPink = 15
+    static let yellow = 16
     /// Every colour a face can be: the palette's, Redde's two, then the later ones.
-    static let colorCount = 16
-    /// The colours any bot can be picked to have, in the order they are offered (Soft Pink by Pink).
-    static let pickable: [Int] = {
-        var colors = Array(palette.indices) + (0 ..< laterPalette.count).map { laterColors + $0 }
-        if let pink = colors.firstIndex(of: 2) { colors.removeLast(); colors.insert(softPink, at: pink + 1) }
-        return colors
-    }()
+    static let colorCount = 17
+    /// The colours any bot can be picked to have, in the order they are offered: round the colour
+    /// wheel from red to pink, Soft Pink by Pink, then white and black (asked 2026-10-22, "list
+    /// the colors in an order that makes sense").
+    static let pickable: [Int] = [9, 7, 1, yellow, 10, 6, 4, 8, 0, 3, 5, 2, softPink, white, white + 1]
+    // (coral, orange, amber, yellow, lime, green, teal, sky, blue, indigo, violet, pink, soft pink, white, black)
 
     /// A colour's gradient, light to deep (any but Redde's two, which follow the theme).
     static func pair(_ color: Int) -> (light: Color, deep: Color) {

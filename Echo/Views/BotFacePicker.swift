@@ -30,9 +30,15 @@ struct BotFacePicker: View {
     }
 
     static let colorNames = ["Blue", "Amber", "Pink", "Indigo", "Teal", "Violet", "Green", "Orange", "Sky", "Coral", "Lime", "White", "Black",
-                             "Theme", "Code Blue", "Soft Pink"]
-    /// The colours offered: Redde's own two first for the main agent (`BotFace.themed`, `codeBlue`).
-    private var offered: [Int] { (bot.isDefault ? [BotFace.themed, BotFace.codeBlue] : []) + BotFace.pickable }
+                             "Theme", "Code Blue", "Soft Pink", "Yellow"]
+    /// The colours offered: for the main agent, Redde's own two besides, the theme's first and the
+    /// Code blue by Sky (`BotFace.themed`, `codeBlue`).
+    private var offered: [Int] {
+        guard bot.isDefault else { return BotFace.pickable }
+        var colors = [BotFace.themed] + BotFace.pickable
+        if let sky = colors.firstIndex(of: 8) { colors.insert(BotFace.codeBlue, at: sky + 1) }
+        return colors
+    }
     @Environment(\.theme) private var theme
 
     var body: some View {
