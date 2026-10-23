@@ -217,6 +217,10 @@ nonisolated enum ReplyCards {
             return .init(date: date, high: high, low: low, condition: .init(lenient: text(d["condition"])),
                          precipitation: number(d["precipitation"]).map { Int($0.rounded()) })
         }
+        // Exactly 0 and nothing else read with it, on a card with nothing more: a placeholder too (the
+        // agent once sent 0 and "clear" without looking the weather up). A real 0 comes with its other numbers.
+        if let n = now, n.temperature == 0, n.high == nil, n.low == nil, n.feelsLike == nil, n.wind == nil, n.humidity == nil,
+           n.precipitation == nil, n.summary == nil, hours.isEmpty, days.isEmpty { now = nil }
         guard now != nil || !hours.isEmpty || !days.isEmpty else { return nil }
         return .init(place: String(place.prefix(80)), units: units, now: now, hours: Array(hours.prefix(24)), days: Array(days.prefix(10)),
                      source: text(value["source"]))

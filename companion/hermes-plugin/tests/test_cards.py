@@ -29,7 +29,7 @@ class CardTests(unittest.TestCase):
     def test_each_kind_says_what_it_shows(self):
         answer = json.loads(cards.handle({"cards": [WALK, PLACES, WEATHER]}))
         self.assertEqual(answer["shown"], ["map: route to Rossio Roasters (walking)", "places: 3 (Rossio Roasters, Alfama Bean, Tram 28 Café)",
-                                           "weather: Lisbon (now, 1 days)"])
+                                           "weather: Lisbon (now 19°C partly_cloudy, 1 days)"])
         self.assertNotIn("not_shown", answer)
         self.assertIn("don't read out", answer["note"])
 
@@ -50,8 +50,14 @@ class CardTests(unittest.TestCase):
         answer = json.loads(cards.handle({"cards": [with_days]}))
         self.assertEqual(answer["shown"], ["weather: Orlando FL (1 days)"])
         self.assertIn("placeholder", answer["not_shown"][0])
-        self.assertEqual(json.loads(cards.handle({"cards": [{"type": "weather", "place": "Fairbanks", "now": {"temperature": 0, "condition": "snow"}}]}))["shown"],
-                         ["weather: Fairbanks (now)"], "a real 0 has its condition")
+        self.assertEqual(json.loads(cards.handle({"cards": [{"type": "weather", "place": "Fairbanks", "units": "F",
+                                                             "now": {"temperature": 0, "condition": "snow", "feels_like": -12}}]}))["shown"],
+                         ["weather: Fairbanks (now 0°F snow)"], "a real 0 comes with its other numbers")
+        # Seen later the same day: 0 and "clear", without the weather looked up at all.
+        answer = json.loads(cards.handle({"cards": [{"place": "Orlando FL", "now": {"temperature": 0, "condition": "clear"}, "type": "weather", "units": "F"}]}))
+        self.assertIn("error", answer)
+        self.assertIn("looks nothing up", json.dumps(answer))
+        self.assertIn("looks nothing up", cards.SCHEMA["description"])
         self.assertIn("placeholder such as 0", cards.SCHEMA["description"])
 
     def test_nothing_to_show_is_an_error(self):
@@ -59,7 +65,7 @@ class CardTests(unittest.TestCase):
             self.assertIn("error", json.loads(cards.handle(args)))
 
     def test_one_card_without_the_list_is_taken(self):
-        self.assertEqual(json.loads(cards.handle(WEATHER))["shown"], ["weather: Lisbon (now, 1 days)"])
+        self.assertEqual(json.loads(cards.handle(WEATHER))["shown"], ["weather: Lisbon (now 19°C partly_cloudy, 1 days)"])
 
     def test_at_most_four(self):
         answer = json.loads(cards.handle({"cards": [PLACES] * 6}))

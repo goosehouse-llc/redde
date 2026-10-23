@@ -47,7 +47,8 @@ SCHEMA = {
     "description": (
         "Shows cards under your reply in the Redde app: a map (places as pins, or a route), a list of places, or "
         "the weather. Use it when the person asks where something is, for directions, for places nearby or for "
-        "the weather, once you have the facts (from search or your other tools). Give coordinates when you have "
+        "the weather, once you have the facts (from search or your other tools): it looks nothing up, it shows "
+        "what you give it, so get the forecast first and copy its numbers in. Give coordinates when you have "
         "them; a name and street address are enough otherwise, the phone looks them up. Fill each card with the "
         "values you read; leave out what you don't have rather than writing a placeholder such as 0. Up to 4 cards. Then "
         "answer in a sentence or two: the cards are on the person's screen, so don't read out everything in them."),
@@ -162,6 +163,16 @@ def check(args) -> tuple[list[str], list[str]]:
             if now is not None and not has_now:
                 problems.append(f"card {n}: 'now' needs the temperature and the condition you read from the forecast, "
                                 "not a placeholder such as 0; it was left out")
+            # Exactly 0 and nothing else read with it is a placeholder too (seen 2026-10-23: the agent sent
+            # 0 and "clear" without looking the weather up, as if the card would). A forecast's real 0
+            # comes with its other numbers.
+            bare_zero = has_now and _number(now.get("temperature")) == 0 and not any(
+                now.get(k) not in (None, "") for k in ("high", "low", "feels_like", "humidity", "wind", "precipitation", "summary"))
+            if bare_zero and not card.get("hours") and not card.get("days"):
+                has_now = False
+                problems.append(f"card {n}: a temperature of exactly 0 with nothing else looks like a placeholder. This tool "
+                                "shows the numbers you give it and looks nothing up: get the forecast first and send what it "
+                                "says (a real 0 comes with its high and low, or feels_like)")
             hours = [h for h in card.get("hours") or [] if isinstance(h, dict) and _number(h.get("temperature")) is not None
                      and h.get("time") and named(h)]
             days = [d for d in card.get("days") or [] if isinstance(d, dict) and _number(d.get("high")) is not None
@@ -172,7 +183,9 @@ def check(args) -> tuple[list[str], list[str]]:
             if not (has_now or hours or days):
                 problems.append(f"card {n}: the weather needs 'now' (temperature and condition), 'hours' or 'days'")
                 continue
-            parts = [p for p in ("now" if has_now else "", f"{len(hours)} hours" if hours else "", f"{len(days)} days" if days else "") if p]
+            # The reading said back, so a wrong number can be seen and sent again.
+            said_now = f"now {_number(now.get('temperature')):g}°{card.get('units') or ''} {now.get('condition')}" if has_now else ""
+            parts = [p for p in (said_now, f"{len(hours)} hours" if hours else "", f"{len(days)} days" if days else "") if p]
             shown.append(f"weather: {place.strip()} ({', '.join(parts)})")
     if len(cards) > MAX_CARDS:
         problems.append(f"only the first {MAX_CARDS} cards are shown")

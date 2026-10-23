@@ -65,8 +65,10 @@ struct ReplyCardsTests {
         let real = ReplyCards.parse(json(#"{"cards":[{"type":"weather","place":"Orlando FL","units":"F","now":{"temperature":85,"condition":"clear"}}]}"#))
         guard case let .weather(r) = try #require(real.first) else { Issue.record("not weather"); return }
         #expect(r.now?.temperature == 85 && r.now?.condition == .clear)
-        #expect(ReplyCards.parse(json(#"{"cards":[{"type":"weather","place":"Fairbanks","now":{"temperature":0,"condition":"snow"}}]}"#)).count == 1,
-                "a real 0 has its condition")
+        #expect(ReplyCards.parse(json(#"{"cards":[{"type":"weather","place":"Fairbanks","now":{"temperature":0,"condition":"snow","feels_like":-12}}]}"#)).count == 1,
+                "a real 0 comes with its other numbers")
+        // Later the same day: 0 and "clear", the weather never looked up. Nothing else read with it, so no card.
+        #expect(ReplyCards.parse(json(#"{"cards":[{"place":"Orlando FL","now":{"temperature":0,"condition":"clear"},"type":"weather","units":"F"}]}"#)).isEmpty)
     }
 
     @Test func atMostFourAndOnlyKnownKinds() {

@@ -323,7 +323,9 @@ reloads the conversation list.
   off (`/redde-push cards off`, `ReplyCardsSwitch`; its description rides on every prompt); off,
   it also refuses a call that reaches it through `tool_call` (0.21.5 lets a model). Plugin 1.6.0; 1.6.1 sends back a
   weather reading with no condition (a model filled one with 0 and "" while its reply said 85°F and clear,
-  2026-10-23), and the app doesn't draw one.
+  2026-10-23), and the app doesn't draw one. 1.6.2 does the same with a bare 0 (exactly 0, nothing else read
+  with it: the agent sent 0 and "clear" without looking the weather up, as if the card would), says each
+  reading back to the agent, and its description says the tool looks nothing up.
   `lab.sh cards` passes on 0.21.0 to 0.22.2; `ReplyCardsTests`, `ReplyCardsUITests`
   (`-echo.demoCards`), `companion/hermes-plugin/tests/test_cards.py`.
 - **Link previews** (Settings → Appearance, **off by default**; asked on Reddit 2026-10-23, "image
