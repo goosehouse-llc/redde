@@ -128,13 +128,6 @@ final class AudioSessionController {
         updateRouteFacts()
     }
 
-    /// A headset with a microphone is connected: Bluetooth (HFP, or LE Audio), or wired. A car is
-    /// handled before this is asked. Wired headphones without a mic list no input, but they
-    /// don't renegotiate either, so the route itself is trustworthy for them.
-    nonisolated static func headsetConnected(inputPorts: [AVAudioSession.Port]) -> Bool {
-        inputPorts.contains { [.bluetoothHFP, .bluetoothLE, .headsetMic].contains($0) }
-    }
-
     /// A Bluetooth headset input that can record at full bandwidth is available.
     private static func headsetSupportsHighQualityRecording(_ session: AVAudioSession) -> Bool {
         (session.availableInputs ?? []).contains { port in
@@ -149,7 +142,8 @@ final class AudioSessionController {
         onHeadphones = !route.outputs.isEmpty && route.outputs.allSatisfy { headphonePorts.contains($0.portType) }
         if onHeadphones, activeMode == .voice { headsetSeen = true }
         let highQualityHeadsetMic = route.inputs.contains { $0.bluetoothMicrophoneExtension?.highQualityRecording.isEnabled == true }
-        log.notice("route: headphones=\(self.onHeadphones) hqHeadsetMic=\(highQualityHeadsetMic) out=\(route.outputs.map(\.portType.rawValue).joined(separator: ","), privacy: .public) in=\(route.inputs.map(\.portType.rawValue).joined(separator: ","), privacy: .public)")
+        let available = (AVAudioSession.sharedInstance().availableInputs ?? []).map(\.portType.rawValue).joined(separator: ",")
+        log.notice("route: headphones=\(self.onHeadphones) hqHeadsetMic=\(highQualityHeadsetMic) out=\(route.outputs.map(\.portType.rawValue).joined(separator: ","), privacy: .public) in=\(route.inputs.map(\.portType.rawValue).joined(separator: ","), privacy: .public) available=\(available, privacy: .public)")
     }
 
     func deactivate() {
@@ -319,12 +313,14 @@ final class AudioSessionController {
             $0.portType == .builtInSpeaker || $0.portType == .builtInReceiver
         }
         // Headphones / Bluetooth: don't fight the user. Judged by the session's memory of a
-        // headset and by what's connected, not by the route of the moment: while a Bluetooth link
-        // renegotiates, the route and even the available inputs read as the phone alone (seen in
-        // the log: mode → Default, then "output → speaker", then a Speaker route). A speaker
-        // override taken in that gap outlives it and every later route change re-asserts it, so a
-        // reply asked through AirPods came out of the phone.
-        if headsetSeen || Self.headsetConnected(inputPorts: (session.availableInputs ?? []).map(\.portType)) {
+        // headset, not by the route of the moment: while a Bluetooth link renegotiates, the route
+        // and even the available inputs read as the phone alone (seen in the log: mode → Default,
+        // then "output → speaker", then a Speaker route). A speaker override taken in that gap
+        // outlives it and every later route change re-asserts it, so a reply asked through
+        // AirPods came out of the phone. Never by a headset that is only available: iOS listed
+        // one with nothing connected (2026-10-22), and every reply stayed on the earpiece, the
+        // speaker override cleared each time it was taken.
+        if headsetSeen {
             if builtInOnly, session.currentRoute.outputs.contains(where: { $0.portType == .builtInSpeaker }) {
                 try? session.overrideOutputAudioPort(.none)
                 log.notice("headset connected; speaker override cleared")
