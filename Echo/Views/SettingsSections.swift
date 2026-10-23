@@ -281,6 +281,14 @@ struct AgentSettings<Details: View>: View {
         }
 
         Section {
+            Toggle(isOn: Binding(get: { Settings.shared.replyCards }, set: { Settings.shared.replyCards = $0 })) {
+                Label("Cards in replies", systemImage: "map")
+            }
+        } footer: {
+            Text("Your agent can show a map, places and the weather under its reply, through Redde's Hermes plugin. Off, it isn't offered them, which makes every prompt a little shorter.")
+        }
+
+        Section {
             if !canEditFiles { filesLocked }
             NavigationLink {
                 ContextFileEditorView(title: "SOUL.md", file: "SOUL.md",

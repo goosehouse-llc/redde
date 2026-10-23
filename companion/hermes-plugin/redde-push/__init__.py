@@ -14,6 +14,8 @@ over the Hermes API), `rooms <device,...> <room,...>` which group chats it follo
 `mutes <device,...> <key=until,...>` which chats it has muted, and `offer` then `accept <offer>
 <key> <box>` pair it without a code.
 
+And cards (`cards.py`): `redde_show`, a map, places or the weather the app draws under a reply.
+
 The plugin also offers the agent phone tools, carried out by the app on the iPhone (the calendar,
 reminders, contacts, photos, a folder of files): see `device.py`. They need no pairing, and the
 agent is offered none of them until the phone turns some on (`/redde-push device …`).
@@ -29,7 +31,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import core, qr, rooms, routines
+from . import cards, core, qr, rooms, routines
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
 
 log = logging.getLogger("redde_push")
@@ -361,6 +363,9 @@ def _slash(raw_args: str = "") -> str:
     if words[:1] == ["device"]:
         # Phone tools: which the agent is offered, what it has asked for, and the phone's answers.
         return phone_tools.slash(phone_tools.Phone(_home()), words[1:])
+    if words[:1] == ["cards"]:
+        # Cards in replies (cards.py): on unless the phone turned them off.
+        return cards.slash(_home(), words[1:])
     store, pusher = _state()
     if len(words) == 3 and words[0] == "watch":
         following = store.watch(words[1], [w for w in words[2].split(",") if w])
@@ -513,6 +518,8 @@ def register(ctx) -> None:
                          args_hint="watch <session> <device> | rooms <device> <room,...>")
     # Phone tools (device.py): offered to the agent only for what the phone has turned on.
     phone_tools.register(ctx, lambda: phone_tools.Phone(_home()), to_widget=_to_widget)
+    # Cards (cards.py): a map, places, the weather, drawn by the app under a reply.
+    cards.register(ctx, _home)
     ctx.register_cli_command("redde-push", "Notifications on your iPhone from Redde", _cli_setup, _cli)
     _follow_group_chats_if_any()
     _watch_schedules()

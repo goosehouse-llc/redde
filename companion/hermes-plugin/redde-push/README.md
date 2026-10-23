@@ -159,3 +159,10 @@ plugin inside unmodified Hermes releases. They are kept out of this folder becau
 and scanned, when the plugin is installed. The scan is also why this page and the plugin's code
 avoid the name of the command that runs another as root: Hermes refuses to install a plugin from
 GitHub that has it in either.
+
+## Cards
+
+`redde_show` (`cards.py`): the agent shows a map, a list of places or the weather under its reply,
+and the Redde app draws them (MapKit). Nothing is sent to the phone; the app reads the call from
+the conversation. Offered unless Redde turns it off (`/redde-push cards off`, from Settings →
+Agent → Cards in replies).

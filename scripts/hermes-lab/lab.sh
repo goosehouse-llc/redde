@@ -234,6 +234,21 @@ list_status() {
   echo "\nAll checks passed."
 }
 
+# Cards: the stand-in model calls the Redde plugin's redde_show, and the app has the cards live and
+# read back on both connections; turned off, the tool isn't offered (HermesLabCardsTests).
+cards() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  app_prepare HermesLabCardsTests || exit 1
+  for tag in $tags; do
+    echo "===== Hermes $tag / push (cards)"
+    if ! up "$tag" push; then failed+=("$tag (lab)"); continue; fi
+    app_check || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
 # All Servers: the lab's Hermes saved as two servers, by its Dashboard and by its Hermes API, and a
 # third that is off; each listed on its own, tagged, the one that is off named (HermesLabAllServersTests).
 servers() {
@@ -743,6 +758,7 @@ case "${1:-}" in
   switch) shift; switch "$@" ;;
   status) shift; list_status "$@" ;;
   servers) shift; servers "$@" ;;
+  cards) shift; cards "$@" ;;
   projects) shift; projects "$@" ;;
   bots) shift; bots "$@" ;;
   runs) shift; runs "$@" ;;

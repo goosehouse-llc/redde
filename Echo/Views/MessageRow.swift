@@ -157,6 +157,8 @@ struct MessageRow: View, Equatable {
                     .contextMenu { userMenu }
                     .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
             }
+            // A map, places, the weather the reply shows (`ReplyCards`), as soon as they're asked for.
+            if message.role == .assistant, let cards = message.cards, !cards.isEmpty { ReplyCardsView(cards: cards) }
             // Pages the agent made for the chat, live, under what it said about them.
             if message.role == .assistant, !isLive {
                 ForEach(message.attachments.filter { $0.page != nil }) { AgentPage(attachment: $0, messageID: message.id) }

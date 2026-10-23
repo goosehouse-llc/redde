@@ -188,6 +188,7 @@ final class Conversation {
         self.name = nil   // a new conversation: not the name of the one it replaces
         var messages = messages
         TodoList.resolve(&messages)
+        ReplyCards.resolve(&messages)
         self.messages = messages
     }
 
@@ -403,6 +404,7 @@ final class Conversation {
                 }
                 if transportKind == .hermesSessions {
                     await settleTodos(replyID)
+                    await settleCards(replyID)
                     try Task.checkCancellation()
                 }
                 let window = await windowTask.value
@@ -530,7 +532,12 @@ final class Conversation {
             if settings.phoneTools.on {
                 phoneTools.toolStarted(name) { [weak self] picture in self?.update(replyID) { $0.attachments.append(picture) } }
             }
-            update(replyID) { $0.tools.append(ToolActivity(name: name, preview: preview, status: .running, startedAt: .now, args: args)) }
+            update(replyID) { message in
+                let step = ToolActivity(name: name, preview: preview, status: .running, startedAt: .now, args: args)
+                message.tools.append(step)
+                // A map, places, the weather: shown as soon as the call is made.
+                if let cards = ReplyCards.cards(from: step), !cards.isEmpty { message.cards = (message.cards ?? []) + cards }
+            }
         case let .toolFinished(name, failed, output):
             interruptResolvedElsewhere()
             var finished: ToolActivity?
@@ -541,6 +548,11 @@ final class Conversation {
                     message.tools[i].endedAt = .now
                     if let output { message.tools[i].output = output }
                     finished = message.tools[i]
+                    // A card call the plugin turned down shows nothing after all.
+                    if failed, message.tools[i].name == ReplyCards.tool {
+                        let kept = message.tools.compactMap(ReplyCards.cards(from:)).flatMap { $0 }
+                        message.cards = kept.isEmpty ? nil : kept
+                    }
                 }
             }
             // The agent's to-do tool: what a finished call wrote, applied to the list so far, is
@@ -1106,6 +1118,7 @@ final class Conversation {
         // each gets its task list here, so a reply can show it as a checklist.
         var messages = messages
         TodoList.resolve(&messages)
+        ReplyCards.resolve(&messages)
         self.messages = messages
         self.outbox = outbox
         self.serverSessionID = serverSessionID
@@ -1466,6 +1479,7 @@ final class Conversation {
         // The agent's task list: replayed from the transcript's to-do calls, then set against
         // what the host says the list is now.
         TodoList.resolve(&messages)
+        ReplyCards.resolve(&messages)
         TodoList.reconcile(&messages, with: dashboard.hostTodos[summary.id])
         adopt(serverSession: summary, messages: messages, bot: bot, elsewhere: elsewhere)
         // The agent may still be at work in it, or waiting for an answer.
@@ -1667,6 +1681,19 @@ final class Conversation {
         guard let session = serverSessionID, messages.last(where: { $0.id == id })?.todos != nil,
               let answered = await ledgerAPI()?.answeredTodos(sessionID: session) else { return }
         update(id) { if $0.todos != answered { $0.todos = answered } }
+    }
+
+    /// Over the Hermes API a card call (`redde_show`) comes in the stream by its name alone, its
+    /// arguments left out: the transcript has them, read once the reply is done. Only the newest
+    /// reply's, and only for a reply that made such a call and has no cards yet.
+    private func settleCards(_ id: UUID) async {
+        guard let session = serverSessionID, let reply = messages.last(where: { $0.id == id }), (reply.cards ?? []).isEmpty,
+              reply.tools.contains(where: { $0.name == ReplyCards.tool && $0.status != .failed }),
+              let rows = try? await ledgerAPI()?.newestMessages(sessionID: session, limit: 60) else { return }
+        var read = Conversation.mapStored(rows)
+        ReplyCards.resolve(&read)
+        guard let cards = read.last(where: { $0.role == .assistant })?.cards, !cards.isEmpty else { return }
+        update(id) { if ($0.cards ?? []).isEmpty { $0.cards = cards } }
     }
 
     /// A reply that delivers a file carries a bare server path (`MEDIA:` tag, markdown image,

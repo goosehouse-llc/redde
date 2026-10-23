@@ -199,6 +199,7 @@ targets:
       - path: Shared/ReplyMedia.swift
       - path: Echo/Services/Keychain.swift
       - path: Echo/Models/Message.swift
+      - path: Echo/Models/ReplyCards.swift
       - path: Echo/Models/WatchChats.swift
       # The complication's look and its link, shared with the extension that draws it.
       - path: WatchWidgets/AskComplication.swift

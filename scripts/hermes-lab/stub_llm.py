@@ -84,10 +84,14 @@ CALLS = {
     "lab:reminder": ("phone_reminders_add", {"title": "Renew the car registration", "due": "2026-10-20"}),
     "lab:photo": ("phone_photos_get", {"id": "ABC-123"}),
     "lab:note": ("phone_files_write", {"path": "lab/note.txt", "text": "from the agent"}),
+    # Cards (the Redde plugin's `redde_show`): a walk on a map, and the weather.
+    "lab:cards": ("redde_show", {"cards": [
+        {"type": "map", "title": "Lab walk", "route": {"mode": "walking", "to": {"name": "Lab Café", "latitude": 38.7176, "longitude": -9.1404}}},
+        {"type": "weather", "place": "Labtown", "units": "C", "now": {"temperature": 19, "condition": "partly_cloudy"}}]}),
 }
 #: What the model says once a phone tool has answered, by what the answer holds.
 PHONE_SAID = (('"added"', "[phone: added]"), ("file_path", "[phone: file]"), ('"saved"', "[phone: saved]"), ("said no", "[phone: no]"),
-              ("didn't answer", "[phone: no answer]"), ("turned off", "[phone: off]"))
+              ("didn't answer", "[phone: no answer]"), ("turned off", "[phone: off]"), ('"shown"', "[cards: shown]"))
 #: How many more times each "lab:hiccup" message is answered with a failure.
 HICCUPS = {}
 #: What a message makes the endpoint answer in place of a completion.
@@ -296,7 +300,7 @@ class Handler(BaseHTTPRequestHandler):
                 name = next((n for n in names if n in offered), None)
                 if name:
                     planned = (name, arguments)
-                elif (names is TODO or names[0].startswith("phone_")) and "tool_call" in offered:
+                elif (names is TODO or names[0].startswith(("phone_", "redde_"))) and "tool_call" in offered:
                     # From Hermes 0.21.3 most tools are not offered outright: the model finds
                     # them and calls them through `tool_call`, by name. (0.21.0 does the same once
                     # enough tools are on, and its `tool_call` takes one call, not a list of them.)

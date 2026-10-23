@@ -645,6 +645,42 @@ extension Conversation {
                                   Message(role: .user, text: "And a couple of voice samples?"), samples])
     }
 
+    /// `-echo.demoCards`: a reply that shows a walk on a map, three places and the weather, asked
+    /// for with `redde_show` as an agent would (made-up cafés, real streets of Lisbon).
+    func seedCardsDemo() {
+        reset()
+        let json = """
+        {"cards": [
+          {"type": "map", "title": "To Rossio Roasters", "route": {"mode": "walking",
+            "from": {"name": "The office", "address": "Praça do Comércio, Lisbon", "latitude": 38.7076, "longitude": -9.1365},
+            "to": {"name": "Rossio Roasters", "address": "Rua das Portas de Santo Antão 136, Lisbon", "latitude": 38.7176, "longitude": -9.1404}}},
+          {"type": "places", "title": "Coffee near the office", "places": [
+            {"name": "Rossio Roasters", "category": "Coffee roaster", "rating": 4.7, "address": "Rua das Portas de Santo Antão 136",
+             "note": "Pour-over and a quiet back room.", "latitude": 38.7176, "longitude": -9.1404, "phone": "+351 21 000 0001"},
+            {"name": "Tram 28 Café", "category": "Café", "rating": 4.4, "address": "Rua da Conceição 22",
+             "latitude": 38.7103, "longitude": -9.1378},
+            {"name": "Alfama Bean", "category": "Café and bakery", "rating": "4.6", "address": "Largo do Chafariz de Dentro 5",
+             "note": "Pastéis de nata from 8.", "latitude": 38.7116, "longitude": -9.1279}]},
+          {"type": "weather", "place": "Lisbon", "units": "C", "source": "From the forecast the agent looked up",
+           "now": {"temperature": 19, "condition": "partly_cloudy", "high": 21, "low": 15, "feels_like": 18, "wind": "14 km/h NW", "humidity": 62, "precipitation": 10},
+           "hours": [{"time": "10:00", "temperature": 19, "condition": "partly cloudy"}, {"time": "11:00", "temperature": 20, "condition": "clear"},
+                     {"time": "12:00", "temperature": 21, "condition": "clear"}, {"time": "13:00", "temperature": 21, "condition": "partly_cloudy"},
+                     {"time": "14:00", "temperature": 20, "condition": "cloudy", "precipitation": 30}, {"time": "15:00", "temperature": 18, "condition": "rain", "precipitation": 70},
+                     {"time": "16:00", "temperature": 17, "condition": "rain", "precipitation": 60}, {"time": "17:00", "temperature": 17, "condition": "cloudy", "precipitation": 20}],
+           "days": [{"date": "2026-10-23", "high": 21, "low": 15, "condition": "rain", "precipitation": 70},
+                    {"date": "2026-10-24", "high": 22, "low": 16, "condition": "clear"},
+                    {"date": "2026-10-25", "high": 20, "low": 15, "condition": "partly_cloudy", "precipitation": 10},
+                    {"date": "2026-10-26", "high": 18, "low": 13, "condition": "thunderstorm", "precipitation": 80},
+                    {"date": "2026-10-27", "high": 19, "low": 14, "condition": "cloudy"}]}
+        ]}
+        """
+        var reply = Message(role: .assistant, text: "Rossio Roasters is a twelve-minute walk, and the closest of three good ones. Go before three: rain comes in after.")
+        let args = try? JSONValue.parse(Data(json.utf8))
+        reply.tools = [ToolActivity(name: ReplyCards.tool, preview: "map, places, weather", status: .completed, args: ToolActivity.args(ReplyCards.tool, args))]
+        reply.cards = ReplyCards.parse(args)
+        replaceForDemo(messages: [Message(role: .user, text: "Where should we get coffee near the office, and is it going to rain?"), reply])
+    }
+
     /// `-echo.demoPage`: a reply with a page the agent made (`::preview`), drawn by its own script,
     /// with buttons that send the agent a message.
     func seedPageDemo() {

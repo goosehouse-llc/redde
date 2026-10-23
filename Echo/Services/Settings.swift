@@ -338,6 +338,15 @@ final class Settings: ServeEndpoint {
             if self === Settings.shared { WatchLink.shared.botsChanged() }   // the watch's bot pictures
         }
     }
+    /// Settings → Agent → Cards in replies: the agent is offered Redde's `redde_show` (a map,
+    /// places, the weather under a reply; his ask 2026-10-22). On unless turned off: off, the
+    /// plugin stops offering it, and its description leaves every prompt (`ReplyCardsSwitch`).
+    var replyCards: Bool {
+        didSet {
+            store(replyCards, forKey: Keys.replyCards)
+            if self === Settings.shared, oldValue != replyCards { Task { await ReplyCardsSwitch.publish() } }
+        }
+    }
     /// Settings → Appearance → Pictures from Hermes: a bot with a picture set in Hermes Desktop is
     /// drawn as that picture (`BotPictures`). Asked on Reddit 2026-10-22; on unless turned off.
     var botPictures: Bool {
@@ -550,6 +559,7 @@ final class Settings: ServeEndpoint {
         static let botColors = "botColors"
         static let botFaces = "botFaces"
         static let botPictures = "botPictures"
+        static let replyCards = "replyCards"
         static let requireBiometrics = "requireBiometrics"
         static let siriAIEnabled = "siriAIEnabled"
         static let siriDraftsInNewConversation = "siriDraftsInNewConversation"
@@ -633,6 +643,7 @@ final class Settings: ServeEndpoint {
         botColors = defaults.object(forKey: Keys.botColors) as? Bool ?? true
         botFaces = defaults.object(forKey: Keys.botFaces) as? Bool ?? true
         botPictures = defaults.object(forKey: Keys.botPictures) as? Bool ?? true
+        replyCards = defaults.object(forKey: Keys.replyCards) as? Bool ?? true
         requireBiometrics = defaults.bool(forKey: Keys.requireBiometrics)
         siriAIEnabled = defaults.bool(forKey: Keys.siriAIEnabled)
         siriDraftsInNewConversation = defaults.bool(forKey: Keys.siriDraftsInNewConversation)
@@ -697,7 +708,7 @@ final class Settings: ServeEndpoint {
     /// Siri, Phone tools, what needs a permission of the device (notifications, motion), and the
     /// push relay.
     static let syncedKeys: [String] = [
-        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.botColors, Keys.botFaces, Keys.botPictures, Keys.returnSends,
+        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.botColors, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
         Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.showBots,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
@@ -726,6 +737,7 @@ final class Settings: ServeEndpoint {
         case Keys.botColors: botColors = flag(true)
         case Keys.botFaces: botFaces = flag(true)
         case Keys.botPictures: botPictures = flag(true)
+        case Keys.replyCards: replyCards = flag(true)
         case Keys.returnSends: returnSends = flag()
         case Keys.voiceOrb: voiceOrb = pick(VoiceOrb.reddeFace)
         case Keys.orbLight: orbLight = pick(OrbLight.nebula)
@@ -992,6 +1004,7 @@ final class Settings: ServeEndpoint {
         botColors = true
         botFaces = true
         botPictures = true
+        replyCards = true
         requireBiometrics = false
         siriAIEnabled = false
         siriDraftsInNewConversation = false

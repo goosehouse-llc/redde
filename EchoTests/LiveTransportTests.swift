@@ -2930,3 +2930,94 @@ struct HermesLabAllServersTests {
                                       "\(merged.rows.count) rows, unreachable \(merged.unreachable), \(String(format: "%.1f", took)) s")
     }
 }
+
+/// Cards (his ask 2026-10-22): the agent calls the Redde plugin's `redde_show` (the lab's stand-in
+/// model does, on "lab:cards"), and the app has the cards from the call as it is made and again
+/// when the conversation is read back, on the Dashboard and on the Hermes API; the phone turning
+/// cards off takes the tool away. `scripts/hermes-lab/lab.sh cards`; skips when no lab is up.
+@MainActor
+struct HermesLabCardsTests {
+    private static let api = URL(string: "http://127.0.0.1:18642")!
+    private static let key = "labkey-labkey-labkey"
+
+    private static func cards(in events: [TurnEvent]) -> [ReplyCard] {
+        events.compactMap { event -> [ReplyCard]? in
+            guard case let .toolStarted(name, _, args) = event, name == ReplyCards.tool,
+                  let args, let value = try? JSONValue.parse(Data(args.utf8)) else { return nil }
+            return ReplyCards.parse(value)
+        }.flatMap { $0 }
+    }
+
+    private static func shown(_ cards: [ReplyCard]) -> Bool {
+        guard cards.count == 2, case let .map(walk) = cards[0], case let .weather(w) = cards[1] else { return false }
+        return walk.route?.to.name == "Lab Café" && walk.route?.mode == .walking && w.place == "Labtown"
+    }
+
+    @Test func theAgentsCardsReachTheAppOnBothConnections() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        let plugin = PushService.command(over: client)
+        guard (try? await plugin("cards on"))?.hasPrefix("redde-push cards on") == true else {
+            print("LAB SKIP: this lab's Hermes has no cards in its push plugin (scripts/hermes-lab/lab.sh up <tag> push)")
+            return
+        }
+
+        // The Dashboard: live, then read back.
+        let (_, stored) = try await client.openSession(stored: nil)
+        var events: [TurnEvent] = []
+        var said = ""
+        for try await event in HermesServeTransport(client: client).stream(TurnRequest(userText: "lab:cards please", history: [], sessionID: stored, model: nil, instructions: nil)) {
+            events.append(event)
+            if case let .textFinal(text) = event { said = text } else if case let .textDelta(text) = event { said += text }
+        }
+        let failed = events.contains { if case let .toolFinished(name, failed, _) = $0 { name == ReplyCards.tool && failed } else { false } }
+        HermesLabApprovalTests.report(Self.shown(Self.cards(in: events)) && !failed && said.contains("[cards: shown]"),
+                                      "the Dashboard: the cards come with the call, and the plugin said they were shown",
+                                      "\(Self.cards(in: events)) said: \(said.prefix(80))")
+        var back = Conversation.messages(fromServeRows: try await client.history(stored: stored))
+        ReplyCards.resolve(&back)
+        HermesLabApprovalTests.report(Self.shown(back.compactMap(\.cards).flatMap { $0 }), "and read back from the Dashboard",
+                                      "\(back.compactMap(\.cards))")
+
+        // The Hermes API: live, then read back.
+        let ledger = HermesSessionsAPI(baseURL: Self.api, apiKey: Self.key)
+        let session = try await ledger.createSession(title: "lab cards \(UUID().uuidString.prefix(6))")
+        events = []
+        for try await event in HermesSessionsTransport(baseURL: Self.api, apiKey: Self.key).stream(TurnRequest(userText: "lab:cards please", history: [], sessionID: session.id, model: nil, instructions: nil)) {
+            events.append(event)
+        }
+        // Its stream names the call without its arguments (0.21.0 to 0.22.2): the app's own
+        // conversation reads them back as the reply finishes (`settleCards`).
+        HermesLabApprovalTests.report(Self.cards(in: events).isEmpty && events.contains { if case let .toolStarted(name, _, _) = $0 { name == ReplyCards.tool } else { false } },
+                                      "the Hermes API names the call in its stream, without the cards", "")
+        let settings = Settings(defaults: UserDefaults(suiteName: "lab-cards-\(UUID().uuidString)")!)
+        settings.transport = .hermesSessions
+        settings.gatewayURL = Self.api.absoluteString
+        // (The key is read for the server the app is on, whatever these settings say.)
+        let account = Keychain.account(.gatewayAPIKey)
+        let keyBefore = Keychain.read(account: account)
+        Keychain.write(account: account, value: Self.key)
+        defer { if let keyBefore { Keychain.write(account: account, value: keyBefore) } else { Keychain.delete(account: account) } }
+        let conversation = Conversation(settings: settings, store: ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "lab-cards-\(UUID().uuidString)")))
+        _ = conversation.send("lab:cards please")
+        for _ in 0 ..< 600 where conversation.isStreaming { try await Task.sleep(for: .milliseconds(100)) }
+        HermesLabApprovalTests.report(Self.shown(conversation.messages.last?.cards ?? []), "and the app's conversation has them as the reply finishes",
+                                      "\(String(describing: conversation.messages.last?.cards)) \(conversation.messages.last?.text.prefix(60) ?? "")")
+        var stored2 = Conversation.mapStored(try await ledger.messages(sessionID: session.id))
+        ReplyCards.resolve(&stored2)
+        HermesLabApprovalTests.report(Self.shown(stored2.compactMap(\.cards).flatMap { $0 }), "and read back from the Hermes API", "\(stored2.compactMap(\.cards))")
+
+        // Off on the phone: the tool isn't offered, and the model can't call it.
+        _ = try await plugin("cards off")
+        let (_, quiet) = try await client.openSession(stored: nil)
+        events = []
+        for try await event in HermesServeTransport(client: client).stream(TurnRequest(userText: "lab:cards please", history: [], sessionID: quiet, model: nil, instructions: nil)) {
+            events.append(event)
+        }
+        // Not offered; and reached anyway through `tool_call` (0.21.5 lets a model), refused.
+        let refused = events.contains { if case let .toolFinished(name, failed, output) = $0 { (name == ReplyCards.tool || name.isEmpty) && (failed || output?.contains("turned off") == true) } else { false } }
+        HermesLabApprovalTests.report(Self.cards(in: events).isEmpty || refused, "turned off on the phone, the agent isn't offered cards, or is refused them",
+                                      "\(Self.cards(in: events)) \(events.compactMap { if case let .toolFinished(n, f, o) = $0 { "\(n) \(f) \(o?.prefix(80) ?? "")" } else { nil } })")
+        _ = try await plugin("cards on")
+    }
+}

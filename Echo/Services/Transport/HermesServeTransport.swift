@@ -165,8 +165,8 @@ nonisolated struct HermesServeTransport: HermesTransport {
         case "reasoning.delta", "reasoning.available":
             if let t = p["text"]?.string { continuation.yield(.reasoningDelta(t)) }
         case "tool.start":
-            continuation.yield(.toolStarted(name: p["name"]?.string ?? "tool", preview: p["context"]?.string,
-                                            args: ToolActivity.detail(p["args"])))
+            let name = p["name"]?.string ?? "tool"
+            continuation.yield(.toolStarted(name: name, preview: p["context"]?.string, args: ToolActivity.args(name, p["args"])))
         case "tool.complete":
             let failed = p["error"] != nil && !(p["error"]?.isNull ?? true)
             // The whole result rides on the event (`result_text` is the host's own

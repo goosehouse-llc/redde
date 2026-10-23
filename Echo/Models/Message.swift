@@ -19,6 +19,8 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
     var tools: [ToolActivity] = []
     /// The agent's own task list as this reply left it, when the reply changed it (`TodoList`).
     var todos: [TodoItem]?
+    /// The cards this reply shows (a map, places, the weather), asked for with `redde_show`.
+    var cards: [ReplyCard]?
     /// Delegated child agents spawned during this reply.
     var subagents: [SubagentActivity] = []
     var attachments: [Attachment] = []
@@ -37,7 +39,7 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
 
     private enum CodingKeys: String, CodingKey {
         case id, role, text, createdAt, metrics, error, reasoning, reasoningStartedAt, reasoningEndedAt, tools, todos, subagents, attachments, isSteer
-        case delivered
+        case delivered, cards
     }
 
     init(from decoder: Decoder) throws {
@@ -57,6 +59,7 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
         attachments = try c.decodeIfPresent([Attachment].self, forKey: .attachments) ?? []
         isSteer = try c.decodeIfPresent(Bool.self, forKey: .isSteer) ?? false
         delivered = try c.decodeIfPresent(Delivered.self, forKey: .delivered)
+        cards = try c.decodeIfPresent([ReplyCard].self, forKey: .cards)
     }
 }
 

@@ -241,7 +241,7 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
         case "tool.started":
             // A tool reached through `tool_call` is named as itself, as the Dashboard names it.
             let call = ToolActivity.unwrapped(name: env.tool_name ?? "tool", args: env.args)
-            var events: [TurnEvent] = [.toolStarted(name: call.name, preview: env.preview, args: ToolActivity.detail(call.args))]
+            var events: [TurnEvent] = [.toolStarted(name: call.name, preview: env.preview, args: ToolActivity.args(call.name, call.args))]
             if call.name == "delegate_task" { events += delegatedGoals(call.args, runID: env.run_id).map { .subagent($0) } }
             return (events, false)
         case "tool.completed":
@@ -859,7 +859,7 @@ nonisolated struct HermesRuns: Sendable {
             if let text = json["text"]?.string, !text.isEmpty { out.events = [.reasoningDelta(text)] }
         case "tool.started":
             let call = ToolActivity.unwrapped(name: json["tool"]?.string ?? json["tool_name"]?.string ?? "tool", args: json["args"])
-            out.events = [.toolStarted(name: call.name, preview: json["preview"]?.string?.nilIfEmpty, args: ToolActivity.detail(call.args))]
+            out.events = [.toolStarted(name: call.name, preview: json["preview"]?.string?.nilIfEmpty, args: ToolActivity.args(call.name, call.args))]
         case "tool.completed", "tool.failed":
             let tool = ToolActivity.unwrapped(name: json["tool"]?.string ?? json["tool_name"]?.string ?? "", args: json["args"]).name
             out.events = [.toolFinished(name: tool == "tool_call" ? "" : tool,

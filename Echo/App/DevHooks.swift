@@ -57,6 +57,7 @@ import WidgetKit
 /// - `-echo.demoDocument`: a reply that came with a Markdown file (a tile that opens in QuickLook),
 ///   then one that names its files by path (links that open them).
 /// - `-echo.demoPage`: a reply with a page the agent made, live in the chat, with buttons that talk back.
+/// - `-echo.demoCards`: a reply with a map (a walk), three places and the weather (`ReplyCards`).
 /// - `-echo.demoPhotos [n]`: messages with two photos, one, and n (five by default), to look at
 ///   how pictures are set out together and at the full-screen viewer.
 /// - `-echo.demoWidgets`: fill the "Needs you" and Context widgets with sample data (two requests
@@ -200,6 +201,7 @@ enum DevHooks {
         if has("-echo.demoAudio") { conversation.seedAudioDemo() }
         if has("-echo.demoDocument") { conversation.seedDocumentDemo() }
         if has("-echo.demoPage") { conversation.seedPageDemo() }
+        if has("-echo.demoCards") { conversation.seedCardsDemo() }
         if has("-echo.demoPhotos") { conversation.seedPhotoDemo(count: value("-echo.demoPhotos").flatMap(Int.init) ?? 5) }
         if has("-echo.demoWidgets") {
             NeedsYou.clear()

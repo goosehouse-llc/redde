@@ -32,7 +32,7 @@ extension Conversation {
                 // The row carries the call; its result only for the edit tools.
                 let call = ToolActivity.unwrapped(name: name, args: row["args"])
                 let tool = ToolActivity(name: call.name, preview: row["context"]?.string?.nilIfEmpty, status: .completed,
-                                        args: ToolActivity.detail(call.args), output: ToolActivity.detail(row["content"]))
+                                        args: ToolActivity.args(call.name, call.args), output: ToolActivity.detail(row["content"]))
                 if let last = out.indices.last, out[last].role == .assistant {
                     out[last].tools.append(tool)
                 } else {
@@ -64,7 +64,7 @@ extension Conversation {
                         let stored = call.function?.arguments
                         let arguments = stored?.string.flatMap { try? JSONValue.parse(Data($0.utf8)) } ?? stored
                         let inner = ToolActivity.unwrapped(name: $0, args: arguments)
-                        return ToolActivity(name: inner.name, preview: nil, status: .completed, args: ToolActivity.detail(inner.args))
+                        return ToolActivity(name: inner.name, preview: nil, status: .completed, args: ToolActivity.args(inner.name, inner.args))
                     }
                 }
                 // Tool-call-only assistant rows fold into the next assistant text: one bubble with

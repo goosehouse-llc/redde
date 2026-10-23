@@ -96,6 +96,14 @@ nonisolated struct ToolActivity: Identifiable, Equatable, Sendable, Codable {
         return (inner, calls[0]["arguments"])
     }
 
+    /// A call's arguments as its step keeps them: for reading (`detail`), except a card call's,
+    /// kept as the JSON it came as, for the cards to be read from (`ReplyCards`).
+    static func args(_ name: String, _ value: JSONValue?) -> String? {
+        guard name == ReplyCards.tool, let value, !value.isNull,
+              let data = try? JSONEncoder().encode(value), data.count < 256_000 else { return detail(value) }
+        return String(decoding: data, as: UTF8.self)
+    }
+
     /// The same for JSON that arrives as text (a stored call's `arguments`): parsed when it
     /// parses, else shown as it came.
     static func detail(json text: String?) -> String? {

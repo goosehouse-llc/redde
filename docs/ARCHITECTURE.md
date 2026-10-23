@@ -303,6 +303,27 @@ reloads the conversation list.
     chat in `ConversationRecord.elsewhere`. Calls go to that profile the way a bot's chat's do
     (`routeProfile`, `apiProfile`, `connection`). The header names the profile where the agent's
     name goes. New chats start in the selected profile.
+- **Cards in replies** (asked 2026-10-22, after Conduit's rich cards; our own format and code:
+  `ReplyCards`, `ReplyCardViews`, the plugin's `cards.py`). The agent calls the Redde plugin's
+  `redde_show` with up to four cards: a map (pins, or a route from a place or from where the
+  person is), a list of places (rating, category, address, a note, a phone, a website), the
+  weather (now, by the hour, by the day, in °C or °F). Nothing goes to the phone: the tool checks
+  the cards and says what each shows, and the app reads the call itself. The step keeps a card
+  call's arguments as their JSON (`ToolActivity.args`), not the reading text other calls get.
+  Live on the Dashboard the cards arrive with `tool.start`; the Hermes API's stream names the
+  call without its arguments, so the app reads them from the transcript as the reply finishes
+  (`settleCards`). Read back, both histories carry them (`ReplyCards.resolve`, through
+  `tool_call` too). Drawn with MapKit (a still map in the chat, a tap opens Apple Maps, with
+  directions for a route; between two named places the route is drawn, worked out by
+  MKDirections; from where the person is, Maps works it out, so the app never asks for the
+  phone's location) and the system's weather symbols. A place without coordinates is looked up
+  on the phone (`PlaceLookup`, MapKit's search, once a run). Lenient: numbers as text, lat/lng,
+  "sunny" for clear; a card or place that can't be drawn is dropped, never the whole call. The
+  tool is always offered, never behind tool search, unless Settings → Agent → Cards in replies is
+  off (`/redde-push cards off`, `ReplyCardsSwitch`; its description rides on every prompt); off,
+  it also refuses a call that reaches it through `tool_call` (0.21.5 lets a model). Plugin 1.6.0.
+  `lab.sh cards` passes on 0.21.0 to 0.22.2; `ReplyCardsTests`, `ReplyCardsUITests`
+  (`-echo.demoCards`), `companion/hermes-plugin/tests/test_cards.py`.
 - **All Servers** (2026-10-22, after a Reddit request: several gateways in one list, each row
   tagged with its server; `AllServers`, `RemoteServer`). The server menu at the top of the chat
   list (shown once there are two servers) has All Servers above the servers; with it on, the list
