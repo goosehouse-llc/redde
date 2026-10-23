@@ -52,6 +52,23 @@ struct ReplyCardsTests {
         #expect(ReplyCard.Condition(lenient: "something odd") == .unknown)
     }
 
+    /// Seen 2026-10-23: the reply said 85°F and clear, and the call it made held 0 and no condition. A
+    /// reading names its condition, so that one isn't drawn: alone, there is no card.
+    @Test func aPlaceholderReadingIsntDrawn() throws {
+        let placeholder = #"{"type":"weather","units":"F","now":{"temperature":0,"condition":""},"place":"Orlando FL"}"#
+        #expect(ReplyCards.parse(json(#"{"cards":["# + placeholder + "]}")).isEmpty, "a 0 with no condition is no card")
+        let withDays = ReplyCards.parse(json(#"{"cards":[{"type":"weather","place":"Orlando FL","now":{"temperature":0,"condition":""},"#
+                                             + #""days":[{"date":"2026-10-24","high":88,"low":72,"condition":"clear"},{"date":"2026-10-25","high":0,"low":0}]}]}"#))
+        guard case let .weather(w) = try #require(withDays.first) else { Issue.record("not weather"); return }
+        #expect(w.now == nil, "the placeholder is left out")
+        #expect(w.days.count == 1 && w.days[0].high == 88, "a day with no condition is left out too")
+        let real = ReplyCards.parse(json(#"{"cards":[{"type":"weather","place":"Orlando FL","units":"F","now":{"temperature":85,"condition":"clear"}}]}"#))
+        guard case let .weather(r) = try #require(real.first) else { Issue.record("not weather"); return }
+        #expect(r.now?.temperature == 85 && r.now?.condition == .clear)
+        #expect(ReplyCards.parse(json(#"{"cards":[{"type":"weather","place":"Fairbanks","now":{"temperature":0,"condition":"snow"}}]}"#)).count == 1,
+                "a real 0 has its condition")
+    }
+
     @Test func atMostFourAndOnlyKnownKinds() {
         let one = #"{"type": "places", "places": ["A"]}"#
         let cards = ReplyCards.parse(json(#"{"cards": [{"type": "chart"}, "#

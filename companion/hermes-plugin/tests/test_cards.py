@@ -40,6 +40,20 @@ class CardTests(unittest.TestCase):
         self.assertIn("card 2", answer["not_shown"][0])
         self.assertIn("map, places or weather", answer["not_shown"][1])
 
+    def test_a_placeholder_reading_is_sent_back(self):
+        # Seen 2026-10-23: the reply said 85°F and clear; the card held 0 and no condition.
+        placeholder = {"type": "weather", "units": "F", "now": {"temperature": 0, "condition": ""}, "place": "Orlando FL"}
+        answer = json.loads(cards.handle({"cards": [placeholder]}))
+        self.assertIn("error", answer)
+        self.assertTrue(any("placeholder" in p for p in answer.get("not_shown", [])) or "placeholder" in json.dumps(answer))
+        with_days = dict(placeholder, days=[{"date": "2026-10-24", "high": 88, "low": 72, "condition": "clear"}])
+        answer = json.loads(cards.handle({"cards": [with_days]}))
+        self.assertEqual(answer["shown"], ["weather: Orlando FL (1 days)"])
+        self.assertIn("placeholder", answer["not_shown"][0])
+        self.assertEqual(json.loads(cards.handle({"cards": [{"type": "weather", "place": "Fairbanks", "now": {"temperature": 0, "condition": "snow"}}]}))["shown"],
+                         ["weather: Fairbanks (now)"], "a real 0 has its condition")
+        self.assertIn("placeholder such as 0", cards.SCHEMA["description"])
+
     def test_nothing_to_show_is_an_error(self):
         for args in ({}, {"cards": []}, {"cards": [{"type": "places", "places": []}]}, None):
             self.assertIn("error", json.loads(cards.handle(args)))

@@ -198,7 +198,9 @@ nonisolated enum ReplyCards {
         guard let place = text(value["place"] ?? value["location"]) else { return nil }
         let units = text(value["units"])?.uppercased().hasPrefix("F") == true ? "F" : "C"
         var now: ReplyCard.Weather.Now?
-        if let n = value["now"] ?? value["current"], let temperature = number(n["temperature"] ?? n["temp"]) {
+        // A reading names its condition: a temperature with none is a placeholder (the agent once sent
+        // 0 and "" while its reply said 85°F and clear), not drawn.
+        if let n = value["now"] ?? value["current"], let temperature = number(n["temperature"] ?? n["temp"]), text(n["condition"]) != nil {
             now = .init(temperature: temperature, condition: .init(lenient: text(n["condition"])),
                         feelsLike: number(n["feels_like"] ?? n["feelsLike"]), high: number(n["high"]), low: number(n["low"]),
                         wind: text(n["wind"]), humidity: number(n["humidity"]).map { Int($0.rounded()) },
@@ -206,12 +208,12 @@ nonisolated enum ReplyCards {
                         summary: text(n["summary"]).map { String($0.prefix(200)) })
         }
         let hours: [ReplyCard.Weather.Hour] = (value["hours"]?.array ?? []).compactMap { h in
-            guard let time = text(h["time"]), let temperature = number(h["temperature"] ?? h["temp"]) else { return nil }
+            guard let time = text(h["time"]), let temperature = number(h["temperature"] ?? h["temp"]), text(h["condition"]) != nil else { return nil }
             return .init(time: time, temperature: temperature, condition: .init(lenient: text(h["condition"])),
                          precipitation: number(h["precipitation"]).map { Int($0.rounded()) })
         }
         let days: [ReplyCard.Weather.Day] = (value["days"]?.array ?? []).compactMap { d in
-            guard let date = text(d["date"] ?? d["day"]), let high = number(d["high"]), let low = number(d["low"]) else { return nil }
+            guard let date = text(d["date"] ?? d["day"]), let high = number(d["high"]), let low = number(d["low"]), text(d["condition"]) != nil else { return nil }
             return .init(date: date, high: high, low: low, condition: .init(lenient: text(d["condition"])),
                          precipitation: number(d["precipitation"]).map { Int($0.rounded()) })
         }

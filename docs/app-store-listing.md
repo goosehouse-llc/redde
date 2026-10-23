@@ -72,7 +72,7 @@ The words in both sit inside the "art safe area" of Apple's templates. Use Previ
 Every server in one list, maps and weather in replies, and Redde on the iPhone Duo.
 
 • All Servers and All Profiles. The server menu at the top of the conversation list shows every saved server's chats in one list, each tagged with its server. All Profiles does the same for your Hermes profiles.
-• Cards in replies. Your agent can show a map with pins or a route, a list of places, and the weather now, by the hour and by the day. Tap a map for directions in Apple Maps. It takes the Redde plugin 1.6.0 on your Hermes; Settings → Agent → Cards in replies turns it off.
+• Cards in replies. Your agent can show a map with pins or a route, a list of places, and the weather now, by the hour and by the day. Tap a map for directions in Apple Maps. It takes the Redde plugin 1.6.1 on your Hermes; Settings → Agent → Cards in replies turns it off.
 • Link previews. Settings → Appearance → Link previews puts a linked page's title and picture under the message. Off until you turn it on: to make the card, Redde opens the page itself.
 • Pages and files from your agent. A page your agent makes is live in its reply, as in Hermes Desktop, and a file it sends, or names by its path, opens in the chat.
 • Bots. Bots sit as faces in a grid, with their pictures from Hermes Desktop. Edit Bot switches a bot's skills, pins the ones it always loads, and now sets the main agent's tools too. Topology shows your bots, their group chats and their models on one map. New colors, Soft Pink and Yellow, and the colors listed round the color wheel. Bot faces can be turned off, and a bot's chat takes its color.
@@ -91,7 +91,7 @@ In App Store Connect and on the web:
 - iPhone Duo screenshots (outer 1398 × 2034, inner 2007 × 2853) are optional until April 2027; made on the Duo simulator in `design/screenshots/duo/`. The store script doesn't send them yet: upload them by hand, under iPhone.
 - The privacy policy gains two paragraphs: link previews (the phone opens a linked page when they are on) and cards in replies (Apple Maps draws the map and looks a named place up). Publish it before the release. App Privacy stays "Data Not Collected": nothing reaches us.
 - Export compliance: the answer stays as it is.
-- Cards in replies need the Redde plugin 1.6.0 on the user's Hermes (the What's New says so).
+- Cards in replies need the Redde plugin 1.6.1 on the user's Hermes (the What's New says so).
 - The website says "new in 2.0".
 
 Not known to have been tried on a device: Stop and Skip in a car, the chirp change in the car, the car opening on the tab it was left on, the bot cards on a car's screen, and the voice camera restarting after iOS takes it away. The iPhone Duo was tried on the simulator only (Device Hub: closed, open, half open); landscape on its closed screen was not, because the simulator doesn't turn when closed.

@@ -48,7 +48,8 @@ SCHEMA = {
         "Shows cards under your reply in the Redde app: a map (places as pins, or a route), a list of places, or "
         "the weather. Use it when the person asks where something is, for directions, for places nearby or for "
         "the weather, once you have the facts (from search or your other tools). Give coordinates when you have "
-        "them; a name and street address are enough otherwise, the phone looks them up. Up to 4 cards. Then "
+        "them; a name and street address are enough otherwise, the phone looks them up. Fill each card with the "
+        "values you read; leave out what you don't have rather than writing a placeholder such as 0. Up to 4 cards. Then "
         "answer in a sentence or two: the cards are on the person's screen, so don't read out everything in them."),
     "parameters": {
         "type": "object",
@@ -154,10 +155,17 @@ def check(args) -> tuple[list[str], list[str]]:
         else:
             place = card.get("place") or card.get("location")
             now = card.get("now") if isinstance(card.get("now"), dict) else None
-            has_now = now is not None and _number(now.get("temperature")) is not None
-            hours = [h for h in card.get("hours") or [] if isinstance(h, dict) and _number(h.get("temperature")) is not None and h.get("time")]
+            # A reading names its condition: a temperature with none (a 0 and "", 2026-10-23, where the
+            # reply said 85°F and clear) is a placeholder, sent back to be filled in.
+            def named(r): return bool(str(r.get("condition") or "").strip())
+            has_now = now is not None and _number(now.get("temperature")) is not None and named(now)
+            if now is not None and not has_now:
+                problems.append(f"card {n}: 'now' needs the temperature and the condition you read from the forecast, "
+                                "not a placeholder such as 0; it was left out")
+            hours = [h for h in card.get("hours") or [] if isinstance(h, dict) and _number(h.get("temperature")) is not None
+                     and h.get("time") and named(h)]
             days = [d for d in card.get("days") or [] if isinstance(d, dict) and _number(d.get("high")) is not None
-                    and _number(d.get("low")) is not None and (d.get("date") or d.get("day"))]
+                    and _number(d.get("low")) is not None and (d.get("date") or d.get("day")) and named(d)]
             if not (isinstance(place, str) and place.strip()):
                 problems.append(f"card {n}: the weather needs 'place'")
                 continue

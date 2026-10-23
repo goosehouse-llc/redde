@@ -26,7 +26,7 @@ nonisolated enum WhatsNew {
             Item(symbol: "rectangle.stack", title: "Every server in one list",
                  detail: "All Servers, in the server menu at the top of the conversation list, shows every saved server's chats in one list, each tagged with its server. All Profiles does the same for your Hermes profiles."),
             Item(symbol: "map", title: "Cards in replies",
-                 detail: "Your agent can show a map with pins or a route, a list of places and the weather under its reply. Tap a map for directions. It takes the Redde plugin 1.6.0 on your Hermes."),
+                 detail: "Your agent can show a map with pins or a route, a list of places and the weather under its reply. Tap a map for directions. It takes the Redde plugin 1.6.1 on your Hermes."),
             Item(symbol: "link", title: "Link previews",
                  detail: "Settings → Appearance → Link previews puts a linked page's title and picture under the message. Off until you turn it on: to make the card, Redde opens the page itself."),
             Item(symbol: "square.grid.2x2", title: "Bots, further",
