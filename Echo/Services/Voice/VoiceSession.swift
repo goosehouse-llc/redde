@@ -23,6 +23,10 @@ final class EarconPlayer {
     /// device's (`play(atTime:)`): those changes restart the device, and its clock with it, and
     /// a stop cue timed on it was never heard.
     static let lead: Duration = .milliseconds(100)
+    /// In the car, longer: a cue that began as the car opened its voice channel for the mic
+    /// crackled there, and only there (heard 2026-10-22). The car's channel takes longer to
+    /// settle than the phone's own audio does.
+    static let carLead: Duration = .milliseconds(350)
 
     private init() {
         for (cue, name) in [(VoiceSession.Earcon.listening, "listen-start"), (.stopped, "listen-stop")] {
@@ -37,10 +41,16 @@ final class EarconPlayer {
         waiting[cue]?.cancel()
         player.stop()
         player.currentTime = 0
+        let inCar = CarPlaySceneDelegate.isConnected || AudioSessionController.shared.route == .car
         waiting[cue] = Task { [weak self] in
-            try? await Task.sleep(for: Self.lead)
+            try? await Task.sleep(for: inCar ? Self.carLead : Self.lead)
             guard !Task.isCancelled else { return }
             self?.waiting[cue] = nil
+            #if DEBUG
+            // What the cue went out through, for a crackle heard in the car.
+            let session = AVAudioSession.sharedInstance()
+            Logger(subsystem: "com.goosehouse.echo", category: "voice").info("cue \(cue == .listening ? "start" : "stop", privacy: .public): \(session.currentRoute.outputs.map(\.portType.rawValue).joined(separator: ","), privacy: .public) at \(Int(session.sampleRate)) Hz, mode \(session.mode.rawValue, privacy: .public), buffer \(Int(session.ioBufferDuration * 1000)) ms")
+            #endif
             if !player.play() {
                 Logger(subsystem: "com.goosehouse.echo", category: "voice").error("the \(cue == .listening ? "start" : "stop", privacy: .public) cue didn't play")
             }
