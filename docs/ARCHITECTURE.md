@@ -2451,6 +2451,15 @@ the handover itself is tested on a real watch.
     camera and file picker close, as do the conversation list's own sheets (New Group Chat, a
     bot's editor) and its select mode. `LayoutChangeUITests` swaps the layout mid-test with
     `-echo.flipLayout` (DEBUG): reading place, typing, voice mode, a group draft, Settings, Find.
+- **On its side, closed** (`Views/Foldable.swift`, asked 2026-10-23). An iPhone is portrait, as
+  Redde always was, unless it folds: closed, a Duo stands like a tent and Apple asks for
+  landscape on its outer screen. The Info.plist allows landscape on iPhone, and the app delegate
+  (`PushDelegate`) answers portrait unless iOS 27.1 has reported a hinge (`onHingeChange`; there
+  is no other way to tell a Duo, and on other phones it reports none: checked on an iOS 27 iPhone,
+  which stays upright when turned). Its inner screen turns whatever an app says. On a phone on its
+  side (compact height) the voice screen puts the orb on the left and what is said and the buttons
+  on the right. The closed Duo simulator ignores `devicectl device orientation set`, so the turn
+  itself is for Device Hub's rotate button or a Duo.
 - **The fold** (`Views/Fold.swift`, iOS 27.1's reserved regions, kind `.division`, active only
   while a Duo is half open). Scrolling content runs across it, as Apple asks, and sheets, alerts
   and menus move off it themselves. What stands still in the middle is moved: held like a book

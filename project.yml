@@ -125,7 +125,12 @@ targets:
             # echo: the app's own links (controls, share extension). redde: setup links,
             # redde://connect, which people see and type.
             CFBundleURLSchemes: [echo, redde]
-        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        # Landscape too, for an iPhone Duo's outer screen standing like a tent: every other iPhone
+        # is kept in portrait at run time (`Foldable.orientations`, from the app delegate).
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         UISupportedInterfaceOrientations~ipad:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationPortraitUpsideDown

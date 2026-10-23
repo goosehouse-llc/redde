@@ -40,6 +40,7 @@ struct EchoApp: App {
                     #if DEBUG
                     .modifier(LayoutFlip())
                     #endif
+                    .modifier(HingeWatch())
                     .accessibilityHidden(lock.isLocked || lock.isCovered)
                 ReplyDrawingWarmUp()
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

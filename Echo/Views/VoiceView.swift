@@ -34,6 +34,8 @@ struct VoiceView: View {
 
     /// An iPhone Duo half open: where its fold lies across the screen (`Fold`).
     @State private var fold: Fold?
+    /// Compact: a phone on its side (an iPhone Duo closed, standing like a tent).
+    @Environment(\.verticalSizeClass) private var verticalSize
 
     var body: some View {
         Group {
@@ -50,6 +52,17 @@ struct VoiceView: View {
                     }
                     .frame(maxHeight: .infinity)
                     .padding(.top, fold.frame.height)
+                }
+            } else if verticalSize == .compact {
+                // A phone on its side, too short for the column: the orb and what is going on on
+                // the left, what is said and the buttons on the right.
+                HStack(alignment: .top, spacing: 24) {
+                    VStack(spacing: 0) { upper(orbScale: 1) }
+                        .frame(maxHeight: .infinity, alignment: .top)
+                    VStack(spacing: 0) {
+                        middle
+                        lower
+                    }
                 }
             } else {
                 VStack(spacing: 0) {

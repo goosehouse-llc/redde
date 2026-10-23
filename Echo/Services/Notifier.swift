@@ -637,6 +637,11 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
 final class PushDelegate: NSObject, UIApplicationDelegate {
     private let log = Logger(subsystem: "com.goosehouse.echo", category: "notify")
 
+    /// Portrait on an iPhone, unless it folds (`Foldable`); every way on an iPad.
+    func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
+        Foldable.orientations
+    }
+
     nonisolated func application(_ application: UIApplication,
                                  didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         Task.detached { await Notifier.uploadDeviceToken(deviceToken) }
