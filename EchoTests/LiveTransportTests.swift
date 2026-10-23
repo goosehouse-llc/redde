@@ -2886,3 +2886,47 @@ struct HermesLabButlerTests {
         }
     }
 }
+
+/// All Servers (his ask 2026-10-22, after a Reddit request): the lab's Hermes saved as two servers,
+/// one used by its Dashboard and one by its Hermes API, and a third that is off. Each is asked on
+/// its own with the secrets filed under its id (`AllServers`), its rows tagged with it, and the one
+/// that is off named in time. `scripts/hermes-lab/lab.sh servers`; skips when no lab is up.
+@MainActor
+struct HermesLabAllServersTests {
+    private static let api = URL(string: "http://127.0.0.1:18642")!
+    private static let key = "labkey-labkey-labkey"
+
+    @Test func everySavedServerIsListedOnItsOwnAndTagged() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        client.disconnect()
+        // A chat with a message in it, so both lists have it.
+        let title = "lab all servers \(UUID().uuidString.prefix(6))"
+        let made = try await HermesSessionsAPI(baseURL: Self.api, apiKey: Self.key).createSession(title: title)
+        let request = TurnRequest(userText: "hi", history: [], sessionID: made.id, model: nil, instructions: nil)
+        for try await _ in HermesSessionsTransport(baseURL: Self.api, apiKey: Self.key).stream(request) {}
+
+        let dashboard = HermesServer(id: UUID(), name: "Lab Dashboard", transport: .hermesServe, serveURL: "http://127.0.0.1:19119", serveUsername: "lab")
+        let viaAPI = HermesServer(id: UUID(), name: "Lab API", transport: .hermesSessions, gatewayURL: Self.api.absoluteString)
+        let off = HermesServer(id: UUID(), name: "Lab Off", transport: .hermesSessions, gatewayURL: "http://127.0.0.1:9")
+        let accounts = [Keychain.account(.serveDashboardPassword, server: dashboard.id.uuidString),
+                        Keychain.account(.gatewayAPIKey, server: viaAPI.id.uuidString), Keychain.account(.gatewayAPIKey, server: off.id.uuidString)]
+        Keychain.write(account: accounts[0], value: "labpass-labpass")
+        Keychain.write(account: accounts[1], value: Self.key)
+        Keychain.write(account: accounts[2], value: Self.key)
+        defer { accounts.forEach { Keychain.delete(account: $0) } }
+
+        for server in [dashboard, viaAPI] {
+            let rows = try await AllServers.sessions(of: server)
+            let row = rows.first { $0.title == title }
+            HermesLabApprovalTests.report(row?.otherServer == ServerTag(id: server.id, name: server.title) && rows.allSatisfy { $0.otherServer?.id == server.id },
+                                          "\(server.name): its chats listed on its own and tagged with it", "\(rows.count) rows, \(String(describing: row?.otherServer))")
+        }
+
+        let started = Date.now
+        let merged = await AllServers.listing([dashboard, viaAPI, off])
+        let took = Date.now.timeIntervalSince(started)
+        HermesLabApprovalTests.report(merged.rows.filter { $0.title == title }.count == 2 && merged.unreachable == ["Lab Off"] && took < 12,
+                                      "every other server asked at once; the one that is off named, in time",
+                                      "\(merged.rows.count) rows, unreachable \(merged.unreachable), \(String(format: "%.1f", took)) s")
+    }
+}

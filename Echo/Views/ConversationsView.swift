@@ -66,6 +66,10 @@ struct ConversationsList: View {
     /// Every profile's chats in the list at once, each tagged with its profile, as Hermes Desktop
     /// can (his ask 2026-10-22, after a Reddit request); off, the selected profile's alone.
     @AppStorage("sessions.allProfiles") private var allProfiles = false
+    /// Every saved server's chats in the list, each tagged with its server (`AllServers`).
+    @AppStorage("sessions.allServers") private var allServers = false
+    /// The servers that didn't answer, with All Servers on.
+    @State private var serversUnreachable: [String] = []
     /// The bot whose chat is being found or made.
     @State private var openingBot: String?
     /// "Let bots message each other", being asked about.
@@ -209,24 +213,37 @@ struct ConversationsList: View {
     }
 
     /// Switch servers without going through Settings.
+    /// The server the app is on, or All Servers: every saved server's chats in the list, the one
+    /// the app is on still the one new chats start on (a Reddit request, 2026-10-21).
     private var serverMenu: some View {
-        Menu {
-            Picker("Server", selection: Binding(
-                get: { settings.activeServerID },
-                set: { ServerSwitcher.switchTo($0, conversation: conversation) })) {
-                ForEach(settings.servers) { server in Text(server.title).tag(server.id) }
+        let title = allServers ? "All Servers" : settings.activeServer?.title ?? ""
+        return Menu {
+            Button { allServers = true } label: {
+                Label("All Servers", systemImage: allServers ? "checkmark" : "square.stack.3d.up")
+            }
+            Divider()
+            ForEach(settings.servers) { server in
+                Button {
+                    allServers = false
+                    ServerSwitcher.switchTo(server.id, conversation: conversation)
+                } label: {
+                    if !allServers, server.id == settings.activeServerID { Label(server.title, systemImage: "checkmark") } else { Text(server.title) }
+                }
             }
         } label: {
             HStack(spacing: 6) {
-                Image(systemName: "server.rack")
-                Text(settings.activeServer?.title ?? "").lineLimit(1)
+                Image(systemName: allServers ? "square.stack.3d.up" : "server.rack")
+                Text(title).lineLimit(1)
+                if allServers, let here = settings.activeServer?.title {
+                    Text("· new chats on \(here)").foregroundStyle(.secondary).lineLimit(1)
+                }
                 Image(systemName: "chevron.up.chevron.down").font(.caption2.weight(.semibold))
             }
             .font(.subheadline.weight(.medium))
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityLabel("Server")
-        .accessibilityValue(settings.activeServer?.title ?? "")
+        .accessibilityValue(title)
     }
 
     /// The profiles this server has, as far as the phone knows.
@@ -387,7 +404,7 @@ struct ConversationsList: View {
         // which stays up).
         // Not while the iPhone's panel is closed: it loads when it opens (isShowing below).
         // (All Profiles turned on or off loads the list again too.)
-        .task(id: "\(settings.connectionKey)|\(allProfiles)") { if usesLedger, isShowing { await refresh() } }
+        .task(id: "\(settings.connectionKey)|\(allProfiles)|\(allServers)") { if usesLedger, isShowing { await refresh() } }
         .onChange(of: settings.connectionKey) {
             // The old server's or profile's sessions must not linger while the new list loads.
             ledger = []
@@ -1078,6 +1095,11 @@ struct ConversationsList: View {
                                    description: Text("Conversations from every platform appear here."))
                 .listRowSeparator(.hidden)
         }
+        if !serversUnreachable.isEmpty {   // (empty unless All Servers is on)
+            Label("\(serversUnreachable.formatted()) didn't answer, so \(serversUnreachable.count == 1 ? "its" : "their") chats aren't here.",
+                  systemImage: "wifi.exclamationmark")
+                .font(.footnote).foregroundStyle(.secondary).listRowSeparator(.hidden)
+        }
         let rows = visibleLedger
         let pinned = rows.filter { $0.pinned == true }
         let runs = rows.filter(Self.isFoldable)
@@ -1254,6 +1276,30 @@ struct ConversationsList: View {
     }
 
     private func ledgerButton(_ session: HermesSessionsAPI.SessionSummary, hasDraft: Bool) -> some View {
+        Group {
+            if let server = session.otherServer {
+                remoteButton(session, on: server, hasDraft: hasDraft)
+            } else {
+                ownButton(session, hasDraft: hasDraft)
+            }
+        }
+    }
+
+    /// Another server's row (All Servers): it opens on its server, and is changed there.
+    private func remoteButton(_ session: HermesSessionsAPI.SessionSummary, on server: ServerTag, hasDraft: Bool) -> some View {
+        Button { if !selecting { open(session) } } label: { ledgerRow(session, hasDraft: hasDraft, marks: ChatMarks(kind: nil, unread: session.unread == true)) }
+            .buttonStyle(.plain)
+            .opensConversation()
+            .tag(session.id)
+            .selectionDisabled()
+            .disabled(opening != nil)
+            .contextMenu {
+                Button("Open on \(server.name)", systemImage: "server.rack") { open(session) }
+            }
+            .accessibilityHint("Opens it on \(server.name); Redde moves to that server")
+    }
+
+    private func ownButton(_ session: HermesSessionsAPI.SessionSummary, hasDraft: Bool) -> some View {
         let marks = marks(session)
         // The open conversation is read whatever it is marked: leaving it marks it read again.
         let canMark = session.id != conversation.serverSessionID
@@ -1437,6 +1483,17 @@ struct ConversationsList: View {
             HStack(spacing: 6) {
                 if marks.kind == .needsYou { NeedsYouTag() }
                 if hasDraft { draftMark }
+                // Another server's, with All Servers on: which.
+                if let server = session.otherServer {
+                    Label(server.name, systemImage: "server.rack")
+                        .labelStyle(.titleAndIcon)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 6).padding(.vertical, 1)
+                        .background(.quaternary, in: .capsule)
+                        .lineLimit(1)
+                        .fixedSize()
+                }
                 // Another profile's, with All Profiles on: whose it is.
                 if let route = session.elsewhere {
                     Text(profileLabel(route.profile))
@@ -1495,6 +1552,11 @@ struct ConversationsList: View {
             projects = Self.demoProjects
             folders = Self.demoProjects
             ledger = Self.demoProjects.flatMap { $0.lanes.flatMap(\.sessions) } + Self.demoScheduledRuns
+            // `-echo.demoAllServers`: two chats of another server's among them (All Servers).
+            if DevHooks.has("-echo.demoAllServers") {
+                ledger = (ledger + Self.demoOtherServer).sorted { ($0.lastActiveDate ?? .distantPast) > ($1.lastActiveDate ?? .distantPast) }
+                serversUnreachable = ["Cabin"]
+            }
             if DevHooks.demoBots {
                 botDirectory.set(Self.demoBots, key: settings.connectionKey)
                 groups.set(rooms: [.demo, .demoDesktop], supported: true, writable: true, key: settings.connectionKey)
@@ -1550,6 +1612,18 @@ struct ConversationsList: View {
             ledger = sessions
             activity.listed(sessions)
             conversation.noteServerTitles(sessions)
+            // Every other saved server's, once they answer: this server's rows don't wait for them.
+            if allServers, settings.servers.count > 1 {
+                let others = await AllServers.otherServers(settings)
+                guard current else { return }
+                // One Hermes saved twice (its Dashboard and its API) lists its chats once.
+                var seen = Set(sessions.map(\.id))
+                let theirs = others.rows.filter { seen.insert($0.id).inserted }
+                ledger = (sessions + theirs).sorted { ($0.lastActiveDate ?? .distantPast) > ($1.lastActiveDate ?? .distantPast) }
+                serversUnreachable = others.unreachable
+            } else {
+                serversUnreachable = []
+            }
             // Bots and projects are a bonus; a failure here must not hide the flat list.
             if botsHere, settings.showBots {
                 if apiBotsOnly {
@@ -1690,6 +1764,14 @@ struct ConversationsList: View {
 
     /// Swaps the transcript to this session. Throws, so callers can show what went wrong.
     private func load(_ session: HermesSessionsAPI.SessionSummary) async throws {
+        // Another server's: the app moves to that server, and opens it there as one of its own.
+        if let server = session.otherServer {
+            guard settings.servers.contains(where: { $0.id == server.id }) else { throw AllServers.Gone(name: server.name) }
+            ServerSwitcher.switchTo(server.id, conversation: conversation)
+            var own = session
+            own.otherServer = nil
+            return try await load(own)
+        }
         // Another profile's opens in that profile, by the way it was listed.
         if let route = session.elsewhere {
             if route.viaAPI {
@@ -2155,6 +2237,20 @@ extension ConversationsList {
     static var openedDemoGroup = false
     /// `-echo.topology` has opened the map.
     static var openedDemoTopology = false
+
+    /// Another server's chats, for `-echo.demoAllServers`.
+    static var demoOtherServer: [HermesSessionsAPI.SessionSummary] {
+        let json = """
+        [{"id":"workshop-1","title":"Garage door sensor","source":"desktop","started_at":1772998000,"last_active":1772999500,"message_count":8,"preview":"The sensor reads closed again."},
+         {"id":"workshop-2","title":"Printer queue","source":"desktop","started_at":1772900000,"last_active":1772950000,"message_count":3}]
+        """
+        let tag = ServerTag(id: UUID(uuidString: "00000000-0000-4000-8000-00000000F00D")!, name: "Workshop")
+        return ((try? JSONDecoder().decode([HermesSessionsAPI.SessionSummary].self, from: Data(json.utf8))) ?? []).map {
+            var row = $0
+            row.otherServer = tag
+            return row
+        }
+    }
 
     /// One project Hermes found, with one lane and two sessions (enough to reach
     /// ProjectSessionsView and tap a row), and one someone made, still empty.

@@ -3,6 +3,13 @@ import Foundation
 /// The profile a conversation lives in when it is neither the selected profile's nor a bot's
 /// chat: one opened from the chat list with All Profiles on (his ask 2026-10-22, after a Reddit
 /// request: Hermes Desktop shows every profile's sessions at once).
+/// A row of the chat list from another saved server than the one the app is on (All Servers): its
+/// id, to switch to it when the row is opened, and its name, for the row's tag.
+nonisolated struct ServerTag: Codable, Equatable, Sendable {
+    var id: UUID
+    var name: String
+}
+
 nonisolated struct ProfileRoute: Codable, Equatable, Sendable {
     var profile: String
     /// Reached by the Hermes API at /p/<profile>/ with that profile's own key, not the Dashboard.
@@ -323,6 +330,9 @@ nonisolated struct HermesSessionsAPI: Sendable {
         /// Another profile than the selected one, and how to reach it: set by the chat list with All
         /// Profiles on (`SessionBackend.everyProfile`), never by the server.
         var elsewhere: ProfileRoute?
+        /// Another saved server's, with All Servers on (`AllServers`): which, never by the server
+        /// (a key no Hermes list has, so the rows decode as before).
+        var otherServer: ServerTag?
 
         var totalTokens: Int { (input_tokens ?? 0) + (output_tokens ?? 0) }
         var cost: Double? { actual_cost_usd ?? estimated_cost_usd }

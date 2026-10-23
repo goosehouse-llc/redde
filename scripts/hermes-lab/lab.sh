@@ -234,6 +234,21 @@ list_status() {
   echo "\nAll checks passed."
 }
 
+# All Servers: the lab's Hermes saved as two servers, by its Dashboard and by its Hermes API, and a
+# third that is off; each listed on its own, tagged, the one that is off named (HermesLabAllServersTests).
+servers() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  app_prepare HermesLabAllServersTests || exit 1
+  for tag in $tags; do
+    echo "===== Hermes $tag / approval"
+    if ! up "$tag" approval; then failed+=("$tag (lab)"); continue; fi
+    app_check || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
 # The agent's task list: the stub writes one with Hermes's to-do tool and merges into it, and the
 # app has to have the list after each, live and from the stored transcript, on both connections.
 plugin() {
@@ -727,6 +742,7 @@ case "${1:-}" in
   device) shift; device "$@" ;;
   switch) shift; switch "$@" ;;
   status) shift; list_status "$@" ;;
+  servers) shift; servers "$@" ;;
   projects) shift; projects "$@" ;;
   bots) shift; bots "$@" ;;
   runs) shift; runs "$@" ;;

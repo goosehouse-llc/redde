@@ -61,6 +61,17 @@ nonisolated struct DashboardTokenStore: Sendable {
             guard let tokens, let data = try? JSONEncoder().encode(tokens) else { Keychain.delete(.serveSignIn); return }
             Keychain.write(.serveSignIn, value: String(decoding: data, as: UTF8.self))
         })
+
+    /// Another saved server's (All Servers): those filed under its id.
+    static func keychain(server: String) -> DashboardTokenStore {
+        let account = Keychain.account(.serveSignIn, server: server)
+        return DashboardTokenStore(
+            read: { Keychain.read(account: account).flatMap { try? JSONDecoder().decode(DashboardTokens.self, from: Data($0.utf8)) } },
+            write: { tokens in
+                guard let tokens, let data = try? JSONEncoder().encode(tokens) else { Keychain.delete(account: account); return }
+                Keychain.write(account: account, value: String(decoding: data, as: UTF8.self))
+            })
+    }
 }
 
 /// Signing in to a Hermes Dashboard through a browser: OAuth for native apps (RFC 8252) with PKCE,

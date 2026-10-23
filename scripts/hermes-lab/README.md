@@ -22,6 +22,7 @@ scripts/hermes-lab/lab.sh device         # phone tools: the agent calls one and 
 scripts/hermes-lab/lab.sh device --app   # and the app's own service carries one out
 scripts/hermes-lab/lab.sh switch         # a turn left for another conversation goes on, and is picked up on return
 scripts/hermes-lab/lab.sh projects       # projects made in the app: a folder in ~/Projects, a conversation in it, a move, rename, remove
+scripts/hermes-lab/lab.sh servers        # All Servers: the lab saved twice (Dashboard, Hermes API) and one server that is off, listed and tagged
 scripts/hermes-lab/lab.sh search         # searching inside messages: words said on either connection, found through the Dashboard
 scripts/hermes-lab/lab.sh context        # Settings' context and memory files, found where Hermes keeps them (issue 15)
 scripts/hermes-lab/lab.sh speech         # replies read out with the voice Hermes is set up with, streamed and whole (issue 7)

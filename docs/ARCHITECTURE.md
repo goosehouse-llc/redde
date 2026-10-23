@@ -303,6 +303,27 @@ reloads the conversation list.
     chat in `ConversationRecord.elsewhere`. Calls go to that profile the way a bot's chat's do
     (`routeProfile`, `apiProfile`, `connection`). The header names the profile where the agent's
     name goes. New chats start in the selected profile.
+- **All Servers** (2026-10-22, after a Reddit request: several gateways in one list, each row
+  tagged with its server; `AllServers`, `RemoteServer`). The server menu at the top of the chat
+  list (shown once there are two servers) has All Servers above the servers; with it on, the list
+  holds every saved server's chats, newest first, another server's with its name on a grey tag,
+  and new chats still start on the server the app is on (the menu says which).
+  - **Where the rows come from:** the server the app is on as before, at once; then every other
+    saved server, all asked together, each by the connection its record is used with (its
+    Dashboard's REST `api/sessions` through a `HermesServeClient` of its own, kept while the
+    record is unchanged, or its Hermes API at its profile's `/p/<profile>/`) and the secrets filed
+    under its id (password or browser sign-in, API keys, Cloudflare Access, custom headers). Each
+    has eight seconds; one that doesn't answer is named above the list. A Bot Chat and a group
+    chat's session are left out. A chat already listed (one Hermes saved twice, by its Dashboard
+    and by its API) is listed once.
+  - **Rows:** `SessionSummary.otherServer` (`ServerTag`: id and name), never decoded from the
+    server. Another server's row opens by switching to that server (`ServerSwitcher`) and opening
+    it there as one of its own; it has no swipes, its menu is Open on <server>, and it can't be
+    selected, so nothing about it ever goes to the wrong server. Live marks (working, needs you)
+    are the active server's alone; another's shows the unread its list gives.
+  - **Not merged:** bots and group chats, projects, Cron, Kanban and message search are the active
+    server's. `lab.sh servers` saves the lab's Hermes twice (Dashboard, API) and a third server
+    that is off, on 0.21.0 and 0.22.2; `AllServersTests`, `AllServersUITests` (`-echo.demoAllServers`).
   - **Not covered:** message search and the project tree stay the selected profile's. Session ids
     are assumed unique across profiles (Hermes makes them from the time plus random characters).
   - **Lab:** `bots` runs `anotherProfilesChatIsListedAndGoesOnInItsProfile` (Dashboard, and the
