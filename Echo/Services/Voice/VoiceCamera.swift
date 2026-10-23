@@ -74,10 +74,15 @@ nonisolated final class CameraFeed: NSObject, AVCaptureVideoDataOutputSampleBuff
     /// Says how far a frame has to be turned to stand upright, the way the device is held now.
     private var upright: AVCaptureDevice.RotationCoordinator?
     private var configured = false
+    /// Voice mode has the camera open: one that stops (iOS took it away for a while, or it failed)
+    /// is started again when it can be, and not left showing its last frame.
+    private var wanted = false
+    private var observers: [NSObjectProtocol] = []
 
     func start() async -> Bool {
         await withCheckedContinuation { done in
             queue.async {
+                self.wanted = true
                 if !self.configured { self.configured = self.configure() }
                 if self.configured, !self.session.isRunning { self.session.startRunning() }
                 done.resume(returning: self.session.isRunning)
@@ -87,6 +92,7 @@ nonisolated final class CameraFeed: NSObject, AVCaptureVideoDataOutputSampleBuff
 
     func stop() {
         queue.async {
+            self.wanted = false
             if self.session.isRunning { self.session.stopRunning() }
             self.lock.withLock { self.frame = nil }
         }
@@ -116,7 +122,20 @@ nonisolated final class CameraFeed: NSObject, AVCaptureVideoDataOutputSampleBuff
         session.addOutput(output)
         let coordinator = AVCaptureDevice.RotationCoordinator(device: camera, previewLayer: nil)
         lock.withLock { upright = coordinator }
+        for name in [AVCaptureSession.interruptionEndedNotification, AVCaptureSession.runtimeErrorNotification] {
+            observers.append(NotificationCenter.default.addObserver(forName: name, object: session, queue: nil) { [weak self] note in
+                Logger(subsystem: "com.goosehouse.echo", category: "voice").notice("camera: \(note.name.rawValue, privacy: .public)")
+                guard let self else { return }
+                self.queue.async { self.restartIfWanted() }
+            })
+        }
         return true
+    }
+
+    /// Started again after iOS gave the camera back or it failed, if voice mode still has it open.
+    private func restartIfWanted() {
+        guard wanted, configured, !session.isRunning else { return }
+        session.startRunning()
     }
 
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
