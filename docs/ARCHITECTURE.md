@@ -454,14 +454,19 @@ where a new conversation is in the ••• menu, and ⌘N as anywhere) is the 
   screen says so). `lab.sh templates` checks it on all four releases; `HermesLabBotsTests` makes a
   bot from the Writer template with the app's own client. The main agent has the Tools row too
   (asked 2026-10-22, to take Code Execution off a butler that kept running server scripts
-  itself): no "Same as", its own list sent as `profiles.configure name: default`, which pins
-  `platform_toolsets.cli`, the list the Dashboard's chats and its Bot Chat read (the same switch
-  as Settings → Agent → Tools; the Hermes API server reads `platform_toolsets.api_server`). The
-  last switch on can't be turned off. Hermes fixes a chat's tools when its agent is built, so a
-  change reached only new chats until the Dashboard restarted: after any tool change (Edit Bot or
-  Settings → Agent → Tools) Redde sends `reload.mcp` with `confirm: true`, which gives every open
-  chat its profile's tools again (and reconnects the MCP servers). `HermesLabBotsTests` takes
-  Code Execution off the main agent and puts it back, with a chat open that follows both.
+  itself): no "Same as", read and changed by the Dashboard's own switches (`GET`/`PUT
+  api/tools/toolsets`, Settings → Agent → Tools', each that changed, only among those Edit Bot
+  offers), which write `platform_toolsets.cli`, the list the Dashboard's chats and its Bot Chat
+  read. Not `profiles.configure` as for a bot: 0.21.0 and 0.21.3 kept that list for the main
+  profile where its chats never looked, and `profiles.describe` showed it, not what the chats had
+  (measured). The Hermes API server reads `platform_toolsets.api_server`. The last switch on
+  can't be turned off. Hermes fixes a chat's tools when its agent is built, so a change reached
+  only new chats until the Dashboard restarted: after any tool change (Edit Bot or Settings →
+  Agent → Tools) Redde sends `reload.mcp` with `confirm: true`, which gives every open chat its
+  profile's tools again (and reconnects the MCP servers); 0.21.0's reload reconnects the MCP
+  servers alone, so there it reaches chats started after it. `HermesLabBotsTests` takes Code
+  Execution off the main agent and puts it back, no other switch moving, with a chat open that
+  follows both (0.21.3 to 0.22.2).
 - **Making and changing bots** (`BotManagement.swift`, `BotEditor.swift`), as Hermes Desktop does:
   New Bot asks for a name, what it does, a personality (empty: one written from the name and what
   it does, Desktop's wording), a model, a face and its tools. The profile is made with `profiles.create`

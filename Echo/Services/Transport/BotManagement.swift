@@ -196,6 +196,13 @@ extension HermesServeClient {
         return BotDetails(try await call("profiles.describe", params: .object(["name": .string("default")]), timeout: 30))
     }
 
+    /// The main profile's toolsets as its chats have them: the Dashboard's own switches (0.21.0
+    /// lists another set for the main profile in profiles.describe). Nil when they can't be read.
+    func mainToolsetsNow() async -> Set<String>? {
+        guard let rows = try? await dashboardToolsets() else { return nil }
+        return Set(rows.filter { $0.enabled == true }.map(\.name))
+    }
+
     /// What the roster leaves out about a bot: its personality, its model and its toolsets.
     func botDetails(_ bot: HermesBot) async throws -> BotDetails {
         try await ensureConnected()
@@ -226,7 +233,18 @@ extension HermesServeClient {
         var sections: [String: JSONValue] = [:]
         if let description = change.description { sections["description"] = .string(description.trimmingCharacters(in: .whitespacesAndNewlines)) }
         if let soul = change.soul { sections["soul"] = .string(soul) }
-        if let toolsets = change.toolsets, !toolsets.isEmpty { sections["enabled_toolsets"] = .array(toolsets.map(JSONValue.string)) }
+        // The main profile's by the Dashboard's own switches, each that changed (Settings → Agent
+        // → Tools'), which its chats read on every release; a bot's as its list.
+        if bot.isDefault, let toolsets = change.toolsets, !toolsets.isEmpty {
+            // Only those Edit Bot offers: one it doesn't list stays as it is.
+            let offered = try await toolsetsOffered()
+            let now = await mainToolsetsNow() ?? offered.enabledToolsets, wanted = Set(toolsets)
+            let changed = now.symmetricDifference(wanted).intersection(offered.toolsets.map(\.name))
+            for name in changed.sorted() { try await switchToolset(name: name, enabled: wanted.contains(name)) }
+            Task { await refreshOpenChatsTools() }
+        } else if let toolsets = change.toolsets, !toolsets.isEmpty {
+            sections["enabled_toolsets"] = .array(toolsets.map(JSONValue.string))
+        }
         if !sections.isEmpty {
             sections["name"] = .string(bot.name)
             let applied = try await call("profiles.configure", params: .object(sections), timeout: 30)["applied"]

@@ -389,7 +389,7 @@ struct BotEditor: View {
             models = (try? await client.modelOptions(forProfile: "default")) ?? []
             let main = try? await tools
             offered = main?.toolsets ?? []
-            mainToolsets = main?.enabledToolsets ?? []
+            mainToolsets = await client.mainToolsetsNow() ?? main?.enabledToolsets ?? []
             loaded = !models.isEmpty
             return
         }
@@ -399,8 +399,11 @@ struct BotEditor: View {
             async let ownSkills = client.dashboardSkills(profile: editing.name)
             async let preloaded = client.alwaysLoadedSkills(profile: editing.name)
             let options = isMain ? [] : ((try? await client.modelOptions(forProfile: editing.name)) ?? [])
-            let read = try await details
-            let main = (try? await tools)?.enabledToolsets ?? []
+            var read = try await details
+            let described = (try? await tools)?.enabledToolsets
+            let main = await client.mainToolsetsNow() ?? described ?? []
+            // The main agent's own: as its chats have them.
+            if isMain { read.toolsets = read.toolsets.map { var set = $0; set.enabled = main.contains(set.name); return set } }
             models = options
             let current = options.first(where: \.isCurrent)
                 ?? read.model.map { ModelChoice(provider: read.provider ?? "", providerName: read.provider ?? "", model: $0, name: $0, isCurrent: true) }
@@ -689,7 +692,7 @@ struct BotToolsList: View {
                 }
             } footer: {
                 if isMain {
-                    Text("\(mainName)'s tools over the Hermes Dashboard, its Bot Chat included, from the next message; the first reply after a change is slow on a model running on your own machine. The Hermes API server keeps its own list (platform_toolsets.api_server in config.yaml on the Hermes host).")
+                    Text("\(mainName)'s tools over the Hermes Dashboard, its Bot Chat included, from the next message (Hermes 0.21.0: in chats started after the change); the first reply after a change is slow on a model running on your own machine. The Hermes API server keeps its own list (platform_toolsets.api_server in config.yaml on the Hermes host).")
                 } else {
                     Text("Fewer tools make a bot's every turn quicker to start on a model running on your own machine. Hermes 0.21.5 and later keep a bot to these; earlier ones give every bot all of \(mainName)'s.")
                 }

@@ -1060,9 +1060,16 @@ final class HermesServeClient {
 
     /// Enable/disable a toolset for its configuration platform, as the dashboard does.
     func toggleToolset(name: String, enabled: Bool) async throws {
+        try await switchToolset(name: name, enabled: enabled)
+        Task { await refreshOpenChatsTools() }
+    }
+
+    /// The Dashboard's own switch, alone: the main profile's toolsets as its chats read them, on
+    /// every release (0.21.0 kept a profiles.configure list for the main profile where its chats
+    /// never looked).
+    func switchToolset(name: String, enabled: Bool) async throws {
         struct Body: Encodable { var enabled: Bool }
         _ = try await rest("PUT", "api/tools/toolsets/\(name)", body: try JSONEncoder().encode(Body(enabled: enabled)))
-        Task { await refreshOpenChatsTools() }
     }
 
     /// Gives the open chats their profiles' tools as they now stand: Hermes fixes a chat's tools

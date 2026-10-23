@@ -2096,8 +2096,10 @@ struct HermesLabBotsTests {
 
         // The main agent's own list (Edit Bot → Tools on it): Code Execution off and on again, as
         // the Dashboard's Tools page then shows it.
-        let mainBot = HermesBot(name: "default")
-        if mainTools.contains("code_execution") {
+        let mainBot = HermesBot(name: "default", isDefault: true)
+        // As Edit Bot has them: the Dashboard's switches, of those it offers.
+        let mainNow = (await client.mainToolsetsNow() ?? mainTools).intersection(mainAgent.toolsets.map(\.name))
+        if mainNow.contains("code_execution") {
             // A chat already open, its tools fixed at its first message: it takes the change too.
             let (runtime, stored) = try await client.openSession(stored: nil)
             _ = try await Self.say("hello", in: stored, client)
@@ -2109,17 +2111,28 @@ struct HermesLabBotsTests {
                 }
                 return false
             }
-            _ = try await client.changeBot(mainBot, BotChange(toolsets: mainTools.subtracting(["code_execution"]).sorted()))
-            let without = try await client.toolsetsOffered().enabledToolsets
+            _ = try await client.changeBot(mainBot, BotChange(toolsets: mainNow.subtracting(["code_execution"]).sorted()))
+            let without = (await client.mainToolsetsNow() ?? []).intersection(mainAgent.toolsets.map(\.name))
             let page = try await client.dashboardToolsets().first { $0.name == "code_execution" }?.enabled
-            HermesLabApprovalTests.report(without == mainTools.subtracting(["code_execution"]) && page == false,
-                                          "the main agent's tools changed from Edit Bot", "\(without.sorted()) page: \(String(describing: page))")
-            HermesLabApprovalTests.report(try await openChatHasCodeExecution(false), "and a chat already open loses Code Execution, no restart", "")
-            _ = try await client.changeBot(mainBot, BotChange(toolsets: mainTools.sorted()))
-            HermesLabApprovalTests.report(try await client.toolsetsOffered().enabledToolsets == mainTools, "and put back", "")
-            HermesLabApprovalTests.report(try await openChatHasCodeExecution(true), "and the open chat has it again", "")
+            HermesLabApprovalTests.report(without == mainNow.subtracting(["code_execution"]) && page == false,
+                                          "the main agent's tools changed from Edit Bot, and no other", "\(without.sorted()) page: \(String(describing: page))")
+            let version = (try? await client.restJSON("GET", "api/status"))?["version"]?.string ?? ""
+            if try await openChatHasCodeExecution(false) {
+                HermesLabApprovalTests.report(true, "and a chat already open loses Code Execution, no restart", "")
+            } else if version.hasPrefix("0.21.0") {
+                // 0.21.0's reload reconnects the MCP servers alone: an open chat keeps the tools it started with.
+                print("  ----  Hermes \(version): a chat already open keeps its tools until it starts again (reload.mcp re-reads them from 0.21.3)")
+            } else {
+                HermesLabApprovalTests.report(false, "and a chat already open loses Code Execution, no restart", "Hermes \(version)")
+            }
+            _ = try await client.changeBot(mainBot, BotChange(toolsets: mainNow.sorted()))
+            let back = (await client.mainToolsetsNow() ?? []).intersection(mainAgent.toolsets.map(\.name))
+            HermesLabApprovalTests.report(back == mainNow, "and put back", "\(back.sorted())")
+            if !version.hasPrefix("0.21.0") {
+                HermesLabApprovalTests.report(try await openChatHasCodeExecution(true), "and the open chat has it again", "")
+            }
         } else {
-            HermesLabApprovalTests.report(false, "the main agent has Code Execution to switch", "\(mainTools.sorted())")
+            HermesLabApprovalTests.report(false, "the main agent has Code Execution to switch", "\(mainNow.sorted())")
         }
 
         // Renamed, described, a personality of the person's own; Hermes Desktop's look kept.
