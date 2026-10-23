@@ -112,17 +112,6 @@
   }
   @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
 
-  .marquee {
-    border-top: 1px solid rgba(232,176,75,.35); border-bottom: 1px solid rgba(232,176,75,.35);
-    padding: 16px 0; overflow: hidden; background: rgba(232,176,75,.05);
-  }
-  .marquee-track { display: flex; width: max-content; animation: marquee 30s linear infinite; }
-  .marquee-track > div {
-    display: flex; gap: 42px; padding-right: 42px; font-size: clamp(1.2rem, 2vw, 1.6rem);
-    font-weight: 800; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; color: var(--gold);
-  }
-  .marquee-track .sep { color: var(--dim); }
-  @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
   /* ── what's new ── */
   .new { padding-top: 72px; padding-bottom: 8px; }
@@ -208,7 +197,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
-    .marquee-track, .cursor { animation: none; }
+    .cursor { animation: none; }
     .store, .card { transition: none; }
   }
   @media (max-width: 1060px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -359,13 +348,6 @@
         </div>
       </div>
     </div>
-  </div>
-</div>
-
-<div class="marquee" aria-hidden="true">
-  <div class="marquee-track">
-    <div><span>Meet the crew</span><span class="sep">·</span><span>Group chats</span><span class="sep">·</span><span>Talk to the room</span><span class="sep">·</span><span>Schedules</span><span class="sep">·</span><span>Talk</span><span class="sep">·</span><span>Type</span><span class="sep">·</span><span>Watch it work</span><span class="sep">·</span><span>Approve</span><span class="sep">·</span><span>Continue anywhere</span><span class="sep">·</span></div>
-    <div><span>Meet the crew</span><span class="sep">·</span><span>Group chats</span><span class="sep">·</span><span>Talk to the room</span><span class="sep">·</span><span>Schedules</span><span class="sep">·</span><span>Talk</span><span class="sep">·</span><span>Type</span><span class="sep">·</span><span>Watch it work</span><span class="sep">·</span><span>Approve</span><span class="sep">·</span><span>Continue anywhere</span><span class="sep">·</span></div>
   </div>
 </div>
 
