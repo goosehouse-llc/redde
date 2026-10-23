@@ -50,6 +50,8 @@ struct TranscriptView: View {
     /// The message at the top of the screen, for the other layout (`LayoutCarry`). Not state: it
     /// changes as the reader scrolls, and nothing on screen shows it.
     @State private var topRow = TopRow()
+    /// An iPhone Duo half open: where its fold lies across the transcript (`Fold`).
+    @State private var fold: Fold?
 
     /// "Today" / "Yesterday" / a date where the day changes between messages. Computed once per
     /// message-count change rather than by searching the array from every row.
@@ -294,7 +296,13 @@ struct TranscriptView: View {
             .environment(\.asksAboutSelection, true)
             // A conversation opening out of the start screen's card comes forward as the cover clears.
             .scaleEffect(cardOpening?.contentScale ?? 1)
-            .overlay(alignment: .bottom) { jumpButton(proxy) }
+            .overlay(alignment: .bottom) {
+                // On an iPhone Duo held like a book, on the right-hand page, clear of the fold.
+                jumpButton(proxy)
+                    .frame(maxWidth: .infinity)
+                    .padding(.leading, fold.flatMap { $0.isVertical ? $0.frame.maxX : nil } ?? 0)
+            }
+            .readingFold($fold)
             // What was there when the reader scrolled away, to know when something new has come.
             .onChange(of: following) { _, following in
                 leftAt = following ? nil : (conversation.messages.count, conversation.messages.last?.text.utf8.count ?? 0)

@@ -52,6 +52,8 @@ struct ContentView: View {
     /// A group chat's voice screen, and the room it talks with.
     @State private var showGroupVoice = false
     @State private var groupVoice: GroupVoiceScene?
+    /// An iPhone Duo half open, folded down the middle of the wide layout (`Fold`).
+    @State private var splitFold: Fold?
     /// When the composer last lost the keyboard: the layout changing takes it away, and gives it back.
     @State private var focusLostAt: Date?
     @State private var showSearch = false
@@ -97,10 +99,16 @@ struct ContentView: View {
                     NavigationStack {
                         ConversationsList(wideDetail: true)
                     }
-                    .navigationSplitViewColumnWidth(min: 280, ideal: 340, max: 420)
+                    // An iPhone Duo half open, folded down the middle: the list on the left page and the
+                    // chat on the right, the line between them on the fold (as Apple's split views
+                    // go), so that the chat and its message field are clear of it.
+                    .navigationSplitViewColumnWidth(min: splitFold.map { $0.frame.midX } ?? 280,
+                                                    ideal: splitFold.map { $0.frame.midX } ?? 340,
+                                                    max: splitFold.map { $0.frame.midX } ?? 420)
                 } detail: {
                     padDetail
                 }
+                .readingFold($splitFold, vertical: true)
             } else {
                 phoneLayout
             }

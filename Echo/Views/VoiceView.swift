@@ -32,42 +32,38 @@ struct VoiceView: View {
     #endif
     private var phase: VoiceSession.Phase { Self.demo ? .listening : session.phase }
 
+    /// An iPhone Duo half open: where its fold lies across the screen (`Fold`).
+    @State private var fold: Fold?
+
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            orb
-                .padding(.top, 28)
-            // The state word pushes the last one up and out, in its own colour.
-            ZStack {
-                Text(phaseTitle)
-                    .foregroundStyle(phaseColor)
-                .font(.footnote.weight(.semibold))
-                .textCase(.uppercase)
-                .tracking(1.2)
-                .id(phaseTitle)
-                .transition(.push(from: .bottom).combined(with: .opacity))
-            }
-            .clipped()
-            .animation(.snappy(duration: 0.35), value: phaseTitle)
-            .accessibilityLabel(phaseTitle)   // read in normal case, not letter by letter
-            .padding(.top, 18)
-            captionArea
-                .padding(.top, 14)
-                .frame(maxHeight: .infinity, alignment: .top)
-            if let group {
-                if group.feed.state.waitsOnPerson {
-                    Label("A bot needs you: answer in the chat.", systemImage: "hand.raised")
-                        .font(.footnote.weight(.medium)).foregroundStyle(.orange)
+        Group {
+            if let fold, !fold.isVertical {
+                // Propped like a laptop, the screen folded across: the orb and what is going on
+                // above the fold, where they are seen from further off, smaller if it takes that;
+                // what is said and the buttons below it, to hand (Apple's way with a Duo on a table).
+                VStack(spacing: 0) {
+                    VStack(spacing: 0) { upper(orbScale: Self.orbScale(above: fold.frame.minY)) }
+                        .frame(height: max(0, fold.frame.minY))
+                    VStack(spacing: 0) {
+                        middle
+                        lower
+                    }
+                    .frame(maxHeight: .infinity)
+                    .padding(.top, fold.frame.height)
                 }
-            } else if let pending = conversation.pendingInterrupt {
-                InterruptCard(interrupt: pending.interrupt)
+            } else {
+                VStack(spacing: 0) {
+                    upper(orbScale: 1)
+                    middle
+                    lower
+                }
+                // Held like a book, folded down the middle: all of it on the right-hand page,
+                // clear of the fold.
+                .padding(.leading, fold?.frame.maxX ?? 0)
             }
-            footer
-            controls
-                .padding(.top, 14)
-                .padding(.bottom, 12)
         }
         .padding(.horizontal)
+        .readingFold($fold)
         .background(theme.pageColor)
         .foregroundStyle(theme.textColor)
         .onAppear { session.attachHeadsetControls() }
@@ -115,6 +111,58 @@ struct VoiceView: View {
             }
         }
         .padding(.top, 8)
+    }
+
+    /// How small the orb goes to fit above a fold this far down, with the header over it and the
+    /// state word under it.
+    static func orbScale(above height: CGFloat) -> CGFloat {
+        min(1, max(0.5, (height - 52 - 28 - 40) / 233))
+    }
+
+    /// The orb and what is going on.
+    @ViewBuilder private func upper(orbScale: CGFloat) -> some View {
+        header
+        orb
+            .scaleEffect(orbScale)
+            .frame(width: 233 * orbScale, height: 233 * orbScale)
+            .padding(.top, 28)
+        // The state word pushes the last one up and out, in its own colour.
+        ZStack {
+            Text(phaseTitle)
+                .foregroundStyle(phaseColor)
+            .font(.footnote.weight(.semibold))
+            .textCase(.uppercase)
+            .tracking(1.2)
+            .id(phaseTitle)
+            .transition(.push(from: .bottom).combined(with: .opacity))
+        }
+        .clipped()
+        .animation(.snappy(duration: 0.35), value: phaseTitle)
+        .accessibilityLabel(phaseTitle)   // read in normal case, not letter by letter
+        .padding(.top, 18)
+    }
+
+    /// What is said, and what waits on you.
+    @ViewBuilder private var middle: some View {
+        captionArea
+            .padding(.top, 14)
+            .frame(maxHeight: .infinity, alignment: .top)
+        if let group {
+            if group.feed.state.waitsOnPerson {
+                Label("A bot needs you: answer in the chat.", systemImage: "hand.raised")
+                    .font(.footnote.weight(.medium)).foregroundStyle(.orange)
+            }
+        } else if let pending = conversation.pendingInterrupt {
+            InterruptCard(interrupt: pending.interrupt)
+        }
+    }
+
+    /// The buttons, and what sits over them.
+    @ViewBuilder private var lower: some View {
+        footer
+        controls
+            .padding(.top, 14)
+            .padding(.bottom, 12)
     }
 
     // MARK: - The orb

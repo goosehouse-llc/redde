@@ -2433,6 +2433,17 @@ the handover itself is tested on a real watch.
     camera and file picker close, as do the conversation list's own sheets (New Group Chat, a
     bot's editor) and its select mode. `LayoutChangeUITests` swaps the layout mid-test with
     `-echo.flipLayout` (DEBUG): reading place, typing, voice mode, a group draft, Settings, Find.
+- **The fold** (`Views/Fold.swift`, iOS 27.1's reserved regions, kind `.division`, active only
+  while a Duo is half open). Scrolling content runs across it, as Apple asks, and sheets, alerts
+  and menus move off it themselves. What stands still in the middle is moved: held like a book
+  (the fold down the middle, the open Duo's own way up), the voice screen goes onto the right-hand
+  page, and so does "Jump to latest"; propped like a laptop (turned, the fold across), the orb and
+  the state word stay above it, the orb smaller if it takes that (`VoiceView.orbScale`), and what
+  is said and the buttons go below it. The wide layout's list takes the left page and the chat
+  the right, the line between them on the fold (Redde's cap on the list's width kept the system's
+  even split from happening, and the chat and its message field sat across the fold). Checked on
+  the Duo simulator in Device Hub; `-echo.fakeFold vertical|horizontal` (DEBUG) draws a fold
+  anywhere, to look at the layouts on an iPad.
 - **App lock:** Face ID / Touch ID / passcode with a grace period; Siri, control and share requests
   wait until unlocked; background Shortcuts runs are protected by the Keychain instead.
 - **Cloudflare Access:** a service-token ID and secret sent as `CF-Access-Client-Id` /
