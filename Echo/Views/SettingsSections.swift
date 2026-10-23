@@ -103,6 +103,8 @@ struct AppearanceSettings: View {
             if UIDevice.current.userInterfaceIdiom == .phone {
                 CarPlayCardSettings()
                 CarPlayVoiceSettings()
+                // The Bots tab is there with Bots on the Dashboard (or the Hermes API through its login).
+                if BotDirectory.available(settings) { CarPlayBotSettings() }
             }
         } header: {
             Text("Appearance")

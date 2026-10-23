@@ -292,6 +292,15 @@ final class Settings: ServeEndpoint {
     var carPlayVoice: CarPlayVoiceLook {
         didSet { store(carPlayVoice.rawValue, forKey: Keys.carPlayVoice) }
     }
+    /// How CarPlay's Bots tab draws its bots' cards.
+    var carPlayBots: CarPlayBotLook {
+        didSet { store(carPlayBots.rawValue, forKey: Keys.carPlayBots) }
+    }
+    /// The CarPlay tab last picked ("ask", "chats", "bots"), which the car opens on next time.
+    /// This phone's alone: not synced.
+    var carPlayTab: String {
+        didSet { store(carPlayTab, forKey: Keys.carPlayTab) }
+    }
     /// Settings → Phone tools: which of the phone's own things the agent may use (`DeviceTool`).
     /// Everything off until turned on.
     var phoneTools: PhoneToolsSettings {
@@ -547,6 +556,8 @@ final class Settings: ServeEndpoint {
         static let orbLight = "orbLight"
         static let carPlayCards = "carPlayCards"
         static let carPlayVoice = "carPlayVoice"
+        static let carPlayBots = "carPlayBots"
+        static let carPlayTab = "carPlayTab"
         static let phoneTools = "phoneTools"
         static let notifyInBackground = "notifyInBackground"
         static let showLiveActivity = "showLiveActivity"
@@ -629,6 +640,8 @@ final class Settings: ServeEndpoint {
         orbLight = OrbLight(rawValue: defaults.string(forKey: Keys.orbLight) ?? "") ?? .nebula
         carPlayCards = CarPlayCardLook(rawValue: defaults.string(forKey: Keys.carPlayCards) ?? "") ?? .color
         carPlayVoice = CarPlayVoiceLook(rawValue: defaults.string(forKey: Keys.carPlayVoice) ?? "") ?? .bars
+        carPlayBots = CarPlayBotLook(rawValue: defaults.string(forKey: Keys.carPlayBots) ?? "") ?? .sticker
+        carPlayTab = defaults.string(forKey: Keys.carPlayTab) ?? "ask"
         phoneTools = defaults.data(forKey: Keys.phoneTools).flatMap { try? JSONDecoder().decode(PhoneToolsSettings.self, from: $0) } ?? .init()
         notifyInBackground = defaults.bool(forKey: Keys.notifyInBackground)
         showLiveActivity = defaults.object(forKey: Keys.showLiveActivity) as? Bool ?? true
@@ -709,7 +722,7 @@ final class Settings: ServeEndpoint {
     /// push relay.
     static let syncedKeys: [String] = [
         Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.botColors, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
-        Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.showBots,
+        Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
         Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopPhrases,
@@ -743,6 +756,7 @@ final class Settings: ServeEndpoint {
         case Keys.orbLight: orbLight = pick(OrbLight.nebula)
         case Keys.carPlayCards: carPlayCards = pick(CarPlayCardLook.color)
         case Keys.carPlayVoice: carPlayVoice = pick(CarPlayVoiceLook.bars)
+        case Keys.carPlayBots: carPlayBots = pick(CarPlayBotLook.sticker)
         case Keys.showBots: showBots = flag(true)
         case Keys.fastLaneURL: fastLaneURL = text(Self.defaultFastLaneURL)
         case Keys.fastLaneModel: fastLaneModel = text(Self.defaultFastLaneModel)
@@ -993,6 +1007,7 @@ final class Settings: ServeEndpoint {
         orbLight = .nebula
         carPlayCards = .color
         carPlayVoice = .bars
+        carPlayBots = .sticker
         phoneTools = .init()
         notifyInBackground = false
         showLiveActivity = true

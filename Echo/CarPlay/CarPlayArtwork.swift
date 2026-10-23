@@ -2,7 +2,8 @@ import CarPlay
 import UIKit
 
 /// Redde's CarPlay artwork. The Ask tab's cards come in six looks (`CarPlayCardLook`, picked in
-/// Settings), a colour each unless another is chosen, to be told apart at a glance.
+/// Settings), a colour each unless another is chosen, to be told apart at a glance. The Bots
+/// tab's cards, a bot's face in its mood, in five (`CarPlayBotLook`).
 /// The voice card's pictures are discs with lights on them, in four looks (`CarPlayVoiceLook`,
 /// picked in Settings too). Three are after the dashboard of KITT, the talking car in Knight
 /// Rider: three bars of light, low while you are heard and swelling while Redde speaks, and one
@@ -184,6 +185,166 @@ enum CarPlayArtwork {
         UIImage(systemName: "checkmark")?.withTintColor(gold, renderingMode: .alwaysOriginal)
     }
 
+    // MARK: - The Bots tab
+
+    /// What a bot is up to, as its card on the Bots tab shows it: its face in a pose, and a sign
+    /// beside it. CarPlay can't animate a list, so a card changes when the bot does.
+    enum BotMood: String, CaseIterable { case ready, working, needsYou, asleep }
+
+    /// How long a bot's chat can be quiet before its card nods off.
+    static let asleepAfter: TimeInterval = 24 * 3_600
+
+    /// A bot card's picture in points: square, the most a card takes, but for the wide look,
+    /// which is the Ask tab's 16 by 9.
+    static func botCardSize(_ look: CarPlayBotLook) -> CGSize {
+        look == .wide ? wideCard : squareCard
+    }
+
+    /// What a bot card's picture is drawn from: another face, mood, look or theme, another picture.
+    static func botCardKey(_ face: BotFace, named name: String?, mood: BotMood, look: CarPlayBotLook) -> String {
+        let settings = Settings.shared
+        // A picture from Hermes Desktop is drawn in place of the face once it has been fetched.
+        let picture = face.picture.map { settings.botPictures && BotPictures.shared.image(for: $0) != nil ? $0 : "-" } ?? ""
+        return "\(look.rawValue) \(mood.rawValue) \(face.code) \(picture) \(settings.botFaces ? "" : name ?? "") "
+            + "\(settings.theme.rawValue) \(String(describing: settings.themeColors[settings.theme.rawValue]))"
+    }
+
+    /// A bot's card on the Bots tab, in the look Settings names: the bot's colour, its face as big
+    /// as the card lets it be, in its mood. As on the Ask tab, the car writes the card's two lines
+    /// (its name, what it is doing) over the bottom left in white, so every look is dark there.
+    static func botCard(_ face: BotFace, named name: String?, mood: BotMood, look: CarPlayBotLook) -> UIImage {
+        let key = botCardKey(face, named: name, mood: mood, look: look)
+        if let made = botPictures[key] { return made }
+        let colours = BotAvatar.colors(of: face, theme: Settings.shared.resolvedTheme)
+        let deep = UIColor(colours.deep), light = UIColor(colours.light)
+        let pose = botPose(mood)
+        func drawFace(_ side: CGFloat, centre c: CGPoint) {
+            guard let image = BotAvatar.picture(of: face, named: name, side: side, pose: pose, scale: 3) else { return }
+            image.draw(in: CGRect(x: c.x - side / 2, y: c.y - side / 2, width: side, height: side))
+        }
+        let picture = render(botCardSize(look), opaque: true) { ctx, rect in
+            let w = rect.width, h = rect.height
+            switch look {
+            case .sticker:
+                // Bright, in the bot's own colours, with faint stripes; the face a sticker on it,
+                // a white edge and a shadow.
+                linear(ctx, [shade(light, 1.05), deep], from: .zero, to: CGPoint(x: w, y: h))
+                ctx.saveGState()
+                UIColor.white.withAlphaComponent(0.10).setFill()
+                let stripe = h * 0.07
+                var x = -h
+                while x < w + h {
+                    ctx.move(to: CGPoint(x: x, y: h)); ctx.addLine(to: CGPoint(x: x + h, y: 0))
+                    ctx.addLine(to: CGPoint(x: x + h + stripe, y: 0)); ctx.addLine(to: CGPoint(x: x + stripe, y: h)); ctx.closePath()
+                    x += stripe * 2.4
+                }
+                ctx.fillPath()
+                ctx.restoreGState()
+                let side = h * 0.62, c = CGPoint(x: w / 2, y: h * 0.38)
+                if let image = BotAvatar.picture(of: face, named: name, side: side, pose: pose, scale: 3) {
+                    let frame = CGRect(x: c.x - side / 2, y: c.y - side / 2, width: side, height: side)
+                    let edge = image.withTintColor(.white)
+                    ctx.saveGState()
+                    ctx.setShadow(offset: CGSize(width: 0, height: side * 0.04), blur: side * 0.08, color: UIColor.black.withAlphaComponent(0.35).cgColor)
+                    ctx.beginTransparencyLayer(auxiliaryInfo: nil)
+                    for k in 0 ..< 16 {
+                        let a = Double(k) / 16 * 2 * .pi
+                        edge.draw(in: frame.offsetBy(dx: side * 0.05 * cos(a), dy: side * 0.05 * sin(a)))
+                    }
+                    ctx.endTransparencyLayer()
+                    ctx.restoreGState()
+                    image.draw(in: frame)
+                }
+                underWords(ctx, rect, 0.62)
+                ctx.setShadow(offset: CGSize(width: 0, height: 1), blur: 3, color: UIColor.black.withAlphaComponent(0.4).cgColor)
+                moodSign(mood, at: CGPoint(x: w - h * 0.15, y: h * 0.15), height: h * 0.15)
+            case .stage:
+                // A spotlight in the bot's colour from above, and a pool of it on the floor.
+                linear(ctx, [rgb(0x121212), rgb(0x080808)], from: .zero, to: CGPoint(x: 0, y: h))
+                let floor = h * 0.70
+                ctx.saveGState()
+                ctx.move(to: CGPoint(x: w * 0.40, y: 0)); ctx.addLine(to: CGPoint(x: w * 0.60, y: 0))
+                ctx.addLine(to: CGPoint(x: w * 0.92, y: floor)); ctx.addLine(to: CGPoint(x: w * 0.08, y: floor)); ctx.closePath()
+                ctx.clip()
+                linear(ctx, [light.withAlphaComponent(0.42), light.withAlphaComponent(0.08)], from: .zero, to: CGPoint(x: 0, y: floor))
+                ctx.restoreGState()
+                radial(ctx, [light.withAlphaComponent(0.75), light.withAlphaComponent(0)], at: [0, 1],
+                       centre: CGPoint(x: w / 2, y: floor), radii: CGSize(width: w * 0.42, height: w * 0.067))
+                let side = h * 0.54
+                drawFace(side, centre: CGPoint(x: w / 2, y: floor - side * 0.46))
+                underWords(ctx, rect, 0.5)
+                moodSign(mood, at: CGPoint(x: w - h * 0.16, y: h * 0.16), height: h * 0.14)
+            case .peek:
+                // The face, too big for its card, peeks in from the top right.
+                linear(ctx, [shade(deep, 0.36), shade(deep, 0.14)], from: .zero, to: CGPoint(x: w, y: h))
+                for (x, y, r) in [(0.18, 0.22, 0.10), (0.30, 0.55, 0.06), (0.10, 0.62, 0.05)] as [(CGFloat, CGFloat, CGFloat)] {
+                    radial(ctx, [light.withAlphaComponent(0.22), light.withAlphaComponent(0)], at: [0, 1],
+                           centre: CGPoint(x: w * x, y: h * y), radii: CGSize(width: h * r * 1.6, height: h * r * 1.6))
+                }
+                drawFace(h * 1.0, centre: CGPoint(x: w * 0.76, y: h * 0.40))
+                underWords(ctx, rect, 0.78)
+                moodSign(mood, at: CGPoint(x: h * 0.18, y: h * 0.17), height: h * 0.15)
+            case .wide, .glow:
+                // Dark in the bot's colour, the face in a soft light of it: on a wide card to the
+                // right, as the Ask tab's marks are.
+                linear(ctx, [shade(deep, 0.42), shade(deep, 0.16)], from: .zero, to: CGPoint(x: w * 0.5, y: h))
+                let c = look == .wide ? CGPoint(x: w * 0.68, y: h * 0.44) : CGPoint(x: w / 2, y: h * 0.40)
+                let side = h * (look == .wide ? 0.72 : 0.64)
+                radial(ctx, [light.withAlphaComponent(0.55), light.withAlphaComponent(0)], at: [0, 1],
+                       centre: c, radii: CGSize(width: side * 0.9, height: side * 0.9))
+                drawFace(side, centre: c)
+                underWords(ctx, rect, 0.5)
+                moodSign(mood, at: CGPoint(x: min(c.x + side * 0.62, w - h * 0.16), y: h * 0.17), height: h * 0.15)
+            }
+        }
+        botPictures[key] = picture
+        return picture
+    }
+
+    /// The pose a mood puts a face in: working it looks up and away, thinking; needing you it
+    /// looks straight out, eyes wide and mouth open; asleep its eyes are nearly shut.
+    static func botPose(_ mood: BotMood) -> BotPose? {
+        switch mood {
+        case .ready: nil
+        case .working: BotPose(look: CGPoint(x: 0.75, y: -0.85), blink: 0.15, tilt: 6)
+        case .needsYou: BotPose(look: .zero, blink: 0, mouth: 0.85, tilt: 0)
+        case .asleep: BotPose(look: CGPoint(x: 0, y: 0.7), blink: 0.78, tilt: -7)
+        }
+    }
+
+    /// The sign beside a face: a thought bubble working, a gold one with a "!" needing you, z's asleep.
+    private static func moodSign(_ mood: BotMood, at point: CGPoint, height: CGFloat) {
+        let name: String
+        let colour: UIColor
+        switch mood {
+        case .ready: return
+        case .working: (name, colour) = ("ellipsis.bubble.fill", .white)
+        case .needsYou: (name, colour) = ("exclamationmark.bubble.fill", rgb(0xFFB81A))
+        case .asleep: (name, colour) = ("zzz", UIColor.white.withAlphaComponent(0.8))
+        }
+        symbol(name, height: height, weight: .bold, colour: colour, centre: point)
+    }
+
+    /// Darker toward the bottom, where the car writes a card's two lines in white.
+    private static func underWords(_ ctx: CGContext, _ rect: CGRect, _ strength: CGFloat) {
+        let clear = UIColor.black.withAlphaComponent(0)
+        linear(ctx, [clear, clear, UIColor.black.withAlphaComponent(strength * 0.72), UIColor.black.withAlphaComponent(strength)],
+               from: CGPoint(x: 0, y: rect.minY), to: CGPoint(x: 0, y: rect.maxY), locations: [0, 0.48, 0.72, 1])
+    }
+
+    /// A colour's hue a little richer, its brightness times `k`.
+    private static func shade(_ c: UIColor, _ k: CGFloat) -> UIColor {
+        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        c.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
+        return UIColor(hue: h, saturation: min(1, s * 1.1), brightness: min(1, b * k), alpha: 1)
+    }
+
+    /// A gradient along a line, carried on past both its ends.
+    private static func linear(_ ctx: CGContext, _ colours: [UIColor], from a: CGPoint, to b: CGPoint, locations: [CGFloat]? = nil) {
+        guard let g = CGGradient(colorsSpace: CGColorSpace(name: CGColorSpace.sRGB), colors: colours.map(\.cgColor) as CFArray, locations: locations) else { return }
+        ctx.drawLinearGradient(g, start: a, end: b, options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
+    }
+
     // MARK: - The voice card
 
     /// The largest image a voice-control state takes, in points (CarPlay's own limit).
@@ -270,12 +431,15 @@ enum CarPlayArtwork {
     private static var backdrops: [String: UIImage] = [:]
     /// And the Ask tab's cards, which are asked for again whenever the tab is brought up to date.
     private static var cardPictures: [String: UIImage] = [:]
+    /// And the Bots tab's, by face, mood and look.
+    private static var botPictures: [String: UIImage] = [:]
 
     /// Lets go of the drawn pictures: the car is gone.
     static func forget() {
         voicePictures = [:]
         backdrops = [:]
         cardPictures = [:]
+        botPictures = [:]
     }
 
     /// Lets go of the voice card's pictures in every look but one: another was picked.

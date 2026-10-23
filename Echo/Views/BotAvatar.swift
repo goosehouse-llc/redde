@@ -424,7 +424,11 @@ struct BotAvatar: View {
 
     /// The face's colour as a gradient, light to deep. Redde's own two: the colour of a message
     /// bubble in this theme (the prompt line's in a theme without bubbles), or the Code theme's.
-    private var colors: (light: Color, deep: Color) {
+    private var colors: (light: Color, deep: Color) { Self.colors(of: face, theme: theme) }
+
+    /// A face's colour as a gradient, light to deep, in a theme: for what draws beside a face in
+    /// its colour (CarPlay's bot cards).
+    static func colors(of face: BotFace, theme: ResolvedTheme) -> (light: Color, deep: Color) {
         let own: Color
         switch face.color {
         case BotFace.themed: own = theme.promptPrefix != nil ? theme.promptColor : theme.userBubble

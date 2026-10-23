@@ -14,8 +14,9 @@ import UIKit
 /// it.
 ///
 /// On the Dashboard connection, with Bots on, a third tab, Bots, lists the server's bots (Hermes's
-/// Bot Mode): picking one opens its own chat and listens, as picking a chat does. Each row is the
-/// bot's creature, its name and what it is doing, never what it said.
+/// Bot Mode): picking one opens its own chat and listens, as picking a chat does. Each is a card:
+/// the bot's creature in its mood, its name and what it is doing, never what it said. The car
+/// opens on the tab it was left on.
 ///
 /// What CarPlay makes of a template can be drawn without a car: see `scripts/carplay-preview.sh`.
 /// Two things learned that way shape this file. A grid button's picture is 40 points on every
@@ -65,6 +66,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             let tabs = rootTemplate()
             tabs.delegate = self
             interfaceController.setRootTemplate(tabs, animated: false, completion: nil)
+            pickRememberedTab()
             observe()
             reloadChats()
             reloadBots()
@@ -86,6 +88,9 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             askTab = nil
             chatsTab = nil
             botsTab = nil
+            botsWatch?.cancel()
+            botsWatch = nil
+            botsShown = []
             chats = []
             CarPlayArtwork.forget()
         }
@@ -156,12 +161,37 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     }
 
     /// The Chats or Bots tab was opened: the phone, or the server, may have moved on since.
+    /// It is remembered too, and the car opens on it the next time it connects.
     nonisolated func tabBarTemplate(_ tabBarTemplate: CPTabBarTemplate, didSelect selectedTemplate: CPTemplate) {
         let selected = ObjectIdentifier(selectedTemplate)
         Task { @MainActor in
             if let chatsTab, ObjectIdentifier(chatsTab) == selected { reloadChats() }
             if let botsTab, ObjectIdentifier(botsTab) == selected { reloadBots() }
+            if let tab = tabName(selected) { settings.carPlayTab = tab }
         }
+    }
+
+    /// A tab's name as it is remembered: "ask", "chats" or "bots".
+    private func tabName(_ template: ObjectIdentifier) -> String? {
+        [("ask", askTab), ("chats", chatsTab), ("bots", botsTab)].first { $0.1.map(ObjectIdentifier.init) == template }?.0
+    }
+
+    /// The tab last picked, picked again: the car opens where it was left.
+    private func pickRememberedTab() {
+        guard let tabs, let remembered = rememberedTab() else { return }
+        tabs.select(remembered)
+    }
+
+    /// The tab to open on: the one last picked, unless it is Ask (the first already) or gone
+    /// (Bots, off the Dashboard). Not private, for the tests: a tab bar picks a tab only on a car.
+    func rememberedTab() -> CPTemplate? {
+        let remembered: CPTemplate? = switch settings.carPlayTab {
+        case "chats": chatsTab
+        case "bots": botsTab
+        default: nil
+        }
+        guard let remembered, tabs?.templates.contains(where: { $0 === remembered }) == true else { return nil }
+        return remembered
     }
 
     /// The Ask tab: one row of three cards, under the name of the conversation they carry on.
@@ -371,66 +401,172 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     // MARK: - Bots
 
     /// Reads the server's bots into the Bots tab: the ones the phone has, at once, then the
-    /// server's own word.
+    /// server's own word. While the tab is up, what the bots are doing is asked after
+    /// (`watchBots`), and a card changes when its bot does (`armBotsObservation`).
     private func reloadBots() {
         guard let list = botsTab else { return }
         botsLoad += 1
         let load = botsLoad
-        if let rows = cachedBotRows() { list.updateSections([CPListSection(items: rows)]) }
+        if let roster = cachedRoster() { showBots(roster, in: list) }
         Task {
-            let rows = await botRows()
+            let roster = await freshRoster()
             guard load == botsLoad else { return }
-            list.emptyViewTitleVariants = rows.isEmpty ? ["No bots yet"] : []
-            list.emptyViewSubtitleVariants = rows.isEmpty ? ["Make one in Redde on your iPhone"] : []
-            list.showsSpinnerWhileEmpty = false
-            list.updateSections([CPListSection(items: rows)])
+            showBots(roster, in: list)
+        }
+        watchBots()
+    }
+
+    /// The bots the phone last read for this connection; nil when it has none.
+    private func cachedRoster() -> BotRoster? {
+        guard bots.key == settings.connectionKey, let roster = bots.roster, !roster.listed.isEmpty else { return nil }
+        return roster
+    }
+
+    /// The server's bots, read again; if that fails, the phone's as they are by then, not as they
+    /// were before the read (they may have moved on while it was out, and the cards with them).
+    private func freshRoster() async -> BotRoster? {
+        if let fresh = try? await bots.refresh(settings: settings) { return fresh }
+        return bots.key == settings.connectionKey ? bots.roster : nil
+    }
+
+    /// The server's bots as the tab shows them, read again first. Not private, for the tests.
+    func botRows() async -> [any CPListTemplateItem] {
+        await freshRoster().map { botRows($0).rows } ?? []
+    }
+
+    /// The Bots tab brought up to date with these bots, unless it shows them as they are already.
+    private func showBots(_ roster: BotRoster?, in list: CPListTemplate) {
+        let (rows, shown) = roster.map(botRows) ?? ([], [])
+        armBotsObservation()
+        guard shown != botsShown || rows.isEmpty != list.sections.isEmpty || botsShown.isEmpty else { return }
+        botsShown = shown
+        list.emptyViewTitleVariants = rows.isEmpty ? ["No bots yet"] : []
+        list.emptyViewSubtitleVariants = rows.isEmpty ? ["Make one in Redde on your iPhone"] : []
+        list.showsSpinnerWhileEmpty = false
+        list.updateSections(rows.isEmpty ? [] : [CPListSection(items: rows)])
+    }
+
+    /// The bots as one row of cards, in the look Settings → Appearance → CarPlay bot cards names,
+    /// each face in its bot's mood; and what the cards say, to tell whether anything changed.
+    /// Above them, whose chat is open, as the Ask tab says which conversation it carries on.
+    private func botRows(_ roster: BotRoster) -> (rows: [any CPListTemplateItem], shown: [String]) {
+        let listed = Array(roster.listed(in: settings.botOrderHere).prefix(Self.mostBots))
+        guard !listed.isEmpty else { return ([], []) }
+        let faces = roster.faces
+        let look = settings.carPlayBots
+        var shown: [String] = []
+        let cards = listed.map { bot in
+            let name = bot.label(mainName: settings.headerTitle)
+            let face = faces[bot.name] ?? BotFace(seed: bot.name)
+            let mood = botMood(bot)
+            let detail = botDetail(bot, mood)
+            let picture = CarPlayArtwork.botCard(face, named: name, mood: mood, look: look)
+            shown.append("\(bot.name)|\(name)|\(detail)|" + CarPlayArtwork.botCardKey(face, named: name, mood: mood, look: look))
+            if #available(iOS 26.4, *) {
+                let card = CPListImageRowItemCardElement(thumbnail: CPThumbnailImage(image: picture), title: name, subtitle: detail, tintColor: nil)
+                card.accessibilityLabel = "\(name), \(botDetail(bot, mood, spoken: true))"
+                return card
+            }
+            return CPListImageRowItemCardElement(image: picture, showsImageFullHeight: false, title: name, subtitle: detail, tintColor: nil)
+        }
+        let open = conversation?.bot.flatMap { open in listed.first { $0.name == open.profile } }?.label(mainName: settings.headerTitle)
+        shown.append("open|\(open ?? "")")
+        let row = CPListImageRowItem(text: open.map { "Now with \($0)" }, cardElements: cards, allowsMultipleLines: true)
+        row.listImageRowHandler = { [weak self] _, index, completion in
+            Task { @MainActor in
+                if listed.indices.contains(index) { await self?.talk(to: listed[index]) }
+                completion()
+            }
+        }
+        return ([row], shown)
+    }
+
+    /// At most this many bots on the tab: five fit across a car's screen of 568 points.
+    private static let mostBots = 12
+
+    /// What a bot is up to: what its chat is doing, or, quiet, how long it has been.
+    func botMood(_ bot: HermesBot) -> CarPlayArtwork.BotMood {
+        guard let conversation else { return .ready }
+        switch activity.kind(of: bot, open: conversation, settings: settings) {
+        case .working: return .working
+        case .needsYou: return .needsYou
+        case nil:
+            guard let when = bot.lastActive else { return .ready }
+            return Date.now.timeIntervalSince(when) > CarPlayArtwork.asleepAfter ? .asleep : .ready
         }
     }
 
-    /// The bots the phone last read for this connection, as rows; nil when it has none.
-    private func cachedBotRows() -> [CPListItem]? {
-        guard bots.key == settings.connectionKey, let roster = bots.roster, !roster.listed.isEmpty else { return nil }
-        return botRows(roster)
+    /// What a bot is doing, or when it was last talked to: never what was said (the category's
+    /// rule). Short, as a card's second line is; `spoken` is what VoiceOver says of it.
+    private func botDetail(_ bot: HermesBot, _ mood: CarPlayArtwork.BotMood, spoken: Bool = false) -> String {
+        switch mood {
+        case .working: return spoken ? "working" : "Working"
+        case .needsYou: return spoken ? "needs you on your iPhone" : "Needs you"
+        case .ready, .asleep:
+            guard let when = bot.lastActive else { return spoken ? "no chat yet" : "No chat yet" }
+            return spoken ? "last talked \(DateGroup.rowTime(when))" : DateGroup.rowTime(when)
+        }
     }
 
-    /// The server's bots as rows, read again first (the phone's as they were if that fails). Not
-    /// private, for the tests.
-    func botRows() async -> [CPListItem] {
-        var roster = bots.key == settings.connectionKey ? bots.roster : nil
-        if let fresh = try? await bots.refresh(settings: settings) { roster = fresh }
-        return roster.map(botRows) ?? []
+    /// What the cards were drawn from when the tab was last brought up to date.
+    private var botsShown: [String] = []
+    /// Asks the host what the bots are doing while the Bots tab is up.
+    private var botsWatch: Task<Void, Never>?
+    private var botsArmed = 0
+    /// How often the host is asked, as the phone's chat list asks it, and the bots read again (a
+    /// bot's worker, and when each chat was last active, show only there).
+    private static let botsLookEvery: Duration = .seconds(5)
+    private static let botsReadEvery: TimeInterval = 30
+
+    /// The Bots tab is the one picked on the car's screen.
+    private var botsTabPicked: Bool {
+        guard controller != nil, let botsTab, let tabs else { return false }
+        return tabs.selectedTemplate === botsTab
     }
 
-    private func botRows(_ roster: BotRoster) -> [CPListItem] {
-        let faces = roster.faces
-        let side = CPListItem.maximumImageSize.width
-        let scale = controller?.carTraitCollection.displayScale ?? 2
-        let most = Int(CPListTemplate.maximumItemCount)
-        return roster.listed(in: settings.botOrderHere).prefix(most > 0 ? most : 12).map { bot in
-            let isOpen = conversation?.bot?.profile == bot.name
-            let row = CPListItem(text: bot.label(mainName: settings.headerTitle), detailText: botDetail(bot),
-                                 image: BotAvatar.picture(of: faces[bot.name] ?? BotFace(seed: bot.name), named: bot.label(mainName: settings.headerTitle),
-                                                         side: side, scale: scale),
-                                 accessoryImage: isOpen ? CarPlayArtwork.openChatMark : nil, accessoryType: .none)
-            row.handler = { [weak self] _, completion in
-                Task { @MainActor in
-                    await self?.talk(to: bot)
-                    completion()
+    /// Nothing is over the tabs: no voice card, no alert.
+    private var tabsInView: Bool {
+        guard let controller else { return false }
+        return controller.presentedTemplate == nil && controller.templates.count <= 1
+    }
+
+    /// While the Bots tab is up: what the host is doing, every few seconds (a turn under way in a
+    /// bot's chat, one waiting on you), and the bots read again now and then. Whatever changes
+    /// shows through `armBotsObservation`. Under the voice card it waits; it stops when another
+    /// tab is picked or the car goes.
+    private func watchBots() {
+        guard botsWatch == nil, botsTabPicked else { return }
+        botsWatch = Task { [weak self] in
+            var readAt = Date.now
+            while !Task.isCancelled {
+                try? await Task.sleep(for: Self.botsLookEvery)
+                guard let self, self.botsTabPicked else { break }
+                guard self.tabsInView, let conversation = self.conversation else { continue }
+                await self.activity.look(conversation, settings: self.settings)
+                if Date.now.timeIntervalSince(readAt) >= Self.botsReadEvery {
+                    readAt = .now
+                    _ = try? await self.bots.refresh(settings: self.settings)
                 }
             }
-            return row
+            self?.botsWatch = nil
         }
     }
 
-    /// What a bot is doing, or when it was last talked to: never what was said (the category's rule).
-    private func botDetail(_ bot: HermesBot) -> String {
-        guard let conversation else { return "" }
-        switch activity.kind(of: bot, open: conversation, settings: settings) {
-        case .working: return "Working…"
-        case .needsYou: return "Needs you on your iPhone"
-        case nil:
-            guard let when = bot.lastActive else { return "No chat yet" }
-            return "Last talked \(DateGroup.rowTime(when))"
+    /// Anything the cards are drawn from changed: a turn started or ended in a bot's chat, or is
+    /// waiting on you; the bots were read again; another look, theme or name was picked. The tab
+    /// is brought up to date, which redraws only the cards that changed. CarPlay can't animate a
+    /// list, so this is how the faces move.
+    private func armBotsObservation() {
+        botsArmed += 1
+        let armed = botsArmed
+        withObservationTracking {
+            _ = settings.carPlayBots
+            if let roster = cachedRoster() { _ = botRows(roster) }
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                guard let self, armed == self.botsArmed, let list = self.botsTab else { return }
+                self.showBots(self.cachedRoster(), in: list)
+            }
         }
     }
 
@@ -489,6 +625,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     private func voiceCardWentAway() {
         barShown = nil
+        watchBots()
         if closingCard { closingCard = false; return }
         guard let pressedAt, Date.now.timeIntervalSince(pressedAt) < 2, let session, voiceCard == nil else { return }
         if case .showing = Self.card(phase: session.phase, waitingOnPhone: session.activeTool == "waiting for you",

@@ -374,15 +374,112 @@ struct CarPlayTests {
         let tabs = h.delegate.rootTemplate()
         #expect(tabs.templates.count == 3 && tabs.templates.count <= CPTabBarTemplate.maximumTabCount)
         #expect((tabs.templates.last as? CPListTemplate)?.title == "Bots")
-        let rows = await h.delegate.botRows()
-        #expect(rows.map(\.text) == [h.settings.headerTitle, "Scout", "Quill"], "the main agent first, then the most recently talked to")
-        #expect(rows.allSatisfy { $0.image != nil }, "each with its creature")
-        #expect(rows[1].detailText?.hasPrefix("Last talked") == true && rows[2].detailText == "No chat yet")
-        #expect(!rows.contains { ($0.detailText ?? "").contains("trails") }, "never what was said")
+        let row = try #require(await h.delegate.botRows().first as? CPListImageRowItem, "one row of cards")
+        let cards = row.elements.compactMap { $0 as? CPListImageRowItemCardElement }
+        #expect(cards.map(\.title) == [h.settings.headerTitle, "Scout", "Quill"], "the main agent first, then the most recently talked to")
+        if #available(iOS 26.4, *) { #expect(cards.allSatisfy { $0.thumbnail != nil }, "each with its creature") }
+        #expect(cards[1].subtitle == DateGroup.rowTime(.now.addingTimeInterval(-600)) && cards[2].subtitle == "No chat yet")
+        #expect(!cards.contains { ($0.subtitle ?? "").contains("trails") }, "never what was said")
+        #expect(row.text == nil, "no bot's chat is open")
 
-        try await press(rows[1])
+        try await press(card: 1, in: row)
         #expect(opened.bots == ["scout"])
         try await waitUntil("listening") { h.recognizer.starts == 1 }
+    }
+
+    /// Presses a card the way the car does, by its place in the row.
+    private func press(card index: Int, in row: CPListImageRowItem) async throws {
+        let handler = try #require(row.listImageRowHandler)
+        await withCheckedContinuation { done in handler(row, index) { done.resume() } }
+    }
+
+    /// The cards of the Bots tab as it shows them now.
+    private func shownBots(_ tabs: CPTabBarTemplate) -> [CPListImageRowItemCardElement] {
+        let bots = tabs.templates.last as? CPListTemplate
+        return ((bots?.sections.first?.items.first as? CPListImageRowItem)?.elements ?? []).compactMap { $0 as? CPListImageRowItemCardElement }
+    }
+
+    private func botsHarness(_ bots: [HermesBot]) -> (Harness, BotDirectory) {
+        let h = Harness()
+        h.settings.transport = .hermesServe
+        h.settings.showBots = true
+        let directory = BotDirectory()
+        directory.set(BotRoster(bots: bots), key: h.settings.connectionKey)
+        h.delegate.bots = directory
+        return (h, directory)
+    }
+
+    /// A bot's face shows what it is up to (asked 2026-10-22, "make the bot tab a bit more fun"):
+    /// at work, waiting on you, or asleep after a quiet day; its card's second line says it in a
+    /// word or two.
+    @Test func eachBotsCardShowsItsMood() async throws {
+        let (h, _) = botsHarness([
+            HermesBot(name: "scout", chatID: "s-scout", lastActive: .now.addingTimeInterval(-600)),
+            HermesBot(name: "fixit", chatID: "s-fixit", lastActive: .now.addingTimeInterval(-600), workerActive: .now),
+            HermesBot(name: "quill", chatID: "s-quill", lastActive: .now.addingTimeInterval(-3 * 86_400)),
+            HermesBot(name: "new"),
+        ])
+        let roster = try #require(h.delegate.bots.roster)
+        let moods = roster.bots.map { h.delegate.botMood($0) }
+        #expect(moods == [.ready, .working, .asleep, .ready], "no chat yet is not asleep")
+        let row = try #require(await h.delegate.botRows().first as? CPListImageRowItem)
+        let cards = row.elements.compactMap { $0 as? CPListImageRowItemCardElement }
+        let byName = Dictionary(uniqueKeysWithValues: cards.map { ($0.title, $0.subtitle ?? "") })
+        #expect(byName["fixit"] == "Working" && byName["new"] == "No chat yet")
+        if #available(iOS 26.4, *) {
+            #expect(cards.first { $0.title == "fixit" }?.accessibilityLabel == "fixit, working")
+        }
+        // Each mood its own picture, in every look.
+        let face = BotFace(seed: "scout")
+        for look in CarPlayBotLook.allCases {
+            let pictures = CarPlayArtwork.BotMood.allCases.compactMap { CarPlayArtwork.botCard(face, named: "scout", mood: $0, look: look).pngData() }
+            #expect(Set(pictures).count == CarPlayArtwork.BotMood.allCases.count, "\(look): two moods look alike")
+        }
+    }
+
+    /// The cards keep up while the tab is up: a bot that starts work shows it without the tab
+    /// being opened again.
+    @Test func theBotsCardsChangeWhenTheBotsDo() async throws {
+        let (h, directory) = botsHarness([HermesBot(name: "scout", chatID: "s-scout", lastActive: .now.addingTimeInterval(-600))])
+        let tabs = h.delegate.rootTemplate()
+        let bots = try #require(tabs.templates.last)
+        h.delegate.tabBarTemplate(tabs, didSelect: bots)
+        try await waitUntil("the card") { shownBots(tabs).count == 1 }
+        #expect(shownBots(tabs).first?.subtitle == DateGroup.rowTime(.now.addingTimeInterval(-600)))
+        directory.set(BotRoster(bots: [HermesBot(name: "scout", chatID: "s-scout", lastActive: .now, workerActive: .now)]), key: h.settings.connectionKey)
+        try await waitUntil("working") { shownBots(tabs).first?.subtitle == "Working" }
+        // And another look, picked on the phone (a card's picture can be read back from iOS 26.4).
+        let before = shownBotPicture(tabs)
+        h.settings.carPlayBots = .stage
+        if before != nil { try await waitUntil("the stage") { shownBotPicture(tabs) != before } }
+        #expect(Settings(defaults: h.defaults).carPlayBots == .stage, "the pick outlives the app")
+    }
+
+    private func shownBotPicture(_ tabs: CPTabBarTemplate) -> Data? {
+        guard #available(iOS 26.4, *) else { return nil }
+        return shownBots(tabs).first?.thumbnail?.image.pngData()
+    }
+
+    /// The tab picked last is the one the car opens on next time (asked 2026-10-22: "make the tab
+    /// selected sticky"), and Ask when that tab has gone.
+    @Test func theCarOpensOnTheTabLeftLastTime() async throws {
+        let (h, _) = botsHarness([HermesBot(name: "scout")])
+        #expect(h.settings.carPlayTab == "ask")
+        let tabs = h.delegate.rootTemplate()
+        h.delegate.tabBarTemplate(tabs, didSelect: tabs.templates[2])
+        try await waitUntil("remembered") { h.settings.carPlayTab == "bots" }
+        #expect(Settings(defaults: h.defaults).carPlayTab == "bots", "kept for the next time")
+
+        let again = h.delegate.rootTemplate()
+        #expect(h.delegate.rememberedTab() === again.templates[2])
+        h.delegate.tabBarTemplate(again, didSelect: again.templates[1])
+        try await waitUntil("chats") { h.settings.carPlayTab == "chats" }
+        #expect(h.delegate.rememberedTab() === again.templates[1])
+        // Off the Dashboard there is no Bots tab: the car opens on Ask.
+        h.settings.carPlayTab = "bots"
+        h.settings.transport = .chatCompletions
+        let off = h.delegate.rootTemplate()
+        #expect(off.templates.count == 2 && h.delegate.rememberedTab() == nil)
     }
 
     // MARK: The voice card

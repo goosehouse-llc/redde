@@ -2071,12 +2071,28 @@ a list of the phone's conversations to pick one from (`CarPlay/CarPlayChats.swif
 list in its order, as names and times; a session nobody named is "Untitled chat", never the
 preview of its last message), the open one marked with a check at the trailing edge. The list is
 read when the car connects, when the tab is opened and when the open conversation changes. On the
-Dashboard connection, with Bots on, a third tab, **Bots**, lists the server's bots (the chat list's
+Dashboard connection, with Bots on, a third tab, **Bots**, shows the server's bots (the chat list's
 Bots, in the order the person put them there, else the main agent first, then the most recently
-talked to): each row the bot's creature
-(`BotAvatar.picture`), its name, and what it is doing ("Working…", "Needs you on your iPhone") or
-when it was last talked to, never what it said. Picking one opens its own chat and listens, as
-picking a chat does. New Chat, a picked chat and a picked bot listen in the mode Settings → Voice
+talked to) as one row of cards, five across on a 568-point screen, more on another line (asked
+2026-10-22, "make the bot tab a bit more fun"). Each card is the bot's creature as big as a card
+lets it be, in its colour (`CarPlayArtwork.botCard`), with its name and, in a word or two, what
+it is doing ("Working", "Needs you") or when it was last talked to, never what it said. The face
+is in the bot's mood (`CarPlayArtwork.BotMood`, `botPose`): working it looks up and away with a
+thought bubble, needing you it stares, mouth open, with a gold "!", and after a day with no chat
+(`asleepAfter`) its eyes are nearly shut beside z's. The cards come in five looks, picked in
+Settings → Appearance → CarPlay bot cards (`CarPlayBotLook`, `Settings.carPlayBots`, synced; the
+row shows with Bots): Sticker (a new install's: bright in the bot's colours, the face a sticker
+with a white edge), Stage (a spotlight), Peek (a face too big for its card), Wide (the Ask
+tab's 16 by 9, three across) and Glow; `CarPlayArtworkTests` holds each dark enough where the
+car writes. With a bot's chat open, the row says whose ("Now with …"). A list can't animate, so
+the cards keep up instead: while the tab is up the host is asked what the bots are doing every
+five seconds, as the phone's chat list asks it (`ChatActivity.look`), and the bots are read
+again every thirty (`watchBots`; under the voice card it waits); whatever a card is drawn from
+is observed, and when it changes the tab is drawn again (`armBotsObservation`, only if a card
+would change). Picking one opens its own chat and listens, as picking a chat does. The tab last
+picked is remembered (`Settings.carPlayTab`, this phone's alone) and the car opens on it the next
+time it connects, or on Ask if that tab has gone (asked 2026-10-22, "make the tab selected
+sticky"; `CPTabBarTemplate.select`, which picks a tab only on a car). New Chat, a picked chat and a picked bot listen in the mode Settings → Voice
 gives the phone's voice button. Each of
 them ends on a voice-control card (Listening, Thinking, Speaking, Paused, Needs your phone) with
 **Stop** and **Pause** in its bar while Redde listens, thinks or speaks. Neither closes the card

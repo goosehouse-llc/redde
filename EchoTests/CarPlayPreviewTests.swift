@@ -76,11 +76,10 @@ struct CarPlayPreviewTests {
         directory.set(BotRoster(bots: [
             HermesBot(name: "default", isDefault: true, lastActive: .now.addingTimeInterval(-3_600)),
             HermesBot(name: "scout", title: "Scout", chatID: "s-scout", lastActive: .now.addingTimeInterval(-600)),
-            HermesBot(name: "writer", displayName: "Quill", chatID: "s-writer", lastActive: .now.addingTimeInterval(-7_200)),
-            HermesBot(name: "fixit", title: "Fix-it"),
+            HermesBot(name: "writer", displayName: "Quill", chatID: "s-writer", lastActive: .now.addingTimeInterval(-3 * 86_400)),
+            HermesBot(name: "fixit", title: "Fix-it", chatID: "s-fixit", lastActive: .now.addingTimeInterval(-120), workerActive: .now),
         ]), key: h.settings.connectionKey)
         h.delegate.bots = directory
-        let botRows = await h.delegate.botRows()
         // A moving picture is caught wherever its loop happens to be, often at rest: with
         // REDDE_CARPLAY_STILL the card gets the pictures that stand still (the store screenshot).
         let moving = ProcessInfo.processInfo.environment["REDDE_CARPLAY_STILL"] == nil
@@ -95,8 +94,14 @@ struct CarPlayPreviewTests {
         var screens: [(String, () -> UIViewController?)] = [
             ("ask", ask(.color)),
             ("chats", { self.list(CPListTemplate(title: "Chats", sections: [CPListSection(items: chatRows)])) }),
-            ("bots", { self.list(CPListTemplate(title: "Bots", sections: [CPListSection(items: botRows)])) }),
         ]
+        // The Bots tab in each look of Settings → Appearance → CarPlay bot cards, Sticker first.
+        for look in CarPlayBotLook.allCases {
+            h.settings.carPlayBots = look
+            let rows = await h.delegate.botRows()
+            screens.append(("bots\(look == .sticker ? "" : "-\(look.rawValue)")", { self.list(CPListTemplate(title: "Bots", sections: [CPListSection(items: rows)])) }))
+        }
+        h.settings.carPlayBots = .sticker
         screens += CarPlayCardLook.allCases.filter { $0 != .color }.map { ("ask-\($0.rawValue)", ask($0)) }
         // The Short Answers row with its switch on.
         screens.append(("ask-short", {

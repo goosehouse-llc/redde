@@ -56,6 +56,26 @@ struct CarPlayArtworkTests {
         }
     }
 
+    /// The Bots tab's cards likewise, in every look and mood, for a pale bot, a bright one and
+    /// Redde's own (`CarPlayBotLook`).
+    @Test(arguments: CarPlayBotLook.allCases) func theBotCardsAreDeepWhereTheCarWritesOnThem(_ look: CarPlayBotLook) throws {
+        var white = BotFace(seed: "a")
+        white.color = BotFace.white
+        var lime = BotFace(seed: "b")
+        lime.color = 10
+        for face in [white, lime, BotFace.main] {
+            for mood in Art.BotMood.allCases {
+                let image = Art.botCard(face, named: "Scout", mood: mood, look: look)
+                #expect(image.size == Art.botCardSize(look) && image.scale == 3)
+                for (x, y) in [(0.06, 0.92), (0.25, 0.80), (0.45, 0.90), (0.50, 0.76)] {
+                    let ground = try relativeLuminance(of: image, at: CGPoint(x: x, y: y))
+                    let contrast = 1.05 / (ground + 0.05)
+                    #expect(contrast >= 3.5, "\(look) \(mood) colour \(face.color): white words at \(x), \(y) have a contrast of \(contrast)")
+                }
+            }
+        }
+    }
+
     /// The relative luminance of a picture (the measure contrast ratios are made of) at a point
     /// given as fractions of its width and height.
     private func relativeLuminance(of image: UIImage, at point: CGPoint) throws -> Double {
