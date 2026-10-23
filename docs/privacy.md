@@ -22,6 +22,8 @@ Redde sends messages, attachments, and voice transcripts only to the server addr
 
 Connections use HTTPS when the address you enter provides it. Because self-hosted servers on private networks often lack public certificates, Redde also allows plain HTTP connections to addresses you choose.
 
+Link previews (Settings → Appearance) are off unless you turn them on. With them on, when a message in a conversation contains a web link, your device opens that page itself to show its title and picture under the message, the way Messages does. The website sees a visit from your device's network address, like any visit from Safari. Nothing else from the conversation is sent to it, and nothing goes to Goosehouse LLC. The preview is kept on your device so the page is opened only once.
+
 ## Notifications when Redde is closed (optional, off by default)
 
 iOS closes an app in the background after a few minutes, and from then on Redde cannot tell you that a reply is ready or that your assistant is waiting for you. If you want to be told anyway, you can pair your own Hermes server with your iPhone in Settings → Voice → Notify when Redde is closed. Nothing in this section happens unless you do.

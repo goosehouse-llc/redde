@@ -157,6 +157,9 @@ struct MessageRow: View, Equatable {
                     .contextMenu { userMenu }
                     .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
             }
+            // The page of the first web link, with Link previews on (`LinkPreviewSlot`), once a
+            // reply has finished.
+            if !isLive, !message.isSteer, message.error == nil, hasTextBubble { LinkPreviewSlot(text: message.text) }
             // A map, places, the weather the reply shows (`ReplyCards`), as soon as they're asked for.
             if message.role == .assistant, let cards = message.cards, !cards.isEmpty { ReplyCardsView(cards: cards) }
             // Pages the agent made for the chat, live, under what it said about them.

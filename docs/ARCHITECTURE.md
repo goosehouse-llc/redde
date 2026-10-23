@@ -324,6 +324,18 @@ reloads the conversation list.
   it also refuses a call that reaches it through `tool_call` (0.21.5 lets a model). Plugin 1.6.0.
   `lab.sh cards` passes on 0.21.0 to 0.22.2; `ReplyCardsTests`, `ReplyCardsUITests`
   (`-echo.demoCards`), `companion/hermes-plugin/tests/test_cards.py`.
+- **Link previews** (Settings → Appearance, **off by default**; asked on Reddit 2026-10-23, "image
+  / link preview in chats", his pick of three: a switch, the phone fetching, rather than a tap per
+  link or Hermes fetching for it). Under a finished message, yours or a reply, with a web link: a
+  card for the first one (`LinkPreviewLinks.first`: http or https, not in code, not a picture),
+  with the page's picture or icon, title and site (`LinkPreviewCard`). The phone reads the page
+  with LinkPresentation (`LinkPreviews.fromSite`), so the site sees the visit: that is why it is
+  off, Redde otherwise talking only to its own servers (the privacy policy says so; a web
+  picture in a reply still loads only on a tap, `MarkdownImage`). Each page once: kept in
+  memory and in Caches by address, its picture a 240-pixel JPEG; one that can't be read is left
+  for 15 minutes. The card is the same height loaded or not, so filling in doesn't move the
+  conversation under a reader. Synced like the other appearance settings; cleared by Erase
+  everything. `LinkPreviewTests`, `LinkPreviewUITests` (`-echo.demoLinkPreview` makes pages up).
 - **All Servers** (2026-10-22, after a Reddit request: several gateways in one list, each row
   tagged with its server; `AllServers`, `RemoteServer`). The server menu at the top of the chat
   list (shown once there are two servers) has All Servers above the servers; with it on, the list

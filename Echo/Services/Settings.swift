@@ -343,6 +343,12 @@ final class Settings: ServeEndpoint {
     var botColors: Bool {
         didSet { store(botColors, forKey: Keys.botColors) }
     }
+    /// A card with the page's title and picture under a message with a web link
+    /// (`LinkPreviews`). Off until turned on: the phone opens the page itself, so the site sees
+    /// the visit, where Redde otherwise only ever talks to the servers it is set up with.
+    var linkPreviews: Bool {
+        didSet { store(linkPreviews, forKey: Keys.linkPreviews) }
+    }
     /// Settings → Appearance → Bot faces: off, every bot (Redde too) is drawn as a circle in its
     /// colour with its initial instead of a creature, and voice mode shows the voice orb (the
     /// Bubble one in place of Redde's face). The faces stay on the server. Asked 2026-10-21, for
@@ -575,6 +581,7 @@ final class Settings: ServeEndpoint {
         static let returnSends = "returnSends"
         static let chatTextSize = "chatTextSize"
         static let botColors = "botColors"
+        static let linkPreviews = "linkPreviews"
         static let botFaces = "botFaces"
         static let botPictures = "botPictures"
         static let replyCards = "replyCards"
@@ -662,6 +669,7 @@ final class Settings: ServeEndpoint {
         returnSends = defaults.bool(forKey: Keys.returnSends)
         chatTextSize = min(max(defaults.integer(forKey: Keys.chatTextSize), Self.chatTextSizes.lowerBound), Self.chatTextSizes.upperBound)
         botColors = defaults.object(forKey: Keys.botColors) as? Bool ?? true
+        linkPreviews = defaults.bool(forKey: Keys.linkPreviews)
         botFaces = defaults.object(forKey: Keys.botFaces) as? Bool ?? true
         botPictures = defaults.object(forKey: Keys.botPictures) as? Bool ?? true
         replyCards = defaults.object(forKey: Keys.replyCards) as? Bool ?? true
@@ -729,7 +737,7 @@ final class Settings: ServeEndpoint {
     /// Siri, Phone tools, what needs a permission of the device (notifications, motion), and the
     /// push relay.
     static let syncedKeys: [String] = [
-        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.botColors, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
+        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.botColors, Keys.linkPreviews, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
         Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
@@ -756,6 +764,7 @@ final class Settings: ServeEndpoint {
         case Keys.appearance: appearance = pick(Appearance.system)
         case Keys.chatTextSize: chatTextSize = min(max(value as? Int ?? 0, Self.chatTextSizes.lowerBound), Self.chatTextSizes.upperBound)
         case Keys.botColors: botColors = flag(true)
+        case Keys.linkPreviews: linkPreviews = flag()
         case Keys.botFaces: botFaces = flag(true)
         case Keys.botPictures: botPictures = flag(true)
         case Keys.replyCards: replyCards = flag(true)
@@ -1027,6 +1036,7 @@ final class Settings: ServeEndpoint {
         returnSends = false
         chatTextSize = 0
         botColors = true
+        linkPreviews = false
         botFaces = true
         botPictures = true
         replyCards = true

@@ -97,6 +97,13 @@ struct AppearanceSettings: View {
                 ForEach(Array(Settings.chatTextSizes), id: \.self) { Text(ChatTextSize.label($0)).tag($0) }
             }
             .pickerStyle(.menu)
+            Toggle(isOn: $settings.linkPreviews) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Link previews")
+                    Text("A card with the page's title and picture under a message with a link. To make it, Redde opens the page itself, so the site sees the visit. Off, Redde only talks to your own servers.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
             AppIconSettings()
             VoiceOrbSettings()
             // An iPad has no CarPlay.
@@ -752,6 +759,7 @@ struct ResetSettings: View {
         conversation.eraseAll()
         AttachmentFiles.deleteAll()
         WebBlockHeights.clear()
+        LinkPreviews.shared.clear()
         // Every server's secrets and every profile key; only the push registration secret stays.
         for account in Keychain.allAccounts() where account != Keychain.Item.pushRegisterSecret.rawValue {
             Keychain.delete(account: account)
