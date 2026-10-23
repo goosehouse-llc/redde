@@ -69,21 +69,24 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
     static let themed = 13
     static let codeBlue = 14
     /// Colours added for picking after Redde's own two, from `laterColors` on, so no colour kept on
-    /// a server changes: a soft pink, then a yellow, lemon rather than amber (both asked 2026-10-22).
+    /// a server changes: a soft pink, then a yellow, lemon rather than amber (both asked 2026-10-22),
+    /// then a gold, Redde's own, deeper and browner than amber (asked 2026-10-23).
     static let laterPalette: [(light: Color, deep: Color)] = [
         (Color(red: 1.00, green: 0.87, blue: 0.93), Color(red: 0.96, green: 0.64, blue: 0.80)),   // soft pink
         (Color(red: 1.00, green: 0.96, blue: 0.58), Color(red: 0.98, green: 0.83, blue: 0.10)),   // yellow
+        (Color(red: 0.99, green: 0.86, blue: 0.50), Color(red: 0.80, green: 0.59, blue: 0.16)),   // gold
     ]
     static let laterColors = 15
     static let softPink = 15
     static let yellow = 16
+    static let gold = 17
     /// Every colour a face can be: the palette's, Redde's two, then the later ones.
-    static let colorCount = 17
+    static let colorCount = 18
     /// The colours any bot can be picked to have, in the order they are offered: round the colour
     /// wheel from red to pink, Soft Pink by Pink, then white and black (asked 2026-10-22, "list
     /// the colors in an order that makes sense").
-    static let pickable: [Int] = [9, 7, 1, yellow, 10, 6, 4, 8, 0, 3, 5, 2, softPink, white, white + 1]
-    // (coral, orange, amber, yellow, lime, green, teal, sky, blue, indigo, violet, pink, soft pink, white, black)
+    static let pickable: [Int] = [9, 7, 1, gold, yellow, 10, 6, 4, 8, 0, 3, 5, 2, softPink, white, white + 1]
+    // (coral, orange, amber, gold, yellow, lime, green, teal, sky, blue, indigo, violet, pink, soft pink, white, black)
 
     /// A colour's gradient, light to deep (any but Redde's two, which follow the theme).
     static func pair(_ color: Int) -> (light: Color, deep: Color) {
@@ -507,7 +510,11 @@ struct BotAvatar: View {
                 if i == 0 { star.move(to: p) } else { star.addLine(to: p) }
             }
             star.closeSubpath()
-            context.fill(star, with: .color(pale ? ink.opacity(0.4) : .white.opacity(0.92)))
+            // White with a thin dark edge, so it shows on any body and any ground: where it stands
+            // past the body's edge it was drawn dark on a pale body (and vanished on a dark ground)
+            // and white on the others (and vanished on a light one).
+            context.fill(star, with: .color(.white.opacity(0.95)))
+            context.stroke(star, with: .color(ink.opacity(pale ? 0.45 : 0.3)), style: StrokeStyle(lineWidth: 1.1, lineJoin: .round))
         }
 
         // A little gloss on its top left.
@@ -621,6 +628,18 @@ struct BotGallery: View {
 
     var body: some View {
         ScrollView {
+            // The later colours with a spark, on black and on white: a spark past a pale body's
+            // edge was drawn dark, and vanished on a dark ground.
+            ForEach([Color.black, Color.white], id: \.self) { ground in
+                HStack(spacing: 10) {
+                    ForEach(Array([BotFace.Shape.round, .square, .star, .blob].enumerated()), id: \.offset) { i, shape in
+                        BotAvatar(face: BotFace(shape: shape, eyes: .round, mouth: .smile, mark: .spark, glance: i, tilt: 0,
+                                                color: [BotFace.yellow, BotFace.gold, BotFace.softPink, BotFace.gold][i]), size: 56)
+                    }
+                }
+                .padding(8)
+                .background(ground, in: .rect(cornerRadius: 10))
+            }
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 18) {
                 ForEach(Self.names, id: \.self) { name in
                     VStack(spacing: 6) {

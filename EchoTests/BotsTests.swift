@@ -234,12 +234,12 @@ struct BotsTests {
     /// Asked 2026-10-22: a yellow, and the colours in an order that makes sense: round the colour
     /// wheel, then white and black. Every colour is offered once, and no kept colour's number moves.
     @Test func aYellowAndTheColoursRoundTheWheel() throws {
-        #expect(BotFace.yellow == 16 && BotFace.colorCount == 17 && BotFace.softPink == 15)
+        #expect(BotFace.yellow == 16 && BotFace.gold == 17 && BotFace.colorCount == 18 && BotFace.softPink == 15)
         #expect(BotFacePicker.colorNames.count == BotFace.colorCount && BotFacePicker.colorNames[BotFace.yellow] == "Yellow")
         let names = BotFace.pickable.map { BotFacePicker.colorNames[$0] }
-        #expect(names == ["Coral", "Orange", "Amber", "Yellow", "Lime", "Green", "Teal", "Sky", "Blue", "Indigo", "Violet", "Pink", "Soft Pink", "White", "Black"])
+        #expect(names == ["Coral", "Orange", "Amber", "Gold", "Yellow", "Lime", "Green", "Teal", "Sky", "Blue", "Indigo", "Violet", "Pink", "Soft Pink", "White", "Black"])
         #expect(Set(BotFace.pickable).count == BotFace.pickable.count)
-        #expect(Set(BotFace.pickable) == Set(Array(BotFace.palette.indices) + [BotFace.softPink, BotFace.yellow]))
+        #expect(Set(BotFace.pickable) == Set(Array(BotFace.palette.indices) + [BotFace.softPink, BotFace.yellow, BotFace.gold]))
         let face = BotFace(shape: .round, eyes: .happy, mouth: .smile, mark: .none, glance: 0, tilt: 0, color: BotFace.yellow)
         #expect(BotFace(code: face.code) == face, "it reads back as written")
         #expect(face.chatColors?.accent != nil, "its chat in its own colour")

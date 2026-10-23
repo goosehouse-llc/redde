@@ -393,7 +393,7 @@ when that colour is pale. Its face can be picked like a bot's, and two colours a
 the palette: Theme (`BotFace.themed`, the one it has unpicked) and Code Blue (`codeBlue`, #CBF0FF
 whatever the theme); the other bots keep off blue all the same. Colours added for picking go
 after those two, so no colour kept on a server changes its number (`laterPalette`: Soft Pink,
-then Yellow, both 2026-10-22), and the picker offers them round the colour wheel, Coral to Pink,
+then Yellow, both 2026-10-22, then Gold, deeper and browner than Amber, 2026-10-23), and the picker offers them round the colour wheel, Coral to Pink,
 then White and Black (`BotFace.pickable`; Theme first and Code Blue by Sky for the main agent).
 A bot's face can be picked
 instead (Change Face…

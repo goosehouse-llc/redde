@@ -30,7 +30,7 @@ struct BotFacePicker: View {
     }
 
     static let colorNames = ["Blue", "Amber", "Pink", "Indigo", "Teal", "Violet", "Green", "Orange", "Sky", "Coral", "Lime", "White", "Black",
-                             "Theme", "Code Blue", "Soft Pink", "Yellow"]
+                             "Theme", "Code Blue", "Soft Pink", "Yellow", "Gold"]
     /// The colours offered: for the main agent, Redde's own two besides, the theme's first and the
     /// Code blue by Sky (`BotFace.themed`, `codeBlue`).
     private var offered: [Int] {
