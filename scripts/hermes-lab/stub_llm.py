@@ -264,7 +264,9 @@ class Handler(BaseHTTPRequestHandler):
                                 # Bot Mode (lab.sh bots): the teammate protocol in the system prompt,
                                 # its tool, and the @mention note on the message.
                                 "bots": "Messaging other agents" in system, "message_agent": "message_agent" in tools,
-                                "mention": "[@mentions resolved from the Bot Mode roster" in last_user}) + "\n")
+                                "mention": "[@mentions resolved from the Bot Mode roster" in last_user,
+                                # Cards (lab.sh cards): the plugin's word on a turn asking the time or the weather.
+                                "redde_note": "[Redde: asked about" in last_user}) + "\n")
         text, call = f"[{NAME}:{model}]", None
         last = messages[-1] if messages else {}
         planned = EXTRA.flow(messages, body, tool_call) if EXTRA else None

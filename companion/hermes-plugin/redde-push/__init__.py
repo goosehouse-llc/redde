@@ -198,14 +198,21 @@ def _on_reply(session_id: str = "", assistant_response: str = "", platform: str 
         log.debug("redde-push: reply hook failed", exc_info=True)
 
 
-def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", **_) -> None:
-    """`pre_llm_call`: a turn starts."""
+def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_message=None, **_) -> dict | None:
+    """`pre_llm_call`: a turn starts. Asked the time or the weather, the agent is told the
+    person's time and to show the card (`cards.turn_note`)."""
     try:
         _remember_platform(session_id, platform)
         if platform not in NOBODYS:
             _watchers()[0].began(session_id, turn_id)
     except Exception:
         log.debug("redde-push: turn hook failed", exc_info=True)
+    try:
+        note = cards.turn_note(_home(), user_message, platform)
+        return {"context": note} if note else None
+    except Exception:
+        log.debug("redde-push: card note failed", exc_info=True)
+        return None
 
 
 def _on_request(session_id: str = "", **_) -> None:

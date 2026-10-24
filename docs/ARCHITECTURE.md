@@ -349,6 +349,12 @@ reloads the conversation list.
     date there and how far it is from here; with no place it is the phone's own time. Day labels
     read a forecast's date on the phone's calendar (as an instant, midnight UTC, it was the day
     before anywhere west of Greenwich: "Thu" for today in Orlando).
+  - **Asked, from 1.7.1** (2026-10-23: asked "What time is it", Sol showed no card and guessed,
+    9:55 PM at 9:06 PM, then 12:05 AM Thursday at 9:09 PM Friday: Hermes's prompt gives the date
+    only, and its advice for the time is the terminal, which Sol hasn't got). The plugin's
+    `pre_llm_call` returns a line for that turn's message when it asks the time or the weather in
+    English (`cards.turn_note`, Redde's connections only, cards on): the person's time in the zone
+    the phone said, and to call `redde_show` first. Hermes appends it to that user message only.
   `lab.sh cards` passes on 0.21.0 to 0.22.2; `ReplyCardsTests`, `ReplyCardsUITests`
   (`-echo.demoCards`), `companion/hermes-plugin/tests/test_cards.py` (Open-Meteo faked).
 - **Link previews** (Settings → Appearance, **off by default**; asked on Reddit 2026-10-23, "image

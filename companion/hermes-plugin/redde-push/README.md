@@ -174,4 +174,7 @@ agree. This is the only thing the plugin asks of a service outside your Hermes a
 the place's name goes to geocoding-api.open-meteo.com and its coordinates to api.open-meteo.com.
 Open-Meteo is free without a key for non-commercial use, and its data is under CC BY 4.0 (the card
 credits it). Redde tells the plugin the phone's time zone and temperature units
-(`/redde-push cards on tz=… units=…`) for "what time is it" with no place.
+(`/redde-push cards on tz=… units=…`) for "what time is it" with no place. When a message asks the time or
+the weather (in English), the plugin adds a line to that turn only: the person's time in that
+zone, and to show the card before answering. An agent asked "what time is it" otherwise answers
+from Hermes's clock, which is the server's.

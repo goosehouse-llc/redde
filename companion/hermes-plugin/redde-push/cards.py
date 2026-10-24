@@ -17,6 +17,7 @@ description is in every prompt. The format must match what the app reads
 from __future__ import annotations
 
 import json
+import re
 import time
 from datetime import datetime
 from pathlib import Path
@@ -267,6 +268,49 @@ def handle(args, home=None, **_) -> str:
         answer["not_shown"] = problems
     answer["cards"] = args["cards"][:MAX_CARDS]    # what the app draws, filled in
     return json.dumps(answer, ensure_ascii=False)
+
+
+# ---- a word at the turn
+
+# Asked the time or the weather, in English: the description alone wasn't enough. Asked "What time
+# is it" at 9:06 and 9:09 PM, Sol (no terminal, so no `date`; Hermes gives only the date) said
+# 9:55 PM, then 12:05 AM Thursday, on a Friday, and showed no card (2026-10-23).
+_ASKS_TIME = re.compile(r"\bwhat(?:'s|’s| is)? the time\b|\bwhat time\b|\btime (?:is it|now|there|in|zone)\b"
+                        r"|\b(?:current|local) time\b|\bclock\b|\bo'?clock\b", re.IGNORECASE)
+_ASKS_WEATHER = re.compile(r"\bweather\b|\bforecast\b|\btemp(?:erature)?s?\b|\bdegrees\b|\bumbrella\b"
+                           r"|\b(?:rain(?:ing|y)?|snow(?:ing)?|sunny|humid(?:ity)?|windy)\b", re.IGNORECASE)
+REDDES = ("desktop", "tui", "api_server", "")    # Redde's connections: the Dashboard, the Hermes API
+
+
+def _text(message) -> str:
+    if isinstance(message, str):
+        return message
+    if isinstance(message, list):    # multimodal: the text parts
+        return " ".join(str(p.get("text") or "") for p in message if isinstance(p, dict))
+    return ""
+
+
+def turn_note(home: Path, message, platform: str = "", at: datetime | None = None) -> str | None:
+    """For `pre_llm_call`: when the person asks the time or the weather, and cards are on, what
+    their time is (in the zone their phone said) and to show the card before answering. Added to
+    that turn's message only, so it costs nothing on any other."""
+    if platform not in REDDES or not offered(home):
+        return None
+    text = _text(message)
+    time_asked, weather_asked = bool(_ASKS_TIME.search(text)), bool(_ASKS_WEATHER.search(text))
+    if not time_asked and not weather_asked:
+        return None
+    asked = " and ".join(w for w, yes in (("the time", time_asked), ("the weather", weather_asked)) if yes)
+    note = (f"[Redde: asked about {asked}. Call {TOOL} first (a "
+            + " and a ".join(k for k, yes in (("'time'", time_asked), ("'weather'", weather_asked)) if yes)
+            + " card; 'place' as the person said it, or none for where they are) and answer from its 'said'.")
+    tz = forecast.zone(preferences(home).get("tz"))
+    if tz is not None:
+        note += f" Where the person is, it is now {forecast.time_said(None, tz, at).split(': ', 1)[1]} ({tz.key});"
+        note += " go by this, not by any other clock or a guess.]"
+    else:
+        note += " Don't guess the time: what the card returns has it.]"
+    return note
 
 
 # ---- on or off, the phone's to say

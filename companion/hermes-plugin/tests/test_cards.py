@@ -150,6 +150,34 @@ class CardTests(unittest.TestCase):
         self.assertEqual(json.loads(cards.handle({"cards": [{"type": "time", "timezone": "Asia/Tokyo"}]}))["cards"][0]["timezone"], "Asia/Tokyo")
         self.assertEqual(self.open_meteo.calls, [], "a zone given needs no search")
 
+    def test_asked_the_time_the_turn_says_whose_time_and_to_show_it(self):
+        from datetime import datetime, timezone
+        at = datetime(2026, 10, 24, 0, 5, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as home:
+            home = Path(home)
+            note = cards.turn_note(home, "What time is it", "desktop", at)
+            self.assertIn("Call redde_show first (a 'time' card", note)
+            self.assertIn("Don't guess the time", note, "the phone hasn't said its zone yet")
+            cards.slash(home, ["on", "tz=America/New_York"])
+            note = cards.turn_note(home, "What time is it", "desktop", at)
+            self.assertIn("it is now 20:05 (8:05 PM), Friday 23 October 2026, EDT (UTC-04:00) (America/New_York)", note,
+                          "Sol guessed: 12:05 AM Thursday, at 9:09 PM on Friday")
+            self.assertIn("'weather' card", cards.turn_note(home, "Will it rain tomorrow?", "api_server", at))
+            self.assertIn("a 'time' and a 'weather' card", cards.turn_note(home, [{"type": "text", "text": "time in Tokyo and the weather there"}], "tui", at))
+            for other in ("Turn off the lights in the office.", "Tell me a 30 word short story.", "Set the alarm to away."):
+                self.assertIsNone(cards.turn_note(home, other, "desktop", at), other)
+            self.assertIsNone(cards.turn_note(home, "What time is it", "telegram", at), "cards are drawn only in Redde")
+            cards.slash(home, ["off"])
+            self.assertIsNone(cards.turn_note(home, "What time is it", "desktop", at), "cards off: nothing to show")
+            plugin_home = plugin._home
+            plugin._home = lambda: home
+            try:
+                cards.slash(home, ["on"])
+                self.assertIn("'time' card", plugin._on_turn(session_id="s", platform="desktop", turn_id="t", user_message="what's the time")["context"])
+                self.assertIsNone(plugin._on_turn(session_id="s", platform="desktop", turn_id="t", user_message="hello"))
+            finally:
+                plugin._home = plugin_home
+
     def test_the_time_is_said_plainly(self):
         from datetime import datetime, timezone
         at = datetime(2026, 10, 23, 21, 36, tzinfo=timezone.utc)
