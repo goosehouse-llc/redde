@@ -1,7 +1,7 @@
 import XCTest
 
 /// A reply's cards (`redde_show`): a walk on a map with its directions, a list of places, the
-/// weather now, by the hour and by the day. `-echo.demoCards` supplies the reply.
+/// weather now, by the hour and by the day, and the time in Tokyo. `-echo.demoCards` supplies the replies.
 @MainActor
 final class ReplyCardsUITests: XCTestCase {
     func testAReplyShowsAMapPlacesAndTheWeather() {
@@ -40,5 +40,15 @@ final class ReplyCardsUITests: XCTestCase {
         weather.name = "cards-weather"
         weather.lifetime = .keepAlways
         add(weather)
+
+        // The time in Tokyo, running, and how far it is from here.
+        for _ in 0 ..< 4 where !app.text(containing: "Tokyo's time").isHittable { window.swipeUp() }
+        XCTAssertTrue(app.text(containing: "Tokyo").exists, "The time card's place isn't there")
+        XCTAssertTrue(app.text(containing: "hr ahead").exists || app.text(containing: "hr behind").exists
+                      || app.text(containing: "Same time").exists, "The time card doesn't say how far it is from here")
+        let time = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        time.name = "cards-time"
+        time.lifetime = .keepAlways
+        add(time)
     }
 }

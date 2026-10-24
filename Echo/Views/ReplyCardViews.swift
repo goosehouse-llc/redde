@@ -1,10 +1,12 @@
 import MapKit
 import SwiftUI
 
-/// A reply's cards under its words (`ReplyCards`): a map, a list of places, the weather. Drawn
-/// here with MapKit and the system's weather symbols; a map or a place opens in Apple Maps.
+/// A reply's cards under its words (`ReplyCards`): a map, a list of places, the weather, the time.
+/// Drawn here with MapKit and the system's weather symbols; a map or a place opens in Apple Maps.
 struct ReplyCardsView: View {
     let cards: [ReplyCard]
+    /// The reply is still coming in: a weather or a time card still being looked up says so.
+    var pending = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -12,7 +14,8 @@ struct ReplyCardsView: View {
                 switch card {
                 case let .map(map): MapCard(card: map)
                 case let .places(places): PlacesCard(card: places)
-                case let .weather(weather): WeatherCard(card: weather)
+                case let .weather(weather): WeatherCard(card: weather, pending: pending)
+                case let .time(clock): TimeCard(card: clock, pending: pending)
                 }
             }
         }
@@ -264,12 +267,23 @@ private struct PlacesCard: View {
 
 private struct WeatherCard: View {
     let card: ReplyCard.Weather
+    var pending = false
+    @State private var lookup = CardLookup.shared
 
     var body: some View {
+        if card.hasReading {
+            reading
+        } else if pending || lookup.isLooking(card.place) {
+            // Only its place so far: the forecast is on its way, from the plugin or looked up here.
+            CardBox { LookingUp(text: "Looking up the weather in \(card.place)…") }
+        }
+    }
+
+    private var reading: some View {
         CardBox {
             if let now = card.now {
                 HStack(alignment: .center, spacing: 12) {
-                    Image(systemName: Self.symbol(now.condition)).symbolRenderingMode(.multicolor).font(.system(size: 40))
+                    Image(systemName: Self.symbol(now.condition, night: now.night == true)).symbolRenderingMode(.multicolor).font(.system(size: 40))
                     VStack(alignment: .leading, spacing: 0) {
                         Text(card.place).font(.subheadline.weight(.semibold))
                         Text(now.summary ?? Self.name(now.condition)).font(.caption).foregroundStyle(.secondary)
@@ -298,7 +312,7 @@ private struct WeatherCard: View {
                         ForEach(Array(card.hours.enumerated()), id: \.offset) { _, hour in
                             VStack(spacing: 4) {
                                 Text(Self.hourLabel(hour.time)).font(.caption2).foregroundStyle(.secondary)
-                                Image(systemName: Self.symbol(hour.condition)).symbolRenderingMode(.multicolor).font(.callout).frame(height: 22)
+                                Image(systemName: Self.symbol(hour.condition, night: hour.night == true)).symbolRenderingMode(.multicolor).font(.callout).frame(height: 22)
                                 Text(degrees(hour.temperature)).font(.caption.weight(.medium)).monospacedDigit()
                                 if let rain = hour.precipitation, rain > 0 { Text("\(rain)%").font(.caption2).foregroundStyle(.blue) }
                             }
@@ -323,16 +337,22 @@ private struct WeatherCard: View {
                     .accessibilityElement(children: .combine)
                 }
             }
-            if let source = card.source { Text(source).font(.caption2).foregroundStyle(.tertiary) }
+            if card.source == ReplyCards.lookedUpSource {
+                // Open-Meteo's data is under CC BY 4.0: credited, with a link.
+                Link("Weather data by Open-Meteo.com", destination: URL(string: "https://open-meteo.com/")!)
+                    .font(.caption2).foregroundStyle(.tertiary)
+            } else if let source = card.source {
+                Text(source).font(.caption2).foregroundStyle(.tertiary)
+            }
         }
     }
 
     private func degrees(_ value: Double) -> String { "\(Int(value.rounded()))°" }
 
-    static func symbol(_ condition: ReplyCard.Condition) -> String {
+    static func symbol(_ condition: ReplyCard.Condition, night: Bool = false) -> String {
         switch condition {
-        case .clear: "sun.max.fill"
-        case .partlyCloudy: "cloud.sun.fill"
+        case .clear: night ? "moon.stars.fill" : "sun.max.fill"
+        case .partlyCloudy: night ? "cloud.moon.fill" : "cloud.sun.fill"
         case .cloudy: "cloud.fill"
         case .fog: "cloud.fog.fill"
         case .drizzle: "cloud.drizzle.fill"
@@ -377,10 +397,124 @@ private struct WeatherCard: View {
         return date.formatted(.dateTime.hour())
     }
 
-    /// "2026-10-23" as a weekday ("Thu"), today as "Today"; else as it came.
+    /// "2026-10-23" as a weekday ("Fri"), today as "Today"; else as it came. Read as that day on the
+    /// phone's calendar: as an instant (midnight UTC) it was the day before anywhere west of Greenwich.
     static func dayLabel(_ text: String) -> String {
-        guard let date = try? Date(String(text.prefix(10)), strategy: .iso8601.year().month().day()) else { return text }
+        let parts = text.prefix(10).split(separator: "-").compactMap { Int($0) }
+        guard parts.count == 3, let date = Calendar.current.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2])) else { return text }
         return Calendar.current.isDateInToday(date) ? "Today" : date.formatted(.dateTime.weekday(.abbreviated))
+    }
+}
+
+/// A card still being looked up.
+private struct LookingUp: View {
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 10) {
+            ProgressView()
+            Text(text).font(.subheadline).foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+// MARK: - Time
+
+/// The time somewhere, kept running: a place's (its zone given or looked up), or with no place the
+/// phone's own. Drawn here from the phone's clock, never from what the agent believed the time was.
+private struct TimeCard: View {
+    let card: ReplyCard.Clock
+    var pending = false
+    @State private var lookup = CardLookup.shared
+
+    private var zone: TimeZone? {
+        if let id = card.timeZone { return TimeZone(identifier: id) }
+        return card.place == nil ? .current : nil
+    }
+
+    var body: some View {
+        if let zone {
+            CardBox {
+                TimelineView(.everyMinute) { context in
+                    face(at: context.date, in: zone)
+                }
+            }
+        } else if let place = card.place, pending || lookup.isLooking(place) {
+            CardBox { LookingUp(text: "Looking up the time in \(place)…") }
+        }
+    }
+
+    private func face(at date: Date, in zone: TimeZone) -> some View {
+        var clock = Date.FormatStyle.dateTime.hour().minute()
+        clock.timeZone = zone
+        var day = Date.FormatStyle.dateTime.weekday(.wide).day().month(.wide)
+        day.timeZone = zone
+        // Somewhere else: how far it is from here; here: the zone's name ("EDT").
+        let away = card.place != nil && zone.identifier != TimeZone.current.identifier
+        let second = away ? ReplyCard.Clock.difference(zone.secondsFromGMT(for: date) - TimeZone.current.secondsFromGMT(for: date))
+            : zone.abbreviation(for: date)
+        return HStack(alignment: .center, spacing: 12) {
+            ClockFace(date: date, zone: zone).frame(width: 44, height: 44)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(card.place ?? "Your time").font(.subheadline.weight(.semibold))
+                Text(date.formatted(day)).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+            VStack(alignment: .trailing, spacing: 0) {
+                Text(date.formatted(clock)).font(.system(size: 34, weight: .semibold)).monospacedDigit()
+                if let second { Text(second).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+extension ReplyCard.Clock {
+    /// "Same time", "4 hr behind", "5½ hr ahead": than here.
+    static func difference(_ seconds: Int) -> String {
+        guard seconds != 0 else { return "Same time" }
+        let hours = Double(abs(seconds)) / 3600
+        let whole = Int(hours)
+        let part = hours - Double(whole)
+        let fraction = [0.25: "¼", 0.5: "½", 0.75: "¾"][part]
+        let amount = part == 0 ? "\(whole)" : fraction.map { (whole == 0 ? "" : "\(whole)") + $0 } ?? String(format: "%.2g", hours)
+        return seconds > 0 ? "\(amount) hr ahead" : "\(amount) hr behind"
+    }
+}
+
+/// A small clock with hands, dark through the night there.
+private struct ClockFace: View {
+    let date: Date
+    let zone: TimeZone
+
+    var body: some View {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = zone
+        let parts = calendar.dateComponents([.hour, .minute], from: date)
+        let hour = Double(parts.hour ?? 0), minute = Double(parts.minute ?? 0)
+        let night = hour < 6 || hour >= 19
+        return Canvas { context, size in
+            let centre = CGPoint(x: size.width / 2, y: size.height / 2)
+            let radius = min(size.width, size.height) / 2
+            func hand(_ turn: Double, _ length: CGFloat, _ width: CGFloat) {
+                let angle = turn * 2 * .pi - .pi / 2
+                var path = Path()
+                path.move(to: centre)
+                path.addLine(to: CGPoint(x: centre.x + cos(angle) * radius * length, y: centre.y + sin(angle) * radius * length))
+                context.stroke(path, with: .color(night ? .white : .primary), style: StrokeStyle(lineWidth: width, lineCap: .round))
+            }
+            for tick in 0 ..< 12 {
+                let angle = Double(tick) / 12 * 2 * .pi
+                let point = CGPoint(x: centre.x + cos(angle) * radius * 0.8, y: centre.y + sin(angle) * radius * 0.8)
+                context.fill(Path(ellipseIn: CGRect(x: point.x - 1, y: point.y - 1, width: 2, height: 2)),
+                             with: .color(night ? .white.opacity(0.6) : .secondary))
+            }
+            hand((hour.truncatingRemainder(dividingBy: 12) + minute / 60) / 12, 0.5, 2.5)
+            hand(minute / 60, 0.72, 1.6)
+        }
+        .background(Circle().fill(night ? Color.indigo.opacity(0.85) : Color.secondary.opacity(0.12)))
+        .accessibilityHidden(true)
     }
 }
 

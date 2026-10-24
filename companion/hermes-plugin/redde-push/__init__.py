@@ -14,7 +14,8 @@ over the Hermes API), `rooms <device,...> <room,...>` which group chats it follo
 `mutes <device,...> <key=until,...>` which chats it has muted, and `offer` then `accept <offer>
 <key> <box>` pair it without a code.
 
-And cards (`cards.py`): `redde_show`, a map, places or the weather the app draws under a reply.
+And cards (`cards.py`): `redde_show`, a map, places, the weather or the time the app draws under a reply;
+the weather and the time are looked up (`forecast.py`, Open-Meteo).
 
 The plugin also offers the agent phone tools, carried out by the app on the iPhone (the calendar,
 reminders, contacts, photos, a folder of files): see `device.py`. They need no pairing, and the
@@ -518,7 +519,7 @@ def register(ctx) -> None:
                          args_hint="watch <session> <device> | rooms <device> <room,...>")
     # Phone tools (device.py): offered to the agent only for what the phone has turned on.
     phone_tools.register(ctx, lambda: phone_tools.Phone(_home()), to_widget=_to_widget)
-    # Cards (cards.py): a map, places, the weather, drawn by the app under a reply.
+    # Cards (cards.py): a map, places, the weather, the time, drawn by the app under a reply.
     cards.register(ctx, _home)
     ctx.register_cli_command("redde-push", "Notifications on your iPhone from Redde", _cli_setup, _cli)
     _follow_group_chats_if_any()

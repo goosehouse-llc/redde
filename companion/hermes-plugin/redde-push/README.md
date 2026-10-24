@@ -162,7 +162,16 @@ GitHub that has it in either.
 
 ## Cards
 
-`redde_show` (`cards.py`): the agent shows a map, a list of places or the weather under its reply,
-and the Redde app draws them (MapKit). Nothing is sent to the phone; the app reads the call from
-the conversation. Offered unless Redde turns it off (`/redde-push cards off`, from Settings →
-Agent → Cards in replies).
+`redde_show` (`cards.py`): the agent shows a map, a list of places, the weather or the time under
+its reply, and the Redde app draws them (MapKit). Nothing is sent to the phone; the app reads the
+call, and the tool's answer, from the conversation. Offered unless Redde turns it off
+(`/redde-push cards off`, from Settings → Agent → Cards in replies).
+
+A weather or a time card names only its place. The tool looks it up (`forecast.py`): the place
+through Open-Meteo's place search, then its forecast (now, 12 hours, 7 days) or its time zone, and
+answers with the numbers and the filled card, so what the agent says and what the card shows
+agree. This is the only thing the plugin asks of a service outside your Hermes and your phone:
+the place's name goes to geocoding-api.open-meteo.com and its coordinates to api.open-meteo.com.
+Open-Meteo is free without a key for non-commercial use, and its data is under CC BY 4.0 (the card
+credits it). Redde tells the plugin the phone's time zone and temperature units
+(`/redde-push cards on tz=… units=…`) for "what time is it" with no place.

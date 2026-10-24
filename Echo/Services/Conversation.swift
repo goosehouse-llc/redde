@@ -113,6 +113,8 @@ final class Conversation {
 
     /// Test seam: where the status widgets' data is kept (the App Group).
     var widgetDefaults: UserDefaults? = NeedsYou.shared
+    /// Test seam: where weather and time cards are looked up when the plugin's answer didn't fill them.
+    var cardLookup = CardLookup.shared
 
     /// Whatever the gateway is waiting on you for (hermes serve).
     private(set) var pendingInterrupt: (interrupt: Interrupt, runtimeSession: String)? {
@@ -548,13 +550,15 @@ final class Conversation {
                     message.tools[i].endedAt = .now
                     if let output { message.tools[i].output = output }
                     finished = message.tools[i]
-                    // A card call the plugin turned down shows nothing after all.
-                    if failed, message.tools[i].name == ReplyCards.tool {
+                    // A card call: the plugin's answer has the weather and the time filled in, and a
+                    // call it turned down shows nothing after all.
+                    if message.tools[i].name == ReplyCards.tool {
                         let kept = message.tools.compactMap(ReplyCards.cards(from:)).flatMap { $0 }
                         message.cards = kept.isEmpty ? nil : kept
                     }
                 }
             }
+            if finished?.name == ReplyCards.tool { Task { await fillCards(replyID) } }
             // The agent's to-do tool: what a finished call wrote, applied to the list so far, is
             // the list now. (The Dashboard says the list itself right after: `.todos`.)
             if let finished, let list = TodoList.after(step: finished, previous: TodoList.latest(in: messages)) {
@@ -1694,6 +1698,17 @@ final class Conversation {
         ReplyCards.resolve(&read)
         guard let cards = read.last(where: { $0.role == .assistant })?.cards, !cards.isEmpty else { return }
         update(id) { if ($0.cards ?? []).isEmpty { $0.cards = cards } }
+        Task { await fillCards(id) }   // not holding up the end of the turn
+    }
+
+    /// A reply's weather and time cards that the plugin's answer didn't fill in (a plugin older
+    /// than 1.7.0, or its answer not read), looked up on the phone (`CardLookup`). Only a reply
+    /// coming in: one read back later keeps what it was saved with.
+    private func fillCards(_ id: UUID) async {
+        guard let cards = messages.last(where: { $0.id == id })?.cards, cards.contains(where: CardLookup.needsLookup) else { return }
+        let filled = await cardLookup.fill(cards)
+        guard filled != cards else { return }
+        update(id) { if $0.cards == cards { $0.cards = filled } }   // unless another call changed them meanwhile
     }
 
     /// A reply that delivers a file carries a bare server path (`MEDIA:` tag, markdown image,

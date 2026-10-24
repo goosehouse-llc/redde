@@ -326,8 +326,31 @@ reloads the conversation list.
   2026-10-23), and the app doesn't draw one. 1.6.2 does the same with a bare 0 (exactly 0, nothing else read
   with it: the agent sent 0 and "clear" without looking the weather up, as if the card would), says each
   reading back to the agent, and its description says the tool looks nothing up.
+  - **Looked up, from 1.7.0** (2026-10-23: he found the weather 10° cold: the agent had said 66°F
+    from a web search's snippet at 5 pm, when Orlando was at 75°F, and Sol never looked at all).
+    A weather or a time card names only its place, and the plugin looks it up (`forecast.py`):
+    Open-Meteo's place search ("Orlando FL" is retried as "Orlando" matched to Florida: the search
+    takes bare names), then its forecast (now with feels-like, high/low, humidity, wind, rain
+    chance and night; 12 hours; 7 days) or its time zone. Its answer gives the agent `said` lines
+    to answer from (rounded half up, as the app rounds) and the filled `cards`, which the app reads
+    in place of the call's arguments (`ReplyCards.cards(from:)`: on the Dashboard live when the
+    result comes as its JSON, on the API through `settleCards`, read back on both). Where the
+    answer has no filled cards (an older plugin, or the Dashboard's own rendering of the result),
+    the phone looks up a reply's cards once the call finishes (`Conversation.fillCards`,
+    `CardLookup`: `MKGeocodingRequest` for coordinates and time zone, then Open-Meteo with
+    coordinates only, kept ten minutes). Never for a reply read back later: its weather was that
+    day's, and a card with only its place isn't drawn (`Weather.hasReading`). The agent's own
+    numbers are replaced whenever the lookup works and stand when it doesn't. Units: the agent's,
+    else the phone's (`UnitTemperature(forLocale:usage: .weather)`, said to the plugin as
+    `cards on tz=… units=…` each time the app comes forward), else °F for the US and a few others.
+    Open-Meteo is free without a key for non-commercial use (a tip jar is allowed), data under
+    CC BY 4.0: the card credits it with a link. The time card (`ReplyCard.Clock`) is drawn from
+    the phone's clock in the place's zone, running (`TimelineView`), with a small clock face, the
+    date there and how far it is from here; with no place it is the phone's own time. Day labels
+    read a forecast's date on the phone's calendar (as an instant, midnight UTC, it was the day
+    before anywhere west of Greenwich: "Thu" for today in Orlando).
   `lab.sh cards` passes on 0.21.0 to 0.22.2; `ReplyCardsTests`, `ReplyCardsUITests`
-  (`-echo.demoCards`), `companion/hermes-plugin/tests/test_cards.py`.
+  (`-echo.demoCards`), `companion/hermes-plugin/tests/test_cards.py` (Open-Meteo faked).
 - **Link previews** (Settings → Appearance, **off by default**; asked on Reddit 2026-10-23, "image
   / link preview in chats", his pick of three: a switch, the phone fetching, rather than a tap per
   link or Hermes fetching for it). Under a finished message, yours or a reply, with a web link: a

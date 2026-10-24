@@ -60,7 +60,7 @@ import WidgetKit
 /// - `-echo.demoDocument`: a reply that came with a Markdown file (a tile that opens in QuickLook),
 ///   then one that names its files by path (links that open them).
 /// - `-echo.demoPage`: a reply with a page the agent made, live in the chat, with buttons that talk back.
-/// - `-echo.demoCards`: a reply with a map (a walk), three places and the weather (`ReplyCards`).
+/// - `-echo.demoCards`: a reply with a map (a walk), three places and the weather, then the time in Tokyo (`ReplyCards`).
 /// - `-echo.demoPhotos [n]`: messages with two photos, one, and n (five by default), to look at
 ///   how pictures are set out together and at the full-screen viewer.
 /// - `-echo.demoWidgets`: fill the "Needs you" and Context widgets with sample data (two requests

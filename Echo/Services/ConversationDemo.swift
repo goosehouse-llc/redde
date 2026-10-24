@@ -678,7 +678,13 @@ extension Conversation {
         let args = try? JSONValue.parse(Data(json.utf8))
         reply.tools = [ToolActivity(name: ReplyCards.tool, preview: "map, places, weather", status: .completed, args: ToolActivity.args(ReplyCards.tool, args))]
         reply.cards = ReplyCards.parse(args)
-        replaceForDemo(messages: [Message(role: .user, text: "Where should we get coffee near the office, and is it going to rain?"), reply])
+        // The time somewhere: drawn running, from the phone's clock.
+        var clock = Message(role: .assistant, text: "Tokyo's time is on the card, and it keeps running.")
+        let clockArgs = try? JSONValue.parse(Data(#"{"cards": [{"type": "time", "place": "Tokyo", "timezone": "Asia/Tokyo"}]}"#.utf8))
+        clock.tools = [ToolActivity(name: ReplyCards.tool, preview: "time", status: .completed, args: ToolActivity.args(ReplyCards.tool, clockArgs))]
+        clock.cards = ReplyCards.parse(clockArgs)
+        replaceForDemo(messages: [Message(role: .user, text: "Where should we get coffee near the office, and is it going to rain?"), reply,
+                                  Message(role: .user, text: "What time is it in Tokyo?"), clock])
     }
 
     /// `-echo.demoPage`: a reply with a page the agent made (`::preview`), drawn by its own script,

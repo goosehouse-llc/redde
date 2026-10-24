@@ -1,15 +1,28 @@
 import Foundation
 
 /// Cards a reply shows beside its words (his ask 2026-10-22, after Conduit's rich cards): a map, a
-/// list of places, the weather. The agent asks for them with the Redde plugin's `redde_show` tool,
-/// whose arguments are `{"cards": [...]}`; the app reads them from the call itself, live and when
-/// a conversation is read back, on either connection. Our own format: `ReplyCards.parse` is
-/// lenient (a number as text, a missing optional field, an unknown key) and drops a card or a
-/// place it can't use rather than the whole call.
+/// list of places, the weather, the time. The agent asks for them with the Redde plugin's
+/// `redde_show` tool, whose arguments are `{"cards": [...]}`; the app reads them from the call
+/// itself, live and when a conversation is read back, on either connection. Our own format:
+/// `ReplyCards.parse` is lenient (a number as text, a missing optional field, an unknown key) and
+/// drops a card or a place it can't use rather than the whole call.
+///
+/// A weather or a time card names only its place (2026-10-23: agents guessed the weather, or read a
+/// search result hours old, and told the time in another zone). The plugin, from 1.7.0, looks it up
+/// and answers with the cards filled in, read from its answer where there is one; else the phone
+/// looks it up itself (`CardLookup`), for a reply that is coming in only.
 nonisolated enum ReplyCard: Codable, Equatable, Sendable {
     case map(Map)
     case places(Places)
     case weather(Weather)
+    case time(Clock)
+
+    /// The time somewhere, drawn live on the phone: a place's, or with none the phone's own.
+    nonisolated struct Clock: Codable, Equatable, Sendable {
+        var place: String?
+        /// An IANA zone ("Europe/Lisbon"): given, or looked up from the place.
+        var timeZone: String?
+    }
 
     /// Places on a map, and a way between two of them.
     nonisolated struct Map: Codable, Equatable, Sendable {
@@ -61,6 +74,9 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
         var days: [Day]
         var source: String?
 
+        /// Whether there is anything to draw: a card with only its place is waiting for its forecast.
+        var hasReading: Bool { now != nil || !hours.isEmpty || !days.isEmpty }
+
         nonisolated struct Now: Codable, Equatable, Sendable {
             var temperature: Double
             var condition: Condition
@@ -71,6 +87,8 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
             var humidity: Int?
             var precipitation: Int?
             var summary: String?
+            /// After dark there: a clear sky is drawn with the moon.
+            var night: Bool?
         }
 
         nonisolated struct Hour: Codable, Equatable, Sendable {
@@ -78,6 +96,7 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
             var temperature: Double
             var condition: Condition
             var precipitation: Int?
+            var night: Bool?
         }
 
         nonisolated struct Day: Codable, Equatable, Sendable {
@@ -125,11 +144,24 @@ nonisolated enum ReplyCards {
         return parse(args)
     }
 
-    /// The same from a step whose arguments were kept as JSON text (`ToolActivity.args`).
+    /// The same from a step whose arguments were kept as JSON text (`ToolActivity.args`). The
+    /// plugin's answer, where it can be read, has the cards filled in (from 1.7.0: the weather and
+    /// the time looked up), and wins over what the agent wrote.
     static func cards(from step: ToolActivity) -> [ReplyCard]? {
-        guard step.name == tool, step.status != .failed, let text = step.args,
-              let args = try? JSONValue.parse(Data(text.utf8)) else { return nil }
+        guard step.name == tool, step.status != .failed else { return nil }
+        if let output = step.output, let answer = try? JSONValue.parse(Data(output.utf8)), answer["cards"]?.array != nil {
+            return parse(answer)
+        }
+        guard let text = step.args, let args = try? JSONValue.parse(Data(text.utf8)) else { return nil }
         return parse(args)
+    }
+
+    /// Where the forecasts the plugin and the phone look up come from, credited on the card.
+    static let lookedUpSource = "Open-Meteo.com"
+
+    /// The temperature units this phone's person reads: "F" or "C".
+    static var preferredUnits: String {
+        UnitTemperature(forLocale: .current, usage: .weather) == .fahrenheit ? "F" : "C"
     }
 
     static func parse(_ args: JSONValue?) -> [ReplyCard] {
@@ -161,6 +193,9 @@ nonisolated enum ReplyCards {
             return .places(.init(title: text(value["title"]), places: places))
         case "weather":
             return weather(value).map(ReplyCard.weather)
+        case "time", "clock":
+            let zone = text(value["timezone"] ?? value["time_zone"] ?? value["timeZone"]).flatMap { TimeZone(identifier: $0)?.identifier }
+            return .time(.init(place: text(value["place"] ?? value["location"]).map { String($0.prefix(80)) }, timeZone: zone))
         default:
             return nil
         }
@@ -196,7 +231,7 @@ nonisolated enum ReplyCards {
 
     static func weather(_ value: JSONValue) -> ReplyCard.Weather? {
         guard let place = text(value["place"] ?? value["location"]) else { return nil }
-        let units = text(value["units"])?.uppercased().hasPrefix("F") == true ? "F" : "C"
+        let units = text(value["units"]).map { $0.uppercased().hasPrefix("F") ? "F" : "C" } ?? preferredUnits
         var now: ReplyCard.Weather.Now?
         // A reading names its condition: a temperature with none is a placeholder (the agent once sent
         // 0 and "" while its reply said 85°F and clear), not drawn.
@@ -205,12 +240,12 @@ nonisolated enum ReplyCards {
                         feelsLike: number(n["feels_like"] ?? n["feelsLike"]), high: number(n["high"]), low: number(n["low"]),
                         wind: text(n["wind"]), humidity: number(n["humidity"]).map { Int($0.rounded()) },
                         precipitation: number(n["precipitation"] ?? n["chance_of_rain"]).map { Int($0.rounded()) },
-                        summary: text(n["summary"]).map { String($0.prefix(200)) })
+                        summary: text(n["summary"]).map { String($0.prefix(200)) }, night: n["night"]?.bool)
         }
         let hours: [ReplyCard.Weather.Hour] = (value["hours"]?.array ?? []).compactMap { h in
             guard let time = text(h["time"]), let temperature = number(h["temperature"] ?? h["temp"]), text(h["condition"]) != nil else { return nil }
             return .init(time: time, temperature: temperature, condition: .init(lenient: text(h["condition"])),
-                         precipitation: number(h["precipitation"]).map { Int($0.rounded()) })
+                         precipitation: number(h["precipitation"]).map { Int($0.rounded()) }, night: h["night"]?.bool)
         }
         let days: [ReplyCard.Weather.Day] = (value["days"]?.array ?? []).compactMap { d in
             guard let date = text(d["date"] ?? d["day"]), let high = number(d["high"]), let low = number(d["low"]), text(d["condition"]) != nil else { return nil }
@@ -221,7 +256,8 @@ nonisolated enum ReplyCards {
         // agent once sent 0 and "clear" without looking the weather up). A real 0 comes with its other numbers.
         if let n = now, n.temperature == 0, n.high == nil, n.low == nil, n.feelsLike == nil, n.wind == nil, n.humidity == nil,
            n.precipitation == nil, n.summary == nil, hours.isEmpty, days.isEmpty { now = nil }
-        guard now != nil || !hours.isEmpty || !days.isEmpty else { return nil }
+        // Nothing read is kept all the same: the place is all a card needs to be looked up. Drawn
+        // only once it has a forecast (`hasReading`).
         return .init(place: String(place.prefix(80)), units: units, now: now, hours: Array(hours.prefix(24)), days: Array(days.prefix(10)),
                      source: text(value["source"]))
     }

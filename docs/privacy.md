@@ -26,6 +26,8 @@ Link previews (Settings → Appearance) are off unless you turn them on. With th
 
 When your assistant shows a map or places in a reply, the map is drawn by Apple Maps, and a place it names without coordinates is looked up with Apple's map search, under Apple's privacy policy, as the Maps app does. Redde does not ask for your location: directions from where you are are worked out by Maps when you open them.
 
+When your assistant shows the weather or the time somewhere, the place it names is looked up to find its forecast or its time zone. Redde's plugin on your Hermes server does this, asking Open-Meteo (open-meteo.com) with the place's name and then its coordinates, and Redde draws what comes back. Where the plugin hasn't filled the card in, your device looks the place up with Apple's map search and asks Open-Meteo for the forecast of its coordinates. Open-Meteo sees those requests coming from your server or your device; nothing else from the conversation is sent to it, and nothing goes to Goosehouse LLC. The time is drawn from your device's own clock. So that "what time is it" can be answered for where you are, Redde tells the plugin on your server your device's time zone and temperature units.
+
 ## Notifications when Redde is closed (optional, off by default)
 
 iOS closes an app in the background after a few minutes, and from then on Redde cannot tell you that a reply is ready or that your assistant is waiting for you. If you want to be told anyway, you can pair your own Hermes server with your iPhone in Settings → Voice → Notify when Redde is closed. Nothing in this section happens unless you do.
