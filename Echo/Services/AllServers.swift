@@ -35,7 +35,7 @@ enum AllServers {
         switch server.transport {
         case .hermesServe: found = try await client(for: server).listSessions()
         case .hermesSessions:
-            guard let api = api(for: server) else { throw TransportError.missingAPIKey }
+            guard let api = api(for: server) else { throw TransportError.noAPIKey }
             found = try await api.listSessions()
         case .chatCompletions: return []
         }

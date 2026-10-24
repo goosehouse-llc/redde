@@ -5,10 +5,14 @@ import Security
 /// Minimal Keychain wrapper for the app's secrets. A Hermes server's secrets (its API key,
 /// Dashboard password or sign-in, Cloudflare Access secret and per-profile API keys) are stored per server as
 /// `<account>@<server id>`; the rest are app-wide.
-/// Items are `WhenUnlockedThisDeviceOnly`, never synced or migrated to another device, except with
-/// Sync with iCloud on (`CloudSync`): then the `syncable` ones are kept in iCloud Keychain
-/// (synchronizable, `WhenUnlocked`, end-to-end encrypted) and every device of the person's has
-/// them. Each account is in one place or the other, never both.
+/// Items are `AfterFirstUnlockThisDeviceOnly`: readable while the iPhone is locked, once it has
+/// been unlocked since it was turned on, as they have to be in the car, for the watch and for a
+/// reply in the background (GitHub issue 34: CarPlay found no key until the phone was opened).
+/// This device's SSH key alone stays `WhenUnlockedThisDeviceOnly`: only the terminal, on screen,
+/// uses it. They are never synced or migrated to another device, except with Sync with iCloud on
+/// (`CloudSync`): then the `syncable` ones are kept in iCloud Keychain (synchronizable,
+/// `AfterFirstUnlock`, end-to-end encrypted) and every device of the person's has them. Each
+/// account is in one place or the other, never both.
 nonisolated enum Keychain {
     enum Item: String {
         case gatewayAPIKey = "gateway-api-key"
@@ -82,7 +86,10 @@ nonisolated enum Keychain {
     static func allAccounts() -> [String] { accounts(synced: kSecAttrSynchronizableAny) }
 
     /// The accounts on this device only (false) or in iCloud Keychain only (true).
-    static func accounts(synced: Any) -> [String] {
+    static func accounts(synced: Any) -> [String] { listed(synced: synced) ?? [] }
+
+    /// The same, or nil when the Keychain couldn't say (the device is locked).
+    private static func listed(synced: Any) -> [String]? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -91,9 +98,47 @@ nonisolated enum Keychain {
             kSecMatchLimit as String: kSecMatchLimitAll,
         ]
         var result: AnyObject?
-        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
-              let items = result as? [[String: Any]] else { return [] }
-        return Array(Set(items.compactMap { $0[kSecAttrAccount as String] as? String })).sorted()
+        switch SecItemCopyMatching(query as CFDictionary, &result) {
+        case errSecSuccess:
+            let items = result as? [[String: Any]] ?? []
+            return Array(Set(items.compactMap { $0[kSecAttrAccount as String] as? String })).sorted()
+        case errSecItemNotFound:
+            return []
+        default:
+            return nil
+        }
+    }
+
+    /// When an account can be read: once the iPhone has been unlocked since it was turned on, but
+    /// for this device's SSH key, only while it is unlocked. A synchronizable item can't be "this
+    /// device only".
+    static func accessibility(of account: String, synced: Bool) -> CFString {
+        if account == Item.sshKey.rawValue { return kSecAttrAccessibleWhenUnlockedThisDeviceOnly }
+        return synced ? kSecAttrAccessibleAfterFirstUnlock : kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+    }
+
+    /// Where it is recorded that the items stored before Redde 2.2, readable only while the
+    /// iPhone was unlocked, are kept as `accessibility(of:synced:)` says now.
+    static let movedKey = "keychainAfterFirstUnlock"
+
+    /// Moves the items stored before to how they are kept now. That needs the iPhone unlocked, so
+    /// the app tries at launch and again each time it is unlocked, until every one has moved.
+    /// True once they all have.
+    @discardableResult
+    static func moveToAfterFirstUnlock() -> Bool {
+        guard !UserDefaults.standard.bool(forKey: movedKey) else { return true }
+        var moved = true
+        for synced in [false, true] {
+            guard let accounts = listed(synced: synced) else { moved = false; continue }
+            for account in accounts {
+                let attributes = [kSecAttrAccessible as String: accessibility(of: account, synced: synced)]
+                if SecItemUpdate(baseQuery(account, synced: synced) as CFDictionary, attributes as CFDictionary) != errSecSuccess {
+                    moved = false
+                }
+            }
+        }
+        if moved { UserDefaults.standard.set(true, forKey: movedKey) }
+        return moved
     }
 
     /// Sync with iCloud turned on: each syncable secret on this device goes to iCloud Keychain,
@@ -115,6 +160,12 @@ nonisolated enum Keychain {
         }
         forgetCache()
     }
+
+    /// The last read found the Keychain shut: the iPhone hasn't been unlocked since it was turned
+    /// on (or it is locked, and the item is one stored before `moveToAfterFirstUnlock`). Then a
+    /// missing key may be there after all.
+    static var isShut: Bool { shut.withLock { $0 } }
+    private static let shut = OSAllocatedUnfairLock(initialState: false)
 
     /// Reads again what was cached: another device may have changed a secret in iCloud Keychain,
     /// which says nothing when it does.
@@ -190,7 +241,9 @@ nonisolated enum Keychain {
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
         var result: AnyObject?
-        return switch SecItemCopyMatching(query as CFDictionary, &result) {
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        shut.withLock { $0 = status == errSecInteractionNotAllowed }
+        return switch status {
         case errSecSuccess: (result as? Data).map { String(decoding: $0, as: UTF8.self) }
         case errSecItemNotFound: .some(nil)
         default: nil
@@ -204,8 +257,7 @@ nonisolated enum Keychain {
         let query = baseQuery(account, synced: synced)
         let attributes: [String: Any] = [
             kSecValueData as String: Data(value.utf8),
-            // A synchronizable item can't be "this device only".
-            kSecAttrAccessible as String: synced ? kSecAttrAccessibleWhenUnlocked : kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
+            kSecAttrAccessible as String: accessibility(of: account, synced: synced),
         ]
         let update = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
         if update == errSecSuccess { return true }

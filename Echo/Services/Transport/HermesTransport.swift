@@ -280,8 +280,14 @@ nonisolated struct ModelChoice: Identifiable, Equatable, Sendable, Codable {
 }
 
 nonisolated enum TransportError: LocalizedError {
+    /// No key to send: none is stored, or the Keychain couldn't be read.
+    static var noAPIKey: TransportError { Keychain.isShut ? .keychainShut : .missingAPIKey }
+
     case badURL
     case missingAPIKey
+    /// The key may be there, but the Keychain is shut: the iPhone hasn't been unlocked since it
+    /// was turned on (`Keychain.isShut`).
+    case keychainShut
     case http(status: Int, body: String)
     case malformed(String)
     /// The server couldn't be reached before the turn was handed over; safe to send again later.
@@ -293,6 +299,7 @@ nonisolated enum TransportError: LocalizedError {
         switch self {
         case .badURL: "The endpoint URL is invalid."
         case .missingAPIKey: "No API key is stored. Add one in Settings."
+        case .keychainShut: "Unlock your iPhone, then ask again: Redde can't read its keys until you do."
         case let .http(status, body) where status == 404 && body.contains("Unknown or unconfigured profile"):
             // The Hermes API's /p/<profile>/ routes: the gateway doesn't serve that profile.
             "This Hermes gateway doesn't serve the selected profile. Turn on gateway.multiplex_profiles in its config, or pick Default under Settings → Profile."

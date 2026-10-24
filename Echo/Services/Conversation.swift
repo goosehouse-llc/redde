@@ -373,7 +373,7 @@ final class Conversation {
                 }
                 // Ledger transport: the session row must exist before the first turn.
                 if transportKind == .hermesSessions, request.sessionID == nil {
-                    guard let api = ledgerAPI() else { throw TransportError.missingAPIKey }
+                    guard let api = ledgerAPI() else { throw TransportError.noAPIKey }
                     let created = try await api.createSession(title: Self.sessionTitle(from: trimmed),
                                                               model: request.model, provider: request.provider,
                                                               reasoningEffort: request.reasoningEffort)
@@ -1326,7 +1326,7 @@ final class Conversation {
     /// Loads a session from the Hermes API server's ledger.
     func loadLedgerSession(_ summary: HermesSessionsAPI.SessionSummary, bot: BotRef? = nil, elsewhere: ProfileRoute? = nil) async throws {
         let api = bot != nil ? ledgerAPI(for: bot) : ledgerAPI(profile: elsewhere?.viaAPI == true ? elsewhere?.profile : nil)
-        guard let api else { throw TransportError.missingAPIKey }
+        guard let api else { throw TransportError.noAPIKey }
         let stored = try await api.messages(sessionID: summary.id)
         adopt(serverSession: summary, messages: Self.mapStored(stored), bot: bot, elsewhere: elsewhere)
         // A run the app let go of before it ended (another conversation opened, the app closed):
@@ -1435,7 +1435,7 @@ final class Conversation {
         if connection == .hermesSessions {
             let api = ledgerAPI()
             run {
-                guard let api else { throw TransportError.missingAPIKey }
+                guard let api else { throw TransportError.noAPIKey }
                 try await api.respondApproval(runID: pendingInterrupt.runtimeSession, requestID: request.id, choice: choice)
             }
         } else {

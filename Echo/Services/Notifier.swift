@@ -648,6 +648,13 @@ final class PushDelegate: NSObject, UIApplicationDelegate {
         Task { @MainActor in PushService.shared.received(token: deviceToken) }
     }
 
+    /// Keys stored before 2.2 are moved to being readable while the iPhone is locked
+    /// (`Keychain.moveToAfterFirstUnlock`) as it is unlocked, if the car started Redde while it
+    /// was locked and launch couldn't.
+    func applicationProtectedDataDidBecomeAvailable(_ application: UIApplication) {
+        Keychain.moveToAfterFirstUnlock()
+    }
+
     nonisolated func application(_ application: UIApplication,
                                  didFailToRegisterForRemoteNotificationsWithError error: Error) {
         log.error("push registration failed: \(error.localizedDescription)")

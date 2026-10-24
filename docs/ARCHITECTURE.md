@@ -12,9 +12,15 @@ How Redde works, for contributors. For what it is and how to build it, see the [
   (so the reply's text may go on from it to the provider chosen there; Settings says which), and
   GPT-Live, OpenAI's voice model, which hears the microphone while a call is open (opt-in, with
   the person's or their Hermes's OpenAI key; see [GPT-Live](#gpt-live)).
-- **Secrets in the Keychain.** Keys and passwords are stored `WhenUnlockedThisDeviceOnly`, never in
-  UserDefaults, source or config files; with Sync with iCloud turned on, a server's keys and
+- **Secrets in the Keychain.** Keys and passwords are stored `AfterFirstUnlockThisDeviceOnly`, never
+  in UserDefaults, source or config files; with Sync with iCloud turned on, a server's keys and
   passwords go in iCloud Keychain instead (end-to-end encrypted; see [Sync with iCloud](#sync-with-icloud)).
+  They can be read while the iPhone is locked, once it has been unlocked since it was turned on:
+  CarPlay, the watch and replies in the background need them then. Until 2.2 they were
+  `WhenUnlocked`, and the first question of a drive got "No API key is stored" (GitHub issue 34);
+  `Keychain.moveToAfterFirstUnlock` moves the old ones at launch, or as the iPhone is next
+  unlocked. A key that can't be read yet says so ("Unlock your iPhone…", `Keychain.isShut`). The
+  terminal's SSH key alone stays `WhenUnlockedThisDeviceOnly`.
 - **One opt-in exception:** Settings → Siri → "Let Siri use Redde" (iOS 27) lets Apple Intelligence
   hear messages and see recent conversations. Off by default; see [Siri AI](#siri-ai-ios-27-opt-in).
 
@@ -2643,7 +2649,9 @@ the handover itself is tested on a real watch.
   the Duo simulator in Device Hub; `-echo.fakeFold vertical|horizontal` (DEBUG) draws a fold
   anywhere, to look at the layouts on an iPad.
 - **App lock:** Face ID / Touch ID / passcode with a grace period; Siri, control and share requests
-  wait until unlocked; background Shortcuts runs are protected by the Keychain instead.
+  wait until unlocked, and so does Ask Redde a Question from Shortcuts, which runs in the
+  background (`ShortcutRunner.ask`; the Keychain no longer stops it, since keys can be read while
+  the iPhone is locked). A note for Take a Note still goes: nothing comes back from one.
 - **Cloudflare Access:** a service-token ID and secret sent as `CF-Access-Client-Id` /
   `CF-Access-Client-Secret` on every Dashboard request and WebSocket handshake.
 - **Pangolin** (asked 2026-10-23, pangolin.net): a Link's access token (`<token-id>.<token>`) sent as
@@ -2684,7 +2692,7 @@ servers on every device signed in to the same Apple Account. Off until turned on
   apiece (`setting.<key>`, `server.<id>`), so two devices changing different things never undo
   each other. A server's keys and passwords (`Keychain.syncable`: API keys and per-profile keys,
   Dashboard password, Cloudflare Access secret, custom headers, and the OpenAI-compatible key) go in
-  iCloud Keychain: synchronizable, `WhenUnlocked`, each account in one place or the other. Never a
+  iCloud Keychain: synchronizable, `AfterFirstUnlock`, each account in one place or the other. Never a
   browser sign-in (each device refreshes its own tokens), the push secret or the SSH key.
 - **Each device's own:** the connection in use and the server it is on; on each server, the profile
   and model it is on (kept from the device's record when another's arrives); what Redde does on

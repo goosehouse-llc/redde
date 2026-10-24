@@ -90,7 +90,7 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
     /// was left (`TurnRequest.departure`). A gateway without runs gets the chat stream, as before.
     func stream(_ request: TurnRequest) -> AsyncThrowingStream<TurnEvent, Error> {
         guard let apiKey, !apiKey.isEmpty else {
-            return AsyncThrowingStream { $0.finish(throwing: TransportError.missingAPIKey) }
+            return AsyncThrowingStream { $0.finish(throwing: TransportError.noAPIKey) }
         }
         guard let sessionID = request.sessionID, !sessionID.isEmpty else {
             return AsyncThrowingStream { $0.finish(throwing: TransportError.malformed("no session id")) }

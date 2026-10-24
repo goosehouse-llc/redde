@@ -7,6 +7,10 @@ struct EchoApp: App {
     @State private var voiceSession: VoiceSession
 
     init() {
+        // Keys stored before 2.2 could be read only while the iPhone was unlocked, so the car found
+        // none (GitHub issue 34): from now on they can be once it has been unlocked since it was
+        // turned on. Done here if it is unlocked, else as it is (`PushDelegate`).
+        Keychain.moveToAfterFirstUnlock()
         let conversation = Conversation()
         _conversation = State(initialValue: conversation)
         let voice = VoiceSession(conversation: conversation)

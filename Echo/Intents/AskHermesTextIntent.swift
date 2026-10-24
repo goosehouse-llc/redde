@@ -1,6 +1,7 @@
 import AppIntents
 import Foundation
 import os
+import UIKit
 
 /// Shortcuts action: "Ask Hermes ⟨question⟩" → reply as text. Runs in the background using the
 /// transport selected in Settings; over the Hermes transports the exchange lands in a dedicated
@@ -65,6 +66,10 @@ enum ShortcutRunner {
         let sessionKey = slot(for: thread)
         let trimmed = question.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw IntentError.emptyQuestion }
+        // With App lock on, a question waits for the iPhone to be unlocked, as Siri's and the share
+        // sheet's do: its keys can be read while it is locked (`Keychain`), and the reply would be
+        // read out on the Lock Screen. A note still goes: nothing comes back from one.
+        if thread == .shortcuts, AppLock.shared.isEnabled, !UIApplication.shared.isProtectedDataAvailable { throw IntentError.locked }
         guard let url = settings.activeBaseURL else { throw IntentError.notConfigured }
         let key = settings.gatewayAPIKey
 
@@ -72,7 +77,7 @@ enum ShortcutRunner {
         var sessionID: String?
         switch settings.transport {
         case .hermesSessions:
-            guard let key, !key.isEmpty else { throw IntentError.notConfigured }
+            guard let key, !key.isEmpty else { throw Keychain.isShut ? TransportError.keychainShut as Error : IntentError.notConfigured }
             let headers = settings.apiHeaders
             transport = HermesSessionsTransport(baseURL: url, apiKey: key, headers: headers)
             sessionID = try await ledgerSession(thread, api: HermesSessionsAPI(baseURL: url, apiKey: key, headers: headers))
@@ -125,11 +130,12 @@ enum ShortcutRunner {
     }
 
     enum IntentError: LocalizedError {
-        case emptyQuestion, notConfigured
+        case emptyQuestion, notConfigured, locked
         var errorDescription: String? {
             switch self {
             case .emptyQuestion: "The question was empty."
             case .notConfigured: "Open Redde and finish setting up the transport in Settings first."
+            case .locked: "Redde is locked. Unlock your iPhone, then ask again."
             }
         }
     }
