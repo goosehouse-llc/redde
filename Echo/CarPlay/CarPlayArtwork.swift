@@ -358,7 +358,7 @@ enum CarPlayArtwork {
         case (.paused, _), (.phone, _): nil
         case (.listening, .redde): (4.0, 40)
         case (.thinking, .redde): (2.4, 32)
-        case (.speaking, .redde): (2.4, 36)
+        case (.speaking, .redde): (4.0, 42)
         case (.listening, .orb): (4.8, 58)
         case (.thinking, .orb): (1.8, 36)
         case (.speaking, .orb): (2.4, 36)
@@ -393,11 +393,24 @@ enum CarPlayArtwork {
     /// would cut the face's aura off at its sides.
     static let faceLookHeight: CGFloat = 0.76
 
+    /// The face look's Speaking picture has no title over it (`CarPlaySceneDelegate.voiceTemplate`):
+    /// on his car it is then 89 points high and the face 78, where it is 62 under a title (asked
+    /// 2026-10-23, "make the carplay bots bigger on screen when speaking"; of three drawn through
+    /// CarPlay's own card, "the b size is good"). As wide as CarPlay's box for it, 150 by 89, so
+    /// its aura has room at the sides.
+    static let speakingHeight: CGFloat = 89.0 / 150
+
+    /// How tall a state's picture is in a look, for a side `side` wide.
+    static func pictureHeight(_ state: VoiceState, look: CarPlayVoiceLook, side: CGFloat) -> CGFloat {
+        guard look == .redde else { return side }
+        return side * (state == .speaking ? speakingHeight : faceLookHeight)
+    }
+
     /// The same picture drawn afresh and not kept: for Settings, which plays a look's loops only
     /// while its row is open.
     static func voicePicture(_ state: VoiceState, look: CarPlayVoiceLook, face: BotFace? = nil, side: CGFloat = voiceImageSide,
                              movingAt scale: CGFloat? = nil) -> UIImage {
-        let size = CGSize(width: side, height: look == .redde ? side * faceLookHeight : side)
+        let size = CGSize(width: side, height: pictureHeight(state, look: look, side: side))
         guard let scale, let loop = loop(state, look: look) else {
             return render(size) { ctx, rect in draw(state, look, face: face, at: nil, ctx, rect) }
         }
@@ -427,10 +440,12 @@ enum CarPlayArtwork {
         switch look {
         case .bars, .lamps, .kitt:
             voiceBars(state, at: CGFloat(i) / CGFloat(frames)).map { .bars($0) }
-        case .orb, .redde:
+        case .orb:
             // Speaking sends out two rings half a loop apart: its second half is its first again.
-            // Redde's mouth says the same two syllables twice.
             state == .speaking ? .half(i % (frames / 2)) : nil
+        case .redde:
+            // The face's mouth says something different all through its loop (`speakingMouth`).
+            nil
         }
     }
 
@@ -770,8 +785,8 @@ enum CarPlayArtwork {
     /// soft light of the state's colour. As big as the picture lets it be: on a car the picture is
     /// small (69 points high on a 568×263 screen with a title, 89 without), so the face fills it.
     /// While you are heard it looks at you, its eyes drifting a little, and blinks once a loop;
-    /// thinking, it looks up and away, its eyes going round; speaking, its mouth opens and shuts
-    /// on two syllables; paused, its eyes are shut; waiting on the phone, it looks down at one.
+    /// thinking, it looks up and away, its eyes going round; speaking, its mouth moves as speech
+    /// does (`speakingMouth`); paused, its eyes are shut; waiting on the phone, it looks down at one.
     private static func reddeFace(_ ctx: CGContext, _ picture: CGRect, _ state: VoiceState, face: BotFace, at p: CGFloat?, colour: UIColor) {
         // Drawn in the square in the middle of the picture, which is wider than that for the aura.
         let rect = CGRect(x: picture.midX - picture.height / 2, y: picture.minY, width: picture.height, height: picture.height)
@@ -807,17 +822,47 @@ enum CarPlayArtwork {
             // The face in its aura, faded out toward the picture's edges so that the picture's edge
             // never cuts the aura off in a line; then the face again over it, whole. (A face drawn
             // off the picture for its shadow alone is drawn not at all: what lies outside is skipped.)
+            // Speaking, wider and stronger (asked 2026-10-23, "make the aura bigger"; the rings the
+            // phone sends out were tried and taken off): twice over, so a wider blur doesn't fade
+            // to nothing, and a soft glow of it in the card's backdrop beyond (`voiceBackdrop`).
+            let speaking = state == .speaking
             ctx.saveGState()
             ctx.beginTransparencyLayer(auxiliaryInfo: nil)
-            ctx.setShadow(offset: .zero, blur: 2 * 10 * k * pixels, color: aura.withAlphaComponent(0.9).cgColor)
+            ctx.setShadow(offset: .zero, blur: 2 * (speaking ? 20 : 10) * k * pixels, color: aura.withAlphaComponent(speaking ? 1 : 0.9).cgColor)
             image.draw(in: frame)
+            if speaking { image.draw(in: frame) }
             ctx.setShadow(offset: .zero, blur: 0, color: nil)
             ctx.setBlendMode(.destinationIn)
             let clear = UIColor.black.withAlphaComponent(0), solid = UIColor.black
-            linear(ctx, [clear, solid, solid, clear], from: CGPoint(x: 0, y: picture.minY), to: CGPoint(x: 0, y: picture.maxY), locations: [0, 0.12, 0.88, 1])
-            linear(ctx, [clear, solid, solid, clear], from: CGPoint(x: picture.minX, y: 0), to: CGPoint(x: picture.maxX, y: 0), locations: [0, 0.1, 0.9, 1])
+            if speaking {
+                // Faded out in an oval: the wider glow reached the picture's sides, and straight
+                // fades there showed it as a box on the car.
+                radial(ctx, [solid, solid, clear], at: [0, 0.72, 1], centre: CGPoint(x: picture.midX, y: picture.midY),
+                       radii: CGSize(width: picture.width / 2, height: picture.height / 2))
+            } else {
+                linear(ctx, [clear, solid, solid, clear], from: CGPoint(x: 0, y: picture.minY), to: CGPoint(x: 0, y: picture.maxY), locations: [0, 0.12, 0.88, 1])
+                linear(ctx, [clear, solid, solid, clear], from: CGPoint(x: picture.minX, y: 0), to: CGPoint(x: picture.maxX, y: 0), locations: [0, 0.1, 0.9, 1])
+            }
             ctx.endTransparencyLayer()
             ctx.restoreGState()
+        }
+        if state == .speaking {
+            // Sound bars either side of the face, as tall as its mouth is open, each a step behind
+            // the one before it (his pick 2026-10-23 of four ways to fill the screen around the
+            // face, "lets go with soundbars"). As near the creature as its width lets them be, and
+            // inside the picture: CarPlay gives it no more than 150 points across.
+            let w = picture.width / 150
+            let creature = faceBounds(face)
+            let near = min(creature.width * side / 2 + 6 * w, picture.width / 2 - 25 * w)
+            for (j, lag) in [0.0, 0.035, 0.07].enumerated() {
+                let level = CGFloat(speakingMouth((Double(p ?? 0.3) - lag + 1).truncatingRemainder(dividingBy: 1)))
+                let tall = picture.height * (0.12 + 0.5 * level * [1, 0.8, 0.6][j])
+                UIColor.systemGreen.withAlphaComponent([0.95, 0.7, 0.45][j]).setFill()
+                for way: CGFloat in [-1, 1] {
+                    let x = picture.midX + way * (near + 2.5 * w + CGFloat(j) * 9 * w) - 2.5 * w
+                    UIBezierPath(roundedRect: CGRect(x: x, y: picture.midY - tall / 2, width: 5 * w, height: tall), cornerRadius: 2.5 * w).fill()
+                }
+            }
         }
         image.draw(in: frame)
         if state == .phone {
@@ -869,16 +914,38 @@ enum CarPlayArtwork {
             let look = CGPoint(x: 0.55 + 0.3 * cos(2 * .pi * t), y: -0.8 + 0.15 * sin(2 * .pi * t))
             return BotPose(look: look, blink: 0, mouth: 0, tilt: -3 + Double(look.x) * 2.5)
         case .speaking:
-            // Two syllables a half loop, the second a little smaller.
-            let q = (2 * t).truncatingRemainder(dividingBy: 1)
-            let open = q < 0.5 ? sin(q / 0.5 * .pi) : 0.7 * sin((q - 0.5) / 0.5 * .pi)
-            return BotPose(look: CGPoint(x: 0.1, y: 0.2), blink: 0, mouth: CGFloat(0.15 + 0.75 * max(0, open)), tilt: -3)
+            // Like speech, not a beat (asked 2026-10-23, "make the mouth a bit more random"):
+            // syllables long and short, wide and narrow, a breath now and then; the eyes drifting
+            // and one blink, as the phone's face speaks.
+            let blink = (0.7 ... 0.74).contains(t) ? CGFloat(sin((t - 0.7) / 0.04 * .pi)) : 0
+            return BotPose(look: CGPoint(x: 0.1 + 0.14 * sin(2 * .pi * t), y: 0.2 + 0.06 * sin(4 * .pi * t)), blink: blink,
+                           mouth: CGFloat(0.12 + 0.8 * speakingMouth(t)), tilt: -3 + 0.6 * sin(2 * .pi * t))
         case .paused:
             return BotPose(look: CGPoint(x: 0, y: 0.3), blink: 1, mouth: 0, tilt: -3)
         case .phone:
             return BotPose(look: CGPoint(x: 0.75, y: 0.9), blink: 0, mouth: 0, tilt: -1)
         }
     }
+
+    /// How open the speaking face's mouth is, 0 to 1, `t` through its loop: one take of made-up
+    /// speech, each syllable (its share of the loop, how wide) opening quickly and closing.
+    static func speakingMouth(_ t: Double) -> Double {
+        let total = speakingSyllables.reduce(0) { $0 + $1.length }
+        var at = t.truncatingRemainder(dividingBy: 1) * total
+        for syllable in speakingSyllables {
+            if at < syllable.length { return syllable.open * pow(sin(at / syllable.length * .pi), 0.7) }
+            at -= syllable.length
+        }
+        return 0
+    }
+
+    /// Made up once, not drawn at random each time, so a face's pictures are the same every time
+    /// they are made. Silences (0) are breaths; the loop ends on one, so it starts again unseen.
+    private static let speakingSyllables: [(length: Double, open: Double)] = [
+        (0.20, 0.85), (0.14, 0.45), (0.26, 1.0), (0.16, 0.6), (0.12, 0.3), (0.28, 0),
+        (0.22, 0.75), (0.18, 0.95), (0.14, 0.4), (0.24, 0.7), (0.16, 0.55), (0.36, 0),
+        (0.18, 0.9), (0.12, 0.35), (0.28, 0.8), (0.16, 0.5), (0.20, 0.65), (0.14, 0.9), (0.30, 0),
+    ]
 
     /// The ring, lit differently all the way round: `light` says how brightly at an angle
     /// (radians, clockwise from the top). Worked out a pixel at a time and laid on as a mask.
@@ -925,10 +992,12 @@ enum CarPlayArtwork {
     /// card's own words follow the car's appearance and have to stay readable on either.
     static func voiceBackdrop(_ state: VoiceState, look: CarPlayVoiceLook = .bars) -> UIImage {
         let warm = state == .thinking || state == .speaking, kitt = look == .kitt
-        let key = kitt ? "kitt" : warm ? "warm" : "cool"
+        // The speaking face's aura goes on past its picture, a green glow where the card puts it.
+        let aura = look == .redde && state == .speaking
+        let key = kitt ? "kitt" : aura ? "aura" : warm ? "warm" : "cool"
         if let made = backdrops[key] { return made }
-        let glow: UIColor = kitt ? red : warm ? gold : mist
-        let light = backdrop(dark: false, glow: glow, black: kitt), dark = backdrop(dark: true, glow: glow, black: kitt)
+        let glow: UIColor = kitt ? red : aura ? .systemGreen : warm ? gold : mist
+        let light = backdrop(dark: false, glow: glow, black: kitt, aura: aura), dark = backdrop(dark: true, glow: glow, black: kitt, aura: aura)
         let both = UIImageAsset()
         both.register(light, with: UITraitCollection(userInterfaceStyle: .light))
         both.register(dark, with: UITraitCollection(userInterfaceStyle: .dark))
@@ -942,7 +1011,7 @@ enum CarPlayArtwork {
     /// keeps a picture registered for an appearance alone.
     static let backdropSize = CGSize(width: 960, height: 540)
 
-    private static func backdrop(dark: Bool, glow: UIColor, black: Bool) -> UIImage {
+    private static func backdrop(dark: Bool, glow: UIColor, black: Bool, aura: Bool = false) -> UIImage {
         render(backdropSize, scale: 1, opaque: true) { ctx, rect in
             let ground: [UIColor] = !dark
                 ? [UIColor.white,
@@ -959,6 +1028,13 @@ enum CarPlayArtwork {
             radial(ctx, ground, at: [0, 0.46, 1], centre: centre, radii: CGSize(width: rect.width * 1.2, height: rect.height * 0.9))
             // A light backdrop is already as light as mist: only gold and red show on it.
             guard dark || glow != mist else { return }
+            if aura {
+                // Around the face: its picture's middle is 60% of the way down a car's screen.
+                let face = CGPoint(x: rect.midX, y: rect.height * 0.6)
+                radial(ctx, [glow.withAlphaComponent(dark ? 0.46 : 0.3), glow.withAlphaComponent(0)], at: [0, 1], centre: face,
+                       radii: CGSize(width: rect.height * 0.6, height: rect.height * 0.6))
+                return
+            }
             let strength: CGFloat = glow == mist ? 0.18 : 0.24
             radial(ctx, [glow.withAlphaComponent(strength), glow.withAlphaComponent(0)], at: [0, 1], centre: centre,
                    radii: CGSize(width: rect.height * 0.62, height: rect.height * 0.62))

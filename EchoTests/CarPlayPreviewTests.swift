@@ -123,9 +123,13 @@ struct CarPlayPreviewTests {
         }
 
         var notes: [String] = []
-        for (name, make) in screens {
+        // REDDE_CARPLAY_ONLY=<prefix> draws only the screens whose names start with it.
+        let wanted = ProcessInfo.processInfo.environment["REDDE_CARPLAY_ONLY"]
+        for (name, make) in screens where wanted == nil || name.hasPrefix(wanted!) {
             for size in sizes {
-                for style in [UIUserInterfaceStyle.dark, .light] {
+                // REDDE_CARPLAY_STYLES=dark (or light) draws only that one.
+                let only = ProcessInfo.processInfo.environment["REDDE_CARPLAY_STYLES"]
+                for style in [UIUserInterfaceStyle.dark, .light] where only == nil || only == (style == .dark ? "dark" : "light") {
                     guard let controller = make() else {
                         Issue.record("CarPlay's own view for \(name) could not be made on this iOS; the preview needs updating")
                         return

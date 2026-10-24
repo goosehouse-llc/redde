@@ -709,6 +709,23 @@ struct VoiceSessionTests {
         #expect(h.session.lastMetrics?.endToFirstWord != nil)
     }
 
+    /// When a reply was first heard, for the car's face (its mouth waits for the sound): none
+    /// while it is thought about, set by the first sound, gone once the reply is over.
+    @Test func whenTheReplyWasFirstHeard() async throws {
+        let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport(reply(["Hello", " there."])))
+        h.session.beginListening()
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        #expect(h.session.soundStartedAt == nil)
+        h.recognizer.deliver("hi")
+        try await waitUntil("reply spoken") { h.speaker.spoken.count == 2 }
+        let heard = try #require(h.session.soundStartedAt)
+        #expect(abs(heard.timeIntervalSinceNow) < 5)
+        try await waitUntil("reply ended") { h.speaker.ends >= 1 }
+        h.speaker.finishSpeaking()
+        try await waitUntil("idle") { h.session.phase == .idle }
+        #expect(h.session.soundStartedAt == nil)
+    }
+
     /// The proximity sensor blanks the screen when covered, so it's only on while speaking,
     /// never through listening or a long think.
     /// Voice-chat mode (call-volume buttons) only while the mic is open: thinking and speaking run

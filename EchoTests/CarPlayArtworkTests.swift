@@ -33,8 +33,10 @@ struct CarPlayArtworkTests {
         }
         for (_, image) in square { #expect(image.size.width == image.size.height) }
         for (name, image) in states {
-            // The face look's are wider than tall, for the face's aura (`faceLookHeight`).
-            let tall = name.hasPrefix("voice-redde-") ? Art.voiceImageSide * Art.faceLookHeight : Art.voiceImageSide
+            // The face look's are wider than tall, for the face's aura (`faceLookHeight`), and its
+            // Speaking one wider still, having no title over it (`speakingHeight`).
+            let tall = name.hasPrefix("voice-redde-speaking") ? Art.voiceImageSide * Art.speakingHeight
+                : name.hasPrefix("voice-redde-") ? Art.voiceImageSide * Art.faceLookHeight : Art.voiceImageSide
             #expect(image.size == CGSize(width: Art.voiceImageSide, height: tall), "\(name)")
             #expect(image.images == nil, "a picture nobody asked to move stands still")
         }
@@ -125,7 +127,7 @@ struct CarPlayArtworkTests {
         var kept = 0
         for state in Art.VoiceState.allCases {
             let image = Art.voiceStateImage(state, look: look, movingAt: 2)
-            let tall = look == .redde ? Art.voiceImageSide * Art.faceLookHeight : Art.voiceImageSide
+            let tall = Art.pictureHeight(state, look: look, side: Art.voiceImageSide)
             #expect(image.size == CGSize(width: Art.voiceImageSide, height: tall), "\(state) is larger than the card takes")
             guard let loop = Art.loop(state, look: look) else {
                 #expect(image.images == nil, "\(state) has nothing to move")
@@ -140,10 +142,10 @@ struct CarPlayArtworkTests {
             #expect(frames.first?.pngData() != frames[frames.count / 3].pngData(), "\(state) plays the same picture throughout")
             // A picture that comes round again is the same object, not another copy of it for
             // the car to hold: the bars come back to where they have been, and the orb's rings
-            // leave the spark twice a loop.
+            // leave the spark twice a loop. (The face's mouth never says the same thing twice.)
             let different = Set(frames.map(ObjectIdentifier.init)).count
             switch (look, state) {
-            case (.orb, .speaking), (.redde, .speaking): #expect(different == frames.count / 2)
+            case (.orb, .speaking): #expect(different == frames.count / 2)
             case (.orb, _), (.redde, _), (_, .thinking): #expect(different == frames.count)
             default: #expect(different <= frames.count * 3 / 5)
             }

@@ -74,11 +74,17 @@ final class VoiceSession {
     /// Audible cues at the listening boundaries, so ears alone can tell the mic is open.
     nonisolated enum Earcon { case listening, stopped }
 
+    /// When the reply being spoken was first heard: `.speaking` begins with the reply's first
+    /// word of text, and its sound only once that has been made into speech, a second or more
+    /// later. The car's face moves its mouth from here (`CarPlaySceneDelegate.card`).
+    private(set) var soundStartedAt: Date?
+
     private(set) var phase: Phase = .idle {
         didSet {
             guard phase != oldValue else { return }
             // A reply held while it was being thought about is still held at its first word.
             if !(oldValue == .thinking && phase == .speaking) { isPaused = false }
+            if phase != .speaking { soundStartedAt = nil }
             // Every path OUT of listening funnels through here: utterance end, tap,
             // interruption, AirPods coming out. The start cue plays in startRecognizer
             // instead — at phase-set time the audio session isn't active or routed yet,
@@ -289,6 +295,7 @@ final class VoiceSession {
         self.keepAwake = keepAwake
         output.onFirstSpeech = { [weak self] in
             self?.metrics.firstSpokenAt = .now
+            if self?.phase == .speaking, self?.soundStartedAt == nil { self?.soundStartedAt = .now }
             self?.playThinkingSound(false)   // the reply is out: not a note over its first word
             // The sound starts now: the watch for a voice over it starts its count from here.
             self?.watchIfSpeaking()

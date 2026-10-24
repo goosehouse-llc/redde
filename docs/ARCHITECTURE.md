@@ -2196,6 +2196,11 @@ picture. So no state has action buttons, and the controls are bar buttons
 (`CarPlaySceneDelegate.barButtons(for:)`). End is the leading one on purpose: a card that
 offers nothing there gets a close button from CarPlay, which takes the card down without the
 conversation being told. The car's own Back button still does that; nothing here hears of it.
+The card keeps the same two bar buttons for as long as it is up, and a press changes only what
+they say and do (`barKinds`; Stop and Done, Pause and Resume): with new buttons put on it at each
+press, the car took the card down and Redde with it (2026-10-22, and again 10-23, "kick me out of
+the app"; no crash). A development build writes what the car screen did (presses, templates up
+and gone, connects) to `carplay-events.txt` in Application Support, to read after a drive.
 
 **Short answers in the car** (Settings → Voice, off until turned on). A long reply is hard to
 follow at the wheel. With the switch on, a question asked by voice while the phone is with a car
@@ -2263,9 +2268,10 @@ most). They come in five looks, picked in Settings → Appearance → CarPlay vo
 Redde. Redde (asked 2026-10-19) is Redde's own bot face (`BotFace.main`, drawn by `BotAvatar` in
 its colour through `BotAvatar.picture`), with no disc, in a soft light of the
 state's colour: listening it looks at you, eyes drifting, and blinks once in a 4-second loop;
-thinking its eyes go round, up and away (2.4 s); speaking its mouth says two syllables twice
-(2.4 s, half of the pictures kept); paused its eyes are shut; waiting on the phone it looks down
-at one (`CarPlayArtwork.reddePose`). Its pictures are kept by theme, so another theme draws them
+thinking its eyes go round, up and away (2.4 s); speaking its mouth moves as speech does,
+nineteen made-up syllables long and short with two breaths and a blink (`speakingMouth`, 4 s,
+42 pictures, asked 2026-10-23 "a bit more random"); paused its eyes are shut; waiting on the
+phone it looks down at one (`CarPlayArtwork.reddePose`). Its pictures are kept by theme, so another theme draws them
 again. In a bot's chat the card shows that bot's face instead (`voiceStateImage(face:)`, from
 `BotDirectory.roster.faces`; asked 2026-10-22, "like on the phone"). On a car the card's picture
 is small: 150 by 69 points under a title on a 568 by 263 screen (measured from Marta in the A6),
@@ -2282,6 +2288,24 @@ cut it in a line; the phone's dark shadow under it is left out, as on the car's 
 only showed the picture's edges. For room at the sides the look's pictures are 150 by 114
 (`faceLookHeight`), not square. The iOS 27 backdrop (`backgroundImage`) can't hold a bigger face:
 CarPlay blurs it under the card.
+Speaking is the exception (2026-10-23, "make the carplay bots bigger on screen when speaking";
+of three drawn through CarPlay's own card, "the b size is good"): no title, so its picture is
+150 by 89 (`speakingHeight`) and the face about 78 points high, against 62 under a title, where
+CarPlay fits the picture into 150 by 69 and clips the rest. Its aura is wider and stronger,
+faded out in an oval, with a green glow in the backdrop beyond it (`voiceBackdrop`, "aura"); the
+phone's rings were tried and taken off. Of four ways to fill the screen around it, drawn the same
+way (the bot's colour over the screen, its name as a bar button, its name as the title, sound
+bars), he picked sound bars: three either side of the face, as tall as its mouth is open, each a
+step behind the last, placed by the creature's width. A name drawn into the backdrop doesn't show
+at all: CarPlay blurs it away.
+**The mouth waits for the sound** (asked 2026-10-23, "wait a few seconds before the mouth starts
+moving"): `.speaking` begins with the reply's first word of text, and its sound only once that has
+been made into speech. So the card shows Thinking until `VoiceSession.soundStartedAt` (the
+speaker's first sound) plus `carSoundLag` (1 s, the car's audio behind the phone's), in every look
+(`CarPlaySceneDelegate.card(heard:)`, `heardInCar`).
+**The face follows a spoken name** ("Home, …" said to Sol's card): the reply was Home's, but a
+template's states can't be changed, so the card kept Sol's face. When the open chat's bot changes
+under it, the card is put up again in the new face (`botChanged`).
 Bars, the one a new install has, is described first; the others follow it. They
 are drawn after the dashboard of KITT, the car in Knight Rider (asked for
 2026-10-11), in the mist and gold the card had before. Speaking is its voice display: three
@@ -2338,6 +2362,11 @@ the car's status bar and the tab bar. Look at its pictures before changing anyth
 rounds of this work were done from the headers alone and both looked wrong on a car. What size a
 given car's screen is in points can't be read off its dashboard, so a development build writes it
 down when the car connects (`noteScreen`, a file in Application Support).
+`REDDE_CARPLAY_ONLY=<name prefix>` and `REDDE_CARPLAY_STYLES=dark|light` (as `TEST_RUNNER_…`)
+draw only some screens. For a moving picture, each of its frames redrawn at three pixels a point
+(CarPlay lays a still out by its pixels, as if at 3x) and put through the card one by one makes a
+video of what the car will show; the script's three-minute limit is too short for that, so run
+`xcodebuild test-without-building` directly.
 
 Declaring the scene enables multiple scenes, so the WindowGroup routes
 external events to the existing window (`handlesExternalEvents` in `EchoApp`); re-check the Action

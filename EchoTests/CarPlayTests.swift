@@ -84,6 +84,22 @@ struct CarPlayTests {
 
     // MARK: Which chats, in what order
 
+    /// The car's card is Thinking until the reply is heard in the car, a little after the phone
+    /// starts playing it: its mouth moved a second or more before the voice came (asked
+    /// 2026-10-23, "wait a few seconds before the mouth starts moving").
+    @Test func theMouthWaitsForTheSound() {
+        let speaking = { (heard: Bool) in
+            CarPlaySceneDelegate.card(phase: .speaking, waitingOnPhone: false, muted: false, paused: false, heard: heard)
+        }
+        #expect(speaking(false) == .showing(.thinking))
+        #expect(speaking(true) == .showing(.speaking))
+        #expect(CarPlaySceneDelegate.card(phase: .speaking, waitingOnPhone: false, muted: false, paused: true, heard: false) == .showing(.paused))
+        let started = Date.now
+        #expect(!CarPlaySceneDelegate.heardInCar(since: nil, now: started.addingTimeInterval(10)), "no sound yet")
+        #expect(!CarPlaySceneDelegate.heardInCar(since: started, now: started.addingTimeInterval(0.5)))
+        #expect(CarPlaySceneDelegate.heardInCar(since: started, now: started.addingTimeInterval(CarPlaySceneDelegate.carSoundLag)))
+    }
+
     @Test func serverSessionsListPinnedFirstThenNewest() {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let rows = CarPlayChats.rows(sessions: [
@@ -485,15 +501,18 @@ struct CarPlayTests {
     // MARK: The voice card
 
     /// The face look says what is going on over the face, as the others do (his word
-    /// 2026-10-22, "I still want it to say speaking over the bot", after a round without titles).
+    /// 2026-10-22, "I still want it to say speaking over the bot", after a round without titles),
+    /// except while it speaks: then the face is bigger with no title over it, and its mouth and
+    /// green aura say so (his pick 2026-10-23, "the b size is good").
     @Test func theFaceLookSaysWhatIsGoingOnOverTheFace() throws {
         let h = Harness()
         h.settings.carPlayVoice = .redde
         let faces = h.delegate.voiceTemplate(moving: false).voiceControlStates.map(\.titleVariants)
         h.settings.carPlayVoice = .bars
         let bars = h.delegate.voiceTemplate(moving: false).voiceControlStates.map(\.titleVariants)
-        #expect(faces == bars)
-        #expect(faces[2] == ["Speaking…"])
+        #expect(bars[2] == ["Speaking…"])
+        #expect((faces[2] ?? []).isEmpty)
+        #expect(faces.enumerated().filter { $0.offset != 2 }.map(\.element) == bars.enumerated().filter { $0.offset != 2 }.map(\.element))
     }
 
     /// In a bot's chat the face look draws that bot, not Redde.
