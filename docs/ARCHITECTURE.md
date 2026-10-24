@@ -420,8 +420,8 @@ reloads the conversation list.
 Hermes's Bot Mode, as Hermes Desktop has it, on the Dashboard connection and on the Hermes API
 (below; `ServerBots.swift`). A bot is a Hermes profile with one conversation of its own: the session titled exactly "Bot Chat" on
 that profile. Hermes counts every profile as one. The chat list's **Bots** section lists them once
-the server has a profile besides the main one, and has New Bot either way (Settings → Hermes server
-→ Bots in the chat list turns it off). Each bot is a little creature of its own (`BotAvatar.swift`): a speech bubble at
+the server has a profile besides the main one, and has New Bot either way (Settings → Appearance
+→ Bots in the chat list turns it off; it was under Hermes server until GitHub issue 32). Each bot is a little creature of its own (`BotAvatar.swift`): a speech bubble at
 heart, its tail the corner nearest its bottom left drawn sharp as a message bubble's is (a round or
 egg shape gets a corner there, a pointed one sharpens that point), in one of eight shapes (round,
 egg, pill, capsule, burst, pick, hex, diamond), white eyes glancing somewhere, on some a small mouth
@@ -1289,7 +1289,9 @@ with pull-to-refresh.
 
 On the Dashboard the list starts with **Projects** (`projects.tree`), grouped by working directory
 and repo: the ones someone made (`isAuto: false`) even before their first conversation, the ones
-Hermes found (repositories conversations ran in) once they have one, then a **New Project** row. Search, pin, rename, fork, archive and delete go through `PATCH /api/sessions/{id}`, fork
+Hermes found (repositories conversations ran in) once they have one, then a **New Project** row.
+Settings → Appearance → Projects in the chat list takes the section away (GitHub issue 32, for a
+small screen); their conversations are in the list either way. Search, pin, rename, fork, archive and delete go through `PATCH /api/sessions/{id}`, fork
 through `POST /api/sessions/{id}/fork` (API) or `session.branch` (Dashboard). Rows show token totals
 and the gateway's cost estimate; long-press for the full usage breakdown. Any conversation exports
 as Markdown. Local (OpenAI-compatible) conversations are saved on the phone as JSON with complete

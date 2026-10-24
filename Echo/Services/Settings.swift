@@ -441,6 +441,11 @@ final class Settings: ServeEndpoint {
     var showBots: Bool {
         didSet { store(showBots, forKey: Keys.showBots) }
     }
+    /// The chat list shows the Dashboard's projects above the conversations. Off, their
+    /// conversations are still in the list; only the section goes (GitHub issue 32).
+    var projectsInChatList: Bool {
+        didSet { store(projectsInChatList, forKey: Keys.projectsInChatList) }
+    }
     /// How long the app may be in the background before it locks again.
     var lockGraceSeconds: Double {
         didSet { store(lockGraceSeconds, forKey: Keys.lockGraceSeconds) }
@@ -646,6 +651,7 @@ final class Settings: ServeEndpoint {
         static let siriAIEnabled = "siriAIEnabled"
         static let siriDraftsInNewConversation = "siriDraftsInNewConversation"
         static let showBots = "showBots"
+        static let projectsInChatList = "projectsInChatList"
         static let lockGraceSeconds = "lockGraceSeconds"
         static let displayName = "displayName"
         static let setupDone = "setupDone"
@@ -737,6 +743,7 @@ final class Settings: ServeEndpoint {
         siriAIEnabled = defaults.bool(forKey: Keys.siriAIEnabled)
         siriDraftsInNewConversation = defaults.bool(forKey: Keys.siriDraftsInNewConversation)
         showBots = defaults.object(forKey: Keys.showBots) as? Bool ?? true
+        projectsInChatList = defaults.object(forKey: Keys.projectsInChatList) as? Bool ?? true
         lockGraceSeconds = defaults.object(forKey: Keys.lockGraceSeconds) as? Double ?? 60
         displayName = defaults.string(forKey: Keys.displayName) ?? ""
         setupDone = defaults.bool(forKey: Keys.setupDone)
@@ -798,7 +805,7 @@ final class Settings: ServeEndpoint {
     /// push relay.
     static let syncedKeys: [String] = [
         Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.botColors, Keys.linkPreviews, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
-        Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots,
+        Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots, Keys.projectsInChatList,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
         Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopAndSkipInCar, Keys.stopPhrases,
@@ -836,6 +843,7 @@ final class Settings: ServeEndpoint {
         case Keys.carPlayVoice: carPlayVoice = pick(CarPlayVoiceLook.bars)
         case Keys.carPlayBots: carPlayBots = pick(CarPlayBotLook.sticker)
         case Keys.showBots: showBots = flag(true)
+        case Keys.projectsInChatList: projectsInChatList = flag(true)
         case Keys.fastLaneURL: fastLaneURL = text(Self.defaultFastLaneURL)
         case Keys.fastLaneModel: fastLaneModel = text(Self.defaultFastLaneModel)
         case Keys.reasoningEffort: reasoningEffort = text(Self.defaultReasoningEffort)
@@ -1111,6 +1119,7 @@ final class Settings: ServeEndpoint {
         siriAIEnabled = false
         siriDraftsInNewConversation = false
         showBots = true
+        projectsInChatList = true
         lockGraceSeconds = 60
         displayName = ""
         serveURL = Self.defaultServeURL

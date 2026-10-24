@@ -93,6 +93,25 @@ struct AppearanceSettings: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
+            // What the chat list shows above the conversations (GitHub issue 32).
+            if BotDirectory.reachable(settings) {
+                Toggle(isOn: $settings.showBots) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Bots in the chat list")
+                        Text("Your server's bots and group chats, at the top of the list.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            if settings.transport == .hermesServe {
+                Toggle(isOn: $settings.projectsInChatList) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Projects in the chat list")
+                        Text("Your Hermes projects, above the conversations. Off, their conversations are still in the list.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            }
             Picker("Chat text size", selection: $settings.chatTextSize) {
                 ForEach(Array(Settings.chatTextSizes), id: \.self) { Text(ChatTextSize.label($0)).tag($0) }
             }
@@ -187,9 +206,6 @@ struct ProfileSettings: View {
                     } label: {
                         Label("Profile", systemImage: "person.2")
                     }
-                }
-                if BotDirectory.reachable(settings) {
-                    Toggle(isOn: $settings.showBots) { Label("Bots in the chat list", systemImage: "at") }
                 }
             } header: {
                 Text("Hermes server")

@@ -346,7 +346,7 @@ struct ConversationsList: View {
                 if usesLedger {
                     if query.isEmpty, !selecting {
                         if botsHere { botsSection }
-                        if viaServe { projectsSection }
+                        if viaServe, settings.projectsInChatList { projectsSection }
                     }
                     ledgerSection
                     if searchesMessages, !selecting { messageHitsSection }
