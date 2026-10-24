@@ -28,6 +28,8 @@ final class EarconPlayer {
     /// settle than the phone's own audio does.
     static let carLead: Duration = .milliseconds(350)
 
+    /// Made as voice mode plays its first cue, inside its session, so preparing the players is
+    /// safe here. Prepared as the app launched, they would stop another app's music (GitHub issue 30).
     private init() {
         for (cue, name) in [(VoiceSession.Earcon.listening, "listen-start"), (.stopped, "listen-stop")] {
             guard let url = Bundle.main.url(forResource: name, withExtension: "wav") else { continue }

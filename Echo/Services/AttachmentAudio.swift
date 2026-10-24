@@ -86,7 +86,10 @@ final class AttachmentAudio: NSObject, AVAudioPlayerDelegate {
     }
 
     /// A player for the attachment's bytes, read from a file named for its kind: the decoder
-    /// goes by the name as much as by the contents.
+    /// goes by the name as much as by the contents. Not prepared: preparing a player takes the
+    /// audio hardware, in the plain category nothing has set yet, and that stopped another app's
+    /// music as a chat with a voice reply in it opened, to read the reply's length (GitHub issue
+    /// 30). `play()` prepares it, after `activateForPlayback`.
     private nonisolated static func player(for attachment: Attachment) -> AVAudioPlayer? {
         let folder = FileManager.default.temporaryDirectory.appending(path: "audio")
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -95,8 +98,6 @@ final class AttachmentAudio: NSObject, AVAudioPlayerDelegate {
         if !FileManager.default.fileExists(atPath: url.path) {
             guard (try? attachment.data.write(to: url)) != nil else { return nil }
         }
-        guard let player = try? AVAudioPlayer(contentsOf: url) else { return nil }
-        player.prepareToPlay()
-        return player
+        return try? AVAudioPlayer(contentsOf: url)
     }
 }

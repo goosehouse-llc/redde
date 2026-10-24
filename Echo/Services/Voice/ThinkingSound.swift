@@ -26,9 +26,11 @@ final class ThinkingSoundPlayer: ThinkingSounding {
     private static let fade = 0.12
 
     private init() {
+        // Not prepared here: this is made as the app launches (`VoiceSession`'s default), and
+        // preparing takes the audio hardware, which stopped another app's music as Redde opened
+        // (GitHub issue 30). `play()` prepares it, inside voice mode's session.
         player = Bundle.main.url(forResource: "thinking", withExtension: "wav").flatMap { try? AVAudioPlayer(contentsOf: $0) }
         player?.numberOfLoops = -1
-        player?.prepareToPlay()
     }
 
     func start() {

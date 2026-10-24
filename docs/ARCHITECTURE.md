@@ -1127,7 +1127,10 @@ Opus in an .ogg for platforms with voice bubbles; iOS 27 decodes both, and FLAC,
 the server (`Attachment.isAudio`, by type or by name) and is shown as a player where it stands
 (`AudioBubble`: play or pause, a bar to move along, the time; `AttachmentAudio` plays one at a
 time through the playback audio session, like a reply read aloud). One the phone can't decode
-is a file chip that opens in Quick Look. Read aloud, the tag is "audio attached", never a path.
+is a file chip that opens in Quick Look. Its length is read from a player that is never prepared:
+preparing one takes the audio hardware, and that stopped another app's music as the chat opened
+(GitHub issue 30). Nothing that plays sound is prepared before something asks for it to play;
+`ThinkingSoundPlayer`, made as the app launches, was the other one. Read aloud, the tag is "audio attached", never a path.
 A chat opened again from the server comes back as text, its files bare paths once more,
 pictures included: the newest eight replies that name files have them fetched again, newest
 first (`Conversation.resolveReopenedMedia`). `-echo.demoAudio` shows a reply with a sound to
