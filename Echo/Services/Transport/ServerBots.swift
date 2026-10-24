@@ -159,6 +159,17 @@ nonisolated struct BotRoster: Equatable, Sendable {
             return a.name < b.name
         }
     }
+
+    /// The chat list's Bots section: `listed`, or the main profile on its own while it is the only
+    /// one. Its tile vanished as the last other bot was hidden or deleted, which read as the main
+    /// one going too (GitHub issue 29). Everywhere else, no one to talk to is still no bots.
+    var inChatList: [HermesBot] {
+        let listed = listed
+        return listed.isEmpty ? bots.filter(\.isDefault) : listed
+    }
+
+    /// There is a bot to talk to besides the main profile.
+    var hasOthers: Bool { !listed.isEmpty }
 }
 
 /// A row of the Bots section: a bot's chat or a group chat. The person can put them in any order.

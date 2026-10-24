@@ -26,7 +26,7 @@ import WidgetKit
 /// - `-echo.demoProjects`: fill the conversation list's Projects from a fixture (Dashboard connection).
 ///   Add `-echo.demoMarks` for rows marked working, needing you and unread (`ChatActivity`), and
 ///   `-echo.demoBots` for the Bots section, with a bot's chat open (Quill's) (`-echo.demoBotCount n`
-///   for n bots, up to 12, where they fold; `-echo.demoPicture` gives Scout a picture from Hermes Desktop); with
+///   for n bots, up to 12, where they fold, or 1 for the main profile alone; `-echo.demoPicture` gives Scout a picture from Hermes Desktop); with
 ///   `-echo.openGroup` its group chat is open, and `-echo.demoDraft` plays a bot's reply there as
 ///   it is written; `-echo.groupFind <words>` opens Find in Chat on those words, and
 ///   `-echo.groupVoice [bot]` the voice screen on the room (with that bot's reply being read; with

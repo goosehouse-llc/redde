@@ -43,9 +43,12 @@ struct BotsTests {
         let roster = try roster(Self.listing)
         #expect(roster.listed.map(\.name) == ["default", "scout", "writer"], "the main one first, then the latest; a hidden bot left out")
         let alone = BotRoster(bots: [HermesBot(name: "default", isDefault: true)])
-        #expect(alone.listed.isEmpty)
+        #expect(alone.listed.isEmpty && !alone.hasOthers)
         let hiddenOthers = BotRoster(bots: [HermesBot(name: "default", isDefault: true), HermesBot(name: "x", isHidden: true)])
         #expect(hiddenOthers.listed.isEmpty)
+        // The chat list keeps the main one when it is alone, the last other bot hidden or deleted (issue 29).
+        #expect(alone.inChatList.map(\.name) == ["default"] && hiddenOthers.inChatList.map(\.name) == ["default"])
+        #expect(roster.inChatList == roster.listed && roster.hasOthers)
         #expect(!BotRoster(bots: [HermesBot(name: "default", isDefault: true), HermesBot(name: "x")]).messagingIsOn)
     }
 

@@ -479,10 +479,10 @@ struct ConversationsList: View {
 
     // MARK: - Bots (Hermes's Bot Mode, on the Dashboard)
 
-    /// The bots the list shows: none with the setting off, or while the main profile is the only one.
+    /// The bots the list shows: none with the setting off; the main profile alone while it is the only one.
     private var listedBots: [HermesBot] {
         guard settings.showBots, botDirectory.key == settings.connectionKey else { return [] }
-        return botDirectory.roster?.listed ?? []
+        return botDirectory.roster?.inChatList ?? []
     }
 
     /// The server's bots as last read, with the setting on: nil before they are (or can't be) read.
@@ -499,8 +499,10 @@ struct ConversationsList: View {
             let bots = listedBots
             let hidden = all.filter { $0.isHidden && !$0.isDefault }
             let faces = botDirectory.roster?.faces ?? [:]
+            // Group chats and bots messaging each other need a bot besides the main one.
+            let others = botDirectory.roster?.hasOthers == true
             // (Group chats are the Dashboard's: none on the Hermes API alone, whatever was read before.)
-            let hasRooms = !apiBotsOnly && !bots.isEmpty && groups.key == settings.connectionKey && groups.supported
+            let hasRooms = !apiBotsOnly && others && groups.key == settings.connectionKey && groups.supported
             let items = BotListItem.arranged(bots: bots, rooms: hasRooms ? groups.rooms : [], order: botOrder)
             Section {
                 if arrangingBots {
@@ -529,7 +531,7 @@ struct ConversationsList: View {
                     if hasRooms, groups.writable {
                         sectionAction("New Group Chat", systemImage: "person.3", hint: "Starts a chat with several bots at once") { makingGroup = true }
                     }
-                    if !apiBotsOnly, !bots.isEmpty, botDirectory.roster?.messagingIsOn == false {
+                    if !apiBotsOnly, others, botDirectory.roster?.messagingIsOn == false {
                         sectionAction("Let bots message each other", systemImage: "bubble.left.and.text.bubble.right",
                                       hint: "Sets your main profile up as a bot on the server, as Hermes Desktop does") { askingBotMessaging = true }
                     }
@@ -540,7 +542,7 @@ struct ConversationsList: View {
                 if arrangingBots {
                     Text("Drag bots and group chats by their handles into the order you want.")
                         .font(.footnote).foregroundStyle(.secondary)
-                } else if apiBotsOnly, showBotRows, bots.isEmpty {
+                } else if apiBotsOnly, showBotRows, !others {
                     Text("Bots are your server's other profiles. On the Hermes API, add each by its name and its own API key; with the Dashboard login saved in Settings, Redde lists them and has group chats too.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
@@ -2264,7 +2266,7 @@ extension ConversationsList {
     /// One project Hermes found, with one lane and two sessions (enough to reach
     /// ProjectSessionsView and tap a row), and one someone made, still empty.
     static var demoBots: BotRoster {
-        BotRoster(bots: [
+        let all = [
             HermesBot(name: "default", isDefault: true, lastActive: .now.addingTimeInterval(-3_600), preview: "Done: the reminder is set for 4 pm."),
             HermesBot(name: "scout", title: "Scout", description: "Finds things out", lastActive: .now.addingTimeInterval(-600),
                       preview: "Three trails under two hours from you, all open."),
@@ -2279,7 +2281,9 @@ extension ConversationsList {
             bot.model = ["default": "qwen3.6-35b-a3b", "scout": "qwen3.6-35b-a3b", "writer": "anthropic/claude-sonnet-4.5",
                          "fixit": "gemma-4-12b"][bot.name]
             return bot
-        } + extraDemoBots + claudeDemoBot)
+        } + extraDemoBots + claudeDemoBot
+        // `-echo.demoBotCount 1`: the main profile alone.
+        return BotRoster(bots: DevHooks.value("-echo.demoBotCount") == "1" ? all.filter(\.isDefault) : all)
     }
 
     /// `-echo.demoClaudeBot`: a coding bot that works through Claude Code, as the butler setup's (Topology).
