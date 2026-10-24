@@ -9,6 +9,14 @@ nonisolated struct BotVoice: Codable, Equatable, Sendable {
     var kokoro: String?
     /// Read in Redde's own voice, as before bots had voices.
     var sameAsMain: Bool?
+    /// How fast it reads (1 is the voice's own pace), whatever its voice; nil reads at Redde's
+    /// speed (Settings → Voice → Voice speed). Asked 2026-10-23, "control voice speed for each bot".
+    var speed: Double?
+
+    /// No voice picked for it: it gets one of its own (`BotVoices`).
+    var isAutomatic: Bool { onDevice == nil && kokoro == nil && sameAsMain != true }
+    /// Nothing picked at all, voice or speed: as good as no record.
+    var isEmpty: Bool { isAutomatic && speed == nil }
 }
 
 /// Which voice reads a bot's words: what was picked for it, else one of its own, in the language
@@ -62,6 +70,12 @@ nonisolated enum BotVoices {
             used.insert(given)
         }
         return nil
+    }
+
+    /// How fast `profile`'s words are read: its own speed where one was set, else Redde's (`main`).
+    static func speed(for profile: String?, picked: [String: BotVoice], main: Double) -> Double {
+        guard let profile, profile != "default", let own = picked[profile]?.speed, own > 0 else { return main }
+        return own
     }
 
     /// FNV-1a: the same voice for the same name on every device and every launch.

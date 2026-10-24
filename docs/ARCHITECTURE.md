@@ -796,7 +796,10 @@ count as English), or the built-in ones installed (enhanced and premium first, t
 novelty voices never), given out by name (FNV-1a) through the roster in name order, so no two bots
 share while there are voices enough. "Same as Redde" reads in Redde's own; the main agent always
 does. A reply clearly in another language still goes to a voice for it. Hermes's own voice is
-the server's, one for every bot.
+the server's, one for every bot. A bot reads at a speed of its own when one is set (asked
+2026-10-23, "control voice speed for each bot"; `BotVoice.speed`, Speed in its voice screen with a
+sample), whatever its voice, else at Redde's (Settings → Voice → Voice speed; `BotVoices.speed`).
+Not for Hermes's voice, which takes no speed, nor on the watch.
 
 ### Incognito chats
 

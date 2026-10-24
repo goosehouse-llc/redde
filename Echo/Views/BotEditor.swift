@@ -66,10 +66,11 @@ struct BotEditor: View {
 
     /// A picked voice, in a word: its name, or Redde's own.
     static func voiceSummary(_ voice: BotVoice) -> String {
-        if voice.sameAsMain == true { return "Same as the main agent" }
-        if let id = voice.kokoro { return BotVoicePicker.kokoroName(id) }
-        if let id = voice.onDevice { return AVSpeechSynthesisVoice(identifier: id)?.name ?? "A built-in voice" }
-        return "Automatic"
+        let speed = voice.speed.map { String(format: " · %.2f×", $0) } ?? ""
+        if voice.sameAsMain == true { return "Same as the main agent" + speed }
+        if let id = voice.kokoro { return BotVoicePicker.kokoroName(id) + speed }
+        if let id = voice.onDevice { return (AVSpeechSynthesisVoice(identifier: id)?.name ?? "A built-in voice") + speed }
+        return "Automatic" + speed
     }
 
     private struct Original: Equatable {

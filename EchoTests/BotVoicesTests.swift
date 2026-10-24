@@ -30,6 +30,21 @@ struct BotVoicesTests {
         #expect(BotVoices.kokoro(for: "writer", picked: [:], main: "af_heart", available: ["af_heart"], names: names) == nil, "no other: Redde's")
     }
 
+    /// Its own speed, whatever its voice, or Redde's (asked 2026-10-23, "control voice speed for
+    /// each bot"); a speed alone leaves its voice Automatic, and a record saved before speeds reads as before.
+    @Test func eachBotReadsAtItsOwnSpeedOrRedde_s() throws {
+        let picked = ["scout": BotVoice(speed: 1.4), "writer": BotVoice(kokoro: "am_adam", speed: 0.8), "fixit": BotVoice(sameAsMain: true)]
+        #expect(BotVoices.speed(for: "scout", picked: picked, main: 1.1) == 1.4)
+        #expect(BotVoices.speed(for: "writer", picked: picked, main: 1.1) == 0.8)
+        #expect(BotVoices.speed(for: "fixit", picked: picked, main: 1.1) == 1.1, "none set: Redde's")
+        #expect(BotVoices.speed(for: "default", picked: ["default": BotVoice(speed: 2)], main: 1.1) == 1.1, "the main agent's is Redde's")
+        #expect(BotVoices.speed(for: nil, picked: picked, main: 1.1) == 1.1)
+        #expect(picked["scout"]?.isAutomatic == true && picked["scout"]?.isEmpty == false)
+        #expect(BotVoices.kokoro(for: "scout", picked: picked, main: "af_heart", available: kokoro, names: names) != nil, "its voice still its own")
+        let old = try JSONDecoder().decode(BotVoice.self, from: Data(#"{"kokoro":"am_adam"}"#.utf8))
+        #expect(old.speed == nil && old.kokoro == "am_adam")
+    }
+
     @Test func builtInVoicesGoRoundTheBetterOnesFirst() {
         let installed = [
             SpokenLanguage.AppleVoice(identifier: "main", language: "en-US", quality: 3),

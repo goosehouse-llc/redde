@@ -112,6 +112,11 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
     }
 
     /// The Kokoro voice `speaker`'s words are read in (`BotVoices`), Redde's own for nil.
+    /// How fast `speaker` reads: a bot's own speed, else Redde's (`BotVoices.speed`).
+    private func speed(of speaker: String?) -> Double {
+        BotVoices.speed(for: speaker, picked: Settings.shared.botVoicesHere, main: Settings.shared.voiceSpeed)
+    }
+
     private func kokoroVoice(of speaker: String?) -> String {
         BotVoices.kokoro(for: speaker, picked: Settings.shared.botVoicesHere, main: Settings.shared.kokoroVoice,
                          available: kokoroVoiceIDs?.ids ?? [], names: botNames) ?? Settings.shared.kokoroVoice
@@ -129,7 +134,7 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         guard let first = chunker.append(text).first ?? (whole ? chunker.flush() : nil) else { return }
         let spoken = PlainText.spoken(first)
         guard !spoken.isEmpty else { return }
-        player.prefetch(spoken, baseURL: base, voice: kokoroVoice(of: speaker), speed: Settings.shared.voiceSpeed)
+        player.prefetch(spoken, baseURL: base, voice: kokoroVoice(of: speaker), speed: speed(of: speaker))
     }
 
     /// The bot's own built-in voice for `language`, when it has one there: looked up once a reply
@@ -345,7 +350,7 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
                 isSpeaking = true
                 sentToKokoro = true
                 player.enqueue(spoken, baseURL: base, voice: voice ?? replyKokoroVoice,
-                               speed: Settings.shared.voiceSpeed)
+                               speed: speed(of: speaker))
                 return
             }
             // Kokoro has no voice for this language: the built-in one reads the whole reply.
@@ -366,7 +371,7 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         // The same speed slider as Kokoro, scaled around the system default rate.
         utterance.rate = min(AVSpeechUtteranceMaximumSpeechRate,
                              max(AVSpeechUtteranceMinimumSpeechRate,
-                                 AVSpeechUtteranceDefaultSpeechRate * Float(Settings.shared.voiceSpeed)))
+                                 AVSpeechUtteranceDefaultSpeechRate * Float(speed(of: speaker))))
         utterance.postUtteranceDelay = 0.02
         queued += 1
         isSpeaking = true

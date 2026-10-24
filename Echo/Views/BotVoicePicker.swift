@@ -4,7 +4,8 @@ import SwiftUI
 /// A bot's voice: Automatic (one of its own, `BotVoices`), Redde's own, or one of the voices Redde
 /// reads with now (Settings → Voice → Reply voice: the built-in voices for the listening language,
 /// or the Kokoro server's), each with a sample to hear. Kept on the phone, per server, and synced
-/// with iCloud. Hermes's own voice is the server's, one for every bot.
+/// with iCloud. Hermes's own voice is the server's, one for every bot. Its speed too: its own, or
+/// Redde's (Settings → Voice → Voice speed).
 struct BotVoicePicker: View {
     let bot: HermesBot
     let mainName: String
@@ -28,8 +29,9 @@ struct BotVoicePicker: View {
                             .font(.footnote).foregroundStyle(.secondary)
                     }
                 } else {
+                    speedSection
                     Section {
-                        row("Automatic", detail: automaticDetail, chosen: picked == nil, voice: nil) { set(nil) }
+                        row("Automatic", detail: automaticDetail, chosen: picked?.isAutomatic ?? true, voice: nil) { set(nil) }
                         row("Same as \(mainName)", detail: nil, chosen: picked?.sameAsMain == true, voice: BotVoice(sameAsMain: true)) {
                             set(BotVoice(sameAsMain: true))
                         }
@@ -84,6 +86,37 @@ struct BotVoicePicker: View {
 
     private func isPicked(_ id: String) -> Bool { picked?.kokoro == id || picked?.onDevice == id }
 
+    /// Its own speed, or Redde's: a switch, and the slider while it is on.
+    private var speedSection: some View {
+        Section {
+            Toggle("Its own speed", isOn: Binding(
+                get: { picked?.speed != nil },
+                set: { own in setSpeed(own ? settings.voiceSpeed : nil) }))
+            if let speed = picked?.speed {
+                VStack(alignment: .leading, spacing: 2) {
+                    LabeledContent("Speed") { Text(String(format: "%.2f×", speed)).monospacedDigit() }
+                    Slider(value: Binding(get: { speed }, set: { setSpeed($0, hear: false) }), in: 0.5...2.0, step: 0.05) { editing in
+                        if !editing { play(picked.flatMap { $0.isAutomatic ? nil : $0 }) }
+                    }
+                    .accessibilityLabel("\(name)'s voice speed")
+                }
+            }
+        } header: {
+            Text("Speed")
+        } footer: {
+            Text(picked?.speed == nil
+                ? "\(name) reads at \(mainName)'s speed, \(String(format: "%.2f×", settings.voiceSpeed)) (Settings → Voice → Voice speed)."
+                : "\(name) reads at this speed in voice mode, in group chats and in the car, whatever its voice.")
+        }
+    }
+
+    private func setSpeed(_ speed: Double?, hear: Bool = true) {
+        var voice = picked ?? BotVoice()
+        voice.speed = speed
+        settings.botVoicesHere[bot.name] = voice.isEmpty ? nil : voice
+        if hear { play(voice.isAutomatic ? nil : voice) }
+    }
+
     /// What Automatic gives it now.
     private var automaticDetail: String {
         var others = settings.botVoicesHere
@@ -128,8 +161,11 @@ struct BotVoicePicker: View {
         }
     }
 
+    /// Another voice; its speed stays as it was.
     private func set(_ voice: BotVoice?) {
-        settings.botVoicesHere[bot.name] = voice
+        var record = voice ?? BotVoice()
+        record.speed = picked?.speed
+        settings.botVoicesHere[bot.name] = record.isEmpty ? nil : record
         play(voice)
     }
 
