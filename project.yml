@@ -7,7 +7,8 @@ options:
   xcodeVersion: "27.0"
   createIntermediateGroups: true
   generateEmptyDirectories: true
-# The only code from outside Apple and this repository: the terminal (Echo/Services/Terminal). Pinned:
+# Code from outside Apple and this repository: the terminal's (Echo/Services/Terminal), and WebRTC
+# for GPT-Live's calls (ReddeLive). Pinned:
 # SwiftTerm 1.12 onwards compiles a Metal shader (Xcode's separately downloaded Metal toolchain) and
 # 1.20 onwards runs a build-tool plugin Xcode wants trusted before every build and archive; 1.11.2
 # needs neither. swift-nio-ssh is Apple's, on Apple's CryptoKit. The packages after swift-nio are
@@ -41,6 +42,11 @@ packages:
   swift-argument-parser:
     url: https://github.com/apple/swift-argument-parser
     exactVersion: 1.8.2
+  # Google's WebRTC as stasel builds it (BSD; M155, 2026-10-12), a binary framework checked
+  # against the checksum in its manifest. Only ReddeLive links it.
+  WebRTC:
+    url: https://github.com/stasel/WebRTC
+    exactVersion: 155.0.0
 settings:
   base:
     DEVELOPMENT_TEAM: 579BSQT6J4
@@ -77,6 +83,16 @@ targets:
         product: NIOCore
       - package: swift-nio
         product: NIOPosix
+      # GPT-Live's calls: in the app, never linked by it, loaded when a call starts (LiveEngine).
+      - target: ReddeLive
+        link: false
+        embed: true
+      # And the WebRTC it links, as its package left it among the built products: Xcode won't
+      # embed a package's framework in a target that doesn't link it.
+      - framework: WebRTC.framework
+        implicit: true
+        link: false
+        embed: true
     entitlements:
       path: Echo/Echo.entitlements
       properties:
@@ -189,6 +205,23 @@ targets:
         # The personal prefill never rides along in a Release / App Store build.
         Release:
           EXCLUDED_SOURCE_FILE_NAMES: LocalDefaults.json
+  # GPT-Live's calls over WebRTC (12 MB of code). A framework of its own so that the app loads
+  # it only when a call starts, not with every launch (LiveCallBridge.swift says how they talk).
+  ReddeLive:
+    type: framework
+    platform: iOS
+    sources:
+      - path: ReddeLive
+      - path: Echo/Services/Voice/LiveCallBridge.swift
+    dependencies:
+      - package: WebRTC
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.goosehouse.echo.live
+        GENERATE_INFOPLIST_FILE: true
+        SKIP_INSTALL: true
+        SWIFT_APPROACHABLE_CONCURRENCY: true
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
   # The Apple Watch app. It talks to Hermes itself, with the connection the phone hands over
   # (Shared/WatchSync.swift), through the same transport code as the phone: those files are
   # listed one by one, since the rest of the app assumes iOS.

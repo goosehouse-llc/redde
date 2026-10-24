@@ -8,8 +8,10 @@ How Redde works, for contributors. For what it is and how to build it, see the [
   no crash reporting, no service of our own in the request path.
 - **On the device where possible.** Speech recognition (SpeechAnalyzer) and the built-in voice
   (AVSpeechSynthesizer) run on the phone. The only optional remote audio services are a Kokoro
-  server the user runs and the user's own Hermes, which speaks with the voice it is set up with
-  (so the reply's text may go on from it to the provider chosen there; Settings says which).
+  server the user runs, the user's own Hermes, which speaks with the voice it is set up with
+  (so the reply's text may go on from it to the provider chosen there; Settings says which), and
+  GPT-Live, OpenAI's voice model, which hears the microphone while a call is open (opt-in, with
+  the person's or their Hermes's OpenAI key; see [GPT-Live](#gpt-live)).
 - **Secrets in the Keychain.** Keys and passwords are stored `WhenUnlockedThisDeviceOnly`, never in
   UserDefaults, source or config files; with Sync with iCloud turned on, a server's keys and
   passwords go in iCloud Keychain instead (end-to-end encrypted; see [Sync with iCloud](#sync-with-icloud)).
@@ -1873,6 +1875,67 @@ so the answer goes to the conversation that is waiting, by the same door as the 
 buttons. Approve asks for the device to be unlocked; Deny doesn't. A stale activity shows no
 buttons: the app that would carry the answer has stopped. `-echo.demoApproval` puts one up to
 look at.
+
+### GPT-Live
+
+Settings → Voice → Conversation picks who holds a voice conversation: Redde (the loop above), or
+GPT-Live (`Services/Voice/LiveVoice.swift`), OpenAI's full-duplex voice model, as Hermes Desktop
+has it (`voice.voice_chat_mode: gpt-live`; asked 2026-10-23 after a Reddit comment, built
+2026-10-24). The voice model talks and listens at once, answers small talk itself, says "let me
+check", and hands every real request to the agent (client delegation); the agent's answer goes
+back for it to say in its own words. Hermes keeps the model, tools, memory and approvals.
+
+- **The call** goes straight from the phone to OpenAI over WebRTC: the microphone (Opus, with
+  WebRTC's echo cancellation on Redde's own voice-chat audio session), the voice coming back, and
+  the `oai-events` data channel. Only the SDP offer and answer pass through whoever sets it up
+  (`LiveSetup`): the person's Hermes, on the Dashboard (`POST /api/audio/voice-live/session`,
+  0.21.3 and later, with an OpenAI key there; its status endpoint says whether it can, asked as
+  the voice screen opens and kept five minutes), else Redde, with an OpenAI key kept in the
+  Keychain (`openai-live-key`, synced like the other keys), posting to OpenAI's
+  `/v1/live/sessions` itself with Hermes's persona and session config. The Hermes API has no way
+  to set a call up, so on it the key in Redde is the way, unless the Dashboard's login is saved.
+- **WebRTC loads only when a call starts.** It is 12 MB of code; linked, it would load with every
+  launch (21 ms, 53 ms the first time after an install, on an iPhone 15 Pro Max, measured
+  2026-10-24). So it lives in `ReddeLive.framework` (`ReddeLive/LiveCall.swift`, the only target
+  that links the stasel/WebRTC package), embedded beside WebRTC.framework and loaded with `dlopen`
+  (`LiveEngine`); the app talks to it through Objective-C protocols compiled into both
+  (`LiveCallBridge.swift`). The voice screen loads it off the main thread as it opens with
+  GPT-Live chosen. A unit test checks nothing has loaded it before a call.
+- **Handing over** (`LiveVoice.delegated`): `session.delegation.created` carries no text, so the
+  prompt is the person's last words (the message the chat shows) and the context the last five
+  minutes of the exchange (`LiveFragment.delegation`). On a Dashboard that knows live voice
+  turns it goes as `prompt.submit` with `surface: "voice-live"` and `voice_context`, and Hermes
+  tells its model itself; on the Hermes API and the fast lane `LiveVoiceNote` goes in the
+  instructions, and on Hermes 0.21.0 on the message (hidden again by `ReplyLanguage.stripNote`).
+  Spoken prefixes apply as in Redde's own voice. A newer request stops one still being worked on.
+- **The answer** goes back as the agent writes it, a sentence at a time (`SentenceChunker`, then
+  `PlainText.spoken`; pieces with nothing to say, a table's rule or a code fence, are left out),
+  as `session.commentary.append` in 1,400-character pieces at most; each tool started is a
+  `session.thinking.append` ("Sol is working: calendar. Not done yet."). Hermes Desktop polls
+  every 200 ms and sends what has built up; Redde sends each sentence as it completes.
+- **The voice session** (`VoiceSession.startLive`, `mirrorLive`) shows the call as its phases:
+  connecting and working as thinking, the voice speaking (from the connection's audio levels,
+  eight times a second, with half a second of quiet before it counts as stopped) as speaking,
+  the rest as listening. No cues between them, no mode or route changes, no thinking sound: one
+  cue as the call starts and one as it ends. The orb, the headset, Stop and Done hang up; Pause in
+  the car shuts the microphone (`session.input_audio.mute`), the call staying open. A stop phrase
+  hangs up, judged 1.5 s after the person stops talking (the voice model answers a bare "stop"
+  itself and never hands it over). Leaving the foreground hangs up unless hands-free or CarPlay,
+  as an open microphone does in Redde's own loop. A call quiet for Settings' minutes (2 by
+  default) hangs up too: OpenAI bills $0.05 a minute, silence included. A note and a group
+  chat's voice stay Redde's own.
+- **Measured on Marta** (2026-10-24, a loopback call through the same WebRTC in a throwaway
+  build): 9.3% of one core for the call, against about 24% for Redde's own voice mode listening
+  (7.5% of which is the voice screen); about +7 MB while a call is up; about 44 kbps out. The
+  phone's own setup (the offer with every host candidate) takes about a tenth of a second; ICE
+  gathering with host addresses only completes in about 110 ms, so waiting for all of it costs
+  nothing worth saving. `-echo.liveMeasure` logs each step of setting a call up and the call's
+  cost every ten seconds; `scripts/live-standin.py` stands in for OpenAI (and the agent) to try a
+  whole call with no key, `-echo.liveEndpoint` pointing a DEBUG build at it.
+- **What it gives up:** Redde's voices (Kokoro, a bot's voice, the voice speed): everyone speaks
+  in OpenAI's voice, the one Hermes is set to through Hermes (`voice.gpt_live.voice`), else the
+  one picked in Settings. Answering a request aloud: a request goes to the screen, and the voice
+  is told so. Not on the watch.
 
 ### Status widgets: Needs you, and Context
 

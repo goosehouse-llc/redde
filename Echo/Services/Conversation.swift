@@ -240,9 +240,10 @@ final class Conversation {
     /// Sends one user turn. The returned stream mirrors the transport events for callers that
     /// want them live (the voice loop); the transcript is updated regardless.
     /// `brief`: asked by voice in a car, for an answer short enough to follow there
-    /// (`CarBrevity`). A message that has to wait its turn goes out later as an ordinary one.
+    /// (`CarBrevity`). `live`: handed over by GPT-Live (`LiveTurn`). A message that has to wait
+    /// its turn goes out later as an ordinary one.
     @discardableResult
-    func send(_ text: String, attachments: [Attachment] = [], brief: Bool = false) -> AsyncStream<TurnEvent> {
+    func send(_ text: String, attachments: [Attachment] = [], brief: Bool = false, live: LiveTurn? = nil) -> AsyncStream<TurnEvent> {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty || !attachments.isEmpty else { return Self.finishedStream() }
         userSendCount += 1
@@ -257,7 +258,7 @@ final class Conversation {
             if !isStreaming { retryOutbox() }
             return Self.finishedStream()
         }
-        return startTurn(userMessage, brief: brief)
+        return startTurn(userMessage, brief: brief, live: live)
     }
 
     /// What a page in a reply sends the agent (`window.hermes.send`, `data-hermes-send`): a turn
@@ -281,7 +282,8 @@ final class Conversation {
     /// Runs one turn for a user message that isn't in the transcript yet. `heldSince` is when a
     /// message coming out of the outbox was first queued, so holding it again keeps its age.
     @discardableResult
-    private func startTurn(_ outgoing: Message, heldSince: Date? = nil, brief: Bool = false, fromPage: PageTurn? = nil) -> AsyncStream<TurnEvent> {
+    private func startTurn(_ outgoing: Message, heldSince: Date? = nil, brief: Bool = false, live: LiveTurn? = nil,
+                           fromPage: PageTurn? = nil) -> AsyncStream<TurnEvent> {
         let (mirror, mirrorContinuation) = AsyncStream.makeStream(of: TurnEvent.self)
         lastSendWasHeld = false
         lastError = nil
@@ -314,6 +316,7 @@ final class Conversation {
         if connection == .hermesServe, serverSessionID == nil { request.folder = startsIn?.path }
         request.incognito = isIncognito
         request.fromPage = fromPage != nil
+        request.live = live
         // The Hermes API's run for this message, should it go again after a dropped connection.
         request.turnKey = userID.uuidString
         // The conversation's fast mode: the Hermes API keeps none for a session, so each turn asks.

@@ -94,6 +94,10 @@ import WidgetKit
 /// - `-echo.demoAlarm [seconds]`: set a timer as the phone tool does (thirty seconds by default;
 ///   Alarms has to be allowed already), to look at its countdown and at what rings.
 ///   `-echo.demoAlarm clear` cancels every alarm and timer iOS holds for Redde.
+/// - `-echo.liveEndpoint <url>`: GPT-Live calls go to a stand-in for OpenAI's sessions at that
+///   address (scripts/live-standin.py), with no key, instead of to OpenAI. `-echo.liveMeasure`:
+///   how long each step of setting a call up took, and every ten seconds what the call costs the
+///   phone (CPU, memory), in Library/Caches/live-measure.log.
 /// - `-echo.voiceLook`: give voice mode a made-up camera (`DemoEye`), since the simulator has
 ///   none: the camera button shows, and a question asked with it on goes with a drawn picture.
 /// - `-echo.dictation`: listen with the transcriber an iPhone 11 or SE 2 gets (`Transcriber`),

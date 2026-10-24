@@ -1270,7 +1270,7 @@ final class HermesServeClient {
         case (_, "api/sessions"): return method == "GET" ? .query : .none
         default:
             let queryRoutes = ["api/skills", "api/tools/toolsets", "api/cron/", "api/mcp/servers", "api/logs", "api/status", "api/gateway/restart",
-                               "api/sessions/search", "api/audio/speak"]
+                               "api/sessions/search", "api/audio/speak", "api/audio/voice-live/"]
             return queryRoutes.contains { route == $0 || route.hasPrefix($0.hasSuffix("/") ? $0 : $0 + "/") } ? .query : .none
         }
     }

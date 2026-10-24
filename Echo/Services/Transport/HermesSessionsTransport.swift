@@ -155,10 +155,11 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
     }
 
     /// The turn's instructions to the agent, on top of Hermes's own: Redde's hint, then the
-    /// reply language and the car's request for a short answer.
+    /// reply language, the car's request for a short answer, and what a turn GPT-Live handed over is.
     static func instructions(for request: TurnRequest) -> String {
         ([clientHint] + [request.instructions?.nilIfEmpty, request.replyLanguage.map(ReplyLanguage.instruction),
-                         request.brief ? CarBrevity.instruction : nil, request.incognito ? IncognitoNote.instruction : nil].compactMap { $0 })
+                         request.brief ? CarBrevity.instruction : nil, request.incognito ? IncognitoNote.instruction : nil,
+                         request.live.map { LiveVoiceNote.instruction(context: $0.context) }].compactMap { $0 })
             .joined(separator: "\n\n")
     }
 

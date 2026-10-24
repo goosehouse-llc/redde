@@ -27,7 +27,7 @@ struct ConnectionDetailsView: View {
 
 /// A secret's field with its Save/Remove row. The typed value lives here and is cleared on
 /// save; whether one is stored belongs to the caller, which gates other sections on it.
-private struct SecretField: View {
+struct SecretField: View {
     let item: Keychain.Item
     let prompt: String
     let replacePrompt: String

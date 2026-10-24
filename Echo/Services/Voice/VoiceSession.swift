@@ -85,6 +85,13 @@ final class VoiceSession {
             // A reply held while it was being thought about is still held at its first word.
             if !(oldValue == .thinking && phase == .speaking) { isPaused = false }
             if phase != .speaking { soundStartedAt = nil }
+            // A GPT-Live call has its own audio, open both ways all the while: no cues between its
+            // phases, no change of mode or route, no thinking sound, no microphone behind a reply.
+            if live != nil {
+                if headsetControlsOn { publishNowPlaying() }
+                updateScreenAwake()
+                return
+            }
             // Every path OUT of listening funnels through here: utterance end, tap,
             // interruption, AirPods coming out. The start cue plays in startRecognizer
             // instead — at phase-set time the audio session isn't active or routed yet,
@@ -128,6 +135,28 @@ final class VoiceSession {
     /// listens): the session is idle but not over. `unmute()`, or the mic by any other route,
     /// listens again.
     private(set) var isMuted = false
+
+    /// A GPT-Live call (Settings → Voice → Conversation), while there is one: it holds the
+    /// conversation in place of the recogniser and the voice, and the phase is the call's.
+    private(set) var live: LiveVoice?
+    /// What GPT-Live's voice is saying, for the screen while it speaks.
+    private(set) var liveSaid = ""
+    var isLive: Bool { live != nil }
+    /// A GPT-Live call being set up.
+    var liveConnecting: Bool { live.map { !$0.connected } ?? false }
+    /// The call's start cue has played: its end gets the stop cue.
+    private var liveCued = false
+    /// Settings → Voice → Conversation is GPT-Live, and what makes a call. Injectable so tests choose.
+    private let liveWanted: () -> Bool
+    private let makeLive: (Conversation) -> LiveVoice
+    /// The microphone allowed (a call needs no speech recognition). Injectable like `requestPermissions`.
+    private let micAllowed: () async -> Bool
+
+    /// How loud the person is, 0…1, for the screen: the call's on GPT-Live, else the recogniser's.
+    var micLevel: Float { live?.inputLevel ?? recognizer.meterLevel }
+    var micSmoothedLevel: Float { live?.inputLevel ?? recognizer.level }
+    /// How loud the reply is, 0…1: GPT-Live's voice, else Redde's.
+    var replyLevel: Float { live?.outputLevel ?? output.meterLevel }
 
     let recognizer: any VoiceRecognizing
     let output: any VoiceSpeaking
@@ -265,7 +294,13 @@ final class VoiceSession {
          takeNote: @escaping (String) -> Void = { CaptureInbox.shared.add($0) },
          thinkingSoundWanted: @escaping () -> Settings.ThinkingSound = { Settings.shared.thinkingSound },
          thinkingSound: any ThinkingSounding = ThinkingSoundPlayer.shared,
-         respond: ((SpokenRequest.Answer) -> Void)? = nil) {
+         respond: ((SpokenRequest.Answer) -> Void)? = nil,
+         liveWanted: @escaping () -> Bool = { Settings.shared.voiceEngine == .gptLive },
+         makeLive: @escaping (Conversation) -> LiveVoice = { LiveVoice(conversation: $0) },
+         micAllowed: @escaping () async -> Bool = { await AVAudioApplication.requestRecordPermission() }) {
+        self.liveWanted = liveWanted
+        self.makeLive = makeLive
+        self.micAllowed = micAllowed
         self.talkOver = talkOver
         self.commandsInCar = commandsInCar
         self.interruption = interruption
@@ -352,6 +387,8 @@ final class VoiceSession {
 
     /// What tapping the mic does in each phase; AirPods and Lock Screen presses do the same.
     func primaryAction() {
+        // On a GPT-Live call the orb hangs up, whatever the call is doing.
+        if live != nil { cancel(); return }
         switch phase {
         case .idle, .error: beginListening()
         case .listening: endListening()
@@ -392,7 +429,8 @@ final class VoiceSession {
         HeadsetControls.shared.setNowPlaying(status: status, active: phase == .listening || phase == .speaking)
     }
 
-    var mightBeBusy: Bool { phase != .idle }
+    /// A GPT-Live call with its microphone shut is idle, and still open (and billed).
+    var mightBeBusy: Bool { phase != .idle || live != nil }
 
     // MARK: - Public actions
 
@@ -429,6 +467,8 @@ final class VoiceSession {
     /// Tap the mic: start listening. If a reply is being spoken, this barges in. `capturing`:
     /// for a note (`CaptureInbox`), which leaves the conversation and whatever it is doing alone.
     func beginListening(capturing: Bool = false) {
+        // On a call already: the microphone opens again if it was shut, and that is all.
+        if live != nil { unmute(); return }
         if asking != nil {
             // Tapped while the request is being read out: hear the answer now. The turn is not
             // one to barge in on; it waits for that answer.
@@ -441,6 +481,12 @@ final class VoiceSession {
         if capturing, phase != .idle, !isErrored { return }
         replaying = false
         guard phase == .idle || phase == .speaking || isErrored else { return }
+        // GPT-Live: a call instead. A note and a group chat's voice stay Redde's own.
+        if !capturing, sendsTo == nil, liveWanted() {
+            output.stop()
+            startLive()
+            return
+        }
         isCapturing = capturing
         isMuted = false
         stopMonitor()   // the mic behind a reply closes; listening opens it afresh
@@ -462,6 +508,12 @@ final class VoiceSession {
     /// left alone: that is what the background modes are for.
     func leftForeground(carPlayConnected: Bool) {
         guard !continuous, !carPlayConnected else { return }
+        // A call, too: an open microphone on a locked phone, and a bill running.
+        if live != nil {
+            log.info("left the foreground on a GPT-Live call: hanging up")
+            cancel()
+            return
+        }
         // The same goes for the mic behind a reply: the reply plays on, and can't be talked over.
         if phase == .thinking || phase == .speaking { stopMonitor() }
         // And for a mic waiting on an answer: the request stays, on the screen and in its notification.
@@ -474,6 +526,12 @@ final class VoiceSession {
     /// Shut the mic without ending the conversation, so nothing said in the car is taken for a
     /// question. Only while listening; hands-free stays as it was for when the mic comes back.
     func mute() {
+        if let live {
+            guard !isMuted else { return }
+            isMuted = true
+            live.setMuted(true)
+            return
+        }
         guard phase == .listening else { return }
         // Muted instead of answering: the request waits on the screen, the turn on the request.
         if asking != nil { leaveForTheScreen(saying: false); return }
@@ -485,6 +543,11 @@ final class VoiceSession {
 
     func unmute() {
         guard isMuted else { return }
+        if let live {
+            isMuted = false
+            live.setMuted(false)
+            return
+        }
         beginListening(capturing: isCapturing)   // a note being taken is still a note
     }
 
@@ -529,6 +592,8 @@ final class VoiceSession {
     /// it is still being thought about. Then the agent works on and the reply waits, whole,
     /// until Play.
     func pauseSpeaking() {
+        // A call can't hold what its voice says: Pause shuts the microphone instead.
+        if live != nil { mute(); return }
         guard phase == .speaking || phase == .thinking, !isPaused else { return }
         output.pause()
         isPaused = true
@@ -536,6 +601,7 @@ final class VoiceSession {
     }
 
     func resumeSpeaking() {
+        if live != nil { unmute(); return }
         guard phase == .speaking || phase == .thinking, isPaused else { return }
         output.resume()
         isPaused = false
@@ -544,11 +610,13 @@ final class VoiceSession {
     /// The Stop button while speaking: silence the reply and go idle. Hands-free stays
     /// switched on for the next tap; the server turn is cancelled if it is still streaming.
     func stopSpeaking() {
+        if live != nil { cancel(); return }
         guard phase == .speaking else { return }
         cancel()
     }
 
     func cancel() {
+        if live != nil { endLive(); return }
         replaying = false
         isMuted = false
         isCapturing = false
@@ -576,6 +644,83 @@ final class VoiceSession {
             guard let self, phase == .idle || isErrored else { return }
             audio.deactivate()
         }
+    }
+
+    // MARK: - GPT-Live
+
+    /// Calls GPT-Live: the microphone allowed and the audio session set up for voice, as for
+    /// listening, then the call (`LiveVoice`), whose state is shown as the phase from here on.
+    private func startLive() {
+        let live = makeLive(conversation)
+        self.live = live
+        isMuted = false
+        isCapturing = false
+        liveTranscript = ""
+        liveSaid = ""
+        live.onChange = { [weak self, weak live] in
+            guard let self, let live, self.live === live else { return }
+            mirrorLive()
+        }
+        activeTool = "Calling GPT-Live…"
+        phase = .thinking
+        Task {
+            guard await micAllowed() else {
+                endLive(problem: "Redde can't use the microphone. Allow it in Settings → Privacy & Security → Microphone.")
+                return
+            }
+            guard self.live === live else { return }
+            do { try audio.activateForVoice() } catch {
+                endLive(problem: error.localizedDescription)
+                return
+            }
+            await live.start()
+        }
+    }
+
+    /// The call as the phase: connecting and working as thinking, its voice as speaking, the rest
+    /// as listening (idle while the microphone is shut).
+    private func mirrorLive() {
+        guard let live else { return }
+        liveTranscript = live.heard
+        liveSaid = live.said
+        switch live.state {
+        case .ended:
+            endLive(problem: live.problem)
+            return
+        case .connecting:
+            phase = .thinking
+        case .listening:
+            activeTool = nil
+            phase = isMuted ? .idle : .listening
+        case .thinking:
+            activeTool = live.tool
+            phase = .thinking
+        case .speaking:
+            let wasSpeaking = phase == .speaking
+            phase = .speaking
+            if !wasSpeaking { soundStartedAt = .now }
+        }
+        if live.connected, !liveCued {
+            liveCued = true
+            earcon(.listening)
+            audio.refreshRoute()   // WebRTC's voice-processing unit just reset the output
+        }
+    }
+
+    /// The call is over: hung up here, or ended by the service or a lost connection (`problem`).
+    private func endLive(problem: String? = nil) {
+        guard let live else { return }
+        live.onChange = nil
+        if live.state != .ended { live.hangUp() }
+        isMuted = false
+        liveSaid = ""
+        activeTool = nil
+        // While the call is still the session's, so the phase change makes no cue or audio change of its own.
+        phase = problem.map { .error($0) } ?? .idle
+        self.live = nil
+        if liveCued { earcon(.stopped) }
+        liveCued = false
+        releaseAudioAfterCue()
     }
 
     // MARK: - Pipeline

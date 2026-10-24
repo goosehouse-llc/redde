@@ -148,6 +148,25 @@ final class Settings: ServeEndpoint {
     var thinkingSound: ThinkingSound {
         didSet { store(thinkingSound.rawValue, forKey: Keys.thinkingSound) }
     }
+    /// Who holds a voice conversation: Redde (the phone hears, the agent answers, a voice reads
+    /// it), or GPT-Live, OpenAI's voice model, which talks and listens at once and hands the real
+    /// work to the agent (`LiveVoice`). Redde until chosen: GPT-Live sends the microphone to OpenAI
+    /// and costs money by the minute.
+    enum VoiceEngine: String, CaseIterable, Sendable { case redde, gptLive }
+    var voiceEngine: VoiceEngine {
+        didSet { store(voiceEngine.rawValue, forKey: Keys.voiceEngine) }
+    }
+    /// GPT-Live's voice when Redde sets the call up with its own OpenAI key. Through Hermes it is
+    /// the one in Hermes's config (voice.gpt_live.voice).
+    var liveVoice: String {
+        didSet { store(liveVoice, forKey: Keys.liveVoice) }
+    }
+    /// Minutes of quiet after which a GPT-Live call hangs up by itself: OpenAI bills every minute
+    /// it is open, silent ones too. 0: only when ended.
+    var liveHangUp: Int {
+        didSet { store(liveHangUp, forKey: Keys.liveHangUp) }
+    }
+    static let liveHangUps = [1, 2, 5, 10, 0]
     /// With that on, a nod of the head approves and a shake denies, with AirPods that sense
     /// movement (`HeadGestures`). Off until asked for: iOS has to be asked for Motion & Fitness.
     var answerRequestsByNod: Bool {
@@ -583,6 +602,9 @@ final class Settings: ServeEndpoint {
         static let answerRequestsByNod = "answerRequestsByNod"
         static let shortAnswersInCar = "shortAnswersInCar"
         static let thinkingSound = "thinkingSound"
+        static let voiceEngine = "voiceEngine"
+        static let liveVoice = "liveVoice"
+        static let liveHangUp = "liveHangUp"
         static let useKokoro = "useKokoro"
         static let replyVoice = "replyVoice"
         static let kokoroURL = "kokoroURL"
@@ -660,6 +682,9 @@ final class Settings: ServeEndpoint {
         answerRequestsByNod = defaults.bool(forKey: Keys.answerRequestsByNod)
         shortAnswersInCar = defaults.bool(forKey: Keys.shortAnswersInCar)
         thinkingSound = defaults.string(forKey: Keys.thinkingSound).flatMap(ThinkingSound.init(rawValue:)) ?? .off
+        voiceEngine = defaults.string(forKey: Keys.voiceEngine).flatMap(VoiceEngine.init(rawValue:)) ?? .redde
+        liveVoice = defaults.string(forKey: Keys.liveVoice) ?? LiveSetup.defaultVoice
+        liveHangUp = defaults.object(forKey: Keys.liveHangUp) as? Int ?? 2
         // Before there were three, Kokoro was a switch.
         replyVoice = defaults.string(forKey: Keys.replyVoice).flatMap(ReplyVoice.init(rawValue:))
             ?? (defaults.bool(forKey: Keys.useKokoro) ? .kokoro : .onDevice)
@@ -777,7 +802,8 @@ final class Settings: ServeEndpoint {
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
         Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopAndSkipInCar, Keys.stopPhrases,
-        Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.replyVoice, Keys.kokoroURL,
+        Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.voiceEngine, Keys.liveVoice, Keys.liveHangUp,
+        Keys.replyVoice, Keys.kokoroURL,
         Keys.kokoroVoice, Keys.voiceSpeed, Keys.speechLanguage, Keys.matchReplyLanguage, Keys.spokenPrefixes,
         Keys.botOrder, Keys.apiBots, Keys.botVoices, Keys.mutes,
     ]
@@ -829,6 +855,9 @@ final class Settings: ServeEndpoint {
         case Keys.answerRequestsByVoice: answerRequestsByVoice = flag()
         case Keys.shortAnswersInCar: shortAnswersInCar = flag()
         case Keys.thinkingSound: thinkingSound = pick(ThinkingSound.off)
+        case Keys.voiceEngine: voiceEngine = pick(VoiceEngine.redde)
+        case Keys.liveVoice: liveVoice = text(LiveSetup.defaultVoice)
+        case Keys.liveHangUp: liveHangUp = value as? Int ?? 2
         case Keys.replyVoice: replyVoice = pick(ReplyVoice.onDevice)
         case Keys.kokoroURL: kokoroURL = text(Self.defaultKokoroURL)
         case Keys.kokoroVoice: kokoroVoice = text(Self.defaultKokoroVoice)
@@ -1043,6 +1072,9 @@ final class Settings: ServeEndpoint {
         answerRequestsByNod = false
         shortAnswersInCar = false
         thinkingSound = .off
+        voiceEngine = .redde
+        liveVoice = LiveSetup.defaultVoice
+        liveHangUp = 2
         replyVoice = .onDevice
         kokoroURL = Self.defaultKokoroURL
         kokoroVoice = Self.defaultKokoroVoice

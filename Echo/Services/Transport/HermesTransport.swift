@@ -244,6 +244,17 @@ nonisolated struct TurnRequest: Sendable {
     /// Sent by a page in a reply (`AgentPage`), not typed: no message of the person's shows for it,
     /// here or in the conversation opened again (`PageTurn`).
     var fromPage = false
+    /// Handed over by GPT-Live (`LiveVoice`): the agent is told so, each transport in its own way.
+    var live: LiveTurn? = nil
+}
+
+/// A turn GPT-Live handed to the agent: the recent spoken exchange it refers to (the person's
+/// last words alone are often "yes" or "Thursday, not Friday"), for the agent's eyes only, and
+/// whether the Dashboard takes it as a live voice turn itself (Hermes 0.21.3 and later), which
+/// says the rest. Otherwise the note says it (`LiveVoiceNote`).
+nonisolated struct LiveTurn: Sendable, Equatable {
+    var context: String
+    var surface: Bool
 }
 
 /// The turn a page in a reply started (`AgentPage`): which reply, and the page to read again after.

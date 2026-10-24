@@ -82,7 +82,11 @@ struct VoiceView: View {
         .readingFold($fold)
         .background(theme.pageColor)
         .foregroundStyle(theme.textColor)
-        .onAppear { session.attachHeadsetControls() }
+        .onAppear {
+            session.attachHeadsetControls()
+            // GPT-Live: its framework loaded and the Dashboard asked now, not when the orb is tapped.
+            if Settings.shared.voiceEngine == .gptLive, group == nil { LiveSetup.prepare(conversation, .shared) }
+        }
         .onDisappear { session.detachHeadsetControls(); session.cancel(); session.setLooking(false) }
     }
 
@@ -232,6 +236,16 @@ struct VoiceView: View {
             }
         case let .error(message):
             Text(message).font(.title3).multilineTextAlignment(.center).foregroundStyle(.red)
+        case .thinking where session.liveConnecting:
+            Text("Connecting…")
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(.tertiary)
+                .frame(maxWidth: .infinity)
+        // GPT-Live's voice: what it is saying, as the person's words are shown while they talk.
+        case .speaking where session.isLive && !session.liveSaid.isEmpty:
+            RisingCaption(text: session.liveSaid)
+                .font(.title2.weight(.semibold))
+                .frame(maxWidth: .infinity)
         case .idle, .thinking, .speaking:
             if let group {
                 groupExchange(group)
@@ -442,7 +456,8 @@ struct VoiceView: View {
     }
 
     private var orbHint: String {
-        switch session.phase {
+        if session.isLive { return "Double tap to hang up" }
+        return switch session.phase {
         case .idle, .error: "Double tap to start listening"
         case .listening: "Double tap to stop listening and send"
         case .thinking: "Double tap to cancel"
@@ -455,6 +470,14 @@ struct VoiceView: View {
             switch phase {
             case .speaking: return "\(groupSpeaker?.label ?? "A bot") is speaking"
             case .idle where group.isTalking: return group.writer.map { "\($0.label) is writing" } ?? "The bots are talking"
+            default: break
+            }
+        }
+        if session.isLive {
+            switch phase {
+            case .thinking where session.liveConnecting: return "Calling GPT-Live"
+            case .idle: return session.isMuted ? "Muted" : "Ready"
+            case .listening: return "On a call"
             default: break
             }
         }
@@ -505,7 +528,7 @@ private struct Viewfinder: View {
         .clipShape(.rect(cornerRadius: Self.corner))
         .overlay(alignment: .bottom) {
             if phase == .listening || phase == .speaking {
-                LiveWaveform(phase: phase, level: { phase == .speaking ? session.output.meterLevel : session.recognizer.meterLevel })
+                LiveWaveform(phase: phase, level: { phase == .speaking ? session.replyLevel : session.micLevel })
                     .scaleEffect(0.45, anchor: .bottom)
                     .padding(.bottom, 14)
             }
@@ -556,7 +579,7 @@ private struct OrbFace: View {
 
     var body: some View {
         let listening = phase == .listening
-        let level = demo ? 0.6 : CGFloat(session.recognizer.level)
+        let level = demo ? 0.6 : CGFloat(session.micSmoothedLevel)
         ZStack {
             // The aura: wide and bright while listening, swelling with your voice; a faint
             // halo otherwise.
@@ -570,7 +593,7 @@ private struct OrbFace: View {
             let orb = VoiceOrb.shown()
             // With Bot faces off, the orb stands in for the bots' faces too.
             let faces = Settings.shared.botFaces
-            let meter: () -> Float = { demo ? Self.demoLevel() : session.phase == .speaking ? session.output.meterLevel : session.recognizer.meterLevel }
+            let meter: () -> Float = { demo ? Self.demoLevel() : session.phase == .speaking ? session.replyLevel : session.micLevel }
             if listening || phase == .speaking {
                 Halos(color: phaseColor, diameter: orb.isDrawn ? GlassOrb.haloDiameter : 198)
             } else if phase == .idle {

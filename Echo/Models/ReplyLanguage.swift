@@ -38,7 +38,7 @@ nonisolated enum ReplyLanguage {
     /// from the car carries after it (`CarBrevity`), nor the one that says who an @mention is
     /// (`MentionNote`), which comes before both.
     static func stripNote(_ text: String) -> String {
-        var text = CarBrevity.strip(IncognitoNote.strip(text))
+        var text = CarBrevity.strip(IncognitoNote.strip(LiveVoiceNote.strip(text)))
         if text.hasSuffix(".)"), let range = text.range(of: "\n\n(Reply in ", options: .backwards),
            !text[range.upperBound...].contains("\n") {
             text = String(text[..<range.lowerBound])
@@ -121,6 +121,41 @@ nonisolated enum MentionNote {
 /// sentences, and to offer the rest. "More" is then a question like any other, and the agent
 /// carries on. Nothing is cut or summed up on the phone: the reply in the conversation is the
 /// reply that was heard.
+/// A turn GPT-Live handed to the agent (`LiveVoice`): what it is and how to answer it, as Hermes
+/// tells its own model when its Dashboard takes the turn as a live voice one
+/// (`VOICE_LIVE_TURN_NOTE`, tools/voice_live.py). Other connections are told here.
+nonisolated enum LiveVoiceNote {
+    /// The most of the spoken exchange that goes with a turn, as Hermes keeps it.
+    static let contextLimit = 6_000
+
+    static let instruction = """
+        This message comes from a live spoken conversation: a voice model is talking with the user \
+        and handed this request to you. The text is a voice transcript; it may contain mishearings, \
+        hesitations and later corrections, so go by the latest intent. Your reply will be spoken \
+        aloud by that voice model, which paraphrases it: answer in plain conversational sentences, \
+        keep it short (a few sentences unless the user asked for detail), with no markdown, no lists, \
+        no code blocks and no links read out. Do the work with your tools as usual; only the final \
+        facts need to be spoken. Don't say an action succeeded before it actually did.
+        """
+
+    /// The instruction, and the exchange it refers to, newest last.
+    static func instruction(context: String) -> String {
+        let context = String(context.suffix(contextLimit))
+        return context.isEmpty ? instruction : instruction + "\n\nThe recent spoken conversation, newest last:\n" + context
+    }
+
+    /// On a Dashboard that doesn't know live voice turns (Hermes 0.21.0), the note rides on the
+    /// message. Redde hides it (`strip`).
+    static let opening = "\n\n[Spoken live. "
+    static func note(context: String) -> String { opening + instruction(context: context) + "]" }
+
+    /// A message loaded back from the server, without the note.
+    static func strip(_ text: String) -> String {
+        guard let range = text.range(of: opening), text.hasSuffix("]") else { return text }
+        return String(text[..<range.lowerBound])
+    }
+}
+
 nonisolated enum CarBrevity {
     /// Added to the agent's system prompt for the turn (the Hermes API's instructions, an
     /// OpenAI-compatible system message).

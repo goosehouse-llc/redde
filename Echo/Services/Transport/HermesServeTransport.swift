@@ -83,9 +83,16 @@ nonisolated struct HermesServeTransport: HermesTransport {
                     let text = Self.prompt(request.userText, naming: references) + (request.mentionNote ?? "")
                         + (request.replyLanguage.map(ReplyLanguage.note) ?? "") + (request.brief ? CarBrevity.note : "")
                         + (request.incognito ? IncognitoNote.note : "")
+                        + (request.live.flatMap { $0.surface ? nil : LiveVoiceNote.note(context: $0.context) } ?? "")
                     var params: [String: JSONValue] = ["session_id": .string(runtime), "text": .string(text)]
                     // A page's message is the agent's to read, not a bubble (Hermes 0.21.0 and later).
                     if request.fromPage { params["display_kind"] = .string("hidden") }
+                    // Handed over by GPT-Live, on a Hermes that knows such turns (0.21.3 and later): it
+                    // tells its model itself, and keeps the spoken exchange out of the message.
+                    if let live = request.live, live.surface {
+                        params["surface"] = .string("voice-live")
+                        params["voice_context"] = .string(String(live.context.suffix(LiveVoiceNote.contextLimit)))
+                    }
                     let submit = try await client.call("prompt.submit", params: .object(params))
                     if submit["status"]?.string == "queued" { continuation.yield(.status("queued behind a running turn…")) }
 
