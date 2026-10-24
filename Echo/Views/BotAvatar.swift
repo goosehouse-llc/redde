@@ -14,8 +14,9 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
         /// Redde's own: the message bubble, its tucked corner on the left. No other bot gets it.
         case bubble
         /// Shapes only picked, never given by a name (adding them to what a name gives would
-        /// change every bot's creature): a ghost, a rounded square, a star, a blob.
-        case ghost, square, star, blob
+        /// change every bot's creature): a ghost, a rounded square, a house (the square with a
+        /// peaked roof, asked 2026-10-24), a star, a blob.
+        case ghost, square, house, star, blob
 
         /// The shapes a bot can be picked to have.
         static let given = allCases.filter { $0 != .bubble }
@@ -400,6 +401,20 @@ struct BotAvatar: View {
         case .square:
             // A square with gently rounded corners; the bottom left one the tail.
             return Layout(body: tucked(CGRect(x: 14, y: 12, width: 74, height: 74), radius: 13), eyeY: 45, eyeGap: 12, top: CGPoint(x: 51, y: 12))
+        case .house:
+            // The square's walls under a big pointed roof: a sharp peak, rounder eaves, the bottom
+            // left corner the tail. Its top stands about where the square's does, the roof at 37°
+            // (asked 2026-10-24: less steep than the 46° and 41° first tried).
+            var p = Path()
+            let peak = CGPoint(x: 51, y: 12), left = CGPoint(x: 14, y: 40), right = CGPoint(x: 88, y: 40)
+            p.move(to: CGPoint(x: 51, y: 88))
+            p.addArc(tangent1End: CGPoint(x: 14, y: 88), tangent2End: left, radius: Self.tailCorner)
+            p.addArc(tangent1End: left, tangent2End: peak, radius: 14)
+            p.addArc(tangent1End: peak, tangent2End: right, radius: 9)
+            p.addArc(tangent1End: right, tangent2End: CGPoint(x: 88, y: 88), radius: 14)
+            p.addArc(tangent1End: CGPoint(x: 88, y: 88), tangent2End: CGPoint(x: 14, y: 88), radius: 13)
+            p.closeSubpath()
+            return Layout(body: p, eyeY: 53, eyeGap: 12, top: CGPoint(x: 51, y: 15))
         case .star:
             // Five soft points; the one at the bottom left a little sharper.
             let points = ring(5, center: CGPoint(x: 51, y: 52), outer: 45, inner: 27)
@@ -628,6 +643,26 @@ struct BotGallery: View {
 
     var body: some View {
         ScrollView {
+            // The house beside the square it is drawn from, then with each mark, as large as a
+            // creature in the picker and as small as one in the list: its peak takes the antenna,
+            // the spark stands by its roof.
+            VStack(spacing: 10) {
+                HStack(spacing: 14) {
+                    ForEach([BotFace.Shape.square, .house], id: \.self) { shape in
+                        BotAvatar(face: BotFace(shape: shape, eyes: .round, mouth: .smile, mark: .none, glance: 1, tilt: 0, color: 9), size: 96)
+                    }
+                }
+                ForEach([56, 26] as [CGFloat], id: \.self) { size in
+                    HStack(spacing: 10) {
+                        ForEach(Array(BotFace.Mark.allCases.enumerated()), id: \.offset) { i, mark in
+                            BotAvatar(face: BotFace(shape: .house, eyes: BotFace.Eyes.allCases[i], mouth: BotFace.Mouth.allCases[(i + 1) % 4], mark: mark,
+                                                    glance: i % 4, tilt: Double(i * 2 - 4), color: [6, 2, 0, 16, 12][i]), size: size)
+                        }
+                    }
+                }
+            }
+            .padding(10)
+            .background(Color.white, in: .rect(cornerRadius: 12))
             // The later colours with a spark, on black and on white: a spark past a pale body's
             // edge was drawn dark, and vanished on a dark ground.
             ForEach([Color.black, Color.white], id: \.self) { ground in
@@ -651,9 +686,9 @@ struct BotGallery: View {
             .padding()
             // The shapes only picked, never given by a name.
             HStack(spacing: 14) {
-                ForEach(Array([BotFace.Shape.ghost, .square, .star, .blob].enumerated()), id: \.offset) { i, shape in
-                    BotAvatar(face: BotFace(shape: shape, eyes: [.round, .happy, .sparkle, .mismatched][i], mouth: [.smile, .none, .grin, .oh][i],
-                                            mark: [.none, .blush, .spark, .freckles][i], glance: i, tilt: Double(i * 2 - 3), color: [8, 4, 1, 5][i]), size: 72)
+                ForEach(Array([BotFace.Shape.ghost, .square, .house, .star, .blob].enumerated()), id: \.offset) { i, shape in
+                    BotAvatar(face: BotFace(shape: shape, eyes: [.round, .happy, .round, .sparkle, .mismatched][i], mouth: [.smile, .none, .smile, .grin, .oh][i],
+                                            mark: [.none, .blush, .antenna, .spark, .freckles][i], glance: i, tilt: Double(i * 2 - 4), color: [8, 4, 9, 1, 5][i]), size: 60)
                 }
             }
             .padding(.vertical, 8)

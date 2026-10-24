@@ -133,8 +133,11 @@ struct BotsTests {
         let ghost = BotFace(shape: .ghost, eyes: .happy, mouth: .smile, mark: .blush, glance: 0, tilt: 2, color: 3)
         #expect(BotFace.faces(for: ["default", "scout"], picked: ["default": ghost])["default"] == ghost, "the main agent's face can be picked")
         #expect(BotFace.Shape.seeded == [.round, .egg, .pill, .capsule, .burst, .pick, .hex, .diamond]
-                && BotFace.Shape.given.contains(.ghost) && BotFace.Shape.given.contains(.square) && !BotFace.Shape.given.contains(.bubble),
+                && BotFace.Shape.given.contains(.ghost) && BotFace.Shape.given.contains(.square) && BotFace.Shape.given.contains(.house)
+                && !BotFace.Shape.given.contains(.bubble),
                 "new shapes are for picking: what a name gives never changes")
+        let house = BotFace(shape: .house, eyes: .round, mouth: .smile, mark: .antenna, glance: 1, tilt: -2, color: 9)
+        #expect(house.code == "1:house:round:smile:antenna:9:1:-2" && BotFace(code: house.code) == house, "the house is kept by name")
         #expect(BotFace(code: "2:egg:round:none:none:0:1:0") == nil && BotFace(code: "1:cloud:round:none:none:0:1:0") == nil,
                 "a face from a later Redde isn't misread")
 

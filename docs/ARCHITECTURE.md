@@ -434,8 +434,8 @@ A bot's face can be picked
 instead (Change Face…
 on its row, or in its chat's ••• menu; `BotFacePicker`): shape, eyes, mouth, mark and colour, kept
 on the server in the profile's `ui_meta` under `redde` (`face`, a short code; compare-and-swap on
-its revision), so every Redde there shows it. Four shapes are for picking only (a ghost, a rounded
-square, a star, a blob): what a name gives is drawn from the first eight (`Shape.seeded`), so no
+its revision), so every Redde there shows it. Five shapes are for picking only (a ghost, a rounded
+square, a house, a star, a blob): what a name gives is drawn from the first eight (`Shape.seeded`), so no
 bot's creature changes when shapes are added. The main agent's face can be picked too (Redde's
 bubble is offered to it alone, and "Its Own Face" goes back to it); `BotDirectory.mainFace` is what
 the voice orb, CarPlay's Redde look and the list then draw.
