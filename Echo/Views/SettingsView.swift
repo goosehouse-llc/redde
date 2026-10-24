@@ -43,6 +43,14 @@ struct SettingsView: View {
                 } footer: {
                     Text("URLs, keys and logins for every connection, including ones you aren't using right now. The Hermes Dashboard login also unlocks the context and memory files, and files the agent sends, while you chat over the Hermes API.")
                 }
+                // A setting of its own, not under Agent (asked 2026-10-23): it is on the server,
+                // and much of Redde comes through it.
+                Section {
+                    ReddePluginLink()
+                } footer: {
+                    Text("Redde's plugin on your Hermes: cards in replies, phone tools, the widget your agent writes on and notifications when Redde is closed all come through it.")
+                }
+                .id("plugin")
                 MetricsSettings()
                 ICloudSettings()
                 LockSettings()
@@ -50,15 +58,16 @@ struct SettingsView: View {
                 ResetSettings()
             }
             #if DEBUG
-            // Dev hooks: `-echo.settingsAnchor` opens Agent on the context and memory files, and
-            // `-echo.settingsAnchor icloud` scrolls to Sync with iCloud; `-echo.expandAppIcons`
+            // Dev hooks: `-echo.settingsAnchor` opens Agent on the context and memory files,
+            // `-echo.settingsAnchor icloud` scrolls to Sync with iCloud and `-echo.settingsAnchor
+            // plugin` to the Redde Plugin row; `-echo.expandAppIcons`
             // opens Appearance on the app icons (screenshots).
             .task {
                 if DevHooks.expandAppIcons { path = [.appearance] }
                 guard DevHooks.settingsAnchor else { return }
                 try? await Task.sleep(for: .milliseconds(600))
-                if DevHooks.value("-echo.settingsAnchor") == "icloud" {
-                    proxy.scrollTo("icloud", anchor: .top)
+                if let anchor = DevHooks.value("-echo.settingsAnchor"), ["icloud", "plugin"].contains(anchor) {
+                    proxy.scrollTo(anchor, anchor: anchor == "plugin" ? .center : .top)
                 } else {
                     path = [.agent]
                 }

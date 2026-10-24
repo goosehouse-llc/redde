@@ -1,11 +1,12 @@
 import SwiftUI
 
-/// The Redde plugin on the user's Hermes, on a page of its own (Settings → Agent → Redde Plugin):
-/// what it does for Redde, whether it is there and how new, and the button that installs or
-/// updates it. It does far more than notifications, where its row used to be the only one (asked
-/// 2026-10-23, "is the plugin really only for Voice?"): cards in replies, the phone tools, the
-/// widget the agent writes on, and notifications when Redde is closed. Phone tools and Cards in
-/// replies link here; the notifications screen shows the same row.
+/// The Redde plugin on the user's Hermes, on a page of its own (Settings → Redde Plugin, on the
+/// first screen; it was under Agent until he moved it, 2026-10-23): what it does for Redde, whether
+/// it is there and how new, and the button that installs or updates it. It does far more than
+/// notifications, where its row used to be the only one (asked 2026-10-23, "is the plugin really
+/// only for Voice?"): cards in replies, the phone tools, the widget the agent writes on, and
+/// notifications when Redde is closed. Phone tools links here too; the notifications screen shows
+/// the same row.
 struct ReddePluginView: View {
     @State private var settings = Settings.shared
     @State private var plugin = PushPluginModel(manager: PushSettingsView.pluginManager)

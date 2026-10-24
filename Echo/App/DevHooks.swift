@@ -73,7 +73,8 @@ import WidgetKit
 /// - `-echo.demoNotify [seconds]`: ask to send notifications, then post one that many seconds
 ///   later (twelve by default), for the test that closes the app and taps it.
 /// - `-echo.section cron|kanban`: open the conversation list on that tab.
-/// - `-echo.settingsAnchor [icloud]`: scroll Settings to the context and memory files, or to iCloud.
+/// - `-echo.settingsAnchor [icloud|plugin]`: scroll Settings to the context and memory files, to iCloud
+///   or to the Redde Plugin row.
 /// - `-echo.expandAppIcons`: open Settings' app icon grid.
 /// - `-echo.draft "text"`: type a question into a focused composer (keyboard screenshots).
 ///   `-echo.clearDrafts` forgets every conversation's unsent draft first (UI tests).

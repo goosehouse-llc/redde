@@ -298,12 +298,6 @@ struct AgentSettings<Details: View>: View {
         }
 
         Section {
-            ReddePluginLink()
-        } footer: {
-            Text("Redde's plugin on your Hermes: cards in replies, phone tools, the widget your agent writes on and notifications when Redde is closed all come through it.")
-        }
-
-        Section {
             if !canEditFiles { filesLocked }
             NavigationLink {
                 ContextFileEditorView(title: "SOUL.md", file: "SOUL.md",
