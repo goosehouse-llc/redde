@@ -375,17 +375,107 @@ enum CarPlayArtwork {
     /// That is why they are slow: see `speakingLevel`.
     static func voiceStateImage(_ state: VoiceState, look: CarPlayVoiceLook = .bars, face: BotFace? = nil, side: CGFloat = voiceImageSide,
                                 movingAt scale: CGFloat? = nil) -> UIImage {
-        // Redde's face has the theme's corners and, unless another was picked, its bubble colour:
-        // another theme, or another colour picked for its bubbles, another picture. A bot's chat
-        // shows that bot's face instead (`face`).
+        let key = voiceKey(state, look: look, face: face, side: side, movingAt: scale)
+        if let made = voicePictures[key] { return made }
+        // Being drawn ahead (`drawVoiceAhead`): finished from where that got to.
+        let drawing = voiceDrawings[key] ?? VoiceDrawing(state, look: look, face: face, side: side, movingAt: scale)
+        while !drawing.isDone { drawing.drawNext() }
+        let picture = drawing.picture
+        voiceDrawings[key] = nil
+        voicePictures[key] = picture
+        return picture
+    }
+
+    /// Which picture `voiceStateImage` keeps a state's under. Redde's face has the theme's corners
+    /// and, unless another was picked, its bubble colour: another theme, or another colour picked
+    /// for its bubbles, another picture. A bot's chat shows that bot's face instead (`face`).
+    private static func voiceKey(_ state: VoiceState, look: CarPlayVoiceLook, face: BotFace?, side: CGFloat, movingAt scale: CGFloat?) -> String {
         let settings = Settings.shared
         let shown = face ?? BotDirectory.shared.mainFace
         let theme = look == .redde ? " \(settings.theme.rawValue) \(String(describing: settings.themeColors[settings.theme.rawValue])) \(shown.code) \(shown.picture ?? "")" : ""
-        let key = "\(look.rawValue) \(state.rawValue) \(side) \(scale ?? 0)\(theme)"
-        if let made = voicePictures[key] { return made }
-        let picture = voicePicture(state, look: look, face: face, side: side, movingAt: scale)
-        voicePictures[key] = picture
-        return picture
+        return "\(look.rawValue) \(state.rawValue) \(side) \(scale ?? 0)\(theme)"
+    }
+
+    /// Draws what `voiceStateImage` gives for every state, and the backdrops behind them, a
+    /// picture at a time with the main thread let go between pictures, so that a press finds them
+    /// made. In the face look that is 116 pictures a face, about a second's drawing (measured
+    /// 2026-10-24: the first card of a drive waited that long for them). Stopped by cancelling;
+    /// a press meanwhile finishes the state it needs from where this got to. Says how many
+    /// pictures it drew.
+    @discardableResult
+    static func drawVoiceAhead(look: CarPlayVoiceLook, face: BotFace? = nil, side: CGFloat = voiceImageSide, movingAt scale: CGFloat?) async -> Int {
+        var drawn = 0
+        for state in VoiceState.allCases {
+            if #available(iOS 27.0, *) { _ = voiceBackdrop(state, look: look) }
+            let key = voiceKey(state, look: look, face: face, side: side, movingAt: scale)
+            guard voicePictures[key] == nil else { continue }
+            let drawing = voiceDrawings[key] ?? VoiceDrawing(state, look: look, face: face, side: side, movingAt: scale)
+            voiceDrawings[key] = drawing
+            while !drawing.isDone {
+                if drawing.drawNext() {
+                    drawn += 1
+                    try? await Task.sleep(for: .milliseconds(1))
+                }
+                if Task.isCancelled { return drawn }
+            }
+            // Kept, unless a press kept it first or the car went meanwhile (`forget`).
+            if voiceDrawings[key] === drawing {
+                voiceDrawings[key] = nil
+                voicePictures[key] = drawing.picture
+            }
+        }
+        return drawn
+    }
+
+    /// One state's picture being drawn, a picture of its loop at a time.
+    private final class VoiceDrawing {
+        let state: VoiceState, look: CarPlayVoiceLook, face: BotFace?, size: CGSize
+        /// Pixels a point, and the loop: nil for a picture that stands still.
+        let scale: CGFloat?, loop: (duration: TimeInterval, frames: Int)?
+        private var frames: [UIImage] = []
+        private var still: UIImage?
+        /// A picture that looks just like one drawn already is that one again: the bars come down
+        /// the way they went up, which halves what the car has to hold.
+        private var twins: [Twin: UIImage] = [:]
+
+        init(_ state: VoiceState, look: CarPlayVoiceLook, face: BotFace?, side: CGFloat, movingAt scale: CGFloat?) {
+            self.state = state
+            self.look = look
+            self.face = face
+            size = CGSize(width: side, height: CarPlayArtwork.pictureHeight(state, look: look, side: side))
+            let loop = scale == nil ? nil : CarPlayArtwork.loop(state, look: look)
+            self.loop = loop
+            self.scale = loop == nil ? nil : scale
+        }
+
+        var isDone: Bool { loop.map { frames.count == $0.frames } ?? (still != nil) }
+
+        /// Draws the next picture. False when there was nothing to draw: it was a twin.
+        @discardableResult
+        func drawNext() -> Bool {
+            let (state, look, face) = (state, look, face)
+            guard let loop, let scale else {
+                still = CarPlayArtwork.render(size) { ctx, rect in CarPlayArtwork.draw(state, look, face: face, at: nil, ctx, rect) }
+                return true
+            }
+            let i = frames.count
+            let twin = CarPlayArtwork.twin(state, look, picture: i, of: loop.frames)
+            if let twin, let same = twins[twin] {
+                frames.append(same)
+                return false
+            }
+            let frame = CarPlayArtwork.render(size, scale: scale) { ctx, rect in
+                CarPlayArtwork.draw(state, look, face: face, at: CGFloat(i) / CGFloat(loop.frames), ctx, rect)
+            }
+            if let twin { twins[twin] = frame }
+            frames.append(frame)
+            return true
+        }
+
+        var picture: UIImage {
+            if let still { return still }
+            return loop.flatMap { UIImage.animatedImage(with: frames, duration: $0.duration) } ?? frames[0]
+        }
     }
 
     /// The face look's pictures are wider than tall (150 by 114, a whole number of pixels at any
@@ -410,25 +500,9 @@ enum CarPlayArtwork {
     /// while its row is open.
     static func voicePicture(_ state: VoiceState, look: CarPlayVoiceLook, face: BotFace? = nil, side: CGFloat = voiceImageSide,
                              movingAt scale: CGFloat? = nil) -> UIImage {
-        let size = CGSize(width: side, height: pictureHeight(state, look: look, side: side))
-        guard let scale, let loop = loop(state, look: look) else {
-            return render(size) { ctx, rect in draw(state, look, face: face, at: nil, ctx, rect) }
-        }
-        var frames: [UIImage] = []
-        // A picture that looks just like one drawn already is that one again: the bars come down
-        // the way they went up, which halves what the car has to hold.
-        var drawn: [Twin: UIImage] = [:]
-        for i in 0 ..< loop.frames {
-            let twin = twin(state, look, picture: i, of: loop.frames)
-            if let twin, let same = drawn[twin] {
-                frames.append(same)
-            } else {
-                let frame = render(size, scale: scale) { ctx, rect in draw(state, look, face: face, at: CGFloat(i) / CGFloat(loop.frames), ctx, rect) }
-                if let twin { drawn[twin] = frame }
-                frames.append(frame)
-            }
-        }
-        return UIImage.animatedImage(with: frames, duration: loop.duration) ?? frames[0]
+        let drawing = VoiceDrawing(state, look: look, face: face, side: side, movingAt: scale)
+        while !drawing.isDone { drawing.drawNext() }
+        return drawing.picture
     }
 
     /// What a picture of a loop shares with every other that looks just the same: where its
@@ -451,6 +525,8 @@ enum CarPlayArtwork {
 
     /// The pictures already drawn, so that a card opens without drawing a hundred of them first.
     private static var voicePictures: [String: UIImage] = [:]
+    /// And those being drawn ahead, as far as they have got.
+    private static var voiceDrawings: [String: VoiceDrawing] = [:]
     private static var backdrops: [String: UIImage] = [:]
     /// And the Ask tab's cards, which are asked for again whenever the tab is brought up to date.
     private static var cardPictures: [String: UIImage] = [:]
@@ -460,6 +536,7 @@ enum CarPlayArtwork {
     /// Lets go of the drawn pictures: the car is gone.
     static func forget() {
         voicePictures = [:]
+        voiceDrawings = [:]
         backdrops = [:]
         cardPictures = [:]
         botPictures = [:]
@@ -468,6 +545,13 @@ enum CarPlayArtwork {
     /// Lets go of the voice card's pictures in every look but one: another was picked.
     static func keepVoicePictures(only look: CarPlayVoiceLook) {
         voicePictures = voicePictures.filter { $0.key.hasPrefix("\(look.rawValue) ") }
+        voiceDrawings = voiceDrawings.filter { $0.key.hasPrefix("\(look.rawValue) ") }
+    }
+
+    /// Whether a state's picture is drawn and kept already: for the tests.
+    static func hasVoicePicture(_ state: VoiceState, look: CarPlayVoiceLook, face: BotFace? = nil, side: CGFloat = voiceImageSide,
+                                movingAt scale: CGFloat?) -> Bool {
+        voicePictures[voiceKey(state, look: look, face: face, side: side, movingAt: scale)] != nil
     }
 
     /// One picture of a state in a look. `p` is how far through its loop, 0 up to 1; nil is the

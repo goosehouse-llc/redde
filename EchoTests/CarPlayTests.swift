@@ -56,7 +56,8 @@ struct CarPlayTests {
         /// What the car's card shows for where the voice session stands now.
         var card: CarPlaySceneDelegate.Card {
             CarPlaySceneDelegate.card(phase: session.phase, waitingOnPhone: session.activeTool == "waiting for you",
-                                      muted: session.isMuted, paused: session.isPaused, stopped: delegate.stopped)
+                                      muted: session.isMuted, paused: session.isPaused, stopped: delegate.stopped,
+                                      opening: delegate.listensOnceOpen)
         }
     }
 
@@ -368,6 +369,116 @@ struct CarPlayTests {
 
     @MainActor final class Opened {
         var bots: [String] = []
+    }
+
+    /// A bot's chat that opens when the test says so, or fails to.
+    @MainActor final class Gate {
+        private var waiting: CheckedContinuation<Void, any Error>?
+        var isWaiting: Bool { waiting != nil }
+        func wait() async throws { try await withCheckedThrowingContinuation { waiting = $0 } }
+        func open() { waiting?.resume(); waiting = nil }
+        func fail() { waiting?.resume(throwing: URLError(.timedOut)); waiting = nil }
+    }
+
+    private func slowBots() async throws -> (Harness, Gate, Opened, CPListImageRowItem) {
+        let (h, _) = botsHarness([
+            HermesBot(name: "default", isDefault: true),
+            HermesBot(name: "scout", title: "Scout", chatID: "s-scout"),
+            HermesBot(name: "writer", displayName: "Quill"),
+        ])
+        let gate = Gate(), opened = Opened()
+        h.delegate.openBot = { bot in
+            opened.bots.append(bot.name)
+            try await gate.wait()
+        }
+        let row = try #require(await h.delegate.botRows().first as? CPListImageRowItem)
+        return (h, gate, opened, row)
+    }
+
+    /// A picked bot's card comes up at once, Thinking in its face while its chat is opened behind
+    /// it, and listens once it is open: the chat used to be opened first, and the card, which takes
+    /// a second and a half on the car, only then (asked 2026-10-24, "a bit of a lag between
+    /// pressing the bot button and it switching to the listening/speaking screen").
+    @Test func aPickedBotsCardComesUpBeforeItsChatIsOpen() async throws {
+        let (h, gate, opened, row) = try await slowBots()
+        try await press(card: 1, in: row)
+        #expect(opened.bots == ["scout"], "the chat is being opened")
+        #expect(h.delegate.chatOpening && h.card == .showing(.thinking), "and the card is up meanwhile, Thinking")
+        #expect(h.recognizer.starts == 0, "nothing is heard before the chat is open: it would go to the one open before")
+        try await waitUntil("the chat opening") { gate.isWaiting }
+        gate.open()
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        #expect(!h.delegate.chatOpening && h.card == .showing(.listening))
+    }
+
+    /// Stop or Pause while the chat opens holds it there, open and not listened in; Resume listens,
+    /// at once if it is open by then, else once it is.
+    @Test func stopOrPauseWhileABotsChatOpensHoldsItThere() async throws {
+        let (h, gate, _, row) = try await slowBots()
+        try await press(card: 1, in: row)
+        h.delegate.pressed(.stop)
+        #expect(h.card == .showing(.paused))
+        try await waitUntil("the chat opening") { gate.isWaiting }
+        gate.open()
+        try await waitUntil("the chat open") { !h.delegate.chatOpening }
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(h.recognizer.starts == 0 && h.card == .showing(.paused), "the card waits on Paused")
+        h.delegate.pressed(.resume)
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+
+        try await press(card: 2, in: row)
+        h.delegate.pressed(.pause)
+        #expect(h.card == .showing(.paused))
+        h.delegate.pressed(.resume)
+        #expect(h.card == .showing(.thinking), "Resume before the chat is open: listens once it is")
+        try await waitUntil("the chat opening") { gate.isWaiting }
+        gate.open()
+        try await waitUntil("listening") { h.recognizer.starts == 2 }
+    }
+
+    /// A chat that can't be opened: nothing listens, and the card goes (for the car's alert).
+    @Test func aBotsChatThatWontOpenListensToNothing() async throws {
+        let (h, gate, _, row) = try await slowBots()
+        try await press(card: 1, in: row)
+        try await waitUntil("the chat opening") { gate.isWaiting }
+        gate.fail()
+        try await waitUntil("given up") { !h.delegate.chatOpening }
+        #expect(h.recognizer.starts == 0 && h.card == .closed)
+    }
+
+    /// The voice card's pictures drawn ahead, a picture at a time, are the ones the card then
+    /// shows, and as they are drawn at once: in the face look 116 a face (measured 2026-10-24, a
+    /// second of drawing at the press without this).
+    @Test func theCardsPicturesDrawnAheadAreTheOnesItShows() async {
+        let face = BotFace(seed: "ahead-\(UUID().uuidString)")
+        #expect(!CarPlayArtwork.hasVoicePicture(.speaking, look: .redde, face: face, movingAt: 2))
+        let drawn = await CarPlayArtwork.drawVoiceAhead(look: .redde, face: face, movingAt: 2)
+        #expect(drawn == 40 + 32 + 42 + 2, "three loops and two pictures that stand still")
+        for state in CarPlayArtwork.VoiceState.allCases {
+            #expect(CarPlayArtwork.hasVoicePicture(state, look: .redde, face: face, movingAt: 2))
+        }
+        let shown = CarPlayArtwork.voiceStateImage(.speaking, look: .redde, face: face, movingAt: 2)
+        let fresh = CarPlayArtwork.voicePicture(.speaking, look: .redde, face: face, movingAt: 2)
+        #expect(shown.images?.count == 42 && shown.duration == fresh.duration)
+        #expect(shown.images?[7].pngData() == fresh.images?[7].pngData())
+        #expect(await CarPlayArtwork.drawVoiceAhead(look: .redde, face: face, movingAt: 2) == 0, "nothing twice")
+        // Bars share their pictures between the way up and the way down.
+        let bars = await CarPlayArtwork.drawVoiceAhead(look: .bars, side: 149, movingAt: 2)
+        #expect(bars > 0 && bars < 44 + 42 + 60 + 2)
+    }
+
+    /// A press while a face is still being drawn ahead finishes it from where that got to, and the
+    /// picture kept is the one the card showed.
+    @Test func aPressWhileDrawingAheadFinishesFromWhereItGot() async throws {
+        let face = BotFace(seed: "partial-\(UUID().uuidString)")
+        let ahead = Task { await CarPlayArtwork.drawVoiceAhead(look: .redde, face: face, movingAt: 2) }
+        try await Task.sleep(for: .milliseconds(30))
+        let listening = CarPlayArtwork.voiceStateImage(.listening, look: .redde, face: face, movingAt: 2)
+        #expect(listening.images?.count == 40)
+        let drawnAhead = await ahead.value
+        #expect(drawnAhead < 116, "Listening, or what was left of it, was drawn by the press")
+        #expect(CarPlayArtwork.voiceStateImage(.listening, look: .redde, face: face, movingAt: 2) === listening)
+        #expect(CarPlayArtwork.hasVoicePicture(.speaking, look: .redde, face: face, movingAt: 2), "and the rest drawn ahead")
     }
 
     /// On the Dashboard, a Bots tab: each bot by its name and its creature, what it is doing or

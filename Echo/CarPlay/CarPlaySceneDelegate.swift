@@ -70,8 +70,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             observe()
             reloadChats()
             reloadBots()
-            // Draw the voice card's pictures now, not at the first press.
-            _ = voiceTemplate()
+            // The voice card's pictures now, not at the first press.
+            drawAhead()
             #if DEBUG
             noteScreen(of: scene, interfaceController)
             #endif
@@ -94,6 +94,9 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             botsWatch = nil
             botsShown = []
             chats = []
+            listensOnceOpen = false
+            drawingAhead?.cancel()
+            drawingAhead = nil
             CarPlayArtwork.forget()
         }
     }
@@ -416,6 +419,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             showBots(roster, in: list)
         }
         watchBots()
+        drawAhead()
     }
 
     /// The bots the phone last read for this connection; nil when it has none.
@@ -446,6 +450,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         list.emptyViewSubtitleVariants = rows.isEmpty ? ["Make one in Redde on your iPhone"] : []
         list.showsSpinnerWhileEmpty = false
         list.updateSections(rows.isEmpty ? [] : [CPListSection(items: rows)])
+        drawAhead()
     }
 
     /// The bots as one row of cards, in the look Settings → Appearance → CarPlay bot cards names,
@@ -474,6 +479,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         let open = conversation?.bot.flatMap { open in listed.first { $0.name == open.profile } }?.label(mainName: settings.headerTitle)
         shown.append("open|\(open ?? "")")
         let row = CPListImageRowItem(text: open.map { "Now with \($0)" }, cardElements: cards, allowsMultipleLines: true)
+        // The card spins until the completion is called: here, until the voice card is on its way up.
         row.listImageRowHandler = { [weak self] _, index, completion in
             Task { @MainActor in
                 if listed.indices.contains(index) { await self?.talk(to: listed[index]) }
@@ -573,20 +579,93 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     }
 
     /// A bot was picked: its chat becomes the conversation the phone has open, and Redde listens.
+    /// The voice card goes up at once, in the bot's face, Thinking while the chat is opened behind
+    /// it, and Redde listens once it is open. The card takes a second and a half to come up on the
+    /// car, and the chat used to be opened before it started (asked 2026-10-24, "a bit of a lag
+    /// between pressing the bot button and it switching to the listening/speaking screen").
+    /// Returns once the card is on its way up; the chat opens on.
     private func talk(to bot: HermesBot) async {
-        guard let conversation else { return }
+        guard let conversation, let session else { return }
         stopVoice()
-        do {
-            if conversation.bot?.profile != bot.name {
-                if let openBot { try await openBot(bot) } else { try await conversation.openBot(bot, mainName: settings.headerTitle) }
-            }
-        } catch {
-            alert("Couldn't open \(bot.label(mainName: settings.headerTitle))'s chat")
+        note("pressed \(bot.name)")
+        guard conversation.bot?.profile != bot.name else {
+            reloadChats()
+            reloadBots()
+            listenAsSet()
             return
         }
-        reloadChats()
-        reloadBots()
-        listenAsSet()
+        session.continuous = settings.handsFreeByDefault
+        stopped = false
+        chatOpening = true
+        listensOnceOpen = true
+        let started = Date.now
+        let opening = Task { [weak self] in try await self?.openChat(of: bot) }
+        // The request goes out first: making the card and handing it to the car hold the phone a
+        // third of a second.
+        await Task.yield()
+        showVoiceCard(faced: bot.name == "default" ? nil : bot.name)
+        Task { [weak self] in
+            let opened = await opening.result
+            guard let self else { return }
+            self.chatOpening = false
+            // Unless Stop, Pause, Done or the car's own Back came meanwhile.
+            let listen = self.listensOnceOpen
+            self.listensOnceOpen = false
+            switch opened {
+            case .failure:
+                self.note("couldn't open \(bot.name)'s chat")
+                self.alert("Couldn't open \(bot.label(mainName: self.settings.headerTitle))'s chat")
+            case .success:
+                self.note(String(format: "chat open in %.2f s", Date.now.timeIntervalSince(started)))
+                self.reloadChats()
+                self.reloadBots()
+                if listen { session.beginListening() } else { self.phaseChanged() }
+            }
+        }
+    }
+
+    private func openChat(of bot: HermesBot) async throws {
+        guard let conversation else { return }
+        if let openBot { try await openBot(bot) } else { try await conversation.openBot(bot, mainName: settings.headerTitle) }
+    }
+
+    /// A bot's chat is being opened for the card that is up (`talk(to:)`).
+    private(set) var chatOpening = false
+    /// Redde listens once it is open, and till then the card says Thinking. Stop, Pause, Done or
+    /// the car's own Back meanwhile, and it doesn't.
+    private(set) var listensOnceOpen = false
+
+    // MARK: - Drawn ahead
+
+    /// The voice card's pictures, drawn ahead for the faces it is likeliest to wear next: the open
+    /// chat's, and while the Bots tab is up the first bots on it. A card drawn at the press waited
+    /// a second for its pictures in the face look (measured 2026-10-24); other looks draw one set
+    /// for every chat.
+    private var drawingAhead: Task<Void, Never>?
+    /// Bots whose faces are drawn ahead: as many as fit across his car's screen (`mostBots`).
+    /// About 30 MB a face, kept while the car is connected.
+    private static let botsDrawnAhead = 5
+
+    private func drawAhead() {
+        guard controller != nil else { return }
+        drawingAhead?.cancel()
+        let look = settings.carPlayVoice, scale = pictureScale()
+        var faces: [String?] = [facedBot]
+        if look == .redde, botsTabPicked, let roster = cachedRoster() {
+            for bot in roster.listed(in: settings.botOrderHere).prefix(Self.botsDrawnAhead) {
+                let profile = bot.name == "default" ? nil : bot.name
+                if !faces.contains(profile) { faces.append(profile) }
+            }
+        }
+        drawingAhead = Task { [weak self] in
+            let started = Date.now
+            var drawn = 0
+            for profile in faces {
+                guard let self, !Task.isCancelled else { return }
+                drawn += await CarPlayArtwork.drawVoiceAhead(look: look, face: self.face(of: profile), movingAt: scale)
+            }
+            if drawn > 0 { self?.note(String(format: "drew %d pictures ahead in %.1f s", drawn, Date.now.timeIntervalSince(started))) }
+        }
     }
 
     // MARK: - Voice card
@@ -595,11 +674,16 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private var voiceCard: CPVoiceControlTemplate? { controller?.presentedTemplate as? CPVoiceControlTemplate }
 
     private func showVoiceCard() {
+        showVoiceCard(faced: facedBot)
+    }
+
+    /// The card in the face of `profile`'s bot, Redde's for nil: a picked bot's before its chat is open.
+    private func showVoiceCard(faced profile: String?) {
         guard voiceCard == nil else { return }
         note("card up")
         barShown = nil
-        cardFace = facedBot
-        present(voiceTemplate()) { [weak self] in self?.phaseChanged() }
+        cardFace = profile
+        present(voiceTemplate(faced: profile)) { [weak self] in self?.phaseChanged() }
     }
 
     /// The bot whose face the voice card wears: the open chat's, the main agent's being Redde's own.
@@ -616,7 +700,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         note("card again for \(facedBot ?? "Redde")")
         barShown = nil
         cardFace = facedBot
-        present(voiceTemplate(), animated: false) { [weak self] in self?.phaseChanged() }
+        present(voiceTemplate(faced: facedBot), animated: false) { [weak self] in self?.phaseChanged() }
     }
 
     private func hideVoiceCard() {
@@ -669,9 +753,13 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         barShown = nil
         watchBots()
         if closingCard { closingCard = false; return }
-        guard let pressedAt, Date.now.timeIntervalSince(pressedAt) < 2, let session, voiceCard == nil else { return }
+        guard let pressedAt, Date.now.timeIntervalSince(pressedAt) < 2, let session, voiceCard == nil else {
+            // Gone by the car's own Back: a chat being opened opens, and nothing listens.
+            listensOnceOpen = false
+            return
+        }
         if case .showing = Self.card(phase: session.phase, waitingOnPhone: session.activeTool == "waiting for you",
-                                     muted: session.isMuted, paused: session.isPaused, stopped: stopped) {
+                                     muted: session.isMuted, paused: session.isPaused, stopped: stopped, opening: listensOnceOpen) {
             showVoiceCard()
         }
     }
@@ -681,14 +769,26 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// Not private, so the tests can count them and press the buttons, and the preview can ask
     /// for the pictures standing still.
     func voiceTemplate(moving: Bool = !UIAccessibility.isReduceMotionEnabled) -> CPVoiceControlTemplate {
+        voiceTemplate(moving: moving, faced: facedBot)
+    }
+
+    /// The pictures move, unless Reduce Motion is on. They are drawn for the car's screen, at two
+    /// pixels a point at most: about a hundred of them are kept while the car is connected.
+    private func pictureScale(moving: Bool = !UIAccessibility.isReduceMotionEnabled) -> CGFloat? {
+        moving ? min(max(controller?.carTraitCollection.displayScale ?? 2, 1), 2) : nil
+    }
+
+    /// The face of whoever Redde is being: the bot whose chat it is (his ask 2026-10-22, "like on
+    /// the phone"), else Redde's own (nil).
+    private func face(of profile: String?) -> BotFace? {
+        profile.flatMap { BotDirectory.shared.roster?.faces[$0] }
+    }
+
+    private func voiceTemplate(moving: Bool = !UIAccessibility.isReduceMotionEnabled, faced profile: String?) -> CPVoiceControlTemplate {
         // In the look picked in Settings → Appearance → CarPlay voice screen.
         let look = settings.carPlayVoice
-        // The pictures move, unless Reduce Motion is on. They are drawn for the car's screen, at
-        // two pixels a point at most: about a hundred of them are kept while the car is connected.
-        let scale: CGFloat? = moving ? min(max(controller?.carTraitCollection.displayScale ?? 2, 1), 2) : nil
-        // The face of whoever Redde is being: the bot whose chat it is (his ask 2026-10-22, "like
-        // on the phone"), else Redde's own.
-        let face = conversation?.bot.flatMap { bot in bot.profile == "default" ? nil : BotDirectory.shared.roster?.faces[bot.profile] }
+        let scale = pictureScale(moving: moving)
+        let face = self.face(of: profile)
         // Every look says what is going on over its picture, the face's too (his word 2026-10-22,
         // "I still want it to say speaking over the bot"), though the picture is 69 points high
         // under a title on a 568×263 car, and 89 without one.
@@ -783,6 +883,14 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         guard let session else { return }
         note("pressed \(Self.title(of: kind)) while \(session.phase)")
         pressedAt = .now
+        // A bot's chat still being opened: Stop and Pause both hold it there, open but not listened
+        // in, and Resume listens once it is.
+        if chatOpening, session.phase == .idle, kind == .stop || kind == .pause || (kind == .resume && stopped) {
+            stopped = kind != .resume
+            listensOnceOpen = kind == .resume
+            phaseChanged()
+            return
+        }
         switch kind {
         case .pause: if session.phase == .listening { session.mute() } else { session.pauseSpeaking() }
         case .resume:
@@ -799,6 +907,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             session.cancel()
         case .done:
             stopped = false
+            listensOnceOpen = false
             session.continuous = false
             session.cancel()
             hideVoiceCard()
@@ -810,9 +919,10 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     /// `heard`: the reply's sound has reached the car (`heardInCar`). Until then a reply that has
     /// begun is still Thinking on the card: its mouth moved a second or more before its voice
-    /// came (asked 2026-10-23, "wait a few seconds before the mouth starts moving").
+    /// came (asked 2026-10-23, "wait a few seconds before the mouth starts moving"). `opening`: a
+    /// picked bot's chat is being opened, and Redde listens once it is (`listensOnceOpen`).
     static func card(phase: VoiceSession.Phase, waitingOnPhone: Bool, muted: Bool, paused: Bool, stopped: Bool = false,
-                     heard: Bool = true) -> Card {
+                     heard: Bool = true, opening: Bool = false) -> Card {
         switch phase {
         case .listening: .showing(.listening)
         // An approval request parks the turn on the phone, paused or not.
@@ -820,7 +930,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         case .speaking: .showing(paused ? .paused : heard ? .speaking : .thinking)
         // Reply finished, or the question was dropped: back to the tabs, unless the mic is only
         // shut for a while (Pause while listening), or Stop was pressed (the card waits).
-        case .idle: muted || stopped ? .showing(.paused) : .closed
+        case .idle: muted || stopped ? .showing(.paused) : opening ? .showing(.thinking) : .closed
         case .error: .failed
         }
     }
@@ -906,7 +1016,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             Task { @MainActor in
                 guard let self else { return }
                 CarPlayArtwork.keepVoicePictures(only: self.settings.carPlayVoice)
-                if self.controller != nil { _ = self.voiceTemplate() }
+                self.drawAhead()
                 self.armVoiceLookObservation()
             }
         }
@@ -952,7 +1062,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             }
         }
         switch Self.card(phase: session.phase, waitingOnPhone: session.activeTool == "waiting for you", muted: session.isMuted,
-                         paused: session.isPaused, stopped: stopped, heard: heard) {
+                         paused: session.isPaused, stopped: stopped, heard: heard, opening: listensOnceOpen) {
         case .showing(let state):
             voiceCard.activateVoiceControlState(withIdentifier: state.rawValue)
             // The bar only when its buttons change: Listening, Thinking and Speaking share one.

@@ -2235,7 +2235,15 @@ the cards keep up instead: while the tab is up the host is asked what the bots a
 five seconds, as the phone's chat list asks it (`ChatActivity.look`), and the bots are read
 again every thirty (`watchBots`; under the voice card it waits); whatever a card is drawn from
 is observed, and when it changes the tab is drawn again (`armBotsObservation`, only if a card
-would change). Picking one opens its own chat and listens, as picking a chat does. The tab last
+would change). Picking one opens its own chat and listens, as picking a chat does, except that
+the voice card goes up at once, in that bot's face, saying Thinking while the chat is opened
+behind it, and Redde listens once the chat is open (`talk(to:)`, `listensOnceOpen`; asked
+2026-10-24, "a bit of a lag between pressing the bot button and it switching to the
+listening/speaking screen"). The card takes a second and a half to come up on his car and the
+chat had been opened before it started. Nothing is heard before the chat is open, or it would
+go to the one open before. Stop or Pause meanwhile holds the card on Paused with the chat
+opened and nothing listening; Resume listens, once the chat is open if it isn't yet. The car's
+own Back means the same: the chat opens, nothing listens. The tab last
 picked is remembered (`Settings.carPlayTab`, this phone's alone) and the car opens on it the next
 time it connects, or on Ask if that tab has gone (asked 2026-10-22, "make the tab selected
 sticky"; `CPTabBarTemplate.select`, which picks a tab only on a car). New Chat, a picked chat and a picked bot listen in the mode Settings → Voice
@@ -2429,9 +2437,25 @@ The pictures are drawn ahead of time at the car's display scale, thirty-six to s
 loop. The bars' loops come down the way they went up, so each picture serves twice and is one
 object, not two copies, and the orb's speaking loop is its first half twice; that leaves about
 a hundred different ones in any look (112 at most), some 40 MB while the car is connected.
-Only the picked look's are kept: picking another lets the old ones go and draws the new ones
-at once, for the next card to open (a card that is up keeps its pictures, since a template's
-states cannot be changed). Settings shows each look as its Listening, Thinking and Speaking
+The face look draws a set per face (116 pictures, about 30 MB).
+
+Measured 2026-10-24 on his drives and in the simulator:
+- Drawn at the press, the face look's pictures took a second, and the orb's longer. Bars take
+  0.14 s.
+- Handing the card to the car takes about a third of a second on the phone's main thread,
+  whatever the look. The cost goes with the number of pictures, not their size (45 ms with
+  stills).
+- CarPlay then needs about another second before it reports the card up.
+
+So the pictures are drawn ahead, a picture at a time with the main thread let go in between
+(`drawAhead`, `CarPlayArtwork.drawVoiceAhead`). They are drawn when the car connects, and for
+the open chat's face again when the look changes. While the Bots tab is up, the first five
+bots' faces are drawn too. A press that comes while a state is being drawn finishes it from
+where the drawing got to. Only the picked look's are kept: picking another lets the old ones
+go (a card that is up keeps its pictures, since a template's states cannot be changed).
+
+A development build writes each press, the time a bot's chat took to open, and what was drawn
+ahead to `carplay-events.txt`. Settings shows each look as its Listening, Thinking and Speaking
 pictures and plays the picked one's loops there (`voicePicture`, drawn small and not kept),
 so a look can be judged without a car. Reduce Motion gets the still pictures, on the car and
 in Settings. On iOS 27 each state
