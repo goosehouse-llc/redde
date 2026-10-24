@@ -77,6 +77,7 @@ struct PhoneToolsSettingsView: View {
 
                 Section {
                     pluginRow
+                    ReddePluginLink()
                 } header: {
                     Text("On your Hermes")
                 } footer: {

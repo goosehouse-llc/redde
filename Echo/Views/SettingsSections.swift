@@ -294,7 +294,13 @@ struct AgentSettings<Details: View>: View {
                 Label("Cards in replies", systemImage: "map")
             }
         } footer: {
-            Text("Your agent can show a map, places and the weather under its reply, through Redde's Hermes plugin. Off, it isn't offered them, which makes every prompt a little shorter.")
+            Text("Your agent can show a map, places, the weather and the time under its reply, through Redde's Hermes plugin. The weather comes from Open-Meteo. Off, it isn't offered them, which makes every prompt a little shorter.")
+        }
+
+        Section {
+            ReddePluginLink()
+        } footer: {
+            Text("Redde's plugin on your Hermes: cards in replies, phone tools, the widget your agent writes on and notifications when Redde is closed all come through it.")
         }
 
         Section {
