@@ -1031,6 +1031,25 @@ where it is, for the agent to read with its own tools (`AttachedFileNote`, hidde
 is shown again; the API doesn't expand `@file:` references as the Dashboard does). Without the
 login it is refused, saying so.
 
+**Pictures on other devices** (GitHub issue 18). Hermes keeps no picture's bytes in a session:
+what other clients find is a line `@image:<path on the server>` in the message where its
+Dashboard saved the picture, else only `[screenshot]` (`_durable_content`, every release from
+0.21.0 to 0.22.2). The Dashboard writes that line itself for `image.attach_bytes`, so pictures sent
+there were always kept (Hermes Desktop's remote mode sends them the same way). The Hermes API keeps
+only `[screenshot]`, so on it, with the Dashboard's login saved, each picture is also put on the
+server first (`POST /api/chat/image-upload`, into the profile's pictures folder, as the
+Dashboard's own chat does) and named on a line of the message (`Conversation.namingPictures`,
+`ServeMedia.pictureRef`, quoted as Hermes Desktop reads it back); the picture still goes inline for
+the model, and one that can't be put there goes unnamed. A message's `@image:` lines (and the
+older `[Image attached at: …]`) are pictures to fetch like a reply's files, from Hermes Desktop or
+Redde on another device alike: the row leaves the lines and their `[screenshot]`s out
+(`ServeMedia.named`), offers each as a chip until it is fetched, and a chat opened again fetches
+them with its replies' files. A Desktop picture's path is on the server's own disk, so a Windows
+server's `C:\…` path is fetched like any other. A picture is always the JPEG Redde made of it,
+and named so (`Attachment.jpegName`): Hermes takes an attached picture's kind from its name, and
+a photo shared as IMG_0412.HEIC was turned down on the Dashboard. `lab.sh pictures` checks all of
+this against each release.
+
 The composer's round button follows what you're doing (the app's waveform, still, for voice; send;
 stop; steer and queue during a reply) and springs between those; the field gets a faint accent
 ring while there is something to send. The + menu attaches files (up to 8 MB), photos and videos from the library, or a photo taken with
@@ -1040,7 +1059,7 @@ no camera). Images are downscaled to 2560 px JPEG:
 | Connection | Images | Text files | PDF / video / other |
 | --- | --- | --- | --- |
 | Hermes Dashboard | `image.attach_bytes` | `file.attach` | `pdf.attach` / `file.attach` |
-| Hermes API | `input_image` data URL parts | inlined into the prompt | refused (no file parts) |
+| Hermes API | `image_url` data URL parts, and with the Dashboard login a copy on the server named in the message | inlined into the prompt | placed on the server through the Dashboard, or refused |
 | OpenAI-compatible | `image_url` parts (needs a vision model) | inlined | refused |
 
 `file.attach` only puts the file in the session's workspace and answers with a reference to it

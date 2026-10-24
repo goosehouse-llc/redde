@@ -1521,7 +1521,7 @@ struct ConversationsList: View {
                         .padding(.horizontal, 6).padding(.vertical, 1)
                         .background(.quaternary, in: .capsule)
                 }
-                Text(session.preview?.nilIfEmpty ?? session.message_count.map { "\($0) messages" } ?? " ")
+                Text(session.preview?.nilIfEmpty.map(ServeMedia.preview) ?? session.message_count.map { "\($0) messages" } ?? " ")
                     .lineLimit(1)
             }
             .font(.subheadline)
@@ -2169,7 +2169,7 @@ struct ProjectSessionsView: View {
                 if let n = session.message_count { Text("·"); Text("\(n) messages") }
             }
             .font(.caption).foregroundStyle(.secondary).lineLimit(1)
-            if let p = session.preview, !p.isEmpty { Text(p).font(.footnote).foregroundStyle(.secondary).lineLimit(2) }
+            if let p = session.preview, !p.isEmpty { Text(ServeMedia.preview(p)).font(.footnote).foregroundStyle(.secondary).lineLimit(2) }
         }
         .padding(.vertical, 2)
         .contentShape(.rect)

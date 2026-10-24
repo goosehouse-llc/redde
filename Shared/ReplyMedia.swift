@@ -73,11 +73,14 @@ nonisolated enum ServeMedia {
         var whole: String
         /// As the reply wrote it: absolute, from `~/`, or relative to the session's folder.
         var path: String
-        var filename: String { String(path.split(separator: "/").last ?? "photo") }
+        /// (A server on Windows writes its paths with backslashes.)
+        var filename: String { String(path.split(whereSeparator: { $0 == "/" || $0 == "\\" }).last ?? "photo") }
         /// A web page written for the chat (`::preview{file="page.html"}`), shown live in it.
         var isPage = false
+        /// A picture a person's message carries by reference, as Hermes keeps one (`pictureRefs`).
+        var isPicture = false
         /// Neither absolute nor from home: the server finds it from the session's folder.
-        var isRelative: Bool { !path.hasPrefix("/") && !path.hasPrefix("~") }
+        var isRelative: Bool { !path.hasPrefix("/") && !path.hasPrefix("~") && path.range(of: #"^[A-Za-z]:\\"#, options: .regularExpression) == nil }
     }
 
     private static let imageExts: Set<String> = ["png", "jpg", "jpeg", "gif", "webp", "bmp", "heic"]
@@ -134,6 +137,45 @@ nonisolated enum ServeMedia {
     static func mayName(in text: String) -> Bool {
         text.contains("MEDIA:") || text.contains("::preview") || text.contains("[IMAGE:") || text.contains("](/")
             || text.contains("](file://") || text.contains("/redde-push/device/files/")
+            || text.contains("@image:") || text.contains("[Image attached at:")
+    }
+
+    /// A picture in a person's message as Hermes keeps it in the session: `@image:<path>` on a line
+    /// of its own, the path on the server (what its Dashboard writes for a picture attached to a
+    /// turn, Hermes Desktop's and Redde's alike, and what Redde names on the Hermes API; quoted
+    /// when the path has spaces), or, in older rows, `[Image attached at: <path>]`. Hermes keeps
+    /// no picture's bytes in the session: where it couldn't name the file it left only
+    /// `placeholder` (GitHub issue 18).
+    private static let pictureRefs = [
+        try! NSRegularExpression(pattern: #"^@image:(?:`([^`\n]+)`|"([^"\n]+)"|'([^'\n]+)'|(\S+))[ \t]*$"#, options: [.anchorsMatchLines]),
+        try! NSRegularExpression(pattern: #"^\[Image attached at: ([^\]\n]+)\][ \t]*$"#, options: [.anchorsMatchLines]),
+    ]
+
+    /// The line Hermes keeps for each picture's bytes.
+    static let placeholder = "[screenshot]"
+
+    /// The text without the lines that stand for pictures' bytes: for a message that names its
+    /// pictures, which are shown instead.
+    static func withoutPlaceholders(_ text: String) -> String {
+        text.split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { $0.trimmingCharacters(in: .whitespaces) != placeholder }
+            .joined(separator: "\n")
+    }
+
+    /// A session's preview as the server gives it (the start of its first message, cut short,
+    /// newlines and all, or not): up to its first picture's line, or "Picture" for a message that
+    /// was a picture and nothing else.
+    static func preview(_ text: String) -> String {
+        let markers = ["@image:", "[Image attached at:", placeholder]
+        guard let cut = markers.compactMap({ text.range(of: $0)?.lowerBound }).min() else { return text }
+        let before = text[..<cut].trimmingCharacters(in: .whitespacesAndNewlines)
+        return before.isEmpty ? "Picture" : before
+    }
+
+    /// How a message names a picture on the server, as Hermes Desktop reads it back.
+    static func pictureRef(_ path: String) -> String {
+        let plain = path.rangeOfCharacter(from: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "()[]{}<>\"'`"))) == nil
+        return "@image:" + (plain ? path : path.contains("`") ? "\"\(path)\"" : "`\(path)`")
     }
 
     static func candidates(in text: String) -> [Candidate] {
@@ -166,6 +208,14 @@ nonisolated enum ServeMedia {
                 guard let ext = path.split(separator: ".").last?.lowercased(),
                       imageExts.contains(ext) || docExts.contains(ext) || audioExts.contains(ext) else { continue }
                 add(String(match.output.0), path)
+            }
+        }
+        for regex in pictureRefs {
+            for match in regex.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
+                guard let group = (1..<match.numberOfRanges).first(where: { match.range(at: $0).location != NSNotFound }) else { continue }
+                let path = ns.substring(with: match.range(at: group)).trimmingCharacters(in: .whitespaces)
+                guard !path.isEmpty, seen.insert(ns.substring(with: match.range)).inserted else { continue }
+                found.append(Candidate(whole: ns.substring(with: match.range), path: path, isPicture: true))
             }
         }
         for match in previewDirective.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
@@ -220,6 +270,7 @@ nonisolated enum ServeMedia {
         guard !found.isEmpty else { return (text, []) }
         var out = text.replacingOccurrences(of: voiceMarker, with: "")
         for file in found { out = out.replacingOccurrences(of: file.whole, with: "") }
+        if found.contains(where: \.isPicture) { out = withoutPlaceholders(out) }
         var paths: Set<String> = []
         return (out.trimmingCharacters(in: .whitespacesAndNewlines), found.filter { paths.insert($0.path).inserted })
     }

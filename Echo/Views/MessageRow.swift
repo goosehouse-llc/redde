@@ -28,7 +28,20 @@ struct MessageRow: View, Equatable {
             && (a.onLoadToolDetails == nil) == (b.onLoadToolDetails == nil)
     }
     /// An image-only message renders just its attachments — no empty text bubble.
-    private var hasTextBubble: Bool { !(message.text.isEmpty && !message.attachments.isEmpty) }
+    private var hasTextBubble: Bool {
+        !(shownText.isEmpty && (!message.attachments.isEmpty || !namedPictures.isEmpty))
+    }
+
+    /// A message of the person's without the lines naming its pictures on the server
+    /// (`@image:`, and Hermes's "[screenshot]" for them): the pictures show instead.
+    private var shownText: String {
+        message.role == .user ? ServeMedia.named(in: message.text).text : message.text
+    }
+
+    /// Those pictures, while they aren't in the chat yet: each to fetch on a tap.
+    private var namedPictures: [ServeMedia.Candidate] {
+        message.role == .user ? ServeMedia.named(in: message.text).files : []
+    }
 
     /// Terminal-family themes render your messages as shell input (`❯ text`), left-aligned
     /// and unbubbled, the way a prompt line sits in a terminal.
@@ -87,9 +100,10 @@ struct MessageRow: View, Equatable {
             if !message.subagents.isEmpty { SubagentRows(subagents: message.subagents) }
             let files = message.attachments.filter { $0.page == nil }
             if !files.isEmpty { AttachmentGallery(attachments: files) }
-            // Files the reply names that aren't in the chat: each to fetch and open, not a path.
-            if message.role == .assistant, !isLive {
-                let named = ServeMedia.named(in: message.text).files
+            // Files the reply names that aren't in the chat, and pictures a message of the
+            // person's names on the server: each to fetch and open, not a path.
+            if message.role != .assistant || !isLive {
+                let named = message.role == .assistant ? ServeMedia.named(in: message.text).files : namedPictures
                 if !named.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
                         ForEach(named, id: \.path) { DeliveredFileChip(file: $0, source: fileSource) }
@@ -131,17 +145,17 @@ struct MessageRow: View, Equatable {
                     .padding(.vertical, 6)
                     .background(Color.orange.opacity(0.12), in: .capsule)
             } else if hasTextBubble, promptStyled, let prompt = theme.promptPrefix {
-                Text("\(Text(prompt).bold())\(message.text)")
+                Text("\(Text(prompt).bold())\(shownText)")
                     .font(theme.messageFont)
                     .foregroundStyle(theme.promptColor)
                     // The ❯ is decoration; VoiceOver (and UI tests) should get the words alone.
-                    .accessibilityLabel(message.text)
+                    .accessibilityLabel(shownText)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .overlay(highlightRing)
                     .contextMenu { userMenu }
                     .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
             } else if hasTextBubble {
-                Text(message.text)
+                Text(shownText)
                     .font(theme.userFont)
                     .padding(.horizontal, 14)
                     .padding(.vertical, theme.bubbleVerticalPadding)

@@ -112,9 +112,18 @@ nonisolated struct Attachment: Identifiable, Codable, Equatable, Sendable {
         let renderer = UIGraphicsImageRenderer(size: target, format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; return f }())
         let scaled = renderer.image { _ in image.draw(in: CGRect(origin: .zero, size: target)) }
         guard let jpeg = scaled.jpegData(compressionQuality: 0.88) else { return nil }
-        return Attachment(kind: .image, filename: filename, mimeType: "image/jpeg", data: jpeg)
+        return Attachment(kind: .image, filename: jpegName(filename), mimeType: "image/jpeg", data: jpeg)
     }
     #endif
+
+    /// A picture's name for the JPEG it became: a photo shared as IMG_0412.HEIC is sent as
+    /// IMG_0412.jpg. Hermes takes an attached picture's kind from its name and turns a .heic down.
+    static func jpegName(_ filename: String) -> String {
+        let ext = (filename as NSString).pathExtension.lowercased()
+        guard ext != "jpg", ext != "jpeg" else { return filename }
+        let stem = ext.isEmpty ? filename : (filename as NSString).deletingPathExtension
+        return (stem.isEmpty ? "photo" : stem) + ".jpg"
+    }
 
     /// Downsamples an image file through ImageIO: a 48 MP photo never becomes a 190 MB bitmap,
     /// which matters inside the share extension's memory limit.
@@ -134,7 +143,7 @@ nonisolated struct Attachment: Identifiable, Codable, Equatable, Sendable {
         guard let dest = CGImageDestinationCreateWithData(out, UTType.jpeg.identifier as CFString, 1, nil) else { return nil }
         CGImageDestinationAddImage(dest, cg, [kCGImageDestinationLossyCompressionQuality: 0.88] as CFDictionary)
         guard CGImageDestinationFinalize(dest) else { return nil }
-        return Attachment(kind: .image, filename: filename, mimeType: "image/jpeg", data: out as Data)
+        return Attachment(kind: .image, filename: jpegName(filename), mimeType: "image/jpeg", data: out as Data)
     }
 
     /// A small copy for a row thumbnail, decoded from the stored JPEG at the size it is shown.

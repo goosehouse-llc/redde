@@ -1220,6 +1220,15 @@ final class HermesServeClient {
     /// file is missing or over the server's size cap.
     /// A file as a data URL (16 MB at most: nil over that, and when it isn't there). `in`: the
     /// session whose folder a relative path is in, and the profile it belongs to (a bot's).
+    /// A picture put on the server as the Dashboard's own chat puts one (`POST /api/chat/image-upload`,
+    /// into the profile's pictures folder; PNG, JPEG, GIF, WebP or BMP, 25 MB at most): its path there.
+    func uploadPicture(_ picture: Attachment) async throws -> String {
+        let reply = try await restJSON("POST", "api/chat/image-upload",
+                                       body: .object(["data_url": .string(picture.dataURL), "filename": .string(picture.filename)]))
+        guard let path = reply["path"]?.string, !path.isEmpty else { throw TransportError.malformed("no path for the picture") }
+        return path
+    }
+
     func readDataURL(path: String, in source: FileSource? = nil) async throws -> String? {
         var comps = URLComponents()
         comps.path = "api/fs/read-data-url"
@@ -1270,7 +1279,7 @@ final class HermesServeClient {
         case (_, "api/sessions"): return method == "GET" ? .query : .none
         default:
             let queryRoutes = ["api/skills", "api/tools/toolsets", "api/cron/", "api/mcp/servers", "api/logs", "api/status", "api/gateway/restart",
-                               "api/sessions/search", "api/audio/speak", "api/audio/voice-live/"]
+                               "api/sessions/search", "api/audio/speak", "api/audio/voice-live/", "api/chat/image-upload"]
             return queryRoutes.contains { route == $0 || route.hasPrefix($0.hasSuffix("/") ? $0 : $0 + "/") } ? .query : .none
         }
     }

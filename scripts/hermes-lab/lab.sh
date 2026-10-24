@@ -22,6 +22,7 @@
 #   scripts/hermes-lab/lab.sh search [tag ...]     searching inside messages: words said on either connection, found through the Dashboard
 #   scripts/hermes-lab/lab.sh context [tag ...]    Settings' context and memory files, found where Hermes keeps them (issue 15)
 #   scripts/hermes-lab/lab.sh speech [tag ...]     replies read out with the voice Hermes is set up with, streamed and whole (issue 7)
+#   scripts/hermes-lab/lab.sh pictures [tag ...]   pictures sent from the app kept where other clients find them, on both connections (issue 18)
 #   scripts/hermes-lab/lab.sh status [tag ...]     the chat list's marks: working, waiting on a person, unread, on both connections
 #   scripts/hermes-lab/lab.sh bots [tag ...]       bots: each profile's own chat, hidden from the list, and bots messaging bots
 #   scripts/hermes-lab/lab.sh groups [tag ...]     group chats: a room of bots made, talked to, a bot tagged, stopped, renamed, disbanded
@@ -723,6 +724,20 @@ device() {
 # voice that streams (the stub's "OpenAI"), and one that runs on the server and only writes whole
 # files (tts_command.py). LAB_SPEAKS tells the app's check which the socket should do: stream, or
 # say "fallback" so the app asks for each sentence whole (up to 0.21.5, for the second voice).
+# Pictures across devices (GitHub issue 18): what the app sends with a picture on each connection,
+# and whether Hermes keeps it where another client finds it (pictures_check.py).
+pictures() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  for tag in $tags; do
+    echo "===== Hermes $tag / approval"
+    if ! up "$tag" approval; then failed+=("$tag (lab)"); continue; fi
+    (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" pictures_check.py) || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
 speech() {
   local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
   app_prepare HermesLabSpeechTests || exit 1
@@ -771,6 +786,7 @@ case "${1:-}" in
   search) shift; search "$@" ;;
   context) shift; context "$@" ;;
   speech) shift; speech "$@" ;;
+  pictures) shift; pictures "$@" ;;
   up) up "$2" "$3" && echo "lab up: Hermes $2 / $3 — API http://127.0.0.1:18642 (key labkey-labkey-labkey), Dashboard http://127.0.0.1:19119" ;;
   down) down ;;
   *) sed -n '2,26p' "$0"; exit 2 ;;

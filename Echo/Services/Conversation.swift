@@ -388,6 +388,14 @@ final class Conversation {
                     statusLine = "putting the file on the server…"
                     request = try await Self.placingFiles(request)
                 }
+                // Pictures go in the run itself, but the Hermes API keeps none of them, only a
+                // "[screenshot]" in their place, so the chat opened anywhere else had no picture
+                // (GitHub issue 18). With the Dashboard's login a copy goes to the server too, and
+                // the message names it as Hermes Desktop's pictures are named.
+                if transportKind == .hermesSessions, request.attachments.contains(where: { $0.kind == .image }),
+                   dashboard.hasCredentials {
+                    request = await Self.namingPictures(request)
+                }
                 for try await event in transport.stream(request) {
                     mirrorContinuation.yield(event)
                     apply(event, to: replyID)
@@ -489,6 +497,20 @@ final class Conversation {
         guard !files.isEmpty else { return request }
         for placed in try await ServerFiles.place(files, client: client) { request.userText += AttachedFileNote.note(path: placed.path) }
         request.attachments.removeAll { $0.kind == .pdf || $0.kind == .other }
+        return request
+    }
+
+    /// A turn's pictures, each put on the server through the Dashboard (its own pictures folder,
+    /// as the Dashboard's chat puts them) and named on a line of the message (`@image:`), which
+    /// is how Hermes keeps a picture with a session for every other client to show. One that
+    /// can't be put there still goes with the run, unnamed, as before.
+    static func namingPictures(_ request: TurnRequest,
+                               upload: (Attachment) async throws -> String = { try await HermesServeClient.shared.uploadPicture($0) }) async -> TurnRequest {
+        var request = request
+        for picture in request.attachments where picture.kind == .image {
+            guard let path = try? await upload(picture) else { continue }
+            request.userText += "\n" + ServeMedia.pictureRef(path)
+        }
         return request
     }
 
@@ -1752,6 +1774,8 @@ final class Conversation {
         }
         // The speech tool's request for a voice bubble went with its file.
         if attachments.contains(where: \.isAudio) { cleaned = cleaned.replacingOccurrences(of: ServeMedia.voiceMarker, with: "") }
+        // And Hermes's stand-in for a picture's bytes with the picture.
+        if candidates.contains(where: { $0.isPicture && fetched.contains($0.path) }) { cleaned = ServeMedia.withoutPlaceholders(cleaned) }
         // The message may have been replaced while its files were on their way (another chat opened).
         guard messages.contains(where: { $0.id == id && $0.text == text }) else { return }
         update(id) { $0.text = cleaned.trimmingCharacters(in: .whitespacesAndNewlines); $0.attachments += attachments }
@@ -1784,13 +1808,14 @@ final class Conversation {
     private var reopenedMedia: Task<Void, Never>?
 
     /// A chat opened from the server comes back as text: the files its replies delivered are
-    /// bare paths again, pictures and sound alike. The newest of them are fetched once more,
-    /// as they were when they first arrived, newest first; older ones stay as they are written.
+    /// bare paths again, pictures and sound alike, and the pictures sent with its messages are
+    /// `@image:` lines (from Hermes Desktop, or Redde on another device; GitHub issue 18). The
+    /// newest of them are fetched once more, newest first; older ones stay as they are written.
     func resolveReopenedMedia() {
         reopenedMedia?.cancel()
         guard settings.transport == .hermesServe || (settings.transport == .hermesSessions && dashboard.hasCredentials) else { return }
         let opened = id
-        let replies = messages.reversed().lazy.filter { $0.role == .assistant && !ServeMedia.candidates(in: $0.text).isEmpty }
+        let replies = messages.reversed().lazy.filter { !ServeMedia.candidates(in: $0.text).isEmpty }
             .prefix(Self.reopenedMediaReach).map(\.id)
         guard !replies.isEmpty else { return }
         reopenedMedia = Task { [weak self] in
