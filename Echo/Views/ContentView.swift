@@ -408,7 +408,7 @@ struct ContentView: View {
                                     // A bot's chat: whose it is, by its face and name, side by side.
                                     HStack(spacing: 6) {
                                         BotAvatar(face: botFace, name: headerTitle, size: 22)
-                                        Text(headerTitle).lineLimit(1)
+                                        chatTitleText
                                     }
                                     .fixedSize(horizontal: true, vertical: false)
                                 } else if conversation.isIncognito {
@@ -417,8 +417,7 @@ struct ContentView: View {
                                         .labelStyle(.titleAndIcon)
                                         .fixedSize(horizontal: true, vertical: false)
                                 } else {
-                                    TypedTitle(title: headerTitle, conversationID: conversation.id,
-                                               isPlaceholder: !conversation.hasMessages && conversation.outbox.isEmpty)
+                                    chatTitleText
                                 }
                             }
                             .font(.headline)
@@ -684,6 +683,23 @@ struct ContentView: View {
         if let bot = conversation.bot { return bot.name }
         if conversation.isIncognito { return IncognitoNote.title }
         return !conversation.hasMessages && conversation.outbox.isEmpty ? "New conversation" : conversation.title
+    }
+
+    @ViewBuilder private var chatTitleText: some View {
+        let separator = headerTitle.range(of: #"\s+[-‐‑‒–—―]\s+"#, options: .regularExpression)
+        if let separator {
+            let firstLine = headerTitle[..<separator.lowerBound].trimmingCharacters(in: .whitespacesAndNewlines)
+            let secondLine = headerTitle[separator.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
+            VStack(spacing: 0) {
+                Text(firstLine).lineLimit(1)
+                Text(secondLine)
+                    .font(.caption)
+                    .lineLimit(1)
+            }
+        } else {
+            TypedTitle(title: headerTitle, conversationID: conversation.id,
+                       isPlaceholder: !conversation.hasMessages && conversation.outbox.isEmpty)
+        }
     }
 
     /// What the title chip shows: the picked model, or the backend's default.
