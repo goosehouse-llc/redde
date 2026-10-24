@@ -16,6 +16,7 @@ struct ConnectionDetailsView: View {
             GatewayKeySettings(hasStoredKey: $hasStoredKey, saved: $saved)
             ServeLoginSettings(hasServePassword: $hasServePassword, saved: $saved)
             CloudflareSettings()
+            PangolinSettings()
             CustomHeadersSettings()
             FastLaneSettings(saved: $saved)
         }
@@ -37,11 +38,19 @@ private struct SecretField: View {
     @Binding var hasValue: Bool
     var onSaved: () -> Void = {}
     var onRemoved: () -> Void = {}
+    /// What is stored for what was typed, or nil to refuse it with `refusal`. Stored as typed without.
+    var accept: ((String) -> String?)?
+    var refusal = ""
     @State private var text = ""
+    @State private var refused = false
 
     var body: some View {
         SecureField(hasValue ? replacePrompt : prompt, text: $text)
             .onSubmit(save)
+            .onChange(of: text) { refused = false }
+        if refused {
+            Text(refusal).font(.footnote).foregroundStyle(.red)
+        }
         if !optional || !text.isEmpty || hasValue {
             HStack {
                 Button(saveTitle, action: save)
@@ -60,7 +69,9 @@ private struct SecretField: View {
     }
 
     private func save() {
-        guard Keychain.write(item, value: text) else { return }
+        let value = accept.map { $0(text) } ?? text
+        guard let value else { refused = true; return }
+        guard Keychain.write(item, value: value) else { return }
         text = ""
         hasValue = true
         onSaved()
@@ -221,6 +232,39 @@ struct CloudflareSettings: View {
             Text("If the Hermes Dashboard sits behind Cloudflare Access instead of a tailnet, create a service token in Zero Trust and paste its ID and secret. Sent as CF-Access-Client-Id / -Secret on every request and WebSocket.")
         }
         .task { hasSecret = Keychain.read(.cfAccessClientSecret) != nil }
+    }
+}
+
+/// Pangolin (pangolin.net) in front of the Dashboard or the Hermes API: a Link's access token for
+/// each resource, sent as its two headers on every request (`Settings.pangolinHeaders`). A Link
+/// opens one resource; when only one token is given it is sent to both, for a Dashboard and API
+/// behind the one resource. (Its header authentication, a Basic `Authorization` header, goes in
+/// Custom headers for the Dashboard; on the Hermes API that header carries the key.)
+struct PangolinSettings: View {
+    @State private var hasDashboard = false
+    @State private var hasAPI = false
+
+    var body: some View {
+        Section {
+            field(.pangolinDashboard, "Dashboard access token", has: $hasDashboard)
+            field(.pangolinAPI, "Hermes API access token", has: $hasAPI)
+        } header: {
+            Text("Pangolin (optional)")
+        } footer: {
+            Text("If the Dashboard or the Hermes API sits behind Pangolin, make a Link to its resource and paste its access token here: the token ID and token as id.token, or the link that has p_token= in it. Sent as P-Access-Token-Id / P-Access-Token on every request and WebSocket. One token is used for both when the other is empty. Treat it like a password.")
+        }
+        .task {
+            hasDashboard = Keychain.read(.pangolinDashboard) != nil
+            hasAPI = Keychain.read(.pangolinAPI) != nil
+        }
+    }
+
+    private func field(_ item: Keychain.Item, _ prompt: String, has: Binding<Bool>) -> some View {
+        SecretField(item: item, prompt: prompt, replacePrompt: "Replace stored \(prompt.lowercased())", saveTitle: "Save token",
+                    optional: true, hasValue: has,
+                    onSaved: { HermesServeClient.shared.disconnect() }, onRemoved: { HermesServeClient.shared.disconnect() },
+                    accept: Settings.pangolinToken,
+                    refusal: "That isn't a Pangolin access token. Paste the token ID and token as id.token, or the Link with p_token= in it.")
     }
 }
 

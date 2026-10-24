@@ -117,7 +117,7 @@ final class BotHandoffStore {
     private static func rows(of bot: HermesBot, chat: String, apiOnly: Bool, settings: Settings, dashboard: HermesServeClient) async -> [BotHandoffs.Row]? {
         if apiOnly {
             guard let endpoint = settings.gatewayEndpoint(profile: bot.name) else { return nil }
-            let api = HermesSessionsAPI(baseURL: endpoint.url, apiKey: endpoint.key, headers: settings.customHeaderFields)
+            let api = HermesSessionsAPI(baseURL: endpoint.url, apiKey: endpoint.key, headers: settings.apiHeaders)
             guard let stored = try? await api.newestMessages(sessionID: chat, limit: rowsRead) else { return nil }
             return stored.map { BotHandoffs.Row(role: $0.role, text: $0.content?.text ?? "", at: $0.timestamp.map(Date.init(timeIntervalSince1970:))) }
         }

@@ -228,7 +228,7 @@ struct SetupView: View {
         switch settings.transport {
         case .hermesSessions:
             guard let url = settings.gatewayBaseURL else { outcome = .failed("Enter a valid URL."); return }
-            outcome = await ConnectionTester.hermesAPI(url: url, apiKey: apiKey.isEmpty ? Keychain.read(.gatewayAPIKey) : apiKey, headers: settings.customHeaderFields)
+            outcome = await ConnectionTester.hermesAPI(url: url, apiKey: apiKey.isEmpty ? Keychain.read(.gatewayAPIKey) : apiKey, headers: settings.apiHeaders)
         case .hermesServe:
             guard let url = settings.serveBaseURL else { outcome = .failed("Enter a valid URL."); return }
             outcome = await ConnectionTester.hermesServe(url: url)

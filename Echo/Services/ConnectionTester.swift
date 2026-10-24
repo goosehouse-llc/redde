@@ -18,9 +18,14 @@ nonisolated enum ConnectionTester {
 
     /// Hermes API server: /health, then /v1/models with the key.
     static func hermesAPI(url: URL, apiKey: String?, headers: [String: String] = [:]) async -> Outcome {
-        guard let (_, health) = try? await get(url.appending(path: "health"), key: nil, headers: headers), health == 200 else {
+        guard let (_, health) = try? await get(url.appending(path: "health"), key: nil, headers: headers) else {
             return .failed("No Hermes API server answered at \(url.host() ?? url.absoluteString).")
         }
+        // A sign-in gate in front (Pangolin, Cloudflare Access, a proxy) sends its login page instead.
+        if [302, 303, 307, 401, 403].contains(health) {
+            return .failed(gated(url, status: health, headers: headers))
+        }
+        guard health == 200 else { return .failed("No Hermes API server answered at \(url.host() ?? url.absoluteString).") }
         guard let apiKey, !apiKey.isEmpty else { return .failed("Server reachable. Add the API key.") }
         guard let (_, status) = try? await get(url.appending(path: "v1/models"), key: apiKey, headers: headers) else {
             return .failed("Server reachable, but the key check didn't complete.")
@@ -40,9 +45,7 @@ nonisolated enum ConnectionTester {
             return .failed("No Hermes Dashboard answered at \(url.host() ?? url.absoluteString).")
         }
         if status == 403 || status == 302 {
-            return .failed(access.isEmpty
-                ? "\(url.host() ?? "The host") is behind an access gate (HTTP \(status)). Add its headers under Settings → Connection details: a Cloudflare Access service token, or the proxy's own."
-                : "The access gate in front of \(url.host() ?? "the host") turned the request away (HTTP \(status)). Check the Cloudflare Access client ID and secret, or the custom headers.")
+            return .failed(gated(url, status: status, headers: access))
         }
         guard status == 200 else { return .failed("Hermes Dashboard answered HTTP \(status).") }
         let json = (try? JSONDecoder().decode(JSONValue.self, from: data)) ?? .null
@@ -69,6 +72,13 @@ nonisolated enum ConnectionTester {
             return .failed("Connected, but the endpoint doesn't list a model named \(model).")
         }
         return .ok(ids.isEmpty ? "Connected." : "Connected. \(ids.count) model\(ids.count == 1 ? "" : "s") available.")
+    }
+
+    /// What to say when an access gate turns the check away.
+    private static func gated(_ url: URL, status: Int, headers: [String: String]) -> String {
+        headers.isEmpty
+            ? "\(url.host() ?? "The host") is behind an access gate (HTTP \(status)). Add what it asks for under Settings → Connection details: a Cloudflare Access service token, a Pangolin access token, or the proxy's own headers."
+            : "The access gate in front of \(url.host() ?? "the host") turned the request away (HTTP \(status)). Check the Cloudflare Access client ID and secret, the Pangolin access token, or the custom headers."
     }
 
     private static func get(_ url: URL, key: String?, headers: [String: String] = [:]) async throws -> (Data, Int) {

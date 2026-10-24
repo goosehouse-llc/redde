@@ -1244,7 +1244,7 @@ final class Conversation {
     /// The Hermes API for a profile at /p/<profile>/ with its own key; nil, the app's.
     func ledgerAPI(profile: String?) -> HermesSessionsAPI? {
         guard let endpoint = settings.gatewayEndpoint(profile: profile) else { return nil }
-        return HermesSessionsAPI(baseURL: endpoint.url, apiKey: endpoint.key, headers: settings.customHeaderFields)
+        return HermesSessionsAPI(baseURL: endpoint.url, apiKey: endpoint.key, headers: settings.apiHeaders)
     }
 
     // MARK: Name
@@ -1395,7 +1395,7 @@ final class Conversation {
         switch connection {
         case .hermesSessions:
             // The app's API, or an API bot's at /p/<profile>/ with its own key.
-            guard let api = ledgerAPI() else { return HermesSessionsTransport(baseURL: url, apiKey: key, headers: settings.customHeaderFields) }
+            guard let api = ledgerAPI() else { return HermesSessionsTransport(baseURL: url, apiKey: key, headers: settings.apiHeaders) }
             return HermesSessionsTransport(baseURL: api.baseURL, apiKey: api.apiKey, headers: api.headers)
         case .hermesServe: return HermesServeTransport(client: dashboard)
         case .chatCompletions: return ChatCompletionsTransport(baseURL: url, apiKey: Keychain.read(.fastLaneAPIKey))
@@ -1840,7 +1840,7 @@ final class Conversation {
     func loadToolDetails(for id: UUID) async {
         guard let sessionID = serverSessionID, let base = settings.gatewayBaseURL, let key = settings.gatewayAPIKey, !key.isEmpty,
               let local = messages.first(where: { $0.id == id }), !local.tools.isEmpty,
-              let stored = try? await HermesSessionsAPI(baseURL: base, apiKey: key, headers: settings.customHeaderFields).messages(sessionID: sessionID),
+              let stored = try? await HermesSessionsAPI(baseURL: base, apiKey: key, headers: settings.apiHeaders).messages(sessionID: sessionID),
               let found = Self.storedTools(for: local, in: Self.mapStored(stored)) else { return }
         update(id) { message in
             for (i, tool) in found.enumerated() where i < message.tools.count {

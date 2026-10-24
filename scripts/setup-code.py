@@ -68,6 +68,8 @@ def main():
     parser.add_argument("--api", type=address, default="", help="Hermes API server address (port 8642)")
     parser.add_argument("--profile", default="", help="Hermes profile, when it isn't the default one")
     parser.add_argument("--access-id", default="", help="Cloudflare Access service token client ID")
+    parser.add_argument("--pangolin", action="store_true",
+                        help="the server is behind Pangolin: asks for its Link access token (id.token), one for each address")
     parser.add_argument("--header", type=header_name, action="append", default=[], metavar="NAME",
                         help="a header your reverse proxy asks for (its value is asked for); may be repeated, up to 8")
     parser.add_argument("--model-url", type=address, default="", help="OpenAI-compatible endpoint address")
@@ -91,6 +93,9 @@ def main():
         ("profile-key", secret("REDDE_PROFILE_KEY", f"API key of the profile {args.profile}", ask and args.api and args.profile)),
         ("access-id", args.access_id),
         ("access-secret", secret("REDDE_ACCESS_SECRET", "Cloudflare Access client secret", ask and args.access_id)),
+        ("pangolin", secret("REDDE_PANGOLIN", "Pangolin access token for the Dashboard (id.token)", ask and args.pangolin and args.dashboard)),
+        ("pangolin-api", secret("REDDE_PANGOLIN_API", "Pangolin access token for the Hermes API (id.token; empty: the same as the Dashboard's)",
+                                ask and args.pangolin and args.api)),
     ]
     # A header goes along only with its value, and only for a Hermes server: a name alone sets nothing up.
     for name in args.header[:8]:

@@ -393,6 +393,29 @@ struct SetupCodeTests {
         #expect(Keychain.read(.fastLaneAPIKey) == "third-key")
     }
 
+    /// Pangolin's access tokens go along as secrets, read however they were pasted, and land in
+    /// the server's Keychain; a code made from that server carries them again.
+    @Test func pangolinTokensGoAlongAsSecrets() throws {
+        let link = "https%3A%2F%2Fapi.test%2F%3Fp_token%3Dapiid.apitoken"
+        let code = try #require(try read("redde://connect?dashboard=http://d.test:9119&api=http://a.test:8642&key=k&pangolin=dashid.dashtoken&pangolin-api=\(link)"))
+        #expect(code.pangolin == "dashid.dashtoken" && code.pangolinAPI == "apiid.apitoken")
+        #expect(code.hasSecrets)
+        #expect(code.withoutSecrets.pangolin.isEmpty && code.withoutSecrets.pangolinAPI.isEmpty)
+        #expect(try #require(try read("redde://connect?dashboard=http://d.test:9119&pangolin=nonsense")).pangolin.isEmpty, "not a token: left out")
+
+        let settings = settings()
+        let server = settings.activeServerID
+        defer { forget(server) }
+        code.install(in: settings) { _ in }
+        let id = server.uuidString
+        #expect(Keychain.read(account: Keychain.account(.pangolinDashboard, server: id)) == "dashid.dashtoken")
+        #expect(Keychain.read(account: Keychain.account(.pangolinAPI, server: id)) == "apiid.apitoken")
+        let record = try #require(settings.activeServer)
+        let again = SetupCode(server: record, settings: settings, secrets: true)
+        #expect(again.pangolin == "dashid.dashtoken" && again.pangolinAPI == "apiid.apitoken")
+        #expect(SetupCode(server: record, settings: settings, secrets: false).pangolin.isEmpty)
+    }
+
     // MARK: - Making one
 
     @Test func aServersCodeSetsUpAnotherDeviceTheSame() throws {

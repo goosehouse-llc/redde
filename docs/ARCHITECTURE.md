@@ -2540,6 +2540,18 @@ the handover itself is tested on a real watch.
   wait until unlocked; background Shortcuts runs are protected by the Keychain instead.
 - **Cloudflare Access:** a service-token ID and secret sent as `CF-Access-Client-Id` /
   `CF-Access-Client-Secret` on every Dashboard request and WebSocket handshake.
+- **Pangolin** (asked 2026-10-23, pangolin.net): a Link's access token (`<token-id>.<token>`) sent as
+  `P-Access-Token-Id` / `P-Access-Token` on every request and WebSocket handshake
+  (`Settings.pangolinHeaders`, `PangolinSettings`). A Link opens one Pangolin resource, so there are
+  two per server, the Dashboard's and the Hermes API's (Keychain `pangolin-dashboard`,
+  `pangolin-api`), each used for both when the other is missing. The API's rides in
+  `Settings.apiHeaders` (the person's own headers plus it: every Hermes API request, the watch's
+  and other servers' too, `RemoteServer.apiHeaders`), the Dashboard's in `accessHeaders`. Pasted as
+  the pair, its `p_token` value or a link carrying `p_token=` (`Settings.pangolinToken`). Setup
+  codes carry them as `pangolin` and `pangolin-api` (secrets). The connection test names an access
+  gate (a redirect, 401 or 403 at `/health` or `/api/status`) instead of saying no server answered.
+  Pangolin's header authentication is a Basic `Authorization` header: Custom headers, for the
+  Dashboard only, as on the Hermes API that header carries the key; there a Link's token is the way.
 - **Custom headers:** for a reverse proxy that asks for a header of its own (`Models/CustomHeader.swift`,
   Settings → Connection details). Per server, names and values both in the Keychain. They ride on
   every Dashboard request and WebSocket handshake (the client's `URLSession` carries them, with

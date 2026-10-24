@@ -495,12 +495,47 @@ final class Settings: ServeEndpoint {
         get { CustomHeader.decode(Keychain.read(.customHeaders)) }
         set { Keychain.write(.customHeaders, value: CustomHeader.encode(newValue)) }
     }
-    /// The same as request fields: what every request to the Hermes API carries besides its key.
+    /// The same as request fields.
     var customHeaderFields: [String: String] { CustomHeader.fields(customHeaders) }
-    /// What every request to the Dashboard carries besides its login: the person's own headers
-    /// and Cloudflare Access's service token.
+    /// What every request to the Hermes API carries besides its key: the person's own headers and
+    /// a Pangolin Link's access token.
+    var apiHeaders: [String: String] {
+        customHeaderFields.merging(Self.pangolinHeaders(Keychain.read(.pangolinAPI) ?? Keychain.read(.pangolinDashboard))) { _, token in token }
+    }
+    /// What every request to the Dashboard carries besides its login: the person's own headers,
+    /// Cloudflare Access's service token and a Pangolin Link's access token.
     var accessHeaders: [String: String] {
-        customHeaderFields.merging(Self.cloudflareAccessHeaders(clientID: cfAccessClientID, secret: Keychain.read(.cfAccessClientSecret))) { _, access in access }
+        customHeaderFields
+            .merging(Self.cloudflareAccessHeaders(clientID: cfAccessClientID, secret: Keychain.read(.cfAccessClientSecret))) { _, access in access }
+            .merging(Self.pangolinHeaders(Keychain.read(.pangolinDashboard) ?? Keychain.read(.pangolinAPI))) { _, token in token }
+    }
+
+    /// A Pangolin Link's access token as the two headers Pangolin reads on every request
+    /// (docs.pangolin.net, Links: `P-Access-Token-Id`, `P-Access-Token`), or none.
+    nonisolated static func pangolinHeaders(_ stored: String?) -> [String: String] {
+        guard let stored, let (id, token) = pangolinParts(stored) else { return [:] }
+        return ["P-Access-Token-Id": id, "P-Access-Token": token]
+    }
+
+    /// What was pasted for a Pangolin access token, as it is stored (`<token-id>.<token>`): the
+    /// pair itself, its `p_token` value, or a link with `p_token=` in it. Nil when it is none of them.
+    nonisolated static func pangolinToken(_ pasted: String) -> String? {
+        var text = pasted.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let range = text.range(of: "p_token=") {
+            text = String(text[range.upperBound...].prefix { $0 != "&" && $0 != "#" })
+            text = text.removingPercentEncoding ?? text
+        }
+        guard let (id, token) = pangolinParts(text) else { return nil }
+        return id + "." + token
+    }
+
+    private nonisolated static func pangolinParts(_ text: String) -> (id: String, token: String)? {
+        let pair = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let dot = pair.firstIndex(of: ".") else { return nil }
+        let id = String(pair[..<dot]), token = String(pair[pair.index(after: dot)...])
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_."))
+        guard !id.isEmpty, !token.isEmpty, (id + token).unicodeScalars.allSatisfy(allowed.contains) else { return nil }
+        return (id, token)
     }
     nonisolated static let defaultServeURL = ""
     var serveBaseURL: URL? {

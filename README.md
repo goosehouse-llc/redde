@@ -80,7 +80,9 @@ Profiles need Hermes 0.21 or later. Over the Hermes API a named profile also nee
 A Dashboard that signs you in with Google or another identity provider has no password to type:
 tap **Sign in with a browser** (Hermes 0.21 or later). A server behind a reverse proxy that asks
 for a header of its own takes it under Settings → Connection details → Custom headers, next to
-the Cloudflare Access service token.
+the Cloudflare Access service token. Behind [Pangolin](https://pangolin.net), make a Link to the
+resource and paste its access token under Pangolin there (`id.token`, or the link with `p_token=`):
+one for the Dashboard and one for the Hermes API, or one for both.
 
 ## Setup codes
 
@@ -110,6 +112,7 @@ The link is `https://redde.goosehouse.org/connect#` followed by any of these, pe
 | `api`, `key` | Hermes API server address and `API_SERVER_KEY` |
 | `profile`, `profile-key` | A Hermes profile, and its own API key if it has one |
 | `access-id`, `access-secret` | A Cloudflare Access service token |
+| `pangolin`, `pangolin-api` | Pangolin Link access tokens (`id.token`) for the Dashboard and the Hermes API (`setup-code.py --pangolin`) |
 | `header` | A header your reverse proxy asks for, as `Name: value`; may be repeated (`setup-code.py --header Name`) |
 | `model-url`, `model-key`, `model` | An OpenAI-compatible endpoint |
 | `use` | `dashboard`, `api` or `model`: which connection Redde talks to (default: the first in the code) |

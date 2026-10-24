@@ -19,6 +19,10 @@ nonisolated enum Keychain {
         case cfAccessClientSecret = "cf-access-client-secret"
         /// The person's own headers for a server behind a reverse proxy (`CustomHeader`, as JSON).
         case customHeaders = "custom-headers"
+        /// Pangolin Link access tokens, as `<token-id>.<token>` (`Settings.pangolinHeaders`): for the
+        /// Dashboard's resource and the Hermes API's, each used for both when the other is missing.
+        case pangolinDashboard = "pangolin-dashboard"
+        case pangolinAPI = "pangolin-api"
         case pushRegisterSecret = "push-register-secret"
         /// This device's SSH key for the terminal (`SSHIdentity`), Ed25519, raw and base64: app-wide.
         case sshKey = "ssh-key"
@@ -36,7 +40,8 @@ nonisolated enum Keychain {
     /// profiles' API keys too, `gateway-api-key.<profile>@…`) and the OpenAI-compatible key. Never
     /// a browser sign-in (each device refreshes its own tokens), the push registration secret or
     /// this device's SSH key.
-    static let syncable: [Item] = [.gatewayAPIKey, .serveDashboardPassword, .cfAccessClientSecret, .customHeaders, .fastLaneAPIKey]
+    static let syncable: [Item] = [.gatewayAPIKey, .serveDashboardPassword, .cfAccessClientSecret, .customHeaders, .pangolinDashboard,
+                                   .pangolinAPI, .fastLaneAPIKey]
     static func isSyncable(account: String) -> Bool {
         syncable.contains { account == $0.rawValue || account.hasPrefix($0.rawValue + "@") || account.hasPrefix($0.rawValue + ".") }
     }
@@ -45,7 +50,8 @@ nonisolated enum Keychain {
     static var syncsToICloud: Bool { UserDefaults.standard.bool(forKey: syncKey) }
 
     /// Items that belong to one Hermes server.
-    static let serverScoped: Set<Item> = [.gatewayAPIKey, .serveDashboardPassword, .serveSignIn, .cfAccessClientSecret, .customHeaders]
+    static let serverScoped: Set<Item> = [.gatewayAPIKey, .serveDashboardPassword, .serveSignIn, .cfAccessClientSecret, .customHeaders,
+                                          .pangolinDashboard, .pangolinAPI]
     /// Where Settings records the active server. Read here directly (UserDefaults is thread-safe),
     /// so a secret read can never happen before the scope is known.
     static let activeServerKey = "activeServerID"

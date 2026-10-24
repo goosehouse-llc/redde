@@ -70,7 +70,7 @@ enum AllServers {
             key = Keychain.read(account: Keychain.profileAccount(profile, server: id))?.nilIfEmpty ?? key
         }
         guard let key else { return nil }
-        return HermesSessionsAPI(baseURL: base, apiKey: key, headers: RemoteServer.customHeaders(of: server))
+        return HermesSessionsAPI(baseURL: base, apiKey: key, headers: RemoteServer.apiHeaders(of: server))
     }
 
     /// A row of a server that has since been taken off this phone.
@@ -111,6 +111,17 @@ final class RemoteServer: ServeEndpoint {
         let secret = Keychain.read(account: Keychain.account(.cfAccessClientSecret, server: server.id.uuidString))
         return Self.customHeaders(of: server)
             .merging(Settings.cloudflareAccessHeaders(clientID: server.cfAccessClientID, secret: secret)) { _, access in access }
+            .merging(Settings.pangolinHeaders(Self.pangolin(.pangolinDashboard, of: server) ?? Self.pangolin(.pangolinAPI, of: server))) { _, token in token }
+    }
+
+    /// What its Hermes API is sent besides the key, as `Settings.apiHeaders` for the active server.
+    static func apiHeaders(of server: HermesServer) -> [String: String] {
+        customHeaders(of: server)
+            .merging(Settings.pangolinHeaders(pangolin(.pangolinAPI, of: server) ?? pangolin(.pangolinDashboard, of: server))) { _, token in token }
+    }
+
+    private static func pangolin(_ item: Keychain.Item, of server: HermesServer) -> String? {
+        Keychain.read(account: Keychain.account(item, server: server.id.uuidString))
     }
 
     /// Its profile, as `Settings.profileName` reads the app's: none for the main one.

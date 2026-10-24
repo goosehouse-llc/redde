@@ -232,7 +232,7 @@ enum APIBots {
             throw APIBotProblem.noAPI
         }
         do {
-            _ = try await HermesSessionsAPI(baseURL: base.appending(path: "p/\(profile)"), apiKey: tried, headers: settings.customHeaderFields)
+            _ = try await HermesSessionsAPI(baseURL: base.appending(path: "p/\(profile)"), apiKey: tried, headers: settings.apiHeaders)
                 .listSessions(limit: 1)
         } catch TransportError.http(404, _) {
             throw APIBotProblem.notServed(profile)
@@ -570,7 +570,7 @@ final class BotDirectory {
             var bot = HermesBot(name: added.profile, title: added.title, isDefault: added.profile == "default")
             bot.viaAPI = true
             if let endpoint = settings.gatewayEndpoint(profile: added.profile),
-               let chat = try? await APIBotChat.find(HermesSessionsAPI(baseURL: endpoint.url, apiKey: endpoint.key, headers: settings.customHeaderFields)) {
+               let chat = try? await APIBotChat.find(HermesSessionsAPI(baseURL: endpoint.url, apiKey: endpoint.key, headers: settings.apiHeaders)) {
                 bot.chatID = chat.id
                 bot.lastActive = chat.lastActiveDate
                 bot.preview = chat.preview

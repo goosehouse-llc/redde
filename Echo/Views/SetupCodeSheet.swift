@@ -93,6 +93,9 @@ struct SetupCodeSheet: View {
                 if !code.accessID.isEmpty {
                     LabeledContent("Cloudflare Access", value: code.accessSecret.isEmpty ? "Client ID only" : "Service token included")
                 }
+                if !(code.pangolin.isEmpty && code.pangolinAPI.isEmpty) {
+                    LabeledContent("Pangolin", value: code.pangolin.isEmpty || code.pangolinAPI.isEmpty ? "Access token included" : "Access tokens included")
+                }
                 if !code.headers.isEmpty {
                     // By name; a header's value is a secret and is never shown.
                     LabeledContent(code.headers.count == 1 ? "Custom header" : "Custom headers",

@@ -122,7 +122,7 @@ final class ChatActivity {
             /// Where a left run is asked after: the app's API, or an API bot's own (`APIBot`).
             func api(_ turn: LeftTurn) -> HermesSessionsAPI? {
                 guard let endpoint = turn.profile.map({ settings.gatewayEndpoint(profile: $0) }) ?? main else { return nil }
-                return HermesSessionsAPI(baseURL: endpoint.url, apiKey: endpoint.key, headers: settings.customHeaderFields)
+                return HermesSessionsAPI(baseURL: endpoint.url, apiKey: endpoint.key, headers: settings.apiHeaders)
             }
             var found: [String: Kind] = [:]
             var reached = true

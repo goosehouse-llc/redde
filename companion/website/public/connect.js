@@ -49,6 +49,7 @@
   row("Hermes API", fields.api, fields.key || fields["profile-key"] ? "key included" : "no key");
   row("Profile", fields.profile);
   if (fields.dashboard || fields.api) row(headers.length === 1 ? "Custom header" : "Custom headers", headers.join(", "), headers.length ? "value included" : "");
+  if ((fields.dashboard || fields.api) && (fields.pangolin || fields["pangolin-api"])) row("Pangolin", "access token included");
   row("Model endpoint", fields["model-url"], notes([fields.model, fields["model-key"] && "key included"]));
 
   document.getElementById("open").href = "redde://connect?" + raw;

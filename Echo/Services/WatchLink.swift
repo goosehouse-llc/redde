@@ -42,7 +42,7 @@ final class WatchLink: NSObject, WCSessionDelegate {
         let api: WatchConnection? = {
             guard let base = settings.gatewayBaseURL, let key, !key.isEmpty else { return nil }
             var connection = made(.hermesAPI, url: base.absoluteString, key: key, model: settings.gatewayModel, provider: settings.gatewayProvider)
-            let headers = customHeaders?() ?? settings.customHeaderFields
+            let headers = customHeaders?() ?? settings.apiHeaders
             if !headers.isEmpty { connection.headers = headers }
             return connection
         }()

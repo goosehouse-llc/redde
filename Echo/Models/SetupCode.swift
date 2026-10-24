@@ -41,6 +41,10 @@ nonisolated struct SetupCode: Equatable, Sendable {
     var profileKey = ""
     var accessID = ""
     var accessSecret = ""
+    /// Pangolin Link access tokens (`<token-id>.<token>`) for the Dashboard's resource and the
+    /// API's. Secrets like a key.
+    var pangolin = ""
+    var pangolinAPI = ""
     /// Custom headers for the server (`CustomHeader`). Their values are secrets like a key.
     var headers: [CustomHeader] = []
     var modelURL = ""
@@ -133,6 +137,8 @@ nonisolated struct SetupCode: Equatable, Sendable {
         code.profileKey = fields["profile-key"] ?? ""
         code.accessID = fields["access-id"] ?? ""
         code.accessSecret = fields["access-secret"] ?? ""
+        code.pangolin = fields["pangolin"].flatMap(Settings.pangolinToken) ?? ""
+        code.pangolinAPI = fields["pangolin-api"].flatMap(Settings.pangolinToken) ?? ""
         code.modelURL = try address(fields["model-url"])
         // Headers go to a Hermes server; a code for a model endpoint alone has no use for them.
         code.headers = code.hasServer ? headers : []
@@ -206,6 +212,8 @@ nonisolated struct SetupCode: Equatable, Sendable {
         add("profile-key", profileKey)
         add("access-id", accessID)
         add("access-secret", accessSecret)
+        add("pangolin", pangolin)
+        add("pangolin-api", pangolinAPI)
         for header in headers { add("header", "\(header.name): \(header.value)") }
         add("model-url", modelURL)
         add("model-key", modelKey)
@@ -242,7 +250,8 @@ nonisolated struct SetupCode: Equatable, Sendable {
     var hasServer: Bool { !dashboardURL.isEmpty || !apiURL.isEmpty }
 
     var hasSecrets: Bool {
-        !(dashboardPassword.isEmpty && apiKey.isEmpty && profileKey.isEmpty && accessSecret.isEmpty && modelKey.isEmpty && headers.isEmpty)
+        !(dashboardPassword.isEmpty && apiKey.isEmpty && profileKey.isEmpty && accessSecret.isEmpty && pangolin.isEmpty && pangolinAPI.isEmpty
+          && modelKey.isEmpty && headers.isEmpty)
     }
 
     /// The same code with addresses and names only, for showing where a password shouldn't be.
@@ -252,6 +261,8 @@ nonisolated struct SetupCode: Equatable, Sendable {
         code.apiKey = ""
         code.profileKey = ""
         code.accessSecret = ""
+        code.pangolin = ""
+        code.pangolinAPI = ""
         code.headers = []
         code.modelKey = ""
         return code
