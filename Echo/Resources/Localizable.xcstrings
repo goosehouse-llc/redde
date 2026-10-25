@@ -1,0 +1,3428 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+
+    },
+    "… %lld more lines" : {
+
+    },
+    "·" : {
+
+    },
+    "· last %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "· last %1$@ %2$@"
+          }
+        }
+      }
+    },
+    "· new chats on %@" : {
+
+    },
+    "“%@”" : {
+
+    },
+    "“Ask each time” puts every request to you first. “Allow reading” lets it look things up without asking; adding, changing and deleting are still put to you, and deleting photos is put to you by iOS with the photos shown. Files are Redde's folder in the Files app, under On My %@. The widget is Redde's own, “From Your Agent”, which you add to your Home Screen: allowed, your agent writes on it without asking, also while Redde is closed if this %@ is paired for notifications. A call is put to you by iOS before it goes out, and a message is written for you to send: Redde asks about neither, and can send nothing." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "“Ask each time” puts every request to you first. “Allow reading” lets it look things up without asking; adding, changing and deleting are still put to you, and deleting photos is put to you by iOS with the photos shown. Files are Redde's folder in the Files app, under On My %1$@. The widget is Redde's own, “From Your Agent”, which you add to your Home Screen: allowed, your agent writes on it without asking, also while Redde is closed if this %2$@ is paired for notifications. A call is put to you by iOS before it goes out, and a message is written for you to send: Redde asks about neither, and can send nothing."
+          }
+        }
+      }
+    },
+    "“Chat text size” sets the conversation larger or smaller than the rest of the iPhone's text. It still follows the iPhone's own text size from there." : {
+
+    },
+    "/" : {
+
+    },
+    "/path/on/the/server" : {
+
+    },
+    "%@" : {
+
+    },
+    "%@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "%@ · %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$lld"
+          }
+        }
+      }
+    },
+    "%@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
+    "%@ couldn't answer. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ couldn't answer. %2$@"
+          }
+        }
+      }
+    },
+    "%@ didn't answer, so %@ chats aren't here." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ didn't answer, so %2$@ chats aren't here."
+          }
+        }
+      }
+    },
+    "%@ didn't finish" : {
+
+    },
+    "%@ is already called that." : {
+
+    },
+    "%@ is made" : {
+
+    },
+    "%@ is still answering something else. I'll send this right after." : {
+
+    },
+    "%@ on your Hermes?" : {
+
+    },
+    "%@ reads at %@'s speed, %@ (Settings → Voice → Voice speed)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ reads at %2$@'s speed, %3$@ (Settings → Voice → Voice speed)."
+          }
+        }
+      }
+    },
+    "%@ reads at this speed in voice mode, in group chats and in the car, whatever its voice." : {
+
+    },
+    "%@ to %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ to %2$@"
+          }
+        }
+      }
+    },
+    "%@ wants to run a command" : {
+
+    },
+    "%@ wrote a message as if from you" : {
+
+    },
+    "%@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      }
+    },
+    "%@, group chat with %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, group chat with %2$@"
+          }
+        }
+      }
+    },
+    "%@: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@"
+          }
+        }
+      }
+    },
+    "%@. Model: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@. Model: %2$@"
+          }
+        }
+      }
+    },
+    "%@'s face: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@'s face: %2$@"
+          }
+        }
+      }
+    },
+    "%@'s Schedules" : {
+
+    },
+    "%@'s Skills tool is off (Edit Bot → Tools), so it reads none of these." : {
+
+    },
+    "%@'s tools over the Hermes Dashboard, its Bot Chat included, from the next message (Hermes 0.21.0: in chats started after the change); the first reply after a change is slow on a model running on your own machine. The Hermes API server keeps its own list (platform_toolsets.api_server in config.yaml on the Hermes host)." : {
+
+    },
+    "%@'s Voice" : {
+
+    },
+    "%@'s voice speed" : {
+
+    },
+    "%@'s website" : {
+
+    },
+    "%@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@%2$@"
+          }
+        }
+      }
+    },
+    "%lld" : {
+
+    },
+    "%lld attachment%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld attachment%2$@"
+          }
+        }
+      }
+    },
+    "%lld conversation%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld conversation%2$@"
+          }
+        }
+      }
+    },
+    "%lld messages" : {
+
+    },
+    "%lld minutes" : {
+
+    },
+    "%lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "%lld/%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld"
+          }
+        }
+      }
+    },
+    "%lld%%" : {
+
+    },
+    "+%lld" : {
+
+    },
+    "−%lld" : {
+
+    },
+    "0" : {
+
+    },
+    "1 hour" : {
+
+    },
+    "1 minute" : {
+
+    },
+    "5 minutes" : {
+
+    },
+    "9:00 am" : {
+
+    },
+    "15 minutes" : {
+
+    },
+    "22" : {
+
+    },
+    "131072" : {
+
+    },
+    "A bot is one of your server's profiles: the name its folder has under ~/.hermes/profiles. Redde opens its chat, the one Hermes Desktop and the Dashboard show for it." : {
+
+    },
+    "A bot needs you: answer in the chat." : {
+
+    },
+    "A bot with a picture set in Hermes Desktop shows that picture instead of its face." : {
+
+    },
+    "A bot's schedules are kept with its other settings on your server, through the Dashboard. Add its login in Settings → Hermes server." : {
+
+    },
+    "A card with the page's title and picture under a message with a link. To make it, Redde opens the page itself, so the site sees the visit. Off, Redde only talks to your own servers." : {
+
+    },
+    "A command on the gateway host needs elevated rights. The password goes straight to that terminal and isn't stored by Redde." : {
+
+    },
+    "A folder of that name is made in ~/Projects on your server, and this conversation works in it from now on." : {
+
+    },
+    "A folder of that name is made in ~/Projects on your server. The project's conversations work in it." : {
+
+    },
+    "A hidden bot stays on your server; find it again under Hidden Bots at the end of your bots." : {
+
+    },
+    "A key is stored in the Keychain. It is never shown again. Redde on Apple Watch asks through this connection and keeps its own copy of the key." : {
+
+    },
+    "A new server can be filled in from a setup code: scan or paste one on its setup screen." : {
+
+    },
+    "A one-time tip through the App Store. It doesn't unlock anything: every feature is already yours." : {
+
+    },
+    "A path on the Hermes host. ~ is its user's home." : {
+
+    },
+    "A server that shows another key later is refused, in case something is in the way. Forget the old one only if the server was reinstalled." : {
+
+    },
+    "A setup code fills in everything below. Make one on a device that is already set up: Settings › Connection › Set up another device." : {
+
+    },
+    "A shell on your Hermes server over SSH, signed in with a key made on this iPhone. Also in a chat's More menu, in the chat's folder." : {
+
+    },
+    "A switch changes Hermes's config, as the Dashboard's own does. It takes effect in new conversations. Test has Hermes connect to the server and list its tools." : {
+
+    },
+    "Accent" : {
+
+    },
+    "Acknowledged" : {
+
+    },
+    "Acknowledgements" : {
+
+    },
+    "Activity" : {
+
+    },
+    "Actual" : {
+
+    },
+    "Add" : {
+
+    },
+    "Add a bot" : {
+
+    },
+    "Add a comment" : {
+
+    },
+    "Add a photo or file to your message" : {
+
+    },
+    "Add a photo or file to your message. It goes to your server, where the bots can open it." : {
+
+    },
+    "Add a phrase" : {
+
+    },
+    "Add Bot" : {
+
+    },
+    "Add Dashboard login" : {
+
+    },
+    "Add header" : {
+
+    },
+    "Add it as one line to ~/.ssh/authorized_keys for %@ on %@. The key was made on this iPhone and never leaves it." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add it as one line to ~/.ssh/authorized_keys for %1$@ on %2$@. The key was made on this iPhone and never leaves it."
+          }
+        }
+      }
+    },
+    "Add key" : {
+
+    },
+    "Add login" : {
+
+    },
+    "Add phrase" : {
+
+    },
+    "Add prefix" : {
+
+    },
+    "Add server" : {
+
+    },
+    "Add server…" : {
+
+    },
+    "Add the Hermes Dashboard login in Connection details to pick from a list. Over the Hermes API, a profile other than Default needs gateway.multiplex_profiles turned on in the gateway's config." : {
+
+    },
+    "Add the Hermes Dashboard username and password in Settings to create, edit or toggle skills." : {
+
+    },
+    "Add to Project" : {
+
+    },
+    "Aliases catch the ways speech recognition tends to hear the word." : {
+
+    },
+    "Aliases, comma-separated" : {
+
+    },
+    "All Profiles" : {
+
+    },
+    "All Servers" : {
+
+    },
+    "Allow Motion & Fitness for Redde…" : {
+
+    },
+    "Allow the camera for Redde in Settings to scan a setup code, or paste the setup link instead." : {
+
+    },
+    "Allow the camera for Redde in Settings to scan the pairing code, or paste the pairing link instead." : {
+
+    },
+    "Always" : {
+
+    },
+    "Always %@" : {
+
+    },
+    "Always heard" : {
+
+    },
+    "Always loaded" : {
+
+    },
+    "Always your Kokoro voice" : {
+
+    },
+    "am_onyx(2)+bm_george(1)" : {
+
+    },
+    "Announce on AirPods" : {
+
+    },
+    "Answer requests by voice" : {
+
+    },
+    "Any OpenAI-compatible endpoint, with no agent in between: llama.cpp, llama-swap, vLLM, Ollama, or a hosted provider. No tools or memory, lowest latency." : {
+
+    },
+    "Anything here can be used by asking in plain words. Add the Hermes Dashboard login to toggle toolsets from here." : {
+
+    },
+    "Anything you say" : {
+
+    },
+    "API key" : {
+
+    },
+    "API key (if the endpoint needs one)" : {
+
+    },
+    "API key (only if it has its own)" : {
+
+    },
+    "Appearance" : {
+
+    },
+    "Applies to this conversation and to new ones." : {
+
+    },
+    "Applies to voice mode and Siri only: when a message starts with one of these words, the word is replaced with its prefix before sending, the conversation goes to the rule's bot if it names one (and stays with it), and switches to the rule's model if it names one. Typed messages are never changed. The first matching prefix wins." : {
+
+    },
+    "Approval needed" : {
+
+    },
+    "Approve" : {
+
+    },
+    "Archive" : {
+
+    },
+    "Archive %lld" : {
+
+    },
+    "As each conversation was when it was last open here. A message you send now waits, and goes when the connection is back." : {
+
+    },
+    "As you would ask it in its chat. Its answer comes into the chat, with a notification." : {
+
+    },
+    "Ask %@" : {
+
+    },
+    "Ask %@ to Apply It" : {
+
+    },
+    "Ask ${profile} in Redde" : {
+
+    },
+    "Ask a Bot" : {
+
+    },
+    "Ask a Redde Bot" : {
+
+    },
+    "Ask each time" : {
+
+    },
+    "Ask in a new conversation" : {
+
+    },
+    "Ask in the open conversation" : {
+
+    },
+    "Ask Redde" : {
+
+    },
+    "Ask Redde ${question}" : {
+
+    },
+    "Ask Redde a Question" : {
+
+    },
+    "Ask Redde about this card" : {
+
+    },
+    "Asked for lately" : {
+
+    },
+    "Asks the agent to answer in this language, whatever language you write or speak in. On the Hermes Dashboard it's added to each message as a note, “(Reply in …)”, which other apps show; Redde hides it. For voice mode, pick a matching Listening language too." : {
+
+    },
+    "Assignee" : {
+
+    },
+    "Assignee (profile)" : {
+
+    },
+    "At" : {
+
+    },
+    "Audio: %@" : {
+
+    },
+    "Automatic gives %@ a voice of its own, not %@'s and not another bot's while there are voices to go round. It reads %@'s replies in voice mode, in group chats and in the car." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Automatic gives %1$@ a voice of its own, not %2$@'s and not another bot's while there are voices to go round. It reads %3$@'s replies in voice mode, in group chats and in the car."
+          }
+        }
+      }
+    },
+    "Backend" : {
+
+    },
+    "Blueprints" : {
+
+    },
+    "Bot" : {
+
+    },
+    "Bot colors in their chats" : {
+
+    },
+    "Bot faces" : {
+
+    },
+    "Bot or Profile" : {
+
+    },
+    "Bots" : {
+
+    },
+    "Bots are your server's other profiles. On the Hermes API, add each by its name and its own API key; with the Dashboard login saved in Settings, Redde lists them and has group chats too." : {
+
+    },
+    "Bots in the chat list" : {
+
+    },
+    "Bots to mention" : {
+
+    },
+    "Brief" : {
+
+    },
+    "Built-in" : {
+
+    },
+    "By name" : {
+
+    },
+    "Call %@" : {
+
+    },
+    "Calls are set up by" : {
+
+    },
+    "Camera" : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Cancel editing" : {
+
+    },
+    "Card" : {
+
+    },
+    "Card %@ has no change attached." : {
+
+    },
+    "Cards in replies" : {
+
+    },
+    "Cards in replies: maps, places, the weather and the time" : {
+
+    },
+    "Category (optional)" : {
+
+    },
+    "Change Face" : {
+
+    },
+    "Change Face…" : {
+
+    },
+    "Change it in the model menu" : {
+
+    },
+    "Change profile" : {
+
+    },
+    "Changes" : {
+
+    },
+    "Chat text size" : {
+
+    },
+    "Chats, sessions, projects, skills, tools, cron jobs and the context and memory files follow the profile. The Kanban board is shared by every profile. Switching starts a new conversation. Siri can open voice mode on one: “Ask %@ in Redde”." : {
+
+    },
+    "Check for Updates" : {
+
+    },
+    "Check the weather and my calendar, and tell me what to wear" : {
+
+    },
+    "Choice" : {
+
+    },
+    "Choose which model answers" : {
+
+    },
+    "Claude Code" : {
+
+    },
+    "Claude Code, does the work of %@" : {
+
+    },
+    "Clear" : {
+
+    },
+    "Client ID" : {
+
+    },
+    "Close" : {
+
+    },
+    "Close conversations" : {
+
+    },
+    "Closes voice mode and opens the keyboard" : {
+
+    },
+    "Cloudflare Access" : {
+
+    },
+    "Cloudflare Access (optional)" : {
+
+    },
+    "Collapse" : {
+
+    },
+    "Colour" : {
+
+    },
+    "Command suggestions" : {
+
+    },
+    "Commands" : {
+
+    },
+    "Commands run without asking" : {
+
+    },
+    "Comments" : {
+
+    },
+    "Completed" : {
+
+    },
+    "Connect" : {
+
+    },
+    "Connecting to %@…" : {
+
+    },
+    "Connecting…" : {
+
+    },
+    "Connection" : {
+
+    },
+    "Connection details" : {
+
+    },
+    "Connections" : {
+
+    },
+    "Context" : {
+
+    },
+    "Context files" : {
+
+    },
+    "Context window" : {
+
+    },
+    "Continue" : {
+
+    },
+    "Conversation" : {
+
+    },
+    "Conversations" : {
+
+    },
+    "Conversations from every platform appear here." : {
+
+    },
+    "Conversations started here work in its folder on your server:" : {
+
+    },
+    "Conversations, attachments, credentials and settings. This can't be undone." : {
+
+    },
+    "Copied" : {
+
+    },
+    "Copies the version for a bug report" : {
+
+    },
+    "Copy" : {
+
+    },
+    "Copy %@" : {
+
+    },
+    "Copy image" : {
+
+    },
+    "Copy image link" : {
+
+    },
+    "Copy LaTeX" : {
+
+    },
+    "Copy link" : {
+
+    },
+    "Copy Link" : {
+
+    },
+    "Copy Path" : {
+
+    },
+    "Copy reply" : {
+
+    },
+    "Copy source" : {
+
+    },
+    "Copy summary" : {
+
+    },
+    "Copy the command" : {
+
+    },
+    "Copy thinking" : {
+
+    },
+    "Copy This iPhone's Key" : {
+
+    },
+    "Cost" : {
+
+    },
+    "Costs are the gateway's own estimate from provider pricing." : {
+
+    },
+    "Couldn't add it to a project" : {
+
+    },
+    "Couldn't be fetched from the server. Tap to try again." : {
+
+    },
+    "Couldn't load blueprints" : {
+
+    },
+    "Couldn't load jobs" : {
+
+    },
+    "Couldn't load the board" : {
+
+    },
+    "Couldn't load the list, but you can still name a profile." : {
+
+    },
+    "Couldn't load the project" : {
+
+    },
+    "Couldn't open the session" : {
+
+    },
+    "Couldn't open the subagent" : {
+
+    },
+    "Couldn't open this folder" : {
+
+    },
+    "Couldn't reach the gateway" : {
+
+    },
+    "Couldn't rename" : {
+
+    },
+    "Couldn't start fresh" : {
+
+    },
+    "Create" : {
+
+    },
+    "Create job" : {
+
+    },
+    "Created" : {
+
+    },
+    "Creating…" : {
+
+    },
+    "Cron" : {
+
+    },
+    "Cron jobs live on the Hermes gateway. Set up the Hermes Dashboard or the Hermes API in Settings." : {
+
+    },
+    "current" : {
+
+    },
+    "Current voice" : {
+
+    },
+    "Custom header" : {
+
+    },
+    "Custom headers" : {
+
+    },
+    "Custom headers (optional)" : {
+
+    },
+    "Dashboard password" : {
+
+    },
+    "Dashboard username" : {
+
+    },
+    "Delete" : {
+
+    },
+    "Delete %@?" : {
+
+    },
+    "Delete %lld" : {
+
+    },
+    "Delete %lld conversation%@?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete %1$lld conversation%2$@?"
+          }
+        }
+      }
+    },
+    "Delete Bot" : {
+
+    },
+    "Delete File" : {
+
+    },
+    "Delete Folder and Its Contents" : {
+
+    },
+    "Deletes every conversation and attachment on this device, forgets all servers, keys and passwords, and returns the settings to their defaults. Nothing on your servers is touched, and Sync with iCloud turns off first, so your other devices keep theirs." : {
+
+    },
+    "Deliver to" : {
+
+    },
+    "Deny" : {
+
+    },
+    "Deselect all" : {
+
+    },
+    "Details" : {
+
+    },
+    "Details for the worker" : {
+
+    },
+    "Diagram" : {
+
+    },
+    "DIAGRAM" : {
+
+    },
+    "Dictate" : {
+
+    },
+    "Didn't run %@: your server isn't running %@'s schedules" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Didn't run %1$@: your server isn't running %2$@'s schedules"
+          }
+        }
+      }
+    },
+    "Directions" : {
+
+    },
+    "Disk in use" : {
+
+    },
+    "Dismiss" : {
+
+    },
+    "Does its work" : {
+
+    },
+    "Does their work" : {
+
+    },
+    "Done" : {
+
+    },
+    "Download and Open" : {
+
+    },
+    "Downloading the speech model…" : {
+
+    },
+    "Draft" : {
+
+    },
+    "Draft with Redde" : {
+
+    },
+    "Drafts in a new conversation" : {
+
+    },
+    "Drag bots and group chats by their handles into the order you want." : {
+
+    },
+    "Drop to attach" : {
+
+    },
+    "Each profile has its own API_SERVER_KEY, in its .env file on the server, and the gateway needs gateway.multiplex_profiles turned on. Only the Hermes API needs this; the Dashboard login already covers every profile." : {
+
+    },
+    "Each run is %@'s, with its own personality and tools, and its answer comes into its chat, with a notification, while your phone is off. Times are your server's. Hermes 0.21.5 and later run a bot's schedules by themselves; earlier ones only with gateway.multiplex_profiles on." : {
+
+    },
+    "Each theme keeps its own colors. Text on your bubbles and on accent buttons turns light or dark to stay readable." : {
+
+    },
+    "Earlier messages are in Hermes Desktop." : {
+
+    },
+    "Earpiece when raised to your ear" : {
+
+    },
+    "Edit" : {
+
+    },
+    "Edit & resend" : {
+
+    },
+    "Edit Account" : {
+
+    },
+    "Edit Bot…" : {
+
+    },
+    "Edit card" : {
+
+    },
+    "Edit connection…" : {
+
+    },
+    "Edit job" : {
+
+    },
+    "Edit This" : {
+
+    },
+    "Edited in place on the Hermes host through the Hermes Dashboard." : {
+
+    },
+    "Edited. %@ is answering again." : {
+
+    },
+    "Editing. Sending replaces this message and everything after it." : {
+
+    },
+    "Enabled · %lld" : {
+
+    },
+    "End “%@”?" : {
+
+    },
+    "End Group Chat" : {
+
+    },
+    "End voice mode" : {
+
+    },
+    "Ends dictation; what was said stays in the message" : {
+
+    },
+    "ENVIRONMENT.md" : {
+
+    },
+    "Erase everything" : {
+
+    },
+    "Erase everything on this device?" : {
+
+    },
+    "Erase everything…" : {
+
+    },
+    "Error" : {
+
+    },
+    "Estimated" : {
+
+    },
+    "Every %lld %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Every %1$lld %2$@"
+          }
+        }
+      }
+    },
+    "Everything said in this conversation is read again with each message. When it fills up the oldest part is summarised or dropped; a new conversation starts empty." : {
+
+    },
+    "Expand" : {
+
+    },
+    "Expands the summary" : {
+
+    },
+    "Export as Markdown" : {
+
+    },
+    "Eyes" : {
+
+    },
+    "Failed" : {
+
+    },
+    "Fast mode" : {
+
+    },
+    "Fetching %@…" : {
+
+    },
+    "Fetching the output…" : {
+
+    },
+    "Fewer" : {
+
+    },
+    "Fewer tools make a bot's every turn quicker to start on a model running on your own machine. Hermes 0.21.5 and later keep a bot to these; earlier ones give every bot all of %@'s." : {
+
+    },
+    "Filed as soon as your server can be reached, in a chat called Notes." : {
+
+    },
+    "Files" : {
+
+    },
+    "Filter" : {
+
+    },
+    "Find a skill" : {
+
+    },
+    "Find in chat" : {
+
+    },
+    "Find in Chat" : {
+
+    },
+    "Find in conversation" : {
+
+    },
+    "Fingerprint" : {
+
+    },
+    "Finished" : {
+
+    },
+    "Finished conversations show up here." : {
+
+    },
+    "Focus composer" : {
+
+    },
+    "Folder Actions" : {
+
+    },
+    "Forget This Server's Key" : {
+
+    },
+    "Fork" : {
+
+    },
+    "From a blueprint…" : {
+
+    },
+    "From the plugin %@; switched with it." : {
+
+    },
+    "Front matter (name, description, version, metadata) then When to Use, Procedure, Pitfalls, Verification. Redde loads it on demand when a request matches." : {
+
+    },
+    "Gate the app behind %@. The phone holds the Hermes API key and the dashboard password." : {
+
+    },
+    "Gateway" : {
+
+    },
+    "Give %@ something to do at a time: every weekday at 7, check the weather and your calendar and say what to wear. Its answer comes into its chat." : {
+
+    },
+    "Give it a name with a letter or number in it." : {
+
+    },
+    "Go" : {
+
+    },
+    "Go ahead." : {
+
+    },
+    "Go to Folder" : {
+
+    },
+    "Go to Folder…" : {
+
+    },
+    "Goes to this bot's chat before sending, and voice stays with it until another rule moves it. On the Dashboard connection, or the Hermes API with the Dashboard's login saved." : {
+
+    },
+    "GPT-Live" : {
+
+    },
+    "H %@  L %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "H %1$@  L %2$@"
+          }
+        }
+      }
+    },
+    "Hands a note to Redde to file. Nothing is sent back." : {
+
+    },
+    "Hands-free" : {
+
+    },
+    "Hang up after quiet" : {
+
+    },
+    "Has a draft" : {
+
+    },
+    "Have a setup code?" : {
+
+    },
+    "Header name" : {
+
+    },
+    "Headphones and speaker" : {
+
+    },
+    "Hear it" : {
+
+    },
+    "Hermes" : {
+
+    },
+    "Hermes %@" : {
+
+    },
+    "Hermes API" : {
+
+    },
+    "Hermes API key for %@" : {
+
+    },
+    "Hermes API server" : {
+
+    },
+    "Hermes Dashboard" : {
+
+    },
+    "Hermes Dashboard (WebSocket)" : {
+
+    },
+    "Hermes downloads it from github.com/goosehouse-llc/redde and switches it on. It is the same plugin that sends notifications." : {
+
+    },
+    "Hermes downloads it from github.com/goosehouse-llc/redde and switches it on. It is the same plugin the command in a terminal installs." : {
+
+    },
+    "Hermes gives each bot's chat a tool to message the other bots, so you can say “@scout, what do you think?” in one bot's chat and have it ask. Redde turns this on the way Hermes Desktop does, by setting your main profile up as a bot on the server. Chats with your agent stay as they are." : {
+
+    },
+    "Hermes is fetching it from GitHub. This can take a minute." : {
+
+    },
+    "Hermes loads it when it next starts. Restart the gateway and the Dashboard on that machine." : {
+
+    },
+    "Hermes offered no models for it." : {
+
+    },
+    "Hermes restarts on the way and answers nothing for a while. This can take a few minutes." : {
+
+    },
+    "Hermes server" : {
+
+    },
+    "Hermes takes the API_SERVER_KEY in the profile's own .env (~/.hermes/profiles/<name>/.env). Put your main API key there and the name alone does here; Hermes 0.21.3 and later leave it out when they copy a profile. Hermes 0.21.5 and later serve every profile over the API; on 0.21.3 and earlier, set gateway.multiplex_profiles: true in config.yaml and restart the gateway." : {
+
+    },
+    "hermes.example.ts.net" : {
+
+    },
+    "Hidden Bots" : {
+
+    },
+    "Hidden here and in Hermes Desktop alike. A hidden bot keeps its chat, and the other bots can still message it." : {
+
+    },
+    "Hide" : {
+
+    },
+    "Hides it" : {
+
+    },
+    "Hides what %@ said" : {
+
+    },
+    "Hides what it returned" : {
+
+    },
+    "Host" : {
+
+    },
+    "How does Redde reach it?" : {
+
+    },
+    "How each bot's card looks on your car's Bots tab. Its face shows what the bot is doing: working, waiting on you, or asleep after a quiet day. The car adds its name." : {
+
+    },
+    "How much the model thinks before answering. None asks the model not to think; any other level asks it to, and is passed on as its effort. Models that don't grade effort treat every level the same, and a server that fixes thinking on or off has the last word. Default leaves it to the server." : {
+
+    },
+    "How much the model thinks before answering. None asks the model not to think; some models and servers decide that themselves. X-High and Max are for frontier models such as Claude and GPT; others treat them as High or may refuse them. Applies to this conversation and to new ones. Default leaves it to the gateway, and leaves the open conversation at the level it has." : {
+
+    },
+    "How the Ask, Talk and New Chat cards look on your car's screen. The car adds their names." : {
+
+    },
+    "http://your-redde:9119" : {
+
+    },
+    "http://your-server:8080" : {
+
+    },
+    "http://your-tts-server:8880" : {
+
+    },
+    "https://your-gateway:8642" : {
+
+    },
+    "iCloud" : {
+
+    },
+    "If a reverse proxy in front of your Hermes server asks for a header of its own, add it here. It is sent with every request to this server's Dashboard and Hermes API, the WebSocket and Apple Watch included, and kept in the Keychain. Redde's own headers, such as the API key, take precedence." : {
+
+    },
+    "If the Dashboard or the Hermes API sits behind Pangolin, make a Link to its resource and paste its access token here: the token ID and token as id.token, or the link that has p_token= in it. Sent as P-Access-Token-Id / P-Access-Token on every request and WebSocket. One token is used for both when the other is empty. Treat it like a password." : {
+
+    },
+    "If the Hermes Dashboard sits behind Cloudflare Access instead of a tailnet, create a service token in Zero Trust and paste its ID and secret. Sent as CF-Access-Client-Id / -Secret on every request and WebSocket." : {
+
+    },
+    "Immediately" : {
+
+    },
+    "In the car" : {
+
+    },
+    "In this conversation Hermes will run every command it wants to, including the ones it would have stopped to ask you about." : {
+
+    },
+    "Include passwords and keys" : {
+
+    },
+    "Incognito: kept nowhere. It's deleted from your server when you leave it, and your agent is asked to save nothing from it." : {
+
+    },
+    "Interrupt with" : {
+
+    },
+    "iOS doesn't allow Redde this. Open Settings…" : {
+
+    },
+    "It is removed from the Hermes host. This can't be undone." : {
+
+    },
+    "It really does help." : {
+
+    },
+    "It starts as a copy of %@'s setup on your server: its settings, API keys and sign-ins, so it can use the same models and tools. Its chats and memories are its own." : {
+
+    },
+    "It stopped partway, and Hermes can't tell how far it got. Run it again?" : {
+
+    },
+    "Its API key" : {
+
+    },
+    "Its chat, memories and settings are deleted from your server. This can't be undone." : {
+
+    },
+    "Its face" : {
+
+    },
+    "Its folder and its conversations stay on the server. The conversations just aren't grouped under it any more." : {
+
+    },
+    "Its folder keeps its name." : {
+
+    },
+    "Its name, what it does, its personality, face and tools filled in. Change any of them before you make it." : {
+
+    },
+    "Its Own Face" : {
+
+    },
+    "Its own speed" : {
+
+    },
+    "Job" : {
+
+    },
+    "Jump to latest" : {
+
+    },
+    "Jump to the live reply" : {
+
+    },
+    "Jump to the newest message" : {
+
+    },
+    "Kanban" : {
+
+    },
+    "Keep" : {
+
+    },
+    "Keep listening after each reply until you say “stop listening”." : {
+
+    },
+    "Kept on your Hermes server once the bot is made, so Redde on your other devices shows it too." : {
+
+    },
+    "Kept on your Hermes server, so Redde on your other devices shows it too." : {
+
+    },
+    "Kokoro" : {
+
+    },
+    "Kokoro voices" : {
+
+    },
+    "Languages" : {
+
+    },
+    "Last conversation" : {
+
+    },
+    "Last error" : {
+
+    },
+    "Last failure" : {
+
+    },
+    "Last run" : {
+
+    },
+    "Latest" : {
+
+    },
+    "Leave it empty to go back to the first question." : {
+
+    },
+    "Let bots message each other?" : {
+
+    },
+    "Let Siri use Redde" : {
+
+    },
+    "Let Them" : {
+
+    },
+    "Let your agent use this device's calendar, reminders, contacts, photos and a folder of files, set alarms, write on a widget, and start calls and messages, through Redde." : {
+
+    },
+    "Lets your agent ask Redde for things on this %@: your calendar, reminders, contacts, photos, a folder of files, alarms, a widget it can write on, and calls and messages. It is asked each time it wants to add, change or delete something. It can't go into other apps; iOS allows no app that." : {
+
+    },
+    "Light, dark or system appearance" : {
+
+    },
+    "Link previews" : {
+
+    },
+    "Listen whenever Redde opens" : {
+
+    },
+    "Listening language" : {
+
+    },
+    "Listening…" : {
+
+    },
+    "Live Activities are off for Redde, and iOS neither shows nor sounds an alarm without them. Open Settings…" : {
+
+    },
+    "Live Activity while Redde works" : {
+
+    },
+    "Live updates on" : {
+
+    },
+    "llama-swap's configured default" : {
+
+    },
+    "Load image from %@" : {
+
+    },
+    "Loaded when needed" : {
+
+    },
+    "Loading %@…" : {
+
+    },
+    "Loading from Redde…" : {
+
+    },
+    "Loading models…" : {
+
+    },
+    "Loading skill…" : {
+
+    },
+    "Loading voices from Kokoro…" : {
+
+    },
+    "Loads the previous %lld messages" : {
+
+    },
+    "Local keeps the output on the gateway. A platform sends it to that platform's cron home channel; “Other” takes an explicit target like telegram:123456." : {
+
+    },
+    "Lock" : {
+
+    },
+    "Lock after" : {
+
+    },
+    "Log" : {
+
+    },
+    "Logs" : {
+
+    },
+    "Looking for the plugin on %@…" : {
+
+    },
+    "Looking for the plugin…" : {
+
+    },
+    "Looking in iCloud for what your other devices put there…" : {
+
+    },
+    "Lowercase with hyphens, like the folder it becomes in ~/.hermes/skills." : {
+
+    },
+    "Maintenance" : {
+
+    },
+    "Make a New Key" : {
+
+    },
+    "Make a New Key for This iPhone" : {
+
+    },
+    "Make a new key?" : {
+
+    },
+    "Make one with New Bot, and it shows here with the model it runs on." : {
+
+    },
+    "Makes a project folder on your server and starts a conversation in it" : {
+
+    },
+    "Mark" : {
+
+    },
+    "Mark as Read" : {
+
+    },
+    "Mark as Unread" : {
+
+    },
+    "Match %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Match %1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "Match each reply" : {
+
+    },
+    "Math: %@" : {
+
+    },
+    "MCP servers" : {
+
+    },
+    "Memory" : {
+
+    },
+    "Memory in use" : {
+
+    },
+    "MEMORY.md" : {
+
+    },
+    "Mermaid diagram" : {
+
+    },
+    "Message" : {
+
+    },
+    "Message the group" : {
+
+    },
+    "Metrics" : {
+
+    },
+    "Model" : {
+
+    },
+    "Model · %lld bots" : {
+
+    },
+    "Model %@, used by %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Model %1$@, used by %2$@"
+          }
+        }
+      }
+    },
+    "Model → %@" : {
+
+    },
+    "Model name" : {
+
+    },
+    "More" : {
+
+    },
+    "More voices, and better ones, come from Settings → Accessibility → Spoken Content → Voices." : {
+
+    },
+    "Mouth" : {
+
+    },
+    "Move" : {
+
+    },
+    "Move down" : {
+
+    },
+    "Move to" : {
+
+    },
+    "Move to %@" : {
+
+    },
+    "Move to Project" : {
+
+    },
+    "Move up" : {
+
+    },
+    "Mute" : {
+
+    },
+    "Muted" : {
+
+    },
+    "Name" : {
+
+    },
+    "Name (optional)" : {
+
+    },
+    "Name, e.g. Home or Office" : {
+
+    },
+    "Names in this folder" : {
+
+    },
+    "Names that start with a dot are hidden." : {
+
+    },
+    "Needs the Hermes Dashboard" : {
+
+    },
+    "Needs the Hermes Dashboard connection: its address and login, under Connection. Until then the on-device voice reads replies." : {
+
+    },
+    "Needs the Hermes Dashboard login" : {
+
+    },
+    "Needs you" : {
+
+    },
+    "Never" : {
+
+    },
+    "New" : {
+
+    },
+    "New card" : {
+
+    },
+    "New conversation" : {
+
+    },
+    "New Conversation" : {
+
+    },
+    "New conversation in voice mode" : {
+
+    },
+    "New Conversation with %@" : {
+
+    },
+    "New Folder" : {
+
+    },
+    "New Folder…" : {
+
+    },
+    "New Group Chat" : {
+
+    },
+    "New Incognito Chat" : {
+
+    },
+    "New job" : {
+
+    },
+    "New line" : {
+
+    },
+    "New messages below" : {
+
+    },
+    "New Project" : {
+
+    },
+    "New Project…" : {
+
+    },
+    "New Schedule" : {
+
+    },
+    "New server" : {
+
+    },
+    "New skill" : {
+
+    },
+    "Next %@" : {
+
+    },
+    "Next match" : {
+
+    },
+    "Next run" : {
+
+    },
+    "No blueprints" : {
+
+    },
+    "No bots yet" : {
+
+    },
+    "No camera access" : {
+
+    },
+    "No conversations yet" : {
+
+    },
+    "No effect" : {
+
+    },
+    "No gateway configured" : {
+
+    },
+    "No jobs yet" : {
+
+    },
+    "No line matches." : {
+
+    },
+    "No matches" : {
+
+    },
+    "No MCP servers are set up on this Hermes." : {
+
+    },
+    "No output was kept for this step." : {
+
+    },
+    "No runs yet" : {
+
+    },
+    "No schedules yet" : {
+
+    },
+    "No skills" : {
+
+    },
+    "Nod or shake to answer" : {
+
+    },
+    "None" : {
+
+    },
+    "Not answered in about 5 minutes, it isn't run." : {
+
+    },
+    "Not done" : {
+
+    },
+    "Not enabled · %lld" : {
+
+    },
+    "Not met yet: the first connection shows its key's fingerprint and asks." : {
+
+    },
+    "Not paired with a Hermes yet." : {
+
+    },
+    "Not sent yet: %@. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Not sent yet: %1$@. %2$@"
+          }
+        }
+      }
+    },
+    "Note" : {
+
+    },
+    "Note to Redde: ${note}" : {
+
+    },
+    "Noted." : {
+
+    },
+    "Nothing has been asked for yet." : {
+
+    },
+    "Nothing in %@" : {
+
+    },
+    "Nothing in this log." : {
+
+    },
+    "Nothing said yet in Hermes Desktop." : {
+
+    },
+    "Nothing yet" : {
+
+    },
+    "Notification sound" : {
+
+    },
+    "Notifications when Redde is closed, encrypted end to end" : {
+
+    },
+    "Notify me in the background" : {
+
+    },
+    "Notify when Redde is closed" : {
+
+    },
+    "Off" : {
+
+    },
+    "Off, each bot, Redde too, is its initial on a circle of its color, and voice mode shows the Bubble orb in place of a face. The bots work the same either way." : {
+
+    },
+    "OK" : {
+
+    },
+    "On" : {
+
+    },
+    "On that machine" : {
+
+    },
+    "On the machine that runs Hermes, install the plugin, then restart Hermes" : {
+
+    },
+    "On the other device, open Redde and choose Scan a setup code, or point its Camera at this." : {
+
+    },
+    "On your Hermes" : {
+
+    },
+    "On-device" : {
+
+    },
+    "On-device speech recognition and synthesis. No analytics. Every request goes only to the servers you configured. The exceptions are opt-in: with “Let Siri use Redde” on, Apple Intelligence handles what you say to Siri; with a Hermes paired under “Notify when Redde is closed”, its notifications pass through Goosehouse's relay, encrypted; and with “Sync with iCloud” on, your settings and servers are kept in your own iCloud, their keys and passwords in iCloud Keychain, end-to-end encrypted." : {
+
+    },
+    "On, %@ sees a skill listed and reads it only when it needs it. Off, it doesn't see it at all. Pinned (%@), it reads the skill in full at the start of every message: keep that to the few it needs every time, as each makes every message slower to start. A pin takes effect in new chats, and in %@'s ongoing chat once that starts fresh or is condensed." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On, %1$@ sees a skill listed and reads it only when it needs it. Off, it doesn't see it at all. Pinned (%2$@), it reads the skill in full at the start of every message: keep that to the few it needs every time, as each makes every message slower to start. A pin takes effect in new chats, and in %3$@'s ongoing chat once that starts fresh or is condensed."
+          }
+        }
+      }
+    },
+    "Only “stop”" : {
+
+    },
+    "Only the start is shown: the file is larger than Hermes reads for an editor. It can't be changed here, since saving would cut it short. Download it for all of it." : {
+
+    },
+    "Open" : {
+
+    },
+    "Open %@ in Maps" : {
+
+    },
+    "Open diagram full screen" : {
+
+    },
+    "Open full output" : {
+
+    },
+    "Open in full" : {
+
+    },
+    "Open in Maps" : {
+
+    },
+    "Open it full screen to zoom, or use the Source button to read the diagram text" : {
+
+    },
+    "Open on %@" : {
+
+    },
+    "Open Settings" : {
+
+    },
+    "Open Terminal" : {
+
+    },
+    "Open the copy on this iPhone, from %@" : {
+
+    },
+    "Open the editor" : {
+
+    },
+    "Open transcript" : {
+
+    },
+    "OpenAI-compatible (direct to a model)" : {
+
+    },
+    "OpenAI-compatible endpoint" : {
+
+    },
+    "OpenAI's voice model talks and listens at the same time: interrupt it whenever you like, and it answers small talk at once and says “let me check” while your agent works. Anything real goes to your agent, as in a typed chat, and the voice says the answer in its own words." : {
+
+    },
+    "Opens it in Maps" : {
+
+    },
+    "Opens it on %@; Redde moves to that server" : {
+
+    },
+    "Opens it, from your server" : {
+
+    },
+    "Opens one of your bots' chats in Redde (or Redde on one of your Hermes profiles) and starts listening." : {
+
+    },
+    "Opens Redde and listens for a note to file. Nothing is sent back." : {
+
+    },
+    "Opens Redde and starts listening for a question for Redde." : {
+
+    },
+    "Opens Redde and starts listening." : {
+
+    },
+    "Opens Redde in hands-free conversation mode." : {
+
+    },
+    "Opens the copy kept on this iPhone" : {
+
+    },
+    "Opens the directions in Maps" : {
+
+    },
+    "Opens the group chat" : {
+
+    },
+    "Opens the page" : {
+
+    },
+    "Opens the subagent's transcript" : {
+
+    },
+    "Opens this conversation at the match" : {
+
+    },
+    "Opens this group chat" : {
+
+    },
+    "Opens this session" : {
+
+    },
+    "Opens voice mode and keeps listening after each reply" : {
+
+    },
+    "Opens voice mode and starts listening" : {
+
+    },
+    "Opens your chat with this bot" : {
+
+    },
+    "Optional" : {
+
+    },
+    "Or type something else" : {
+
+    },
+    "Orb light" : {
+
+    },
+    "Other…" : {
+
+    },
+    "Others call it @%@." : {
+
+    },
+    "Others call it @%@. Its handle stays @%@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Others call it @%1$@. Its handle stays @%2$@."
+          }
+        }
+      }
+    },
+    "P%lld" : {
+
+    },
+    "Pair" : {
+
+    },
+    "Pair a Hermes" : {
+
+    },
+    "Pair with %@" : {
+
+    },
+    "Pair with a code instead" : {
+
+    },
+    "Pair with this Hermes" : {
+
+    },
+    "Pair with your Hermes" : {
+
+    },
+    "Paired" : {
+
+    },
+    "Paired %@" : {
+
+    },
+    "Paired; its first notification hasn't arrived yet" : {
+
+    },
+    "Pangolin" : {
+
+    },
+    "Pangolin (optional)" : {
+
+    },
+    "Password" : {
+
+    },
+    "Paste a setup link" : {
+
+    },
+    "Paste the pairing link" : {
+
+    },
+    "Paste the scoped API_SERVER_KEY. It is stored in the Keychain only. With it, Redde on Apple Watch asks on its own; without it, the watch asks through this iPhone, which has to be in reach." : {
+
+    },
+    "Pause" : {
+
+    },
+    "Paused" : {
+
+    },
+    "Personality" : {
+
+    },
+    "Phone tools" : {
+
+    },
+    "Phone Tools" : {
+
+    },
+    "Phone tools: your calendar, reminders, contacts, photos and alarms, as you allow" : {
+
+    },
+    "Photo %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Photo %1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "Photo %lld of %lld, and %lld more" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Photo %1$lld of %2$lld, and %3$lld more"
+          }
+        }
+      }
+    },
+    "Photo Library" : {
+
+    },
+    "Pick a Time Instead" : {
+
+    },
+    "Pick a voice below, or type a blend: voice names joined with + and optional weights in parentheses." : {
+
+    },
+    "Pictures from Hermes" : {
+
+    },
+    "Pin" : {
+
+    },
+    "Pinned" : {
+
+    },
+    "Places" : {
+
+    },
+    "platform:chat_id or bot-chat:profile" : {
+
+    },
+    "Play" : {
+
+    },
+    "Point the camera at a Redde setup code." : {
+
+    },
+    "Point the camera at the code in your terminal." : {
+
+    },
+    "Polling for updates" : {
+
+    },
+    "Port" : {
+
+    },
+    "Position" : {
+
+    },
+    "Post" : {
+
+    },
+    "Prefix" : {
+
+    },
+    "Prefixes" : {
+
+    },
+    "Preparing the video…" : {
+
+    },
+    "Preview" : {
+
+    },
+    "Preview %@" : {
+
+    },
+    "Previous match" : {
+
+    },
+    "Priority" : {
+
+    },
+    "Priority %lld" : {
+
+    },
+    "Privacy invariant" : {
+
+    },
+    "Profile" : {
+
+    },
+    "Profile name" : {
+
+    },
+    "Project: %@" : {
+
+    },
+    "Projects in the chat list" : {
+
+    },
+    "Prompt" : {
+
+    },
+    "Question" : {
+
+    },
+    "Rate Redde on the App Store" : {
+
+    },
+    "Read" : {
+
+    },
+    "Reads it in full at the start of every message" : {
+
+    },
+    "Reads it only when needed instead" : {
+
+    },
+    "Ready cards with an assignee are picked up by the dispatcher; others wait in Triage." : {
+
+    },
+    "Reason" : {
+
+    },
+    "Reasoning effort" : {
+
+    },
+    "Recent runs" : {
+
+    },
+    "Reconnect" : {
+
+    },
+    "Recurring: “30m”, “every hour”, “every day at 9am”, “weekdays at 9am”, or a cron expression. Once: “in 30m” or an ISO time. Bare “30m” repeats; “in 30m” runs once." : {
+
+    },
+    "Redde" : {
+
+    },
+    "Redde asks your Hermes about the plugin through its Dashboard login. Without one, the command installs it; run it again with --force to update it." : {
+
+    },
+    "Redde has a few questions" : {
+
+    },
+    "Redde has a question" : {
+
+    },
+    "Redde is locked" : {
+
+    },
+    "Redde is made by one small company, with no ads, no accounts and no tracking. If it's useful to you, a tip helps keep it going." : {
+
+    },
+    "Redde locks when it's been in the background longer than this. The device passcode works as a fallback. Background Shortcuts runs aren't gated." : {
+
+    },
+    "Redde needs a secret" : {
+
+    },
+    "Redde Plugin" : {
+
+    },
+    "Redde renders diagrams with mermaid and math with KaTeX, and draws its terminal with SwiftTerm over Apple's SwiftNIO SSH. All are used unmodified in function, under their licences below." : {
+
+    },
+    "Redde will use this" : {
+
+    },
+    "Redde writes a complete SKILL.md from this, using the gateway's own conventions. You review it before saving." : {
+
+    },
+    "Redde's plugin on your Hermes is older than this and doesn't offer it, so your agent isn't given it." : {
+
+    },
+    "Redde's plugin on your Hermes: cards in replies, phone tools, the widget your agent writes on and notifications when Redde is closed all come through it." : {
+
+    },
+    "Refresh" : {
+
+    },
+    "Regenerate" : {
+
+    },
+    "Remove" : {
+
+    },
+    "Remove “%@” from Projects?" : {
+
+    },
+    "Remove %@" : {
+
+    },
+    "Remove from Redde" : {
+
+    },
+    "Remove key" : {
+
+    },
+    "Remove Project" : {
+
+    },
+    "Remove this server" : {
+
+    },
+    "Removed from Redde. The Hermes ledger keeps its copy." : {
+
+    },
+    "Rename" : {
+
+    },
+    "Rename conversation" : {
+
+    },
+    "Rename group chat" : {
+
+    },
+    "Rename project" : {
+
+    },
+    "Rename server" : {
+
+    },
+    "Rename session" : {
+
+    },
+    "Renaming isn't supported by the gateway; create a new skill instead." : {
+
+    },
+    "Reorder Bots" : {
+
+    },
+    "Repeat" : {
+
+    },
+    "Replace" : {
+
+    },
+    "Replace stored API key" : {
+
+    },
+    "Replace stored password" : {
+
+    },
+    "Replace?" : {
+
+    },
+    "Replies are read in Hermes's own voice (Settings → Voice → Reply voice), one for every bot. Pick Built-in or Kokoro there for each bot to have a voice of its own." : {
+
+    },
+    "Reply language" : {
+
+    },
+    "Request" : {
+
+    },
+    "Require %@" : {
+
+    },
+    "Required" : {
+
+    },
+    "required, such as hermes" : {
+
+    },
+    "Restart" : {
+
+    },
+    "Restart Gateway…" : {
+
+    },
+    "Restart the gateway?" : {
+
+    },
+    "Restarting stops whatever the gateway is in the middle of. This Hermes is updated outside its Dashboard (a container or a package manager), so there is no update here." : {
+
+    },
+    "Restarting stops whatever the gateway is in the middle of. Updating runs hermes update on the host and restarts Hermes." : {
+
+    },
+    "Restarting the gateway…" : {
+
+    },
+    "Result" : {
+
+    },
+    "Resume" : {
+
+    },
+    "Retry" : {
+
+    },
+    "Return key" : {
+
+    },
+    "Return sends the message. On a keyboard, Shift-Return starts a new line; for a long message, the field's editor button opens a page where Return always does." : {
+
+    },
+    "Return starts a new line, and the Send button sends. On a keyboard, ⌘Return sends." : {
+
+    },
+    "Returns to the conversation" : {
+
+    },
+    "Run commands without asking" : {
+
+    },
+    "Run commands without asking?" : {
+
+    },
+    "Run now" : {
+
+    },
+    "Run Now" : {
+
+    },
+    "Run the pairing command on that machine" : {
+
+    },
+    "Run Without Asking" : {
+
+    },
+    "running" : {
+
+    },
+    "Running" : {
+
+    },
+    "Running…" : {
+
+    },
+    "Runs %@." : {
+
+    },
+    "Runs in Hermes Desktop" : {
+
+    },
+    "Same as %@" : {
+
+    },
+    "Save" : {
+
+    },
+    "Save key" : {
+
+    },
+    "Saved on the Hermes gateway" : {
+
+    },
+    "Saved. Enter a new key to replace it" : {
+
+    },
+    "Saving…" : {
+
+    },
+    "Say “stop listening” or “that's all” to end hands-free." : {
+
+    },
+    "Say a test sentence" : {
+
+    },
+    "Say something to all of them, or start with @ and a name to ask one. A bot that has nothing to add stays quiet." : {
+
+    },
+    "Scan a pairing code" : {
+
+    },
+    "Scan a setup code" : {
+
+    },
+    "Scan the code it shows" : {
+
+    },
+    "Schedule" : {
+
+    },
+    "Schedule Redde to run a prompt every hour, every weekday at 9am, or once at a time you pick." : {
+
+    },
+    "Schedules…" : {
+
+    },
+    "Scout" : {
+
+    },
+    "Search conversations" : {
+
+    },
+    "Search in %@" : {
+
+    },
+    "Search languages" : {
+
+    },
+    "Search this log" : {
+
+    },
+    "Section" : {
+
+    },
+    "Select" : {
+
+    },
+    "Select all" : {
+
+    },
+    "Select some of it and choose Ask about this to quote it in your next message." : {
+
+    },
+    "Select text" : {
+
+    },
+    "Send" : {
+
+    },
+    "Send now" : {
+
+    },
+    "Sends" : {
+
+    },
+    "Sends a question to Redde and returns the reply as text." : {
+
+    },
+    "Sends what the camera sees with each question" : {
+
+    },
+    "Sent to %@. I'll let you know when %@ replies." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sent to %1$@. I'll let you know when %2$@ replies."
+          }
+        }
+      }
+    },
+    "Sent to %@. The reply will be waiting in Redde." : {
+
+    },
+    "Server" : {
+
+    },
+    "Server's key" : {
+
+    },
+    "Servers" : {
+
+    },
+    "Servers that have the old key won't let this iPhone in until they have the new one." : {
+
+    },
+    "Sessions" : {
+
+    },
+    "Set up" : {
+
+    },
+    "Set up another device" : {
+
+    },
+    "Set up another device…" : {
+
+    },
+    "Set up connection…" : {
+
+    },
+    "Set up Redde" : {
+
+    },
+    "Settings" : {
+
+    },
+    "Setup code" : {
+
+    },
+    "Setup code for %@" : {
+
+    },
+    "Shape" : {
+
+    },
+    "Share" : {
+
+    },
+    "Share…" : {
+
+    },
+    "Short answers in the car" : {
+
+    },
+    "Show" : {
+
+    },
+    "Show all %lld" : {
+
+    },
+    "Show earlier messages (%lld)" : {
+
+    },
+    "Show Hidden Files" : {
+
+    },
+    "Show in the chat list" : {
+
+    },
+    "Show setup code" : {
+
+    },
+    "Shown in the header and the message box. Siri phrases and the Home Screen icon keep the app's real name." : {
+
+    },
+    "Shows every timing" : {
+
+    },
+    "Shows fewer timings" : {
+
+    },
+    "Shows how much of the model's context this conversation uses" : {
+
+    },
+    "Shows only the first of your bots" : {
+
+    },
+    "Shows the message on a page of its own" : {
+
+    },
+    "Shows this Hermes Desktop group chat's last messages" : {
+
+    },
+    "Shows this project's sessions" : {
+
+    },
+    "Shows what %@ said" : {
+
+    },
+    "Shows what it returned" : {
+
+    },
+    "Shows what it said" : {
+
+    },
+    "Shows what it wrote. You didn't send it." : {
+
+    },
+    "Sign in to iCloud in the Settings app first, with iCloud Drive on." : {
+
+    },
+    "Sign in to your server over SSH, with a key made on this iPhone. Passwords aren't used." : {
+
+    },
+    "Sign in with a browser" : {
+
+    },
+    "Sign out" : {
+
+    },
+    "Signed in" : {
+
+    },
+    "Signed in through a browser" : {
+
+    },
+    "Signing in…" : {
+
+    },
+    "Siri" : {
+
+    },
+    "Skill" : {
+
+    },
+    "skill-name" : {
+
+    },
+    "SKILL.md" : {
+
+    },
+    "Skills" : {
+
+    },
+    "Skip" : {
+
+    },
+    "Sort Bots by Recent" : {
+
+    },
+    "Sorting out a reply that was cut off…" : {
+
+    },
+    "SOUL.md" : {
+
+    },
+    "Source" : {
+
+    },
+    "Speak in this language in voice mode. Transcription stays on this iPhone. With “Voice for replies” set to Always this language, every reply is read in it too." : {
+
+    },
+    "Speak your message; it is written here, not sent" : {
+
+    },
+    "Speed" : {
+
+    },
+    "Spoken by %@" : {
+
+    },
+    "Spoken prefixes" : {
+
+    },
+    "Spoken word" : {
+
+    },
+    "Start a fresh chat with %@?" : {
+
+    },
+    "Start Fresh" : {
+
+    },
+    "Start from" : {
+
+    },
+    "Start right away (Ready)" : {
+
+    },
+    "Start voice mode in hands-free" : {
+
+    },
+    "Starts a conversation in %@" : {
+
+    },
+    "State" : {
+
+    },
+    "Status" : {
+
+    },
+    "Stay where I am" : {
+
+    },
+    "Steer the reply…" : {
+
+    },
+    "Steer the subagent…" : {
+
+    },
+    "Steering note" : {
+
+    },
+    "Steps were left with it, for whoever puts it in place." : {
+
+    },
+    "Still running." : {
+
+    },
+    "Stop" : {
+
+    },
+    "Stop and Skip in the car" : {
+
+    },
+    "Stop dictating" : {
+
+    },
+    "Stop phrases" : {
+
+    },
+    "Stop preview" : {
+
+    },
+    "Stop reply" : {
+
+    },
+    "Stopping…" : {
+
+    },
+    "Stops it. Press again to leave voice mode" : {
+
+    },
+    "Stored on the gateway as %@" : {
+
+    },
+    "Straight to a model with no agent in between: llama.cpp, llama-swap, vLLM, Ollama, or a hosted provider." : {
+
+    },
+    "Subagent" : {
+
+    },
+    "Subagent %@, %@. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Subagent %1$@, %2$@. %3$@"
+          }
+        }
+      }
+    },
+    "sudo password needed" : {
+
+    },
+    "Suggest follow-up questions" : {
+
+    },
+    "Suggested follow-ups" : {
+
+    },
+    "Summary" : {
+
+    },
+    "Support Redde" : {
+
+    },
+    "Surprise Me" : {
+
+    },
+    "Switch a skill off and Redde stops loading it; edit or create with the editor." : {
+
+    },
+    "Switches change the toolset's platform setting in Hermes's config, the same as the dashboard. The API server's own list (platform_toolsets.api_server) is separate and set in config.yaml on the Hermes host." : {
+
+    },
+    "Switches the conversation to this model before sending, and it stays there until you pick another. Models come from the connection you're on now." : {
+
+    },
+    "Sync with iCloud" : {
+
+    },
+    "System" : {
+
+    },
+    "Table with %lld columns and %lld rows" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Table with %1$lld columns and %2$lld rows"
+          }
+        }
+      }
+    },
+    "Take a Note" : {
+
+    },
+    "Take a Note in Redde" : {
+
+    },
+    "Take a Note with Redde" : {
+
+    },
+    "Taking a note. Redde files it and says nothing back." : {
+
+    },
+    "Talk over replies" : {
+
+    },
+    "Talk to your own AI agent by voice or chat." : {
+
+    },
+    "Talk with Redde" : {
+
+    },
+    "Talk with the group: what you say goes to the bots, and their replies are read to you" : {
+
+    },
+    "Talks to the model directly, without the gateway" : {
+
+    },
+    "Tap a server to switch to it; that starts a new conversation. Touch and hold to rename or to show its setup code for another device, swipe to remove one you're not using. Each server keeps its own addresses, keys, profile and model." : {
+
+    },
+    "Tap the orb and talk to the group." : {
+
+    },
+    "Tap the orb and talk." : {
+
+    },
+    "task %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "task %1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "Tasks" : {
+
+    },
+    "Tasks, %@" : {
+
+    },
+    "Terminal" : {
+
+    },
+    "Test" : {
+
+    },
+    "Test %@" : {
+
+    },
+    "Test again" : {
+
+    },
+    "Test connection" : {
+
+    },
+    "Testing the connection…" : {
+
+    },
+    "Testing…" : {
+
+    },
+    "Text prefix" : {
+
+    },
+    "Thank you!" : {
+
+    },
+    "That isn't a Redde pairing code." : {
+
+    },
+    "That isn't a Redde setup code." : {
+
+    },
+    "The bars move when you speak; the light inside follows “Orb light”. Redde looks at you instead, and talks with the reply." : {
+
+    },
+    "The bots are talking…" : {
+
+    },
+    "The bots stop and the group chat goes, on the server too. The bots' own chats stay." : {
+
+    },
+    "The change has no lines to show." : {
+
+    },
+    "The code holds %@. Passwords and keys are left out and typed in on the other device." : {
+
+    },
+    "The code is saved, but it came without a password or key. %@" : {
+
+    },
+    "The code is saved. If the address is only reachable on your home network or VPN, connect to that and test again." : {
+
+    },
+    "The files the memory tool writes when you say “remember that…”. Edit them here to correct or prune what Redde carries into every conversation." : {
+
+    },
+    "The files the memory tool writes when you say “remember that…”. Like the context files, they need the Hermes Dashboard login." : {
+
+    },
+    "The folders on the Hermes host: look at files, change text ones, upload from this iPhone, make folders and delete." : {
+
+    },
+    "The folders on the Hermes host: look at files, upload from this iPhone, make folders and delete. Needs the Hermes Dashboard login." : {
+
+    },
+    "The gateway reports no skills." : {
+
+    },
+    "The gateway's API server and its API_SERVER_KEY. Sessions from every platform appear in Redde." : {
+
+    },
+    "The Hermes API can't read or edit files on your server. Keep using it for chat, and add your Dashboard login (from hermes serve) to unlock these files and your memory." : {
+
+    },
+    "The Hermes Dashboard couldn't be asked. Phone tools need its login: Settings → Connection details." : {
+
+    },
+    "The Hermes server itself: what it is connected to, its MCP servers and logs, and restarting or updating it." : {
+
+    },
+    "The Hermes server itself: what it is connected to, its MCP servers and logs, and restarting or updating it. Needs the Hermes Dashboard login." : {
+
+    },
+    "The kanban board is part of the Hermes Dashboard. Add your Hermes Dashboard address and login in Settings." : {
+
+    },
+    "The plugin runs on your Hermes. Hermes downloads it from github.com/goosehouse-llc/redde. It sends nothing anywhere but to this iPhone, through the notification relay when you pair, except to look up the weather or the time somewhere: then it asks Open-Meteo, with the place's name." : {
+
+    },
+    "The same login as the Hermes Dashboard: its username and password, or Sign in with a browser where it uses Google or another provider. Adds tool approvals and slash commands." : {
+
+    },
+    "The same login as the Hermes Dashboard: its username and password, or, where it signs you in with Google or another provider, Sign in with a browser. Gives live reasoning, tool approvals and slash commands over one WebSocket." : {
+
+    },
+    "The server's main profile" : {
+
+    },
+    "The session is renamed on your server too." : {
+
+    },
+    "The subagent is starting." : {
+
+    },
+    "The tools %@ has." : {
+
+    },
+    "The tools are offered to your agent by Redde's plugin on your Hermes, the one that also sends notifications, from version 1.3.0. Redde talks to it through the Hermes Dashboard login. Phone tools work while Redde is open and following the conversation: a request made from somewhere else gets no answer." : {
+
+    },
+    "The widget your agent writes on" : {
+
+    },
+    "Then set up how Redde reaches it." : {
+
+    },
+    "There is no connection to hand over yet. Set this one up first." : {
+
+    },
+    "They are removed from the Redde ledger for every client." : {
+
+    },
+    "Thinking sound" : {
+
+    },
+    "This chat is archived on your server with its messages, and the new one starts with no history. What the bot saved to its memory stays. To make this chat shorter instead, send /compress." : {
+
+    },
+    "This code now holds %@. Anyone who scans or receives it can use your server: show it only to your own devices." : {
+
+    },
+    "This connection is too long to show as a code. Copy the link instead." : {
+
+    },
+    "This conversation" : {
+
+    },
+    "This group chat runs in Hermes Desktop. Its last messages show here; to talk in it, use Desktop." : {
+
+    },
+    "This iPhone's key" : {
+
+    },
+    "This isn't text after all, so it can't be changed here. Download it to look at it." : {
+
+    },
+    "This only removes them from this phone." : {
+
+    },
+    "This subagent left no transcript." : {
+
+    },
+    "Thought" : {
+
+    },
+    "Thought for %@" : {
+
+    },
+    "Tips aren't available right now. Nothing's wrong on your side; every feature is already yours." : {
+
+    },
+    "Title" : {
+
+    },
+    "To %@" : {
+
+    },
+    "To connect, fill in %@." : {
+
+    },
+    "Tokens" : {
+
+    },
+    "Tool %@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tool %1$@, %2$@"
+          }
+        }
+      }
+    },
+    "Tools" : {
+
+    },
+    "Toolsets enabled on the gateway. Read through the Hermes API key or the Hermes Dashboard login, whichever is set." : {
+
+    },
+    "Topology" : {
+
+    },
+    "Total" : {
+
+    },
+    "Trust" : {
+
+    },
+    "Trust this server?" : {
+
+    },
+    "Try again" : {
+
+    },
+    "Try Again" : {
+
+    },
+    "Turns running" : {
+
+    },
+    "Two to six. A message goes to all of them, or with an @tag to one; they answer one after another, and may ask each other." : {
+
+    },
+    "Unassigned" : {
+
+    },
+    "Unchanged: add a word, then a bot, a prefix or a model." : {
+
+    },
+    "Under its name in your chat list, and how the other bots know what to ask it." : {
+
+    },
+    "Unlock with %@" : {
+
+    },
+    "Unmute" : {
+
+    },
+    "Unpin" : {
+
+    },
+    "Unread" : {
+
+    },
+    "Unsent." : {
+
+    },
+    "Up for" : {
+
+    },
+    "Update Hermes" : {
+
+    },
+    "Update Hermes?" : {
+
+    },
+    "Update Hermes…" : {
+
+    },
+    "Update it on the host: %@" : {
+
+    },
+    "Updating Hermes…" : {
+
+    },
+    "Upload Files…" : {
+
+    },
+    "Upload Photos…" : {
+
+    },
+    "URLs, keys and logins for every connection, including ones you aren't using right now. The Hermes Dashboard login also unlocks the context and memory files, and files the agent sends, while you chat over the Hermes API." : {
+
+    },
+    "Usage & cost" : {
+
+    },
+    "Use %@'s own colors" : {
+
+    },
+    "Use It" : {
+
+    },
+    "Use the model directly" : {
+
+    },
+    "Use this model?" : {
+
+    },
+    "Use this profile" : {
+
+    },
+    "Used %@" : {
+
+    },
+    "Used for the “ctx %” figure when the backend can't report its window. A llama.cpp server reports it automatically." : {
+
+    },
+    "User" : {
+
+    },
+    "USER.md" : {
+
+    },
+    "Value" : {
+
+    },
+    "Version" : {
+
+    },
+    "Version %@" : {
+
+    },
+    "Video: %@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Video: %1$@, %2$@"
+          }
+        }
+      }
+    },
+    "View Changes" : {
+
+    },
+    "Voice" : {
+
+    },
+    "Voice for replies" : {
+
+    },
+    "Voice mode" : {
+
+    },
+    "Voice speed" : {
+
+    },
+    "Voice…" : {
+
+    },
+    "Voices on this iPhone" : {
+
+    },
+    "Waiting for its first notification" : {
+
+    },
+    "Waiting for reply" : {
+
+    },
+    "Waiting on you" : {
+
+    },
+    "Weather data by Open-Meteo.com" : {
+
+    },
+    "Welcome to Redde" : {
+
+    },
+    "What %@ does" : {
+
+    },
+    "What a notification says is encrypted on your Hermes and opened on this iPhone, with a key the two agree on when you pair. On the way it passes through a relay run by Goosehouse and through Apple; neither can read it. The relay keeps this iPhone's notification address so it can deliver, and never has the key. Removing a pairing deletes the address there." : {
+
+    },
+    "What it does" : {
+
+    },
+    "What it may use" : {
+
+    },
+    "What it's for" : {
+
+    },
+    "What its replies are read in, in voice mode, group chats and the car." : {
+
+    },
+    "What Redde knows how to do. Create and edit from here; changes are live on the next turn." : {
+
+    },
+    "What replaces the word. Spaces count, including a space at the end. Leave it empty to only switch the model." : {
+
+    },
+    "What should %@ look into?" : {
+
+    },
+    "What should Redde do?" : {
+
+    },
+    "What should this skill make Redde good at?" : {
+
+    },
+    "What the gateway is connected to. Messaging platforms are set up on the Hermes host." : {
+
+    },
+    "What to wear" : {
+
+    },
+    "What would you like to ask Redde?" : {
+
+    },
+    "What your car's screen shows while Redde listens, thinks and speaks, in that order." : {
+
+    },
+    "What's New in Redde" : {
+
+    },
+    "What's the note?" : {
+
+    },
+    "Whatever Redde is configured to use" : {
+
+    },
+    "When" : {
+
+    },
+    "When Redde is closed" : {
+
+    },
+    "When Redde opens" : {
+
+    },
+    "Which bot?" : {
+
+    },
+    "While Redde is running it notifies you itself. Once iOS has closed it, a paired Hermes does: it tells this iPhone when a reply is ready, when the agent waits for you (an approval, a question, a password) and when it couldn't reply, for conversations you have taken part in from here. Swipe a pairing to remove it." : {
+
+    },
+    "While Redde speaks in the car, say “stop” to end the reply, or “skip” to jump to its end." : {
+
+    },
+    "Who it is and how it talks (its SOUL.md on the server). It reads this at the start of every chat; a chat already going keeps the one it began with." : {
+
+    },
+    "Who it is and how it talks (its SOUL.md on the server). Left empty, it gets the one shown, written from its name and what it does." : {
+
+    },
+    "With headphones" : {
+
+    },
+    "With or without “okay”, “Redde”, “please” or “thanks” around them." : {
+
+    },
+    "Word" : {
+
+    },
+    "Working · %@" : {
+
+    },
+    "Writing" : {
+
+    },
+    "You" : {
+
+    },
+    "Your agent can show a map, places, the weather and the time under its reply, through Redde's Hermes plugin. The weather comes from Open-Meteo. Off, it isn't offered them, which makes every prompt a little shorter." : {
+
+    },
+    "Your agent on Hermes" : {
+
+    },
+    "Your agent's own: its model is picked in each conversation, its name in Settings." : {
+
+    },
+    "Your answer" : {
+
+    },
+    "Your bubbles" : {
+
+    },
+    "Your bubbles and the buttons in a bot's chat take its color, and Redde's own chats take its face's if it has one. Group chats keep the theme's." : {
+
+    },
+    "Your Hermes" : {
+
+    },
+    "Your Hermes projects, above the conversations. Off, their conversations are still in the list." : {
+
+    },
+    "Your iPhone hears you, your agent answers, and the voice you picked reads the answer out. Nothing goes anywhere but your server and that voice." : {
+
+    },
+    "Your messages" : {
+
+    },
+    "Your phrases" : {
+
+    },
+    "Your question goes with a picture of what the camera sees." : {
+
+    },
+    "Your server's bots and group chats, at the top of the list." : {
+
+    },
+    "Your servers with their keys and passwords, and your settings, on every iPhone, iPad and Mac signed in to your Apple Account. Keys and passwords go through iCloud Keychain, end-to-end encrypted. Which server and profile each device is on, App Lock, Siri, Phone tools, notifications and browser sign-ins stay on each device. Turn it on first where your settings are as you want them." : {
+
+    }
+  },
+  "version" : "1.0"
+}
