@@ -49,7 +49,7 @@ A FULL CLIENT, NOT JUST A MIC
 • Skills, tools, memory and context files; on the server, MCP servers, logs, updates, files and an SSH terminal.
 
 YOUR BACKEND, YOUR RULES
-• Connect to Hermes through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access or a reverse proxy. Save several servers, see all their chats in one list, and sync them with iCloud. Sign in with a password or a browser.
+• Connect to Hermes through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access, Pangolin or a reverse proxy. Save several servers, see all their chats in one list, and sync them with iCloud. Sign in with a password or a browser.
 • Or go straight to any OpenAI-compatible endpoint: llama.cpp, llama-swap, vLLM or Ollama on your hardware, or a hosted provider with your key.
 • Set up by QR code or link. Credentials stay in the Keychain.
 • Face ID lock, seven themes with your own colors, app icons and voice orbs, iPad split view, iPhone Duo, keyboard shortcuts.
@@ -67,6 +67,36 @@ Two pictures App Store Connect has taken since October 2026, on the version page
 - Search results (`search-3840x2560.png`, 3:2): "Talk to your own AI agent. Voice and chat for Hermes." beside voice mode and a chat. Shown with the app in search in place of the first screenshots.
 
 The words in both sit inside the "art safe area" of Apple's templates. Use Preview in App Store Connect before submitting: it shows each on iPhone and iPad, both ways up.
+
+## What's New in 2.1.1 (4000)
+Weather and time that look themselves up, pictures on every device, a quicker CarPlay, and fixes.
+
+• Weather and time. Weather cards fill themselves in, now and by the hour and day, and your agent knows your local time when you ask. It takes the Redde plugin 1.7.1 on your Hermes; Settings → Redde Plugin offers the update.
+• Pictures on every device. Pictures sent from Hermes Desktop, or from Redde on another device, show in your chats. On the Hermes API, with the Dashboard login saved, each picture you send is also kept on your server, so Hermes Desktop and your other devices show it.
+• CarPlay. Pick a bot and the voice screen comes up at once, in its face, while its chat opens. A speaking bot's face is bigger, with sound bars, and its mouth moves with what you hear.
+• A voice speed for each bot, whatever its voice: Edit Bot → Voice → Speed.
+• Pangolin. A Hermes Dashboard or API behind Pangolin connects with a Link's access token: Settings → Connection details → Pangolin.
+• Settings → Appearance can take bots or projects out of the chat list, and the Redde Plugin has a row of its own on Settings' first screen.
+• A new bot face shape: the house.
+• Fixes. Opening Redde no longer stops music playing in another app. In the car, the first question of a drive no longer says no API key is stored: the keys can now be read while the iPhone is locked, once it has been unlocked since it was turned on. The main agent stays in the bots list when it's the only one.
+
+## Before submitting 2.1.1
+Written ahead of the release. What a phone has shown is said where it has.
+
+In App Store Connect and on the web:
+- 2.1 was released on 2026-10-24 (archived from 2a7ab76).
+- The build is 2.1.1 (269), from main. GPT-Live is not in it: it is in development builds only (`GPT_LIVE`), and a Release build leaves ReddeLive and WebRTC out of the app (checked 2026-10-24: no Frameworks folder, no BoringSSL in the bundle). It ships once a real OpenAI call has been tried and France's encryption declaration is in (see Export compliance).
+- The description gains Pangolin, and What's New is new. `scripts/app-store-push.py all` makes the 2.1.1 version and sends them; then `notes` (the review notes are unchanged).
+- The privacy policy gains the weather and time paragraph (the plugin on the user's server, or the device, asks Open-Meteo; Redde tells the plugin the device's time zone and units). Publish it before the release. App Privacy stays "Data Not Collected".
+- Export compliance: the answer stays as it is, with GPT-Live out of the build.
+- Weather and time cards need the Redde plugin 1.7.1 on the user's Hermes (the What's New says so).
+- The website says "new in 2.1".
+
+Tried on a phone before submitting (2026-10-24, both good):
+- Issue 30: play music in another app, open Redde, then a chat with a voice reply in it. The music keeps playing.
+- Issue 34: open Redde once with the iPhone unlocked (that moves the keys stored before), then ask in the car with it locked.
+
+Not known to have been tried on a device: a real Pangolin, pictures between Redde and a real Hermes Desktop, and the CarPlay voice card coming up at the press in a car.
 
 ## What's New in 2.1 (4000)
 Every server in one list, maps and weather in replies, and Redde on the iPhone Duo.
@@ -283,7 +313,7 @@ On devices, to check first:
 - Settings → Gateway against a real server. The lab covered the status, MCP servers, logs, the update check and a restart of a gateway started by hand, on Hermes 0.21.0, 0.21.3 and 0.21.5. Not covered anywhere: a restart where a service manager (launchd, systemd) runs the gateway, which is how most servers are set up, and applying an update, which has never been run for real.
 
 ## App Privacy (App Store Connect → App Privacy)
-"Data Not Collected", unchanged in 1.7 (decided 2026-10-08, with the notification relay in view) and in 1.8.
+"Data Not Collected", unchanged in 1.7 (decided 2026-10-08, with the notification relay in view) and in 1.8. 2.1.1's weather and time lookups go from the user's server, or the device, to Open-Meteo with a place's name or coordinates, and nothing reaches Goosehouse, so it stays.
 
 1.8's Phone tools read the calendar, reminders, contacts and photos, and the label is about what the developer collects: all of it goes to the person's own server, at their agent's request and with the area switched on by them, and none of it to Goosehouse. What Redde makes out in photos stays in a file on the device. Head movement for the nod is read on the device and kept nowhere. App Store Connect's label is unchanged; the purpose strings in `project.yml` and the privacy policy say what each permission is for.
 
@@ -291,6 +321,8 @@ What that decision weighed: the optional relay keeps a paired iPhone's push toke
 
 ## Export compliance
 `ITSAppUsesNonExemptEncryption` stays `false` (`project.yml`). Besides HTTPS, 1.7 encrypts and decrypts notifications (X25519, HKDF-SHA256, AES-256-GCM) and hashes for its browser sign-in (SHA-256, for PKCE). All of it is CryptoKit, Apple's implementation in the operating system; the app contains no cryptography of its own and none from a third party. Since 1.9 the terminal speaks SSH through Apple's open-source swift-nio-ssh, with standard algorithms only (curve25519-sha256 and ecdh-sha2-nistp256/384/521 key exchange, aes128-gcm and aes256-gcm, ssh-ed25519 and ecdsa-sha2 keys, hmac-sha2-256). Its primitives come from swift-crypto, which on Apple's platforms is CryptoKit itself (`@_exported import CryptoKit`; its vendored BoringSSL is built only for Linux, Android, Windows, WASI and OpenBSD, and a 1.9 build links none of it), and the device's own key is CryptoKit's Ed25519. So the cryptography is still all the operating system's. App Store Connect asks for documentation when an app implements proprietary algorithms, or standard ones "instead of, or in addition to, using or accessing the encryption within Apple's operating system". Redde does neither, so the answer to "What type of encryption algorithms does your app implement?" is "None of the algorithms mentioned above", and with the key set to `false` the question isn't asked at upload.
+
+GPT-Live (in main since 2026-10-24, not in 2.1.1) links Google's WebRTC, which carries its own BoringSSL for the call's DTLS-SRTP: standard cryptography that isn't the operating system's. With it in the app, the answer would become "Standard encryption algorithms instead of, or in addition to, using or accessing the encryption within Apple's operating system". By Apple's reference ("Export compliance documentation for encryption"), that takes no US document (a CCATS is only for proprietary algorithms), but a French encryption declaration, uploaded in App Store Connect, to be sold in France; and since BIS's rule of March 2021 a mass-market app files no annual self-classification report. So App Store builds leave GPT-Live out: `GPT_LIVE` is a Debug-only compilation condition (`Settings.gptLiveIncluded`), and Release excludes `ReddeLive.framework` and `WebRTC.framework` from the bundle (`EXCLUDED_SOURCE_FILE_NAMES`), so the answer above holds. Before GPT-Live ships: file the French declaration with ANSSI, upload it under App Information → App Encryption Documentation, set the key to `true` with the code Apple gives (`ITSEncryptionExportComplianceCode`), and put GPT-Live's text back in the privacy policy (`git show a673afa -- docs/privacy.md`).
 
 ## What's New in 1.6 (4000)
 Redde comes to Apple Watch, sets itself up from a QR code, and keeps a reply going after the phone locks.

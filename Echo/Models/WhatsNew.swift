@@ -22,11 +22,24 @@ nonisolated enum WhatsNew {
 
     /// Newest first. Keep each to a handful of lines a person reads in ten seconds.
     static let releases: [Release] = [
+        Release(version: "2.1.1", items: [
+            Item(symbol: "cloud.sun", title: "Weather and time, looked up",
+                 detail: "Weather cards fill themselves in, now and by the hour and day, and your agent knows your local time when you ask. It takes the Redde plugin 1.7.1 on your Hermes: Settings → Redde Plugin offers the update."),
+            Item(symbol: "photo.on.rectangle", title: "Pictures on every device",
+                 detail: "Pictures sent from Hermes Desktop, or from Redde on another device, show in your chats. On the Hermes API, with the Dashboard login saved, the pictures you send are kept on your server too, so they show elsewhere."),
+            Item(symbol: "car", title: "CarPlay, quicker",
+                 detail: "Pick a bot and the voice screen comes up at once, in its face, while its chat opens. A speaking bot's face is bigger, with sound bars, and moves with what you hear.",
+                 phoneOnly: true),
+            Item(symbol: "slider.horizontal.3", title: "Also",
+                 detail: "Each bot can read at a speed of its own (Edit Bot → Voice → Speed). Servers behind Pangolin connect with a Link's access token. Settings → Appearance can take bots or projects out of the chat list. And a new face shape: the house."),
+            Item(symbol: "checkmark.seal", title: "Fixes",
+                 detail: "Opening Redde no longer stops music playing in another app. In the car, the first question of a drive no longer says no API key is stored. The main agent stays in the bots list when it's the only one."),
+        ]),
         Release(version: "2.1", items: [
             Item(symbol: "rectangle.stack", title: "Every server in one list",
                  detail: "All Servers, in the server menu at the top of the conversation list, shows every saved server's chats in one list, each tagged with its server. All Profiles does the same for your Hermes profiles."),
             Item(symbol: "map", title: "Cards in replies",
-                 detail: "Your agent can show a map with pins or a route, a list of places and the weather under its reply. Tap a map for directions. It takes the Redde plugin 1.6.1 on your Hermes."),
+                 detail: "Your agent can show a map with pins or a route, a list of places and the weather under its reply. Tap a map for directions. It takes the Redde plugin on your Hermes."),
             Item(symbol: "link", title: "Link previews",
                  detail: "Settings → Appearance → Link previews puts a linked page's title and picture under the message. Off until you turn it on: to make the card, Redde opens the page itself."),
             Item(symbol: "square.grid.2x2", title: "Bots, further",
