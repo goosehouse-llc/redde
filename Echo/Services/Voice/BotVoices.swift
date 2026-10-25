@@ -12,11 +12,24 @@ nonisolated struct BotVoice: Codable, Equatable, Sendable {
     /// How fast it reads (1 is the voice's own pace), whatever its voice; nil reads at Redde's
     /// speed (Settings → Voice → Voice speed). Asked 2026-10-23, "control voice speed for each bot".
     var speed: Double?
+    /// Who holds its voice conversations, Redde or a live engine; nil as Settings → Voice →
+    /// Conversation has it. Asked 2026-10-25: one bot on GPT-Live, the others as they are.
+    var conversation: BotConversation?
+    /// Its voice in each live engine's calls, by `LiveEngine` raw value; none for an engine, the
+    /// one in Settings → Voice → Conversation.
+    var liveVoices: [String: String]?
 
     /// No voice picked for it: it gets one of its own (`BotVoices`).
     var isAutomatic: Bool { onDevice == nil && kokoro == nil && sameAsMain != true }
-    /// Nothing picked at all, voice or speed: as good as no record.
-    var isEmpty: Bool { isAutomatic && speed == nil }
+    /// Nothing picked at all, voice, speed or conversation: as good as no record.
+    var isEmpty: Bool { isAutomatic && speed == nil && conversation == nil && (liveVoices ?? [:]).isEmpty }
+}
+
+/// Who holds a bot's voice conversations (`BotVoice.conversation`), as Settings → Voice →
+/// Conversation does for the main agent and every bot without a choice of its own.
+nonisolated enum BotConversation: String, Codable, Sendable, CaseIterable {
+    case redde, gptLive, gemini, grok, elevenLabs
+    var live: LiveEngine? { LiveEngine(rawValue: rawValue) }
 }
 
 /// Which voice reads a bot's words: what was picked for it, else one of its own, in the language

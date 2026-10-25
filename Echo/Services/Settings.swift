@@ -149,28 +149,60 @@ final class Settings: ServeEndpoint {
         didSet { store(thinkingSound.rawValue, forKey: Keys.thinkingSound) }
     }
     /// Who holds a voice conversation: Redde (the phone hears, the agent answers, a voice reads
-    /// it), or GPT-Live, OpenAI's voice model, which talks and listens at once and hands the real
-    /// work to the agent (`LiveVoice`). Redde until chosen: GPT-Live sends the microphone to OpenAI
-    /// and costs money by the minute.
-    enum VoiceEngine: String, CaseIterable, Sendable { case redde, gptLive }
+    /// it), or a live voice model (GPT-Live, Gemini Live, Grok Voice: `LiveEngine`), which talks
+    /// and listens at once and hands the real work to the agent (`LiveVoice`). Redde until chosen:
+    /// a live call sends the microphone to its company and costs money by the minute.
+    enum VoiceEngine: String, CaseIterable, Sendable {
+        case redde, gptLive, gemini, grok, elevenLabs
+        var live: LiveEngine? { LiveEngine(rawValue: rawValue) }
+    }
     var voiceEngine: VoiceEngine {
         didSet { store(voiceEngine.rawValue, forKey: Keys.voiceEngine) }
     }
-    /// GPT-Live is in this build: development builds only for now (`GPT_LIVE`, project.yml). Its
-    /// WebRTC brings an encryption library of its own, which the App Store's export answers and
-    /// France's declaration would have to cover, so App Store builds go without it for now (decided 2026-10-24).
+    /// GPT-Live is in this build: development builds only until it's finished (`GPT_LIVE`,
+    /// project.yml). Its calls go over a WebSocket on Apple's TLS since 2026-10-24, so it brings no
+    /// cryptography of its own to declare (it went without WebRTC for that).
     #if GPT_LIVE
     static let gptLiveIncluded = true
     #else
     static let gptLiveIncluded = false
     #endif
-    /// GPT-Live holds voice conversations: picked, and in this build. Picked on a device that has
-    /// it and synced to one that doesn't, Redde holds them.
-    var usesGPTLive: Bool { Self.gptLiveIncluded && voiceEngine == .gptLive }
-    /// GPT-Live's voice when Redde sets the call up with its own OpenAI key. Through Hermes it is
-    /// the one in Hermes's config (voice.gpt_live.voice).
+    /// The live engine holding the voice conversations with `profile` (nil or "default": the main
+    /// agent): the bot's own choice (Edit Bot → Voice), else the one above; nil for Redde's, and
+    /// in a build without live calls. Picked on a device that has them and synced to one that
+    /// doesn't, Redde holds them.
+    func liveEngine(for profile: String?) -> LiveEngine? {
+        guard Self.gptLiveIncluded else { return nil }
+        if let profile, profile != "default", let own = botVoicesHere[profile]?.conversation { return own.live }
+        return voiceEngine.live
+    }
+    func usesLiveCall(for profile: String?) -> Bool { liveEngine(for: profile) != nil }
+    /// The voice `engine` speaks with in calls with `profile`: its own for that engine, else the
+    /// app's; one the engine doesn't offer (Redde listed OpenAI's older voices until 2026-10-25)
+    /// is its default.
+    func liveVoice(for profile: String?, engine: LiveEngine = .gptLive) -> String {
+        if let profile, profile != "default", let own = botVoicesHere[profile]?.liveVoices?[engine.rawValue],
+           engine.voicesFromAccount ? !own.isEmpty : engine.voices.contains(own) {
+            return own
+        }
+        return appLiveVoice(engine)
+    }
+    /// The app's voice for `engine` (Settings → Voice → Conversation).
+    func appLiveVoice(_ engine: LiveEngine) -> String {
+        let picked = engine == .gptLive ? liveVoice : liveVoices[engine.rawValue]
+        if engine.voicesFromAccount { return picked ?? "" }
+        return picked.flatMap { engine.voices.contains($0) ? $0 : nil } ?? engine.defaultVoice
+    }
+    func setAppLiveVoice(_ voice: String, for engine: LiveEngine) {
+        if engine == .gptLive { liveVoice = voice } else { liveVoices[engine.rawValue] = voice }
+    }
+    /// GPT-Live's voice when Redde sets the call up with its own OpenAI key.
     var liveVoice: String {
         didSet { store(liveVoice, forKey: Keys.liveVoice) }
+    }
+    /// The other live engines' voices, by `LiveEngine` raw value.
+    var liveVoices: [String: String] {
+        didSet { store(liveVoices, forKey: Keys.liveVoices) }
     }
     /// Minutes of quiet after which a GPT-Live call hangs up by itself: OpenAI bills every minute
     /// it is open, silent ones too. 0: only when ended.
@@ -620,6 +652,7 @@ final class Settings: ServeEndpoint {
         static let thinkingSound = "thinkingSound"
         static let voiceEngine = "voiceEngine"
         static let liveVoice = "liveVoice"
+        static let liveVoices = "liveVoices"
         static let liveHangUp = "liveHangUp"
         static let useKokoro = "useKokoro"
         static let replyVoice = "replyVoice"
@@ -701,6 +734,7 @@ final class Settings: ServeEndpoint {
         thinkingSound = defaults.string(forKey: Keys.thinkingSound).flatMap(ThinkingSound.init(rawValue:)) ?? .off
         voiceEngine = defaults.string(forKey: Keys.voiceEngine).flatMap(VoiceEngine.init(rawValue:)) ?? .redde
         liveVoice = defaults.string(forKey: Keys.liveVoice) ?? LiveSetup.defaultVoice
+        liveVoices = defaults.dictionary(forKey: Keys.liveVoices) as? [String: String] ?? [:]
         liveHangUp = defaults.object(forKey: Keys.liveHangUp) as? Int ?? 2
         // Before there were three, Kokoro was a switch.
         replyVoice = defaults.string(forKey: Keys.replyVoice).flatMap(ReplyVoice.init(rawValue:))
@@ -820,7 +854,7 @@ final class Settings: ServeEndpoint {
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
         Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopAndSkipInCar, Keys.stopPhrases,
-        Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.voiceEngine, Keys.liveVoice, Keys.liveHangUp,
+        Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.voiceEngine, Keys.liveVoice, Keys.liveVoices, Keys.liveHangUp,
         Keys.replyVoice, Keys.kokoroURL,
         Keys.kokoroVoice, Keys.voiceSpeed, Keys.speechLanguage, Keys.matchReplyLanguage, Keys.spokenPrefixes,
         Keys.botOrder, Keys.apiBots, Keys.botVoices, Keys.mutes,
@@ -876,6 +910,7 @@ final class Settings: ServeEndpoint {
         case Keys.thinkingSound: thinkingSound = pick(ThinkingSound.off)
         case Keys.voiceEngine: voiceEngine = pick(VoiceEngine.redde)
         case Keys.liveVoice: liveVoice = text(LiveSetup.defaultVoice)
+        case Keys.liveVoices: liveVoices = value as? [String: String] ?? [:]
         case Keys.liveHangUp: liveHangUp = value as? Int ?? 2
         case Keys.replyVoice: replyVoice = pick(ReplyVoice.onDevice)
         case Keys.kokoroURL: kokoroURL = text(Self.defaultKokoroURL)

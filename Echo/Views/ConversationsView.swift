@@ -701,6 +701,16 @@ struct ConversationsList: View {
                                 .offset(x: 5, y: 3)
                         }
                     }
+                    .overlay(alignment: .bottomLeading) {
+                        if let engine = settings.liveEngine(for: bot.name) {
+                            Image(systemName: "phone.fill")
+                                .font(.system(size: 9)).foregroundStyle(.secondary)
+                                .padding(2)
+                                .background(.background, in: .circle)
+                                .offset(x: -5, y: 3)
+                                .accessibilityLabel("\(engine.name) calls")
+                        }
+                    }
                 Text(name).lineLimit(1).truncationMode(.tail)
                     .font(.caption.weight(isOpen ? .semibold : .regular))
                     .foregroundStyle(isOpen ? accent : .primary)
@@ -792,6 +802,7 @@ struct ConversationsList: View {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(name).font(.body.weight(.semibold)).lineLimit(1)
+                        if let engine = settings.liveEngine(for: bot.name) { LiveCallMark(engine: engine) }
                         if muted { MutedMark() }
                         Spacer(minLength: 8)
                         if openingBot == bot.name || marks.kind == .working {

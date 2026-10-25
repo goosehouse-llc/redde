@@ -439,7 +439,7 @@ struct VoiceSettings: View {
                     LiveVoiceSettings()
                 } label: {
                     LabeledContent("Conversation") {
-                        Text(settings.voiceEngine == .gptLive ? "GPT-Live" : "Redde").lineLimit(1)
+                        Text(settings.voiceEngine.live?.name ?? "Redde").lineLimit(1)
                     }
                 }
             }

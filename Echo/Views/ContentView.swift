@@ -177,6 +177,15 @@ struct ContentView: View {
             #if DEBUG
             if DevHooks.has("-echo.voiceView") { openVoice(fromOutside: true) }
             if DevHooks.has("-echo.autoVoice") { await launchVoice(handsFree: false, fromOutside: true) }
+            // `-echo.livePreview <voice>`: that live voice's preview played (the engine whose voice
+            // it is), how it went in the live-measure log (with `-echo.liveMeasure`).
+            if let voice = DevHooks.value("-echo.livePreview") {
+                let preview = LiveVoicePreview(), began = ContinuousClock.now
+                let engine = LiveEngine.allCases.first { $0.voices.contains(voice) } ?? .gptLive
+                preview.play(voice, of: engine, as: settings.headerTitle, in: "English")
+                while preview.playing != nil { try? await Task.sleep(for: .milliseconds(100)) }
+                LiveMeasure.write("preview \(voice): \(preview.problem ?? "played") after \((ContinuousClock.now - began).formatted(.units(allowed: [.milliseconds], width: .narrow)))")
+            }
             // `-echo.voiceHandoff`: the voice screen's face handed to Scout, back, then to Quill, as
             // a spoken prefix does it (recording the transition).
             if DevHooks.has("-echo.voiceHandoff") {

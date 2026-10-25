@@ -1,13 +1,14 @@
 import Foundation
 import os
 
-/// GPT-Live (Settings → Voice → Conversation): OpenAI's voice model holds the conversation,
-/// talking and listening at once, and hands every real request to the agent, whose answer it
-/// then says in its own words. Hermes keeps everything else: the model, the tools, the memory,
-/// the approvals. This is Hermes Desktop's live voice (tools/voice_live.py and its desktop
-/// client), on Redde's connections: the call goes straight from the phone to OpenAI over WebRTC
-/// (`LiveCalling`); the person's Hermes sets it up with its own OpenAI key, or Redde with one kept
-/// in it (`LiveSetup`). The voice session drives this in place of its recogniser and its voice.
+/// A live call (Settings → Voice → Conversation, or a bot's own): a voice model, GPT-Live, Gemini
+/// Live or Grok Voice (`LiveEngine`), holds the conversation, talking and listening at once, and
+/// hands every real request to the agent, whose answer it then says in its own words. Hermes keeps
+/// everything else: the model, the tools, the memory, the approvals. This is Hermes Desktop's live
+/// voice (tools/voice_live.py and its desktop client), on Redde's connections and with more
+/// engines: the call goes straight from the phone to the service over a WebSocket (`LiveCall`),
+/// set up with the key kept in Redde (`LiveSetup`), each service's wire worded by its
+/// `LiveDialect`. The voice session drives this in place of its recogniser and its voice.
 final class LiveVoice {
     enum State: Equatable { case connecting, listening, thinking, speaking, ended }
 
@@ -25,13 +26,20 @@ final class LiveVoice {
     private(set) var connected = false
     /// Each change, for the voice session to show.
     var onChange: (() -> Void)?
+    /// With hands-free off, the call ends once a question has been answered, as Redde's own voice
+    /// stops after its answer (asked 2026-10-25). Read as it goes: hands-free can be turned on
+    /// mid-call.
+    var endsAfterAnswer: () -> Bool = { false }
 
     var inputLevel: Float { call?.inputLevel ?? 0 }
     var outputLevel: Float { call?.outputLevel ?? 0 }
+    /// Who holds this call.
+    let engine: LiveEngine
 
     private let conversation: Conversation
     private let settings: Settings
-    private let makeCall: (LiveCallListening) throws -> LiveCalling
+    private let dialect: any LiveDialect
+    private let makeCall: (LiveCallListening, any LiveDialect) throws -> LiveCalling
     private let setUp: LiveSetup.Resolver
     private var call: LiveCalling?
     private lazy var relay = Relay(owner: self)
@@ -39,6 +47,8 @@ final class LiveVoice {
 
     /// The spoken exchange as transcribed, both sides, for what a handed-over request refers to.
     private var fragments: [LiveFragment] = []
+    /// Where the last handed-over request ended in `fragments`: what was said since is the next one's.
+    private var handedOverAt = 0
     private var lastSpeaker: LiveFragment.Speaker?
     /// The person's words since they last started talking, judged once they stop: a stop phrase ends the call.
     private var utterance = ""
@@ -47,8 +57,20 @@ final class LiveVoice {
     /// The request the agent is working on (`session.delegation.created`), and the turn doing it.
     private var delegation: String?
     private var turn: Task<Void, Never>?
+    /// Says the agent is still at it while the person waits (`keepPosted`).
+    private var posting: Task<Void, Never>?
+    private let postEvery: Posting
     private var chunker = SentenceChunker()
     private var spokenAnything = false
+    /// Whose voice the call speaks in now (a profile, "default" the main agent's); and, for a
+    /// request that went to another bot's chat, its answer gathered whole for that bot's session
+    /// to open with (`handOff`).
+    private var voiceOf = "default"
+    private var collecting = false
+    /// Opens a bot's chat for a spoken prefix (`Conversation.goToBot`; a stand-in in tests).
+    private let goToBot: (Conversation, String, String) async -> Void
+    /// The answer so far, for a dialect that takes it whole (a tool's result).
+    private var answer = ""
     /// The Dashboard takes the turn as a live voice one itself (`LiveTurn.surface`).
     private var hermesKnowsLiveTurns = false
     private var eventCount = 0
@@ -57,58 +79,81 @@ final class LiveVoice {
     /// When `start` began, for the log of how long each step of setting the call up took.
     private var callStarted: ContinuousClock.Instant?
 
-    init(conversation: Conversation, settings: Settings = .shared,
-         makeCall: @escaping (LiveCallListening) throws -> LiveCalling = { try LiveEngine.makeCall(listener: $0) },
-         setUp: @escaping LiveSetup.Resolver = LiveSetup.resolve) {
+    /// When the voice says the agent is still working: first after this long without an answer,
+    /// then every so often; and how long a quiet after an answer ends a call (`endsAfterAnswer`).
+    struct Posting {
+        var first: Duration = .seconds(15)
+        var every: Duration = .seconds(30)
+        var answered: Duration = .seconds(3)
+    }
+
+    /// When the person last said something, and the voice was last heard.
+    private var lastAsked: ContinuousClock.Instant?
+    private var lastHeardVoice: ContinuousClock.Instant?
+    /// The agent's answer went to the voice and it hasn't said it yet.
+    private var answerUnsaid = false
+    private var answerCheck: Task<Void, Never>?
+
+    init(conversation: Conversation, settings: Settings = .shared, engine: LiveEngine? = nil,
+         makeCall: @escaping (LiveCallListening, any LiveDialect) throws -> LiveCalling = { LiveCall(listener: $0, dialect: $1) },
+         setUp: @escaping LiveSetup.Resolver = LiveSetup.resolve, posting: Posting = Posting(),
+         goToBot: @escaping (Conversation, String, String) async -> Void = { conversation, bot, main in
+             _ = try? await conversation.goToBot(bot, mainName: main)
+         }) {
         self.conversation = conversation
+        self.goToBot = goToBot
         self.settings = settings
+        self.engine = engine ?? settings.liveEngine(for: conversation.bot?.profile) ?? .gptLive
+        dialect = self.engine.dialect
         self.makeCall = makeCall
         self.setUp = setUp
+        postEvery = posting
     }
 
     // MARK: - The call
 
-    /// Sets the call up: the microphone and the offer, while (at the same time) it is found out
-    /// who sets it up; then the session, then the answer. The audio session is the caller's,
-    /// active for voice already.
+    /// Sets the call up: the microphone first, so that nothing said while it connects is lost; then
+    /// where to connect (`LiveSetup`), then the connection, until the service says the session has
+    /// started. The audio session is the caller's, active for voice already.
     func start() async {
         let started = ContinuousClock.now
         callStarted = started
         func took() -> String { (ContinuousClock.now - started).formatted(.units(allowed: [.milliseconds], width: .narrow)) }
         let call: LiveCalling
-        do { call = try makeCall(relay) } catch { end(problem: error.localizedDescription); return }
-        self.call = call
-        async let found = setUp(conversation, settings)
         do {
-            let offer = try await withCheckedThrowingContinuation { (sent: CheckedContinuation<String, Error>) in
-                call.makeOffer { offer, problem in
-                    if let offer { sent.resume(returning: offer) } else { sent.resume(throwing: LiveFailure(problem ?? "No offer.")) }
-                }
-            }
-            note("offer ready after \(took())")
-            let setup = try await found
+            call = try makeCall(relay, dialect)
+            self.call = call
+            try call.open()
+        } catch {
+            end(problem: error.localizedDescription)
+            return
+        }
+        note("microphone open after \(took())")
+        voiceOf = conversation.bot?.profile ?? "default"
+        do {
+            let setup = try await setUp(conversation, settings, engine)
             guard state != .ended else { return }
             hermesKnowsLiveTurns = setup.hermesKnowsLiveTurns
-            let answer = try await setup.open(offer, LiveSetup.history(conversation.messages))
-            note("answered through \(setup.label) after \(took())")
+            let connection = try await setup.open(LiveSetup.history(conversation.messages))
+            note("set up with \(setup.label) after \(took())")
             guard state != .ended else { return }
-            try await withCheckedThrowingContinuation { (applied: CheckedContinuation<Void, Error>) in
-                call.accept(answer) { problem in
-                    if let problem { applied.resume(throwing: LiveFailure(problem)) } else { applied.resume() }
-                }
-            }
-            note("answer applied after \(took())")
+            try await call.connect(connection)
+            note("session started after \(took())")
         } catch {
             guard state != .ended else { return }
             end(problem: error.localizedDescription)
         }
     }
 
-    /// The person ends the call. OpenAI is told, so that its bill stops at once, and a moment
+    /// The person ends the call. The service is told, so that its bill stops at once, and a moment
     /// after (for that to go out) the connection closes.
     func hangUp() {
         guard state != .ended else { return }
-        _ = send(["type": .string("session.close")])
+        // A request it handed over stops with it, as a turn Redde's own voice started stops with
+        // its Stop: hung up mid-request, the agent went on for minutes (Marta, 2026-10-25). A call
+        // that ends otherwise (dropped, ended by the service) leaves the answer to come in the chat.
+        if delegation != nil, conversation.isStreaming { conversation.cancel() }
+        send(dialect.close())
         let call = call
         Task { try? await Task.sleep(for: .milliseconds(250)); call?.close() }
         self.call = nil
@@ -119,7 +164,7 @@ final class LiveVoice {
         guard muted != isMuted, state != .ended else { return }
         isMuted = muted
         call?.setMuted(muted)
-        _ = send(["type": .string(muted ? "session.input_audio.mute" : "session.input_audio.unmute"), "event_id": .string(nextID(muted ? "mute" : "unmute"))])
+        send(dialect.mute(muted, eventID: nextID(muted ? "mute" : "unmute")))
         changed()
     }
 
@@ -127,12 +172,14 @@ final class LiveVoice {
         guard state != .ended else { return }
         if let callStarted { note("ended after \((ContinuousClock.now - callStarted).formatted(.units(allowed: [.seconds], width: .narrow)))\(problem.map { ": " + $0 } ?? "")") }
         self.problem = problem
-        if let problem { log.error("GPT-Live call ended: \(problem, privacy: .public)") }
+        if let problem { log.error("\(self.engine.name, privacy: .public) call ended: \(problem, privacy: .public)") }
         state = .ended
         utteranceSettles?.cancel()
         quietWatch?.cancel()
+        answerCheck?.cancel()
         turn?.cancel()
         turn = nil
+        posting?.cancel()
         delegation = nil
         call?.close()
         call = nil
@@ -149,41 +196,54 @@ final class LiveVoice {
     // MARK: - What the call says
 
     fileprivate func received(_ text: String) {
-        guard state != .ended, let event = try? JSONValue.parse(Data(text.utf8)), let type = event["type"]?.string else { return }
-        switch type {
-        case "session.started":
-            began()
-        case "session.input_transcript.delta", "session.output_transcript.delta":
-            let speaker: LiveFragment.Speaker = type == "session.input_transcript.delta" ? .person : .voice
-            let delta = event["delta"]?.string ?? ""
-            transcribed(LiveFragment(speaker: speaker, text: delta, startMs: event["start_ms"]?.int ?? 0, endMs: event["end_ms"]?.int ?? 0))
-        case "session.delegation.created":
-            if let id = event["delegation"]?["id"]?.string { delegated(id) }
-        case "error":
-            // Appends after the call is over, or to a request it has moved on from: expected.
-            if event["error"]?["code"]?.string == "context_injection_incomplete" { return }
-            log.error("GPT-Live: \(event["error"]?["message"]?.string ?? "an error", privacy: .public)")
-        case "session.closed":
-            let reason = event["reason"]?.string ?? ""
-            end(problem: reason.isEmpty || reason == "close_requested" ? nil : LiveFailure.readable(reason))
-        default:
-            break
+        for event in dialect.read(text) {
+            guard state != .ended else { return }
+            switch event {
+            case .started:
+                began()
+            case let .transcript(speaker, piece, startMs, endMs):
+                // "…" for a silence (ElevenLabs): nothing said.
+                if speaker == .person, !piece.contains(where: { $0.isLetter || $0.isNumber }) { continue }
+                // Times where the service gives them (GPT-Live), else the call's own clock.
+                let now = callStarted.map { Int((ContinuousClock.now - $0) / .milliseconds(1)) } ?? 0
+                transcribed(LiveFragment(speaker: speaker, text: piece, startMs: startMs ?? now, endMs: endMs ?? now))
+            case let .delegated(id, request):
+                delegated(id, request: request)
+            case let .withdrawn(ids):
+                if let delegation, ids.contains(delegation) { withdraw() }
+            case let .failed(message, code):
+                // Appends after the call is over, or to a request it has moved on from: expected.
+                if code == "context_injection_incomplete" { continue }
+                log.error("\(self.engine.name, privacy: .public): \(message, privacy: .public)")
+            case let .closed(reason):
+                end(problem: reason.map { LiveFailure.readable($0, engine: engine) })
+            case .interrupted:
+                #if DEBUG
+                note("interrupted: the voice's queued audio dropped")
+                #endif
+            case .audio, .reply:
+                break
+            }
         }
     }
 
     fileprivate func callChanged(_ state: LiveCallState) {
         switch state {
-        case .connected: began()
         case .speaking:
             voiceSpeaking = true
             lastActivity = .now
+            lastHeardVoice = .now
+            answerUnsaid = false
+            answerCheck?.cancel()
             changed()
         case .quiet:
             voiceSpeaking = false
             lastActivity = .now
+            lastHeardVoice = .now
             changed()
+            checkAnswered()
         case .lost:
-            end(problem: "The connection to GPT-Live dropped.")
+            end(problem: "The connection to \(engine.name) dropped.")
         }
     }
 
@@ -202,9 +262,21 @@ final class LiveVoice {
     private func transcribed(_ fragment: LiveFragment) {
         lastActivity = .now
         fragments.append(fragment)
-        if fragments.count > 2_000 { fragments.removeFirst(500) }
+        if fragments.count > 2_000 {
+            fragments.removeFirst(500)
+            handedOverAt = max(0, handedOverAt - 500)
+        }
+        #if DEBUG
+        // What each side said, a turn at a time, in the measure log: the exchange, not a guess at it.
+        if let lastSpeaker, fragment.speaker != lastSpeaker {
+            let turn = lastSpeaker == .person ? heard : said
+            if !turn.isEmpty { note("\(lastSpeaker == .person ? "person" : "voice"): \(turn)") }
+        }
+        #endif
         switch fragment.speaker {
         case .person:
+            lastAsked = .now
+            answerCheck?.cancel()
             if lastSpeaker != .person { heard = "" }
             heard += fragment.text
             utterance += fragment.text
@@ -230,7 +302,7 @@ final class LiveVoice {
     }
 
     /// Hangs up after Settings' minutes of nobody saying anything and nothing being worked on:
-    /// OpenAI bills the silence too.
+    /// the silence is billed too.
     private func watchForQuiet() {
         quietWatch?.cancel()
         let minutes = settings.liveHangUp
@@ -240,7 +312,7 @@ final class LiveVoice {
                 try? await Task.sleep(for: .seconds(10))
                 guard let self, !Task.isCancelled else { return }
                 if delegation == nil, !voiceSpeaking, ContinuousClock.now - lastActivity > .seconds(minutes * 60) {
-                    log.info("GPT-Live call quiet for \(minutes) min: hanging up")
+                    log.info("live call quiet for \(minutes) min: hanging up")
                     hangUp()
                     return
                 }
@@ -251,30 +323,167 @@ final class LiveVoice {
     // MARK: - Handing a request to the agent
 
     /// The voice wants the agent: what the person last said becomes a turn in the conversation,
-    /// with the exchange around it for the agent alone. A newer request stops one still being
-    /// worked on, so the answer the voice gives is to what was asked last.
-    private func delegated(_ id: String) {
+    /// with the exchange around it for the agent alone (and the voice's own wording of the request,
+    /// where it gives one: a tool call's). A newer request stops one still being worked on, so the
+    /// answer the voice gives is to what was asked last.
+    private func delegated(_ id: String, request: String? = nil) {
         lastActivity = .now
-        let (prompt, context) = LiveFragment.delegation(from: recentFragments())
-        if StopPhrase.matches(prompt, own: settings.stopPhrases) { hangUp(); return }
         turn?.cancel()
         if conversation.isStreaming { conversation.cancel() }
         delegation = id
         tool = nil
         spokenAnything = false
+        answer = ""
+        collecting = false
         chunker = SentenceChunker()
         changed()
-        turn = Task { [weak self] in await self?.work(on: prompt, context: context, for: id) }
+        // A tool call can come before the words it answers are written down (Gemini's transcripts
+        // come in no set order): a moment for them, or "Home, …" was routed by the voice's own
+        // wording, the name gone (2026-10-25). GPT-Live hands over after them.
+        let settle: Duration = dialect.streamsAnswers ? .zero : .milliseconds(700)
+        turn = Task { [weak self] in
+            if settle > .zero { try? await Task.sleep(for: settle) }
+            guard let self, delegation == id, !Task.isCancelled else { return }
+            let (prompt, context) = asked(wording: request)
+            if StopPhrase.matches(prompt, own: settings.stopPhrases) {
+                hangUp()
+                return
+            }
+            #if DEBUG
+            note("handed over: \(prompt)")
+            #endif
+            await work(on: prompt, context: context, for: id)
+        }
+        posting?.cancel()
+        posting = Task { [weak self] in await self?.keepPosted(for: id) }
+    }
+
+    /// What was asked, for the agent: the person's own words since the last request (a spoken
+    /// prefix anywhere in them, `addressed`), else the voice's wording of it (a tool call's), which
+    /// goes along in the context too; a prefix in that wording counts where theirs has none.
+    private func asked(wording request: String?) -> (prompt: String, context: String) {
+        var (prompt, context) = LiveFragment.delegation(from: recentFragments())
+        let worded = request?.split(whereSeparator: \.isWhitespace).joined(separator: " ") ?? ""
+        if prompt.isEmpty || fragments.allSatisfy({ $0.speaker == .voice }) { prompt = worded.isEmpty ? prompt : worded }
+        if !worded.isEmpty, worded != prompt { context += (context.isEmpty ? "" : "\n") + "Voice assistant's request to you: \(worded)" }
+        prompt = Self.addressed(prompt, asked: LiveFragment.personTurns(Array(fragments[min(handedOverAt, fragments.count)...])),
+                                rules: settings.spokenPrefixes)
+        if VoiceRouting.route(prompt, rules: settings.spokenPrefixes) == nil, VoiceRouting.route(worded, rules: settings.spokenPrefixes) != nil {
+            prompt = worded
+        }
+        handedOverAt = fragments.count
+        return (prompt, context)
+    }
+
+    /// A spoken prefix ("Home, …") said anywhere in what the person asked since the last request,
+    /// not only at the start of their last words: the voice talks back, "Home." "Yes?" "Turn the
+    /// lights off.", and a backchannel splits a sentence in two. Found 2026-10-25: prefixes never
+    /// worked on GPT-Live. `prompt` as it was when none is said, or it starts with one already.
+    static func addressed(_ prompt: String, asked: [String], rules: [SpokenPrefix]) -> String {
+        guard VoiceRouting.route(prompt, rules: rules) == nil else { return prompt }
+        for start in asked.indices.reversed() {
+            let since = asked[start...].joined(separator: " ")
+            if VoiceRouting.route(since, rules: rules) != nil { return since }
+        }
+        return prompt
+    }
+
+    /// The request went to another bot's chat (a spoken prefix): once its answer is in, the call
+    /// goes on as that bot, in its voice, a new session on the same service (a voice can't be
+    /// changed within one) that opens saying the answer, the way a preview's voice says its line
+    /// (an answer handed to a session already under way, as a note of no request's, went unsaid on
+    /// GPT-Live), the microphone and the speaker going on throughout; the person goes on with that
+    /// bot. Asked 2026-10-25: "the prefix to Home worked, but it continued in Sol's voice". False
+    /// when it couldn't: the voice as it was says the answer.
+    private func handOff(asking request: String, saying answer: String) async -> Bool {
+        guard let call else { return false }
+        let profile = conversation.bot?.profile ?? "default"
+        do {
+            let setup = try await setUp(conversation, settings, engine)
+            var history = LiveSetup.history(conversation.messages)
+            history.append(LiveLine(fromPerson: true, text: request))
+            var connection = try await setup.open(history)
+            connection.plan.greeting = LiveGreeting(line: answer, language: "English")
+            guard state != .ended else { return false }
+            try await call.reconnect(connection)
+            voiceOf = profile
+            note("went on as \(agentName)")
+            return true
+        } catch {
+            log.error("handing the call to \(profile, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
+    }
+
+    /// Hands-free off: three seconds after something asked has been answered, the call ends, unless
+    /// the person goes on talking (his words, 2026-10-25: "unless I keep talking"; the voice ending
+    /// on a question of its own no longer keeps it). Not while the agent is working, nor before the
+    /// voice has said the agent's answer.
+    private static let talking: Float = 0.03
+    private func checkAnswered() {
+        answerCheck?.cancel()
+        guard endsAfterAnswer(), connected else { return }
+        answerCheck = Task { [weak self, wait = postEvery.answered] in
+            // The person starting to talk keeps the call, heard in the microphone at once (a
+            // transcript can come a second or two after they've started, and cancels this): a
+            // sound only puts the hang-up off, ten seconds at most, so a noise can't keep the
+            // call open (it did, after ElevenLabs' "are you still there?", 2026-10-25).
+            let began = ContinuousClock.now
+            var quietSince = began
+            while ContinuousClock.now - quietSince < wait, ContinuousClock.now - began < .seconds(10) {
+                try? await Task.sleep(for: .milliseconds(100))
+                guard let self, !Task.isCancelled else { return }
+                if inputLevel > Self.talking { quietSince = .now }
+            }
+            guard let self, !Task.isCancelled, state != .ended, endsAfterAnswer() else { return }
+            guard delegation == nil, !voiceSpeaking, !answerUnsaid else { return }
+            guard let asked = lastAsked, let heard = lastHeardVoice, heard > asked else { return }
+            note("answered, hands-free off: hanging up")
+            hangUp()
+        }
+    }
+
+    /// The voice no longer wants what it asked (the person moved on): the agent stops too.
+    private func withdraw() {
+        turn?.cancel()
+        turn = nil
+        posting?.cancel()
+        if conversation.isStreaming { conversation.cancel() }
+        delegation = nil
+        tool = nil
+        collecting = false
+        changed()
+    }
+
+    /// A long wait isn't silence: until the agent has something to say, the voice says it is still
+    /// on it, after `postEvery.first` and then every `postEvery.every`. Said, not quiet progress:
+    /// GPT-Live's voice speaks commentary (in its own words) and keeps thinking to itself, and a
+    /// delay is an update the person should hear (`LiveDialect.update`). On Marta (2026-10-25) the agent's model took two and a
+    /// half minutes to start, its cache emptied by a group chat, and the call sat silent until it
+    /// was ended.
+    private func keepPosted(for id: String) async {
+        let asked = ContinuousClock.now
+        var wait = postEvery.first
+        while true {
+            try? await Task.sleep(for: wait)
+            guard delegation == id, !spokenAnything, !Task.isCancelled else { return }
+            let seconds = Int((ContinuousClock.now - asked) / .seconds(1))
+            let doing = tool.map { ", using \($0)" } ?? ""
+            let update = "\(agentName) is still working on it\(doing): \(seconds) seconds so far, not done yet."
+            send(dialect.update(update, to: id, eventID: nextID("wait")))
+            wait = postEvery.every
+        }
     }
 
     private func work(on prompt: String, context: String, for id: String) async {
         // Spoken prefixes, as in Redde's own voice: "Home, …" goes to that bot's chat first.
         let route = VoiceRouting.route(prompt, rules: settings.spokenPrefixes)
-        if let bot = route?.bot {
-            _ = try? await conversation.goToBot(bot, mainName: settings.headerTitle)
-        }
+        if let bot = route?.bot { await goToBot(conversation, bot, settings.headerTitle) }
         if let model = route?.model { try? await conversation.switchModel(model, provider: route?.provider) }
         guard delegation == id, !Task.isCancelled else { return }
+        // Another bot's chat now: its answer gathered, for the call to go on as that bot saying it.
+        let handingOff = (conversation.bot?.profile ?? "default") != voiceOf
+        collecting = handingOff
         let events = conversation.send(route?.text ?? prompt, live: LiveTurn(context: context, surface: hermesKnowsLiveTurns))
         for await event in events {
             guard delegation == id, !Task.isCancelled else { return }
@@ -301,29 +510,40 @@ final class LiveVoice {
             say("That request is waiting behind another one; it goes as soon as that's done.", for: id)
         } else if let error = conversation.lastError {
             say("I couldn't get that from \(agentName): \(error)", for: id)
-        } else if !spokenAnything {
+        } else if !spokenAnything, dialect.streamsAnswers, !handingOff {
             think("\(agentName) finished that request without anything to say.", for: id)
         }
+        let whole = answer.isEmpty ? "\(agentName) finished that request without anything to say." : answer
+        if handingOff {
+            // The other bot's session opens saying it; where it couldn't open, the voice as it was says it.
+            if await !handOff(asking: route?.text ?? prompt, saying: whole) {
+                guard delegation == id else { return }
+                let final = !dialect.streamsAnswers
+                for part in final ? [whole] : LiveFragment.appendable(whole) {
+                    send(dialect.answer(part, to: id, final: final, eventID: nextID("say")))
+                }
+            }
+            guard delegation == id else { return }
+        } else if !dialect.streamsAnswers {
+            // A tool call's result is the whole answer, once.
+            send(dialect.answer(whole, to: id, final: true, eventID: nextID("say")))
+        }
+        collecting = false
+        // An answer to say: the call goes on until the voice has said it.
+        answerUnsaid = spokenAnything || !dialect.streamsAnswers || handingOff
         delegation = nil
         tool = nil
+        posting?.cancel()
         changed()
+        checkAnswered()
     }
 
     /// How setting the call up went, in the log; with `-echo.liveMeasure` (DEBUG), in
     /// Library/Caches/live-measure.log as well, with the call's cost to the phone every ten seconds.
     private func note(_ line: String) {
-        log.info("GPT-Live: \(line, privacy: .public)")
+        log.info("\(self.engine.name, privacy: .public): \(line, privacy: .public)")
         #if DEBUG
-        guard DevHooks.has("-echo.liveMeasure") else { return }
-        let file = URL.cachesDirectory.appending(path: "live-measure.log")
-        let text = Date.now.formatted(.iso8601.time(includingFractionalSeconds: true)) + " " + line + "\n"
-        if let handle = try? FileHandle(forWritingTo: file) {
-            handle.seekToEndOfFile()
-            handle.write(Data(text.utf8))
-            try? handle.close()
-        } else {
-            try? text.write(to: file, atomically: true, encoding: .utf8)
-        }
+        LiveMeasure.write(line)
         #endif
     }
 
@@ -353,6 +573,27 @@ final class LiveVoice {
                 last = now
             }
         }
+        // How long the voice takes to answer, the same way for either call: from the person's last
+        // sound to the voice audible after a quiet of 0.7 s or more, read off the levels.
+        Task { [weak self] in
+            var lastLoud: ContinuousClock.Instant?
+            var quietSince = ContinuousClock.now
+            var audible = false
+            while let self, state != .ended {
+                try? await Task.sleep(for: .milliseconds(50))
+                let now = ContinuousClock.now
+                if inputLevel > 0.02, !audible { lastLoud = now }
+                if outputLevel > 0.03 {
+                    if !audible, now - quietSince > .milliseconds(700), let lastLoud {
+                        note("voice began \((now - lastLoud).formatted(.units(allowed: [.milliseconds], width: .narrow))) after the person's last sound")
+                    }
+                    audible = true
+                } else if audible {
+                    audible = false
+                    quietSince = now
+                }
+            }
+        }
     }
     #endif
 
@@ -365,21 +606,23 @@ final class LiveVoice {
         // A table's rule or a code block's fence, alone on its line: nothing to say.
         guard spoken.contains(where: { $0.isLetter || $0.isNumber }), !spoken.hasPrefix("`") else { return }
         spokenAnything = true
+        guard dialect.streamsAnswers, !collecting else {
+            answer += (answer.isEmpty ? "" : " ") + spoken
+            return
+        }
         for part in LiveFragment.appendable(spoken) {
-            _ = send(["type": .string("session.commentary.append"), "content": .string(part),
-                      "delegation_id": .string(id), "event_id": .string(nextID("say"))])
+            send(dialect.answer(part, to: id, final: false, eventID: nextID("say")))
         }
     }
 
     /// Quiet progress, for the voice to mention if it likes ("it's checking your calendar").
     private func think(_ text: String, for id: String) {
-        _ = send(["type": .string("session.thinking.append"), "content": .string(String(text.prefix(LiveFragment.appendLimit))),
-                  "delegation_id": .string(id), "event_id": .string(nextID("think"))])
+        send(dialect.note(text, to: id, eventID: nextID("think")))
     }
 
-    private func send(_ event: [String: JSONValue]) -> Bool {
-        guard let call, let data = try? JSONEncoder().encode(JSONValue.object(event)) else { return false }
-        return call.send(String(decoding: data, as: UTF8.self))
+    private func send(_ messages: [JSONValue]) {
+        guard let call else { return }
+        for message in messages { _ = call.send(type(of: dialect).encode(message)) }
     }
 
     private func nextID(_ prefix: String) -> String {
@@ -401,11 +644,11 @@ nonisolated struct LiveFailure: LocalizedError {
     var errorDescription: String? { message }
 
     /// A machine reason from the service, as a sentence where Redde knows it.
-    static func readable(_ reason: String) -> String {
+    static func readable(_ reason: String, engine: LiveEngine = .gptLive) -> String {
         switch reason {
-        case "connection_lost": "The connection to GPT-Live dropped."
-        case "max_duration", "session_expired": "The GPT-Live call reached its time limit."
-        default: "GPT-Live ended the call (\(reason))."
+        case "connection_lost": "The connection to \(engine.name) dropped."
+        case "max_duration", "session_expired", "go_away": "The \(engine.name) call reached its time limit."
+        default: reason.contains(" ") ? reason : "\(engine.name) ended the call (\(reason))."
         }
     }
 }
@@ -443,6 +686,22 @@ nonisolated struct LiveFragment: Equatable, Sendable {
         return (prompt.isEmpty ? String(context.suffix(400)) : prompt, context)
     }
 
+    /// What the person said, a turn at a time (the voice's words between them dividing them), tidied.
+    static func personTurns(_ fragments: [LiveFragment]) -> [String] {
+        var turns: [String] = []
+        var current = ""
+        for fragment in fragments {
+            if fragment.speaker == .person {
+                current += fragment.text
+            } else if !current.isEmpty {
+                turns.append(current)
+                current = ""
+            }
+        }
+        if !current.isEmpty { turns.append(current) }
+        return turns.map { $0.split(whereSeparator: \.isWhitespace).joined(separator: " ") }.filter { !$0.isEmpty }
+    }
+
     /// Text in pieces the service takes: whole sentences where they fit.
     static func appendable(_ text: String, limit: Int = appendLimit) -> [String] {
         let clean = text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
@@ -471,46 +730,34 @@ nonisolated struct LiveFragment: Equatable, Sendable {
     }
 }
 
-/// Hears the call for `LiveVoice`: a call holds what it tells weakly, and has to be told by
-/// an Objective-C object.
-private final class Relay: NSObject, LiveCallListening {
+/// Hears the call for `LiveVoice`: a call holds what it tells weakly.
+private final class Relay: LiveCallListening {
     weak var owner: LiveVoice?
     init(owner: LiveVoice) { self.owner = owner }
     func liveCallReceived(_ event: String) { owner?.received(event) }
-    func liveCallChanged(_ state: String) { LiveCallState(rawValue: state).map { owner?.callChanged($0) } }
+    func liveCallChanged(_ state: LiveCallState) { owner?.callChanged(state) }
 }
 
-/// Loads ReddeLive.framework, which carries WebRTC, the first time it is wanted and never before
-/// (`LiveCallBridge`).
-enum LiveEngine {
-    nonisolated private static let path = Bundle.main.privateFrameworksPath.map { $0 + "/ReddeLive.framework/ReddeLive" }
-    private static var callType: NSObject.Type?
-
-    /// Loads it away from the main thread when the voice screen opens with GPT-Live chosen: a
-    /// first load takes up to 50 ms, a stall in the screen's opening on the main thread.
-    nonisolated static func preload() {
-        guard let path else { return }
-        Task.detached(priority: .userInitiated) { _ = dlopen(path, RTLD_NOW) }
-    }
-
-    /// Whether it is loaded in this process (it shouldn't be, until a call).
-    nonisolated static var isLoaded: Bool {
-        (0..<_dyld_image_count()).contains { String(cString: _dyld_get_image_name($0)).hasSuffix("/ReddeLive.framework/ReddeLive") }
-    }
-
-    static func makeCall(listener: LiveCallListening) throws -> LiveCalling {
-        guard let made = try load().perform(NSSelectorFromString("makeWithListener:"), with: listener)?.takeUnretainedValue(),
-              let call = made as? LiveCalling else { throw LiveFailure("GPT-Live couldn't start.") }
-        return call
-    }
-
-    private static func load() throws -> NSObject.Type {
-        if let callType { return callType }
-        guard let path, dlopen(path, RTLD_NOW) != nil else {
-            throw LiveFailure("GPT-Live couldn't load: \(dlerror().map { String(cString: $0) } ?? "no framework").")
+#if DEBUG
+/// With `-echo.liveMeasure`: Library/Caches/live-measure.log, a line at a time, read off the
+/// phone after a call (`devicectl device copy from`).
+enum LiveMeasure {
+    /// Every call in a development build, not only those started with `-echo.liveMeasure` (the
+    /// costs every ten seconds stay with it): what went on in a call the person made is there to
+    /// read afterwards. Started afresh past a megabyte.
+    static func write(_ line: String) {
+        let file = URL.cachesDirectory.appending(path: "live-measure.log")
+        if let size = try? FileManager.default.attributesOfItem(atPath: file.path)[.size] as? Int, size > 1_000_000 {
+            try? FileManager.default.removeItem(at: file)
         }
-        guard let type = NSClassFromString("ReddeLiveCall") as? NSObject.Type else { throw LiveFailure("GPT-Live couldn't load.") }
-        callType = type
-        return type
+        let text = Date.now.formatted(.iso8601.time(includingFractionalSeconds: true)) + " " + line + "\n"
+        if let handle = try? FileHandle(forWritingTo: file) {
+            handle.seekToEndOfFile()
+            handle.write(Data(text.utf8))
+            try? handle.close()
+        } else {
+            try? text.write(to: file, atomically: true, encoding: .utf8)
+        }
     }
 }
+#endif

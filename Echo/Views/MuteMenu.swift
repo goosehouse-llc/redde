@@ -26,6 +26,17 @@ struct MuteMenu: View {
 }
 
 /// The crossed-out bell a muted row wears beside its name.
+/// A bot whose voice mode is a live call (`Settings.liveEngine(for:)`), on its row.
+struct LiveCallMark: View {
+    let engine: LiveEngine
+    var body: some View {
+        Image(systemName: "phone.fill")
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+            .accessibilityLabel("\(engine.name) calls")
+    }
+}
+
 struct MutedMark: View {
     var body: some View {
         Image(systemName: "bell.slash.fill")

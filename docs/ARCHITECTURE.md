@@ -1916,31 +1916,102 @@ check", and hands every real request to the agent (client delegation); the agent
 back for it to say in its own words. Hermes keeps the model, tools, memory and approvals.
 
 - **Not in App Store builds yet.** GPT-Live is a Debug-only compilation condition (`GPT_LIVE`,
-  `Settings.gptLiveIncluded`): without it there is no Conversation row in Settings, and a GPT-Live
-  choice synced from another device leaves voice mode Redde's own (`Settings.usesGPTLive`). A
-  Release build leaves `ReddeLive.framework` and `WebRTC.framework` out of the bundle
-  (`EXCLUDED_SOURCE_FILE_NAMES`). WebRTC's BoringSSL is cryptography that isn't the operating
-  system's, which changes the App Store's export answers and needs a French encryption
-  declaration (docs/app-store-listing.md, Export compliance), so 2.1.1 went without it
-  (decided 2026-10-24). The privacy policy's GPT-Live text was taken out with it and is in
-  a673afa.
+  `Settings.gptLiveIncluded`) until it's finished: without it there is no Conversation row in
+  Settings, and a GPT-Live choice synced from another device leaves voice mode Redde's own
+  (`Settings.usesGPTLive`). 2.1.1 went without it; the privacy policy's GPT-Live text is in
+  a673afa, to go back in when it ships.
 
-- **The call** goes straight from the phone to OpenAI over WebRTC: the microphone (Opus, with
-  WebRTC's echo cancellation on Redde's own voice-chat audio session), the voice coming back, and
-  the `oai-events` data channel. Only the SDP offer and answer pass through whoever sets it up
-  (`LiveSetup`): the person's Hermes, on the Dashboard (`POST /api/audio/voice-live/session`,
-  0.21.3 and later, with an OpenAI key there; its status endpoint says whether it can, asked as
-  the voice screen opens and kept five minutes), else Redde, with an OpenAI key kept in the
-  Keychain (`openai-live-key`, synced like the other keys), posting to OpenAI's
-  `/v1/live/sessions` itself with Hermes's persona and session config. The Hermes API has no way
-  to set a call up, so on it the key in Redde is the way, unless the Dashboard's login is saved.
-- **WebRTC loads only when a call starts.** It is 12 MB of code; linked, it would load with every
-  launch (21 ms, 53 ms the first time after an install, on an iPhone 15 Pro Max, measured
-  2026-10-24). So it lives in `ReddeLive.framework` (`ReddeLive/LiveCall.swift`, the only target
-  that links the stasel/WebRTC package), embedded beside WebRTC.framework and loaded with `dlopen`
-  (`LiveEngine`); the app talks to it through Objective-C protocols compiled into both
-  (`LiveCallBridge.swift`). The voice screen loads it off the main thread as it opens with
-  GPT-Live chosen. A unit test checks nothing has loaded it before a call.
+- **The call** (`LiveCall`) is a WebSocket straight from the phone to OpenAI
+  (`wss://api.openai.com/v1/live/sessions`): `session.start` first, then JSON events both ways,
+  the audio raw mono PCM16 at 16 kHz (`LiveSetup.audioRate`; OpenAI's default is 24 kHz),
+  base64 in `session.input_audio.append` and `session.output_audio.delta`. It was WebRTC until
+  2026-10-24 (stasel/WebRTC in a framework of its own, loaded with `dlopen`; git history), and
+  changed after an A/B on Marta: WebRTC carries Google's BoringSSL, cryptography that isn't the
+  operating system's, which would have changed the App Store's export answer and needed a
+  French encryption declaration, and it was 12 MB of code. The WebSocket is Apple's (URLSession,
+  Apple's TLS), so nothing changes there. Set against WebRTC on Marta: connected sooner (1.7 to
+  2.7 s against 2.4, most of it OpenAI starting the session) and lighter (24 to 31% of a core
+  against 32 to 34, the voice screen included); more data (raw audio: about 0.35 Mbit/s each way
+  at 16 kHz, against WebRTC's Opus at about 0.04), and on a weak signal a lost packet holds up
+  what follows, where WebRTC skips it. OpenAI recommends WebRTC for phones.
+- **The audio** (`LiveCallAudio`) is one AVAudioEngine with Apple's voice processing on the input
+  (echo cancellation works only for sound played through the same I/O unit that records; off in
+  the simulator, where it stops the audio): the microphone through an `AVAudioSinkNode` (each I/O
+  cycle as it comes; a tap gathers 100 ms first), converted and sent 20 ms at a time; the voice's
+  deltas onto an `AVAudioPlayerNode`, behind 120 ms of silence when the queue is empty (60 ms ran
+  dry 2 to 5 times every ten seconds). OpenAI sends the voice's audio as a steady stream, silence included,
+  so speaking is told by its level (0.03, as WebRTC's call did), not by audio arriving. Turning
+  voice processing on switches the session to voice chat, which stops the engine (it is started
+  again on `AVAudioEngineConfigurationChange`, at the microphone's format then) and puts the
+  iPhone's own output on the earpiece (moved back to the loudspeaker unless a headset or the car
+  has it). Both found on Marta: the first calls sent nothing, then played to the earpiece. The
+  restart also clears the player: what it had waiting (and a start time, which the first version
+  used for the 120 ms) was laid out on the old engine's timeline, and the voice, already streaming
+  by then, played into nothing for the whole call (2026-10-25; found with the stand-in's
+  `--stream`, which sends audio all the while as OpenAI does).
+- **Setting it up** (`LiveSetup`): the key kept in Redde (`openai-live-key`, synced like the other
+  keys), on either connection, with Hermes's persona and session config (`sessionStart`).
+  Hermes's own GPT-Live endpoint (`POST /api/audio/voice-live/session`, 0.21.3 and later) sets
+  calls up over WebRTC only, so calls with Hermes's OpenAI key will go through a relay in the
+  Redde plugin; its status endpoint is still asked as the voice screen opens (kept five minutes),
+  for whether the Dashboard knows live voice turns.
+- **Who and which voice**: Settings → Voice → Conversation for the main agent and every bot
+  without a choice of its own; a bot's own in Edit Bot → Voice → Voice mode (`BotVoice.conversation`,
+  `liveVoice`; `Settings.usesGPTLive(for:)`), marked on its row with a phone. The voices are
+  gpt-live-1's (`LiveSetup.voiceGroups`, by language, from OpenAI's live-conversations guide), not
+  the older Realtime ones Redde listed before 2026-10-25. Each can be heard (`LiveVoicePreview`):
+  OpenAI has no samples, so a call of a few seconds in which the voice says one line, made to
+  speak first as OpenAI's guide has a greeting done (the line as a developer message in the
+  session's input, again as `session.commentary.append` with `delegation_id: null` once it has
+  started, and the microphone's side streamed as silence: with no input audio it said nothing).
+  Every append names a delegation, null included, or OpenAI refuses it.
+- **Gemini Live and Grok Voice** (2026-10-25, for cost): the same call, another wire. `LiveEngine`
+  picks a `LiveDialect` that words what Redde sends and reads what comes back as `LiveEvent`s
+  (started, audio, transcript, delegated, withdrawn, interrupted, closed, failed, a keepalive
+  reply); `LiveCall` and `LiveVoice` speak only those. Each engine has its own key in the
+  Keychain (synced), its voices, and its rates (GPT-Live 16 kHz both ways; Gemini and Grok 16 kHz
+  in, 24 kHz out). They hand requests over through one function tool, `ask_agent(request)`, so the
+  agent's answer goes back whole, as the call's result, when the turn ends (GPT-Live's goes a
+  sentence at a time as commentary); the person's own words stay the chat's message, the voice's
+  wording rides in the context. Gemini (`gemini-3.8-live`, key in the address): `setup` →
+  `setupComplete`, the tool NON_BLOCKING so it can talk while the agent works, the answer a
+  `toolResponse` spoken WHEN_IDLE, `interrupted` empties the queued voice, `toolCallCancellation`
+  stops the agent, the conversation so far as initial `clientContent`; a connection lasts about
+  ten minutes (`goAway` ends the call; resumption not built). Grok (`grok-voice-3.0`): the key
+  traded for a five-minute client secret sent as the WebSocket subprotocol (xAI's iOS sample:
+  URLSession drops an Authorization header on the upgrade), `session.update` → `session.updated`,
+  the conversation so far inside the instructions (a separate item costs $0.004), the answer a
+  `function_call_output` and `response.create`, `speech_started` empties the queued voice, pings
+  answered. Neither has GPT-Live's spoken progress: the "still working" update is a turn from the
+  app asking the voice to say so. Previews: Gemini asked by a `clientContent` turn, Grok's line
+  word for word as a `force_message`. The stand-in answers all three wires (it reads which from
+  the first message).
+- **ElevenLabs** (2026-10-25, for its voices; `ElevenLabsDialect`): calls run an agent in the
+  person's ElevenLabs account, which Redde makes the first time with their key ("Redde voice":
+  the `ask_agent` client tool, waiting on it without a time limit and with a typing sound,
+  sign-in required, its prompt, first line, language and voice overridable per call, 16 kHz in
+  and 24 kHz out, a Flash-class model) and remembers by the key's fingerprint (a deleted agent is
+  made again). Each call fetches a short-lived signed address with the key, opens with
+  `conversation_initiation_client_data` (the persona and the conversation so far as its prompt,
+  the voice), and starts on `conversation_initiation_metadata`. Its `interruption` names the last
+  event heard; audio from before it still arriving is dropped. The agent's answer is the
+  `client_tool_result`; progress a quiet `contextual_update`. Voices are the account's
+  (`GET /v2/voices`), each with its own sample, so a preview plays that, no call needed.
+- **Hands-free off** (2026-10-25): one question, one answer, as Redde's own voice. The call
+  hangs up three seconds after the voice has answered something asked (`LiveVoice.checkAnswered`),
+  but not while a request is with the agent, not before the voice has said the agent's answer,
+  and not when the voice ended on a question of its own (the person answers it). Hands-free on,
+  it goes on until hung up or quiet for Settings' minutes.
+- **Spoken prefixes** on a call look through everything the person said since the last request
+  (`LiveVoice.addressed`): the voice talks back ("Home." "Yes?" "Lights off.") and backchannels
+  split a sentence, so the name was seldom at the start of the last words (they never routed).
+  A request routed to another bot's chat hands the call over (`LiveVoice.handOff`): a voice
+  can't change within a session, so a new one on the same service opens as that bot (its name,
+  its voice for that engine, its chat and the request as history) while the microphone and the
+  speaker go on (`LiveCall.reconnect`, which leaves the old connection unheard); the answer is
+  then announced (`LiveDialect.announce`: GPT-Live's commentary with a null delegation, a prompt
+  to Gemini, a `force_message` to Grok), and the person goes on with that bot. The voice screen's
+  face follows the chat's bot as it does in Redde's own voice.
 - **Handing over** (`LiveVoice.delegated`): `session.delegation.created` carries no text, so the
   prompt is the person's last words (the message the chat shows) and the context the last five
   minutes of the exchange (`LiveFragment.delegation`). On a Dashboard that knows live voice
@@ -1953,9 +2024,17 @@ back for it to say in its own words. Hermes keeps the model, tools, memory and a
   as `session.commentary.append` in 1,400-character pieces at most; each tool started is a
   `session.thinking.append` ("Sol is working: calendar. Not done yet."). Hermes Desktop polls
   every 200 ms and sends what has built up; Redde sends each sentence as it completes.
+- **A long wait** is said aloud (`LiveVoice.keepPosted`): with nothing from the agent after 15 s,
+  and every 30 s after, a commentary that it is still working (the tool, if one runs, and how
+  long so far). Commentary, not thinking: OpenAI's voice speaks the one and keeps the other to
+  itself. Hermes Desktop says nothing while it waits. Found on Marta (2026-10-25): the agent's
+  model took 155 s to its first word (a group chat had emptied its cache of the 61,000-token
+  conversation) and the call sat silent until it was ended. On the Hermes API the voice note in
+  the instructions changes the system prompt, which costs such a re-read on every handed-over
+  turn and the turn after; the Dashboard puts it on the message, leaving the cached prefix whole.
 - **The voice session** (`VoiceSession.startLive`, `mirrorLive`) shows the call as its phases:
-  connecting and working as thinking, the voice speaking (from the connection's audio levels,
-  eight times a second, with half a second of quiet before it counts as stopped) as speaking,
+  connecting and working as thinking, the voice speaking (from its audio's level, with half a
+  second of quiet before it counts as stopped) as speaking,
   the rest as listening. No cues between them, no mode or route changes, no thinking sound: one
   cue as the call starts and one as it ends. The orb, the headset, Stop and Done hang up; Pause in
   the car shuts the microphone (`session.input_audio.mute`), the call staying open. A stop phrase
@@ -1964,14 +2043,11 @@ back for it to say in its own words. Hermes keeps the model, tools, memory and a
   as an open microphone does in Redde's own loop. A call quiet for Settings' minutes (2 by
   default) hangs up too: OpenAI bills $0.05 a minute, silence included. A note and a group
   chat's voice stay Redde's own.
-- **Measured on Marta** (2026-10-24, a loopback call through the same WebRTC in a throwaway
-  build): 9.3% of one core for the call, against about 24% for Redde's own voice mode listening
-  (7.5% of which is the voice screen); about +7 MB while a call is up; about 44 kbps out. The
-  phone's own setup (the offer with every host candidate) takes about a tenth of a second; ICE
-  gathering with host addresses only completes in about 110 ms, so waiting for all of it costs
-  nothing worth saving. `-echo.liveMeasure` logs each step of setting a call up and the call's
-  cost every ten seconds; `scripts/live-standin.py` stands in for OpenAI (and the agent) to try a
-  whole call with no key, `-echo.liveEndpoint` pointing a DEBUG build at it.
+- **Measuring:** `-echo.liveMeasure` (DEBUG) logs each step of setting a call up, the call's
+  cost every ten seconds, the connection's data each way, how much of the voice was queued and
+  how often it ran dry, and how long the voice took to answer, to Library/Caches/live-measure.log;
+  `scripts/live-standin.py` stands in for OpenAI's socket (and the agent) to try a whole call with
+  no key, `-echo.liveEndpoint ws://…` pointing a DEBUG build at it.
 - **What it gives up:** Redde's voices (Kokoro, a bot's voice, the voice speed): everyone speaks
   in OpenAI's voice, the one Hermes is set to through Hermes (`voice.gpt_live.voice`), else the
   one picked in Settings. Answering a request aloud: a request goes to the screen, and the voice

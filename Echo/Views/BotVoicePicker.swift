@@ -5,7 +5,8 @@ import SwiftUI
 /// reads with now (Settings → Voice → Reply voice: the built-in voices for the listening language,
 /// or the Kokoro server's), each with a sample to hear. Kept on the phone, per server, and synced
 /// with iCloud. Hermes's own voice is the server's, one for every bot. Its speed too: its own, or
-/// Redde's (Settings → Voice → Voice speed).
+/// Redde's (Settings → Voice → Voice speed). And, in builds with GPT-Live, who holds its voice
+/// conversations, and GPT-Live's voice in them (`conversationSection`).
 struct BotVoicePicker: View {
     let bot: HermesBot
     let mainName: String
@@ -23,6 +24,7 @@ struct BotVoicePicker: View {
     var body: some View {
         NavigationStack {
             Form {
+                if Settings.gptLiveIncluded { conversationSection }
                 if engine == .hermes {
                     Section {
                         Text("Replies are read in Hermes's own voice (Settings → Voice → Reply voice), one for every bot. Pick Built-in or Kokoro there for each bot to have a voice of its own.")
@@ -86,6 +88,53 @@ struct BotVoicePicker: View {
 
     private func isPicked(_ id: String) -> Bool { picked?.kokoro == id || picked?.onDevice == id }
 
+    /// Redde or a live engine for its voice conversations, or as Settings → Voice → Conversation has
+    /// it; on a live engine, that engine's voice for it.
+    private var conversationSection: some View {
+        let appWide = settings.voiceEngine.live?.name ?? "Redde"
+        let engine = settings.liveEngine(for: bot.name)
+        return Section {
+            Picker("Conversation", selection: Binding(
+                get: { picked?.conversation },
+                set: { choice in update { $0.conversation = choice } })) {
+                Text("As in Settings (\(appWide))").tag(BotConversation?.none)
+                Text("Redde").tag(BotConversation?.some(.redde))
+                ForEach(LiveEngine.allCases, id: \.self) { engine in
+                    Text(engine.name).tag(BotConversation(rawValue: engine.rawValue))
+                }
+            }
+            .pickerStyle(.menu)
+            if let engine {
+                let inherited = "As in Settings (\(engine.voiceName(settings.appLiveVoice(engine))))"
+                let own = picked?.liveVoices?[engine.rawValue].flatMap { engine.voicesFromAccount || engine.voices.contains($0) ? $0 : nil }
+                NavigationLink {
+                    LiveVoiceList(engine: engine, selection: Binding(
+                        get: { own },
+                        set: { voice in update { record in
+                            var voices = record.liveVoices ?? [:]
+                            voices[engine.rawValue] = voice
+                            record.liveVoices = voices.isEmpty ? nil : voices
+                        } }),
+                                  inherit: inherited, name: name)
+                } label: {
+                    LabeledContent("\(engine.name) voice", value: own.map(engine.voiceName) ?? inherited)
+                }
+            }
+        } header: {
+            Text("Voice mode")
+        } footer: {
+            Text(engine.map { "Voice mode in \(name)'s chat is a \($0.name) call: \($0.company)'s voice talks with you and hands anything real to \(name). Group chats, read-aloud and the voice below stay Redde's." }
+                 ?? "Voice mode in \(name)'s chat is Redde's: your iPhone hears you, \(name) answers, and the voice below reads it.")
+        }
+    }
+
+    /// Changes its record, dropping it once nothing is left picked.
+    private func update(_ change: (inout BotVoice) -> Void) {
+        var voice = picked ?? BotVoice()
+        change(&voice)
+        settings.botVoicesHere[bot.name] = voice.isEmpty ? nil : voice
+    }
+
     /// Its own speed, or Redde's: a switch, and the slider while it is on.
     private var speedSection: some View {
         Section {
@@ -111,10 +160,8 @@ struct BotVoicePicker: View {
     }
 
     private func setSpeed(_ speed: Double?, hear: Bool = true) {
-        var voice = picked ?? BotVoice()
-        voice.speed = speed
-        settings.botVoicesHere[bot.name] = voice.isEmpty ? nil : voice
-        if hear { play(voice.isAutomatic ? nil : voice) }
+        update { $0.speed = speed }
+        if hear { play(picked.flatMap { $0.isAutomatic ? nil : $0 }) }
     }
 
     /// What Automatic gives it now.
@@ -161,10 +208,12 @@ struct BotVoicePicker: View {
         }
     }
 
-    /// Another voice; its speed stays as it was.
+    /// Another voice; its speed and conversation stay as they were.
     private func set(_ voice: BotVoice?) {
         var record = voice ?? BotVoice()
         record.speed = picked?.speed
+        record.conversation = picked?.conversation
+        record.liveVoices = picked?.liveVoices
         settings.botVoicesHere[bot.name] = record.isEmpty ? nil : record
         play(voice)
     }

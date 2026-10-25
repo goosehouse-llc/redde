@@ -144,21 +144,26 @@ final class VoiceSession {
     /// What GPT-Live's voice is saying, for the screen while it speaks.
     private(set) var liveSaid = ""
     var isLive: Bool { live != nil }
+    /// Who holds the call, while there is one.
+    var liveEngine: LiveEngine? { live?.engine }
     /// A GPT-Live call being set up.
     var liveConnecting: Bool { live.map { !$0.connected } ?? false }
     /// The call's start cue has played: its end gets the stop cue.
     private var liveCued = false
     /// Settings → Voice → Conversation is GPT-Live, and what makes a call. Injectable so tests choose.
-    private let liveWanted: () -> Bool
+    private let liveWanted: (_ profile: String?) -> Bool
     private let makeLive: (Conversation) -> LiveVoice
     /// The microphone allowed (a call needs no speech recognition). Injectable like `requestPermissions`.
     private let micAllowed: () async -> Bool
 
     /// How loud the person is, 0…1, for the screen: the call's on GPT-Live, else the recogniser's.
-    var micLevel: Float { live?.inputLevel ?? recognizer.meterLevel }
-    var micSmoothedLevel: Float { live?.inputLevel ?? recognizer.level }
+    var micLevel: Float { live.map { Self.metered($0.inputLevel) } ?? recognizer.meterLevel }
+    var micSmoothedLevel: Float { live.map { Self.metered($0.inputLevel) } ?? recognizer.level }
     /// How loud the reply is, 0…1: GPT-Live's voice, else Redde's.
-    var replyLevel: Float { live?.outputLevel ?? output.meterLevel }
+    var replyLevel: Float { live.map { Self.metered($0.outputLevel) } ?? output.meterLevel }
+    /// A call's level (RMS) on the meters' scale, -50…0 dB as 0…1, as the face and the waveform
+    /// take Redde's own voice and microphone.
+    static func metered(_ rms: Float) -> Float { min(max((20 * log10(max(rms, 1e-6)) + 50) / 50, 0), 1) }
 
     let recognizer: any VoiceRecognizing
     let output: any VoiceSpeaking
@@ -297,7 +302,7 @@ final class VoiceSession {
          thinkingSoundWanted: @escaping () -> Settings.ThinkingSound = { Settings.shared.thinkingSound },
          thinkingSound: any ThinkingSounding = ThinkingSoundPlayer.shared,
          respond: ((SpokenRequest.Answer) -> Void)? = nil,
-         liveWanted: @escaping () -> Bool = { Settings.shared.usesGPTLive },
+         liveWanted: @escaping (_ profile: String?) -> Bool = { Settings.shared.usesLiveCall(for: $0) },
          makeLive: @escaping (Conversation) -> LiveVoice = { LiveVoice(conversation: $0) },
          micAllowed: @escaping () async -> Bool = { await AVAudioApplication.requestRecordPermission() }) {
         self.liveWanted = liveWanted
@@ -483,8 +488,9 @@ final class VoiceSession {
         if capturing, phase != .idle, !isErrored { return }
         replaying = false
         guard phase == .idle || phase == .speaking || isErrored else { return }
-        // GPT-Live: a call instead. A note and a group chat's voice stay Redde's own.
-        if !capturing, sendsTo == nil, liveWanted() {
+        // GPT-Live: a call instead, where the chat's bot (or the app) has it. A note and a group
+        // chat's voice stay Redde's own.
+        if !capturing, sendsTo == nil, liveWanted(conversation.bot?.profile) {
             output.stop()
             startLive()
             return
@@ -512,7 +518,7 @@ final class VoiceSession {
         guard !continuous, !carPlayConnected else { return }
         // A call, too: an open microphone on a locked phone, and a bill running.
         if live != nil {
-            log.info("left the foreground on a GPT-Live call: hanging up")
+            log.info("left the foreground on a live call: hanging up")
             cancel()
             return
         }
@@ -663,7 +669,9 @@ final class VoiceSession {
             guard let self, let live, self.live === live else { return }
             mirrorLive()
         }
-        activeTool = "Calling GPT-Live…"
+        // Hands-free off: one question, one answer, as Redde's own voice does.
+        live.endsAfterAnswer = { [weak self] in !(self?.continuous ?? true) }
+        activeTool = "Calling \(live.engine.name)…"
         phase = .thinking
         Task {
             guard await micAllowed() else {
@@ -705,7 +713,7 @@ final class VoiceSession {
         if live.connected, !liveCued {
             liveCued = true
             earcon(.listening)
-            audio.refreshRoute()   // WebRTC's voice-processing unit just reset the output
+            audio.refreshRoute()   // the call's voice processing just reset the output
         }
     }
 

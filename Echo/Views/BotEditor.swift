@@ -66,7 +66,8 @@ struct BotEditor: View {
 
     /// A picked voice, in a word: its name, or Redde's own.
     static func voiceSummary(_ voice: BotVoice) -> String {
-        let speed = voice.speed.map { String(format: " · %.2f×", $0) } ?? ""
+        var speed = voice.speed.map { String(format: " · %.2f×", $0) } ?? ""
+        if Settings.gptLiveIncluded, let conversation = voice.conversation { speed += " · " + (conversation.live?.name ?? "Redde") }
         if voice.sameAsMain == true { return "Same as the main agent" + speed }
         if let id = voice.kokoro { return BotVoicePicker.kokoroName(id) + speed }
         if let id = voice.onDevice { return (AVSpeechSynthesisVoice(identifier: id)?.name ?? "A built-in voice") + speed }
@@ -169,7 +170,9 @@ struct BotEditor: View {
                         }
                         .foregroundStyle(.primary)
                     } footer: {
-                        Text("What its replies are read in, in voice mode, group chats and the car.")
+                        Text(Settings.gptLiveIncluded
+                             ? "What its replies are read in, in voice mode, group chats and the car, and whether its voice mode is Redde's or a GPT-Live call."
+                             : "What its replies are read in, in voice mode, group chats and the car.")
                     }
                     .sheet(isPresented: $pickingVoice) { BotVoicePicker(bot: editing, mainName: mainName) }
                 }

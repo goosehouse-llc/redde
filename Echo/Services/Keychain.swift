@@ -22,6 +22,12 @@ nonisolated enum Keychain {
         case fastLaneAPIKey = "fast-lane-api-key"
         /// An OpenAI key kept in Redde for GPT-Live, where the person's Hermes can't set a call up.
         case openAILive = "openai-live-key"
+        /// A Google AI Studio (Gemini API) key for Gemini Live calls.
+        case geminiLive = "gemini-live-key"
+        /// An xAI key for Grok Voice calls.
+        case grokVoice = "grok-voice-key"
+        /// An ElevenLabs key for ElevenLabs voice-agent calls.
+        case elevenLabsLive = "elevenlabs-live-key"
         case cfAccessClientSecret = "cf-access-client-secret"
         /// The person's own headers for a server behind a reverse proxy (`CustomHeader`, as JSON).
         case customHeaders = "custom-headers"
@@ -43,11 +49,11 @@ nonisolated enum Keychain {
     private static let cache = OSAllocatedUnfairLock<[String: String?]>(initialState: [:])
 
     /// What goes to iCloud Keychain with Sync with iCloud on: a server's connection secrets (its
-    /// profiles' API keys too, `gateway-api-key.<profile>@…`), the OpenAI-compatible key and
-    /// GPT-Live's. Never a browser sign-in (each device refreshes its own tokens), the push
+    /// profiles' API keys too, `gateway-api-key.<profile>@…`), the OpenAI-compatible key and the
+    /// live calls' (GPT-Live, Gemini Live, Grok Voice). Never a browser sign-in (each device refreshes its own tokens), the push
     /// registration secret or this device's SSH key.
     static let syncable: [Item] = [.gatewayAPIKey, .serveDashboardPassword, .cfAccessClientSecret, .customHeaders, .pangolinDashboard,
-                                   .pangolinAPI, .fastLaneAPIKey, .openAILive]
+                                   .pangolinAPI, .fastLaneAPIKey, .openAILive, .geminiLive, .grokVoice, .elevenLabsLive]
     static func isSyncable(account: String) -> Bool {
         syncable.contains { account == $0.rawValue || account.hasPrefix($0.rawValue + "@") || account.hasPrefix($0.rawValue + ".") }
     }

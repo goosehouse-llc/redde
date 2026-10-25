@@ -1,67 +1,88 @@
 import Foundation
 import os
 
-/// Who sets a GPT-Live call up (`LiveVoice`): the person's Hermes, which keeps the OpenAI key
-/// (its Dashboard, 0.21.3 and later, with a key there), or else Redde, with a key kept in it
-/// (Settings → Voice → Conversation). The Hermes API has no way to set one up, so on it the key
-/// in Redde is what there is, unless the Dashboard's login is saved too. Either way the call
-/// itself goes straight from the phone to OpenAI, and only the offer and answer pass through.
+/// How a live call is set up (`LiveVoice`): where its WebSocket connects, with which key, and
+/// what the session opens with, for the engine the chat's voice mode uses (`LiveEngine`): the key
+/// kept in Redde for that engine, on either connection. Hermes's own GPT-Live endpoint sets calls
+/// up over WebRTC only, which Redde no longer carries (LiveCall says why); calls with Hermes's key
+/// will go through a relay in the Redde plugin.
 struct LiveSetup {
-    typealias Resolver = @MainActor @Sendable (Conversation, Settings) async throws -> LiveSetup
-    typealias Opener = @MainActor @Sendable (_ offer: String, _ history: [JSONValue]) async throws -> String
+    typealias Resolver = @MainActor @Sendable (Conversation, Settings, LiveEngine) async throws -> LiveSetup
+    typealias Opener = @MainActor @Sendable (_ history: [LiveLine]) async throws -> LiveConnection
 
     /// For the log: which way the call was set up.
     let label: String
     /// The turns it hands over can go to the Dashboard as live voice turns (`LiveTurn.surface`).
     let hermesKnowsLiveTurns: Bool
-    /// Takes the phone's SDP offer (and the conversation so far, for the voice to know it) and
-    /// gives OpenAI's answer.
+    /// Where to connect, given the conversation so far for the voice to know it.
     let open: Opener
 
-    static let model = "gpt-live-1"
-    static let defaultVoice = "marin"
-    /// OpenAI's voices, for a call Redde sets up; through Hermes the voice is Hermes's setting.
-    static let voices = ["marin", "cedar", "alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse"]
-    static let endpoint = URL(string: "https://api.openai.com/v1/live/sessions")!
+    nonisolated static let model = "gpt-live-1"
+    nonisolated static let defaultVoice = "marin"
+    /// OpenAI's voices for gpt-live-1, by the language each speaks (its live-conversations guide,
+    /// read 2026-10-25), Marin, the default it names, first. Not the older voices of its other
+    /// services (Alloy, Coral, Verse…), which Redde listed until then.
+    nonisolated static let voiceGroups: [(language: String, voices: [String])] = [
+        ("English", ["marin", "quartz", "ripple", "vesper", "willow", "stone", "gleam", "meridian", "beacon", "delta", "cinder"]),
+        ("Portuguese", ["bossa", "tempo"]),
+        ("German", ["nuri", "juni", "flitz"]),
+        ("French", ["brise", "sillage"]),
+        ("Hindi", ["nira"]),
+        ("Japanese", ["harema", "shida"]),
+        ("Korean", ["noeul"]),
+    ]
+    nonisolated static let voices = voiceGroups.flatMap(\.voices)
+    nonisolated static let endpoint = URL(string: "wss://api.openai.com/v1/live/sessions")!
+    /// The call's audio both ways. OpenAI takes 24 kHz (its default) or 16 kHz PCM16 over a
+    /// WebSocket, sent raw; 16 kHz is a third less data (about 0.35 Mbit/s each way) for speech.
+    /// `-echo.liveRate 24000` (DEBUG) tries the other.
+    nonisolated static var audioRate: Double {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        if let at = arguments.firstIndex(of: "-echo.liveRate"), at + 1 < arguments.count, let rate = Double(arguments[at + 1]) { return rate }
+        #endif
+        return 16_000
+    }
 
     private static let log = Logger(subsystem: "com.goosehouse.echo", category: "live")
 
     // MARK: - Choosing
 
-    static func resolve(_ conversation: Conversation, _ settings: Settings) async throws -> LiveSetup {
+    static func resolve(_ conversation: Conversation, _ settings: Settings, _ engine: LiveEngine) async throws -> LiveSetup {
+        let profile = conversation.bot?.profile
+        let name = conversation.bot?.name ?? settings.headerTitle
+        let voice = settings.liveVoice(for: profile, engine: engine)
+        let plan = { (history: [LiveLine]) in
+            LivePlan(voice: voice, instructions: persona(name: name, engine: engine, others: addressable(settings, besides: name)), history: history,
+                     agent: engine == .gptLive ? nil : LiveAgentTool(agentName: name))
+        }
+        // The Dashboard knows live voice turns where it has GPT-Live's endpoints (0.21.3 on).
+        let hermes = BotDirectory.reachable(settings) ? await status(profile: profile, settings: settings) : nil
+        let knows = hermes != nil && settings.transport == .hermesServe
         #if DEBUG
-        // `-echo.liveEndpoint <url>`: a stand-in for OpenAI's sessions (scripts/live-standin.py).
+        // `-echo.liveEndpoint ws://…`: a stand-in for the service (scripts/live-standin.py, which
+        // answers each engine's wire).
         if let lab = DevHooks.value("-echo.liveEndpoint").flatMap(URL.init(string:)) {
-            let voice = settings.liveVoice, instructions = persona(name: settings.headerTitle)
-            return LiveSetup(label: "the stand-in at \(lab.absoluteString)", hermesKnowsLiveTurns: false) { offer, history in
-                try await openWithOpenAI(offer: offer, history: history, key: "stand-in", voice: voice, instructions: instructions, at: lab)
+            return LiveSetup(label: "the stand-in at \(lab.absoluteString)", hermesKnowsLiveTurns: knows) { history in
+                LiveConnection(url: lab, plan: plan(history))
             }
         }
         #endif
-        let profile = conversation.bot?.profile
-        let hermes = BotDirectory.reachable(settings) ? await status(profile: profile, settings: settings) : nil
-        // The Dashboard knows live voice turns where it has the endpoints (0.21.3 on).
-        let knows = hermes != nil && settings.transport == .hermesServe
-        if hermes?.available == true {
-            return LiveSetup(label: "Hermes", hermesKnowsLiveTurns: knows) { offer, history in
-                try await openThroughHermes(offer: offer, history: history, profile: profile)
+        if let key = Keychain.read(engine.keyItem)?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty {
+            return LiveSetup(label: "Redde's \(engine.company) key", hermesKnowsLiveTurns: knows) { history in
+                let endpoint = try await engine.dialect.endpoint(key: key)
+                return LiveConnection(url: endpoint.url, headers: endpoint.headers, plan: plan(history))
             }
         }
-        if let key = Keychain.read(.openAILive)?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty {
-            let voice = settings.liveVoice
-            let instructions = persona(name: conversation.bot?.name ?? settings.headerTitle)
-            return LiveSetup(label: "Redde's OpenAI key", hermesKnowsLiveTurns: knows) { offer, history in
-                try await openWithOpenAI(offer: offer, history: history, key: key, voice: voice, instructions: instructions)
-            }
+        if engine == .gptLive, hermes?.available == true {
+            throw LiveFailure("Calls with your Hermes's OpenAI key come with the next Redde plugin. Until then, add your own key in Settings → Voice → Conversation.")
         }
-        throw LiveFailure(hermes != nil
-            ? "Your Hermes has no OpenAI key for GPT-Live. Add one to it (OPENAI_API_KEY), or add your own in Redde under Settings → Voice → Conversation."
-            : "GPT-Live needs an OpenAI key: on your Hermes (0.21.3 or later, through the Dashboard) or in Redde, under Settings → Voice → Conversation.")
+        throw LiveFailure("\(engine.name) needs your \(engine.company) key, in Settings → Voice → Conversation.")
     }
 
-    // MARK: - Through Hermes
+    // MARK: - What Hermes says
 
-    /// What the Dashboard says of GPT-Live for a profile: whether it can set a call up. Nil when
+    /// What the Dashboard says of GPT-Live for a profile: whether it could set a call up. Nil when
     /// it can't be asked (Hermes before 0.21.3, or not reachable). Kept for a few minutes, and
     /// asked for when the voice screen opens, so a call doesn't wait on it.
     struct Status: Equatable, Sendable {
@@ -92,104 +113,87 @@ struct LiveSetup {
         return status
     }
 
-    /// Looks ahead while the voice screen opens: the framework loaded, the Dashboard asked.
+    /// Looks ahead while the voice screen opens: the Dashboard asked.
     static func prepare(_ conversation: Conversation, _ settings: Settings) {
-        LiveEngine.preload()
         guard BotDirectory.reachable(settings) else { return }
         let profile = conversation.bot?.profile
         Task { _ = await status(profile: profile, settings: settings) }
     }
 
-    private static func openThroughHermes(offer: String, history: [JSONValue], profile: String?) async throws -> String {
-        var path = "api/audio/voice-live/session"
-        if let profile { path += "?profile=" + (profile.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? profile) }
-        // The offer exactly as made: OpenAI's SDP parser wants its last line break too.
-        let reply = try await HermesServeClient.shared.restJSON("POST", path, body: .object(["sdp": .string(offer), "history": .array(history)]),
-                                                                timeout: 45)
-        guard let answer = reply["transport"]?["sdp"]?.string else { throw LiveFailure("Your Hermes didn't set the GPT-Live call up.") }
-        return answer
-    }
-
-    // MARK: - With Redde's key
-
-    private static func openWithOpenAI(offer: String, history: [JSONValue], key: String, voice: String, instructions: String,
-                                       at url: URL = endpoint) async throws -> String {
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.timeoutInterval = 30
-        request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONEncoder().encode(body(offer: offer, history: history, voice: voice, instructions: instructions))
-        let (data, response) = try await URLSession.shared.data(for: request)
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        guard (200..<300).contains(status) else {
-            let detail = (try? JSONValue.parse(data))?["error"]?["message"]?.string ?? String(decoding: data.prefix(300), as: UTF8.self)
-            throw LiveFailure(status == 401 ? "OpenAI didn't take the key kept in Redde for GPT-Live." : "OpenAI refused the call (\(status)): \(detail)")
-        }
-        guard let answer = (try? JSONValue.parse(data))?["transport"]?["sdp"]?.string else { throw LiveFailure("OpenAI didn't answer the call.") }
-        return answer
-    }
-
-    /// The request for a session, as Hermes makes it (tools/voice_live.py): the model, who the
-    /// voice is and when to hand over, the voice, the agent as the one handed to, and the call.
-    static func body(offer: String, history: [JSONValue], voice: String, instructions: String) -> JSONValue {
-        var session: [String: JSONValue] = [
-            "model": .string(model),
-            "instructions": .string(instructions),
-            "audio": .object(["output": .object(["voice": .string(voice)])]),
-            "delegation": .object(["type": .string("client")]),
-        ]
-        if !history.isEmpty { session["input"] = .array(history) }
-        return .object(["session": .object(session), "transport": .object(["type": .string("webrtc"), "sdp": .string(offer)])])
-    }
+    // MARK: - The session
 
     /// Who the voice is, after Hermes's (`LIVE_PERSONA`): short, as OpenAI asks of a live model,
-    /// and with when to hand over to the agent and when not.
-    static func persona(name: String) -> String {
-        """
-        You are \(name), a calm and friendly voice assistant. Speak naturally at an unhurried pace. \
-        Be clear and direct, not overly cheerful. If the user is frustrated, acknowledge it briefly \
-        and focus on the next helpful step.
+    /// and with when to hand over to the agent and when not. GPT-Live hands over by delegation;
+    /// the others through the one tool they are given (`LiveAgentTool`).
+    /// The bots the person can name to reach (their spoken prefixes, Settings → Voice), but the one
+    /// the voice is: it is told to hand such requests over as they are, for the app to route; told
+    /// only of its own agent, it answered "Home, …" itself and nothing was routed (2026-10-25).
+    static func addressable(_ settings: Settings, besides name: String) -> [String] {
+        var seen: Set<String> = [name.lowercased()]
+        return settings.spokenPrefixes.filter { $0.isActive && !($0.bot ?? "").isEmpty }
+            .map(\.word).filter { !$0.isEmpty && seen.insert($0.lowercased()).inserted }
+    }
 
-        Backchannel policy: Use moderate backchannels. Acknowledge naturally without competing with \
-        the main response.
+    static func persona(name: String, engine: LiveEngine = .gptLive, others: [String] = []) -> String {
+        let backend = engine == .gptLive
+            ? """
+              Delegation policy:
+              Backend tools:
+              - \(name)'s agent: a full AI agent with tools. It can run commands, read and edit files, \
+              browse the web, search, remember things across sessions, schedule tasks, use the user's \
+              phone, and reason carefully about anything. It is the one who actually does work and knows facts.
 
-        Interruption policy: Stop speaking when the user interrupts. Listen to what they say.
+              Delegate to the backend when:
+              """
+            : """
+              Tool policy:
+              You have one tool, \(LiveAgentTool.name), which hands a request to \(name)'s agent: a full AI \
+              agent with tools. It can run commands, read and edit files, browse the web, search, remember \
+              things across sessions, schedule tasks, use the user's phone and home, and reason carefully \
+              about anything. It is the one who actually does work and knows facts. Its answer comes back \
+              as the tool's result: say it in your own words, briefly.
 
-        Delegation policy:
-        Backend tools:
-        - \(name)'s agent: a full AI agent with tools. It can run commands, read and edit files, \
-        browse the web, search, remember things across sessions, schedule tasks, use the user's \
-        phone, and reason carefully about anything. It is the one who actually does work and knows facts.
+              Call \(LiveAgentTool.name) when:
+              """
+        let delegate = engine == .gptLive ? "Delegate" : "Call it"
+        let addressed = others.isEmpty ? "" : "\n\nOther agents: the user may address \(others.joined(separator: ", ")) by name (\"\(others[0]), …\"). "
+            + "The app sends such a request to that agent. \(delegate == "Delegate" ? "Delegate it" : "Call \(LiveAgentTool.name) with it, the name included,") "
+            + "like any request, and never answer for them or say you can't reach them."
+        return """
+            You are \(name), a calm and friendly voice assistant. Speak naturally at an unhurried pace. \
+            Be clear and direct, not overly cheerful. If the user is frustrated, acknowledge it briefly \
+            and focus on the next helpful step.
 
-        Delegate to the backend when:
-        - The user asks a question that needs facts, current information, or careful reasoning.
-        - The user asks you to do, check, find, make, fix, run or remember anything.
-        - A correction changes work already requested.
+            Backchannel policy: Use moderate backchannels. Acknowledge naturally without competing with \
+            the main response.
 
-        Do not delegate to the backend when:
-        - The user greets you, makes small talk, or asks you to repeat a result already provided.
-        - You need a brief clarification to understand the request.
+            Interruption policy: Stop speaking when the user interrupts. Listen to what they say.
 
-        Delegate before giving an answer that depends on backend work. Do not guess the result \
-        while waiting; say briefly that you are checking, then wait for the result.
-        """
+            \(backend)
+            - The user asks a question that needs facts, current information, or careful reasoning.
+            - The user asks you to do, check, find, make, fix, run or remember anything.
+            - A correction changes work already requested.
+
+            Do not \(delegate.lowercased()) when:
+            - The user greets you, makes small talk, or asks you to repeat a result already provided.
+            - You need a brief clarification to understand the request.\(addressed)
+
+            \(delegate) before giving an answer that depends on that work. Do not guess the result \
+            while waiting; say briefly that you are checking, then wait for the result.
+            """
     }
 
     /// The conversation so far for the voice to know, as Hermes Desktop seeds it: text only,
     /// newest kept, 24 messages and 6,000 characters at most, 1,200 of any one.
-    static func history(_ messages: [Message]) -> [JSONValue] {
-        var kept: [JSONValue] = []
+    static func history(_ messages: [Message]) -> [LiveLine] {
+        var kept: [LiveLine] = []
         var budget = 6_000
         for message in messages.reversed() {
             let text = String(message.text.split(whereSeparator: \.isWhitespace).joined(separator: " ").prefix(1_200))
             guard !text.isEmpty else { continue }
             guard kept.count < 24, budget - text.count >= 0 else { break }
             budget -= text.count
-            let user = message.role == .user
-            kept.insert(.object(["type": .string("message"), "role": .string(user ? "user" : "assistant"),
-                                 "content": .array([.object(["type": .string(user ? "input_text" : "output_text"), "text": .string(text)])])]),
-                        at: 0)
+            kept.insert(LiveLine(fromPerson: message.role == .user, text: text), at: 0)
         }
         return kept
     }

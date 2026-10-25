@@ -85,7 +85,7 @@ struct VoiceView: View {
         .onAppear {
             session.attachHeadsetControls()
             // GPT-Live: its framework loaded and the Dashboard asked now, not when the orb is tapped.
-            if Settings.shared.usesGPTLive, group == nil { LiveSetup.prepare(conversation, .shared) }
+            if Settings.shared.usesLiveCall(for: conversation.bot?.profile), group == nil { LiveSetup.prepare(conversation, .shared) }
         }
         .onDisappear { session.detachHeadsetControls(); session.cancel(); session.setLooking(false) }
     }
@@ -475,7 +475,7 @@ struct VoiceView: View {
         }
         if session.isLive {
             switch phase {
-            case .thinking where session.liveConnecting: return "Calling GPT-Live"
+            case .thinking where session.liveConnecting: return "Calling \(session.liveEngine?.name ?? "GPT-Live")"
             case .idle: return session.isMuted ? "Muted" : "Ready"
             case .listening: return "On a call"
             default: break

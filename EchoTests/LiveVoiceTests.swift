@@ -5,24 +5,28 @@ import Testing
 
 /// GPT-Live (`LiveVoice`): the call set up, what the service says turned into turns for the agent,
 /// the agent's answer sent back a sentence at a time, and the voice session showing the call.
-/// A fake call stands in for WebRTC and OpenAI; what a real call does on a phone is measured
-/// there, not here.
+/// A fake call stands in for the WebSocket and OpenAI; what a real call does on a phone is
+/// measured there, not here.
 @MainActor
 struct LiveVoiceTests {
     // MARK: Fakes
 
-    /// The call: what was sent on its channel, as JSON, and what the app asked of it.
-    final class FakeCall: NSObject, LiveCalling {
+    /// The call: what was sent on its connection, as JSON, and what the app asked of it.
+    final class FakeCall: LiveCalling {
         weak var listener: LiveCallListening?
         private(set) var sent: [JSONValue] = []
         private(set) var muted = false
         private(set) var closed = false
-        private(set) var answer: String?
+        private(set) var opened = false
+        private(set) var connection: LiveConnection?
+        /// The sessions it went on to (another bot's voice), in order.
+        private(set) var reconnections: [LiveConnection] = []
         var inputLevel: Float = 0
         var outputLevel: Float = 0
 
-        func makeOffer(_ done: @escaping (String?, String?) -> Void) { done("offer-sdp\r\n", nil) }
-        func accept(_ answer: String, done: @escaping (String?) -> Void) { self.answer = answer; done(nil) }
+        func open() throws { opened = true }
+        func connect(_ connection: LiveConnection) async throws { self.connection = connection }
+        func reconnect(_ connection: LiveConnection) async throws { reconnections.append(connection) }
         func send(_ event: String) -> Bool {
             guard !closed, let parsed = try? JSONValue.parse(Data(event.utf8)) else { return false }
             sent.append(parsed)
@@ -33,7 +37,7 @@ struct LiveVoiceTests {
 
         /// The service says something.
         func receive(_ event: String) { listener?.liveCallReceived(event) }
-        func state(_ state: LiveCallState) { listener?.liveCallChanged(state.rawValue) }
+        func state(_ state: LiveCallState) { listener?.liveCallChanged(state) }
         func sent(_ type: String) -> [JSONValue] { sent.filter { $0["type"]?.string == type } }
     }
 
@@ -43,14 +47,22 @@ struct LiveVoiceTests {
         private var kept: [TurnRequest] = []
         var requests: [TurnRequest] { lock.withLock { kept } }
         let reply: [TurnEvent]
-        init(reply: [TurnEvent]) { self.reply = reply }
+        /// How long the agent takes to start answering.
+        let after: Duration
+        init(reply: [TurnEvent], after: Duration = .zero) {
+            self.reply = reply
+            self.after = after
+        }
         nonisolated func stream(_ request: TurnRequest) -> AsyncThrowingStream<TurnEvent, Error> {
             lock.withLock { kept.append(request) }
-            let reply = reply
+            let reply = reply, after = after
             return AsyncThrowingStream { continuation in
-                for event in reply { continuation.yield(event) }
-                continuation.yield(.done)
-                continuation.finish()
+                Task {
+                    if after > .zero { try? await Task.sleep(for: after) }
+                    for event in reply { continuation.yield(event) }
+                    continuation.yield(.done)
+                    continuation.finish()
+                }
             }
         }
     }
@@ -61,33 +73,45 @@ struct LiveVoiceTests {
         let conversation: Conversation
         let settings: Settings
         let live: LiveVoice
-        /// What the setup was given: the offer, and the conversation so far.
-        let opened = Box<(String, [JSONValue])?>(nil)
+        /// What the setup was given: the conversation so far.
+        let opened = Box<[LiveLine]?>(nil)
+        let engine: LiveEngine
 
-        init(reply: [TurnEvent] = [.textDelta("Your meeting is at 4 pm. "), .textDelta("It's with Ana.")], hangUp: Int = 2) {
+        init(reply: [TurnEvent] = [.textDelta("Your meeting is at 4 pm. "), .textDelta("It's with Ana.")], hangUp: Int = 2,
+             answerAfter: Duration = .zero, posting: LiveVoice.Posting = LiveVoice.Posting(), engine: LiveEngine = .gptLive) {
+            self.engine = engine
             settings = Settings(defaults: UserDefaults(suiteName: "live-\(UUID().uuidString)")!)
             settings.transport = .chatCompletions
             settings.fastLaneURL = "http://example.invalid:11500"
             settings.fastLaneModel = "test"
             settings.liveHangUp = hangUp
-            transport = RecordingTransport(reply: reply)
+            transport = RecordingTransport(reply: reply, after: answerAfter)
             let store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "live-\(UUID().uuidString)"))
             conversation = Conversation(settings: settings, store: store, transportOverride: transport)
             let call = call, opened = opened
-            live = LiveVoice(conversation: conversation, settings: settings,
-                             makeCall: { listener in call.listener = listener; return call },
-                             setUp: { _, _ in
-                                 LiveSetup(label: "test", hermesKnowsLiveTurns: true) { offer, history in
-                                     opened.value = (offer, history)
-                                     return "answer-sdp"
+            live = LiveVoice(conversation: conversation, settings: settings, engine: engine,
+                             makeCall: { listener, _ in call.listener = listener; return call },
+                             setUp: { _, _, _ in
+                                 LiveSetup(label: "test", hermesKnowsLiveTurns: true) { history in
+                                     opened.value = history
+                                     return LiveConnection(url: URL(string: "wss://example.invalid/live")!, headers: ["Authorization": "Bearer test"],
+                                                           plan: LivePlan(voice: "marin", instructions: "", history: history))
                                  }
+                             }, posting: posting,
+                             goToBot: { conversation, bot, _ in
+                                 conversation.replaceForDemo(messages: conversation.messages, bot: BotRef(profile: bot, name: bot.capitalized))
                              })
         }
 
         /// Set up and connected, as a call is once the service has started it.
         func connect() async {
             await live.start()
-            call.receive(#"{"type":"session.started","session":{"id":"s1"}}"#)
+            switch engine {
+            case .gptLive: call.receive(#"{"type":"session.started","session":{"id":"s1"}}"#)
+            case .gemini: call.receive(#"{"setupComplete":{}}"#)
+            case .grok: call.receive(#"{"type":"session.updated","session":{}}"#)
+            case .elevenLabs: call.receive(#"{"type":"conversation_initiation_metadata","conversation_initiation_metadata_event":{}}"#)
+            }
         }
 
         func person(_ words: String, at ms: Int = 0) {
@@ -114,14 +138,16 @@ struct LiveVoiceTests {
 
     // MARK: Setting the call up
 
-    @Test func theCallIsSetUpWithTheOfferAndTheConversationSoFar() async throws {
+    @Test func theCallIsSetUpWithTheConversationSoFar() async throws {
         let harness = Harness()
         harness.conversation.replaceForDemo(messages: [Message(role: .user, text: "Hi"), Message(role: .assistant, text: "Hello!")], bot: nil)
         await harness.live.start()
-        let (offer, history) = try #require(harness.opened.value)
-        #expect(offer == "offer-sdp\r\n", "the offer exactly as made: OpenAI's parser wants its last line break")
-        #expect(history.count == 2 && history[0]["role"]?.string == "user" && history[1]["content"]?.array?.first?["type"]?.string == "output_text")
-        #expect(harness.call.answer == "answer-sdp")
+        let history = try #require(harness.opened.value)
+        #expect(history == [LiveLine(fromPerson: true, text: "Hi"), LiveLine(fromPerson: false, text: "Hello!")])
+        #expect(harness.call.opened, "the microphone opens first, so nothing said while it connects is lost")
+        let connection = try #require(harness.call.connection)
+        #expect(connection.url.scheme == "wss" && connection.headers["Authorization"] == "Bearer test")
+        #expect(GPTLiveDialect().opening(connection.plan).first?["session"]?["input"]?.array?.count == 2)
         #expect(harness.live.state == .connecting, "not connected until the service says it has started")
         harness.call.receive(#"{"type":"session.started","session":{"id":"s1"}}"#)
         #expect(harness.live.state == .listening && harness.live.connected)
@@ -132,8 +158,8 @@ struct LiveVoiceTests {
         let store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "live-\(UUID().uuidString)"))
         let conversation = Conversation(settings: settings, store: store, transportOverride: RecordingTransport(reply: []))
         let call = FakeCall()
-        let live = LiveVoice(conversation: conversation, settings: settings, makeCall: { _ in call },
-                             setUp: { _, _ in throw LiveFailure("GPT-Live needs an OpenAI key.") })
+        let live = LiveVoice(conversation: conversation, settings: settings, makeCall: { _, _ in call },
+                             setUp: { _, _, _ in throw LiveFailure("GPT-Live needs an OpenAI key.") })
         await live.start()
         #expect(live.state == .ended && live.problem == "GPT-Live needs an OpenAI key." && call.closed)
     }
@@ -168,6 +194,53 @@ struct LiveVoiceTests {
         let thought = harness.call.sent("session.thinking.append").compactMap { $0["content"]?.string }
         #expect(thought.contains { $0.contains("working: calendar") })
         #expect(harness.call.sent("session.commentary.append").compactMap { $0["content"]?.string } == ["Done."])
+    }
+
+    @Test func aLongWaitIsSaidAloudUntilTheAnswerComes() async throws {
+        let harness = Harness(reply: [.textDelta("Done.")], answerAfter: .milliseconds(500),
+                              posting: LiveVoice.Posting(first: .milliseconds(100), every: .milliseconds(150)))
+        await harness.connect()
+        harness.person("Check the build.")
+        harness.handOver()
+        try await Self.until { harness.live.state == .listening }
+        let said = harness.call.sent("session.commentary.append")
+        let words = said.compactMap { $0["content"]?.string }
+        #expect(words.last == "Done.")
+        #expect(words.dropLast().count >= 2 && words.dropLast().allSatisfy { $0.contains("still working on it") && $0.contains("not done yet") },
+                "said aloud (commentary), more than once while it waits")
+        #expect(said.allSatisfy { $0["delegation_id"]?.string == "d1" })
+        try await Task.sleep(for: .milliseconds(400))
+        #expect(harness.call.sent("session.commentary.append").count == said.count, "nothing more once the answer has come")
+    }
+
+    @Test func hangingUpStopsTheRequestItHandedOver() async throws {
+        let harness = Harness(answerAfter: .seconds(5))
+        await harness.connect()
+        harness.person("Check the build.")
+        harness.handOver()
+        try await Self.until { harness.conversation.isStreaming }
+        harness.live.hangUp()
+        #expect(!harness.conversation.isStreaming, "the agent is told to stop, as with Redde's own Stop")
+    }
+
+    @Test func aDroppedCallLeavesTheRequestToFinish() async throws {
+        let harness = Harness(answerAfter: .milliseconds(300))
+        await harness.connect()
+        harness.person("Check the build.")
+        harness.handOver()
+        try await Self.until { harness.conversation.isStreaming }
+        harness.call.listener?.liveCallChanged(.lost)
+        #expect(harness.live.state == .ended && harness.conversation.isStreaming, "its answer still comes, in the chat")
+    }
+
+    @Test func aQuickAnswerHasNoWaitingSaid() async throws {
+        let harness = Harness(posting: LiveVoice.Posting(first: .milliseconds(200), every: .milliseconds(200)))
+        await harness.connect()
+        harness.person("What's next?")
+        harness.handOver()
+        try await Self.until { harness.live.state == .listening }
+        try await Task.sleep(for: .milliseconds(450))
+        #expect(!harness.call.sent("session.commentary.append").contains { $0["content"]?.string?.contains("still working") == true })
     }
 
     @Test func anAnswerWithNothingToSaySaysSoQuietly() async throws {
@@ -224,7 +297,8 @@ struct LiveVoiceTests {
         await harness.connect()
         harness.person("That's all.")
         harness.handOver()
-        #expect(harness.live.state == .ended && harness.transport.requests.isEmpty)
+        try await Self.until { harness.live.state == .ended }
+        #expect(harness.transport.requests.isEmpty)
     }
 
     @Test func theServiceEndingTheCallSaysWhyUnlessItWasAsked() async {
@@ -291,7 +365,7 @@ struct LiveVoiceTests {
             session = VoiceSession(conversation: base.conversation, recognizer: VoiceSessionTests.FakeRecognizer(),
                                    output: VoiceSessionTests.FakeSpeaker(), audio: audio, requestPermissions: { true },
                                    earcon: { cues.record($0) }, cueSettle: .zero, keepAwake: { _ in },
-                                   liveWanted: { true }, makeLive: { _ in base.live }, micAllowed: { true })
+                                   liveWanted: { _ in true }, makeLive: { _ in base.live }, micAllowed: { true })
         }
     }
 
@@ -300,7 +374,7 @@ struct LiveVoiceTests {
         let session = harness.session
         session.beginListening()
         #expect(session.isLive && session.phase == .thinking, "calling")
-        try await Self.until { harness.base.call.answer != nil }
+        try await Self.until { harness.base.call.connection != nil }
         harness.base.call.receive(#"{"type":"session.started"}"#)
         #expect(session.phase == .listening && harness.audio.activations == 1)
         #expect(harness.cues.cues == [.listening], "one cue as the call starts, none between its phases")
@@ -324,7 +398,7 @@ struct LiveVoiceTests {
     @Test func aCallThatFailsShowsWhy() async throws {
         let harness = SessionHarness()
         harness.session.beginListening()
-        try await Self.until { harness.base.call.answer != nil }
+        try await Self.until { harness.base.call.connection != nil }
         harness.base.call.state(.lost)
         #expect(harness.session.phase == .error("The connection to GPT-Live dropped.") && !harness.session.isLive)
     }
@@ -342,24 +416,28 @@ struct LiveVoiceTests {
 
     // MARK: The request for a session, and the turn's note
 
-    @Test func theSessionRequestIsHermes_s() throws {
+    @Test func theSessionIsHermes_sOverAWebSocket() throws {
         let history = LiveSetup.history([Message(role: .user, text: "One  two"), Message(role: .assistant, text: "")])
-        #expect(history.count == 1 && history[0]["content"]?.array?.first?["text"]?.string == "One two", "empty replies left out")
-        let body = LiveSetup.body(offer: "v=0\r\n", history: history, voice: "cedar", instructions: LiveSetup.persona(name: "Sol"))
-        let session = try #require(body["session"])
+        #expect(history == [LiveLine(fromPerson: true, text: "One two")], "empty replies left out")
+        let dialect = GPTLiveDialect()
+        let start = try #require(dialect.opening(LivePlan(voice: "quartz", instructions: LiveSetup.persona(name: "Sol"), history: history)).first)
+        #expect(start["type"]?.string == "session.start")
+        let session = try #require(start["session"])
         #expect(session["model"]?.string == "gpt-live-1" && session["delegation"]?["type"]?.string == "client")
-        #expect(session["audio"]?["output"]?["voice"]?.string == "cedar" && session["input"]?.array?.count == 1)
+        #expect(session["audio"]?["output"]?["voice"]?.string == "quartz" && session["input"]?.array?.count == 1)
+        #expect(session["audio"]?["format"]?["type"]?.string == "audio/pcm" && session["audio"]?["format"]?["rate"] == .number(16_000),
+                "16 kHz both ways: a third less data than OpenAI's 24 kHz default")
         #expect(session["instructions"]?.string?.hasPrefix("You are Sol,") == true)
-        #expect(body["transport"]?["type"]?.string == "webrtc" && body["transport"]?["sdp"]?.string == "v=0\r\n")
-        #expect(LiveSetup.body(offer: "o", history: [], voice: "marin", instructions: "")["session"]?["input"] == nil)
+        #expect(dialect.opening(LivePlan(voice: "marin", instructions: "")).first?["session"]?["input"] == nil)
+        #expect(LiveSetup.endpoint.absoluteString == "wss://api.openai.com/v1/live/sessions")
     }
 
     @Test func theConversationSoFarIsKeptShort() {
         let long = (0..<40).map { Message(role: $0.isMultiple(of: 2) ? .user : .assistant, text: "message \($0) " + String(repeating: "x", count: 400)) }
         let history = LiveSetup.history(long)
         #expect(history.count <= 24)
-        #expect(history.compactMap { $0["content"]?.array?.first?["text"]?.string }.reduce(0) { $0 + $1.count } <= 6_000)
-        #expect(history.last?["content"]?.array?.first?["text"]?.string?.hasPrefix("message 39") == true, "newest kept")
+        #expect(history.map(\.text).reduce(0) { $0 + $1.count } <= 6_000)
+        #expect(history.last?.text.hasPrefix("message 39") == true, "newest kept")
     }
 
     @Test func theAgentIsToldOnEveryConnection() {
@@ -375,20 +453,266 @@ struct LiveVoiceTests {
         #expect(LiveVoiceNote.instruction(context: String(repeating: "y", count: 9_000)).count < LiveVoiceNote.instruction.count + 6_100)
     }
 
-    // MARK: Loading
+    // MARK: The call
 
-    /// The framework with WebRTC in it is in the app and loads when asked, not before; the
-    /// call it makes answers to the app's protocol.
-    @Test func theCallsFrameworkLoadsOnlyWhenACallIsMade() throws {
-        final class Listener: NSObject, LiveCallListening {
+    /// No WebRTC in the app any more; a call with no connection yet sends nothing and hears nothing.
+    @Test func eachBotCanHaveItsOwnConversation() {
+        let settings = Settings(defaults: UserDefaults(suiteName: "live-\(UUID().uuidString)")!)
+        settings.voiceEngine = .gptLive
+        settings.liveVoice = "marin"
+        settings.botVoicesHere["scout"] = BotVoice(conversation: .redde)
+        settings.botVoicesHere["sol"] = BotVoice(liveVoices: ["gptLive": "quartz", "gemini": "Kore"])
+        #expect(settings.liveEngine(for: nil) == .gptLive && settings.liveEngine(for: "default") == .gptLive, "the main agent goes by the app's setting")
+        #expect(settings.liveEngine(for: "scout") == nil, "a bot's own choice wins")
+        #expect(settings.liveEngine(for: "sol") == .gptLive, "no choice of its own: the app's")
+        #expect(settings.liveVoice(for: "sol") == "quartz" && settings.liveVoice(for: "scout") == "marin" && settings.liveVoice(for: nil) == "marin")
+        #expect(settings.liveVoice(for: "sol", engine: .gemini) == "Kore" && settings.liveVoice(for: "scout", engine: .gemini) == "Puck",
+                "a voice for each engine; none of its own, the app's for that engine")
+        settings.liveVoice = "alloy"
+        #expect(settings.liveVoice(for: nil) == "marin", "a voice GPT-Live doesn't have is the default")
+        settings.voiceEngine = .redde
+        settings.botVoicesHere["fixit"] = BotVoice(conversation: .gemini)
+        #expect(settings.liveEngine(for: "fixit") == .gemini && !settings.usesLiveCall(for: nil) && !settings.usesLiveCall(for: "sol"))
+        #expect(!BotVoice(conversation: .redde).isEmpty && !BotVoice(liveVoices: ["grok": "eve"]).isEmpty, "kept with nothing else picked")
+    }
+
+    @Test func aSpokenPrefixIsHeardAcrossTheVoicesReply() async throws {
+        let harness = Harness()
+        harness.settings.spokenPrefixes = [SpokenPrefix(word: "Home", prefix: "[home] ")]
+        await harness.connect()
+        harness.person("Home.")
+        harness.voice("Yes?", at: 1_000)
+        harness.person("Turn the office lights off.", at: 2_000)
+        harness.voice("On it.", at: 3_000)
+        harness.handOver()
+        try await Self.until { harness.live.state == .listening }
+        #expect(harness.transport.requests.last?.userText == "[home] Turn the office lights off.",
+                "the name said first, the request after the voice answered it: still Home's")
+    }
+
+    @Test func aRequestForAnotherBotGoesOnInThatBotsVoice() async throws {
+        let harness = Harness()
+        harness.settings.spokenPrefixes = [SpokenPrefix(word: "Home", prefix: "", bot: "home")]
+        await harness.connect()
+        harness.person("Home, turn the office lights off.")
+        harness.voice("Let me check.", at: 1_000)
+        harness.handOver()
+        try await Self.until { harness.live.state == .listening }
+        #expect(harness.conversation.bot?.profile == "home", "the request went to Home's chat")
+        let session = try #require(harness.call.reconnections.first, "a new session, in Home's voice")
+        #expect(session.plan.history.last == LiveLine(fromPerson: true, text: "turn the office lights off."))
+        #expect(session.plan.greeting?.line == "Your meeting is at 4 pm. It's with Ana.",
+                "Home's session opens saying the answer, as a preview's voice says its line")
+        #expect(!session.plan.preview, "and goes on handing requests over")
+        #expect(harness.call.sent("session.commentary.append").isEmpty, "Sol's voice doesn't say Home's answer")
+        harness.person("And the porch?", at: 6_000)
+        harness.voice("Let me check.", at: 7_000)
+        harness.handOver("d2")
+        try await Self.until { harness.call.sent("session.commentary.append").contains { $0["delegation_id"]?.string == "d2" } }
+        #expect(harness.call.reconnections.count == 1, "still Home: no second handoff")
+    }
+
+    @Test func theVoiceKnowsWhichBotsCanBeNamed() {
+        let settings = Settings(defaults: UserDefaults(suiteName: "live-\(UUID().uuidString)")!)
+        settings.spokenPrefixes = [SpokenPrefix(word: "Home", prefix: "", bot: "home"), SpokenPrefix(word: "Sol", prefix: "", bot: "default"),
+                                   SpokenPrefix(word: "Note", prefix: "[note] ")]
+        #expect(LiveSetup.addressable(settings, besides: "Sol") == ["Home"], "a bot's names, not its own, not a plain prefix")
+        #expect(LiveSetup.persona(name: "Sol", others: ["Home"]).contains("may address Home by name"))
+        #expect(!LiveSetup.persona(name: "Sol").contains("Other agents"))
+    }
+
+    @Test func aSpokenPrefixFromAnEarlierRequestIsNotReused() {
+        let rules = [SpokenPrefix(word: "Home", prefix: "[home] ")]
+        #expect(LiveVoice.addressed("What's the weather?", asked: ["What's the weather?"], rules: rules) == "What's the weather?")
+        #expect(LiveVoice.addressed("lights off", asked: ["Home", "lights off"], rules: rules) == "Home lights off")
+        #expect(LiveVoice.addressed("Home, lights off", asked: ["Scout", "Home, lights off"], rules: rules) == "Home, lights off")
+    }
+
+    // MARK: Hands-free off: one question, one answer
+
+    static let quickly = LiveVoice.Posting(answered: .milliseconds(100))
+
+    @Test func aCallEndsOnceAnsweredWithHandsFreeOff() async throws {
+        let harness = Harness(posting: Self.quickly)
+        harness.live.endsAfterAnswer = { true }
+        await harness.connect()
+        harness.person("Hi there.")
+        harness.call.state(.speaking)
+        harness.voice("Hello, good to hear from you.", at: 1_000)
+        harness.call.state(.quiet)
+        try await Self.until { harness.live.state == .ended }
+        #expect(!harness.call.sent("session.close").isEmpty && harness.live.problem == nil)
+    }
+
+    @Test func thePersonGoingOnTalkingKeepsTheCall() async throws {
+        let harness = Harness(posting: LiveVoice.Posting(answered: .milliseconds(300)))
+        harness.live.endsAfterAnswer = { true }
+        await harness.connect()
+        harness.person("Move my meeting.")
+        harness.call.state(.speaking)
+        harness.voice("Which one, the 4 pm?", at: 1_000)
+        harness.call.state(.quiet)
+        harness.call.inputLevel = 0.2
+        try await Task.sleep(for: .milliseconds(500))
+        #expect(harness.live.state != .ended, "heard in the microphone before any transcript of it")
+    }
+
+    @Test func theAgentsAnswerIsSaidBeforeTheCallEnds() async throws {
+        let harness = Harness(answerAfter: .milliseconds(200), posting: Self.quickly)
+        harness.live.endsAfterAnswer = { true }
+        await harness.connect()
+        harness.person("What's next on my calendar?")
+        harness.call.state(.speaking)
+        harness.voice("Let me check.", at: 1_000)
+        harness.call.state(.quiet)
+        harness.handOver()
+        try await Self.until { harness.live.state == .listening }
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(harness.live.state != .ended, "not while the agent works, nor before the voice has said its answer")
+        harness.call.state(.speaking)
+        harness.voice("Your meeting is at 4 pm, with Ana.", at: 5_000)
+        harness.call.state(.quiet)
+        try await Self.until { harness.live.state == .ended }
+    }
+
+    @Test func handsFreeKeepsTheCallOpen() async throws {
+        let harness = Harness(posting: Self.quickly)
+        harness.live.endsAfterAnswer = { false }
+        await harness.connect()
+        harness.person("Hi there.")
+        harness.call.state(.speaking)
+        harness.voice("Hello.", at: 1_000)
+        harness.call.state(.quiet)
+        try await Task.sleep(for: .milliseconds(400))
+        #expect(harness.live.state == .listening)
+    }
+
+    // MARK: Gemini Live and Grok Voice
+
+    @Test func geminiSpeaksItsOwnWire() throws {
+        let dialect = GeminiLiveDialect()
+        let plan = LivePlan(voice: "Kore", instructions: "Be Sol.", history: [LiveLine(fromPerson: true, text: "Hi")],
+                            agent: LiveAgentTool(agentName: "Sol"))
+        let setup = try #require(dialect.opening(plan).first?["setup"])
+        #expect(setup["model"]?.string == "models/gemini-3.8-live")
+        #expect(setup["generationConfig"]?["speechConfig"]?["voiceConfig"]?["prebuiltVoiceConfig"]?["voiceName"]?.string == "Kore")
+        let tool = try #require(setup["tools"]?.array?.first?["functionDeclarations"]?.array?.first)
+        #expect(tool["name"]?.string == "ask_agent" && tool["behavior"]?.string == "NON_BLOCKING", "the voice goes on talking while the agent works")
+        #expect(setup["historyConfig"]?["initialHistoryInClientContent"]?.bool == true)
+        #expect(dialect.afterStart(plan, eventID: "x").first?["clientContent"]?["turns"]?.array?.first?["role"]?.string == "user")
+        #expect(dialect.audio("AAAA").contains(#""mimeType":"audio/pcm;rate=16000""#) && dialect.outputRate == 24_000)
+        #expect(dialect.read(#"{"setupComplete":{}}"#) == [.started])
+        let pcm = Data([1, 0, 2, 0])
+        let content = #"{"serverContent":{"modelTurn":{"parts":[{"inlineData":{"mimeType":"audio/pcm;rate=24000","data":"\#(pcm.base64EncodedString())"}}]},"outputTranscription":{"text":"Hello"},"interrupted":true}}"#
+        #expect(dialect.read(content) == [.audio(pcm), .transcript(.voice, "Hello", startMs: nil, endMs: nil), .interrupted])
+        #expect(dialect.read(#"{"toolCall":{"functionCalls":[{"id":"c1","name":"ask_agent","args":{"request":"Check the build"}}]}}"#)
+                == [.delegated(id: "c1", request: "Check the build")])
+        #expect(dialect.read(#"{"toolCallCancellation":{"ids":["c1"]}}"#) == [.withdrawn(["c1"])])
+        let response = try #require(dialect.answer("Done.", to: "c1", final: true, eventID: "x").first?["toolResponse"]?["functionResponses"]?.array?.first)
+        #expect(response["id"]?.string == "c1" && response["response"]?["result"]?.string == "Done.")
+        #expect(dialect.answer("Part.", to: "c1", final: false, eventID: "x").isEmpty, "a tool's result goes once, whole")
+    }
+
+    @Test func grokSpeaksItsOwnWire() throws {
+        let dialect = GrokVoiceDialect()
+        let plan = LivePlan(voice: "eve", instructions: "Be Sol.", history: [LiveLine(fromPerson: true, text: "Hi there")],
+                            agent: LiveAgentTool(agentName: "Sol"))
+        let update = try #require(dialect.opening(plan).first)
+        #expect(update["type"]?.string == "session.update" && update["session"]?["voice"]?.string == "eve")
+        #expect(update["session"]?["instructions"]?.string?.contains("User: Hi there") == true, "the conversation so far in the instructions: items cost extra")
+        #expect(update["session"]?["tools"]?.array?.first?["name"]?.string == "ask_agent")
+        #expect(update["session"]?["audio"]?["input"]?["format"]?["rate"] == .number(16_000))
+        #expect(dialect.read(#"{"type":"session.updated","session":{}}"#) == [.started])
+        let pcm = Data([3, 0, 4, 0])
+        #expect(dialect.read(#"{"type":"response.output_audio.delta","delta":"\#(pcm.base64EncodedString())"}"#) == [.audio(pcm)])
+        #expect(dialect.read(#"{"type":"response.audio.delta","delta":"\#(pcm.base64EncodedString())"}"#) == [.audio(pcm)])
+        #expect(dialect.read(#"{"type":"input_audio_buffer.speech_started","item_id":"i1"}"#) == [.interrupted])
+        #expect(dialect.read(#"{"type":"response.function_call_arguments.done","call_id":"k1","name":"ask_agent","arguments":"{\"request\":\"Lights off\"}"}"#)
+                == [.delegated(id: "k1", request: "Lights off")])
+        guard case let .reply(pong)? = dialect.read(#"{"type":"ping","ping_timestamp":7}"#).first else { Issue.record("no pong"); return }
+        let answered = try JSONValue.parse(Data(pong.utf8))
+        #expect(answered["type"]?.string == "pong" && answered["ping_timestamp"] == .number(7))
+        let answer = dialect.answer("Off.", to: "k1", final: true, eventID: "x")
+        #expect(answer.first?["item"]?["type"]?.string == "function_call_output" && answer.first?["item"]?["call_id"]?.string == "k1")
+        #expect(answer.last?["type"]?.string == "response.create")
+        let preview = LivePlan(voice: "eve", instructions: "", greeting: LiveGreeting(line: "Hi, I'm Sol.", language: "English"))
+        #expect(dialect.afterStart(preview, eventID: "x").first?["item"]?["type"]?.string == "force_message", "a preview's line word for word")
+    }
+
+    @Test func elevenLabsSpeaksItsOwnWire() throws {
+        let dialect = ElevenLabsDialect()
+        let plan = LivePlan(voice: "voice123", instructions: "Be Sol.", history: [LiveLine(fromPerson: true, text: "Hi")],
+                            agent: LiveAgentTool(agentName: "Sol"))
+        let opening = try #require(dialect.opening(plan).first)
+        #expect(opening["type"]?.string == "conversation_initiation_client_data")
+        let override = try #require(opening["conversation_config_override"])
+        #expect(override["tts"]?["voice_id"]?.string == "voice123" && override["agent"]?["first_message"]?.string == "")
+        #expect(override["agent"]?["prompt"]?["prompt"]?.string?.contains("User: Hi") == true)
+        #expect(dialect.opening(LivePlan(voice: "", instructions: "")).first?["conversation_config_override"]?["tts"] == nil,
+                "no voice picked: the agent's own")
+        #expect(dialect.audio("AAAA") == #"{"user_audio_chunk":"AAAA"}"#)
+        #expect(dialect.read(#"{"type":"conversation_initiation_metadata","conversation_initiation_metadata_event":{"conversation_id":"c"}}"#) == [.started])
+        let pcm = Data([5, 0, 6, 0]).base64EncodedString()
+        #expect(dialect.read(#"{"type":"audio","audio_event":{"audio_base_64":"\#(pcm)","event_id":3}}"#) == [.audio(Data([5, 0, 6, 0]))])
+        #expect(dialect.read(#"{"type":"interruption","interruption_event":{"event_id":4}}"#) == [.interrupted])
+        #expect(dialect.read(#"{"type":"audio","audio_event":{"audio_base_64":"\#(pcm)","event_id":4}}"#).isEmpty,
+                "what was said before the person talked over it goes unplayed")
+        #expect(dialect.read(#"{"type":"audio","audio_event":{"audio_base_64":"\#(pcm)","event_id":5}}"#).count == 1)
+        #expect(dialect.read(#"{"type":"user_transcript","user_transcription_event":{"user_transcript":"Lights off"}}"#)
+                == [.transcript(.person, "Lights off ", startMs: nil, endMs: nil)])
+        #expect(dialect.read(#"{"type":"client_tool_call","client_tool_call":{"tool_name":"ask_agent","tool_call_id":"t1","parameters":{"request":"Lights off"}}}"#)
+                == [.delegated(id: "t1", request: "Lights off")])
+        guard case let .reply(pong)? = dialect.read(#"{"type":"ping","ping_event":{"event_id":9}}"#).first else { Issue.record("no pong"); return }
+        let answered = try JSONValue.parse(Data(pong.utf8))
+        #expect(answered["type"]?.string == "pong" && answered["event_id"] == .number(9))
+        let result = try #require(dialect.answer("Off.", to: "t1", final: true, eventID: "x").first)
+        #expect(result["type"]?.string == "client_tool_result" && result["tool_call_id"]?.string == "t1" && result["result"]?.string == "Off.")
+    }
+
+    @Test func aToolCallGetsTheWholeAnswerOnce() async throws {
+        let harness = Harness(engine: .gemini)
+        await harness.connect()
+        #expect(harness.live.connected)
+        harness.call.receive(#"{"serverContent":{"inputTranscription":{"text":"What's next on my calendar?"}}}"#)
+        harness.call.receive(#"{"toolCall":{"functionCalls":[{"id":"c1","name":"ask_agent","args":{"request":"Next calendar event"}}]}}"#)
+        try await Self.until { harness.live.state == .listening }
+        #expect(harness.transport.requests.last?.userText == "What's next on my calendar?", "the person's own words are the message")
+        #expect(harness.transport.requests.last?.live?.context.contains("Next calendar event") == true, "the voice's wording goes along")
+        let responses = harness.call.sent.compactMap { $0["toolResponse"]?["functionResponses"]?.array?.first }
+        #expect(responses.count == 1 && responses[0]["id"]?.string == "c1")
+        #expect(responses[0]["response"]?["result"]?.string == "Your meeting is at 4 pm. It's with Ana.")
+    }
+
+    @Test func aBotsNameHeardJustAfterTheToolCallStillRoutes() async throws {
+        let harness = Harness(engine: .gemini)
+        harness.settings.spokenPrefixes = [SpokenPrefix(word: "Home", prefix: "", bot: "home")]
+        await harness.connect()
+        harness.call.receive(#"{"toolCall":{"functionCalls":[{"id":"c1","name":"ask_agent","args":{"request":"What's on the user's calendar today?"}}]}}"#)
+        harness.call.receive(#"{"serverContent":{"inputTranscription":{"text":"Home, what's on my calendar today?"}}}"#)
+        try await Self.until { harness.live.state == .listening }
+        #expect(harness.conversation.bot?.profile == "home" && harness.call.reconnections.count == 1,
+                "the person's words, written down after Gemini's call, still name Home")
+    }
+
+    @Test func aWithdrawnRequestStopsTheAgent() async throws {
+        let harness = Harness(answerAfter: .seconds(5), engine: .gemini)
+        await harness.connect()
+        harness.call.receive(#"{"serverContent":{"inputTranscription":{"text":"Check the build."}}}"#)
+        harness.call.receive(#"{"toolCall":{"functionCalls":[{"id":"c1","name":"ask_agent","args":{"request":"Check the build"}}]}}"#)
+        try await Self.until { harness.conversation.isStreaming }
+        harness.call.receive(#"{"toolCallCancellation":{"ids":["c1"]}}"#)
+        #expect(!harness.conversation.isStreaming && harness.live.state == .listening)
+    }
+
+    @Test func aCallWithNoConnectionSendsNothing() {
+        final class Listener: LiveCallListening {
             func liveCallReceived(_ event: String) {}
-            func liveCallChanged(_ state: String) {}
+            func liveCallChanged(_ state: LiveCallState) {}
         }
-        #expect(!LiveEngine.isLoaded, "nothing at launch has loaded it")
         let listener = Listener()
-        let call = try LiveEngine.makeCall(listener: listener)
-        #expect(LiveEngine.isLoaded)
-        #expect(call.inputLevel == 0 && call.outputLevel == 0 && !call.send("{}"), "nothing to send on before a call")
+        let call = LiveCall(listener: listener)
+        #expect(call.inputLevel == 0 && call.outputLevel == 0 && !call.send("{}"))
         call.close()
+        #expect(Bundle.main.path(forResource: "WebRTC", ofType: "framework", inDirectory: "Frameworks") == nil)
     }
 }
