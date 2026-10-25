@@ -8,6 +8,7 @@
     scripts/app-store-push.py notes [--dry-run]      the notes for App Review, with the test key put in
     scripts/app-store-push.py previews [--dry-run]   the App Preview videos (made by design/video, not in git)
     scripts/app-store-push.py all [--dry-run]        copy and screenshots (not the notes)
+    scripts/app-store-push.py submit [--dry-run]     attach the uploaded build and send the version to App Review
 
 The copy is read from docs/app-store-listing.md (the sections named for those four fields, the
 What's New being the one for the version in project.yml) and the pictures from
@@ -18,6 +19,10 @@ The review notes are the block in docs/app-review-notes.md with its <<REVIEW KEY
 the test key: ASC_REVIEW_KEY if that is set (environment or tmp/asc.env), or else the key in the
 newest notes App Store Connect holds that have one. The key is never printed. (Found 2026-10-13:
 the notes of every version from 1.1 to 1.7.1 had gone in with the placeholder still in them.)
+
+`submit` takes the build numbered in project.yml once App Store Connect has finished processing
+it (it says so and stops while it hasn't), attaches it to the version and submits the version
+for review. The upload itself is Xcode's (Organizer, or xcodebuild -exportArchive).
 
 It needs an App Store Connect API key with the App Manager role: ASC_KEY_ID, ASC_ISSUER_ID and
 ASC_KEY_PATH (the .p8 file), in the environment or as KEY=value lines in tmp/asc.env, which
@@ -346,11 +351,53 @@ def push_notes(app, version, dry):
         print('  sent')
 
 
+def project_build():
+    text = open(os.path.join(ROOT, 'project.yml')).read()
+    return re.search(r'CURRENT_PROJECT_VERSION:\s*"?([0-9]+)"?', text).group(1)
+
+
+def submit(app, version, wanted, dry):
+    """Attaches the build in project.yml to the version and sends the version to App Review, once
+    the build has finished processing."""
+    number = project_build()
+    builds = api('GET', f'/v1/builds?filter[app]={app}&filter[version]={number}&filter[preReleaseVersion.version]={wanted}'
+                        '&fields[builds]=version,processingState,usesNonExemptEncryption,expired')['data']
+    if not builds:
+        print(f'  build {number}: not in App Store Connect yet')
+        return False
+    build = builds[0]
+    a = build['attributes']
+    print(f"  build {number}: {a['processingState']}, uses non-exempt encryption: {a.get('usesNonExemptEncryption')}")
+    if a['processingState'] != 'VALID':
+        return False
+    attached = api('GET', f"/v1/appStoreVersions/{version['id']}/relationships/build").get('data')
+    print(f"  attached: {'this build' if attached and attached['id'] == build['id'] else 'another build' if attached else 'none'}")
+    detail = api('GET', f"/v1/appStoreVersions/{version['id']}?fields[appStoreVersions]=releaseType,earliestReleaseDate")['data']['attributes']
+    print(f"  release: {detail.get('releaseType')}")
+    if dry:
+        return True
+    if not attached or attached['id'] != build['id']:
+        api('PATCH', f"/v1/appStoreVersions/{version['id']}/relationships/build", {'data': {'type': 'builds', 'id': build['id']}})
+        print('  build attached')
+    open_ones = api('GET', f'/v1/reviewSubmissions?filter[app]={app}&filter[platform]=IOS&filter[state]=READY_FOR_REVIEW')['data']
+    submission = open_ones[0] if open_ones else api('POST', '/v1/reviewSubmissions', {'data': {'type': 'reviewSubmissions',
+        'attributes': {'platform': 'IOS'}, 'relationships': {'app': {'data': {'type': 'apps', 'id': app}}}}})['data']
+    items = every(f"/v1/reviewSubmissions/{submission['id']}/items?fields[reviewSubmissionItems]=appStoreVersion&include=appStoreVersion")
+    if not any((i.get('relationships', {}).get('appStoreVersion', {}).get('data') or {}).get('id') == version['id'] for i in items):
+        api('POST', '/v1/reviewSubmissionItems', {'data': {'type': 'reviewSubmissionItems', 'relationships': {
+            'reviewSubmission': {'data': {'type': 'reviewSubmissions', 'id': submission['id']}},
+            'appStoreVersion': {'data': {'type': 'appStoreVersions', 'id': version['id']}}}}})
+    done = api('PATCH', f"/v1/reviewSubmissions/{submission['id']}", {'data': {'type': 'reviewSubmissions', 'id': submission['id'],
+        'attributes': {'submitted': True}}})['data']
+    print(f"  submitted for review: {done['attributes'].get('state')}")
+    return True
+
+
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith('-')]
     dry = '--dry-run' in sys.argv
     what = args[0] if args else ''
-    if what not in ('check', 'status', 'copy', 'screenshots', 'notes', 'previews', 'all'):
+    if what not in ('check', 'status', 'copy', 'screenshots', 'notes', 'previews', 'all', 'submit'):
         sys.exit(__doc__)
     wanted = project_version()
     fields = copy_fields(wanted)
@@ -390,6 +437,8 @@ def main():
         push_notes(app, version, dry)
     if what == 'previews':
         push_previews(loc, dry)
+    if what == 'submit' and not submit(app, version, wanted, dry):
+        sys.exit(1)
 
 
 if __name__ == '__main__':
