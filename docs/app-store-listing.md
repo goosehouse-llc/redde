@@ -1,9 +1,9 @@
-# App Store listing — Redde for Hermes
+# App Store listing — Hermes Redde
 
 Character limits are Apple's. Everything here describes shipped, verified behaviour.
 
 ## Name (30)
-Redde for Hermes
+Hermes Redde
 
 ## Subtitle (30)
 Talk, chat and run your agent
