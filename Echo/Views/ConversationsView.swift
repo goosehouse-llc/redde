@@ -78,6 +78,7 @@ struct ConversationsList: View {
     /// `groups.open`), and a new one being made.
     @State private var groups = GroupDirectory.shared
     @State private var makingGroup = false
+    @State private var dateGroupExpansion: [String: Bool] = [:]
     /// The bot whose face is being picked.
     @State private var facing: HermesBot?
     /// A bot being made or changed, and the hidden ones being looked at.
@@ -1116,10 +1117,20 @@ struct ConversationsList: View {
         let runs = rows.filter(Self.isFoldable)
         let drafted = draftedSessions
         if !pinned.isEmpty {
-            Section { ForEach(pinned) { ledgerButton($0, hasDraft: drafted.contains($0.id)) } } header: { groupHeader("Pinned") }
+            let isOpen = isDateGroupOpen("Pinned")
+            Section {
+                if isOpen { ForEach(pinned) { ledgerButton($0, hasDraft: drafted.contains($0.id)) } }
+            } header: {
+                dateGroupHeader("Pinned", count: pinned.count)
+            }
         }
         ForEach(DateGroup.group(rows.filter { $0.pinned != true && !$0.isScheduledRun }, by: { $0.lastActiveDate }), id: \.title) { group in
-            Section { ForEach(group.items) { ledgerButton($0, hasDraft: drafted.contains($0.id)) } } header: { groupHeader(group.title) }
+            let isOpen = isDateGroupOpen(group.title)
+            Section {
+                if isOpen { ForEach(group.items) { ledgerButton($0, hasDraft: drafted.contains($0.id)) } }
+            } header: {
+                dateGroupHeader(group.title, count: group.items.count)
+            }
         }
         // Hermes makes a session of every run of a scheduled job, and a busy schedule buried
         // the conversations (GitHub issue 19): the runs wait at the end, folded unless opened.
@@ -1279,6 +1290,38 @@ struct ConversationsList: View {
             .font(.footnote.weight(.semibold))
             .foregroundStyle(.secondary)
             .textCase(.uppercase)
+    }
+
+    private func isDateGroupOpen(_ title: String) -> Bool {
+        dateGroupExpansion[title] ?? (title == "Pinned" || title == "Today")
+    }
+
+    private func dateGroupHeader(_ title: String, count: Int) -> some View {
+        let isOpen = isDateGroupOpen(title)
+        return Button {
+            withAnimation(.snappy) { dateGroupExpansion[title] = !isOpen }
+        } label: {
+            HStack(spacing: 6) {
+                Text(title)
+                if !isOpen {
+                    Text("\(count)").font(.caption2.weight(.semibold)).monospacedDigit()
+                        .padding(.horizontal, 6).padding(.vertical, 1)
+                        .background(.quaternary, in: .capsule)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .rotationEffect(.degrees(isOpen ? 90 : 0))
+            }
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .textCase(.uppercase)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(isOpen ? "Hide" : "Show") \(title.lowercased())")
+        .accessibilityValue("\(count) chats")
+        .accessibilityAddTraits(.isHeader)
     }
 
     private func marks(_ session: HermesSessionsAPI.SessionSummary) -> ChatMarks {
@@ -1872,7 +1915,12 @@ struct ConversationsList: View {
                 .listRowSeparator(.hidden)
         }
         ForEach(DateGroup.group(visibleLocal, by: { $0.updatedAt }), id: \.title) { group in
-            Section { ForEach(group.items) { localButton($0) } } header: { groupHeader(group.title) }
+            let isOpen = isDateGroupOpen(group.title)
+            Section {
+                if isOpen { ForEach(group.items) { localButton($0) } }
+            } header: {
+                dateGroupHeader(group.title, count: group.items.count)
+            }
         }
     }
 
