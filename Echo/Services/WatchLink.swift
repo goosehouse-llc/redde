@@ -101,13 +101,44 @@ final class WatchLink: NSObject, WCSessionDelegate {
 
     /// Send the current connection over; an empty context tells the watch there is none.
     func push() {
+        #if DEBUG
+        if let session {
+            Self.note("push: activated \(session.activationState == .activated), paired \(session.isPaired), app on the watch \(session.isWatchAppInstalled)")
+        } else {
+            Self.note("push: no session")
+        }
+        #endif
         guard let session, session.activationState == .activated, session.isPaired, session.isWatchAppInstalled else { return }
+        let connection = Self.connection()
+        let context = connection?.asContext() ?? [:]
+        #if DEBUG
+        let size = (try? PropertyListSerialization.data(fromPropertyList: context, format: .binary, options: 0))?.count ?? -1
+        Self.note("push: kind \(connection.map { "\($0.kind)" } ?? "none"), bots \(connection?.bots?.map(\.name).joined(separator: ", ") ?? "none"), \(size) bytes")
+        #endif
         do {
-            try session.updateApplicationContext(Self.connection()?.asContext() ?? [:])
+            try session.updateApplicationContext(context)
         } catch {
             log.error("watch context not sent: \(error.localizedDescription, privacy: .public)")
+            #if DEBUG
+            Self.note("push failed: \(error.localizedDescription)")
+            #endif
         }
     }
+
+    #if DEBUG
+    /// What the watch was handed, a line at a time, in Library/Caches/watch-link.log (read off the phone).
+    static func note(_ line: String) {
+        let file = URL.cachesDirectory.appending(path: "watch-link.log")
+        let text = Date.now.formatted(.iso8601.time(includingFractionalSeconds: true)) + " " + line + "\n"
+        if let handle = try? FileHandle(forWritingTo: file) {
+            handle.seekToEndOfFile()
+            handle.write(Data(text.utf8))
+            try? handle.close()
+        } else {
+            try? text.write(to: file, atomically: true, encoding: .utf8)
+        }
+    }
+    #endif
 
     /// A relayed turn that has finished, sent without being asked for: queued, so it arrives
     /// when the watch's app next runs even if it had stopped polling (a lowered wrist).
