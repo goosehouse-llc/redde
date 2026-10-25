@@ -797,7 +797,7 @@ struct ConversationsList: View {
                         if openingBot == bot.name || marks.kind == .working {
                             ProgressView().controlSize(.small)
                         } else if let when = bot.lastActive {
-                            Text(DateGroup.rowTime(when)).font(.caption).foregroundStyle(.secondary)
+                            ChatRowTime(date: when)
                         }
                     }
                     HStack(spacing: 6) {
@@ -841,7 +841,7 @@ struct ConversationsList: View {
                         if marks.kind == .working {
                             ProgressView().controlSize(.small)
                         } else if let when = room.updatedAt {
-                            Text(DateGroup.rowTime(when)).font(.caption).foregroundStyle(.secondary)
+                            ChatRowTime(date: when)
                         }
                     }
                     HStack(spacing: 5) {
@@ -1172,7 +1172,7 @@ struct ConversationsList: View {
                 if opening == session.id {
                     ProgressView().controlSize(.small)
                 } else if let when = session.lastActiveDate {
-                    Text(DateGroup.rowTime(when)).font(.caption).foregroundStyle(.secondary)
+                    ChatRowTime(date: when)
                 }
             }
             Text(Self.snippetText(hit, accent: Settings.shared.resolvedTheme.accent))
@@ -1488,7 +1488,7 @@ struct ConversationsList: View {
                 if opening == session.id || marks.kind == .working {
                     ProgressView().controlSize(.small)
                 } else if let when = session.lastActiveDate {
-                    Text(DateGroup.rowTime(when)).font(.caption).foregroundStyle(.secondary)
+                    ChatRowTime(date: when)
                 }
             }
             HStack(spacing: 6) {
@@ -1919,7 +1919,7 @@ struct ConversationsList: View {
             HStack(spacing: 6) {
                 Text(record.title).font(.body.weight(.semibold)).lineLimit(1)
                 Spacer(minLength: 8)
-                Text(DateGroup.rowTime(record.updatedAt)).font(.caption).foregroundStyle(.secondary)
+                ChatRowTime(date: record.updatedAt)
             }
             HStack(spacing: 6) {
                 if drafts.isWaiting(record.id) { draftMark }
@@ -1970,6 +1970,43 @@ enum DateGroup {
         if cal.isDate(date, inSameDayAs: now) { return date.formatted(date: .omitted, time: .shortened) }
         if let week = cal.date(byAdding: .day, value: -6, to: now), date > week { return date.formatted(.dateTime.weekday(.abbreviated)) }
         return date.formatted(.dateTime.month(.abbreviated).day())
+    }
+
+    /// A compact age for a chat row, rounded down to the largest useful unit.
+    static func elapsed(_ date: Date, now: Date = .now) -> String {
+        let seconds = max(0, now.timeIntervalSince(date))
+        let minutes = Int(seconds / 60)
+        guard minutes > 0 else { return "1 min" }
+        if minutes < 60 { return "\(minutes)m" }
+
+        let hours = minutes / 60
+        if hours < 24 {
+            let remainder = minutes % 60
+            return remainder == 0 ? "\(hours)h" : "\(hours)h \(remainder)m"
+        }
+
+        let days = Int(seconds / 86_400)
+        if days < 30 { return "\(days)d" }
+        let months = max(1, Int(seconds / 2_629_746))
+        return "\(months) mo"
+    }
+}
+
+private struct ChatRowTime: View {
+    let date: Date
+
+    var body: some View {
+        VStack(alignment: .trailing, spacing: 1) {
+            Text(DateGroup.rowTime(date))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(DateGroup.elapsed(date))
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .lineLimit(1)
+        .fixedSize(horizontal: true, vertical: false)
+        .accessibilityElement(children: .combine)
     }
 }
 
