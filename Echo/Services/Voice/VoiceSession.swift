@@ -297,7 +297,7 @@ final class VoiceSession {
          thinkingSoundWanted: @escaping () -> Settings.ThinkingSound = { Settings.shared.thinkingSound },
          thinkingSound: any ThinkingSounding = ThinkingSoundPlayer.shared,
          respond: ((SpokenRequest.Answer) -> Void)? = nil,
-         liveWanted: @escaping () -> Bool = { Settings.shared.voiceEngine == .gptLive },
+         liveWanted: @escaping () -> Bool = { Settings.shared.usesGPTLive },
          makeLive: @escaping (Conversation) -> LiveVoice = { LiveVoice(conversation: $0) },
          micAllowed: @escaping () async -> Bool = { await AVAudioApplication.requestRecordPermission() }) {
         self.liveWanted = liveWanted

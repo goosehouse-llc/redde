@@ -156,6 +156,17 @@ final class Settings: ServeEndpoint {
     var voiceEngine: VoiceEngine {
         didSet { store(voiceEngine.rawValue, forKey: Keys.voiceEngine) }
     }
+    /// GPT-Live is in this build: development builds only for now (`GPT_LIVE`, project.yml). Its
+    /// WebRTC brings an encryption library of its own, which the App Store's export answers and
+    /// France's declaration would have to cover, so App Store builds go without it for now (decided 2026-10-24).
+    #if GPT_LIVE
+    static let gptLiveIncluded = true
+    #else
+    static let gptLiveIncluded = false
+    #endif
+    /// GPT-Live holds voice conversations: picked, and in this build. Picked on a device that has
+    /// it and synced to one that doesn't, Redde holds them.
+    var usesGPTLive: Bool { Self.gptLiveIncluded && voiceEngine == .gptLive }
     /// GPT-Live's voice when Redde sets the call up with its own OpenAI key. Through Hermes it is
     /// the one in Hermes's config (voice.gpt_live.voice).
     var liveVoice: String {

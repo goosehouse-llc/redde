@@ -202,9 +202,14 @@ targets:
         SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
         SWIFT_OBJC_BRIDGING_HEADER: Echo/App/Echo-Bridging-Header.h
       configs:
-        # The personal prefill never rides along in a Release / App Store build.
+        # GPT-Live is in development builds only (Settings.gptLiveIncluded).
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) GPT_LIVE
+        # The personal prefill never rides along in a Release / App Store build, and neither does
+        # GPT-Live's framework or the WebRTC it links: WebRTC brings an encryption library of its
+        # own (BoringSSL), which would change the App Store's export answers.
         Release:
-          EXCLUDED_SOURCE_FILE_NAMES: LocalDefaults.json
+          EXCLUDED_SOURCE_FILE_NAMES: LocalDefaults.json ReddeLive.framework WebRTC.framework
   # GPT-Live's calls over WebRTC (12 MB of code). A framework of its own so that the app loads
   # it only when a call starts, not with every launch (LiveCallBridge.swift says how they talk).
   ReddeLive:

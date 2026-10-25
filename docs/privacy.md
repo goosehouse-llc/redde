@@ -12,13 +12,13 @@ Redde is a voice and chat client for an AI assistant that you run yourself. This
 ## What Redde does not do
 
 - Redde has no analytics, crash reporting, advertising, or tracking of any kind.
-- Redde contains no third-party SDKs that collect anything: no analytics, advertising or tracking libraries. The one outside library that touches audio, WebRTC, is loaded only for GPT-Live calls (below).
+- Redde contains no third-party SDKs.
 - Goosehouse LLC cannot see your conversations, your credentials, or how you use the app. None of that reaches us. The one service we run for Redde is the notification relay described below, and it is used only if you turn that feature on.
 - Redde does not sell, share, or transfer personal information to anyone.
 
 ## Where your data goes
 
-Redde sends messages, attachments, and voice transcripts only to the server address you enter in the app's setup (and, if you choose GPT-Live, to OpenAI, as described below). That server is one you control or choose: typically a self-hosted Hermes agent or an OpenAI-compatible model server on your own network. What that server does with your data is governed by your own configuration and, if you point Redde at a third-party hosted provider, by that provider's privacy policy. Redde puts no intermediary between you and that server.
+Redde sends messages, attachments, and voice transcripts only to the server address you enter in the app's setup. That server is one you control or choose: typically a self-hosted Hermes agent or an OpenAI-compatible model server on your own network. What that server does with your data is governed by your own configuration and, if you point Redde at a third-party hosted provider, by that provider's privacy policy. Redde puts no intermediary between you and that server.
 
 Connections use HTTPS when the address you enter provides it. Because self-hosted servers on private networks often lack public certificates, Redde also allows plain HTTP connections to addresses you choose.
 
@@ -52,13 +52,7 @@ Notifications that Redde posts itself while it is running do not involve the rel
 
 ## Speech
 
-Voice input is transcribed on your device using Apple's on-device speech recognition, in voice mode and when you dictate into the message field. Audio never leaves the device, unless you choose GPT-Live (below). Only the resulting text is sent, and only to your configured server. Where a reply can be talked over (Settings → Voice → Talk over replies: with headphones, unless you change it), the microphone stays open in voice mode while the reply is read aloud, so that Redde can notice you starting to speak. That audio is handled the same way and nothing is recorded. The on-device voice used to read replies aloud also runs entirely on the device. If you enable a server-side text-to-speech voice in Settings, reply text is sent to the TTS server address you configure so it can return audio.
-
-## GPT-Live (optional, off by default)
-
-If you choose GPT-Live under Settings → Voice → Conversation, a voice conversation is held by OpenAI's voice model instead of on your device. While a call is open (from when you start it until you hang up, say a stop phrase, leave voice mode, or it hangs up after the quiet you set), what your microphone hears is streamed to OpenAI, and OpenAI's voice is streamed back. When a call starts, the last few messages of the conversation are given to OpenAI so that the voice knows what you were talking about. Requests the voice hands to your assistant go to your configured server as messages, as typed ones do, together with the recent spoken exchange, and your assistant's answers are sent to OpenAI for the voice to say.
-
-The call is set up either by your Hermes server, with its own OpenAI API key, or by Redde, with an OpenAI API key you enter, kept in the iOS Keychain. Either way the call goes directly between your device and OpenAI and does not pass through Goosehouse LLC. OpenAI handles it under its own terms and privacy policy, and bills the key's account for it. Nothing in this section happens unless you choose GPT-Live.
+Voice input is transcribed on your device using Apple's on-device speech recognition, in voice mode and when you dictate into the message field. Audio never leaves the device. Only the resulting text is sent, and only to your configured server. Where a reply can be talked over (Settings → Voice → Talk over replies: with headphones, unless you change it), the microphone stays open in voice mode while the reply is read aloud, so that Redde can notice you starting to speak. That audio is handled the same way and nothing is recorded. The on-device voice used to read replies aloud also runs entirely on the device. If you enable a server-side text-to-speech voice in Settings, reply text is sent to the TTS server address you configure so it can return audio.
 
 ## Siri and Shortcuts
 
@@ -92,7 +86,7 @@ The Apple Watch app gets your server's address and key from Redde on your iPhone
 
 - Redde uses the system photo picker and file picker, which give the app access only to the items you select. A video that is too large to send is made smaller on the device first.
 - The camera is used only when you choose Camera from the + menu, switch the camera on in voice mode, or Scan a setup code in setup. In voice mode it is on only while its button is, with the system's indicator showing, and one picture is taken for each question you ask meanwhile; nothing else it sees is kept or sent. A photo you take becomes an attachment in your message: it is kept with that conversation like any attachment and sent only to your server, and it is not saved to your photo library. Scanning a setup code reads the QR code on the device; no picture is kept or sent.
-- The microphone is used only while you are talking with the app (voice mode, including while a reply that can be talked over is read aloud, and dictation into the message field), with the system's indicator showing, and only for on-device transcription, or, during a GPT-Live call you start, streamed to OpenAI as described above.
+- The microphone is used only while you are talking with the app (voice mode, including while a reply that can be talked over is read aloud, and dictation into the message field), with the system's indicator showing, and only for on-device transcription.
 - If you turn on Phone tools, your assistant can ask Redde for the areas you switch on: calendar events, reminders, contacts, photos (when they were taken, what they show, and a photo it asks to look at), the files in Redde's own folder, and the alarms and timers Redde itself has set (it can set and cancel those once you confirm; it cannot see the Clock app's). With calls and messages on, your assistant can ask Redde to start a call, which iOS asks you to confirm, and to write a message, which opens in Messages for you to send or discard: Redde sends nothing by itself, and your assistant does not hear the call or see your messages. It learns whom you asked it to call or write to, and whether you sent the message. With the widget area on, your assistant can write a few lines on Redde's own widget; that sends nothing from your iPhone. If Redde is closed and your iPhone is paired for notifications, what it wrote arrives the way notifications do, encrypted between your server and your iPhone. To find a photo by what it shows, Redde looks at your pictures on the device while it is open, with Apple's on-device image recognition, and keeps what it made out (the things in each picture, and text in screenshots, documents and signs) in a file on the device that is not backed up and is deleted when you turn Photos off. Your assistant is told what was made out only for the photos that match what it asked for. What it asks for is read on the device and sent to the server you connect to, and nowhere else, at the moment it asks. Each area is off until you turn it on, you can have Redde ask you every time, and adding, changing or deleting anything is always put to you first. A list of what was asked for is kept on the device.
 - If you turn on "Nod or shake to answer", Redde reads head movement from your AirPods while a request from your assistant waits for your answer in voice mode, to tell a nod from a shake. It is read on the device, at no other time, and is not stored or sent anywhere.
 - If you enable the app lock, or ask for your passwords to be included in a setup code for another device, Face ID or Touch ID is evaluated by iOS. Redde never receives biometric data.
@@ -111,7 +105,7 @@ Redde is not directed at children under 13, and has no accounts and no personal 
 
 ## Changes
 
-If this policy changes, the new version will be posted at this address with an updated effective date. The October 2026 version added the optional notification relay; before it, Goosehouse LLC ran no service for Redde at all. The October 24, 2026 version added GPT-Live.
+If this policy changes, the new version will be posted at this address with an updated effective date. The October 2026 version added the optional notification relay; before it, Goosehouse LLC ran no service for Redde at all.
 
 ## Contact
 

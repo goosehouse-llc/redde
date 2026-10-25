@@ -1915,6 +1915,16 @@ has it (`voice.voice_chat_mode: gpt-live`; asked 2026-10-23 after a Reddit comme
 check", and hands every real request to the agent (client delegation); the agent's answer goes
 back for it to say in its own words. Hermes keeps the model, tools, memory and approvals.
 
+- **Not in App Store builds yet.** GPT-Live is a Debug-only compilation condition (`GPT_LIVE`,
+  `Settings.gptLiveIncluded`): without it there is no Conversation row in Settings, and a GPT-Live
+  choice synced from another device leaves voice mode Redde's own (`Settings.usesGPTLive`). A
+  Release build leaves `ReddeLive.framework` and `WebRTC.framework` out of the bundle
+  (`EXCLUDED_SOURCE_FILE_NAMES`). WebRTC's BoringSSL is cryptography that isn't the operating
+  system's, which changes the App Store's export answers and needs a French encryption
+  declaration (docs/app-store-listing.md, Export compliance), so 2.1.1 went without it
+  (decided 2026-10-24). The privacy policy's GPT-Live text was taken out with it and is in
+  a673afa.
+
 - **The call** goes straight from the phone to OpenAI over WebRTC: the microphone (Opus, with
   WebRTC's echo cancellation on Redde's own voice-chat audio session), the voice coming back, and
   the `oai-events` data channel. Only the SDP offer and answer pass through whoever sets it up

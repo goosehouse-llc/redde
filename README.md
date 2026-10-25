@@ -17,10 +17,11 @@ and can't read them ([docs/push.md](docs/push.md)).
 - **Voice first.** On-device speech recognition, replies spoken by the built-in voice, your own
   Kokoro server or the voice your Hermes is set up with, hands-free mode, barge-in, AirPods and CarPlay. Switch the camera on in voice
   mode and what you point the phone at goes with your question.
-- **GPT-Live, if you want it.** OpenAI's full-duplex voice model holds the conversation, talking
-  and listening at once, and hands every real request to your agent, as Hermes Desktop's live
-  voice does. Set up by your Hermes with its OpenAI key, or with your own key kept in Redde; off
-  until you pick it, since your microphone goes to OpenAI while a call is open.
+- **GPT-Live, coming.** OpenAI's full-duplex voice model holds the conversation, talking and
+  listening at once, and hands every real request to your agent, as Hermes Desktop's live voice
+  does. Set up by your Hermes with its OpenAI key, or with your own key kept in Redde; off until
+  you pick it, since your microphone goes to OpenAI while a call is open. In development builds
+  only for now, not yet in the App Store's.
 - **Your language.** Listen in any language on-device transcription supports, hear each reply in a
   voice for the language it's written in, ask the agent to always answer in one language, and
   end a hands-free conversation with stop phrases of your own.

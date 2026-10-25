@@ -434,11 +434,13 @@ struct VoiceSettings: View {
 
     var body: some View {
         Section {
-            NavigationLink {
-                LiveVoiceSettings()
-            } label: {
-                LabeledContent("Conversation") {
-                    Text(settings.voiceEngine == .gptLive ? "GPT-Live" : "Redde").lineLimit(1)
+            if Settings.gptLiveIncluded {
+                NavigationLink {
+                    LiveVoiceSettings()
+                } label: {
+                    LabeledContent("Conversation") {
+                        Text(settings.voiceEngine == .gptLive ? "GPT-Live" : "Redde").lineLimit(1)
+                    }
                 }
             }
             Picker("Voice", selection: $settings.replyVoice) {
