@@ -25,6 +25,10 @@ nonisolated enum WhatsNew {
         Release(version: "2.2", items: [
             Item(symbol: "waveform.and.mic", title: "LIVE VOICE!",
                  detail: "Pick GPT-Live, Gemini Live, Grok Voice or ElevenLabs in Settings → Voice → Voice mode and add your key for it: voice mode becomes a call you can interrupt, and the voice hands real work to your agent. Each bot can have its own (Edit Bot → Voice). The service bills your key by the minute."),
+            Item(symbol: "person.3.fill", title: "Group chats as calls",
+                 detail: "Turn on Group Chats as Calls in Settings → Voice → Voice mode: voice mode in a group chat becomes a live call, and each bot answers in its own live voice."),
+            Item(symbol: "speaker.wave.2.fill", title: "ElevenLabs reads replies",
+                 detail: "Pick ElevenLabs in Settings → Voice → Reading voice, on your own key, and each bot reads in an ElevenLabs voice of its own. A bot can have a reading voice of its own too, in Edit Bot → Voice."),
             Item(symbol: "ear", title: "Wake phrases",
                  detail: "With Redde open, say “Hey” and an agent's name to talk to it, or “Hey Home, turn the lights off” to ask at once. Turn it on, and change the phrases, in Settings → Voice → Wake Phrase. It listens on the device."),
             Item(symbol: "puzzlepiece.extension", title: "Plugins",

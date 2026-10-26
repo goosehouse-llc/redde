@@ -27,7 +27,7 @@ BOTS
 • Ask a bot from Siri, CarPlay, the Apple Watch or a spoken word.
 
 TALK, DON'T TYPE
-• Tap the mic or say "Hey" and your agent's name, ask, hear the answer, or show it what the camera sees. Speech is recognized on your iPhone; the reply is spoken by the built-in voice, Kokoro or your Hermes.
+• Tap the mic or say "Hey" and your agent's name, ask, hear the answer, or show it what the camera sees. Speech is recognized on your iPhone; the reply is spoken by the built-in voice, Kokoro, ElevenLabs or your Hermes.
 • Or talk live, interrupting any time, with GPT-Live, Gemini Live, Grok Voice or ElevenLabs on your own key.
 • Hands-free keeps the conversation going until you say "that's all". Talk over an answer or type to steer it.
 • In CarPlay, ask in a new chat, a recent one or a bot's. On Apple Watch, raise your wrist and ask.
@@ -51,7 +51,7 @@ YOUR BACKEND, YOUR RULES
 • Connect to Hermes through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access, Pangolin or a reverse proxy. Save several servers, see all their chats in one list, and sync them with iCloud. Sign in with a password or a browser.
 • Or go straight to any OpenAI-compatible endpoint: llama.cpp, llama-swap, vLLM or Ollama on your hardware, or a hosted provider with your key.
 • Set up by QR code or link. Credentials stay in the Keychain.
-• Face ID lock, seven themes with your own colors, app icons and voice orbs, iPad split view, iPhone Duo, keyboard shortcuts.
+• Face ID lock, seven themes with your own colors, app icons and voice orbs, iPad split view, iPhone Duo.
 • The one service we run is an optional relay for notifications, which can't read them.
 
 REQUIRES
@@ -71,18 +71,21 @@ The words in both sit inside the "art safe area" of Apple's templates. Use Previ
 LIVE VOICE! Wake phrases. And plugins.
 
 • LIVE VOICE! Pick GPT-Live, Gemini Live, Grok Voice or ElevenLabs in Settings → Voice → Voice mode, add your key for it, and voice mode becomes a call: the voice talks and listens at once, so you can interrupt it, it answers small talk itself, and it hands anything real to your agent and says the answer in its own words. Each bot can have its own engine and voice (Edit Bot → Voice), with a sample of every voice before you pick it. Say "Home, …" and the call goes to Home, in Home's voice. It waits a moment for you to finish, and your agent checks the current state each time you ask. With hands-free off, it hangs up a few seconds after the answer unless you keep talking. Each service bills your key per minute.
+• Group chats as calls. Turn on Group Chats as Calls (Settings → Voice → Voice mode) and voice mode in a group chat is a live call: what you say goes to the group, and each bot answers in its own live voice. Keep Calls On When Locked lets a call go on with your iPhone locked.
+• ElevenLabs reads replies too (Settings → Voice → Reading voice), on your own key, each bot in an ElevenLabs voice of its own. And a bot can read with a voice of its own (Edit Bot → Voice): Kokoro for one, ElevenLabs for another, and a Kokoro voice can be a blend.
 • Wake phrases. With Redde open on your iPhone, iPad or the car's screen, say "Hey" and an agent's name to talk to it, or "Hey Home, turn the lights off" to ask straight away. Each agent's phrase can be changed. Off until you turn it on in Settings → Voice → Wake Phrase; it listens on the device.
 • Plugins. Settings → Plugins finds Hermes plugins in Nous Research's catalog and installs them on your server, for your agent or for one bot (Edit Bot → Plugins). Official and verified ones first, and you see what each sends, costs and adds before you install it. It takes the Hermes Dashboard login.
 • Bots can make Kanban cards: Edit Bot → Tools offers Kanban, in a bot's own chat and in group chats.
 • On Apple Watch, each bot reads its replies in its own voice, as on the iPhone.
-• The main agent's ••• menu has Voice…, as a bot's does.
+• Settings → Voice comes in three parts: Voice mode, Reading voice and the rest. The main agent's ••• menu has Voice…, as a bot's does.
+• ElevenLabs' typing sound while your agent works no longer moves the voice's face.
 
 ## Before submitting 2.2
 Written ahead of the release. What a phone has shown is said where it has.
 
 In App Store Connect and on the web:
 - 2.1.1 (269) was released on 2026-10-25.
-- The build is 2.2 (272), from main: the live voice fixes, Kanban for bots and Plugins (2026-10-26). 270 lacks the fixes and 271 (archived, never uploaded) the rest: submit 272.
+- The build is 2.2 (273), from main: the live voice fixes, Kanban for bots, Plugins, and the afternoon's voice work (ElevenLabs reading, group chats as calls, Voice settings in three parts; 2026-10-26). 270 and 272 were uploaded before it: submit 273.
 - Live voice is in the Release build from 2.2: the `GPT_LIVE` flag is gone (2026-10-25). Its calls go over WebSockets on URLSession, Apple's TLS, with no WebRTC or other cryptography in the app, so the export answer stays as it is and no French declaration is needed.
 - The description gains live voice and wake phrases (3,995 of 4,000; two lines tightened to make room), and What's New is new. `scripts/app-store-push.py all`, then `notes`: the review notes gain LIVE VOICE and a new MICROPHONE line (3,993 with the key).
 - The microphone's permission text changes (`NSMicrophoneUsageDescription`): the text goes only to the user's server, unless they start a live voice call.

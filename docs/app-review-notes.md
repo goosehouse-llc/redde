@@ -16,16 +16,16 @@ TO TEST
 Hermes screens (Skills, Memory, Files, Plugins, bots) need a self-hosted Hermes server. Plugins are installed by that server; the app runs no plugin code.
 
 PHONE TOOLS (optional, off by default)
-Settings > Phone tools. The user's Hermes can ask for calendar events, reminders, a contact, photos, files in the app's folder, alarms and timers (AlarmKit) and a widget it writes on, start a call (iOS confirms) or draft a text the user sends. Each area is off until turned on, when iOS asks for its permission. Changes ask first. What is read goes only to the user's server, through a plugin there, so the review endpoint can't run them.
+Settings > Phone tools. The user's Hermes can ask for calendar events, reminders, a contact, photos, files in the app's folder, alarms and timers (AlarmKit) and a widget it writes on, start a call (iOS confirms) or draft a text the user sends. Each area is off until turned on, when iOS asks for its permission. Changes ask first. What is read goes only to the user's server, through a plugin there; the review endpoint can't run them.
 
 CARPLAY (voice-based conversational app entitlement)
 Connect to CarPlay or the CarPlay Simulator. Ask has three cards: Ask (one question), Talk (hands-free until "that's all") and New Chat. Chats and Bots list conversations and bots by name, status and time only; picking one continues it by voice. The voice card shows Listening, Thinking, Speaking, Stop and Pause. Answers are spoken; no reply text is shown.
 
 APPLE WATCH
-On the paired watch tap Ask and dictate; the reply is shown and read aloud, and with Bluetooth headphones plays on after the wrist is lowered (background audio).
+On the paired watch tap Ask and dictate; the reply is shown and read aloud, and with Bluetooth headphones plays on after the wrist is lowered.
 
 TERMINAL
-Settings > Terminal: a shell on the user's own server over SSH, its key made and kept in the Keychain.
+Settings > Terminal: a shell on the user's own server over SSH, its key kept in the Keychain.
 
 ICLOUD (off by default)
 Settings > iCloud keeps the user's servers and settings in their own iCloud (keys in iCloud Keychain). Nothing goes to us.
@@ -34,13 +34,13 @@ NOTIFICATIONS (optional, off by default)
 Settings > Voice > Notify when Redde is closed. Pairing takes a plugin on the user's Hermes server, which "Install the Plugin" asks it to install; the app downloads and runs no code. The server sends them through our relay, redde-push.goosehouse.org, to APNs, encrypted end to end with CryptoKit; the relay keeps only the push token.
 
 LINK PREVIEWS (off by default)
-Settings > Appearance: the phone opens a linked page for its title and picture. Nothing else is sent.
+Settings > Appearance: the phone opens a linked page for its title and picture; nothing else is sent.
 
 MICROPHONE
 Voice mode, dictation, a reply with Talk over replies, and, with Wake Phrase on (Settings > Voice, off by default), while Redde is on screen. Transcribed on the device; no audio is kept or sent but in a live voice call.
 
 LIVE VOICE (optional, off by default)
-Settings > Voice > Voice mode: GPT-Live, Gemini Live, Grok Voice or ElevenLabs holds the call, on the user's own key, the audio going straight there over a WebSocket. The review account has none.
+Settings > Voice > Voice mode: GPT-Live, Gemini Live, Grok Voice or ElevenLabs holds the call, on the user's own key, the audio going straight there over a WebSocket. ElevenLabs also reads replies. The review account has none.
 
 IN-APP PURCHASES
 Settings > About > Support Redde: three optional one-time tips (consumables) that unlock nothing.
