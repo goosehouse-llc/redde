@@ -73,7 +73,7 @@
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Redde connects to the Hermes gateway or model server you configure, which is often on your local network.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Redde listens so you can talk to your assistant. Audio is transcribed on this device and only your own server ever receives the text.</string>
+	<string>Redde listens so you can talk to your assistant. Speech is transcribed on this device and only your own server receives the text, unless you start a live voice call, which goes to the voice service you chose.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>Redde reads head movement from your AirPods so you can nod to approve, or shake your head to deny, a request from your assistant. It is read on this device and never stored or sent.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

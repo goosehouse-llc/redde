@@ -164,20 +164,12 @@ final class Settings: ServeEndpoint {
     var voiceEngine: VoiceEngine {
         didSet { store(voiceEngine.rawValue, forKey: Keys.voiceEngine) }
     }
-    /// GPT-Live is in this build: development builds only until it's finished (`GPT_LIVE`,
-    /// project.yml). Its calls go over a WebSocket on Apple's TLS since 2026-10-24, so it brings no
-    /// cryptography of its own to declare (it went without WebRTC for that).
-    #if GPT_LIVE
-    static let gptLiveIncluded = true
-    #else
-    static let gptLiveIncluded = false
-    #endif
     /// The live engine holding the voice conversations with `profile` (nil or "default": the main
-    /// agent): the bot's own choice (Edit Bot → Voice), else the one above; nil for Redde's, and
-    /// in a build without live calls. Picked on a device that has them and synced to one that
-    /// doesn't, Redde holds them.
+    /// agent): the bot's own choice (Edit Bot → Voice), else the one above; nil for Redde's. In
+    /// release builds since 2.2: until then development builds only, while its calls went over
+    /// WebRTC, whose own cryptography would have needed declaring; they go over a WebSocket on
+    /// Apple's TLS since 2026-10-24.
     func liveEngine(for profile: String?) -> LiveEngine? {
-        guard Self.gptLiveIncluded else { return nil }
         if let profile, profile != "default", let own = botVoicesHere[profile]?.conversation { return own.live }
         return voiceEngine.live
     }

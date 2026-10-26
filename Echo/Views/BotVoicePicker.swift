@@ -24,7 +24,7 @@ struct BotVoicePicker: View {
     var body: some View {
         NavigationStack {
             Form {
-                if Settings.gptLiveIncluded { conversationSection }
+                conversationSection
                 if engine == .hermes {
                     Section {
                         Text("Replies are read in Hermes's own voice (Settings → Voice → Reply voice), one for every bot. Pick Built-in or Kokoro there for each bot to have a voice of its own.")

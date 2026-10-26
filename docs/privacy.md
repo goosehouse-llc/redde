@@ -4,7 +4,7 @@ title: Redde Privacy Policy
 
 # Redde Privacy Policy
 
-**Effective date:** October 24, 2026
+**Effective date:** October 25, 2026
 **Publisher:** Goosehouse LLC
 
 Redde is a voice and chat client for an AI assistant that you run yourself. This policy explains what the app does with your information. The short version: Redde has no account, no analytics and no tracking, and your conversations go only to the server you configure. One optional feature, notifications when Redde is closed, uses a relay that we run. It holds your iPhone's push address and passes on notifications it cannot read.
@@ -18,7 +18,7 @@ Redde is a voice and chat client for an AI assistant that you run yourself. This
 
 ## Where your data goes
 
-Redde sends messages, attachments, and voice transcripts only to the server address you enter in the app's setup. That server is one you control or choose: typically a self-hosted Hermes agent or an OpenAI-compatible model server on your own network. What that server does with your data is governed by your own configuration and, if you point Redde at a third-party hosted provider, by that provider's privacy policy. Redde puts no intermediary between you and that server.
+Redde sends messages, attachments, and voice transcripts only to the server address you enter in the app's setup (and, if you start a live voice call, to the voice service you chose, as described below). That server is one you control or choose: typically a self-hosted Hermes agent or an OpenAI-compatible model server on your own network. What that server does with your data is governed by your own configuration and, if you point Redde at a third-party hosted provider, by that provider's privacy policy. Redde puts no intermediary between you and that server.
 
 Connections use HTTPS when the address you enter provides it. Because self-hosted servers on private networks often lack public certificates, Redde also allows plain HTTP connections to addresses you choose.
 
@@ -52,7 +52,17 @@ Notifications that Redde posts itself while it is running do not involve the rel
 
 ## Speech
 
-Voice input is transcribed on your device using Apple's on-device speech recognition, in voice mode and when you dictate into the message field. Audio never leaves the device. Only the resulting text is sent, and only to your configured server. Where a reply can be talked over (Settings → Voice → Talk over replies: with headphones, unless you change it), the microphone stays open in voice mode while the reply is read aloud, so that Redde can notice you starting to speak. That audio is handled the same way and nothing is recorded. The on-device voice used to read replies aloud also runs entirely on the device. If you enable a server-side text-to-speech voice in Settings, reply text is sent to the TTS server address you configure so it can return audio.
+Voice input is transcribed on your device using Apple's on-device speech recognition, in voice mode and when you dictate into the message field. Audio never leaves the device, unless you start a live voice call (below). Only the resulting text is sent, and only to your configured server. Where a reply can be talked over (Settings → Voice → Talk over replies: with headphones, unless you change it), the microphone stays open in voice mode while the reply is read aloud, so that Redde can notice you starting to speak. That audio is handled the same way and nothing is recorded. The on-device voice used to read replies aloud also runs entirely on the device. If you enable a server-side text-to-speech voice in Settings, reply text is sent to the TTS server address you configure so it can return audio.
+
+### Wake phrases (optional, off by default)
+
+If you turn on wake phrases (Settings → Voice → Wake Phrase), the microphone stays on while Redde is open on your screen or on your car's, with the system's indicator showing, so that Redde can hear an agent's phrase, such as "Hey Sol". Nothing is transcribed until the sound says someone is talking. Then a few seconds are transcribed on the device to look for a phrase, and let go of at once when there isn't one. Nothing is recorded or sent anywhere. What you say after a phrase is sent to your configured server, as anything said in voice mode is. Wake phrases stop while Redde isn't on screen and while something else uses the microphone.
+
+## Live voice calls (optional, off by default)
+
+If you choose a live voice under Settings → Voice → Conversation, or for one bot in its voice settings, a voice conversation is held by that service's voice model instead of on your device: GPT-Live (OpenAI), Gemini Live (Google), Grok Voice (xAI), or ElevenLabs. While a call is open (from when you start it until you hang up, say a stop phrase, leave voice mode, or it hangs up after the quiet you set), what your microphone hears is streamed to that service, and its voice is streamed back. When a call starts, the latest messages of the conversation (24 at most) and the names you call your bots by are given to the service, so that the voice knows what you were talking about and whom you may ask for. Requests the voice hands to your assistant go to your configured server as messages, as typed ones do, together with the recent spoken exchange, and your assistant's answers are sent to the service for the voice to say.
+
+Calls are made with an API key you enter for that service, kept in the iOS Keychain. Each call goes directly between your device and the service and does not pass through Goosehouse LLC. The service handles it under its own terms and privacy policy, and bills the key's account for it. Redde also uses that key to list the service's voices and to play one before you pick it. For ElevenLabs, the first call creates one agent in your ElevenLabs account, named "Redde voice", with the one tool it hands requests over with; each call then tells that agent whom it speaks as and in which voice. Nothing in this section happens unless you choose a live voice.
 
 ## Siri and Shortcuts
 
@@ -64,10 +74,10 @@ On iOS 27 and later you can turn on "Let Siri use Redde" in Settings. With it on
 
 ## Data stored on your device
 
-- **Credentials** (server API keys, passwords, the tokens of a browser sign-in, and any custom headers you add for a server) are stored in the iOS Keychain, restricted to this device, and never leave it except in requests to the servers they belong to.
+- **Credentials** (server API keys, passwords, the tokens of a browser sign-in, any custom headers you add for a server, and the keys of live voice services) are stored in the iOS Keychain, and never leave the device except in requests to the servers and services they belong to, and, if you turn on Sync with iCloud, to your other devices through iCloud Keychain, which is end-to-end encrypted. Browser sign-ins always stay on the device.
 - **Notification pairings**, if you make any: the key shared with your Hermes server and what identifies the pairing at the relay, in the iOS Keychain on this device.
 - **Conversation history**, **attachments** and **drafts** (what you have typed and not sent) are stored in the app's private container with iOS data protection. They are not synced or backed up by Redde, though they are included in your own iCloud or computer backups of the device like any app data.
-- **Settings** are stored in the app's preferences on the device.
+- **Settings** are stored in the app's preferences on the device. If you turn on Sync with iCloud, your servers and settings are also kept in your iCloud account, for your other iPhones, iPads and Macs signed in to it; which server and profile each device is on, App Lock, Siri, Phone tools, wake phrases being on, and notifications stay on each device.
 - **Shared items** sent to Redde from other apps via the share sheet are stored briefly in the app's private container until Redde opens and moves them into the composer.
 - **Files from your server** that you open in Settings → Files are downloaded to a temporary folder so they can be shown, and removed the next time you open the file browser. Files you upload from there go only to your server.
 - **What the widgets show** (the last reply, a command or question that is waiting for you, and how full the model's context is) is kept in a container the app shares with its widgets, on the device. With the app lock on, the widgets leave out commands, questions and titles.
@@ -86,7 +96,7 @@ The Apple Watch app gets your server's address and key from Redde on your iPhone
 
 - Redde uses the system photo picker and file picker, which give the app access only to the items you select. A video that is too large to send is made smaller on the device first.
 - The camera is used only when you choose Camera from the + menu, switch the camera on in voice mode, or Scan a setup code in setup. In voice mode it is on only while its button is, with the system's indicator showing, and one picture is taken for each question you ask meanwhile; nothing else it sees is kept or sent. A photo you take becomes an attachment in your message: it is kept with that conversation like any attachment and sent only to your server, and it is not saved to your photo library. Scanning a setup code reads the QR code on the device; no picture is kept or sent.
-- The microphone is used only while you are talking with the app (voice mode, including while a reply that can be talked over is read aloud, and dictation into the message field), with the system's indicator showing, and only for on-device transcription.
+- The microphone is used only while you are talking with the app (voice mode, including while a reply that can be talked over is read aloud, and dictation into the message field) and, if you turn on wake phrases, while Redde is open, with the system's indicator showing, and only for on-device transcription, or, during a live voice call you start, streamed to the service you chose as described above.
 - If you turn on Phone tools, your assistant can ask Redde for the areas you switch on: calendar events, reminders, contacts, photos (when they were taken, what they show, and a photo it asks to look at), the files in Redde's own folder, and the alarms and timers Redde itself has set (it can set and cancel those once you confirm; it cannot see the Clock app's). With calls and messages on, your assistant can ask Redde to start a call, which iOS asks you to confirm, and to write a message, which opens in Messages for you to send or discard: Redde sends nothing by itself, and your assistant does not hear the call or see your messages. It learns whom you asked it to call or write to, and whether you sent the message. With the widget area on, your assistant can write a few lines on Redde's own widget; that sends nothing from your iPhone. If Redde is closed and your iPhone is paired for notifications, what it wrote arrives the way notifications do, encrypted between your server and your iPhone. To find a photo by what it shows, Redde looks at your pictures on the device while it is open, with Apple's on-device image recognition, and keeps what it made out (the things in each picture, and text in screenshots, documents and signs) in a file on the device that is not backed up and is deleted when you turn Photos off. Your assistant is told what was made out only for the photos that match what it asked for. What it asks for is read on the device and sent to the server you connect to, and nowhere else, at the moment it asks. Each area is off until you turn it on, you can have Redde ask you every time, and adding, changing or deleting anything is always put to you first. A list of what was asked for is kept on the device.
 - If you turn on "Nod or shake to answer", Redde reads head movement from your AirPods while a request from your assistant waits for your answer in voice mode, to tell a nod from a shake. It is read on the device, at no other time, and is not stored or sent anywhere.
 - If you enable the app lock, or ask for your passwords to be included in a setup code for another device, Face ID or Touch ID is evaluated by iOS. Redde never receives biometric data.
@@ -105,7 +115,7 @@ Redde is not directed at children under 13, and has no accounts and no personal 
 
 ## Changes
 
-If this policy changes, the new version will be posted at this address with an updated effective date. The October 2026 version added the optional notification relay; before it, Goosehouse LLC ran no service for Redde at all.
+If this policy changes, the new version will be posted at this address with an updated effective date. The October 2026 version added the optional notification relay; before it, Goosehouse LLC ran no service for Redde at all. The October 25, 2026 version added live voice calls and wake phrases, and says what Sync with iCloud sends to your other devices.
 
 ## Contact
 

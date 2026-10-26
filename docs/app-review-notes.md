@@ -2,10 +2,10 @@
 
 # App Review notes
 
-Paste the block below into App Store Connect → App Review Information → Notes. The field takes plain text, 4,000 characters at most; this is 3,910 with the placeholder and about 3,969 with a key in its place. Replace `<<REVIEW KEY>>` first, or let `scripts/app-store-push.py notes` put the key in and send them: until 1.8 the notes went in by hand, and from 1.1 to 1.7.1 with the placeholder still in them. Keep it under the limit when adding to it: the notes for 1.6 ran to 6,600 before they were cut.
+Paste the block below into App Store Connect → App Review Information → Notes. The field takes plain text, 4,000 characters at most; this is 3,934 with the placeholder and about 3,993 with a key in its place. Replace `<<REVIEW KEY>>` first, or let `scripts/app-store-push.py notes` put the key in and send them: until 1.8 the notes went in by hand, and from 1.1 to 1.7.1 with the placeholder still in them. Keep it under the limit when adding to it: the notes for 1.6 ran to 6,600 before they were cut.
 
 ```text
-Redde is a voice and chat client for a self-hosted AI assistant. It has no account; conversations go only to the server the user configures. Our one service is an optional notification relay.
+Redde is a voice and chat client for a self-hosted AI assistant. It has no account; conversations go only to the server the user configures.
 
 TO TEST
 1. On the "Set up Redde" sheet choose "OpenAI-compatible (direct to a model)".
@@ -16,28 +16,31 @@ TO TEST
 Hermes screens (Skills, Memory, Files, bots) need a self-hosted Hermes server.
 
 PHONE TOOLS (optional, off by default)
-Settings > Phone tools. The user's Hermes can ask for calendar events, reminders, a contact, photos, files in the app's own folder, alarms and timers (AlarmKit) and a widget it writes on, start a call (iOS confirms) or draft a text the user sends. Each area is off until turned on, when iOS asks for its permission (visible without a server). Changes ask first. What is read goes only to the user's server. The tools need a plugin there, so the review endpoint can't run them.
+Settings > Phone tools. The user's Hermes can ask for calendar events, reminders, a contact, photos, files in the app's folder, alarms and timers (AlarmKit) and a widget it writes on, start a call (iOS confirms) or draft a text the user sends. Each area is off until turned on, when iOS asks for its permission. Changes ask first. What is read goes only to the user's server, through a plugin there, so the review endpoint can't run them.
 
 CARPLAY (voice-based conversational app entitlement)
-Connect the phone to CarPlay or the CarPlay Simulator. Ask has three cards: Ask (one question), Talk (hands-free until the user says "that's all") and New Chat. Chats, and Bots with a Hermes server, list conversations and bots by name, status and time only; picking one continues it by voice. The voice card shows Listening, Thinking and Speaking, with Stop and Pause. Answers are spoken; no reply text is shown.
+Connect to CarPlay or the CarPlay Simulator. Ask has three cards: Ask (one question), Talk (hands-free until "that's all") and New Chat. Chats and Bots list conversations and bots by name, status and time only; picking one continues it by voice. The voice card shows Listening, Thinking, Speaking, Stop and Pause. Answers are spoken; no reply text is shown.
 
 APPLE WATCH
-Open Redde on the paired watch, tap Ask and dictate; the reply is shown and read aloud. Background audio: with Bluetooth headphones a reply plays on after the wrist is lowered. The watch app records nothing.
+On the paired watch tap Ask and dictate; the reply is shown and read aloud, and with Bluetooth headphones plays on after the wrist is lowered (background audio).
 
 TERMINAL
 Settings > Terminal: a shell on the user's own server over SSH, with a key the app makes and keeps in the Keychain.
 
 ICLOUD (off by default)
-Settings > iCloud > Sync with iCloud keeps the user's servers and settings in their own iCloud (key-value store; keys in iCloud Keychain). Nothing goes to us.
+Settings > iCloud > Sync with iCloud keeps the user's servers and settings in their own iCloud (keys in iCloud Keychain). Nothing goes to us.
 
 NOTIFICATIONS (optional, off by default)
-Settings > Voice > Notify when Redde is closed. Pairing takes a plugin on the user's Hermes server: "Install the Plugin" asks that server to install it on itself; the app downloads and runs no code. The server sends them through our relay, redde-push.goosehouse.org, to APNs, encrypted between server and iPhone with CryptoKit; the relay keeps only the push token.
+Settings > Voice > Notify when Redde is closed. Pairing takes a plugin on the user's Hermes server, which "Install the Plugin" asks it to install; the app downloads and runs no code. The server sends them through our relay, redde-push.goosehouse.org, to APNs, encrypted end to end with CryptoKit; the relay keeps only the push token.
 
 LINK PREVIEWS (off by default)
 Settings > Appearance > Link previews: the phone opens a linked page for its title and picture. Nothing else is sent.
 
 MICROPHONE
-Only while the user talks to the app: voice mode, dictation, and, with Talk over replies, while a reply plays. Transcription is on the device; no audio is kept or sent.
+Voice mode, dictation, a reply with Talk over replies, and, with Wake Phrase on (Settings > Voice, off by default), while Redde is on screen. Transcribed on the device; no audio is kept or sent but in a live voice call.
+
+LIVE VOICE (optional, off by default)
+Settings > Voice > Conversation: GPT-Live, Gemini Live, Grok Voice or ElevenLabs holds the call, on the user's own key, the audio going straight there over a WebSocket. The review account has none.
 
 IN-APP PURCHASES
 Settings > About > Support Redde: three optional one-time tips (consumables) that unlock nothing.
@@ -49,7 +52,7 @@ Processing: only BGContinuedProcessingTaskRequest, so a reply the user asked for
 PERMISSIONS
 Calendar: attaching a day's events from the message field; also Phone tools.
 Reminders, Contacts, Photos, Alarms: only for Phone tools, asked when the user turns that area on.
-Motion & Fitness: Nod or shake to answer (Settings > Voice): AirPods head movement, read on the device while a request waits; nothing is kept or sent.
+Motion & Fitness: Nod or shake to answer (Settings > Voice), AirPods head movement read on the device while a request waits.
 Camera: the + menu's Camera, "Scan a setup code", and voice mode's camera button, which sends a still with each spoken question.
 
 APP TRANSPORT SECURITY

@@ -1915,11 +1915,10 @@ has it (`voice.voice_chat_mode: gpt-live`; asked 2026-10-23 after a Reddit comme
 check", and hands every real request to the agent (client delegation); the agent's answer goes
 back for it to say in its own words. Hermes keeps the model, tools, memory and approvals.
 
-- **Not in App Store builds yet.** GPT-Live is a Debug-only compilation condition (`GPT_LIVE`,
-  `Settings.gptLiveIncluded`) until it's finished: without it there is no Conversation row in
-  Settings, and a GPT-Live choice synced from another device leaves voice mode Redde's own
-  (`Settings.usesGPTLive`). 2.1.1 went without it; the privacy policy's GPT-Live text is in
-  a673afa, to go back in when it ships.
+- **In App Store builds from 2.2.** Until then it was a Debug-only compilation condition
+  (`GPT_LIVE`), taken out on 2026-10-25 once the calls went over Apple's TLS and the four
+  engines had been tried; 2.1.1 went without it. The privacy policy says what goes to each
+  service (docs/privacy.md, "Live voice calls").
 
 - **The call** (`LiveCall`) is a WebSocket straight from the phone to OpenAI
   (`wss://api.openai.com/v1/live/sessions`): `session.start` first, then JSON events both ways,

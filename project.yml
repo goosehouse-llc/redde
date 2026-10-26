@@ -156,7 +156,7 @@ targets:
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
         NSMotionUsageDescription: Redde reads head movement from your AirPods so you can nod to approve, or shake your head to deny, a request from your assistant. It is read on this device and never stored or sent.
-        NSMicrophoneUsageDescription: Redde listens so you can talk to your assistant. Audio is transcribed on this device and only your own server ever receives the text.
+        NSMicrophoneUsageDescription: Redde listens so you can talk to your assistant. Speech is transcribed on this device and only your own server receives the text, unless you start a live voice call, which goes to the voice service you chose.
         NSCalendarsFullAccessUsageDescription: Redde can show your next event when you start a conversation, and attach a day's events to a message for your assistant. With Phone tools turned on, your assistant can also look up events and add them. Events go only to your own server.
         NSCameraUsageDescription: Redde uses the camera when you take a photo to attach to a message, when you show your assistant something in voice mode, and to scan a setup code. A photo goes only to the server you connect to.
         NSFaceIDUsageDescription: Redde uses Face ID to unlock the app, which holds your Hermes credentials.
@@ -187,9 +187,6 @@ targets:
         SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
         SWIFT_OBJC_BRIDGING_HEADER: Echo/App/Echo-Bridging-Header.h
       configs:
-        # GPT-Live is in development builds only until it's finished (Settings.gptLiveIncluded).
-        Debug:
-          SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) GPT_LIVE
         # The personal prefill never rides along in a Release / App Store build.
         Release:
           EXCLUDED_SOURCE_FILE_NAMES: LocalDefaults.json

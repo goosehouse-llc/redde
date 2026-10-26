@@ -18,33 +18,32 @@ voice,assistant,ai,agent,carplay,self-hosted,llm,ollama,bots,watch,siri,shortcut
 
 Redde is a complete iPhone and iPad client for Hermes, the open-source AI agent, with CarPlay and an Apple Watch app. Talk or type, watch it think and use tools, approve what it runs, and give it a crew: bots with faces and voices of their own, alone or in group chats.
 
-You bring the backend. Redde has no account and no analytics, and your conversations go only to the server you configured.
+You bring the backend. Redde has no account and no analytics, and your conversations go only to your server, and to a voice service if you pick one.
 
 BOTS
 • Each Hermes profile is a bot with a face, a voice and a chat of its own. Start one from a template (Researcher, Writer, Coder, Home, Planner) and make its job, personality, model, face and tools your own.
 • Type @ to hand work to another bot. Put two to six in a group chat and they answer in turn; talk to the room and each answers in its own voice.
-• Give a bot a schedule and its answer arrives in its chat, with a notification, even with Redde closed. Mute any chat for a while.
+• Give a bot a schedule and its answer arrives in its chat, with a notification, even with Redde closed. Mute any chat.
 • Ask a bot from Siri, CarPlay, the Apple Watch or a spoken word.
 
 TALK, DON'T TYPE
-• Tap the mic, ask, hear the answer, or show it what the camera sees. Speech is recognized on your iPhone; the reply is spoken by the built-in voice, a Kokoro server or your Hermes.
-• Hands-free mode keeps the conversation going until you say "that's all". Talk over an answer, or type, to steer it.
-• In CarPlay, ask through the car's mic and speakers, in a new chat, a recent one or a bot's. On Apple Watch, raise your wrist and ask.
-• "Hey Siri, ask Redde…" works from the Lock Screen and AirPods. A Control Center button, a widget or the Action Button starts listening.
+• Tap the mic or say "Hey" and your agent's name, ask, hear the answer, or show it what the camera sees. Speech is recognized on your iPhone; the reply is spoken by the built-in voice, Kokoro or your Hermes.
+• Or talk live, interrupting any time, with GPT-Live, Gemini Live, Grok Voice or ElevenLabs on your own key.
+• Hands-free keeps the conversation going until you say "that's all". Talk over an answer or type to steer it.
+• In CarPlay, ask in a new chat, a recent one or a bot's. On Apple Watch, raise your wrist and ask.
+• "Hey Siri, ask Redde…" works from the Lock Screen and AirPods, and Siri takes notes for your agent. A control, widget or the Action Button starts listening.
 • Spoken prefixes: a word you chose adds a text prefix, switches model or goes to a bot: "Opus, review this diff".
-• Siri takes notes for your agent; Shortcuts can ask it things.
 
 SEE THE AGENT WORK
-• Watch reasoning and tool calls live, with a Live Activity; lock the phone and the reply carries on.
-• The list shows what's working, what needs you and what's unread.
+• Watch reasoning and tool calls live, with a Live Activity; lock the phone and it carries on. The list shows what's working or needs you.
 • Approve a risky command or answer the agent's question from a notification, out loud, or with a nod in AirPods. Pair your Hermes and notifications arrive with Redde closed, encrypted end to end.
 
 A FULL CLIENT, NOT JUST A MIC
-• Conversations live in your gateway's session ledger: start on the phone, continue on the desktop, Telegram or the CLI. Search inside them, pin, rename, fork, archive, or go incognito.
+• Chats live in your gateway's session ledger: start on the phone, continue on the desktop or the CLI. Search inside them, pin, rename, fork, archive, or go incognito.
 • Projects, scheduled jobs and the Kanban board.
 • Phone tools: your agent can use your iPhone's calendar, reminders, contacts, photos and files, set alarms, write on a widget, and start calls and texts, each only if you allow it.
 • Rich replies: Markdown, code, tables, Mermaid diagrams, math, and cards with maps, places and the weather. Pictures, PDFs and audio open in place.
-• Select part of a reply and ask about it. Regenerate, edit and resend, or switch models with /model.
+• Ask about part of a reply, regenerate, edit and resend, or switch models with /model.
 • Attach photos, videos, files or a day's calendar, or share from any app.
 • Skills, tools, memory and context files; on the server, MCP servers, logs, updates, files and an SSH terminal.
 
@@ -67,6 +66,35 @@ Two pictures App Store Connect has taken since October 2026, on the version page
 - Search results (`search-3840x2560.png`, 3:2): "Talk to your own AI agent. Voice and chat for Hermes." beside voice mode and a chat. Shown with the app in search in place of the first screenshots.
 
 The words in both sit inside the "art safe area" of Apple's templates. Use Preview in App Store Connect before submitting: it shows each on iPhone and iPad, both ways up.
+
+## What's New in 2.2 (4000)
+Live voice, and wake phrases.
+
+• Live voice. Pick GPT-Live, Gemini Live, Grok Voice or ElevenLabs in Settings → Voice → Conversation, add your key for it, and voice mode becomes a call: the voice talks and listens at once, so you can interrupt it, it answers small talk itself, and it hands anything real to your agent and says the answer in its own words. Each bot can have its own engine and voice (Edit Bot → Voice), with a sample of every voice before you pick it. Say "Home, …" and the call goes to Home, in Home's voice. With hands-free off, it hangs up a few seconds after the answer unless you keep talking. Each service bills your key per minute.
+• Wake phrases. With Redde open on your iPhone, iPad or the car's screen, say "Hey" and an agent's name to talk to it, or "Hey Home, turn the lights off" to ask straight away. Each agent's phrase can be changed. Off until you turn it on in Settings → Voice → Wake Phrase; it listens on the device.
+• On Apple Watch, each bot reads its replies in its own voice, as on the iPhone.
+• The main agent's ••• menu has Voice…, as a bot's does.
+
+## Before submitting 2.2
+Written ahead of the release. What a phone has shown is said where it has.
+
+In App Store Connect and on the web:
+- 2.1.1 (269) was released on 2026-10-25.
+- The version is still 2.1.1 (269) in `project.yml`: bump it to 2.2 (270) before archiving.
+- Live voice is in the Release build from 2.2: the `GPT_LIVE` flag is gone (2026-10-25). Its calls go over WebSockets on URLSession, Apple's TLS, with no WebRTC or other cryptography in the app, so the export answer stays as it is and no French declaration is needed.
+- The description gains live voice and wake phrases (3,995 of 4,000; two lines tightened to make room), and What's New is new. `scripts/app-store-push.py all`, then `notes`: the review notes gain LIVE VOICE and a new MICROPHONE line (3,993 with the key).
+- The microphone's permission text changes (`NSMicrophoneUsageDescription`): the text goes only to the user's server, unless they start a live voice call.
+- The privacy policy gains Wake phrases and Live voice calls, and now says what Sync with iCloud sends, which it never did. Publish it before the release (`scripts/privacy-page.py`).
+- App Privacy: "Data Not Collected" is your call again. In a live call the audio goes from the device straight to the service the person picked, on their own key, as their messages go to their own server; nothing reaches us.
+- The website says "coming soon in 2.1.1": change it when 2.2 is out (deploys are your word).
+- The in-app What's New (`Echo/Models/WhatsNew.swift`) has no 2.2 entry yet: write it with the bump.
+
+Tried on a phone:
+- GPT-Live, Gemini Live and ElevenLabs calls on Marta, Debug builds (2026-10-25). Grok Voice only against `scripts/live-standin.py`, never the real service.
+- Wake phrases on Marta, basic test (2026-10-25); the fixes from that try are unheard.
+- A Release build on Marta: see below.
+
+Not known to have been tried: Grok Voice for real, wake phrases in a car (whether the car's media keeps playing while Redde holds its microphone), live voice in CarPlay.
 
 ## What's New in 2.1.1 (4000)
 Weather and time that look themselves up, pictures on every device, a quicker CarPlay, and fixes.
@@ -322,7 +350,7 @@ What that decision weighed: the optional relay keeps a paired iPhone's push toke
 ## Export compliance
 `ITSAppUsesNonExemptEncryption` stays `false` (`project.yml`). Besides HTTPS, 1.7 encrypts and decrypts notifications (X25519, HKDF-SHA256, AES-256-GCM) and hashes for its browser sign-in (SHA-256, for PKCE). All of it is CryptoKit, Apple's implementation in the operating system; the app contains no cryptography of its own and none from a third party. Since 1.9 the terminal speaks SSH through Apple's open-source swift-nio-ssh, with standard algorithms only (curve25519-sha256 and ecdh-sha2-nistp256/384/521 key exchange, aes128-gcm and aes256-gcm, ssh-ed25519 and ecdsa-sha2 keys, hmac-sha2-256). Its primitives come from swift-crypto, which on Apple's platforms is CryptoKit itself (`@_exported import CryptoKit`; its vendored BoringSSL is built only for Linux, Android, Windows, WASI and OpenBSD, and a 1.9 build links none of it), and the device's own key is CryptoKit's Ed25519. So the cryptography is still all the operating system's. App Store Connect asks for documentation when an app implements proprietary algorithms, or standard ones "instead of, or in addition to, using or accessing the encryption within Apple's operating system". Redde does neither, so the answer to "What type of encryption algorithms does your app implement?" is "None of the algorithms mentioned above", and with the key set to `false` the question isn't asked at upload.
 
-GPT-Live (in development builds since 2026-10-24, not in 2.1.1) first went over Google's WebRTC, which carries its own BoringSSL: standard cryptography that isn't the operating system's, which would have made the answer "Standard encryption algorithms instead of, or in addition to, using or accessing the encryption within Apple's operating system" and, by Apple's reference ("Export compliance documentation for encryption"), needed a French encryption declaration to sell in France. So GPT-Live's calls now go over a WebSocket on URLSession (Apple's TLS) instead, WebRTC is out of the app, and the answer above holds with GPT-Live in. No French declaration is needed (a draft was made on 2026-10-24 and not filed). When GPT-Live ships: put its text back in the privacy policy (`git show a673afa -- docs/privacy.md`, with the call going to OpenAI over a WebSocket).
+GPT-Live (in development builds from 2026-10-24, in the App Store build from 2.2 with Gemini Live, Grok Voice and ElevenLabs, all over URLSession WebSockets) first went over Google's WebRTC, which carries its own BoringSSL: standard cryptography that isn't the operating system's, which would have made the answer "Standard encryption algorithms instead of, or in addition to, using or accessing the encryption within Apple's operating system" and, by Apple's reference ("Export compliance documentation for encryption"), needed a French encryption declaration to sell in France. So GPT-Live's calls now go over a WebSocket on URLSession (Apple's TLS) instead, WebRTC is out of the app, and the answer above holds with GPT-Live in. No French declaration is needed (a draft was made on 2026-10-24 and not filed). The privacy policy's "Live voice calls" says what goes to each service (2026-10-25).
 
 ## What's New in 1.6 (4000)
 Redde comes to Apple Watch, sets itself up from a QR code, and keeps a reply going after the phone locks.
