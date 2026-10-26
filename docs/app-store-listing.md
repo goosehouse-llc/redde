@@ -9,7 +9,7 @@ Hermes Redde
 Talk, chat and run your agent
 
 ## Promotional text (170, editable without a new build)
-New in 2.1: every server in one list, maps and weather in replies, link previews, bot cards in CarPlay, and the iPhone Duo. Your agent, and its whole crew.
+New in 2.2: live voice with GPT-Live, Gemini Live, Grok Voice or ElevenLabs, and wake phrases: say “Hey” and a bot's name. Your agent, and its whole crew.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name)
 voice,assistant,ai,agent,carplay,self-hosted,llm,ollama,bots,watch,siri,shortcuts,private,openai
@@ -68,9 +68,9 @@ Two pictures App Store Connect has taken since October 2026, on the version page
 The words in both sit inside the "art safe area" of Apple's templates. Use Preview in App Store Connect before submitting: it shows each on iPhone and iPad, both ways up.
 
 ## What's New in 2.2 (4000)
-Live voice, and wake phrases.
+LIVE VOICE! And wake phrases.
 
-• Live voice. Pick GPT-Live, Gemini Live, Grok Voice or ElevenLabs in Settings → Voice → Conversation, add your key for it, and voice mode becomes a call: the voice talks and listens at once, so you can interrupt it, it answers small talk itself, and it hands anything real to your agent and says the answer in its own words. Each bot can have its own engine and voice (Edit Bot → Voice), with a sample of every voice before you pick it. Say "Home, …" and the call goes to Home, in Home's voice. With hands-free off, it hangs up a few seconds after the answer unless you keep talking. Each service bills your key per minute.
+• LIVE VOICE! Pick GPT-Live, Gemini Live, Grok Voice or ElevenLabs in Settings → Voice → Conversation, add your key for it, and voice mode becomes a call: the voice talks and listens at once, so you can interrupt it, it answers small talk itself, and it hands anything real to your agent and says the answer in its own words. Each bot can have its own engine and voice (Edit Bot → Voice), with a sample of every voice before you pick it. Say "Home, …" and the call goes to Home, in Home's voice. With hands-free off, it hangs up a few seconds after the answer unless you keep talking. Each service bills your key per minute.
 • Wake phrases. With Redde open on your iPhone, iPad or the car's screen, say "Hey" and an agent's name to talk to it, or "Hey Home, turn the lights off" to ask straight away. Each agent's phrase can be changed. Off until you turn it on in Settings → Voice → Wake Phrase; it listens on the device.
 • On Apple Watch, each bot reads its replies in its own voice, as on the iPhone.
 • The main agent's ••• menu has Voice…, as a bot's does.
@@ -80,14 +80,13 @@ Written ahead of the release. What a phone has shown is said where it has.
 
 In App Store Connect and on the web:
 - 2.1.1 (269) was released on 2026-10-25.
-- The version is still 2.1.1 (269) in `project.yml`: bump it to 2.2 (270) before archiving.
+- The build is 2.2 (270), from main.
 - Live voice is in the Release build from 2.2: the `GPT_LIVE` flag is gone (2026-10-25). Its calls go over WebSockets on URLSession, Apple's TLS, with no WebRTC or other cryptography in the app, so the export answer stays as it is and no French declaration is needed.
 - The description gains live voice and wake phrases (3,995 of 4,000; two lines tightened to make room), and What's New is new. `scripts/app-store-push.py all`, then `notes`: the review notes gain LIVE VOICE and a new MICROPHONE line (3,993 with the key).
 - The microphone's permission text changes (`NSMicrophoneUsageDescription`): the text goes only to the user's server, unless they start a live voice call.
 - The privacy policy gains Wake phrases and Live voice calls, and now says what Sync with iCloud sends, which it never did. Publish it before the release (`scripts/privacy-page.py`).
-- App Privacy: "Data Not Collected" is your call again. In a live call the audio goes from the device straight to the service the person picked, on their own key, as their messages go to their own server; nothing reaches us.
+- App Privacy stays "Data Not Collected" (his call, 2026-10-25; the reasoning is under App Privacy below).
 - The website says "coming soon in 2.1.1": change it when 2.2 is out (deploys are your word).
-- The in-app What's New (`Echo/Models/WhatsNew.swift`) has no 2.2 entry yet: write it with the bump.
 
 Tried on a phone:
 - GPT-Live, Gemini Live and ElevenLabs calls on Marta, Debug builds (2026-10-25). Grok Voice only against `scripts/live-standin.py`, never the real service.
@@ -342,6 +341,8 @@ On devices, to check first:
 
 ## App Privacy (App Store Connect → App Privacy)
 "Data Not Collected", unchanged in 1.7 (decided 2026-10-08, with the notification relay in view) and in 1.8. 2.1.1's weather and time lookups go from the user's server, or the device, to Open-Meteo with a place's name or coordinates, and nothing reaches Goosehouse, so it stays.
+
+2.2's live voice calls keep it (decided 2026-10-25). Apple's "collected" means sent off the device where the developer or its third-party partners (code added to the app: analytics, ads, SDKs) can get at it. A call goes from the device straight to the service the person picked, GPT-Live, Gemini Live, Grok Voice or ElevenLabs, with their own key and on their own account, over a plain WebSocket: no code of those companies is in the app, Goosehouse has no agreement with any of them, and nothing reaches Goosehouse. It is the reasoning that already covers messages to the person's own server or to a hosted provider on their own key. Wake phrases are heard on the device and sent nowhere. The privacy policy says what goes to each service, and the review notes point to it. If App Review asks for it on the label, the entries would be Audio Data and Other User Content, for App Functionality, not linked to the user, not used for tracking: a change in App Store Connect, no new build.
 
 1.8's Phone tools read the calendar, reminders, contacts and photos, and the label is about what the developer collects: all of it goes to the person's own server, at their agent's request and with the area switched on by them, and none of it to Goosehouse. What Redde makes out in photos stays in a file on the device. Head movement for the nod is read on the device and kept nowhere. App Store Connect's label is unchanged; the purpose strings in `project.yml` and the privacy policy say what each permission is for.
 

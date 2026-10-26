@@ -22,6 +22,15 @@ nonisolated enum WhatsNew {
 
     /// Newest first. Keep each to a handful of lines a person reads in ten seconds.
     static let releases: [Release] = [
+        Release(version: "2.2", items: [
+            Item(symbol: "waveform.and.mic", title: "LIVE VOICE!",
+                 detail: "Pick GPT-Live, Gemini Live, Grok Voice or ElevenLabs in Settings → Voice → Conversation and add your key for it: voice mode becomes a call you can interrupt, and the voice hands real work to your agent. Each bot can have its own (Edit Bot → Voice). The service bills your key by the minute."),
+            Item(symbol: "ear", title: "Wake phrases",
+                 detail: "With Redde open, say “Hey” and an agent's name to talk to it, or “Hey Home, turn the lights off” to ask at once. Turn it on, and change the phrases, in Settings → Voice → Wake Phrase. It listens on the device."),
+            Item(symbol: "applewatch", title: "Bots' voices on the watch",
+                 detail: "On Apple Watch each bot reads its replies in its own voice, as on the iPhone.",
+                 phoneOnly: true),
+        ]),
         Release(version: "2.1.1", items: [
             Item(symbol: "cloud.sun", title: "Weather and time, looked up",
                  detail: "Weather cards fill themselves in, now and by the hour and day, and your agent knows your local time when you ask. It takes the Redde plugin 1.7.1 on your Hermes: Settings → Redde Plugin offers the update."),
