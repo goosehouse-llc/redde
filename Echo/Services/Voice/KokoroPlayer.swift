@@ -263,8 +263,14 @@ final class KokoroPlayer {
         var request = URLRequest(url: baseURL.appending(path: "v1/audio/voices"))
         request.timeoutInterval = 6
         let (data, _) = try await URLSession.shared.data(for: request)
-        return try JSONDecoder().decode(Envelope.self, from: data).voices.map(\.id).sorted()
+        let ids = try JSONDecoder().decode(Envelope.self, from: data).voices.map(\.id).sorted()
+        knownVoiceIDs.withLock { $0 = (baseURL, ids) }
+        return ids
     }
+
+    /// The server's voices as last listed, for what can't wait on a list of its own (the bots'
+    /// voices handed to the watch, `WatchLink.watchBots`).
+    nonisolated static let knownVoiceIDs = OSAllocatedUnfairLock<(server: URL?, ids: [String])>(initialState: (nil, []))
 
     // MARK: - Fetch
 

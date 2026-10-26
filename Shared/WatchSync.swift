@@ -85,6 +85,10 @@ nonisolated struct WatchBot: Codable, Equatable, Sendable, Identifiable {
     var name: String
     /// Its creature as a small picture, drawn on the phone: the watch draws none of its own.
     var face: Data?
+    /// The Kokoro voice and speed it reads in on the phone (`BotVoices`), for the watch to read it
+    /// so too; none, Redde's own. Asked 2026-10-25: "can I have the bots mirror what's on phone".
+    var kokoroVoice: String?
+    var voiceSpeed: Double?
 
     var id: String { profile }
 }

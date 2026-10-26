@@ -75,10 +75,19 @@ final class WatchLink: NSObject, WCSessionDelegate {
     static func watchBots(_ settings: Settings = .shared, directory: BotDirectory = .shared) -> [WatchBot] {
         guard directory.key == settings.connectionKey, let roster = directory.roster else { return [] }
         let faces = roster.faces
-        return roster.listed(in: settings.botOrderHere).filter { !$0.isDefault }.prefix(8).map { bot in
+        let listed = roster.listed(in: settings.botOrderHere).filter { !$0.isDefault }.prefix(8)
+        // Each one's voice as the phone reads it (with the server's voices as last listed, for
+        // the ones on Automatic), the watch reading it with Kokoro too.
+        let known = KokoroPlayer.knownVoiceIDs.withLock { $0 }
+        let available = known.server == settings.kokoroBaseURL ? known.ids : []
+        let names = roster.bots.map(\.name)
+        return listed.map { bot in
             WatchBot(profile: bot.name, name: bot.label(mainName: settings.headerTitle),
                      face: BotAvatar.picture(of: faces[bot.name] ?? BotFace(seed: bot.name), named: bot.label(mainName: settings.headerTitle),
-                                             side: 40, scale: 2)?.pngData())
+                                             side: 40, scale: 2)?.pngData(),
+                     kokoroVoice: BotVoices.kokoro(for: bot.name, picked: settings.botVoicesHere, main: settings.kokoroVoice,
+                                                   available: available, names: names),
+                     voiceSpeed: BotVoices.speed(for: bot.name, picked: settings.botVoicesHere, main: settings.voiceSpeed))
         }
     }
 

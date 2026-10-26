@@ -56,7 +56,10 @@ struct BotVoicePicker: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
             .task { await loadKokoro() }
-            .onDisappear { sample.stop() }
+            .onDisappear {
+                sample.stop()
+                WatchLink.shared.push()   // the watch reads the bot in its voice too
+            }
         }
     }
 

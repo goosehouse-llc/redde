@@ -301,8 +301,10 @@ final class WatchStore {
 
     private func speak(_ text: String) {
         status = .speaking
+        // A bot reads in its own voice and at its own speed, as on the phone.
         let kokoro = connection?.kokoroURL.flatMap(URL.init(string:)).map {
-            Speaker.Kokoro(url: $0, voice: connection?.kokoroVoice ?? "", speed: connection?.voiceSpeed ?? 1)
+            Speaker.Kokoro(url: $0, voice: bot?.kokoroVoice ?? connection?.kokoroVoice ?? "",
+                           speed: bot?.voiceSpeed ?? connection?.voiceSpeed ?? 1)
         }
         speaker.speak(PlainText.spoken(text), language: connection?.replyLanguage ?? "", title: question, kokoro: kokoro)
     }
