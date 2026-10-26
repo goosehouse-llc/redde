@@ -7,8 +7,13 @@ nonisolated struct BotVoice: Codable, Equatable, Sendable {
     var onDevice: String?
     /// One of the Kokoro server's voices, by its id ("am_adam").
     var kokoro: String?
+    /// One of the person's ElevenLabs voices, by its id.
+    var elevenLabs: String?
     /// Read in Redde's own voice, as before bots had voices.
     var sameAsMain: Bool?
+    /// Which voice reads its replies (Kokoro for one bot, ElevenLabs for another); nil, the one
+    /// Settings → Voice reads with. Asked 2026-10-26: Home's settings didn't have the same choices.
+    var reader: Settings.ReplyVoice?
     /// How fast it reads (1 is the voice's own pace), whatever its voice; nil reads at Redde's
     /// speed (Settings → Voice → Voice speed). Asked 2026-10-23, "control voice speed for each bot".
     var speed: Double?
@@ -16,13 +21,13 @@ nonisolated struct BotVoice: Codable, Equatable, Sendable {
     /// Conversation has it. Asked 2026-10-25: one bot on GPT-Live, the others as they are.
     var conversation: BotConversation?
     /// Its voice in each live engine's calls, by `LiveEngine` raw value; none for an engine, the
-    /// one in Settings → Voice → Conversation.
+    /// one in Settings → Voice → Voice mode.
     var liveVoices: [String: String]?
 
     /// No voice picked for it: it gets one of its own (`BotVoices`).
-    var isAutomatic: Bool { onDevice == nil && kokoro == nil && sameAsMain != true }
+    var isAutomatic: Bool { onDevice == nil && kokoro == nil && elevenLabs == nil && sameAsMain != true }
     /// Nothing picked at all, voice, speed or conversation: as good as no record.
-    var isEmpty: Bool { isAutomatic && speed == nil && conversation == nil && (liveVoices ?? [:]).isEmpty }
+    var isEmpty: Bool { isAutomatic && speed == nil && conversation == nil && (liveVoices ?? [:]).isEmpty && reader == nil }
 }
 
 /// Who holds a bot's voice conversations (`BotVoice.conversation`), as Settings → Voice →
@@ -39,11 +44,21 @@ nonisolated enum BotVoices {
     /// The Kokoro voice for `profile`'s words, or nil for Redde's own (`main`).
     static func kokoro(for profile: String?, picked: [String: BotVoice], main: String, available: [String], names: [String]) -> String? {
         guard let profile, profile != "default", picked[profile]?.sameAsMain != true else { return nil }
-        if let id = picked[profile]?.kokoro, available.isEmpty || available.contains(id) { return id }
+        if let id = picked[profile]?.kokoro, available.isEmpty || KokoroBlend.voices(in: id).allSatisfy(available.contains) { return id }
         guard let language = SpokenLanguage.kokoroLanguage(of: main) else { return nil }
         let pool = available.filter { $0 != main && SpokenLanguage.kokoroLanguage(of: $0) == language }
         let unpicked = names.filter { picked[$0]?.kokoro == nil && picked[$0]?.sameAsMain != true }
         return assign(profile, names: unpicked, tiers: [pool], taken: picked.values.compactMap(\.kokoro))
+    }
+
+    /// The ElevenLabs voice for `profile`'s words, or nil for Redde's own (`main`): what was picked
+    /// for it, else one of the account's other voices of its own. ElevenLabs' voices speak every
+    /// language, so there is one pool.
+    static func elevenLabs(for profile: String?, picked: [String: BotVoice], main: String, available: [String], names: [String]) -> String? {
+        guard let profile, profile != "default", picked[profile]?.sameAsMain != true else { return nil }
+        if let id = picked[profile]?.elevenLabs, available.isEmpty || available.contains(id) { return id }
+        let unpicked = names.filter { picked[$0]?.elevenLabs == nil && picked[$0]?.sameAsMain != true }
+        return assign(profile, names: unpicked, tiers: [available.filter { $0 != main }], taken: picked.values.compactMap(\.elevenLabs))
     }
 
     /// The built-in voice for `profile`'s words in `language` ("en"), or nil for Redde's own
@@ -96,5 +111,33 @@ nonisolated enum BotVoices {
         var hash: UInt64 = 0xcbf29ce484222325
         for byte in text.utf8 { hash = (hash ^ UInt64(byte)) &* 0x100000001b3 }
         return hash
+    }
+}
+
+/// A Kokoro voice written as a blend of the server's own: "bf_emma(1)+af_heart(4)+af_bella(2)", each
+/// voice's weight in brackets (one where there are none), as Kokoro-FastAPI takes it; the first
+/// voice's letter says how it is pronounced (b: British). Redde's own voice is one (`am_onyx(2)+bm_george(1)`);
+/// a bot's may be one too (asked 2026-10-26, Home's: "With a little Emma").
+nonisolated enum KokoroBlend {
+    /// The voices it is made of, in order: one for a plain voice.
+    static func voices(in id: String) -> [String] {
+        id.split(separator: "+").map { part in
+            String(part.prefix { $0 != "(" }).trimmingCharacters(in: .whitespaces)
+        }.filter { !$0.isEmpty }
+    }
+
+    /// Whether `id` is a blend Kokoro can make of `available`: two voices or more, each of them
+    /// there, each weight a number.
+    static func isBlend(_ id: String, of available: [String]) -> Bool {
+        let parts = id.split(separator: "+").map { $0.trimmingCharacters(in: .whitespaces) }
+        guard parts.count >= 2 else { return false }
+        return parts.allSatisfy { part in
+            let name = String(part.prefix { $0 != "(" })
+            guard available.contains(name) else { return false }
+            let rest = part.dropFirst(name.count)
+            guard !rest.isEmpty else { return true }
+            guard rest.hasPrefix("("), rest.hasSuffix(")"), let weight = Double(rest.dropFirst().dropLast()) else { return false }
+            return weight > 0
+        }
     }
 }

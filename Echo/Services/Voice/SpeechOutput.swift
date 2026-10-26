@@ -50,6 +50,12 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
     private var heard = ""
     /// The Kokoro server's voices, for reading a reply in another language.
     private var kokoroVoiceIDs: (server: URL, ids: [String], at: Date)?
+    /// ElevenLabs: the key this reply is read with (nil, not ElevenLabs), the sentence said
+    /// before the next (for how it follows on), and the account's voices, for bots' own.
+    private var elevenLabsKey: String?
+    private var lastSaid: String?
+    private var elevenLabsVoiceIDs: (ids: [String], at: Date)?
+    private var elevenLabsVoicesLoading = false
     private var kokoroVoicesLoading = false
     private var voicesObserver: NSObjectProtocol?
 
@@ -62,7 +68,10 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
             MainActor.assumeIsolated { self?.cachedVoices = [:]; self?.installedVoices = nil }
         }
         // Ready before the first reply, so it isn't read by the wrong voice while the list loads.
-        if Settings.shared.replyVoice == .kokoro, let server = Settings.shared.kokoroBaseURL { loadKokoroVoices(server) }
+        // Settings' and every bot's own, so a bot's first reply isn't read by the wrong voice either.
+        let readers = Set([Settings.shared.replyVoice] + Settings.shared.botVoicesHere.values.compactMap(\.reader))
+        if readers.contains(.kokoro), let server = Settings.shared.kokoroBaseURL { loadKokoroVoices(server) }
+        if readers.contains(.elevenLabs) { loadElevenLabsVoices() }
         synthesizer.delegate = self
         // Mixing with the session we already configured; don't let the synthesizer flip categories.
         synthesizer.usesApplicationAudioSession = true
@@ -117,6 +126,36 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         BotVoices.speed(for: speaker, picked: Settings.shared.botVoicesHere, main: Settings.shared.voiceSpeed)
     }
 
+    /// Which voice reads what `speaker` says: a preview's, the bot's own reading voice, else
+    /// Settings' (`Settings.readingVoice`).
+    private func reader(of speaker: String?) -> Settings.ReplyVoice {
+        voiceOverride?.reader ?? Settings.shared.readingVoice(for: speaker)
+    }
+
+    /// The ElevenLabs voice Redde reads in: the one picked, else the account's first.
+    private var mainElevenLabsVoice: String? {
+        Settings.shared.elevenLabsVoice.nilIfEmpty ?? elevenLabsVoiceIDs?.ids.first
+    }
+
+    /// The ElevenLabs voice `speaker`'s words are read in (`BotVoices`): Redde's own for nil, or
+    /// the one a preview names.
+    private func elevenLabsVoice(of speaker: String?) -> String? {
+        if let id = voiceOverride?.elevenLabs { return id }
+        guard voiceOverride == nil, let main = mainElevenLabsVoice else { return mainElevenLabsVoice }
+        return BotVoices.elevenLabs(for: speaker, picked: Settings.shared.botVoicesHere, main: main,
+                                    available: elevenLabsVoiceIDs?.ids ?? [], names: botNames) ?? main
+    }
+
+    private func loadElevenLabsVoices() {
+        if let loaded = elevenLabsVoiceIDs, Date.now.timeIntervalSince(loaded.at) < 600 { return }
+        guard !elevenLabsVoicesLoading, let key = ElevenLabsSpeech.key else { return }
+        elevenLabsVoicesLoading = true
+        Task {
+            defer { elevenLabsVoicesLoading = false }
+            if let voices = try? await ElevenLabsVoice.all(key: key) { elevenLabsVoiceIDs = (voices.map(\.id), .now) }
+        }
+    }
+
     private func kokoroVoice(of speaker: String?) -> String {
         BotVoices.kokoro(for: speaker, picked: Settings.shared.botVoicesHere, main: Settings.shared.kokoroVoice,
                          available: kokoroVoiceIDs?.ids ?? [], names: botNames) ?? Settings.shared.kokoroVoice
@@ -129,11 +168,15 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
     /// gets another voice then, and is simply asked for again. nil lets it go.
     func prefetch(_ text: String?, whole: Bool, speaker: String?) {
         guard let text else { player.dropPrefetch(); return }
-        guard Settings.shared.replyVoice == .kokoro, let base = Settings.shared.kokoroBaseURL else { return }
         var chunker = SentenceChunker()
         guard let first = chunker.append(text).first ?? (whole ? chunker.flush() : nil) else { return }
         let spoken = PlainText.spoken(first)
         guard !spoken.isEmpty else { return }
+        if reader(of: speaker) == .elevenLabs, let key = ElevenLabsSpeech.key, let voice = elevenLabsVoice(of: speaker) {
+            player.prefetchElevenLabs(spoken, voice: voice, speed: speed(of: speaker), key: key)
+            return
+        }
+        guard reader(of: speaker) == .kokoro, let base = Settings.shared.kokoroBaseURL else { return }
         player.prefetch(spoken, baseURL: base, voice: kokoroVoice(of: speaker), speed: speed(of: speaker))
     }
 
@@ -248,8 +291,10 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         detectedLanguage = nil
         heard = ""
         hermesServer = nil
+        elevenLabsKey = nil
+        lastSaid = nil
         botVoiceCache = [:]   // a voice picked since is the one
-        switch Settings.shared.replyVoice {
+        switch reader(of: speaker) {
         case .kokoro:
             usingPlayer = Settings.shared.kokoroBaseURL != nil
             if let server = Settings.shared.kokoroBaseURL {
@@ -261,6 +306,12 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
             // Without a Dashboard to speak through, the built-in voice reads it.
             hermesServer = HermesSpeech.isAvailable ? Settings.shared.serveBaseURL : nil
             usingPlayer = hermesServer != nil
+            if usingPlayer { player.begin() }
+        case .elevenLabs:
+            // Without a key, or before a voice is known, the built-in voice reads it.
+            loadElevenLabsVoices()
+            elevenLabsKey = mainElevenLabsVoice == nil ? nil : ElevenLabsSpeech.key
+            usingPlayer = elevenLabsKey != nil
             if usingPlayer { player.begin() }
         case .onDevice:
             usingPlayer = false
@@ -338,6 +389,13 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         let spoken = PlainText.spoken(text)
         guard !spoken.isEmpty else { return }
         let language = replyLanguage(adding: spoken)
+        // ElevenLabs' voices speak every language: the speaker's, whatever the reply's.
+        if let key = elevenLabsKey, let voice = elevenLabsVoice(of: speaker) {
+            isSpeaking = true
+            player.enqueueElevenLabs(spoken, voice: voice, speed: speed(of: speaker), previous: lastSaid, key: key)
+            lastSaid = spoken
+            return
+        }
         // Hermes's voice is the one it is set up with, whatever the reply's language.
         if let server = hermesServer {
             isSpeaking = true

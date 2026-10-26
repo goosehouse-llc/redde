@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Settings → Voice → Conversation: who holds a voice conversation, Redde or a live engine
+/// Settings → Voice → Voice mode: who holds a voice conversation, Redde or a live engine
 /// (GPT-Live, Gemini Live, Grok Voice: `LiveVoice`), for the main agent and every bot without a
 /// choice of its own (Edit Bot → Voice, `BotVoice.conversation`); and for a live engine, the key
 /// its calls use, the voice, and when a quiet one ends.
@@ -17,20 +17,34 @@ struct LiveVoiceSettings: View {
     var body: some View {
         Form {
             Section {
-                Picker("Conversation", selection: $settings.voiceEngine) {
-                    Text("Redde").tag(Settings.VoiceEngine.redde)
+                Picker("Voice mode", selection: $settings.voiceEngine) {
+                    Text(VoiceSettings.modeName(nil)).tag(Settings.VoiceEngine.redde)
                     ForEach(LiveEngine.allCases, id: \.self) { engine in
-                        Text(engine.name).tag(Settings.VoiceEngine(rawValue: engine.rawValue) ?? .redde)
+                        Text(VoiceSettings.modeName(engine)).tag(Settings.VoiceEngine(rawValue: engine.rawValue) ?? .redde)
                     }
                 }
                 .pickerStyle(.inline)
                 .labelsHidden()
             } footer: {
                 Text((engine.map { "\($0.company)'s voice model talks and listens at the same time: interrupt it whenever you like, and it answers small talk at once and says \u{201C}let me check\u{201D} while your agent works. Anything real goes to your agent, as in a typed chat, and the voice says the answer in its own words." }
-                     ?? "Your iPhone hears you, your agent answers, and the voice you picked reads the answer out. Nothing goes anywhere but your server and that voice.")
+                     ?? "Your iPhone hears you, your agent answers, and the reading voice (Settings → Voice) reads the answer out. Nothing goes anywhere but your server and that voice.")
                      + "\n\nFor the main agent and every bot without its own choice (Edit Bot → Voice).")
             }
+            Section {
+                Toggle("Keep Calls On When Locked", isOn: $settings.liveWhenLocked)
+            } footer: {
+                Text(settings.liveWhenLocked
+                     ? "A live call goes on with your iPhone locked: the microphone stays open (the orange dot shows it) and the service bills its minutes until you hang up or say a stop phrase, or it ends by itself: after a quiet (Hang up after quiet) or, with hands-free off, after an answer."
+                     : "Locking your iPhone hangs up a live call, unless it is hands-free or on your car's screen.")
+            }
             if let engine {
+                Section {
+                    Toggle("Group Chats as Calls", isOn: $settings.liveGroupCalls)
+                } footer: {
+                    Text(settings.liveGroupCalls
+                         ? "Voice mode in a group chat is a \(engine.name) call: \(engine.company)'s voice hands what you say to the group, and each bot's reply is said in that bot's \(engine.name) voice (Edit Bot → Voice), the call switching to it for the reply. The call is billed for as long as it is open."
+                         : "Voice mode in a group chat is Redde's: your iPhone hears you, and each bot's reply is read in its reading voice.")
+                }
                 Section("Calls use") {
                     if engine == .gptLive {
                         LabeledContent("Your Hermes's key") { Text(hermesState).foregroundStyle(.secondary).multilineTextAlignment(.trailing) }
@@ -59,7 +73,7 @@ struct LiveVoiceSettings: View {
                 }
             }
         }
-        .navigationTitle("Conversation")
+        .navigationTitle("Voice Mode")
         .navigationBarTitleDisplayMode(.inline)
         .task(id: settings.voiceEngine) {
             hasKey = engine.map { Keychain.read($0.keyItem) != nil } ?? false

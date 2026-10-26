@@ -29,6 +29,13 @@ protocol LiveCalling: AnyObject {
     var outputLevel: Float { get }
     /// Everything closed, the audio given back.
     func close()
+    /// The answer to a request the voice handed over went to it: what it plays now is its voice
+    /// again, not a sound while it waits (`LiveDialect.soundsWhileWaiting`).
+    func answered()
+}
+
+extension LiveCalling {
+    func answered() {}
 }
 
 /// What a call tells `LiveVoice`, on the main actor.
@@ -137,6 +144,8 @@ final class LiveCall: LiveCalling {
 
     func setMuted(_ muted: Bool) { audio.setMuted(muted) }
 
+    func answered() { audio.waiting(false) }
+
     func close() {
         guard !closed else { return }
         closed = true
@@ -172,6 +181,10 @@ final class LiveCall: LiveCalling {
                     switch event {
                     case let .audio(pcm): audio.play(pcm)
                     case .interrupted: audio.flush(); forward = true
+                    // From here what it plays is its typing, not its voice, until the answer goes
+                    // (`answered`): marked here, in order with the audio around it.
+                    case .delegated where dialect.soundsWhileWaiting: audio.waiting(true); forward = true
+                    case .withdrawn: audio.waiting(false); forward = true
                     case let .reply(message): try? await socket.send(.string(message))
                     default: forward = true
                     }
@@ -348,6 +361,8 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
     private let gain: Float
     private var leveller: Float = 0
     private var loudness: Float = 0
+    /// What comes now is the service's waiting sound (`waiting`). Touched on `sending`.
+    private var waitingSound = false
     /// The level speech is brought to (RMS: GPT-Live's as it comes; 0.12 played ElevenLabs about
     /// twice as loud), and the most it is raised or lowered.
     private static let speechLevel: Float = 0.06
@@ -713,6 +728,17 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
         sending.async { [weak self] in self?.queue(pcm) }
     }
 
+    /// The service's sound while a request is out (`LiveDialect.soundsWhileWaiting`, ElevenLabs'
+    /// typing): what comes meanwhile isn't the voice, neither for whether it speaks nor for the
+    /// face's mouth (2026-10-26: "the 'thinking' keyboard sound shows the bot as speaking").
+    func waiting(_ on: Bool) {
+        sending.async { [weak self] in
+            guard let self, waitingSound != on else { return }
+            waitingSound = on
+            voice.markSound(on)
+        }
+    }
+
     /// The person talked over the voice: what is queued of it goes, at once.
     func flush() {
         voice.clear()
@@ -747,12 +773,13 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
         if leveller == 0 { leveller = gain }
         // A soft voice's speech counts too (Home's measured a fifth of Sol's, much of it under
         // 0.01), and a new one is caught up with in a second or so.
-        if raw > 0.003 {
+        if raw > 0.003, !waitingSound {
             loudness = loudness == 0 ? raw : loudness * 0.8 + raw * 0.2
             leveller = min(Self.gainRange.upperBound, max(Self.gainRange.lowerBound, Self.speechLevel / loudness))
         }
         for index in samples.indices { samples[index] = min(1, max(-1, samples[index] * leveller)) }
-        let level = Self.rms(samples)
+        // The waiting sound is played, never taken for the voice.
+        let level = waitingSound ? 0 : Self.rms(samples)
         let (waited, queued) = samples.withUnsafeBufferPointer { voice.append($0) }
         let now = mach_absolute_time()
         let (begins, ends) = state.withLock { state -> (Bool, Bool) in
@@ -893,6 +920,16 @@ nonisolated final class VoiceQueue: @unchecked Sendable {
         var held = false
         /// Waiting: the same, for the person to finish (`LiveCallAudio.patience`).
         var waiting = false
+        /// Samples ever added and ever played (or dropped), and the stretches of them that are a
+        /// sound the service plays while it waits (`markSound`), which leave the meter at rest.
+        var written = 0, played = 0
+        var soundFrom: Int?
+        var sounds: [Range<Int>] = []
+
+        func isSound(_ sample: Int) -> Bool {
+            if let soundFrom, sample >= soundFrom { return true }
+            return sounds.contains { $0.contains(sample) }
+        }
     }
 
     private let lead: Int
@@ -927,9 +964,25 @@ nonisolated final class VoiceQueue: @unchecked Sendable {
         return (true, AVAudioTime.seconds(forHostTime: now - since))
     }
 
+    /// What is added from now on is (or no longer is) a sound the service plays while it waits,
+    /// not the voice: played as it comes, with the meter at rest.
+    func markSound(_ on: Bool) {
+        ring.withLock { ring in
+            if on {
+                if ring.soundFrom == nil { ring.soundFrom = ring.written }
+            } else if let from = ring.soundFrom {
+                ring.sounds.append(from ..< ring.written)
+                ring.soundFrom = nil
+            }
+        }
+    }
+
     /// Everything queued gone, holding back again.
     func clear() {
         ring.withLock { ring in
+            ring.played = ring.written
+            ring.sounds.removeAll()
+            if ring.soundFrom != nil { ring.soundFrom = ring.written }
             ring.count = 0
             ring.flowing = false
             ring.held = false
@@ -980,9 +1033,11 @@ nonisolated final class VoiceQueue: @unchecked Sendable {
                 if ring.count == size {
                     ring.read = (ring.read + 1) % size
                     ring.count -= 1
+                    ring.played += 1
                 }
                 ring.samples[(ring.read + ring.count) % size] = sample
                 ring.count += 1
+                ring.written += 1
             }
             if !ring.flowing, ring.count >= lead { ring.flowing = true }
             return (waited, ring.count)
@@ -1002,12 +1057,17 @@ nonisolated final class VoiceQueue: @unchecked Sendable {
                 }
                 ring.read = (ring.read + played) % size
                 ring.count -= played
+                let sound = ring.isSound(ring.played)
+                ring.played += played
+                ring.sounds.removeAll { $0.upperBound <= ring.played }
                 var sum: Float = 0
                 for index in 0..<played { sum += out[index] * out[index] }
                 // As Redde's own voice is metered (`OutputMeter`): at once up, half again in 60 ms
-                // down; unsmoothed, the face's mouth flickered with every few milliseconds.
+                // down; unsmoothed, the face's mouth flickered with every few milliseconds. The
+                // service's waiting sound is heard (and gated against below) but leaves the mouth at rest.
                 let release = Float(pow(0.5, Double(frames) / (rate * 0.06)))
-                ring.playedLevel = max(played > 0 ? (sum / Float(played)).squareRoot() : 0, ring.playedLevel * release)
+                let voiceLevel = played > 0 && !sound ? (sum / Float(played)).squareRoot() : 0
+                ring.playedLevel = max(voiceLevel, ring.playedLevel * release)
                 ring.playedAt = mach_absolute_time()
                 if played > 0, (sum / Float(played)).squareRoot() > 0.02 {
                     let now = mach_absolute_time()

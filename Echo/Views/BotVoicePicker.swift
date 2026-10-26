@@ -1,36 +1,47 @@
 import AVFoundation
 import SwiftUI
 
-/// A bot's voice: Automatic (one of its own, `BotVoices`), Redde's own, or one of the voices Redde
-/// reads with now (Settings → Voice → Reply voice: the built-in voices for the listening language,
-/// or the Kokoro server's), each with a sample to hear. Kept on the phone, per server, and synced
-/// with iCloud. Hermes's own voice is the server's, one for every bot. Its speed too: its own, or
-/// Redde's (Settings → Voice → Voice speed). And, in builds with GPT-Live, who holds its voice
-/// conversations, and GPT-Live's voice in them (`conversationSection`).
+/// A bot's voice, in the same two parts as Settings → Voice (2026-10-26: "Home's voice settings
+/// does not have the same selections"): its voice mode, as in Settings, Redde's own or a call, and
+/// that call's voice (`conversationSection`); and its reading voice, as in Settings or its own
+/// (`readerSection`), and in it Automatic (one of its own, `BotVoices`), Redde's, or one picked,
+/// each with a sample to hear, and its speed. Kept on the phone, per server, and synced with iCloud.
+/// Hermes's own voice is the server's, one for every bot that reads with it.
 struct BotVoicePicker: View {
     let bot: HermesBot
     let mainName: String
     @Environment(\.dismiss) private var dismiss
     @State private var settings = Settings.shared
     @State private var kokoroVoices: [String] = []
+    /// ElevenLabs: the account's voices.
+    @State private var elevenLabsVoices: [ElevenLabsVoice] = []
+    /// Kokoro: a blend being typed (`KokoroBlend`).
+    @State private var blend = ""
     @State private var loading = false
     @State private var sample = SpeechOutput()
 
     private var name: String { bot.label(mainName: mainName) }
     private var picked: BotVoice? { settings.botVoicesHere[bot.name] }
-    private var engine: Settings.ReplyVoice { settings.replyVoice }
+    /// The voice that reads its replies: its own, else Settings'.
+    private var engine: Settings.ReplyVoice { picked?.reader ?? settings.replyVoice }
+    @State private var hasElevenLabsKey = ElevenLabsSpeech.key != nil
+    /// The reading voice can't read yet (no Kokoro address, no ElevenLabs key): the built-in one does.
+    private var engineNotReady: Bool {
+        (engine == .kokoro && settings.kokoroBaseURL == nil) || (engine == .elevenLabs && !hasElevenLabsKey)
+    }
     private var listening: String { SpokenLanguage.base(settings.speechLanguage.isEmpty ? AVSpeechSynthesisVoice.currentLanguageCode() : settings.speechLanguage) }
 
     var body: some View {
         NavigationStack {
             Form {
                 conversationSection
+                readerSection
                 if engine == .hermes {
                     Section {
-                        Text("Replies are read in Hermes's own voice (Settings → Voice → Reply voice), one for every bot. Pick Built-in or Kokoro there for each bot to have a voice of its own.")
+                        Text("\(name)'s replies are read in your Hermes's own voice, the one it is set up with, the same for every bot that reads with Hermes. Pick On-device, Kokoro or ElevenLabs for a voice of its own.")
                             .font(.footnote).foregroundStyle(.secondary)
                     }
-                } else {
+                } else if !engineNotReady {
                     speedSection
                     Section {
                         row("Automatic", detail: automaticDetail, chosen: picked?.isAutomatic ?? true, voice: nil) { set(nil) }
@@ -40,7 +51,8 @@ struct BotVoicePicker: View {
                     } footer: {
                         Text("Automatic gives \(name) a voice of its own, not \(mainName)'s and not another bot's while there are voices to go round. It reads \(name)'s replies in voice mode, in group chats and in the car.")
                     }
-                    Section(engine == .kokoro ? "Kokoro voices" : "Voices on this iPhone") {
+                    if engine == .kokoro { blendSection }
+                    Section(engine == .kokoro ? "Kokoro voices" : engine == .elevenLabs ? "Your ElevenLabs voices" : "Voices on this iPhone") {
                         if loading { ProgressView() }
                         ForEach(choices, id: \.id) { choice in
                             row(choice.name, detail: choice.detail, chosen: isPicked(choice.id), voice: choice.voice) { set(choice.voice) }
@@ -55,7 +67,7 @@ struct BotVoicePicker: View {
             .navigationTitle("\(name)'s Voice")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
-            .task { await loadKokoro() }
+            .task(id: engine) { await loadVoices() }
             .onDisappear {
                 sample.stop()
                 WatchLink.shared.push()   // the watch reads the bot in its voice too
@@ -85,26 +97,33 @@ struct BotVoicePicker: View {
                 .filter { SpokenLanguage.base($0.language) == listening && !$0.voiceTraits.contains(.isNoveltyVoice) }
                 .sorted { $0.quality.rawValue != $1.quality.rawValue ? $0.quality.rawValue > $1.quality.rawValue : $0.name < $1.name }
                 .map { Choice(id: $0.identifier, name: $0.name, detail: Self.quality($0) + " · " + $0.language, voice: BotVoice(onDevice: $0.identifier)) }
+        case .elevenLabs:
+            return elevenLabsVoices.map {
+                Choice(id: $0.id, name: $0.name, detail: $0.id == mainElevenLabs ? "\(mainName)'s voice" : $0.detail, voice: BotVoice(elevenLabs: $0.id))
+            }
         case .hermes:
             return []
         }
     }
 
-    private func isPicked(_ id: String) -> Bool { picked?.kokoro == id || picked?.onDevice == id }
+    /// The ElevenLabs voice Redde reads in: the one picked, else the account's first.
+    private var mainElevenLabs: String? { settings.elevenLabsVoice.nilIfEmpty ?? elevenLabsVoices.first?.id }
 
-    /// Redde or a live engine for its voice conversations, or as Settings → Voice → Conversation has
+    private func isPicked(_ id: String) -> Bool { picked?.kokoro == id || picked?.onDevice == id || picked?.elevenLabs == id }
+
+    /// Redde or a live engine for its voice conversations, or as Settings → Voice → Voice mode has
     /// it; on a live engine, that engine's voice for it.
     private var conversationSection: some View {
-        let appWide = settings.voiceEngine.live?.name ?? "Redde"
+        let appWide = VoiceSettings.modeName(settings.voiceEngine.live)
         let engine = settings.liveEngine(for: bot.name)
         return Section {
-            Picker("Conversation", selection: Binding(
+            Picker("Voice mode", selection: Binding(
                 get: { picked?.conversation },
                 set: { choice in update { $0.conversation = choice } })) {
                 Text("As in Settings (\(appWide))").tag(BotConversation?.none)
-                Text("Redde").tag(BotConversation?.some(.redde))
+                Text(VoiceSettings.modeName(nil)).tag(BotConversation?.some(.redde))
                 ForEach(LiveEngine.allCases, id: \.self) { engine in
-                    Text(engine.name).tag(BotConversation(rawValue: engine.rawValue))
+                    Text(VoiceSettings.modeName(engine)).tag(BotConversation(rawValue: engine.rawValue))
                 }
             }
             .pickerStyle(.menu)
@@ -127,8 +146,62 @@ struct BotVoicePicker: View {
         } header: {
             Text("Voice mode")
         } footer: {
-            Text(engine.map { "Voice mode in \(name)'s chat is a \($0.name) call: \($0.company)'s voice talks with you and hands anything real to \(name). Group chats, read-aloud and the voice below stay Redde's." }
-                 ?? "Voice mode in \(name)'s chat is Redde's: your iPhone hears you, \(name) answers, and the voice below reads it.")
+            Text(engine.map { "Voice mode in \(name)'s chat is a \($0.name) call: \($0.company)'s voice talks with you and hands anything real to \(name). Group chats, the car and Read aloud use the reading voice below." }
+                 ?? "Voice mode in \(name)'s chat is Redde's: your iPhone hears you, \(name) answers, and the reading voice below reads it.")
+        }
+    }
+
+    /// A blend of the server's voices, typed (Redde's own Kokoro voice is one): heard, then used.
+    private var blendSection: some View {
+        let typed = blend.trimmingCharacters(in: .whitespaces)
+        let valid = KokoroBlend.isBlend(typed, of: kokoroVoices)
+        return Section {
+            if let current = picked?.kokoro, current.contains("+") {
+                row(current, detail: "\(name)'s blend", chosen: true, voice: BotVoice(kokoro: current)) {}
+            }
+            TextField("bf_emma(1)+af_heart(4)+af_bella(2)", text: $blend)
+                .font(.callout.monospaced())
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .accessibilityLabel("A blend of Kokoro voices")
+            HStack {
+                Button("Hear It") { play(BotVoice(kokoro: typed)) }.disabled(!valid)
+                Spacer()
+                Button("Use This Blend") { set(BotVoice(kokoro: typed)) }.disabled(!valid || picked?.kokoro == typed)
+            }
+            .buttonStyle(.borderless)
+        } header: {
+            Text("A blend")
+        } footer: {
+            Text(typed.isEmpty || valid
+                 ? "Two of the voices below or more, each with its share in brackets. The first one says how it's pronounced: a British voice first (bf_, bm_) drops its r's."
+                 : "Write voices the server has, joined by +, each with a number in brackets.")
+        }
+    }
+
+    /// Which voice reads its replies: Settings', or one of its own, with what that one still needs.
+    private var readerSection: some View {
+        Section {
+            Picker("Reading voice", selection: Binding(
+                get: { picked?.reader },
+                set: { reader in update { $0.reader = reader } })) {
+                Text("As in Settings (\(settings.replyVoice.name))").tag(Settings.ReplyVoice?.none)
+                ForEach(Settings.ReplyVoice.allCases, id: \.self) { Text($0.name).tag(Settings.ReplyVoice?.some($0)) }
+            }
+            .pickerStyle(.menu)
+            if engine == .kokoro, settings.kokoroBaseURL == nil {
+                TextField("http://your-tts-server:8880", text: $settings.kokoroURL)
+                    .urlFieldStyle()
+            }
+            if engine == .elevenLabs, !hasElevenLabsKey {
+                SecretField(item: LiveEngine.elevenLabs.keyItem, prompt: "ElevenLabs API key", replacePrompt: "Replace stored ElevenLabs key",
+                            saveTitle: "Save key", removeTitle: "Remove key", optional: true, hasValue: $hasElevenLabsKey)
+            }
+        } header: {
+            Text("Reading voice")
+        } footer: {
+            Text("Which voice reads \(name)'s replies aloud: in voice mode when that isn't a call, in group chats, in the car and with Read aloud."
+                 + (engineNotReady ? " Until it's set up, the built-in voice reads them." : ""))
         }
     }
 
@@ -185,6 +258,10 @@ struct BotVoicePicker: View {
             let main = sample.voice(for: listening)?.identifier
             let id = BotVoices.onDevice(for: bot.name, picked: others, language: listening, main: main, installed: installed, names: names)
             return id.flatMap { AVSpeechSynthesisVoice(identifier: $0)?.name } ?? "\(mainName)'s voice, for now: no other voice is installed for its language"
+        case .elevenLabs:
+            guard let main = mainElevenLabs else { return "Save your ElevenLabs key in Settings → Voice first" }
+            let id = BotVoices.elevenLabs(for: bot.name, picked: others, main: main, available: elevenLabsVoices.map(\.id), names: names)
+            return id.flatMap(ElevenLabsVoice.name) ?? "\(mainName)'s voice, for now: your account has no other voice"
         case .hermes:
             return ""
         }
@@ -218,6 +295,7 @@ struct BotVoicePicker: View {
         record.speed = picked?.speed
         record.conversation = picked?.conversation
         record.liveVoices = picked?.liveVoices
+        record.reader = picked?.reader
         settings.botVoicesHere[bot.name] = record.isEmpty ? nil : record
         play(voice)
     }
@@ -232,11 +310,21 @@ struct BotVoicePicker: View {
         sample.endReply()
     }
 
-    private func loadKokoro() async {
-        guard engine == .kokoro, let server = settings.kokoroBaseURL else { return }
-        loading = true
-        defer { loading = false }
-        kokoroVoices = (try? await KokoroPlayer.voiceIDs(baseURL: server)) ?? []
+    private func loadVoices() async {
+        switch engine {
+        case .kokoro:
+            guard let server = settings.kokoroBaseURL else { return }
+            loading = true
+            defer { loading = false }
+            kokoroVoices = (try? await KokoroPlayer.voiceIDs(baseURL: server)) ?? []
+        case .elevenLabs:
+            guard let key = ElevenLabsSpeech.key else { return }
+            loading = true
+            defer { loading = false }
+            elevenLabsVoices = (try? await ElevenLabsVoice.all(key: key)) ?? []
+        default:
+            return
+        }
     }
 
     /// "am_adam" → "Adam (American, male)".

@@ -26,6 +26,14 @@ final class GroupVoice {
     @ObservationIgnored private var listens = true
     @ObservationIgnored private weak var session: VoiceSession?
     @ObservationIgnored private weak var feed: GroupFeed?
+    /// The room's voice is a live call (`LiveRoom`): it listens and says the replies; this hands
+    /// them over, whole, and shows who is speaking.
+    @ObservationIgnored private(set) var asCall = false
+
+    /// The engine a group chat's call is in: the app's, where group chats are calls.
+    static func callEngine(_ settings: Settings = .shared) -> LiveEngine? {
+        settings.liveGroupCalls ? settings.voiceEngine.live : nil
+    }
 
     func start(_ feed: GroupFeed, session: VoiceSession) {
         guard !isOn else { return }
@@ -38,6 +46,12 @@ final class GroupVoice {
         (fed, ended) = ("", false)
         session.cancel()
         session.continuous = true
+        if let engine = Self.callEngine() {
+            asCall = true
+            session.roomCall = { [weak feed] in (Self.room(feed), engine) }
+            session.beginListening()
+            return
+        }
         session.sendsTo = { [weak feed] in feed?.send($0) }
         #if DEBUG
         // `-echo.demoDraft` (`-echo.demoRound`): the sample replies are read as they are written,
@@ -66,8 +80,35 @@ final class GroupVoice {
         replies.dropAll()
         session?.prefetch(nil)
         session?.sendsTo = nil
+        session?.roomCall = nil
+        asCall = false
         session?.continuous = false
         session?.cancel()
+    }
+
+    /// The room as its call knows it: its name and members, what has been said in it, and where
+    /// what the person says goes.
+    private static func room(_ feed: GroupFeed?) -> LiveRoom {
+        LiveRoom(name: feed?.room.name ?? "the group", members: (feed?.room.members ?? []).map { ($0.profile, $0.label) },
+                 history: { [weak feed] in
+                     guard let feed else { return [] }
+                     return LiveRoom.history(feed.events) { feed.room.member($0)?.label ?? "A member" }
+                 },
+                 send: { [weak feed] in feed?.send($0) })
+    }
+
+    /// On a call: each reply, once whole, to the call to say; who is saying one, on the screen.
+    private func handToCall() {
+        guard let session, let feed else { return }
+        replies.update(events: feed.events, drafts: feed.drafts)
+        while let up = replies.queue.first, up.whole || up.isAbandoned {
+            _ = replies.next()
+            replies.finishReading()
+            session.roomReplied(profile: profile(up.memberID), text: up.text)
+        }
+        let speaking = session.liveRoomSpeaker.flatMap { profile in feed.room.members.first { $0.profile == profile }?.id }
+        if speaker != speaking { speaker = speaking }
+        if session.isLive { isHeld = false }
     }
 
     /// Stop on the voice screen: the reply being read and those waiting, the listening, and the
@@ -86,6 +127,7 @@ final class GroupVoice {
     /// the next is begun or fetched ahead, or it is the person's turn.
     func roomChanged() {
         guard isOn, let feed else { return }
+        if asCall { return handToCall() }
         replies.update(events: feed.events, drafts: feed.drafts)
         // Stopped: what is written now is on the screen, not read.
         if isHeld { replies.dropAll() }
@@ -97,6 +139,7 @@ final class GroupVoice {
     /// The voice session went quiet: the next reply, or the person's turn.
     func sessionChanged() {
         guard isOn, let session else { return }
+        if asCall { return handToCall() }
         // A stop phrase ends hands-free: voice ends with it.
         if !session.continuous { stop(); return }
         // Listening again (the person opened the mic): what was waiting is let go, and Stop is over.

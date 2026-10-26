@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// A live engine's voices by language (`LiveEngine.voiceGroups`), each with Hear it
-/// (`LiveVoicePreview`): Settings → Voice → Conversation's voice, and a bot's own
+/// (`LiveVoicePreview`): Settings → Voice → Voice mode's voice, and a bot's own
 /// (`BotVoicePicker`), whose list starts with the one it has without (`inherit`).
 struct LiveVoiceList: View {
     let engine: LiveEngine
@@ -10,6 +10,8 @@ struct LiveVoiceList: View {
     var inherit: String?
     /// Who the sample line says it is.
     let name: String
+    /// For reading replies (`ElevenLabsSpeech`), not a call: no row for the call agent's own voice.
+    var reading = false
     @State private var preview = LiveVoicePreview()
     /// ElevenLabs: the account's own voices, listed with its key.
     @State private var account: [ElevenLabsVoice] = []
@@ -25,7 +27,7 @@ struct LiveVoiceList: View {
                 Section("Your voices") {
                     if listing { ProgressView() }
                     if let listProblem { Label(listProblem, systemImage: "exclamationmark.triangle").foregroundStyle(.orange) }
-                    if inherit == nil { row("The agent's own", voice: "", language: nil) }
+                    if inherit == nil, !reading { row("The agent's own", voice: "", language: nil) }
                     ForEach(account) { voice in row(voice.name, voice: voice.id, language: nil, detail: voice.detail, sample: voice.sample) }
                 }
             } else {

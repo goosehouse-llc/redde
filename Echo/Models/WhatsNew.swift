@@ -24,7 +24,7 @@ nonisolated enum WhatsNew {
     static let releases: [Release] = [
         Release(version: "2.2", items: [
             Item(symbol: "waveform.and.mic", title: "LIVE VOICE!",
-                 detail: "Pick GPT-Live, Gemini Live, Grok Voice or ElevenLabs in Settings → Voice → Conversation and add your key for it: voice mode becomes a call you can interrupt, and the voice hands real work to your agent. Each bot can have its own (Edit Bot → Voice). The service bills your key by the minute."),
+                 detail: "Pick GPT-Live, Gemini Live, Grok Voice or ElevenLabs in Settings → Voice → Voice mode and add your key for it: voice mode becomes a call you can interrupt, and the voice hands real work to your agent. Each bot can have its own (Edit Bot → Voice). The service bills your key by the minute."),
             Item(symbol: "ear", title: "Wake phrases",
                  detail: "With Redde open, say “Hey” and an agent's name to talk to it, or “Hey Home, turn the lights off” to ask at once. Turn it on, and change the phrases, in Settings → Voice → Wake Phrase. It listens on the device."),
             Item(symbol: "puzzlepiece.extension", title: "Plugins",

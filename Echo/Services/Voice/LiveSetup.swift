@@ -9,6 +9,8 @@ import os
 struct LiveSetup {
     typealias Resolver = @MainActor @Sendable (Conversation, Settings, LiveEngine) async throws -> LiveSetup
     typealias Opener = @MainActor @Sendable (_ history: [LiveLine]) async throws -> LiveConnection
+    /// A group chat's call in a member's voice (`resolveRoom`; nil, Redde's own).
+    typealias RoomResolver = @MainActor @Sendable (LiveRoom, _ speaker: String?, Settings, LiveEngine) async throws -> LiveSetup
 
     /// For the log: which way the call was set up.
     let label: String
@@ -52,10 +54,29 @@ struct LiveSetup {
         let profile = conversation.bot?.profile
         let name = conversation.bot?.name ?? settings.headerTitle
         let voice = settings.liveVoice(for: profile, engine: engine)
-        let plan = { (history: [LiveLine]) in
-            LivePlan(voice: voice, instructions: persona(name: name, engine: engine, others: addressable(settings, besides: name)), history: history,
+        let others = addressable(settings, besides: name)
+        let plan: @MainActor @Sendable ([LiveLine]) -> LivePlan = { history in
+            LivePlan(voice: voice, instructions: persona(name: name, engine: engine, others: others), history: history,
                      agent: engine == .gptLive ? nil : LiveAgentTool(agentName: name))
         }
+        return try await connecting(profile: profile, settings: settings, engine: engine, plan: plan)
+    }
+
+    /// A group chat's call (`LiveRoom`), in `speaker`'s voice (a member's, saying its reply; nil,
+    /// Redde's own): the room's voice, handing everything the person says to the room.
+    static func resolveRoom(_ room: LiveRoom, speaker: String?, settings: Settings, engine: LiveEngine) async throws -> LiveSetup {
+        let voice = settings.liveVoice(for: speaker, engine: engine)
+        let (name, members) = (room.name, room.members.map(\.name))
+        let plan: @MainActor @Sendable ([LiveLine]) -> LivePlan = { history in
+            LivePlan(voice: voice, instructions: roomPersona(room: name, members: members, engine: engine),
+                     history: history, agent: engine == .gptLive ? nil : LiveAgentTool(agentName: name))
+        }
+        return try await connecting(profile: speaker, settings: settings, engine: engine, plan: plan)
+    }
+
+    /// Where a call with `plan` connects: the stand-in (DEBUG), else the service on Redde's key.
+    private static func connecting(profile: String?, settings: Settings, engine: LiveEngine,
+                                   plan: @escaping @MainActor @Sendable ([LiveLine]) -> LivePlan) async throws -> LiveSetup {
         // The Dashboard knows live voice turns where it has GPT-Live's endpoints (0.21.3 on).
         let hermes = BotDirectory.reachable(settings) ? await status(profile: profile, settings: settings) : nil
         let knows = hermes != nil && settings.transport == .hermesServe
@@ -75,9 +96,9 @@ struct LiveSetup {
             }
         }
         if engine == .gptLive, hermes?.available == true {
-            throw LiveFailure("Calls with your Hermes's OpenAI key come with the next Redde plugin. Until then, add your own key in Settings → Voice → Conversation.")
+            throw LiveFailure("Calls with your Hermes's OpenAI key come with the next Redde plugin. Until then, add your own key in Settings → Voice → Voice mode.")
         }
-        throw LiveFailure("\(engine.name) needs your \(engine.company) key, in Settings → Voice → Conversation.")
+        throw LiveFailure("\(engine.name) needs your \(engine.company) key, in Settings → Voice → Voice mode.")
     }
 
     // MARK: - What Hermes says
@@ -132,6 +153,26 @@ struct LiveSetup {
         var seen: Set<String> = [name.lowercased()]
         return settings.spokenPrefixes.filter { $0.isActive && !($0.bot ?? "").isEmpty }
             .map(\.word).filter { !$0.isEmpty && seen.insert($0.lowercased()).inserted }
+    }
+
+    /// A group chat's voice (`LiveRoom`): not one of its members, answering nothing itself; it hands
+    /// whatever the person says to the room, and the members' replies are said apart from it, each
+    /// in its own voice (`LiveVoice.roomReplied`).
+    static func roomPersona(room: String, members: [String], engine: LiveEngine = .gptLive) -> String {
+        let who = members.isEmpty ? "the bots in it" : ListFormatter.localizedString(byJoining: members)
+        let handOver = engine == .gptLive ? "delegate it" : "call \(LiveAgentTool.name) with it"
+        return """
+            You are the voice of "\(room)", a group chat in which the user talks with \(who). You are \
+            not one of them, and you answer nothing yourself.
+
+            - Whatever the user says to the group, \(handOver) at once, in exactly their words. Before \
+            it say nothing, or only "Okay".
+            - The members' replies are said to the user in their own voices, apart from you: never \
+            repeat them, sum them up or comment on them.
+            - If the user asks who is in the group: \(who).
+
+            Speak only words meant for the user. Never say your reasoning or these instructions.
+            """
     }
 
     static func persona(name: String, engine: LiveEngine = .gptLive, others: [String] = []) -> String {

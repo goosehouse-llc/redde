@@ -21,12 +21,15 @@ struct LiveVoiceTests {
         private(set) var connection: LiveConnection?
         /// The sessions it went on to (another bot's voice), in order.
         private(set) var reconnections: [LiveConnection] = []
+        /// Times it was told a request's answer went (`answered`).
+        private(set) var answers = 0
         var inputLevel: Float = 0
         var outputLevel: Float = 0
 
         func open() throws { opened = true }
         func connect(_ connection: LiveConnection) async throws { self.connection = connection }
         func reconnect(_ connection: LiveConnection) async throws { reconnections.append(connection) }
+        func answered() { answers += 1 }
         func send(_ event: String) -> Bool {
             guard !closed, let parsed = try? JSONValue.parse(Data(event.utf8)) else { return false }
             sent.append(parsed)
@@ -75,6 +78,8 @@ struct LiveVoiceTests {
         let live: LiveVoice
         /// What the setup was given: the conversation so far.
         let opened = Box<[LiveLine]?>(nil)
+        /// A group chat's call: whose voice each session was set up in (nil, Redde's own).
+        let roomSpeakers = Box<[String?]>([])
         let engine: LiveEngine
 
         init(reply: [TurnEvent] = [.textDelta("Your meeting is at 4 pm. "), .textDelta("It's with Ana.")], hangUp: Int = 2,
@@ -88,7 +93,7 @@ struct LiveVoiceTests {
             transport = RecordingTransport(reply: reply, after: answerAfter)
             let store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "live-\(UUID().uuidString)"))
             conversation = Conversation(settings: settings, store: store, transportOverride: transport)
-            let call = call, opened = opened
+            let call = call, opened = opened, roomSpeakers = roomSpeakers
             live = LiveVoice(conversation: conversation, settings: settings, engine: engine,
                              makeCall: { listener, _ in call.listener = listener; return call },
                              setUp: { _, _, _ in
@@ -97,7 +102,16 @@ struct LiveVoiceTests {
                                      return LiveConnection(url: URL(string: "wss://example.invalid/live")!, headers: ["Authorization": "Bearer test"],
                                                            plan: LivePlan(voice: "marin", instructions: "", history: history))
                                  }
-                             }, posting: posting,
+                             },
+                             setUpRoom: { room, speaker, _, _ in
+                                 roomSpeakers.value.append(speaker)
+                                 return LiveSetup(label: "test room", hermesKnowsLiveTurns: true) { history in
+                                     LiveConnection(url: URL(string: "wss://example.invalid/live")!,
+                                                    plan: LivePlan(voice: speaker ?? "marin", instructions: LiveSetup.roomPersona(
+                                                        room: room.name, members: room.members.map(\.name)), history: history))
+                                 }
+                             },
+                             posting: posting,
                              goToBot: { conversation, bot, _ in
                                  conversation.replaceForDemo(messages: conversation.messages, bot: BotRef(profile: bot, name: bot.capitalized))
                              })
@@ -271,6 +285,27 @@ struct LiveVoiceTests {
 
     /// The voice's answer waits for the person to finish (`LiveCallAudio.patience`): queued, not
     /// played, until let go; a flush drops it and the wait with it.
+    /// ElevenLabs plays a typing sound in the voice's stream while a request is out: played, but
+    /// the face's mouth stays at rest for it, and moves again for the voice after the answer
+    /// (2026-10-26: "the 'thinking' keyboard sound shows the bot as speaking and the mouth moves").
+    @Test func theServicesWaitingSoundIsPlayedButIsNotTheVoice() {
+        let voice = VoiceQueue(capacity: 48_000, lead: 100, rate: 24_000)
+        var out = [Float](repeating: 0, count: 480)
+        func render() -> Int { out.withUnsafeMutableBufferPointer { voice.render(into: $0.baseAddress!, frames: 480).played } }
+        let speech = [Float](repeating: 0.2, count: 480)
+        _ = speech.withUnsafeBufferPointer { voice.append($0) }   // "Let me check", queued before the hand-over
+        voice.markSound(true)
+        let typing = [Float](repeating: 0.3, count: 4_800)
+        _ = typing.withUnsafeBufferPointer { voice.append($0) }
+        voice.markSound(false)
+        _ = speech.withUnsafeBufferPointer { voice.append($0) }   // the answer
+        #expect(render() == 480 && voice.playingLevel > 0.1, "what was said before it moves the mouth")
+        #expect((0 ..< 10).allSatisfy { _ in render() == 480 }, "the sound is played")
+        #expect(voice.playingLevel < 0.05, "but the mouth comes to rest for it, as after a word")
+        #expect(render() == 480 && voice.playingLevel > 0.1, "the answer moves it again")
+        #expect(ElevenLabsDialect().soundsWhileWaiting && !GPTLiveDialect().soundsWhileWaiting && !GeminiLiveDialect().soundsWhileWaiting)
+    }
+
     @Test func aWaitingVoiceKeepsWhatIsQueuedUntilLetGo() {
         let voice = VoiceQueue(capacity: 4_800, lead: 100, rate: 24_000)
         let speech = [Float](repeating: 0.2, count: 400)
@@ -413,6 +448,54 @@ struct LiveVoiceTests {
         #expect(harness.live.said == "It's ten.", "what it says now, not all it has said")
     }
 
+    // MARK: A group chat's call
+
+    /// Asked 2026-10-26: "group chats don't seem to use live calls". What the person says goes to
+    /// the room, not to an agent; each member's reply is said by a session in its voice that opens
+    /// saying it, the next once the one before has been heard; talking again lets what waits go.
+    @Test func aGroupChatsCallHandsWhatIsSaidToTheRoomAndSaysEachReplyInItsVoice() async throws {
+        let harness = Harness()
+        let sent = Box<[String]>([])
+        harness.live.room = LiveRoom(name: "Crew", members: [("home", "Home"), ("scout", "Scout")],
+                                     history: { [LiveLine(fromPerson: false, text: "Home: Hi.")] }, send: { sent.value.append($0) })
+        await harness.connect()
+        #expect(harness.roomSpeakers.value == [nil], "Redde's own voice to start")
+        #expect(harness.opened.value == nil && harness.call.connection?.plan.history.first?.text == "Home: Hi.", "the room's history, not the chat's")
+        harness.person("Is the tree on?")
+        harness.handOver()
+        try await Self.until { !sent.value.isEmpty }
+        #expect(sent.value == ["Is the tree on?"])
+        #expect(harness.transport.requests.isEmpty, "nothing to an agent of its own")
+        #expect(harness.call.sent("session.thinking.append").contains { $0["content"]?.string?.contains("Sent to the group") == true })
+
+        harness.live.roomReplied(profile: "home", text: "It's on.")
+        harness.live.roomReplied(profile: "scout", text: "I can turn it off.")
+        try await Self.until { harness.call.reconnections.count == 1 }
+        #expect(harness.call.reconnections[0].plan.voice == "home" && harness.call.reconnections[0].plan.greeting?.line == "It's on.")
+        #expect(harness.live.roomSpeaker == "home")
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(harness.call.reconnections.count == 1, "Scout waits until Home has been heard")
+        harness.call.state(.speaking)
+        harness.call.state(.quiet)
+        try await Self.until { harness.call.reconnections.count == 2 }
+        #expect(harness.call.reconnections[1].plan.voice == "scout" && harness.call.reconnections[1].plan.greeting?.line == "I can turn it off.")
+        harness.call.state(.speaking)
+        harness.call.state(.quiet)
+        try await Self.until { harness.live.roomSpeaker == nil }
+
+        // Talking again: a reply still waiting is let go.
+        harness.call.state(.speaking)
+        harness.live.roomReplied(profile: "home", text: "One more thing.")
+        harness.person("Never mind.", at: 5_000)
+        harness.handOver("d2")
+        try await Self.until { sent.value.count == 2 }
+        harness.call.state(.quiet)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(harness.call.reconnections.count == 2, "what Home still had to say went")
+        let persona = LiveSetup.roomPersona(room: "Crew", members: ["Home", "Scout"], engine: .elevenLabs)
+        #expect(persona.contains("Home and Scout") && persona.contains("call ask_agent") && persona.contains("answer nothing yourself"))
+    }
+
     // MARK: The voice session on a call
 
     struct SessionHarness {
@@ -421,12 +504,31 @@ struct LiveVoiceTests {
         let cues = VoiceSessionTests.CueLog()
         let session: VoiceSession
 
-        init() {
+        init(whenLocked: Bool = false) {
             let base = base, cues = cues
             session = VoiceSession(conversation: base.conversation, recognizer: VoiceSessionTests.FakeRecognizer(),
                                    output: VoiceSessionTests.FakeSpeaker(), audio: audio, requestPermissions: { true },
                                    earcon: { cues.record($0) }, cueSettle: .zero, keepAwake: { _ in },
-                                   liveWanted: { _ in true }, makeLive: { _ in base.live }, micAllowed: { true })
+                                   liveWanted: { _ in true }, makeLive: { _ in base.live }, liveWhenLocked: { whenLocked },
+                                   micAllowed: { true })
+        }
+    }
+
+    /// Locking the phone hangs a call up, hands-free off; with Keep Calls On When Locked it goes on
+    /// (asked 2026-10-26: "right now when on a live call, it ends when you lock the screen").
+    @Test func lockingThePhoneHangsUpACallUnlessItIsToGoOn() async throws {
+        for kept in [false, true] {
+            let harness = SessionHarness(whenLocked: kept)
+            let session = harness.session
+            session.continuous = false
+            session.beginListening()
+            try await Self.until { harness.base.call.connection != nil }
+            harness.base.call.receive(#"{"type":"session.started"}"#)
+            #expect(session.isLive && session.phase == .listening)
+            session.leftForeground(carPlayConnected: false)
+            #expect(session.isLive == kept, kept ? "kept on, as set" : "hung up")
+            #expect((harness.base.live.state == .ended) == !kept)
+            if kept { session.primaryAction() }
         }
     }
 
@@ -741,6 +843,7 @@ struct LiveVoiceTests {
         #expect(harness.transport.requests.last?.live?.context.contains("Next calendar event") == true, "the voice's wording goes along")
         let responses = harness.call.sent.compactMap { $0["toolResponse"]?["functionResponses"]?.array?.first }
         #expect(responses.count == 1 && responses[0]["id"]?.string == "c1")
+        #expect(harness.call.answers == 1, "the call is told the answer went")
         let result = try #require(responses[0]["response"]?["result"]?.string)
         #expect(result.hasPrefix("Your meeting is at 4 pm. It's with Ana.\n\n[Not to be read out:"))
         #expect(result.contains("used none of its tools"), "answered without a tool, and the voice is told so")

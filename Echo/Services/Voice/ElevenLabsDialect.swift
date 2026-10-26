@@ -27,6 +27,8 @@ nonisolated struct ElevenLabsDialect: LiveDialect {
     var outputRate: Double { 24_000 }
     var outputGain: Float { 0.35 }
     var streamsAnswers: Bool { false }
+    /// Its tool plays a typing sound while it waits (`tool_call_sound`).
+    var soundsWhileWaiting: Bool { true }
 
     /// The voice's audio from before the person's last interruption still arriving: dropped.
     private let heard = OSAllocatedUnfairLock(initialState: -1)

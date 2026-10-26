@@ -163,7 +163,7 @@ final class LiveVoicePreview {
         if let lab = DevHooks.value("-echo.liveEndpoint").flatMap(URL.init(string:)) { return LiveEndpoint(url: lab) }
         #endif
         guard let key = Keychain.read(engine.keyItem)?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty else {
-            throw LiveFailure("Hearing a voice needs your \(engine.company) key, in Settings → Voice → Conversation.")
+            throw LiveFailure("Hearing a voice needs your \(engine.company) key, in Settings → Voice → Voice mode.")
         }
         return try await engine.dialect.endpoint(key: key)
     }

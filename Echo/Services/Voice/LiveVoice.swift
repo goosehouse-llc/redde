@@ -1,7 +1,7 @@
 import Foundation
 import os
 
-/// A live call (Settings → Voice → Conversation, or a bot's own): a voice model, GPT-Live, Gemini
+/// A live call (Settings → Voice → Voice mode, or a bot's own): a voice model, GPT-Live, Gemini
 /// Live or Grok Voice (`LiveEngine`), holds the conversation, talking and listening at once, and
 /// hands every real request to the agent, whose answer it then says in its own words. Hermes keeps
 /// everything else: the model, the tools, the memory, the approvals. This is Hermes Desktop's live
@@ -45,7 +45,18 @@ final class LiveVoice {
     private let dialect: any LiveDialect
     private let makeCall: (LiveCallListening, any LiveDialect) throws -> LiveCalling
     private let setUp: LiveSetup.Resolver
+    private let setUpRoom: LiveSetup.RoomResolver
     private var call: LiveCalling?
+    /// A group chat this call speaks for (`LiveRoom`): what the person says goes there, and its
+    /// members' replies are said, each in its own voice (`roomReplied`). Set before `start`.
+    var room: LiveRoom?
+    /// The member whose reply is being said (its profile), for the screen's face.
+    private(set) var roomSpeaker: String?
+    /// Members' replies still to say, in order; one being put on, and one put on not yet heard
+    /// (a session that opens saying it), so the next doesn't cut it off.
+    private var roomReplies: [(profile: String, text: String)] = []
+    private var puttingOnReply = false
+    private var replyDue = false
     private lazy var relay = Relay(owner: self)
     private let log = Logger(subsystem: "com.goosehouse.echo", category: "live")
 
@@ -59,7 +70,10 @@ final class LiveVoice {
     private var utteranceSettles: Task<Void, Never>?
     private var voiceSpeaking = false
     /// The request the agent is working on (`session.delegation.created`), and the turn doing it.
-    private var delegation: String?
+    private var delegation: String? {
+        // Its answer has gone: what the service plays from now is its voice again (`answered`).
+        didSet { if delegation == nil, oldValue != nil { call?.answered() } }
+    }
     private var turn: Task<Void, Never>?
     /// Says the agent is still at it while the person waits (`keepPosted`).
     private var posting: Task<Void, Never>?
@@ -100,7 +114,9 @@ final class LiveVoice {
 
     init(conversation: Conversation, settings: Settings = .shared, engine: LiveEngine? = nil,
          makeCall: @escaping (LiveCallListening, any LiveDialect) throws -> LiveCalling = { LiveCall(listener: $0, dialect: $1) },
-         setUp: @escaping LiveSetup.Resolver = LiveSetup.resolve, posting: Posting = Posting(),
+         setUp: @escaping LiveSetup.Resolver = LiveSetup.resolve,
+         setUpRoom: @escaping LiveSetup.RoomResolver = { try await LiveSetup.resolveRoom($0, speaker: $1, settings: $2, engine: $3) },
+         posting: Posting = Posting(),
          goToBot: @escaping (Conversation, String, String) async -> Void = { conversation, bot, main in
              _ = try? await conversation.goToBot(bot, mainName: main)
          }) {
@@ -111,6 +127,7 @@ final class LiveVoice {
         dialect = self.engine.dialect
         self.makeCall = makeCall
         self.setUp = setUp
+        self.setUpRoom = setUpRoom
         postEvery = posting
     }
 
@@ -133,18 +150,18 @@ final class LiveVoice {
             return
         }
         note("microphone open after \(took())")
-        voiceOf = conversation.bot?.profile ?? "default"
+        voiceOf = room == nil ? conversation.bot?.profile ?? "default" : "default"
         do {
-            let setup = try await setUp(conversation, settings, engine)
+            let setup = if let room { try await setUpRoom(room, nil, settings, engine) } else { try await setUp(conversation, settings, engine) }
             guard state != .ended else { return }
             hermesKnowsLiveTurns = setup.hermesKnowsLiveTurns
             var greeting: LiveGreeting?
-            if let opening, !opening.isEmpty {
+            if let opening, !opening.isEmpty, room == nil {
                 greeting = await answer(opening)
                 note("opening request answered after \(took())")
                 guard state != .ended else { return }
             }
-            var connection = try await setup.open(LiveSetup.history(conversation.messages))
+            var connection = try await setup.open(room?.history() ?? LiveSetup.history(conversation.messages))
             connection.plan.greeting = greeting
             note("set up with \(setup.label) after \(took())")
             guard state != .ended else { return }
@@ -171,6 +188,68 @@ final class LiveVoice {
         end(problem: nil)
     }
 
+    // MARK: - A group chat's call
+
+    /// A member's reply, whole: said in its voice once what is being said has been.
+    func roomReplied(profile: String, text: String) {
+        guard room != nil, state != .ended, !text.isEmpty else { return }
+        roomReplies.append((profile, text))
+        sayNextRoomReply()
+    }
+
+    /// What the person said, to the room; the voice is told it went, and to say nothing of it.
+    private func toRoom(_ prompt: String, room: LiveRoom, for id: String) {
+        roomReplies.removeAll()   // what was still to be said is over: the person went on
+        room.send(prompt)
+        let note = "Sent to the group. The members' replies are said to the user in their own voices: say nothing about it."
+        if dialect.streamsAnswers { think(note, for: id) } else { send(dialect.answer(note, to: id, final: true, eventID: nextID("say"))) }
+        delegation = nil
+        tool = nil
+        posting?.cancel()
+        changed()
+    }
+
+    /// The next reply, said by a session in its member's voice that opens saying it, the
+    /// microphone and the speaker going on throughout (as `handOff` does): once nothing is being
+    /// said, and the last one put on has been heard.
+    private func sayNextRoomReply() {
+        guard let room, let call, state != .ended, !puttingOnReply, !replyDue, !voiceSpeaking, !roomReplies.isEmpty else {
+            if roomReplies.isEmpty, !voiceSpeaking, !puttingOnReply, !replyDue, roomSpeaker != nil {
+                roomSpeaker = nil
+                changed()
+            }
+            return
+        }
+        let (profile, text) = roomReplies.removeFirst()
+        puttingOnReply = true
+        roomSpeaker = profile
+        changed()
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let setup = try await setUpRoom(room, profile, settings, engine)
+                var connection = try await setup.open(room.history())
+                connection.plan.greeting = LiveGreeting(line: text, language: "English")
+                guard state != .ended else { return }
+                try await call.reconnect(connection)
+                voiceOf = profile
+                replyDue = true
+                note("saying \(profile)'s reply")
+                // Heard when the voice starts (`callChanged`); a session that never speaks lets go.
+                Task { [weak self] in
+                    try? await Task.sleep(for: .seconds(10))
+                    guard let self, replyDue, !voiceSpeaking else { return }
+                    replyDue = false
+                    sayNextRoomReply()
+                }
+            } catch {
+                log.error("saying \(profile, privacy: .public)'s reply failed: \(error.localizedDescription, privacy: .public)")
+            }
+            puttingOnReply = false
+            sayNextRoomReply()
+        }
+    }
+
     func setMuted(_ muted: Bool) {
         guard muted != isMuted, state != .ended else { return }
         isMuted = muted
@@ -192,6 +271,8 @@ final class LiveVoice {
         turn = nil
         posting?.cancel()
         delegation = nil
+        roomReplies.removeAll()
+        roomSpeaker = nil
         call?.close()
         call = nil
         onChange?()
@@ -242,6 +323,7 @@ final class LiveVoice {
         switch state {
         case .speaking:
             voiceSpeaking = true
+            replyDue = false
             lastActivity = .now
             lastHeardVoice = .now
             answerUnsaid = false
@@ -253,6 +335,7 @@ final class LiveVoice {
             lastHeardVoice = .now
             changed()
             checkAnswered()
+            sayNextRoomReply()
         case .lost:
             end(problem: "The connection to \(engine.name) dropped.")
         }
@@ -360,12 +443,18 @@ final class LiveVoice {
                 hangUp()
                 return
             }
+            if let room {
+                toRoom(prompt, room: room, for: id)
+                return
+            }
             #if DEBUG
             note("handed over: \(prompt)")
             #endif
             await work(on: prompt, context: context, for: id)
         }
         posting?.cancel()
+        // A room's members answer in their own time: nothing to keep the person posted on.
+        guard room == nil else { return }
         posting = Task { [weak self] in await self?.keepPosted(for: id) }
     }
 

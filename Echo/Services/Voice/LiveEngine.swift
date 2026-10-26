@@ -1,6 +1,6 @@
 import Foundation
 
-/// Who holds a live voice call (Settings → Voice → Conversation, or a bot's own): OpenAI's
+/// Who holds a live voice call (Settings → Voice → Voice mode, or a bot's own): OpenAI's
 /// GPT-Live, Google's Gemini Live, xAI's Grok Voice or an ElevenLabs voice agent. Each is a WebSocket on Apple's TLS straight
 /// from the phone, with a key of its own kept in Redde, and speaks a wire of its own
 /// (`LiveDialect`); the rest of a call, the audio, the screen, handing requests to the agent, is
@@ -182,6 +182,9 @@ nonisolated protocol LiveDialect: Sendable {
     /// The agent's answer goes as it is written (GPT-Live's commentary), or whole once done, as the
     /// tool call's result (Gemini, Grok).
     var streamsAnswers: Bool { get }
+    /// The service plays a sound of its own while a request it handed over is out (ElevenLabs'
+    /// typing), in the voice's stream: not the voice speaking. None by default.
+    var soundsWhileWaiting: Bool { get }
     /// Where a call connects with `key` (which may first be traded for a short-lived one).
     func endpoint(key: String) async throws -> LiveEndpoint
     /// What opens the session, before it says it has started.
@@ -201,6 +204,10 @@ nonisolated protocol LiveDialect: Sendable {
     func close() -> [JSONValue]
     /// One message from the service.
     func read(_ text: String) -> [LiveEvent]
+}
+
+nonisolated extension LiveDialect {
+    var soundsWhileWaiting: Bool { false }
 }
 
 nonisolated extension LiveDialect {

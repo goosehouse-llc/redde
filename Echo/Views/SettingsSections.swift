@@ -434,6 +434,8 @@ struct VoiceSettings: View {
         case .kokoro:
             "Streams audio from a Kokoro-compatible TTS server and starts playing before the sentence finishes. Falls back to the on-device voice if the server is unreachable. "
                 + "“Voice for replies”: Match each reply picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice (the built-in one when Kokoro has none for it). "
+        case .elevenLabs:
+            "ElevenLabs reads replies out on your own key, the one live calls with ElevenLabs use, starting before the sentence is finished, in any language. Each bot reads in an ElevenLabs voice of its own (Edit Bot → Voice), in group chats too. The reply's text goes from your iPhone to ElevenLabs, which bills your account by the character. ElevenLabs takes speeds from 0.7× to 1.2×. Falls back to the on-device voice without a key or a connection; the watch reads with its own. "
         case .hermes:
             "Your Hermes reads replies out with the voice set under tts in its config.yaml (ElevenLabs, OpenAI, Gemini, a voice running on the server, and others), through the Dashboard connection. The phone needs no voice key and no second server. The reply's text goes from your Hermes to that provider; Hermes's default, Edge, is Microsoft's online voice. “Say a test sentence” shows which one speaks. Speed and language are Hermes's settings too. Falls back to the on-device voice when the Dashboard can't speak. "
         }
@@ -445,23 +447,39 @@ struct VoiceSettings: View {
         return targets.isEmpty ? "Off" : targets.count == 1 ? targets[0].phrase : "\(targets.count) phrases"
     }
 
+    /// Voice mode as it is set: Redde's own, or a call.
+    static func modeName(_ engine: LiveEngine?) -> String { engine.map { "\($0.name) call" } ?? "Listen and read aloud" }
+
+    /// Two choices, kept apart (2026-10-26: "Conversation can be set to Redde, but the next down is
+    /// kokoro, hermes, elevenlabs"): who holds voice mode, and which voice reads replies aloud.
     var body: some View {
         Section {
             NavigationLink {
                 LiveVoiceSettings()
             } label: {
-                LabeledContent("Conversation") {
-                    Text(settings.voiceEngine.live?.name ?? "Redde").lineLimit(1)
+                LabeledContent("Voice mode") {
+                    Text(Self.modeName(settings.voiceEngine.live)).lineLimit(1)
                 }
             }
-            Picker("Voice", selection: $settings.replyVoice) {
+        } header: {
+            Text("Voice mode")
+        } footer: {
+            Text(settings.voiceEngine.live.map { "Voice mode is a \($0.name) call: \($0.company)'s voice talks and listens at once, and hands anything real to your agent. Bots can have their own (Edit Bot → Voice)." }
+                 ?? "Your iPhone listens, your agent answers, and the reading voice below reads the answer out. Or make voice mode a live call with GPT-Live, Gemini Live, Grok Voice or ElevenLabs. Bots can have their own (Edit Bot → Voice).")
+        }
+        Section {
+            Picker("Reading voice", selection: $settings.replyVoice) {
                 Text("On-device").tag(Settings.ReplyVoice.onDevice)
                 Text("Kokoro").tag(Settings.ReplyVoice.kokoro)
                 Text("Hermes").tag(Settings.ReplyVoice.hermes)
+                Text("ElevenLabs").tag(Settings.ReplyVoice.elevenLabs)
             }
             .adaptiveSegmented()
             if settings.replyVoice == .hermes {
                 HermesVoiceRows()
+            }
+            if settings.replyVoice == .elevenLabs {
+                ElevenLabsVoiceRows()
             }
             if settings.useKokoro {
                 TextField("http://your-tts-server:8880", text: $settings.kokoroURL)
@@ -474,6 +492,31 @@ struct VoiceSettings: View {
                     }
                 }
             }
+            // Hermes's voice is the one it is set up with: no language to match, no speed to send.
+            // ElevenLabs' voices speak whatever language the reply is in.
+            if settings.replyVoice != .hermes {
+                if settings.replyVoice != .elevenLabs {
+                    Picker("Voice for replies", selection: $settings.matchReplyLanguage) {
+                        Text("Match each reply").tag(true)
+                        Text(settings.useKokoro ? "Always your Kokoro voice" : "Always \(listeningLanguageName)").tag(false)
+                    }
+                    .pickerStyle(.menu)
+                }
+                // Applies to Kokoro and the built-in fallback voice alike.
+                VStack(alignment: .leading, spacing: 2) {
+                    LabeledContent("Voice speed") {
+                        Text(String(format: "%.2f×", settings.voiceSpeed)).monospacedDigit()
+                    }
+                    Slider(value: $settings.voiceSpeed, in: 0.5...2.0, step: 0.05)
+                        .accessibilityLabel("Voice speed")
+                }
+            }
+        } header: {
+            Text("Reading voice")
+        } footer: {
+            Text(voiceFooter + "It reads replies aloud in voice mode (when that isn't a call), in group chats, in the car and with Read aloud, each bot in a voice of its own unless it has its own reading voice (Edit Bot → Voice).")
+        }
+        Section {
             NavigationLink {
                 SpeechLanguageView()
             } label: {
@@ -503,22 +546,6 @@ struct VoiceSettings: View {
             } label: {
                 LabeledContent("Wake phrase") {
                     Text(wakeSummary).lineLimit(1)
-                }
-            }
-            // Hermes's voice is the one it is set up with: no language to match, no speed to send.
-            if settings.replyVoice != .hermes {
-                Picker("Voice for replies", selection: $settings.matchReplyLanguage) {
-                    Text("Match each reply").tag(true)
-                    Text(settings.useKokoro ? "Always your Kokoro voice" : "Always \(listeningLanguageName)").tag(false)
-                }
-                .pickerStyle(.menu)
-                // Applies to Kokoro and the built-in fallback voice alike.
-                VStack(alignment: .leading, spacing: 2) {
-                    LabeledContent("Voice speed") {
-                        Text(String(format: "%.2f×", settings.voiceSpeed)).monospacedDigit()
-                    }
-                    Slider(value: $settings.voiceSpeed, in: 0.5...2.0, step: 0.05)
-                        .accessibilityLabel("Voice speed")
                 }
             }
             Toggle("Start voice mode in hands-free", isOn: $settings.handsFreeByDefault)
@@ -617,8 +644,7 @@ struct VoiceSettings: View {
         } header: {
             Text("Voice")
         } footer: {
-            Text(voiceFooter
-                + "“Talk over replies” lets you interrupt a spoken reply by speaking: the reply stops and what you say is your next message. With headphones it costs nothing. On the phone's speaker Redde has to cancel its own echo for as long as it speaks, so replies play at call volume, quieter than usual; that is why the speaker is a separate choice. Not in the car: there, “Stop and Skip in the car” listens for two words alone while Redde speaks, “stop”, which ends the reply as a stop phrase does, and “skip”, which jumps to its end (hands-free then listens for what's next). The car's speakers sit near its microphone, so it is off until you turn it on. “Interrupt with” says what counts: anything you say, or only the word “stop”, for when other people are talking nearby. With “Only “stop””, the reply plays on through whatever else is said, and “stop” ends it. “Stop phrases” adds your own ways of ending a hands-free conversation to the built-in ones, for another language or a word of your own; with “Only “stop””, they end a reply as well. "
+            Text("“Talk over replies” lets you interrupt a spoken reply by speaking: the reply stops and what you say is your next message. With headphones it costs nothing. On the phone's speaker Redde has to cancel its own echo for as long as it speaks, so replies play at call volume, quieter than usual; that is why the speaker is a separate choice. Not in the car: there, “Stop and Skip in the car” listens for two words alone while Redde speaks, “stop”, which ends the reply as a stop phrase does, and “skip”, which jumps to its end (hands-free then listens for what's next). The car's speakers sit near its microphone, so it is off until you turn it on. “Interrupt with” says what counts: anything you say, or only the word “stop”, for when other people are talking nearby. With “Only “stop””, the reply plays on through whatever else is said, and “stop” ends it. “Stop phrases” adds your own ways of ending a hands-free conversation to the built-in ones, for another language or a word of your own; with “Only “stop””, they end a reply as well. "
                 + "“Answer requests by voice”: in voice mode and in the car, Redde reads out a command that waits for your approval, or a question from your agent, and takes your spoken answer: “approve” or “deny”, or the answer to the question. Anyone in earshot can answer, and what the agent wants to run is said aloud, so it is off until you turn it on. Passwords and secrets are only ever asked for on the screen."
                 + (HeadGestures.isAvailable
                     ? " “Nod or shake to answer” adds your head, with AirPods that sense movement (AirPods Pro, AirPods Max, AirPods 3 or later): once the request has been read out, nod a couple of times to approve, or shake your head to deny. iOS asks for Motion & Fitness when you turn it on; the movement is read on this device and kept nowhere."

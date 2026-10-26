@@ -105,6 +105,7 @@ import WidgetKit
 /// - `-echo.demoTips`: sample tips on Settings → About → Support Redde (App Review screenshot).
 /// - `-echo.whatsNew`: show this version's "What's New" sheet (any other `-echo.` flag hides it).
 /// - `-echo.switchProfile <name>`: switch profile five seconds after launch.
+/// - `-echo.botKokoro <profile> <voice>`: that bot's Kokoro voice, a blend too ("bf_emma(1)+af_heart(4)").
 /// - `-echo.askProfile <name>`: what Siri's "Ask <name> in Redde" does, at launch: the name is
 ///   made known, then voice mode is asked for on that profile ("default" is the main one).
 /// - `-echo.dropHint`: show the outline a drag over the chat brings up, without a drag.
@@ -334,6 +335,14 @@ enum DevHooks {
                     ServerSwitcher.switchTo(target.id, conversation: conversation)
                 }
             }
+        }
+
+        // `-echo.botKokoro <profile> <voice>`: that bot's Kokoro voice, a blend as well (Home's,
+        // set from the Mac 2026-10-26), its speed and conversation as they were.
+        if let at = args.firstIndex(of: "-echo.botKokoro"), at + 2 < args.count {
+            var record = settings.botVoicesHere[args[at + 1]] ?? BotVoice()
+            (record.kokoro, record.onDevice, record.elevenLabs, record.sameAsMain) = (args[at + 2], nil, nil, nil)
+            settings.botVoicesHere[args[at + 1]] = record
         }
 
         if let name = value("-echo.askProfile") {

@@ -133,12 +133,20 @@ final class VoiceSession {
     /// A group chat's voice (`GroupVoice`): what is said goes there instead of the conversation,
     /// and the group chat reads its bots' replies and opens the mic again.
     var sendsTo: ((String) -> Void)?
+    /// A group chat's voice as a live call (`GroupVoice`, Settings → Voice → Voice mode → Group
+    /// Chats as Calls): the mic opens a call that speaks for the room (`LiveRoom`), in the engine given.
+    var roomCall: (() -> (room: LiveRoom, engine: LiveEngine))?
+    /// On a group chat's call: the member whose reply is being said (its profile).
+    var liveRoomSpeaker: String? { live?.roomSpeaker }
+
+    /// A member's reply, whole, for the group chat's call to say in its voice.
+    func roomReplied(profile: String, text: String) { live?.roomReplied(profile: profile, text: text) }
     /// The mic is held shut in the middle of a conversation (the car screen's Pause while Redde
     /// listens): the session is idle but not over. `unmute()`, or the mic by any other route,
     /// listens again.
     private(set) var isMuted = false
 
-    /// A GPT-Live call (Settings → Voice → Conversation), while there is one: it holds the
+    /// A GPT-Live call (Settings → Voice → Voice mode), while there is one: it holds the
     /// conversation in place of the recogniser and the voice, and the phase is the call's.
     private(set) var live: LiveVoice?
     /// What GPT-Live's voice is saying, for the screen while it speaks.
@@ -150,9 +158,11 @@ final class VoiceSession {
     var liveConnecting: Bool { live.map { !$0.connected } ?? false }
     /// The call's start cue has played: its end gets the stop cue.
     private var liveCued = false
-    /// Settings → Voice → Conversation is GPT-Live, and what makes a call. Injectable so tests choose.
+    /// Settings → Voice → Voice mode is GPT-Live, and what makes a call. Injectable so tests choose.
     private let liveWanted: (_ profile: String?) -> Bool
     private let makeLive: (Conversation) -> LiveVoice
+    /// Live calls go on with the phone locked (`Settings.liveWhenLocked`).
+    private let liveWhenLocked: () -> Bool
     /// The microphone allowed (a call needs no speech recognition). Injectable like `requestPermissions`.
     private let micAllowed: () async -> Bool
 
@@ -304,9 +314,11 @@ final class VoiceSession {
          respond: ((SpokenRequest.Answer) -> Void)? = nil,
          liveWanted: @escaping (_ profile: String?) -> Bool = { Settings.shared.usesLiveCall(for: $0) },
          makeLive: @escaping (Conversation) -> LiveVoice = { LiveVoice(conversation: $0) },
+         liveWhenLocked: @escaping () -> Bool = { Settings.shared.liveWhenLocked },
          micAllowed: @escaping () async -> Bool = { await AVAudioApplication.requestRecordPermission() }) {
         self.liveWanted = liveWanted
         self.makeLive = makeLive
+        self.liveWhenLocked = liveWhenLocked
         self.micAllowed = micAllowed
         self.talkOver = talkOver
         self.commandsInCar = commandsInCar
@@ -488,6 +500,13 @@ final class VoiceSession {
         if capturing, phase != .idle, !isErrored { return }
         replaying = false
         guard phase == .idle || phase == .speaking || isErrored else { return }
+        // A group chat's call, where its voice is one.
+        if !capturing, let roomCall {
+            output.stop()
+            let (room, engine) = roomCall()
+            startLive(room: room, engine: engine)
+            return
+        }
         // GPT-Live: a call instead, where the chat's bot (or the app) has it. A note and a group
         // chat's voice stay Redde's own.
         if !capturing, sendsTo == nil, liveWanted(conversation.bot?.profile) {
@@ -543,8 +562,14 @@ final class VoiceSession {
     /// left alone: that is what the background modes are for.
     func leftForeground(carPlayConnected: Bool) {
         guard !continuous, !carPlayConnected else { return }
-        // A call, too: an open microphone on a locked phone, and a bill running.
+        // A call, too: an open microphone on a locked phone, and a bill running; unless calls are
+        // to go on locked (Settings → Voice → Voice mode; asked 2026-10-26: "keep the call live
+        // when locked").
         if live != nil {
+            if liveWhenLocked() {
+                log.info("left the foreground on a live call: kept on, as set")
+                return
+            }
             log.info("left the foreground on a live call: hanging up")
             cancel()
             return
@@ -686,9 +711,11 @@ final class VoiceSession {
     /// Calls GPT-Live: the microphone allowed and the audio session set up for voice, as for
     /// listening, then the call (`LiveVoice`), whose state is shown as the phase from here on.
     /// `opening`: a request asked before the call opens (`ask`).
-    private func startLive(opening: String? = nil) {
-        let live = makeLive(conversation)
+    private func startLive(opening: String? = nil, room: LiveRoom? = nil, engine: LiveEngine? = nil) {
+        // A room's call is in the engine its group chats use, not the open chat's bot's.
+        let live = room == nil ? makeLive(conversation) : LiveVoice(conversation: conversation, engine: engine)
         live.opening = opening
+        live.room = room
         self.live = live
         isMuted = false
         isCapturing = false
@@ -698,8 +725,8 @@ final class VoiceSession {
             guard let self, let live, self.live === live else { return }
             mirrorLive()
         }
-        // Hands-free off: one question, one answer, as Redde's own voice does.
-        live.endsAfterAnswer = { [weak self] in !(self?.continuous ?? true) }
+        // Hands-free off: one question, one answer, as Redde's own voice does. A room's goes on.
+        live.endsAfterAnswer = { [weak self] in room == nil && !(self?.continuous ?? true) }
         activeTool = "Calling \(live.engine.name)…"
         phase = .thinking
         Task {

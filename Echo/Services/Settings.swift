@@ -184,7 +184,7 @@ final class Settings: ServeEndpoint {
         }
         return appLiveVoice(engine)
     }
-    /// The app's voice for `engine` (Settings → Voice → Conversation).
+    /// The app's voice for `engine` (Settings → Voice → Voice mode).
     func appLiveVoice(_ engine: LiveEngine) -> String {
         let picked = engine == .gptLive ? liveVoice : liveVoices[engine.rawValue]
         if engine.voicesFromAccount { return picked ?? "" }
@@ -206,6 +206,18 @@ final class Settings: ServeEndpoint {
     var liveHangUp: Int {
         didSet { store(liveHangUp, forKey: Keys.liveHangUp) }
     }
+    /// A live call goes on with the phone locked, hands-free or not (asked 2026-10-26). Off, as
+    /// before: locking the phone hangs a call up unless it is hands-free or on the car's screen,
+    /// as it closes Redde's own microphone.
+    var liveWhenLocked: Bool {
+        didSet { store(liveWhenLocked, forKey: Keys.liveWhenLocked) }
+    }
+    /// A group chat's voice is a live call too, in the engine of Settings → Voice → Voice mode: it
+    /// hands what the person says to the room and says each bot's reply in that bot's live voice
+    /// (`LiveRoom`; asked 2026-10-26). Off: Redde's own voice, each bot read in its reading voice.
+    var liveGroupCalls: Bool {
+        didSet { store(liveGroupCalls, forKey: Keys.liveGroupCalls) }
+    }
     static let liveHangUps = [1, 2, 5, 10, 0]
     /// With that on, a nod of the head approves and a shake denies, with AirPods that sense
     /// movement (`HeadGestures`). Off until asked for: iOS has to be asked for Motion & Fitness.
@@ -226,9 +238,27 @@ final class Settings: ServeEndpoint {
     }
     /// Launch straight into the voice screen. (Once its own switch; now one of `launchScreen`.)
     var openToVoiceScreen: Bool { launchScreen == .voice }
-    /// Who reads replies out: the iPhone's own voice, a Kokoro server, or the person's Hermes
-    /// with the voice it is set up with (`HermesSpeech`, over the Dashboard).
-    enum ReplyVoice: String, CaseIterable, Sendable { case onDevice, kokoro, hermes }
+    /// Who reads replies out: the iPhone's own voice, a Kokoro server, the person's Hermes with
+    /// the voice it is set up with (`HermesSpeech`, over the Dashboard), or ElevenLabs on the
+    /// person's own key (`ElevenLabsSpeech`; asked 2026-10-26, for bots' voices in group chats).
+    enum ReplyVoice: String, CaseIterable, Codable, Sendable {
+        case onDevice, kokoro, hermes, elevenLabs
+
+        var name: String {
+            switch self {
+            case .onDevice: "On-device"
+            case .kokoro: "Kokoro"
+            case .hermes: "Hermes"
+            case .elevenLabs: "ElevenLabs"
+            }
+        }
+    }
+    /// Which voice reads what `profile` says: a bot's own reading voice (Edit Bot → Voice), else
+    /// this one. The main agent's is always this one.
+    func readingVoice(for profile: String?) -> ReplyVoice {
+        guard let profile, profile != "default", let own = botVoicesHere[profile]?.reader else { return replyVoice }
+        return own
+    }
     var replyVoice: ReplyVoice {
         didSet { store(replyVoice.rawValue, forKey: Keys.replyVoice) }
     }
@@ -244,6 +274,11 @@ final class Settings: ServeEndpoint {
     }
     var kokoroVoice: String {
         didSet { store(kokoroVoice, forKey: Keys.kokoroVoice) }
+    }
+    /// The ElevenLabs voice replies are read in (a voice id of the person's account); empty, the
+    /// account's first voice.
+    var elevenLabsVoice: String {
+        didSet { store(elevenLabsVoice, forKey: Keys.elevenLabsVoice) }
     }
     /// The language Redde listens for, as a locale id ("es-MX"). Empty = the iPhone's language.
     var speechLanguage: String {
@@ -663,10 +698,13 @@ final class Settings: ServeEndpoint {
         static let liveVoice = "liveVoice"
         static let liveVoices = "liveVoices"
         static let liveHangUp = "liveHangUp"
+        static let liveWhenLocked = "liveWhenLocked"
+        static let liveGroupCalls = "liveGroupCalls"
         static let useKokoro = "useKokoro"
         static let replyVoice = "replyVoice"
         static let kokoroURL = "kokoroURL"
         static let kokoroVoice = "kokoroVoice"
+        static let elevenLabsVoice = "elevenLabsVoice"
         static let voiceSpeed = "voiceSpeed"
         static let speechLanguage = "speechLanguage"
         static let matchReplyLanguage = "matchReplyLanguage"
@@ -746,11 +784,14 @@ final class Settings: ServeEndpoint {
         liveVoice = defaults.string(forKey: Keys.liveVoice) ?? LiveSetup.defaultVoice
         liveVoices = defaults.dictionary(forKey: Keys.liveVoices) as? [String: String] ?? [:]
         liveHangUp = defaults.object(forKey: Keys.liveHangUp) as? Int ?? 2
+        liveWhenLocked = defaults.bool(forKey: Keys.liveWhenLocked)
+        liveGroupCalls = defaults.bool(forKey: Keys.liveGroupCalls)
         // Before there were three, Kokoro was a switch.
         replyVoice = defaults.string(forKey: Keys.replyVoice).flatMap(ReplyVoice.init(rawValue:))
             ?? (defaults.bool(forKey: Keys.useKokoro) ? .kokoro : .onDevice)
         kokoroURL = defaults.string(forKey: Keys.kokoroURL) ?? Self.defaultKokoroURL
         kokoroVoice = defaults.string(forKey: Keys.kokoroVoice) ?? Self.defaultKokoroVoice
+        elevenLabsVoice = defaults.string(forKey: Keys.elevenLabsVoice) ?? ""
         // "kokoroSpeed" was this setting's name for one build; carry the value over.
         let storedSpeed = defaults.double(forKey: Keys.voiceSpeed)
         let legacySpeed = defaults.double(forKey: "kokoroSpeed")
@@ -866,9 +907,9 @@ final class Settings: ServeEndpoint {
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
         Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopAndSkipInCar, Keys.stopPhrases,
-        Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.voiceEngine, Keys.liveVoice, Keys.liveVoices, Keys.liveHangUp,
+        Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.voiceEngine, Keys.liveVoice, Keys.liveVoices, Keys.liveHangUp, Keys.liveWhenLocked, Keys.liveGroupCalls,
         Keys.replyVoice, Keys.kokoroURL,
-        Keys.kokoroVoice, Keys.voiceSpeed, Keys.speechLanguage, Keys.matchReplyLanguage, Keys.spokenPrefixes,
+        Keys.kokoroVoice, Keys.elevenLabsVoice, Keys.voiceSpeed, Keys.speechLanguage, Keys.matchReplyLanguage, Keys.spokenPrefixes,
         Keys.botOrder, Keys.apiBots, Keys.botVoices, Keys.mutes, Keys.wakePhrases,
     ]
 
@@ -924,9 +965,12 @@ final class Settings: ServeEndpoint {
         case Keys.liveVoice: liveVoice = text(LiveSetup.defaultVoice)
         case Keys.liveVoices: liveVoices = value as? [String: String] ?? [:]
         case Keys.liveHangUp: liveHangUp = value as? Int ?? 2
+        case Keys.liveWhenLocked: liveWhenLocked = flag()
+        case Keys.liveGroupCalls: liveGroupCalls = flag()
         case Keys.replyVoice: replyVoice = pick(ReplyVoice.onDevice)
         case Keys.kokoroURL: kokoroURL = text(Self.defaultKokoroURL)
         case Keys.kokoroVoice: kokoroVoice = text(Self.defaultKokoroVoice)
+        case Keys.elevenLabsVoice: elevenLabsVoice = text()
         case Keys.voiceSpeed: voiceSpeed = (value as? Double).flatMap { $0 > 0 ? $0 : nil } ?? 1.0
         case Keys.speechLanguage: speechLanguage = text()
         case Keys.matchReplyLanguage: matchReplyLanguage = flag(true)
@@ -1143,9 +1187,12 @@ final class Settings: ServeEndpoint {
         voiceEngine = .redde
         liveVoice = LiveSetup.defaultVoice
         liveHangUp = 2
+        liveWhenLocked = false
+        liveGroupCalls = false
         replyVoice = .onDevice
         kokoroURL = Self.defaultKokoroURL
         kokoroVoice = Self.defaultKokoroVoice
+        elevenLabsVoice = ""
         voiceSpeed = 1.0
         speechLanguage = ""
         matchReplyLanguage = true

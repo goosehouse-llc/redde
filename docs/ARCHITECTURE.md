@@ -1535,8 +1535,8 @@ and while listening each new word of the caption rises in on its own (`RisingCap
 Each turn's footer shows where the time went: end of speech → first spoken word (the number that
 matters), recognizer finalize, time to first token, first token → audio, and total model time.
 
-Replies are spoken sentence by sentence while they stream, by AVSpeechSynthesizer, a Kokoro server
-or the user's Hermes (Settings → Voice: On-device, Kokoro, Hermes; `Settings.replyVoice`, which
+Replies are spoken sentence by sentence while they stream, by AVSpeechSynthesizer, a Kokoro server,
+the user's Hermes or ElevenLabs (Settings → Voice: On-device, Kokoro, Hermes, ElevenLabs; `Settings.replyVoice`, which
 took over the old Kokoro switch). Kokoro: one PCM streaming request per sentence, decoded ~100 ms
 at a time onto an `AVAudioPlayerNode`, fetched ahead and played in order, with the built-in voice
 as the fallback. Measured 2026-10-20 on a 64 GB Mac (Kokoro-FastAPI 0.7.2-rc1 on MPS, the same
@@ -1544,7 +1544,17 @@ GPU as the agent's model): a 5-second sentence in ~0.45 s alone and ~0.85 s whil
 and about a second more the first time a sentence of a new length is made (MPS compiles a program
 for each input shape). Left running for days that server grew to 26 GB (19 GB compressed), and one
 request in five stalled ~7 s while it was unpacked: 0.7.2 never empties the MPS cache (its memory
-check is CUDA's only), and the compiled programs pile up besides, so it wants a restart now and then. The replay button speaks the last reply again without a new turn. The speech model
+check is CUDA's only), and the compiled programs pile up besides, so it wants a restart now and then.
+
+**ElevenLabs** (`ElevenLabsSpeech`, Settings → Voice → ElevenLabs; asked 2026-10-26 so bots in group
+chats read in ElevenLabs voices without a call): the person's key (the one live calls with ElevenLabs
+use, `LiveEngine.elevenLabs.keyItem`), one `POST /v1/text-to-speech/{voice}/stream?output_format=pcm_24000`
+per sentence with `eleven_flash_v2_5`, the sentence before it as `previous_text` for how it follows on,
+speed clamped to 0.7–1.2, streamed into the same player as Kokoro (prefetch for a group chat's next
+bot too) with the built-in voice as the fallback. Redde's voice is the one picked (`elevenLabsVoice`),
+else the account's first; each bot gets one picked for it or Automatic, another of the account's
+voices (`BotVoices.elevenLabs`; every voice speaks every language, so one pool). The watch reads with
+its own voice (the key never goes to it). The replay button speaks the last reply again without a new turn. The speech model
 is downloaded in the background at launch.
 
 **Hermes's own voice** (GitHub issue 7, `Services/Voice/HermesSpeech.swift`). The Dashboard speaks
@@ -1944,7 +1954,7 @@ look at.
 
 ### GPT-Live
 
-Settings → Voice → Conversation picks who holds a voice conversation: Redde (the loop above), or
+Settings → Voice → Voice mode picks who holds a voice conversation: Redde (the loop above), or
 GPT-Live (`Services/Voice/LiveVoice.swift`), OpenAI's full-duplex voice model, as Hermes Desktop
 has it (`voice.voice_chat_mode: gpt-live`; asked 2026-10-23 after a Reddit comment, built
 2026-10-24). The voice model talks and listens at once, answers small talk itself, says "let me
@@ -1990,7 +2000,7 @@ back for it to say in its own words. Hermes keeps the model, tools, memory and a
   calls up over WebRTC only, so calls with Hermes's OpenAI key will go through a relay in the
   Redde plugin; its status endpoint is still asked as the voice screen opens (kept five minutes),
   for whether the Dashboard knows live voice turns.
-- **Who and which voice**: Settings → Voice → Conversation for the main agent and every bot
+- **Who and which voice**: Settings → Voice → Voice mode for the main agent and every bot
   without a choice of its own; a bot's own in Edit Bot → Voice → Voice mode (`BotVoice.conversation`,
   `liveVoice`; `Settings.usesGPTLive(for:)`), marked on its row with a phone. The voices are
   gpt-live-1's (`LiveSetup.voiceGroups`, by language, from OpenAI's live-conversations guide), not
@@ -2108,6 +2118,23 @@ back for it to say in its own words. Hermes keeps the model, tools, memory and a
   have been quiet that long; what it says while they go on talking is dropped. GPT-Live has no
   setting for its turn-taking (its session config is strict), and its stream never stops, so its
   silence is skipped while the queue is behind, or each wait would add to every later reply.
+- **Locked** (`VoiceSession.leftForeground`, `Settings.liveWhenLocked`): locking the phone hangs a
+  call up, hands-free off and away from the car, as it closes Redde's own microphone (an open mic
+  on a locked phone, and a bill running). Settings → Voice → Voice mode → Keep Calls On When
+  Locked (asked 2026-10-26, off by default, synced) lets it go on; it still ends by its quiet
+  hang-up, or after an answer with hands-free off. Background audio keeps the engine and socket up.
+- **Group chats as calls** (`LiveRoom`, `LiveVoice.room`, `Settings.liveGroupCalls`; asked
+  2026-10-26: "group chats don't seem to use live calls"): with Settings → Voice → Voice mode →
+  Group Chats as Calls on, `GroupVoice` gives the voice session a room to call (`roomCall`) in the
+  app's engine instead of `sendsTo`. The call speaks for the room (`LiveSetup.roomPersona`: not a
+  member, answers nothing itself, hands whatever is said over at once) and opens with the room's
+  history; a hand-over goes to the room (`GroupFeed.send`) and the voice is told it went ("Sent to
+  the group", a quiet note on GPT-Live, the tool's result elsewhere). `GroupVoice` hands each reply
+  over once whole (`GroupReplies`), and the call says it by a session in that member's live voice
+  that opens saying it (`LiveSetup.resolveRoom(speaker:)`, `reconnect`, as a spoken prefix's
+  hand-off), the next once the one before has been heard (`replyDue` until the voice starts, ten
+  seconds at most); talking again lets what waits go. The face shown is `roomSpeaker`'s. A room's
+  call never hangs up after an answer.
 - **Opening with a request** (`LiveVoice.opening`): a wake phrase said with one ("Hey Home, turn
   the lights off") asks the agent before the call connects, and the call opens saying the answer
   (`LiveGreeting`), as a handed-over call does.

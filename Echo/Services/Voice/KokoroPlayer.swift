@@ -61,6 +61,8 @@ final class KokoroPlayer {
         case kokoro(baseURL: URL, voice: String, speed: Double)
         /// The Dashboard at `server`, with the voice its Hermes is set up with.
         case hermes(HermesServeClient, server: URL)
+        /// ElevenLabs, on the person's key (`ElevenLabsSpeech`), after the sentence before.
+        case elevenLabs(voice: String, speed: Double, previous: String?, key: String)
         /// Audio already in hand.
         case ready
     }
@@ -70,8 +72,11 @@ final class KokoroPlayer {
         let source: Source
         /// What a prefetched sentence is matched by: its words, voice, speed and server.
         var key: String? {
-            guard case let .kokoro(baseURL, voice, speed) = source else { return nil }
-            return "\(baseURL.absoluteString)|\(voice)|\(speed)|\(text)"
+            switch source {
+            case let .kokoro(baseURL, voice, speed): "\(baseURL.absoluteString)|\(voice)|\(speed)|\(text)"
+            case let .elevenLabs(voice, speed, _, _): "elevenlabs|\(voice)|\(speed)|\(text)"
+            default: nil
+            }
         }
         let chunks: AsyncThrowingStream<AVAudioPCMBuffer, Error>
         let continuation: AsyncThrowingStream<AVAudioPCMBuffer, Error>.Continuation
@@ -168,6 +173,26 @@ final class KokoroPlayer {
     func dropPrefetch() {
         prefetched?.fetch?.cancel()
         prefetched = nil
+    }
+
+    /// A sentence for ElevenLabs to say in `voice`; `previous`, the one said before it.
+    func enqueueElevenLabs(_ text: String, voice: String, speed: Double, previous: String?, key: String) {
+        let sentence = Sentence(text: text, source: .elevenLabs(voice: voice, speed: speed, previous: previous, key: key))
+        if let early = prefetched, early.key == sentence.key {
+            prefetched = nil
+            enqueue(early)
+            return
+        }
+        enqueue(sentence)
+    }
+
+    /// `prefetch`, for ElevenLabs (a group chat's next bot).
+    func prefetchElevenLabs(_ text: String, voice: String, speed: Double, key: String) {
+        let sentence = Sentence(text: text, source: .elevenLabs(voice: voice, speed: speed, previous: nil, key: key))
+        guard prefetched?.key != sentence.key else { return }
+        prefetched?.fetch?.cancel()
+        prefetched = sentence
+        startFetch(sentence)
     }
 
     /// A sentence for the person's Hermes to say, through the Dashboard at `server`.
@@ -296,6 +321,10 @@ final class KokoroPlayer {
             let format = format
             sentence.fetch = Task {
                 _ = await HermesSpeech.fetch(text, client: client, server: server, format: format, into: continuation)
+            }
+        case let .elevenLabs(voice, speed, previous, key):
+            sentence.fetch = Task {
+                _ = await ElevenLabsSpeech.fetch(text, voice: voice, speed: speed, previous: previous, key: key, into: continuation)
             }
         case .ready:
             sentence.fetch = Task {}

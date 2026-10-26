@@ -60,7 +60,7 @@ struct SettingsView: View {
             #if DEBUG
             // Dev hooks: `-echo.settingsAnchor` opens Agent on the context and memory files,
             // `-echo.settingsAnchor icloud` scrolls to Sync with iCloud and `-echo.settingsAnchor
-            // plugin` to the Redde Plugin row; `-echo.expandAppIcons`
+            // plugin` to the Redde Plugin row, `voice` opens Voice; `-echo.expandAppIcons`
             // opens Appearance on the app icons (screenshots).
             .task {
                 if DevHooks.expandAppIcons { path = [.appearance] }
@@ -68,6 +68,8 @@ struct SettingsView: View {
                 try? await Task.sleep(for: .milliseconds(600))
                 if let anchor = DevHooks.value("-echo.settingsAnchor"), ["icloud", "plugin"].contains(anchor) {
                     proxy.scrollTo(anchor, anchor: anchor == "plugin" ? .center : .top)
+                } else if DevHooks.value("-echo.settingsAnchor") == "voice" {
+                    path = [.voice]
                 } else {
                     path = [.agent]
                 }

@@ -40,7 +40,7 @@ MICROPHONE
 Voice mode, dictation, a reply with Talk over replies, and, with Wake Phrase on (Settings > Voice, off by default), while Redde is on screen. Transcribed on the device; no audio is kept or sent but in a live voice call.
 
 LIVE VOICE (optional, off by default)
-Settings > Voice > Conversation: GPT-Live, Gemini Live, Grok Voice or ElevenLabs holds the call, on the user's own key, the audio going straight there over a WebSocket. The review account has none.
+Settings > Voice > Voice mode: GPT-Live, Gemini Live, Grok Voice or ElevenLabs holds the call, on the user's own key, the audio going straight there over a WebSocket. The review account has none.
 
 IN-APP PURCHASES
 Settings > About > Support Redde: three optional one-time tips (consumables) that unlock nothing.
