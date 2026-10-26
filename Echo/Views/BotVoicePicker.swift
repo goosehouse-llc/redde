@@ -61,6 +61,7 @@ struct BotVoicePicker: View {
                 WatchLink.shared.push()   // the watch reads the bot in its voice too
             }
         }
+        .holdsWakePhrases(.voicePicker)
     }
 
     private struct Choice {

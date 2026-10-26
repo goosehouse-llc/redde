@@ -202,6 +202,7 @@ struct ConversationsList: View {
                     .navigationTitle("\(settings.headerTitle)'s Voice")
                     .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { voicingMain = false } } }
             }
+            .holdsWakePhrases(.voicePicker)
         }
         .sheet(item: $scheduling) { BotSchedulesView(bot: $0, mainName: settings.headerTitle) }
         .sheet(item: $facing) { bot in

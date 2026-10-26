@@ -12,6 +12,9 @@ final class AudioSessionController {
     private let log = Logger(subsystem: "com.goosehouse.echo", category: "audio")
 
     var onInterruption: (() -> Void)?
+    /// Voice or playback is about to take the session from wake phrases (`WakeListener`), which
+    /// must let the microphone go first: called before anything changes.
+    var onClaim: (() -> Void)?
     /// Fired when the interruption ends; `shouldResume` mirrors the system's hint.
     var onInterruptionEnded: ((_ shouldResume: Bool) -> Void)?
     /// Headphones or a car went away mid-reply. Apple's guidance is to pause, not to re-route
@@ -32,8 +35,10 @@ final class AudioSessionController {
     /// change that re-runs the routing logic; in hands-free each turn would pay for all of them,
     /// so an already-active session in the same mode is left alone. Cleared by `deactivate()`
     /// and by an interruption, after which the system needs the activation again.
-    private enum Mode { case voice, playback }
+    private enum Mode { case voice, playback, wake }
     private var activeMode: Mode?
+    /// Nothing but wake phrases holds the session, if anything does.
+    var isFree: Bool { activeMode == nil || activeMode == .wake }
     /// The mode chosen for listening: voice chat (echo cancellation), or default on a headset that
     /// records at full bandwidth. Replies play in `.default` (see `setReplying`).
     private var listeningMode: AVAudioSession.Mode = .voiceChat
@@ -82,6 +87,7 @@ final class AudioSessionController {
     }
 
     func activateForVoice() throws {
+        if activeMode == .wake { onClaim?() }
         let session = AVAudioSession.sharedInstance()
         if activeMode != .voice {
             lastAtEar = false   // a new voice session starts on the speaker until the sensor says otherwise
@@ -119,6 +125,7 @@ final class AudioSessionController {
     /// or to headphones / Bluetooth / CarPlay when connected. Listening switches back to
     /// `activateForVoice`.
     func activateForPlayback() throws {
+        if activeMode == .wake { onClaim?() }
         stopProximityRouting()
         guard activeMode != .playback else { return }
         let session = AVAudioSession.sharedInstance()
@@ -126,6 +133,42 @@ final class AudioSessionController {
         try session.setActive(true, options: [])
         activeMode = .playback
         updateRouteFacts()
+    }
+
+    /// Wake phrases (`WakeListener`): the microphone open beside whatever else plays, which plays
+    /// on (mixed, not ducked and not paused), and on the speaker rather than the earpiece.
+    /// Bluetooth headphones stay in their music mode, so the phone's own microphone listens; in the
+    /// car, the car's. A session its owner never let go of ends first, other audio told, so music
+    /// paused for it starts again.
+    func activateForWake() throws {
+        guard activeMode != .wake else { return }
+        let session = AVAudioSession.sharedInstance()
+        if activeMode != nil {
+            stopProximityRouting()
+            try? session.setActive(false, options: [.notifyOthersOnDeactivation])
+            activeMode = nil
+        }
+        try session.setCategory(.playAndRecord, mode: .default, options: [.mixWithOthers, .defaultToSpeaker, .allowBluetoothA2DP])
+        try session.setActive(true, options: [])
+        activeMode = .wake
+        headsetSeen = false
+        updateRouteFacts()
+        if let car = session.availableInputs?.first(where: { $0.portType == .carAudio }), session.preferredInput?.uid != car.uid {
+            try? session.setPreferredInput(car)
+        }
+    }
+
+    /// Nothing of Redde's uses the session any more, as `WakeListener` sees it (a voice sample's
+    /// page gone, voice mode idle a while): let go, if it is still set up for voice or playback.
+    func releaseUnused() {
+        guard activeMode == .playback || activeMode == .voice else { return }
+        release()
+    }
+
+    /// Wake phrases no longer listened for: the session let go, if it is still theirs.
+    func deactivateWake() {
+        guard activeMode == .wake else { return }
+        release()
     }
 
     /// A Bluetooth headset input that can record at full bandwidth is available.
@@ -146,7 +189,14 @@ final class AudioSessionController {
         log.notice("route: headphones=\(self.onHeadphones) hqHeadsetMic=\(highQualityHeadsetMic) out=\(route.outputs.map(\.portType.rawValue).joined(separator: ","), privacy: .public) in=\(route.inputs.map(\.portType.rawValue).joined(separator: ","), privacy: .public) available=\(available, privacy: .public)")
     }
 
+    /// Voice or playback is done with the session. Not when wake phrases have it by then (a voice
+    /// session lets go a moment after its last cue): that is theirs to let go (`deactivateWake`).
     func deactivate() {
+        guard activeMode != .wake else { return }
+        release()
+    }
+
+    private func release() {
         stopProximityRouting()
         activeMode = nil
         headsetSeen = false

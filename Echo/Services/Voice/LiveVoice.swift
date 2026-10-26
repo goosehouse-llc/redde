@@ -30,6 +30,10 @@ final class LiveVoice {
     /// stops after its answer (asked 2026-10-25). Read as it goes: hands-free can be turned on
     /// mid-call.
     var endsAfterAnswer: () -> Bool = { false }
+    /// A request to the agent before the call opens (a wake phrase said with one: "Hey Home, turn
+    /// the lights off"): asked as the call's first, and the call opens saying the answer, as a
+    /// call handed to another bot does (`handOff`). Set before `start`.
+    var opening: String?
 
     var inputLevel: Float { call?.inputLevel ?? 0 }
     var outputLevel: Float { call?.outputLevel ?? 0 }
@@ -134,7 +138,14 @@ final class LiveVoice {
             let setup = try await setUp(conversation, settings, engine)
             guard state != .ended else { return }
             hermesKnowsLiveTurns = setup.hermesKnowsLiveTurns
-            let connection = try await setup.open(LiveSetup.history(conversation.messages))
+            var greeting: LiveGreeting?
+            if let opening, !opening.isEmpty {
+                greeting = await answer(opening)
+                note("opening request answered after \(took())")
+                guard state != .ended else { return }
+            }
+            var connection = try await setup.open(LiveSetup.history(conversation.messages))
+            connection.plan.greeting = greeting
             note("set up with \(setup.label) after \(took())")
             guard state != .ended else { return }
             try await call.connect(connection)
@@ -413,6 +424,43 @@ final class LiveVoice {
             log.error("handing the call to \(profile, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
             return false
         }
+    }
+
+    /// The call's opening request (`opening`) asked of the agent, its answer whole for the call to
+    /// open saying. Shown as the agent at work meanwhile; hanging up stops it.
+    private func answer(_ request: String) async -> LiveGreeting {
+        delegation = "opening"
+        lastAsked = .now
+        changed()
+        var whole = ""
+        let events = conversation.send(request, live: LiveTurn(context: "", surface: hermesKnowsLiveTurns))
+        for await event in events {
+            guard state != .ended else { break }
+            switch event {
+            case let .textDelta(delta):
+                whole += delta
+            case let .toolStarted(name, _, _):
+                tool = name
+                changed()
+            case .toolFinished:
+                tool = nil
+                changed()
+            default:
+                break
+            }
+        }
+        delegation = nil
+        tool = nil
+        if conversation.lastSendWasHeld {
+            whole = "That request is waiting behind another one; it goes as soon as that's done."
+        } else if let error = conversation.lastError {
+            whole = "I couldn't get that from \(agentName): \(error)"
+        } else if whole.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            whole = "\(agentName) finished that request without anything to say."
+        }
+        answerUnsaid = true
+        changed()
+        return LiveGreeting(line: whole, language: "English")
     }
 
     /// Hands-free off: three seconds after something asked has been answered, the call ends, unless
@@ -744,9 +792,10 @@ private final class Relay: LiveCallListening {
 enum LiveMeasure {
     /// Every call in a development build, not only those started with `-echo.liveMeasure` (the
     /// costs every ten seconds stay with it): what went on in a call the person made is there to
-    /// read afterwards. Started afresh past a megabyte.
-    static func write(_ line: String) {
-        let file = URL.cachesDirectory.appending(path: "live-measure.log")
+    /// read afterwards. Started afresh past a megabyte. `name`: another file in Caches, for another
+    /// part of voice (wake.log, `WakeListener`).
+    static func write(_ line: String, to name: String = "live-measure.log") {
+        let file = URL.cachesDirectory.appending(path: name)
         if let size = try? FileManager.default.attributesOfItem(atPath: file.path)[.size] as? Int, size > 1_000_000 {
             try? FileManager.default.removeItem(at: file)
         }

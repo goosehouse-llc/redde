@@ -316,7 +316,53 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         guard let session else { return }
         session.continuous = handsFree
         showVoiceCard()
-        session.beginListening()
+        beginListening(session)
+    }
+
+    /// Listening, or, after a wake phrase with a request in it, that request asked at once.
+    private func beginListening(_ session: VoiceSession) {
+        if let asking = wakeAsks {
+            wakeAsks = nil
+            session.ask(asking)
+        } else {
+            session.beginListening()
+        }
+        WakeListener.shared.release(.handoff)
+    }
+
+    /// What was said after a wake phrase, to ask once its chat is open (`woke`).
+    private var wakeAsks: String?
+
+    /// A wake phrase was heard while Redde is on the car's screen (`WakeListener`): as pressing
+    /// that bot; for the main agent, Ask or Talk as Settings → Voice has hands-free, in the chat
+    /// open when it is the main agent's, else in its bot chat (a new one where there are no
+    /// bots). What was said after the phrase is asked at once.
+    func woke(profile: String?, asking: String?) async {
+        guard let conversation else { return }
+        wakeAsks = asking
+        note("woken for \(profile ?? "the main agent")")
+        if let profile {
+            var bot = cachedRoster()?.named(profile)
+            if bot == nil { bot = await freshRoster()?.named(profile) }
+            guard let bot else {
+                wakeAsks = nil
+                WakeListener.shared.release(.handoff)
+                return
+            }
+            await talk(to: bot)
+        } else if let here = conversation.bot?.profile, here != "default" {
+            if let main = cachedRoster()?.bots.first(where: \.isDefault) {
+                await talk(to: main)
+            } else {
+                stopVoice()
+                conversation.reset()
+                reloadChats()
+                listenAsSet()
+            }
+        } else {
+            stopVoice()
+            listenAsSet()
+        }
     }
 
     /// New Chat and a picked chat don't name a mode, so they take Settings → Voice's, like the
@@ -619,7 +665,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
                 self.note(String(format: "chat open in %.2f s", Date.now.timeIntervalSince(started)))
                 self.reloadChats()
                 self.reloadBots()
-                if listen { session.beginListening() } else { self.phaseChanged() }
+                if listen { self.beginListening(session) } else { self.wakeAsks = nil; self.phaseChanged() }
             }
         }
     }

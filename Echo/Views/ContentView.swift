@@ -216,8 +216,9 @@ struct ContentView: View {
             if let offer = PushOffer(url: url) { router.requestPushPairing(offer) }
             else if let offer = SetupCodeOffer(url: url) { router.requestSetup(offer) }
         }
-        .onAppear { consumeControlRequest(); handleLaunchRequest(); handleCaptureRequest(); handleDraftRequest(); handleSetupCode(); handlePushRequests() }
+        .onAppear { consumeControlRequest(); handleLaunchRequest(); handleWake(); handleCaptureRequest(); handleDraftRequest(); handleSetupCode(); handlePushRequests() }
         .onChange(of: router.pendingVoice) { handleLaunchRequest() }
+        .onChange(of: router.pendingWake) { handleWake() }
         .onChange(of: router.pendingCapture) { handleCaptureRequest() }
         .onChange(of: router.pendingDraft) { handleDraftRequest() }
         .onChange(of: router.pendingSetupCode) { handleSetupCode() }
@@ -227,7 +228,7 @@ struct ContentView: View {
         .onChange(of: router.pendingBot) { handlePushRequests() }
         .onChange(of: lock.isLocked) { _, locked in
             // A Siri / control / share request that arrived while locked runs once unlocked.
-            if !locked { consumeControlRequest(); handleLaunchRequest(); handleCaptureRequest(); consumeSharedItems(); handleDraftRequest(); handleSetupCode(); handlePushRequests() }
+            if !locked { consumeControlRequest(); handleLaunchRequest(); handleWake(); handleCaptureRequest(); consumeSharedItems(); handleDraftRequest(); handleSetupCode(); handlePushRequests() }
             // "What's New" held back by the lock. A moment later, so a voice request opens first.
             if !locked { Task { try? await Task.sleep(for: .milliseconds(600)); presentWhatsNewIfDue() } }
         }
@@ -352,6 +353,7 @@ struct ContentView: View {
                         .navigationTitle("\(settings.headerTitle)'s Voice")
                         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { voicingMain = false } } }
                 }
+                .holdsWakePhrases(.voicePicker)
             }
             .sheet(item: $schedulingBot) { BotSchedulesView(bot: $0, mainName: settings.headerTitle) }
             .sheet(item: $facingBot) { bot in
@@ -932,9 +934,40 @@ struct ContentView: View {
         }
     }
 
+    /// A wake phrase was heard (`WakeListener`): voice mode in its agent's chat, the chat on screen
+    /// carried on when it is that agent's (as the Talk button does), with what was said after the
+    /// phrase asked at once. The main agent from a bot's chat: its own bot chat where there are
+    /// bots (where a spoken prefix takes it), else a new conversation.
+    private func handleWake() {
+        guard !lock.isLocked, let wake = router.consumeWake() else { return }
+        Task {
+            defer { WakeListener.shared.release(.handoff) }
+            let here = conversation.bot?.profile
+            let there = wake.profile.map { here == $0 } ?? (here == nil || here == "default")
+            if !there {
+                if showVoice { voiceSession.cancel() }   // what voice mode was saying in another chat is over
+                do {
+                    if let profile = wake.profile {
+                        guard try await conversation.goToBot(profile, mainName: settings.headerTitle) else {
+                            Logger(subsystem: "com.goosehouse.echo", category: "wake").error("no bot \(profile, privacy: .public) to wake here")
+                            return
+                        }
+                    } else if try await !conversation.goToBot("default", mainName: settings.headerTitle) {
+                        conversation.reset()
+                    }
+                } catch {
+                    Logger(subsystem: "com.goosehouse.echo", category: "wake").error("couldn't open the woken agent's chat: \(error.localizedDescription)")
+                    return
+                }
+            }
+            await launchVoice(handsFree: settings.handsFreeByDefault, fromOutside: false, asking: wake.asking)
+        }
+    }
+
     /// Voice mode asked for in a specific mode (the Talk button, Siri, a control): that mode wins
-    /// over the Settings default. `fromOutside`: not from a button in the chat.
-    private func launchVoice(handsFree: Bool, fromOutside: Bool) async {
+    /// over the Settings default. `fromOutside`: not from a button in the chat. `asking`: asked at
+    /// once instead of listening (`VoiceSession.ask`).
+    private func launchVoice(handsFree: Bool, fromOutside: Bool, asking: String? = nil) async {
         voiceSession.continuous = handsFree
         if !showVoice {
             if fromOutside { startFreshForVoice() }
@@ -948,7 +981,7 @@ struct ContentView: View {
             // Let the cover present before the audio session and mic spin up.
             try? await Task.sleep(for: .milliseconds(400))
         }
-        voiceSession.beginListening()
+        if let asking { voiceSession.ask(asking) } else { voiceSession.beginListening() }
     }
 
     #if DEBUG

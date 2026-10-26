@@ -98,6 +98,11 @@ final class Settings: ServeEndpoint {
     var listenOnOpen: Bool {
         didSet { store(listenOnOpen, forKey: Keys.listenOnOpen) }
     }
+    /// Listen for wake phrases while Redde is open (`WakeListener`). This device's own, off until
+    /// turned on: it keeps the microphone open.
+    var wakeListening: Bool {
+        didSet { store(wakeListening, forKey: Keys.wakeListening) }
+    }
     /// Voice mode opens with Hands-free switched on. Requests that ask for a mode themselves (the
     /// hands-free button, Siri, the controls) keep theirs.
     var handsFreeByDefault: Bool {
@@ -283,6 +288,16 @@ final class Settings: ServeEndpoint {
     /// (`Date.distantFuture`: until turned back on). See `Mutes`.
     var mutes: [String: [String: Date]] {
         didSet { store(try? JSONEncoder().encode(mutes), forKey: Keys.mutes) }
+    }
+    /// Wake phrases, per server (its id), then agent: "default" for the main agent, else the
+    /// bot's profile. None set for an agent: `Settings.wakePhrase(for:)`.
+    var wakePhrases: [String: [String: WakePhrase]] {
+        didSet { store(try? JSONEncoder().encode(wakePhrases), forKey: Keys.wakePhrases) }
+    }
+    /// `wakePhrases` for the server in use.
+    var wakePhrasesHere: [String: WakePhrase] {
+        get { wakePhrases[activeServerID.uuidString] ?? [:] }
+        set { wakePhrases[activeServerID.uuidString] = newValue.isEmpty ? nil : newValue }
     }
     /// `mutes` for the server in use.
     var mutesHere: [String: Date] {
@@ -639,6 +654,8 @@ final class Settings: ServeEndpoint {
         static let reasoningEffort = "reasoningEffort"
         static let replyLanguage = "replyLanguage"
         static let listenOnOpen = "listenOnOpen"
+        static let wakeListening = "wakeListening"
+        static let wakePhrases = "wakePhrases"
         static let openToVoiceScreen = "openToVoiceScreen"   // before launchScreen; read once to carry it over
         static let launchScreen = "launchScreen"
         static let handsFreeByDefault = "handsFreeByDefault"
@@ -721,6 +738,7 @@ final class Settings: ServeEndpoint {
         reasoningEffort = defaults.string(forKey: Keys.reasoningEffort) ?? Self.defaultReasoningEffort
         replyLanguage = defaults.string(forKey: Keys.replyLanguage) ?? ""
         listenOnOpen = defaults.bool(forKey: Keys.listenOnOpen)
+        wakeListening = defaults.bool(forKey: Keys.wakeListening)
         launchScreen = defaults.string(forKey: Keys.launchScreen).flatMap(LaunchScreen.init(rawValue:))
             ?? (defaults.bool(forKey: Keys.openToVoiceScreen) ? .voice : .conversation)
         handsFreeByDefault = defaults.bool(forKey: Keys.handsFreeByDefault)
@@ -758,6 +776,8 @@ final class Settings: ServeEndpoint {
             .flatMap { try? JSONDecoder().decode([String: [String: BotVoice]].self, from: $0) } ?? [:]
         mutes = defaults.data(forKey: Keys.mutes)
             .flatMap { try? JSONDecoder().decode([String: [String: Date]].self, from: $0) } ?? [:]
+        wakePhrases = defaults.data(forKey: Keys.wakePhrases)
+            .flatMap { try? JSONDecoder().decode([String: [String: WakePhrase]].self, from: $0) } ?? [:]
         appearance = Appearance(rawValue: defaults.string(forKey: Keys.appearance) ?? "") ?? .system
         // Redde's own face unless another was picked; a still orb picked in an earlier version
         // falls back to it too (they are gone).
@@ -857,7 +877,7 @@ final class Settings: ServeEndpoint {
         Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.voiceEngine, Keys.liveVoice, Keys.liveVoices, Keys.liveHangUp,
         Keys.replyVoice, Keys.kokoroURL,
         Keys.kokoroVoice, Keys.voiceSpeed, Keys.speechLanguage, Keys.matchReplyLanguage, Keys.spokenPrefixes,
-        Keys.botOrder, Keys.apiBots, Keys.botVoices, Keys.mutes,
+        Keys.botOrder, Keys.apiBots, Keys.botVoices, Keys.mutes, Keys.wakePhrases,
     ]
 
     /// A synced setting as it is saved here, for `CloudSync` to send.
@@ -923,6 +943,7 @@ final class Settings: ServeEndpoint {
         case Keys.apiBots: apiBots = decoded([:])
         case Keys.botVoices: botVoices = decoded([:])
         case Keys.mutes: mutes = decoded([:])
+        case Keys.wakePhrases: wakePhrases = decoded([:])
         default: break
         }
     }
@@ -1115,6 +1136,7 @@ final class Settings: ServeEndpoint {
         reasoningEffort = Self.defaultReasoningEffort
         replyLanguage = ""
         listenOnOpen = false
+        wakeListening = false
         launchScreen = .conversation
         handsFreeByDefault = false
         newConversationForVoice = false
@@ -1140,6 +1162,7 @@ final class Settings: ServeEndpoint {
         apiBots = [:]
         botVoices = [:]
         mutes = [:]
+        wakePhrases = [:]
         theme = .standard
         themeColors = [:]
         appearance = .system

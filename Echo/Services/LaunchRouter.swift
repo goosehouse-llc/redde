@@ -26,6 +26,26 @@ final class LaunchRouter {
         return pendingVoice
     }
 
+    /// A wake phrase was heard (`WakeListener`): voice mode in that agent's chat.
+    struct WakeRequest: Equatable {
+        /// The bot's profile; nil for the main agent.
+        var profile: String?
+        /// What was said after the phrase, asked at once ("Hey Home, turn the lights off").
+        var asking: String?
+        var issuedAt: Date
+    }
+
+    private(set) var pendingWake: WakeRequest?
+
+    func requestWake(profile: String?, asking: String?) {
+        pendingWake = WakeRequest(profile: profile, asking: asking, issuedAt: .now)
+    }
+
+    func consumeWake() -> WakeRequest? {
+        defer { pendingWake = nil }
+        return pendingWake
+    }
+
     /// Quick capture asked for from a control: listen for a note. Set once, consumed once.
     private(set) var pendingCapture: Date?
 

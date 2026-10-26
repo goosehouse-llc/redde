@@ -54,6 +54,15 @@ final class SpeechRecognizer {
     var speechMargin: Float = 0.12
     /// Hard cap so a stuck mic never records forever.
     var maxUtterance: TimeInterval = 45
+    /// The system's echo cancellation while listening (off on headphones whatever this says). Off
+    /// for wake phrases (`WakeListener`): nothing of Redde's plays then, and it would treat the
+    /// app as in a call, ducking whatever else plays.
+    var echoCancellation = true
+    /// Words to listen out for besides the spoken prefixes' (the wake phrases), set before `start`.
+    var hints: [String] = []
+    /// While held, how much of the newest audio is kept for `beginTranscribing` to start with. A
+    /// wake phrase keeps more: the level can notice a voice only at its louder words, after "Hey Sol".
+    var heldAudio: TimeInterval = 1.0
 
     /// What it listens with. Anything but the device's own is for tests.
     private let kind: Transcriber.Kind
@@ -153,13 +162,14 @@ final class SpeechRecognizer {
     }
 
     /// Tells the analyzer the spoken-prefix words, so "Claude" is heard as Claude rather than
-    /// "cloud". Nothing when no prefixes are set up; a context the analyzer can't take is ignored,
-    /// so this can never break transcription.
-    private static func applySpokenPrefixHints(to analyzer: SpeechAnalyzer) async {
+    /// "cloud", and any `extra` (wake phrases). Nothing when there are none; a context the analyzer
+    /// can't take is ignored, so this can never break transcription.
+    private static func applySpokenPrefixHints(to analyzer: SpeechAnalyzer, extra: [String] = []) async {
         let rules = Settings.shared.spokenPrefixes
-        guard !rules.isEmpty else { return }
+        let strings = (rules.isEmpty ? [] : VoiceRouting.contextualStrings(for: rules)) + extra
+        guard !strings.isEmpty else { return }
         let context = AnalysisContext()
-        context.contextualStrings[.general] = VoiceRouting.contextualStrings(for: rules)
+        context.contextualStrings[.general] = strings
         try? await analyzer.setContext(context)
     }
 
@@ -268,12 +278,21 @@ final class SpeechRecognizer {
     }
 
     /// Listening → held again: what set it off wasn't words.
-    func holdAgain() {
+    func holdAgain() { holdAgain(finalizing: false) }
+
+    /// `holdAgain`, and with `finalizing` the analyzer told to be done with what it was given now,
+    /// while held, so its last words for it are dropped here; otherwise they come once audio flows
+    /// again, at the start of the next utterance (a wake phrase's listener found a whole sentence
+    /// from before there, 2026-10-25).
+    func holdAgain(finalizing: Bool) {
         guard state == .listening, let tap else { return }
         endpointTask?.cancel()
         endpointTask = nil
         tap.hold()
         state = .holding
+        if finalizing, let analyzer {
+            Task { try? await analyzer.finalize(through: nil) }
+        }
         // Whatever it made of that noise belongs to no utterance.
         finalizedText = ""
         volatileText = ""
@@ -319,7 +338,7 @@ final class SpeechRecognizer {
         }
         try stillPreparing()
         let analyzer = SpeechAnalyzer(modules: [transcriber.module])
-        await Self.applySpokenPrefixHints(to: analyzer)
+        await Self.applySpokenPrefixHints(to: analyzer, extra: hints)
         self.transcriber = transcriber
         self.analyzer = analyzer
 
@@ -331,7 +350,7 @@ final class SpeechRecognizer {
         // into the mic. Headphones and AirPods keep the reply out of the mic themselves, and the
         // processing would only dull their microphone, so it's off there. Must be set before reading
         // the format, which changes when it's on.
-        let wantsEchoCancellation = !AudioSessionController.shared.onHeadphones
+        let wantsEchoCancellation = echoCancellation && !AudioSessionController.shared.onHeadphones
         if input.isVoiceProcessingEnabled != wantsEchoCancellation {
             do { try await Self.setVoiceProcessing(wantsEchoCancellation, of: input) } catch { log.error("voice processing toggle failed: \(error.localizedDescription)") }
         }
@@ -357,7 +376,7 @@ final class SpeechRecognizer {
         }
         guard let converter = AVAudioConverter(from: micFormat, to: analyzerFormat),
               let tap = TapProcessor(converter: converter, targetFormat: analyzerFormat, continuation: continuation,
-                                     onVoice: TapProcessor.report(to: self)) else {
+                                     heldSeconds: heldAudio, onVoice: TapProcessor.report(to: self)) else {
             abandon(); throw Failure.audioFormat
         }
         self.tap = tap
@@ -474,6 +493,20 @@ final class SpeechRecognizer {
         endpointTask = nil
         return await finish()
     }
+
+    /// `cancel`, with the microphone let go of before this returns rather than as the teardown gets
+    /// to it: for a listener that must be out of the way before another opens it (`WakeListener`).
+    func cancelNow() {
+        if state == .holding || state == .listening {
+            engine.inputNode.removeTap(onBus: 0)
+            engine.stop()
+        }
+        cancel()
+    }
+
+    /// The microphone's engine is running: false once a route or configuration change stopped it
+    /// under a listener that holds (`WakeListener` starts again then).
+    var isEngineRunning: Bool { engine.isRunning }
 
     func cancel() {
         generation += 1
@@ -611,7 +644,7 @@ nonisolated private final class TapProcessor: @unchecked Sendable {
     /// Whether the analyzer has been handed any audio at all (under `stageLock`).
     private var fed = false
     var hasFedAnalyzer: Bool { stageLock.withLock { fed } }
-    private static let heldSeconds = 1.0
+    private let heldSeconds: Double
     /// Watches the level for a voice while a reply plays; nil when nobody asked.
     private let watch = OSAllocatedUnfairLock<BargeInDetector?>(initialState: nil)
     private let onVoice: @Sendable () -> Void
@@ -632,10 +665,11 @@ nonisolated private final class TapProcessor: @unchecked Sendable {
     }
 
     init?(converter: AVAudioConverter, targetFormat: AVAudioFormat, continuation: AsyncStream<AnalyzerInput>.Continuation,
-          onVoice: @escaping @Sendable () -> Void) {
+          heldSeconds: Double = 1.0, onVoice: @escaping @Sendable () -> Void) {
         self.converter = converter
         self.targetFormat = targetFormat
         self.continuation = continuation
+        self.heldSeconds = heldSeconds
         self.onVoice = onVoice
         let ratio = targetFormat.sampleRate / converter.inputFormat.sampleRate
         let perCallback = AVAudioFrameCount(Double(Self.maxInputFrames) * ratio) + 32
@@ -643,7 +677,7 @@ nonisolated private final class TapProcessor: @unchecked Sendable {
         guard let scratch = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: perCallback),
               let staged = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: yieldFrames + perCallback),
               let kept = AVAudioPCMBuffer(pcmFormat: targetFormat,
-                                          frameCapacity: AVAudioFrameCount(targetFormat.sampleRate * Self.heldSeconds) + perCallback) else { return nil }
+                                          frameCapacity: AVAudioFrameCount(targetFormat.sampleRate * heldSeconds) + perCallback) else { return nil }
         self.scratch = scratch
         self.staged = staged
         self.kept = kept
@@ -714,7 +748,7 @@ nonisolated private final class TapProcessor: @unchecked Sendable {
 
     /// Adds to the held audio, letting the oldest go once there is more than `heldSeconds` of it.
     private func keep(_ out: AVAudioPCMBuffer) {
-        let limit = AVAudioFrameCount(targetFormat.sampleRate * Self.heldSeconds)
+        let limit = AVAudioFrameCount(targetFormat.sampleRate * heldSeconds)
         let n = min(out.frameLength, kept.frameCapacity)
         if kept.frameLength + n > limit, kept.frameLength > 0 {
             let drop = min(kept.frameLength, kept.frameLength + n - limit)

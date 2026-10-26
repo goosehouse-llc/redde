@@ -432,6 +432,12 @@ struct VoiceSettings: View {
         }
     }
 
+    /// Wake Phrase's row: off, the one phrase, or how many.
+    private var wakeSummary: String {
+        let targets = settings.wakeListening ? settings.wakeTargets : []
+        return targets.isEmpty ? "Off" : targets.count == 1 ? targets[0].phrase : "\(targets.count) phrases"
+    }
+
     var body: some View {
         Section {
             if Settings.gptLiveIncluded {
@@ -485,6 +491,13 @@ struct VoiceSettings: View {
                 LabeledContent("Spoken prefixes") {
                     Text(settings.spokenPrefixes.isEmpty ? "Off" : "\(settings.spokenPrefixes.count)")
                         .lineLimit(1)
+                }
+            }
+            NavigationLink {
+                WakePhraseSettings()
+            } label: {
+                LabeledContent("Wake phrase") {
+                    Text(wakeSummary).lineLimit(1)
                 }
             }
             // Hermes's voice is the one it is set up with: no language to match, no speed to send.

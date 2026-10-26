@@ -92,6 +92,7 @@ struct SettingsView: View {
             }
             .sensoryFeedback(.success, trigger: secretSaved)
         }
+        .holdsWakePhrases(.settings)
     }
 
     @ViewBuilder

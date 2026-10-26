@@ -509,6 +509,33 @@ final class VoiceSession {
         Task { await startRecognizer() }
     }
 
+    /// A wake phrase said with a request after it ("Hey Home, turn the lights off",
+    /// `WakeListener`): asked at once, as if voice mode had just heard it, in the chat open now;
+    /// where that chat has a call, the call opens saying the answer.
+    func ask(_ text: String) {
+        guard live == nil, asking == nil, phase == .idle || isErrored else { return }
+        if sendsTo == nil, liveWanted(conversation.bot?.profile) {
+            output.stop()
+            startLive(opening: text)
+            return
+        }
+        replaying = false
+        isCapturing = false
+        isMuted = false
+        stopMonitor()
+        output.stop()
+        replyTask?.cancel()
+        metrics = VoiceMetrics()
+        phase = .listening
+        liveTranscript = text
+        Task {
+            do { try audio.activateForVoice() } catch {
+                log.error("audio for a wake request: \(error.localizedDescription)")
+            }
+            await handleUtterance(text)
+        }
+    }
+
     /// The phone locked, or Redde was left for another app, while the mic was open. Listening
     /// now survives the background (the `audio` background mode), so a mic left open on a locked
     /// phone would stay open for good. Unless the person is in a hands-free conversation or on
@@ -658,8 +685,10 @@ final class VoiceSession {
 
     /// Calls GPT-Live: the microphone allowed and the audio session set up for voice, as for
     /// listening, then the call (`LiveVoice`), whose state is shown as the phase from here on.
-    private func startLive() {
+    /// `opening`: a request asked before the call opens (`ask`).
+    private func startLive(opening: String? = nil) {
         let live = makeLive(conversation)
+        live.opening = opening
         self.live = live
         isMuted = false
         isCapturing = false

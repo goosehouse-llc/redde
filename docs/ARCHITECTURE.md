@@ -2052,6 +2052,48 @@ back for it to say in its own words. Hermes keeps the model, tools, memory and a
   in OpenAI's voice, the one Hermes is set to through Hermes (`voice.gpt_live.voice`), else the
   one picked in Settings. Answering a request aloud: a request goes to the screen, and the voice
   is told so. Not on the watch.
+- **Opening with a request** (`LiveVoice.opening`): a wake phrase said with one ("Hey Home, turn
+  the lights off") asks the agent before the call connects, and the call opens saying the answer
+  (`LiveGreeting`), as a handed-over call does.
+
+### Wake phrases
+
+Settings → Voice → Wake Phrase (`Services/Voice/WakeListener.swift`, `WakePhrase.swift`,
+`Views/WakePhraseSettings.swift`), asked 2026-10-25 after Conduit's. While Redde is open on the
+iPhone or iPad, or on the car's screen, an agent's phrase ("Hey Sol", "Hey Home") opens voice mode
+in its chat, as the Talk button does in the chat on screen; "Hey Home, turn the lights off" asks at
+once (`VoiceSession.ask`, through `LaunchRouter.requestWake` on the phone and
+`CarPlaySceneDelegate.woke` in the car). Each agent's phrase is "Hey <name>" unless other words are
+typed; the main agent's is on until turned off, a bot's off until turned on. The phrases are kept
+per server and synced (`Settings.wakePhrases`, key "default" for the main agent); listening is the
+device's own switch (`wakeListening`), off by default. Both connections: it is all on the phone.
+
+- **Listening:** its own `SpeechRecognizer` held (`startHeld`), on a session of its own
+  (`AudioSessionController.activateForWake`: play and record, mixed with other audio so music
+  plays on, speaker by default, Bluetooth left in its music mode so the phone's microphone listens;
+  in the car, the car's), no echo cancellation (`SpeechRecognizer.echoCancellation`). Nothing is
+  transcribed until the level says someone is talking (`BargeInDetector`, -46 dBFS and 12 dB over
+  the room: a first guess, to tune on the phone); then the second and a half before and what
+  follows (`SpeechRecognizer.heldAudio`: the level noticed a voice only at its louder words, after
+  "Hey Sol"), the phrases given to the analyzer as hints, until a phrase is found at the start (`WakeMatch`: a word
+  or two before it allowed, each word as written or with the same Soundex code, so "Saul" is Sol),
+  or more words than a phrase has, or five seconds, say it was something else and it holds again,
+  the analyzer told to finish with that audio then (`holdAgain(finalizing:)`; otherwise its last
+  words for it came at the start of the next utterance). A phrase found, the utterance ends a
+  second after the words stop (half a second of quiet with it, or three seconds of no words
+  alone), not by the recogniser's endpointing, which never found a room quiet with no echo
+  cancellation; what followed the phrase is the request.
+- **Stepping aside:** voice mode, a call, Read aloud, dictation or a sample taking the session call
+  `onClaim`, which stops its microphone before theirs opens (`SpeechRecognizer.cancelNow`); it holds
+  off while Settings or a voice picker is open (`holdsWakePhrases`), while a wake is on its way into
+  voice mode, through an interruption, and for a moment after voice mode is done, then opens again
+  (a two-second tick while any scene is in front). A session left set up with nothing using it is
+  let go of after half a minute. A route change that stops its engine opens it again; so does every
+  ten minutes of holding.
+- **Development builds** write what it did and heard to Library/Caches/wake.log (never to the
+  system log); the transcripts stay on the phone either way.
+- **Untried:** the level threshold on a real room, and the car: whether a car keeps its media
+  playing while a mixed session holds its microphone.
 
 ### Status widgets: Needs you, and Context
 

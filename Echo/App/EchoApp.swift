@@ -66,6 +66,7 @@ struct EchoApp: App {
             .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
             .onAppear {
                 lock.appDidLaunch()
+                WakeListener.shared.begin()   // listens for wake phrases where they're on (Settings → Voice)
                 Settings.shared.applyLateLocalDefaults()
                 // Daemon round trips (notification categories, Siri phrases) wait for the first frame.
                 Notifier.shared.registerCategories()
