@@ -236,10 +236,11 @@ extension HermesServeClient {
         // The main profile's by the Dashboard's own switches, each that changed (Settings → Agent
         // → Tools'), which its chats read on every release; a bot's as its list.
         if bot.isDefault, let toolsets = change.toolsets, !toolsets.isEmpty {
-            // Only those Edit Bot offers: one it doesn't list stays as it is.
+            // Only those Edit Bot offers: one it doesn't list stays as it is. Kanban it offers
+            // though Hermes lists it only once it is on (`BotEditor.withKanban`).
             let offered = try await toolsetsOffered()
             let now = await mainToolsetsNow() ?? offered.enabledToolsets, wanted = Set(toolsets)
-            let changed = now.symmetricDifference(wanted).intersection(offered.toolsets.map(\.name))
+            let changed = now.symmetricDifference(wanted).intersection(offered.toolsets.map(\.name) + ["kanban"])
             for name in changed.sorted() { try await switchToolset(name: name, enabled: wanted.contains(name)) }
             Task { await refreshOpenChatsTools() }
         } else if let toolsets = change.toolsets, !toolsets.isEmpty {

@@ -79,6 +79,8 @@ CALLS = {
     "lab:question": ("clarify", {"questions": [{"question": "Which branch should I deploy?", "choices": ["main", "release"]}]}),
     "lab:delegate": ("delegate_task", {"goal": "Say hello."}),
     "lab:sudo": ("terminal", {"command": "sudo true"}),
+    # A kanban card, from wherever the message is (lab.sh templates: a bot in a group chat).
+    "lab:card": ("kanban_create", {"title": "Lab card from a group chat", "assignee": "default", "body": "Made in a group chat."}),
     "lab:secret": ("skill_view", {"name": "lab-secret"}),
     # Phone tools (the Redde plugin's): carried out by whoever plays the phone in the check.
     "lab:reminder": ("phone_reminders_add", {"title": "Renew the car registration", "due": "2026-10-20"}),
@@ -302,7 +304,7 @@ class Handler(BaseHTTPRequestHandler):
                 name = next((n for n in names if n in offered), None)
                 if name:
                     planned = (name, arguments)
-                elif (names is TODO or names[0].startswith(("phone_", "redde_"))) and "tool_call" in offered:
+                elif (names is TODO or names[0].startswith(("phone_", "redde_", "kanban_"))) and "tool_call" in offered:
                     # From Hermes 0.21.3 most tools are not offered outright: the model finds
                     # them and calls them through `tool_call`, by name. (0.21.0 does the same once
                     # enough tools are on, and its `tool_call` takes one call, not a list of them.)

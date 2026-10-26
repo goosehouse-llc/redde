@@ -558,7 +558,14 @@ where a new conversation is in the ••• menu, and ⌘N as anywhere) is the 
   offers), which write `platform_toolsets.cli`, the list the Dashboard's chats and its Bot Chat
   read. Not `profiles.configure` as for a bot: 0.21.0 and 0.21.3 kept that list for the main
   profile where its chats never looked, and `profiles.describe` showed it, not what the chats had
-  (measured). The Hermes API server reads `platform_toolsets.api_server`. The last switch on
+  (measured). The Hermes API server reads `platform_toolsets.api_server`; a group chat on the
+  same server doesn't: each bot's room session is a Dashboard one (source `bot_room`), so its
+  Edit Bot list is what it has there from 0.21.5 (`lab.sh templates`: a bot given Kanban makes a
+  card in a group chat; the API server's list changed nothing; 0.21.3 gives every bot the main
+  agent's tools, 0.21.0 has no Kanban). Kanban is off by default from 0.22, and
+  `profiles.describe` lists such a toolset only where it is on already, so Edit Bot adds it to
+  what it offers (`BotEditor.withKanban`, and the main agent's switches let it through); no bot
+  could be given it before (2026-10-26). The last switch on
   can't be turned off. Hermes fixes a chat's tools when its agent is built, so a change reached
   only new chats until the Dashboard restarted: after any tool change (Edit Bot or Settings →
   Agent → Tools) Redde sends `reload.mcp` with `confirm: true`, which gives every open chat its

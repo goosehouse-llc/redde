@@ -388,9 +388,10 @@ struct BotEditor: View {
         defer { loading = false }
         guard let editing else {
             async let tools = client.toolsetsOffered()
+            async let board = client.dashboardToolsets()
             models = (try? await client.modelOptions(forProfile: "default")) ?? []
             let main = try? await tools
-            offered = main?.toolsets ?? []
+            offered = Self.withKanban(main?.toolsets ?? [], board: try? await board)
             mainToolsets = await client.mainToolsetsNow() ?? main?.enabledToolsets ?? []
             loaded = !models.isEmpty
             return
@@ -400,6 +401,7 @@ struct BotEditor: View {
             async let tools = client.toolsetsOffered()
             async let ownSkills = client.dashboardSkills(profile: editing.name)
             async let preloaded = client.alwaysLoadedSkills(profile: editing.name)
+            async let board = client.dashboardToolsets()
             let options = isMain ? [] : ((try? await client.modelOptions(forProfile: editing.name)) ?? [])
             var read = try await details
             let described = (try? await tools)?.enabledToolsets
@@ -412,7 +414,7 @@ struct BotEditor: View {
             let start = Original(title: editing.title ?? editing.displayName ?? "", about: read.description, soul: read.soul,
                                  model: current, shown: !editing.isHidden,
                                  toolsets: !isMain && read.enabledToolsets == main ? nil : read.enabledToolsets)
-            offered = read.toolsets
+            offered = Self.withKanban(read.toolsets, board: try? await board)
             mainToolsets = main
             toolsets = start.toolsets
             skills = try? await ownSkills
@@ -427,6 +429,15 @@ struct BotEditor: View {
         } catch {
             problem = "Couldn't read this bot: \(error.localizedDescription)"
         }
+    }
+
+    /// Kanban offered too: Hermes lists a toolset that is off by default only where it is on
+    /// already, so no bot could be given it, and none in a group chat could make a card (2026-10-26).
+    /// A bot's own list is what its group chats on its own server use (lab.sh templates, 0.21.5 on).
+    private static func withKanban(_ offered: [BotToolset], board: [HermesSessionsAPI.Toolset]?) -> [BotToolset] {
+        guard !offered.isEmpty, !offered.contains(where: { $0.name == "kanban" }),
+              let kanban = board?.first(where: { $0.name == "kanban" }) else { return offered }
+        return offered + [BotToolset(name: "kanban", description: kanban.description ?? "", enabled: false)]
     }
 
     private func save(modelConfirmed: Bool = false) {

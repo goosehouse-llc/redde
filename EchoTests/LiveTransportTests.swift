@@ -2106,6 +2106,27 @@ struct HermesLabBotsTests {
         HermesLabApprovalTests.report(try await client.botDetails(writerBot).enabledToolsets == mainTools,
                                       "an empty list is never sent", "")
 
+        // Kanban, off by default, so Hermes lists it only where it is on already: Edit Bot offers it
+        // all the same (no bot in a group chat could make a card, 2026-10-26), to a bot and to the
+        // main agent, and takes it off again.
+        if try await client.dashboardToolsets().contains(where: { $0.name == "kanban" }) {
+            _ = try await client.changeBot(writerBot, BotChange(toolsets: mainTools.union(["kanban"]).sorted()))
+            let carded = try await client.botDetails(writerBot).enabledToolsets
+            HermesLabApprovalTests.report(carded == mainTools.union(["kanban"]), "a bot is given Kanban", "\(carded.sorted())")
+            let agent = HermesBot(name: "default", isDefault: true)
+            let had = await client.mainToolsetsNow() ?? []
+            if !had.contains("kanban") {
+                _ = try await client.changeBot(agent, BotChange(toolsets: had.union(["kanban"]).sorted()))
+                let given = await client.mainToolsetsNow() ?? []
+                _ = try await client.changeBot(agent, BotChange(toolsets: had.sorted()))
+                let back = await client.mainToolsetsNow() ?? []
+                HermesLabApprovalTests.report(given == had.union(["kanban"]) && back == had, "and the main agent Kanban, and off again",
+                                              "given \(given.sorted()), back \(back.sorted())")
+            }
+        } else {
+            print("  info  no kanban toolset on this release")
+        }
+
         // The main agent's own list (Edit Bot → Tools on it): Code Execution off and on again, as
         // the Dashboard's Tools page then shows it.
         let mainBot = HermesBot(name: "default", isDefault: true)
