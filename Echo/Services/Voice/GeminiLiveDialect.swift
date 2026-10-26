@@ -50,8 +50,14 @@ nonisolated struct GeminiLiveDialect: LiveDialect {
             "systemInstruction": .object(["parts": .array([.object(["text": .string(plan.instructions)])])]),
             "inputAudioTranscription": .object([:]),
             "outputAudioTranscription": .object([:]),
+            // Patient, as ElevenLabs' agent was made after it answered while the person was still
+            // finishing (2026-10-25): a second of quiet before it answers, and less taken by a noise
+            // for the start of speech (the room's voices were heard as the person's).
             "realtimeInputConfig": .object([
-                "automaticActivityDetection": .object(["disabled": .bool(false), "silenceDurationMs": .number(700), "prefixPaddingMs": .number(200)]),
+                "automaticActivityDetection": .object([
+                    "disabled": .bool(false), "silenceDurationMs": .number(1_000), "prefixPaddingMs": .number(200),
+                    "startOfSpeechSensitivity": .string("START_SENSITIVITY_LOW"), "endOfSpeechSensitivity": .string("END_SENSITIVITY_LOW"),
+                ]),
                 "activityHandling": .string("START_OF_ACTIVITY_INTERRUPTS"),
             ]),
             // A long call's context kept short, so it isn't cut off (and isn't billed again whole each turn).

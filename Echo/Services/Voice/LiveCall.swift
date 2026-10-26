@@ -239,11 +239,12 @@ final class LiveCall: LiveCalling {
                 try? await Task.sleep(for: .seconds(10))
                 guard !closed, let before = last else { return }
                 let now = audio.snapshot(), seconds = Date.now.timeIntervalSince(at)
-                LiveMeasure.write(String(format: "connection: up %.0f kbit/s, down %.0f kbit/s, voice queued at most %.0f ms, ran dry %d times, gated %.1f s (echo %.3f, loudest while the voice played %.3f, between replies %.3f), audio restarted %d times, out to %@%@",
+                LiveMeasure.write(String(format: "connection: up %.0f kbit/s, down %.0f kbit/s, voice queued at most %.0f ms, ran dry %d times, gated %.1f s (echo %.3f, loudest while the voice played %.3f, between replies %.3f), talked over %d times, audio restarted %d times, out to %@%@",
                                          Double(now.sent - before.sent) * 8 / 1000 / seconds,
                                          Double(now.received - before.received) * 8 / 1000 / seconds,
                                          now.mostQueuedMs, now.underruns - before.underruns,
-                                         now.gated - before.gated, now.echoNow, now.echoPeak, now.speechPeak, now.restarts, now.route,
+                                         now.gated - before.gated, now.echoNow, now.echoPeak, now.speechPeak, now.bargeIns - before.bargeIns,
+                                         now.restarts, now.route,
                                          now.replyGaps.isEmpty ? "" : "; the voice's audio arrived " + now.replyGaps.map { "\($0) ms" }.joined(separator: ", ") + " after the person's last sound"))
                 LiveMeasure.write(String(format: "audio: the voice played at most %.3f, out of the mixer at most %.3f; %@", now.voicePeak, now.mixedPeak, now.engine))
                 audio.clearReplyGaps()
@@ -262,8 +263,9 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
     struct Snapshot {
         var sent = 0, received = 0, underruns = 0, restarts = 0
         /// Seconds of the microphone sent as silence by the gate, and the loudest it heard while
-        /// the voice played.
+        /// the voice played; and times the person talked over a voice the microphone was shut for.
         var gated = 0.0
+        var bargeIns = 0
         var echoPeak: Float = 0, echoNow: Float = 0
         /// The loudest the microphone was between replies: the person, as it hears them.
         var speechPeak: Float = 0
@@ -342,6 +344,22 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
     /// Whether the sound is on the phone's own speaker, looked at once a second (on `sending`).
     private var speakerCheckedAt: UInt64 = 0
     private var speakerNow = true
+    /// Talking over a voice that can't be heard over (`HalfDuplex`): someone loud enough, long
+    /// enough, for Redde's own voice's detector (`BargeInDetector`), and the voice is held, the
+    /// microphone opened, what it heard just before sent first, so "stop" arrives whole; the
+    /// service interrupts it (`flush`), or with nothing more said it goes on. Asked 2026-10-25:
+    /// "I'd like to still be able to ask them to stop". All on `sending`.
+    private var detector = BargeInDetector.echoCancelled
+    private var wasPlaying = false
+    private var bargingSince: UInt64 = 0
+    private var bargeQuietSince: UInt64 = 0
+    /// The microphone's own audio, the last moments of it, kept while silence went instead.
+    private var preRoll = Data()
+    private static let preRollSeconds = 0.5
+    /// A held voice goes on after this long without the person talking (a false start), or this
+    /// long at most.
+    private static let bargeQuiet = 1.2
+    private static let bargeLongest = 8.0
     /// `-echo.liveMeasure` (DEBUG): what the voice plays and what leaves the mixer are measured too.
     private let measuring: Bool
     private let engine = AVAudioEngine()
@@ -583,7 +601,9 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
         // phone's speaker where only headphones may (looked at only while it plays).
         let listening = !playing || !(halfDuplex == .always || (halfDuplex == .onSpeaker && onSpeaker()))
         let now = mach_absolute_time()
-        let open = state.withLock { state -> Bool in
+        let seconds = Double(samples.count) / heardFormat.sampleRate
+        let barging = bargeIn(playing: playing, listening: listening, level: level, seconds: seconds, now: now)
+        let open = barging || state.withLock { state -> Bool in
             if playing {
                 state.echo = state.echo == 0 ? level : state.echo * 0.95 + level * 0.05
                 state.stats.echoPeak = max(state.stats.echoPeak, level)
@@ -602,23 +622,57 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
             if level >= Self.speech { state.openUntil = now + AVAudioTime.hostTime(forSeconds: Self.hold) }
             return now < state.openUntil
         }
-        if !open {
-            channel.update(repeating: 0, count: samples.count)
-            let seconds = Double(samples.count) / heardFormat.sampleRate
-            state.withLock { $0.stats.gated += seconds }
-        }
+        if !open { state.withLock { $0.stats.gated += seconds } }
         let capacity = AVAudioFrameCount(Double(buffer.frameLength) * wire.sampleRate / buffer.format.sampleRate) + 32
         guard let out = AVAudioPCMBuffer(pcmFormat: wire, frameCapacity: capacity) else { return }
         let source = Fed(buffer)
         var error: NSError?
         converter.convert(to: out, error: &error) { _, status in source.next(status) }
         guard error == nil, out.frameLength > 0, let converted = out.int16ChannelData else { return }
-        pending.append(Data(bytes: converted[0], count: Int(out.frameLength) * 2))
+        let real = Data(bytes: converted[0], count: Int(out.frameLength) * 2)
+        // What it heard, kept a moment, for a talking-over to send from where it began; silence
+        // goes out instead while closed, the stream unbroken.
+        preRoll.append(real)
+        let keep = Int(wire.sampleRate * Self.preRollSeconds) * 2
+        if preRoll.count > keep { preRoll.removeFirst(preRoll.count - keep) }
+        pending.append(open ? real : Data(count: real.count))
         guard pending.count >= sendBytes else { return }
         let message = message(pending.base64EncodedString())
         pending.removeAll(keepingCapacity: true)
         state.withLock { $0.stats.sent += message.utf8.count }
         socket.send(.string(message)) { _ in }
+    }
+
+    /// Whether the person is talking over a voice the microphone is shut for (`detector`): true
+    /// from when they start, the voice held and what was heard just before sent first, until the
+    /// service interrupts it (`flush`) or they stop without it doing so (then the voice goes on).
+    private func bargeIn(playing: Bool, listening: Bool, level: Float, seconds: Double, now: UInt64) -> Bool {
+        defer { wasPlaying = playing }
+        if bargingSince != 0 {
+            if level >= Self.speech { bargeQuietSince = now }
+            let quiet = AVAudioTime.seconds(forHostTime: now - bargeQuietSince)
+            let long = AVAudioTime.seconds(forHostTime: now - bargingSince)
+            guard quiet > Self.bargeQuiet || long > Self.bargeLongest else { return true }
+            endBargeIn(resume: true)
+            return false
+        }
+        guard playing, !listening else { return false }
+        if !wasPlaying { detector.rearm() }
+        guard detector.feed(decibels: 20 * log10(max(level, 1e-6)), seconds: seconds) else { return false }
+        bargingSince = now
+        bargeQuietSince = now
+        voice.hold(true)
+        pending.append(preRoll)
+        preRoll.removeAll(keepingCapacity: true)
+        state.withLock { $0.stats.bargeIns += 1 }
+        return true
+    }
+
+    /// The talking-over is over: the voice gone (the service interrupted it) or going on.
+    private func endBargeIn(resume: Bool) {
+        bargingSince = 0
+        detector.rearm()
+        if resume { voice.hold(false) }
     }
 
     /// Hands the converter one buffer, then says there's no more for now (the stream goes on).
@@ -642,7 +696,10 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
     }
 
     /// The person talked over the voice: what is queued of it goes, at once.
-    func flush() { voice.clear() }
+    func flush() {
+        voice.clear()
+        sending.async { [weak self] in self?.endBargeIn(resume: false) }
+    }
 
     /// Another voice from now (the call gone on as another bot): its loudness measured afresh.
     func newVoice() {
@@ -755,6 +812,8 @@ nonisolated final class VoiceQueue: @unchecked Sendable {
         /// How loud what played last was (RMS), and when: the face's mouth goes by it.
         var playedLevel: Float = 0
         var playedAt: UInt64 = 0
+        /// Held: silence plays, what is queued waits (the person talking over it).
+        var held = false
     }
 
     private let lead: Int
@@ -790,8 +849,12 @@ nonisolated final class VoiceQueue: @unchecked Sendable {
         ring.withLock { ring in
             ring.count = 0
             ring.flowing = false
+            ring.held = false
         }
     }
+
+    /// Silence while held, what is queued kept for when it isn't.
+    func hold(_ held: Bool) { ring.withLock { $0.held = held } }
 
     /// The audio thread's part, for an `AVAudioSourceNode`: what is queued, or silence; `dry` told
     /// each time it runs out.
@@ -844,7 +907,7 @@ nonisolated final class VoiceQueue: @unchecked Sendable {
     func render(into out: UnsafeMutablePointer<Float>, frames: Int) -> (played: Int, ranDry: Bool) {
         ring.withLockUnchecked { ring in
             var played = 0
-            if ring.flowing {
+            if ring.flowing, !ring.held {
                 let size = ring.samples.count
                 played = min(frames, ring.count)
                 ring.samples.withUnsafeBufferPointer { samples in
