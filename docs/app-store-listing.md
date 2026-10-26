@@ -9,7 +9,7 @@ Hermes Redde
 Talk, chat and run your agent
 
 ## Promotional text (170, editable without a new build)
-New in 2.2: live voice with GPT-Live, Gemini Live, Grok Voice or ElevenLabs, and wake phrases: say “Hey” and a bot's name. Your agent, and its whole crew.
+New in 2.2: live voice with GPT-Live, Gemini Live, Grok Voice or ElevenLabs, wake phrases (say “Hey” and a bot's name), and Hermes plugins from Nous Research's catalog.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name)
 voice,assistant,ai,agent,carplay,self-hosted,llm,ollama,bots,watch,siri,shortcuts,private,openai
@@ -39,13 +39,13 @@ SEE THE AGENT WORK
 • Approve a risky command or answer the agent's question from a notification, out loud, or with a nod in AirPods. Pair your Hermes and notifications arrive with Redde closed, encrypted end to end.
 
 A FULL CLIENT, NOT JUST A MIC
-• Chats live in your gateway's session ledger: start on the phone, continue on the desktop or the CLI. Search inside them, pin, rename, fork, archive, or go incognito.
+• Chats live in your gateway's session ledger: start on the phone, continue on the desktop or the CLI. Search them, pin, rename, fork, archive, or go incognito.
 • Projects, scheduled jobs and the Kanban board.
 • Phone tools: your agent can use your iPhone's calendar, reminders, contacts, photos and files, set alarms, write on a widget, and start calls and texts, each only if you allow it.
 • Rich replies: Markdown, code, tables, Mermaid diagrams, math, and cards with maps, places and the weather. Pictures, PDFs and audio open in place.
 • Ask about part of a reply, regenerate, edit and resend, or switch models with /model.
 • Attach photos, videos, files or a day's calendar, or share from any app.
-• Skills, tools, memory and context files; on the server, MCP servers, logs, updates, files and an SSH terminal.
+• Skills, tools, plugins, memory and context files; on the server, MCP servers, logs, updates, files and an SSH terminal.
 
 YOUR BACKEND, YOUR RULES
 • Connect to Hermes through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access, Pangolin or a reverse proxy. Save several servers, see all their chats in one list, and sync them with iCloud. Sign in with a password or a browser.
@@ -68,10 +68,12 @@ Two pictures App Store Connect has taken since October 2026, on the version page
 The words in both sit inside the "art safe area" of Apple's templates. Use Preview in App Store Connect before submitting: it shows each on iPhone and iPad, both ways up.
 
 ## What's New in 2.2 (4000)
-LIVE VOICE! And wake phrases.
+LIVE VOICE! Wake phrases. And plugins.
 
-• LIVE VOICE! Pick GPT-Live, Gemini Live, Grok Voice or ElevenLabs in Settings → Voice → Conversation, add your key for it, and voice mode becomes a call: the voice talks and listens at once, so you can interrupt it, it answers small talk itself, and it hands anything real to your agent and says the answer in its own words. Each bot can have its own engine and voice (Edit Bot → Voice), with a sample of every voice before you pick it. Say "Home, …" and the call goes to Home, in Home's voice. With hands-free off, it hangs up a few seconds after the answer unless you keep talking. Each service bills your key per minute.
+• LIVE VOICE! Pick GPT-Live, Gemini Live, Grok Voice or ElevenLabs in Settings → Voice → Conversation, add your key for it, and voice mode becomes a call: the voice talks and listens at once, so you can interrupt it, it answers small talk itself, and it hands anything real to your agent and says the answer in its own words. Each bot can have its own engine and voice (Edit Bot → Voice), with a sample of every voice before you pick it. Say "Home, …" and the call goes to Home, in Home's voice. It waits a moment for you to finish, and your agent checks the current state each time you ask. With hands-free off, it hangs up a few seconds after the answer unless you keep talking. Each service bills your key per minute.
 • Wake phrases. With Redde open on your iPhone, iPad or the car's screen, say "Hey" and an agent's name to talk to it, or "Hey Home, turn the lights off" to ask straight away. Each agent's phrase can be changed. Off until you turn it on in Settings → Voice → Wake Phrase; it listens on the device.
+• Plugins. Settings → Plugins finds Hermes plugins in Nous Research's catalog and installs them on your server, for your agent or for one bot (Edit Bot → Plugins). Official and verified ones first, and you see what each sends, costs and adds before you install it. It takes the Hermes Dashboard login.
+• Bots can make Kanban cards: Edit Bot → Tools offers Kanban, in a bot's own chat and in group chats.
 • On Apple Watch, each bot reads its replies in its own voice, as on the iPhone.
 • The main agent's ••• menu has Voice…, as a bot's does.
 
@@ -80,11 +82,11 @@ Written ahead of the release. What a phone has shown is said where it has.
 
 In App Store Connect and on the web:
 - 2.1.1 (269) was released on 2026-10-25.
-- The build is 2.2 (271), from main. 2.2 (270) was uploaded first (2026-10-25) and lacks the live voice fixes of 2026-10-26: submit 271, never 270.
+- The build is 2.2 (272), from main: the live voice fixes, Kanban for bots and Plugins (2026-10-26). 270 lacks the fixes and 271 (archived, never uploaded) the rest: submit 272.
 - Live voice is in the Release build from 2.2: the `GPT_LIVE` flag is gone (2026-10-25). Its calls go over WebSockets on URLSession, Apple's TLS, with no WebRTC or other cryptography in the app, so the export answer stays as it is and no French declaration is needed.
 - The description gains live voice and wake phrases (3,995 of 4,000; two lines tightened to make room), and What's New is new. `scripts/app-store-push.py all`, then `notes`: the review notes gain LIVE VOICE and a new MICROPHONE line (3,993 with the key).
 - The microphone's permission text changes (`NSMicrophoneUsageDescription`): the text goes only to the user's server, unless they start a live voice call.
-- The privacy policy gains Wake phrases and Live voice calls, and now says what Sync with iCloud sends, which it never did. Publish it before the release (`scripts/privacy-page.py`).
+- The privacy policy gains Wake phrases, Live voice calls and the plugin catalog Find Plugins downloads from Nous Research, and now says what Sync with iCloud sends, which it never did. Publish it before the release (`scripts/privacy-page.py`).
 - App Privacy stays "Data Not Collected" (his call, 2026-10-25; the reasoning is under App Privacy below).
 - The website says "coming soon in 2.1.1": change it when 2.2 is out (deploys are your word).
 
