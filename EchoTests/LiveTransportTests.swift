@@ -3042,3 +3042,45 @@ struct HermesLabCardsTests {
         _ = try await plugin("cards on")
     }
 }
+
+/// Plugins with the app's own Dashboard client (lab.sh plugins, after plugins_check.py): the catalog
+/// fetched as the phone fetches it, a catalog plugin installed by name, listed with its tier,
+/// switched off and on, and removed, as Settings → Plugins does. Needs the network.
+@MainActor
+struct HermesLabPluginsTests {
+    @Test func aCatalogPluginIsInstalledSwitchedAndRemoved() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        let release = await client.hermesRelease() ?? ""
+        let parts = HermesVersion.parts(release) ?? [99, 0, 0]
+        print("  info  Hermes \(release)")
+        let before = try await client.installedPlugins(profile: nil)
+        HermesLabApprovalTests.report(true, "the installed plugins are read", "\(before.map(\.name))")
+
+        let catalog = try await PluginCatalogStore.load(refresh: true)
+        let picker = catalog.plugins.first { $0.name == "accent-picker" }
+        HermesLabApprovalTests.report(picker?.tier == .official && catalog.plugins.count > 100,
+                                      "the catalog is fetched and read", "\(catalog.plugins.count) plugins")
+        guard parts.lexicographicallyPrecedes([0, 21, 3]) == false else {
+            print("  info  this release installs from git only")
+            return
+        }
+
+        let outcome = try await client.installPlugin("accent-picker", profile: nil)
+        var installed = try await client.installedPlugins(profile: nil).first { $0.catalogName == "accent-picker" }
+        HermesLabApprovalTests.report(installed?.enabled == true && installed?.catalogTier == .official,
+                                      "a catalog plugin installed by name, on, with its tier", "\(outcome) \(String(describing: installed))")
+        guard let plugin = installed else { return }
+        _ = try await client.switchPlugin(plugin, on: false, profile: nil)
+        let off = try await client.installedPlugins(profile: nil).first { $0.key == plugin.key }
+        _ = try await client.switchPlugin(plugin, on: true, profile: nil)
+        installed = try await client.installedPlugins(profile: nil).first { $0.key == plugin.key }
+        HermesLabApprovalTests.report(off?.enabled == false && installed?.enabled == true, "switched off, and on again",
+                                      "\(off?.status ?? "none") → \(installed?.status ?? "none")")
+        if !parts.lexicographicallyPrecedes([0, 21, 5]) {
+            try await client.removePlugin(plugin.name, profile: nil)
+            let gone = try await client.installedPlugins(profile: nil).first { $0.key == plugin.key }
+            HermesLabApprovalTests.report(gone == nil, "removed, and gone", "\(String(describing: gone))")
+        }
+    }
+}

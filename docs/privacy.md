@@ -4,7 +4,7 @@ title: Redde Privacy Policy
 
 # Redde Privacy Policy
 
-**Effective date:** October 25, 2026
+**Effective date:** October 26, 2026
 **Publisher:** Goosehouse LLC
 
 Redde is a voice and chat client for an AI assistant that you run yourself. This policy explains what the app does with your information. The short version: Redde has no account, no analytics and no tracking, and your conversations go only to the server you configure. One optional feature, notifications when Redde is closed, uses a relay that we run. It holds your iPhone's push address and passes on notifications it cannot read.
@@ -27,6 +27,8 @@ Link previews (Settings → Appearance) are off unless you turn them on. With th
 When your assistant shows a map or places in a reply, the map is drawn by Apple Maps, and a place it names without coordinates is looked up with Apple's map search, under Apple's privacy policy, as the Maps app does. Redde does not ask for your location: directions from where you are are worked out by Maps when you open them.
 
 When your assistant shows the weather or the time somewhere, the place it names is looked up to find its forecast or its time zone. Redde's plugin on your Hermes server does this, asking Open-Meteo (open-meteo.com) with the place's name and then its coordinates, and Redde draws what comes back. Where the plugin hasn't filled the card in, your device looks the place up with Apple's map search and asks Open-Meteo for the forecast of its coordinates. Open-Meteo sees those requests coming from your server or your device; nothing else from the conversation is sent to it, and nothing goes to Goosehouse LLC. The time is drawn from your device's own clock. So that "what time is it" can be answered for where you are, Redde tells the plugin on your server your device's time zone and temperature units.
+
+When you open Find Plugins (Settings → Plugins), your device downloads Nous Research's public catalog of Hermes plugins from hermes-agent.nousresearch.com, the same file your Hermes server reads, and keeps a copy for a few hours. Nous Research sees that request coming from your device; nothing else is sent with it. Searching the catalog happens on your device. Installing a plugin is asked of your own server, which fetches the plugin itself. A key you type for a plugin goes only to your server, into its settings file.
 
 ## Notifications when Redde is closed (optional, off by default)
 
@@ -115,7 +117,7 @@ Redde is not directed at children under 13, and has no accounts and no personal 
 
 ## Changes
 
-If this policy changes, the new version will be posted at this address with an updated effective date. The October 2026 version added the optional notification relay; before it, Goosehouse LLC ran no service for Redde at all. The October 25, 2026 version added live voice calls and wake phrases, and says what Sync with iCloud sends to your other devices.
+If this policy changes, the new version will be posted at this address with an updated effective date. The October 2026 version added the optional notification relay; before it, Goosehouse LLC ran no service for Redde at all. The October 25, 2026 version added live voice calls and wake phrases, and says what Sync with iCloud sends to your other devices. The October 26, 2026 version added the plugin catalog that Find Plugins downloads.
 
 ## Contact
 

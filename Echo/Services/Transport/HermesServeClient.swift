@@ -719,8 +719,11 @@ final class HermesServeClient {
         "session.create", "session.resume", "session.delete", "session.branch",
         "projects.tree", "projects.project_sessions", "projects.create", "projects.update", "projects.delete",
         "model.options", "config.set",
-        "slash.exec", "command.dispatch", "session.workspace.move",
+        "slash.exec", "command.dispatch", "session.workspace.move", "plugins.manage",
     ]
+
+    /// The profile Redde is on (nil: the main one), for a REST body that names it itself.
+    var selectedProfile: String? { settings.profileName }
 
     /// Adds the selected profile to a profile-scoped call; the default profile sends nothing. A
     /// call about a bot's chat names the bot's profile instead (`sessionProfiles`).

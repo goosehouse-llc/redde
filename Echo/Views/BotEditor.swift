@@ -221,6 +221,12 @@ struct BotEditor: View {
                             LabeledContent("Skills", value: skillsSummary)
                         }
                         .disabled(skills == nil)
+                        // Its plugins, its own as its skills are (a profile's), changed at once.
+                        NavigationLink {
+                            PluginsView(profile: editing.name, owner: isMain ? mainName : title.nilIfEmpty ?? editing.label(mainName: mainName))
+                        } label: {
+                            Text("Plugins")
+                        }
                     }
                 } footer: {
                     if isMain {

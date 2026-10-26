@@ -673,6 +673,26 @@ routines() {
   echo "\nAll checks passed."
 }
 
+# Plugins (plugins_check.py, then the app's own client, HermesLabPluginsTests): a catalog plugin
+# installed by name through the Dashboard, for the main profile and for a bot alone, switched off
+# and on, removed. Needs the network (Nous Research's catalog, GitHub). In a home of the lab's own.
+plugins() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  [[ -n "${LAB_HOST_ONLY:-}" ]] || app_prepare HermesLabPluginsTests || exit 1
+  for tag in $tags; do
+    echo "===== Hermes $tag / plugins"
+    if ! LAB_OWN_HOME=1 up "$tag" approval; then failed+=("$tag (lab)"); continue; fi
+    (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" plugins_check.py) || failed+=("$tag (host)")
+    if [[ -z "${LAB_HOST_ONLY:-}" ]]; then
+      LAB_OWN_HOME=1 up "$tag" approval || { failed+=("$tag (lab)"); continue; }
+      app_check || failed+=("$tag")
+    fi
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
 # Bot templates (templates_check.py): a bot made from one has the template's toolsets and no others,
 # in its chat and in a group chat, and the main profile keeps its own.
 templates() {
@@ -781,6 +801,7 @@ case "${1:-}" in
   groups) shift; groups "$@" ;;
   grouppush) shift; grouppush "$@" ;;
   templates) shift; templates "$@" ;;
+  plugins) shift; plugins "$@" ;;
   routines) shift; routines "$@" ;;
   apibots) shift; apibots "$@" ;;
   search) shift; search "$@" ;;

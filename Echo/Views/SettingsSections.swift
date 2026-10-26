@@ -294,6 +294,13 @@ struct AgentSettings<Details: View>: View {
         }
 
         Section {
+            NavigationLink { PluginsView(profile: nil, owner: "Your agent") } label: { Label("Plugins", systemImage: "puzzlepiece.extension") }
+                .disabled(!canEditFiles)
+        } footer: {
+            Text(canEditFiles ? "Find and install Hermes plugins from Nous Research's catalog, and switch them on and off." : "Find and install Hermes plugins: needs the Hermes Dashboard login.")
+        }
+
+        Section {
             NavigationLink { PhoneToolsSettingsView() } label: {
                 LabeledContent {
                     Text(Settings.shared.phoneTools.on ? "On" : "Off")

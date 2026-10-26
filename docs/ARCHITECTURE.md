@@ -79,6 +79,35 @@ every skill the agent knows. With the Dashboard login they also get switches: a 
 changes its platform setting in Hermes's config (`PUT /api/tools/toolsets/{name}`), and a skill
 switch stops Redde loading that skill (`PUT /api/skills/toggle`).
 
+**Plugins** (`PluginsView`, `HermesPlugins.swift`; asked 2026-10-26: "search and install of
+official hermes plugins through Redde"): Settings → Plugins for the profile Redde is on, Edit Bot →
+Plugins for a bot (a profile's own; a new bot starts with a copy of the main profile's). Dashboard
+only: the Hermes API has no plugin calls.
+- **Finding:** Nous Research publishes the curated catalog Hermes itself reads
+  (`hermes-agent.nousresearch.com/docs/api/plugin-catalog.json`, ~860 entries: official, verified,
+  community; removed names dropped). The Dashboard can look one entry up (`plugins.catalog.lookup`,
+  0.22) but not list them, so the phone fetches the file and keeps it six hours, as Hermes does
+  (`PluginCatalogStore`), and searches it on the device (`PluginCatalog.search`: every word must
+  match; name, then title, maintainer, description; official first). Official and verified are shown
+  unless All is picked. An entry's "Disclosure:" sentences are shown on their own, with the tools,
+  hooks and keys it declares and the Hermes it needs (`requires_hermes`, against `/api/status`).
+- **Installing:** `plugins.manage {action: install, catalog_name, enable: true, profile}`. Hermes
+  resolves the pinned commit from its own copy of the catalog (a client never names the commit),
+  refuses removed entries, scans the plugin and installs its Python dependencies; Redde waits up to
+  ten minutes. The answer says what works now (MCP servers, skills, commands), what from the next
+  chat (tools), whether a restart is wanted and which keys are missing (`PluginOutcome`).
+- **Installed:** `plugins.manage list` (Hermes's own bundled plugins on a page of their own);
+  `toggle {key, enable}`; `update {name}`, which answers `consent_required` with the lines a re-pin
+  adds, nothing changed until it is asked again with `accept_capabilities`; `remove {name}` (user
+  installs, 0.21.5 on); `settings {key, values}` for the non-secret ones (0.21.5 on). A secret
+  setting or missing key goes to the profile's `.env` with `PUT /api/env {key, value, profile}`;
+  only whether it is set is ever shown.
+- **Releases:** 0.21.0 installs from git only (no catalog install); 0.21.3 adds catalog installs
+  and updates; 0.21.5 removal and settings. `lab.sh plugins` installs accent-picker (official, no
+  key, no server, any Hermes) by name for the main profile and then a bot, switches it off and on
+  and removes it, from the host and with the app's client (`HermesLabPluginsTests`); it needs the
+  network.
+
 **Each bot's skills** are in Edit Bot → Skills (`BotSkillsList`, 2026-10-22). The list is the bot's
 own, from `GET /api/skills?profile=<bot>`, and switching one off writes the bot's `skills.disabled`
 (`PUT /api/skills/toggle?profile=<bot>`), right away rather than on Save. On, the bot sees the skill
