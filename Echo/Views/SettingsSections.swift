@@ -169,6 +169,14 @@ struct ComposerSettings: View {
 
     var body: some View {
         Section {
+            Toggle("Suggest follow-up questions", isOn: $settings.suggestFollowUps)
+                .disabled(Settings.normalizedBase(settings.fastLaneURL) == nil)
+        } header: {
+            Text("Replies")
+        } footer: {
+            Text("Three things you might ask next under each reply, written by the model on your OpenAI-compatible connection (it needs that address set, whichever connection the conversation uses).")
+        }
+        Section {
             Picker("Return key", selection: $settings.returnSends) {
                 Text("New line").tag(false)
                 Text("Sends").tag(true)
@@ -511,10 +519,11 @@ struct VoiceSettings: View {
                         .accessibilityLabel("Voice speed")
                 }
             }
+            Toggle("Earpiece when raised to your ear", isOn: $settings.earpieceAtEar)
         } header: {
             Text("Reading voice")
         } footer: {
-            Text(voiceFooter + "It reads replies aloud in voice mode (when that isn't a call), in group chats, in the car and with Read aloud, each bot in a voice of its own unless it has its own reading voice (Edit Bot → Voice).")
+            Text(voiceFooter + "It reads replies aloud in voice mode (when that isn't a call), in group chats, in the car and with Read aloud, each bot in a voice of its own unless it has its own reading voice (Edit Bot → Voice). “Earpiece” plays replies through the earpiece when the phone is at your ear, like a call; turn it off for hands-free use with the phone face down.")
         }
         Section {
             NavigationLink {
@@ -548,6 +557,12 @@ struct VoiceSettings: View {
                     Text(wakeSummary).lineLimit(1)
                 }
             }
+        } header: {
+            Text("Listening")
+        } footer: {
+            Text("A spoken prefix is a word you choose at the start of what you say: it adds a text prefix, switches model or goes to a bot (“Opus, review this diff”). With a wake phrase on, say “Hey” and an agent's name while Redde is open.")
+        }
+        Section {
             Toggle("Start voice mode in hands-free", isOn: $settings.handsFreeByDefault)
             Picker("Talk over replies", selection: $settings.talkOver) {
                 Text("Off").tag(Settings.TalkOver.off)
@@ -562,16 +577,6 @@ struct VoiceSettings: View {
                 }
                 .pickerStyle(.menu)
             }
-            // An iPad has no car.
-            if UIDevice.current.userInterfaceIdiom == .phone {
-                Toggle(isOn: $settings.stopAndSkipInCar) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Stop and Skip in the car")
-                        Text("While Redde speaks in the car, say “stop” to end the reply, or “skip” to jump to its end.")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                }
-            }
             NavigationLink {
                 StopPhrasesView()
             } label: {
@@ -580,6 +585,25 @@ struct VoiceSettings: View {
                         .lineLimit(1)
                 }
             }
+            Picker("Thinking sound", selection: Binding(
+                get: { settings.thinkingSound },
+                set: { choice in
+                    settings.thinkingSound = choice
+                    // Heard as it is chosen, like a ringtone.
+                    if choice != .off { ThinkingSoundPlayer.shared.preview() }
+                })) {
+                Text("Off").tag(Settings.ThinkingSound.off)
+                Text("In the car").tag(Settings.ThinkingSound.car)
+                Text("Always").tag(Settings.ThinkingSound.always)
+            }
+            .pickerStyle(.menu)
+            Toggle("New conversation in voice mode", isOn: $settings.newConversationForVoice)
+        } header: {
+            Text("Talking")
+        } footer: {
+            Text("“Talk over replies” lets you interrupt a spoken reply by speaking: the reply stops and what you say is your next message. With headphones it costs nothing. On the phone's speaker Redde has to cancel its own echo for as long as it speaks, so replies play at call volume, quieter than usual; that is why the speaker is a separate choice. “Interrupt with” says what counts: anything you say, or only the word “stop”, for when other people are talking nearby. “Stop phrases” adds your own ways of ending a hands-free conversation to the built-in ones; with “Only “stop””, they end a reply as well. “New conversation in voice mode” starts a fresh conversation each time you come into voice mode from Siri, the Action button, a control or opening Redde; the Talk button in a chat carries that chat on.")
+        }
+        Section {
             Toggle("Answer requests by voice", isOn: $settings.answerRequestsByVoice)
             if settings.answerRequestsByVoice, HeadGestures.isAvailable {
                 Toggle("Nod or shake to answer", isOn: Binding(
@@ -601,20 +625,32 @@ struct VoiceSettings: View {
                     }
                 }
             }
-            Toggle("Short answers in the car", isOn: $settings.shortAnswersInCar)
-            Picker("Thinking sound", selection: Binding(
-                get: { settings.thinkingSound },
-                set: { choice in
-                    settings.thinkingSound = choice
-                    // Heard as it is chosen, like a ringtone.
-                    if choice != .off { ThinkingSoundPlayer.shared.preview() }
-                })) {
-                Text("Off").tag(Settings.ThinkingSound.off)
-                Text("In the car").tag(Settings.ThinkingSound.car)
-                Text("Always").tag(Settings.ThinkingSound.always)
+        } header: {
+            Text("Requests by voice")
+        } footer: {
+            Text("In voice mode and in the car, Redde reads out a command that waits for your approval, or a question from your agent, and takes your spoken answer: “approve” or “deny”, or the answer to the question. Anyone in earshot can answer, and what the agent wants to run is said aloud, so it is off until you turn it on. Passwords and secrets are only ever asked for on the screen."
+                + (HeadGestures.isAvailable
+                    ? " “Nod or shake to answer” adds your head, with AirPods that sense movement (AirPods Pro, AirPods Max, AirPods 3 or later): once the request has been read out, nod a couple of times to approve, or shake your head to deny. iOS asks for Motion & Fitness when you turn it on; the movement is read on this device and kept nowhere."
+                    : ""))
+        }
+        // An iPad has no car.
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            Section {
+                Toggle(isOn: $settings.stopAndSkipInCar) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Stop and Skip in the car")
+                        Text("While Redde speaks in the car, say “stop” to end the reply, or “skip” to jump to its end.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Toggle("Short answers in the car", isOn: $settings.shortAnswersInCar)
+            } header: {
+                Text("In the car")
+            } footer: {
+                Text("“Stop and Skip in the car” listens for two words alone while Redde speaks: “stop”, which ends the reply as a stop phrase does, and “skip”, which jumps to its end (hands-free then listens for what's next). The car's speakers sit near its microphone, so it is off until you turn it on. “Short answers in the car”: a question asked by voice while your iPhone is connected to a car asks your agent for two or three sentences and to offer the rest; say “more” and it carries on. On the Hermes Dashboard connection the request is a line added to your message, which other apps on the same server will show.")
             }
-            .pickerStyle(.menu)
-            Toggle("New conversation in voice mode", isOn: $settings.newConversationForVoice)
+        }
+        Section {
             Picker("When Redde opens", selection: $settings.launchScreen) {
                 Text("Last conversation").tag(Settings.LaunchScreen.conversation)
                 // The iPad keeps the list beside the chat, so there's nothing extra to open.
@@ -625,10 +661,21 @@ struct VoiceSettings: View {
             }
             .pickerStyle(.menu)
             Toggle("Listen whenever Redde opens", isOn: $settings.listenOnOpen)
-            Toggle("Earpiece when raised to your ear", isOn: $settings.earpieceAtEar)
-            Toggle("Live Activity while Redde works", isOn: $settings.showLiveActivity)
-            Toggle("Suggest follow-up questions", isOn: $settings.suggestFollowUps)
-                .disabled(Settings.normalizedBase(settings.fastLaneURL) == nil)
+        } header: {
+            Text("When Redde opens")
+        } footer: {
+            Text("Where Redde starts: your last conversation, the conversation list, or voice mode. “Listen whenever Redde opens” starts the mic as well, so “Hey Siri, open Redde” goes straight to listening.")
+        }
+    }
+}
+
+/// Settings → Notifications: what Redde tells you while you're elsewhere, and how. Under Voice
+/// until 2026-10-26, when that page was split up ("there are a ton of voice settings now").
+struct NotificationSettings: View {
+    @State private var settings = Settings.shared
+
+    var body: some View {
+        Section {
             Toggle("Notify me in the background", isOn: Binding(
                 get: { settings.notifyInBackground },
                 set: { on in
@@ -638,22 +685,20 @@ struct VoiceSettings: View {
             Toggle("Announce on AirPods", isOn: $settings.announceOnAirPods)
                 .disabled(!settings.notifyInBackground)
             Toggle("Notification sound", isOn: $settings.notificationSound)
+        } footer: {
+            Text("Background notifications tell you when Redde needs an approval or an answer, or when a reply finishes, while you're in another app. “Announce on AirPods” marks them time-sensitive so Siri can read them aloud through AirPods (turn on Announce Notifications for Redde in the iPhone's Settings) and so they reach you in a Focus. “Notification sound” off makes all of them silent, those from your Hermes too; they still appear.")
+        }
+        Section {
             NavigationLink { PushSettingsView() } label: {
                 LabeledContent("Notify when Redde is closed", value: PushService.shared.pairings.contains(where: \.isPaired) ? "On" : "Off")
             }
-        } header: {
-            Text("Voice")
         } footer: {
-            Text("“Talk over replies” lets you interrupt a spoken reply by speaking: the reply stops and what you say is your next message. With headphones it costs nothing. On the phone's speaker Redde has to cancel its own echo for as long as it speaks, so replies play at call volume, quieter than usual; that is why the speaker is a separate choice. Not in the car: there, “Stop and Skip in the car” listens for two words alone while Redde speaks, “stop”, which ends the reply as a stop phrase does, and “skip”, which jumps to its end (hands-free then listens for what's next). The car's speakers sit near its microphone, so it is off until you turn it on. “Interrupt with” says what counts: anything you say, or only the word “stop”, for when other people are talking nearby. With “Only “stop””, the reply plays on through whatever else is said, and “stop” ends it. “Stop phrases” adds your own ways of ending a hands-free conversation to the built-in ones, for another language or a word of your own; with “Only “stop””, they end a reply as well. "
-                + "“Answer requests by voice”: in voice mode and in the car, Redde reads out a command that waits for your approval, or a question from your agent, and takes your spoken answer: “approve” or “deny”, or the answer to the question. Anyone in earshot can answer, and what the agent wants to run is said aloud, so it is off until you turn it on. Passwords and secrets are only ever asked for on the screen."
-                + (HeadGestures.isAvailable
-                    ? " “Nod or shake to answer” adds your head, with AirPods that sense movement (AirPods Pro, AirPods Max, AirPods 3 or later): once the request has been read out, nod a couple of times to approve, or shake your head to deny. iOS asks for Motion & Fitness when you turn it on; the movement is read on this device and kept nowhere."
-                    : "")
-                + "\n\n"
-                + "“Short answers in the car”: a question asked by voice while your iPhone is connected to a car asks your agent for two or three sentences and to offer the rest; say “more” and it carries on. On the Hermes Dashboard connection the request is a line added to your message, which other apps on the same server will show. "
-                + "“New conversation in voice mode” starts a fresh conversation each time you come into voice mode from Siri, the Action button, a control or opening Redde; the one you were in stays in your list. The Talk button in a chat carries that chat on. "
-                + "“Suggest follow-up questions” shows three things you might ask next under each reply, written by the model on your OpenAI-compatible connection (it needs that address set, whichever connection the conversation uses). "
-                + "“When Redde opens” picks where it starts: your last conversation, the conversation list, or voice mode; “Listen whenever Redde opens” starts the mic as well, so “Hey Siri, open Redde” goes straight to listening. “Earpiece” plays replies through the earpiece when the phone is at your ear, like a call; turn it off for hands-free use with the phone face down. Background notifications tell you when Redde needs an approval or an answer, or when a reply finishes, while you're in another app; they stop when iOS closes Redde, and “Notify when Redde is closed” has your Hermes send them from then on. “Announce on AirPods” marks them time-sensitive so Siri can read them aloud through AirPods (turn on Announce Notifications for Redde in the iPhone's Settings) and so they reach you in a Focus. “Notification sound” off makes all of them silent, the ones from your Hermes too; they still appear. With AirPods in, pressing the stem on the voice screen works like tapping the mic.")
+            Text("Background notifications stop when iOS closes Redde; with this, your Hermes sends them from then on.")
+        }
+        Section {
+            Toggle("Live Activity while Redde works", isOn: $settings.showLiveActivity)
+        } footer: {
+            Text("A reply being worked on shows on the Lock Screen and in the Dynamic Island.")
         }
     }
 }

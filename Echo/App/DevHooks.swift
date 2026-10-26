@@ -337,6 +337,19 @@ enum DevHooks {
             }
         }
 
+        // `-echo.keychainReport`: which saved server has which secret stored, yes or no, never
+        // the value, in Library/Caches/keychain-report.log (Skills greyed out on Marta, 2026-10-26).
+        if has("-echo.keychainReport") {
+            var lines = ["active \(Keychain.activeServerID ?? "none")"]
+            for server in settings.servers {
+                let id = server.id.uuidString
+                func stored(_ item: Keychain.Item) -> String { Keychain.read(account: Keychain.account(item, server: id)) == nil ? "no" : "yes" }
+                lines.append("\(id) \(server.serveURL) \(server.serveUsername): password \(stored(.serveDashboardPassword)), sign-in \(stored(.serveSignIn)), API key \(stored(.gatewayAPIKey))")
+            }
+            lines.append("unscoped password \(Keychain.read(account: Keychain.Item.serveDashboardPassword.rawValue) == nil ? "no" : "yes")")
+            LiveMeasure.write(lines.joined(separator: "\n"), to: "keychain-report.log")
+        }
+
         // `-echo.botKokoro <profile> <voice>`: that bot's Kokoro voice, a blend as well (Home's,
         // set from the Mac 2026-10-26), its speed and conversation as they were.
         if let at = args.firstIndex(of: "-echo.botKokoro"), at + 2 < args.count {

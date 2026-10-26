@@ -8,8 +8,8 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showSetup = false
-    @State private var hasStoredKey = false
-    @State private var hasServePassword = false
+    /// Whether a Hermes API key or a Dashboard login is there (`SettingsAccess`).
+    @State private var access = SettingsAccess()
     /// Toggled whenever a secret is saved; drives the success haptic.
     @State private var secretSaved = false
     /// The page open over the first screen, if any.
@@ -37,8 +37,8 @@ struct SettingsView: View {
                 }
                 Section {
                     NavigationLink {
-                        ConnectionDetailsView(hasStoredKey: $hasStoredKey,
-                                              hasServePassword: $hasServePassword, saved: $secretSaved)
+                        ConnectionDetailsView(hasStoredKey: $access.hasStoredKey,
+                                              hasServePassword: $access.hasServePassword, saved: $secretSaved)
                     } label: { Label("Connection details", systemImage: "key") }
                 } footer: {
                     Text("URLs, keys and logins for every connection, including ones you aren't using right now. The Hermes Dashboard login also unlocks the context and memory files, and files the agent sends, while you chat over the Hermes API.")
@@ -81,12 +81,7 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showSetup) { SetupView() }
             // Keychain reads once when the screen appears, not per parent render.
-            .task {
-                hasStoredKey = Keychain.read(.gatewayAPIKey) != nil
-                hasServePassword = Keychain.read(.serveDashboardPassword) != nil || HermesServeClient.shared.isSignedIn
-                // A Dashboard with no password on it lets the phone in all the same.
-                if !hasServePassword { hasServePassword = await HermesServeClient.shared.canUse() }
-            }
+            .task { await access.check() }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -97,24 +92,24 @@ struct SettingsView: View {
         .holdsWakePhrases(.settings)
     }
 
+
     @ViewBuilder
     private func pageContent(_ page: SettingsPage) -> some View {
         switch page {
         case .appearance: AppearanceSettings()
         case .writing: ComposerSettings()
         case .voice: VoiceSettings()
+        case .notifications: NotificationSettings()
         case .siri: if #available(iOS 27.0, *) { SiriSettings() }
         case .agent:
-            AgentSettings(canReachGateway: hasStoredKey || hasServePassword, canEditFiles: hasServePassword) {
-                ConnectionDetailsView(hasStoredKey: $hasStoredKey, hasServePassword: $hasServePassword, saved: $secretSaved)
-            }
+            AgentSettingsPage(access: access, saved: $secretSaved)
         }
     }
 }
 
 /// A page of Settings: what was a section of the one long form.
 enum SettingsPage: String, CaseIterable, Identifiable, Hashable {
-    case appearance, writing, voice, siri, agent
+    case appearance, writing, voice, notifications, siri, agent
 
     var id: String { rawValue }
 
@@ -129,6 +124,7 @@ enum SettingsPage: String, CaseIterable, Identifiable, Hashable {
         case .appearance: "Appearance"
         case .writing: "Writing"
         case .voice: "Voice"
+        case .notifications: "Notifications"
         case .siri: "Siri"
         case .agent: "Agent"
         }
@@ -139,6 +135,7 @@ enum SettingsPage: String, CaseIterable, Identifiable, Hashable {
         case .appearance: "paintbrush"
         case .writing: "keyboard"
         case .voice: "waveform"
+        case .notifications: "bell.badge"
         case .siri: "sparkles"
         case .agent: "brain.head.profile"
         }
@@ -146,6 +143,37 @@ enum SettingsPage: String, CaseIterable, Identifiable, Hashable {
 }
 
 /// A page's form, titled; on Agent, the dev hook that shows the context and memory files.
+/// Whether a Hermes API key or a Dashboard login is there to use, which Agent's rows go by: an
+/// object the pages watch. Handed to a page as values, through `navigationDestination`, they stayed
+/// as they were before Settings had looked, and Skills, Tools and Plugins were greyed out with the
+/// login stored (2026-10-26, on Marta; `-echo.settingsAnchor agent` shows it).
+@Observable
+final class SettingsAccess {
+    var hasStoredKey = false
+    var hasServePassword = false
+
+    func check() async {
+        hasStoredKey = Keychain.read(.gatewayAPIKey) != nil
+        hasServePassword = Keychain.read(.serveDashboardPassword) != nil || HermesServeClient.shared.isSignedIn
+        // A Dashboard with no password on it lets the phone in all the same.
+        if !hasServePassword { hasServePassword = await HermesServeClient.shared.canUse() }
+    }
+}
+
+/// Settings → Agent, following `SettingsAccess` as it changes, and looking again as it opens.
+private struct AgentSettingsPage: View {
+    let access: SettingsAccess
+    @Binding var saved: Bool
+
+    var body: some View {
+        @Bindable var access = access
+        AgentSettings(canReachGateway: access.hasStoredKey || access.hasServePassword, canEditFiles: access.hasServePassword) {
+            ConnectionDetailsView(hasStoredKey: $access.hasStoredKey, hasServePassword: $access.hasServePassword, saved: $saved)
+        }
+        .task { await access.check() }
+    }
+}
+
 private struct SettingsPageForm<Content: View>: View {
     let page: SettingsPage
     @ViewBuilder let content: () -> Content
