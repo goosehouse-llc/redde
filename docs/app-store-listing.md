@@ -80,7 +80,7 @@ Written ahead of the release. What a phone has shown is said where it has.
 
 In App Store Connect and on the web:
 - 2.1.1 (269) was released on 2026-10-25.
-- The build is 2.2 (270), from main.
+- The build is 2.2 (271), from main. 2.2 (270) was uploaded first (2026-10-25) and lacks the live voice fixes of 2026-10-26: submit 271, never 270.
 - Live voice is in the Release build from 2.2: the `GPT_LIVE` flag is gone (2026-10-25). Its calls go over WebSockets on URLSession, Apple's TLS, with no WebRTC or other cryptography in the app, so the export answer stays as it is and no French declaration is needed.
 - The description gains live voice and wake phrases (3,995 of 4,000; two lines tightened to make room), and What's New is new. `scripts/app-store-push.py all`, then `notes`: the review notes gain LIVE VOICE and a new MICROPHONE line (3,993 with the key).
 - The microphone's permission text changes (`NSMicrophoneUsageDescription`): the text goes only to the user's server, unless they start a live voice call.
@@ -90,6 +90,7 @@ In App Store Connect and on the web:
 
 Tried on a phone:
 - GPT-Live, Gemini Live and ElevenLabs calls on Marta, Debug builds (2026-10-25). Grok Voice only against `scripts/live-standin.py`, never the real service.
+- ElevenLabs calls to Home on Marta, Debug builds (2026-10-26): the 1.5 s pause held each early reply to about 1.5 s; the voice said truthfully when Home had answered without checking; Home itself still answered a repeated "is it on?" from memory, which is Home's model (Qwen3.6-35B-A3B), not Redde.
 - Wake phrases on Marta, basic test (2026-10-25); the fixes from that try are unheard.
 - A Release build on Marta: see below.
 

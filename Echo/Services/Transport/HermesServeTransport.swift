@@ -91,7 +91,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
                     // tells its model itself, and keeps the spoken exchange out of the message.
                     if let live = request.live, live.surface {
                         params["surface"] = .string("voice-live")
-                        params["voice_context"] = .string(String(live.context.suffix(LiveVoiceNote.contextLimit)))
+                        params["voice_context"] = .string(LiveVoiceNote.voiceContext(live.context))
                     }
                     let submit = try await client.call("prompt.submit", params: .object(params))
                     if submit["status"]?.string == "queued" { continuation.yield(.status("queued behind a running turn…")) }

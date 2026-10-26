@@ -136,12 +136,38 @@ nonisolated enum LiveVoiceNote {
         keep it short (a few sentences unless the user asked for detail), with no markdown, no lists, \
         no code blocks and no links read out. Do the work with your tools as usual; only the final \
         facts need to be spoken. Don't say an action succeeded before it actually did.
-        """
+        """ + " " + lookAgain
+
+    /// With every live turn. Asked "is the tree on?" five times, Home's agent answered from its own
+    /// result of a minute before, with no tool, the plug switched off by hand in between (Marta,
+    /// 2026-10-26); Hermes's own note for a live turn says nothing of it.
+    static let lookAgain = "Whether anything is on or off, open or shut, where it is or what it reads right now: look it up "
+        + "with your tools before you answer, every time, even if you checked or changed it a moment ago. Never answer "
+        + "that from earlier in this conversation: things change outside it."
+
+    /// Before an exchange the voice speaks in: its lines are its own words. It has no tools and sees
+    /// nothing; a guess of its, given to the agent unmarked, was taken for a fact (2026-10-25).
+    static let caveat = "(The voice assistant's lines are its own words: it has no tools and can see nothing, "
+        + "so what it says about the state of anything is not a fact. Check with your tools, and do what the user asks.)"
+
+    /// The exchange as the agent is given it, newest last and `limit` at most: with `caveat`
+    /// before it where the voice has lines in it.
+    static func spoken(context: String, limit: Int = contextLimit) -> String {
+        guard context.contains("Voice assistant:") else { return String(context.suffix(limit)) }
+        return caveat + "\n" + String(context.suffix(limit - caveat.count - 1))
+    }
+
+    /// Hermes's `voice_context` (0.21.3 and later), model input only: `lookAgain` first, as Hermes
+    /// words the rest of the note itself, then the exchange; `contextLimit` at most, as Hermes keeps.
+    static func voiceContext(_ context: String) -> String {
+        let rule = "(" + lookAgain + ")"
+        guard !context.isEmpty else { return rule }
+        return rule + "\n" + spoken(context: context, limit: contextLimit - rule.count - 1)
+    }
 
     /// The instruction, and the exchange it refers to, newest last.
     static func instruction(context: String) -> String {
-        let context = String(context.suffix(contextLimit))
-        return context.isEmpty ? instruction : instruction + "\n\nThe recent spoken conversation, newest last:\n" + context
+        context.isEmpty ? instruction : instruction + "\n\nThe recent spoken conversation, newest last:\n" + spoken(context: context)
     }
 
     /// On a Dashboard that doesn't know live voice turns (Hermes 0.21.0), the note rides on the

@@ -2051,6 +2051,27 @@ back for it to say in its own words. Hermes keeps the model, tools, memory and a
   in OpenAI's voice, the one Hermes is set to through Hermes (`voice.gpt_live.voice`), else the
   one picked in Settings. Answering a request aloud: a request goes to the screen, and the voice
   is told so. Not on the watch.
+- **What the agent is given** (`LiveFragment.delegation`, `LiveVoiceNote.spoken`): the person's
+  words as the message, and the spoken exchange up to them, the voice's lines marked as its own
+  words with no tools behind them. The voice's reaction to the request itself is left out: given
+  "The Christmas tree is now off." with a turn-off request, Home's agent confirmed it and called
+  no tool (Marta, 2026-10-25). The persona tells the voice it sees and controls nothing, to state
+  nothing unless the result for this request says it, and to hand "check again" over again.
+  Every live turn also tells the agent to look the current state up with its tools each time
+  (`LiveVoiceNote.lookAgain`): on a Dashboard of 0.21.3 or later at the head of `voice_context`
+  (`LiveVoiceNote.voiceContext`), since Hermes words the rest of that note itself and says
+  nothing of it; elsewhere in the instruction. Asked "is the tree on?" five times, each a new
+  call, Home answered from its result of a minute before with no tool, the plug switched off by
+  hand in between (Marta, 2026-10-26). The answer goes back to the voice with whether the agent
+  used its tools (`LiveAgentTool.checked`, not to be read out; a quiet thinking note on GPT-Live),
+  since asked "did you run a tool?" the voice said yes, having only handed the question over; and
+  the persona forbids saying its reasoning aloud, which Haiku 5.5 on ElevenLabs had begun to.
+- **A second and a half of quiet first** (`LiveCallAudio.patience`, a second asked 2026-10-25,
+  1.5 s on 2026-10-26 as ElevenLabs already began 1.1 to 1.3 s after the person): a voice that
+  begins sooner after the person last spoke waits on the phone (`VoiceQueue.wait`) until they
+  have been quiet that long; what it says while they go on talking is dropped. GPT-Live has no
+  setting for its turn-taking (its session config is strict), and its stream never stops, so its
+  silence is skipped while the queue is behind, or each wait would add to every later reply.
 - **Opening with a request** (`LiveVoice.opening`): a wake phrase said with one ("Hey Home, turn
   the lights off") asks the agent before the call connects, and the call opens saying the answer
   (`LiveGreeting`), as a handed-over call does.

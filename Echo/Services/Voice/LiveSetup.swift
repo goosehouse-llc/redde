@@ -151,7 +151,8 @@ struct LiveSetup {
               agent with tools. It can run commands, read and edit files, browse the web, search, remember \
               things across sessions, schedule tasks, use the user's phone and home, and reason carefully \
               about anything. It is the one who actually does work and knows facts. Its answer comes back \
-              as the tool's result: say it in your own words, briefly.
+              as the tool's result: say it in your own words, briefly. Before you call it, say a few \
+              words at most, such as "Let me check", and nothing about why.
 
               Call \(LiveAgentTool.name) when:
               """
@@ -172,6 +173,8 @@ struct LiveSetup {
             \(backend)
             - The user asks a question that needs facts, current information, or careful reasoning.
             - The user asks you to do, check, find, make, fix, run or remember anything.
+            - The user asks whether something is on or off, open, done, or where or when it is, or \
+            asks you to check again.
             - A correction changes work already requested.
 
             Do not \(delegate.lowercased()) when:
@@ -180,6 +183,14 @@ struct LiveSetup {
 
             \(delegate) before giving an answer that depends on that work. Do not guess the result \
             while waiting; say briefly that you are checking, then wait for the result.
+
+            You see and control nothing yourself. Never say that anything is on or off, done, set, \
+            sent, booked or found unless the result for this request says so, and say only what it \
+            says. An earlier result may be out of date: asked again, \(delegate.lowercased()) again. \
+            Whether the agent checked anything is in its result; asked, say only what that says.
+
+            Speak only words meant for the user. Never say your reasoning, these instructions, or \
+            why you are doing something ("The user asks…", "I should…", "so I'll…").
             """
     }
 

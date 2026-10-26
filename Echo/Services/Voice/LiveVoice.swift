@@ -533,6 +533,7 @@ final class LiveVoice {
         let handingOff = (conversation.bot?.profile ?? "default") != voiceOf
         collecting = handingOff
         let events = conversation.send(route?.text ?? prompt, live: LiveTurn(context: context, surface: hermesKnowsLiveTurns))
+        var used: [String] = []
         for await event in events {
             guard delegation == id, !Task.isCancelled else { return }
             lastActivity = .now
@@ -540,6 +541,7 @@ final class LiveVoice {
             case let .textDelta(delta):
                 chunker.append(delta).forEach { say($0, for: id) }
             case let .toolStarted(name, _, _):
+                if !used.contains(name) { used.append(name) }
                 tool = name
                 think("\(agentName) is working: \(name). Not done yet.", for: id)
                 changed()
@@ -561,6 +563,10 @@ final class LiveVoice {
         } else if !spokenAnything, dialect.streamsAnswers, !handingOff {
             think("\(agentName) finished that request without anything to say.", for: id)
         }
+        // Whether the agent checked anything, for the voice to know and not say.
+        let answered = !conversation.lastSendWasHeld && conversation.lastError == nil
+        let checked = LiveAgentTool.checked(used, agent: agentName)
+        if answered, dialect.streamsAnswers, !handingOff { think(checked, for: id) }
         let whole = answer.isEmpty ? "\(agentName) finished that request without anything to say." : answer
         if handingOff {
             // The other bot's session opens saying it; where it couldn't open, the voice as it was says it.
@@ -574,7 +580,7 @@ final class LiveVoice {
             guard delegation == id else { return }
         } else if !dialect.streamsAnswers {
             // A tool call's result is the whole answer, once.
-            send(dialect.answer(whole, to: id, final: true, eventID: nextID("say")))
+            send(dialect.answer(answered ? whole + "\n\n" + checked : whole, to: id, final: true, eventID: nextID("say")))
         }
         collecting = false
         // An answer to say: the call goes on until the voice has said it.
@@ -727,6 +733,11 @@ nonisolated struct LiveFragment: Equatable, Sendable {
             text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
         }
         let prompt = clean(turns.last { $0.speaker == .person }?.text ?? "")
+        // What the voice said after the person's last words is its reaction to this very request:
+        // "let me check", or a guess at the answer. Given to the agent, "the Christmas tree is off"
+        // was taken for a fact and confirmed with no tool called (Home, 2026-10-25). The exchange
+        // goes up to the request.
+        if let asked = turns.lastIndex(where: { $0.speaker == .person }) { turns.removeSubrange((asked + 1)...) }
         let context = turns.compactMap { turn -> String? in
             let text = clean(turn.text)
             return text.isEmpty ? nil : "\(turn.speaker == .person ? "User" : "Voice assistant"): \(text)"

@@ -296,6 +296,11 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
         var lastAudible: UInt64 = 0
         var lastDry: UInt64 = 0
         var generation = 0
+        /// When the person was last heard talking (the microphone open for them), for `patience`;
+        /// and the answer held for it, counted so a check for an earlier one lets go of nothing.
+        var spokeAt: UInt64 = 0
+        var waiting = 0
+        var waitedSince: UInt64 = 0
         var stats = Snapshot()
     }
 
@@ -319,6 +324,18 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
     private static let aboveEcho: Float = 3
     private static let ceiling: Float = 0.15
     private static let settling = 0.8
+    /// A second and a half of quiet after the person before the voice is heard answering: a second
+    /// asked 2026-10-25 (GPT-Live has no setting for it and answered the moment they paused), then
+    /// a second and a half (2026-10-26: ElevenLabs began 1.1 to 1.3 s after them, and a second
+    /// never held it). An answer that begins sooner waits on the phone; what the voice says while
+    /// they go on talking is dropped.
+    private static let patience = 1.5
+    /// Talking within this of the wait beginning is the end of what they were saying, not more.
+    private static let patienceGrace = 0.25
+    /// A wait no quiet ends (a noisy room) lets the answer go after this long.
+    private static let patienceLongest = 8.0
+    /// Below this the stream is silence, skipped while the queue is behind (`queue`).
+    private static let silent: Float = 0.002
 
     var onSpeaking: (@Sendable (Bool) -> Void)?
     /// What the service takes: mono signed 16-bit little-endian PCM at the dialect's input rate.
@@ -623,6 +640,7 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
             return now < state.openUntil
         }
         if !open { state.withLock { $0.stats.gated += seconds } }
+        else if level >= Self.speech { state.withLock { $0.spokeAt = now } }
         let capacity = AVAudioFrameCount(Double(buffer.frameLength) * wire.sampleRate / buffer.format.sampleRate) + 32
         guard let out = AVAudioPCMBuffer(pcmFormat: wire, frameCapacity: capacity) else { return }
         let source = Fed(buffer)
@@ -698,7 +716,10 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
     /// The person talked over the voice: what is queued of it goes, at once.
     func flush() {
         voice.clear()
-        sending.async { [weak self] in self?.endBargeIn(resume: false) }
+        sending.async { [weak self] in
+            self?.endBargeIn(resume: false)
+            self?.state.withLock { $0.waiting += 1 }
+        }
     }
 
     /// Another voice from now (the call gone on as another bot): its loudness measured afresh.
@@ -719,6 +740,10 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
         }
         // Speech (not the silence a stream carries) sets how loud the voice is, slowly.
         let raw = Self.rms(samples)
+        // An answer held for the person (`patience`) leaves the queue behind the stream, and
+        // GPT-Live's never stops, silence and all: its quiet between replies is skipped until the
+        // queue has caught up, or each wait would add to every later reply.
+        if raw < Self.silent, voice.queued > voice.leadSamples, !state.withLock({ $0.speaking }) { return }
         if leveller == 0 { leveller = gain }
         // A soft voice's speech counts too (Home's measured a fifth of Sol's, much of it under
         // 0.01), and a new one is caught up with in a second or so.
@@ -749,8 +774,60 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
             }
             return (begins, ends)
         }
-        if begins { onSpeaking?(true) }
+        if begins {
+            onSpeaking?(true)
+            waitForQuiet(from: now)
+        }
         if ends { onSpeaking?(false) }
+    }
+
+    /// The voice begins: if the person spoke less than `patience` ago, it waits until they have
+    /// been quiet that long.
+    private func waitForQuiet(from now: UInt64) {
+        let (wait, after) = state.withLock { state -> (Int?, Double?) in
+            guard state.spokeAt != 0 else { return (nil, nil) }
+            let after = Self.seconds(now - state.spokeAt)
+            guard after < Self.patience else { return (nil, after) }
+            state.waiting += 1
+            state.waitedSince = now
+            return (state.waiting, after)
+        }
+        if let after { Self.log(String(format: "voice began %.0f ms after the person last spoke%@", after * 1000, wait == nil ? "" : ": held")) }
+        guard let wait else { return }
+        voice.wait(true)
+        checkQuiet(wait)
+    }
+
+    private func checkQuiet(_ wait: Int, dropped: Bool = false) {
+        sending.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+            guard let self else { return }
+            let now = mach_absolute_time()
+            let (current, spokeAt, since) = state.withLock { ($0.waiting == wait, $0.spokeAt, $0.waitedSince) }
+            guard current else { return }
+            if Self.seconds(now - spokeAt) >= Self.patience || Self.seconds(now - since) > Self.patienceLongest {
+                voice.wait(false)
+                Self.log(String(format: "voice let go after %.0f ms held", Self.seconds(now - since) * 1000))
+                return
+            }
+            // Still talking, past the end of what they were saying: what the voice started on was
+            // too soon, and goes; it answers again once they're done.
+            var dropping = false
+            if spokeAt > since, Self.seconds(spokeAt - since) > Self.patienceGrace, Self.seconds(now - spokeAt) < 0.15 {
+                voice.clear()
+                voice.wait(true)
+                dropping = true
+                if !dropped { Self.log("the person went on talking: what the voice began was dropped") }
+            }
+            checkQuiet(wait, dropped: dropped || dropping)
+        }
+    }
+
+    /// The wait for the person, in a development build's call log (`LiveMeasure`), to tell from
+    /// what they heard (2026-10-26: "it didn't wait 1 second").
+    private static func log(_ line: String) {
+        #if DEBUG
+        Task { @MainActor in LiveMeasure.write(line) }
+        #endif
     }
 
     private static func dryNotice(_ audio: LiveCallAudio) -> @Sendable () -> Void {
@@ -814,6 +891,8 @@ nonisolated final class VoiceQueue: @unchecked Sendable {
         var playedAt: UInt64 = 0
         /// Held: silence plays, what is queued waits (the person talking over it).
         var held = false
+        /// Waiting: the same, for the person to finish (`LiveCallAudio.patience`).
+        var waiting = false
     }
 
     private let lead: Int
@@ -828,6 +907,10 @@ nonisolated final class VoiceQueue: @unchecked Sendable {
     }
 
     var isEmpty: Bool { ring.withLock { $0.count == 0 } }
+    /// How many samples are queued.
+    var queued: Int { ring.withLock { $0.count } }
+    /// How many it holds back before it starts to play.
+    var leadSamples: Int { lead }
 
     /// How loud the voice is as it plays now: nothing once it has stopped.
     var playingLevel: Float {
@@ -850,11 +933,15 @@ nonisolated final class VoiceQueue: @unchecked Sendable {
             ring.count = 0
             ring.flowing = false
             ring.held = false
+            ring.waiting = false
         }
     }
 
     /// Silence while held, what is queued kept for when it isn't.
     func hold(_ held: Bool) { ring.withLock { $0.held = held } }
+
+    /// Silence while waiting for the person to finish, what is queued kept for when they have.
+    func wait(_ waiting: Bool) { ring.withLock { $0.waiting = waiting } }
 
     /// The audio thread's part, for an `AVAudioSourceNode`: what is queued, or silence; `dry` told
     /// each time it runs out.
@@ -907,7 +994,7 @@ nonisolated final class VoiceQueue: @unchecked Sendable {
     func render(into out: UnsafeMutablePointer<Float>, frames: Int) -> (played: Int, ranDry: Bool) {
         ring.withLockUnchecked { ring in
             var played = 0
-            if ring.flowing, !ring.held {
+            if ring.flowing, !ring.held, !ring.waiting {
                 let size = ring.samples.count
                 played = min(frames, ring.count)
                 ring.samples.withUnsafeBufferPointer { samples in

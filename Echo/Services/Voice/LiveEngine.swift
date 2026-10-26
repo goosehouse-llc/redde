@@ -136,6 +136,15 @@ nonisolated struct LiveAgentTool: Sendable, Equatable {
             + "a while; say briefly that you're checking, then wait for the result and say it in your own words."
     }
     static let requestDescription = "What the user wants, in their own words where you can, with anything from the conversation it needs."
+
+    /// What goes with an answer to the voice, not to be said: whether the agent used its tools for
+    /// it. Asked "did you run a tool?", ElevenLabs' voice said yes; it had handed the question
+    /// over, and Home had answered from memory (Marta, 2026-10-26).
+    static func checked(_ tools: [String], agent: String) -> String {
+        tools.isEmpty
+            ? "[Not to be read out: \(agent) used none of its tools for this answer. It answered from what it already had and checked nothing just now.]"
+            : "[Not to be read out: \(agent) used its tools for this answer: \(tools.joined(separator: ", ")).]"
+    }
 }
 
 /// What a service said, in Redde's terms: the same events whichever engine it is.

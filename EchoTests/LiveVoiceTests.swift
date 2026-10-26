@@ -178,7 +178,8 @@ struct LiveVoiceTests {
         let request = try #require(harness.transport.requests.last)
         #expect(request.userText == "What's next on my calendar?", "the person's own words are the message")
         let live = try #require(request.live)
-        #expect(live.surface && live.context == "User: What's next on my calendar?\nVoice assistant: Let me check.")
+        // The voice's "Let me check", its reaction to this request, stays out: a guess there was taken for a fact.
+        #expect(live.surface && live.context == "User: What's next on my calendar?")
         let said = harness.call.sent("session.commentary.append")
         #expect(said.compactMap { $0["content"]?.string } == ["Your meeting is at 4 pm.", "It's with Ana."])
         #expect(said.allSatisfy { $0["delegation_id"]?.string == "d1" })
@@ -194,6 +195,7 @@ struct LiveVoiceTests {
         let thought = harness.call.sent("session.thinking.append").compactMap { $0["content"]?.string }
         #expect(thought.contains { $0.contains("working: calendar") })
         #expect(harness.call.sent("session.commentary.append").compactMap { $0["content"]?.string } == ["Done."])
+        #expect(thought.contains { $0.contains("used its tools for this answer: calendar") }, "the voice knows it checked")
     }
 
     @Test func aLongWaitIsSaidAloudUntilTheAnswerComes() async throws {
@@ -265,6 +267,65 @@ struct LiveVoiceTests {
         #expect(context == "User: Book a table for Friday.\nVoice assistant: For how many?\nUser: Four, thanks.")
         // Nothing the person said: the end of the exchange stands in.
         #expect(LiveFragment.delegation(from: [LiveFragment(speaker: .voice, text: "Hello.", startMs: 0, endMs: 1)]).prompt == "Voice assistant: Hello.")
+    }
+
+    /// The voice's answer waits for the person to finish (`LiveCallAudio.patience`): queued, not
+    /// played, until let go; a flush drops it and the wait with it.
+    @Test func aWaitingVoiceKeepsWhatIsQueuedUntilLetGo() {
+        let voice = VoiceQueue(capacity: 4_800, lead: 100, rate: 24_000)
+        let speech = [Float](repeating: 0.2, count: 400)
+        _ = speech.withUnsafeBufferPointer { voice.append($0) }
+        var out = [Float](repeating: 0, count: 200)
+        voice.wait(true)
+        #expect(out.withUnsafeMutableBufferPointer { voice.render(into: $0.baseAddress!, frames: 200).played } == 0)
+        #expect(voice.queued == 400, "kept while waiting")
+        voice.wait(false)
+        #expect(out.withUnsafeMutableBufferPointer { voice.render(into: $0.baseAddress!, frames: 200).played } == 200)
+        voice.wait(true)
+        voice.clear()
+        _ = speech.withUnsafeBufferPointer { voice.append($0) }
+        #expect(out.withUnsafeMutableBufferPointer { voice.render(into: $0.baseAddress!, frames: 200).played } == 200, "a flush ends the wait")
+    }
+
+    /// Asked to turn the tree off, GPT-Live said "The Christmas tree is now off." before handing it
+    /// over; Home's agent, given that line, confirmed it and called no tool (Marta, 2026-10-25).
+    @Test func theVoicesGuessAtTheAnswerDoesNotGoToTheAgent() {
+        let fragments = [
+            LiveFragment(speaker: .person, text: "Is the tree on?", startMs: 0, endMs: 900),
+            LiveFragment(speaker: .voice, text: "It's on.", startMs: 1_000, endMs: 1_500),
+            LiveFragment(speaker: .person, text: "Turn off the Christmas tree.", startMs: 2_000, endMs: 3_000),
+            LiveFragment(speaker: .voice, text: "Done, the Christmas tree is now off.", startMs: 3_200, endMs: 4_000),
+        ]
+        let (prompt, context) = LiveFragment.delegation(from: fragments)
+        #expect(prompt == "Turn off the Christmas tree.")
+        #expect(!context.contains("now off"))
+        // Its earlier lines go along, marked as its own words, not facts.
+        let given = LiveVoiceNote.spoken(context: context)
+        #expect(given.hasPrefix(LiveVoiceNote.caveat) && given.hasSuffix("User: Turn off the Christmas tree."))
+        #expect(LiveVoiceNote.spoken(context: "User: Lights off.") == "User: Lights off.", "no voice, no caveat")
+        #expect(LiveSetup.persona(name: "Home").contains("You see and control nothing yourself"))
+    }
+
+    /// Asked "is the tree on?" five times, each a new call, Home answered from its own result of a
+    /// minute before, no tool, the plug switched off by hand in between; Hermes's own note for a
+    /// live turn never said to look again, and the context had no voice lines for the caveat
+    /// (Marta, 2026-10-26).
+    @Test func everyLiveTurnTellsTheAgentToLookAgain() {
+        let rule = "(" + LiveVoiceNote.lookAgain + ")"
+        #expect(LiveVoiceNote.voiceContext("") == rule, "a new call's first question too")
+        let given = LiveVoiceNote.voiceContext("User: Is the tree on?")
+        #expect(given.hasPrefix(rule) && given.hasSuffix("User: Is the tree on?"))
+        let long = LiveVoiceNote.voiceContext("Voice assistant: " + String(repeating: "y", count: 9_000))
+        #expect(long.hasPrefix(rule + "\n" + LiveVoiceNote.caveat) && long.count <= LiveVoiceNote.contextLimit)
+        // The Hermes API and an older Dashboard get it in the instruction.
+        #expect(LiveVoiceNote.instruction.hasSuffix("did. " + LiveVoiceNote.lookAgain))
+        #expect(LiveAgentTool.checked([], agent: "Home").contains("Home used none of its tools"))
+        #expect(LiveAgentTool.checked(["ha_get_state"], agent: "Home").contains("Home used its tools for this answer: ha_get_state"))
+        // ElevenLabs' voice said its reasoning aloud: "The user keeps asking this, … so I'll ask the agent to look again."
+        #expect(LiveSetup.persona(name: "Home", engine: .elevenLabs).contains("Never say your reasoning"))
+        // ElevenLabs makes it speak before each tool call, and Haiku 5.5 said why: "The conversation
+        // history shows conflicting answers about this, so I'll check the current state directly."
+        #expect(LiveSetup.persona(name: "Home", engine: .elevenLabs).contains("say a few words at most"))
     }
 
     @Test func longAnswersGoInPiecesTheServiceTakes() {
@@ -680,7 +741,9 @@ struct LiveVoiceTests {
         #expect(harness.transport.requests.last?.live?.context.contains("Next calendar event") == true, "the voice's wording goes along")
         let responses = harness.call.sent.compactMap { $0["toolResponse"]?["functionResponses"]?.array?.first }
         #expect(responses.count == 1 && responses[0]["id"]?.string == "c1")
-        #expect(responses[0]["response"]?["result"]?.string == "Your meeting is at 4 pm. It's with Ana.")
+        let result = try #require(responses[0]["response"]?["result"]?.string)
+        #expect(result.hasPrefix("Your meeting is at 4 pm. It's with Ana.\n\n[Not to be read out:"))
+        #expect(result.contains("used none of its tools"), "answered without a tool, and the voice is told so")
     }
 
     @Test func aBotsNameHeardJustAfterTheToolCallStillRoutes() async throws {
