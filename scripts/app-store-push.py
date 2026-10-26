@@ -8,6 +8,7 @@
     scripts/app-store-push.py notes [--dry-run]      the notes for App Review, with the test key put in
     scripts/app-store-push.py previews [--dry-run]   the App Preview videos (made by design/video, not in git)
     scripts/app-store-push.py all [--dry-run]        copy and screenshots (not the notes)
+    scripts/app-store-push.py attach [--dry-run]     attach the uploaded build to the version, nothing sent to App Review
     scripts/app-store-push.py submit [--dry-run]     attach the uploaded build and send the version to App Review
 
 The copy is read from docs/app-store-listing.md (the sections named for those four fields, the
@@ -356,9 +357,9 @@ def project_build():
     return re.search(r'CURRENT_PROJECT_VERSION:\s*"?([0-9]+)"?', text).group(1)
 
 
-def submit(app, version, wanted, dry):
+def submit(app, version, wanted, dry, attach_only=False):
     """Attaches the build in project.yml to the version and sends the version to App Review, once
-    the build has finished processing."""
+    the build has finished processing; `attach_only` (the `attach` command), the build alone."""
     number = project_build()
     builds = api('GET', f'/v1/builds?filter[app]={app}&filter[version]={number}&filter[preReleaseVersion.version]={wanted}'
                         '&fields[builds]=version,processingState,usesNonExemptEncryption,expired')['data']
@@ -379,6 +380,8 @@ def submit(app, version, wanted, dry):
     if not attached or attached['id'] != build['id']:
         api('PATCH', f"/v1/appStoreVersions/{version['id']}/relationships/build", {'data': {'type': 'builds', 'id': build['id']}})
         print('  build attached')
+    if attach_only:
+        return True
     open_ones = api('GET', f'/v1/reviewSubmissions?filter[app]={app}&filter[platform]=IOS&filter[state]=READY_FOR_REVIEW')['data']
     submission = open_ones[0] if open_ones else api('POST', '/v1/reviewSubmissions', {'data': {'type': 'reviewSubmissions',
         'attributes': {'platform': 'IOS'}, 'relationships': {'app': {'data': {'type': 'apps', 'id': app}}}}})['data']
@@ -397,7 +400,7 @@ def main():
     args = [a for a in sys.argv[1:] if not a.startswith('-')]
     dry = '--dry-run' in sys.argv
     what = args[0] if args else ''
-    if what not in ('check', 'status', 'copy', 'screenshots', 'notes', 'previews', 'all', 'submit'):
+    if what not in ('check', 'status', 'copy', 'screenshots', 'notes', 'previews', 'all', 'attach', 'submit'):
         sys.exit(__doc__)
     wanted = project_version()
     fields = copy_fields(wanted)
@@ -437,7 +440,7 @@ def main():
         push_notes(app, version, dry)
     if what == 'previews':
         push_previews(loc, dry)
-    if what == 'submit' and not submit(app, version, wanted, dry):
+    if what in ('attach', 'submit') and not submit(app, version, wanted, dry, attach_only=what == 'attach'):
         sys.exit(1)
 
 
