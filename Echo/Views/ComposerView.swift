@@ -156,6 +156,18 @@ struct ComposerView: View {
         .animation(.snappy(duration: 0.3), value: pendingAttachments.count)
         .animation(.snappy(duration: 0.3), value: editing?.id)
         .animation(.snappy(duration: 0.3), value: contextSuggestions)
+        // A swipe down on the message box puts the keyboard away, as a drag down the chat does
+        // (asked 2026-10-26, "swipe to remove the keyboard"). Alongside the field's own gestures,
+        // so taps, selection and the buttons go on working; only a mostly downward swipe while
+        // it has the keyboard, and not in a long draft, where a drag scrolls its lines.
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 24).onEnded { drag in
+                let down = drag.translation.height
+                guard focused, down > 40, abs(drag.translation.width) < down,
+                      draft.count < 200, draft.filter(\.isNewline).count < 3 else { return }
+                focused = false
+            }
+        )
         .background {
             // ⌘↩ sends from anywhere; lives here because send() does.
             Button("Send") { send() }.keyboardShortcut(.return, modifiers: .command)
