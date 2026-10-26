@@ -349,8 +349,11 @@ struct ContentView: View {
             .sheet(item: $voicingBot) { BotVoicePicker(bot: $0, mainName: settings.headerTitle) }
             .sheet(isPresented: $voicingMain, onDismiss: { WatchLink.shared.push() }) {
                 NavigationStack {
-                    VoiceSettings()
+                    // Its sections, in a form as Settings has them: alone, each was laid out apart and each
+                    // took the Done (2026-10-26, from Sol's ••• menu).
+                    Form { VoiceSettings() }
                         .navigationTitle("\(settings.headerTitle)'s Voice")
+                        .navigationBarTitleDisplayMode(.inline)
                         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { voicingMain = false } } }
                 }
                 .holdsWakePhrases(.voicePicker)
