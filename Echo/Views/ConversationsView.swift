@@ -88,6 +88,8 @@ struct ConversationsList: View {
     @State private var showingTopology = false
     /// The bot whose voice is being picked.
     @State private var voicing: HermesBot?
+    /// The main agent's voice: the app's own, Settings → Voice.
+    @State private var voicingMain = false
     /// The bot whose schedules are open (`BotSchedulesView`).
     @State private var scheduling: HermesBot?
     @State private var showingHiddenBots = false
@@ -194,6 +196,13 @@ struct ConversationsList: View {
             }
         }
         .sheet(item: $voicing) { BotVoicePicker(bot: $0, mainName: settings.headerTitle) }
+        .sheet(isPresented: $voicingMain, onDismiss: { WatchLink.shared.push() }) {
+            NavigationStack {
+                VoiceSettings()
+                    .navigationTitle("\(settings.headerTitle)'s Voice")
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { voicingMain = false } } }
+            }
+        }
         .sheet(item: $scheduling) { BotSchedulesView(bot: $0, mainName: settings.headerTitle) }
         .sheet(item: $facing) { bot in
             BotFacePicker(bot: bot, name: bot.label(mainName: settings.headerTitle),
@@ -761,7 +770,9 @@ struct ConversationsList: View {
                 Button("Mark as Unread", systemImage: "envelope.badge") { activity.markUnread(bot: bot.name) }
             }
         }
-        if !bot.isDefault {
+        if bot.isDefault {
+            Button("Voice…", systemImage: "waveform") { voicingMain = true }
+        } else {
             Button("Voice…", systemImage: "waveform") { voicing = bot }
         }
         MuteMenu(item: "bot:" + bot.name)

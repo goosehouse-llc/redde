@@ -32,6 +32,8 @@ struct ContentView: View {
     @State private var facingBot: HermesBot?
     /// In a bot's chat, its voice being picked.
     @State private var voicingBot: HermesBot?
+    /// The main agent's voice: the app's own, Settings → Voice, from its chat's menu.
+    @State private var voicingMain = false
     @State private var schedulingBot: HermesBot?
     /// "Edit Bot…" in a bot's chat.
     @State private var editingBot: HermesBot?
@@ -344,6 +346,13 @@ struct ContentView: View {
                 Text(freshProblem ?? "")
             }
             .sheet(item: $voicingBot) { BotVoicePicker(bot: $0, mainName: settings.headerTitle) }
+            .sheet(isPresented: $voicingMain, onDismiss: { WatchLink.shared.push() }) {
+                NavigationStack {
+                    VoiceSettings()
+                        .navigationTitle("\(settings.headerTitle)'s Voice")
+                        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { voicingMain = false } } }
+                }
+            }
             .sheet(item: $schedulingBot) { BotSchedulesView(bot: $0, mainName: settings.headerTitle) }
             .sheet(item: $facingBot) { bot in
                 BotFacePicker(bot: bot, name: bot.label(mainName: settings.headerTitle), current: botFace ?? BotFace(seed: bot.name)) {
@@ -508,6 +517,11 @@ struct ContentView: View {
                         if let bot = chatBot, !bot.viaAPI {
                             Button("Edit Bot…", systemImage: "slider.horizontal.3") { editingBot = bot }
                             Button("Change Face…", systemImage: "face.smiling") { facingBot = bot }
+                        }
+                        // The main agent's voice is the app's (asked 2026-10-25: "Sol's three dot drop
+                        // down does not have voice in it").
+                        if chatBot?.isDefault ?? (conversation.bot == nil) {
+                            Button("Voice…", systemImage: "waveform") { voicingMain = true }
                         }
                         if let bot = chatBot, !bot.isDefault {
                             Button("Voice…", systemImage: "waveform") { voicingBot = bot }
