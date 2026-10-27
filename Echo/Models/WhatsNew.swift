@@ -23,7 +23,7 @@ nonisolated enum WhatsNew {
     /// Newest first. Keep each to a handful of lines a person reads in ten seconds.
     static let releases: [Release] = [
         Release(version: "2.2", items: [
-            Item(symbol: "waveform.and.mic", title: "LIVE VOICE!",
+            Item(symbol: "waveform.and.mic", title: "Live voice",
                  detail: "Pick GPT-Live, Gemini Live, Grok Voice or ElevenLabs in Settings → Voice → Voice mode and add your key for it: voice mode becomes a call you can interrupt, and the voice hands real work to your agent. Each bot can have its own (Edit Bot → Voice). The service bills your key by the minute."),
             Item(symbol: "phone.arrow.down.left.fill", title: "Your agents can call you",
                  detail: "Turn on Calls from Agents in Settings → Notifications and pick who may: when something shouldn't wait, an agent rings your iPhone like a phone call. Answer and it says why, in its own voice, and you talk. It takes the Redde plugin 1.8.0 on your Hermes."),
