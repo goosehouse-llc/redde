@@ -267,11 +267,11 @@ private struct SetupFeature: View {
     }
 }
 
-/// The app's default icon (Graphite) at the top of the intro: the picker's copy of it,
+/// The app's default icon (Redde Face) at the top of the intro: the picker's copy of it,
 /// with the Home Screen's rounded corners.
 struct ReddeMark: View {
     var body: some View {
-        Image("IconPreviews/AppIcon")
+        Image("IconPreviews/AppIconFaceMist")
             .resizable()
             .scaledToFit()
             .clipShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
