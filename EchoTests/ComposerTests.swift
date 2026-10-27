@@ -82,7 +82,7 @@ struct DraftsTests {
 /// What the composer makes of keys, pastes and files.
 struct ComposerLogicTests {
     @Test func aDraftThatGrewByOneLineBreakWasAReturn() {
-        let isReturn = ComposerView.isReturn
+        let isReturn = ReturnSends.isReturn
         #expect(isReturn("hello", "hello\n"))
         #expect(isReturn("hello world", "hello\n world"), "Return in the middle of the text")
         #expect(isReturn("one\ntwo", "one\n\ntwo"))

@@ -30,8 +30,6 @@ struct ComposerView: View {
     @State private var showEditor = false
     /// A video being made small enough to send.
     @State private var preparingVideo = false
-    /// Shift-Return on a keyboard while Return is set to send: this one line break is meant.
-    @State private var lineBreakMeant = false
 
     /// Slash-command menu (hermes serve): what the gateway offers for the current "/…" draft.
     @State private var slashItems: [HermesServeClient.SlashCompletion] = []
@@ -113,10 +111,7 @@ struct ComposerView: View {
             }
             composerRow
         }
-        .onChange(of: draft) { old, new in
-            refreshContext(new)
-            returnTyped(from: old, to: new)
-        }
+        .onChange(of: draft) { _, new in refreshContext(new) }
         // A picture on the clipboard pastes into the field as an attachment (`ComposerPaste`).
         .onChange(of: focused, initial: true) { _, isFocused in
             ComposerPaste.shared.deliver = !isFocused ? nil : { attachments, problems in
@@ -239,29 +234,6 @@ struct ComposerView: View {
 
     private func attachVideo(at url: URL, named name: String) {
         Task { await attachVideo(url, named: name) }
-    }
-
-    // MARK: Return, and the keyboard
-
-    /// A draft that grew by exactly one line break: Return was pressed. (A paste or a deletion
-    /// changes it some other way.)
-    nonisolated static func isReturn(from old: String, to new: String) -> Bool {
-        guard new.utf16.count == old.utf16.count + 1 else { return false }
-        let shared = new.commonPrefix(with: old)
-        let rest = new.dropFirst(shared.count)
-        return rest.first == "\n" && rest.dropFirst() == old.dropFirst(shared.count)
-    }
-
-    /// Settings → Return key sends: the line break Return just typed comes out again and the
-    /// message goes, unless it was Shift-Return or there is nothing to send yet.
-    private func returnTyped(from old: String, to new: String) {
-        guard settings.returnSends, Self.isReturn(from: old, to: new) else { return }
-        if lineBreakMeant {
-            lineBreakMeant = false
-            return
-        }
-        draft = old
-        if hasDraft { send() }
     }
 
     // MARK: Dictation
@@ -488,18 +460,9 @@ struct ComposerView: View {
                     .textFieldStyle(.plain)
                     .padding(.vertical, 9)
                     .focused($focused)
+                    .accessibilityIdentifier("composer")
                     .onSubmit(send)
-                    .submitLabel(settings.returnSends ? .send : .return)
-                    // A keyboard's Return, with Return set to send: sends, and Shift-Return is the line break.
-                    .onKeyPress(.return, phases: .down) { press in
-                        guard settings.returnSends else { return .ignored }
-                        if press.modifiers.contains(.shift) {
-                            lineBreakMeant = true
-                            return .ignored
-                        }
-                        if hasDraft { send() }
-                        return .handled
-                    }
+                    .modifier(ReturnSends(draft: $draft, canSend: { hasDraft }, send: send))
                 if draftIsLong {
                     Button("Open the editor", systemImage: "arrow.up.left.and.arrow.down.right") { showEditor = true }
                         .font(.footnote.weight(.semibold))

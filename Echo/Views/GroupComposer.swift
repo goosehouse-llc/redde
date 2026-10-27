@@ -59,6 +59,12 @@ struct GroupComposer: View {
             .animation(.snappy(duration: 0.3, extraBounce: 0.15), value: hasDraft)
         }
         .padding(.horizontal).padding(.vertical, 8)
+        .background {
+            // ⌘↩ sends, as under a conversation, whatever Return is set to.
+            Button("Send") { send() }.keyboardShortcut(.return, modifiers: .command)
+                .disabled(!hasDraft)
+                .frame(width: 0, height: 0).opacity(0).accessibilityHidden(true)
+        }
         .dictating(dictation, base: $dictationBase, draft: $draft, problem: $problem)
         // What is being typed to the room goes over to the screen built in the other layout (an
         // iPhone Duo opened or closed), with the room (`LayoutCarry`).
@@ -126,6 +132,7 @@ struct GroupComposer: View {
                 .textFieldStyle(.plain)
                 .padding(.vertical, 9)
                 .focused(focused)
+                .modifier(ReturnSends(draft: $draft, canSend: { hasDraft }, send: send))
             DictateButton(dictation: dictation, toggle: toggleDictation)
         }
         .padding(.horizontal, 4)

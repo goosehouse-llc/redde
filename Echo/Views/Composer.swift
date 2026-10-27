@@ -205,3 +205,51 @@ final class WaveformBarsView: UIView {
         }
     }
 }
+
+/// Settings → Return key, for a message field: with Return set to send, Return sends and a
+/// keyboard's Shift-Return is the line break; otherwise Return is a line break and ⌘Return sends.
+/// Both composers have it: a conversation's, and a group chat's.
+struct ReturnSends: ViewModifier {
+    @Binding var draft: String
+    /// Whether there is something to send (asked after the line break comes out again).
+    let canSend: () -> Bool
+    let send: () -> Void
+    @State private var settings = Settings.shared
+    /// Shift-Return on a keyboard while Return is set to send: this one line break is meant.
+    @State private var lineBreakMeant = false
+
+    func body(content: Content) -> some View {
+        content
+            .submitLabel(settings.returnSends ? .send : .return)
+            // A keyboard's Return, with Return set to send: sends, and Shift-Return is the line break.
+            .onKeyPress(.return, phases: .down) { press in
+                guard settings.returnSends else { return .ignored }
+                if press.modifiers.contains(.shift) {
+                    lineBreakMeant = true
+                    return .ignored
+                }
+                if canSend() { send() }
+                return .handled
+            }
+            // The on-screen keyboard's Return types a line break the field keeps: it comes out
+            // again and the message goes.
+            .onChange(of: draft) { old, new in
+                guard settings.returnSends, Self.isReturn(from: old, to: new) else { return }
+                if lineBreakMeant {
+                    lineBreakMeant = false
+                    return
+                }
+                draft = old
+                if canSend() { send() }
+            }
+    }
+
+    /// A draft that grew by exactly one line break: Return was pressed. (A paste or a deletion
+    /// changes it some other way.)
+    nonisolated static func isReturn(from old: String, to new: String) -> Bool {
+        guard new.utf16.count == old.utf16.count + 1 else { return false }
+        let shared = new.commonPrefix(with: old)
+        let rest = new.dropFirst(shared.count)
+        return rest.first == "\n" && rest.dropFirst() == old.dropFirst(shared.count)
+    }
+}
