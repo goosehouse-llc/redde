@@ -438,6 +438,12 @@ struct ComposerView: View {
                     if CameraPicker.isAvailable {
                         Button("Camera", systemImage: "camera") { showCamera = true }
                     }
+                    #if os(macOS)
+                    // A Mac's text field turns Paste down when the clipboard has a picture and no
+                    // text; here it is taken as the iPhone's field takes it (`ComposerPaste`).
+                    Button("Paste Picture", systemImage: "doc.on.clipboard") { pastePictures() }
+                        .disabled(!UIPasteboard.general.hasImages)
+                    #endif
                     if conversation.connection == .hermesServe {
                         Divider()
                         Button("Commands", systemImage: "terminal") { draft = "/"; focused = true }
@@ -561,6 +567,20 @@ struct ComposerView: View {
         draft = ""
         conversation.steer(text)
     }
+
+    #if os(macOS)
+    private func pastePictures() {
+        let providers = UIPasteboard.general.itemProviders.filter {
+            ComposerPaste.isPicture(types: $0.registeredContentTypes, readsAsText: $0.canLoadObject(ofClass: NSString.self))
+        }
+        guard !providers.isEmpty else { return }
+        Task {
+            let loaded = await DroppedItems.load(providers)
+            pendingAttachments += loaded.attachments
+            if let problem = loaded.problems.first { attachmentError = problem }
+        }
+    }
+    #endif
 
     private func send() {
         stopDictating()

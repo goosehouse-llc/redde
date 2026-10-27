@@ -210,7 +210,7 @@ struct TranscriptView: View {
                             if let anchor { Task { proxy.scrollTo(anchor, anchor: .top) } }
                         } label: {
                             Label("Show earlier messages (\(hiddenCount))", systemImage: "arrow.up.circle")
-                                .font(.footnote)
+                                .chatFont(.footnote)
                         }
                         .buttonStyle(.bordered)
                         .frame(maxWidth: .infinity)
@@ -226,7 +226,7 @@ struct TranscriptView: View {
                     }
                     if let status = conversation.statusLine {
                         Label(status, systemImage: "ellipsis.circle")
-                            .font(.footnote)
+                            .chatFont(.footnote)
                             .foregroundStyle(.secondary)
                             .padding(.leading, 6)
                     }
@@ -369,6 +369,7 @@ struct TranscriptView: View {
             .animation(.easeOut(duration: 0.2), value: conversation.outbox)
             // (Bytes, not characters: counting characters walks the whole of the thinking.)
             .onChange(of: conversation.messages.last?.reasoning.utf8.count) { scrollToBottom(proxy) }
+            #if os(iOS)
             // Keyboard rising: keep the newest message in view above the composer, unless the
             // reader has scrolled up on purpose. Re-check once the system's own animation ends.
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { note in
@@ -383,6 +384,7 @@ struct TranscriptView: View {
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidChangeFrameNotification)) { _ in
                 scrollToBottom(proxy)
             }
+            #endif
         }
     }
 
@@ -400,7 +402,7 @@ struct TranscriptView: View {
     @ViewBuilder
     private func messageCell(_ message: Message, canLoadTools: Bool) -> some View {
         if let day = dayLabels[message.id] {
-            Text(day).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+            Text(day).chatFont(.caption2, weight: .semibold).foregroundStyle(.secondary)
                 .padding(.horizontal, 10).padding(.vertical, 4)
                 .background(.quaternary, in: .capsule)
                 .frame(maxWidth: .infinity)
@@ -462,10 +464,10 @@ struct TranscriptView: View {
             } label: {
                 HStack(spacing: 7) {
                     Image(systemName: "arrow.down")
-                        .font(.footnote.weight(.bold))
+                        .chatFont(.footnote, weight: .bold)
                         .foregroundStyle(theme.accent)
                     Text("Jump to latest")
-                        .font(.subheadline.weight(.semibold))
+                        .chatFont(.subheadline, weight: .semibold)
                     if hasNewBelow { NewBelowDot(color: theme.accent, live: conversation.isStreaming) }
                 }
                 .padding(.horizontal, 4).padding(.vertical, 3)
@@ -491,7 +493,7 @@ struct TranscriptView: View {
                 .submitLabel(.search)
             if !searchText.isEmpty {
                 (matches.isEmpty ? Text(0.formatted()) : Text("\(matchIndex + 1) of \(matches.count)"))
-                    .font(.caption.monospacedDigit())
+                    .chatFont(.caption).monospacedDigit()
                     .foregroundStyle(.secondary)
                     .accessibilityLabel(matches.isEmpty ? String(localized: "No matches") : String(localized: "Match \(matchIndex + 1) of \(matches.count)"))
             }
@@ -500,7 +502,7 @@ struct TranscriptView: View {
             Button("Next match", systemImage: "chevron.down") { goToMatch(matchIndex + 1, proxy) }
                 .disabled(matches.count < 2)
             Button("Done") { showSearch = false }
-                .font(.body.weight(.semibold))
+                .chatFont(.body, weight: .semibold)
         }
         .labelStyle(.iconOnly)
         .padding(.horizontal, 14).padding(.vertical, 8)
@@ -512,7 +514,7 @@ struct TranscriptView: View {
     private var incognitoBanner: some View {
         Label("Incognito: kept nowhere. It's deleted from your server when you leave it, and your agent is asked to save nothing from it.",
               systemImage: "eyeglasses")
-            .font(.caption)
+            .chatFont(.caption)
             .foregroundStyle(.secondary)
             .padding(.horizontal, 14).padding(.vertical, 8)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -524,7 +526,7 @@ struct TranscriptView: View {
     private var reconnectBanner: some View {
         if conversation.connection == .hermesServe, let text = reconnectText {
             Label(text, systemImage: "wifi.exclamationmark")
-                .font(.caption.weight(.medium))
+                .chatFont(.caption, weight: .medium)
                 .padding(.horizontal, 12).padding(.vertical, 6)
                 .frame(maxWidth: .infinity)
                 .background(.orange.opacity(0.15))
@@ -604,6 +606,7 @@ private struct NewBelowDot: View {
 /// has no way to stop a fling, and a jump has to.
 @MainActor
 final class ScrollHandle {
+    #if os(iOS)
     fileprivate weak var view: UIScrollView?
     /// It has found its scroll view.
     var isAttached: Bool { view != nil }
@@ -640,6 +643,44 @@ final class ScrollHandle {
             }
         }
     }
+    #else
+    fileprivate weak var view: NSScrollView?
+    /// It has found its scroll view.
+    var isAttached: Bool { view != nil }
+
+    /// Stops a fling where it is: the clip view told to stay where it is ends the momentum.
+    func stopCoasting() {
+        guard let view else { return }
+        view.contentView.scroll(to: view.contentView.bounds.origin)
+        view.reflectScrolledClipView(view.contentView)
+    }
+
+    /// Placed in the scroll view's content: once in a window, it finds the scroll view above it.
+    struct Finder: NSViewRepresentable {
+        let handle: ScrollHandle
+
+        func makeNSView(context: Context) -> Probe { Probe(handle: handle) }
+        func updateNSView(_ probe: Probe, context: Context) { probe.handle = handle }
+
+        final class Probe: NSView {
+            var handle: ScrollHandle
+
+            init(handle: ScrollHandle) {
+                self.handle = handle
+                super.init(frame: .zero)
+            }
+
+            required init?(coder: NSCoder) { nil }
+
+            override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+            override func viewDidMoveToWindow() {
+                super.viewDidMoveToWindow()
+                handle.view = enclosingScrollView
+            }
+        }
+    }
+    #endif
 }
 
 /// The message at the top of the transcript's screen, kept where writing it redraws nothing.

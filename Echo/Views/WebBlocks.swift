@@ -167,6 +167,7 @@ struct RememberedHeight: ViewModifier {
 }
 
 /// UIKit bridge: transparent, non-scrolling, height reported by the page.
+#if os(iOS)
 struct WebBlock: UIViewRepresentable {
     let html: String
     /// Where the drawn height is remembered (see WebBlockHeights); nil keeps it in the view only.
@@ -207,20 +208,75 @@ struct WebBlock: UIViewRepresentable {
         context.coordinator.load(html, into: view)
     }
 
+    static func dismantleUIView(_ view: BlockWebView, coordinator: Coordinator) {
+        view.configuration.userContentController.removeScriptMessageHandler(forName: "size")
+    }
+}
+#else
+/// The Mac's: the same page, transparent, its height reported by the page.
+struct WebBlock: NSViewRepresentable {
+    let html: String
+    /// Where the drawn height is remembered (see WebBlockHeights); nil keeps it in the view only.
+    var heightKey: String? = nil
+    @Binding var height: CGFloat
+    /// Called when the reader clicks the drawn content.
+    var onTap: (() -> Void)? = nil
+
+    func makeCoordinator() -> Coordinator { Coordinator(height: $height, heightKey: heightKey) }
+
+    func makeNSView(context: Context) -> BlockWebView {
+        let config = WKWebViewConfiguration()
+        config.setURLSchemeHandler(WebBlockAssets.handler, forURLScheme: WebBlockAssets.scheme)
+        config.userContentController.add(context.coordinator, name: "size")
+        let view = BlockWebView(frame: .zero, configuration: config)
+        view.setValue(false, forKey: "drawsBackground")   // the reply's own background shows through
+        view.navigationDelegate = context.coordinator
+        view.setAccessibilityElement(false)
+        view.onWidthChange = { [weak view] in
+            view?.evaluateJavaScript("if (window.__drawn) report();", completionHandler: nil)
+        }
+        context.coordinator.onTap = onTap
+        context.coordinator.load(html, into: view)
+        return view
+    }
+
+    func updateNSView(_ view: BlockWebView, context: Context) {
+        context.coordinator.heightKey = heightKey
+        context.coordinator.onTap = onTap
+        context.coordinator.load(html, into: view)
+    }
+
+    static func dismantleNSView(_ view: BlockWebView, coordinator: Coordinator) {
+        view.configuration.userContentController.removeScriptMessageHandler(forName: "size")
+    }
+}
+#endif
+
+extension WebBlock {
     final class BlockWebView: WKWebView {
         var onWidthChange: (() -> Void)?
         private var lastWidth: CGFloat = 0
 
+        #if os(iOS)
         override func layoutSubviews() {
             super.layoutSubviews()
+            widthMayHaveChanged()
+        }
+        #else
+        override func layout() {
+            super.layout()
+            widthMayHaveChanged()
+        }
+
+        /// The page doesn't scroll in the transcript: the wheel scrolls the transcript.
+        override func scrollWheel(with event: NSEvent) { nextResponder?.scrollWheel(with: event) }
+        #endif
+
+        private func widthMayHaveChanged() {
             guard abs(bounds.width - lastWidth) > 0.5 else { return }
             lastWidth = bounds.width
             onWidthChange?()
         }
-    }
-
-    static func dismantleUIView(_ view: BlockWebView, coordinator: Coordinator) {
-        view.configuration.userContentController.removeScriptMessageHandler(forName: "size")
     }
 
     final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
@@ -374,23 +430,31 @@ struct MermaidBlock: View {
     /// text and lines chosen for contrast on the current background.
     private var themeVariables: String {
         let dark = (drawnScheme ?? colorScheme) == .dark
-        let accent = UIColor(theme.accent)
-        let ground = UIColor(theme.pageColor)
-        func hex(_ c: UIColor) -> String {
+        let accent = PlatformColor(theme.accent)
+        let ground = PlatformColor(theme.pageColor)
+        /// The colour's own components (on the Mac, in sRGB: a grey or a named colour has none).
+        func rgb(_ c: PlatformColor) -> PlatformColor {
+            #if canImport(UIKit)
+            c
+            #else
+            c.usingColorSpace(.sRGB) ?? .black
+            #endif
+        }
+        func hex(_ c: PlatformColor) -> String {
             var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-            c.getRed(&r, green: &g, blue: &b, alpha: &a)
+            rgb(c).getRed(&r, green: &g, blue: &b, alpha: &a)
             return String(format: "#%02X%02X%02X", Int(r * 255), Int(g * 255), Int(b * 255))
         }
-        func mix(_ a: UIColor, _ b: UIColor, _ t: CGFloat) -> UIColor {
+        func mix(_ a: PlatformColor, _ b: PlatformColor, _ t: CGFloat) -> PlatformColor {
             var ar: CGFloat = 0, ag: CGFloat = 0, ab: CGFloat = 0, aa: CGFloat = 0
             var br: CGFloat = 0, bg: CGFloat = 0, bb: CGFloat = 0, ba: CGFloat = 0
-            a.getRed(&ar, green: &ag, blue: &ab, alpha: &aa); b.getRed(&br, green: &bg, blue: &bb, alpha: &ba)
-            return UIColor(red: ar + (br - ar) * t, green: ag + (bg - ag) * t, blue: ab + (bb - ab) * t, alpha: 1)
+            rgb(a).getRed(&ar, green: &ag, blue: &ab, alpha: &aa); rgb(b).getRed(&br, green: &bg, blue: &bb, alpha: &ba)
+            return PlatformColor(red: ar + (br - ar) * t, green: ag + (bg - ag) * t, blue: ab + (bb - ab) * t, alpha: 1)
         }
-        let text = dark ? UIColor(white: 0.95, alpha: 1) : UIColor(white: 0.11, alpha: 1)
+        let text = dark ? PlatformColor(white: 0.95, alpha: 1) : PlatformColor(white: 0.11, alpha: 1)
         let fill = mix(ground, accent, dark ? 0.28 : 0.14)
         let alt = mix(ground, accent, dark ? 0.16 : 0.07)
-        let line = dark ? UIColor(white: 0.66, alpha: 1) : UIColor(white: 0.40, alpha: 1)
+        let line = dark ? PlatformColor(white: 0.66, alpha: 1) : PlatformColor(white: 0.40, alpha: 1)
         let vars: [(String, String)] = [
             ("background", "transparent"),
             ("primaryColor", hex(fill)), ("primaryTextColor", hex(text)), ("primaryBorderColor", hex(accent)),
@@ -440,21 +504,21 @@ struct MermaidBlock: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("DIAGRAM").font(.caption2.weight(.medium)).foregroundStyle(.secondary)
+                Text("DIAGRAM").chatFont(.caption2, weight: .medium).foregroundStyle(.secondary)
                 Spacer()
                 Button { expanded = true } label: {
-                    Image(systemName: "arrow.up.left.and.arrow.down.right").font(.caption2)
+                    Image(systemName: "arrow.up.left.and.arrow.down.right").chatFont(.caption2)
                 }
                 .buttonStyle(.plain).foregroundStyle(.secondary).padding(.trailing, 8)
                 .accessibilityLabel("Open diagram full screen")
                 Button(showSource ? String(localized: "Diagram") : String(localized: "Source", comment: "Button: shows a diagram's text")) { showSource.toggle() }
-                    .font(.caption2).buttonStyle(.plain).foregroundStyle(.secondary)
+                    .chatFont(.caption2).buttonStyle(.plain).foregroundStyle(.secondary)
                 Button {
                     UIPasteboard.general.string = source
                     copied = true
                     Task { try? await Task.sleep(for: .seconds(1.5)); copied = false }
                 } label: {
-                    Label(copied ? String(localized: "Copied") : String(localized: "Copy"), systemImage: copied ? "checkmark" : "doc.on.doc").font(.caption2)
+                    Label(copied ? String(localized: "Copied") : String(localized: "Copy"), systemImage: copied ? "checkmark" : "doc.on.doc").chatFont(.caption2)
                 }
                 .buttonStyle(.plain).foregroundStyle(.secondary).padding(.leading, 8)
             }
@@ -515,6 +579,7 @@ struct DiagramViewer: View {
 }
 
 /// A web view that scrolls and zooms, for DiagramViewer.
+#if os(iOS)
 struct ZoomableWebView: UIViewRepresentable {
     let html: String
 
@@ -533,6 +598,24 @@ struct ZoomableWebView: UIViewRepresentable {
 
     func updateUIView(_ view: WKWebView, context: Context) {}
 }
+#else
+struct ZoomableWebView: NSViewRepresentable {
+    let html: String
+
+    func makeNSView(context: Context) -> WKWebView {
+        let config = WKWebViewConfiguration()
+        config.setURLSchemeHandler(WebBlockAssets.handler, forURLScheme: WebBlockAssets.scheme)
+        let view = WKWebView(frame: .zero, configuration: config)
+        view.setValue(false, forKey: "drawsBackground")
+        view.allowsMagnification = true   // a pinch, or ⌘+ and ⌘−, zooms
+        view.setAccessibilityLabel(String(localized: "Diagram"))
+        view.loadHTMLString(html, baseURL: WebBlockAssets.baseURL)
+        return view
+    }
+
+    func updateNSView(_ view: WKWebView, context: Context) {}
+}
+#endif
 
 /// `$$ … $$` block rendered with KaTeX.
 struct MathBlock: View {

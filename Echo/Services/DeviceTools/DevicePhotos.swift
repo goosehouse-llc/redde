@@ -1,6 +1,10 @@
 import Foundation
 import Photos
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
 
 /// The photo library tools: finding photos by when they were taken, what kind they are and what
 /// they show, handing one over to be looked at, and deleting. A delete is put to the person by
@@ -47,7 +51,7 @@ nonisolated enum DevicePhotos {
     /// is not taken for "there is none".
     private static func search(for query: PhotoQuery, _ options: PHFetchOptions, _ wanted: @escaping (PHAsset) -> Bool, limit: Int,
                                index: PhotoIndex, patience: Duration) async throws -> JSONValue {
-        if #available(iOS 27, *) { options.prefetchAssetExtendedMetadata = true }
+        if #available(iOS 27, macOS 27, *) { options.prefetchAssetExtendedMetadata = true }
         var assets: [PHAsset] = []
         PHAsset.fetchAssets(with: options).enumerateObjects { asset, _, _ in
             if wanted(asset) { assets.append(asset) }
@@ -97,7 +101,7 @@ nonisolated enum DevicePhotos {
 
     /// What the person wrote on a picture in the Photos app. iOS shows it to other apps from 27.
     static func written(on asset: PHAsset) -> (caption: String?, keywords: [String]) {
-        guard #available(iOS 27, *) else { return (nil, []) }
+        guard #available(iOS 27, macOS 27, *) else { return (nil, []) }
         let more = asset.extendedMetadata
         return (more.caption?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty, more.keywords)
     }
@@ -145,7 +149,7 @@ nonisolated enum DevicePhotos {
         guard await allowed() else { throw DeviceToolError.refused(.photos) }
         let id = try args.required("id")
         let options = PHFetchOptions()
-        if #available(iOS 27, *) { options.prefetchAssetExtendedMetadata = true }   // its caption comes with it
+        if #available(iOS 27, macOS 27, *) { options.prefetchAssetExtendedMetadata = true }   // its caption comes with it
         guard let asset = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: options).firstObject else { throw DeviceToolError("There is no photo with that id.") }
         let edge = CGFloat(min(max(args["max_edge"]?.int ?? 1280, 256), 2048))
         let request = PHImageRequestOptions()

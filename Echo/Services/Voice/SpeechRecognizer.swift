@@ -362,8 +362,12 @@ final class SpeechRecognizer {
         }
         let micFormat = input.outputFormat(forBus: 0)
         let hardware = input.inputFormat(forBus: 0)
+        #if os(iOS)
         let route = AVAudioSession.sharedInstance().currentRoute
         Self.log.notice("listen: in \(route.inputs.map(\.portType.rawValue).joined(separator: ","), privacy: .public) out \(route.outputs.map(\.portType.rawValue).joined(separator: ","), privacy: .public) mic \(micFormat.sampleRate)Hz×\(micFormat.channelCount) hw \(hardware.sampleRate)Hz×\(hardware.channelCount) vp \(input.isVoiceProcessingEnabled)")
+        #else
+        Self.log.notice("listen: mic \(micFormat.sampleRate)Hz×\(micFormat.channelCount) hw \(hardware.sampleRate)Hz×\(hardware.channelCount) vp \(input.isVoiceProcessingEnabled)")
+        #endif
         // installTap raises an Objective-C exception for a microphone it can't tap, which ended
         // the app (with AirPods, 2026-10-22): a route with no microphone has no format at all, an
         // engine last run on another route can give the old rate, and a tap left on the bus by a

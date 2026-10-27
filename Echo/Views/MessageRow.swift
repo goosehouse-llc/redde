@@ -139,7 +139,7 @@ struct MessageRow: View, Equatable {
                 }
             } else if message.isSteer {
                 Label(message.text, systemImage: "arrow.turn.down.right")
-                    .font(.footnote)
+                    .chatFont(.footnote)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
@@ -213,12 +213,12 @@ struct MessageRow: View, Equatable {
         HStack(spacing: 6) {
             if isLive { LiveMark(color: theme.accent) }
             if let replyFace { BotAvatar(face: replyFace, name: replySpeaker ?? settings.headerTitle, size: 20) }
-            Text(replySpeaker ?? settings.headerTitle).font(.subheadline.weight(.semibold))
+            Text(replySpeaker ?? settings.headerTitle).chatFont(.subheadline, weight: .semibold)
             if isLive {
                 // The one place that shimmers while the reply is being worked on.
                 TimelineView(.periodic(from: message.createdAt, by: 1)) { context in
                     ShimmerText(text: String(localized: "is working · \(Self.elapsed(from: message.createdAt, to: context.date))"))
-                        .font(.subheadline)
+                        .chatFont(.subheadline)
                         .monospacedDigit()
                 }
             }
@@ -240,11 +240,11 @@ struct MessageRow: View, Equatable {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: "chevron.right")
-                    .font(.caption2.weight(.semibold))
+                    .chatFont(.caption2, weight: .semibold)
                     .rotationEffect(.degrees(open ? 90 : 0))
                 label()
             }
-            .font(.subheadline.weight(.medium))
+            .chatFont(.subheadline, weight: .medium)
             .foregroundStyle(.secondary)
             .padding(.vertical, 6)
             .padding(.trailing, 6)
@@ -288,7 +288,7 @@ struct MessageRow: View, Equatable {
         // While live, the newest part: with the start shown, a long think stopped moving once it
         // passed the line limit. The whole trace is there under "Thought" afterwards.
         Text(isLive ? Self.tail(of: message.reasoning, maxCharacters: 360) : message.reasoning)
-            .font(.footnote)
+            .chatFont(.footnote)
             .foregroundStyle(.secondary)
             .textSelection(.enabled)
             .lineLimit(isLive ? 8 : nil)
@@ -322,16 +322,16 @@ struct MessageRow: View, Equatable {
                                 HStack(alignment: .center, spacing: 12) {
                                     StepMark(status: tool.status, animated: isLive)
                                     VStack(alignment: .leading, spacing: 1) {
-                                        Text(BotMessages.stepName(tool) ?? tool.name).font(.subheadline)
+                                        Text(BotMessages.stepName(tool) ?? tool.name).chatFont(.subheadline)
                                             .foregroundStyle(tool.status == .running ? .primary : .secondary)
                                         if let preview = tool.preview, !preview.isEmpty {
-                                            Text(preview).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                            Text(preview).chatFont(.caption).foregroundStyle(.secondary).lineLimit(1)
                                         }
                                     }
                                     Spacer(minLength: 0)
                                     if canOpen {
                                         Image(systemName: "chevron.right")
-                                            .font(.caption2.weight(.semibold))
+                                            .chatFont(.caption2, weight: .semibold)
                                             .foregroundStyle(.tertiary)
                                             .rotationEffect(.degrees(isOpen ? 90 : 0))
                                     }
@@ -385,15 +385,15 @@ struct MessageRow: View, Equatable {
             if let output = tool.output {
                 detailBlock(String(localized: "Output", comment: "What a tool step returned"), output, lines: 12)
             } else if tool.status == .running {
-                Text("Still running.").font(.caption).foregroundStyle(.secondary)
+                Text("Still running.").chatFont(.caption).foregroundStyle(.secondary)
             } else if loadingDetails {
                 HStack(spacing: 6) {
                     ProgressView().controlSize(.mini)
                     Text("Fetching the output…")
                 }
-                .font(.caption).foregroundStyle(.secondary)
+                .chatFont(.caption).foregroundStyle(.secondary)
             } else {
-                Text("No output was kept for this step.").font(.caption).foregroundStyle(.secondary)
+                Text("No output was kept for this step.").chatFont(.caption).foregroundStyle(.secondary)
             }
             if tool.args != nil || tool.output != nil {
                 HStack(spacing: 18) {
@@ -401,7 +401,7 @@ struct MessageRow: View, Equatable {
                         .accessibilityLabel(tool.output != nil ? String(localized: "Copy output") : String(localized: "Copy input"))
                     Button(tool.output != nil ? String(localized: "Open full output") : String(localized: "Open in full")) { fullDetail = ToolDetail(tool) }
                 }
-                .font(.caption.weight(.medium))
+                .chatFont(.caption, weight: .medium)
                 .foregroundStyle(theme.accent)
                 .buttonStyle(.plain)
             }
@@ -412,9 +412,9 @@ struct MessageRow: View, Equatable {
 
     private func detailBlock(_ label: String, _ text: String, lines: Int) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(label).font(.caption2.weight(.semibold)).foregroundStyle(.secondary).textCase(.uppercase)
+            Text(label).chatFont(.caption2, weight: .semibold).foregroundStyle(.secondary).textCase(.uppercase)
             Text(Self.head(of: text, lines: lines))
-                .font(.caption.monospaced())
+                .chatFont(.caption, design: .monospaced)
                 .foregroundStyle(theme.textColor)
                 .lineLimit(lines)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -465,7 +465,7 @@ struct MessageRow: View, Equatable {
             if let metrics = message.metrics, metrics.completedAt != nil {
                 Button { withAnimation(.easeOut(duration: 0.15)) { fullMetrics.toggle() } } label: {
                     Text(fullMetrics ? metrics.summary : Self.compact(metrics))
-                        .font(.caption2.monospacedDigit())
+                        .chatFont(.caption2).monospacedDigit()
                         .lineLimit(1)
                         .padding(.leading, 6)
                 }
@@ -474,7 +474,7 @@ struct MessageRow: View, Equatable {
                 .accessibilityHint(fullMetrics ? String(localized: "Shows fewer timings") : String(localized: "Shows every timing"))
             }
         }
-        .font(.subheadline)
+        .chatFont(.subheadline)
         .foregroundStyle(.secondary)
         .padding(.leading, -7)
     }
@@ -644,7 +644,7 @@ private struct StepMark: View {
                     .stroke(.green, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
                     .padding(5)
             case .failed:
-                Image(systemName: "xmark").font(.caption.weight(.bold)).foregroundStyle(.red)
+                Image(systemName: "xmark").chatFont(.caption, weight: .bold).foregroundStyle(.red)
                     .frame(width: 20, height: 20).background(.red.opacity(0.16), in: .circle)
             }
         }
@@ -729,14 +729,14 @@ struct DeliveredMessage: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "chevron.right")
-                            .font(.caption2.weight(.semibold))
+                            .chatFont(.caption2, weight: .semibold)
                             .rotationEffect(.degrees(open ? 90 : 0))
                         if delivered.kind == .routine {
                             Image(systemName: "clock").frame(width: 20)
                         } else {
                             BotAvatar(face: face, name: name, size: 20)
                         }
-                        Text(heading).font(.subheadline.weight(.medium))
+                        Text(heading).chatFont(.subheadline, weight: .medium)
                     }
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 4)
@@ -747,7 +747,7 @@ struct DeliveredMessage: View {
             } else {
                 HStack(spacing: 6) {
                     BotAvatar(face: face, name: name, size: 20)
-                    Text(heading).font(.subheadline.weight(.semibold))
+                    Text(heading).chatFont(.subheadline, weight: .semibold)
                 }
             }
             if !unanswered, !folds || open {
@@ -771,7 +771,7 @@ struct DeliveredMessage: View {
     private var processLine: some View {
         Button { showingOutput = true } label: {
             Label(delivered.title ?? String(localized: "A background task finished"), systemImage: "gearshape.2")
-                .font(.footnote)
+                .chatFont(.footnote)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
@@ -799,8 +799,8 @@ struct InventedTurnNote: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "exclamationmark.bubble")
-                    Text("\(name) wrote a message as if from you").font(.footnote.weight(.medium))
-                    Image(systemName: "chevron.right").font(.caption2.weight(.semibold)).rotationEffect(.degrees(open ? 90 : 0))
+                    Text("\(name) wrote a message as if from you").chatFont(.footnote, weight: .medium)
+                    Image(systemName: "chevron.right").chatFont(.caption2, weight: .semibold).rotationEffect(.degrees(open ? 90 : 0))
                 }
                 .foregroundStyle(.orange)
                 .padding(.vertical, 4)
@@ -810,7 +810,7 @@ struct InventedTurnNote: View {
             .accessibilityHint(open ? String(localized: "Hides it") : String(localized: "Shows what it wrote. You didn't send it."))
             if open {
                 Text(invented)
-                    .font(.footnote)
+                    .chatFont(.footnote)
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
                     .padding(10)

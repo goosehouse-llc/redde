@@ -1,14 +1,22 @@
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
 
 /// Carries out one phone tool and gives back what it found or did, as the JSON the agent reads.
 /// The permission questions (is the area on, does the person have to be asked) are settled
 /// before this is called (`DeviceToolsService`).
 nonisolated struct DeviceToolRunner: Sendable {
     var files = DeviceFiles()
+    #if os(iOS)
     var alarms = DeviceAlarms()
+    #endif
     var board = DeviceBoard()
+    #if os(iOS)
     var people = DevicePeople()
+    #endif
 
     func run(_ tool: DeviceTool, _ args: JSONValue, info: JSONValue = .object([:])) async throws -> JSONValue {
         switch tool {
@@ -26,14 +34,22 @@ nonisolated struct DeviceToolRunner: Sendable {
         case .filesRead: try files.read(args)
         case .filesWrite: try files.write(args)
         case .filesDelete: try files.delete(args)
+        #if os(iOS)
         case .alarmsSet: try await alarms.set(args)
         case .alarmsList: try await alarms.list(args)
         case .alarmsCancel: try await alarms.cancel(args)
+        #else
+        case .alarmsSet, .alarmsList, .alarmsCancel: throw DeviceToolError("This Mac has no alarms or calls; that tool is the iPhone's.")
+        #endif
         case .widgetSet: try await board.set(args)
         case .widgetClear: try await board.clear(args)
         // A name is looked up in Contacts, which is for the person to have turned on.
+        #if os(iOS)
         case .peopleCall: try await people.call(args, contactsOn: info["areas"]?[DeviceArea.contacts.rawValue]?.string?.hasPrefix("on") == true)
         case .peopleMessage: try await people.message(args, contactsOn: info["areas"]?[DeviceArea.contacts.rawValue]?.string?.hasPrefix("on") == true)
+        #else
+        case .peopleCall, .peopleMessage: throw DeviceToolError("This Mac has no alarms or calls; that tool is the iPhone's.")
+        #endif
         }
     }
 }

@@ -53,6 +53,7 @@ nonisolated enum Quote {
     }
 }
 
+#if os(iOS)
 /// Text that can be selected a word, a sentence, a paragraph at a time. SwiftUI's own selectable
 /// `Text` has no say in the selection's menu, which is where "Ask about this" goes.
 struct SelectableTextView: UIViewRepresentable {
@@ -96,6 +97,61 @@ struct SelectableTextView: UIViewRepresentable {
         }
     }
 }
+#else
+/// The same on the Mac: a text view that selects as any Mac text does, and "Ask about this"
+/// heads the menu a right-click on a selection brings up.
+struct SelectableTextView: NSViewRepresentable {
+    let text: String
+    var monospaced = false
+    /// Heads the selection's menu with "Ask about this"; nil leaves the menu as the system's.
+    var onAsk: ((String) -> Void)?
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let scroll = NSTextView.scrollableTextView()
+        scroll.drawsBackground = false
+        if let view = scroll.documentView as? NSTextView {
+            view.isEditable = false
+            view.isSelectable = true
+            view.drawsBackground = false
+            view.textContainerInset = NSSize(width: 12, height: 16)
+            view.delegate = context.coordinator
+        }
+        return scroll
+    }
+
+    func updateNSView(_ scroll: NSScrollView, context: Context) {
+        context.coordinator.onAsk = onAsk
+        guard let view = scroll.documentView as? NSTextView else { return }
+        if view.string != text { view.string = text }
+        view.font = monospaced ? .monospacedSystemFont(ofSize: 12, weight: .regular) : .preferredFont(forTextStyle: .body)
+        view.textColor = .labelColor
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    final class Coordinator: NSObject, NSTextViewDelegate {
+        var onAsk: ((String) -> Void)?
+
+        func textView(_ view: NSTextView, menu: NSMenu, for event: NSEvent, at charIndex: Int) -> NSMenu? {
+            let range = view.selectedRange()
+            guard onAsk != nil, range.length > 0 else { return menu }
+            let selection = (view.string as NSString).substring(with: range)
+            guard !selection.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return menu }
+            let ask = NSMenuItem(title: String(localized: "Ask about this"), action: #selector(ask(_:)), keyEquivalent: "")
+            ask.target = self
+            ask.representedObject = selection
+            ask.image = NSImage(systemSymbolName: "quote.bubble", accessibilityDescription: nil)
+            menu.insertItem(ask, at: 0)
+            menu.insertItem(.separator(), at: 1)
+            return menu
+        }
+
+        @objc private func ask(_ item: NSMenuItem) {
+            if let selection = item.representedObject as? String { onAsk?(selection) }
+        }
+    }
+}
+#endif
 
 /// Settings → Appearance → Chat text size: the conversation set a few steps larger or smaller
 /// than the iPhone's own text size, on the system's scale, so it still follows that setting.
@@ -107,9 +163,16 @@ struct ChatTextSize: ViewModifier {
 
     func body(content: Content) -> some View {
         let size = Self.size(system, steps: settings.chatTextSize)
+        #if os(macOS)
+        // The Mac's text zoom (`TextZoom`): the theme's fonts take it, and so do the formulas.
+        let zoom = TextZoom.shared
+        content
+            .environment(\.chatFontPoints, zoom.isActualSize ? nil : TextZoom.points(.body) * zoom.scale)
+        #else
         content
             .dynamicTypeSize(size)
             .environment(\.chatFontPoints, settings.chatTextSize == 0 ? nil : Self.bodyPoints(at: size))
+        #endif
     }
 
     /// `steps` along the system's scale from `system`, stopping at either end of it.
@@ -121,7 +184,11 @@ struct ChatTextSize: ViewModifier {
 
     /// The body font's size in points at a text size, for what isn't drawn by SwiftUI (formulas).
     static func bodyPoints(at size: DynamicTypeSize) -> CGFloat {
+        #if canImport(UIKit)
         UIFont.preferredFont(forTextStyle: .body, compatibleWith: UITraitCollection(preferredContentSizeCategory: UIContentSizeCategory(size))).pointSize
+        #else
+        NSFont.preferredFont(forTextStyle: .body).pointSize   // a Mac's text has one size
+        #endif
     }
 
     /// What Settings calls each step.

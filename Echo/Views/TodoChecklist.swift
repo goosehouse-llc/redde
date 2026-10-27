@@ -19,19 +19,19 @@ struct TodoChecklist: View {
         let visible = showAll || items.count <= Self.shown + 1 ? items : Array(items.prefix(Self.shown))
         VStack(alignment: .leading, spacing: 7) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Tasks").font(.footnote.weight(.semibold))
+                Text("Tasks").chatFont(.footnote, weight: .semibold)
                 Spacer(minLength: 8)
-                Text(TodoList.summary(items)).font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                Text(TodoList.summary(items)).chatFont(.caption).foregroundStyle(.secondary).monospacedDigit()
             }
             ForEach(visible) { item in
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Image(systemName: Self.symbol(item.status))
-                        .font(.footnote)
+                        .chatFont(.footnote)
                         .foregroundStyle(tint(item.status))
                         .symbolEffect(.pulse, isActive: isLive && item.status == .inProgress)
                         .accessibilityHidden(true)
                     Text(item.content)
-                        .font(.footnote.weight(item.status == .inProgress ? .medium : .regular))
+                        .chatFont(.footnote, weight: item.status == .inProgress ? .medium : .regular)
                         .foregroundStyle(item.status == .inProgress ? .primary : .secondary)
                         .strikethrough(item.status == .cancelled)
                         .fixedSize(horizontal: false, vertical: true)
@@ -42,7 +42,7 @@ struct TodoChecklist: View {
             }
             if visible.count < items.count {
                 Button("Show all \(items.count)") { withAnimation(.snappy(duration: 0.25)) { showAll = true } }
-                    .font(.caption.weight(.medium))
+                    .chatFont(.caption, weight: .medium)
                     .foregroundStyle(theme.accent)
                     .buttonStyle(.plain)
             }

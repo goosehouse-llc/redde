@@ -1,7 +1,15 @@
 import Foundation
 import LinkPresentation
 import Observation
+#if canImport(UIKit)
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
+#else
+import AppKit
+#endif
 import UniformTypeIdentifiers
 import os
 
@@ -38,7 +46,9 @@ final class LinkPreviews {
         // Made-up pages are kept nowhere, so they never stand in for real ones later.
         let demo = DevHooks.has("-echo.demoLinkPreview")
         self.folder = demo ? nil : folder
+        #if canImport(UIKit)
         if demo { fetch = { await LinkPreviews.demo($0) } }
+        #endif
         #else
         self.folder = folder
         #endif
@@ -116,14 +126,19 @@ final class LinkPreviews {
         let data: Data? = await withCheckedContinuation { done in
             _ = item.loadDataRepresentation(for: .image) { data, _ in done.resume(returning: data) }
         }
+        #if canImport(UIKit)
         guard let data, let image = UIImage(data: data) else { return nil }
         let side: CGFloat = 240
         let scale = min(1, side / max(image.size.width, image.size.height, 1))
         let size = CGSize(width: (image.size.width * scale).rounded(), height: (image.size.height * scale).rounded())
         return (image.preparingThumbnail(of: size) ?? image).jpegData(compressionQuality: 0.8)
+        #else
+        guard let data else { return nil }
+        return ImageThumbnail.decode(data, maxPixel: 240)?.jpegData(compressionQuality: 0.8)
+        #endif
     }
 
-    #if DEBUG
+    #if DEBUG && canImport(UIKit)
     /// `-echo.demoLinkPreview`: made-up pages, at once, with no network (screenshots, UI tests).
     nonisolated static func demo(_ url: URL) async -> LinkPreview? {
         try? await Task.sleep(for: .milliseconds(300))

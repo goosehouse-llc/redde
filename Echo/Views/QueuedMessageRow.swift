@@ -15,7 +15,7 @@ struct QueuedMessageRow: View {
         VStack(alignment: .trailing, spacing: 6) {
             if !item.message.attachments.isEmpty {
                 Label(String(localized: "\(item.message.attachments.count) attachments"), systemImage: "paperclip")
-                    .font(.caption)
+                    .chatFont(.caption)
                     .foregroundStyle(.secondary)
             }
             if !item.message.text.isEmpty {
@@ -32,11 +32,11 @@ struct QueuedMessageRow: View {
             }
             HStack(spacing: 10) {
                 Label(statusText, systemImage: statusSymbol)
-                    .font(.caption)
+                    .chatFont(.caption)
                     .foregroundStyle(.secondary)
                 if isFirst, item.state != .queued {
                     Button("Send now", action: onSend)
-                        .font(.caption.weight(.semibold))
+                        .chatFont(.caption, weight: .semibold)
                         .buttonStyle(.bordered)
                         .controlSize(.mini)
                 }

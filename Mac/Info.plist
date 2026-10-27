@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ATSApplicationFontsPath</key>
+	<string>.</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Redde</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.productivity</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Redde can show your next event when you start a conversation, and attach a day's events to a message for your assistant. Events go only to your own server.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Redde uses the camera when you show your assistant something in voice mode. A picture goes only to the server you connect to.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>With Phone tools turned on, Redde looks up a contact when your assistant asks it to. What it finds goes only to the server you connect to.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Redde connects to the Hermes gateway or model server you configure, which is often on your local network.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Redde listens so you can talk to your assistant. Speech is transcribed on this device and only your own server receives the text, unless you start a live voice call, which goes to the voice service you chose.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>With Phone tools turned on, Redde finds photos, shows one to your assistant, or deletes the ones you confirm, when your assistant asks it to. A photo goes only to the server you connect to.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>With Phone tools turned on, Redde reads and adds reminders when your assistant asks it to. They go only to the server you connect to.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Redde turns what you say into text on this Mac, so you can talk to your assistant.</string>
+</dict>
+</plist>

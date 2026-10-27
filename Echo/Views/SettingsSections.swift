@@ -139,8 +139,11 @@ struct AppearanceSettings: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
+            #if os(iOS)
             AppIconSettings()
+            #endif
             VoiceOrbSettings()
+            #if os(iOS)
             // An iPad has no CarPlay.
             if UIDevice.current.userInterfaceIdiom == .phone {
                 CarPlayCardSettings()
@@ -148,6 +151,7 @@ struct AppearanceSettings: View {
                 // The Bots tab is there with Bots on the Dashboard (or the Hermes API through its login).
                 if BotDirectory.available(settings) { CarPlayBotSettings() }
             }
+            #endif
         } header: {
             Text("Appearance")
         } footer: {
@@ -400,11 +404,13 @@ struct AgentSettings<Details: View>: View {
                 : Text("The folders on the Hermes host: look at files, upload from this iPhone, make folders and delete. Needs the Hermes Dashboard login.")
         }
 
+        #if os(iOS)
         Section {
             NavigationLink { TerminalSettingsView() } label: { Label("Terminal", systemImage: "apple.terminal") }
         } footer: {
             Text("A shell on your Hermes server over SSH, signed in with a key made on this iPhone. Also in a chat's More menu, in the chat's folder.")
         }
+        #endif
 
         Section {
             NavigationLink { GatewayView() } label: { Label("Gateway", systemImage: "gearshape.2") }
@@ -721,6 +727,7 @@ struct NotificationSettings: View {
         } footer: {
             Text("Background notifications stop when iOS closes Redde; with this, your Hermes sends them from then on.")
         }
+        #if os(iOS)
         Section {
             NavigationLink { AgentCallsSettingsView() } label: {
                 LabeledContent("Calls from Agents", value: settings.agentCalls ? String(localized: "On") : String(localized: "Off"))
@@ -728,6 +735,7 @@ struct NotificationSettings: View {
         } footer: {
             Text("An agent you allow rings this iPhone like a phone call when something shouldn't wait.")
         }
+        #endif
         Section {
             Toggle("Live Activity while Redde works", isOn: $settings.showLiveActivity)
         } footer: {
@@ -738,7 +746,7 @@ struct NotificationSettings: View {
 
 /// Siri AI (iOS 27). Off by default because it is the one path where Apple's models, not
 /// just your own servers, see what you ask. See README → "Siri AI".
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 struct SiriSettings: View {
     @State private var settings = Settings.shared
 

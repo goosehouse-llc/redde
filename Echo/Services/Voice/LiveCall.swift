@@ -425,7 +425,11 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
         let now = mach_absolute_time()
         if speakerCheckedAt == 0 || AVAudioTime.seconds(forHostTime: now - speakerCheckedAt) > 1 {
             speakerCheckedAt = now
+            #if os(iOS)
             speakerNow = AVAudioSession.sharedInstance().currentRoute.outputs.contains { $0.portType == .builtInSpeaker || $0.portType == .builtInReceiver }
+            #else
+            speakerNow = true   // a Mac's own speakers, near its microphones
+            #endif
         }
         return speakerNow
     }
@@ -462,7 +466,11 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
     func clearReplyGaps() { state.withLock { $0.stats.replyGaps.removeAll() } }
 
     func snapshot() -> Snapshot {
+        #if os(iOS)
         let route = AVAudioSession.sharedInstance().currentRoute.outputs.map(\.portType.rawValue).joined(separator: "+")
+        #else
+        let route = "Mac"
+        #endif
         #if DEBUG
         let engineNote = describeEngine()
         #endif
@@ -487,13 +495,18 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
     #if DEBUG
     /// Whether the engine runs, and the formats and volumes between the voice and the speaker.
     private func describeEngine() -> String {
+        #if os(iOS)
         let session = AVAudioSession.sharedInstance()
+        let sessionRate = session.sampleRate, volume = session.outputVolume
+        #else
+        let sessionRate = 0.0, volume: Float = 1
+        #endif
         let into = engine.outputNode.inputFormat(forBus: 0), hardware = engine.outputNode.outputFormat(forBus: 0)
         let mixed = engine.mainMixerNode.outputFormat(forBus: 0)
         return String(format: "engine %@, mixer out %.0f Hz %u ch, into the output %.0f Hz %u ch, output %.0f Hz %u ch, session %.0f Hz, volume %.2f",
                       engine.isRunning ? "running" : "stopped",
                       mixed.sampleRate, mixed.channelCount, into.sampleRate, into.channelCount, hardware.sampleRate, hardware.channelCount,
-                      session.sampleRate, session.outputVolume)
+                      sessionRate, volume)
     }
     #endif
 
@@ -576,9 +589,11 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
     /// Voice processing switches the audio to voice chat, which on the iPhone's own speakers means
     /// the earpiece: back on the loudspeaker, unless a headset or the car has it.
     private static func keepOnSpeaker() {
+        #if os(iOS)
         let session = AVAudioSession.sharedInstance()
         guard session.currentRoute.outputs.contains(where: { $0.portType == .builtInReceiver }) else { return }
         try? session.overrideOutputAudioPort(.speaker)
+        #endif
     }
 
     #if DEBUG

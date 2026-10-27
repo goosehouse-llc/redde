@@ -206,8 +206,14 @@ nonisolated enum PushVault {
     static let account = "pairings"
 
     private static func query(_ account: String) -> [String: Any] {
+        #if os(macOS)
+        // A Mac's data protection keychain, the app group's: the file-based one asks.
+        [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
+         kSecAttrAccount as String: account, kSecAttrAccessGroup as String: group, kSecUseDataProtectionKeychain as String: true]
+        #else
         [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
          kSecAttrAccount as String: account, kSecAttrAccessGroup as String: group]
+        #endif
     }
 
     static func load(account: String = account) -> [PushPairing] {

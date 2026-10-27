@@ -92,8 +92,13 @@ private struct WakePhraseRow: View {
 
 extension View {
     /// Wake phrases held off while this is on screen (`WakeListener.Hold`).
+    #if os(iOS)
     func holdsWakePhrases(_ reason: WakeListener.Hold) -> some View {
         onAppear { WakeListener.shared.hold(reason) }
             .onDisappear { WakeListener.shared.release(reason) }
     }
+    #else
+    /// The Mac listens for no wake phrases yet: nothing to hold.
+    func holdsWakePhrases(_ reason: WakeHold) -> some View { self }
+    #endif
 }

@@ -269,6 +269,7 @@ nonisolated enum TodoList {
     /// The list as the Live Activity shows it: how many are done of how many, and the one in
     /// hand. Nil for a list of fewer than two tasks, which is not a list to follow. Of a task
     /// and its subtask both in hand, the subtask is the one being done.
+    #if os(iOS)
     static func progress(_ items: [TodoItem]) -> EchoTurnAttributes.ContentState.Progress? {
         let live = items.filter { $0.status != .cancelled }
         guard live.count >= 2 else { return nil }
@@ -277,6 +278,7 @@ nonisolated enum TodoList {
         let current = (active.first { !parents.contains($0.id) } ?? active.first)?.content
         return .init(done: live.count { $0.status == .completed }, total: live.count, current: current.map { String($0.prefix(90)) })
     }
+    #endif
 
     /// "2 of 5 done". Cancelled items are not work left to do, and not work done.
     static func summary(_ items: [TodoItem]) -> String {

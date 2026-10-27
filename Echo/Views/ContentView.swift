@@ -20,6 +20,9 @@ struct ContentView: View {
     /// What the composer held when "Edit & resend" took it over; it comes back when that ends.
     @State private var draftBeforeEditing: (text: String, attachments: [Attachment])?
     @State private var showSettings = false
+    #if os(macOS)
+    @Environment(\.openSettings) private var openSettings
+    #endif
     @State private var shareItem: ShareItem?
     /// Rename, from the header's menu.
     @State private var showRename = false
@@ -112,12 +115,24 @@ struct ContentView: View {
                 }
                 .readingFold($splitFold, vertical: true)
             } else {
+                #if os(iOS)
                 phoneLayout
+                #endif
             }
         }
         .environment(\.wideLayout, sizeClass == .regular)
         .environment(\.showSettingsSheet, SettingsOpener { showSettings = true })))
+        #if os(iOS)
         .sheet(isPresented: $showSettings, onDismiss: { WatchLink.shared.push() }) { SettingsView() }
+        #else
+        // The Mac's Settings window, wherever the iPhone opens its sheet.
+        .onChange(of: showSettings) { _, show in
+            guard show else { return }
+            showSettings = false
+            openSettings()
+        }
+        .focusedSceneValue(\.chatCommands, chatCommands)
+        #endif
         .sheet(isPresented: $showModelPicker) { NavigationStack { ModelPickerView() }.presentationDetents([.medium, .large]) }
         .sheet(isPresented: $showSetup, onDismiss: { WatchLink.shared.push() }) { SetupView() }
         .sheet(item: $setupCode, onDismiss: {
@@ -231,7 +246,9 @@ struct ContentView: View {
             // A Siri / control / share request that arrived while locked runs once unlocked.
             if !locked { consumeControlRequest(); handleLaunchRequest(); handleWake(); handleCaptureRequest(); consumeSharedItems(); handleDraftRequest(); handleSetupCode(); handlePushRequests(); handleCallScreen() }
             // An agent's call answered while Redde was locked: its microphone opens now.
+            #if os(iOS)
             if !locked { AgentCalls.shared.unlocked() }
+            #endif
             // "What's New" held back by the lock. A moment later, so a voice request opens first.
             if !locked { Task { try? await Task.sleep(for: .milliseconds(600)); presentWhatsNewIfDue() } }
         }
@@ -282,7 +299,10 @@ struct ContentView: View {
             consumeSharedItems()
             handleCallScreen()
             // (On an agent's call, voice mode is the call's: nothing new is started over it.)
-            guard Settings.shared.listenOnOpen, router.pendingVoice == nil, !voiceSession.mightBeBusy, AgentCalls.shared.current == nil else { return }
+            #if os(iOS)
+            guard AgentCalls.shared.current == nil else { return }
+            #endif
+            guard Settings.shared.listenOnOpen, router.pendingVoice == nil, !voiceSession.mightBeBusy else { return }
             Task { await launchVoice(handsFree: showVoice ? voiceSession.continuous : settings.handsFreeByDefault, fromOutside: true) }
         }
     }
@@ -325,7 +345,9 @@ struct ContentView: View {
             .onChange(of: sizeClass) { _, now in layoutChanged(wide: now == .regular) }
             .onChange(of: composerFocused) { _, focused in if !focused { focusLostAt = .now } }
             .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
+            #if os(iOS)
             .fullScreenCover(isPresented: $showTerminal) { TerminalScreen(folderLookup: terminalFolder) }
+            #endif
             .alert("Rename conversation", isPresented: $showRename) {
                 TextField("Name", text: $renameText)
                     // Return on the keyboard saves, like the button.
@@ -418,6 +440,9 @@ struct ContentView: View {
                 }
                     .animation(.snappy(duration: 0.3), value: conversation.followUps)
                     .frame(maxWidth: 820).frame(maxWidth: .infinity)
+                    #if os(macOS)
+                    .padding(.bottom, 10)   // clear of the window's edge, which a phone's home bar keeps it from
+                    #endif
                     // Solid themes have no glass field to hide the transcript scrolling past the composer.
                     .background(theme.usesGlass ? AnyShapeStyle(.clear) : AnyShapeStyle(theme.pageColor))
             }
@@ -496,7 +521,13 @@ struct ContentView: View {
                         }
                     }
                     .frame(maxWidth: 240)
+                    #if os(macOS)
+                    .fixedSize()   // a Mac toolbar sizes an item to its ideal width: without, it clipped the title
+                    #endif
                 }
+                #if os(macOS)
+                .sharedBackgroundVisibility(.hidden)   // a window's title, not a button in a capsule
+                #endif
                 ToolbarItem(placement: .topBarLeading) {
                     if showListButton {
                         Button("Conversations", systemImage: "list.bullet") { setDrawer(open: true) }
@@ -553,14 +584,20 @@ struct ContentView: View {
                             Button("New Incognito Chat", systemImage: "eyeglasses") { conversation.startIncognito() }
                                 .keyboardShortcut("n", modifiers: [.command, .shift])
                         }
+                        #if os(iOS)
                         if settings.transport.hasLedger {
                             Button("Terminal", systemImage: "apple.terminal") { showTerminal = true }
                         }
+                        #endif
                         Divider()
                         Button("Settings", systemImage: "gearshape") { showSettings = true }
                     } label: {
                         Label("More", systemImage: "ellipsis")
                     }
+                    #if os(macOS)
+                    .menuStyle(.automatic)   // the toolbar's own button, beside the next (not the app's plain menus)
+                    .menuIndicator(.hidden)
+                    #endif
                     if conversation.bot != nil {
                         // A bot has one chat: a new one is that chat started over (asked first).
                         Button("Start Fresh", systemImage: "arrow.counterclockwise") { confirmingFresh = true }
@@ -581,7 +618,9 @@ struct ContentView: View {
             .onChange(of: BotDirectory.shared.roster) { _, roster in
                 if let roster, BotDirectory.shared.key == settings.connectionKey { conversation.followBotName(in: roster, mainName: settings.headerTitle) }
             }
-            .background { keyboardShortcuts }
+            #if os(iOS)
+            .background { keyboardShortcuts }   // (the Mac's are in its menus: `chatCommands`)
+            #endif
     }
 
     // MARK: - iPad detail pane
@@ -605,6 +644,7 @@ struct ContentView: View {
 
     // MARK: - iPhone conversation list
 
+    #if os(iOS)
     /// iPhone: the chat, with the conversation list in a panel that slides in from the left.
     private var phoneLayout: some View {
         SidePanel(isOpen: $showConversations, openingFrom: $openingFromRow, openingTitle: headerTitle,
@@ -614,6 +654,7 @@ struct ContentView: View {
             ConversationsView(isShowing: showConversations, onOpened: { conversationOpened() })
         }
     }
+    #endif
 
     /// A conversation was opened from the list (or a new one started there). Picked from a row,
     /// it opens out of that row; otherwise, and under Reduce Motion, the list slides away.
@@ -651,6 +692,23 @@ struct ContentView: View {
 
     /// Hardware-keyboard shortcuts (iPad, Mac). Zero-size buttons still receive key equivalents,
     /// and they show up in the ⌘ overlay with these titles.
+    #if os(macOS)
+    /// The iPad's keyboard shortcuts, as the Mac's menu bar has them (`ReddeCommands`).
+    private var chatCommands: ChatCommands {
+        ChatCommands(
+            newConversation: { conversation.reset() },
+            newIncognito: conversation.isIncognito ? nil : { conversation.startIncognito() },
+            voice: { openVoice(fromOutside: false) },
+            focusComposer: { composerFocused = true },
+            chooseModel: { showModelPicker = true },
+            find: conversation.hasMessages ? { withAnimation { showSearch.toggle() } } : nil,
+            stop: conversation.isStreaming ? { conversation.cancel() } : nil,
+            export: conversation.hasMessages ? {
+                if let url = try? TranscriptExporter.file(title: conversation.title, messages: conversation.messages) { shareItem = ShareItem(url: url) }
+            } : nil)
+    }
+    #endif
+
     private var keyboardShortcuts: some View {
         Group {
             Button("Settings") { showSettings = true }.keyboardShortcut(",", modifiers: .command)
@@ -951,7 +1009,9 @@ struct ContentView: View {
     private func handleWake() {
         guard !lock.isLocked, let wake = router.consumeWake() else { return }
         Task {
+            #if os(iOS)
             defer { WakeListener.shared.release(.handoff) }
+            #endif
             let here = conversation.bot?.profile
             let there = wake.profile.map { here == $0 } ?? (here == nil || here == "default")
             if !there {

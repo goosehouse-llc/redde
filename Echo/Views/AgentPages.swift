@@ -186,9 +186,15 @@ nonisolated enum PageChrome {
 
     /// A colour as CSS, in the appearance the page is drawn in.
     static func css(_ color: Color, dark: Bool) -> String {
-        let ui = UIColor(color).resolvedColor(with: UITraitCollection(userInterfaceStyle: dark ? .dark : .light))
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        #if canImport(UIKit)
+        let ui = UIColor(color).resolvedColor(with: UITraitCollection(userInterfaceStyle: dark ? .dark : .light))
         ui.getRed(&r, green: &g, blue: &b, alpha: &a)
+        #else
+        NSAppearance(named: dark ? .darkAqua : .aqua)?.performAsCurrentDrawingAppearance {
+            (NSColor(color).usingColorSpace(.sRGB) ?? .black).getRed(&r, green: &g, blue: &b, alpha: &a)
+        }
+        #endif
         let c = [r, g, b].map { Int((min(max($0, 0), 1) * 255).rounded()) }
         return a >= 0.999 ? String(format: "#%02X%02X%02X", c[0], c[1], c[2])
             : String(format: "rgba(%d,%d,%d,%.3f)", c[0], c[1], c[2], Double(a))
@@ -264,6 +270,7 @@ extension EnvironmentValues {
 }
 
 /// The web view a page lives in.
+#if os(iOS)
 struct PageWebView: UIViewRepresentable {
     let html: String
     let heightKey: String
@@ -274,17 +281,7 @@ struct PageWebView: UIViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeUIView(context: Context) -> PageView {
-        let config = WKWebViewConfiguration()
-        // Nothing a page keeps outlives it.
-        config.websiteDataStore = .nonPersistent()
-        config.preferences.javaScriptCanOpenWindowsAutomatically = false
-        config.dataDetectorTypes = []
-        let content = config.userContentController
-        content.addUserScript(WKUserScript(source: PageChrome.bridge, injectionTime: .atDocumentStart, forMainFrameOnly: true, in: .page))
-        content.addUserScript(WKUserScript(source: PageChrome.measure, injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: .defaultClient))
-        content.addScriptMessageHandler(context.coordinator, contentWorld: .page, name: "hermes")
-        content.add(context.coordinator, contentWorld: .defaultClient, name: "pageSize")
-        let view = PageView(frame: .zero, configuration: config)
+        let view = PageView(frame: .zero, configuration: Self.configuration(context.coordinator))
         view.isOpaque = false
         view.backgroundColor = .clear
         view.scrollView.backgroundColor = .clear
@@ -306,6 +303,47 @@ struct PageWebView: UIViewRepresentable {
         view.show(html)
     }
 
+    static func dismantleUIView(_ view: PageView, coordinator: Coordinator) {
+        view.configuration.userContentController.removeAllScriptMessageHandlers()
+    }
+}
+#else
+struct PageWebView: NSViewRepresentable {
+    let html: String
+    let heightKey: String
+    @Binding var height: CGFloat
+    @Binding var width: CGFloat?
+    let onSend: (String) -> Bool
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeNSView(context: Context) -> PageView {
+        let view = PageView(frame: .zero, configuration: Self.configuration(context.coordinator))
+        view.underPageBackgroundColor = .clear
+        view.setValue(false, forKey: "drawsBackground")   // the reply's own background shows through
+        view.navigationDelegate = context.coordinator
+        view.uiDelegate = context.coordinator
+        #if DEBUG
+        view.isInspectable = true
+        #endif
+        context.coordinator.view = view
+        update(context.coordinator)
+        view.show(html)
+        return view
+    }
+
+    func updateNSView(_ view: PageView, context: Context) {
+        update(context.coordinator)
+        view.show(html)
+    }
+
+    static func dismantleNSView(_ view: PageView, coordinator: Coordinator) {
+        view.configuration.userContentController.removeAllScriptMessageHandlers()
+    }
+}
+#endif
+
+extension PageWebView {
     private func update(_ coordinator: Coordinator) {
         coordinator.heightKey = heightKey
         coordinator.height = $height
@@ -313,8 +351,22 @@ struct PageWebView: UIViewRepresentable {
         coordinator.onSend = onSend
     }
 
-    static func dismantleUIView(_ view: PageView, coordinator: Coordinator) {
-        view.configuration.userContentController.removeAllScriptMessageHandlers()
+    /// What every page is given: nothing kept after it, no windows of its own, Redde's bridge
+    /// and its measuring.
+    static func configuration(_ coordinator: Coordinator) -> WKWebViewConfiguration {
+        let config = WKWebViewConfiguration()
+        // Nothing a page keeps outlives it.
+        config.websiteDataStore = .nonPersistent()
+        config.preferences.javaScriptCanOpenWindowsAutomatically = false
+        #if os(iOS)
+        config.dataDetectorTypes = []
+        #endif
+        let content = config.userContentController
+        content.addUserScript(WKUserScript(source: PageChrome.bridge, injectionTime: .atDocumentStart, forMainFrameOnly: true, in: .page))
+        content.addUserScript(WKUserScript(source: PageChrome.measure, injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: .defaultClient))
+        content.addScriptMessageHandler(coordinator, contentWorld: .page, name: "hermes")
+        content.add(coordinator, contentWorld: .defaultClient, name: "pageSize")
+        return config
     }
 
     /// Loads only once it has a width: a page laid out at none measures as one tall column.
@@ -334,8 +386,19 @@ struct PageWebView: UIViewRepresentable {
             loadHTMLString(html, baseURL: nil)
         }
 
+        #if os(iOS)
         override func layoutSubviews() {
             super.layoutSubviews()
+            resized()
+        }
+        #else
+        override func layout() {
+            super.layout()
+            resized()
+        }
+        #endif
+
+        private func resized() {
             guard abs(bounds.width - lastWidth) > 0.5 else { return }
             lastWidth = bounds.width
             if let waiting, bounds.width > 0 { load(waiting); return }
@@ -369,7 +432,9 @@ struct PageWebView: UIViewRepresentable {
             if let w = (body["width"] as? NSNumber).map({ CGFloat(truncating: $0) }), w > 0, let width, width.wrappedValue == nil {
                 width.wrappedValue = w.rounded(.up)
             }
+            #if os(iOS)
             view.scrollView.isScrollEnabled = reported > PageChrome.maxHeight || view.scrollView.contentSize.width > view.bounds.width + 1
+            #endif
         }
 
         // What the page sends.

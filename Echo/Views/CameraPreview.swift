@@ -2,6 +2,7 @@ import AVFoundation
 import SwiftUI
 
 /// A running camera's picture, filling whatever frame it is given.
+#if os(iOS)
 struct CameraPreview: UIViewRepresentable {
     let session: AVCaptureSession
 
@@ -53,3 +54,20 @@ struct CameraPreview: UIViewRepresentable {
         }
     }
 }
+#else
+/// The Mac's: its camera's picture in a layer-backed view, filling the frame.
+struct CameraPreview: NSViewRepresentable {
+    let session: AVCaptureSession
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        let preview = AVCaptureVideoPreviewLayer(session: session)
+        preview.videoGravity = .resizeAspectFill
+        view.layer = preview
+        view.wantsLayer = true
+        return view
+    }
+
+    func updateNSView(_ view: NSView, context: Context) {}
+}
+#endif

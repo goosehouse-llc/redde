@@ -1,7 +1,11 @@
 import AppIntents
 import Foundation
 import os
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
 
 /// Shortcuts action: "Ask Hermes ⟨question⟩" → reply as text. Runs in the background using the
 /// transport selected in Settings; over the Hermes transports the exchange lands in a dedicated
@@ -70,7 +74,7 @@ enum ShortcutRunner {
         // With App lock on, a question waits for the iPhone to be unlocked, as Siri's and the share
         // sheet's do: its keys can be read while it is locked (`Keychain`), and the reply would be
         // read out on the Lock Screen. A note still goes: nothing comes back from one.
-        if thread == .shortcuts, AppLock.shared.isEnabled, !UIApplication.shared.isProtectedDataAvailable { throw IntentError.locked }
+        if thread == .shortcuts, AppLock.shared.isEnabled, !AppState.isProtectedDataAvailable { throw IntentError.locked }
         guard let url = settings.activeBaseURL else { throw IntentError.notConfigured }
         let key = settings.gatewayAPIKey
 

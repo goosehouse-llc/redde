@@ -1,5 +1,9 @@
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
 
 /// A picture as the full-screen viewer takes it: its place among the others, what to call it,
 /// and how to get it at full size (off the main actor: it may be read from disk and decoded).
@@ -28,6 +32,7 @@ struct ViewerPhoto: Identifiable {
     }
 }
 
+#if os(iOS)
 /// Pictures full screen, as Messages and Photos show them: swipe sideways from one to the next,
 /// pinch or double-tap to zoom, drag a zoomed picture about, tap to clear the screen of
 /// everything but the picture. Closing is the Close button, or the system's own gestures for a
@@ -382,3 +387,74 @@ final class ZoomingPictureView: UIScrollView, UIScrollViewDelegate {
         }
     }
 }
+#else
+/// Pictures in a sheet of their own, as Quick Look shows them on a Mac: the arrow keys or the
+/// buttons for the next one, a pinch to zoom (double-click for back to fit), Escape to close.
+struct PhotoViewer: View {
+    let photos: [ViewerPhoto]
+    @Binding var showing: String?
+    @Environment(\.dismiss) private var dismiss
+    @State private var image: NSImage?
+    @State private var zoom: CGFloat = 1
+    @State private var pinch: CGFloat = 1
+
+    private var place: Int { photos.firstIndex { $0.id == showing } ?? 0 }
+    private var photo: ViewerPhoto? { photos.indices.contains(place) ? photos[place] : nil }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            GeometryReader { room in
+                ScrollView([.horizontal, .vertical]) {
+                    Group {
+                        if let image {
+                            Image(nsImage: image).resizable().scaledToFit()
+                                .accessibilityLabel(photo?.name ?? "")
+                        } else {
+                            ProgressView()
+                        }
+                    }
+                    .frame(width: room.size.width * zoom * pinch, height: room.size.height * zoom * pinch)
+                }
+                .scrollIndicators(zoom * pinch > 1 ? .automatic : .hidden)
+            }
+            .background(.black)
+            .gesture(MagnifyGesture()
+                .onChanged { pinch = $0.magnification }
+                .onEnded { _ in zoom = min(6, max(1, zoom * pinch)); pinch = 1 })
+            .onTapGesture(count: 2) { withAnimation(.snappy) { zoom = 1 } }
+            HStack(spacing: 12) {
+                if photos.count > 1 {
+                    Button("Previous", systemImage: "chevron.left") { go(-1) }
+                        .labelStyle(.iconOnly)
+                        .disabled(place == 0)
+                    Button("Next", systemImage: "chevron.right") { go(1) }
+                        .labelStyle(.iconOnly)
+                        .disabled(place >= photos.count - 1)
+                }
+                Text(photo?.caption.isEmpty == false ? photo!.caption : photos.count > 1 ? String(localized: "\(place + 1) of \(photos.count)") : "")
+                    .lineLimit(2)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button("Done") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+            }
+            .padding(12)
+        }
+        .frame(minWidth: 640, idealWidth: 900, minHeight: 480, idealHeight: 700)
+        .task(id: photo?.id) {
+            zoom = 1
+            image = nil
+            image = await photo?.load()
+        }
+        .focusable()
+        .onKeyPress(.leftArrow) { go(-1); return .handled }
+        .onKeyPress(.rightArrow) { go(1); return .handled }
+    }
+
+    private func go(_ step: Int) {
+        let next = place + step
+        guard photos.indices.contains(next) else { return }
+        showing = photos[next].id
+    }
+}
+#endif

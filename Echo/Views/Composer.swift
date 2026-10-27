@@ -94,10 +94,11 @@ struct WaveformPulse: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        Bars(color: UIColor(color), barCount: barCount, height: height, spacing: spacing, shape: shape, still: still || reduceMotion)
+        Bars(color: PlatformColor(color), barCount: barCount, height: height, spacing: spacing, shape: shape, still: still || reduceMotion)
             .frame(width: WaveformBarsView.width(barCount: barCount, spacing: spacing), height: height)
     }
 
+    #if os(iOS)
     private struct Bars: UIViewRepresentable {
         var color: UIColor
         var barCount: Int
@@ -112,8 +113,25 @@ struct WaveformPulse: View {
             view.configure(color: color, barCount: barCount, height: height, spacing: spacing, shape: shape, still: still)
         }
     }
+    #else
+    private struct Bars: NSViewRepresentable {
+        var color: NSColor
+        var barCount: Int
+        var height: CGFloat
+        var spacing: CGFloat
+        var shape: [CGFloat]
+        var still: Bool
+
+        func makeNSView(context: Context) -> WaveformBarsView { WaveformBarsView() }
+
+        func updateNSView(_ view: WaveformBarsView, context: Context) {
+            view.configure(color: color, barCount: barCount, height: height, spacing: spacing, shape: shape, still: still)
+        }
+    }
+    #endif
 }
 
+#if os(iOS)
 final class WaveformBarsView: UIView {
     private static let barWidth: CGFloat = 4
     /// Resting shape mirrors the icon (tall middle); each bar breathes down to 35% of it.
@@ -205,6 +223,100 @@ final class WaveformBarsView: UIView {
         }
     }
 }
+#else
+/// The same bars on the Mac: layers in a layer-backed view, Core Animation running them.
+final class WaveformBarsView: NSView {
+    private static let barWidth: CGFloat = 4
+    /// Resting shape mirrors the icon (tall middle); each bar breathes down to 35% of it.
+    static let iconShape: [CGFloat] = [0.45, 0.75, 1.0, 0.75, 0.45]
+    private static let animationKey = "breathe"
+
+    static func width(barCount: Int, spacing: CGFloat) -> CGFloat { max(0, CGFloat(barCount) * (barWidth + spacing) - spacing) }
+
+    private var bars: [CALayer] = []
+    private var color = NSColor.controlAccentColor
+    private var barHeight: CGFloat = 20
+    private var spacing: CGFloat = 4
+    private var rest = WaveformBarsView.iconShape
+    private var still = false
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        wantsLayer = true
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("not used from a nib") }
+
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+    func configure(color: NSColor, barCount: Int, height: CGFloat, spacing: CGFloat, shape: [CGFloat], still: Bool) {
+        let changed = barCount != bars.count || height != barHeight || spacing != self.spacing || shape != rest || still != self.still
+        self.color = color
+        barHeight = height
+        self.spacing = spacing
+        rest = shape.isEmpty ? Self.iconShape : shape
+        self.still = still
+        if barCount != bars.count {
+            bars.forEach { $0.removeFromSuperlayer() }
+            bars = (0 ..< barCount).map { _ in
+                let bar = CALayer()
+                bar.cornerRadius = Self.barWidth / 2
+                layer?.addSublayer(bar)
+                return bar
+            }
+        }
+        applyColor()
+        if changed { needsLayout = true }
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        applyColor()
+    }
+
+    private func applyColor() {
+        var resolved = color.cgColor
+        effectiveAppearance.performAsCurrentDrawingAppearance { resolved = color.cgColor }
+        bars.forEach { $0.backgroundColor = resolved }
+    }
+
+    private func restHeight(_ index: Int) -> CGFloat { barHeight * rest[index % rest.count] }
+
+    override func layout() {
+        super.layout()
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        for (i, bar) in bars.enumerated() {
+            bar.bounds = CGRect(x: 0, y: 0, width: Self.barWidth, height: restHeight(i))
+            bar.position = CGPoint(x: CGFloat(i) * (Self.barWidth + spacing) + Self.barWidth / 2, y: bounds.midY)
+        }
+        CATransaction.commit()
+        animate()
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        animate()
+    }
+
+    private func animate() {
+        for (i, bar) in bars.enumerated() {
+            bar.removeAnimation(forKey: Self.animationKey)
+            guard !still, window != nil else { continue }
+            let breathe = CABasicAnimation(keyPath: "bounds.size.height")
+            breathe.fromValue = max(4, restHeight(i) * 0.35)
+            breathe.toValue = max(4, restHeight(i))
+            breathe.duration = .pi / 5
+            breathe.autoreverses = true
+            breathe.repeatCount = .infinity
+            breathe.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            breathe.beginTime = bar.convertTime(CACurrentMediaTime(), from: nil) - Double(i) * 0.18
+            bar.add(breathe, forKey: Self.animationKey)
+        }
+    }
+}
+#endif
 
 /// Settings → Return key, for a message field: with Return set to send, Return sends and a
 /// keyboard's Shift-Return is the line break; otherwise Return is a line break and ⌘Return sends.

@@ -35,13 +35,13 @@ struct LinkPreviewCard: View {
                     .clipShape(.rect(cornerRadius: 8))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(preview?.title ?? site)
-                        .font(.subheadline.weight(.semibold))
+                        .chatFont(.subheadline, weight: .semibold)
                         .foregroundStyle(theme.textColor)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                     if preview?.title != nil {
                         Text(site)
-                            .font(.caption)
+                            .chatFont(.caption)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
@@ -71,7 +71,7 @@ struct LinkPreviewCard: View {
             Image(uiImage: image).resizable().scaledToFill()
         } else {
             Image(systemName: "link")
-                .font(.title3.weight(.semibold))
+                .chatFont(.title3, weight: .semibold)
                 .foregroundStyle(theme.accent)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(theme.accent.opacity(0.12))

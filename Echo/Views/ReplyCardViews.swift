@@ -94,7 +94,7 @@ private struct MapCard: View {
 
     var body: some View {
         CardBox {
-            if let title = card.title { Text(title).font(.subheadline.weight(.semibold)) }
+            if let title = card.title { Text(title).chatFont(.subheadline, weight: .semibold) }
             MapPicture(places: pins, route: route)
                 .frame(height: 190)
                 .clipShape(.rect(cornerRadius: 12))
@@ -106,19 +106,19 @@ private struct MapCard: View {
                 .accessibilityHint(card.route == nil ? String(localized: "Opens it in Maps") : String(localized: "Opens the directions in Maps"))
             HStack(spacing: 10) {
                 if let r = card.route {
-                    Label(Self.modeName(r.mode), systemImage: Self.modeSymbol(r.mode)).font(.footnote.weight(.medium))
+                    Label(Self.modeName(r.mode), systemImage: Self.modeSymbol(r.mode)).chatFont(.footnote, weight: .medium)
                     if let route {
-                        Text("\(Self.duration(route.expectedTravelTime)) · \(Self.distance(route.distance))").font(.footnote).foregroundStyle(.secondary)
+                        Text("\(Self.duration(route.expectedTravelTime)) · \(Self.distance(route.distance))").chatFont(.footnote).foregroundStyle(.secondary)
                     } else {
-                        Text("\(r.from?.name ?? String(localized: "From here")) to \(r.to.name)").font(.footnote).foregroundStyle(.secondary).lineLimit(1)
+                        Text("\(r.from?.name ?? String(localized: "From here")) to \(r.to.name)").chatFont(.footnote).foregroundStyle(.secondary).lineLimit(1)
                     }
                     Spacer(minLength: 0)
                     Button("Directions", systemImage: "arrow.triangle.turn.up.right.diamond.fill", action: open)
-                        .font(.footnote.weight(.semibold)).buttonStyle(.borderless)
+                        .chatFont(.footnote, weight: .semibold).buttonStyle(.borderless)
                 } else {
-                    Text(pins.map(\.name).formatted()).font(.footnote).foregroundStyle(.secondary).lineLimit(2)
+                    Text(pins.map(\.name).formatted()).chatFont(.footnote).foregroundStyle(.secondary).lineLimit(2)
                     Spacer(minLength: 0)
-                    Button("Open in Maps", systemImage: "map", action: open).font(.footnote.weight(.semibold)).buttonStyle(.borderless)
+                    Button("Open in Maps", systemImage: "map", action: open).chatFont(.footnote, weight: .semibold).buttonStyle(.borderless)
                 }
             }
         }
@@ -219,7 +219,7 @@ private struct PlacesCard: View {
 
     var body: some View {
         CardBox {
-            if let title = card.title { Text(title).font(.subheadline.weight(.semibold)) }
+            if let title = card.title { Text(title).chatFont(.subheadline, weight: .semibold) }
             if card.places.count > 1 {
                 MapPicture(places: card.places, route: nil, numbered: true)
                     .frame(height: 140)
@@ -238,16 +238,16 @@ private struct PlacesCard: View {
     private func row(_ place: ReplyCard.Place, index: Int) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Text("\(index + 1)")
-                .font(.caption.weight(.bold).monospacedDigit())
+                .chatFont(.caption, weight: .bold).monospacedDigit()
                 .foregroundStyle(.white)
                 .frame(width: 20, height: 20)
                 .background(.red, in: .circle)
             VStack(alignment: .leading, spacing: 2) {
-                Text(place.name).font(.subheadline.weight(.semibold))
+                Text(place.name).chatFont(.subheadline, weight: .semibold)
                 let line = [place.category, place.rating.map { "★ " + $0.formatted(.number.precision(.fractionLength(1))) }].compactMap(\.self)
-                if !line.isEmpty { Text(line.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary) }
-                if let address = place.address { Text(address).font(.caption).foregroundStyle(.secondary).lineLimit(2) }
-                if let note = place.note { Text(note).font(.caption).lineLimit(3) }
+                if !line.isEmpty { Text(line.joined(separator: " · ")).chatFont(.caption).foregroundStyle(.secondary) }
+                if let address = place.address { Text(address).chatFont(.caption).foregroundStyle(.secondary).lineLimit(2) }
+                if let note = place.note { Text(note).chatFont(.caption).lineLimit(3) }
             }
             Spacer(minLength: 0)
             HStack(spacing: 14) {
@@ -262,7 +262,7 @@ private struct PlacesCard: View {
                     .disabled(lookup.coordinate(of: place) == nil)
                     .accessibilityLabel("Open \(place.name) in Maps")
             }
-            .font(.callout)
+            .chatFont(.callout)
         }
         .accessibilityElement(children: .contain)
     }
@@ -290,14 +290,14 @@ private struct WeatherCard: View {
                 HStack(alignment: .center, spacing: 12) {
                     Image(systemName: Self.symbol(now.condition, night: now.night == true)).symbolRenderingMode(.multicolor).font(.system(size: 40))
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(card.place).font(.subheadline.weight(.semibold))
-                        Text(now.summary ?? Self.name(now.condition)).font(.caption).foregroundStyle(.secondary)
+                        Text(card.place).chatFont(.subheadline, weight: .semibold)
+                        Text(now.summary ?? Self.name(now.condition)).chatFont(.caption).foregroundStyle(.secondary)
                     }
                     Spacer(minLength: 0)
                     VStack(alignment: .trailing, spacing: 0) {
-                        Text(degrees(now.temperature)).font(.system(size: 34, weight: .semibold)).monospacedDigit()
+                        Text(degrees(now.temperature)).chatFont(size: 34, weight: .semibold).monospacedDigit()
                         if let high = now.high, let low = now.low {
-                            Text("H \(degrees(high))  L \(degrees(low))").font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                            Text("H \(degrees(high))  L \(degrees(low))").chatFont(.caption).foregroundStyle(.secondary).monospacedDigit()
                         }
                     }
                 }
@@ -306,10 +306,10 @@ private struct WeatherCard: View {
                                now.humidity.map { String(localized: "Humidity \($0.formatted(.percent))") },
                                now.precipitation.map { String(localized: "Rain \($0.formatted(.percent))", comment: "Chance of rain") }].compactMap(\.self)
                 if !details.isEmpty {
-                    Text(details.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+                    Text(details.joined(separator: " · ")).chatFont(.caption).foregroundStyle(.secondary)
                 }
             } else {
-                Text(card.place).font(.subheadline.weight(.semibold))
+                Text(card.place).chatFont(.subheadline, weight: .semibold)
             }
             if !card.hours.isEmpty {
                 Divider()
@@ -317,10 +317,10 @@ private struct WeatherCard: View {
                     HStack(spacing: 16) {
                         ForEach(Array(card.hours.enumerated()), id: \.offset) { _, hour in
                             VStack(spacing: 4) {
-                                Text(Self.hourLabel(hour.time)).font(.caption2).foregroundStyle(.secondary)
-                                Image(systemName: Self.symbol(hour.condition, night: hour.night == true)).symbolRenderingMode(.multicolor).font(.callout).frame(height: 22)
-                                Text(degrees(hour.temperature)).font(.caption.weight(.medium)).monospacedDigit()
-                                if let rain = hour.precipitation, rain > 0 { Text(rain.formatted(.percent)).font(.caption2).foregroundStyle(.blue) }
+                                Text(Self.hourLabel(hour.time)).chatFont(.caption2).foregroundStyle(.secondary)
+                                Image(systemName: Self.symbol(hour.condition, night: hour.night == true)).symbolRenderingMode(.multicolor).chatFont(.callout).frame(height: 22)
+                                Text(degrees(hour.temperature)).chatFont(.caption, weight: .medium).monospacedDigit()
+                                if let rain = hour.precipitation, rain > 0 { Text(rain.formatted(.percent)).chatFont(.caption2).foregroundStyle(.blue) }
                             }
                             .accessibilityElement(children: .combine)
                         }
@@ -333,12 +333,12 @@ private struct WeatherCard: View {
                 let low = card.days.map(\.low).min() ?? 0, high = card.days.map(\.high).max() ?? 1
                 ForEach(Array(card.days.enumerated()), id: \.offset) { _, day in
                     HStack(spacing: 10) {
-                        Text(Self.dayLabel(day.date)).font(.caption.weight(.medium)).frame(width: 44, alignment: .leading)
+                        Text(Self.dayLabel(day.date)).chatFont(.caption, weight: .medium).frame(width: 44, alignment: .leading)
                         Image(systemName: Self.symbol(day.condition)).symbolRenderingMode(.multicolor).frame(width: 24)
-                        Text(day.precipitation.map { $0 > 0 ? $0.formatted(.percent) : "" } ?? "").font(.caption2).foregroundStyle(.blue).frame(width: 32, alignment: .leading)
-                        Text(degrees(day.low)).font(.caption).foregroundStyle(.secondary).monospacedDigit().frame(width: 34, alignment: .trailing)
+                        Text(day.precipitation.map { $0 > 0 ? $0.formatted(.percent) : "" } ?? "").chatFont(.caption2).foregroundStyle(.blue).frame(width: 32, alignment: .leading)
+                        Text(degrees(day.low)).chatFont(.caption).foregroundStyle(.secondary).monospacedDigit().frame(width: 34, alignment: .trailing)
                         TemperatureBar(low: day.low, high: day.high, from: low, to: high)
-                        Text(degrees(day.high)).font(.caption.weight(.medium)).monospacedDigit().frame(width: 34, alignment: .leading)
+                        Text(degrees(day.high)).chatFont(.caption, weight: .medium).monospacedDigit().frame(width: 34, alignment: .leading)
                     }
                     .accessibilityElement(children: .combine)
                 }
@@ -346,9 +346,9 @@ private struct WeatherCard: View {
             if card.source == ReplyCards.lookedUpSource {
                 // Open-Meteo's data is under CC BY 4.0: credited, with a link.
                 Link("Weather data by Open-Meteo.com", destination: URL(string: "https://open-meteo.com/")!)
-                    .font(.caption2).foregroundStyle(.tertiary)
+                    .chatFont(.caption2).foregroundStyle(.tertiary)
             } else if let source = card.source {
-                Text(source).font(.caption2).foregroundStyle(.tertiary)
+                Text(source).chatFont(.caption2).foregroundStyle(.tertiary)
             }
         }
     }
@@ -419,7 +419,7 @@ private struct LookingUp: View {
     var body: some View {
         HStack(spacing: 10) {
             ProgressView()
-            Text(text).font(.subheadline).foregroundStyle(.secondary)
+            Text(text).chatFont(.subheadline).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -463,13 +463,13 @@ private struct TimeCard: View {
         return HStack(alignment: .center, spacing: 12) {
             ClockFace(date: date, zone: zone).frame(width: 44, height: 44)
             VStack(alignment: .leading, spacing: 0) {
-                Text(card.place ?? String(localized: "Your time")).font(.subheadline.weight(.semibold))
-                Text(date.formatted(day)).font(.caption).foregroundStyle(.secondary)
+                Text(card.place ?? String(localized: "Your time")).chatFont(.subheadline, weight: .semibold)
+                Text(date.formatted(day)).chatFont(.caption).foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)
             VStack(alignment: .trailing, spacing: 0) {
-                Text(date.formatted(clock)).font(.system(size: 34, weight: .semibold)).monospacedDigit()
-                if let second { Text(second).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
+                Text(date.formatted(clock)).chatFont(size: 34, weight: .semibold).monospacedDigit()
+                if let second { Text(second).chatFont(.caption).foregroundStyle(.secondary).lineLimit(1) }
             }
         }
         .accessibilityElement(children: .combine)

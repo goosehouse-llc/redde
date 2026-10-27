@@ -1,34 +1,5 @@
 import SwiftUI
 
-/// How CarPlay's voice screen shows what Redde is doing: listening, thinking, speaking. The
-/// pictures are drawn in code by `CarPlayArtwork.voiceStateImage`; the car places them and writes
-/// the words under them.
-enum CarPlayVoiceLook: String, CaseIterable, Identifiable {
-    case bars, lamps, kitt, orb, redde
-
-    var id: String { rawValue }
-
-    var label: String {
-        switch self {
-        case .bars: String(localized: "Bars", comment: "A look for CarPlay's voice screen: bars of light")
-        case .lamps: String(localized: "Lamps", comment: "A look for CarPlay's voice screen: stacks of small lamps")
-        case .kitt: "KITT"
-        case .orb: String(localized: "Orb")
-        case .redde: "Redde"
-        }
-    }
-
-    var blurb: String {
-        switch self {
-        case .bars: String(localized: "Three solid bars of light, and one that glides")
-        case .lamps: String(localized: "The bars as stacks of small lamps, and a scanner")
-        case .kitt: String(localized: "The lamps in red, on black")
-        case .orb: String(localized: "A ring of light around Redde's spark")
-        case .redde: String(localized: "Redde's face: it looks at you, looks up to think, and talks")
-        }
-    }
-}
-
 /// The CarPlay voice screen row of the Appearance section: collapsed to the current look, it
 /// opens on all four, each shown as its Listening, Thinking and Speaking pictures. The chosen
 /// look's pictures move as they do on the car, unless Reduce Motion is on; the others stand

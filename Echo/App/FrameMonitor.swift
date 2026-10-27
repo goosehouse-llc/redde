@@ -1,4 +1,4 @@
-#if DEBUG
+#if DEBUG && os(iOS)
 import Foundation
 import os
 import QuartzCore
@@ -206,5 +206,27 @@ final class FrameMonitor: NSObject {
             try? Data(text.utf8).write(to: file)
         }
     }
+}
+#elseif DEBUG
+import AppKit
+import os
+
+/// The Mac's: no frames counted yet, only how long each step of `-echo.tour` takes.
+@MainActor
+final class FrameMonitor: NSObject {
+    static let shared = FrameMonitor()
+    private let log = Logger(subsystem: "com.goosehouse.echo", category: "frames")
+
+    func start() {}
+    func autoScroll(for seconds: Double) {}
+
+    func report(_ label: String, _ action: () async -> Void) async {
+        let began = Date.now
+        await action()
+        log.notice("\(label, privacy: .public): \(String(format: "%.1f", Date.now.timeIntervalSince(began)), privacy: .public) s")
+    }
+
+    /// The text view typing goes into, as the keyboard puts it there.
+    static func focusedTextInput() -> NSTextView? { NSApplication.shared.keyWindow?.firstResponder as? NSTextView }
 }
 #endif

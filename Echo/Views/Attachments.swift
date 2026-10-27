@@ -1,6 +1,9 @@
 import AVFoundation
 import QuickLook
 import SwiftUI
+#if os(macOS)
+import QuickLookUI
+#endif
 import UniformTypeIdentifiers
 
 /// Pending attachments above the composer: thumbnails for images, chips for files, each removable.
@@ -16,7 +19,7 @@ struct AttachmentStrip: View {
                         AttachmentTile(attachment: att, size: 64)
                         Button { remove(att.id) } label: {
                             Image(systemName: "xmark.circle.fill")
-                                .font(.body)
+                                .chatFont(.body)
                                 .foregroundStyle(.white, .black.opacity(0.6))
                         }
                         .buttonStyle(.plain)
@@ -80,7 +83,7 @@ struct AudioBubble: View {
         HStack(spacing: 10) {
             Button { audio.toggle(attachment) } label: {
                 Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                    .font(.body.weight(.semibold))
+                    .chatFont(.body, weight: .semibold)
                     .frame(width: 36, height: 36)
                     .background(.tint.opacity(0.16), in: .circle)
             }
@@ -97,7 +100,7 @@ struct AudioBubble: View {
                         .accessibilityLabel("Position")
                         .accessibilityValue(Self.clock(at))
                     Text(isCurrent ? Self.clock(at) : Self.clock(duration ?? 0))
-                        .font(.caption.monospacedDigit())
+                        .chatFont(.caption).monospacedDigit()
                         .foregroundStyle(.secondary)
                         .frame(minWidth: 34, alignment: .trailing)
                 }
@@ -241,7 +244,7 @@ struct PhotoGroup: View {
                             if hidden > 0, index == tiles.count - 1 {
                                 ZStack {
                                     Color.black.opacity(0.5)
-                                    Text("+\(hidden)").font(.title.weight(.semibold)).foregroundStyle(.white)
+                                    Text("+\(hidden)").chatFont(.title, weight: .semibold).foregroundStyle(.white)
                                 }
                                 .clipShape(.rect(cornerRadius: 4))
                             }
@@ -267,6 +270,7 @@ struct PhotoGroup: View {
     }
 }
 
+#if os(iOS)
 /// QuickLook for a document attachment; the bytes go to a temp file so QL can render them,
 /// and its share button covers saving to Files. In a sheet QuickLook has no bar of its own, so
 /// it had no Done: it could only be swiped away (a Reddit report, 2026-10-21). It sits in a
@@ -338,17 +342,67 @@ struct CameraPicker: UIViewControllerRepresentable {
     }
     func updateUIViewController(_ picker: UIImagePickerController, context: Context) {}
 }
+#else
+/// Quick Look for a document attachment, in a sheet with Done; the bytes go to a temp file so
+/// Quick Look can draw them.
+struct DocumentPreview: View {
+    private let url: URL
+    @Environment(\.dismiss) private var dismiss
+
+    init(attachment: Attachment) {
+        let dir = FileManager.default.temporaryDirectory.appending(path: "previews")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        url = dir.appending(path: attachment.filename)
+        try? attachment.data.write(to: url)
+    }
+    /// A file already on this Mac (one a reply named, fetched from the server).
+    init(url: URL) { self.url = url }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            QuickLookView(url: url)
+            HStack {
+                Text(url.lastPathComponent).foregroundStyle(.secondary).lineLimit(1)
+                Spacer()
+                ShareLink(item: url)
+                Button("Done") { dismiss() }.keyboardShortcut(.cancelAction)
+            }
+            .padding(12)
+        }
+        .frame(minWidth: 560, idealWidth: 800, minHeight: 440, idealHeight: 640)
+    }
+
+    private struct QuickLookView: NSViewRepresentable {
+        let url: URL
+        func makeNSView(context: Context) -> QLPreviewView {
+            let view = QLPreviewView(frame: .zero, style: .normal) ?? QLPreviewView()
+            view.previewItem = url as NSURL
+            return view
+        }
+        func updateNSView(_ view: QLPreviewView, context: Context) {
+            if (view.previewItem as? NSURL) as URL? != url { view.previewItem = url as NSURL }
+        }
+    }
+}
+
+/// The iPhone's camera, for one photo: a Mac has none to offer here.
+struct CameraPicker: View {
+    var onCapture: (NSImage?) -> Void
+    static var isAvailable: Bool { false }
+    var body: some View { EmptyView() }
+}
+#endif
 
 /// One image, shown big: scaled to fit, tap for the zoomable viewer.
 /// ImageIO thumbnailing: decodes only what's needed for `maxPixel` instead of the full image.
 nonisolated enum ImageThumbnail {
-    static func decode(_ data: Data, maxPixel: CGFloat) -> UIImage? {
+    static func decode(_ data: Data, maxPixel: CGFloat) -> PlatformImage? {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
         let options: [CFString: Any] = [kCGImageSourceCreateThumbnailFromImageAlways: true,
                                         kCGImageSourceThumbnailMaxPixelSize: Int(maxPixel),
                                         kCGImageSourceCreateThumbnailWithTransform: true]
         guard let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
-        return UIImage(cgImage: cg)
+        return PlatformImage(cgImage: cg)
     }
 }
 
@@ -484,8 +538,8 @@ struct AttachmentTile: View {
             HStack(spacing: 6) {
                 Image(systemName: attachment.isAudio ? "waveform" : attachment.kind == .pdf ? "doc.richtext" : "doc.text")
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(attachment.filename).font(.caption.weight(.medium)).lineLimit(1)
-                    Text(attachment.sizeLabel).font(.caption2).foregroundStyle(.secondary)
+                    Text(attachment.filename).chatFont(.caption, weight: .medium).lineLimit(1)
+                    Text(attachment.sizeLabel).chatFont(.caption2).foregroundStyle(.secondary)
                 }
             }
             .padding(.horizontal, 10)

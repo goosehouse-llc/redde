@@ -1,6 +1,14 @@
 import Foundation
 import Observation
+#if canImport(UIKit)
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
+#else
+import AppKit
+#endif
 
 /// What the chat list marks beside a conversation: the agent at work in it, the agent waiting on
 /// the person, or a reply the person hasn't seen. A conversation left while the agent works goes
@@ -381,7 +389,7 @@ final class ChatActivity {
     /// on the Hermes API, here. `onlyOnScreen`: not while Redde is in the background, as when a
     /// reply finishes with the phone locked.
     func markRead(_ sessionID: String, conversation: Conversation, onlyOnScreen: Bool = false, settings: Settings = .shared) {
-        if onlyOnScreen, UIApplication.shared.applicationState != .active { return }
+        if onlyOnScreen, !AppState.isActive { return }
         guard settings.transport.hasLedger else { return }
         if settings.transport == .hermesSessions { mark(sessionID, seenAt: Date.now.timeIntervalSince1970, key: settings.connectionKey) }
         if let at = markedAt[sessionID], Date.now.timeIntervalSince(at) < 2 { return }

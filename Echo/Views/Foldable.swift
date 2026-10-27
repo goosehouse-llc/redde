@@ -9,6 +9,7 @@ import SwiftUI
 /// outer screen for that (asked for here 2026-10-23). Its inner screen turns whatever an app
 /// says. An iPad turns every way, as before.
 @MainActor enum Foldable {
+    #if os(iOS)
     static var hasHinge = false {
         didSet {
             guard hasHinge != oldValue else { return }
@@ -23,15 +24,23 @@ import SwiftUI
         if UIDevice.current.userInterfaceIdiom == .pad { return .all }
         return hasHinge ? .allButUpsideDown : .portrait
     }
+    #else
+    /// A Mac has no hinge.
+    static var hasHinge = false
+    #endif
 }
 
 /// Listens for the hinge, from the app's root (`Foldable`).
 struct HingeWatch: ViewModifier {
     func body(content: Content) -> some View {
+        #if os(iOS)
         if #available(iOS 27.1, *) {
             content.onHingeChange { _, now in Foldable.hasHinge = now.hinge != nil }
         } else {
             content
         }
+        #else
+        content
+        #endif
     }
 }

@@ -44,6 +44,14 @@ let targets: [(name: String, catalog: String, build: String)] = [
 /// Catalogs no build fills: the Info.plist texts (the permission texts, an extension's name), keyed
 /// by their Info.plist key with the English as its value. Exported and imported with the rest.
 let plistCatalogs = ["Echo/Resources/InfoPlist.xcstrings", "EchoControls/InfoPlist.xcstrings"]
+
+/// Builds that fill a catalog beside its own target's: the Mac app (ReddeMac) shares the app's,
+/// and has text of its own (its menus). Its build is in DerivedData-mac, from
+/// `xcodebuild … -scheme ReddeMac -derivedDataPath DerivedData-mac`.
+let alsoFilledBy: [String: URL] = [
+    "Echo/Resources/Localizable.xcstrings":
+        repo.appending(path: "DerivedData-mac/Build/Intermediates.noindex/Echo.build/Debug/ReddeMac.build/Objects-normal/arm64"),
+]
 var allCatalogs: [String] { targets.map(\.catalog) + plistCatalogs }
 /// Siri's phrases: each provider's file, and its AppShortcuts catalog (keyed by each shortcut's
 /// first phrase, every phrase in a language's `stringSet`).
@@ -104,9 +112,13 @@ func save(_ catalog: JSON, _ path: String) {
 /// identifier, `String(localized: "task.done", defaultValue: "Done")`, has its English apart).
 func found(in build: String) -> [String: (comment: String, english: String)] {
     let folder = derived.appending(path: build)
-    guard let files = try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil) else {
-        fail("no build at \(folder.path): build for the simulator first")
-    }
+    guard let keys = found(at: folder) else { fail("no build at \(folder.path): build for the simulator first") }
+    return keys
+}
+
+/// The same from a build folder anywhere; nil when there is no build there.
+func found(at folder: URL) -> [String: (comment: String, english: String)]? {
+    guard let files = try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil) else { return nil }
     var keys: [String: (comment: String, english: String)] = [:]
     for file in files where file.pathExtension == "stringsdata" {
         guard let data = try? Data(contentsOf: file), let object = try? JSONSerialization.jsonObject(with: data) as? JSON,
@@ -155,7 +167,18 @@ case "sync":
     for target in targets {
         var catalog = load(target.catalog)
         var strings = catalog["strings"] as? JSON ?? [:]
-        let keys = found(in: target.build)
+        var keys = found(in: target.build)
+        // Text another build has too (the Mac's): in it, as found by either. Without that build,
+        // nothing is marked gone, since its own text can't be told from what was dropped.
+        var complete = true
+        if let other = alsoFilledBy[target.catalog] {
+            if let more = found(at: other) {
+                keys.merge(more) { mine, theirs in mine.comment.isEmpty ? theirs : mine }
+            } else {
+                complete = false
+                print("(\(target.catalog): no Mac build in DerivedData-mac, so nothing is marked gone)")
+            }
+        }
         var added = 0, gone = 0, back = 0
         for (key, (comment, english)) in keys {
             var entry = strings[key] as? JSON ?? { added += 1; return [:] }()
@@ -173,7 +196,7 @@ case "sync":
             if !hasWords(key) { entry["shouldTranslate"] = false }
             strings[key] = entry
         }
-        for (key, value) in strings where keys[key] == nil {
+        for (key, value) in strings where complete && keys[key] == nil {
             guard var entry = value as? JSON, entry["extractionState"] as? String != "manual",
                   entry["extractionState"] as? String != "stale" else { continue }
             entry["extractionState"] = "stale"

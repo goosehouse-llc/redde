@@ -1,6 +1,8 @@
 import AVFoundation
 import SwiftUI
+#if os(iOS)
 import VisionKit
+#endif
 
 /// The camera, looking for a Redde setup code (a QR code of a setup link, in either form). It hands
 /// the first one it reads to `onCode` and closes; any other QR code gets a line saying so.
@@ -30,7 +32,12 @@ struct CodeScanner: View {
     var denied: LocalizedStringKey
     var accept: (String) -> Bool
 
+    #if os(iOS)
     static var isSupported: Bool { DataScannerViewController.isSupported }
+    #else
+    /// A Mac has no live text scanner: a setup link is pasted instead.
+    static var isSupported: Bool { false }
+    #endif
 
     private enum Access { case asking, allowed, denied }
 
@@ -47,8 +54,10 @@ struct CodeScanner: View {
                 case .asking:
                     ProgressView().tint(.white)
                 case .allowed:
+                    #if os(iOS)
                     CodeCamera { text in read(text) }
                         .ignoresSafeArea()
+                    #endif
                     VStack {
                         Spacer()
                         Text(wrongCode ? wrong : prompt)
@@ -100,6 +109,7 @@ struct CodeScanner: View {
     }
 }
 
+#if os(iOS)
 /// VisionKit's live scanner, set to QR codes only.
 private struct CodeCamera: UIViewControllerRepresentable {
     var onText: (String) -> Void
@@ -141,3 +151,4 @@ private struct CodeCamera: UIViewControllerRepresentable {
         }
     }
 }
+#endif

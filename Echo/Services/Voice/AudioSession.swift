@@ -1,9 +1,14 @@
 import AVFoundation
 import Foundation
 import Observation
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
 import os
 
+#if os(iOS)
 /// Owns the shared AVAudioSession for the voice loop and reports interruptions (calls, Siri,
 /// CarPlay). One category for the whole loop so the route doesn't flap between listen and speak.
 @Observable
@@ -418,3 +423,32 @@ final class AudioSessionController {
         }
     }
 }
+#else
+/// The Mac has no audio session to set up: the microphone and the speakers are the Mac's, shared
+/// with every app, and no call or Siri takes them from Redde as on the iPhone. The iPhone's calls,
+/// so the voice loop runs unchanged; they keep what it reads and change nothing else.
+@Observable
+final class AudioSessionController {
+    static let shared = AudioSessionController()
+
+    var onInterruption: (() -> Void)?
+    var onClaim: (() -> Void)?
+    var onInterruptionEnded: ((_ shouldResume: Bool) -> Void)?
+    var onOutputDeviceLost: (() -> Void)?
+    private(set) var onHeadphones = false
+    private var active = false
+    var isFree: Bool { !active }
+    var route: VoiceRoute { .speaker }
+    var heldByCall = false
+
+    func activateForVoice() throws { active = true }
+    func activateForPlayback() throws { active = true }
+    func activateForWake() throws {}
+    func releaseUnused() {}
+    func deactivateWake() {}
+    func deactivate() { active = false }
+    func setReplying(_ on: Bool) {}
+    func setEarRouting(_ on: Bool) {}
+    func refreshRoute() {}
+}
+#endif

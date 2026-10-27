@@ -34,7 +34,7 @@ struct DeliveredFileChip: View {
                     }
                     Text(file.filename).lineLimit(1).truncationMode(.middle)
                 }
-                .font(.footnote)
+                .chatFont(.footnote)
                 .padding(.horizontal, 10).padding(.vertical, 6)
                 .background(.quaternary, in: .capsule)
             }
@@ -42,7 +42,7 @@ struct DeliveredFileChip: View {
             .accessibilityLabel(file.filename)
             .accessibilityHint(problem ?? String(localized: "Opens it, from your server"))
             if let problem {
-                Text(problem).font(.caption).foregroundStyle(.secondary)
+                Text(problem).chatFont(.caption).foregroundStyle(.secondary)
             }
         }
         .sheet(item: $opened) { FileViewer(file: $0) }
@@ -107,10 +107,10 @@ struct OpensServerPaths: ViewModifier {
                     ProgressView().controlSize(.mini)
                     Text("Fetching \(fetching)…")
                 }
-                .font(.caption).foregroundStyle(.secondary)
+                .chatFont(.caption).foregroundStyle(.secondary)
             } else if let problem {
                 Label("\(problem.name): \(problem.text)", systemImage: "exclamationmark.triangle")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .chatFont(.caption).foregroundStyle(.secondary)
             }
         }
         .sheet(item: $opened) { FileViewer(file: $0) }

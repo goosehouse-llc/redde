@@ -1,5 +1,13 @@
 import Observation
+#if canImport(UIKit)
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
+#else
+import AppKit
+#endif
 
 /// The pictures bots were given in Hermes Desktop (`profiles.get_asset`), drawn in place of their
 /// faces (`BotAvatar`, `BotFace.picture`); asked on Reddit 2026-10-22. Each is fetched once a
@@ -11,7 +19,7 @@ final class BotPictures {
     static let shared = BotPictures()
 
     /// By server and profile ("<server id>/<profile>").
-    private var images: [String: UIImage] = [:]
+    private var images: [String: PlatformImage] = [:]
     @ObservationIgnored private var asked: Set<String> = []
     @ObservationIgnored private let folder: URL
 
@@ -23,14 +31,14 @@ final class BotPictures {
         // The ones kept from before, at once: a list must not show faces first and pictures after.
         let files = (try? FileManager.default.subpathsOfDirectory(atPath: folder.path())) ?? []
         for file in files where file.hasSuffix(".png") {
-            if let image = UIImage(contentsOfFile: folder.appending(path: file).path()) {
+            if let image = PlatformImage(contentsOfFile: folder.appending(path: file).path()) {
                 images[String(file.dropLast(4))] = image
             }
         }
     }
 
     /// The picture for a profile on the server in use, if it has been fetched.
-    func image(for profile: String) -> UIImage? { images[Self.key(profile)] }
+    func image(for profile: String) -> PlatformImage? { images[Self.key(profile)] }
 
     /// Fetches a profile's picture, once a launch; one it no longer has is forgotten.
     func load(_ profile: String) async {
@@ -52,7 +60,7 @@ final class BotPictures {
         }
     }
 
-    #if DEBUG
+    #if DEBUG && canImport(UIKit)
     /// `-echo.demoPicture`: a picture as if fetched, for a look without a server.
     func seed(_ profile: String, _ image: UIImage) {
         let key = Self.key(profile)
@@ -78,7 +86,7 @@ final class BotPictures {
     private func file(_ key: String) -> URL { folder.appending(path: key + ".png") }
 
     /// Decoded off the main thread at the size it is drawn, never the 2 MB it may arrive as.
-    @concurrent private static func small(_ data: Data) async -> UIImage? {
+    @concurrent private static func small(_ data: Data) async -> PlatformImage? {
         ImageThumbnail.decode(data, maxPixel: side)
     }
 }

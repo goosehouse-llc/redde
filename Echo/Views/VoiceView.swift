@@ -1000,7 +1000,13 @@ private struct GlassOrb: View {
     /// How far to turn the palette so its blue lands on `color`; none for a grey.
     private static func hueShift(to color: Color) -> Angle {
         var hue: CGFloat = 0, saturation: CGFloat = 0, brightness: CGFloat = 0, alpha: CGFloat = 0
+        #if canImport(UIKit)
         guard UIColor(color).getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha), saturation > 0.08 else { return .zero }
+        #else
+        guard let rgb = NSColor(color).usingColorSpace(.sRGB) else { return .zero }
+        rgb.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
+        guard saturation > 0.08 else { return .zero }
+        #endif
         return .degrees(Double(hue) * 360 - baseHue)
     }
 

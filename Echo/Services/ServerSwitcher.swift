@@ -10,7 +10,9 @@ enum ServerSwitcher {
         conversation.reset()   // saves the open conversation as the old server's, then starts fresh
         HermesServeClient.shared.resetForServerChange()
         settings.activateServer(id)
+        #if os(iOS)
         WatchLink.shared.push()
+        #endif
         EchoShortcuts.updateAppShortcutParameters()   // Siri's profile phrases are this server's profiles now
     }
 }

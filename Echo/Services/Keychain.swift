@@ -96,13 +96,13 @@ nonisolated enum Keychain {
 
     /// The same, or nil when the Keychain couldn't say (the device is locked).
     private static func listed(synced: Any) -> [String]? {
-        let query: [String: Any] = [
+        let query: [String: Any] = onThisDevice([
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrSynchronizable as String: synced,
             kSecReturnAttributes as String: true,
             kSecMatchLimit as String: kSecMatchLimitAll,
-        ]
+        ])
         var result: AnyObject?
         switch SecItemCopyMatching(query as CFDictionary, &result) {
         case errSecSuccess:
@@ -180,13 +180,13 @@ nonisolated enum Keychain {
     /// Whether any stored account ends with `suffix` (a server's secrets end with `@<its id>`).
     /// Nil when the Keychain couldn't be read, which is not the same as "none".
     static func hasAccount(endingWith suffix: String) -> Bool? {
-        let query: [String: Any] = [
+        let query: [String: Any] = onThisDevice([
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrSynchronizable as String: kSecAttrSynchronizableAny,
             kSecReturnAttributes as String: true,
             kSecMatchLimit as String: kSecMatchLimitAll,
-        ]
+        ])
         var result: AnyObject?
         switch SecItemCopyMatching(query as CFDictionary, &result) {
         case errSecSuccess:
@@ -267,10 +267,21 @@ nonisolated enum Keychain {
         ]
         let update = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
         if update == errSecSuccess { return true }
-        guard update == errSecItemNotFound else { return false }
+        guard update == errSecItemNotFound else {
+            #if os(macOS)
+            Logger(subsystem: "com.goosehouse.echo", category: "keychain").error("update of \(account, privacy: .public) failed: \(update)")
+            #endif
+            return false
+        }
         var add = query
         add.merge(attributes) { _, new in new }
+        #if os(macOS)
+        let added = SecItemAdd(add as CFDictionary, nil)
+        if added != errSecSuccess { Logger(subsystem: "com.goosehouse.echo", category: "keychain").error("add of \(account, privacy: .public) failed: \(added)") }
+        return added == errSecSuccess
+        #else
         return SecItemAdd(add as CFDictionary, nil) == errSecSuccess
+        #endif
     }
 
     @discardableResult
@@ -280,11 +291,25 @@ nonisolated enum Keychain {
     }
 
     private static func baseQuery(_ account: String, synced: Bool) -> [String: Any] {
-        [
+        onThisDevice([
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
             kSecAttrSynchronizable as String: synced,
-        ]
+        ])
+    }
+
+    /// A query as this device's Keychain takes it. The iPhone has one Keychain, its app's own;
+    /// a Mac has that one too (the data protection keychain, the app's alone, never asking), and
+    /// the older file-based login keychain it would otherwise use, which asks its person whether
+    /// each build may read what another one saved.
+    @inline(__always) private static func onThisDevice(_ query: [String: Any]) -> [String: Any] {
+        #if os(macOS)
+        var query = query
+        query[kSecUseDataProtectionKeychain as String] = true
+        return query
+        #else
+        query
+        #endif
     }
 }

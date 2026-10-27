@@ -112,7 +112,9 @@ struct PhoneToolsSettingsView: View {
         }
         .task { await plugin.refresh() }
         // Read again on coming back from the iPhone's Settings, where it is switched.
+        #if os(iOS)
         .onChange(of: scenePhase, initial: true) { alarmsShow = SystemAlarms().canShow }
+        #endif
         .task(id: settings.phoneTools) { await service.publish() }
         .onChange(of: settings.phoneTools.access(.photos), initial: true) { looking.resume() }
     }
@@ -161,7 +163,11 @@ struct PhoneToolsSettingsView: View {
         case .contacts: await DeviceContacts.allowed()
         case .photos: await DevicePhotos.allowed()
         case .files: true
+        #if os(iOS)
         case .alarms: await SystemAlarms().allowed()
+        #else
+        case .alarms: false   // a Mac has no alarms for Redde to set
+        #endif
         case .widget, .people: true
         }
     }

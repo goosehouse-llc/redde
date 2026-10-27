@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- The Mac App Store's sandbox, and what Redde needs out of it. -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<!-- Hermes, the model servers, the voice services, link previews. -->
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<!-- Signing in to the Hermes Dashboard with a browser: the browser comes back to a listener on
+	     this Mac's own loopback address (DashboardSignIn), which the sandbox allows only with this. -->
+	<key>com.apple.security.network.server</key>
+	<true/>
+	<!-- Voice mode, dictation, live voice calls; showing the agent something in voice mode. -->
+	<key>com.apple.security.device.audio-input</key>
+	<true/>
+	<key>com.apple.security.device.camera</key>
+	<true/>
+	<!-- Attaching a file, saving one a reply sent, exporting a conversation. -->
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+	<!-- The phone tools, where they are turned on. -->
+	<key>com.apple.security.personal-information.calendars</key>
+	<true/>
+	<key>com.apple.security.personal-information.addressbook</key>
+	<true/>
+	<key>com.apple.security.personal-information.photos-library</key>
+	<true/>
+	<!-- The app's own keychain (the data protection keychain, as on the iPhone): its access group.
+	     The Mac app's own while it has its own id, so it never shares a login with the iPad app
+	     that a Mac can run; shipped under the iPhone's id, it is the iPhone's (and iCloud's). -->
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)com.goosehouse.echo.mac</string>
+	</array>
+	<!-- The iPhone's app group: drafts and flags shared with Redde's extensions. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.goosehouse.echo</string>
+	</array>
+	<!-- Sync with iCloud: the iPhone's key-value store, so settings and servers reach the Mac. -->
+	<key>com.apple.developer.ubiquity-kvstore-identifier</key>
+	<string>$(TeamIdentifierPrefix)com.goosehouse.echo</string>
+</dict>
+</plist>

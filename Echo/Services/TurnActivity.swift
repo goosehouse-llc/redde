@@ -1,3 +1,4 @@
+#if os(iOS)
 import ActivityKit
 import Foundation
 import os
@@ -238,3 +239,24 @@ final class TurnActivity {
         }
     }
 }
+#else
+import Foundation
+
+/// The Mac has no Live Activities: a reply shows in its window. The iPhone's calls, which do
+/// nothing, so the conversation's code is the same on both.
+@MainActor
+final class TurnActivity {
+    static let shared = TurnActivity()
+
+    func clearStrays() {}
+    func start(question: String, agent: String? = nil) {}
+    func tool(_ name: String) {}
+    func needsApproval(_ request: ApprovalRequest) {}
+    func approvalSettled() {}
+    func tasks(_ items: [TodoItem]) {}
+    func replyDelta(_ delta: String) {}
+    func finish(reply: String) {}
+    func fail(_ message: String) {}
+    func leave() {}
+}
+#endif

@@ -59,7 +59,9 @@ final class Dictation {
         do {
             guard await requestPermissions() else { throw SpeechRecognizer.Failure.permissionDenied }
             guard attempt == self.attempt, phase == .starting else { return }
+            #if os(iOS)
             WakeListener.shared.hold(.dictation)
+            #endif
             try audio.activateForVoice()
             try await recognizer.start { [weak self] text in
                 Task { self?.ended(text, attempt: attempt) }
@@ -75,7 +77,11 @@ final class Dictation {
             }
             phase = .idle
             audio.deactivate()
-            WakeListener.shared.release(.dictation)
+            #if os(iOS)
+            #if os(iOS)
+        WakeListener.shared.release(.dictation)
+        #endif
+            #endif
         }
     }
 
@@ -108,7 +114,9 @@ final class Dictation {
         if !text.isEmpty { heard = text }
         phase = .idle
         audio.deactivate()
+        #if os(iOS)
         WakeListener.shared.release(.dictation)
+        #endif
     }
 
     private func follow(_ attempt: Int) {

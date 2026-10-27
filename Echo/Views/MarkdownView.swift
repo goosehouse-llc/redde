@@ -174,8 +174,8 @@ struct MarkdownImage: View {
                 } else if isRemote, !wantsRemote {
                     Button { wantsRemote = true } label: {
                         VStack(spacing: 6) {
-                            Image(systemName: "photo").font(.title2)
-                            Text("Load image from \(URL(string: url)?.host() ?? String(localized: "the web"))").font(.caption)
+                            Image(systemName: "photo").chatFont(.title2)
+                            Text("Load image from \(URL(string: url)?.host() ?? String(localized: "the web"))").chatFont(.caption)
                         }
                         .frame(maxWidth: .infinity).frame(height: 120)
                         .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 10))
@@ -200,7 +200,7 @@ struct MarkdownImage: View {
             }
             .accessibilityLabel(alt.isEmpty ? String(localized: "Image") : alt)
             .accessibilityAddTraits(.isImage)
-            if !alt.isEmpty { Text(alt).font(.caption).foregroundStyle(.secondary) }
+            if !alt.isEmpty { Text(alt).chatFont(.caption).foregroundStyle(.secondary) }
         }
         // A struct key, not a string: for agent-sent images `url` is the whole data URI.
         .task(id: LoadKey(url: url, wantsRemote: wantsRemote)) {
@@ -243,7 +243,7 @@ struct CodeBlock: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text(language ?? String(localized: "code", comment: "Label on a code block that names no language")).font(.caption2.weight(.medium)).foregroundStyle(.secondary).textCase(.uppercase)
+                Text(language ?? String(localized: "code", comment: "Label on a code block that names no language")).chatFont(.caption2, weight: .medium).foregroundStyle(.secondary).textCase(.uppercase)
                 Spacer()
                 Button {
                     UIPasteboard.general.string = code
@@ -251,7 +251,7 @@ struct CodeBlock: View {
                     Task { try? await Task.sleep(for: .seconds(1.5)); copied = false }
                 } label: {
                     Label(copied ? String(localized: "Copied") : String(localized: "Copy"), systemImage: copied ? "checkmark" : "doc.on.doc")
-                        .font(.caption2)
+                        .chatFont(.caption2)
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)

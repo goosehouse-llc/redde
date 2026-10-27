@@ -1,7 +1,15 @@
 import CryptoKit
 import Foundation
 import Observation
+#if canImport(UIKit)
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
+#else
+import AppKit
+#endif
 import os
 
 /// A pairing link, as `hermes redde-push pair` shows it (and draws it as a QR code):
@@ -171,7 +179,7 @@ final class PushService {
 
     init(defaults: UserDefaults = .standard, session: URLSession = .shared,
          vault: (load: () -> [PushPairing], save: ([PushPairing]) -> Bool) = ({ PushVault.load() }, { PushVault.save($0) }),
-         askForToken: @escaping () -> Void = { UIApplication.shared.registerForRemoteNotifications() },
+         askForToken: @escaping () -> Void = { AppState.registerForRemoteNotifications() },
          allowed: @escaping () async -> Bool = { await Notifier.shared.requestAuthorization() },
          callsOn: @escaping () -> Bool = { Settings.shared.agentCalls }) {
         self.defaults = defaults
@@ -363,7 +371,7 @@ final class PushService {
         let id = try await relay.register(token: token, environment: Self.environment, sendKey: sendKey, voip: voipForRelay)
         var pairing: PushPairing
         do {
-            let answer = try PushSeal.answer(to: offered, deviceID: id, sendKey: sendKey, name: UIDevice.current.name)
+            let answer = try PushSeal.answer(to: offered, deviceID: id, sendKey: sendKey, name: AppState.deviceName)
             let host = try await deliver((answer.pub, answer.box), relay, id, sendKey)
             pairing = PushPairing(id: id, sendKey: sendKey, key: answer.noteKey, relay: relayURL)
             if let host {

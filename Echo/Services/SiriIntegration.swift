@@ -54,11 +54,11 @@ nonisolated enum ReadState {
 @MainActor
 enum SiriHooks {
     static func appLaunched() {
-        if #available(iOS 27.0, *) { Task { await SiriIndex.shared.reindexIfNeeded() } }
+        if #available(iOS 27.0, macOS 27.0, *) { Task { await SiriIndex.shared.reindexIfNeeded() } }
     }
 
     static func accessChanged(_ enabled: Bool) {
-        guard #available(iOS 27.0, *) else { return }
+        guard #available(iOS 27.0, macOS 27.0, *) else { return }
         Task {
             if enabled { await SiriIndex.shared.reindexAll() } else { await SiriIndex.shared.removeAll() }
         }
@@ -66,27 +66,27 @@ enum SiriHooks {
 
     /// App Lock or the agent's name changed: what the index holds is out of date.
     static func indexInputsChanged() {
-        if #available(iOS 27.0, *) { Task { await SiriIndex.shared.reindexIfNeeded() } }
+        if #available(iOS 27.0, macOS 27.0, *) { Task { await SiriIndex.shared.reindexIfNeeded() } }
     }
 
     static func conversationChanged(_ id: UUID) {
-        if #available(iOS 27.0, *) { SiriIndex.shared.changed(id) }
+        if #available(iOS 27.0, macOS 27.0, *) { SiriIndex.shared.changed(id) }
     }
 
     static func conversationDeleted(_ id: UUID, messageIDs: [UUID]) {
         ReadState.markConversationRead(id)
-        if #available(iOS 27.0, *) { SiriIndex.shared.deleted(id, messageIDs: messageIDs) }
+        if #available(iOS 27.0, macOS 27.0, *) { SiriIndex.shared.deleted(id, messageIDs: messageIDs) }
     }
 
     static func allConversationsDeleted() {
         ReadState.clear()
-        if #available(iOS 27.0, *) { Task { await SiriIndex.shared.removeAll() } }
+        if #available(iOS 27.0, macOS 27.0, *) { Task { await SiriIndex.shared.removeAll() } }
     }
 
     /// Something you sent from the composer or the voice screen. Teaches Siri the habit, so
     /// it can suggest "Message Sol" at the times you usually do.
     static func donateSend(_ text: String) {
-        guard #available(iOS 27.0, *), SiriAccess.isEnabled, !text.isEmpty else { return }
+        guard #available(iOS 27.0, macOS 27.0, *), SiriAccess.isEnabled, !text.isEmpty else { return }
         let intent = ReddeSendMessageIntent()
         intent.destination = .contact(.agent(named: Settings.shared.headerTitle))
         intent.content = AttributedString(text)
@@ -100,7 +100,7 @@ enum SiriHooks {
     /// AirPods. Also marks it unread until you open the conversation.
     static func annotateReply(_ content: UNMutableNotificationContent, messageEntityID: String) {
         ReadState.set(messageEntityID, read: false)
-        guard #available(iOS 27.0, *), SiriAccess.isEnabled else { return }
+        guard #available(iOS 27.0, macOS 27.0, *), SiriAccess.isEnabled else { return }
         content.appEntityIdentifiers = [EntityIdentifier(for: ReddeMessageEntity.self, identifier: messageEntityID)]
     }
 }
@@ -109,7 +109,7 @@ extension View {
     /// On-screen awareness: "Siri, summarize this" / "reply to that" knows which message you mean.
     @ViewBuilder
     func siriMessage(conversationID: UUID, messageID: UUID) -> some View {
-        if #available(iOS 27.0, *) {
+        if #available(iOS 27.0, macOS 27.0, *) {
             if SiriAccess.isEnabled {
                 appEntityIdentifier(EntityIdentifier(for: ReddeMessageEntity.self,
                                                      identifier: SiriID.message(conversationID, messageID)))
@@ -126,7 +126,7 @@ extension View {
 /// is what lets Siri find "the conversation about the backup" semantically. Only while Siri
 /// access is on; turning it off deletes everything Redde indexed. With App Lock on, only
 /// conversation titles are indexed, never message text.
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 @MainActor
 final class SiriIndex {
     static let shared = SiriIndex()

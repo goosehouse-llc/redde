@@ -17,12 +17,16 @@ extension GeometryProxy {
         #if DEBUG
         if let fake = Fold.fake(in: size) { return fake }
         #endif
+        #if os(iOS)
         guard #available(iOS 27.1, *) else { return nil }
         guard let region = reservedRegions(kind: .division).first(where: \.isActive) else { return nil }
         let fold = Fold(frame: region.frame)
         let inside = fold.isVertical ? fold.frame.minX > 0 && fold.frame.maxX < size.width
                                      : fold.frame.minY > 0 && fold.frame.maxY < size.height
         return inside ? fold : nil
+        #else
+        return nil   // a Mac has no fold
+        #endif
     }
 }
 

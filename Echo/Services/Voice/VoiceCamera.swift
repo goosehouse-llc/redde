@@ -1,7 +1,11 @@
 import AVFoundation
 import CoreImage
 import Observation
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
 import os
 
 /// The camera in voice mode: opened from the voice screen, it shows what it sees where the orb
@@ -200,6 +204,7 @@ final class DemoEye: VoiceLooking {
 
     /// A pothos in a terracotta pot on a table, drooping, one leaf gone yellow.
     static func plant() -> UIImage {
+        #if canImport(UIKit)
         let size = CGSize(width: 720, height: 960)
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
@@ -271,6 +276,9 @@ final class DemoEye: VoiceLooking {
                 cg.restoreGState()
             }
         }
+        #else
+        return NSImage(size: CGSize(width: 720, height: 960))   // (the Mac's demo eye sees a blank wall)
+        #endif
     }
 }
 #endif

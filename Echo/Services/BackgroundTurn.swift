@@ -1,3 +1,4 @@
+#if os(iOS)
 import BackgroundTasks
 import UIKit
 import os
@@ -157,4 +158,18 @@ final class BackgroundTurn {
         return min(progressTotal - 1, Int64(Double(progressTotal) * t / (t + 120)))
     }
 }
+#else
+import os
 
+/// A Mac doesn't suspend Redde while a reply comes in, so a turn needs no time asked for: the
+/// iPhone's calls, which change nothing.
+@MainActor
+final class BackgroundTurn {
+    static let shared = BackgroundTurn()
+    nonisolated static let identifierPrefix = "com.goosehouse.echo.turn."
+    private(set) var expired = false
+
+    func begin(question: String = "", agent: String? = nil) {}
+    func end(success: Bool = true) {}
+}
+#endif

@@ -1,6 +1,10 @@
 import Foundation
 import Observation
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
 import os
 
 /// Which phone tools the agent may use, kept in Settings (Settings → Phone tools).
@@ -93,7 +97,7 @@ final class DeviceToolsService {
          command: ((String) async throws -> String)? = nil,
          run: ((DeviceTool, JSONValue, JSONValue) async throws -> JSONValue)? = nil,
          ask: ((Question) async -> Answer)? = nil,
-         onScreen: @escaping () -> Bool = { UIApplication.shared.applicationState == .active }) {
+         onScreen: @escaping () -> Bool = { AppState.isActive }) {
         self.settings = settings
         self.defaults = defaults
         self.command = command ?? PushService.command(over: HermesServeClient.shared)
@@ -231,8 +235,8 @@ final class DeviceToolsService {
             areas[area.rawValue] = .string(state)
         }
         return .object([
-            "device": .string(UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone"),
-            "system": .string("\(UIDevice.current.systemName) \(UIDevice.current.systemVersion)"),
+            "device": .string(Self.deviceName),
+            "system": .string(Self.systemName),
             "app": .string(app),
             "time": .string(DeviceDates.string(now)),
             "time_zone": .string(TimeZone.current.identifier),
@@ -266,8 +270,20 @@ final class DeviceToolsService {
         return try? JSONValue.parse(data)
     }
 
+    #if canImport(UIKit)
+    private static var deviceName: String { UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone" }
+    private static var systemName: String { "\(UIDevice.current.systemName) \(UIDevice.current.systemVersion)" }
+    #else
+    private static let deviceName = "Mac"
+    private static var systemName: String {
+        let v = ProcessInfo.processInfo.operatingSystemVersion
+        return "macOS \(v.majorVersion).\(v.minorVersion).\(v.patchVersion)"
+    }
+    #endif
+
     // MARK: - Asking the person
 
+    #if canImport(UIKit)
     /// The question as an alert over whatever Redde is showing, voice mode included.
     private static func alert(_ question: Question) async -> Answer {
         await withCheckedContinuation { done in
@@ -284,4 +300,21 @@ final class DeviceToolsService {
             top.present(alert, animated: true)
         }
     }
+    #else
+    /// The question as an alert in front of Redde's window.
+    private static func alert(_ question: Question) async -> Answer {
+        let alert = NSAlert()
+        alert.messageText = String(localized: "\(Settings.shared.headerTitle) wants to:\n\(question.ask.title)", comment: "Asking the person before a phone tool runs: the agent's name, then what it wants to do")
+        alert.informativeText = question.ask.detail
+        alert.addButton(withTitle: String(localized: "Allow", comment: "Lets a phone tool run this once"))
+        alert.addButton(withTitle: String(localized: "Don't Allow"))
+        let always = question.offersAlways ? question.area : nil
+        if let always { alert.addButton(withTitle: always.alwaysLabel) }
+        switch alert.runModal() {
+        case .alertFirstButtonReturn: return .allow
+        case .alertThirdButtonReturn: return always == nil ? .deny : .always
+        default: return .deny
+        }
+    }
+    #endif
 }

@@ -1,6 +1,10 @@
 import Foundation
 import ImageIO
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
 import UniformTypeIdentifiers
 
 /// Something the user attached to a message. Images are downscaled to keep the transcript file
@@ -103,7 +107,7 @@ nonisolated struct Attachment: Identifiable, Codable, Equatable, Sendable {
 
     // MARK: - Builders
 
-    #if !os(watchOS)   // no camera or paste on the wrist, and watchOS has no UIGraphicsImageRenderer
+    #if os(iOS)   // no camera or paste on the wrist, and watchOS has no UIGraphicsImageRenderer
     /// For callers that already hold a decoded bitmap (camera, paste). Files and shared photos
     /// go through `image(fileURL:)`, which never decodes the full-size image.
     static func image(_ image: UIImage, filename: String = "photo.jpg") -> Attachment? {
@@ -112,6 +116,21 @@ nonisolated struct Attachment: Identifiable, Codable, Equatable, Sendable {
         let renderer = UIGraphicsImageRenderer(size: target, format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; return f }())
         let scaled = renderer.image { _ in image.draw(in: CGRect(origin: .zero, size: target)) }
         guard let jpeg = scaled.jpegData(compressionQuality: 0.88) else { return nil }
+        return Attachment(kind: .image, filename: jpegName(filename), mimeType: "image/jpeg", data: jpeg)
+    }
+    #elseif os(macOS)
+    /// For a picture already in hand (pasted, dropped on the window): made small and sent as JPEG.
+    static func image(_ image: NSImage, filename: String = "photo.jpg") -> Attachment? {
+        guard let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
+              let space = CGColorSpace(name: CGColorSpace.sRGB) else { return nil }
+        let scale = min(1, maxImageEdge / CGFloat(max(cg.width, cg.height)))
+        let width = max(1, Int(CGFloat(cg.width) * scale)), height = max(1, Int(CGFloat(cg.height) * scale))
+        guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0, space: space,
+                                      bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { return nil }
+        context.interpolationQuality = .high
+        context.draw(cg, in: CGRect(x: 0, y: 0, width: width, height: height))
+        guard let scaled = context.makeImage(),
+              let jpeg = NSBitmapImageRep(cgImage: scaled).representation(using: .jpeg, properties: [.compressionFactor: 0.88]) else { return nil }
         return Attachment(kind: .image, filename: jpegName(filename), mimeType: "image/jpeg", data: jpeg)
     }
     #endif

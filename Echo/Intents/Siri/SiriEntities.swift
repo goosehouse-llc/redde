@@ -27,7 +27,7 @@ nonisolated enum SiriID {
 
 // MARK: - Enum schemas
 
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 @AppEnum(schema: .messages.messageType)
 nonisolated enum ReddeMessageType: String {
     case unspecified
@@ -37,7 +37,7 @@ nonisolated enum ReddeMessageType: String {
     ]
 }
 
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 @AppEnum(schema: .messages.messageAttribute)
 nonisolated enum ReddeMessageAttribute: String {
     /// A note injected into a running reply rather than a new question.
@@ -48,7 +48,7 @@ nonisolated enum ReddeMessageAttribute: String {
     ]
 }
 
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 @AppEnum(schema: .messages.conversationAttribute)
 nonisolated enum ReddeConversationAttribute: String {
     /// Lives in the Hermes session ledger as well as on the phone.
@@ -59,7 +59,7 @@ nonisolated enum ReddeConversationAttribute: String {
     ]
 }
 
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 @AppEnum(schema: .messages.messageEffect)
 nonisolated enum ReddeMessageEffect: String {
     case plain
@@ -69,7 +69,7 @@ nonisolated enum ReddeMessageEffect: String {
     ]
 }
 
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 @AppEnum(schema: .messages.customReaction)
 nonisolated enum ReddeReaction: String {
     case acknowledged
@@ -80,7 +80,7 @@ nonisolated enum ReddeReaction: String {
 }
 
 /// A reaction is a tapback or free text. Redde's messages never carry one.
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 @UnionValue
 enum ReddeMessageReaction {
     case tapback(ReddeReaction)
@@ -91,7 +91,7 @@ enum ReddeMessageReaction {
 
 /// The two people in every Redde conversation: your agent (named in Settings → Name, "Redde"
 /// by default) and you. "Tell Sol…" resolves to the agent through `ReddePersonQuery`.
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 @AppEntity(schema: .messages.messagePerson)
 struct ReddePersonEntity: IndexedEntity {
     static let defaultQuery = ReddePersonQuery()
@@ -133,7 +133,7 @@ struct ReddePersonEntity: IndexedEntity {
     }
 }
 
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 nonisolated struct ReddePersonQuery: EntityStringQuery {
     func entities(for identifiers: [ReddePersonEntity.ID]) async throws -> [ReddePersonEntity] {
         await SiriCatalog.people().filter { identifiers.contains($0.id) }
@@ -150,7 +150,7 @@ nonisolated struct ReddePersonQuery: EntityStringQuery {
 
 // MARK: - Conversations
 
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 @AppEntity(schema: .messages.conversation)
 struct ReddeConversationEntity: IndexedEntity {
     static let defaultQuery = ReddeConversationQuery()
@@ -183,7 +183,7 @@ struct ReddeConversationEntity: IndexedEntity {
     }
 }
 
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 nonisolated struct ReddeConversationQuery: EntityStringQuery {
     func entities(for identifiers: [ReddeConversationEntity.ID]) async throws -> [ReddeConversationEntity] {
         await SiriCatalog.conversations(ids: identifiers)
@@ -200,7 +200,7 @@ nonisolated struct ReddeConversationQuery: EntityStringQuery {
 
 // MARK: - Messages
 
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 @AppEntity(schema: .messages.message)
 struct ReddeMessageEntity: IndexedEntity {
     static let defaultQuery = ReddeMessageQuery()
@@ -254,7 +254,7 @@ struct ReddeMessageEntity: IndexedEntity {
     }
 }
 
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 nonisolated struct ReddeMessageQuery: EntityQuery {
     func entities(for identifiers: [ReddeMessageEntity.ID]) async throws -> [ReddeMessageEntity] {
         await SiriCatalog.messages(ids: identifiers)
@@ -266,7 +266,7 @@ nonisolated struct ReddeMessageQuery: EntityQuery {
 }
 
 /// Required by the message schema. Redde has no plugin-style attachments, so there are none.
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 @AppEntity(schema: .messages.customAttachment)
 struct ReddeCustomAttachment: AppEntity {
     static let defaultQuery = ReddeCustomAttachmentQuery()
@@ -280,7 +280,7 @@ struct ReddeCustomAttachment: AppEntity {
     }
 }
 
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 nonisolated struct ReddeCustomAttachmentQuery: EntityQuery {
     func entities(for identifiers: [ReddeCustomAttachment.ID]) async throws -> [ReddeCustomAttachment] { [] }
 }
@@ -289,7 +289,7 @@ nonisolated struct ReddeCustomAttachmentQuery: EntityQuery {
 
 /// Builds entities from the conversation store (and the live conversation, whose newest turn
 /// may not be persisted yet). Main actor, like the store. Returns nothing while Siri access is off.
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 @MainActor
 enum SiriCatalog {
     /// How many turns of one conversation Siri can see by id or in suggestions.

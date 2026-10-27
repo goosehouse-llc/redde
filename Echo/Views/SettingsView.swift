@@ -87,9 +87,11 @@ struct SettingsView: View {
             .task { await access.check() }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
+            #if os(iOS)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
+            #endif
             .sensoryFeedback(.success, trigger: secretSaved)
         }
         .holdsWakePhrases(.settings)
@@ -106,7 +108,7 @@ struct SettingsView: View {
         case .writing: ComposerSettings()
         case .voice: VoiceSettings()
         case .notifications: NotificationSettings()
-        case .siri: if #available(iOS 27.0, *) { SiriSettings() }
+        case .siri: if #available(iOS 27.0, macOS 27.0, *) { SiriSettings() }
         case .agent:
             AgentSettingsPage(access: access, saved: $secretSaved)
         }
@@ -121,7 +123,7 @@ enum SettingsPage: String, CaseIterable, Identifiable, Hashable {
 
     /// The pages this device has: Siri's needs iOS 27.
     static var offered: [SettingsPage] {
-        if #available(iOS 27.0, *) { return allCases }
+        if #available(iOS 27.0, macOS 27.0, *) { return allCases }
         return allCases.filter { $0 != .siri }
     }
 

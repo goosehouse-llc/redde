@@ -1,5 +1,13 @@
 import Foundation
+#if canImport(UIKit)
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
+#else
+import AppKit
+#endif
 import WidgetKit
 
 #if DEBUG
@@ -166,6 +174,7 @@ extension Conversation {
     /// an iPhone iOS really asks about the call and the Messages sheet really opens; a
     /// simulator has no phone and no Messages, so there the two are only spoken of.
     func streamPhoneDemo(reach: Bool = false) {
+        #if os(iOS)   // (the phone's tools, and pictures drawn with UIKit)
         cancel()
         replaceForDemo(messages: [])
         Task { @MainActor in
@@ -227,12 +236,14 @@ extension Conversation {
                 reply: "Found it, from Saturday at 8:42 PM. You bowled a **187**, your best this year.",
                 picture: Self.scoreboardForDemo())
         }
+        #endif
     }
 
     /// The scenes of the second Phone tools video (`-echo.demoFun`): a day with the agent, every
     /// area in turn. Played like `streamPhoneDemo`; the timer and the widget are set for real, so
     /// the Lock Screen and the Home Screen show them.
     func streamFunDemo(_ scene: String) {
+        #if os(iOS)   // (the phone's tools, and pictures drawn with UIKit)
         cancel()
         replaceForDemo(messages: [])
         Task { @MainActor in
@@ -331,6 +342,7 @@ extension Conversation {
                 break
             }
         }
+        #endif
     }
 
     /// One exchange played live: the question arrives (with `shown`, a picture sent with it),
@@ -382,6 +394,7 @@ extension Conversation {
 
     /// A picture of a bowling alley's scoreboard, drawn: the photo the demo's agent finds.
     static func scoreboardForDemo() -> Attachment? {
+        #if os(iOS)   // (the phone's tools, and pictures drawn with UIKit)
         let size = CGSize(width: 1200, height: 800)
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
@@ -425,6 +438,9 @@ extension Conversation {
             }
         }
         return Attachment.image(image, filename: "scoreboard.jpg")
+        #else
+        return nil
+        #endif
     }
 
     /// Measuring aid (`-echo.demoHeavy [turns]`, 32 by default): a thread of long replies, about
@@ -570,6 +586,7 @@ extension Conversation {
     /// drawn here: a colour each, its number large in the middle, in the shapes a camera makes,
     /// with fine lines to zoom into.
     func seedPhotoDemo(count: Int = 5) {
+        #if os(iOS)   // (the phone's tools, and pictures drawn with UIKit)
         reset()
         func picture(_ number: Int, set: String) -> Attachment {
             let shapes = [CGSize(width: 1600, height: 1200), CGSize(width: 1200, height: 1600), CGSize(width: 1600, height: 1600), CGSize(width: 1600, height: 900)]
@@ -603,6 +620,7 @@ extension Conversation {
         var reply = Message(role: .assistant, text: "Here are the \(count) most recent photos from your library.")
         reply.attachments = (1 ... max(count, 1)).map { picture($0, set: "photo") }
         replaceForDemo(messages: [sent, one, Message(role: .user, text: "Show me my latest photos."), reply])
+        #endif
     }
 
     /// Dev hook (`-echo.demoAudio`): a reply that came with a sound file, as the agent's speech

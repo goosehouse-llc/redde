@@ -133,7 +133,11 @@ struct StartScreen: View {
     @State private var windowHeight = Self.currentWindowHeight
 
     private static var currentWindowHeight: CGFloat {
+        #if os(iOS)
         UIApplication.shared.connectedScenes.lazy.compactMap { ($0 as? UIWindowScene)?.keyWindow?.bounds.height }.first ?? 0
+        #else
+        NSApplication.shared.keyWindow?.contentLayoutRect.height ?? 0
+        #endif
     }
 
     // MARK: Pieces

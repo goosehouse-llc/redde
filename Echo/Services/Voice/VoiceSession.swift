@@ -3,7 +3,11 @@ import AVFoundation
 import Foundation
 import Observation
 import os
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
 
 /// Plays the bundled listening tones through the app's audio session: on the active
 /// `.playAndRecord` voice session they ignore the ring/silent switch, like Siri's cues —
@@ -48,7 +52,7 @@ final class EarconPlayer {
             try? await Task.sleep(for: inCar ? Self.carLead : Self.lead)
             guard !Task.isCancelled else { return }
             self?.waiting[cue] = nil
-            #if DEBUG
+            #if DEBUG && os(iOS)
             // What the cue went out through, for a crackle heard in the car.
             let session = AVAudioSession.sharedInstance()
             Logger(subsystem: "com.goosehouse.echo", category: "voice").info("cue \(cue == .listening ? "start" : "stop", privacy: .public): \(session.currentRoute.outputs.map(\.portType.rawValue).joined(separator: ","), privacy: .public) at \(Int(session.sampleRate)) Hz, mode \(session.mode.rawValue, privacy: .public), buffer \(Int(session.ioBufferDuration * 1000)) ms")

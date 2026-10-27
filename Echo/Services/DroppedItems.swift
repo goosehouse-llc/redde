@@ -1,5 +1,13 @@
 import Foundation
+#if canImport(UIKit)
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
+#else
+import AppKit
+#endif
 import UniformTypeIdentifiers
 
 /// What a drop on the chat carries, sorted into what the composer takes: pictures and files

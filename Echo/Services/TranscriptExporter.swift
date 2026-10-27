@@ -1,6 +1,14 @@
 import Foundation
 import SwiftUI
+#if canImport(UIKit)
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
+#else
+import AppKit
+#endif
 
 /// Writes a conversation as a Markdown file for sharing. Reasoning is kept in a collapsed
 /// details block so it doesn't dominate; tool calls become a one-line note.
@@ -57,6 +65,7 @@ nonisolated enum TranscriptExporter {
     }
 }
 
+#if canImport(UIKit)
 /// UIKit share sheet, for exporting from places where a ShareLink can't be built ahead of time.
 struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
@@ -65,6 +74,32 @@ struct ShareSheet: UIViewControllerRepresentable {
     }
     func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }
+#else
+/// The Mac's: the file a sheet away from sharing or showing in Finder.
+struct ShareSheet: View {
+    let items: [Any]
+    @Environment(\.dismiss) private var dismiss
+    private var urls: [URL] { items.compactMap { $0 as? URL } }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            ForEach(urls, id: \.self) { url in
+                Label(url.lastPathComponent, systemImage: "doc.text")
+            }
+            HStack {
+                if let url = urls.first {
+                    ShareLink(item: url)
+                    Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting(urls) }
+                }
+                Spacer()
+                Button("Done") { dismiss() }.keyboardShortcut(.cancelAction)
+            }
+        }
+        .padding(20)
+        .frame(minWidth: 420)
+    }
+}
+#endif
 
 /// Identifiable wrapper so a URL can drive `.sheet(item:)`.
 struct ShareItem: Identifiable {

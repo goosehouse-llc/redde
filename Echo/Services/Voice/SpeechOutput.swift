@@ -74,7 +74,9 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         if readers.contains(.elevenLabs) { loadElevenLabsVoices() }
         synthesizer.delegate = self
         // Mixing with the session we already configured; don't let the synthesizer flip categories.
+        #if os(iOS)
         synthesizer.usesApplicationAudioSession = true
+        #endif
         player.onFirstAudio = { [weak self] in
             guard let self, !announcedStart else { return }
             announcedStart = true

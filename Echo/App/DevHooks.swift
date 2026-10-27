@@ -1,5 +1,7 @@
 #if DEBUG
+#if canImport(AlarmKit)
 import AlarmKit
+#endif
 import Foundation
 import UserNotifications
 import WidgetKit
@@ -191,7 +193,9 @@ enum DevHooks {
         if demoBots {
             conversation.seedBotDemo()
             BotDirectory.shared.set(ConversationsList.demoBots, key: settings.connectionKey)
+            #if canImport(UIKit)
             if has("-echo.demoPicture") { BotPictures.shared.seed("scout", BotPictures.demoPicture) }
+            #endif
         }
         if has("-echo.demoLong") { conversation.seedLongDemo() }
         if has("-echo.incognito") { conversation.startIncognito() }
@@ -242,6 +246,7 @@ enum DevHooks {
             }
             WidgetCenter.shared.reloadTimelines(ofKind: AgentBoard.widgetKind)
         }
+        #if os(iOS)
         if has("-echo.demoAlarm") {
             if value("-echo.demoAlarm") == "clear" {
                 for alarm in (try? AlarmManager.shared.alarms) ?? [] { try? AlarmManager.shared.cancel(id: alarm.id) }
@@ -251,6 +256,7 @@ enum DevHooks {
                 Task { _ = try? await DeviceAlarms().set(.object(["title": .string("Pasta"), "minutes": .number(seconds / 60)])) }
             }
         }
+        #endif
         if has("-echo.demoNotify") {
             let wait = value("-echo.demoNotify").flatMap(Double.init) ?? 12
             Task {
@@ -268,9 +274,11 @@ enum DevHooks {
             TurnActivity.shared.tool("terminal")
             TurnActivity.shared.needsApproval(ApprovalRequest(id: "demo", command: "rm -rf ~/builds/2025-*", description: nil,
                                                               choices: ["once", "session", "always", "deny"]))
+            #if os(iOS)
             ApprovalAnswer.deliver = { _, choice in
                 TurnActivity.shared.finish(reply: choice == "deny" ? "Denied. Nothing was removed." : "Approved (\(choice)).")
             }
+            #endif
         }
         if has("-echo.demoTasks") {
             // "3": that many of the six done, and it stays so. "run": one more every few seconds.
@@ -373,6 +381,7 @@ enum DevHooks {
             }
         }
 
+        #if os(iOS)
         // `-echo.ringMe <profile> <seconds>` (and `-echo.callsOn`): an agent's call, without the relay.
         if has("-echo.callsOn") {
             settings.agentCalls = true
@@ -387,6 +396,7 @@ enum DevHooks {
                 AgentCalls.shared.ring(from: profile, saying: "This is a test call from Redde. The garage door has been open for an hour.")
             }
         }
+        #endif
 
         if let name = value("-echo.askProfile") {
             ProfileCatalog.keep(named: name)

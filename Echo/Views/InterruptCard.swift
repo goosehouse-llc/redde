@@ -33,10 +33,10 @@ struct ClarifyCard: View {
         VStack(alignment: .leading, spacing: 12) {
             Label(request.questions.count > 1 ? String(localized: "Redde has a few questions") : String(localized: "Redde has a question"),
                   systemImage: "questionmark.bubble")
-                .font(.subheadline.weight(.semibold))
+                .chatFont(.subheadline, weight: .semibold)
             ForEach(request.questions) { q in
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(q.question).font(.body)
+                    Text(q.question).chatFont(.body)
                     if !q.choices.isEmpty {
                         FlowChips(items: q.choices, selected: picked[q.id] ?? []) { choice in
                             var set = picked[q.id] ?? []
@@ -52,7 +52,7 @@ struct ClarifyCard: View {
                     TextField(q.choices.isEmpty ? String(localized: "Your answer") : String(localized: "Or type something else"),
                               text: binding(for: q.id), axis: .vertical)
                         .textFieldStyle(.roundedBorder)
-                        .font(.footnote)
+                        .chatFont(.footnote)
                         .onSubmit { if request.questions.count == 1 { send() } }
                 }
             }
@@ -60,7 +60,7 @@ struct ClarifyCard: View {
                 Button(action: send) { FilledButtonTitle(title: String(localized: "Send answers")) }
                     .buttonStyle(.borderedProminent)
                     .disabled(!allAnswered)
-                    .font(.footnote)
+                    .chatFont(.footnote)
             }
         }
         .padding(12)
@@ -94,9 +94,9 @@ struct SudoCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Label("sudo password needed", systemImage: "lock.shield")
-                .font(.subheadline.weight(.semibold))
+                .chatFont(.subheadline, weight: .semibold)
             Text("A command on the gateway host needs elevated rights. The password goes straight to that terminal and isn't stored by Redde.")
-                .font(.footnote).foregroundStyle(.secondary)
+                .chatFont(.footnote).foregroundStyle(.secondary)
             HStack {
                 SecureField("Password", text: $password)
                     .textFieldStyle(.roundedBorder)
@@ -104,7 +104,7 @@ struct SudoCard: View {
                 Button(action: send) { FilledButtonTitle(title: String(localized: "Send")) }.buttonStyle(.borderedProminent).disabled(password.isEmpty)
                 Button("Cancel") { respond("") }.buttonStyle(.bordered)
             }
-            .font(.footnote)
+            .chatFont(.footnote)
         }
         .padding(12)
         .background(Color.red.opacity(0.10), in: .rect(cornerRadius: 14))
@@ -126,11 +126,11 @@ struct SecretCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Label("Redde needs a secret", systemImage: "key")
-                .font(.subheadline.weight(.semibold))
+                .chatFont(.subheadline, weight: .semibold)
             Text(request.prompt.isEmpty ? String(localized: "Provide a value for \(request.envVar).") : request.prompt)
-                .font(.footnote)
+                .chatFont(.footnote)
             if !request.envVar.isEmpty {
-                Text("Stored on the gateway as \(request.envVar)").font(.caption.monospaced()).foregroundStyle(.secondary)
+                Text("Stored on the gateway as \(request.envVar)").chatFont(.caption, design: .monospaced).foregroundStyle(.secondary)
             }
             HStack {
                 SecureField("Value", text: $value)
@@ -139,7 +139,7 @@ struct SecretCard: View {
                 Button(action: send) { FilledButtonTitle(title: String(localized: "Save")) }.buttonStyle(.borderedProminent).disabled(value.isEmpty)
                 Button("Skip") { respond("") }.buttonStyle(.bordered)
             }
-            .font(.footnote)
+            .chatFont(.footnote)
         }
         .padding(12)
         .background(Color.purple.opacity(0.10), in: .rect(cornerRadius: 14))
@@ -164,7 +164,7 @@ struct FlowChips: View {
             ForEach(items, id: \.self) { item in
                 Button { tap(item) } label: {
                     Text(item)
-                        .font(.footnote.weight(.medium))
+                        .chatFont(.footnote, weight: .medium)
                         .padding(.horizontal, 10).padding(.vertical, 6)
                         .frame(maxWidth: .infinity)
                         .background(selected.contains(item) ? theme.accent : Color.primary.opacity(0.08), in: .capsule)

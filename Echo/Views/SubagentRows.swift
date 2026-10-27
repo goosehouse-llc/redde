@@ -34,21 +34,21 @@ struct SubagentRows: View {
                 Image(systemName: icon(agent.status))
                     .symbolEffect(.pulse, isActive: agent.status == .running)
                     .foregroundStyle(tint(agent.status))
-                    .font(.caption)
+                    .chatFont(.caption)
                 Text(agent.goal.isEmpty ? String(localized: "Delegated task") : agent.goal)
-                    .font(.footnote.weight(.medium))
+                    .chatFont(.footnote, weight: .medium)
                     .lineLimit(open ? nil : 2)
                 Spacer(minLength: 0)
                 if agent.taskCount > 1 {
                     Text("\(agent.taskIndex + 1)/\(agent.taskCount)")
-                        .font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+                        .chatFont(.caption2).foregroundStyle(.secondary).monospacedDigit()
                 }
                 if canOpen(agent) {
-                    Image(systemName: "chevron.right").font(.caption2.weight(.semibold)).foregroundStyle(.tertiary)
+                    Image(systemName: "chevron.right").chatFont(.caption2, weight: .semibold).foregroundStyle(.tertiary)
                 }
             }
             Text(detail(agent))
-                .font(.caption)
+                .chatFont(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(open ? nil : 1)
         }

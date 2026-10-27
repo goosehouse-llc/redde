@@ -19,7 +19,7 @@ struct FollowUpChips: View {
                                 conversation.send(text)
                             } label: {
                                 Text(text)
-                                    .font(.subheadline)
+                                    .chatFont(.subheadline)
                                     .lineLimit(1)
                                     .padding(.horizontal, 14).padding(.vertical, 8)
                                     .background(theme.surfaceColor, in: .capsule)

@@ -154,7 +154,7 @@ struct ConversationsList: View {
     /// "Chats": what the sidebar lists, whichever section the wide pane shows. And nothing while
     /// selecting, when Cancel and Deselect all need the room.
     private var listTitle: String {
-        if #available(iOS 27.0, *), wideDetail { return selecting || arrangingBots ? "" : String(localized: "Chats") }
+        if #available(iOS 27.0, macOS 27.0, *), wideDetail { return selecting || arrangingBots ? "" : String(localized: "Chats") }
         return section == .sessions || wideDetail ? String(localized: "Conversations") : section.title
     }
 
@@ -350,6 +350,9 @@ struct ConversationsList: View {
             ForEach(Tab.allCases) { s in Text(s.title).tag(s) }
         }
         .pickerStyle(.segmented)
+        #if os(macOS)
+        .labelsHidden()   // (a Mac shows a picker's label beside it; the three tabs say enough)
+        #endif
     }
 
     private var sessionsList: some View {
@@ -374,7 +377,11 @@ struct ConversationsList: View {
                 }
             }
         }
+        #if os(macOS)
+        .listStyle(.sidebar)   // the Mac's sidebar: its translucent material, its rows
+        #else
         .listStyle(.plain)
+        #endif
         .navigationDestination(for: ProjectRoute.self) { route in
             if let project = projects.first(where: { $0.id == route.id }) {
                 ProjectSessionsView(project: project, open: load, currentID: conversation.serverSessionID,
@@ -387,8 +394,11 @@ struct ConversationsList: View {
                 if selecting {
                     Button("Cancel") { selecting = false; selected = [] }
                 } else if !arrangingBots {
+                    // (On the Mac, Settings is the app menu's, and New Conversation the chat's toolbar's.)
+                    #if os(iOS)
                     Button("Settings", systemImage: "gearshape") { openSettings() }
                         .keyboardShortcut(",", modifiers: .command)
+                    #endif
                 }
             }
             ToolbarItemGroup(placement: .topBarTrailing) {
@@ -403,10 +413,12 @@ struct ConversationsList: View {
                     if !visibleIDs.isEmpty {
                         Button("Select", systemImage: "checkmark.circle") { selecting = true }
                     }
+                    #if os(iOS)
                     Button("New conversation", systemImage: "square.and.pencil") {
                         conversation.reset()
                         opened()
                     }
+                    #endif
                 }
             }
             ToolbarItemGroup(placement: .bottomBar) {
@@ -2136,7 +2148,11 @@ struct ProjectSessionsView: View {
                 }
             }
         }
+        #if os(macOS)
+        .listStyle(.sidebar)
+        #else
         .listStyle(.plain)
+        #endif
         .navigationTitle(project.label)
         .toolbarVisibility(panelParked ? .hidden : .automatic, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)

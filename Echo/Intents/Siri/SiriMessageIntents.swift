@@ -1,7 +1,11 @@
 import AppIntents
 import Foundation
 import GeoToolbox
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
 import UniformTypeIdentifiers
 import os
 
@@ -17,7 +21,7 @@ nonisolated private let siriLog = Logger(subsystem: "com.goosehouse.echo", categ
 
 /// Who Siri is messaging. The schema allows people only, no conversations, so a Siri message
 /// lands in the open conversation (a draft in a new one, with "Drafts in a new conversation").
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 @UnionValue
 enum ReddeMessageDestination {
     case contact(ReddePersonEntity)
@@ -28,7 +32,7 @@ enum ReddeMessageDestination {
 
 // MARK: - Send
 
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 @AppIntent(schema: .messages.sendMessage)
 struct ReddeSendMessageIntent: AppIntent {
     /// The turn uses the gateway credentials, so Siri asks for Face ID on a locked phone.
@@ -72,7 +76,7 @@ struct ReddeSendMessageIntent: AppIntent {
 
 // MARK: - Draft
 
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 @AppIntent(schema: .messages.draftMessage)
 struct ReddeDraftMessageIntent: AppIntent {
     static let supportedModes: IntentModes = .foreground
@@ -98,7 +102,7 @@ struct ReddeDraftMessageIntent: AppIntent {
 
 // MARK: - Edit, unsend, read status
 
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 @AppIntent(schema: .messages.editSentMessage)
 struct ReddeEditSentMessageIntent: AppIntent {
     static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
@@ -117,7 +121,7 @@ struct ReddeEditSentMessageIntent: AppIntent {
     }
 }
 
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 @AppIntent(schema: .messages.unsendMessage)
 struct ReddeUnsendMessageIntent: AppIntent {
     static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
@@ -135,7 +139,7 @@ struct ReddeUnsendMessageIntent: AppIntent {
     }
 }
 
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 @AppIntent(schema: .messages.setMessageReadStatus)
 struct ReddeSetMessageReadStatusIntent: AppIntent {
     var message: ReddeMessageEntity
@@ -154,7 +158,7 @@ struct ReddeSetMessageReadStatusIntent: AppIntent {
 /// the transcript, the ledger, the Live Activity and the widget exactly like a typed one.
 /// Waits `replyBudget` for the reply so Siri can speak it; after that the turn carries on and
 /// the usual "Redde replied" notification (tagged with the reply's entity) brings it back.
-@available(iOS 27.0, *)
+@available(iOS 27.0, macOS 27.0, *)
 @MainActor
 enum SiriTurn {
     /// How long Siri waits for the agent before saying "Sent". Local models with a tool loop

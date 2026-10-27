@@ -1,7 +1,11 @@
 import Foundation
 import Observation
 import Photos
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
 import os
 
 /// What the phone has made out in the pictures in the library (`PhotoLook`), kept so that each

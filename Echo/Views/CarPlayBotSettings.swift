@@ -1,34 +1,5 @@
 import SwiftUI
 
-/// How CarPlay's Bots tab draws each bot's card. The pictures are drawn in code by
-/// `CarPlayArtwork.botCard`, the face in the mood the bot is in; the car writes its name and
-/// what it is doing under it.
-enum CarPlayBotLook: String, CaseIterable, Identifiable {
-    case sticker, stage, peek, wide, glow
-
-    var id: String { rawValue }
-
-    var label: String {
-        switch self {
-        case .sticker: String(localized: "Sticker", comment: "A look for CarPlay's bot cards")
-        case .stage: String(localized: "Stage", comment: "A look for CarPlay's bot cards: each bot in a spotlight")
-        case .peek: String(localized: "Peek", comment: "A look for CarPlay's bot cards: a face peeking in")
-        case .wide: String(localized: "Wide", comment: "A look for CarPlay's bot cards: wider cards")
-        case .glow: String(localized: "Glow")
-        }
-    }
-
-    var blurb: String {
-        switch self {
-        case .sticker: String(localized: "Bright, in each bot's colors, its face a sticker")
-        case .stage: String(localized: "Each bot in a spotlight of its color")
-        case .peek: String(localized: "A face too big for its card, peeking in")
-        case .wide: String(localized: "Wider cards, three across, each face in a soft light")
-        case .glow: String(localized: "Dark, each face in a soft light of its color")
-        }
-    }
-}
-
 /// The CarPlay bot cards row of the Appearance section: collapsed to the current look, it opens
 /// on all five, each shown as four cards in the four moods (your own bots, once Redde has read
 /// them).

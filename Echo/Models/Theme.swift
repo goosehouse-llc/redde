@@ -1,5 +1,9 @@
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
 
 /// Visual themes. Each theme is one `Palette` value — every colour, font and shape decision
 /// in one place — with light and dark variants inside the colours themselves; Settings →
@@ -71,10 +75,17 @@ nonisolated enum Theme: String, CaseIterable, Identifiable, Codable {
 
     /// A colour with one value in light mode and another in dark.
     private static func dyn(_ light: (Double, Double, Double), _ dark: (Double, Double, Double)) -> Color {
+        #if canImport(UIKit)
         Color(uiColor: UIColor { traits in
             let c = traits.userInterfaceStyle == .dark ? dark : light
             return UIColor(red: c.0, green: c.1, blue: c.2, alpha: 1)
         })
+        #else
+        Color(nsColor: NSColor(name: nil) { appearance in
+            let c = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light
+            return NSColor(srgbRed: c.0, green: c.1, blue: c.2, alpha: 1)
+        })
+        #endif
     }
 
     var palette: Palette {
@@ -220,7 +231,11 @@ nonisolated enum Theme: String, CaseIterable, Identifiable, Codable {
             p.text = ink.color
             p.scheme = dark ? .dark : .light
         }
+        #if os(macOS)
+        return ResolvedTheme(base: self, palette: p, textScale: TextZoom.current.withLock { $0 })
+        #else
         return ResolvedTheme(base: self, palette: p)
+        #endif
     }
 }
 
@@ -230,6 +245,10 @@ nonisolated enum Theme: String, CaseIterable, Identifiable, Codable {
 nonisolated struct ResolvedTheme: ThemeStyle, Equatable, Sendable {
     let base: Theme
     let palette: Theme.Palette
+    #if os(macOS)
+    /// View → Zoom In and Out on the Mac (`TextZoom`): the conversation's fonts at this scale.
+    var textScale: CGFloat = 1
+    #endif
     var rawValue: String { base.rawValue }
 }
 
@@ -252,7 +271,11 @@ nonisolated struct ThemeColors: Codable, Equatable, Sendable {
 
         init(_ color: Color) {
             var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            #if canImport(UIKit)
             UIColor(color).getRed(&r, green: &g, blue: &b, alpha: &a)
+            #else
+            (NSColor(color).usingColorSpace(.sRGB) ?? .black).getRed(&r, green: &g, blue: &b, alpha: &a)
+            #endif
             // Extended-range pickers can report slightly past 0...1; clamp to plain sRGB.
             red = min(max(Double(r), 0), 1); green = min(max(Double(g), 0), 1); blue = min(max(Double(b), 0), 1)
         }
@@ -285,7 +308,25 @@ nonisolated struct ThemeColors: Codable, Equatable, Sendable {
 /// base theme and the reader's resolved copy of it answer identically.
 nonisolated protocol ThemeStyle {
     var palette: Theme.Palette { get }
+    #if os(macOS)
+    /// The Mac's text zoom (`TextZoom`), 1 at Actual Size.
+    var textScale: CGFloat { get }
+    #endif
 }
+
+#if os(macOS)
+extension ThemeStyle {
+    var textScale: CGFloat { 1 }
+
+    /// A font of the conversation at the Mac's zoom: the Mac's size for `style` (or a custom
+    /// face's own size), times it. Nil at Actual Size, where the font is as it always was.
+    func zoomed(_ style: NSFont.TextStyle, custom size: CGFloat, design: Font.Design?) -> Font? {
+        guard textScale != 1 else { return nil }
+        if let name = palette.monoFontName ?? palette.bodyFontName { return .custom(name, fixedSize: size * textScale) }
+        return .system(size: TextZoom.points(style) * textScale, design: design)
+    }
+}
+#endif
 
 extension ThemeStyle {
     var label: String { palette.label }
@@ -302,8 +343,13 @@ extension ThemeStyle {
     /// The page, a raised surface and the text as colours to draw with. A theme may leave any of
     /// the three to the system (nil above, for the places that want the system's own material);
     /// these fall back to the system's colour, so a view doesn't spell the fallback out each time.
+    #if canImport(UIKit)
     var pageColor: Color { background ?? Color(.systemBackground) }
     var surfaceColor: Color { surface ?? Color(.secondarySystemBackground) }
+    #else
+    var pageColor: Color { background ?? Color(nsColor: .windowBackgroundColor) }
+    var surfaceColor: Color { surface ?? Color(nsColor: .controlBackgroundColor) }
+    #endif
     var textColor: Color { text ?? .primary }
     var linkColor: Color { palette.linkColor ?? accent }
     var checkboxColor: Color { palette.checkboxColor ?? accent }
@@ -313,6 +359,9 @@ extension ThemeStyle {
     var promptColor: Color { palette.promptColor ?? accent }
     /// Reply text.
     var messageFont: Font {
+        #if os(macOS)
+        if let zoomed = zoomed(.body, custom: 17, design: palette.replyDesign) { return zoomed }
+        #endif
         if let name = palette.monoFontName ?? palette.bodyFontName { return .custom(name, size: 17, relativeTo: .body) }
         return .system(.body, design: palette.replyDesign)
     }
@@ -320,6 +369,13 @@ extension ThemeStyle {
     func headingFont(_ level: Int) -> Font {
         // Prompt-prefix (CRT) themes keep headings at body size in bold — one type size.
         if palette.promptPrefix != nil { return messageFont.weight(level <= 2 ? .bold : .semibold) }
+        #if os(macOS)
+        switch level {
+        case 1: if let zoomed = zoomed(.title3, custom: 20, design: palette.headingDesign) { return zoomed.weight(palette.monoFontName ?? palette.bodyFontName == nil ? .semibold : .bold) }
+        case 2: if let zoomed = zoomed(.headline, custom: 17, design: palette.headingDesign) { return zoomed.weight(.bold) }
+        default: if let zoomed = zoomed(.subheadline, custom: 15, design: palette.headingDesign) { return zoomed.weight(.semibold) }
+        }
+        #endif
         if let name = palette.monoFontName ?? palette.bodyFontName {
             // Custom-face theme without the CRT constraint: scaled headings, same face.
             switch level {
@@ -335,13 +391,27 @@ extension ThemeStyle {
         }
     }
     var tableFont: Font {
+        #if os(macOS)
+        if let zoomed = zoomed(.footnote, custom: 13, design: palette.monoTables ? .monospaced : .default) { return zoomed }
+        #endif
         if let name = palette.monoFontName ?? palette.bodyFontName { return .custom(name, size: 13, relativeTo: .footnote) }
         return palette.monoTables ? .system(.footnote, design: .monospaced) : .system(.footnote)
     }
     /// Your own messages.
-    var userFont: Font { palette.sansUserFont ? .body : messageFont }
+    var userFont: Font {
+        #if os(macOS)
+        if palette.sansUserFont, textScale != 1 { return .system(size: TextZoom.points(.body) * textScale) }
+        #endif
+        return palette.sansUserFont ? .body : messageFont
+    }
     /// Font for code blocks.
     var codeFont: Font {
+        #if os(macOS)
+        if textScale != 1 {
+            if let name = palette.monoFontName { return .custom(name, fixedSize: 13 * textScale) }
+            return .system(size: TextZoom.points(.footnote) * textScale, design: .monospaced)
+        }
+        #endif
         if let name = palette.monoFontName { return .custom(name, size: 13, relativeTo: .footnote) }
         return .system(.footnote, design: .monospaced)
     }

@@ -1,6 +1,14 @@
 import Foundation
 import Observation
+#if canImport(UIKit)
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
+#else
+import AppKit
+#endif
 import UserNotifications
 import os
 
@@ -633,6 +641,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     }
 }
 
+#if os(iOS)
 /// Catches the APNs registration callbacks; everything else stays SwiftUI.
 final class PushDelegate: NSObject, UIApplicationDelegate {
     private let log = Logger(subsystem: "com.goosehouse.echo", category: "notify")
@@ -663,3 +672,4 @@ final class PushDelegate: NSObject, UIApplicationDelegate {
         Task { @MainActor in PushService.shared.failedToRegister(PushError.noToken(reason)) }
     }
 }
+#endif

@@ -621,7 +621,9 @@ final class BotDirectory {
         guard let roster, key == Settings.shared.connectionKey, !(unchanged && told == key) else { return }
         told = key
         ProfileCatalog.keep(bots: roster)
+        #if os(iOS)
         WatchLink.shared.botsChanged()
+        #endif
         Mutes.publish()   // a bot's chat may be another session now (Start Fresh)
     }
 

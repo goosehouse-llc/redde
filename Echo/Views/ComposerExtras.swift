@@ -1,5 +1,9 @@
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
 import UniformTypeIdentifiers
 
 /// The draft on a page of its own, for a message too long for the field: the whole screen to
@@ -80,11 +84,14 @@ final class ComposerPaste {
 
     /// The composer's field has just taken the focus: teach the text view behind it.
     func teachFocusedField() {
+        #if os(iOS)
         guard deliver != nil, let field = UIResponder.currentFirstResponder, field is UITextView || field is UITextField else { return }
         PicturePasting.teach(field)
+        #endif
     }
 }
 
+#if os(iOS)
 /// The run-time subclass `ComposerPaste` describes.
 nonisolated enum PicturePasting {
     private static let prefix = "ReddePicturePasting_"
@@ -146,6 +153,7 @@ extension UIResponder {
 
     @objc private func noteAsFirstResponder(_ sender: Any?) { UIResponder.found = self }
 }
+#endif
 
 /// A ring that fills as the conversation fills the model's context window, with the share
 /// beside it; tapped, it says how many tokens that is.
