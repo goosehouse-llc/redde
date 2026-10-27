@@ -4,8 +4,12 @@ Redde is translated into 17 languages besides English (asked for on 2026-10-26):
 German, Italian, Portuguese (Brazil), Japanese, Korean, Chinese (Simplified and Traditional), Dutch,
 Swedish, Polish, Ukrainian, Russian, Turkish, Danish and Norwegian. The whole app is translated: every
 screen on iPhone, iPad, Apple Watch and CarPlay, notifications, the Live Activity, widgets, Siri and
-the permission texts. Two things stay English: the App Store listing, and voice — the words Redde
-says itself ("Okay.", "Noted.") and the words it listens for ("that's all", yes or no to an approval).
+the permission texts. The App Store listing stays English.
+
+Voice follows the language Redde listens in (Settings → Voice → Listening language), not the
+screen's, since 2026-10-27: what Redde says itself ("Okay.", "Approval needed… Say approve, or
+deny.") is looked up in that language's strings (`VoiceWords.bundle`), and the words it listens for
+are heard in that language as well as in English (see "Voice words" below).
 
 ## Where the text lives
 
@@ -69,11 +73,10 @@ Everything else that a person reads is a `String`, and isn't, until it goes thro
   instructions (`LiveSetup`, `LiveVoicePreview`, the dialects), `DeviceToolRunner`'s answers to the
   agent, bot templates' `soul:`, group rooms' instructions (`ServerGroups`), `SkillEditorView`'s
   prompt, `Capture`'s note text. Their `strip()` functions find them by their English.
-- **Voice**: what Redde says aloud (`VoiceSession`, `SpokenRequest`, `AgentCalls`' "Unlock your
-  iPhone to answer"), and the word lists it listens for (`StopPhrase`, `SpokenRequest`,
-  `BargeInDetector`), the default wake phrase ("Hey Sol", `Settings.defaultWakePhrase`) among
-  them. Where a translated text quotes one of these words ("say “stop”", the setting "Stop and
-  Skip in the car"), the word stays English inside it.
+- **The English voice words**, heard in every language beside the listening language's
+  (`StopPhrase`, `SpokenRequest`, `StopWord`, `Backchannel`), and the default wake phrase ("Hey
+  Sol", `Settings.defaultWakePhrase`). Where a screen's text quotes one of them ("say “stop”", the
+  setting "Stop and Skip in the car"), it stays English inside it: it still works.
 - **Logs** (`Logger`, `LiveMeasure`), keys, identifiers, URLs, JSON, DEBUG-only screens and the demo
   conversations (`ConversationDemo`, `DevHooks`).
 
@@ -123,6 +126,18 @@ writing; `import` puts each translation into every catalog that has its English.
 translations of 2026-10-26 followed are kept with the scripts: product names and technical
 identifiers untouched, Apple's own iOS words for Apple's things, Redde's screen names decided once
 and used wherever a text points to them.
+
+## Voice words
+
+`Echo/Resources/VoiceWords.json` has, per language (its base code; Chinese one table for both
+scripts, Norwegian under `nb`), the words Redde hears beside the English: `stop` (whole utterances
+that end the conversation), `before`/`after` (polite words peeled around one), `yes`/`no` (whole
+answers to an approval; the first of each is the word the voice and the screen ask for),
+`numbers` (every way of saying choice one to ten; the first is the one read out),
+`numberBefore`/`numberAfter`, `interrupt` and `skip` (matched anywhere in a sentence, so never an
+everyday word), `negations` (said right before those, they flip them) and `sounds` (a listener's
+"mm-hm", which doesn't interrupt). What Redde says aloud is ordinary catalog text with
+`bundle: VoiceWords.current.bundle`; its comment says it is said aloud.
 
 ## Decided once, for every language
 

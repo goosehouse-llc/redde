@@ -69,45 +69,59 @@ nonisolated struct BargeInDetector: Sendable, Equatable {
     }
 }
 
-/// "Stop", for a reply that only that word stops (Settings → Voice → Interrupt with).
+/// "Stop", for a reply that only that word stops (Settings → Voice → Interrupt with), and the
+/// car's "skip": in English, and the listening language's (`VoiceWords.interrupt`, `.skip`).
 nonisolated enum StopWord {
     /// Said before "stop", these mean the opposite.
     private static let negations: Set<String> = ["don't", "dont", "not", "never", "won't", "wont", "can't", "cant", "cannot", "doesn't", "didn't"]
 
-    /// True when `text` has "stop" in it as a word of its own, and not as "don't stop". One of
-    /// the person's own stop phrases (`own`) counts the same, said as a run of words anywhere in
-    /// what was heard; one written without spaces (Chinese, Japanese) counts wherever it stands.
-    static func heard(in text: String, own: [String] = []) -> Bool {
+    /// True when `text` has "stop" (or the listening language's word) in it as a word of its own,
+    /// and not as "don't stop". One of the person's own stop phrases (`own`) counts the same,
+    /// said as a run of words anywhere in what was heard; one written without spaces (Chinese,
+    /// Japanese) counts wherever it stands.
+    static func heard(in text: String, own: [String] = [], words: VoiceWords = .current) -> Bool {
+        heard(any: [["stop"]] + words.interrupt + StopPhrase.own(own).map(Self.words).filter { !$0.isEmpty }, in: text, words: words)
+    }
+
+    /// True when the car's "skip" (or the listening language's) is in `text`, not after a "don't".
+    static func skipHeard(in text: String, words: VoiceWords = .current) -> Bool {
+        heard(any: [["skip"]] + words.skip, in: text, words: words)
+    }
+
+    private static func heard(any phrases: [[String]], in text: String, words table: VoiceWords) -> Bool {
         let words = Self.words(text)
-        let phrases = [["stop"]] + StopPhrase.own(own).map(Self.words).filter { !$0.isEmpty }
+        let negations = Self.negations.union(table.negations)
         for phrase in phrases {
             guard words.count >= phrase.count else { continue }
             for i in 0 ... words.count - phrase.count where Array(words[i ..< i + phrase.count]) == phrase {
                 if !(i > 0 && negations.contains(words[i - 1])) { return true }
             }
         }
+        // Written without spaces: wherever it stands in the run, but not straight after a "别".
         let run = words.joined()
-        return StopPhrase.own(own).contains { phrase in
-            !phrase.contains(" ") && phrase.unicodeScalars.contains { $0.value >= 0x2E80 } && run.contains(phrase)
+        return phrases.contains { phrase in
+            guard phrase.count == 1, VoiceWords.isWide(phrase[0]) else { return false }
+            var from = run.startIndex
+            while let found = run.range(of: phrase[0], range: from ..< run.endIndex) {
+                let before = run[..<found.lowerBound]
+                if !negations.contains(where: { VoiceWords.isWide($0) && before.hasSuffix($0) }) { return true }
+                from = found.upperBound
+            }
+            return false
         }
     }
 
-    /// True when `text` has `word` in it as a word of its own, not after a "don't" ("skip", in
-    /// the car, beside "stop").
-    static func heard(_ word: String, in text: String) -> Bool {
-        let words = Self.words(text)
-        return words.indices.contains { i in words[i] == word && !(i > 0 && negations.contains(words[i - 1])) }
-    }
-
-    private static func words(_ text: String) -> [String] {
+    /// `text` as the words it's compared by: lowercase, accents and width folded.
+    static func words(_ text: String) -> [String] {
         text.lowercased().folding(options: [.diacriticInsensitive, .widthInsensitive], locale: nil)
             .replacingOccurrences(of: "’", with: "'")
             .split { !$0.isLetter && !$0.isNumber && $0 != "'" }.map(String.init)
     }
 }
 
-/// The small sounds a listener makes without meaning to take the floor ("mm-hm", "okay", "right").
-/// Said over a reply they are no reason to stop it.
+/// The small sounds a listener makes without meaning to take the floor ("mm-hm", "okay", "right"),
+/// in English and the listening language (`VoiceWords.sounds`). Said over a reply they are no
+/// reason to stop it.
 nonisolated enum Backchannel {
     private static let words: Set<String> = [
         "mm", "mhm", "mhmm", "mmhm", "mmhmm", "hmm", "hm", "uh", "um", "huh", "ah", "oh", "ooh", "aha", "uhhuh", "yeah", "yep", "yup", "yes",
@@ -117,10 +131,16 @@ nonisolated enum Backchannel {
 
     /// True when `text` is nothing but such sounds: "Mm-hm.", "Okay, right", "I see". Words only
     /// count as a whole: "okay, stop" is not one, and neither is a long run of them.
-    static func isOnly(_ text: String) -> Bool {
-        let said = text.lowercased().replacingOccurrences(of: "-", with: "")
-            .split { !$0.isLetter }.map(String.init)
+    static func isOnly(_ text: String, words table: VoiceWords = .current) -> Bool {
+        let said = tokens(text)
         guard !said.isEmpty, said.count <= 3 else { return false }
-        return said.allSatisfy(words.contains)
+        return said.allSatisfy { words.contains($0) || table.sounds.contains($0) }
+    }
+
+    /// `text` as the sounds it's compared by: lowercase, accents and width folded, "mm-hm" as one.
+    static func tokens(_ text: String) -> [String] {
+        text.lowercased().folding(options: [.diacriticInsensitive, .widthInsensitive], locale: nil)
+            .replacingOccurrences(of: "-", with: "")
+            .split { !$0.isLetter }.map(String.init)
     }
 }

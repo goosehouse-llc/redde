@@ -2,8 +2,9 @@ import Foundation
 
 /// Recognizes an utterance that means "stop listening" so it never reaches the model.
 /// Whole-utterance match only: "stop" ends the loop, "stop by the store" is a question.
-/// The list here is English; a person's own phrases (Settings → Voice → Stop phrases) are heard
-/// as well, which is how another language gets one, or a household its own word.
+/// The list here is English, heard in every language; the listening language's own are its
+/// `VoiceWords`, and a person's own phrases (Settings → Voice → Stop phrases) are heard as
+/// well, which is how a household gets its own word.
 nonisolated enum StopPhrase {
     static let phrases: Set<String> = [
         "stop", "stop listening", "stop hands free", "stop hands-free", "hands free off", "hands-free off",
@@ -31,28 +32,25 @@ nonisolated enum StopPhrase {
         return phrases.map(normalize).filter { !$0.isEmpty && seen.insert($0).inserted }
     }
 
-    static func matches(_ utterance: String, own: [String] = []) -> Bool {
+    static func matches(_ utterance: String, own: [String] = [], words: VoiceWords = .current) -> Bool {
         var text = normalize(utterance)
         let own = Self.own(own)
-        let phrases = own.isEmpty ? Self.phrases : Self.phrases.union(own)
+        let phrases = Self.phrases.union(words.stop).union(own)
         // Longer than any phrase with its polite wrapping: a sentence, not a goodbye.
-        let longest = max(7, (own.map { $0.split(separator: " ").count }.max() ?? 0) + 3)
+        let longest = max(7, ((own + words.stop).map { $0.split(separator: " ").count }.max() ?? 0) + 3)
         guard !text.isEmpty, text.split(separator: " ").count <= longest else { return false }
         if phrases.contains(text) { return true }
         // Peel polite wrappers: "okay redde, that's all, thanks" → "that's all".
-        var changed = true
-        while changed {
-            changed = false
-            for filler in leadingFiller where text.hasPrefix(filler + " ") {
-                text = String(text.dropFirst(filler.count + 1)); changed = true
-            }
-            for filler in trailingFiller where text.hasSuffix(" " + filler) {
-                text = String(text.dropLast(filler.count + 1)); changed = true
-            }
+        let leading = words.before + leadingFiller, trailing = words.after + trailingFiller
+        while let peeled = VoiceWords.peel(text, leading: leading) ?? VoiceWords.peel(text, trailing: trailing) {
+            text = peeled
             if phrases.contains(text) { return true }
         }
         return false
     }
+
+    /// Every built-in phrase: the English, and the listening language's.
+    static func builtIn(_ words: VoiceWords = .current) -> Set<String> { phrases.union(words.stop) }
 
     /// Lowercased, accents and width set aside (a phrase typed "arrete" is the one heard as
     /// "Arrête"), punctuation dropped, single spaces.

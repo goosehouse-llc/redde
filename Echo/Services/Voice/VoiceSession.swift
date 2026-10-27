@@ -225,6 +225,11 @@ final class VoiceSession {
     private var metrics = VoiceMetrics()
     private var replyTask: Task<Void, Never>?
     private var replySerial = 0
+    /// What is said when a stop phrase is heard, in the listening language.
+    private static var okay: String {
+        String(localized: "Okay.", bundle: VoiceWords.current.bundle, comment: "Said aloud in voice mode: an answer taken, or a stop phrase heard")
+    }
+
     /// True while speaking the "Okay." that confirms a stop phrase; not a real turn.
     private var acknowledging = false
     private var replaying = false
@@ -950,7 +955,7 @@ final class VoiceSession {
             phase = .speaking
             output.speaker = conversation.bot?.profile
             output.beginReply()
-            output.append("Okay.")
+            output.append(Self.okay)
             output.endReply()
             return
         }
@@ -971,7 +976,7 @@ final class VoiceSession {
             phase = .speaking
             output.speaker = conversation.bot?.profile
             output.beginReply()
-            output.append("Noted.")
+            output.append(String(localized: "Noted.", bundle: VoiceWords.current.bundle, comment: "Said aloud in voice mode, and Siri's answer: a note taken"))
             output.endReply()
             return
         }
@@ -1339,7 +1344,7 @@ final class VoiceSession {
         phase = .speaking
         output.speaker = conversation.bot?.profile
         output.beginReply()
-        output.append("It's waiting for you on your iPhone.")
+        output.append(String(localized: "It's waiting for you on your iPhone.", bundle: VoiceWords.current.bundle, comment: "Said aloud in voice mode: a request that has to be answered on the screen"))
         output.endReply()
     }
 
@@ -1487,7 +1492,7 @@ final class VoiceSession {
                     stoppedByWord()
                     return
                 }
-                if skips, StopWord.heard("skip", in: now) {
+                if skips, StopWord.skipHeard(in: now) {
                     confirmTask = nil
                     skippedByWord()
                     return
@@ -1516,7 +1521,7 @@ final class VoiceSession {
         acknowledging = true
         output.speaker = conversation.bot?.profile
         output.beginReply()   // (drops what was left of the reply)
-        output.append("Okay.")
+        output.append(Self.okay)
         output.endReply()
     }
 

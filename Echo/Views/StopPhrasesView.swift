@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// Settings → Voice → Stop phrases: the person's own ways of ending a hands-free conversation,
-/// beside the built-in English ones. Whole phrases, as they'd be said; `StopPhrase` does the
-/// hearing.
+/// beside the built-in ones (English, and the listening language's). Whole phrases, as they'd be
+/// said; `StopPhrase` does the hearing.
 struct StopPhrasesView: View {
     @State private var settings = Settings.shared
     @State private var draft = ""
@@ -14,7 +14,7 @@ struct StopPhrasesView: View {
         let cleaned = phrase.trimmingCharacters(in: .whitespacesAndNewlines)
         let heard = StopPhrase.normalize(cleaned)
         guard !heard.isEmpty, cleaned.count <= StopPhrase.longestOwn, own.count < StopPhrase.mostOwn,
-              !StopPhrase.phrases.contains(heard), !StopPhrase.own(own).contains(heard) else { return nil }
+              !StopPhrase.builtIn().contains(heard), !StopPhrase.own(own).contains(heard) else { return nil }
         return cleaned
     }
 
@@ -46,7 +46,7 @@ struct StopPhrasesView: View {
                         ? " " + String(localized: "With “Interrupt with” set to Only “stop”, these stop a reply too.") : ""))
             }
             Section {
-                Text(Self.builtIn)
+                Text(Self.builtIn(VoiceWords.current))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             } header: {
@@ -60,8 +60,14 @@ struct StopPhrasesView: View {
         .toolbar { if !settings.stopPhrases.isEmpty { EditButton() } }
     }
 
-    /// A few of the built-in ones, enough to show the kind.
-    static let builtIn = "“stop”, “stop listening”, “that's all”, “that's enough”, “goodbye”, “good night”, “end conversation”, “we're done”, “never mind”, “cancel”, “thank you”"
+    /// A few of the built-in ones, enough to show the kind: the listening language's, then the
+    /// English, which are heard too.
+    static func builtIn(_ words: VoiceWords) -> String {
+        let own = words.listedStop.prefix(10).map { "“\($0)”" }.joined(separator: ", ")
+        return own.isEmpty ? english : own + "\n\n" + english
+    }
+
+    static let english = "“stop”, “stop listening”, “that's all”, “that's enough”, “goodbye”, “good night”, “end conversation”, “we're done”, “never mind”, “cancel”, “thank you”"
 
     private func add() {
         guard let phrase = Self.addable(draft, to: settings.stopPhrases) else { return }

@@ -58,7 +58,9 @@ nonisolated enum AgentCallPlan: Equatable, Sendable {
 
     /// What is said after the agent's line while the microphone waits for an unlock.
     static func untilUnlocked(appLocked: Bool) -> String {
-        appLocked ? "Unlock Redde to answer." : "Unlock your iPhone to answer."
+        let said = VoiceWords.current.bundle
+        return appLocked ? String(localized: "Unlock Redde to answer.", bundle: said, comment: "Said aloud on a call from an agent, while Redde is locked")
+            : String(localized: "Unlock your iPhone to answer.", bundle: said, comment: "Said aloud on a call from an agent, while the iPhone is locked")
     }
 
     /// The plugin command that says this call was picked up, so its agent may call again in a

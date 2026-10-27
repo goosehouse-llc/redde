@@ -39,8 +39,13 @@ final class Settings: ServeEndpoint {
     static let shared: Settings = {
         let settings = Settings()
         settings.moveLegacySecretsToActiveServer()
+        settings.isShared = true
+        VoiceWords.listen(in: settings.speechLocale)
         return settings
     }()
+
+    /// The app's own settings, not a test's: they say what language voice words are heard in.
+    @ObservationIgnored private var isShared = false
 
     // Shipped defaults are empty: the app is configured on first run. Personal builds can drop a
     // git-ignored Echo/Resources/LocalDefaults.json into the bundle to prefill (see README).
@@ -287,7 +292,10 @@ final class Settings: ServeEndpoint {
     }
     /// The language Redde listens for, as a locale id ("es-MX"). Empty = the iPhone's language.
     var speechLanguage: String {
-        didSet { store(speechLanguage, forKey: Keys.speechLanguage) }
+        didSet {
+            store(speechLanguage, forKey: Keys.speechLanguage)
+            if isShared { VoiceWords.listen(in: speechLocale) }
+        }
     }
     /// Read each reply with a voice for the language it's written in, not only `speechLanguage`.
     var matchReplyLanguage: Bool {
