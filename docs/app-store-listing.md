@@ -9,7 +9,7 @@ Hermes Redde
 Talk, chat and run your agent
 
 ## Promotional text (170, editable without a new build)
-New in 2.2: live voice with GPT-Live, Gemini Live, Grok Voice or ElevenLabs, wake phrases (say “Hey” and a bot's name), and Hermes plugins from Nous Research's catalog.
+New in 2.2: your agents can call you, live voice with ElevenLabs, GPT-Live, Gemini Live, or Grok Voice, wake phrases, and Hermes plugins from Nous Research's catalog.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name)
 voice,assistant,ai,agent,carplay,self-hosted,llm,ollama,bots,watch,siri,shortcuts,private,openai
@@ -32,11 +32,11 @@ TALK, DON'T TYPE
 • Hands-free keeps the conversation going until you say "that's all". Talk over an answer or type to steer it.
 • In CarPlay, ask in a new chat, a recent one or a bot's. On Apple Watch, raise your wrist and ask.
 • "Hey Siri, ask Redde…" works from the Lock Screen and AirPods, and Siri takes notes for your agent. A control, widget or the Action Button starts listening.
-• Spoken prefixes: a word you chose adds a text prefix, switches model or goes to a bot: "Opus, review this diff".
+• Spoken prefixes add text, switch models or go to a bot: "Opus, review this diff".
 
 SEE THE AGENT WORK
 • Watch reasoning and tool calls live, with a Live Activity; lock the phone and it carries on. The list shows what's working or needs you.
-• Approve a risky command or answer the agent's question from a notification, out loud, or with a nod in AirPods. Pair your Hermes and notifications arrive with Redde closed, encrypted end to end.
+• Approve a risky command or answer the agent's question from a notification, out loud, or with a nod in AirPods. Pair your Hermes and notifications arrive with Redde closed, encrypted end to end, and an agent you allow can call you.
 
 A FULL CLIENT, NOT JUST A MIC
 • Chats live in your gateway's session ledger: start on the phone, continue on the desktop or the CLI. Search them, pin, rename, fork, archive, or go incognito.
@@ -68,9 +68,10 @@ Two pictures App Store Connect has taken since October 2026, on the version page
 The words in both sit inside the "art safe area" of Apple's templates. Use Preview in App Store Connect before submitting: it shows each on iPhone and iPad, both ways up.
 
 ## What's New in 2.2 (4000)
-LIVE VOICE! Wake phrases. And plugins.
+Live voice. Calls from your agents. Wake phrases. And plugins.
 
-• LIVE VOICE! Pick GPT-Live, Gemini Live, Grok Voice or ElevenLabs in Settings → Voice → Voice mode, add your key for it, and voice mode becomes a call: the voice talks and listens at once, so you can interrupt it, it answers small talk itself, and it hands anything real to your agent and says the answer in its own words. Each bot can have its own engine and voice (Edit Bot → Voice), with a sample of every voice before you pick it. Say "Home, …" and the call goes to Home, in Home's voice. It waits a moment for you to finish, and your agent checks the current state each time you ask. With hands-free off, it hangs up a few seconds after the answer unless you keep talking. Each service bills your key per minute.
+• LIVE VOICE! Pick ElevenLabs, GPT-Live, Gemini Live, or Grok Voice in Settings → Voice → Voice mode, add your key for it, and voice mode becomes a call: the voice talks and listens at once, so you can interrupt it, it answers small talk itself, and it hands anything real to your agent and says the answer in its own words. Each bot can have its own engine and voice (Edit Bot → Voice), with a sample of every voice before you pick it. Say "Home, …" and the call goes to Home, in Home's voice. It waits a moment for you to finish, and your agent checks the current state each time you ask. With hands-free off, it hangs up a few seconds after the answer unless you keep talking. Each service bills your key per minute.
+• Your agents can call you. Turn on Calls from Agents (Settings → Notifications) and pick who may: when something shouldn't wait, the agent rings your iPhone like a phone call, on the Lock Screen too. Answer and it says why it called, in its own voice, and you talk; with your iPhone locked it waits for you to unlock it, unless you turn on Talk While Locked. Miss it and a notification says what it was about. It takes the Redde plugin 1.8.0 on your Hermes (Settings → Redde Plugin offers it) and notifications from your Hermes.
 • Group chats as calls. Turn on Group Chats as Calls (Settings → Voice → Voice mode) and voice mode in a group chat is a live call: what you say goes to the group, and each bot answers in its own live voice. Keep Calls On When Locked lets a call go on with your iPhone locked.
 • ElevenLabs reads replies too (Settings → Voice → Reading voice), on your own key, each bot in an ElevenLabs voice of its own. And a bot can read with a voice of its own (Edit Bot → Voice): Kokoro for one, ElevenLabs for another, and a Kokoro voice can be a blend.
 • Wake phrases. With Redde open on your iPhone, iPad or the car's screen, say "Hey" and an agent's name to talk to it, or "Hey Home, turn the lights off" to ask straight away. Each agent's phrase can be changed. Off until you turn it on in Settings → Voice → Wake Phrase; it listens on the device.
@@ -85,11 +86,13 @@ Written ahead of the release. What a phone has shown is said where it has.
 
 In App Store Connect and on the web:
 - 2.1.1 (269) was released on 2026-10-25.
-- The build is 2.2 (273), from main: the live voice fixes, Kanban for bots, Plugins, and the afternoon's voice work (ElevenLabs reading, group chats as calls, Voice settings in three parts; 2026-10-26). 270 and 272 were uploaded before it: submit 273.
+- The build is 2.2 (274), from main: the live voice fixes, Kanban for bots, Plugins, the afternoon's voice work (ElevenLabs reading, group chats as calls, Voice settings in three parts) and calls from agents (2026-10-26). 273 was submitted and came back out of review the same day; 270, 272 and 273 were uploaded before it: submit 274.
+- Calls from agents add the `voip` background mode, PushKit and CallKit. Every VoIP push is reported to CallKit as an incoming call (App Review checks this); the review notes say so under CALLS FROM AGENTS and BACKGROUND MODES. CallKit is not allowed on the China storefront, which Redde already leaves out. The relay's call routes were deployed on 2026-10-26, and plugin 1.8.0 (call_user) is on GitHub main.
+- The copy gains calls: the promotional text and What's New keep the wording changed by hand in App Store Connect (ElevenLabs first, "Live voice. …" as the first line) and add calls; the description mentions them in the notifications line (3,995).
 - Live voice is in the Release build from 2.2: the `GPT_LIVE` flag is gone (2026-10-25). Its calls go over WebSockets on URLSession, Apple's TLS, with no WebRTC or other cryptography in the app, so the export answer stays as it is and no French declaration is needed.
 - The description gains live voice and wake phrases (3,995 of 4,000; two lines tightened to make room), and What's New is new. `scripts/app-store-push.py all`, then `notes`: the review notes gain LIVE VOICE and a new MICROPHONE line (3,993 with the key).
 - The microphone's permission text changes (`NSMicrophoneUsageDescription`): the text goes only to the user's server, unless they start a live voice call.
-- The privacy policy gains Wake phrases, Live voice calls and the plugin catalog Find Plugins downloads from Nous Research, and now says what Sync with iCloud sends, which it never did. Publish it before the release (`scripts/privacy-page.py`).
+- The privacy policy gains Wake phrases, Live voice calls, the plugin catalog Find Plugins downloads from Nous Research, and Calls from agents (the relay's second token), and now says what Sync with iCloud sends, which it never did. Publish it before the release (`scripts/privacy-page.py`).
 - App Privacy stays "Data Not Collected" (his call, 2026-10-25; the reasoning is under App Privacy below).
 - The website says "coming soon in 2.1.1": change it when 2.2 is out (deploys are your word).
 
@@ -97,6 +100,7 @@ Tried on a phone:
 - GPT-Live, Gemini Live and ElevenLabs calls on Marta, Debug builds (2026-10-25). Grok Voice only against `scripts/live-standin.py`, never the real service.
 - ElevenLabs calls to Home on Marta, Debug builds (2026-10-26): the 1.5 s pause held each early reply to about 1.5 s; the voice said truthfully when Home had answered without checking; Home itself still answered a repeated "is it on?" from memory, which is Home's model (Qwen3.6-35B-A3B), not Redde.
 - Wake phrases on Marta, basic test (2026-10-25); the fixes from that try are unheard.
+- Calls from agents on Marta, Debug builds (2026-10-26): the main agent and Home each rang through the deployed relay, were answered, and said their line in their live voice; Home needed the plugin in its own profile (`tmp/plugin-up.sh ops`). Not tried: a missed or declined call, Talk While Locked on, a Release build.
 - A Release build on Marta: see below.
 
 Not known to have been tried: Grok Voice for real, wake phrases in a car (whether the car's media keeps playing while Redde holds its microphone), live voice in CarPlay.
