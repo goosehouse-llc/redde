@@ -26,13 +26,13 @@ final class SpeechRecognizer {
 
         var errorDescription: String? {
             switch self {
-            case .busy: "The microphone is still shutting down. Try again in a moment."
-            case .permissionDenied: "Microphone access was denied. Enable it for Redde in Settings."
-            case .localeUnsupported: "On-device transcription isn't available for this language. Pick another under Settings → Voice → Listening language."
-            case .unavailable: "On-device transcription isn't available on this device, so Redde can't listen here. Typing works as usual."
-            case .assetsUnavailable: "The on-device speech model isn't installed yet."
-            case .audioFormat: "Couldn't set up the microphone audio format."
-            case .noMicrophone: "No microphone is ready just now. Tap the orb to try again."
+            case .busy: String(localized: "The microphone is still shutting down. Try again in a moment.")
+            case .permissionDenied: String(localized: "Microphone access was denied. Enable it for Redde in Settings.")
+            case .localeUnsupported: String(localized: "On-device transcription isn't available for this language. Pick another under Settings → Voice → Listening language.")
+            case .unavailable: String(localized: "On-device transcription isn't available on this device, so Redde can't listen here. Typing works as usual.")
+            case .assetsUnavailable: String(localized: "The on-device speech model isn't installed yet.")
+            case .audioFormat: String(localized: "Couldn't set up the microphone audio format.")
+            case .noMicrophone: String(localized: "No microphone is ready just now. Tap the orb to try again.")
             }
         }
     }

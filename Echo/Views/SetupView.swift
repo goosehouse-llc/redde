@@ -50,12 +50,12 @@ struct SetupView: View {
 
                 Section {
                     VStack(alignment: .leading, spacing: 14) {
-                        SetupFeature(symbol: "server.rack", title: "Your own server",
-                                     detail: "Works with Hermes, the open-source agent you run on your own machine, or any OpenAI-compatible model server.")
-                        SetupFeature(symbol: "lock.shield", title: "Private by design",
-                                     detail: "Your conversations go only to the server you enter below.")
-                        SetupFeature(symbol: "waveform", title: "Speech stays on device",
-                                     detail: "Your voice is recognized on this device, not in the cloud.")
+                        SetupFeature(symbol: "server.rack", title: String(localized: "Your own server"),
+                                     detail: String(localized: "Works with Hermes, the open-source agent you run on your own machine, or any OpenAI-compatible model server."))
+                        SetupFeature(symbol: "lock.shield", title: String(localized: "Private by design"),
+                                     detail: String(localized: "Your conversations go only to the server you enter below."))
+                        SetupFeature(symbol: "waveform", title: String(localized: "Speech stays on device"),
+                                     detail: String(localized: "Your voice is recognized on this device, not in the cloud."))
                     }
                     .padding(.vertical, 6)
                 }
@@ -95,7 +95,7 @@ struct SetupView: View {
                 case .hermesSessions:
                     Section {
                         TextField("https://your-gateway:8642", text: $settings.gatewayURL).urlFieldStyle()
-                        SecureField(hasAPIKey ? "Replace stored API key" : "API key", text: $apiKey)
+                        SecureField(hasAPIKey ? String(localized: "Replace stored API key") : String(localized: "API key"), text: $apiKey)
                     } header: {
                         Text("Hermes API server")
                     } footer: {
@@ -110,7 +110,7 @@ struct SetupView: View {
                         } else {
                             TextField("Dashboard username", text: $settings.serveUsername)
                                 .textInputAutocapitalization(.never).autocorrectionDisabled()
-                            SecureField(hasServePassword ? "Replace stored password" : "Dashboard password", text: $servePassword)
+                            SecureField(hasServePassword ? String(localized: "Replace stored password") : String(localized: "Dashboard password"), text: $servePassword)
                             BrowserSignInButton {
                                 signedIn = true
                                 Task { await test() }
@@ -124,7 +124,7 @@ struct SetupView: View {
                 case .chatCompletions:
                     Section {
                         TextField("http://your-server:8080", text: $settings.fastLaneURL).urlFieldStyle()
-                        SecureField(hasFastLaneKey ? "Replace stored API key" : "API key (if the endpoint needs one)", text: $fastLaneKey)
+                        SecureField(hasFastLaneKey ? String(localized: "Replace stored API key") : String(localized: "API key (if the endpoint needs one)"), text: $fastLaneKey)
                         TextField("Model name", text: $settings.fastLaneModel)
                             .textInputAutocapitalization(.never).autocorrectionDisabled()
                     } header: {
@@ -139,7 +139,7 @@ struct SetupView: View {
                         Task { await test() }
                     } label: {
                         HStack {
-                            Text(testing ? "Testing…" : "Test connection")
+                            testing ? Text("Testing…") : Text("Test connection")
                             Spacer()
                             if testing { ProgressView() }
                         }
@@ -185,7 +185,7 @@ struct SetupView: View {
 
     private func paste(_ strings: [String]) {
         guard let found = strings.lazy.compactMap({ SetupCodeOffer(text: $0) }).first else {
-            pasteProblem = "That isn't a Redde setup link."
+            pasteProblem = String(localized: "That isn't a Redde setup link.")
             return
         }
         pasteProblem = nil
@@ -227,13 +227,13 @@ struct SetupView: View {
         defer { testing = false }
         switch settings.transport {
         case .hermesSessions:
-            guard let url = settings.gatewayBaseURL else { outcome = .failed("Enter a valid URL."); return }
+            guard let url = settings.gatewayBaseURL else { outcome = .failed(String(localized: "Enter a valid URL.")); return }
             outcome = await ConnectionTester.hermesAPI(url: url, apiKey: apiKey.isEmpty ? Keychain.read(.gatewayAPIKey) : apiKey, headers: settings.apiHeaders)
         case .hermesServe:
-            guard let url = settings.serveBaseURL else { outcome = .failed("Enter a valid URL."); return }
+            guard let url = settings.serveBaseURL else { outcome = .failed(String(localized: "Enter a valid URL.")); return }
             outcome = await ConnectionTester.hermesServe(url: url)
         case .chatCompletions:
-            guard let url = settings.activeBaseURL else { outcome = .failed("Enter a valid URL."); return }
+            guard let url = settings.activeBaseURL else { outcome = .failed(String(localized: "Enter a valid URL.")); return }
             outcome = await ConnectionTester.fastLane(url: url, apiKey: fastLaneKey.isEmpty ? Keychain.read(.fastLaneAPIKey) : fastLaneKey, model: settings.fastLaneModel)
         }
     }

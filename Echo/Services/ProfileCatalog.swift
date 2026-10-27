@@ -20,7 +20,7 @@ nonisolated struct KnownProfile: Codable, Equatable, Identifiable, Sendable {
 /// a profile chosen by name is kept when it is chosen. Kept per server.
 enum ProfileCatalog {
     nonisolated static let defaultID = "default"
-    nonisolated static let main = KnownProfile(name: defaultID, title: "Default")
+    nonisolated static let main = KnownProfile(name: defaultID, title: String(localized: "Default", comment: "The server's main Hermes profile"))
     /// As many as Siri is given to learn phrases for.
     nonisolated static let most = 12
 

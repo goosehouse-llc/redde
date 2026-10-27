@@ -59,15 +59,15 @@ nonisolated enum PushError: LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case .noPlugin: "This Hermes hasn't loaded the Redde plugin. Install it from the screen behind this one; if it was only just installed, restart Hermes there (the gateway and the Dashboard), then pair again."
-        case .oldPlugin: "The Redde plugin on this Hermes is an older one that pairs only by code. Update it there by running the install command again with --force, restart Hermes, then pair again."
-        case .noDashboard(let reason): "Couldn't ask your Hermes over the Dashboard: \(reason)"
-        case .refused(let reason): "Your Hermes didn't take the pairing: \(reason). Try again."
-        case .notAllowed: "Notifications are off for Redde. Turn them on in the iPhone's Settings › Notifications › Redde, then pair again."
-        case .noToken(let reason): "This iPhone couldn't register for notifications: \(reason)"
-        case .otherRelay(let host): "That Hermes is set to send through another relay (\(host)), which this copy of Redde doesn't use."
-        case .relay(let reason): "The notification relay refused: \(reason)"
-        case .unreachable: "Couldn't reach the notification relay. Check the connection and try again."
+        case .noPlugin: String(localized: "This Hermes hasn't loaded the Redde plugin. Install it from the screen behind this one; if it was only just installed, restart Hermes there (the gateway and the Dashboard), then pair again.")
+        case .oldPlugin: String(localized: "The Redde plugin on this Hermes is an older one that pairs only by code. Update it there by running the install command again with --force, restart Hermes, then pair again.")
+        case .noDashboard(let reason): String(localized: "Couldn't ask your Hermes over the Dashboard: \(reason)")
+        case .refused(let reason): String(localized: "Your Hermes didn't take the pairing: \(reason). Try again.")
+        case .notAllowed: String(localized: "Notifications are off for Redde. Turn them on in the iPhone's Settings › Notifications › Redde, then pair again.")
+        case .noToken(let reason): String(localized: "This iPhone couldn't register for notifications: \(reason)")
+        case .otherRelay(let host): String(localized: "That Hermes is set to send through another relay (\(host)), which this copy of Redde doesn't use.")
+        case .relay(let reason): String(localized: "The notification relay refused: \(reason)")
+        case .unreachable: String(localized: "Couldn't reach the notification relay. Check the connection and try again.")
         }
     }
 }
@@ -249,7 +249,7 @@ final class PushService {
         let timeout = Task { [weak self] in
             try? await Task.sleep(for: .seconds(20))
             guard !Task.isCancelled, let self else { return }
-            self.failedToRegister(.noToken("iOS didn't answer. Check the connection and try again."))
+            self.failedToRegister(.noToken(String(localized: "iOS didn't answer. Check the connection and try again.")))
         }
         defer { timeout.cancel() }
         return try await withCheckedThrowingContinuation { waiter in
@@ -340,7 +340,7 @@ final class PushService {
         return try await pair(offered: offered, relayAsked: Settings.normalizedBase(words[3])?.absoluteString ?? words[3]) { answer, _, _, _ in
             let reply = try await plugin("accept \(words[2]) \(answer.pub) \(answer.box)")
             guard reply.hasPrefix("redde-push paired") else {
-                throw PushError.refused(reply.hasPrefix("redde-push refused: ") ? String(reply.dropFirst("redde-push refused: ".count)) : "an unexpected reply")
+                throw PushError.refused(reply.hasPrefix("redde-push refused: ") ? String(reply.dropFirst("redde-push refused: ".count)) : String(localized: "an unexpected reply", comment: "Completes \"Your Hermes didn't take the pairing: …\""))
             }
             return String(reply.dropFirst("redde-push paired".count)).trimmingCharacters(in: .whitespaces)
         }
@@ -372,14 +372,14 @@ final class PushService {
             }
         } catch {
             try? await relay.remove(id: id, sendKey: sendKey)   // nothing was paired: leave nothing behind
-            throw (error as? PushError) ?? PushError.relay("that isn't a pairing code Redde can use")
+            throw (error as? PushError) ?? PushError.relay(String(localized: "that isn't a pairing code Redde can use", comment: "Completes \"The notification relay refused: …\""))
         }
         // Pairing again with the same Hermes makes a new registration; a leftover from an
         // attempt that never finished goes.
         let stale = pairings.filter { !$0.isPaired }
         guard vault.save(pairings.filter(\.isPaired) + [pairing]) else {
             try? await relay.remove(id: id, sendKey: sendKey)
-            throw PushError.relay("the pairing couldn't be saved on this iPhone")
+            throw PushError.relay(String(localized: "the pairing couldn't be saved on this iPhone", comment: "Completes \"The notification relay refused: …\""))
         }
         reload()
         for old in stale { try? await PushRelay(base: URL(string: old.relay) ?? base, session: session).remove(id: old.id, sendKey: old.sendKey) }

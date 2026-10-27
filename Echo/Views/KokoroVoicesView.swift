@@ -61,7 +61,7 @@ struct KokoroVoicesView: View {
                                     .font(.title3)
                             }
                             .buttonStyle(.borderless)
-                            .accessibilityLabel(playing == voice ? "Stop preview" : "Preview \(displayName(voice))")
+                            .accessibilityLabel(playing == voice ? String(localized: "Stop preview") : String(localized: "Preview \(displayName(voice))"))
                         }
                     }
                 }
@@ -76,11 +76,11 @@ struct KokoroVoicesView: View {
     // MARK: - Data
 
     private func load() async {
-        guard let base = settings.kokoroBaseURL else { error = "Set the server TTS address first."; loading = false; return }
+        guard let base = settings.kokoroBaseURL else { error = String(localized: "Set the server TTS address first."); loading = false; return }
         do {
             voices = try await KokoroPlayer.voiceIDs(baseURL: base)
         } catch {
-            self.error = "Couldn't reach Kokoro: \(error.localizedDescription)"
+            self.error = String(localized: "Couldn't reach Kokoro: \(error.localizedDescription)")
         }
         loading = false
     }
@@ -88,8 +88,11 @@ struct KokoroVoicesView: View {
     private var groups: [VoiceGroup] {
         // Kokoro ids are <language><gender>_<name>: a=American, b=British, e=Spanish, f=French,
         // h=Hindi, i=Italian, j=Japanese, p=Portuguese, z=Chinese; f/m = female/male.
-        let languages = ["a": "American English", "b": "British English", "e": "Spanish", "f": "French",
-                         "h": "Hindi", "i": "Italian", "j": "Japanese", "p": "Portuguese", "z": "Chinese"]
+        let languages = ["a": String(localized: "American English"), "b": String(localized: "British English"),
+                         "e": String(localized: "Spanish"), "f": String(localized: "French"),
+                         "h": String(localized: "Hindi"), "i": String(localized: "Italian"),
+                         "j": String(localized: "Japanese"), "p": String(localized: "Portuguese"),
+                         "z": String(localized: "Chinese")]
         var buckets: [String: [String]] = [:]
         for voice in voices {
             let code = String(voice.prefix(2))
@@ -98,7 +101,7 @@ struct KokoroVoicesView: View {
         return buckets.keys.sorted().compactMap { code in
             guard let voices = buckets[code] else { return nil }
             let language = languages[String(code.prefix(1))] ?? code.uppercased()
-            let gender = code.hasSuffix("f") ? "female" : code.hasSuffix("m") ? "male" : ""
+            let gender = code.hasSuffix("f") ? String(localized: "female", comment: "A voice's gender") : code.hasSuffix("m") ? String(localized: "male", comment: "A voice's gender") : ""
             return VoiceGroup(id: code, title: "\(language) · \(gender)", voices: voices)
         }
     }

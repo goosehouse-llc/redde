@@ -47,7 +47,7 @@ struct AlarmCountdownActivity: Widget {
     }
 
     static func title(_ attributes: AlarmAttributes<AgentAlarm>) -> String {
-        attributes.metadata?.title ?? "Timer"
+        attributes.metadata?.title ?? String(localized: "Timer")
     }
 }
 
@@ -64,7 +64,7 @@ private struct Remaining: View {
             Text(Duration.seconds(max(0, paused.totalCountdownDuration - paused.previouslyElapsedDuration))
                 .formatted(.time(pattern: .hourMinuteSecond)))
         case .alert:
-            Text("Now")
+            Text("Now", comment: "A timer's time is up")
         @unknown default:
             EmptyView()
         }

@@ -45,7 +45,8 @@ enum ShortcutRunner {
 
         var title: String {
             switch self {
-            case .shortcuts: "Shortcuts · \(Date.now.formatted(date: .abbreviated, time: .omitted))"
+            case .shortcuts: String(localized: "Shortcuts · \(Date.now.formatted(date: .abbreviated, time: .omitted))",
+                                    comment: "The name of the chat that questions asked from Shortcuts go to, with the day it was made")
             case .notes: CaptureFiler.title
             }
         }
@@ -116,7 +117,7 @@ enum ShortcutRunner {
         }
         let reply = text.trimmingCharacters(in: .whitespacesAndNewlines)
         log.info("shortcut reply: \(reply.count) chars")
-        return reply.isEmpty ? "Redde didn't reply." : PlainText.spoken(reply)
+        return reply.isEmpty ? String(localized: "Redde didn't reply.") : PlainText.spoken(reply)
     }
 
     /// One long-lived ledger session for all shortcut runs, and one for all notes, each created
@@ -133,9 +134,9 @@ enum ShortcutRunner {
         case emptyQuestion, notConfigured, locked
         var errorDescription: String? {
             switch self {
-            case .emptyQuestion: "The question was empty."
-            case .notConfigured: "Open Redde and finish setting up the transport in Settings first."
-            case .locked: "Redde is locked. Unlock your iPhone, then ask again."
+            case .emptyQuestion: String(localized: "The question was empty.")
+            case .notConfigured: String(localized: "Open Redde and finish setting up the transport in Settings first.")
+            case .locked: String(localized: "Redde is locked. Unlock your iPhone, then ask again.")
             }
         }
     }

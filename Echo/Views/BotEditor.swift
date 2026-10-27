@@ -66,12 +66,12 @@ struct BotEditor: View {
 
     /// A picked voice, in a word: its name, or Redde's own.
     static func voiceSummary(_ voice: BotVoice) -> String {
-        var speed = voice.speed.map { String(format: " · %.2f×", $0) } ?? ""
+        var speed = voice.speed.map { " · " + BotVoicePicker.speedLabel($0) } ?? ""
         if let conversation = voice.conversation { speed += " · " + (conversation.live?.name ?? "Redde") }
-        if voice.sameAsMain == true { return "Same as the main agent" + speed }
+        if voice.sameAsMain == true { return String(localized: "Same as the main agent") + speed }
         if let id = voice.kokoro { return BotVoicePicker.kokoroName(id) + speed }
-        if let id = voice.onDevice { return (AVSpeechSynthesisVoice(identifier: id)?.name ?? "A built-in voice") + speed }
-        return "Automatic" + speed
+        if let id = voice.onDevice { return (AVSpeechSynthesisVoice(identifier: id)?.name ?? String(localized: "A built-in voice")) + speed }
+        return String(localized: "Automatic", comment: "A bot's voice: one picked for it by itself") + speed
     }
 
     private struct Original: Equatable {
@@ -166,7 +166,8 @@ struct BotEditor: View {
                 if let editing, !isMain {
                     Section {
                         Button { pickingVoice = true } label: {
-                            LabeledContent("Voice", value: Settings.shared.botVoicesHere[editing.name].map(Self.voiceSummary) ?? "Automatic")
+                            LabeledContent("Voice", value: Settings.shared.botVoicesHere[editing.name].map(Self.voiceSummary)
+                                           ?? String(localized: "Automatic", comment: "A bot's voice: one picked for it by itself"))
                         }
                         .foregroundStyle(.primary)
                     } footer: {
@@ -197,9 +198,11 @@ struct BotEditor: View {
                     .disabled(loading && editing != nil)
                     if !isMain {
                         NavigationLink {
-                            BotModelList(models: models, selection: $model, sameAs: editing == nil ? "Same as \(mainName)" : nil, loading: loading)
+                            BotModelList(models: models, selection: $model, sameAs: editing == nil ? String(localized: "Same as \(mainName)") : nil,
+                                         loading: loading)
                         } label: {
-                            LabeledContent("Model", value: model?.name ?? (editing == nil ? "Same as \(mainName)" : loading ? "…" : "Not set"))
+                            LabeledContent("Model", value: model?.name
+                                           ?? (editing == nil ? String(localized: "Same as \(mainName)") : loading ? "…" : String(localized: "Not set")))
                         }
                     }
                     // The main agent's too (his ask 2026-10-22: Code Execution off for Sol): its
@@ -249,7 +252,8 @@ struct BotEditor: View {
                     Section { Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(.orange) }
                 }
             }
-            .navigationTitle(editing == nil ? "New Bot" : isMain ? mainName : (original?.title.nilIfEmpty ?? editing?.label(mainName: mainName) ?? "Bot"))
+            .navigationTitle(editing == nil ? String(localized: "New Bot")
+                             : isMain ? mainName : (original?.title.nilIfEmpty ?? editing?.label(mainName: mainName) ?? String(localized: "Bot")))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
@@ -257,14 +261,15 @@ struct BotEditor: View {
                     if working {
                         ProgressView()
                     } else {
-                        Button(editing == nil ? "Create" : "Save") { save() }
+                        Button(editing == nil ? String(localized: "Create") : String(localized: "Save")) { save() }
                             .disabled(!canSave)
                     }
                 }
             }
             .task { await load() }
             .sheet(isPresented: $pickingFace) { facePicker }
-            .confirmationDialog("Delete \(editing?.label(mainName: mainName) ?? "this bot")?", isPresented: $confirmingDelete, titleVisibility: .visible) {
+            .confirmationDialog(editing.map { String(localized: "Delete \($0.label(mainName: mainName))?") } ?? String(localized: "Delete this bot?"),
+                                isPresented: $confirmingDelete, titleVisibility: .visible) {
                 Button("Delete Bot", role: .destructive) { delete() }
             } message: {
                 Text("Its chat, memories and settings are deleted from your server. This can't be undone.")
@@ -320,14 +325,15 @@ struct BotEditor: View {
                             } else {
                                 BotAvatar(face: choice.face, name: choice.title, size: 52)
                             }
-                            Text(choice.id == BotTemplate.blank.id ? "Blank" : choice.title).font(.caption)
+                            Text(choice.id == BotTemplate.blank.id ? String(localized: "Blank", comment: "A bot template: start from nothing") : choice.title)
+                                .font(.caption)
                         }
                         .padding(6)
                         .background(picked ? AnyShapeStyle(.tint.opacity(0.15)) : AnyShapeStyle(.clear), in: .rect(cornerRadius: 12))
                         .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(choice.id == BotTemplate.blank.id ? "Blank" : choice.title)
+                    .accessibilityLabel(choice.id == BotTemplate.blank.id ? String(localized: "Blank", comment: "A bot template: start from nothing") : choice.title)
                     .accessibilityHint(choice.about)
                     .accessibilityAddTraits(picked ? .isSelected : [])
                 }
@@ -350,25 +356,33 @@ struct BotEditor: View {
 
     /// How many of its skills are on, or "…" until they are read.
     private var skillsSummary: String {
-        guard let skills else { return loading ? "…" : "Can't be read" }
+        guard let skills else { return loading ? "…" : String(localized: "Can't be read", comment: "A bot's skills: they couldn't be read") }
         let on = skills.filter { $0.enabled ?? true }.count
-        let summary = on == skills.count ? "All \(skills.count)" : "\(on) of \(skills.count)"
+        let summary = on == skills.count ? String(localized: "All \(skills.count)", comment: "All of a bot's skills or tools, e.g. “All 12”")
+            : String(localized: "\(on) of \(skills.count)", comment: "How many of a bot's skills or tools it has, e.g. “3 of 12”")
         let pinned = alwaysLoaded?.count ?? 0
-        return pinned == 0 ? summary : "\(summary) · \(pinned) always"
+        return pinned == 0 ? summary : String(localized: "\(summary) · \(pinned) always", comment: "A bot's skills, and how many it reads at the start of every message")
     }
 
     private var toolsSummary: String {
         if loading { return "…" }
-        guard let toolsets, isMain || toolsets != mainToolsets else { return "Same as \(mainName)" }
-        if isMain, toolsets.count > 2 { return toolsets.count == offered.count ? "All \(offered.count)" : "\(toolsets.count) of \(offered.count)" }
+        guard let toolsets, isMain || toolsets != mainToolsets else { return String(localized: "Same as \(mainName)") }
+        if isMain, toolsets.count > 2 {
+            return toolsets.count == offered.count ? String(localized: "All \(offered.count)", comment: "All of a bot's skills or tools, e.g. “All 12”")
+                : String(localized: "\(toolsets.count) of \(offered.count)", comment: "How many of a bot's skills or tools it has, e.g. “3 of 12”")
+        }
         let names = offered.filter { toolsets.contains($0.name) }.map(\.title)
-        return names.count <= 2 ? (names.isEmpty ? "None" : names.joined(separator: ", ")) : "\(names.count) of \(offered.count)"
+        return names.count <= 2 ? (names.isEmpty ? String(localized: "None", comment: "A bot with no tools, or no personality") : names.joined(separator: ", "))
+            : String(localized: "\(names.count) of \(offered.count)", comment: "How many of a bot's skills or tools it has, e.g. “3 of 12”")
     }
 
     private var soulSummary: String {
         if loading && editing != nil { return "…" }
         let text = soul.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return editing == nil ? "Written for it from its name and what it does" : "None" }
+        guard !text.isEmpty else {
+            return editing == nil ? String(localized: "Written for it from its name and what it does")
+                : String(localized: "None", comment: "A bot with no tools, or no personality")
+        }
         let lines = text.split(whereSeparator: \.isNewline)
             .map { $0.replacingOccurrences(of: "**", with: "").trimmingCharacters(in: CharacterSet(charactersIn: "#* ")) }   // ("**Mission:** …")
             .filter { !$0.isEmpty }
@@ -381,7 +395,7 @@ struct BotEditor: View {
                 Task { _ = try? await BotDirectory.shared.refresh() }
             }
         } else {
-            BotFacePicker(bot: HermesBot(name: handle ?? "new-bot", face: face), name: typedTitle.nilIfEmpty ?? "New Bot", current: shownFace,
+            BotFacePicker(bot: HermesBot(name: handle ?? "new-bot", face: face), name: typedTitle.nilIfEmpty ?? String(localized: "New Bot"), current: shownFace,
                           choose: { face = $0 })
         }
     }
@@ -433,7 +447,7 @@ struct BotEditor: View {
             original = start
             loaded = true
         } catch {
-            problem = "Couldn't read this bot: \(error.localizedDescription)"
+            problem = String(localized: "Couldn't read this bot: \(error.localizedDescription)")
         }
     }
 
@@ -500,7 +514,7 @@ struct BotEditor: View {
                 dismiss()
                 onDone(.deleted(editing.name))
             } catch {
-                problem = "Couldn't delete it: \(error.localizedDescription)"
+                problem = String(localized: "Couldn't delete it: \(error.localizedDescription)")
             }
         }
     }
@@ -529,9 +543,9 @@ struct PersonalityEditor: View {
             .navigationTitle("Personality")
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .bottom) {
-                Text(written.isEmpty
-                     ? "Who it is and how it talks (its SOUL.md on the server). It reads this at the start of every chat; a chat already going keeps the one it began with."
-                     : "Who it is and how it talks (its SOUL.md on the server). Left empty, it gets the one shown, written from its name and what it does.")
+                (written.isEmpty
+                     ? Text("Who it is and how it talks (its SOUL.md on the server). It reads this at the start of every chat; a chat already going keeps the one it began with.")
+                     : Text("Who it is and how it talks (its SOUL.md on the server). Left empty, it gets the one shown, written from its name and what it does."))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -742,7 +756,7 @@ struct BotSkillsList: View {
         let shown = (skills ?? []).filter {
             words.isEmpty || $0.name.lowercased().contains(words) || ($0.description ?? "").lowercased().contains(words)
         }
-        let grouped = Dictionary(grouping: shown) { $0.category?.isEmpty == false ? $0.category! : "Other" }
+        let grouped = Dictionary(grouping: shown) { $0.category?.isEmpty == false ? $0.category! : String(localized: "Other", comment: "Skills with no category") }
         return grouped.keys.sorted().compactMap { key in grouped[key].map { (key, $0.sorted { $0.name < $1.name }) } }
     }
 
@@ -794,8 +808,8 @@ struct BotSkillsList: View {
                 }
                 .buttonStyle(.borderless)
                 .disabled(busy.contains(skill.name))
-                .accessibilityLabel(pinned ? "Always loaded" : "Loaded when needed")
-                .accessibilityHint(pinned ? "Reads it only when needed instead" : "Reads it in full at the start of every message")
+                .accessibilityLabel(pinned ? String(localized: "Always loaded") : String(localized: "Loaded when needed"))
+                .accessibilityHint(pinned ? String(localized: "Reads it only when needed instead") : String(localized: "Reads it in full at the start of every message"))
             }
             Toggle("", isOn: Binding(get: { on }, set: { toggle(skill, $0) }))
                 .labelsHidden()
@@ -819,7 +833,8 @@ struct BotSkillsList: View {
                 try await HermesServeClient.shared.setAlwaysLoadedSkills(set.sorted(), profile: bot.name)
             } catch {
                 alwaysLoaded = before
-                problem = "Couldn't \(on ? "pin" : "unpin") \(skill.name): \(error.localizedDescription)"
+                problem = on ? String(localized: "Couldn't pin \(skill.name): \(error.localizedDescription)")
+                    : String(localized: "Couldn't unpin \(skill.name): \(error.localizedDescription)")
             }
         }
     }
@@ -837,7 +852,8 @@ struct BotSkillsList: View {
                 if !on, alwaysLoaded?.contains(skill.name) == true { pin(skill, false) }
             } catch {
                 if let i = skills?.firstIndex(where: { $0.name == skill.name }) { skills?[i].enabled = !on }
-                problem = "Couldn't switch \(skill.name) \(on ? "on" : "off"): \(error.localizedDescription)"
+                problem = on ? String(localized: "Couldn't switch \(skill.name) on: \(error.localizedDescription)")
+                    : String(localized: "Couldn't switch \(skill.name) off: \(error.localizedDescription)")
             }
         }
     }

@@ -94,9 +94,13 @@ nonisolated enum BotNames {
     static let reserved = Set(["hermes", "default", "test", "tmp", "root", "sudo"]).union(BotMentions.reserved)
 
     /// The profile name for a bot called `title`: lower case, letters, digits, - and _, as Hermes
-    /// takes them, and not one of `taken`; nil when the name has nothing to make one from.
+    /// takes them, and not one of `taken`; nil when the name has nothing to make one from. A name
+    /// in another script is spelled in Latin letters first ("Исследователь", "リサーチャー"):
+    /// without that a bot named in Japanese, or a template's translated name, had no handle, and
+    /// couldn't be saved.
     static func handle(for title: String, taken: Set<String>) -> String? {
-        let folded = title.folding(options: [.diacriticInsensitive, .widthInsensitive], locale: .init(identifier: "en_US_POSIX")).lowercased()
+        let latin = title.applyingTransform(.toLatin, reverse: false) ?? title
+        let folded = latin.folding(options: [.diacriticInsensitive, .widthInsensitive], locale: .init(identifier: "en_US_POSIX")).lowercased()
         let trim = CharacterSet(charactersIn: "-_")
         var slug = folded.replacing(/[^a-z0-9_-]+/, with: "-").trimmingCharacters(in: trim)
         slug = String(slug.prefix(56)).trimmingCharacters(in: trim)
@@ -142,9 +146,17 @@ nonisolated enum BotManagementProblem: LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case let .gone(name): "\(name) isn't on your server any more."
-        case .busy: "This bot's settings kept changing somewhere else just now. Try again in a moment."
-        case let .notKept(what): "Hermes didn't keep the bot's \(what)."
+        case let .gone(name): String(localized: "\(name) isn't on your server any more.")
+        case .busy: String(localized: "This bot's settings kept changing somewhere else just now. Try again in a moment.")
+        case let .notKept(what):
+            switch what {
+            case "model": String(localized: "Hermes didn't keep the bot's model.")
+            case "personality": String(localized: "Hermes didn't keep the bot's personality.")
+            case "tools": String(localized: "Hermes didn't keep the bot's tools.")
+            case "description": String(localized: "Hermes didn't keep the bot's description.")
+            case "name": String(localized: "Hermes didn't keep the bot's name.")
+            default: String(localized: "Hermes didn't keep the bot's \(what).")
+            }
         }
     }
 }
@@ -171,19 +183,19 @@ extension HermesServeClient {
         let made = try await call("profiles.create", params: .object(params), timeout: 120)
         var notes: [String] = []
         if let model = bot.model, made["model_set"]?.bool == false {
-            notes.append("Hermes couldn't give it \(model.name), so it has your agent's model for now.")
+            notes.append(String(localized: "Hermes couldn't give it \(model.name), so it has your agent's model for now."))
         }
         try await changeBotSettings(bot.handle, name: bot.title) { settings in
             settings = BotNames.merged(settings, BotChange(title: bot.title))
             settings["created"] = .number((Date.now.timeIntervalSince1970 * 1000).rounded())
         }
         if let face = bot.face {
-            do { try await setFace(face, for: HermesBot(name: bot.handle)) } catch { notes.append("Its face wasn't kept: \(error.localizedDescription)") }
+            do { try await setFace(face, for: HermesBot(name: bot.handle)) } catch { notes.append(String(localized: "Its face wasn't kept: \(error.localizedDescription)")) }
         }
         if let toolsets = bot.toolsets, !toolsets.isEmpty {
             let applied = try? await call("profiles.configure", params: .object([
                 "name": .string(bot.handle), "enabled_toolsets": .array(toolsets.map(JSONValue.string))]), timeout: 30)["applied"]
-            if applied?["toolsets"]?.bool != true { notes.append("Its tools weren't set: it has all of your agent's for now.") }
+            if applied?["toolsets"]?.bool != true { notes.append(String(localized: "Its tools weren't set: it has all of your agent's for now.")) }
         }
         if let problem = await botProblem(bot.handle) { notes.append(problem) }
         return MadeBot(name: bot.handle, notes: notes)
@@ -226,7 +238,7 @@ extension HermesServeClient {
             if change.modelConfirmed { params["confirm_expensive_model"] = .bool(true) }
             let result = try await call("profiles.configure", params: .object(params), timeout: 30)
             if result["confirm_required"]?.bool == true {
-                return .confirmModel(result["confirm_message"]?.string ?? "Hermes wants a yes before \(bot.label()) uses \(model.name).")
+                return .confirmModel(result["confirm_message"]?.string ?? String(localized: "Hermes wants a yes before \(bot.label()) uses \(model.name)."))
             }
             guard result["applied"]?["model"]?.bool != false else { throw BotManagementProblem.notKept("model") }
         }
@@ -272,8 +284,8 @@ extension HermesServeClient {
     func botProblem(_ name: String) async -> String? {
         guard let result = try? await call("setup.runtime_check", params: .object(["profile": .string(name)]), timeout: 30),
               result["ok"]?.bool == false, result["profile"]?.string == name else { return nil }
-        let error = result["error"]?.string?.nilIfEmpty ?? "no model it can reach"
-        return "It can't answer yet: \(error)"
+        let error = result["error"]?.string?.nilIfEmpty ?? String(localized: "no model it can reach", comment: "Completes \"It can't answer yet: …\"")
+        return String(localized: "It can't answer yet: \(error)")
     }
 
     /// Changes a bot's Bot Mode settings as Hermes Desktop does: read as they are now, changed,

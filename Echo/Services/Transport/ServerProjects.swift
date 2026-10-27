@@ -18,7 +18,7 @@ extension HermesServeClient {
 
         var errorDescription: String? {
             switch self {
-            case .noName: "Give the project a name."
+            case .noName: String(localized: "Give the project a name.")
             case let .refused(why): why
             }
         }
@@ -40,7 +40,7 @@ extension HermesServeClient {
             result = try await call("projects.create", params: .object([
                 "name": .string(name), "folders": .array([.string(made.path)]), "primary_path": .string(made.path)]))
         } catch let error as RPCError where error.message.contains("already belongs to project") {
-            throw ProjectError.refused("\(made.path) is already a project's folder. Its conversations are under that project.")
+            throw ProjectError.refused(String(localized: "\(made.path) is already a project's folder. Its conversations are under that project."))
         }
         let project = result["project"]
         return ProjectPlace(name: project?["name"]?.string ?? name, path: project?["primary_path"]?.string ?? made.path)

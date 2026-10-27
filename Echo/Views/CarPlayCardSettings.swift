@@ -9,23 +9,23 @@ enum CarPlayCardLook: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .color: "Color"
-        case .glow: "Glow"
-        case .orb: "Orb"
-        case .gold: "Gold"
-        case .graphite: "Graphite"
-        case .marks: "Marks"
+        case .color: String(localized: "Color", comment: "A look for CarPlay's cards: one color each")
+        case .glow: String(localized: "Glow")
+        case .orb: String(localized: "Orb")
+        case .gold: String(localized: "Gold")
+        case .graphite: String(localized: "Graphite")
+        case .marks: String(localized: "Marks", comment: "A look for CarPlay's cards: Redde's own marks")
         }
     }
 
     var blurb: String {
         switch self {
-        case .color: "A color for each: blue, gold and green"
-        case .glow: "Nearly black, with a light behind each symbol"
-        case .orb: "The voice orb, ringed in each card's color"
-        case .gold: "Graphite, with the symbols in gold"
-        case .graphite: "Graphite and plain light symbols"
-        case .marks: "Redde's own marks: voice bars and the gold spark"
+        case .color: String(localized: "A color for each: blue, gold and green")
+        case .glow: String(localized: "Nearly black, with a light behind each symbol")
+        case .orb: String(localized: "The voice orb, ringed in each card's color")
+        case .gold: String(localized: "Graphite, with the symbols in gold")
+        case .graphite: String(localized: "Graphite and plain light symbols")
+        case .marks: String(localized: "Redde's own marks: voice bars and the gold spark")
         }
     }
 }
@@ -66,7 +66,7 @@ struct CarPlayCardSettings: View {
                 .accessibilityAddTraits(settings.carPlayCards == look ? .isSelected : [])
             }
         } label: {
-            DisclosureSummary(title: "CarPlay cards") {
+            DisclosureSummary(title: String(localized: "CarPlay cards")) {
                 HStack(spacing: 8) {
                     Text(settings.carPlayCards.label)
                     card(.ask, settings.carPlayCards)

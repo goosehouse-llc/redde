@@ -64,7 +64,7 @@ nonisolated struct ToolActivity: Identifiable, Equatable, Sendable, Codable {
     static func detail(_ text: String?) -> String? {
         guard let text = text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return nil }
         guard text.count > detailCap else { return text }
-        return text.prefix(detailCap) + "\n… (\(text.count - detailCap) more characters)"
+        return text.prefix(detailCap) + "\n… (" + String(localized: "\(text.count - detailCap) more characters") + ")"
     }
 
     /// A JSON value as that text. A string stays itself; an object becomes a line per field with
@@ -300,22 +300,33 @@ nonisolated enum TransportError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .badURL: "The endpoint URL is invalid."
-        case .missingAPIKey: "No API key is stored. Add one in Settings."
-        case .keychainShut: "Unlock your iPhone, then ask again: Redde can't read its keys until you do."
+        case .badURL: String(localized: "The endpoint URL is invalid.")
+        case .missingAPIKey: Self.missingKeyText
+        case .keychainShut: String(localized: "Unlock your iPhone, then ask again: Redde can't read its keys until you do.")
         case let .http(status, body) where status == 404 && body.contains("Unknown or unconfigured profile"):
             // The Hermes API's /p/<profile>/ routes: the gateway doesn't serve that profile.
-            "This Hermes gateway doesn't serve the selected profile. Turn on gateway.multiplex_profiles in its config, or pick Default under Settings → Profile."
+            String(localized: "This Hermes gateway doesn't serve the selected profile. Turn on gateway.multiplex_profiles in its config, or pick Default under Settings → Profile.")
         case let .http(status, body) where status == 401 && body.contains("gateway_auth_failed"):
             // Also what a profile's /p/<profile>/ routes answer to the main key.
-            "The Hermes API rejected the key. A profile other than Default has its own key (API_SERVER_KEY in that profile's .env); enter it under Settings → Profile."
+            Self.keyRejectedText
         case let .http(status, body):
-            "Server returned HTTP \(status)." + (body.isEmpty ? "" : " \(body.prefix(300))")
-        case let .malformed(detail): "Unexpected response: \(detail)"
+            String(localized: "Server returned HTTP \(status).") + (body.isEmpty ? "" : " \(body.prefix(300))")
+        case let .malformed(detail): String(localized: "Unexpected response: \(detail)")
         case let .unreachable(detail): detail
-        case let .streamLost(detail): "The connection dropped mid-reply: \(detail)"
+        case let .streamLost(detail): String(localized: "The connection dropped mid-reply: \(detail)")
         }
     }
+}
+
+/// Redde's own messages that the connection card (`ConnectionProblemCard`) knows by their words,
+/// one definition for both: in another language its English words don't match the translation.
+nonisolated extension TransportError {
+    static var missingKeyText: String { String(localized: "No API key is stored. Add one in Settings.") }
+    static var keyRejectedText: String {
+        String(localized: "The Hermes API rejected the key. A profile other than Default has its own key (API_SERVER_KEY in that profile's .env); enter it under Settings → Profile.")
+    }
+    static var missingLoginText: String { String(localized: "Hermes Dashboard username/password not set in Settings") }
+    static var addKeyText: String { String(localized: "Add the gateway API key in Settings.") }
 }
 
 /// Tells a connection that never reached the server apart from every other failure, so the
@@ -653,7 +664,7 @@ nonisolated enum MultimodalInput {
             case .text:
                 if let add = att.promptAddendum { prose += "\n\n" + add }
             case .pdf, .other:
-                throw AttachmentError.unsupported(att.kind == .pdf ? "PDF" : att.isVideo ? "Video" : "File", transport: transportName)
+                throw AttachmentError.unsupported(att.kind == .pdf ? "PDF" : att.isVideo ? String(localized: "Video", comment: "As in \"Video attachments aren't supported on …\"") : String(localized: "File", comment: "As in \"File attachments aren't supported on …\""), transport: transportName)
             }
         }
         if !prose.isEmpty { parts.insert(.object(["type": .string(textType), "text": .string(prose)]), at: 0) }

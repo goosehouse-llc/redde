@@ -91,8 +91,8 @@ nonisolated enum IncognitoNote {
     static let instruction = "This is an incognito chat: it is deleted when the person leaves it. Don't save anything from it to memory, notes, files or skills, and don't bring it up in other conversations."
     static let note = "\n\n[Incognito chat: deleted when the person leaves it. Save nothing from it to memory, notes, files or skills.]"
     /// What the Lock Screen, a notification and the header say in its words' place.
-    static let title = "Incognito chat"
-    static let replied = "Your reply is ready."
+    static let title = String(localized: "Incognito chat")
+    static let replied = String(localized: "Your reply is ready.")
 
     /// A message loaded back from the server, without the note.
     static func strip(_ text: String) -> String {

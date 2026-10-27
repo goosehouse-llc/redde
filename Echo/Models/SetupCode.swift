@@ -73,10 +73,10 @@ nonisolated struct SetupCode: Equatable, Sendable {
 
         var message: String {
             switch self {
-            case .newerVersion: "This setup code was made by a newer version of Redde. Update the app, then try again."
-            case .noAddress: "This setup code has no server address in it."
-            case .badAddress(let text): "This setup code has an address Redde can't use: \(text.prefix(80))"
-            case .tooLong: "This setup code is too long to be one of Redde's."
+            case .newerVersion: String(localized: "This setup code was made by a newer version of Redde. Update the app, then try again.")
+            case .noAddress: String(localized: "This setup code has no server address in it.")
+            case .badAddress(let text): String(localized: "This setup code has an address Redde can't use: \(String(text.prefix(80)))")
+            case .tooLong: String(localized: "This setup code is too long to be one of Redde's.")
             }
         }
     }

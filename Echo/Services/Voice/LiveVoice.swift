@@ -346,7 +346,7 @@ final class LiveVoice {
             checkAnswered()
             sayNextRoomReply()
         case .lost:
-            end(problem: "The connection to \(engine.name) dropped.")
+            end(problem: String(localized: "The connection to \(engine.name) dropped."))
         }
     }
 
@@ -798,9 +798,9 @@ nonisolated struct LiveFailure: LocalizedError {
     /// A machine reason from the service, as a sentence where Redde knows it.
     static func readable(_ reason: String, engine: LiveEngine = .gptLive) -> String {
         switch reason {
-        case "connection_lost": "The connection to \(engine.name) dropped."
-        case "max_duration", "session_expired", "go_away": "The \(engine.name) call reached its time limit."
-        default: reason.contains(" ") ? reason : "\(engine.name) ended the call (\(reason))."
+        case "connection_lost": String(localized: "The connection to \(engine.name) dropped.")
+        case "max_duration", "session_expired", "go_away": String(localized: "The \(engine.name) call reached its time limit.")
+        default: reason.contains(" ") ? reason : String(localized: "\(engine.name) ended the call (\(reason)).")
         }
     }
 }

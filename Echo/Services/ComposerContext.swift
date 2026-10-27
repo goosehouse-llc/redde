@@ -20,8 +20,8 @@ nonisolated enum ComposerContext {
 
         var title: String {
             switch self {
-            case let .calendar(day): "Calendar · " + day.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))
-            case let .file(att): "Attach " + att.filename
+            case let .calendar(day): String(localized: "Calendar · \(day.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)))")
+            case let .file(att): String(localized: "Attach \(att.filename)")
             }
         }
 
@@ -103,7 +103,7 @@ nonisolated enum ComposerContext {
         let start = calendar.startOfDay(for: now)
         guard let end = calendar.date(byAdding: .day, value: 2, to: start) else { return [] }
         return store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: nil)).map {
-            StartCards.Event(title: $0.title ?? "(untitled)", start: $0.startDate, end: $0.endDate, allDay: $0.isAllDay)
+            StartCards.Event(title: $0.title ?? String(localized: "(untitled)", comment: "A calendar event with no title"), start: $0.startDate, end: $0.endDate, allDay: $0.isAllDay)
         }
     }
 

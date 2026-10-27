@@ -142,20 +142,20 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// What the car screen opens on: the Ask tab's cards, and the Chats tab. Not private, so the
     /// tests can look at it.
     func rootTemplate() -> CPTabBarTemplate {
-        let ask = CPListTemplate(title: "Ask", sections: askSections())
+        let ask = CPListTemplate(title: String(localized: "Ask", comment: "CarPlay: the tab to ask Redde something"), sections: askSections())
         ask.tabImage = UIImage(systemName: "mic.fill")
         askTab = ask
-        let chats = CPListTemplate(title: "Chats", sections: [])
+        let chats = CPListTemplate(title: String(localized: "Chats", comment: "CarPlay: the tab with your conversations"), sections: [])
         chats.tabImage = UIImage(systemName: "list.bullet")
-        chats.emptyViewTitleVariants = ["Loading…"]
+        chats.emptyViewTitleVariants = [String(localized: "Loading…")]
         chats.showsSpinnerWhileEmpty = true
         chatsTab = chats
         var templates: [CPTemplate] = [ask, chats]
         // Bots live on the Dashboard (on the Hermes API, through its login), while the chat list shows them.
         if BotDirectory.available(settings) {
-            let bots = CPListTemplate(title: "Bots", sections: [])
+            let bots = CPListTemplate(title: String(localized: "Bots", comment: "CarPlay: the tab with your bots"), sections: [])
             bots.tabImage = UIImage(systemName: "person.2.fill")
-            bots.emptyViewTitleVariants = ["Loading…"]
+            bots.emptyViewTitleVariants = [String(localized: "Loading…")]
             bots.showsSpinnerWhileEmpty = true
             botsTab = bots
             templates.append(bots)
@@ -218,7 +218,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         let open = conversation.flatMap { $0.hasMessages ? $0.title : nil }
         // A second line is allowed for the smallest screens (400 points across), where two wide
         // cards fill a line: New Chat goes under them there, not off the edge.
-        let row = CPListImageRowItem(text: open.map { "Now in “\($0)”" }, cardElements: cards, allowsMultipleLines: true)
+        let row = CPListImageRowItem(text: open.map { String(localized: "Now in “\($0)”", comment: "CarPlay: the conversation Ask and Talk carry on") },
+                                     cardElements: cards, allowsMultipleLines: true)
         row.listImageRowHandler = { [weak self] _, index, completion in
             let starts = CarPlayArtwork.Start.allCases
             if starts.indices.contains(index) { self?.chose(starts[index]) }
@@ -238,15 +239,17 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         let others = chats.filter { !$0.isCurrent }.prefix(Self.recentOnAsk).map { self.row(for: $0) }
         let top = CPListSection(items: [row, noteRow(), brevityRow()])
         guard !others.isEmpty else { return [top] }
-        return [top, CPListSection(items: others, header: "Recent", sectionIndexTitle: nil)]
+        return [top, CPListSection(items: others, header: String(localized: "Recent", comment: "CarPlay: the conversations last carried on"),
+                                   sectionIndexTitle: nil)]
     }
 
     /// Quick capture: under the cards, a row that listens for a note and files it (`CaptureInbox`).
     /// It says so, or how many notes are still waiting for the server.
     private func noteRow() -> CPListItem {
         let waiting = notes.waiting.count
-        let detail = waiting == 0 ? "Say it, and Redde files it. Nothing is said back." : waiting == 1 ? "1 note waiting to be sent" : "\(waiting) notes waiting to be sent"
-        let item = CPListItem(text: "Take a Note", detailText: detail, image: CarPlayArtwork.noteMark, accessoryImage: nil, accessoryType: .none)
+        let detail = waiting == 0 ? String(localized: "Say it, and Redde files it. Nothing is said back.")
+            : String(localized: "\(waiting) notes waiting to be sent")
+        let item = CPListItem(text: String(localized: "Take a Note"), detailText: detail, image: CarPlayArtwork.noteMark, accessoryImage: nil, accessoryType: .none)
         item.handler = { [weak self] _, completion in
             self?.takeNote()
             completion()
@@ -260,7 +263,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// on its way is not cut short. Not private, so the tests can press it.
     func brevityRow() -> CPListItem {
         let on = settings.shortAnswersInCar
-        let item = CPListItem(text: "Short Answers", detailText: on ? "On. Say “more” for the rest." : "Off. Replies are read in full.",
+        let item = CPListItem(text: String(localized: "Short Answers"),
+                              detailText: on ? String(localized: "On. Say “more” for the rest.") : String(localized: "Off. Replies are read in full."),
                               image: CarPlayArtwork.brevityMark, accessoryImage: CarPlayArtwork.switchMark(on: on), accessoryType: .none)
         item.handler = { [weak self] _, completion in
             self?.settings.shortAnswersInCar.toggle()
@@ -288,17 +292,17 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     static func title(_ start: CarPlayArtwork.Start) -> String {
         switch start {
-        case .ask: "Ask"
-        case .talk: "Talk"
-        case .newChat: "New Chat"
+        case .ask: String(localized: "Ask", comment: "CarPlay: a card that listens for one question")
+        case .talk: String(localized: "Talk", comment: "CarPlay: a card that starts a hands-free conversation")
+        case .newChat: String(localized: "New Chat")
         }
     }
 
     static func subtitle(_ start: CarPlayArtwork.Start) -> String {
         switch start {
-        case .ask: "One question"
-        case .talk: "Hands-free"
-        case .newChat: "Start fresh"
+        case .ask: String(localized: "One question", comment: "CarPlay: under the Ask card")
+        case .talk: String(localized: "Hands-free", comment: "CarPlay: under the Talk card")
+        case .newChat: String(localized: "Start fresh", comment: "CarPlay: under the New Chat card")
         }
     }
 
@@ -398,15 +402,15 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             do {
                 let rows = try await chatRows()
                 guard load == chatsLoad else { return }
-                list.emptyViewTitleVariants = ["No chats yet"]
-                list.emptyViewSubtitleVariants = ["Ask Redde something to start one"]
+                list.emptyViewTitleVariants = [String(localized: "No chats yet")]
+                list.emptyViewSubtitleVariants = [String(localized: "Ask Redde something to start one")]
                 list.showsSpinnerWhileEmpty = false
                 list.updateSections([CPListSection(items: rows)])
                 askTab?.updateSections(askSections())
             } catch {
                 guard load == chatsLoad else { return }
-                list.emptyViewTitleVariants = ["Couldn't load your chats"]
-                list.emptyViewSubtitleVariants = ["Check the connection on your iPhone"]
+                list.emptyViewTitleVariants = [String(localized: "Couldn't load your chats")]
+                list.emptyViewSubtitleVariants = [String(localized: "Check the connection on your iPhone")]
                 list.showsSpinnerWhileEmpty = false
             }
         }
@@ -442,7 +446,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         do {
             try await CarPlayChats.open(chat, in: conversation, settings: settings, store: store)
         } catch {
-            alert("Couldn't open that chat")
+            alert(String(localized: "Couldn't open that chat"))
             return
         }
         if !chat.isCurrent { reloadChats() }
@@ -492,8 +496,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         armBotsObservation()
         guard shown != botsShown || rows.isEmpty != list.sections.isEmpty || botsShown.isEmpty else { return }
         botsShown = shown
-        list.emptyViewTitleVariants = rows.isEmpty ? ["No bots yet"] : []
-        list.emptyViewSubtitleVariants = rows.isEmpty ? ["Make one in Redde on your iPhone"] : []
+        list.emptyViewTitleVariants = rows.isEmpty ? [String(localized: "No bots yet")] : []
+        list.emptyViewSubtitleVariants = rows.isEmpty ? [String(localized: "Make one in Redde on your iPhone")] : []
         list.showsSpinnerWhileEmpty = false
         list.updateSections(rows.isEmpty ? [] : [CPListSection(items: rows)])
         drawAhead()
@@ -517,14 +521,16 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             shown.append("\(bot.name)|\(name)|\(detail)|" + CarPlayArtwork.botCardKey(face, named: name, mood: mood, look: look))
             if #available(iOS 26.4, *) {
                 let card = CPListImageRowItemCardElement(thumbnail: CPThumbnailImage(image: picture), title: name, subtitle: detail, tintColor: nil)
-                card.accessibilityLabel = "\(name), \(botDetail(bot, mood, spoken: true))"
+                card.accessibilityLabel = String(localized: "\(name), \(botDetail(bot, mood, spoken: true))",
+                                                 comment: "CarPlay, VoiceOver: a bot's card, its name and what it is doing")
                 return card
             }
             return CPListImageRowItemCardElement(image: picture, showsImageFullHeight: false, title: name, subtitle: detail, tintColor: nil)
         }
         let open = conversation?.bot.flatMap { open in listed.first { $0.name == open.profile } }?.label(mainName: settings.headerTitle)
         shown.append("open|\(open ?? "")")
-        let row = CPListImageRowItem(text: open.map { "Now with \($0)" }, cardElements: cards, allowsMultipleLines: true)
+        let row = CPListImageRowItem(text: open.map { String(localized: "Now with \($0)", comment: "CarPlay: the bot whose chat is open") },
+                                     cardElements: cards, allowsMultipleLines: true)
         // The card spins until the completion is called: here, until the voice card is on its way up.
         row.listImageRowHandler = { [weak self] _, index, completion in
             Task { @MainActor in
@@ -554,11 +560,15 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// rule). Short, as a card's second line is; `spoken` is what VoiceOver says of it.
     private func botDetail(_ bot: HermesBot, _ mood: CarPlayArtwork.BotMood, spoken: Bool = false) -> String {
         switch mood {
-        case .working: return spoken ? "working" : "Working"
-        case .needsYou: return spoken ? "needs you on your iPhone" : "Needs you"
+        case .working:
+            return spoken ? String(localized: "working", comment: "CarPlay, VoiceOver: a bot is working on a reply")
+                : String(localized: "Working", comment: "CarPlay: a bot is working on a reply")
+        case .needsYou:
+            return spoken ? String(localized: "needs you on your iPhone") : String(localized: "Needs you", comment: "A bot or agent is waiting on you")
         case .ready, .asleep:
-            guard let when = bot.lastActive else { return spoken ? "no chat yet" : "No chat yet" }
-            return spoken ? "last talked \(DateGroup.rowTime(when))" : DateGroup.rowTime(when)
+            guard let when = bot.lastActive else { return spoken ? String(localized: "no chat yet") : String(localized: "No chat yet") }
+            return spoken ? String(localized: "last talked \(DateGroup.rowTime(when))", comment: "CarPlay, VoiceOver: when a bot was last talked to, a time or a day")
+                : DateGroup.rowTime(when)
         }
     }
 
@@ -660,7 +670,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             switch opened {
             case .failure:
                 self.note("couldn't open \(bot.name)'s chat")
-                self.alert("Couldn't open \(bot.label(mainName: self.settings.headerTitle))'s chat")
+                self.alert(String(localized: "Couldn't open \(bot.label(mainName: self.settings.headerTitle))'s chat"))
             case .success:
                 self.note(String(format: "chat open in %.2f s", Date.now.timeIntervalSince(started)))
                 self.reloadChats()
@@ -851,12 +861,12 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             return CPVoiceControlState(identifier: id.rawValue, titleVariants: titles, image: image, repeats: true)
         }
         let template = CPVoiceControlTemplate(voiceControlStates: [
-            state(.listening, ["Listening…", "Go ahead"]),
-            state(.thinking, ["Thinking…"]),
+            state(.listening, [String(localized: "Listening…"), String(localized: "Go ahead", comment: "CarPlay voice screen: Redde is listening")]),
+            state(.thinking, [String(localized: "Thinking…")]),
             // The face look's speaking face is bigger without a title over it (`CarPlayArtwork.speakingHeight`).
-            state(.speaking, look == .redde ? [] : ["Speaking…"]),
-            state(.paused, ["Paused"]),
-            state(.phone, ["Needs your phone"]),
+            state(.speaking, look == .redde ? [] : [String(localized: "Speaking…")]),
+            state(.paused, [String(localized: "Paused")]),
+            state(.phone, [String(localized: "Needs your phone", comment: "CarPlay voice screen: something waits for an answer on the iPhone")]),
         ])
         setBar(of: template, for: .listening)
         return template
@@ -911,10 +921,10 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     static func title(of kind: CardButton) -> String {
         switch kind {
-        case .pause: "Pause"
-        case .resume: "Resume"
-        case .stop: "Stop"
-        case .done: "Done"
+        case .pause: String(localized: "Pause")
+        case .resume: String(localized: "Resume")
+        case .stop: String(localized: "Stop")
+        case .done: String(localized: "Done")
         }
     }
 
@@ -1118,14 +1128,14 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
                 setBar(of: voiceCard, for: state)
             }
         case .closed: hideVoiceCard()
-        case .failed: alert("Couldn't reach Redde")
+        case .failed: alert(String(localized: "Couldn't reach Redde"))
         }
     }
 
     // MARK: - Modals
 
     private func alert(_ title: String) {
-        let ok = CPAlertAction(title: "OK", style: .cancel) { [weak self] _ in
+        let ok = CPAlertAction(title: String(localized: "OK"), style: .cancel) { [weak self] _ in
             self?.controller?.dismissTemplate(animated: true, completion: nil)
         }
         present(CPAlertTemplate(titleVariants: [title], actions: [ok]))

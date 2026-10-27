@@ -97,7 +97,7 @@ nonisolated struct CronDeliveryTarget: Identifiable, Equatable, Sendable {
         name = j["name"]?.string ?? id
         homeTargetSet = j["home_target_set"]?.bool ?? true
     }
-    static let builtIn = [CronDeliveryTarget(id: "local", name: "Local (save only)"), CronDeliveryTarget(id: "origin", name: "Where the job was created")]
+    static let builtIn = [CronDeliveryTarget(id: "local", name: String(localized: "Local (save only)", comment: "Where a scheduled job's output goes")), CronDeliveryTarget(id: "origin", name: String(localized: "Where the job was created", comment: "Where a scheduled job's output goes"))]
 }
 
 /// A prebuilt job template from the gateway's catalog: a form of slots that fills a schedule
@@ -194,7 +194,7 @@ enum CronBackend {
     }
 
     func instantiate(blueprint key: String, values: [String: String]) async throws {
-        guard case .serve = self else { throw TransportError.malformed("Blueprints need hermes serve") }
+        guard case .serve = self else { throw TransportError.malformed(String(localized: "Blueprints need hermes serve")) }
         let body: JSONValue = .object(["blueprint": .string(key), "values": .object(values.mapValues { .string($0) })])
         _ = try await HermesServeClient.shared.restJSON("POST", "api/cron/blueprints/instantiate", body: body)
     }
@@ -352,15 +352,15 @@ enum KanbanStatus {
 
     static func label(_ s: String) -> String {
         switch s {
-        case "triage": "Triage"
-        case "todo": "To do"
-        case "scheduled": "Scheduled"
-        case "ready": "Ready"
-        case "running": "Running"
-        case "blocked": "Blocked"
-        case "review": "Review"
-        case "done": "Done"
-        case "archived": "Archived"
+        case "triage": String(localized: "Triage", comment: "A Kanban column")
+        case "todo": String(localized: "To do", comment: "A Kanban column")
+        case "scheduled": String(localized: "Scheduled", comment: "A Kanban column")
+        case "ready": String(localized: "Ready", comment: "A Kanban column")
+        case "running": String(localized: "Running", comment: "A Kanban column: tasks being worked on")
+        case "blocked": String(localized: "Blocked", comment: "A Kanban column")
+        case "review": String(localized: "Review", comment: "A Kanban column")
+        case "done": String(localized: "task.done", defaultValue: "Done", comment: "A task, finished (not the Done button): a ticked checklist item, the agent's finished task, the Kanban column, the title after a plugin change")
+        case "archived": String(localized: "Archived", comment: "A Kanban column")
         default: s.capitalized
         }
     }

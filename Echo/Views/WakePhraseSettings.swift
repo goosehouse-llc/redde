@@ -50,10 +50,15 @@ struct WakePhraseSettings: View {
     }
 
     private var footer: String {
-        let car = device == "iPhone" ? ", or on your car's screen" : ""
-        return "While Redde is open on this \(device)\(car), say an agent's phrase to talk to it: “Hey \(settings.headerTitle)” opens voice mode, and “Hey \(settings.headerTitle), what's on today?” asks at once. "
-            + "Heard on this \(device) and nowhere else. While it listens the microphone stays on (the orange dot shows it), and music and other sound play on. "
-            + "It waits while voice mode, a call or dictation has the microphone, and while Settings is open."
+        // “Hey” is the wake phrase as Redde listens for it, which stays English.
+        let opening = device == "iPhone"
+            ? String(localized: "While Redde is open on this \(device), or on your car's screen, say an agent's phrase to talk to it: “Hey \(settings.headerTitle)” opens voice mode, and “Hey \(settings.headerTitle), what's on today?” asks at once.",
+                     comment: "“Hey” is the English wake word Redde listens for: keep it in English")
+            : String(localized: "While Redde is open on this \(device), say an agent's phrase to talk to it: “Hey \(settings.headerTitle)” opens voice mode, and “Hey \(settings.headerTitle), what's on today?” asks at once.",
+                     comment: "“Hey” is the English wake word Redde listens for: keep it in English")
+        return opening + " "
+            + String(localized: "Heard on this \(device) and nowhere else. While it listens the microphone stays on (the orange dot shows it), and music and other sound play on.") + " "
+            + String(localized: "It waits while voice mode, a call or dictation has the microphone, and while Settings is open.")
     }
 }
 

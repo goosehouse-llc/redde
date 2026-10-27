@@ -99,9 +99,9 @@ nonisolated enum DashboardSignIn {
         var errorDescription: String? {
             switch self {
             case .notOffered(let why): why
-            case .noCode: "The browser came back without signing in. Try again."
-            case .expired: "Your sign-in to the Hermes Dashboard has expired. Sign in again under Settings → Connection."
-            case .refused(let detail): "The Hermes Dashboard refused the sign-in: \(detail)"
+            case .noCode: String(localized: "The browser came back without signing in. Try again.")
+            case .expired: String(localized: "Your sign-in to the Hermes Dashboard has expired. Sign in again under Settings → Connection.")
+            case .refused(let detail): String(localized: "The Hermes Dashboard refused the sign-in: \(detail)")
             }
         }
     }
@@ -304,12 +304,12 @@ nonisolated final class LoopbackCallback: Sendable {
         let line = request.prefix { $0 != "\r" && $0 != "\n" }.split(separator: " ")
         guard line.count >= 2, line[0] == "GET", let target = URLComponents(string: "http://127.0.0.1" + line[1]),
               target.path == path else {
-            return (nil, reply("404 Not Found", "Nothing here."))
+            return (nil, reply("404 Not Found", String(localized: "Nothing here.", comment: "A web page: an address the sign-in doesn't use")))
         }
         let query = Dictionary((target.queryItems ?? []).map { ($0.name, $0.value ?? "") }) { first, _ in first }
         guard query["state"] == state, let code = query["code"], !code.isEmpty else {
-            return (nil, reply("400 Bad Request", "This isn't the sign-in Redde started. Go back to Redde and try again."))
+            return (nil, reply("400 Bad Request", String(localized: "This isn't the sign-in Redde started. Go back to Redde and try again.")))
         }
-        return (code, reply("302 Found", "Signed in. You can go back to Redde.", location: done))
+        return (code, reply("302 Found", String(localized: "Signed in. You can go back to Redde."), location: done))
     }
 }

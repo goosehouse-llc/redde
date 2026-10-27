@@ -22,19 +22,19 @@ enum VoiceOrb: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .darkGlass: "Dark Glass"
+        case .darkGlass: String(localized: "Dark Glass", comment: "A look for the voice orb")
         case .reddeFace: "Redde"
-        case .waveform: "Softer Glass"
-        case .glassWave: "Glass"
-        case .matteWave: "Matte"
-        case .flatWave: "Flat"
-        case .bubbleWave: "Bubble"
-        case .bubbleMatteWave: "Matte Bubble"
-        case .navyGlassWave: "Navy Glass"
-        case .navyMatteWave: "Navy Matte"
-        case .steelGlassWave: "Steel Glass"
-        case .inkWave: "Ink"
-        case .goldWave: "Gold"
+        case .waveform: String(localized: "Softer Glass", comment: "A look for the voice orb")
+        case .glassWave: String(localized: "Glass", comment: "A look for the voice orb")
+        case .matteWave: String(localized: "Matte", comment: "A look for the voice orb")
+        case .flatWave: String(localized: "Flat", comment: "A look for the voice orb")
+        case .bubbleWave: String(localized: "Bubble", comment: "A look for the voice orb")
+        case .bubbleMatteWave: String(localized: "Matte Bubble", comment: "A look for the voice orb")
+        case .navyGlassWave: String(localized: "Navy Glass", comment: "A look for the voice orb")
+        case .navyMatteWave: String(localized: "Navy Matte", comment: "A look for the voice orb")
+        case .steelGlassWave: String(localized: "Steel Glass", comment: "A look for the voice orb")
+        case .inkWave: String(localized: "Ink", comment: "A look for the voice orb")
+        case .goldWave: String(localized: "Gold", comment: "A look for the voice orb")
         }
     }
 
@@ -87,17 +87,17 @@ enum OrbLight: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .nebula: "Nebula"
-        case .aurora: "Aurora"
-        case .core: "Core"
+        case .nebula: String(localized: "Nebula", comment: "The light inside the voice orb")
+        case .aurora: String(localized: "Aurora", comment: "The light inside the voice orb")
+        case .core: String(localized: "Core", comment: "The light inside the voice orb")
         }
     }
 
     var detail: String {
         switch self {
-        case .nebula: "Colour drifting and turning"
-        case .aurora: "Ribbons of light sweeping across"
-        case .core: "A pulsing heart with sparks around it"
+        case .nebula: String(localized: "Colour drifting and turning")
+        case .aurora: String(localized: "Ribbons of light sweeping across")
+        case .core: String(localized: "A pulsing heart with sparks around it")
         }
     }
 }
@@ -114,7 +114,7 @@ struct VoiceOrbSettings: View {
         DisclosureGroup(isExpanded: $expanded) {
             grid
         } label: {
-            DisclosureSummary(title: "Voice orb") {
+            DisclosureSummary(title: String(localized: "Voice orb")) {
                 HStack(spacing: 8) {
                     Text(settings.voiceOrb.label)
                     VoiceOrbPicture(orb: settings.voiceOrb, size: 24)

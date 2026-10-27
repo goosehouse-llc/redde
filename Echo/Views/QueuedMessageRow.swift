@@ -14,7 +14,7 @@ struct QueuedMessageRow: View {
     var body: some View {
         VStack(alignment: .trailing, spacing: 6) {
             if !item.message.attachments.isEmpty {
-                Label("\(item.message.attachments.count) attachment\(item.message.attachments.count == 1 ? "" : "s")", systemImage: "paperclip")
+                Label(String(localized: "\(item.message.attachments.count) attachments"), systemImage: "paperclip")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -63,9 +63,9 @@ struct QueuedMessageRow: View {
 
     private var statusText: String {
         switch item.state {
-        case .queued: isFirst ? "Sends after this reply" : "Queued"
-        case .waitingForConnection: isFirst ? "Waiting for connection · \(queuedTime)" : "Waiting · \(queuedTime)"
-        case .paused: item.isStale() ? "Not sent · from \(queuedTime)" : "Not sent"
+        case .queued: isFirst ? String(localized: "Sends after this reply") : String(localized: "Queued")
+        case .waitingForConnection: isFirst ? String(localized: "Waiting for connection · \(queuedTime)") : String(localized: "Waiting · \(queuedTime)")
+        case .paused: item.isStale() ? String(localized: "Not sent · from \(queuedTime)") : String(localized: "Not sent")
         }
     }
 

@@ -43,7 +43,7 @@ nonisolated struct ElevenLabsDialect: LiveDialect {
             agent = try await Self.agent(key: key)
             signed = try await Self.signedURL(agent: agent, key: key)
         }
-        guard let signed else { throw LiveFailure("ElevenLabs didn't open a conversation.") }
+        guard let signed else { throw LiveFailure(String(localized: "ElevenLabs didn't open a conversation.")) }
         return LiveEndpoint(url: signed)
     }
 
@@ -118,7 +118,7 @@ nonisolated struct ElevenLabsDialect: LiveDialect {
             return [.reply(Self.encode(.object(["type": .string("pong"), "event_id": id])))]
         case "client_error", "error":
             let error = event["error_event"] ?? event["client_error"] ?? event
-            return [.failed(error["message"]?.string ?? "ElevenLabs refused the call.", code: error["code"]?.string ?? error["error_name"]?.string)]
+            return [.failed(error["message"]?.string ?? String(localized: "ElevenLabs refused the call."), code: error["code"]?.string ?? error["error_name"]?.string)]
         default:
             return []
         }
@@ -245,7 +245,7 @@ nonisolated struct ElevenLabsDialect: LiveDialect {
         var parts = URLComponents(string: host + "/v1/convai/conversation/get-signed-url")!
         parts.queryItems = [URLQueryItem(name: "agent_id", value: agent)]
         let reply = try await call(URLRequest(url: parts.url!), key: key)
-        guard let url = reply["signed_url"]?.string.flatMap(URL.init(string:)) else { throw LiveFailure("ElevenLabs didn't open a conversation.") }
+        guard let url = reply["signed_url"]?.string.flatMap(URL.init(string:)) else { throw LiveFailure(String(localized: "ElevenLabs didn't open a conversation.")) }
         return url
     }
 
@@ -255,7 +255,7 @@ nonisolated struct ElevenLabsDialect: LiveDialect {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONEncoder().encode(body)
         let reply = try await call(request, key: key)
-        guard let id = reply[field]?.string else { throw LiveFailure("ElevenLabs didn't make Redde's voice agent.") }
+        guard let id = reply[field]?.string else { throw LiveFailure(String(localized: "ElevenLabs didn't make Redde's voice agent.")) }
         return id
     }
 
@@ -267,7 +267,7 @@ nonisolated struct ElevenLabsDialect: LiveDialect {
         let reply = (try? JSONValue.parse(data)) ?? .null
         guard (200..<300).contains((response as? HTTPURLResponse)?.statusCode ?? 0) else {
             let said = reply["detail"]?["message"]?.string ?? reply["detail"]?.string ?? reply["message"]?.string
-            throw LiveFailure("ElevenLabs refused" + (said.map { ": \($0)" } ?? " the key."))
+            throw LiveFailure(said.map { String(localized: "ElevenLabs refused: \($0)") } ?? String(localized: "ElevenLabs refused the key."))
         }
         return reply
     }
@@ -287,7 +287,7 @@ nonisolated struct ElevenLabsVoice: Identifiable, Equatable, Sendable {
         request.timeoutInterval = 20
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200, let reply = try? JSONValue.parse(data) else {
-            throw LiveFailure("ElevenLabs didn't list the voices.")
+            throw LiveFailure(String(localized: "ElevenLabs didn't list the voices."))
         }
         let voices = (reply["voices"]?.array ?? []).compactMap { voice -> ElevenLabsVoice? in
             guard let id = voice["voice_id"]?.string, let name = voice["name"]?.string else { return nil }

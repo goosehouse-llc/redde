@@ -54,9 +54,9 @@ final class ServerFolderModel {
         var held: [Outgoing] = []
         var refused: [String] = []
         for file in files {
-            guard let name = ServerFiles.usableName(file.name) else { refused.append("“\(file.name)” isn't a name a file can have."); continue }
+            guard let name = ServerFiles.usableName(file.name) else { refused.append(String(localized: "“\(file.name)” isn't a name a file can have.")); continue }
             if let size = (try? file.local.resourceValues(forKeys: [.fileSizeKey]))?.fileSize, size > ServerFiles.largest {
-                refused.append("“\(name)” is \(ServerFiles.size(size)): Hermes takes at most \(ServerFiles.size(ServerFiles.largest)) as one file.")
+                refused.append(String(localized: "“\(name)” is \(ServerFiles.size(size)): Hermes takes at most \(ServerFiles.size(ServerFiles.largest)) as one file."))
                 continue
             }
             if folder.entry(named: name) != nil {
@@ -86,12 +86,12 @@ final class ServerFolderModel {
     /// One upload; why it failed, or nil.
     private func send(_ file: Outgoing, to folder: String, replacing: Bool) async -> String? {
         do {
-            try await watching("Uploading \(file.name)") { watch in
+            try await watching(String(localized: "Uploading \(file.name)", comment: "Progress: a file going to the server")) { watch in
                 _ = try await self.browser.upload(file.local, as: file.name, into: folder, replacing: replacing, watch: watch)
             }
             return nil
         } catch {
-            return "“\(file.name)”: \(ServerFiles.explain(error))"
+            return String(localized: "“\(file.name)”: \(ServerFiles.explain(error))", comment: "A file's name, then why it couldn't be sent")
         }
     }
 
@@ -100,15 +100,15 @@ final class ServerFolderModel {
     func makeFolder(_ typed: String) async -> Bool {
         guard let folder, !isBusy else { return false }
         guard let name = ServerFiles.usableName(typed) else {
-            problem = "That isn't a name a folder can have."
+            problem = String(localized: "That isn't a name a folder can have.")
             return false
         }
         if folder.entry(named: name) != nil {
-            problem = "Something called “\(name)” is already here."
+            problem = String(localized: "Something called “\(name)” is already here.")
             return false
         }
         do {
-            try await watching("Making \(name)") { _ in _ = try await self.browser.makeFolder(name, in: folder.path) }
+            try await watching(String(localized: "Making \(name)", comment: "Progress: a new folder being made on the server")) { _ in _ = try await self.browser.makeFolder(name, in: folder.path) }
             await load()
             return true
         } catch {
@@ -121,7 +121,7 @@ final class ServerFolderModel {
     func delete(_ file: ServerFile) async {
         guard !isBusy else { return }
         do {
-            try await watching("Deleting \(file.name)") { _ in try await self.browser.delete(file) }
+            try await watching(String(localized: "Deleting \(file.name)", comment: "Progress")) { _ in try await self.browser.delete(file) }
         } catch {
             problem = ServerFiles.explain(error)
         }
@@ -132,12 +132,12 @@ final class ServerFolderModel {
     func fetch(_ file: ServerFile) async -> URL? {
         guard !isBusy else { return nil }
         if let size = file.size, size > ServerFiles.largest {
-            problem = "“\(file.name)” is \(ServerFiles.size(size)): Hermes gives at most \(ServerFiles.size(ServerFiles.largest)) as one file."
+            problem = String(localized: "“\(file.name)” is \(ServerFiles.size(size)): Hermes gives at most \(ServerFiles.size(ServerFiles.largest)) as one file.")
             return nil
         }
         do {
             var copy: URL?
-            try await watching("Downloading \(file.name)") { watch in copy = try await self.browser.download(file, watch: watch) }
+            try await watching(String(localized: "Downloading \(file.name)", comment: "Progress")) { watch in copy = try await self.browser.download(file, watch: watch) }
             return copy
         } catch {
             problem = ServerFiles.explain(error)

@@ -10,8 +10,11 @@ struct LastReplyEntry: TimelineEntry {
 
 struct LastReplyProvider: TimelineProvider {
     func placeholder(in context: Context) -> LastReplyEntry {
-        LastReplyEntry(date: .now, snapshot: WidgetSnapshot(question: "What's on my calendar tomorrow?",
-                                                            reply: "Two things: 9:30 standup and 12:15 lunch with Dana. I've added a reminder to call the vet at 4 pm.", date: .now))
+        LastReplyEntry(date: .now, snapshot: WidgetSnapshot(
+            question: String(localized: "What's on my calendar tomorrow?", comment: "Widget gallery: a sample question"),
+            reply: String(localized: "Two things: 9:30 standup and 12:15 lunch with Dana. I've added a reminder to call the vet at 4 pm.",
+                          comment: "Widget gallery: a sample reply to the sample question"),
+            date: .now))
     }
     func getSnapshot(in context: Context, completion: @escaping (LastReplyEntry) -> Void) {
         completion(context.isPreview ? placeholder(in: context) : LastReplyEntry(date: .now, snapshot: WidgetSnapshot.load()))

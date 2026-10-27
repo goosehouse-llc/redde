@@ -170,7 +170,7 @@ enum CaptureFiler {
         // The open conversation writes itself out as it stands: while it is that one, and busy,
         // a note put under it would be written over. It waits a moment.
         let open = Conversation.current.flatMap { $0.id == record.id ? $0 : nil }
-        if let open, open.isStreaming { throw TransportError.malformed("The Notes conversation is busy.") }
+        if let open, open.isStreaming { throw TransportError.malformed(String(localized: "The Notes conversation is busy.")) }
         record.messages += notes.map { Message(role: .user, text: $0.text, createdAt: $0.at) }
         record.updatedAt = .now
         store.upsert(record)

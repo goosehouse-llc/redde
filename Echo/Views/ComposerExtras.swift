@@ -194,6 +194,7 @@ struct ContextRing: View {
     /// "54,210 of 128,000 tokens (42%)".
     nonisolated static func sentence(used: Int, window: Int) -> String {
         let share = window > 0 ? min(1, Double(used) / Double(window)) : 0
-        return "\(used.formatted()) of \(window.formatted()) tokens (\(share.formatted(.percent.precision(.fractionLength(0)))))"
+        return String(localized: "\(used.formatted()) of \(window.formatted()) tokens (\(share.formatted(.percent.precision(.fractionLength(0)))))",
+                      comment: "How full the model's context is, e.g. “54,210 of 128,000 tokens (42%)”")
     }
 }

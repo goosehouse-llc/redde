@@ -197,13 +197,13 @@ extension ConnectionTester {
     static func current(_ settings: Settings = .shared) async -> Outcome {
         switch settings.transport {
         case .hermesSessions:
-            guard let url = settings.gatewayBaseURL else { return .failed("The Hermes API address isn't a valid URL.") }
+            guard let url = settings.gatewayBaseURL else { return .failed(String(localized: "The Hermes API address isn't a valid URL.")) }
             return await hermesAPI(url: url, apiKey: settings.gatewayAPIKey, headers: settings.apiHeaders)
         case .hermesServe:
-            guard let url = settings.serveBaseURL else { return .failed("The Dashboard address isn't a valid URL.") }
+            guard let url = settings.serveBaseURL else { return .failed(String(localized: "The Dashboard address isn't a valid URL.")) }
             return await hermesServe(url: url)
         case .chatCompletions:
-            guard let url = settings.activeBaseURL else { return .failed("The endpoint address isn't a valid URL.") }
+            guard let url = settings.activeBaseURL else { return .failed(String(localized: "The endpoint address isn't a valid URL.")) }
             return await fastLane(url: url, apiKey: Keychain.read(.fastLaneAPIKey), model: settings.fastLaneModel)
         }
     }

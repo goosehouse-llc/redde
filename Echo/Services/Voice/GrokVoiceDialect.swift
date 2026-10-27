@@ -20,8 +20,13 @@ nonisolated struct GrokVoiceDialect: LiveDialect {
     ]
     /// How xAI describes the ones it does.
     static let styles: [String: String] = [
-        "eve": "Energetic, British", "ara": "Warm, friendly", "rex": "Confident, clear", "sal": "Smooth, balanced",
-        "leo": "Authoritative, British", "rigel": "Australian", "naksh": "Indian",
+        "eve": String(localized: "Energetic, British", comment: "How xAI describes one of its voices"),
+        "ara": String(localized: "Warm, friendly", comment: "How xAI describes one of its voices"),
+        "rex": String(localized: "Confident, clear", comment: "How xAI describes one of its voices"),
+        "sal": String(localized: "Smooth, balanced", comment: "How xAI describes one of its voices"),
+        "leo": String(localized: "Authoritative, British", comment: "How xAI describes one of its voices"),
+        "rigel": String(localized: "Australian", comment: "How xAI describes one of its voices"),
+        "naksh": String(localized: "Indian", comment: "How xAI describes one of its voices"),
     ]
 
     var engine: LiveEngine { .grok }
@@ -42,7 +47,7 @@ nonisolated struct GrokVoiceDialect: LiveDialect {
         let reply = try? JSONValue.parse(data)
         guard (response as? HTTPURLResponse)?.statusCode == 200, let secret = reply?["value"]?.string else {
             let said = reply?["error"]?["message"]?.string ?? reply?["error"]?.string ?? reply?["message"]?.string
-            throw LiveFailure("xAI didn't take the key" + (said.map { ": \($0)" } ?? "."))
+            throw LiveFailure(said.map { String(localized: "xAI didn't take the key: \($0)") } ?? String(localized: "xAI didn't take the key."))
         }
         var parts = URLComponents(url: Self.host, resolvingAgainstBaseURL: false)!
         parts.queryItems = [URLQueryItem(name: "model", value: Self.model)]
@@ -152,7 +157,7 @@ nonisolated struct GrokVoiceDialect: LiveDialect {
         case "error":
             let error = event["error"] ?? event
             let kind = error["type"]?.string
-            let message = error["message"]?.string ?? "xAI refused the call."
+            let message = error["message"]?.string ?? String(localized: "xAI refused the call.")
             if kind == "max_duration" { return [.closed("max_duration")] }
             return [.failed(message, code: error["code"]?.string ?? kind)]
         default:

@@ -97,7 +97,7 @@ nonisolated enum HermesSpeech {
                         play(decoder.finish())
                         return true
                     case "fallback":
-                        if heard { throw TransportError.malformed("Hermes stopped speaking mid-sentence") }
+                        if heard { throw TransportError.malformed(String(localized: "Hermes stopped speaking mid-sentence")) }
                         return false
                     default:
                         continue
@@ -116,7 +116,7 @@ nonisolated enum HermesSpeech {
             group.addTask { try await socket.receive() }
             group.addTask {
                 try await Task.sleep(for: frameTimeout)
-                throw TransportError.unreachable("Hermes stopped answering mid-sentence")
+                throw TransportError.unreachable(String(localized: "Hermes stopped answering mid-sentence"))
             }
             defer { group.cancelAll() }
             return try await group.next()!
@@ -128,7 +128,7 @@ nonisolated enum HermesSpeech {
     @concurrent static func whole(_ text: String, client: HermesServeClient, format: AVAudioFormat) async throws -> (samples: [[Float]], provider: String?) {
         let answer = try await client.restJSON("POST", "api/audio/speak", body: .object(["text": .string(text)]), timeout: 60)
         guard let dataURL = answer["data_url"]?.string, let audio = decodeDataURL(dataURL) else {
-            throw TransportError.malformed("Hermes sent no audio")
+            throw TransportError.malformed(String(localized: "Hermes sent no audio"))
         }
         let samples = try decodeFile(audio.data, mimeType: answer["mime_type"]?.string ?? audio.mimeType, to: format)
         return (samples, answer["provider"]?.string)
@@ -138,18 +138,18 @@ nonisolated enum HermesSpeech {
     /// where the text went when the name alone doesn't say: Edge is online, not on the server.
     static func providerName(_ id: String) -> String {
         switch id.lowercased() {
-        case "": "your Hermes"
-        case "edge": "Edge, Microsoft's online voice"
+        case "": String(localized: "your Hermes", comment: "Who spoke a reply: the person's Hermes server")
+        case "edge": String(localized: "Edge, Microsoft's online voice")
         case "elevenlabs": "ElevenLabs"
-        case "openai": "OpenAI, or a server like it"
+        case "openai": String(localized: "OpenAI, or a server like it")
         case "gemini": "Google Gemini"
         case "xai": "xAI"
         case "minimax": "MiniMax"
         case "mistral": "Mistral"
         case "deepinfra": "DeepInfra"
-        case "neutts": "NeuTTS, on your server"
-        case "kittentts": "KittenTTS, on your server"
-        case "piper": "Piper, on your server"
+        case "neutts": String(localized: "NeuTTS, on your server")
+        case "kittentts": String(localized: "KittenTTS, on your server")
+        case "piper": String(localized: "Piper, on your server")
         default: id
         }
     }
@@ -177,7 +177,7 @@ nonisolated enum HermesSpeech {
         defer { try? FileManager.default.removeItem(at: url) }
         let file = try AVAudioFile(forReading: url)
         guard let read = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(file.length)) else {
-            throw TransportError.malformed("Hermes's audio is empty")
+            throw TransportError.malformed(String(localized: "Hermes's audio is empty"))
         }
         try file.read(into: read)
         let all = try samples(of: convert(read, to: format))
@@ -189,11 +189,11 @@ nonisolated enum HermesSpeech {
     static func convert(_ buffer: AVAudioPCMBuffer, to format: AVAudioFormat) throws -> AVAudioPCMBuffer {
         if buffer.format == format { return buffer }
         guard let converter = AVAudioConverter(from: buffer.format, to: format) else {
-            throw TransportError.malformed("Hermes's audio can't be played (\(buffer.format))")
+            throw TransportError.malformed(String(localized: "Hermes's audio can't be played (\(buffer.format))"))
         }
         let ratio = format.sampleRate / buffer.format.sampleRate
         guard let out = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(Double(buffer.frameLength) * ratio) + 1024) else {
-            throw TransportError.malformed("Hermes's audio is empty")
+            throw TransportError.malformed(String(localized: "Hermes's audio is empty"))
         }
         var given = false, error: NSError?
         _ = converter.convert(to: out, error: &error) { _, status in
@@ -208,7 +208,7 @@ nonisolated enum HermesSpeech {
 
     /// A mono float buffer's samples.
     static func samples(of buffer: AVAudioPCMBuffer) throws -> [Float] {
-        guard let data = buffer.floatChannelData?[0] else { throw TransportError.malformed("Hermes's audio can't be played") }
+        guard let data = buffer.floatChannelData?[0] else { throw TransportError.malformed(String(localized: "Hermes's audio can't be played")) }
         return Array(UnsafeBufferPointer(start: data, count: Int(buffer.frameLength)))
     }
 

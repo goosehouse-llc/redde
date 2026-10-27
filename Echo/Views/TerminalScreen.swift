@@ -25,7 +25,7 @@ struct TerminalScreen: View {
                     .ignoresSafeArea(.container, edges: .bottom)
                 if !model.showsScreen || model.ended != nil { statusCard }
             }
-            .navigationTitle(model.showsScreen ? model.title : "Terminal")
+            .navigationTitle(model.showsScreen ? model.title : String(localized: "Terminal"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -47,8 +47,8 @@ struct TerminalScreen: View {
             Button("Trust") { model.answerTrust(true) }
             Button("Cancel", role: .cancel) { model.answerTrust(false) }
         } message: {
-            Text("This is the first time this iPhone connects to \(account.host). Its key's fingerprint is \(model.askingTrust ?? ""). "
-                 + "If you can, check it on the server with ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub.")
+            Text(String(localized: "This is the first time this iPhone connects to \(account.host). Its key's fingerprint is \(model.askingTrust ?? "").")
+                 + " " + String(localized: "If you can, check it on the server with ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub."))
         }
         .task {
             account = TerminalAccount.saved(server: settings.activeServerID.uuidString)
@@ -119,10 +119,10 @@ struct TerminalAccountForm: View {
 
     /// The first thing still needed, and how to say it.
     private var missing: (field: Field, words: String)? {
-        if account.host.trimmingCharacters(in: .whitespaces).isEmpty { return (.host, "the server's host name") }
-        if !(1 ... 65535).contains(account.port) { return (.port, "a port (22, unless your server uses another)") }
+        if account.host.trimmingCharacters(in: .whitespaces).isEmpty { return (.host, String(localized: "the server's host name")) }
+        if !(1 ... 65535).contains(account.port) { return (.port, String(localized: "a port (22, unless your server uses another)")) }
         if account.user.trimmingCharacters(in: .whitespaces).isEmpty {
-            return (.user, "the user: the account you log in to on the server, such as hermes")
+            return (.user, String(localized: "the user: the account you log in to on the server, such as hermes"))
         }
         return nil
     }
@@ -177,12 +177,12 @@ struct TerminalKeyCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("This iPhone's key").font(.subheadline.weight(.semibold))
-            Text(line ?? "Unlock this iPhone to make its key.")
+            Text(line ?? String(localized: "Unlock this iPhone to make its key."))
                 .font(.system(.caption, design: .monospaced))
                 .textSelection(.enabled)
                 .lineLimit(4)
             HStack {
-                Button(copied ? "Copied" : "Copy", systemImage: copied ? "checkmark" : "doc.on.doc") {
+                Button(copied ? String(localized: "Copied") : String(localized: "Copy"), systemImage: copied ? "checkmark" : "doc.on.doc") {
                     UIPasteboard.general.string = line
                     copied = true
                 }
@@ -191,7 +191,7 @@ struct TerminalKeyCard: View {
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
-            Text("Add it as one line to ~/.ssh/authorized_keys for \(user.isEmpty ? "that user" : user) on \(host.isEmpty ? "the server" : host). The key was made on this iPhone and never leaves it.")
+            Text("Add it as one line to ~/.ssh/authorized_keys for \(user.isEmpty ? String(localized: "that user") : user) on \(host.isEmpty ? String(localized: "the server") : host). The key was made on this iPhone and never leaves it.")
                 .font(.caption).foregroundStyle(.secondary)
         }
         .padding(12)
@@ -217,7 +217,7 @@ final class TerminalModel {
     }
 
     var phase: Phase = .connecting
-    var title = "Terminal"
+    var title = String(localized: "Terminal")
     /// Why the shell ended, once it has; the screen stays readable under the note.
     var ended: String?
     /// A server met for the first time: its fingerprint, until the person answers. Nothing is
@@ -270,7 +270,7 @@ final class TerminalModel {
         askingTrust = nil
         asked = nil
         guard yes else {
-            phase = .failed(Failure(message: "Not connected: the server's key wasn't trusted.", wantsKey: false))
+            phase = .failed(Failure(message: String(localized: "Not connected: the server's key wasn't trusted."), wantsKey: false))
             return
         }
         KnownHosts.trust(fingerprint, for: KnownHosts.name(host: target.host, port: target.port))
@@ -300,7 +300,7 @@ struct TerminalSurface: UIViewRepresentable {
         view.terminalDelegate = context.coordinator
         view.nativeBackgroundColor = .systemBackground
         view.nativeForegroundColor = .label
-        view.accessibilityLabel = "Terminal"
+        view.accessibilityLabel = String(localized: "Terminal")
         model.view = view
         return view
     }

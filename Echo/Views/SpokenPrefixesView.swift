@@ -13,7 +13,7 @@ struct SpokenPrefixesView: View {
                     NavigationLink {
                         SpokenPrefixEditor(rule: $rule)
                     } label: {
-                        LabeledContent(rule.word.isEmpty ? "New prefix" : rule.word) {
+                        LabeledContent(rule.word.isEmpty ? String(localized: "New prefix") : rule.word) {
                             Text(Self.summary(rule)).font(.callout.monospaced()).lineLimit(1)
                         }
                     }
@@ -141,7 +141,7 @@ struct SpokenPrefixEditor: View {
                     SpokenPrefixModelPicker(rule: $rule)
                 } label: {
                     LabeledContent("Model") {
-                        Text((rule.model ?? "").isEmpty ? "Keep current" : rule.model ?? "")
+                        Text((rule.model ?? "").isEmpty ? String(localized: "Keep current") : rule.model ?? "")
                             .font(.callout.monospaced()).lineLimit(1)
                     }
                 }
@@ -161,7 +161,7 @@ struct SpokenPrefixEditor: View {
                 }
             }
         }
-        .navigationTitle(rule.word.isEmpty ? "New prefix" : rule.word)
+        .navigationTitle(rule.word.isEmpty ? String(localized: "New prefix") : rule.word)
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -179,7 +179,7 @@ struct SpokenPrefixModelPicker: View {
     var body: some View {
         List {
             Section {
-                row(title: "Keep current", model: nil, selected: (rule.model ?? "").isEmpty) {
+                row(title: String(localized: "Keep current"), model: nil, selected: (rule.model ?? "").isEmpty) {
                     rule.model = nil; rule.provider = nil
                 }
             }

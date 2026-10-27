@@ -75,9 +75,9 @@ nonisolated struct MessageSearchHit: Decodable, Identifiable, Sendable, Equatabl
     /// "You" or "Hermes" before a matched message, so a hit says who said it.
     var speaker: String? {
         switch role {
-        case "user": "You"
+        case "user": String(localized: "You", comment: "Who said a message found by search: the person")
         case "assistant": "Hermes"
-        case "tool": "Tool"
+        case "tool": String(localized: "Tool", comment: "Who said a message found by search: a tool the agent ran")
         default: nil
         }
     }

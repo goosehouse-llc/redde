@@ -66,16 +66,17 @@ nonisolated struct SpokenRequest: Equatable, Sendable {
     /// Under the voice screen's state while the answer is listened for.
     var hint: String {
         switch kind {
-        case .approval: "Say “approve” or “deny”."
-        case let .question(_, choices): choices.isEmpty ? "Say your answer." : "Say the number, or the answer."
+        case .approval: String(localized: "Say “approve” or “deny”.", comment: "On the voice screen. Keep the quoted words in English: they are the words Redde listens for")
+        case let .question(_, choices): choices.isEmpty ? String(localized: "Say your answer.", comment: "On the voice screen")
+            : String(localized: "Say the number, or the answer.", comment: "On the voice screen. Redde listens for the numbers in English")
         }
     }
 
     /// The same, while a nod and a shake of the head answer too.
     var nodHint: String {
         switch kind {
-        case .approval: "Nod or say “approve”. Shake your head or say “deny”."
-        case .question: "Nod for yes, shake your head for no, or say it."
+        case .approval: String(localized: "Nod or say “approve”. Shake your head or say “deny”.", comment: "On the voice screen. Keep the quoted words in English: they are the words Redde listens for")
+        case .question: String(localized: "Nod for yes, shake your head for no, or say it.", comment: "On the voice screen. Redde listens for yes and no in English")
         }
     }
 

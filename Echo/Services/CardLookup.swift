@@ -119,7 +119,9 @@ nonisolated enum OpenMeteo {
             return list[i]
         }
         let wind = now?["wind_speed_10m"]?.number.map { speed in
-            [String(Int(speed.rounded())), units == "F" ? "mph" : "km/h", compass(now?["wind_direction_10m"]?.number)].filter { !$0.isEmpty }.joined(separator: " ")
+            let measured = Measurement(value: speed.rounded(), unit: units == "F" ? UnitSpeed.milesPerHour : UnitSpeed.kilometersPerHour)
+                .formatted(.measurement(width: .abbreviated, usage: .asProvided, numberFormatStyle: .number.precision(.fractionLength(0))))
+            return [measured, compass(now?["wind_direction_10m"]?.number)].filter { !$0.isEmpty }.joined(separator: " ")
         }
         let reading = ReplyCard.Weather.Now(
             temperature: temperature, condition: condition(now?["weather_code"]?.number),
@@ -162,7 +164,16 @@ nonisolated enum OpenMeteo {
 
     private static func compass(_ degrees: Double?) -> String {
         guard let degrees else { return "" }
-        let points = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+        let points = [
+            String(localized: "N", comment: "Compass point, for the wind's direction: north"),
+            String(localized: "NE", comment: "Compass point, for the wind's direction: north-east"),
+            String(localized: "E", comment: "Compass point, for the wind's direction: east"),
+            String(localized: "SE", comment: "Compass point, for the wind's direction: south-east"),
+            String(localized: "S", comment: "Compass point, for the wind's direction: south"),
+            String(localized: "SW", comment: "Compass point, for the wind's direction: south-west"),
+            String(localized: "W", comment: "Compass point, for the wind's direction: west"),
+            String(localized: "NW", comment: "Compass point, for the wind's direction: north-west"),
+        ]
         return points[Int((degrees.truncatingRemainder(dividingBy: 360) + 360).truncatingRemainder(dividingBy: 360) / 45 + 0.5) % 8]
     }
 }

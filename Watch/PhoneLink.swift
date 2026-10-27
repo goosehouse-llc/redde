@@ -79,7 +79,7 @@ final class PhoneLink: NSObject, WCSessionDelegate {
                     continuation.resume(returning: snapshot)
                 } else {
                     // An iPhone on an older Redde doesn't know the question.
-                    continuation.resume(throwing: WatchRelay.Failure.phone("Update Redde on your iPhone: it can't take the watch's questions yet."))
+                    continuation.resume(throwing: WatchRelay.Failure.phone(String(localized: "Update Redde on your iPhone: it can't take the watch's questions yet.")))
                 }
             }, errorHandler: { error in
                 continuation.resume(throwing: error)

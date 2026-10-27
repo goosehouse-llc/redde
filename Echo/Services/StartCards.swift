@@ -27,21 +27,21 @@ nonisolated enum StartCards {
         guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: today),
               let dayAfter = calendar.date(byAdding: .day, value: 2, to: today) else { return nil }
         func time(_ date: Date) -> String { date.formatted(date: .omitted, time: .shortened) }
-        func more(_ count: Int) -> String { count > 0 ? " · \(count) more" : "" }
+        func more(_ count: Int) -> String { count > 0 ? " · " + String(localized: "\(count) more", comment: "More calendar events besides the one shown") : "" }
         let sorted = events.sorted { $0.start < $1.start }
 
         let left = sorted.filter { $0.start < tomorrow && $0.end > now }
         let timed = left.filter { !$0.allDay }
         if let next = timed.first {
-            let when = next.start > now ? "Today at \(time(next.start))" : "Now, until \(time(next.end))"
+            let when = next.start > now ? String(localized: "Today at \(time(next.start))") : String(localized: "Now, until \(time(next.end))", comment: "A calendar event under way")
             return Upcoming(title: next.title, subtitle: when + more(left.count - 1), day: today, question: "What's on my calendar today?")
         }
         if let allDay = left.first {
-            return Upcoming(title: allDay.title, subtitle: "Today, all day" + more(left.count - 1), day: today, question: "What's on my calendar today?")
+            return Upcoming(title: allDay.title, subtitle: String(localized: "Today, all day") + more(left.count - 1), day: today, question: "What's on my calendar today?")
         }
         let next = sorted.filter { $0.start >= tomorrow && $0.start < dayAfter }
         guard let first = next.first(where: { !$0.allDay }) ?? next.first else { return nil }
-        let when = first.allDay ? "Tomorrow, all day" : "Tomorrow at \(time(first.start))"
+        let when = first.allDay ? String(localized: "Tomorrow, all day") : String(localized: "Tomorrow at \(time(first.start))")
         return Upcoming(title: first.title, subtitle: when + more(next.count - 1), day: tomorrow, question: "What's on my calendar tomorrow?")
     }
 

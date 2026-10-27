@@ -45,7 +45,7 @@ struct ModelPickerView: View {
                     models.append(choice)
                 }
             }
-            out.append((slug, "Local", models.sorted { $0.name < $1.name }))
+            out.append((slug, String(localized: "Local", comment: "Models served by your own machines"), models.sorted { $0.name < $1.name }))
         }
         for key in grouped.keys.filter({ !$0.hasPrefix("custom") }).sorted() {
             guard let models = grouped[key], let first = models.first else { continue }
@@ -83,8 +83,8 @@ struct ModelPickerView: View {
                 Button { select(nil) } label: {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(isFastLane ? Settings.defaultFastLaneModel : "Gateway default")
-                            Text(isFastLane ? "llama-swap's configured default" : "Whatever Redde is configured to use")
+                            Text(isFastLane ? Settings.defaultFastLaneModel : String(localized: "Gateway default"))
+                            (isFastLane ? Text("llama-swap's configured default") : Text("Whatever Redde is configured to use"))
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                         Spacer()
@@ -152,7 +152,7 @@ struct ModelPickerView: View {
                                 }
                                 Spacer()
                                 if isSelected(choice) { Image(systemName: "checkmark").foregroundStyle(.tint).fontWeight(.semibold) }
-                                else if choice.isCurrent { Text("current").font(.caption2).foregroundStyle(.secondary) }
+                                else if choice.isCurrent { Text("current", comment: "The model the server uses now").font(.caption2).foregroundStyle(.secondary) }
                             }
                             .contentShape(Rectangle())
                         }
@@ -189,7 +189,7 @@ struct ModelPickerView: View {
             do {
                 try await conversation.pinOpenSessionModel(target.model, provider: target.provider)
             } catch {
-                self.error = "Couldn't switch this conversation: \(error.localizedDescription)"
+                self.error = String(localized: "Couldn't switch this conversation: \(error.localizedDescription)")
             }
         }
     }
@@ -207,7 +207,7 @@ struct ModelPickerView: View {
                     try await HermesServeClient.shared.setSessionReasoning(runtimeSession: runtime, effort: effort)
                 }
             } catch {
-                self.error = "Couldn't change this conversation's reasoning effort: \(error.localizedDescription)"
+                self.error = String(localized: "Couldn't change this conversation's reasoning effort: \(error.localizedDescription)")
             }
         }
     }
@@ -253,7 +253,7 @@ struct ModelPickerView: View {
             guard let id = entry["id"]?.string else { return nil }
             let loaded = entry["status"]?["value"]?.string == "loaded"
             return ModelChoice(provider: "llama-swap", providerName: providerName, model: id,
-                               name: loaded ? "\(id)  ·  loaded" : id, isCurrent: loaded)
+                               name: loaded ? String(localized: "\(id)  ·  loaded", comment: "A model already loaded on the server") : id, isCurrent: loaded)
         }
     }
 }

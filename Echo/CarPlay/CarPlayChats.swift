@@ -20,8 +20,8 @@ nonisolated struct CarPlayChat: Equatable, Sendable {
 /// what a car screen shows. A row is a name and a time. Nothing a reply said goes on the car's
 /// screen, so a session nobody named gets a plain label and never the preview of its last message.
 enum CarPlayChats {
-    static let untitled = "Untitled chat"
-    static let currentDetail = "The chat you are in"
+    static let untitled = String(localized: "Untitled chat")
+    static let currentDetail = String(localized: "The chat you are in", comment: "CarPlay: under the chat that is open now")
 
     /// Server sessions as rows: pinned first, then the most recently used, like the phone's list.
     /// Scheduled runs are left out (a busy schedule would fill every row), unless pinned or open.
@@ -35,7 +35,7 @@ enum CarPlayChats {
         return ordered.prefix(limit).map { session in
             let isCurrent = session.id == currentSessionID
             let when = session.lastActiveDate.map { DateGroup.rowTime($0, now: now) }
-            let detail = isCurrent ? currentDetail : [session.pinned == true ? "Pinned" : nil, when].compactMap { $0 }.joined(separator: " · ")
+            let detail = isCurrent ? currentDetail : [session.pinned == true ? String(localized: "Pinned", comment: "CarPlay: a chat kept at the top of the list") : nil, when].compactMap { $0 }.joined(separator: " · ")
             return CarPlayChat(title: session.title?.nilIfEmpty ?? untitled, detail: detail, isCurrent: isCurrent, source: .session(session))
         }
     }
@@ -79,7 +79,7 @@ enum CarPlayChats {
             }
         case .local(let id):
             guard let record = await store.loadRecord(id: id) else {
-                throw TransportError.malformed("That conversation is no longer on this phone.")
+                throw TransportError.malformed(String(localized: "That conversation is no longer on this phone."))
             }
             conversation.load(record)
         }

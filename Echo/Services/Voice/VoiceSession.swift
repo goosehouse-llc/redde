@@ -450,11 +450,11 @@ final class VoiceSession {
             HeadsetControls.shared.enable { [weak self] in self?.primaryAction() }
         }
         let status = switch phase {
-        case .idle: "Ready"
-        case .listening: "Listening"
+        case .idle: String(localized: "Ready", comment: "Voice mode's state, on the Lock Screen's player")
+        case .listening: String(localized: "Listening", comment: "Voice mode's state, on the Lock Screen's player")
         case .thinking: ""   // stepped aside above
-        case .speaking: "Speaking"
-        case .error: "Tap to try again"
+        case .speaking: String(localized: "Speaking", comment: "Voice mode's state, on the Lock Screen's player")
+        case .error: String(localized: "Tap to try again", comment: "Voice mode's state, on the Lock Screen's player")
         }
         HeadsetControls.shared.setNowPlaying(status: status, active: phase == .listening || phase == .speaking)
     }
@@ -489,7 +489,7 @@ final class VoiceSession {
                 eye.close()   // switched off again while it was opening
             } else if !opened {
                 isLooking = false
-                lookProblem = "Redde can't use the camera. Allow it in Settings → Privacy & Security → Camera."
+                lookProblem = String(localized: "Redde can't use the camera. Allow it in Settings → Privacy & Security → Camera.")
             }
         }
     }
@@ -794,11 +794,11 @@ final class VoiceSession {
         }
         // Hands-free off: one question, one answer, as Redde's own voice does. A room's goes on.
         live.endsAfterAnswer = { [weak self] in room == nil && !(self?.continuous ?? true) }
-        activeTool = "Calling \(live.engine.name)…"
+        activeTool = String(localized: "Calling \(live.engine.name)…", comment: "Voice mode: a live voice call is being opened")
         phase = .thinking
         Task {
             guard await micAllowed() else {
-                endLive(problem: "Redde can't use the microphone. Allow it in Settings → Privacy & Security → Microphone.")
+                endLive(problem: String(localized: "Redde can't use the microphone. Allow it in Settings → Privacy & Security → Microphone."))
                 return
             }
             guard self.live === live else { return }
@@ -1001,7 +1001,7 @@ final class VoiceSession {
             } catch {
                 log.error("spoken prefix: couldn't open \(bot, privacy: .public): \(error.localizedDescription)")
                 output.endReply()
-                phase = .error("Couldn't open that bot's chat: \(error.localizedDescription)")
+                phase = .error(String(localized: "Couldn't open that bot's chat: \(error.localizedDescription)"))
                 output.releaseAudio(); audio.deactivate()
                 return
             }
@@ -1627,15 +1627,18 @@ nonisolated struct VoiceMetrics: Equatable, Sendable {
     var ttsStartup: TimeInterval? { gap(firstTokenAt, firstSpokenAt) }
 
     var summary: String {
-        func f(_ label: String, _ v: TimeInterval?) -> String? { v.map { String(format: "%@ %.2fs", label, $0) } }
+        func f(_ label: String, _ v: TimeInterval?) -> String? {
+            v.map { "\(label) " + Measurement(value: $0, unit: UnitDuration.seconds)
+                .formatted(.measurement(width: .narrow, numberFormatStyle: .number.precision(.fractionLength(2)))) }
+        }
         var parts = [f("end→word", endToFirstWord), f("finalize", finalize), f("TTFT", timeToFirstToken),
                      f("TTS start", ttsStartup), f("model", modelTotal)].compactMap { $0 }
         if let pct = contextPercent {
-            parts.append(String(format: "ctx %.1f%%", pct))
+            parts.append("ctx " + (pct / 100).formatted(.percent.precision(.fractionLength(1))))
         } else if let usage {
             parts.append("\(usage.total) tok")
         }
-        if let tps = tokensPerSecond { parts.append(String(format: "%.0f tok/s", tps)) }
+        if let tps = tokensPerSecond { parts.append(tps.formatted(.number.precision(.fractionLength(0))) + " tok/s") }
         return parts.joined(separator: " · ")
     }
 }

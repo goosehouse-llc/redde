@@ -276,6 +276,11 @@ struct BotsTests {
         #expect(BotNames.handle(for: "Hermes", taken: []) == "hermes-bot" && BotNames.handle(for: "everyone", taken: []) == "everyone-bot",
                 "never a name Hermes or @mentions keep for themselves")
         #expect(BotNames.handle(for: "🤖", taken: []) == nil && BotNames.handle(for: "--", taken: []) == nil, "nothing to make one from")
+        // Another script is spelled in Latin letters: a template's translated name, or a bot named in Japanese.
+        #expect(BotNames.handle(for: "Исследователь", taken: []) == "issledovatel")
+        #expect(BotNames.handle(for: "リサーチャー", taken: []) == "risacha")
+        #expect(BotNames.handle(for: "연구원", taken: []) == "yeonguwon")
+        #expect(BotNames.handle(for: "研究员", taken: [])?.hasPrefix("yan") == true)
         let long = BotNames.handle(for: String(repeating: "a", count: 90), taken: []) ?? ""
         #expect(long.count <= 64 && long.wholeMatch(of: /[a-z0-9][a-z0-9_-]*/) != nil, "within Hermes's rule for a profile's name")
     }

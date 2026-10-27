@@ -32,8 +32,8 @@ nonisolated struct ChatControls: Equatable, Sendable {
 
     /// Why Hermes turned fast mode down, in the screen's words; its own otherwise.
     static func fastRefusal(_ message: String) -> String {
-        message.localizedCaseInsensitiveContains("not available for this model") ? "This model has no fast mode."
-            : message.localizedCaseInsensitiveContains("without a selected model") ? "Pick a model first: fast mode belongs to a model."
+        message.localizedCaseInsensitiveContains("not available for this model") ? String(localized: "This model has no fast mode.")
+            : message.localizedCaseInsensitiveContains("without a selected model") ? String(localized: "Pick a model first: fast mode belongs to a model.")
             : message
     }
 }
@@ -186,7 +186,7 @@ final class RunChatControls: ChatControlling {
     }
 
     func setAutoApprove(_ on: Bool, stored: String) async throws -> ChatControls {
-        throw TransportError.malformed("Over the Hermes API a conversation can't be told to run commands without asking; on the Dashboard connection it can.")
+        throw TransportError.malformed(String(localized: "Over the Hermes API a conversation can't be told to run commands without asking; on the Dashboard connection it can."))
     }
 }
 

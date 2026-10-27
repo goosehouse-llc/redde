@@ -13,7 +13,7 @@ struct HermesVoiceRows: View {
     var body: some View {
         if HermesSpeech.isAvailable {
             Button { trial == .speaking ? release() : test() } label: {
-                LabeledContent(trial == .speaking ? "Stop" : "Say a test sentence") {
+                LabeledContent(trial == .speaking ? String(localized: "Stop") : String(localized: "Say a test sentence")) {
                     switch trial {
                     case .idle: EmptyView()
                     case .speaking: ProgressView()

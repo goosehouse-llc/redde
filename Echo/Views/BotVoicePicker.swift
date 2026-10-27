@@ -44,15 +44,17 @@ struct BotVoicePicker: View {
                 } else if !engineNotReady {
                     speedSection
                     Section {
-                        row("Automatic", detail: automaticDetail, chosen: picked?.isAutomatic ?? true, voice: nil) { set(nil) }
-                        row("Same as \(mainName)", detail: nil, chosen: picked?.sameAsMain == true, voice: BotVoice(sameAsMain: true)) {
+                        row(String(localized: "Automatic", comment: "A bot's voice: one picked for it by itself"), detail: automaticDetail,
+                            chosen: picked?.isAutomatic ?? true, voice: nil) { set(nil) }
+                        row(String(localized: "Same as \(mainName)"), detail: nil, chosen: picked?.sameAsMain == true, voice: BotVoice(sameAsMain: true)) {
                             set(BotVoice(sameAsMain: true))
                         }
                     } footer: {
                         Text("Automatic gives \(name) a voice of its own, not \(mainName)'s and not another bot's while there are voices to go round. It reads \(name)'s replies in voice mode, in group chats and in the car.")
                     }
                     if engine == .kokoro { blendSection }
-                    Section(engine == .kokoro ? "Kokoro voices" : engine == .elevenLabs ? "Your ElevenLabs voices" : "Voices on this iPhone") {
+                    Section(engine == .kokoro ? String(localized: "Kokoro voices")
+                            : engine == .elevenLabs ? String(localized: "Your ElevenLabs voices") : String(localized: "Voices on this iPhone")) {
                         if loading { ProgressView() }
                         ForEach(choices, id: \.id) { choice in
                             row(choice.name, detail: choice.detail, chosen: isPicked(choice.id), voice: choice.voice) { set(choice.voice) }
@@ -91,7 +93,8 @@ struct BotVoicePicker: View {
             return kokoroVoices.sorted { a, b in
                 let (sa, sb) = (SpokenLanguage.kokoroLanguage(of: a) == main, SpokenLanguage.kokoroLanguage(of: b) == main)
                 return sa != sb ? sa : a < b
-            }.map { Choice(id: $0, name: Self.kokoroName($0), detail: $0 == settings.kokoroVoice ? "\(mainName)'s voice" : $0, voice: BotVoice(kokoro: $0)) }
+            }.map { Choice(id: $0, name: Self.kokoroName($0), detail: $0 == settings.kokoroVoice ? String(localized: "\(mainName)'s voice") : $0,
+                           voice: BotVoice(kokoro: $0)) }
         case .onDevice:
             return AVSpeechSynthesisVoice.speechVoices()
                 .filter { SpokenLanguage.base($0.language) == listening && !$0.voiceTraits.contains(.isNoveltyVoice) }
@@ -99,7 +102,8 @@ struct BotVoicePicker: View {
                 .map { Choice(id: $0.identifier, name: $0.name, detail: Self.quality($0) + " · " + $0.language, voice: BotVoice(onDevice: $0.identifier)) }
         case .elevenLabs:
             return elevenLabsVoices.map {
-                Choice(id: $0.id, name: $0.name, detail: $0.id == mainElevenLabs ? "\(mainName)'s voice" : $0.detail, voice: BotVoice(elevenLabs: $0.id))
+                Choice(id: $0.id, name: $0.name, detail: $0.id == mainElevenLabs ? String(localized: "\(mainName)'s voice") : $0.detail,
+                       voice: BotVoice(elevenLabs: $0.id))
             }
         case .hermes:
             return []
@@ -128,7 +132,7 @@ struct BotVoicePicker: View {
             }
             .pickerStyle(.menu)
             if let engine {
-                let inherited = "As in Settings (\(engine.voiceName(settings.appLiveVoice(engine))))"
+                let inherited = String(localized: "As in Settings (\(engine.voiceName(settings.appLiveVoice(engine))))")
                 let own = picked?.liveVoices?[engine.rawValue].flatMap { engine.voicesFromAccount || engine.voices.contains($0) ? $0 : nil }
                 NavigationLink {
                     LiveVoiceList(engine: engine, selection: Binding(
@@ -146,8 +150,8 @@ struct BotVoicePicker: View {
         } header: {
             Text("Voice mode")
         } footer: {
-            Text(engine.map { "Voice mode in \(name)'s chat is a \($0.name) call: \($0.company)'s voice talks with you and hands anything real to \(name). Group chats, the car and Read aloud use the reading voice below." }
-                 ?? "Voice mode in \(name)'s chat is Redde's: your iPhone hears you, \(name) answers, and the reading voice below reads it.")
+            Text(engine.map { String(localized: "Voice mode in \(name)'s chat is a \($0.name) call: \($0.company)'s voice talks with you and hands anything real to \(name). Group chats, the car and Read aloud use the reading voice below.") }
+                 ?? String(localized: "Voice mode in \(name)'s chat is Redde's: your iPhone hears you, \(name) answers, and the reading voice below reads it."))
         }
     }
 
@@ -157,7 +161,7 @@ struct BotVoicePicker: View {
         let valid = KokoroBlend.isBlend(typed, of: kokoroVoices)
         return Section {
             if let current = picked?.kokoro, current.contains("+") {
-                row(current, detail: "\(name)'s blend", chosen: true, voice: BotVoice(kokoro: current)) {}
+                row(current, detail: String(localized: "\(name)'s blend"), chosen: true, voice: BotVoice(kokoro: current)) {}
             }
             TextField("bf_emma(1)+af_heart(4)+af_bella(2)", text: $blend)
                 .font(.callout.monospaced())
@@ -173,9 +177,9 @@ struct BotVoicePicker: View {
         } header: {
             Text("A blend")
         } footer: {
-            Text(typed.isEmpty || valid
-                 ? "Two of the voices below or more, each with its share in brackets. The first one says how it's pronounced: a British voice first (bf_, bm_) drops its r's."
-                 : "Write voices the server has, joined by +, each with a number in brackets.")
+            typed.isEmpty || valid
+                ? Text("Two of the voices below or more, each with its share in brackets. The first one says how it's pronounced: a British voice first (bf_, bm_) drops its r's.")
+                : Text("Write voices the server has, joined by +, each with a number in brackets.")
         }
     }
 
@@ -194,14 +198,17 @@ struct BotVoicePicker: View {
                     .urlFieldStyle()
             }
             if engine == .elevenLabs, !hasElevenLabsKey {
-                SecretField(item: LiveEngine.elevenLabs.keyItem, prompt: "ElevenLabs API key", replacePrompt: "Replace stored ElevenLabs key",
-                            saveTitle: "Save key", removeTitle: "Remove key", optional: true, hasValue: $hasElevenLabsKey)
+                SecretField(item: LiveEngine.elevenLabs.keyItem, prompt: String(localized: "ElevenLabs API key"),
+                            replacePrompt: String(localized: "Replace stored ElevenLabs key"),
+                            saveTitle: String(localized: "Save key"), removeTitle: String(localized: "Remove key"), optional: true,
+                            hasValue: $hasElevenLabsKey)
             }
         } header: {
             Text("Reading voice")
         } footer: {
-            Text("Which voice reads \(name)'s replies aloud: in voice mode when that isn't a call, in group chats, in the car and with Read aloud."
-                 + (engineNotReady ? " Until it's set up, the built-in voice reads them." : ""))
+            engineNotReady
+                ? Text("Which voice reads \(name)'s replies aloud: in voice mode when that isn't a call, in group chats, in the car and with Read aloud. Until it's set up, the built-in voice reads them.")
+                : Text("Which voice reads \(name)'s replies aloud: in voice mode when that isn't a call, in group chats, in the car and with Read aloud.")
         }
     }
 
@@ -220,7 +227,7 @@ struct BotVoicePicker: View {
                 set: { own in setSpeed(own ? settings.voiceSpeed : nil) }))
             if let speed = picked?.speed {
                 VStack(alignment: .leading, spacing: 2) {
-                    LabeledContent("Speed") { Text(String(format: "%.2f×", speed)).monospacedDigit() }
+                    LabeledContent("Speed") { Text(Self.speedLabel(speed)).monospacedDigit() }
                     Slider(value: Binding(get: { speed }, set: { setSpeed($0, hear: false) }), in: 0.5...2.0, step: 0.05) { editing in
                         if !editing { play(picked.flatMap { $0.isAutomatic ? nil : $0 }) }
                     }
@@ -230,9 +237,9 @@ struct BotVoicePicker: View {
         } header: {
             Text("Speed")
         } footer: {
-            Text(picked?.speed == nil
-                ? "\(name) reads at \(mainName)'s speed, \(String(format: "%.2f×", settings.voiceSpeed)) (Settings → Voice → Voice speed)."
-                : "\(name) reads at this speed in voice mode, in group chats and in the car, whatever its voice.")
+            picked?.speed == nil
+                ? Text("\(name) reads at \(mainName)'s speed, \(Self.speedLabel(settings.voiceSpeed)) (Settings → Voice → Voice speed).")
+                : Text("\(name) reads at this speed in voice mode, in group chats and in the car, whatever its voice.")
         }
     }
 
@@ -249,7 +256,7 @@ struct BotVoicePicker: View {
         switch engine {
         case .kokoro:
             let id = BotVoices.kokoro(for: bot.name, picked: others, main: settings.kokoroVoice, available: kokoroVoices, names: names)
-            return id.map(Self.kokoroName) ?? "\(mainName)'s voice, for now: the server has no other voice in its language"
+            return id.map(Self.kokoroName) ?? String(localized: "\(mainName)'s voice, for now: the server has no other voice in its language")
         case .onDevice:
             let installed = AVSpeechSynthesisVoice.speechVoices().map {
                 SpokenLanguage.AppleVoice(identifier: $0.identifier, language: $0.language, quality: $0.quality.rawValue,
@@ -257,11 +264,12 @@ struct BotVoicePicker: View {
             }
             let main = sample.voice(for: listening)?.identifier
             let id = BotVoices.onDevice(for: bot.name, picked: others, language: listening, main: main, installed: installed, names: names)
-            return id.flatMap { AVSpeechSynthesisVoice(identifier: $0)?.name } ?? "\(mainName)'s voice, for now: no other voice is installed for its language"
+            return id.flatMap { AVSpeechSynthesisVoice(identifier: $0)?.name }
+                ?? String(localized: "\(mainName)'s voice, for now: no other voice is installed for its language")
         case .elevenLabs:
-            guard let main = mainElevenLabs else { return "Save your ElevenLabs key in Settings → Voice first" }
+            guard let main = mainElevenLabs else { return String(localized: "Save your ElevenLabs key in Settings → Voice first") }
             let id = BotVoices.elevenLabs(for: bot.name, picked: others, main: main, available: elevenLabsVoices.map(\.id), names: names)
-            return id.flatMap(ElevenLabsVoice.name) ?? "\(mainName)'s voice, for now: your account has no other voice"
+            return id.flatMap(ElevenLabsVoice.name) ?? String(localized: "\(mainName)'s voice, for now: your account has no other voice")
         case .hermes:
             return ""
         }
@@ -331,19 +339,29 @@ struct BotVoicePicker: View {
     static func kokoroName(_ id: String) -> String {
         let parts = id.split(separator: "_", maxSplits: 1)
         guard parts.count == 2, parts[0].count == 2 else { return id }
-        let accent: [Character: String] = ["a": "American", "b": "British", "e": "Spanish", "f": "French", "h": "Hindi", "i": "Italian",
-                                           "j": "Japanese", "p": "Portuguese", "z": "Chinese"]
-        let who = parts[0].last == "f" ? "female" : parts[0].last == "m" ? "male" : nil
+        let accent: [Character: String] = [
+            "a": String(localized: "American", comment: "A Kokoro voice's accent"), "b": String(localized: "British", comment: "A Kokoro voice's accent"),
+            "e": String(localized: "Spanish", comment: "A Kokoro voice's accent"), "f": String(localized: "French", comment: "A Kokoro voice's accent"),
+            "h": String(localized: "Hindi", comment: "A Kokoro voice's accent"), "i": String(localized: "Italian", comment: "A Kokoro voice's accent"),
+            "j": String(localized: "Japanese", comment: "A Kokoro voice's accent"), "p": String(localized: "Portuguese", comment: "A Kokoro voice's accent"),
+            "z": String(localized: "Chinese", comment: "A Kokoro voice's accent")]
+        let who = parts[0].last == "f" ? String(localized: "female", comment: "A Kokoro voice: a woman's")
+            : parts[0].last == "m" ? String(localized: "male", comment: "A Kokoro voice: a man's") : nil
         let place = parts[0].first.flatMap { accent[$0] }
         let about = [place, who].compactMap(\.self).joined(separator: ", ")
         return parts[1].capitalized + (about.isEmpty ? "" : " (\(about))")
     }
 
+    /// A voice speed as Settings shows one: "1.25×".
+    nonisolated static func speedLabel(_ speed: Double) -> String {
+        String(localized: "\(speed.formatted(.number.precision(.fractionLength(2))))×", comment: "A voice's speed, e.g. “1.25×”")
+    }
+
     private static func quality(_ voice: AVSpeechSynthesisVoice) -> String {
         switch voice.quality {
-        case .premium: "Premium"
-        case .enhanced: "Enhanced"
-        default: "Default"
+        case .premium: String(localized: "Premium", comment: "An on-device voice's quality")
+        case .enhanced: String(localized: "Enhanced", comment: "An on-device voice's quality")
+        default: String(localized: "Default", comment: "An on-device voice's quality: the ordinary one")
         }
     }
 }

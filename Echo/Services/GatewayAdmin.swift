@@ -63,9 +63,13 @@ nonisolated struct GatewayStatus: Equatable, Sendable {
 
     /// "Running", or Hermes's own word for anything else.
     var gatewayLabel: String {
-        if gatewayRunning, gatewayState.isEmpty || gatewayState == "running" { return "Running" }
+        if gatewayRunning, gatewayState.isEmpty || gatewayState == "running" { return String(localized: "Running", comment: "The gateway's state") }
         let state = gatewayState.isEmpty ? (gatewayRunning ? "running" : "stopped") : gatewayState
-        return state.replacingOccurrences(of: "_", with: " ").capitalized
+        switch state {
+        case "running": return String(localized: "Running", comment: "The gateway's state")
+        case "stopped": return String(localized: "Stopped", comment: "The gateway's state")
+        default: return state.replacingOccurrences(of: "_", with: " ").capitalized
+        }
     }
 }
 
@@ -141,8 +145,8 @@ nonisolated struct MCPProbe: Equatable, Sendable {
     }
 
     var summary: String {
-        if ok { return tools.isEmpty ? "Connected, no tools" : "Connected · \(tools.count) tool\(tools.count == 1 ? "" : "s")" }
-        return error ?? "Couldn't connect"
+        if ok { return tools.isEmpty ? String(localized: "Connected, no tools") : String(localized: "Connected · \(tools.count) tools") }
+        return error ?? String(localized: "Couldn't connect")
     }
 }
 
@@ -192,8 +196,8 @@ nonisolated struct HermesUpdate: Equatable, Sendable {
     }
 
     var summary: String {
-        if available { return behind.map { "\($0) change\($0 == 1 ? "" : "s") behind" } ?? "An update is available" }
-        return message ?? "Up to date"
+        if available { return behind.map { String(localized: "\($0) changes behind") } ?? String(localized: "An update is available") }
+        return message ?? String(localized: "Up to date")
     }
 }
 
@@ -201,16 +205,22 @@ nonisolated struct HermesUpdate: Equatable, Sendable {
 nonisolated enum GatewayLog: String, CaseIterable, Identifiable, Sendable {
     case agent, errors, gateway
     var id: String { rawValue }
-    var title: String { rawValue.capitalized }
+    var title: String {
+        switch self {
+        case .agent: String(localized: "Agent", comment: "Hermes's log of its agent's work")
+        case .errors: String(localized: "Errors", comment: "Hermes's error log")
+        case .gateway: String(localized: "Gateway", comment: "Hermes's gateway log")
+        }
+    }
 
     enum Level: String, CaseIterable, Identifiable, Sendable {
         case all = "", warning = "WARNING", error = "ERROR"
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .all: "Everything"
-            case .warning: "Warnings and errors"
-            case .error: "Errors only"
+            case .all: String(localized: "Everything")
+            case .warning: String(localized: "Warnings and errors")
+            case .error: String(localized: "Errors only")
             }
         }
     }
@@ -306,7 +316,7 @@ extension HermesServeClient: GatewayAdministering {
         let answer = try await restJSON("POST", "api/hermes/update")
         guard answer["ok"]?.bool == true else {
             let how = answer["update_command"]?.string?.nilIfEmpty.map { " (\($0))" } ?? ""
-            throw GatewayRefusal(message: (answer["message"]?.string?.nilIfEmpty ?? "Hermes didn't start the update.") + how)
+            throw GatewayRefusal(message: (answer["message"]?.string?.nilIfEmpty ?? String(localized: "Hermes didn't start the update.")) + how)
         }
         return answer["name"]?.string ?? GatewayAction.update
     }

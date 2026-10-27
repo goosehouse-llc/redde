@@ -87,7 +87,7 @@ struct AudioBubble: View {
             .buttonStyle(.plain)
             .foregroundStyle(.tint)
             .disabled(duration == nil)
-            .accessibilityLabel(isPlaying ? "Pause" : "Play")
+            .accessibilityLabel(isPlaying ? String(localized: "Pause") : String(localized: "Play"))
             // The clock only runs while this one is playing; at rest the bar costs nothing.
             TimelineView(.periodic(from: .now, by: isPlaying ? 0.1 : 3600)) { _ in
                 let length = max(duration ?? 0, 0.01)
@@ -118,8 +118,7 @@ struct AudioBubble: View {
 
     /// "0:07", "12:40".
     static func clock(_ seconds: TimeInterval) -> String {
-        let whole = Int(seconds.rounded(.down))
-        return String(format: "%d:%02d", whole / 60, whole % 60)
+        Duration.seconds(Int(seconds.rounded(.down))).formatted(.time(pattern: .minuteSecond))
     }
 }
 
@@ -256,8 +255,8 @@ struct PhotoGroup: View {
                         .position(x: frame.midX, y: frame.midY)
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel(hidden > 0 && index == tiles.count - 1
-                            ? "Photo \(index + 1) of \(pictures.count), and \(hidden) more"
-                            : "Photo \(index + 1) of \(pictures.count)")
+                            ? String(localized: "Photo \(index + 1) of \(pictures.count), and \(hidden) more")
+                            : String(localized: "Photo \(index + 1) of \(pictures.count)"))
                         .accessibilityAddTraits([.isImage, .isButton])
                         .accessibilityIdentifier("photo-tile-\(index + 1)")
                     }

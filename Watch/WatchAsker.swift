@@ -92,7 +92,8 @@ final class WatchAsker {
         case .hermesAPI:
             let api = HermesSessionsAPI(baseURL: base, apiKey: connection.apiKey, headers: connection.headers ?? [:])
             if store.sessionID == nil {
-                let title = "Apple Watch · \(Date.now.formatted(date: .abbreviated, time: .omitted))"
+                let title = String(localized: "Apple Watch · \(Date.now.formatted(date: .abbreviated, time: .omitted))",
+                                   comment: "The name of the chat the watch's questions go to, with the day it was made")
                 store.sessionID = try await api.createSession(title: title, model: request.model, provider: request.provider,
                                                               reasoningEffort: request.reasoningEffort).id
             }
@@ -131,11 +132,11 @@ final class WatchAsker {
                         waitingRun = runtime
                         store.needsApproval(.init(id: r.id, command: r.command, approve: choices.approve, deny: choices.deny))
                     } else {
-                        store.waiting("Approval needed on your iPhone: \(r.command)")
+                        store.waiting(String(localized: "Approval needed on your iPhone: \(r.command)"))
                     }
-                case let .clarify(r): store.waiting(r.questions.first?.question ?? "A question is waiting on your iPhone.")
-                case .sudo: store.waiting("Your iPhone is asking for the sudo password.")
-                case let .secret(r): store.waiting("Your iPhone is asking for \(r.envVar).")
+                case let .clarify(r): store.waiting(r.questions.first?.question ?? String(localized: "A question is waiting on your iPhone."))
+                case .sudo: store.waiting(String(localized: "Your iPhone is asking for the sudo password."))
+                case let .secret(r): store.waiting(String(localized: "Your iPhone is asking for \(r.envVar).", comment: "Watch: the agent wants a secret, by its variable's name"))
                 }
             case .interruptExpired: store.working()
             default: break
@@ -155,7 +156,7 @@ final class WatchAsker {
             case .working, .done, .failed: store.working()
             case .approval: if let approval = snapshot.approval { store.needsApproval(approval) }
             case .question: if let question = snapshot.question { store.asked(question) }
-            case .waiting: store.waiting(snapshot.note ?? "Something is waiting on your iPhone.")
+            case .waiting: store.waiting(snapshot.note ?? String(localized: "Something is waiting on your iPhone."))
             }
         }
     }

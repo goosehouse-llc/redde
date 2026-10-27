@@ -43,7 +43,7 @@ struct FilesView: View {
 
     private var shown: [ServerFile] { model.folder?.shown(hidden: showHidden, matching: search) ?? [] }
     private var isRoot: Bool { path == nil }
-    private var title: String { model.folder?.name ?? path.map(ServerFiles.name(of:)) ?? "Files" }
+    private var title: String { model.folder?.name ?? path.map(ServerFiles.name(of:)) ?? String(localized: "Files") }
 
     var body: some View {
         List {
@@ -91,7 +91,7 @@ struct FilesView: View {
                 EmptyView()
             }
         }
-        .navigationTitle(isRoot && model.folder?.lockedRoot == nil ? "Files" : title)
+        .navigationTitle(isRoot && model.folder?.lockedRoot == nil ? String(localized: "Files") : title)
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $search, prompt: "Names in this folder")
         .refreshable { await model.load() }
@@ -131,7 +131,7 @@ struct FilesView: View {
         .navigationDestination(item: $jump) { FilesView(path: $0) }
         .confirmationDialog(deleting.map(Self.deleteQuestion) ?? "", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
                             titleVisibility: .visible, presenting: deleting) { file in
-            Button(file.isDirectory ? "Delete Folder and Its Contents" : "Delete File", role: .destructive) {
+            Button(file.isDirectory ? String(localized: "Delete Folder and Its Contents") : String(localized: "Delete File"), role: .destructive) {
                 Task { await model.delete(file) }
             }
         } message: { _ in
@@ -227,20 +227,20 @@ struct FilesView: View {
     }
 
     private func emptyNote(_ folder: ServerFolder) -> String {
-        if !search.isEmpty { return "Nothing here by that name." }
-        return folder.entries.isEmpty ? "This folder is empty." : "Only hidden files here."
+        if !search.isEmpty { return String(localized: "Nothing here by that name.") }
+        return folder.entries.isEmpty ? String(localized: "This folder is empty.") : String(localized: "Only hidden files here.")
     }
 
     static func deleteQuestion(_ file: ServerFile) -> String {
-        file.isDirectory ? "Delete the folder “\(file.name)” and everything in it?" : "Delete “\(file.name)”?"
+        file.isDirectory ? String(localized: "Delete the folder “\(file.name)” and everything in it?") : String(localized: "Delete “\(file.name)”?")
     }
 
     static func replaceQuestion(_ names: [String]) -> String {
         switch names.count {
         case 0: ""
-        case 1: "“\(names[0])” is already in this folder."
-        case 2: "“\(names[0])” and “\(names[1])” are already in this folder."
-        default: "“\(names[0])” and \(names.count - 1) more are already in this folder."
+        case 1: String(localized: "“\(names[0])” is already in this folder.")
+        case 2: String(localized: "“\(names[0])” and “\(names[1])” are already in this folder.")
+        default: String(localized: "“\(names[0])” and \(names.count - 1) more are already in this folder.")
         }
     }
 
@@ -261,7 +261,7 @@ struct FilesView: View {
         let stamp = Date.now.formatted(.iso8601.year().month().day().dateSeparator(.dash)) + " " + Date.now.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits).second(.twoDigits)).replacingOccurrences(of: ":", with: ".")
         for (i, item) in picked.enumerated() {
             guard let data = try? await item.loadTransferable(type: Data.self) else {
-                model.problem = "One of the photos couldn't be read."
+                model.problem = String(localized: "One of the photos couldn't be read.")
                 continue
             }
             let type = item.supportedContentTypes.first
@@ -305,8 +305,8 @@ struct ServerTextFileView: View {
                 Text(file.path).textCase(nil).font(.caption.monospaced())
             } footer: {
                 if let original, !original.canEdit {
-                    Text(original.binary ? "This isn't text after all, so it can't be changed here. Download it to look at it."
-                         : "Only the start is shown: the file is larger than Hermes reads for an editor. It can't be changed here, since saving would cut it short. Download it for all of it.")
+                    original.binary ? Text("This isn't text after all, so it can't be changed here. Download it to look at it.")
+                        : Text("Only the start is shown: the file is larger than Hermes reads for an editor. It can't be changed here, since saving would cut it short. Download it for all of it.")
                 }
             }
             if let error {
@@ -317,7 +317,7 @@ struct ServerTextFileView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button(saving ? "Saving…" : "Save", action: save).disabled(saving || !dirty)
+                Button(saving ? String(localized: "Saving…") : String(localized: "Save"), action: save).disabled(saving || !dirty)
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Download and Open", systemImage: "arrow.down.circle", action: download).disabled(fetching)

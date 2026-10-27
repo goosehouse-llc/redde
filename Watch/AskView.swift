@@ -62,7 +62,7 @@ struct AskView: View {
                 .foregroundStyle(.secondary)
             // The conversation the question goes into, when one was picked; else which
             // connection the phone handed over: the fast lane is the bare model, no tools.
-            Text(store.chatTitle.map { "in “\($0)”" } ?? connectionLabel)
+            Text(store.chatTitle.map { String(localized: "in “\($0)”", comment: "Watch: the conversation a question goes into") } ?? connectionLabel)
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
                 .lineLimit(2)
@@ -73,9 +73,9 @@ struct AskView: View {
 
     private var connectionLabel: String {
         switch store.connection?.kind {
-        case .hermesAPI: "Hermes API"
-        case .phone: "Through your iPhone"
-        case .fastLane, .dashboard, nil: "Fast lane · no tools"
+        case .hermesAPI: String(localized: "Hermes API", comment: "Watch: the connection a question goes over, by its product name")
+        case .phone: String(localized: "Through your iPhone", comment: "Watch: the connection a question goes over")
+        case .fastLane, .dashboard, nil: String(localized: "Fast lane · no tools", comment: "Watch: the connection a question goes over, the bare model")
         }
     }
 

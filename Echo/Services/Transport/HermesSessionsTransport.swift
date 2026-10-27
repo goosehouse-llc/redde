@@ -273,7 +273,7 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
         case "error":
             // Not a failure: the reply above is whole and already stored. "done" ends the turn.
             if let message = env.message, isLockBucketMismatch(message) { return ([], false) }
-            throw TransportError.malformed(env.message ?? "run failed")
+            throw TransportError.malformed(env.message ?? String(localized: "run failed", comment: "Why a reply failed, when the server gave no reason"))
         case "done":
             return ([], true)
         default:
@@ -343,15 +343,15 @@ nonisolated struct HermesSessionsAPI: Sendable {
         var usageLine: String? {
             guard totalTokens > 0 else { return nil }
             var parts = ["▲ \(Self.compact(input_tokens ?? 0)) ▼ \(Self.compact(output_tokens ?? 0))"]
-            if let cost, cost > 0 { parts.append(String(format: "$%.3f", cost)) }
+            if let cost, cost > 0 { parts.append(cost.formatted(.currency(code: "USD").precision(.fractionLength(3)))) }
             return parts.joined(separator: " · ")
         }
 
         static func compact(_ n: Int) -> String {
             switch n {
-            case ..<1000: "\(n)"
-            case ..<1_000_000: String(format: "%.1fk", Double(n) / 1000)
-            default: String(format: "%.2fM", Double(n) / 1_000_000)
+            case ..<1000: n.formatted()
+            case ..<1_000_000: n.formatted(.number.notation(.compactName).precision(.fractionLength(1)))
+            default: n.formatted(.number.notation(.compactName).precision(.fractionLength(2)))
             }
         }
 
@@ -672,7 +672,7 @@ nonisolated struct HermesRuns: Sendable {
         guard (200 ..< 300).contains(status) else {
             throw TransportError.http(status: status, body: String(decoding: data.prefix(300), as: UTF8.self))
         }
-        guard let run = try JSONValue.parse(data)["run_id"]?.string else { throw TransportError.malformed("Hermes started no run") }
+        guard let run = try JSONValue.parse(data)["run_id"]?.string else { throw TransportError.malformed(String(localized: "Hermes started no run")) }
         return run
     }
 
@@ -706,7 +706,7 @@ nonisolated struct HermesRuns: Sendable {
                 let since = troubleSince ?? .now
                 troubleSince = since
                 guard Date.now.timeIntervalSince(since) < Self.patience else {
-                    throw TransportError.streamLost("Hermes couldn't be reached for half an hour; the reply will be there when it can.")
+                    throw TransportError.streamLost(String(localized: "Hermes couldn't be reached for half an hour; the reply will be there when it can."))
                 }
                 try await Task.sleep(for: .seconds(min(15, max(1, Date.now.timeIntervalSince(since) / 2))))
             }
@@ -833,7 +833,7 @@ nonisolated struct HermesRuns: Sendable {
     private static func finish(_ ending: Ending) throws {
         switch ending {
         case .completed: return
-        case .stopped: throw TransportError.malformed("The agent stopped before it finished (stopped elsewhere, or Hermes restarted).")
+        case .stopped: throw TransportError.malformed(String(localized: "The agent stopped before it finished (stopped elsewhere, or Hermes restarted)."))
         case let .failed(message): throw TransportError.malformed(message)
         }
     }
@@ -894,7 +894,7 @@ nonisolated struct HermesRuns: Sendable {
             }
             out.ending = .completed
         case "failed":
-            let message = json["error"]?.string ?? "The run failed"
+            let message = json["error"]?.string ?? String(localized: "The run failed", comment: "Why a reply failed, when the server gave no reason")
             if HermesSessionsTransport.isLockBucketMismatch(message) {
                 // The pre-0.21.4 check on a named endpoint, wrong about a turn that ran where it should.
                 if let output = json["output"]?.string, !output.isEmpty { out.events.append(.textFinal(output)) }

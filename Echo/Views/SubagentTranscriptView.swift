@@ -30,7 +30,7 @@ struct SubagentTranscriptView: View {
                             ContentUnavailableView("Couldn't open the subagent", systemImage: "wifi.exclamationmark", description: Text(error))
                         } else if messages.isEmpty, !loading {
                             ContentUnavailableView("Nothing yet", systemImage: "person.2.wave.2",
-                                                   description: Text(running ? "The subagent is starting." : "This subagent left no transcript."))
+                                                   description: running ? Text("The subagent is starting.") : Text("This subagent left no transcript."))
                         }
                         ForEach(messages) { message in
                             MessageRow(message: message, isLive: running && message.id == messages.last?.id)
@@ -68,12 +68,12 @@ struct SubagentTranscriptView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(agent.goal.isEmpty ? "Delegated task" : agent.goal).font(.headline)
+            Text(agent.goal.isEmpty ? String(localized: "Delegated task") : agent.goal).font(.headline)
             HStack(spacing: 6) {
                 Image(systemName: running ? "person.2.wave.2" : agent.status == .failed ? "xmark.circle" : "checkmark.circle")
                     .symbolEffect(.pulse, isActive: running)
                     .foregroundStyle(running ? theme.accent : agent.status == .failed ? .red : .green)
-                Text(running ? "Running" : agent.status == .failed ? "Failed" : "Finished")
+                running ? Text("Running") : agent.status == .failed ? Text("Failed") : Text("Finished")
                 if let m = agent.model, !m.isEmpty { Text("·"); Text(m) }
                 if agent.taskCount > 1 { Text("·"); Text("task \(agent.taskIndex + 1) of \(agent.taskCount)") }
             }
@@ -98,7 +98,7 @@ struct SubagentTranscriptView: View {
     // MARK: - Live
 
     private func open() async {
-        guard let stored = agent.childSessionID else { error = "No child session id."; loading = false; return }
+        guard let stored = agent.childSessionID else { error = String(localized: "No child session id."); loading = false; return }
         do {
             let (rt, isRunning, rows) = try await HermesServeClient.shared.resumeLazy(stored: stored)
             // Dismissed during the resume: onDisappear has already run with no listener to
@@ -186,7 +186,7 @@ struct SubagentTranscriptView: View {
         Task {
             do {
                 let queued = try await HermesServeClient.shared.subagentSteer(id: agent.id, text: text)
-                show(queued ? "Sent to the subagent" : "The subagent isn't accepting steering right now")
+                show(queued ? String(localized: "Sent to the subagent") : String(localized: "The subagent isn't accepting steering right now"))
             } catch { show(error.localizedDescription) }
         }
     }
@@ -195,7 +195,7 @@ struct SubagentTranscriptView: View {
         Task {
             do {
                 let found = try await HermesServeClient.shared.subagentInterrupt(id: agent.id)
-                show(found ? "Stopping…" : "Subagent already finished")
+                show(found ? String(localized: "Stopping…") : String(localized: "Subagent already finished"))
             } catch { show(error.localizedDescription) }
         }
     }

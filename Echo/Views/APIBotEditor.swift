@@ -29,7 +29,7 @@ struct APIBotEditor: View {
                     Text("A bot is one of your server's profiles: the name its folder has under ~/.hermes/profiles. Redde opens its chat, the one Hermes Desktop and the Dashboard show for it.")
                 }
                 Section {
-                    SecureField(needsKey ? "API key" : "API key (only if it has its own)", text: $key)
+                    SecureField(needsKey ? String(localized: "API key") : String(localized: "API key (only if it has its own)"), text: $key)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                 } header: {

@@ -50,11 +50,11 @@ struct ServersView: View {
         .navigationTitle("Servers")
         .sheet(isPresented: $showSetup) { SetupView() }
         .sheet(item: $sharing) { SetupCodeView(server: $0) }
-        .alert(naming.map { if case .new = $0 { "New server" } else { "Rename server" } } ?? "",
+        .alert(naming.map { if case .new = $0 { String(localized: "New server") } else { String(localized: "Rename server") } } ?? "",
                isPresented: Binding(get: { naming != nil }, set: { if !$0 { naming = nil } })) {
             TextField("Name, e.g. Home or Office", text: $nameText)
             Button("Cancel", role: .cancel) { naming = nil }
-            Button(naming.map { if case .new = $0 { "Add" } else { "Save" } } ?? "Save") { commitName() }
+            Button(naming.map { if case .new = $0 { String(localized: "Add") } else { String(localized: "Save") } } ?? String(localized: "Save")) { commitName() }
         } message: {
             if case .new = naming { Text("Then set up how Redde reaches it.") }
         }
@@ -77,9 +77,9 @@ struct ServersView: View {
     private func detail(_ server: HermesServer) -> String {
         let address = server.transport == .hermesSessions ? server.gatewayURL : server.serveURL
         let connection = server.transport == .hermesSessions ? "Hermes API" : "Hermes Dashboard"
-        var parts = [connection, address.isEmpty ? "not set up" : address]
+        var parts = [connection, address.isEmpty ? String(localized: "not set up", comment: "A server with no address yet") : address]
         let profile = server.hermesProfile.trimmingCharacters(in: .whitespaces)
-        if !profile.isEmpty, profile.lowercased() != "default" { parts.append("profile \(profile)") }
+        if !profile.isEmpty, profile.lowercased() != "default" { parts.append(String(localized: "profile \(profile)", comment: "A Hermes profile, by name")) }
         return parts.joined(separator: " · ")
     }
 

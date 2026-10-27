@@ -9,7 +9,7 @@ struct ViewerPhoto: Identifiable {
     /// name says nothing worth reading.
     var caption: String = ""
     /// What VoiceOver calls it.
-    var name: String = "Photo"
+    var name: String = String(localized: "Photo")
     let load: @Sendable () async -> UIImage?
 
     /// A picture that is in memory already.
@@ -258,7 +258,7 @@ final class PhotoPageView: UIView {
 
     private func sayItFailed() {
         let words = UILabel()
-        words.text = "This picture couldn't be opened"
+        words.text = String(localized: "This picture couldn't be opened")
         words.textColor = UIColor.white.withAlphaComponent(0.7)
         words.font = .preferredFont(forTextStyle: .body)
         words.sizeToFit()
@@ -366,7 +366,7 @@ final class ZoomingPictureView: UIScrollView, UIScrollViewDelegate {
     private func settle() {
         contentInset = PhotoZoom.margins(content: contentSize, room: bounds.size)
         let zoomed = zoomScale > 1.01
-        picture.accessibilityValue = zoomed ? "Zoomed in, \(Int((zoomScale * 100).rounded())) percent" : ""
+        picture.accessibilityValue = zoomed ? String(localized: "Zoomed in, \(Double(zoomScale).formatted(.percent.precision(.fractionLength(0))))") : ""
     }
 
     func viewForZooming(in scrollView: UIScrollView) -> UIView? { picture }

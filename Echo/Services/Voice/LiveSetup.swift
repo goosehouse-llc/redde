@@ -96,9 +96,9 @@ struct LiveSetup {
             }
         }
         if engine == .gptLive, hermes?.available == true {
-            throw LiveFailure("Calls with your Hermes's OpenAI key come with the next Redde plugin. Until then, add your own key in Settings → Voice → Voice mode.")
+            throw LiveFailure(String(localized: "Calls with your Hermes's OpenAI key come with the next Redde plugin. Until then, add your own key in Settings → Voice → Voice mode."))
         }
-        throw LiveFailure("\(engine.name) needs your \(engine.company) key, in Settings → Voice → Voice mode.")
+        throw LiveFailure(String(localized: "\(engine.name) needs your \(engine.company) key, in Settings → Voice → Voice mode."))
     }
 
     // MARK: - What Hermes says

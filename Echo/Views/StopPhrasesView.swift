@@ -41,9 +41,9 @@ struct StopPhrasesView: View {
             } header: {
                 Text("Your phrases")
             } footer: {
-                Text("Say one of these on its own in hands-free mode and Redde stops listening, without sending it to the agent. Add the words you'd use, or the ones for the language you speak to Redde in: write them the way they are said. A phrase inside a longer sentence doesn't count."
+                Text(String(localized: "Say one of these on its own in hands-free mode and Redde stops listening, without sending it to the agent. Add the words you'd use, or the ones for the language you speak to Redde in: write them the way they are said. A phrase inside a longer sentence doesn't count.")
                      + (settings.talkOver != .off && settings.interruption == .stopWord
-                        ? " With “Interrupt with” set to Only “stop”, these stop a reply too." : ""))
+                        ? " " + String(localized: "With “Interrupt with” set to Only “stop”, these stop a reply too.") : ""))
             }
             Section {
                 Text(Self.builtIn)

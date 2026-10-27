@@ -39,13 +39,13 @@ nonisolated final class SSHShell: Sendable {
 
         var errorDescription: String? {
             switch self {
-            case .noKey: "This device couldn't make or keep its SSH key. Unlock it and try again."
-            case let .unknownServer(fingerprint): "This iPhone hasn't met this server before (its key is \(fingerprint))."
+            case .noKey: String(localized: "This device couldn't make or keep its SSH key. Unlock it and try again.")
+            case let .unknownServer(fingerprint): String(localized: "This iPhone hasn't met this server before (its key is \(fingerprint)).")
             case let .serverKeyChanged(expected, presented):
-                "The server's key has changed since you trusted it (was \(expected), now \(presented)). If the server was reinstalled, forget its old key in Settings › Terminal and connect again; if not, someone may be in the way."
-            case .keyNotAccepted: "The server didn't accept this device's key. Add the key below to ~/.ssh/authorized_keys for that user."
-            case let .unreachable(why): "Couldn't reach the server: \(why)"
-            case .noShell: "The server didn't start a shell."
+                String(localized: "The server's key has changed since you trusted it (was \(expected), now \(presented)). If the server was reinstalled, forget its old key in Settings › Terminal and connect again; if not, someone may be in the way.")
+            case .keyNotAccepted: String(localized: "The server didn't accept this device's key. Add the key below to ~/.ssh/authorized_keys for that user.")
+            case let .unreachable(why): String(localized: "Couldn't reach the server: \(why)")
+            case .noShell: String(localized: "The server didn't start a shell.")
             }
         }
     }
@@ -143,7 +143,7 @@ nonisolated final class SSHShell: Sendable {
         if let connect = error as? NIOConnectionError {
             return connect.connectionErrors.first.map { "\($0.error)" } ?? "\(connect)"
         }
-        if error is ChannelError { return "the connection closed." }
+        if error is ChannelError { return String(localized: "the connection closed.", comment: "Follows \"Couldn't reach the server:\"") }
         return "\(error)"
     }
 }
@@ -268,7 +268,7 @@ private nonisolated final class ShellChannel: ChannelInboundHandler {
     }
 
     func channelInactive(context: ChannelHandlerContext) {
-        let why = refused ? "The server didn't start a shell." : exitStatus.map { "The shell ended (exit status \($0))." } ?? "The connection closed."
+        let why = refused ? String(localized: "The server didn't start a shell.") : exitStatus.map { String(localized: "The shell ended (exit status \($0)).") } ?? String(localized: "The connection closed.")
         events.yield(.ended(why))
         events.finish()
         context.channel.parent?.close(promise: nil)

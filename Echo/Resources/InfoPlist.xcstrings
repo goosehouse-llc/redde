@@ -1,0 +1,1146 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSAlarmKitUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonværktøjer slået til indstiller Redde en alarm eller en timer, når din assistent beder om det, og du har sagt ja til det."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn Telefon-Tools aktiviert sind, stellt Redde einen Wecker oder Timer, wenn dein Assistent darum bittet, sobald du zugestimmt hast."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "With Phone tools turned on, Redde sets an alarm or a timer when your assistant asks it to, once you have said yes to it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Herramientas del teléfono activadas, Redde pone una alarma o un temporizador cuando tu asistente se lo pide, una vez que le hayas dicho que sí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avec les Outils du téléphone activés, Redde règle une alarme ou un minuteur quand votre assistant le lui demande, une fois que vous avez accepté."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con gli Strumenti del telefono attivi, Redde imposta una sveglia o un timer quando il tuo assistente lo chiede, dopo che hai detto di sì."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "デバイスツールがオンの場合、アシスタントの依頼に応じて、許可を得たうえでReddeがアラームやタイマーを設定します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "휴대폰 도구가 켜져 있으면 사용자가 허락한 경우 어시스턴트가 요청할 때 Redde가 알람이나 타이머를 설정합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonverktøy slått på stiller Redde inn en alarm eller en timer når assistenten din ber om det, etter at du har sagt ja til det."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met Telefoontools aan zet Redde een wekker of timer als je assistent erom vraagt, zodra je er ja op hebt gezegd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy Narzędzia telefonu są włączone, Redde ustawia alarm lub minutnik na prośbę Twojego asystenta, po tym jak się na to zgodzisz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com as Ferramentas do telefone ativadas, o Redde define um alarme ou timer quando seu assistente pede, depois que você disser sim."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда включены «Инструменты телефона», Redde устанавливает будильник или таймер по просьбе ассистента, после того как вы дадите согласие."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonverktyg påslaget ställer Redde in ett alarm eller en timer när din assistent ber om det, när du har sagt ja till det."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telefon araçları açıkken, asistanınız istediğinde ve siz onay verdikten sonra Redde bir alarm ya da zamanlayıcı kurar."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли ввімкнено «Інструменти телефона», Redde ставить будильник або таймер на прохання вашого асистента, після того як ви погодитеся."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开手机工具后，当你的助手请求时，Redde会在你同意后设定闹钟或计时器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟手機工具後，當你的助理要求時，Redde 會在你同意後設定鬧鐘或計時器。"
+          }
+        }
+      }
+    },
+    "NSCalendarsFullAccessUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kan vise din næste begivenhed, når du starter en samtale, og vedhæfte en dags begivenheder til en besked til din assistent. Med Telefonværktøjer slået til kan din assistent også slå begivenheder op og tilføje dem. Begivenheder sendes kun til din egen server."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kann deinen nächsten Termin zeigen, wenn du eine Konversation beginnst, und die Termine eines Tages für deinen Assistenten an eine Nachricht anhängen. Wenn Telefon-Tools aktiviert sind, kann dein Assistent auch Termine nachschlagen und hinzufügen. Termine gehen nur an deinen eigenen Server."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Redde can show your next event when you start a conversation, and attach a day's events to a message for your assistant. With Phone tools turned on, your assistant can also look up events and add them. Events go only to your own server."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde puede mostrar tu próximo evento cuando empiezas una conversación, y adjuntar los eventos de un día a un mensaje para tu asistente. Con Herramientas del teléfono activadas, tu asistente también puede consultar eventos y añadirlos. Los eventos solo van a tu propio servidor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde peut afficher votre prochain événement quand vous commencez une conversation, et joindre les événements d’une journée à un message pour votre assistant. Avec les Outils du téléphone activés, votre assistant peut aussi consulter des événements et en ajouter. Les événements ne vont qu’à votre propre serveur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde può mostrare il tuo prossimo evento quando inizi una conversazione, e allegare gli eventi di un giorno a un messaggio per il tuo assistente. Con gli Strumenti del telefono attivi, il tuo assistente può anche cercare eventi e aggiungerli. Gli eventi vanno solo al tuo server."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeは、会話を始めるときに次の予定を表示したり、アシスタントへのメッセージに1日の予定を添付したりできます。デバイスツールがオンの場合、アシスタントが予定を調べたり追加したりすることもできます。予定は自分のサーバにのみ送信されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde는 대화를 시작할 때 다음 이벤트를 표시하고, 어시스턴트에게 보낼 메시지에 하루의 이벤트를 첨부할 수 있습니다. 휴대폰 도구가 켜져 있으면 어시스턴트가 이벤트를 찾아보고 추가할 수도 있습니다. 이벤트는 사용자의 서버로만 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kan vise den neste hendelsen din når du starter en samtale, og legge ved en dags hendelser i en melding til assistenten din. Med Telefonverktøy slått på kan assistenten din også slå opp hendelser og legge dem til. Hendelser går bare til din egen tjener."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kan je volgende activiteit tonen als je een gesprek begint, en de activiteiten van een dag bij een bericht voor je assistent voegen. Met Telefoontools aan kan je assistent ook activiteiten opzoeken en toevoegen. Activiteiten gaan alleen naar je eigen server."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde może pokazać następne wydarzenie, gdy zaczynasz rozmowę, i załączyć wydarzenia z danego dnia do wiadomości dla asystenta. Gdy Narzędzia telefonu są włączone, asystent może też wyszukiwać i dodawać wydarzenia. Wydarzenia trafiają tylko na Twój własny serwer."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde pode mostrar seu próximo evento quando você inicia uma conversa, e anexar os eventos de um dia a uma mensagem para o seu assistente. Com as Ferramentas do telefone ativadas, seu assistente também pode consultar eventos e adicioná-los. Os eventos vão só para o seu próprio servidor."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde может показывать ваше следующее событие, когда вы начинаете разговор, и прикреплять события дня к сообщению для ассистента. Когда включены «Инструменты телефона», ассистент также может находить и добавлять события. События отправляются только на ваш собственный сервер."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kan visa din nästa händelse när du startar en konversation, och bifoga en dags händelser till ett meddelande till din assistent. Med Telefonverktyg påslaget kan din assistent också slå upp händelser och lägga till dem. Händelser går bara till din egen server."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde, bir konuşma başlattığınızda sonraki etkinliğinizi gösterebilir ve bir günün etkinliklerini asistanınız için bir mesaja ekleyebilir. Telefon araçları açıkken asistanınız etkinliklere bakabilir ve etkinlik de ekleyebilir. Etkinlikler yalnızca kendi sunucunuza gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde може показувати вашу наступну подію, коли ви починаєте розмову, і додавати події дня до повідомлення для асистента. Коли ввімкнено «Інструменти телефона», асистент також може шукати й додавати події. Події надходять лише на ваш власний сервер."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde可在你开始对话时显示你的下一项日程，并将某天的日程附加到发给助手的消息中。打开手机工具后，你的助手还可以查找和添加日程。日程只会发送到你自己的服务器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 可以在你開始對話時顯示你的下一個行程，並將某天的行程附加到給助理的訊息中。開啟手機工具後，你的助理也可以查詢和加入行程。行程只會傳送到你自己的伺服器。"
+          }
+        }
+      }
+    },
+    "NSCameraUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde bruger kameraet, når du tager et foto, der skal vedhæftes en besked, når du viser din assistent noget i stemmetilstand, og til at scanne en opsætningskode. Et foto sendes kun til den server, du opretter forbindelse til."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde verwendet die Kamera, wenn du ein Foto für eine Nachricht aufnimmst, wenn du deinem Assistenten im Sprachmodus etwas zeigst und um einen Einrichtungscode zu scannen. Ein Foto geht nur an den Server, mit dem du dich verbindest."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Redde uses the camera when you take a photo to attach to a message, when you show your assistant something in voice mode, and to scan a setup code. A photo goes only to the server you connect to."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde usa la cámara cuando tomas una foto para adjuntarla a un mensaje, cuando le enseñas algo a tu asistente en el modo de voz y para escanear un código de configuración. Una foto solo va al servidor al que te conectas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde utilise l’appareil photo quand vous prenez une photo à joindre à un message, quand vous montrez quelque chose à votre assistant en mode vocal, et pour scanner un code de configuration. Une photo ne va qu’au serveur auquel vous vous connectez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde usa la fotocamera quando scatti una foto da allegare a un messaggio, quando mostri qualcosa al tuo assistente in modalità vocale, e per scansionare un codice di configurazione. Una foto va solo al server a cui ti connetti."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeは、メッセージに添付する写真を撮るとき、音声モードでアシスタントに何かを見せるとき、セットアップコードをスキャンするときにカメラを使用します。写真は接続先のサーバにのみ送信されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde는 메시지에 첨부할 사진을 찍을 때, 음성 모드에서 어시스턴트에게 무언가를 보여 줄 때, 설정 코드를 스캔할 때 카메라를 사용합니다. 사진은 연결한 서버로만 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde bruker kameraet når du tar et bilde for å legge det ved en melding, når du viser assistenten din noe i stemmemodus, og for å skanne en oppsettskode. Et bilde går bare til tjeneren du kobler til."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde gebruikt de camera als je een foto maakt om bij een bericht te voegen, als je je assistent iets laat zien in spraakmodus, en om een instelcode te scannen. Een foto gaat alleen naar de server waarmee je verbinding maakt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde używa aparatu, gdy robisz zdjęcie do załączenia do wiadomości, gdy pokazujesz coś asystentowi w trybie głosowym, oraz do skanowania kodu konfiguracji. Zdjęcie trafia tylko na serwer, z którym się łączysz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde usa a câmera quando você tira uma foto para anexar a uma mensagem, quando mostra algo ao seu assistente no modo de voz e para escanear um código de configuração. Uma foto vai só para o servidor ao qual você se conecta."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde использует камеру, когда вы делаете фото для вложения в сообщение, показываете что-то ассистенту в голосовом режиме или сканируете код настройки. Фото отправляется только на сервер, к которому вы подключаетесь."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde använder kameran när du tar en bild att bifoga i ett meddelande, när du visar din assistent något i röstläge och för att skanna en inställningskod. En bild går bara till servern du ansluter till."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde, bir mesaja eklemek için fotoğraf çektiğinizde, sesli modda asistanınıza bir şey gösterdiğinizde ve bir kurulum kodu taramak için kamerayı kullanır. Bir fotoğraf yalnızca bağlandığınız sunucuya gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde використовує камеру, коли ви робите фото, щоб додати до повідомлення, коли показуєте щось асистенту в голосовому режимі, а також для сканування коду налаштування. Фото надходить лише на сервер, до якого ви під’єднуєтеся."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当你拍照以附加到消息、在语音模式中向助手展示某样东西，以及扫描设置码时，Redde会使用相机。照片只会发送到你连接的服务器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 會在你拍照附加到訊息、在語音模式中讓助理看東西，以及掃描設定碼時使用相機。照片只會傳送到你連線的伺服器。"
+          }
+        }
+      }
+    },
+    "NSContactsUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonværktøjer slået til slår Redde en kontakt op, når din assistent beder om det. Det, den finder, sendes kun til den server, du opretter forbindelse til."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn Telefon-Tools aktiviert sind, schlägt Redde einen Kontakt nach, wenn dein Assistent darum bittet. Was es findet, geht nur an den Server, mit dem du dich verbindest."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "With Phone tools turned on, Redde looks up a contact when your assistant asks it to. What it finds goes only to the server you connect to."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Herramientas del teléfono activadas, Redde busca un contacto cuando tu asistente se lo pide. Lo que encuentra solo va al servidor al que te conectas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avec les Outils du téléphone activés, Redde recherche un contact quand votre assistant le lui demande. Ce qu’il trouve ne va qu’au serveur auquel vous vous connectez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con gli Strumenti del telefono attivi, Redde cerca un contatto quando il tuo assistente lo chiede. Ciò che trova va solo al server a cui ti connetti."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "デバイスツールがオンの場合、アシスタントの依頼に応じてReddeが連絡先を調べます。見つかった情報は接続先のサーバにのみ送信されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "휴대폰 도구가 켜져 있으면 어시스턴트가 요청할 때 Redde가 연락처를 찾습니다. 찾은 내용은 연결한 서버로만 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonverktøy slått på slår Redde opp en kontakt når assistenten din ber om det. Det den finner, går bare til tjeneren du kobler til."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met Telefoontools aan zoekt Redde een contact op als je assistent erom vraagt. Wat het vindt, gaat alleen naar de server waarmee je verbinding maakt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy Narzędzia telefonu są włączone, Redde wyszukuje kontakt na prośbę Twojego asystenta. To, co znajdzie, trafia tylko na serwer, z którym się łączysz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com as Ferramentas do telefone ativadas, o Redde busca um contato quando seu assistente pede. O que ele encontra vai só para o servidor ao qual você se conecta."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда включены «Инструменты телефона», Redde ищет контакт по просьбе ассистента. Найденное отправляется только на сервер, к которому вы подключаетесь."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonverktyg påslaget slår Redde upp en kontakt när din assistent ber om det. Det den hittar går bara till servern du ansluter till."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telefon araçları açıkken Redde, asistanınız istediğinde bir kişiyi arar. Bulduğu şey yalnızca bağlandığınız sunucuya gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли ввімкнено «Інструменти телефона», Redde шукає контакт на прохання вашого асистента. Знайдене надходить лише на сервер, до якого ви під’єднуєтеся."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开手机工具后，当你的助手请求时，Redde会查找联系人。查找结果只会发送到你连接的服务器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟手機工具後，Redde 會在你的助理要求時查詢聯絡人。找到的內容只會傳送到你連線的伺服器。"
+          }
+        }
+      }
+    },
+    "NSFaceIDUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde bruger Face ID til at låse appen op, da den indeholder dine Hermes-loginoplysninger."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde verwendet Face ID zum Entsperren der App, die deine Hermes-Zugangsdaten enthält."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Redde uses Face ID to unlock the app, which holds your Hermes credentials."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde usa Face ID para desbloquear la app, que guarda tus credenciales de Hermes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde utilise Face ID pour déverrouiller l’app, qui contient vos identifiants Hermes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde usa Face ID per sbloccare l'app, che contiene le tue credenziali Hermes."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeは、Hermesの認証情報を保持するアプリのロック解除にFace IDを使用します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde는 Hermes 자격 증명이 저장된 앱을 잠금 해제하는 데 Face ID를 사용합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde bruker Face ID til å låse opp appen, som inneholder påloggingsdetaljene dine for Hermes."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde gebruikt Face ID om de app te ontgrendelen, waarin je Hermes-inloggegevens staan."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde używa Face ID do odblokowania aplikacji, która przechowuje Twoje dane uwierzytelniające Hermesa."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde usa o Face ID para desbloquear o app, que guarda suas credenciais do Hermes."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde использует Face ID для разблокировки приложения, в котором хранятся ваши учетные данные Hermes."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde använder Face ID för att låsa upp appen, som innehåller dina inloggningsuppgifter för Hermes."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde, Hermes kimlik bilgilerinizi barındıran uygulamanın kilidini açmak için Face ID'yi kullanır."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde використовує Face ID, щоб відімкнути програму, у якій зберігаються ваші облікові дані Hermes."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde使用面容ID解锁App，App中保存着你的Hermes凭证。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 使用 Face ID 解鎖 App，因為 App 中存有你的 Hermes 憑證。"
+          }
+        }
+      }
+    },
+    "NSLocalNetworkUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde opretter forbindelse til den Hermes-gateway eller modelserver, du konfigurerer, som ofte er på dit lokale netværk."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde verbindet sich mit dem von dir konfigurierten Hermes-Gateway oder Modellserver, der oft in deinem lokalen Netzwerk ist."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Redde connects to the Hermes gateway or model server you configure, which is often on your local network."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde se conecta al gateway de Hermes o al servidor de modelos que configures, que suele estar en tu red local."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde se connecte à la passerelle Hermes ou au serveur de modèles que vous configurez, souvent sur votre réseau local."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde si connette al gateway Hermes o al server di modelli che configuri, che spesso si trova sulla tua rete locale."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeは、設定したHermesゲートウェイまたはモデルサーバに接続します。これらは多くの場合ローカルネットワーク上にあります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde는 구성한 Hermes 게이트웨이 또는 모델 서버에 연결하며, 이 서버는 대개 로컬 네트워크에 있습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kobler til Hermes-gatewayen eller modelltjeneren du konfigurerer, som ofte er på det lokale nettverket ditt."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde maakt verbinding met de Hermes-gateway of modelserver die je instelt, en die staat vaak op je lokale netwerk."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde łączy się ze skonfigurowaną bramą Hermesa lub serwerem modelu, które często są w Twojej sieci lokalnej."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde se conecta ao gateway do Hermes ou ao servidor de modelos que você configurar, que muitas vezes fica na sua rede local."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde подключается к настроенному вами шлюзу Hermes или серверу модели, который часто находится в вашей локальной сети."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde ansluter till den Hermes-gateway eller modellserver du konfigurerar, som ofta finns på ditt lokala nätverk."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde, yapılandırdığınız Hermes ağ geçidine ya da model sunucusuna bağlanır; bu sunucu genellikle yerel ağınızdadır."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde під’єднується до налаштованого вами шлюзу Hermes або сервера моделі, який часто розташований у вашій локальній мережі."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde会连接到你配置的Hermes网关或模型服务器，它们通常位于你的本地网络中。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 會連線到你設定的 Hermes 閘道或模型伺服器，它們通常位於你的區域網路中。"
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde lytter, så du kan tale med din assistent. Tale transskriberes på denne enhed, og kun din egen server modtager teksten, medmindre du starter et live-stemmeopkald, som går til den stemmetjeneste, du har valgt."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde hört zu, damit du mit deinem Assistenten sprechen kannst. Sprache wird auf diesem Gerät transkribiert, und nur dein eigener Server erhält den Text, außer du startest einen Live-Sprachanruf, der an den von dir gewählten Sprachdienst geht."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Redde listens so you can talk to your assistant. Speech is transcribed on this device and only your own server receives the text, unless you start a live voice call, which goes to the voice service you chose."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde escucha para que puedas hablar con tu asistente. La voz se transcribe en este dispositivo y solo tu propio servidor recibe el texto, salvo que inicies una llamada de voz en vivo, que va al servicio de voz que elegiste."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde écoute pour que vous puissiez parler à votre assistant. La parole est transcrite sur cet appareil et seul votre propre serveur reçoit le texte, sauf si vous lancez un appel vocal en direct, qui passe par le service vocal que vous avez choisi."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde ascolta per permetterti di parlare con il tuo assistente. Il parlato viene trascritto su questo dispositivo e solo il tuo server riceve il testo, a meno che tu non avvii una chiamata vocale in tempo reale, che va al servizio vocale che hai scelto."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeは、アシスタントと話せるように音声を聞き取ります。音声はこのデバイス上で文字に変換され、テキストを受け取るのは自分のサーバだけです。ただし、ライブ音声通話を開始した場合は、選択した音声サービスに送られます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "어시스턴트와 대화할 수 있도록 Redde가 듣습니다. 음성은 이 기기에서 받아쓰기되며 텍스트는 사용자의 서버만 받습니다. 단, 라이브 음성 통화를 시작하면 선택한 음성 서비스로 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde lytter slik at du kan snakke med assistenten din. Tale transkriberes på denne enheten, og bare din egen tjener mottar teksten, med mindre du starter en live-samtale, som går til stemmetjenesten du valgte."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde luistert zodat je met je assistent kunt praten. Spraak wordt op dit apparaat getranscribeerd en alleen je eigen server ontvangt de tekst, tenzij je een live spraakgesprek start, dat naar de spraakdienst gaat die je hebt gekozen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde słucha, by umożliwić rozmowę z Twoim asystentem. Mowa jest transkrybowana na tym urządzeniu, a tekst otrzymuje tylko Twój własny serwer, chyba że rozpoczniesz połączenie głosowe na żywo, które trafia do wybranej usługi głosowej."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde ouve para que você possa falar com seu assistente. A fala é transcrita neste dispositivo e só o seu próprio servidor recebe o texto, a menos que você inicie uma chamada de voz ao vivo, que vai para o serviço de voz que você escolheu."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde слушает, чтобы вы могли разговаривать с ассистентом. Речь расшифровывается на этом устройстве, и текст получает только ваш сервер, если только вы не начнете звонок с живым голосом — тогда звук идет в выбранный вами голосовой сервис."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde lyssnar så att du kan prata med din assistent. Tal transkriberas på den här enheten och bara din egen server tar emot texten, om du inte startar ett livesamtal, som går till den rösttjänst du valt."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde, asistanınızla konuşabilmeniz için dinler. Konuşma bu aygıtta metne dökülür ve metni yalnızca kendi sunucunuz alır; canlı sesli arama başlatırsanız ses, seçtiğiniz ses hizmetine gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde слухає, щоб ви могли говорити з асистентом. Мовлення транскрибується на цьому пристрої, і текст отримує лише ваш власний сервер, якщо тільки ви не почнете голосовий виклик наживо, який іде до вибраного вами голосового сервісу."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde会聆听，以便你与助手交谈。语音在此设备上转写，只有你自己的服务器会收到文本；除非你发起实时语音通话，此时语音会发送到你选择的语音服务。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 會聆聽，讓你可以與助理交談。語音會在此裝置上轉寫，只有你自己的伺服器會收到文字；除非你開始即時語音通話，此時會傳送到你選擇的語音服務。"
+          }
+        }
+      }
+    },
+    "NSMotionUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde læser hovedbevægelser fra dine AirPods, så du kan nikke for at godkende eller ryste på hovedet for at afvise en anmodning fra din assistent. Det læses på denne enhed og bliver aldrig gemt eller sendt."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde liest Kopfbewegungen von deinen AirPods, damit du eine Anfrage deines Assistenten mit einem Nicken genehmigen oder mit einem Kopfschütteln ablehnen kannst. Sie werden auf diesem Gerät gelesen und nie gesichert oder gesendet."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Redde reads head movement from your AirPods so you can nod to approve, or shake your head to deny, a request from your assistant. It is read on this device and never stored or sent."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde lee el movimiento de la cabeza desde tus AirPods para que puedas asentir para aprobar, o negar con la cabeza para denegar, una solicitud de tu asistente. Se lee en este dispositivo y nunca se guarda ni se envía."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde lit les mouvements de tête de vos AirPods pour que vous puissiez hocher la tête pour approuver une demande de votre assistant, ou la secouer pour la refuser. Ils sont lus sur cet appareil et ne sont jamais conservés ni envoyés."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde legge il movimento della testa dagli AirPods per permetterti di annuire per approvare, o scuotere la testa per rifiutare, una richiesta del tuo assistente. Viene letto su questo dispositivo e mai salvato né inviato."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ReddeはAirPodsから頭の動きを読み取り、アシスタントからのリクエストをうなずいて承認したり、首を振って拒否したりできるようにします。動きはこのデバイス上で読み取られ、保存や送信は一切されません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "어시스턴트의 요청을 고개를 끄덕여 승인하거나 저어서 거부할 수 있도록 Redde가 AirPods에서 머리 움직임을 읽습니다. 이 정보는 이 기기에서만 읽히며 저장되거나 전송되지 않습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde leser hodebevegelser fra AirPods slik at du kan nikke for å godkjenne eller riste på hodet for å avvise en forespørsel fra assistenten din. Det leses på denne enheten og blir aldri lagret eller sendt."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde leest hoofdbewegingen uit je AirPods, zodat je kunt knikken om een verzoek van je assistent goed te keuren, of je hoofd kunt schudden om het te weigeren. Dit wordt op dit apparaat gelezen en nooit bewaard of verstuurd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde odczytuje ruch głowy z AirPods, aby skinienie głową zatwierdzało, a pokręcenie głową odrzucało prośbę Twojego asystenta. Ruch jest odczytywany na tym urządzeniu i nigdy nie jest przechowywany ani wysyłany."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde lê o movimento da cabeça pelos AirPods para que você possa acenar para aprovar, ou balançar a cabeça para negar, um pedido do seu assistente. Isso é lido neste dispositivo e nunca é armazenado nem enviado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde считывает движения головы с AirPods, чтобы вы могли кивнуть, одобряя запрос ассистента, или покачать головой, отклоняя его. Данные обрабатываются на этом устройстве и никогда не сохраняются и не передаются."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde läser av huvudrörelser från dina AirPods så att du kan nicka för att godkänna, eller skaka på huvudet för att neka, en förfrågan från din assistent. Det läses av på den här enheten och sparas eller skickas aldrig."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde, asistanınızdan gelen bir isteği başınızı aşağı yukarı sallayarak onaylayabilmeniz ya da iki yana sallayarak reddedebilmeniz için AirPods'unuzdan baş hareketlerini okur. Bu bilgi bu aygıtta okunur, hiçbir zaman saklanmaz ya da gönderilmez."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde зчитує рухи голови з AirPods, щоб ви могли кивнути, схвалюючи запит асистента, або похитати головою, відхиляючи його. Дані зчитуються на цьому пристрої й ніколи не зберігаються та не надсилаються."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde通过你的AirPods读取头部动作，让你可以点头批准或摇头拒绝助手的请求。动作在此设备上读取，绝不会被存储或发送。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 會讀取你 AirPods 偵測到的頭部動作，讓你點頭核准或搖頭拒絕助理的請求。這些資料只在此裝置上讀取，絕不會儲存或傳送。"
+          }
+        }
+      }
+    },
+    "NSPhotoLibraryUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonværktøjer slået til finder Redde fotos, viser et til din assistent eller sletter dem, du bekræfter, når din assistent beder om det. Et foto sendes kun til den server, du opretter forbindelse til."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn Telefon-Tools aktiviert sind, findet Redde Fotos, zeigt deinem Assistenten eines oder löscht die von dir bestätigten, wenn dein Assistent darum bittet. Ein Foto geht nur an den Server, mit dem du dich verbindest."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "With Phone tools turned on, Redde finds photos, shows one to your assistant, or deletes the ones you confirm, when your assistant asks it to. A photo goes only to the server you connect to."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Herramientas del teléfono activadas, Redde busca fotos, muestra una a tu asistente o elimina las que confirmes, cuando tu asistente se lo pide. Una foto solo va al servidor al que te conectas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avec les Outils du téléphone activés, Redde trouve des photos, en montre une à votre assistant, ou supprime celles que vous confirmez, quand votre assistant le lui demande. Une photo ne va qu’au serveur auquel vous vous connectez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con gli Strumenti del telefono attivi, Redde trova foto, ne mostra una al tuo assistente o elimina quelle che confermi, quando il tuo assistente lo chiede. Una foto va solo al server a cui ti connetti."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "デバイスツールがオンの場合、アシスタントの依頼に応じて、Reddeが写真を探したり、アシスタントに写真を見せたり、確認した写真を削除したりします。写真は接続先のサーバにのみ送信されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "휴대폰 도구가 켜져 있으면 어시스턴트가 요청할 때 Redde가 사진을 찾거나, 어시스턴트에게 사진을 보여 주거나, 사용자가 확인한 사진을 삭제합니다. 사진은 연결한 서버로만 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonverktøy slått på finner Redde bilder, viser et til assistenten din eller sletter dem du bekrefter, når assistenten din ber om det. Et bilde går bare til tjeneren du kobler til."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met Telefoontools aan zoekt Redde foto’s, laat het er een aan je assistent zien, of verwijdert het de foto’s die je bevestigt, als je assistent erom vraagt. Een foto gaat alleen naar de server waarmee je verbinding maakt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy Narzędzia telefonu są włączone, Redde na prośbę Twojego asystenta znajduje zdjęcia, pokazuje mu wybrane zdjęcie lub usuwa te, które potwierdzisz. Zdjęcie trafia tylko na serwer, z którym się łączysz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com as Ferramentas do telefone ativadas, o Redde encontra fotos, mostra uma ao seu assistente ou apaga as que você confirmar, quando seu assistente pede. Uma foto vai só para o servidor ao qual você se conecta."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда включены «Инструменты телефона», Redde по просьбе ассистента находит фото, показывает ему одно из них или удаляет те, что вы подтвердите. Фото отправляется только на сервер, к которому вы подключаетесь."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonverktyg påslaget hittar Redde bilder, visar en för din assistent eller raderar de du bekräftar, när din assistent ber om det. En bild går bara till servern du ansluter till."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telefon araçları açıkken Redde, asistanınız istediğinde fotoğraf bulur, birini asistanınıza gösterir ya da onayladıklarınızı siler. Bir fotoğraf yalnızca bağlandığınız sunucuya gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли ввімкнено «Інструменти телефона», Redde на прохання вашого асистента знаходить фото, показує йому одне з них або видаляє ті, які ви підтвердите. Фото надходить лише на сервер, до якого ви під’єднуєтеся."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开手机工具后，当你的助手请求时，Redde会查找照片、向助手展示某张照片，或删除你确认的照片。照片只会发送到你连接的服务器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟手機工具後，當你的助理要求時，Redde 會尋找照片、將照片給助理看，或刪除你確認的照片。照片只會傳送到你連線的伺服器。"
+          }
+        }
+      }
+    },
+    "NSRemindersFullAccessUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonværktøjer slået til læser og tilføjer Redde påmindelser, når din assistent beder om det. De sendes kun til den server, du opretter forbindelse til."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn Telefon-Tools aktiviert sind, liest Redde Erinnerungen und fügt welche hinzu, wenn dein Assistent darum bittet. Sie gehen nur an den Server, mit dem du dich verbindest."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "With Phone tools turned on, Redde reads and adds reminders when your assistant asks it to. They go only to the server you connect to."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Herramientas del teléfono activadas, Redde lee y añade recordatorios cuando tu asistente se lo pide. Solo van al servidor al que te conectas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avec les Outils du téléphone activés, Redde lit et ajoute des rappels quand votre assistant le lui demande. Ils ne vont qu’au serveur auquel vous vous connectez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con gli Strumenti del telefono attivi, Redde legge e aggiunge promemoria quando il tuo assistente lo chiede. Vanno solo al server a cui ti connetti."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "デバイスツールがオンの場合、アシスタントの依頼に応じてReddeがリマインダーを読み取ったり追加したりします。リマインダーは接続先のサーバにのみ送信されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "휴대폰 도구가 켜져 있으면 어시스턴트가 요청할 때 Redde가 미리 알림을 읽고 추가합니다. 미리 알림은 연결한 서버로만 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonverktøy slått på leser og legger Redde til påminnelser når assistenten din ber om det. De går bare til tjeneren du kobler til."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met Telefoontools aan leest Redde herinneringen en voegt het ze toe als je assistent erom vraagt. Ze gaan alleen naar de server waarmee je verbinding maakt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy Narzędzia telefonu są włączone, Redde odczytuje i dodaje przypomnienia na prośbę Twojego asystenta. Trafiają one tylko na serwer, z którym się łączysz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com as Ferramentas do telefone ativadas, o Redde lê e adiciona lembretes quando seu assistente pede. Eles vão só para o servidor ao qual você se conecta."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда включены «Инструменты телефона», Redde читает и добавляет напоминания по просьбе ассистента. Они отправляются только на сервер, к которому вы подключаетесь."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonverktyg påslaget läser och lägger Redde till påminnelser när din assistent ber om det. De går bara till servern du ansluter till."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telefon araçları açıkken Redde, asistanınız istediğinde anımsatıcıları okur ve ekler. Bunlar yalnızca bağlandığınız sunucuya gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли ввімкнено «Інструменти телефона», Redde читає й додає нагадування на прохання вашого асистента. Вони надходять лише на сервер, до якого ви під’єднуєтеся."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开手机工具后，当你的助手请求时，Redde会读取和添加提醒事项。它们只会发送到你连接的服务器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟手機工具後，Redde 會在你的助理要求時讀取並加入提醒事項。它們只會傳送到你連線的伺服器。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

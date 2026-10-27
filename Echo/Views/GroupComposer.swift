@@ -42,15 +42,15 @@ struct GroupComposer: View {
             HStack(alignment: .bottom, spacing: 10) {
                 field
                 if feed.discussing || feed.state.working, !hasDraft {
-                    ComposerButton(symbol: "stop.fill", label: "Stop", tint: .red, size: 44) { feed.stop() }
+                    ComposerButton(symbol: "stop.fill", label: String(localized: "Stop"), tint: .red, size: 44) { feed.stop() }
                         .transition(.scale(scale: 0.4).combined(with: .opacity))
                 } else if !hasDraft, let talk {
                     // As under a conversation: an empty field offers to talk instead.
-                    ComposerButton(symbol: "waveform", label: "Talk", tint: .accentColor, size: 44, waveform: true) { talk() }
+                    ComposerButton(symbol: "waveform", label: String(localized: "Talk"), tint: .accentColor, size: 44, waveform: true) { talk() }
                         .accessibilityHint("Talk with the group: what you say goes to the bots, and their replies are read to you")
                         .transition(.scale(scale: 0.4).combined(with: .opacity))
                 } else {
-                    ComposerButton(symbol: "arrow.up", label: "Send", tint: .accentColor, size: 44) { send() }
+                    ComposerButton(symbol: "arrow.up", label: String(localized: "Send"), tint: .accentColor, size: 44) { send() }
                         .disabled(!hasDraft)
                         .transition(.scale(scale: 0.4).combined(with: .opacity))
                 }
@@ -119,7 +119,7 @@ struct GroupComposer: View {
             }
             .accessibilityLabel("Add")
             .accessibilityHint("Add a photo or file to your message. It goes to your server, where the bots can open it.")
-            TextField(dictation.isActive ? "Listening…" : "Message the group", text: $draft, axis: .vertical)
+            TextField(dictation.isActive ? String(localized: "Listening…") : String(localized: "Message the group"), text: $draft, axis: .vertical)
                 .accessibilityIdentifier("group-composer")
                 .font(theme.userFont)
                 .lineLimit(1 ... 6)
@@ -215,7 +215,8 @@ struct GroupFileChip: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(name)
-        .accessibilityHint(failed ? "Couldn't be fetched from the server. Tap to try again." : "Opens it, from your server")
+        .accessibilityHint(failed ? String(localized: "Couldn't be fetched from the server. Tap to try again.")
+                                  : String(localized: "Opens it, from your server"))
         .sheet(item: $opened) { FileViewer(attachment: $0) }
     }
 

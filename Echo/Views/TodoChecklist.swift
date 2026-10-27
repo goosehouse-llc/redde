@@ -72,10 +72,10 @@ struct TodoChecklist: View {
 
     nonisolated static func spoken(_ status: TodoItem.Status) -> String {
         switch status {
-        case .completed: "Done"
-        case .inProgress: "In progress"
-        case .pending: "To do"
-        case .cancelled: "Dropped"
+        case .completed: String(localized: "task.done", defaultValue: "Done", comment: "A task, finished (not the Done button): a ticked checklist item, the agent's finished task, the Kanban column, the title after a plugin change")
+        case .inProgress: String(localized: "In progress")
+        case .pending: String(localized: "To do")
+        case .cancelled: String(localized: "Dropped", comment: "A task in the agent's list: given up")
         }
     }
 }

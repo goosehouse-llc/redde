@@ -65,8 +65,8 @@ struct TranscriptView: View {
             defer { previous = m.createdAt }
             if let previous, cal.isDate(previous, inSameDayAs: m.createdAt) { continue }
             if previous == nil, cal.isDateInToday(m.createdAt) { continue }
-            out[m.id] = cal.isDateInToday(m.createdAt) ? "Today"
-                : cal.isDateInYesterday(m.createdAt) ? "Yesterday"
+            out[m.id] = cal.isDateInToday(m.createdAt) ? String(localized: "Today")
+                : cal.isDateInYesterday(m.createdAt) ? String(localized: "Yesterday")
                 : m.createdAt.formatted(.dateTime.weekday(.wide).month().day())
         }
         dayLabels = out
@@ -474,8 +474,8 @@ struct TranscriptView: View {
             .buttonBorderShape(.capsule)
             .padding(.bottom, 10)
             .transition(.offset(y: 12).combined(with: .scale(scale: 0.9)).combined(with: .opacity))
-            .accessibilityLabel(conversation.isStreaming ? "Jump to the live reply" : "Jump to the newest message")
-            .accessibilityValue(hasNewBelow && !conversation.isStreaming ? "New messages below" : "")
+            .accessibilityLabel(conversation.isStreaming ? String(localized: "Jump to the live reply") : String(localized: "Jump to the newest message"))
+            .accessibilityValue(hasNewBelow && !conversation.isStreaming ? String(localized: "New messages below") : "")
         }
     }
 
@@ -490,10 +490,10 @@ struct TranscriptView: View {
                 .onSubmit { goToMatch(matchIndex + 1, proxy) }
                 .submitLabel(.search)
             if !searchText.isEmpty {
-                Text(matches.isEmpty ? "0" : "\(matchIndex + 1) of \(matches.count)")
+                (matches.isEmpty ? Text(0.formatted()) : Text("\(matchIndex + 1) of \(matches.count)"))
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
-                    .accessibilityLabel(matches.isEmpty ? "No matches" : "Match \(matchIndex + 1) of \(matches.count)")
+                    .accessibilityLabel(matches.isEmpty ? String(localized: "No matches") : String(localized: "Match \(matchIndex + 1) of \(matches.count)"))
             }
             Button("Previous match", systemImage: "chevron.up") { goToMatch(matchIndex - 1, proxy) }
                 .disabled(matches.count < 2)
@@ -538,8 +538,8 @@ struct TranscriptView: View {
         if DevHooks.demoBots { return nil }   // (the sample bots have no Dashboard login to fail on)
         #endif
         return switch serve.state {
-        case let .reconnecting(attempt): "Reconnecting to the Hermes Dashboard… (try \(attempt))"
-        case let .failed(reason): "Hermes Dashboard: \(reason)"
+        case let .reconnecting(attempt): String(localized: "Reconnecting to the Hermes Dashboard… (try \(attempt))")
+        case let .failed(reason): String(localized: "Hermes Dashboard: \(reason)")
         default: nil
         }
     }

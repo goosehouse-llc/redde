@@ -95,7 +95,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
                         params["voice_context"] = .string(LiveVoiceNote.voiceContext(live.context))
                     }
                     let submit = try await client.call("prompt.submit", params: .object(params))
-                    if submit["status"]?.string == "queued" { continuation.yield(.status("queued behind a running turn…")) }
+                    if submit["status"]?.string == "queued" { continuation.yield(.status(String(localized: "queued behind a running turn…", comment: "Status under a reply"))) }
 
                     for await outcome in finished.stream {
                         if case let .failure(error) = outcome { throw error }
@@ -155,7 +155,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
         case "connection.lost":
             guard !turn.recovering else { return }
             turn.recovering = true
-            continuation.yield(.status("connection lost, reconnecting…"))
+            continuation.yield(.status(String(localized: "connection lost, reconnecting…", comment: "Status under a reply")))
             turn.recoverTask = Task { @MainActor in
                 await Self.recover(turn, client: client, continuation: continuation, finished: finished)
             }
@@ -210,7 +210,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
                                                      contextUsed: u["context_used"]?.int, contextMax: u["context_max"]?.int)))
             }
             if p["status"]?.string == "error" {
-                finished.yield(.failure(TransportError.malformed(p["error"]?.string ?? p["text"]?.string ?? "run failed")))
+                finished.yield(.failure(TransportError.malformed(p["error"]?.string ?? p["text"]?.string ?? String(localized: "run failed", comment: "Why a reply failed, when the server gave no reason"))))
             } else {
                 finished.yield(.success(()))
             }
@@ -233,7 +233,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
                 finished.yield(.success(()))
             }
         case "error":
-            finished.yield(.failure(TransportError.malformed(p["message"]?.string ?? "gateway error")))
+            finished.yield(.failure(TransportError.malformed(p["message"]?.string ?? String(localized: "gateway error", comment: "Why a reply failed, when the server gave no reason"))))
         default:
             break
         }
@@ -342,7 +342,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
                                 continuation: AsyncThrowingStream<TurnEvent, Error>.Continuation,
                                 finished: AsyncStream<Result<Void, Error>>.Continuation) async {
         guard await client.waitForConnection(timeout: 90) else {
-            finished.yield(.failure(TransportError.malformed("lost the connection to Hermes Dashboard and couldn't get it back")))
+            finished.yield(.failure(TransportError.malformed(String(localized: "lost the connection to Hermes Dashboard and couldn't get it back"))))
             return
         }
         do {
@@ -350,7 +350,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
             guard let runtime = info["session_id"]?.string else { throw TransportError.malformed("resume gave no session id") }
             turn.runtime = runtime
             turn.recovering = false
-            continuation.yield(.status("reconnected"))
+            continuation.yield(.status(String(localized: "reconnected", comment: "Status under a reply: the connection is back")))
             // A question the host asked while the socket was down, or still waits on.
             client.replayOpenRequests(in: info)
             if info["running"]?.bool == true {
@@ -425,25 +425,25 @@ nonisolated struct HermesServeTransport: HermesTransport {
         if let level = reasoningLevel(inSlash: body) {
             try await client.setSessionReasoning(runtimeSession: runtime, effort: level)
             #if os(watchOS)
-            return [.textDelta("Reasoning effort for this conversation: \(level)")]
+            return [.textDelta(String(localized: "Reasoning effort for this conversation: \(level)"))]
             #else
             if Settings.reasoningEfforts.contains(where: { $0.value == level }) { Settings.shared.reasoningEffort = level }
-            return [.textDelta("Reasoning effort for this conversation: \(Settings.effortLabel(level))")]
+            return [.textDelta(String(localized: "Reasoning effort for this conversation: \(Settings.effortLabel(level))"))]
             #endif
         }
         do {
             let result = try await client.call("slash.exec", params: .object(["session_id": .string(runtime), "command": .string(body)]))
             let output = result["output"]?.displayText ?? ""
-            return [.textDelta(output.isEmpty ? "(no output)" : output)]
+            return [.textDelta(output.isEmpty ? String(localized: "(no output)", comment: "Shown when a slash command printed nothing") : output)]
         } catch let error as HermesServeClient.RPCError where error.code == 4018 {
             let parts = body.split(separator: " ", maxSplits: 1).map(String.init)
             let result = try await client.call("command.dispatch", params: .object([
                 "session_id": .string(runtime), "name": .string(parts.first ?? body), "arg": .string(parts.count > 1 ? parts[1] : "")]))
             if result["type"]?.string == "send", let message = result["message"]?.string {
                 _ = try await client.call("prompt.submit", params: .object(["session_id": .string(runtime), "text": .string(message)]))
-                return [.status("running \(parts.first ?? body)…")]
+                return [.status(String(localized: "running \(parts.first ?? body)…", comment: "Status under a reply: a slash command is running"))]
             }
-            let shown = result["display"]?.string ?? result["output"]?.displayText ?? result["message"]?.string ?? "(done)"
+            let shown = result["display"]?.string ?? result["output"]?.displayText ?? result["message"]?.string ?? String(localized: "(done)", comment: "Shown when a slash command finished and said nothing")
             return [.textDelta(shown)]
         }
     }

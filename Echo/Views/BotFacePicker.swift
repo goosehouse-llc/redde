@@ -29,8 +29,46 @@ struct BotFacePicker: View {
         _face = State(initialValue: current)
     }
 
-    static let colorNames = ["Blue", "Amber", "Pink", "Indigo", "Teal", "Violet", "Green", "Orange", "Sky", "Coral", "Lime", "White", "Black",
-                             "Theme", "Code Blue", "Soft Pink", "Yellow", "Gold"]
+    nonisolated static let colorNames = [String(localized: "Blue"), String(localized: "Amber"), String(localized: "Pink"), String(localized: "Indigo"),
+                             String(localized: "Teal"), String(localized: "Violet"), String(localized: "Green"), String(localized: "Orange"),
+                             String(localized: "Sky", comment: "A bot face's colour: sky blue"), String(localized: "Coral"),
+                             String(localized: "Lime", comment: "A bot face's colour: lime green"), String(localized: "White"),
+                             String(localized: "Black"), String(localized: "Theme", comment: "A bot face's colour: the theme's own"),
+                             String(localized: "Code Blue", comment: "A bot face's colour: the Code theme's pale blue"),
+                             String(localized: "Soft Pink"), String(localized: "Yellow"), String(localized: "Gold")]
+
+    /// A face part's name (a shape, eyes, a mouth or a mark), by its raw value.
+    nonisolated static func partName(_ raw: String) -> String {
+        switch raw {
+        case "round": String(localized: "Round", comment: "A bot face's shape or eyes")
+        case "egg": String(localized: "Egg", comment: "A bot face's shape")
+        case "pill": String(localized: "Pill", comment: "A bot face's shape")
+        case "capsule": String(localized: "Capsule", comment: "A bot face's shape")
+        case "burst": String(localized: "Burst", comment: "A bot face's shape")
+        case "pick": String(localized: "Pick", comment: "A bot face's shape: a guitar pick")
+        case "hex": String(localized: "Hex", comment: "A bot face's shape: a hexagon")
+        case "diamond": String(localized: "Diamond", comment: "A bot face's shape")
+        case "bubble": String(localized: "Bubble", comment: "A bot face's shape: a message bubble")
+        case "ghost": String(localized: "Ghost", comment: "A bot face's shape")
+        case "square": String(localized: "Square", comment: "A bot face's shape")
+        case "house": String(localized: "House", comment: "A bot face's shape")
+        case "star": String(localized: "Star", comment: "A bot face's shape")
+        case "blob": String(localized: "Blob", comment: "A bot face's shape")
+        case "mismatched": String(localized: "Mismatched", comment: "A bot face's eyes")
+        case "sleepy": String(localized: "Sleepy", comment: "A bot face's eyes")
+        case "happy": String(localized: "Happy", comment: "A bot face's eyes")
+        case "sparkle": String(localized: "Sparkle", comment: "A bot face's eyes")
+        case "none": String(localized: "None", comment: "A bot face with no mouth, or no mark")
+        case "smile": String(localized: "Smile", comment: "A bot face's mouth")
+        case "oh": String(localized: "Oh", comment: "A bot face's mouth: a small round “oh”")
+        case "grin": String(localized: "Grin", comment: "A bot face's mouth")
+        case "antenna": String(localized: "Antenna", comment: "A bot face's mark")
+        case "spark": String(localized: "Spark", comment: "A bot face's mark")
+        case "freckles": String(localized: "Freckles", comment: "A bot face's mark")
+        case "blush": String(localized: "Blush", comment: "A bot face's mark")
+        default: raw.capitalized
+        }
+    }
     /// The colours offered: for the main agent, Redde's own two besides, the theme's first and the
     /// Code blue by Sky (`BotFace.themed`, `codeBlue`).
     private var offered: [Int] {
@@ -65,8 +103,8 @@ struct BotFacePicker: View {
                             .disabled(saving)
                     }
                 } footer: {
-                    Text(choose == nil ? "Kept on your Hermes server, so Redde on your other devices shows it too."
-                                       : "Kept on your Hermes server once the bot is made, so Redde on your other devices shows it too.")
+                    choose == nil ? Text("Kept on your Hermes server, so Redde on your other devices shows it too.")
+                                  : Text("Kept on your Hermes server once the bot is made, so Redde on your other devices shows it too.")
                 }
                 if let problem {
                     Section { Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(.orange) }
@@ -99,7 +137,7 @@ struct BotFacePicker: View {
                                 .padding(5)
                                 .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(picked ? Color.accentColor.opacity(0.14) : .clear))
                                 .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(picked ? Color.accentColor : .clear, lineWidth: 2))
-                            Text(part.rawValue.capitalized)
+                            Text(Self.partName(part.rawValue))
                                 .font(.caption2)
                                 .foregroundStyle(picked ? .primary : .secondary)
                         }
@@ -107,7 +145,7 @@ struct BotFacePicker: View {
                         .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(part.rawValue.capitalized)
+                    .accessibilityLabel(Self.partName(part.rawValue))
                     .accessibilityAddTraits(picked ? .isSelected : [])
                 }
             }
@@ -191,9 +229,15 @@ struct BotFacePicker: View {
     }
 
     nonisolated static func describe(_ face: BotFace) -> String {
-        let mouth = face.mouth == .none ? "" : ", \(face.mouth.rawValue) mouth"
-        let mark = face.mark == .none ? "" : ", \(face.mark.rawValue)"
-        return "\(colorNames[face.color % colorNames.count].lowercased()) \(face.shape.rawValue), \(face.eyes.rawValue) eyes\(mouth)\(mark)"
+        let color = colorNames[face.color % colorNames.count].localizedLowercase
+        let shape = partName(face.shape.rawValue).localizedLowercase, eyes = partName(face.eyes.rawValue).localizedLowercase
+        var parts = [String(localized: "\(color) \(shape), \(eyes) eyes",
+                            comment: "VoiceOver: a bot face's colour, shape and eyes, e.g. “blue round, happy eyes”")]
+        if face.mouth != .none {
+            parts.append(String(localized: "\(partName(face.mouth.rawValue).localizedLowercase) mouth", comment: "VoiceOver: a bot face's mouth, e.g. “smile mouth”"))
+        }
+        if face.mark != .none { parts.append(partName(face.mark.rawValue).localizedLowercase) }
+        return parts.joined(separator: ", ")
     }
 
     /// Any face but Redde's, with the lean and the glance it has.

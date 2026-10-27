@@ -47,7 +47,7 @@ struct ContextFileEditorView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button(saving ? "Saving…" : "Save", action: save).disabled(saving || !dirty)
+                Button(saving ? String(localized: "Saving…") : String(localized: "Save"), action: save).disabled(saving || !dirty)
             }
         }
         .overlay { if loading { ProgressView("Loading \(title)…") } }
@@ -56,8 +56,8 @@ struct ContextFileEditorView: View {
 
     private var missingNote: String {
         homeKnown || isSoul
-            ? "This file doesn't exist yet. Saving creates it."
-            : "Nothing is at this path, and the Hermes Dashboard didn't say where this profile keeps its files. Saving creates the file here."
+            ? String(localized: "This file doesn't exist yet. Saving creates it.")
+            : String(localized: "Nothing is at this path, and the Hermes Dashboard didn't say where this profile keeps its files. Saving creates the file here.")
     }
 
     private func load() async {

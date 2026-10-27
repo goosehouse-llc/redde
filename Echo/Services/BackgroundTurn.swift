@@ -78,8 +78,8 @@ final class BackgroundTurn {
             return
         }
         let subtitle = question.split(whereSeparator: \.isNewline).joined(separator: " ")
-        let request = BGContinuedProcessingTaskRequest(identifier: id, title: "\(agent ?? Settings.shared.headerTitle) is working",
-                                                       subtitle: subtitle.isEmpty ? "Replying" : String(subtitle.prefix(80)))
+        let request = BGContinuedProcessingTaskRequest(identifier: id, title: String(localized: "\(agent ?? Settings.shared.headerTitle) is working", comment: "iOS's progress for a reply carried on in the background: the agent's name"),
+                                                       subtitle: subtitle.isEmpty ? String(localized: "Replying", comment: "iOS's progress for a reply carried on in the background") : String(subtitle.prefix(80)))
         // Fail rather than queue: a reply that starts late in the background is no use, and the
         // 30-second task is already running.
         request.strategy = .fail

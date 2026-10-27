@@ -25,7 +25,8 @@ struct NeedsYouEntry: TimelineEntry {
     }
 
     static let sample = NeedsYouEntry(date: .now, requests: [
-        WaitingRequest(id: "sample", kind: .approval, title: "Clear out the old builds", text: "rm -rf ~/builds/2025-*",
+        WaitingRequest(id: "sample", kind: .approval, title: String(localized: "Clear out the old builds", comment: "Widget gallery: a sample conversation's title"),
+                       text: "rm -rf ~/builds/2025-*",
                        session: nil, since: .now, until: .now.addingTimeInterval(300)),
     ])
 }
@@ -71,7 +72,8 @@ struct NeedsYouCard: View {
         case .accessoryRectangular:
             if let first {
                 VStack(alignment: .leading, spacing: 1) {
-                    Label(requests.count > 1 ? "\(requests.count) need you" : "Needs you", systemImage: first.symbol)
+                    Label(requests.count > 1 ? String(localized: "\(requests.count) need you", comment: "Widget: how many requests wait on you, two or more")
+                          : String(localized: "Needs you"), systemImage: first.symbol)
                         .font(.headline).lineLimit(1).widgetAccentable()
                     Text(words(first)).font(.caption).lineLimit(2).privacySensitive()
                 }
@@ -97,7 +99,8 @@ struct NeedsYouCard: View {
                 .font(request.kind == .approval && !hidesWords ? .caption.monospaced() : .caption)
                 .lineLimit(3).privacySensitive()
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            Text(requests.count > 1 ? "and \(requests.count - 1) more" : "since \(request.since.formatted(date: .omitted, time: .shortened))")
+            Text(requests.count > 1 ? String(localized: "and \(requests.count - 1) more", comment: "Widget: further requests waiting, after the first")
+                 : String(localized: "since \(request.since.formatted(date: .omitted, time: .shortened))", comment: "Widget: the time a request started waiting"))
                 .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
         }
     }
@@ -154,7 +157,7 @@ struct NeedsYouCard: View {
     }
 
     nonisolated static func count(_ n: Int) -> String {
-        n == 0 ? "Nothing needs you" : n == 1 ? "1 waiting on you" : "\(n) waiting on you"
+        n == 0 ? String(localized: "Nothing needs you") : String(localized: "\(n) waiting on you", comment: "Widget: how many requests wait on you")
     }
 
     /// Where a tap goes: the conversation that waits, when the server has a session for it.
@@ -192,7 +195,9 @@ struct ContextEntry: TimelineEntry {
     let reading: ContextReading?
     var hidesWords = false
 
-    static let sample = ContextEntry(date: .now, reading: ContextReading(used: 54_210, window: 128_000, title: "Plan the weekend hike", date: .now))
+    static let sample = ContextEntry(date: .now, reading: ContextReading(
+        used: 54_210, window: 128_000,
+        title: String(localized: "Plan the weekend hike", comment: "Widget gallery: a sample conversation's title"), date: .now))
 }
 
 struct ContextProvider: TimelineProvider {
@@ -224,7 +229,8 @@ struct ContextCard: View {
     var body: some View {
         switch family {
         case .accessoryInline:
-            Label(reading == nil ? "Context: no reading yet" : "Context \(percent) full", systemImage: "circle.dashed")
+            Label(reading == nil ? String(localized: "Context: no reading yet") : String(localized: "Context \(percent) full", comment: "Widget: how full the model's context is, as Context 42% full"),
+                  systemImage: "circle.dashed")
         case .accessoryCircular:
             Gauge(value: share) {
                 Text("ctx")
@@ -248,7 +254,7 @@ struct ContextCard: View {
                     }
                 }
                 .widgetAccentable()
-                Text(reading.map { "\($0.amounts) tokens" } ?? "No reading yet").font(.caption).lineLimit(1)
+                Text(reading.map { Self.tokens($0) } ?? String(localized: "No reading yet")).font(.caption).lineLimit(1)
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Context")
@@ -269,7 +275,7 @@ struct ContextCard: View {
                     if let title {
                         Text(title).font(.caption.weight(.semibold)).lineLimit(1).privacySensitive()
                     }
-                    Text(reading.map { "\($0.amounts) tokens" } ?? "No reading yet").font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                    Text(reading.map { Self.tokens($0) } ?? String(localized: "No reading yet")).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                 }
             }
             .accessibilityElement(children: .ignore)
@@ -279,8 +285,14 @@ struct ContextCard: View {
     }
 
     private var spoken: String {
-        guard let reading else { return "No reading yet" }
-        return "\(reading.used.formatted()) of \(reading.window.formatted()) tokens, \(percent)"
+        guard let reading else { return String(localized: "No reading yet") }
+        return String(localized: "\(reading.used.formatted()) of \(reading.window.formatted()) tokens, \(percent)",
+                      comment: "VoiceOver, Context widget: tokens used of the model's window, and the share")
+    }
+
+    /// "54k of 128k tokens".
+    private static func tokens(_ reading: ContextReading) -> String {
+        String(localized: "\(reading.amounts) tokens", comment: "Context widget: tokens used of the model's window, as 54k of 128k tokens")
     }
 }
 

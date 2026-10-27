@@ -43,7 +43,7 @@ struct BotSchedulesView: View {
                         }
                         .swipeActions(edge: .leading) {
                             if job.state == .scheduled || job.state == .paused {
-                                Button(job.state == .paused ? "Resume" : "Pause", systemImage: job.state == .paused ? "play" : "pause") {
+                                Button(job.state == .paused ? String(localized: "Resume") : String(localized: "Pause"), systemImage: job.state == .paused ? "play" : "pause") {
                                     act(job) { try await $0.setPaused(job.id, job.state != .paused, profile: bot.name) }
                                 }
                                 .tint(job.state == .paused ? .green : .orange)
@@ -51,7 +51,7 @@ struct BotSchedulesView: View {
                         }
                         .contextMenu {
                             Button("Run Now", systemImage: "bolt") { runNow(job) }
-                            Button(job.state == .paused ? "Resume" : "Pause", systemImage: job.state == .paused ? "play" : "pause") {
+                            Button(job.state == .paused ? String(localized: "Resume") : String(localized: "Pause"), systemImage: job.state == .paused ? "play" : "pause") {
                                 act(job) { try await $0.setPaused(job.id, job.state != .paused, profile: bot.name) }
                             }
                             Button("Delete", systemImage: "trash", role: .destructive) { act(job) { try await $0.delete(job.id, profile: bot.name) } }
@@ -113,7 +113,7 @@ struct BotSchedulesView: View {
             jobs = try await BotRoutines.list(bot.name)
             problem = nil
         } catch {
-            problem = "Couldn't read \(name)'s schedules: \(error.localizedDescription)"
+            problem = String(localized: "Couldn't read \(name)'s schedules: \(error.localizedDescription)")
         }
     }
 
@@ -193,7 +193,7 @@ struct RoutineEditor: View {
                         }
                         switch when.repeats {
                         case .hours:
-                            Stepper("Every \(when.everyHours) \(when.everyHours == 1 ? "hour" : "hours")", value: $when.everyHours, in: 1 ... 23)
+                            Stepper(String(localized: "Every \(when.everyHours) hours"), value: $when.everyHours, in: 1 ... 23)
                         case .once:
                             DatePicker("At", selection: $when.once, in: Date.now..., displayedComponents: [.date, .hourAndMinute])
                         default:
@@ -216,12 +216,14 @@ struct RoutineEditor: View {
                     Section { Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(.orange) }
                 }
             }
-            .navigationTitle(job == nil ? "New Schedule" : "Schedule")
+            .navigationTitle(job == nil ? String(localized: "New Schedule") : String(localized: "Schedule"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    if working { ProgressView() } else { Button(job == nil ? "Add" : "Save") { save() }.disabled(!canSave) }
+                    if working { ProgressView() } else {
+                        Button(job == nil ? String(localized: "Add") : String(localized: "Save")) { save() }.disabled(!canSave)
+                    }
                 }
             }
             .onAppear(perform: fill)

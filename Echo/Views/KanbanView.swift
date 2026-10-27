@@ -84,7 +84,7 @@ struct KanbanView: View {
                     Image(systemName: live.isLive ? "dot.radiowaves.left.and.right" : "arrow.clockwise")
                         .font(.caption)
                         .foregroundStyle(live.isLive ? .green : .secondary)
-                        .accessibilityLabel(live.isLive ? "Live updates on" : "Polling for updates")
+                        .accessibilityLabel(live.isLive ? String(localized: "Live updates on") : String(localized: "Polling for updates"))
                 }
             }
         }
@@ -113,16 +113,16 @@ struct KanbanView: View {
         } message: { Text(moveMessage) }
     }
 
-    private var moveTitle: String { "Move to \(KanbanStatus.label(moving?.status ?? ""))" }
+    private var moveTitle: String { String(localized: "Move to \(KanbanStatus.label(moving?.status ?? ""))") }
     private var movePlaceholder: String {
-        switch moving?.status { case "blocked", "scheduled": "Reason"; default: "Summary" }
+        switch moving?.status { case "blocked", "scheduled": String(localized: "Reason"); default: String(localized: "Summary") }
     }
     private var moveMessage: String {
         switch moving?.status {
-        case "blocked": "What is it waiting on?"
-        case "scheduled": "Why is it deferred?"
-        case "review": "What should the reviewer look at?"
-        default: "What was the outcome?"
+        case "blocked": String(localized: "What is it waiting on?")
+        case "scheduled": String(localized: "Why is it deferred?")
+        case "review": String(localized: "What should the reviewer look at?")
+        default: String(localized: "What was the outcome?")
         }
     }
 
@@ -292,12 +292,12 @@ struct KanbanCardEditor: View {
                 }
                 if let error { Section { Text(error).font(.footnote).foregroundStyle(.red) } }
             }
-            .navigationTitle(task == nil ? "New card" : "Edit card")
+            .navigationTitle(task == nil ? String(localized: "New card") : String(localized: "Edit card"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(saving ? "Saving…" : "Save") { save() }.disabled(saving || title.trimmingCharacters(in: .whitespaces).isEmpty)
+                    Button(saving ? String(localized: "Saving…") : String(localized: "Save")) { save() }.disabled(saving || title.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
             .onAppear {
@@ -403,7 +403,7 @@ struct KanbanCardDetail: View {
                     ProgressView()
                 }
             }
-            .navigationTitle(task?.title ?? "Card")
+            .navigationTitle(task?.title ?? String(localized: "Card", comment: "Title: a kanban card"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { Button("Edit", systemImage: "pencil") { editing = true }.disabled(task == nil) }
@@ -411,7 +411,7 @@ struct KanbanCardDetail: View {
             }
             .task { await load() }
             .sheet(isPresented: $showingChange) {
-                if let change { PatchView(title: change.task.title, patch: change.patch, notes: change.notes, notesTitle: "Steps left with it") }
+                if let change { PatchView(title: change.task.title, patch: change.patch, notes: change.notes, notesTitle: String(localized: "Steps left with it")) }
             }
             .sheet(isPresented: $editing) {
                 if let task { KanbanCardEditor(task: task, assignees: assignees) { await load(); await onChange() } }
@@ -425,7 +425,7 @@ struct KanbanCardDetail: View {
                 }
             }
             .alert("Move to \(KanbanStatus.label(pendingStatus ?? ""))", isPresented: Binding(get: { pendingStatus != nil }, set: { if !$0 { cancelMove() } })) {
-                TextField(pendingStatus == "blocked" || pendingStatus == "scheduled" ? "Reason" : "Summary", text: $note)
+                TextField(pendingStatus == "blocked" || pendingStatus == "scheduled" ? String(localized: "Reason") : String(localized: "Summary"), text: $note)
                 Button("Move") { if let s = pendingStatus { apply(s, note: note) } }
                 Button("Cancel", role: .cancel) { cancelMove() }
             }

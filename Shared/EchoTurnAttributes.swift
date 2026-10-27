@@ -63,15 +63,15 @@ extension EchoTurnAttributes.ContentState {
     /// still thinking with the clock running.
     /// `agent`: who is answering (`EchoTurnAttributes.agent`); "Redde" when not said.
     func title(stale: Bool, agent: String? = nil) -> String {
-        if stale, isLive { return "Reply interrupted" }
-        if pendingApproval(stale: stale) != nil { return "Needs your approval" }
+        if stale, isLive { return String(localized: "Reply interrupted") }
+        if pendingApproval(stale: stale) != nil { return String(localized: "Needs your approval") }
         let name = agent.flatMap { $0.trimmingCharacters(in: .whitespaces).isEmpty ? nil : $0 } ?? "Redde"
         switch phase {
-        case .thinking: return "\(name) is thinking"
-        case .tool: return "Using \(detail)"
-        case .replying: return "\(name) is replying"
-        case .done: return "\(name) replied"
-        case .failed: return "\(name) couldn't reply"
+        case .thinking: return String(localized: "\(name) is thinking", comment: "Live Activity: the agent, by its name, is thinking")
+        case .tool: return String(localized: "Using \(detail)", comment: "Live Activity: the agent is using a tool, by its name")
+        case .replying: return String(localized: "\(name) is replying", comment: "Live Activity: the agent, by its name, is writing its reply")
+        case .done: return String(localized: "\(name) replied", comment: "Live Activity: the agent, by its name, has replied")
+        case .failed: return String(localized: "\(name) couldn't reply", comment: "Live Activity: the agent, by its name, couldn't reply")
         }
     }
 
@@ -86,16 +86,16 @@ extension EchoTurnAttributes.ContentState {
     }
 
     func compact(stale: Bool) -> String {
-        if stale, isLive { return "stopped" }
-        if pendingApproval(stale: stale) != nil { return "approve?" }
+        if stale, isLive { return String(localized: "stopped", comment: "Dynamic Island, a word or two: the reply was interrupted") }
+        if pendingApproval(stale: stale) != nil { return String(localized: "approve?", comment: "Dynamic Island, a word or two: a command waits for approval") }
         // Through a long job the count is the thing to glance at.
         if isLive, let progress { return progress.short }
         switch phase {
-        case .thinking: return "thinking"
+        case .thinking: return String(localized: "thinking", comment: "Dynamic Island, a word or two: the agent is thinking")
         case .tool: return detail
-        case .replying: return "replying"
-        case .done: return "done"
-        case .failed: return "failed"
+        case .replying: return String(localized: "replying", comment: "Dynamic Island, a word or two: the agent is writing its reply")
+        case .done: return String(localized: "done", comment: "Dynamic Island, a word or two: the reply is finished")
+        case .failed: return String(localized: "failed", comment: "Dynamic Island, a word or two: the reply failed")
         }
     }
 
@@ -113,7 +113,7 @@ extension EchoTurnAttributes.ContentState {
 
     /// The line under the title: what the reply was doing, or what to do about one that stopped.
     func detailLine(stale: Bool, question: String) -> String {
-        if stale, isLive { return "Open Redde to see where it got to." }
+        if stale, isLive { return String(localized: "Open Redde to see where it got to.") }
         if let approval = pendingApproval(stale: stale) { return approval.command }
         if let step = step(stale: stale) { return step }
         return phase == .thinking ? question : detail
@@ -125,5 +125,8 @@ extension EchoTurnAttributes.ContentState.Progress {
     /// "3/6", for the Dynamic Island's few points.
     var short: String { "\(done)/\(total)" }
     /// "3 of 6 done".
-    var summary: String { done >= total ? "All \(total) done" : "\(done) of \(total) done" }
+    var summary: String {
+        done >= total ? String(localized: "All \(total) done", comment: "The agent's task list: every task done")
+            : String(localized: "\(done) of \(total) done", comment: "The agent's task list: tasks done of all tasks")
+    }
 }

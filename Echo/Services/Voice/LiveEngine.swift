@@ -65,7 +65,7 @@ nonisolated enum LiveEngine: String, CaseIterable, Codable, Sendable {
     /// A voice to show, by its id.
     func voiceName(_ voice: String) -> String {
         guard voicesFromAccount else { return voice.capitalized }
-        return voice.isEmpty ? "The agent's own" : ElevenLabsVoice.name(voice) ?? "A voice of yours"
+        return voice.isEmpty ? String(localized: "The agent's own") : ElevenLabsVoice.name(voice) ?? String(localized: "A voice of yours")
     }
 
     /// How its company describes a voice, where it does.
@@ -81,10 +81,10 @@ nonisolated enum LiveEngine: String, CaseIterable, Codable, Sendable {
     /// What a call costs, for its settings.
     var cost: String {
         switch self {
-        case .gptLive: "OpenAI bills the key's account $0.05 a minute, quiet minutes too."
-        case .gemini: "Google bills the key's account about $0.005 a minute for what you say and $0.018 a minute for what the voice says (about $0.12 for ten minutes); a free tier is offered, whose conversations Google may use to improve its products."
-        case .grok: "xAI bills the key's account $0.08 a minute."
-        case .elevenLabs: "ElevenLabs bills the key's account by the minute past what its plan includes ($0.08 a minute), with the agent's language model on top; silence past ten seconds at a twentieth of that. The first call makes a voice agent named Redde voice in your ElevenLabs account."
+        case .gptLive: String(localized: "OpenAI bills the key's account $0.05 a minute, quiet minutes too.")
+        case .gemini: String(localized: "Google bills the key's account about $0.005 a minute for what you say and $0.018 a minute for what the voice says (about $0.12 for ten minutes); a free tier is offered, whose conversations Google may use to improve its products.")
+        case .grok: String(localized: "xAI bills the key's account $0.08 a minute.")
+        case .elevenLabs: String(localized: "ElevenLabs bills the key's account by the minute past what its plan includes ($0.08 a minute), with the agent's language model on top; silence past ten seconds at a twentieth of that. The first call makes a voice agent named Redde voice in your ElevenLabs account.")
         }
     }
 }
@@ -295,7 +295,7 @@ nonisolated struct GPTLiveDialect: LiveDialect {
         case "session.delegation.created":
             return event["delegation"]?["id"]?.string.map { [.delegated(id: $0, request: nil)] } ?? []
         case "error":
-            return [.failed(event["error"]?["message"]?.string ?? "OpenAI refused the call.", code: event["error"]?["code"]?.string)]
+            return [.failed(event["error"]?["message"]?.string ?? String(localized: "OpenAI refused the call."), code: event["error"]?["code"]?.string)]
         case "session.closed":
             let reason = event["reason"]?.string ?? ""
             return [.closed(reason.isEmpty || reason == "close_requested" ? nil : reason)]

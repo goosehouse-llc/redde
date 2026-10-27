@@ -10,21 +10,21 @@ enum CarPlayBotLook: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .sticker: "Sticker"
-        case .stage: "Stage"
-        case .peek: "Peek"
-        case .wide: "Wide"
-        case .glow: "Glow"
+        case .sticker: String(localized: "Sticker", comment: "A look for CarPlay's bot cards")
+        case .stage: String(localized: "Stage", comment: "A look for CarPlay's bot cards: each bot in a spotlight")
+        case .peek: String(localized: "Peek", comment: "A look for CarPlay's bot cards: a face peeking in")
+        case .wide: String(localized: "Wide", comment: "A look for CarPlay's bot cards: wider cards")
+        case .glow: String(localized: "Glow")
         }
     }
 
     var blurb: String {
         switch self {
-        case .sticker: "Bright, in each bot's colors, its face a sticker"
-        case .stage: "Each bot in a spotlight of its color"
-        case .peek: "A face too big for its card, peeking in"
-        case .wide: "Wider cards, three across, each face in a soft light"
-        case .glow: "Dark, each face in a soft light of its color"
+        case .sticker: String(localized: "Bright, in each bot's colors, its face a sticker")
+        case .stage: String(localized: "Each bot in a spotlight of its color")
+        case .peek: String(localized: "A face too big for its card, peeking in")
+        case .wide: String(localized: "Wider cards, three across, each face in a soft light")
+        case .glow: String(localized: "Dark, each face in a soft light of its color")
         }
     }
 }
@@ -70,7 +70,7 @@ struct CarPlayBotSettings: View {
                 .accessibilityAddTraits(settings.carPlayBots == look ? .isSelected : [])
             }
         } label: {
-            DisclosureSummary(title: "CarPlay bot cards") {
+            DisclosureSummary(title: String(localized: "CarPlay bot cards")) {
                 HStack(spacing: 8) {
                     Text(settings.carPlayBots.label)
                     if let first = samples.first {

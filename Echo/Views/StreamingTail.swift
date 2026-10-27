@@ -151,7 +151,7 @@ struct ReplyDrawingWarmUp: View {
         if !done {
             HStack(spacing: 4) {
                 Text("Redde").textRenderer(StreamingTail(dot: .gray))
-                ShimmerText(text: "Thinking")
+                ShimmerText(text: String(localized: "Thinking"))
                 LiveMark(color: .gray)
             }
             .opacity(0.01)

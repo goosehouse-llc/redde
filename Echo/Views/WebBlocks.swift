@@ -447,14 +447,14 @@ struct MermaidBlock: View {
                 }
                 .buttonStyle(.plain).foregroundStyle(.secondary).padding(.trailing, 8)
                 .accessibilityLabel("Open diagram full screen")
-                Button(showSource ? "Diagram" : "Source") { showSource.toggle() }
+                Button(showSource ? String(localized: "Diagram") : String(localized: "Source", comment: "Button: shows a diagram's text")) { showSource.toggle() }
                     .font(.caption2).buttonStyle(.plain).foregroundStyle(.secondary)
                 Button {
                     UIPasteboard.general.string = source
                     copied = true
                     Task { try? await Task.sleep(for: .seconds(1.5)); copied = false }
                 } label: {
-                    Label(copied ? "Copied" : "Copy", systemImage: copied ? "checkmark" : "doc.on.doc").font(.caption2)
+                    Label(copied ? String(localized: "Copied") : String(localized: "Copy"), systemImage: copied ? "checkmark" : "doc.on.doc").font(.caption2)
                 }
                 .buttonStyle(.plain).foregroundStyle(.secondary).padding(.leading, 8)
             }
@@ -526,7 +526,7 @@ struct ZoomableWebView: UIViewRepresentable {
         view.backgroundColor = .clear
         view.scrollView.minimumZoomScale = 1
         view.scrollView.maximumZoomScale = 6
-        view.accessibilityLabel = "Diagram"
+        view.accessibilityLabel = String(localized: "Diagram")
         view.loadHTMLString(html, baseURL: WebBlockAssets.baseURL)
         return view
     }

@@ -91,7 +91,7 @@ final class Conversation {
             case .chatCompletions:
                 accepted = false
             }
-            self?.statusLine = accepted ? "steer queued" : "steer rejected (turn already finishing)"
+            self?.statusLine = accepted ? String(localized: "steer queued", comment: "Status under a reply: a message added to the turn is waiting") : String(localized: "steer rejected (turn already finishing)")
         }
     }
 
@@ -222,7 +222,7 @@ final class Conversation {
     /// toolbar, the conversation list and the composer on every update. These two change only
     /// when the first message or the emptiness does, so reading them costs nothing while a
     /// reply streams.
-    private(set) var title = "New conversation"
+    private(set) var title = String(localized: "New conversation")
     private(set) var hasMessages = false
     /// How full the model's context is, as of the latest reply that says: the header's ring.
     private(set) var contextUsage: ContextUsage?
@@ -231,7 +231,7 @@ final class Conversation {
     private(set) var name: String? { didSet { refreshHeader() } }
 
     private func refreshHeader() {
-        let first = (messages.first { $0.role == .user && !$0.isSteer } ?? outbox.first?.message).map { $0.text.isEmpty ? "\($0.attachments.count) attachment\($0.attachments.count == 1 ? "" : "s")" : $0.text } ?? "New conversation"
+        let first = (messages.first { $0.role == .user && !$0.isSteer } ?? outbox.first?.message).map { $0.text.isEmpty ? String(localized: "\($0.attachments.count) attachments") : $0.text } ?? String(localized: "New conversation")
         let title = name ?? String(first.prefix(60))
         // Assigning an equal value would still notify every observer.
         if title != self.title { self.title = title }
@@ -343,7 +343,7 @@ final class Conversation {
         request.departure = departure
         guard let transport = makeTransport() else {
             fail(replyID, settings.isConfigured ? TransportError.badURL.localizedDescription
-                                                : "No connection is set up yet. Go to Settings → Connection → Set up connection….")
+                                                : String(localized: "No connection is set up yet. Go to Settings → Connection → Set up connection…."))
             pauseQueue()
             mirrorContinuation.finish()
             return mirror
@@ -396,7 +396,7 @@ final class Conversation {
                 // Dashboard's login, and the message says where they are.
                 if transportKind == .hermesSessions, request.attachments.contains(where: { $0.kind == .pdf || $0.kind == .other }),
                    await dashboard.canUse() {
-                    statusLine = "putting the file on the server…"
+                    statusLine = String(localized: "putting the file on the server…")
                     request = try await Self.placingFiles(request)
                 }
                 // Pictures go in the run itself, but the Hermes API keeps none of them, only a
@@ -446,7 +446,7 @@ final class Conversation {
                     WidgetCenter.shared.reloadTimelines(ofKind: "com.goosehouse.echo.lastreply")
                 }
                 let incognito = isIncognito
-                Notifier.shared.notify(.replied, title: "Redde replied", body: incognito ? IncognitoNote.replied : PlainText.display(replyText),   // autoclosure: only stripped when a banner will post
+                Notifier.shared.notify(.replied, title: String(localized: "Redde replied"), body: incognito ? IncognitoNote.replied : PlainText.display(replyText),   // autoclosure: only stripped when a banner will post
                                        category: Notifier.repliedCategory, userInfo: [Notifier.conversationKey: self.id.uuidString],
                                        messageEntityID: SiriID.message(self.id, replyID))
                 persist()
@@ -549,7 +549,8 @@ final class Conversation {
             // Only worth surfacing when the prompt is big enough to take real time;
             // a short prompt would just flash "100%". Cleared by the first token.
             if total - cached >= 512 {
-                statusLine = "Processing prompt… \(min(100, processed * 100 / total))%"
+                let share = Double(min(100, processed * 100 / total)) / 100
+                statusLine = String(localized: "Processing prompt… \(share.formatted(.percent.precision(.fractionLength(0))))")
             }
         case let .usage(usage):
             // hermes serve ticks this every few hundred ms; it rides the next flush.
@@ -647,7 +648,7 @@ final class Conversation {
         case let .interrupt(interrupt, runtime):
             flushDeltas()
             pendingInterrupt = (interrupt, runtime)
-            statusLine = "waiting for you"
+            statusLine = String(localized: "waiting for you", comment: "Status under a reply: the agent waits for an answer")
             noteWaiting(interrupt)
             if case let .approval(request) = interrupt {
                 Notifier.shared.notifyApproval(request)
@@ -658,7 +659,7 @@ final class Conversation {
                 Notifier.shared.notify(.interrupt, title: Self.interruptTitle(interrupt), body: Self.interruptBody(interrupt))
             }
         case let .interruptExpired(id):
-            if pendingInterrupt?.interrupt.id == id { pendingInterrupt = nil; statusLine = "request expired" }
+            if pendingInterrupt?.interrupt.id == id { pendingInterrupt = nil; statusLine = String(localized: "request expired", comment: "Status under a reply: the agent's question or approval timed out") }
         case .done:
             break
         }
@@ -777,7 +778,7 @@ final class Conversation {
                 try Task.checkCancellation()
                 let replyText = messages.last { $0.id == replyID }?.text ?? ""
                 TurnActivity.shared.finish(reply: replyText)
-                Notifier.shared.notify(.replied, title: "Redde replied", body: PlainText.display(replyText),
+                Notifier.shared.notify(.replied, title: String(localized: "Redde replied"), body: PlainText.display(replyText),
                                        category: Notifier.repliedCategory, userInfo: [Notifier.conversationKey: self.id.uuidString],
                                        messageEntityID: SiriID.message(self.id, replyID))
                 persist()
@@ -837,7 +838,7 @@ final class Conversation {
     private enum TurnOutcome { case completed, cancelled, failed, held }
 
     /// A direct (stateless) connection dropped because iOS suspended the app mid-reply.
-    static let backgroundCutoff = "Stopped when Redde went to the background. iOS gives an app about 30 seconds there, so keep Redde open (or the screen awake) for long replies."
+    static let backgroundCutoff = String(localized: "Stopped when Redde went to the background. iOS gives an app about 30 seconds there, so keep Redde open (or the screen awake) for long replies.")
 
     // MARK: - Outbox
 
@@ -853,7 +854,7 @@ final class Conversation {
     private func hold(userID: UUID, replyID: UUID, queuedAt: Date) {
         guard let message = messages.first(where: { $0.id == userID }) else { return }
         messages.removeAll { $0.id == userID || $0.id == replyID }
-        TurnActivity.shared.fail("Waiting for a connection")
+        TurnActivity.shared.fail(String(localized: "Waiting for a connection"))
         // Everything behind it waits for the connection too.
         for i in outbox.indices where outbox[i].state == .queued { outbox[i].state = .waitingForConnection }
         outbox.insert(OutboxItem(message: message, state: .waitingForConnection, queuedAt: queuedAt), at: 0)
@@ -926,7 +927,7 @@ final class Conversation {
         case let .approval(request): (kind, text) = (.approval, request.command)
         case let .clarify(request): (kind, text) = (.question, request.questions.first?.question ?? "")
         case .sudo: (kind, text) = (.sudo, "")
-        case let .secret(request): (kind, text) = (.secret, request.prompt.isEmpty ? "Value for \(request.envVar)" : request.prompt)
+        case let .secret(request): (kind, text) = (.secret, request.prompt.isEmpty ? String(localized: "Value for \(request.envVar)", comment: "What the agent asks for when it needs a secret: an environment variable's value") : request.prompt)
         }
         let key = NeedsYou.key(session: serverSessionID, conversation: id)
         waitingKey = key
@@ -953,19 +954,19 @@ final class Conversation {
 
     private static func interruptTitle(_ i: Interrupt) -> String {
         switch i {
-        case .approval: "Redde needs your approval"
-        case .clarify: "Redde has a question"
-        case .sudo: "Redde needs a sudo password"
-        case .secret: "Redde needs a secret"
+        case .approval: String(localized: "Redde needs your approval")
+        case .clarify: String(localized: "Redde has a question")
+        case .sudo: String(localized: "Redde needs a sudo password")
+        case .secret: String(localized: "Redde needs a secret")
         }
     }
 
     private static func interruptBody(_ i: Interrupt) -> String {
         switch i {
         case let .approval(r): r.command
-        case let .clarify(r): r.questions.first?.question ?? "Open Redde to answer."
-        case .sudo: "Open Redde to enter it."
-        case let .secret(r): r.prompt.isEmpty ? "Value for \(r.envVar)" : r.prompt
+        case let .clarify(r): r.questions.first?.question ?? String(localized: "Open Redde to answer.")
+        case .sudo: String(localized: "Open Redde to enter it.")
+        case let .secret(r): r.prompt.isEmpty ? String(localized: "Value for \(r.envVar)", comment: "What the agent asks for when it needs a secret: an environment variable's value") : r.prompt
         }
     }
 
@@ -1001,7 +1002,7 @@ final class Conversation {
         // Only a real Stop pauses the queue; regenerate/load/reset while idle must keep a
         // scheduled retry alive and a queued message queued.
         if wasStreaming {
-            if lettingGo { TurnActivity.shared.leave() } else { TurnActivity.shared.fail("Cancelled") }
+            if lettingGo { TurnActivity.shared.leave() } else { TurnActivity.shared.fail(String(localized: "Cancelled", comment: "The Live Activity's last word on a reply that was stopped")) }
             pauseQueue()
         }
     }
@@ -1029,7 +1030,7 @@ final class Conversation {
                     _ = try await client.call("session.undo", params: .object(["session_id": .string(runtime)]))
                 }
             } catch {
-                lastError = "Couldn't rewind the gateway session: \(error.localizedDescription)"
+                lastError = String(localized: "Couldn't rewind the gateway session: \(error.localizedDescription)")
             }
         }
         persist()
@@ -1400,7 +1401,7 @@ final class Conversation {
         guard connection == .hermesSessions, endsUnanswered, let stored = serverSessionID,
               let asked = messages.last?.createdAt, Date.now.timeIntervalSince(asked) < Self.replyStillComing else { return }
         let identity = identity
-        statusLine = "Your agent is still working on this…"
+        statusLine = String(localized: "Your agent is still working on this…")
         ledgerWatch = Task { [weak self] in
             let until = asked.addingTimeInterval(Self.replyStillComing)
             while Date.now < until {
@@ -1605,7 +1606,7 @@ final class Conversation {
         }
         let client = dashboard
         guard let current = try await client.bots().bots.first(where: { $0.name == ref.profile }) else {
-            throw TransportError.malformed("\(ref.name) isn't on this server any more")
+            throw TransportError.malformed(String(localized: "\(ref.name) isn't on this server any more"))
         }
         try await client.startFresh(current)
         // Read again: the roster no longer names the chat put aside, so the bot gets a new one.
@@ -1622,7 +1623,7 @@ final class Conversation {
         switch settings.transport {
         case .hermesServe: try await loadServeSession(summary)
         case .hermesSessions: try await loadLedgerSession(summary)
-        case .chatCompletions: throw TransportError.malformed("that conversation is on a Hermes connection")
+        case .chatCompletions: throw TransportError.malformed(String(localized: "that conversation is on a Hermes connection"))
         }
     }
 
@@ -1925,7 +1926,7 @@ final class Conversation {
         flushDeltas()
         lastError = description
         TurnActivity.shared.fail(description)
-        Notifier.shared.notify(.failed, title: "Redde couldn't reply", body: description)
+        Notifier.shared.notify(.failed, title: String(localized: "Redde couldn't reply"), body: description)
         // A paired Hermes will say so too, minutes later: that note then arrives quietly.
         if let serverSessionID { ToldAlready.failed(session: serverSessionID) }
         update(id) { message in

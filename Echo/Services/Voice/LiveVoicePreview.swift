@@ -52,7 +52,7 @@ final class LiveVoicePreview {
                 try? await Task.sleep(for: .milliseconds(100))
                 guard let self, !Task.isCancelled else { return }
                 if let item = player.currentItem, item.status == .failed {
-                    problem = "The sample didn't play."
+                    problem = String(localized: "The sample didn't play.")
                     break
                 }
                 if let item = player.currentItem, item.duration.isNumeric, player.currentTime() >= item.duration { break }
@@ -132,7 +132,7 @@ final class LiveVoicePreview {
                 #if DEBUG
                 throw LiveFailure("The voice didn't speak. Try again. (Heard: \(heard.joined(separator: ", ")); loudest \(String(format: "%.3f", peak)).)")
                 #else
-                throw LiveFailure("The voice didn't speak. Try again.")
+                throw LiveFailure(String(localized: "The voice didn't speak. Try again."))
                 #endif
             }
             // Its last words still queued: heard out before the call closes.
@@ -163,7 +163,7 @@ final class LiveVoicePreview {
         if let lab = DevHooks.value("-echo.liveEndpoint").flatMap(URL.init(string:)) { return LiveEndpoint(url: lab) }
         #endif
         guard let key = Keychain.read(engine.keyItem)?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty else {
-            throw LiveFailure("Hearing a voice needs your \(engine.company) key, in Settings → Voice → Voice mode.")
+            throw LiveFailure(String(localized: "Hearing a voice needs your \(engine.company) key, in Settings → Voice → Voice mode."))
         }
         return try await engine.dialect.endpoint(key: key)
     }
@@ -177,7 +177,7 @@ nonisolated final class PreviewSpeaker: @unchecked Sendable {
     init(rate: Double) throws {
         queue = VoiceQueue(capacity: Int(rate * 30), lead: Int(rate * 0.12), rate: rate)
         guard let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: rate, channels: 1, interleaved: false) else {
-            throw LiveFailure("The voice can't be played.")
+            throw LiveFailure(String(localized: "The voice can't be played."))
         }
         let node = AVAudioSourceNode(format: format, renderBlock: VoiceQueue.renderer(queue))
         engine.attach(node)

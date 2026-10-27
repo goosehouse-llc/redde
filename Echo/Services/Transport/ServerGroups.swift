@@ -181,14 +181,14 @@ nonisolated struct GroupEvent: Identifiable, Equatable, Sendable {
 
     /// A line about the room rather than something said, or nil when it isn't worth a line.
     func note(in room: GroupRoom) -> String? {
-        let who = room.member(actorID)?.label ?? "A bot"
+        let who = room.member(actorID)?.label ?? String(localized: "A bot", comment: "Who did something in a group chat, when its name isn't known")
         switch kind {
-        case "turn.settled": return payload["passed"]?.bool == true ? "\(who) passed" : nil
-        case "turn.failed": return "\(who) couldn't answer" + (payload["error"]?.string.map { ": \($0)" } ?? "")
-        case "turn.cancelled": return payload["reason"]?.string == "superseded_by_newer_user_event" ? nil : "\(who) was stopped"
-        case "turn.deferred": return "\(who) didn't finish"
-        case "room.activity": return payload["status"]?.string == "bounded" ? "That's as long as a round goes. Say something to carry on." : nil
-        case "room.renamed": return payload["name"]?.string.map { "Renamed “\($0)”" }
+        case "turn.settled": return payload["passed"]?.bool == true ? String(localized: "\(who) passed", comment: "A bot in a group chat had nothing to say this round") : nil
+        case "turn.failed": return payload["error"]?.string.map { String(localized: "\(who) couldn't answer: \($0)") } ?? String(localized: "\(who) couldn't answer")
+        case "turn.cancelled": return payload["reason"]?.string == "superseded_by_newer_user_event" ? nil : String(localized: "\(who) was stopped")
+        case "turn.deferred": return String(localized: "\(who) didn't finish")
+        case "room.activity": return payload["status"]?.string == "bounded" ? String(localized: "That's as long as a round goes. Say something to carry on.") : nil
+        case "room.renamed": return payload["name"]?.string.map { String(localized: "Renamed “\($0)”", comment: "A group chat was given a new name") }
         default: return nil
         }
     }
@@ -336,7 +336,7 @@ extension HermesServeClient {
         let room = "redde-" + UUID().uuidString.lowercased()
         let result = try await call("groups.create", params: .object([
             "room_id": .string(room), "name": .string(String(name.prefix(200))), "members": .array(members.map(\.wire))]))
-        guard let made = result["room"].flatMap(GroupRoom.init) else { throw TransportError.malformed("Hermes made no room") }
+        guard let made = result["room"].flatMap(GroupRoom.init) else { throw TransportError.malformed(String(localized: "Hermes made no room")) }
         return made
     }
 
@@ -781,7 +781,7 @@ final class GroupFeed {
     private func lookInDesktop() async {
         do {
             guard let current = try await client.desktopRooms().first(where: { $0.id == room.id }) else {
-                problem = "This group chat was ended in Hermes Desktop."
+                problem = String(localized: "This group chat was ended in Hermes Desktop.")
                 return
             }
             let named = current.naming(with: BotDirectory.shared.roster, mainName: Settings.shared.headerTitle)
@@ -827,7 +827,7 @@ final class GroupFeed {
                 await look()
             } catch {
                 sending.removeAll { $0.id == id }
-                problem = "Couldn't send: \(error.localizedDescription)"
+                problem = String(localized: "Couldn't send: \(error.localizedDescription)")
             }
         }
     }

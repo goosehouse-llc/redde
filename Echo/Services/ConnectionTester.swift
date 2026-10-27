@@ -19,21 +19,21 @@ nonisolated enum ConnectionTester {
     /// Hermes API server: /health, then /v1/models with the key.
     static func hermesAPI(url: URL, apiKey: String?, headers: [String: String] = [:]) async -> Outcome {
         guard let (_, health) = try? await get(url.appending(path: "health"), key: nil, headers: headers) else {
-            return .failed("No Hermes API server answered at \(url.host() ?? url.absoluteString).")
+            return .failed(String(localized: "No Hermes API server answered at \(url.host() ?? url.absoluteString)."))
         }
         // A sign-in gate in front (Pangolin, Cloudflare Access, a proxy) sends its login page instead.
         if [302, 303, 307, 401, 403].contains(health) {
             return .failed(gated(url, status: health, headers: headers))
         }
-        guard health == 200 else { return .failed("No Hermes API server answered at \(url.host() ?? url.absoluteString).") }
-        guard let apiKey, !apiKey.isEmpty else { return .failed("Server reachable. Add the API key.") }
+        guard health == 200 else { return .failed(String(localized: "No Hermes API server answered at \(url.host() ?? url.absoluteString).")) }
+        guard let apiKey, !apiKey.isEmpty else { return .failed(String(localized: "Server reachable. Add the API key.")) }
         guard let (_, status) = try? await get(url.appending(path: "v1/models"), key: apiKey, headers: headers) else {
-            return .failed("Server reachable, but the key check didn't complete.")
+            return .failed(String(localized: "Server reachable, but the key check didn't complete."))
         }
         switch status {
-        case 200: return .ok("Connected. Key accepted.")
-        case 401, 403: return .failed("Server reachable, but the key was rejected.")
-        default: return .failed("Server answered HTTP \(status) to the key check.")
+        case 200: return .ok(String(localized: "Connected. Key accepted."))
+        case 401, 403: return .failed(String(localized: "Server reachable, but the key was rejected."))
+        default: return .failed(String(localized: "Server answered HTTP \(status) to the key check."))
         }
     }
 
@@ -42,43 +42,43 @@ nonisolated enum ConnectionTester {
     static func hermesServe(url: URL) async -> Outcome {
         let access = Settings.shared.accessHeaders
         guard let (data, status) = try? await get(url.appending(path: "api/status"), key: nil, headers: access) else {
-            return .failed("No Hermes Dashboard answered at \(url.host() ?? url.absoluteString).")
+            return .failed(String(localized: "No Hermes Dashboard answered at \(url.host() ?? url.absoluteString)."))
         }
         if status == 403 || status == 302 {
             return .failed(gated(url, status: status, headers: access))
         }
-        guard status == 200 else { return .failed("Hermes Dashboard answered HTTP \(status).") }
+        guard status == 200 else { return .failed(String(localized: "Hermes Dashboard answered HTTP \(status).")) }
         let json = (try? JSONDecoder().decode(JSONValue.self, from: data)) ?? .null
-        let version = json["version"]?.string ?? "unknown version"
-        guard json["auth_required"]?.bool == true else { return .ok("Connected to Hermes Dashboard \(version) (no login required).") }
+        let version = json["version"]?.string ?? String(localized: "unknown version", comment: "Stands in for the Hermes Dashboard's version number")
+        guard json["auth_required"]?.bool == true else { return .ok(String(localized: "Connected to Hermes Dashboard \(version) (no login required).")) }
         do {
             try await HermesServeClient.shared.ensureLoggedIn()
-            return .ok("Connected to Hermes Dashboard \(version). Login accepted.")
+            return .ok(String(localized: "Connected to Hermes Dashboard \(version). Login accepted."))
         } catch {
-            return .failed("Hermes Dashboard \(version) reachable, but login failed: \(error.localizedDescription)")
+            return .failed(String(localized: "Hermes Dashboard \(version) reachable, but login failed: \(error.localizedDescription)"))
         }
     }
 
     /// OpenAI-compatible endpoint: /v1/models, with the optional key.
     static func fastLane(url: URL, apiKey: String?, model: String) async -> Outcome {
         guard let (data, status) = try? await get(url.appending(path: "v1/models"), key: apiKey) else {
-            return .failed("Nothing answered at \(url.host() ?? url.absoluteString).")
+            return .failed(String(localized: "Nothing answered at \(url.host() ?? url.absoluteString)."))
         }
         guard status == 200 else {
-            return .failed(status == 401 || status == 403 ? "Endpoint reachable, but the key was rejected." : "Endpoint answered HTTP \(status).")
+            return .failed(status == 401 || status == 403 ? String(localized: "Endpoint reachable, but the key was rejected.") : String(localized: "Endpoint answered HTTP \(status)."))
         }
         let ids = ((try? JSONDecoder().decode(JSONValue.self, from: data))?["data"]?.array ?? []).compactMap { $0["id"]?.string }
         if !model.isEmpty, !ids.isEmpty, !ids.contains(model) {
-            return .failed("Connected, but the endpoint doesn't list a model named \(model).")
+            return .failed(String(localized: "Connected, but the endpoint doesn't list a model named \(model)."))
         }
-        return .ok(ids.isEmpty ? "Connected." : "Connected. \(ids.count) model\(ids.count == 1 ? "" : "s") available.")
+        return .ok(ids.isEmpty ? String(localized: "Connected.") : String(localized: "Connected. \(ids.count) models available."))
     }
 
     /// What to say when an access gate turns the check away.
     private static func gated(_ url: URL, status: Int, headers: [String: String]) -> String {
         headers.isEmpty
-            ? "\(url.host() ?? "The host") is behind an access gate (HTTP \(status)). Add what it asks for under Settings → Connection details: a Cloudflare Access service token, a Pangolin access token, or the proxy's own headers."
-            : "The access gate in front of \(url.host() ?? "the host") turned the request away (HTTP \(status)). Check the Cloudflare Access client ID and secret, the Pangolin access token, or the custom headers."
+            ? String(localized: "\(url.host() ?? String(localized: "The host")) is behind an access gate (HTTP \(status)). Add what it asks for under Settings → Connection details: a Cloudflare Access service token, a Pangolin access token, or the proxy's own headers.")
+            : String(localized: "The access gate in front of \(url.host() ?? String(localized: "the host")) turned the request away (HTTP \(status)). Check the Cloudflare Access client ID and secret, the Pangolin access token, or the custom headers.")
     }
 
     private static func get(_ url: URL, key: String?, headers: [String: String] = [:]) async throws -> (Data, Int) {

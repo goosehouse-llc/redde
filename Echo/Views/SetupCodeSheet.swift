@@ -81,24 +81,24 @@ struct SetupCodeSheet: View {
                 if !code.name.isEmpty { LabeledContent("Name", value: code.name) }
                 if !code.dashboardURL.isEmpty {
                     row("Hermes Dashboard", code.dashboardURL,
-                        note: [code.dashboardUser.isEmpty ? nil : "user \(code.dashboardUser)",
-                               code.dashboardPassword.isEmpty ? "no password" : "password included"],
+                        note: [code.dashboardUser.isEmpty ? nil : String(localized: "user \(code.dashboardUser)", comment: "A Dashboard login's user name"),
+                               code.dashboardPassword.isEmpty ? String(localized: "no password") : String(localized: "password included")],
                         used: plan.transport == .hermesServe)
                 }
                 if !code.apiURL.isEmpty {
-                    row("Hermes API", code.apiURL, note: [code.apiKey.isEmpty && code.profileKey.isEmpty ? "no key" : "key included"],
+                    row("Hermes API", code.apiURL, note: [code.apiKey.isEmpty && code.profileKey.isEmpty ? String(localized: "no key") : String(localized: "key included")],
                         used: plan.transport == .hermesSessions)
                 }
                 if !code.profile.isEmpty { LabeledContent("Profile", value: code.profile) }
                 if !code.accessID.isEmpty {
-                    LabeledContent("Cloudflare Access", value: code.accessSecret.isEmpty ? "Client ID only" : "Service token included")
+                    LabeledContent("Cloudflare Access", value: code.accessSecret.isEmpty ? String(localized: "Client ID only") : String(localized: "Service token included"))
                 }
                 if !(code.pangolin.isEmpty && code.pangolinAPI.isEmpty) {
-                    LabeledContent("Pangolin", value: code.pangolin.isEmpty || code.pangolinAPI.isEmpty ? "Access token included" : "Access tokens included")
+                    LabeledContent("Pangolin", value: code.pangolin.isEmpty || code.pangolinAPI.isEmpty ? String(localized: "Access token included") : String(localized: "Access tokens included"))
                 }
                 if !code.headers.isEmpty {
                     // By name; a header's value is a secret and is never shown.
-                    LabeledContent(code.headers.count == 1 ? "Custom header" : "Custom headers",
+                    LabeledContent(code.headers.count == 1 ? String(localized: "Custom header") : String(localized: "Custom headers"),
                                    value: code.headers.map(\.name).joined(separator: ", "))
                 }
             } header: {
@@ -109,7 +109,7 @@ struct SetupCodeSheet: View {
         }
         if !code.modelURL.isEmpty {
             Section {
-                row("Address", code.modelURL, note: [code.modelKey.isEmpty ? nil : "key included"], used: plan.transport == .chatCompletions)
+                row(String(localized: "Address"), code.modelURL, note: [code.modelKey.isEmpty ? nil : String(localized: "key included")], used: plan.transport == .chatCompletions)
                 if !code.model.isEmpty { LabeledContent("Model", value: code.model) }
             } header: {
                 Text("OpenAI-compatible endpoint")
@@ -146,17 +146,17 @@ struct SetupCodeSheet: View {
         var lines: [String] = []
         switch plan.server {
         case .add:
-            lines.append("This is added as a new server and Redde switches to it, which starts a new conversation. Your other servers stay as they are.")
-            if let same = plan.sameAs { lines.append("You already have a server at this address (\(same)). This adds another.") }
+            lines.append(String(localized: "This is added as a new server and Redde switches to it, which starts a new conversation. Your other servers stay as they are."))
+            if let same = plan.sameAs { lines.append(String(localized: "You already have a server at this address (\(same)). This adds another.")) }
         case .fill:
-            lines.append("This sets up your server's connection.")
+            lines.append(String(localized: "This sets up your server's connection."))
         case .none:
             break
         }
         if let replaced = plan.replacesModelURL {
-            lines.append("The endpoint replaces the one you have now (\(URL(string: replaced)?.host() ?? replaced)), and that one's key is forgotten.")
+            lines.append(String(localized: "The endpoint replaces the one you have now (\(URL(string: replaced)?.host() ?? replaced)), and that one's key is forgotten."))
         }
-        lines.append("Only use a code from someone you trust: what you type and say is sent to these addresses.")
+        lines.append(String(localized: "Only use a code from someone you trust: what you type and say is sent to these addresses."))
         return Text(lines.joined(separator: "\n\n"))
     }
 
@@ -167,7 +167,7 @@ struct SetupCodeSheet: View {
         Section {
             switch stage {
             case .review:
-                Button(plan.server == .add ? "Add server" : "Set up") { Task { await save(code) } }
+                Button(plan.server == .add ? String(localized: "Add server") : String(localized: "Set up")) { Task { await save(code) } }
                     .fontWeight(.semibold)
             case .testing:
                 HStack {
@@ -189,9 +189,9 @@ struct SetupCodeSheet: View {
             }
         } footer: {
             if case .tested(let outcome) = stage, !outcome.isOK {
-                Text(code.hasSecrets
-                     ? "The code is saved. If the address is only reachable on your home network or VPN, connect to that and test again."
-                     : "The code is saved, but it came without a password or key. \(offersEditing ? "Add it under Edit connection." : "Tap Done and add it in the form.")")
+                code.hasSecrets
+                    ? Text("The code is saved. If the address is only reachable on your home network or VPN, connect to that and test again.")
+                    : Text("The code is saved, but it came without a password or key. \(offersEditing ? String(localized: "Add it under Edit connection.") : String(localized: "Tap Done and add it in the form."))")
             }
         }
     }

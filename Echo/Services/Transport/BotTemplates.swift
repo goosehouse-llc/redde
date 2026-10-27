@@ -24,14 +24,32 @@ nonisolated struct BotToolset: Equatable, Identifiable, Sendable {
     var title: String { Self.titles[name] ?? name.replacingOccurrences(of: "_", with: " ").capitalized }
 
     static let titles: [String: String] = [
-        "web": "Web search", "browser": "Browser", "terminal": "Terminal", "file": "Files",
-        "code_execution": "Run code", "vision": "Look at pictures", "image_gen": "Make pictures",
-        "tts": "Speak aloud", "stt": "Transcribe audio", "skills": "Skills", "todo": "To-do list",
-        "memory": "Memory", "context_engine": "Context engine", "session_search": "Search past chats",
-        "connections": "Connections", "clarify": "Ask you questions", "delegation": "Hand off tasks",
-        "cronjob": "Schedules", "computer_use": "Use the computer", "homeassistant": "Home Assistant",
-        "kanban": "Kanban", "video": "Watch video", "video_gen": "Make video", "x_search": "Search X",
-        "search": "Search", "spotify": "Spotify",
+        "web": String(localized: "Web search", comment: "A set of tools an agent can be given"),
+        "browser": String(localized: "Browser", comment: "A set of tools an agent can be given"),
+        "terminal": String(localized: "Terminal", comment: "A set of tools an agent can be given"),
+        "file": String(localized: "Files", comment: "A set of tools an agent can be given"),
+        "code_execution": String(localized: "Run code", comment: "A set of tools an agent can be given"),
+        "vision": String(localized: "Look at pictures", comment: "A set of tools an agent can be given"),
+        "image_gen": String(localized: "Make pictures", comment: "A set of tools an agent can be given"),
+        "tts": String(localized: "Speak aloud", comment: "A set of tools an agent can be given"),
+        "stt": String(localized: "Transcribe audio", comment: "A set of tools an agent can be given"),
+        "skills": String(localized: "Skills", comment: "A set of tools an agent can be given"),
+        "todo": String(localized: "To-do list", comment: "A set of tools an agent can be given"),
+        "memory": String(localized: "Memory", comment: "A set of tools an agent can be given"),
+        "context_engine": String(localized: "Context engine", comment: "A set of tools an agent can be given"),
+        "session_search": String(localized: "Search past chats", comment: "A set of tools an agent can be given"),
+        "connections": String(localized: "Connections", comment: "A set of tools an agent can be given"),
+        "clarify": String(localized: "Ask you questions", comment: "A set of tools an agent can be given"),
+        "delegation": String(localized: "Hand off tasks", comment: "A set of tools an agent can be given"),
+        "cronjob": String(localized: "Schedules", comment: "A set of tools an agent can be given"),
+        "computer_use": String(localized: "Use the computer", comment: "A set of tools an agent can be given"),
+        "homeassistant": "Home Assistant",
+        "kanban": "Kanban",
+        "video": String(localized: "Watch video", comment: "A set of tools an agent can be given"),
+        "video_gen": String(localized: "Make video", comment: "A set of tools an agent can be given"),
+        "x_search": String(localized: "Search X", comment: "A set of tools an agent can be given"),
+        "search": String(localized: "Search", comment: "A set of tools an agent can be given"),
+        "spotify": "Spotify",
     ]
 }
 
@@ -59,8 +77,8 @@ nonisolated struct BotTemplate: Equatable, Identifiable, Sendable {
 
     static let all: [BotTemplate] = [
         BotTemplate(
-            id: "researcher", title: "Researcher",
-            about: "Looks things up on the web and comes back with what it found, and where it found it.",
+            id: "researcher", title: String(localized: "Researcher", comment: "A kind of bot to start from (New Bot), and the name it gets"),
+            about: String(localized: "Looks things up on the web and comes back with what it found, and where it found it."),
             soul: """
             # Researcher
 
@@ -73,8 +91,8 @@ nonisolated struct BotTemplate: Equatable, Identifiable, Sendable {
             face: BotFace(shape: .round, eyes: .sparkle, mouth: .smile, mark: .antenna, glance: 2, tilt: -4, color: 8),
             toolsets: ["web", "browser", "memory", "session_search", "clarify", "todo"]),
         BotTemplate(
-            id: "writer", title: "Writer",
-            about: "Drafts, edits and tightens writing, in your voice.",
+            id: "writer", title: String(localized: "Writer", comment: "A kind of bot to start from (New Bot), and the name it gets"),
+            about: String(localized: "Drafts, edits and tightens writing, in your voice."),
             soul: """
             # Writer
 
@@ -87,8 +105,8 @@ nonisolated struct BotTemplate: Equatable, Identifiable, Sendable {
             face: BotFace(shape: .egg, eyes: .happy, mouth: .none, mark: .blush, glance: 1, tilt: 3, color: 5),
             toolsets: ["file", "memory", "clarify", "web", "todo"]),
         BotTemplate(
-            id: "coder", title: "Coder",
-            about: "Reads and changes code, runs it, and says what it did.",
+            id: "coder", title: String(localized: "Coder", comment: "A kind of bot to start from (New Bot), and the name it gets"),
+            about: String(localized: "Reads and changes code, runs it, and says what it did."),
             soul: """
             # Coder
 
@@ -101,8 +119,8 @@ nonisolated struct BotTemplate: Equatable, Identifiable, Sendable {
             face: BotFace(shape: .hex, eyes: .round, mouth: .grin, mark: .spark, glance: 3, tilt: -2, color: 6),
             toolsets: ["terminal", "file", "code_execution", "web", "memory", "clarify", "todo", "delegation", "skills"]),
         BotTemplate(
-            id: "home", title: "Home",
-            about: "Looks after the house: lights, heating, sensors and routines.",
+            id: "home", title: String(localized: "Home", comment: "A kind of bot to start from (New Bot), and the name it gets: one that looks after the house"),
+            about: String(localized: "Looks after the house: lights, heating, sensors and routines."),
             soul: """
             # Home
 
@@ -115,8 +133,8 @@ nonisolated struct BotTemplate: Equatable, Identifiable, Sendable {
             face: BotFace(shape: .capsule, eyes: .sleepy, mouth: .smile, mark: .none, glance: 0, tilt: 2, color: 1),
             toolsets: ["homeassistant", "memory", "clarify", "cronjob", "todo"]),
         BotTemplate(
-            id: "planner", title: "Planner",
-            about: "Keeps your plans, lists and reminders, and nudges you on time.",
+            id: "planner", title: String(localized: "Planner", comment: "A kind of bot to start from (New Bot), and the name it gets"),
+            about: String(localized: "Keeps your plans, lists and reminders, and nudges you on time."),
             soul: """
             # Planner
 

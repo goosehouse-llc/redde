@@ -27,7 +27,7 @@ struct LiveVoiceList: View {
                 Section("Your voices") {
                     if listing { ProgressView() }
                     if let listProblem { Label(listProblem, systemImage: "exclamationmark.triangle").foregroundStyle(.orange) }
-                    if inherit == nil, !reading { row("The agent's own", voice: "", language: nil) }
+                    if inherit == nil, !reading { row(String(localized: "The agent's own"), voice: "", language: nil) }
                     ForEach(account) { voice in row(voice.name, voice: voice.id, language: nil, detail: voice.detail, sample: voice.sample) }
                 }
             } else {
@@ -42,9 +42,9 @@ struct LiveVoiceList: View {
                     Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
                 }
             } footer: {
-                Text(engine.voicesFromAccount
-                     ? "Your ElevenLabs account's voices, each with its own sample to hear."
-                     : "Hear it opens a call of a few seconds with your \(engine.company) key, in which the voice says one line: a fraction of a cent each time. \(engine.company) has no recordings of these voices to play instead.")
+                engine.voicesFromAccount
+                    ? Text("Your ElevenLabs account's voices, each with its own sample to hear.")
+                    : Text("Hear it opens a call of a few seconds with your \(engine.company) key, in which the voice says one line: a fraction of a cent each time. \(engine.company) has no recordings of these voices to play instead.")
             }
         }
         .navigationTitle("\(engine.name) Voice")
@@ -56,7 +56,7 @@ struct LiveVoiceList: View {
     private func listAccount() async {
         guard engine.voicesFromAccount, account.isEmpty else { return }
         guard let key = Keychain.read(engine.keyItem)?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty else {
-            listProblem = "Save your \(engine.company) key first."
+            listProblem = String(localized: "Save your \(engine.company) key first.")
             return
         }
         listing = true

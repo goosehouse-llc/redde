@@ -43,7 +43,7 @@ struct PluginsView: View {
                     }
                     ForEach(added) { plugin in link(plugin) }
                 } header: {
-                    Text(added.isEmpty ? "Installed" : "Installed · \(added.count)")
+                    added.isEmpty ? Text("Installed") : Text("Installed · \(added.count)")
                 } footer: {
                     Text("\(owner)'s own: each bot has its plugins, set in Edit Bot. A new bot starts with a copy of your agent's.")
                 }
@@ -54,7 +54,7 @@ struct PluginsView: View {
                                 .navigationTitle("Come with Hermes")
                                 .navigationBarTitleDisplayMode(.inline)
                         } label: {
-                            LabeledContent("Come with Hermes", value: "\(bundled.filter(\.enabled).count) of \(bundled.count) on")
+                            LabeledContent("Come with Hermes", value: String(localized: "\(bundled.filter(\.enabled).count) of \(bundled.count) on"))
                         }
                     }
                 }
@@ -90,7 +90,7 @@ struct PluginsView: View {
                 .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
             problem = nil
         } catch {
-            problem = "Couldn't read the plugins: \(error.localizedDescription)"
+            problem = String(localized: "Couldn't read the plugins: \(error.localizedDescription)")
         }
         release = await version
     }
@@ -106,7 +106,7 @@ private struct InstalledPluginRow: View {
                 if let tier = plugin.catalogTier { TierBadge(tier: tier) }
                 if plugin.updateAvailable { Text("Update").font(.caption2.bold()).foregroundStyle(.tint) }
             }
-            Text([plugin.enabled ? "On" : "Off", plugin.version.nilIfEmpty.map { "v\($0)" }, plugin.bundled ? "Comes with Hermes" : nil]
+            Text([plugin.enabled ? String(localized: "On", comment: "A plugin is switched on") : String(localized: "Off", comment: "A plugin is switched off"), plugin.version.nilIfEmpty.map { "v\($0)" }, plugin.bundled ? String(localized: "Comes with Hermes") : nil]
                 .compactMap { $0 }.joined(separator: " · "))
                 .font(.caption).foregroundStyle(.secondary)
         }
@@ -180,7 +180,7 @@ private struct PluginCatalogView: View {
                         }
                     }
                 } header: {
-                    Text("\(found.count) plugin\(found.count == 1 ? "" : "s")")
+                    Text("\(found.count) plugins")
                 } footer: {
                     Text("From Nous Research's site, fetched by this phone and kept a few hours.")
                 }
@@ -258,7 +258,7 @@ private struct CatalogPluginView: View {
                         Text(plugin.title).font(.title3.bold())
                         TierBadge(tier: plugin.tier)
                     }
-                    Text([plugin.maintainer.nilIfEmpty.map { "By \($0)" }, plugin.version.map { "v\($0)" }, plugin.category.capitalized]
+                    Text([plugin.maintainer.nilIfEmpty.map { String(localized: "By \($0)", comment: "Who made a plugin") }, plugin.version.map { "v\($0)" }, plugin.category.capitalized]
                         .compactMap { $0 }.joined(separator: " · "))
                         .font(.footnote).foregroundStyle(.secondary)
                 }
@@ -277,7 +277,8 @@ private struct CatalogPluginView: View {
             }
             Section {
                 if let requires = plugin.requiresHermes {
-                    LabeledContent("Hermes", value: requires.replacingOccurrences(of: ">=", with: "") + (requires.hasPrefix(">=") ? " or later" : ""))
+                    let version = requires.replacingOccurrences(of: ">=", with: "")
+                    LabeledContent("Hermes", value: requires.hasPrefix(">=") ? String(localized: "\(version) or later") : version)
                 }
                 if !plugin.platforms.isEmpty {
                     LabeledContent("Runs on", value: plugin.platforms.map { $0 == "macos" ? "macOS" : $0.capitalized }.joined(separator: ", "))
@@ -315,12 +316,12 @@ private struct CatalogPluginView: View {
         .confirmationDialog("Install \(plugin.title) for \(owner)?", isPresented: $asking, titleVisibility: .visible) {
             Button("Install") { install() }
         } message: {
-            Text(plugin.tier == .community
-                 ? "A community plugin, unchecked by Nous Research. It runs on your server inside Hermes, with everything Hermes can reach."
-                 : "It runs on your server inside Hermes, with everything Hermes can reach.")
+            plugin.tier == .community
+                ? Text("A community plugin, unchecked by Nous Research. It runs on your server inside Hermes, with everything Hermes can reach.")
+                : Text("It runs on your server inside Hermes, with everything Hermes can reach.")
         }
         .sheet(item: Binding(get: { outcome.map(OutcomeSheet.Item.init) }, set: { if $0 == nil { outcome = nil } })) { item in
-            OutcomeSheet(outcome: item.outcome, profile: profile, verb: "Installed")
+            OutcomeSheet(outcome: item.outcome, profile: profile, verb: String(localized: "Installed", comment: "Title: a plugin was installed"))
         }
     }
 
@@ -365,7 +366,7 @@ private struct InstalledPluginView: View {
                 if !plugin.description.isEmpty { Text(plugin.description).font(.callout) }
                 LabeledContent("Version", value: plugin.version.nilIfEmpty ?? "—")
                 if let tier = plugin.catalogTier { LabeledContent("Catalog") { TierBadge(tier: tier) } }
-                if plugin.bundled { LabeledContent("Comes with Hermes", value: "Yes") }
+                if plugin.bundled { LabeledContent("Comes with Hermes", value: String(localized: "Yes")) }
             } footer: {
                 if let problem { Text(problem).foregroundStyle(.red) }
             }
@@ -412,7 +413,7 @@ private struct InstalledPluginView: View {
             Text((wantsMore ?? []).joined(separator: "\n"))
         }
         .sheet(item: Binding(get: { outcome.map(OutcomeSheet.Item.init) }, set: { if $0 == nil { outcome = nil } })) { item in
-            OutcomeSheet(outcome: item.outcome, profile: profile, verb: "Done")
+            OutcomeSheet(outcome: item.outcome, profile: profile, verb: String(localized: "task.done", defaultValue: "Done", comment: "A task, finished (not the Done button): a ticked checklist item, the agent's finished task, the Kanban column, the title after a plugin change"))
         }
     }
 
@@ -511,11 +512,11 @@ private struct PluginKeyField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                SecureField(isSet ? "\(label): set, type to replace" : label, text: $value)
+                SecureField(isSet ? String(localized: "\(label): set, type to replace") : label, text: $value)
                     .textContentType(.password)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
-                Button(saving ? "Saving…" : "Save") { save() }
+                Button(saving ? String(localized: "Saving…") : String(localized: "Save")) { save() }
                     .disabled(value.isEmpty || saving)
             }
             Text(name).font(.caption2.monospaced()).foregroundStyle(.secondary)

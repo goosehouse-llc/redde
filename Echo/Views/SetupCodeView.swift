@@ -54,9 +54,9 @@ struct SetupCodeView: View {
                         Toggle("Include passwords and keys", isOn: Binding(get: { withSecrets }, set: { setSecrets($0) }))
                         Button("Copy link", systemImage: "doc.on.doc") { copy() }
                     } footer: {
-                        Text(withSecrets
-                             ? "This code now holds \(holds). Anyone who scans or receives it can use your server: show it only to your own devices."
-                             : "The code holds \(holds). Passwords and keys are left out and typed in on the other device.")
+                        withSecrets
+                            ? Text("This code now holds \(holds). Anyone who scans or receives it can use your server: show it only to your own devices.")
+                            : Text("The code holds \(holds). Passwords and keys are left out and typed in on the other device.")
                     }
                 }
             }
@@ -73,12 +73,12 @@ struct SetupCodeView: View {
     /// What is in the code, in words.
     private var holds: String {
         var parts: [String] = []
-        if !code.dashboardURL.isEmpty { parts.append(withSecrets ? "the Dashboard address and login" : "the Dashboard address and user name") }
-        if !code.apiURL.isEmpty { parts.append(withSecrets ? "the Hermes API address and key" : "the Hermes API address") }
-        if !code.accessID.isEmpty { parts.append(withSecrets ? "the Cloudflare Access token" : "the Cloudflare Access client ID") }
-        if withSecrets, !(code.pangolin.isEmpty && code.pangolinAPI.isEmpty) { parts.append("the Pangolin access token") }
-        if !code.headers.isEmpty { parts.append(code.headers.count == 1 ? "its custom header" : "its \(code.headers.count) custom headers") }
-        if !code.modelURL.isEmpty { parts.append(withSecrets && !code.modelKey.isEmpty ? "the model endpoint and its key" : "the model endpoint") }
+        if !code.dashboardURL.isEmpty { parts.append(withSecrets ? String(localized: "the Dashboard address and login") : String(localized: "the Dashboard address and user name")) }
+        if !code.apiURL.isEmpty { parts.append(withSecrets ? String(localized: "the Hermes API address and key") : String(localized: "the Hermes API address")) }
+        if !code.accessID.isEmpty { parts.append(withSecrets ? String(localized: "the Cloudflare Access token") : String(localized: "the Cloudflare Access client ID")) }
+        if withSecrets, !(code.pangolin.isEmpty && code.pangolinAPI.isEmpty) { parts.append(String(localized: "the Pangolin access token")) }
+        if !code.headers.isEmpty { parts.append(String(localized: "its \(code.headers.count) custom headers")) }
+        if !code.modelURL.isEmpty { parts.append(withSecrets && !code.modelKey.isEmpty ? String(localized: "the model endpoint and its key") : String(localized: "the model endpoint")) }
         return ListFormatter.localizedString(byJoining: parts)
     }
 
@@ -104,14 +104,14 @@ struct SetupCodeView: View {
         // A link with passwords in it doesn't stay on the clipboard.
         let expiry = Date.now.addingTimeInterval(withSecrets ? 120 : 3_600)
         UIPasteboard.general.setItems([[UTType.utf8PlainText.identifier: code.webURL.absoluteString]], options: [.expirationDate: expiry])
-        toast = withSecrets ? "Link copied for two minutes" : "Link copied"
+        toast = withSecrets ? String(localized: "Link copied for two minutes") : String(localized: "Link copied")
     }
 
     /// Face ID, Touch ID or the passcode. A device with none set has nothing to ask.
     private static func confirmOwner() async -> Bool {
         let context = LAContext()
         guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: nil) else { return true }
-        return (try? await context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: "Put your passwords in the setup code")) ?? false
+        return (try? await context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: String(localized: "Put your passwords in the setup code"))) ?? false
     }
 }
 

@@ -18,7 +18,11 @@ struct ConnectionProblemCard: View {
         if m.contains("multiplex_profiles") { return .profileNotServed }
         // The Dashboard's answer for a profile that was deleted or never existed on this server.
         if m.contains("profile '"), m.contains("does not exist") { return .profileMissing }
-        if m.contains("rejected the key") { return settings.profileName == nil ? .key : .profileKey }
+        // Redde's own messages, also as this phone's language words them (`TransportError`).
+        func says(_ text: String) -> Bool { m.contains(text.lowercased()) }
+        if m.contains("rejected the key") || says(TransportError.keyRejectedText) { return settings.profileName == nil ? .key : .profileKey }
+        if says(TransportError.missingLoginText) { return .login }
+        if says(TransportError.missingKeyText) || says(TransportError.addKeyText) { return .key }
         if m.contains("username") || m.contains("password") || m.contains("login") || m.contains("sign-in") || m.contains("401") { return .login }
         if m.contains("api key") || m.contains("apikey") { return .key }
         if m.contains("could not connect") || m.contains("offline") || m.contains("timed out")
@@ -37,25 +41,25 @@ struct ConnectionProblemCard: View {
 
     private var title: String {
         switch kind {
-        case .login: "Sign in to the Hermes Dashboard"
-        case .key: "Add your gateway key"
-        case .profileKey: "Add the key for \(settings.profileName ?? "this profile")"
-        case .profileNotServed: "This profile isn't available"
-        case .profileMissing: settings.profileName.map { "No “\($0)” profile on this server" } ?? "No such profile on this server"
-        case .unreachable: "Can't reach your gateway"
-        case .other: "Couldn't load conversations"
+        case .login: String(localized: "Sign in to the Hermes Dashboard")
+        case .key: String(localized: "Add your gateway key")
+        case .profileKey: settings.profileName.map { String(localized: "Add the key for \($0)") } ?? String(localized: "Add the key for this profile")
+        case .profileNotServed: String(localized: "This profile isn't available")
+        case .profileMissing: settings.profileName.map { String(localized: "No “\($0)” profile on this server") } ?? String(localized: "No such profile on this server")
+        case .unreachable: String(localized: "Can't reach your gateway")
+        case .other: String(localized: "Couldn't load conversations")
         }
     }
 
     private var explanation: String {
         switch kind {
-        case .login: "Your conversations live on the desktop gateway, and it needs you to sign in before it will share them."
-        case .key: "Redde needs the gateway's API key before it can read your conversations."
-        case .profileKey: "Each Hermes profile has its own API key (API_SERVER_KEY in the profile's .env). Enter it under Settings → Profile."
-        case .profileMissing: "This server has no profile by that name; it may have been renamed or deleted. Pick another under Settings → Profile."
-        case .profileNotServed: "The gateway doesn't serve this profile over the Hermes API. Turn on gateway.multiplex_profiles in its config, or switch back to Default under Settings → Profile."
-        case .unreachable: "Check that the gateway is running and that this phone is on your network or tailnet."
-        case .other: "The gateway answered, but not in a way Redde understood."
+        case .login: String(localized: "Your conversations live on the desktop gateway, and it needs you to sign in before it will share them.")
+        case .key: String(localized: "Redde needs the gateway's API key before it can read your conversations.")
+        case .profileKey: String(localized: "Each Hermes profile has its own API key (API_SERVER_KEY in the profile's .env). Enter it under Settings → Profile.")
+        case .profileMissing: String(localized: "This server has no profile by that name; it may have been renamed or deleted. Pick another under Settings → Profile.")
+        case .profileNotServed: String(localized: "The gateway doesn't serve this profile over the Hermes API. Turn on gateway.multiplex_profiles in its config, or switch back to Default under Settings → Profile.")
+        case .unreachable: String(localized: "Check that the gateway is running and that this phone is on your network or tailnet.")
+        case .other: String(localized: "The gateway answered, but not in a way Redde understood.")
         }
     }
 
@@ -82,7 +86,8 @@ struct ConnectionProblemCard: View {
             .accessibilityElement(children: .combine)
             if needsSettings {
                 Button(action: openSettings) {
-                    Text(kind == .login ? "Add login" : kind == .profileNotServed || kind == .profileMissing ? "Change profile" : "Add key")
+                    Text(kind == .login ? String(localized: "Add login")
+                         : kind == .profileNotServed || kind == .profileMissing ? String(localized: "Change profile") : String(localized: "Add key"))
                         .foregroundStyle(theme.userText)   // readable on every theme's accent
                         .frame(maxWidth: .infinity)
                 }

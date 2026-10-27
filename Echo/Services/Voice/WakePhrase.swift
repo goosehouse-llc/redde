@@ -115,10 +115,9 @@ nonisolated enum WakeMatch {
 }
 
 extension Settings {
-    /// The phrase `name` is woken with unless another is set.
-    static func defaultWakePhrase(for name: String) -> String {
-        String(localized: "Hey \(name)", comment: "The wake phrase an agent has unless one is set (Settings → Voice → Wake Phrase)")
-    }
+    /// The phrase `name` is woken with unless another is set. English in every language, as the
+    /// other words Redde listens for are (docs/translations.md).
+    static func defaultWakePhrase(for name: String) -> String { "Hey \(name)" }
 
     /// The agents of the server in use, as Wake Phrase lists them: the main agent (key "default")
     /// first, then each bot not hidden, as the bot list has them. Bots only where the phone has

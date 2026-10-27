@@ -8,15 +8,16 @@ struct ElevenLabsVoiceRows: View {
     @State private var hasKey = ElevenLabsSpeech.key != nil
 
     var body: some View {
-        SecretField(item: LiveEngine.elevenLabs.keyItem, prompt: "ElevenLabs API key", replacePrompt: "Replace stored ElevenLabs key",
-                    saveTitle: "Save key", removeTitle: "Remove key", optional: true, hasValue: $hasKey)
+        SecretField(item: LiveEngine.elevenLabs.keyItem, prompt: String(localized: "ElevenLabs API key"),
+                    replacePrompt: String(localized: "Replace stored ElevenLabs key"),
+                    saveTitle: String(localized: "Save key"), removeTitle: String(localized: "Remove key"), optional: true, hasValue: $hasKey)
         NavigationLink {
             LiveVoiceList(engine: .elevenLabs, selection: Binding(
                 get: { settings.elevenLabsVoice.nilIfEmpty },
                 set: { settings.elevenLabsVoice = $0 ?? "" }),
                           name: settings.headerTitle, reading: true)
         } label: {
-            LabeledContent("Voice", value: settings.elevenLabsVoice.nilIfEmpty.flatMap(ElevenLabsVoice.name) ?? "Your account's first")
+            LabeledContent("Voice", value: settings.elevenLabsVoice.nilIfEmpty.flatMap(ElevenLabsVoice.name) ?? String(localized: "Your account's first", comment: "The ElevenLabs voice used when none is picked: the account's first voice"))
         }
         .disabled(!hasKey)
     }

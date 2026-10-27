@@ -28,7 +28,7 @@ final class WatchRelayHost {
         /// A new session is named after where it came from.
         var nameSession: (_ stored: String, _ title: String) async -> Void
         /// A bot's own chat, by its profile (found on the server, or made the first time).
-        var botChat: (_ profile: String) async throws -> String = { _ in throw WatchRelay.Failure.phone("Your iPhone can't reach bots.") }
+        var botChat: (_ profile: String) async throws -> String = { _ in throw WatchRelay.Failure.phone(String(localized: "Your iPhone can't reach bots.")) }
 
         static var dashboard: Backend {
             Backend(transport: { HermesServeTransport() },
@@ -39,7 +39,7 @@ final class WatchRelayHost {
                     nameSession: { try? await HermesServeClient.shared.updateSession(stored: $0, title: $1) },
                     botChat: { profile in
                         guard let bot = try await HermesServeClient.shared.bots().bots.first(where: { $0.name == profile }) else {
-                            throw WatchRelay.Failure.phone("That bot isn't on your server any more.")
+                            throw WatchRelay.Failure.phone(String(localized: "That bot isn't on your server any more."))
                         }
                         return try await HermesServeClient.shared.botChat(for: bot).stored
                     })
@@ -124,7 +124,7 @@ final class WatchRelayHost {
 
     /// The phone's app was restarted since, or another question took this one's place.
     private static func lost(_ id: String) -> WatchRelay.Snapshot {
-        .init(id: id, state: .failed, note: "Your iPhone lost track of that question. Ask again.")
+        .init(id: id, state: .failed, note: String(localized: "Your iPhone lost track of that question. Ask again."))
     }
 
     // MARK: - The turn
@@ -241,19 +241,19 @@ final class WatchRelayHost {
                 turn.snapshot.approval = .init(id: request.id, command: String(request.command.prefix(300)),
                                                approve: choices.approve, deny: choices.deny)
             } else {
-                wait(turn, "An approval is waiting. Open the Apple Watch conversation in Redde on your iPhone.")
+                wait(turn, String(localized: "An approval is waiting. Open the Apple Watch conversation in Redde on your iPhone."))
             }
         case let .clarify(request):
             if !request.isBatch, request.questions.count == 1, let question = request.questions.first, !question.multiSelect {
                 turn.snapshot.state = .question
                 turn.snapshot.question = .init(id: request.id, text: question.question, choices: Array(question.choices.prefix(4)))
             } else {
-                wait(turn, "The agent has questions. Open the Apple Watch conversation in Redde on your iPhone.")
+                wait(turn, String(localized: "The agent has questions. Open the Apple Watch conversation in Redde on your iPhone."))
             }
         case .sudo:
-            wait(turn, "The agent is asking for the sudo password. Open the Apple Watch conversation in Redde on your iPhone.")
+            wait(turn, String(localized: "The agent is asking for the sudo password. Open the Apple Watch conversation in Redde on your iPhone."))
         case let .secret(request):
-            wait(turn, "The agent is asking for \(request.envVar). Open the Apple Watch conversation in Redde on your iPhone.")
+            wait(turn, String(localized: "The agent is asking for \(request.envVar). Open the Apple Watch conversation in Redde on your iPhone."))
         }
     }
 
@@ -289,7 +289,7 @@ final class WatchRelayHost {
     /// them before), which is the usual state of a phone whose watch is being talked to.
     private static func explain(_ error: Error) -> String {
         if !UIApplication.shared.isProtectedDataAvailable {
-            return "Your iPhone couldn't sign in to the Dashboard while locked. Unlock it once and ask again."
+            return String(localized: "Your iPhone couldn't sign in to the Dashboard while locked. Unlock it once and ask again.")
         }
         return error.localizedDescription
     }

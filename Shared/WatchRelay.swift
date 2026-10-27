@@ -97,7 +97,7 @@ nonisolated enum WatchRelay {
         var errorDescription: String? {
             switch self {
             case .phoneOutOfReach:
-                "Couldn't reach your iPhone, which asks for the watch while Redde is on the Dashboard. Add the Hermes API there (Settings › Connection details) and the watch asks on its own."
+                String(localized: "Couldn't reach your iPhone, which asks for the watch while Redde is on the Dashboard. Add the Hermes API there (Settings › Connection details) and the watch asks on its own.")
             case let .phone(reason): reason
             }
         }
@@ -149,7 +149,7 @@ final class WatchRelayClient {
             onUpdate(snapshot)
             switch snapshot.state {
             case .done: return snapshot
-            case .failed: throw WatchRelay.Failure.phone(snapshot.note ?? "Your iPhone couldn't get an answer.")
+            case .failed: throw WatchRelay.Failure.phone(snapshot.note ?? String(localized: "Your iPhone couldn't get an answer."))
             default: break
             }
             try await Task.sleep(for: pollEvery)

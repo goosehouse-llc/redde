@@ -127,12 +127,12 @@ enum SettingsPage: String, CaseIterable, Identifiable, Hashable {
 
     var title: String {
         switch self {
-        case .appearance: "Appearance"
-        case .writing: "Writing"
-        case .voice: "Voice"
-        case .notifications: "Notifications"
-        case .siri: "Siri"
-        case .agent: "Agent"
+        case .appearance: String(localized: "Appearance")
+        case .writing: String(localized: "Writing")
+        case .voice: String(localized: "Voice")
+        case .notifications: String(localized: "Notifications")
+        case .siri: String(localized: "Siri")
+        case .agent: String(localized: "Agent", comment: "Settings page: the agent's skills, tools and files")
         }
     }
 

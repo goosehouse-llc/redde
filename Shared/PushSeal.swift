@@ -343,7 +343,7 @@ nonisolated extension PushNote {
             content.categoryIdentifier = Self.repliedCategory
             content.threadIdentifier = "redde.turn"
         case .approval:
-            content.title = "Redde needs your approval"
+            content.title = String(localized: "Redde needs your approval")
             if let t, !t.isEmpty { content.subtitle = t }
             content.body = [d, b].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n")
             content.threadIdentifier = "redde.turn"
@@ -351,71 +351,77 @@ nonisolated extension PushNote {
         case .question, .sudo, .secret, .failed:
             // The titles the app gives its own banners for the same things (`Conversation`).
             content.title = switch kind {
-            case .question: "Redde has a question"
-            case .sudo: "Redde needs a sudo password"
-            case .secret: "Redde needs a secret"
-            default: "Redde couldn't reply"
+            case .question: String(localized: "Redde has a question")
+            case .sudo: String(localized: "Redde needs a sudo password")
+            case .secret: String(localized: "Redde needs a secret")
+            default: String(localized: "Redde couldn't reply")
             }
             if let t, !t.isEmpty { content.subtitle = t }
             content.body = [b, d].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n")
-            if content.body.isEmpty, kind == .sudo { content.body = "Open Redde to enter it." }
+            if content.body.isEmpty, kind == .sudo { content.body = String(localized: "Open Redde to enter it.") }
             content.threadIdentifier = "redde.turn"
             if kind == .question, let h, !h.isEmpty, let s, !s.isEmpty { content.categoryIdentifier = Self.questionCategory }
         case .task:
-            content.title = "A task finished"
+            content.title = String(localized: "A task finished")
             if let t, !t.isEmpty { content.subtitle = t }
             content.body = [String(PlainText.display(b ?? "").prefix(300)), d ?? ""].filter { !$0.isEmpty }.joined(separator: "\n")
             content.categoryIdentifier = Self.repliedCategory
             content.threadIdentifier = "redde.turn"
         case .paired:
-            content.title = host.map { "Paired with \($0)" } ?? "Paired"
-            content.body = "Redde will tell you here when this Hermes finishes a reply, waits for you, or couldn't reply."
+            content.title = host.map { String(localized: "Paired with \($0)", comment: "Notification: this iPhone was paired with a Hermes server, by its name") }
+                ?? String(localized: "Paired", comment: "Notification: this iPhone was paired with a Hermes server")
+            content.body = String(localized: "Redde will tell you here when this Hermes finishes a reply, waits for you, or couldn't reply.")
         case .test:
             content.title = host.map { "Redde · \($0)" } ?? "Redde"
-            content.body = b ?? "Notifications from your Hermes reach this iPhone."
+            content.body = b ?? String(localized: "Notifications from your Hermes reach this iPhone.")
         case .widget:
             // Not something to be told: it is on the widget. iOS shows every notification that
             // reaches the extension, so this one says what was written and makes no sound.
             let wrote = [t, b].compactMap { $0 }.filter { !$0.isEmpty }
-            content.title = "Your agent updated its widget"
-            content.body = wrote.isEmpty ? "It cleared what was there." : wrote.joined(separator: "\n")
+            content.title = String(localized: "Your agent updated its widget")
+            content.body = wrote.isEmpty ? String(localized: "It cleared what was there.") : wrote.joined(separator: "\n")
             content.threadIdentifier = "redde.widget"
             content.sound = nil
             content.interruptionLevel = .passive
         case .group:
             // As a group chat's message in Messages: the chat, then who, then what.
-            content.title = t.flatMap { $0.isEmpty ? nil : $0 } ?? "Group chat"
+            content.title = t.flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "Group chat")
             if let d, !d.isEmpty { content.subtitle = d }
             content.body = String(PlainText.display(b ?? "").prefix(300))
             content.threadIdentifier = "redde.group.\(g ?? "")"
             if let g, !g.isEmpty { content.categoryIdentifier = Self.groupRepliedCategory }
         case .routine:
-            let name = t.flatMap { $0.isEmpty ? nil : $0 } ?? "A schedule"
-            content.title = w == "failed" ? "\(name) didn't finish" : name
+            let name = t.flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "A schedule", comment: "Notification: a bot's scheduled job, when it has no name")
+            content.title = w == "failed" ? String(localized: "\(name) didn't finish", comment: "Notification: a bot's scheduled job, by its name, failed") : name
             if let d, !d.isEmpty { content.subtitle = d }
             content.body = String(PlainText.display(b ?? "").prefix(300))
             content.threadIdentifier = "redde.routine.\(p ?? "")"
         case .call:
             // Not answered: as the Phone app shows a missed call, with what the agent called about.
-            content.title = "Missed call from \(d.flatMap { $0.isEmpty ? nil : $0 } ?? "your agent")"
+            if let caller = d.flatMap({ $0.isEmpty ? nil : $0 }) {
+                content.title = String(localized: "Missed call from \(caller)", comment: "Notification: an agent, by its name, called and wasn't answered")
+            } else {
+                content.title = String(localized: "Missed call from your agent")
+            }
             content.body = String(PlainText.display(b ?? "").prefix(300))
             content.threadIdentifier = "redde.call"
             content.interruptionLevel = .timeSensitive
         case .groupWait:
-            let who = d.flatMap { $0.isEmpty ? nil : $0 } ?? "A bot"
+            let who = d.flatMap { $0.isEmpty ? nil : $0 }
             if let t, !t.isEmpty { content.subtitle = t }
             content.threadIdentifier = "redde.group.\(g ?? "")"
             if w == "retry" {
-                content.title = "A reply didn't finish"
-                content.body = "Hermes isn't sure how far it got. Retry runs it again."
+                content.title = String(localized: "A reply didn't finish")
+                content.body = String(localized: "Hermes isn't sure how far it got. Retry runs it again.")
                 if let g, !g.isEmpty, let x, !x.isEmpty { content.categoryIdentifier = Self.groupRetryCategory }
             } else {
-                content.title = "\(who) needs your approval"
+                content.title = who.map { String(localized: "\($0) needs your approval", comment: "Notification: a bot, by its name, waits for a command to be approved") }
+                    ?? String(localized: "A bot needs your approval")
                 content.body = [r, b].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n")
                 if let g, !g.isEmpty, let h, !h.isEmpty { content.categoryIdentifier = Self.groupApprovalCategory }
             }
         }
-        if content.body.isEmpty { content.body = "Open Redde to see it." }
+        if content.body.isEmpty { content.body = String(localized: "Open Redde to see it.") }
         var info: [AnyHashable: Any] = [Self.kindKey: k]
         if let s, !s.isEmpty { info[Self.sessionKey] = s }
         if kind == .approval || kind == .groupWait, let h, !h.isEmpty { info[Self.approvalKey] = h }
@@ -451,8 +457,9 @@ nonisolated extension PushNote {
     /// The Reply field on a question's notification, the same with choices beside it or without:
     /// behind an unlock, like every answer given from a notification a paired Hermes sent.
     static var replyField: UNTextInputNotificationAction {
-        UNTextInputNotificationAction(identifier: replyAction, title: "Reply", options: [.authenticationRequired],
-                                      textInputButtonTitle: "Send", textInputPlaceholder: "Your answer")
+        UNTextInputNotificationAction(identifier: replyAction, title: String(localized: "Reply", comment: "Notification action: answer the agent's question"),
+                                      options: [.authenticationRequired],
+                                      textInputButtonTitle: String(localized: "Send"), textInputPlaceholder: String(localized: "Your answer"))
     }
 
     /// What stands for a command in a note: sixteen hex digits of its SHA-256. The plugin's

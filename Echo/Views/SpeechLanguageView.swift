@@ -16,7 +16,7 @@ struct SpeechLanguageView: View {
     var body: some View {
         List {
             Section {
-                row(id: "", title: "iPhone's language", detail: Self.name(Locale.current.identifier(.bcp47)))
+                row(id: "", title: String(localized: "iPhone's language"), detail: Self.name(Locale.current.identifier(.bcp47)))
             } footer: {
                 statusText
             }
@@ -24,7 +24,7 @@ struct SpeechLanguageView: View {
                 Section("Languages") {
                     ForEach(locales, id: \.self) { locale in
                         let id = locale.identifier(.bcp47)
-                        row(id: id, title: Self.name(id), detail: installed.contains(id) ? "Downloaded" : nil)
+                        row(id: id, title: Self.name(id), detail: installed.contains(id) ? String(localized: "Downloaded", comment: "A speech model is on the iPhone") : nil)
                     }
                 }
             } else if locales != nil {

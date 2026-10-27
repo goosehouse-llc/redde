@@ -14,7 +14,11 @@ struct BoardEntry: TimelineEntry {
     let board: AgentBoard?
     var hidesWords = false
 
-    static let sample = BoardEntry(date: .now, board: AgentBoard(title: "Today", text: "9:30 standup\n12:15 lunch with Dana\nLeave by 4:40 for the vet", from: .now))
+    /// What the widget gallery shows.
+    static let sample = BoardEntry(date: .now, board: AgentBoard(
+        title: String(localized: "Today", comment: "Widget gallery: a sample title the agent wrote on its widget"),
+        text: String(localized: "9:30 standup\n12:15 lunch with Dana\nLeave by 4:40 for the vet", comment: "Widget gallery: sample lines the agent wrote on its widget"),
+        from: .now))
 
     /// What shows now, and at each moment something starts or runs out.
     static func timeline(_ boards: [AgentBoard], from now: Date, hidesWords: Bool) -> [BoardEntry] {
@@ -40,14 +44,14 @@ struct BoardCard: View {
     var hidesWords = false
     let family: WidgetFamily
 
-    private var title: String { hidesWords ? "From your agent" : board?.title ?? "" }
-    private var text: String { hidesWords ? "Unlock Redde to read it." : board?.text ?? "" }
+    private var title: String { hidesWords ? String(localized: "From your agent") : board?.title ?? "" }
+    private var text: String { hidesWords ? String(localized: "Unlock Redde to read it.") : board?.text ?? "" }
 
     var body: some View {
         if let board, !board.isEmpty {
             switch family {
             case .accessoryInline:
-                Label(hidesWords ? "From your agent" : board.title.isEmpty ? board.text : board.title, systemImage: "text.bubble")
+                Label(hidesWords ? String(localized: "From your agent") : board.title.isEmpty ? board.text : board.title, systemImage: "text.bubble")
                     .privacySensitive()
             case .accessoryRectangular:
                 VStack(alignment: .leading, spacing: 1) {

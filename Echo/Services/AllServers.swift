@@ -76,7 +76,7 @@ enum AllServers {
     /// A row of a server that has since been taken off this phone.
     struct Gone: LocalizedError {
         var name: String
-        var errorDescription: String? { "\(name) isn't one of your servers any more." }
+        var errorDescription: String? { String(localized: "\(name) isn't one of your servers any more.") }
     }
 
     /// One server's chats, or nil when it can't be reached in time.

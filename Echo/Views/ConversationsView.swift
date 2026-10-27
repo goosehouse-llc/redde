@@ -131,7 +131,13 @@ struct ConversationsList: View {
     enum Tab: String, CaseIterable, Identifiable {
         case sessions, cron, kanban
         var id: String { rawValue }
-        var title: String { switch self { case .sessions: "Chats"; case .cron: "Cron"; case .kanban: "Kanban" } }
+        var title: String {
+            switch self {
+            case .sessions: String(localized: "Chats")
+            case .cron: String(localized: "Cron", comment: "The list's section of scheduled jobs (cron jobs)")
+            case .kanban: String(localized: "Kanban", comment: "The list's section with the kanban board")
+            }
+        }
         var icon: String { switch self { case .sessions: "bubble.left.and.bubble.right"; case .cron: "clock"; case .kanban: "rectangle.split.3x1" } }
     }
     /// Chats, Cron or Kanban: kept across launches, and shared with the iPad's detail pane.
@@ -148,8 +154,8 @@ struct ConversationsList: View {
     /// "Chats": what the sidebar lists, whichever section the wide pane shows. And nothing while
     /// selecting, when Cancel and Deselect all need the room.
     private var listTitle: String {
-        if #available(iOS 27.0, *), wideDetail { return selecting || arrangingBots ? "" : "Chats" }
-        return section == .sessions || wideDetail ? "Conversations" : section.title
+        if #available(iOS 27.0, *), wideDetail { return selecting || arrangingBots ? "" : String(localized: "Chats") }
+        return section == .sessions || wideDetail ? String(localized: "Conversations") : section.title
     }
 
     /// A conversation opened (or a new one started), or with `room` a group chat: it takes the
@@ -237,7 +243,7 @@ struct ConversationsList: View {
     /// The server the app is on, or All Servers: every saved server's chats in the list, the one
     /// the app is on still the one new chats start on (a Reddit request, 2026-10-21).
     private var serverMenu: some View {
-        let title = allServers ? "All Servers" : settings.activeServer?.title ?? ""
+        let title = allServers ? String(localized: "All Servers") : settings.activeServer?.title ?? ""
         return Menu {
             Button { allServers = true } label: {
                 Label("All Servers", systemImage: allServers ? "checkmark" : "square.stack.3d.up")
@@ -284,7 +290,7 @@ struct ConversationsList: View {
     /// a trip to Settings (a Reddit report, 2026-10-22: moving between profiles was clunky).
     private var profileMenu: some View {
         let current = settings.profileName ?? ProfileCatalog.defaultID
-        let title = allProfiles ? "All Profiles" : profileLabel(current)
+        let title = allProfiles ? String(localized: "All Profiles") : profileLabel(current)
         return Menu {
             Button { allProfiles = true } label: {
                 Label("All Profiles", systemImage: allProfiles ? "checkmark" : "rectangle.stack")
@@ -390,7 +396,7 @@ struct ConversationsList: View {
                     Button("Done") { withAnimation { arrangingBots = false } }
                         .fontWeight(.semibold)
                 } else if selecting {
-                    Button(selected.count == visibleIDs.count ? "Deselect all" : "Select all") {
+                    Button(selected.count == visibleIDs.count ? String(localized: "Deselect all") : String(localized: "Select all")) {
                         selected = selected.count == visibleIDs.count ? [] : visibleIDs
                     }
                 } else {
@@ -414,10 +420,10 @@ struct ConversationsList: View {
                 }
             }
         }
-        .confirmationDialog("Delete \(selected.count) conversation\(selected.count == 1 ? "" : "s")?", isPresented: $confirmBulkDelete, titleVisibility: .visible) {
+        .confirmationDialog(String(localized: "Delete \(selected.count) conversations?"), isPresented: $confirmBulkDelete, titleVisibility: .visible) {
             Button("Delete", role: .destructive) { bulkDelete() }
         } message: {
-            Text(usesLedger ? "They are removed from the Redde ledger for every client." : "This only removes them from this phone.")
+            usesLedger ? Text("They are removed from the Redde ledger for every client.") : Text("This only removes them from this phone.")
         }
         .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search conversations")
@@ -542,15 +548,16 @@ struct ConversationsList: View {
                         groupRow(room, faces: faces)
                     }
                     if hasRooms, groups.writable {
-                        sectionAction("New Group Chat", systemImage: "person.3", hint: "Starts a chat with several bots at once") { makingGroup = true }
+                        sectionAction(String(localized: "New Group Chat"), systemImage: "person.3",
+                                      hint: String(localized: "Starts a chat with several bots at once")) { makingGroup = true }
                     }
                     if !apiBotsOnly, others, botDirectory.roster?.messagingIsOn == false {
-                        sectionAction("Let bots message each other", systemImage: "bubble.left.and.text.bubble.right",
-                                      hint: "Sets your main profile up as a bot on the server, as Hermes Desktop does") { askingBotMessaging = true }
+                        sectionAction(String(localized: "Let bots message each other"), systemImage: "bubble.left.and.text.bubble.right",
+                                      hint: String(localized: "Sets your main profile up as a bot on the server, as Hermes Desktop does")) { askingBotMessaging = true }
                     }
                 }
             } header: {
-                if arrangingBots { Text("Bots") } else { foldingHeader("Bots", count: bots.count, isOpen: $showBotRows) }
+                if arrangingBots { Text("Bots") } else { foldingHeader(String(localized: "Bots"), count: bots.count, isOpen: $showBotRows) }
             } footer: {
                 if arrangingBots {
                     Text("Drag bots and group chats by their handles into the order you want.")
@@ -623,28 +630,34 @@ struct ConversationsList: View {
                     botTile(bot, face: faces[bot.name] ?? BotFace(seed: bot.name))
                 }
                 if folds, !botsExpanded {
-                    gridAction("\(bots.count - shown.count) more", systemImage: "chevron.down", hint: "Shows all your bots") {
+                    gridAction(String(localized: "\(bots.count - shown.count) more", comment: "A tile after the bots shown: how many more there are"),
+                               systemImage: "chevron.down", hint: String(localized: "Shows all your bots")) {
                         withAnimation { botsExpanded = true }
                     }
                 } else if !botActionsShown {
                     // Folded away, one tile for them all, so they aren't always on screen.
-                    gridAction("More", systemImage: "ellipsis", hint: "Shows New Bot, Topology and the hidden bots") {
+                    gridAction(String(localized: "More"), systemImage: "ellipsis",
+                               hint: String(localized: "Shows New Bot, Topology and the hidden bots")) {
                         withAnimation { botActionsShown = true }
                     }
                 } else {
                     if apiBotsOnly {
                         // No Dashboard to make or list them: a profile on the server, by its own key.
-                        gridAction("Add Bot", systemImage: "plus", hint: "Adds one of your server's profiles as a bot, with its own API key") { addingAPIBot = true }
+                        gridAction(String(localized: "Add Bot"), systemImage: "plus",
+                                   hint: String(localized: "Adds one of your server's profiles as a bot, with its own API key")) { addingAPIBot = true }
                     } else {
-                        gridAction("New Bot", systemImage: "plus", hint: "Makes a bot on your server, with a chat of its own") { editingBot = .new }
+                        gridAction(String(localized: "New Bot"), systemImage: "plus",
+                                   hint: String(localized: "Makes a bot on your server, with a chat of its own")) { editingBot = .new }
                     }
                     // Beside New Bot, the same size (his ask 2026-10-22).
-                    gridAction("Topology", systemImage: "point.3.connected.trianglepath.dotted",
-                               hint: "Shows your bots, your group chats and the models they run on") { showingTopology = true }
+                    gridAction(String(localized: "Topology", comment: "A tile that opens the map of the bots"), systemImage: "point.3.connected.trianglepath.dotted",
+                               hint: String(localized: "Shows your bots, your group chats and the models they run on")) { showingTopology = true }
                     if hidden > 0 {
-                        gridAction("Hidden", systemImage: "eye.slash", hint: "Shows the \(hidden) bots hidden from this list") { showingHiddenBots = true }
+                        gridAction(String(localized: "Hidden", comment: "A tile that shows the hidden bots"), systemImage: "eye.slash",
+                                   hint: String(localized: "Shows the \(hidden) bots hidden from this list")) { showingHiddenBots = true }
                     }
-                    gridAction("Less", systemImage: "chevron.left", hint: "Folds New Bot, Topology and the hidden bots into one tile") {
+                    gridAction(String(localized: "Less", comment: "A tile that folds New Bot, Topology and the hidden bots away"), systemImage: "chevron.left",
+                               hint: String(localized: "Folds New Bot, Topology and the hidden bots into one tile")) {
                         withAnimation { botActionsShown = false }
                     }
                 }
@@ -901,7 +914,7 @@ struct ConversationsList: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityValue(marks.spoken)
-        .accessibilityHint(room.inDesktop ? "Shows this Hermes Desktop group chat's last messages" : "Opens this group chat")
+        .accessibilityHint(room.inDesktop ? String(localized: "Shows this Hermes Desktop group chat's last messages") : String(localized: "Opens this group chat"))
     }
 
     private func openBot(_ bot: HermesBot) {
@@ -953,7 +966,7 @@ struct ConversationsList: View {
                 _ = try await HermesServeClient.shared.changeBot(bot, BotChange(hidden: true))
                 try await botDirectory.refresh()
             } catch {
-                ledgerError = "Couldn't hide \(bot.label(mainName: settings.headerTitle)): \(error.localizedDescription)"
+                ledgerError = String(localized: "Couldn't hide \(bot.label(mainName: settings.headerTitle)): \(error.localizedDescription)")
             }
         }
     }
@@ -965,7 +978,7 @@ struct ConversationsList: View {
                 try await HermesServeClient.shared.letBotsMessageEachOther(roster)
                 try await botDirectory.refresh()
             } catch {
-                ledgerError = "Couldn't set that up: \(error.localizedDescription)"
+                ledgerError = String(localized: "Couldn't set that up: \(error.localizedDescription)")
             }
         }
     }
@@ -988,7 +1001,7 @@ struct ConversationsList: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(project.label).font(.body).lineLimit(1)
                             HStack(spacing: 4) {
-                                Text("\(project.sessionCount) conversation\(project.sessionCount == 1 ? "" : "s")")
+                                Text(String(localized: "\(project.sessionCount) conversations"))
                                 if let when = project.lastActive { Text("·"); Text(when, format: .relative(presentation: .named)) }
                             }
                             .font(.caption).foregroundStyle(.secondary).lineLimit(1)
@@ -1015,7 +1028,7 @@ struct ConversationsList: View {
             .accessibilityHint("Makes a project folder on your server and starts a conversation in it")
             }
         } header: {
-            foldingHeader("Projects", count: projects.count, isOpen: $showProjects)
+            foldingHeader(String(localized: "Projects"), count: projects.count, isOpen: $showProjects)
         }
     }
 
@@ -1039,7 +1052,8 @@ struct ConversationsList: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(isOpen.wrappedValue ? "Hide" : "Show") \(title.lowercased())")
+        .accessibilityLabel(isOpen.wrappedValue ? String(localized: "Hide \(title.localizedLowercase)", comment: "VoiceOver: folds a section of the list away, e.g. “Hide bots”")
+                                                : String(localized: "Show \(title.localizedLowercase)", comment: "VoiceOver: opens a folded section of the list, e.g. “Show bots”"))
         .accessibilityAddTraits(.isHeader)
     }
 
@@ -1133,7 +1147,9 @@ struct ConversationsList: View {
                 .listRowSeparator(.hidden)
         }
         if !serversUnreachable.isEmpty {   // (empty unless All Servers is on)
-            Label("\(serversUnreachable.formatted()) didn't answer, so \(serversUnreachable.count == 1 ? "its" : "their") chats aren't here.",
+            Label(serversUnreachable.count == 1
+                  ? String(localized: "\(serversUnreachable.formatted()) didn't answer, so its chats aren't here.", comment: "%@ is one server's name")
+                  : String(localized: "\(serversUnreachable.formatted()) didn't answer, so their chats aren't here.", comment: "%@ is a list of servers' names"),
                   systemImage: "wifi.exclamationmark")
                 .font(.footnote).foregroundStyle(.secondary).listRowSeparator(.hidden)
         }
@@ -1142,7 +1158,7 @@ struct ConversationsList: View {
         let runs = rows.filter(Self.isFoldable)
         let drafted = draftedSessions
         if !pinned.isEmpty {
-            Section { ForEach(pinned) { ledgerButton($0, hasDraft: drafted.contains($0.id)) } } header: { groupHeader("Pinned") }
+            Section { ForEach(pinned) { ledgerButton($0, hasDraft: drafted.contains($0.id)) } } header: { groupHeader(String(localized: "Pinned")) }
         }
         ForEach(DateGroup.group(rows.filter { $0.pinned != true && !$0.isScheduledRun }, by: { $0.lastActiveDate }), id: \.title) { group in
             Section { ForEach(group.items) { ledgerButton($0, hasDraft: drafted.contains($0.id)) } } header: { groupHeader(group.title) }
@@ -1153,7 +1169,7 @@ struct ConversationsList: View {
             Section {
                 if showScheduled { ForEach(runs) { ledgerButton($0, hasDraft: drafted.contains($0.id)) } }
             } header: {
-                foldingHeader("Scheduled runs", count: runs.count, isOpen: $showScheduled)
+                foldingHeader(String(localized: "Scheduled runs"), count: runs.count, isOpen: $showScheduled)
             }
         }
     }
@@ -1181,7 +1197,7 @@ struct ConversationsList: View {
                 }
             } header: {
                 HStack(spacing: 6) {
-                    groupHeader("In messages")
+                    groupHeader(String(localized: "In messages"))
                     if searchingMessages { ProgressView().controlSize(.mini) }
                 }
             }
@@ -1208,7 +1224,7 @@ struct ConversationsList: View {
             if hit.archived || !["api_server", "api-server", ""].contains(session.source ?? "") {
                 HStack(spacing: 6) {
                     if !["api_server", "api-server", ""].contains(session.source ?? "") { capsule(session.sourceLabel) }
-                    if hit.archived { capsule("Archived") }
+                    if hit.archived { capsule(String(localized: "Archived", comment: "A conversation that was archived")) }
                 }
             }
         }
@@ -1271,7 +1287,7 @@ struct ConversationsList: View {
             if case let .http(status, _) = error as? TransportError, status == 404 {
                 messageSearchProblem = nil
             } else {
-                messageSearchProblem = "Couldn't search inside messages: \(error.localizedDescription)"
+                messageSearchProblem = String(localized: "Couldn't search inside messages: \(error.localizedDescription)")
             }
         }
     }
@@ -1293,7 +1309,7 @@ struct ConversationsList: View {
                     .swipeActions { Button("Delete", role: .destructive) { CaptureInbox.shared.remove(note.id) } }
                 }
             } header: {
-                groupHeader("Notes waiting to be sent")
+                groupHeader(String(localized: "Notes waiting to be sent"))
             } footer: {
                 Text("Filed as soon as your server can be reached, in a chat called Notes.")
             }
@@ -1349,12 +1365,15 @@ struct ConversationsList: View {
             .swipeActions(edge: .leading, allowsFullSwipe: true) {
                 if canMark {
                     Button { setUnread(session, !marks.unread) } label: {
-                        Label(marks.unread ? "Read" : "Unread", systemImage: marks.unread ? "checkmark.message" : "message.badge")
+                        Label(marks.unread ? String(localized: "Read", comment: "Swipe action that marks the conversation as read (“read” as in “has been read”)")
+                                           : String(localized: "Unread", comment: "A conversation not yet read; also the swipe action that marks it so"),
+                              systemImage: marks.unread ? "checkmark.message" : "message.badge")
                     }
                     .tint(Settings.shared.resolvedTheme.accent)
                 }
                 Button { setPinned(session, !(session.pinned ?? false)) } label: {
-                    Label(session.pinned == true ? "Unpin" : "Pin", systemImage: session.pinned == true ? "pin.slash" : "pin")
+                    Label(session.pinned == true ? String(localized: "Unpin") : String(localized: "Pin", comment: "Pins the conversation to the top of the list"),
+                          systemImage: session.pinned == true ? "pin.slash" : "pin")
                 }
                 .tint(.orange)
             }
@@ -1365,13 +1384,15 @@ struct ConversationsList: View {
             }
             .contextMenu {
                 if canMark {
-                    Button(marks.unread ? "Mark as Read" : "Mark as Unread", systemImage: marks.unread ? "checkmark.message" : "message.badge") {
+                    Button(marks.unread ? String(localized: "Mark as Read") : String(localized: "Mark as Unread"),
+                           systemImage: marks.unread ? "checkmark.message" : "message.badge") {
                         setUnread(session, !marks.unread)
                     }
                 }
                 Button("Usage & cost", systemImage: "chart.bar") { usageFor = session }
                 Button("Rename", systemImage: "pencil") { renameText = session.title ?? ""; renaming = session }
-                Button(session.pinned == true ? "Unpin" : "Pin", systemImage: "pin") { setPinned(session, !(session.pinned ?? false)) }
+                Button(session.pinned == true ? String(localized: "Unpin") : String(localized: "Pin", comment: "Pins the conversation to the top of the list"),
+                       systemImage: "pin") { setPinned(session, !(session.pinned ?? false)) }
                 Button("Fork", systemImage: "arrow.triangle.branch") { fork(session) }
                 moveMenu(for: session)
                 Button("Export as Markdown", systemImage: "square.and.arrow.up") { export(session) }
@@ -1406,7 +1427,7 @@ struct ConversationsList: View {
             do {
                 try await moveSession(session, to: path)
             } catch {
-                ledgerError = "Couldn't move it to \(project.label): \(error.localizedDescription)"
+                ledgerError = String(localized: "Couldn't move it to \(project.label): \(error.localizedDescription)")
             }
         }
     }
@@ -1461,7 +1482,7 @@ struct ConversationsList: View {
                     await refresh()
                 }
             } catch {
-                ledgerError = "Couldn't make the project: \(ServerFiles.explain(error))"
+                ledgerError = String(localized: "Couldn't make the project: \(ServerFiles.explain(error))")
             }
         }
     }
@@ -1475,7 +1496,7 @@ struct ConversationsList: View {
                 if let open = conversation.serverSessionID { _ = try? await HermesServeClient.shared.chatControls(stored: open) }
                 await refresh()
             } catch {
-                ledgerError = "Couldn't rename \(project.label): \(error.localizedDescription)"
+                ledgerError = String(localized: "Couldn't rename \(project.label): \(error.localizedDescription)")
             }
         }
     }
@@ -1488,7 +1509,7 @@ struct ConversationsList: View {
                 if let open = conversation.serverSessionID { _ = try? await HermesServeClient.shared.chatControls(stored: open) }
                 await refresh()
             } catch {
-                ledgerError = "Couldn't remove \(project.label): \(error.localizedDescription)"
+                ledgerError = String(localized: "Couldn't remove \(project.label): \(error.localizedDescription)")
             }
         }
     }
@@ -1547,7 +1568,7 @@ struct ConversationsList: View {
                         .padding(.horizontal, 6).padding(.vertical, 1)
                         .background(.quaternary, in: .capsule)
                 }
-                Text(session.preview?.nilIfEmpty.map(ServeMedia.preview) ?? session.message_count.map { "\($0) messages" } ?? " ")
+                Text(session.preview?.nilIfEmpty.map(ServeMedia.preview) ?? session.message_count.map { String(localized: "\($0) messages") } ?? " ")
                     .lineLimit(1)
             }
             .font(.subheadline)
@@ -1639,7 +1660,7 @@ struct ConversationsList: View {
         #endif
         do {
             guard let backend = SessionBackend.list(conversation) else {
-                ledgerError = "Add the gateway API key in Settings."
+                ledgerError = TransportError.addKeyText
                 return
             }
             let sessions = allProfiles
@@ -1865,7 +1886,7 @@ struct ConversationsList: View {
                         .listRowBackground(copy.id == conversation.id ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
                 }
             } header: {
-                groupHeader("On this iPhone")
+                groupHeader(String(localized: "On this iPhone"))
             } footer: {
                 Text("As each conversation was when it was last open here. A message you send now waits, and goes when the connection is back.")
             }
@@ -1873,7 +1894,7 @@ struct ConversationsList: View {
     }
 
     private func savedRow(_ copy: ConversationSummary) -> some View {
-        keptRow(copy, caption: "Saved copy · \(Self.turns(copy))")
+        keptRow(copy, caption: String(localized: "Saved copy · \(Self.turns(copy))", comment: "A conversation kept on this iPhone, and how many turns it has"))
             .accessibilityElement(children: .combine)
             .accessibilityHint("Opens the copy kept on this iPhone")
     }
@@ -1935,7 +1956,7 @@ struct ConversationsList: View {
     }
 
     private func localRow(_ record: ConversationSummary) -> some View {
-        keptRow(record, caption: "\(Self.turns(record)) · \(record.transport == .chatCompletions ? "OpenAI-compatible" : "Hermes")")
+        keptRow(record, caption: "\(Self.turns(record)) · \(record.transport == .chatCompletions ? String(localized: "OpenAI-compatible") : "Hermes")")
     }
 
     /// A conversation kept on this iPhone, as a row: its title and when it was last used, then
@@ -1961,7 +1982,7 @@ struct ConversationsList: View {
 
     /// "1 turn", "12 turns".
     private static func turns(_ record: ConversationSummary) -> String {
-        "\(record.turnCount) turn\(record.turnCount == 1 ? "" : "s")"
+        String(localized: "\(record.turnCount) turns", comment: "How many turns (a message and its reply) a conversation has")
     }
 }
 
@@ -1981,11 +2002,11 @@ enum DateGroup {
     }
 
     static func title(for date: Date?, now: Date = .now) -> String {
-        guard let date else { return "Earlier" }
+        guard let date else { return String(localized: "Earlier", comment: "The conversation list's section for conversations with no date") }
         let cal = Calendar.current
-        if cal.isDate(date, inSameDayAs: now) { return "Today" }
-        if let y = cal.date(byAdding: .day, value: -1, to: now), cal.isDate(date, inSameDayAs: y) { return "Yesterday" }
-        if let week = cal.date(byAdding: .day, value: -7, to: now), date > week { return "This week" }
+        if cal.isDate(date, inSameDayAs: now) { return String(localized: "Today") }
+        if let y = cal.date(byAdding: .day, value: -1, to: now), cal.isDate(date, inSameDayAs: y) { return String(localized: "Yesterday") }
+        if let week = cal.date(byAdding: .day, value: -7, to: now), date > week { return String(localized: "This week") }
         if cal.isDate(date, equalTo: now, toGranularity: .year) { return date.formatted(.dateTime.month(.wide)) }
         return date.formatted(.dateTime.month(.wide).year())
     }
@@ -2007,11 +2028,11 @@ struct SessionUsageView: View {
         NavigationStack {
             List {
                 Section("Tokens") {
-                    row("Input", session.input_tokens)
-                    row("Output", session.output_tokens)
-                    row("Reasoning", session.reasoning_tokens)
-                    row("Cache read", session.cache_read_tokens)
-                    row("Cache write", session.cache_write_tokens)
+                    row(String(localized: "Input", comment: "Tokens the model read"), session.input_tokens)
+                    row(String(localized: "Output", comment: "Tokens the model wrote"), session.output_tokens)
+                    row(String(localized: "Reasoning", comment: "Tokens the model spent thinking"), session.reasoning_tokens)
+                    row(String(localized: "Cache read", comment: "Tokens read from the provider's prompt cache"), session.cache_read_tokens)
+                    row(String(localized: "Cache write", comment: "Tokens written to the provider's prompt cache"), session.cache_write_tokens)
                     LabeledContent("Total") { Text(session.totalTokens.formatted()).monospacedDigit() }
                 }
                 if (session.cost ?? 0) > 0 {
@@ -2021,9 +2042,9 @@ struct SessionUsageView: View {
                     }
                 }
                 Section("Activity") {
-                    row("Messages", session.message_count)
-                    row("Tool calls", session.tool_call_count)
-                    row("API calls", session.api_call_count)
+                    row(String(localized: "Messages"), session.message_count)
+                    row(String(localized: "Tool calls"), session.tool_call_count)
+                    row(String(localized: "API calls"), session.api_call_count)
                     if let model = session.model, !model.isEmpty { LabeledContent("Model", value: model) }
                     LabeledContent("Source", value: session.sourceLabel)
                 }
@@ -2047,7 +2068,7 @@ struct SessionUsageView: View {
 
     private func money(_ value: Double?) -> String {
         guard let value else { return "—" }
-        return value == 0 ? "$0" : String(format: "$%.4f", value)
+        return value.formatted(.currency(code: "USD").precision(.fractionLength(value == 0 ? 0 : 4)))
     }
 }
 
@@ -2234,8 +2255,10 @@ struct ChatMarks: Equatable {
 
     /// Read out with the row.
     var spoken: String {
-        [unread ? "Unread" : nil, muted ? "Muted" : nil,
-         kind == .working ? "Agent working" : kind == .needsYou ? "Needs you" : nil].compactMap(\.self).joined(separator: ", ")
+        [unread ? String(localized: "Unread", comment: "A conversation not yet read; also the swipe action that marks it so") : nil,
+         muted ? String(localized: "Muted", comment: "A chat whose notifications are muted") : nil,
+         kind == .working ? String(localized: "Agent working") : kind == .needsYou ? String(localized: "Needs you") : nil]
+            .compactMap(\.self).joined(separator: ", ")
     }
 }
 

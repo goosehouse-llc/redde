@@ -99,26 +99,26 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
 
     /// The category round trip to the notification daemon; fine to run after the first frame.
     func registerCategories() {
-        let approve = UNNotificationAction(identifier: Self.approveAction, title: "Approve", options: [.authenticationRequired])
-        let deny = UNNotificationAction(identifier: Self.denyAction, title: "Deny", options: [.destructive])
+        let approve = UNNotificationAction(identifier: Self.approveAction, title: String(localized: "Approve", comment: "Notification button: approves the command once"), options: [.authenticationRequired])
+        let deny = UNNotificationAction(identifier: Self.denyAction, title: String(localized: "Deny", comment: "Notification button: turns the command down"), options: [.destructive])
         let category = UNNotificationCategory(identifier: Self.approvalCategory, actions: [approve, deny], intentIdentifiers: [])
-        let reply = UNTextInputNotificationAction(identifier: Self.replyAction, title: "Reply", options: [], textInputButtonTitle: "Send", textInputPlaceholder: "Your answer")
+        let reply = UNTextInputNotificationAction(identifier: Self.replyAction, title: String(localized: "Reply", comment: "Notification button: answers by typing"), options: [], textInputButtonTitle: String(localized: "Send", comment: "Notification text field's button"), textInputPlaceholder: String(localized: "Your answer"))
         let clarifyText = UNNotificationCategory(identifier: Self.clarifyTextCategory, actions: [reply], intentIdentifiers: [])
         // A finished reply takes the next message from its banner. With the app's own lock on,
         // only once the device is unlocked: the lock shouldn't have a letterbox.
-        let followUp = UNTextInputNotificationAction(identifier: Self.followUpAction, title: "Reply",
+        let followUp = UNTextInputNotificationAction(identifier: Self.followUpAction, title: String(localized: "Reply", comment: "Notification button: answers by typing"),
                                                      options: settings.requireBiometrics ? [.authenticationRequired] : [],
-                                                     textInputButtonTitle: "Send", textInputPlaceholder: "Message")
+                                                     textInputButtonTitle: String(localized: "Send", comment: "Notification text field's button"), textInputPlaceholder: String(localized: "Message", comment: "Placeholder of a notification's reply field"))
         let replied = UNNotificationCategory(identifier: Self.repliedCategory, actions: [followUp], intentIdentifiers: [])
         // The same for a reply that came as a push, always behind an unlock: the app is started
         // for it, and can't read its saved passwords while the phone is locked.
-        let pushedFollowUp = UNTextInputNotificationAction(identifier: Self.followUpAction, title: "Reply", options: [.authenticationRequired],
-                                                           textInputButtonTitle: "Send", textInputPlaceholder: "Message")
+        let pushedFollowUp = UNTextInputNotificationAction(identifier: Self.followUpAction, title: String(localized: "Reply", comment: "Notification button: answers by typing"), options: [.authenticationRequired],
+                                                           textInputButtonTitle: String(localized: "Send", comment: "Notification text field's button"), textInputPlaceholder: String(localized: "Message", comment: "Placeholder of a notification's reply field"))
         let pushed = UNNotificationCategory(identifier: PushNote.repliedCategory, actions: [pushedFollowUp], intentIdentifiers: [])
         // An approval a paired Hermes announced. Deny waits for an unlock too: either answer may
         // have to sign in to the Dashboard first.
-        let pushedApprove = UNNotificationAction(identifier: Self.approveAction, title: "Approve", options: [.authenticationRequired])
-        let pushedDeny = UNNotificationAction(identifier: Self.denyAction, title: "Deny", options: [.destructive, .authenticationRequired])
+        let pushedApprove = UNNotificationAction(identifier: Self.approveAction, title: String(localized: "Approve", comment: "Notification button: approves the command once"), options: [.authenticationRequired])
+        let pushedDeny = UNNotificationAction(identifier: Self.denyAction, title: String(localized: "Deny", comment: "Notification button: turns the command down"), options: [.destructive, .authenticationRequired])
         let pushedApproval = UNNotificationCategory(identifier: PushNote.approvalCategory, actions: [pushedApprove, pushedDeny], intentIdentifiers: [])
         // A question a paired Hermes announced, answered in words. One with choices arrives
         // under a category of its own that the notification extension registers on the spot
@@ -127,7 +127,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         // A group chat's, from a paired Hermes: Reply to the room, a bot's command, a turn to retry.
         let groupReplied = UNNotificationCategory(identifier: PushNote.groupRepliedCategory, actions: [pushedFollowUp], intentIdentifiers: [])
         let groupApproval = UNNotificationCategory(identifier: PushNote.groupApprovalCategory, actions: [pushedApprove, pushedDeny], intentIdentifiers: [])
-        let retry = UNNotificationAction(identifier: PushNote.retryAction, title: "Retry", options: [.authenticationRequired])
+        let retry = UNNotificationAction(identifier: PushNote.retryAction, title: String(localized: "Retry", comment: "Notification button: asks the agent for the reply again"), options: [.authenticationRequired])
         let groupRetry = UNNotificationCategory(identifier: PushNote.groupRetryCategory, actions: [retry], intentIdentifiers: [])
         fixedCategories = [category, clarifyText, replied, pushed, pushedApproval, pushedQuestion, groupReplied, groupApproval, groupRetry]
         center.setNotificationCategories(fixedCategories)
@@ -140,14 +140,14 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     /// Clarify banner: a single question gets either its choices as buttons (up to four) or a
     /// text reply field. Batched or multi-select questions just open the app.
     func notifyClarify(_ request: ClarifyRequest) {
-        let body = request.questions.first?.question ?? "Open Redde to answer."
+        let body = request.questions.first?.question ?? String(localized: "Open Redde to answer.")
         guard request.questions.count == 1, let q = request.questions.first, !q.multiSelect else {
-            notify(.interrupt, title: "Redde has \(request.questions.count) questions", body: body)
+            notify(.interrupt, title: String(localized: "Redde has \(request.questions.count) questions"), body: body)
             return
         }
         let info: [String: String] = ["requestID": request.id, "questionID": q.id]
         if q.choices.isEmpty || q.choices.count > 4 {
-            notify(.interrupt, title: "Redde has a question", body: body, category: Self.clarifyTextCategory, userInfo: info)
+            notify(.interrupt, title: String(localized: "Redde has a question"), body: body, category: Self.clarifyTextCategory, userInfo: info)
         } else {
             // Choices are per request, so register a one-off category alongside the fixed ones.
             let id = Self.clarifyChoicePrefix + request.id
@@ -155,7 +155,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
             let category = UNNotificationCategory(identifier: id, actions: actions, intentIdentifiers: [])
             adHocCategories[id] = category
             center.setNotificationCategories(fixedCategories.union(adHocCategories.values))
-            notify(.interrupt, title: "Redde has a question", body: body, category: id, userInfo: info)
+            notify(.interrupt, title: String(localized: "Redde has a question"), body: body, category: id, userInfo: info)
         }
     }
 
@@ -166,7 +166,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         var info: [String: String] = ["requestID": request.id]
         if let approveChoice { info["approve"] = approveChoice }
         if let denyChoice { info["deny"] = denyChoice }
-        notify(.interrupt, title: "Redde needs your approval", body: request.description.map { "\($0)\n\(request.command)" } ?? request.command,
+        notify(.interrupt, title: String(localized: "Redde needs your approval"), body: request.description.map { "\($0)\n\(request.command)" } ?? request.command,
                category: approveChoice != nil && denyChoice != nil ? Self.approvalCategory : nil, userInfo: info)
     }
 
@@ -337,30 +337,30 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         switch action {
         case Self.followUpAction:
             guard let text = text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return nil }
-            return givePushedAnswer("pushed-group-reply", sessionID: "", room: room, kind: .group, notGiven: "Your message wasn't sent",
-                                    reaching: "send your message") {
+            return givePushedAnswer("pushed-group-reply", sessionID: "", room: room, kind: .group, notGiven: String(localized: "Your message wasn't sent"),
+                                    reaching: String(localized: "send your message", comment: "Completes \"Redde couldn't reach your Hermes to …\"")) {
                 try await calls.send(room, text)
                 return nil
             }
         case Self.approveAction, Self.denyAction:
             guard let digest else { return nil }
             let approve = action == Self.approveAction
-            return givePushedAnswer("pushed-group-approval", sessionID: "", room: room, kind: .groupWait, notGiven: "The approval wasn't answered",
-                                    reaching: "\(approve ? "approve" : "deny") the command") {
+            return givePushedAnswer("pushed-group-approval", sessionID: "", room: room, kind: .groupWait, notGiven: String(localized: "The approval wasn't answered"),
+                                    reaching: approve ? String(localized: "approve the command", comment: "Completes \"Redde couldn't reach your Hermes to …\"") : String(localized: "deny the command", comment: "Completes \"Redde couldn't reach your Hermes to …\"")) {
                 guard let waiting = try await calls.state(room).approvals.first(where: { PushNote.digest(of: $0.request.command) == digest }) else {
-                    return "That approval is no longer waiting. It was answered somewhere else, or it timed out."
+                    return String(localized: "That approval is no longer waiting. It was answered somewhere else, or it timed out.")
                 }
                 do {
                     try await calls.approve(room, waiting, approve ? "once" : "deny")
                 } catch let error as HermesServeClient.RPCError where [5118, 5119].contains(error.code) {
-                    return "That approval is no longer waiting. It was answered somewhere else, or it timed out."
+                    return String(localized: "That approval is no longer waiting. It was answered somewhere else, or it timed out.")
                 }
                 return nil
             }
         case PushNote.retryAction:
             guard let task else { return nil }
-            return givePushedAnswer("pushed-group-retry", sessionID: "", room: room, kind: .groupWait, notGiven: "The reply wasn't retried",
-                                    reaching: "retry the reply") {
+            return givePushedAnswer("pushed-group-retry", sessionID: "", room: room, kind: .groupWait, notGiven: String(localized: "The reply wasn't retried"),
+                                    reaching: String(localized: "retry the reply", comment: "Completes \"Redde couldn't reach your Hermes to …\"")) {
                 try await calls.retry(room, task)
                 return nil
             }
@@ -392,16 +392,16 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
             conversation.respond(approval: choice)
             return nil
         }
-        return givePushedAnswer("pushed-approval", sessionID: sessionID, kind: .approval, notGiven: "The approval wasn't answered",
-                                reaching: "\(approve ? "approve" : "deny") the command") {
+        return givePushedAnswer("pushed-approval", sessionID: sessionID, kind: .approval, notGiven: String(localized: "The approval wasn't answered"),
+                                reaching: approve ? String(localized: "approve the command", comment: "Completes \"Redde couldn't reach your Hermes to …\"") : String(localized: "deny the command", comment: "Completes \"Redde couldn't reach your Hermes to …\"")) {
             switch try await self.answerWaiting(sessionID, digest, approve) {
             case .answered:
                 StatusWidgets.settled(sessionID)   // the "Needs you" widget lets go of it
                 return nil
             case .nothingWaiting:
                 StatusWidgets.settled(sessionID)
-                return "That approval is no longer waiting. It was answered somewhere else, or it timed out."
-            case .anotherCommand: return "Another command is waiting for approval now. Open Redde to see it."
+                return String(localized: "That approval is no longer waiting. It was answered somewhere else, or it timed out.")
+            case .anotherCommand: return String(localized: "Another command is waiting for approval now. Open Redde to see it.")
             }
         }
     }
@@ -419,7 +419,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
             do {
                 problem = try await give()
             } catch {
-                problem = "Redde couldn't reach your Hermes to \(reaching). Open Redde to answer. (\(error.localizedDescription))"
+                problem = String(localized: "Redde couldn't reach your Hermes to \(reaching). Open Redde to answer. (\(error.localizedDescription))")
             }
             guard let problem else { return }
             log.notice("\(name, privacy: .public) not given: \(problem, privacy: .public)")
@@ -453,16 +453,16 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
             conversation.respond(clarify: [question.id: answer])
             return nil
         }
-        return givePushedAnswer("pushed-answer", sessionID: sessionID, kind: .question, notGiven: "Your answer wasn't given",
-                                reaching: "give your answer") {
+        return givePushedAnswer("pushed-answer", sessionID: sessionID, kind: .question, notGiven: String(localized: "Your answer wasn't given"),
+                                reaching: String(localized: "give your answer", comment: "Completes \"Redde couldn't reach your Hermes to …\"")) {
             switch try await self.answerWaitingQuestion(sessionID, digest, answer) {
             case .answered:
                 StatusWidgets.settled(sessionID)
                 return nil
             case .nothingWaiting:
                 StatusWidgets.settled(sessionID)
-                return "That question is no longer waiting. It was answered somewhere else, or it timed out."
-            case .anotherQuestion: return "Something else is being asked now. Open Redde to see it."
+                return String(localized: "That question is no longer waiting. It was answered somewhere else, or it timed out.")
+            case .anotherQuestion: return String(localized: "Something else is being asked now. Open Redde to see it.")
             }
         }
     }

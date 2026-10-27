@@ -10,21 +10,21 @@ enum CarPlayVoiceLook: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .bars: "Bars"
-        case .lamps: "Lamps"
+        case .bars: String(localized: "Bars", comment: "A look for CarPlay's voice screen: bars of light")
+        case .lamps: String(localized: "Lamps", comment: "A look for CarPlay's voice screen: stacks of small lamps")
         case .kitt: "KITT"
-        case .orb: "Orb"
+        case .orb: String(localized: "Orb")
         case .redde: "Redde"
         }
     }
 
     var blurb: String {
         switch self {
-        case .bars: "Three solid bars of light, and one that glides"
-        case .lamps: "The bars as stacks of small lamps, and a scanner"
-        case .kitt: "The lamps in red, on black"
-        case .orb: "A ring of light around Redde's spark"
-        case .redde: "Redde's face: it looks at you, looks up to think, and talks"
+        case .bars: String(localized: "Three solid bars of light, and one that glides")
+        case .lamps: String(localized: "The bars as stacks of small lamps, and a scanner")
+        case .kitt: String(localized: "The lamps in red, on black")
+        case .orb: String(localized: "A ring of light around Redde's spark")
+        case .redde: String(localized: "Redde's face: it looks at you, looks up to think, and talks")
         }
     }
 }
@@ -77,7 +77,7 @@ struct CarPlayVoiceSettings: View {
                 .accessibilityIdentifier("carplay-voice-\(look.rawValue)")
             }
         } label: {
-            DisclosureSummary(title: "CarPlay voice screen") {
+            DisclosureSummary(title: String(localized: "CarPlay voice screen")) {
                 HStack(spacing: 8) {
                     Text(settings.carPlayVoice.label)
                     Image(uiImage: CarPlayArtwork.voiceStateImage(.speaking, look: settings.carPlayVoice, side: Self.side))

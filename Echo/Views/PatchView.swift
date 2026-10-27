@@ -66,7 +66,7 @@ nonisolated enum Patch {
     /// "2 files · +12 −3".
     static func summary(_ files: [PatchFile]) -> String {
         let added = files.reduce(0) { $0 + $1.added }, removed = files.reduce(0) { $0 + $1.removed }
-        return "\(files.count) file\(files.count == 1 ? "" : "s") · +\(added) −\(removed)"
+        return String(localized: "\(files.count) files · +\(added) −\(removed)")
     }
 }
 
@@ -76,7 +76,7 @@ struct PatchView: View {
     let title: String
     let patch: String
     var notes: String?
-    var notesTitle = "Notes"
+    var notesTitle = String(localized: "Notes")
     @Environment(\.dismiss) private var dismiss
 
     /// A file this long shows its first lines, and says how many more there are.
@@ -166,7 +166,7 @@ struct CardChangeSheet: View {
 
     var body: some View {
         if let change {
-            PatchView(title: change.task.title.nilIfEmpty ?? cardID, patch: change.patch, notes: change.notes, notesTitle: "Steps left with it")
+            PatchView(title: change.task.title.nilIfEmpty ?? cardID, patch: change.patch, notes: change.notes, notesTitle: String(localized: "Steps left with it"))
         } else {
             NavigationStack {
                 Group {
@@ -184,7 +184,7 @@ struct CardChangeSheet: View {
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
             }
             .task {
-                do { change = try await KanbanClient.change(of: cardID) } catch { problem = "Couldn't read card \(cardID): \(error.localizedDescription)" }
+                do { change = try await KanbanClient.change(of: cardID) } catch { problem = String(localized: "Couldn't read card \(cardID): \(error.localizedDescription)") }
                 loaded = true
             }
         }

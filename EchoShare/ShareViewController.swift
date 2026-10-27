@@ -50,9 +50,9 @@ struct ShareView: View {
                         .lineLimit(2 ... 6)
                     Toggle("New conversation", isOn: $newConversation)
                 } footer: {
-                    Text(newConversation
-                         ? "The question is optional. Everything below waits in a new conversation the next time you open Redde; nothing is sent until you tap send there."
-                         : "The question is optional. Everything below waits in the conversation you had open, the next time you open Redde; nothing is sent until you tap send there.")
+                    newConversation
+                        ? Text("The question is optional. Everything below waits in a new conversation the next time you open Redde; nothing is sent until you tap send there.")
+                        : Text("The question is optional. Everything below waits in the conversation you had open, the next time you open Redde; nothing is sent until you tap send there.")
                 }
                 Section("Sharing") {
                     if loading { ProgressView("Reading shared items…") }

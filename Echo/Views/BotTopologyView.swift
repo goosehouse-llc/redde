@@ -205,7 +205,7 @@ struct BotTopologyView: View {
         let index = rooms.firstIndex(of: room) ?? 0
         let tint = Self.roomColors[index % Self.roomColors.count]
         let state = status(kind: activity.kind(of: room), unread: activity.isUnread(room, isOpen: groups.open?.id == room.id),
-                           idle: room.members.count == 1 ? "1 member" : "\(room.members.count) members")
+                           idle: String(localized: "\(room.members.count) members"))
         return Button {
             dismiss()
             openRoom(room)
@@ -224,7 +224,8 @@ struct BotTopologyView: View {
     private func botBox(_ bot: HermesBot) -> some View {
         let face = faces[bot.name] ?? BotFace(seed: bot.name)
         let name = bot.label(mainName: settings.headerTitle)
-        let state = status(kind: activity.kind(of: bot, open: conversation), unread: activity.isUnread(bot, open: conversation), idle: "Idle")
+        let state = status(kind: activity.kind(of: bot, open: conversation), unread: activity.isUnread(bot, open: conversation),
+                           idle: String(localized: "Idle", comment: "A bot doing nothing now"))
         return Button {
             dismiss()
             openBot(bot)
@@ -235,7 +236,7 @@ struct BotTopologyView: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(bot.model.map { "\(name), runs on \(Self.shortName($0))" } ?? name)
+        .accessibilityLabel(bot.model.map { String(localized: "\(name), runs on \(Self.shortName($0))") } ?? name)
         .accessibilityValue([state.text, handsTo(bot)].compactMap { $0 }.joined(separator: ", "))
         .accessibilityHint("Opens your chat with this bot")
     }
@@ -245,7 +246,7 @@ struct BotTopologyView: View {
             Image(systemName: "cpu").foregroundStyle(.orange).frame(width: 22)
             VStack(alignment: .leading, spacing: 2) {
                 Text(Self.shortName(model)).font(.footnote.weight(.semibold)).lineLimit(2).minimumScaleFactor(0.8)
-                Text(users.count == 1 ? "Model" : "Model · \(users.count) bots").font(.caption2).foregroundStyle(.orange)
+                (users.count == 1 ? Text("Model") : Text("Model · \(users.count) bots")).font(.caption2).foregroundStyle(.orange)
             }
         }
         .accessibilityElement(children: .combine)
@@ -257,7 +258,7 @@ struct BotTopologyView: View {
             Image(systemName: "chevron.left.forwardslash.chevron.right").foregroundStyle(Self.claudeCodeTint).frame(width: 22)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Claude Code").font(.footnote.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.7)
-                Text(users.count == 1 ? "Does its work" : "Does their work").font(.caption2).foregroundStyle(Self.claudeCodeTint)
+                (users.count == 1 ? Text("Does its work") : Text("Does their work")).font(.caption2).foregroundStyle(Self.claudeCodeTint)
             }
         }
         .accessibilityElement(children: .combine)
@@ -267,7 +268,8 @@ struct BotTopologyView: View {
     /// The names of the bots this one has handed work to, for VoiceOver.
     private func handsTo(_ bot: HermesBot) -> String? {
         let to = handoffs.filter { $0.from == bot.name }.compactMap { arrow in bots.first { $0.name == arrow.to } }
-        return to.isEmpty ? nil : "hands work to " + to.map { $0.label(mainName: settings.headerTitle) }.formatted()
+        return to.isEmpty ? nil : String(localized: "hands work to \(to.map { $0.label(mainName: settings.headerTitle) }.formatted())",
+                                         comment: "VoiceOver, after a bot's state: the bots it has handed work to")
     }
 
     /// What the lines are, under the map: the ones it has.
@@ -275,9 +277,12 @@ struct BotTopologyView: View {
     private func key(_ map: BotTopology) -> some View {
         let has = { (test: (BotTopology.Link) -> Bool) in map.lines.contains { test($0.link) } }
         let rows: [(String, StrokeStyle, Color)] = [
-            has { if case .model = $0 { true } else { false } } ? ("Runs on", Self.style(.model("", bot: "")), Color.secondary) : nil,
-            has { if case .claudeCode = $0 { true } else { false } } ? ("Works through", Self.style(.claudeCode(bot: "")), Self.claudeCodeTint) : nil,
-            has { if case .handoff = $0 { true } else { false } } ? ("Hands work to (a message or a card, lately)", Self.style(.handoff(from: "", to: "")), Color.secondary) : nil,
+            has { if case .model = $0 { true } else { false } }
+                ? (String(localized: "Runs on", comment: "The map's key: a line from a bot to its model"), Self.style(.model("", bot: "")), Color.secondary) : nil,
+            has { if case .claudeCode = $0 { true } else { false } }
+                ? (String(localized: "Works through", comment: "The map's key: a line from a bot to Claude Code"), Self.style(.claudeCode(bot: "")), Self.claudeCodeTint) : nil,
+            has { if case .handoff = $0 { true } else { false } }
+                ? (String(localized: "Hands work to (a message or a card, lately)"), Self.style(.handoff(from: "", to: "")), Color.secondary) : nil,
         ].compactMap { $0 }
         if !rows.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
@@ -312,9 +317,9 @@ struct BotTopologyView: View {
 
     private func status(kind: ChatActivity.Kind?, unread: Bool, idle: String) -> Status {
         switch kind {
-        case .working: Status(text: "Working", color: accent, working: true)
-        case .needsYou: Status(text: "Needs you", color: .orange)
-        case nil: unread ? Status(text: "New reply", color: accent) : Status(text: idle, color: .secondary)
+        case .working: Status(text: String(localized: "Working", comment: "A bot at work on a reply"), color: accent, working: true)
+        case .needsYou: Status(text: String(localized: "Needs you"), color: .orange)
+        case nil: unread ? Status(text: String(localized: "New reply"), color: accent) : Status(text: idle, color: .secondary)
         }
     }
 

@@ -49,25 +49,25 @@ struct StartScreen: View {
         var cards: [Card] = []
         if let upcoming {
             cards.append(Card(id: "calendar", symbol: "calendar", title: upcoming.title, subtitle: upcoming.subtitle,
-                              hint: "Asks about that day, with its events attached") {
+                              hint: String(localized: "Asks about that day, with its events attached")) {
                 askAboutCalendar(day: upcoming.day, question: upcoming.question)
             })
         } else if calendarAccess == .notAsked {
-            cards.append(Card(id: "calendar", symbol: "calendar", title: "What's on my calendar today?", subtitle: "Attaches today's events",
-                              hint: "Asks for calendar access, then asks about today") {
+            cards.append(Card(id: "calendar", symbol: "calendar", title: String(localized: "What's on my calendar today?"), subtitle: String(localized: "Attaches today's events"),
+                              hint: String(localized: "Asks for calendar access, then asks about today")) {
                 askAboutCalendar(day: .now, question: "What's on my calendar today?")
             })
         }
         if let last = store.sorted.first(where: { $0.id != conversation.id && $0.turnCount > 0 }) {
-            cards.append(Card(id: "continue", symbol: "bubble.left.and.text.bubble.right", title: "Continue: \(last.title)",
-                              subtitle: last.updatedAt.relativeLabel, hint: "Opens your most recent conversation") {
+            cards.append(Card(id: "continue", symbol: "bubble.left.and.text.bubble.right", title: String(localized: "Continue: \(last.title)"),
+                              subtitle: last.updatedAt.relativeLabel, hint: String(localized: "Opens your most recent conversation")) {
                 let (conversation, frame, store) = (conversation, continueFrame, store)
                 let (openFromCard, reduceMotion) = (openFromCard, reduceMotion)
                 Task {
                     // Decoded off the main actor: a long transcript is a big file.
                     guard let record = await store.loadRecord(id: last.id) else { return }
                     if let openFromCard, !reduceMotion, frame != .zero {
-                        openFromCard(frame, "Continue: \(last.title)") { conversation.load(record) }
+                        openFromCard(frame, String(localized: "Continue: \(last.title)")) { conversation.load(record) }
                     } else {
                         conversation.load(record)
                     }
@@ -75,8 +75,8 @@ struct StartScreen: View {
             })
         }
         if home {
-            cards.append(Card(id: "home", symbol: "lightbulb", title: "What's on at home?", subtitle: "Home Assistant is connected",
-                              hint: "Asks what is on at home") {
+            cards.append(Card(id: "home", symbol: "lightbulb", title: String(localized: "What's on at home?"), subtitle: String(localized: "Home Assistant is connected"),
+                              hint: String(localized: "Asks what is on at home")) {
                 conversation.send("What's on at home right now?")
             })
         }
@@ -226,10 +226,10 @@ struct StartScreen: View {
 
     static func greeting(for date: Date) -> String {
         switch Calendar.current.component(.hour, from: date) {
-        case 5..<12: "Good morning."
-        case 12..<17: "Good afternoon."
-        case 17..<22: "Good evening."
-        default: "Hello."
+        case 5..<12: String(localized: "Good morning.")
+        case 12..<17: String(localized: "Good afternoon.")
+        case 17..<22: String(localized: "Good evening.")
+        default: String(localized: "Hello.")
         }
     }
 }

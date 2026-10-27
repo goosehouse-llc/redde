@@ -31,12 +31,12 @@ final class AppLock {
     private static let biometry: (name: String, symbol: String) = {
         let context = LAContext()
         var error: NSError?
-        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else { return ("Passcode", "lock") }
+        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else { return (String(localized: "Passcode", comment: "How the app is unlocked when the iPhone has no Face ID or Touch ID"), "lock") }
         switch context.biometryType {
         case .faceID: return ("Face ID", "faceid")
         case .touchID: return ("Touch ID", "touchid")
         case .opticID: return ("Optic ID", "opticid")
-        default: return ("Passcode", "lock")
+        default: return (String(localized: "Passcode", comment: "How the app is unlocked when the iPhone has no Face ID or Touch ID"), "lock")
         }
     }()
 
@@ -87,14 +87,14 @@ final class AppLock {
 
     private func evaluate() async -> Bool {
         let context = LAContext()
-        context.localizedCancelTitle = "Cancel"
+        context.localizedCancelTitle = String(localized: "Cancel", comment: "Button on the Face ID or passcode prompt")
         var error: NSError?
         guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
-            lastError = error?.localizedDescription ?? "No passcode set on this device."
+            lastError = error?.localizedDescription ?? String(localized: "No passcode set on this device.")
             return false
         }
         do {
-            return try await context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: "Unlock Redde")
+            return try await context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: String(localized: "Unlock Redde"))
         } catch {
             lastError = (error as? LAError)?.code == .userCancel ? nil : error.localizedDescription
             log.info("authentication failed: \(error.localizedDescription)")

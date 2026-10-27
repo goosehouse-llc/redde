@@ -131,7 +131,8 @@ struct ComposerView: View {
         }
         .dictating(dictation, base: $dictationBase, draft: $draft, problem: $attachmentError)
         .sheet(isPresented: $showEditor) {
-            ComposerEditor(draft: $draft, sendLabel: conversation.isStreaming ? "Send after this reply" : "Send", send: send)
+            ComposerEditor(draft: $draft, sendLabel: conversation.isStreaming ? String(localized: "Send after this reply") : String(localized: "Send"),
+                           send: send)
                 .tint(theme.accent)
         }
         // Built again in the other layout (an iPhone Duo opened or closed): the draft's page stays
@@ -210,7 +211,7 @@ struct ComposerView: View {
                 for item in items {
                     if item.supportedContentTypes.contains(where: { $0.conforms(to: .movie) }) {
                         guard let picked = try? await item.loadTransferable(type: PickedVideo.self) else {
-                            attachmentError = "That video couldn't be read."
+                            attachmentError = String(localized: "That video couldn't be read.")
                             continue
                         }
                         await attachVideo(picked.url, named: "video." + picked.url.pathExtension, removing: true)
@@ -360,7 +361,7 @@ struct ComposerView: View {
                 ForEach(attachedContext) { att in
                     HStack(spacing: 6) {
                         Image(systemName: att.filename.hasPrefix("calendar-") ? "calendar" : "doc")
-                        Text(att.filename.hasPrefix("calendar-") ? "Calendar attached" : att.filename).lineLimit(1)
+                        Text(att.filename.hasPrefix("calendar-") ? String(localized: "Calendar attached") : att.filename).lineLimit(1)
                         Button {
                             pendingAttachments.removeAll { $0.id == att.id }
                         } label: {
@@ -444,7 +445,7 @@ struct ComposerView: View {
                     contextAttached.insert(att.id)
                     pendingAttachments.append(att)
                 } else {
-                    attachmentError = "Redde has no access to your calendar. Allow it in the iPhone's Settings → Apps → Redde."
+                    attachmentError = String(localized: "Redde has no access to your calendar. Allow it in the iPhone's Settings → Apps → Redde.")
                     dismissedContext.insert(suggestion.id)
                 }
                 contextBusy = nil
@@ -479,7 +480,9 @@ struct ComposerView: View {
                 }
                 .accessibilityLabel("Add")
                 .accessibilityHint("Add a photo or file to your message")
-                TextField(dictation.isActive ? "Listening…" : conversation.canSteer ? "Steer the reply…" : "Ask \(conversation.bot?.name ?? settings.headerTitle)",
+                TextField(dictation.isActive ? String(localized: "Listening…")
+                          : conversation.canSteer ? String(localized: "Steer the reply…")
+                          : String(localized: "Ask \(conversation.bot?.name ?? settings.headerTitle)", comment: "The message field's placeholder: ask the agent, by its name"),
                           text: $draft, axis: .vertical)
                     .lineLimit(1 ... 5)
                     .textFieldStyle(.plain)
@@ -554,32 +557,34 @@ struct ComposerView: View {
                 if hasDraft {
                     // Typing during a reply: steer this answer, or queue the next question behind it.
                     if conversation.canSteer, !draft.trimmingCharacters(in: .whitespaces).isEmpty {
-                        ComposerButton(symbol: "arrow.turn.down.right", label: "Steer this reply", tint: .orange, size: buttonSize) {
+                        ComposerButton(symbol: "arrow.turn.down.right", label: String(localized: "Steer this reply"), tint: .orange, size: buttonSize) {
                             steer()
                         }
                         .transition(Self.buttonSwap)
                     }
-                    ComposerButton(symbol: "text.line.last.and.arrowtriangle.forward", label: "Send after this reply", tint: theme.accent, size: buttonSize) {
+                    ComposerButton(symbol: "text.line.last.and.arrowtriangle.forward", label: String(localized: "Send after this reply"),
+                                   tint: theme.accent, size: buttonSize) {
                         send()
                     }
                     .transition(Self.buttonSwap)
                 } else {
-                    ComposerButton(symbol: "stop.fill", label: "Stop", tint: .red, size: buttonSize) {
+                    ComposerButton(symbol: "stop.fill", label: String(localized: "Stop"), tint: .red, size: buttonSize) {
                         conversation.cancel()
                     }
                     .transition(Self.buttonSwap)
                 }
             } else if hasDraft {
-                ComposerButton(symbol: "arrow.up", label: "Send", tint: theme.accent, size: buttonSize) {
+                ComposerButton(symbol: "arrow.up", label: String(localized: "Send"), tint: theme.accent, size: buttonSize) {
                     send()
                 }
                 .transition(Self.buttonSwap)
             } else {
-                ComposerButton(symbol: "waveform", label: settings.handsFreeByDefault ? "Talk hands-free" : "Talk", tint: theme.accent, size: buttonSize, waveform: true) {
+                ComposerButton(symbol: "waveform", label: settings.handsFreeByDefault ? String(localized: "Talk hands-free") : String(localized: "Talk"),
+                               tint: theme.accent, size: buttonSize, waveform: true) {
                     openHandsFree()
                 }
-                .accessibilityHint(settings.handsFreeByDefault ? "Opens voice mode and keeps listening after each reply"
-                                                              : "Opens voice mode and starts listening")
+                .accessibilityHint(settings.handsFreeByDefault ? String(localized: "Opens voice mode and keeps listening after each reply")
+                                                              : String(localized: "Opens voice mode and starts listening"))
                 .transition(Self.buttonSwap)
             }
         }

@@ -189,7 +189,7 @@ struct MessageRow: View, Equatable {
         .animation(.easeOut(duration: 0.3), value: isLive)
         .frame(maxWidth: .infinity, alignment: message.role == .user && !promptStyled ? .trailing : .leading)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(message.role == .user ? (message.isSteer ? "Your steer" : "You") : replySpeaker ?? settings.headerTitle)
+        .accessibilityLabel(message.role == .user ? (message.isSteer ? String(localized: "Your steer") : String(localized: "You")) : replySpeaker ?? settings.headerTitle)
         .sensoryFeedback(.success, trigger: copyCount)
         .sheet(item: $fullDetail) { SelectableTextSheet(text: $0.text, title: $0.title, monospaced: true) }
     }
@@ -198,7 +198,7 @@ struct MessageRow: View, Equatable {
     private func copy(_ text: String) {
         UIPasteboard.general.string = text
         copyCount += 1
-        toaster?.show("Copied")
+        toaster?.show(String(localized: "Copied"))
         withAnimation(.snappy(duration: 0.2)) { copied = true }
         Task {
             try? await Task.sleep(for: .seconds(1.6))
@@ -217,7 +217,7 @@ struct MessageRow: View, Equatable {
             if isLive {
                 // The one place that shimmers while the reply is being worked on.
                 TimelineView(.periodic(from: message.createdAt, by: 1)) { context in
-                    ShimmerText(text: "is working · \(Self.elapsed(from: message.createdAt, to: context.date))")
+                    ShimmerText(text: String(localized: "is working · \(Self.elapsed(from: message.createdAt, to: context.date))"))
                         .font(.subheadline)
                         .monospacedDigit()
                 }
@@ -226,10 +226,10 @@ struct MessageRow: View, Equatable {
         .accessibilityElement(children: .combine)
     }
 
-    /// "5 s", "1 min 12 s".
+    /// "5 sec", "1 min 12 sec".
     private static func elapsed(from start: Date, to now: Date) -> String {
         let s = max(0, Int(now.timeIntervalSince(start)))
-        return s < 60 ? "\(s) s" : "\(s / 60) min \(s % 60) s"
+        return Duration.seconds(s).formatted(.units(allowed: [.minutes, .seconds], width: .condensedAbbreviated))
     }
 
     // MARK: - Folds
@@ -260,7 +260,7 @@ struct MessageRow: View, Equatable {
     private var thinkingFold: some View {
         let open = showThinking ?? isLive
         return VStack(alignment: .leading, spacing: 2) {
-            foldHeader(open: open, hint: open ? "Hide thinking" : "Show thinking") {
+            foldHeader(open: open, hint: open ? String(localized: "Hide thinking") : String(localized: "Show thinking")) {
                 withAnimation(.snappy(duration: 0.3)) { showThinking = !open }
             } label: {
                 thinkingLabel
@@ -275,7 +275,7 @@ struct MessageRow: View, Equatable {
     @ViewBuilder
     private var thinkingLabel: some View {
         if isLive, message.text.isEmpty {
-            ShimmerText(text: "Thinking")
+            ShimmerText(text: String(localized: "Thinking"))
         } else if let started = message.reasoningStartedAt, let ended = message.reasoningEndedAt {
             // A think under a second still took a moment; "0 s" would read as nothing.
             Text("Thought for \(Self.elapsed(from: started, to: max(ended, started.addingTimeInterval(1))))")
@@ -304,10 +304,10 @@ struct MessageRow: View, Equatable {
         let working = isLive && tools.contains { $0.status == .running }
         let open = showSteps ?? (isLive && message.text.isEmpty)
         return VStack(alignment: .leading, spacing: 2) {
-            foldHeader(open: open, hint: open ? "Hide tool steps" : "Show tool steps") {
+            foldHeader(open: open, hint: open ? String(localized: "Hide tool steps") : String(localized: "Show tool steps")) {
                 withAnimation(.snappy(duration: 0.3)) { showSteps = !open }
             } label: {
-                Text(working ? "Working · \(Self.toolsSummary(tools, working: true))" : "Used \(Self.toolsSummary(tools, working: false))")
+                (working ? Text("Working · \(Self.toolsSummary(tools, working: true))") : Text("Used \(Self.toolsSummary(tools, working: false))"))
                     .monospacedDigit()
             }
             if open {
@@ -341,8 +341,8 @@ struct MessageRow: View, Equatable {
                             }
                             .buttonStyle(.plain)
                             .disabled(!canOpen)
-                            .accessibilityLabel("Tool \(tool.name), \(tool.status.rawValue)")
-                            .accessibilityHint(canOpen ? (isOpen ? "Hides what it returned" : "Shows what it returned") : "")
+                            .accessibilityLabel("Tool \(tool.name), \(Self.statusLabel(tool.status))")
+                            .accessibilityHint(canOpen ? (isOpen ? String(localized: "Hides what it returned") : String(localized: "Shows what it returned")) : "")
                             if isOpen { stepDetail(tool) }
                         }
                         .transition(.move(edge: .leading).combined(with: .opacity))
@@ -354,6 +354,15 @@ struct MessageRow: View, Equatable {
         .animation(.snappy(duration: 0.3), value: tools.count)
         .animation(.snappy(duration: 0.3), value: open)
         .animation(.snappy(duration: 0.3), value: openStep)
+    }
+
+    /// A step's state, read out by VoiceOver.
+    private static func statusLabel(_ status: ToolActivity.Status) -> String {
+        switch status {
+        case .running: String(localized: "running", comment: "A tool step's state")
+        case .completed: String(localized: "completed", comment: "A tool step's state")
+        case .failed: String(localized: "failed", comment: "A tool step's state")
+        }
     }
 
     private func toggleStep(_ tool: ToolActivity) {
@@ -372,9 +381,9 @@ struct MessageRow: View, Equatable {
     /// whole text.
     private func stepDetail(_ tool: ToolActivity) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            if let args = tool.args { detailBlock("Input", args, lines: 6) }
+            if let args = tool.args { detailBlock(String(localized: "Input", comment: "What a tool step was called with"), args, lines: 6) }
             if let output = tool.output {
-                detailBlock("Output", output, lines: 12)
+                detailBlock(String(localized: "Output", comment: "What a tool step returned"), output, lines: 12)
             } else if tool.status == .running {
                 Text("Still running.").font(.caption).foregroundStyle(.secondary)
             } else if loadingDetails {
@@ -389,8 +398,8 @@ struct MessageRow: View, Equatable {
             if tool.args != nil || tool.output != nil {
                 HStack(spacing: 18) {
                     Button("Copy") { copy(tool.output ?? tool.args ?? "") }
-                        .accessibilityLabel("Copy \(tool.output != nil ? "output" : "input")")
-                    Button(tool.output != nil ? "Open full output" : "Open in full") { fullDetail = ToolDetail(tool) }
+                        .accessibilityLabel(tool.output != nil ? String(localized: "Copy output") : String(localized: "Copy input"))
+                    Button(tool.output != nil ? String(localized: "Open full output") : String(localized: "Open in full")) { fullDetail = ToolDetail(tool) }
                 }
                 .font(.caption.weight(.medium))
                 .foregroundStyle(theme.accent)
@@ -420,12 +429,15 @@ struct MessageRow: View, Equatable {
         return String(first.joined(separator: "\n").prefix(lines * 160))
     }
 
-    /// "3 tools", then "3 tools · 4.2 s" once they are all done and were timed.
+    /// "3 tools", then "3 tools · 4.2 sec" once they are all done and were timed.
     private static func toolsSummary(_ tools: [ToolActivity], working: Bool) -> String {
-        let count = tools.count == 1 ? "1 tool" : "\(tools.count) tools"
+        let count = String(localized: "\(tools.count) tools")
         guard !working, let start = tools.compactMap(\.startedAt).min(), let end = tools.compactMap(\.endedAt).max(), end > start else { return count }
         let seconds = end.timeIntervalSince(start)
-        return seconds < 10 ? count + String(format: " · %.1f s", seconds) : count + " · \(Int(seconds)) s"
+        let time = seconds < 10
+            ? Duration.seconds(seconds).formatted(.units(allowed: [.seconds], width: .condensedAbbreviated, fractionalPart: .show(length: 1)))
+            : Duration.seconds(Int(seconds)).formatted(.units(allowed: [.seconds], width: .condensedAbbreviated))
+        return count + " · " + time
     }
 
     /// Copy, read aloud, retry, more; then how fast it came back.
@@ -438,13 +450,13 @@ struct MessageRow: View, Equatable {
                     .frame(width: 32, height: 32).contentShape(.rect)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(copied ? "Copied" : "Copy reply")
+            .accessibilityLabel(copied ? String(localized: "Copied") : String(localized: "Copy reply"))
             if let onReadAloud {
-                actionButton(isReading ? "Stop reading" : "Read aloud",
+                actionButton(isReading ? String(localized: "Stop reading") : String(localized: "Read aloud"),
                              isReading ? "stop.fill" : "speaker.wave.2", action: onReadAloud)
             }
             if let onRegenerate {
-                actionButton("Regenerate", "arrow.clockwise", action: onRegenerate)
+                actionButton(String(localized: "Regenerate"), "arrow.clockwise", action: onRegenerate)
             }
             Menu { replyMenu } label: {
                 Image(systemName: "ellipsis").frame(width: 32, height: 32).contentShape(.rect)
@@ -459,7 +471,7 @@ struct MessageRow: View, Equatable {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(metrics.summary)
-                .accessibilityHint(fullMetrics ? "Shows fewer timings" : "Shows every timing")
+                .accessibilityHint(fullMetrics ? String(localized: "Shows fewer timings") : String(localized: "Shows every timing"))
             }
         }
         .font(.subheadline)
@@ -491,15 +503,16 @@ struct MessageRow: View, Equatable {
     private static func compact(_ m: TurnMetrics) -> String {
         var parts: [String] = []
         if let t = m.total ?? m.timeToFirstToken { parts.append(duration(t)) }
-        if let tps = m.tokensPerSecond { parts.append(String(format: "%.0f tok/s", tps)) }
+        if let tps = m.tokensPerSecond { parts.append(String(localized: "\(tps.formatted(.number.precision(.fractionLength(0)))) tok/s", comment: "Tokens per second")) }
         return parts.isEmpty ? m.summary : parts.joined(separator: " · ")
     }
 
-    /// "12.3 s" under a minute, "3m 12s" from there.
+    /// "12.3s" under a minute, "3m 12s" from there.
     nonisolated static func duration(_ seconds: TimeInterval) -> String {
-        if seconds < 60 { return String(format: "%.1f s", seconds) }
-        let whole = Int(seconds.rounded())
-        return "\(whole / 60)m \(String(format: "%02d", whole % 60))s"
+        if seconds < 60 {
+            return Duration.seconds(seconds).formatted(.units(allowed: [.seconds], width: .narrow, fractionalPart: .show(length: 1)))
+        }
+        return Duration.seconds(Int(seconds.rounded())).formatted(.units(allowed: [.minutes, .seconds], width: .narrow))
     }
 
     @ViewBuilder
@@ -604,7 +617,9 @@ private struct ToolDetail: Identifiable {
 
     init(_ tool: ToolActivity) {
         title = tool.name
-        text = [tool.args.map { "INPUT\n\n" + $0 }, tool.output.map { "OUTPUT\n\n" + $0 }]
+        let input = String(localized: "Input", comment: "What a tool step was called with").localizedUppercase
+        let output = String(localized: "Output", comment: "What a tool step returned").localizedUppercase
+        text = [tool.args.map { input + "\n\n" + $0 }, tool.output.map { output + "\n\n" + $0 }]
             .compactMap { $0 }.joined(separator: "\n\n\n")
     }
 }
@@ -681,7 +696,7 @@ struct DeliveredMessage: View {
     }
 
     private var name: String {
-        bot?.label(mainName: settings.headerTitle) ?? (delivered.profile == "default" ? settings.headerTitle : delivered.name ?? "A bot")
+        bot?.label(mainName: settings.headerTitle) ?? (delivered.profile == "default" ? settings.headerTitle : delivered.name ?? String(localized: "A bot"))
     }
 
     private var face: BotFace {
@@ -699,10 +714,10 @@ struct DeliveredMessage: View {
     private var botMessage: some View {
         // A relay that came back with nothing in it: the bot's turn failed, or gave no words.
         let unanswered = delivered.kind == .reply && message.text.isEmpty
-        let heading = unanswered ? "\(name) didn't answer"
-            : delivered.kind == .reply ? "\(name) replied"
-            : delivered.kind == .routine ? "\(delivered.title?.nilIfEmpty ?? "A schedule") ran"
-            : "Message from \(name)"
+        let heading = unanswered ? String(localized: "\(name) didn't answer")
+            : delivered.kind == .reply ? String(localized: "\(name) replied")
+            : delivered.kind == .routine ? String(localized: "\(delivered.title?.nilIfEmpty ?? String(localized: "A schedule")) ran")
+            : String(localized: "Message from \(name)")
         // A bot's reply to one this bot sent folds away as the thinking does: what the person
         // reads (and hears) is this bot's answer, which follows it. So does what a schedule came
         // up with, which the bot answers next.
@@ -728,7 +743,7 @@ struct DeliveredMessage: View {
                     .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
-                .accessibilityHint(open ? "Hides what \(name) said" : "Shows what \(name) said")
+                .accessibilityHint(open ? String(localized: "Hides what \(name) said") : String(localized: "Shows what \(name) said"))
             } else {
                 HStack(spacing: 6) {
                     BotAvatar(face: face, name: name, size: 20)
@@ -755,7 +770,7 @@ struct DeliveredMessage: View {
 
     private var processLine: some View {
         Button { showingOutput = true } label: {
-            Label(delivered.title ?? "A background task finished", systemImage: "gearshape.2")
+            Label(delivered.title ?? String(localized: "A background task finished"), systemImage: "gearshape.2")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -764,7 +779,7 @@ struct DeliveredMessage: View {
         .frame(maxWidth: .infinity)
         .accessibilityHint("Shows what it said")
         .sheet(isPresented: $showingOutput) {
-            SelectableTextSheet(text: message.text, title: delivered.title ?? "Background task", monospaced: true)
+            SelectableTextSheet(text: message.text, title: delivered.title ?? String(localized: "Background task"), monospaced: true)
         }
     }
 }
@@ -792,7 +807,7 @@ struct InventedTurnNote: View {
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)
-            .accessibilityHint(open ? "Hides it" : "Shows what it wrote. You didn't send it.")
+            .accessibilityHint(open ? String(localized: "Hides it") : String(localized: "Shows what it wrote. You didn't send it."))
             if open {
                 Text(invented)
                     .font(.footnote)

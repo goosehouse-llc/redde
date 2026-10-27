@@ -96,10 +96,10 @@ struct AgentPage: View {
         switch sendFromPage.send(prompt, page, messageID) {
         case .sent: return true
         case .busy:
-            toaster?.show("Wait for the reply, then try again")
+            toaster?.show(String(localized: "Wait for the reply, then try again"))
             return false
         case .unavailable:
-            toaster?.show("This page can't reach the agent from here")
+            toaster?.show(String(localized: "This page can't reach the agent from here"))
             return false
         }
     }

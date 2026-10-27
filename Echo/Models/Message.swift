@@ -109,8 +109,21 @@ nonisolated struct TurnMetrics: Equatable, Sendable, Codable {
         TokenUsage.decodeRate(output: usage?.output, firstTokenAt: firstTokenAt, doneAt: completedAt, sentAt: sentAt)
     }
 
+    /// "1.2M", "54k", "8.2k", "900": a token count in a few characters.
     static func compact(_ n: Int) -> String {
-        n >= 1_000_000 ? String(format: "%.1fM", Double(n) / 1_000_000) : n >= 10_000 ? String(format: "%.0fk", Double(n) / 1000) : n >= 1000 ? String(format: "%.1fk", Double(n) / 1000) : String(n)
+        func scaled(_ value: Double, digits: Int) -> String {
+            value.formatted(.number.precision(.fractionLength(digits)).grouping(.never))
+        }
+        if n >= 1_000_000 {
+            return String(localized: "\(scaled(Double(n) / 1_000_000, digits: 1))M", comment: "A token count in millions, as 1.2M")
+        }
+        if n >= 10_000 {
+            return String(localized: "\(scaled(Double(n) / 1000, digits: 0))k", comment: "A token count in thousands, as 54k or 8.2k")
+        }
+        if n >= 1000 {
+            return String(localized: "\(scaled(Double(n) / 1000, digits: 1))k", comment: "A token count in thousands, as 54k or 8.2k")
+        }
+        return n.formatted()
     }
 
     var timeToFirstToken: TimeInterval? { firstTokenAt.map { $0.timeIntervalSince(sentAt) } }
@@ -118,17 +131,30 @@ nonisolated struct TurnMetrics: Equatable, Sendable, Codable {
 
     var summary: String {
         var parts: [String] = []
-        if let ttft = timeToFirstToken { parts.append(String(format: "TTFT %.2fs", ttft)) }
-        if let total { parts.append(String(format: "total %.2fs", total)) }
+        if let ttft = timeToFirstToken {
+            parts.append(String(localized: "TTFT \(Self.seconds(ttft))", comment: "A reply's timings: the time to its first token, as TTFT 0.52s"))
+        }
+        if let total {
+            parts.append(String(localized: "total \(Self.seconds(total))", comment: "A reply's timings: how long the whole reply took, as total 3.40s"))
+        }
         if let pct = contextPercent {
-            parts.append(String(format: "ctx %.1f%%", pct))
+            let share = (pct / 100).formatted(.percent.precision(.fractionLength(1)))
+            parts.append(String(localized: "ctx \(share)", comment: "A reply's timings: how full the model's context is, as ctx 12.3%"))
         } else if let usage {
             // Hermes API server: only session totals are known. Say so rather than fake a percentage.
-            parts.append("session \(Self.compact(usage.total)) tok")
+            parts.append(String(localized: "session \(Self.compact(usage.total)) tok", comment: "A reply's timings: tokens used in the whole session, as session 12.3k tok"))
         }
-        if let tps = tokensPerSecond { parts.append(String(format: "%.0f tok/s", tps)) }
-        if characters > 0 { parts.append("\(characters) chars") }
+        if let tps = tokensPerSecond {
+            let rate = tps.formatted(.number.precision(.fractionLength(0)))
+            parts.append(String(localized: "\(rate) tok/s", comment: "A reply's timings: tokens a second"))
+        }
+        if characters > 0 { parts.append(String(localized: "\(characters) chars", comment: "A reply's timings: how many characters the reply has")) }
         return parts.joined(separator: " · ")
+    }
+
+    /// "0.52s": seconds to two places.
+    private static func seconds(_ interval: TimeInterval) -> String {
+        Duration.seconds(interval).formatted(.units(allowed: [.seconds], width: .narrow, fractionalPart: .show(length: 2)))
     }
 }
 

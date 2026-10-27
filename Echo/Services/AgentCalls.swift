@@ -45,7 +45,7 @@ nonisolated enum AgentCallPlan: Equatable, Sendable {
         guard !busy else { return .refuse("on a call already") }
         if let at = note.at, now.timeIntervalSince1970 - at > stale { return .refuse("too late to ring") }
         let profile = note.p.flatMap { $0.isEmpty ? nil : $0 } ?? "default"
-        let named = name(profile) ?? note.d.flatMap { $0.isEmpty ? nil : $0 } ?? "Your agent"
+        let named = name(profile) ?? note.d.flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "Your agent", comment: "Who is calling, on the incoming call screen, when the agent's name isn't known")
         return .ring(AgentCall(id: id, profile: profile, name: named, line: note.b ?? "",
                                session: note.s.flatMap { $0.isEmpty ? nil : $0 }, note: note))
     }
@@ -322,8 +322,8 @@ final class AgentCalls: NSObject {
     private func missed(_ call: AgentCall, declined: Bool = false) {
         let content = UNMutableNotificationContent()
         guard call.note.fill(content) else { return }
-        content.title = declined ? "Call from \(call.name)" : "Missed call from \(call.name)"
-        if call.line.isEmpty { content.body = "Open Redde to see what it was about." }
+        content.title = declined ? String(localized: "Call from \(call.name)", comment: "Notification title: a call from an agent that was declined") : String(localized: "Missed call from \(call.name)", comment: "Notification title: an agent's call nobody answered")
+        if call.line.isEmpty { content.body = String(localized: "Open Redde to see what it was about.") }
         content.sound = settings.notificationSound ? .default : nil
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "redde.call.\(call.note.i ?? call.id.uuidString)",
                                                                      content: content, trigger: nil))

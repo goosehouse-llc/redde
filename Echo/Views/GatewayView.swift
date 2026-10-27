@@ -46,10 +46,10 @@ struct GatewayView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task { await model.load() }
         .refreshable { await model.load() }
-        .confirmationDialog(confirming == .updating ? "Update Hermes?" : "Restart the gateway?",
+        .confirmationDialog(confirming == .updating ? String(localized: "Update Hermes?") : String(localized: "Restart the gateway?"),
                             isPresented: Binding(get: { confirming != nil }, set: { if !$0 { confirming = nil } }),
                             titleVisibility: .visible, presenting: confirming) { work in
-            Button(work == .updating ? "Update Hermes" : "Restart", role: .destructive) {
+            Button(work == .updating ? String(localized: "Update Hermes") : String(localized: "Restart"), role: .destructive) {
                 Task { if work == .updating { await model.applyUpdate() } else { await model.restart() } }
             }
             Button("Cancel", role: .cancel) {}
@@ -74,7 +74,7 @@ struct GatewayView: View {
                 Text(reason).font(.footnote).foregroundStyle(.secondary)
             }
             if status.activeTurns > 0 {
-                LabeledContent("Turns running", value: "\(status.activeTurns)")
+                LabeledContent("Turns running", value: status.activeTurns.formatted())
             }
             if let host = model.host {
                 if !host.hostname.isEmpty { LabeledContent("Host", value: host.hostname) }
@@ -167,7 +167,7 @@ struct GatewayView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 8) {
                         ProgressView()
-                        Text(work == .updating ? "Updating Hermes…" : "Restarting the gateway…")
+                        work == .updating ? Text("Updating Hermes…") : Text("Restarting the gateway…")
                     }
                     if !model.progress.isEmpty {
                         Text(model.progress.joined(separator: "\n")).font(.caption2.monospaced()).foregroundStyle(.secondary).lineLimit(4)
@@ -208,9 +208,9 @@ struct GatewayView: View {
         } header: {
             Text("Maintenance")
         } footer: {
-            Text(status.canUpdate
-                 ? "Restarting stops whatever the gateway is in the middle of. Updating runs hermes update on the host and restarts Hermes."
-                 : "Restarting stops whatever the gateway is in the middle of. This Hermes is updated outside its Dashboard (a container or a package manager), so there is no update here.")
+            status.canUpdate
+                ? Text("Restarting stops whatever the gateway is in the middle of. Updating runs hermes update on the host and restarts Hermes.")
+                : Text("Restarting stops whatever the gateway is in the middle of. This Hermes is updated outside its Dashboard (a container or a package manager), so there is no update here.")
         }
     }
 
@@ -221,14 +221,20 @@ struct GatewayView: View {
     }
 
     nonisolated static func restartWarning(turns: Int) -> String {
-        let cut = "Replies in progress over the Hermes API and on the messaging platforms are stopped, and the gateway is away for a few seconds."
-        return turns > 0 ? "\(turns) turn\(turns == 1 ? " is" : "s are") running now. " + cut : cut
+        let cut = String(localized: "Replies in progress over the Hermes API and on the messaging platforms are stopped, and the gateway is away for a few seconds.")
+        return turns > 0 ? String(localized: "\(turns) turns are running now.") + " " + cut : cut
     }
 
     nonisolated static func updateWarning(_ update: HermesUpdate?, host: HostStats?) -> String {
-        let place = host.flatMap { $0.hostname.isEmpty ? nil : " on \($0.hostname)" } ?? ""
-        let size = update?.behind.map { $0 > 0 ? ", \($0) change\($0 == 1 ? "" : "s")," : "" } ?? ""
-        return "This runs hermes update\(place)\(size) and restarts Hermes. Everything it is doing stops, and changes made by hand to Hermes's own code there can be lost."
+        let place = host.flatMap { $0.hostname.isEmpty ? nil : $0.hostname }
+        let behind = update?.behind.flatMap { $0 > 0 ? $0 : nil }
+        let runs = switch (place, behind) {
+        case let (place?, behind?): String(localized: "This runs hermes update on \(place), \(behind) changes, and restarts Hermes.")
+        case let (place?, nil): String(localized: "This runs hermes update on \(place) and restarts Hermes.")
+        case let (nil, behind?): String(localized: "This runs hermes update, \(behind) changes, and restarts Hermes.")
+        case (nil, nil): String(localized: "This runs hermes update and restarts Hermes.")
+        }
+        return runs + " " + String(localized: "Everything it is doing stops, and changes made by hand to Hermes's own code there can be lost.")
     }
 }
 
@@ -254,7 +260,7 @@ struct GatewayLogView: View {
                     if let problem {
                         Label(problem, systemImage: "exclamationmark.triangle").font(.footnote).foregroundStyle(.orange)
                     } else if lines.isEmpty, !loading {
-                        Text(search.isEmpty ? "Nothing in this log." : "No line matches.").font(.footnote).foregroundStyle(.secondary)
+                        (search.isEmpty ? Text("Nothing in this log.") : Text("No line matches.")).font(.footnote).foregroundStyle(.secondary)
                     }
                     ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
                         Text(line)

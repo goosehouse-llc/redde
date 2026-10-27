@@ -6,13 +6,14 @@ import UIKit
 /// details block so it doesn't dominate; tool calls become a one-line note.
 nonisolated enum TranscriptExporter {
     static func markdown(title: String, messages: [Message], assistantName: String = "Redde") -> String {
-        var out = "# \(title.isEmpty ? "Conversation" : title)\n\n"
+        var out = "# \(title.isEmpty ? String(localized: "Conversation", comment: "Title of an exported conversation that has none") : title)\n\n"
         let stamp = messages.first?.createdAt ?? .now
-        out += "_Exported from Redde · \(stamp.formatted(date: .abbreviated, time: .shortened))_\n\n"
+        out += "_" + String(localized: "Exported from Redde · \(stamp.formatted(date: .abbreviated, time: .shortened))") + "_\n\n"
         for m in messages {
             switch m.role {
             case .user:
-                out += "## You\(m.isSteer ? " (steer)" : "")\n\n"
+                out += "## " + (m.isSteer ? String(localized: "You (steer)", comment: "Exported conversation: a message added to a reply under way")
+                                          : String(localized: "You", comment: "Exported conversation: who wrote a message")) + "\n\n"
                 if !m.text.isEmpty { out += m.text + "\n\n" }
                 if !m.attachments.isEmpty {
                     out += m.attachments.map { "- 📎 \($0.filename)" }.joined(separator: "\n") + "\n\n"
@@ -20,14 +21,15 @@ nonisolated enum TranscriptExporter {
             case .assistant:
                 out += "## \(assistantName)\n\n"
                 if !m.reasoning.isEmpty {
-                    out += "<details><summary>Thinking</summary>\n\n" + m.reasoning.trimmingCharacters(in: .whitespacesAndNewlines) + "\n\n</details>\n\n"
+                    out += "<details><summary>" + String(localized: "Thinking", comment: "Exported conversation: the agent's reasoning") + "</summary>\n\n" + m.reasoning.trimmingCharacters(in: .whitespacesAndNewlines) + "\n\n</details>\n\n"
                 }
                 if !m.tools.isEmpty {
-                    out += "_Tools: " + m.tools.map { $0.name + ($0.status == .failed ? " (failed)" : "") }.joined(separator: ", ") + "_\n\n"
+                    let tools = m.tools.map { $0.status == .failed ? String(localized: "\($0.name) (failed)", comment: "Exported conversation: a tool call that failed") : $0.name }
+                    out += "_" + String(localized: "Tools: \(tools.joined(separator: ", "))", comment: "Exported conversation") + "_\n\n"
                 }
                 if !m.subagents.isEmpty {
                     for s in m.subagents {
-                        out += "- **Subagent:** \(s.goal)" + (s.summary.map { " — \($0)" } ?? "") + "\n"
+                        out += "- **" + String(localized: "Subagent:", comment: "Exported conversation: a task handed to another agent") + "** \(s.goal)" + (s.summary.map { " — \($0)" } ?? "") + "\n"
                     }
                     out += "\n"
                 }

@@ -51,7 +51,7 @@ struct ReddePluginRow: View {
             case .checking:
                 HStack(spacing: 10) {
                     ProgressView()
-                    Text("Looking for the plugin on \(serverName ?? "your Hermes")…").foregroundStyle(.secondary)
+                    Text("Looking for the plugin on \(serverName ?? String(localized: "your Hermes"))…").foregroundStyle(.secondary)
                 }
             case .unknown:
                 // The Dashboard couldn't be asked: the terminal's way still works.
@@ -89,8 +89,8 @@ struct ReddePluginRow: View {
     }
 
     private var installQuestion: String {
-        let server = serverName ?? "your Hermes"
-        return plugin.state?.installed == true ? "Have \(server) fetch the plugin again?" : "Have \(server) install the Redde plugin?"
+        let server = serverName ?? String(localized: "your Hermes")
+        return plugin.state?.installed == true ? String(localized: "Have \(server) fetch the plugin again?") : String(localized: "Have \(server) install the Redde plugin?")
     }
 }
 

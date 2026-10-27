@@ -91,7 +91,7 @@ final class GatewayModel {
         do {
             update = try await source.hermesUpdate()
         } catch {
-            outcome = Outcome(ok: false, text: "Couldn't check for an update: \(error.localizedDescription)")
+            outcome = Outcome(ok: false, text: String(localized: "Couldn't check for an update: \(error.localizedDescription)"))
         }
     }
 
@@ -117,16 +117,18 @@ final class GatewayModel {
             }
             await load()
             if let code = ended.exitCode, code != 0 {
-                outcome = Outcome(ok: false, text: "The restart failed: \(ended.lines.last ?? "exit code \(code)")")
+                let why = ended.lines.last ?? String(localized: "exit code \(code)", comment: "Why a command on the server failed")
+                outcome = Outcome(ok: false, text: String(localized: "The restart failed: \(why)"))
             } else if status?.gatewayRunning == false {
                 // Hermes 0.21.5 does this to a gateway that was started by hand: it stops it, takes
                 // the one it just stopped for a running one, and starts nothing.
-                outcome = Outcome(ok: false, text: "The gateway stopped and hasn't come back (it says: \(status?.gatewayLabel ?? "Stopped")). Start it on the server: hermes gateway start")
+                let says = status?.gatewayLabel ?? String(localized: "Stopped", comment: "The gateway's state")
+                outcome = Outcome(ok: false, text: String(localized: "The gateway stopped and hasn't come back (it says: \(says)). Start it on the server: hermes gateway start"))
             } else {
-                outcome = Outcome(ok: true, text: "The gateway was restarted.")
+                outcome = Outcome(ok: true, text: String(localized: "The gateway was restarted."))
             }
         } catch {
-            outcome = Outcome(ok: false, text: "The gateway wasn't restarted: \(error.localizedDescription)")
+            outcome = Outcome(ok: false, text: String(localized: "The gateway wasn't restarted: \(error.localizedDescription)"))
             await load()
         }
     }
@@ -145,18 +147,21 @@ final class GatewayModel {
             await load()
             let now = status?.version ?? ""
             if let code = ended.exitCode, code != 0 {
-                outcome = Outcome(ok: false, text: "The update failed: \(ended.lines.last ?? "exit code \(code)")")
+                let why = ended.lines.last ?? String(localized: "exit code \(code)", comment: "Why a command on the server failed")
+                outcome = Outcome(ok: false, text: String(localized: "The update failed: \(why)"))
             } else if !now.isEmpty, now != before {
-                outcome = Outcome(ok: true, text: "Hermes is now \(now).")
+                outcome = Outcome(ok: true, text: String(localized: "Hermes is now \(now)."))
             } else if ended.exitCode == 0 {
-                outcome = Outcome(ok: true, text: "Hermes was updated.")
+                outcome = Outcome(ok: true, text: String(localized: "Hermes was updated."))
             } else {
                 // Hermes restarted and no longer knows how the update ended; its version is what it was.
-                outcome = Outcome(ok: false, text: "The update ended and Hermes is still \(before.isEmpty ? "the same version" : before). Its log says why.")
+                outcome = before.isEmpty
+                    ? Outcome(ok: false, text: String(localized: "The update ended and Hermes is still the same version. Its log says why."))
+                    : Outcome(ok: false, text: String(localized: "The update ended and Hermes is still \(before). Its log says why."))
             }
             update = try? await source.hermesUpdate()
         } catch {
-            outcome = Outcome(ok: false, text: "Hermes wasn't updated: \(error.localizedDescription)")
+            outcome = Outcome(ok: false, text: String(localized: "Hermes wasn't updated: \(error.localizedDescription)"))
             await load()
         }
     }
@@ -174,7 +179,7 @@ final class GatewayModel {
                 if !action.running { return action }
                 if let isOver, await isOver() { return GatewayAction(running: false, exitCode: 0, lines: action.lines) }
             }
-            guard clock.now < deadline else { throw GatewayRefusal(message: "it took too long. Look at the server.") }
+            guard clock.now < deadline else { throw GatewayRefusal(message: String(localized: "it took too long. Look at the server.")) }
         }
     }
 }

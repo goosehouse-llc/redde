@@ -41,13 +41,14 @@ struct ChatControlsSection: View {
             Text("This conversation")
         } footer: {
             Text(offersAutoApprove ? Self.footer(controls)
-                 : Self.fastFooter + " It is asked for on each of this conversation's turns; a model without one answers as usual.")
+                 : String(localized: "\(Self.fastFooter) It is asked for on each of this conversation's turns; a model without one answers as usual.",
+                          comment: "Footer: %@ is the sentence explaining fast mode"))
         }
         .task(id: stored) {
             do {
                 controls = try await source.chatControls(stored: stored)
             } catch {
-                problem = "Couldn't read this conversation's settings: \(error.localizedDescription)"
+                problem = String(localized: "Couldn't read this conversation's settings: \(error.localizedDescription)")
             }
         }
         .confirmationDialog("Run commands without asking?", isPresented: $confirmingAutoApprove, titleVisibility: .visible) {
@@ -73,13 +74,15 @@ struct ChatControlsSection: View {
         }
     }
 
-    nonisolated static let fastFooter = "Fast mode asks the provider for its faster tier, which usually costs more; only some models have one."
+    nonisolated static let fastFooter = String(localized: "Fast mode asks the provider for its faster tier, which usually costs more; only some models have one.")
 
     nonisolated static func footer(_ controls: ChatControls?) -> String {
         let fast = fastFooter
         if controls?.serverNeverAsks == true {
-            return fast + " This server never asks before a command: approvals are off in Hermes's config, for every conversation."
+            return String(localized: "\(fast) This server never asks before a command: approvals are off in Hermes's config, for every conversation.",
+                          comment: "Footer: %@ is the sentence explaining fast mode")
         }
-        return fast + " Without asking, Hermes runs every command it wants to in this conversation, until you switch it back or Hermes restarts."
+        return String(localized: "\(fast) Without asking, Hermes runs every command it wants to in this conversation, until you switch it back or Hermes restarts.",
+                      comment: "Footer: %@ is the sentence explaining fast mode")
     }
 }

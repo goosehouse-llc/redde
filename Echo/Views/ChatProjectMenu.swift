@@ -37,13 +37,13 @@ struct ChatProjectMenu: View {
     var body: some View {
         let current = ChatControlStore.shared.project(for: conversation.serverSessionID)?.name
         let targets = directory.key == settings.connectionKey ? directory.folders.filter { $0.label != current } : []
-        Menu(current == nil ? "Add to Project" : "Move to Project", systemImage: "folder") {
+        Menu(current == nil ? String(localized: "Add to Project") : String(localized: "Move to Project"), systemImage: "folder") {
             ForEach(targets) { project in
                 Button(project.label) {
                     guard let stored = conversation.serverSessionID, let path = project.path else { return }
                     Task {
                         do { try await ChatProjectPrompt.move(stored, to: path) } catch {
-                            problem = "Couldn't move it to \(project.label): \(error.localizedDescription)"
+                            problem = String(localized: "Couldn't move it to \(project.label): \(error.localizedDescription)")
                         }
                     }
                 }

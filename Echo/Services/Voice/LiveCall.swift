@@ -96,7 +96,7 @@ final class LiveCall: LiveCalling {
     var outputLevel: Float { audio.levels().output }
 
     func open() throws {
-        do { try audio.start() } catch { throw LiveFailure("The microphone couldn't start: \(error.localizedDescription)") }
+        do { try audio.start() } catch { throw LiveFailure(String(localized: "The microphone couldn't start: \(error.localizedDescription)")) }
     }
 
     func connect(_ connection: LiveConnection) async throws {
@@ -153,7 +153,7 @@ final class LiveCall: LiveCalling {
         audio.stop()
         socket?.cancel(with: .normalClosure, reason: nil)
         socket = nil
-        finishStarting(LiveFailure("The call was closed."))
+        finishStarting(LiveFailure(String(localized: "The call was closed.")))
     }
 
     // MARK: - What comes in
@@ -206,7 +206,7 @@ final class LiveCall: LiveCalling {
                 case let .failed(message, _):
                     finishStarting(LiveFailure(message))
                 case let .closed(reason):
-                    finishStarting(LiveFailure(reason.map { LiveFailure.readable($0, engine: dialect.engine) } ?? "\(dialect.engine.name) ended the call."))
+                    finishStarting(LiveFailure(reason.map { LiveFailure.readable($0, engine: dialect.engine) } ?? String(localized: "\(dialect.engine.name) ended the call.")))
                 default:
                     break
                 }
@@ -225,7 +225,7 @@ final class LiveCall: LiveCalling {
         guard !closed, socket === self.socket else { return }
         log.error("live call connection: \(problem, privacy: .public)")
         if started != nil {
-            finishStarting(LiveFailure("\(dialect.engine.name) couldn't connect: \(problem)"))
+            finishStarting(LiveFailure(String(localized: "\(dialect.engine.name) couldn't connect: \(problem)")))
         } else {
             listener?.liveCallChanged(.lost)
         }
@@ -543,7 +543,7 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
         let format = input.outputFormat(forBus: 0)
         guard let mono = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: format.sampleRate, channels: 1, interleaved: false),
               let converter = AVAudioConverter(from: mono, to: wire) else {
-            throw LiveFailure("The microphone's audio can't be converted for the call.")
+            throw LiveFailure(String(localized: "The microphone's audio can't be converted for the call."))
         }
         heardFormat = mono
         self.converter = converter

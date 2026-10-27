@@ -1,0 +1,835 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Ask ${profile} in ${applicationName}" : {
+      "localizations" : {
+        "da" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Spørg ${profile} i ${applicationName}",
+              "Tal med ${profile} i ${applicationName}",
+              "Åbn ${profile} i ${applicationName}"
+            ]
+          }
+        },
+        "de" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Frag ${profile} in ${applicationName}",
+              "${profile} in ${applicationName} fragen",
+              "Sprich mit ${profile} in ${applicationName}",
+              "Öffne ${applicationName} mit ${profile}"
+            ]
+          }
+        },
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Ask ${profile} in ${applicationName}",
+              "Talk to ${profile} in ${applicationName}",
+              "Open ${applicationName} on ${profile}"
+            ]
+          }
+        },
+        "es" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Pregunta a ${profile} en ${applicationName}",
+              "Habla con ${profile} en ${applicationName}",
+              "Abre ${applicationName} con ${profile}"
+            ]
+          }
+        },
+        "fr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Demande à ${profile} dans ${applicationName}",
+              "Parle à ${profile} dans ${applicationName}",
+              "Ouvre ${applicationName} sur ${profile}"
+            ]
+          }
+        },
+        "it" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Chiedi a ${profile} in ${applicationName}",
+              "Chiedi a ${profile} su ${applicationName}",
+              "Parla con ${profile} in ${applicationName}",
+              "Apri ${applicationName} su ${profile}"
+            ]
+          }
+        },
+        "ja" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}で${profile}に聞いて",
+              "${applicationName}で${profile}に質問",
+              "${applicationName}で${profile}と話す",
+              "${applicationName}で${profile}を開いて"
+            ]
+          }
+        },
+        "ko" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}에서 ${profile}에게 물어봐",
+              "${applicationName}에서 ${profile}한테 물어봐",
+              "${applicationName}에서 ${profile}하고 대화하기",
+              "${applicationName}에서 ${profile} 열어 줘"
+            ]
+          }
+        },
+        "nb" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Spør ${profile} i ${applicationName}",
+              "Snakk med ${profile} i ${applicationName}",
+              "Åpne ${profile} i ${applicationName}"
+            ]
+          }
+        },
+        "nl" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Vraag ${profile} in ${applicationName}",
+              "Praat met ${profile} in ${applicationName}",
+              "Open ${profile} in ${applicationName}",
+              "Vraag het ${profile} in ${applicationName}"
+            ]
+          }
+        },
+        "pl" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Zapytaj ${profile} w ${applicationName}",
+              "Porozmawiaj z ${profile} w ${applicationName}",
+              "Otwórz ${profile} w ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Perguntar a ${profile} no ${applicationName}",
+              "Pergunte a ${profile} no ${applicationName}",
+              "Falar com ${profile} no ${applicationName}",
+              "Abrir ${profile} no ${applicationName}"
+            ]
+          }
+        },
+        "ru" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Спроси ${profile} в ${applicationName}",
+              "Поговорить с ${profile} в ${applicationName}",
+              "Открой ${applicationName} с профилем ${profile}"
+            ]
+          }
+        },
+        "sv" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Fråga ${profile} i ${applicationName}",
+              "Prata med ${profile} i ${applicationName}",
+              "Öppna ${profile} i ${applicationName}"
+            ]
+          }
+        },
+        "tr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName} ile ${profile} profiline sor",
+              "${applicationName} uygulamasında ${profile} profiline sor",
+              "${applicationName} uygulamasında ${profile} ile konuş",
+              "${applicationName} uygulamasını ${profile} profilinde aç"
+            ]
+          }
+        },
+        "uk" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Запитай ${profile} в ${applicationName}",
+              "Поговори з ${profile} в ${applicationName}",
+              "Відкрий ${applicationName} з профілем ${profile}"
+            ]
+          }
+        },
+        "zh-Hans" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "在${applicationName}中问${profile}",
+              "在${applicationName}里和${profile}对话",
+              "在${applicationName}中打开${profile}",
+              "用${applicationName}问${profile}"
+            ]
+          }
+        },
+        "zh-Hant" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "在 ${applicationName} 問 ${profile}",
+              "在 ${applicationName} 跟 ${profile} 說話",
+              "用 ${profile} 打開 ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "Hey ${applicationName}" : {
+      "localizations" : {
+        "da" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Hej ${applicationName}",
+              "${applicationName}, lyt",
+              "Spørg ${applicationName}",
+              "Stil ${applicationName} et spørgsmål",
+              "Tal med ${applicationName}",
+              "Åbn ${applicationName}, og lyt"
+            ]
+          }
+        },
+        "de" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Hey ${applicationName}",
+              "${applicationName}, hör zu",
+              "Sprich mit ${applicationName}",
+              "Mit ${applicationName} sprechen",
+              "Öffne ${applicationName} und hör zu"
+            ]
+          }
+        },
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Hey ${applicationName}",
+              "${applicationName} listen",
+              "Ask ${applicationName}",
+              "Ask ${applicationName} a question",
+              "Talk to ${applicationName}",
+              "Open ${applicationName} and listen"
+            ]
+          }
+        },
+        "es" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Oye ${applicationName}",
+              "${applicationName}, escucha",
+              "Habla con ${applicationName}",
+              "Hablar con ${applicationName}",
+              "Abre ${applicationName} y escucha"
+            ]
+          }
+        },
+        "fr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Dis ${applicationName}",
+              "${applicationName}, écoute",
+              "Demande à ${applicationName}",
+              "Pose une question à ${applicationName}",
+              "Parle à ${applicationName}",
+              "Ouvre ${applicationName} et écoute"
+            ]
+          }
+        },
+        "it" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Ehi ${applicationName}",
+              "${applicationName} ascolta",
+              "Chiedi a ${applicationName}",
+              "Fai una domanda a ${applicationName}",
+              "Parla con ${applicationName}",
+              "Apri ${applicationName} e ascolta"
+            ]
+          }
+        },
+        "ja" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}と話す",
+              "${applicationName}に話しかける",
+              "${applicationName}に聞いて",
+              "${applicationName}に質問",
+              "${applicationName}を開いて聞いて"
+            ]
+          }
+        },
+        "ko" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}에게 물어봐",
+              "${applicationName}한테 물어봐",
+              "${applicationName}에게 질문하기",
+              "${applicationName}에게 말하기",
+              "${applicationName} 들어 줘",
+              "${applicationName} 열고 들어 줘"
+            ]
+          }
+        },
+        "nb" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Hei ${applicationName}",
+              "${applicationName} lytt",
+              "Spør ${applicationName}",
+              "Still ${applicationName} et spørsmål",
+              "Snakk med ${applicationName}",
+              "Åpne ${applicationName} og lytt"
+            ]
+          }
+        },
+        "nl" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Hé ${applicationName}",
+              "${applicationName}, luister",
+              "Vraag ${applicationName}",
+              "Stel ${applicationName} een vraag",
+              "Praat met ${applicationName}",
+              "Open ${applicationName} en luister"
+            ]
+          }
+        },
+        "pl" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Hej ${applicationName}",
+              "${applicationName}, słuchaj",
+              "Porozmawiaj z ${applicationName}",
+              "Rozmowa z ${applicationName}",
+              "Otwórz ${applicationName} i słuchaj"
+            ]
+          }
+        },
+        "pt-BR" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Ei ${applicationName}",
+              "${applicationName} escute",
+              "Pergunte ao ${applicationName}",
+              "Fazer uma pergunta ao ${applicationName}",
+              "Falar com o ${applicationName}",
+              "Abra o ${applicationName} e escute"
+            ]
+          }
+        },
+        "ru" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Привет, ${applicationName}",
+              "${applicationName}, слушай",
+              "Спроси ${applicationName}",
+              "Поговорить с ${applicationName}",
+              "Открой ${applicationName} и слушай"
+            ]
+          }
+        },
+        "sv" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Hej ${applicationName}",
+              "${applicationName} lyssna",
+              "Fråga ${applicationName}",
+              "Ställ en fråga till ${applicationName}",
+              "Prata med ${applicationName}",
+              "Öppna ${applicationName} och lyssna"
+            ]
+          }
+        },
+        "tr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Hey ${applicationName}",
+              "${applicationName} dinle",
+              "${applicationName}'ye sor",
+              "${applicationName} ile konuş",
+              "${applicationName} uygulamasını aç ve dinle"
+            ]
+          }
+        },
+        "uk" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Привіт, ${applicationName}",
+              "${applicationName}, слухай",
+              "Запитай ${applicationName}",
+              "Постав запитання ${applicationName}",
+              "Поговори з ${applicationName}",
+              "Відкрий ${applicationName} і слухай"
+            ]
+          }
+        },
+        "zh-Hans" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "嘿，${applicationName}",
+              "${applicationName}，听我说",
+              "问问${applicationName}",
+              "向${applicationName}提问",
+              "和${applicationName}说话",
+              "打开${applicationName}并聆听"
+            ]
+          }
+        },
+        "zh-Hant" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "嘿 ${applicationName}",
+              "${applicationName} 聽我說",
+              "問 ${applicationName}",
+              "問 ${applicationName} 一個問題",
+              "跟 ${applicationName} 說話",
+              "打開 ${applicationName} 並聆聽"
+            ]
+          }
+        }
+      }
+    },
+    "Start a conversation with ${applicationName}" : {
+      "localizations" : {
+        "da" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Start en samtale med ${applicationName}",
+              "Chat med ${applicationName}",
+              "${applicationName} håndfrit"
+            ]
+          }
+        },
+        "de" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Starte eine Konversation mit ${applicationName}",
+              "Konversation mit ${applicationName} starten",
+              "Chatte mit ${applicationName}",
+              "${applicationName} freihändig",
+              "Unterhalte dich mit ${applicationName}"
+            ]
+          }
+        },
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Start a conversation with ${applicationName}",
+              "Chat with ${applicationName}",
+              "${applicationName} hands-free"
+            ]
+          }
+        },
+        "es" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Empieza una conversación con ${applicationName}",
+              "Inicia una conversación con ${applicationName}",
+              "Chatea con ${applicationName}",
+              "${applicationName} manos libres"
+            ]
+          }
+        },
+        "fr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Démarre une conversation avec ${applicationName}",
+              "Discute avec ${applicationName}",
+              "${applicationName} en mains libres"
+            ]
+          }
+        },
+        "it" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Inizia una conversazione con ${applicationName}",
+              "Avvia una conversazione con ${applicationName}",
+              "Chatta con ${applicationName}",
+              "${applicationName} a mani libere"
+            ]
+          }
+        },
+        "ja" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}と会話を始めて",
+              "${applicationName}と会話",
+              "${applicationName}とチャット",
+              "${applicationName}とハンズフリーで話す"
+            ]
+          }
+        },
+        "ko" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}하고 대화 시작해 줘",
+              "${applicationName}랑 대화할래",
+              "${applicationName}와 채팅하기",
+              "${applicationName} 핸즈프리 켜 줘",
+              "${applicationName} 핸즈프리"
+            ]
+          }
+        },
+        "nb" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Start en samtale med ${applicationName}",
+              "Chat med ${applicationName}",
+              "${applicationName} håndfri"
+            ]
+          }
+        },
+        "nl" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Begin een gesprek met ${applicationName}",
+              "Chat met ${applicationName}",
+              "${applicationName} handsfree",
+              "Start een gesprek met ${applicationName}"
+            ]
+          }
+        },
+        "pl" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Zacznij rozmowę z ${applicationName}",
+              "Rozpocznij rozmowę z ${applicationName}",
+              "Czatuj z ${applicationName}",
+              "${applicationName} bez użycia rąk"
+            ]
+          }
+        },
+        "pt-BR" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Iniciar uma conversa com o ${applicationName}",
+              "Começar uma conversa com o ${applicationName}",
+              "Conversar com o ${applicationName}",
+              "${applicationName} com mãos livres"
+            ]
+          }
+        },
+        "ru" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Начни разговор с ${applicationName}",
+              "Пообщаться с ${applicationName}",
+              "Чат с ${applicationName}",
+              "${applicationName} без рук"
+            ]
+          }
+        },
+        "sv" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Starta en konversation med ${applicationName}",
+              "Chatta med ${applicationName}",
+              "${applicationName} handsfree"
+            ]
+          }
+        },
+        "tr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName} ile sohbet başlat",
+              "${applicationName} ile sohbet et",
+              "${applicationName} eller serbest",
+              "${applicationName} ile konuşma başlat"
+            ]
+          }
+        },
+        "uk" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Почни розмову з ${applicationName}",
+              "Чат з ${applicationName}",
+              "${applicationName} з вільними руками"
+            ]
+          }
+        },
+        "zh-Hans" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "和${applicationName}开始对话",
+              "开始${applicationName}对话",
+              "和${applicationName}聊天",
+              "${applicationName}免提对话"
+            ]
+          }
+        },
+        "zh-Hant" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "和 ${applicationName} 開始對話",
+              "跟 ${applicationName} 聊天",
+              "${applicationName} 免持模式"
+            ]
+          }
+        }
+      }
+    },
+    "Take a note in ${applicationName}" : {
+      "localizations" : {
+        "da" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Tag en note i ${applicationName}",
+              "Tag en note med ${applicationName}",
+              "Note til ${applicationName}",
+              "Føj en note til ${applicationName}"
+            ]
+          }
+        },
+        "de" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Mach eine Notiz in ${applicationName}",
+              "Notiz in ${applicationName} machen",
+              "Notiz mit ${applicationName}",
+              "Notiz an ${applicationName}",
+              "Neue Notiz in ${applicationName}"
+            ]
+          }
+        },
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Take a note in ${applicationName}",
+              "Take a note with ${applicationName}",
+              "Note to ${applicationName}",
+              "Add a note to ${applicationName}"
+            ]
+          }
+        },
+        "es" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Toma una nota en ${applicationName}",
+              "Tomar una nota en ${applicationName}",
+              "Toma una nota con ${applicationName}",
+              "Nota para ${applicationName}",
+              "Añade una nota a ${applicationName}"
+            ]
+          }
+        },
+        "fr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Prends une note dans ${applicationName}",
+              "Prends une note avec ${applicationName}",
+              "Note pour ${applicationName}",
+              "Ajoute une note à ${applicationName}"
+            ]
+          }
+        },
+        "it" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Prendi una nota in ${applicationName}",
+              "Prendi una nota con ${applicationName}",
+              "Nota a ${applicationName}",
+              "Aggiungi una nota a ${applicationName}",
+              "Scrivi una nota in ${applicationName}"
+            ]
+          }
+        },
+        "ja" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}でメモを取って",
+              "${applicationName}でメモして",
+              "${applicationName}にメモ",
+              "${applicationName}にメモを追加"
+            ]
+          }
+        },
+        "ko" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}에 메모해 줘",
+              "${applicationName}로 메모해 줘",
+              "${applicationName}에 메모하기",
+              "${applicationName}에 메모 추가해 줘"
+            ]
+          }
+        },
+        "nb" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Ta et notat i ${applicationName}",
+              "Ta et notat med ${applicationName}",
+              "Notat til ${applicationName}",
+              "Legg til et notat i ${applicationName}"
+            ]
+          }
+        },
+        "nl" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Maak een notitie in ${applicationName}",
+              "Maak een notitie met ${applicationName}",
+              "Notitie voor ${applicationName}",
+              "Voeg een notitie toe aan ${applicationName}"
+            ]
+          }
+        },
+        "pl" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Zanotuj w ${applicationName}",
+              "Zrób notatkę w ${applicationName}",
+              "Zanotuj coś w ${applicationName}",
+              "Notatka dla ${applicationName}",
+              "Dodaj notatkę w ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Criar uma nota no ${applicationName}",
+              "Crie uma nota no ${applicationName}",
+              "Anotar no ${applicationName}",
+              "Nota para o ${applicationName}",
+              "Adicionar uma nota ao ${applicationName}",
+              "Criar nota com o ${applicationName}"
+            ]
+          }
+        },
+        "ru" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Сделай заметку в ${applicationName}",
+              "Заметка в ${applicationName}",
+              "Запиши в ${applicationName}",
+              "Добавь заметку в ${applicationName}"
+            ]
+          }
+        },
+        "sv" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Gör en anteckning i ${applicationName}",
+              "Anteckna med ${applicationName}",
+              "Anteckning till ${applicationName}",
+              "Lägg till en anteckning i ${applicationName}"
+            ]
+          }
+        },
+        "tr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName} ile not al",
+              "${applicationName} uygulamasında not al",
+              "${applicationName} için not",
+              "${applicationName} uygulamasına not ekle"
+            ]
+          }
+        },
+        "uk" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Запиши нотатку в ${applicationName}",
+              "Зроби нотатку в ${applicationName}",
+              "Нотатка для ${applicationName}",
+              "Додай нотатку в ${applicationName}"
+            ]
+          }
+        },
+        "zh-Hans" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "在${applicationName}中记笔记",
+              "用${applicationName}记笔记",
+              "给${applicationName}记一条笔记",
+              "在${applicationName}里记一下"
+            ]
+          }
+        },
+        "zh-Hant" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "在 ${applicationName} 記筆記",
+              "用 ${applicationName} 記筆記",
+              "給 ${applicationName} 的筆記",
+              "在 ${applicationName} 加入筆記"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

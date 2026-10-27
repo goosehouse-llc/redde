@@ -26,7 +26,7 @@ nonisolated enum DroppedItems {
         var loaded = Loaded()
         for provider in providers {
             guard loaded.attachments.count < maximumAttachments else {
-                loaded.problems.append("Only the first \(maximumAttachments) items were attached.")
+                loaded.problems.append(String(localized: "Only the first \(maximumAttachments) items were attached."))
                 break
             }
             let name = provider.suggestedName
@@ -37,13 +37,13 @@ nonisolated enum DroppedItems {
                 if case .success(let attachment?) = made {
                     loaded.attachments.append(attachment)
                 } else {
-                    loaded.problems.append("\(name ?? "A picture") couldn't be read.")
+                    loaded.problems.append(name.map { String(localized: "\($0) couldn't be read.", comment: "A file dropped on the chat, by its name") } ?? String(localized: "A picture couldn't be read."))
                 }
             case .file(let type):
                 let made = await withCheckedContinuation { requestFile(provider, as: type, $0) { try Attachment.file(url: $0) } }
                 switch made {
                 case .success(let attachment?): loaded.attachments.append(attachment)
-                case .success(nil): loaded.problems.append("\(name ?? "A file") couldn't be read.")
+                case .success(nil): loaded.problems.append(name.map { String(localized: "\($0) couldn't be read.", comment: "A file dropped on the chat, by its name") } ?? String(localized: "A file couldn't be read."))
                 case .failure(let error): loaded.problems.append(error.localizedDescription)
                 }
             case .link:

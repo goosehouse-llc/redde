@@ -31,8 +31,8 @@ struct SecretField: View {
     let item: Keychain.Item
     let prompt: String
     let replacePrompt: String
-    var saveTitle = "Save"
-    var removeTitle = "Remove"
+    var saveTitle = String(localized: "Save")
+    var removeTitle = String(localized: "Remove")
     /// Optional secrets show the buttons only once something is typed or stored.
     var optional = false
     @Binding var hasValue: Bool
@@ -87,17 +87,17 @@ struct GatewayKeySettings: View {
         Section {
             TextField("https://your-gateway:8642", text: $settings.gatewayURL)
                 .urlFieldStyle()
-            SecretField(item: .gatewayAPIKey, prompt: "API key", replacePrompt: "Replace stored API key",
-                        saveTitle: "Save key", removeTitle: "Remove key", hasValue: $hasStoredKey,
+            SecretField(item: .gatewayAPIKey, prompt: String(localized: "API key"), replacePrompt: String(localized: "Replace stored API key"),
+                        saveTitle: String(localized: "Save key"), removeTitle: String(localized: "Remove key"), hasValue: $hasStoredKey,
                         onSaved: { saved.toggle() })
         } header: {
             Text("Hermes API")
         } footer: {
             // The watch is handed this connection whatever the phone itself uses: it can't open
             // the Dashboard's WebSocket, and without this it asks through the phone (`WatchLink.connection`).
-            Text(hasStoredKey
-                ? "A key is stored in the Keychain. It is never shown again. Redde on Apple Watch asks through this connection and keeps its own copy of the key."
-                : "Paste the scoped API_SERVER_KEY. It is stored in the Keychain only. With it, Redde on Apple Watch asks on its own; without it, the watch asks through this iPhone, which has to be in reach.")
+            hasStoredKey
+                ? Text("A key is stored in the Keychain. It is never shown again. Redde on Apple Watch asks through this connection and keeps its own copy of the key.")
+                : Text("Paste the scoped API_SERVER_KEY. It is stored in the Keychain only. With it, Redde on Apple Watch asks on its own; without it, the watch asks through this iPhone, which has to be in reach.")
         }
     }
 }
@@ -117,7 +117,8 @@ struct ServeLoginSettings: View {
                 .urlFieldStyle()
             if signedIn {
                 LabeledContent("Signed in") {
-                    Text(signedInName.isEmpty ? "through a browser" : signedInName).foregroundStyle(.secondary)
+                    Text(signedInName.isEmpty ? String(localized: "through a browser", comment: "Signed in: through a browser, with no name to show")
+                                              : signedInName).foregroundStyle(.secondary)
                 }
                 Button("Sign out", role: .destructive) {
                     serve.signOut()
@@ -128,8 +129,9 @@ struct ServeLoginSettings: View {
                 TextField("Dashboard username", text: $settings.serveUsername)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
-                SecretField(item: .serveDashboardPassword, prompt: "Dashboard password", replacePrompt: "Replace stored password",
-                            saveTitle: "Save password", hasValue: $hasServePassword,
+                SecretField(item: .serveDashboardPassword, prompt: String(localized: "Dashboard password"),
+                            replacePrompt: String(localized: "Replace stored password"),
+                            saveTitle: String(localized: "Save password"), hasValue: $hasServePassword,
                             onSaved: { saved.toggle(); serve.disconnect() }, onRemoved: { serve.disconnect() })
                 BrowserSignInButton { readSignIn(); hasServePassword = true; saved.toggle() }
             }
@@ -155,11 +157,11 @@ struct ServeLoginSettings: View {
 
     private var stateLabel: String {
         switch serve.state {
-        case .disconnected: "not connected"
-        case .connecting: "connecting…"
-        case .connected: "connected"
-        case let .reconnecting(attempt): "reconnecting (try \(attempt))…"
-        case let .failed(reason): "failed: \(reason)"
+        case .disconnected: String(localized: "not connected", comment: "The Dashboard connection's state")
+        case .connecting: String(localized: "connecting…", comment: "The Dashboard connection's state")
+        case .connected: String(localized: "connected", comment: "The Dashboard connection's state")
+        case let .reconnecting(attempt): String(localized: "reconnecting (try \(attempt))…", comment: "The Dashboard connection's state, with the attempt's number")
+        case let .failed(reason): String(localized: "failed: \(reason)", comment: "The Dashboard connection's state, with why")
         }
     }
 }
@@ -179,7 +181,7 @@ struct BrowserSignInButton: View {
             Task { await signIn() }
         } label: {
             HStack {
-                Text(working ? "Signing in…" : "Sign in with a browser")
+                working ? Text("Signing in…") : Text("Sign in with a browser")
                 Spacer()
                 if working { ProgressView() }
             }
@@ -223,8 +225,9 @@ struct CloudflareSettings: View {
             TextField("Client ID", text: $settings.cfAccessClientID)
                 .textInputAutocapitalization(.never).autocorrectionDisabled()
                 .onChange(of: settings.cfAccessClientID) { HermesServeClient.shared.disconnect() }
-            SecretField(item: .cfAccessClientSecret, prompt: "Client secret", replacePrompt: "Replace stored client secret",
-                        saveTitle: "Save secret", optional: true, hasValue: $hasSecret,
+            SecretField(item: .cfAccessClientSecret, prompt: String(localized: "Client secret"),
+                        replacePrompt: String(localized: "Replace stored client secret"),
+                        saveTitle: String(localized: "Save secret"), optional: true, hasValue: $hasSecret,
                         onSaved: { HermesServeClient.shared.disconnect() }, onRemoved: { HermesServeClient.shared.disconnect() })
         } header: {
             Text("Cloudflare Access (optional)")
@@ -246,8 +249,10 @@ struct PangolinSettings: View {
 
     var body: some View {
         Section {
-            field(.pangolinDashboard, "Dashboard access token", has: $hasDashboard)
-            field(.pangolinAPI, "Hermes API access token", has: $hasAPI)
+            field(.pangolinDashboard, String(localized: "Dashboard access token"),
+                  replace: String(localized: "Replace stored dashboard access token"), has: $hasDashboard)
+            field(.pangolinAPI, String(localized: "Hermes API access token"),
+                  replace: String(localized: "Replace stored hermes api access token"), has: $hasAPI)
         } header: {
             Text("Pangolin (optional)")
         } footer: {
@@ -259,12 +264,12 @@ struct PangolinSettings: View {
         }
     }
 
-    private func field(_ item: Keychain.Item, _ prompt: String, has: Binding<Bool>) -> some View {
-        SecretField(item: item, prompt: prompt, replacePrompt: "Replace stored \(prompt.lowercased())", saveTitle: "Save token",
+    private func field(_ item: Keychain.Item, _ prompt: String, replace: String, has: Binding<Bool>) -> some View {
+        SecretField(item: item, prompt: prompt, replacePrompt: replace, saveTitle: String(localized: "Save token"),
                     optional: true, hasValue: has,
                     onSaved: { HermesServeClient.shared.disconnect() }, onRemoved: { HermesServeClient.shared.disconnect() },
                     accept: Settings.pangolinToken,
-                    refusal: "That isn't a Pangolin access token. Paste the token ID and token as id.token, or the Link with p_token= in it.")
+                    refusal: String(localized: "That isn't a Pangolin access token. Paste the token ID and token as id.token, or the Link with p_token= in it."))
     }
 }
 
@@ -313,7 +318,7 @@ struct CustomHeadersSettings: View {
 
     private func add() {
         let new = CustomHeader(name: name, value: value)
-        problem = CustomHeader.problem(withName: new.name) ?? (new.value.isEmpty ? "Give the header a value." : nil)
+        problem = CustomHeader.problem(withName: new.name) ?? (new.value.isEmpty ? String(localized: "Give the header a value.") : nil)
         guard problem == nil else { return }
         save(CustomHeader.adding(new, to: headers))
         name = ""
@@ -341,8 +346,8 @@ struct FastLaneSettings: View {
             TextField("Model", text: $settings.fastLaneModel)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
-            SecretField(item: .fastLaneAPIKey, prompt: "API key (optional)", replacePrompt: "Replace stored API key",
-                        saveTitle: "Save key", removeTitle: "Remove key", optional: true, hasValue: $hasKey,
+            SecretField(item: .fastLaneAPIKey, prompt: String(localized: "API key (optional)"), replacePrompt: String(localized: "Replace stored API key"),
+                        saveTitle: String(localized: "Save key"), removeTitle: String(localized: "Remove key"), optional: true, hasValue: $hasKey,
                         onSaved: { saved.toggle() })
         } header: {
             Text("OpenAI-compatible (direct to a model)")

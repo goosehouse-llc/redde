@@ -190,13 +190,21 @@ nonisolated enum AttachmentError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case let .tooLarge(name): "\(name) is over the 8 MB attachment limit."
+        case let .tooLarge(name): String(localized: "\(name) is over the \(Self.limit) attachment limit.")
+        // `transport` is the caller's name for the connection, compared here in English.
         case let .unsupported(kind, transport) where transport == "the Hermes API":
-            "\(kind) attachments aren't supported on the Hermes API alone. Save the Hermes Dashboard login in Settings → Connection details, and they go to the server through it."
-        case let .unsupported(kind, transport): "\(kind) attachments aren't supported on \(transport). Switch to the Hermes Dashboard in Settings."
-        case let .videoTooLong(name): "\(name) is too long to attach: even at low quality it is over the 8 MB limit. Trim it in Photos first."
+            String(localized: "\(kind) attachments aren't supported on the Hermes API alone. Save the Hermes Dashboard login in Settings → Connection details, and they go to the server through it.")
+        case let .unsupported(kind, transport) where transport == "the OpenAI-compatible server":
+            String(localized: "\(kind) attachments aren't supported on the OpenAI-compatible server. Switch to the Hermes Dashboard in Settings.")
+        case let .unsupported(kind, transport):
+            String(localized: "\(kind) attachments aren't supported on \(transport). Switch to the Hermes Dashboard in Settings.")
+        case let .videoTooLong(name):
+            String(localized: "\(name) is too long to attach: even at low quality it is over the \(Self.limit) limit. Trim it in Photos first.")
         }
     }
+
+    /// "8 MB".
+    private static var limit: String { Int64(Attachment.maxFileBytes).formatted(.byteCount(style: .memory)) }
 }
 
 

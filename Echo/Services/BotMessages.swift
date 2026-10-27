@@ -56,7 +56,7 @@ nonisolated enum BotMessages {
             let bot = roster.first { $0.name == String(profile) }
             return (Delivered(kind: .reply, profile: String(profile), name: bot?.label() ?? String(profile)), output)
         }
-        let line = title?.nilIfEmpty ?? "Background process \(match.output.2)"
+        let line = title?.nilIfEmpty ?? String(localized: "Background process \(String(match.output.2))")
         return (Delivered(kind: .process, title: line), output)
     }
 
@@ -140,8 +140,8 @@ nonisolated enum BotMessages {
     /// what it is; anything else as it came.
     static func rowPreview(_ preview: String?, roster: [HermesBot], mainName: String) -> String? {
         guard let preview = preview?.nilIfEmpty else { return nil }
-        if preview.hasPrefix("[IMPORTANT: Background process") { return "A background task finished" }
-        if let (title, _) = routine(preview) { return "\(title) ran" }
+        if preview.hasPrefix("[IMPORTANT: Background process") { return String(localized: "A background task finished") }
+        if let (title, _) = routine(preview) { return String(localized: "\(title) ran", comment: "A bot's row: its scheduled routine ran") }
         if let (said, _) = inventedTurn(in: preview) { return said.nilIfEmpty ?? "…" }
         guard let inbound = inbound(preview) else { return preview }
         let ref = sender(name: inbound.name, handle: inbound.handle, roster: roster)
@@ -152,6 +152,6 @@ nonisolated enum BotMessages {
     /// A message_agent call as a step's name: "Messaged @scout".
     static func stepName(_ tool: ToolActivity) -> String? {
         guard tool.name == "message_agent", let target = tool.args?.firstMatch(of: /(?m)^target: @?([^\s]+)/)?.output.1 else { return nil }
-        return "Messaged @\(target)"
+        return String(localized: "Messaged @\(String(target))", comment: "A step in a reply: the agent sent another agent a message")
     }
 }

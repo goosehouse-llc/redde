@@ -43,10 +43,10 @@ struct ApprovalCard: View {
 
     private func label(for choice: String) -> String {
         switch choice {
-        case "once": "Once"
-        case "session": "This session"
-        case "always": "Always"
-        case "deny": "Deny"
+        case "once": String(localized: "Once", comment: "Approval button: allow the command this one time")
+        case "session": String(localized: "This session", comment: "Approval button: allow the command for this session")
+        case "always": String(localized: "Always", comment: "Approval button: always allow the command")
+        case "deny": String(localized: "Deny", comment: "Approval button: refuse the command")
         default: choice.capitalized
         }
     }

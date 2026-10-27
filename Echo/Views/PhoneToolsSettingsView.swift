@@ -121,18 +121,18 @@ struct PhoneToolsSettingsView: View {
     /// show goes by.
     static func lookingLine(looked: Int, of total: Int, working: Bool) -> String {
         let (seen, all) = (looked.formatted(), total.formatted())
-        if looked >= total { return "Redde has looked at all \(all) pictures." }
-        if working { return "Redde has looked at \(seen) of \(all) pictures so far, and goes on while it is open." }
-        return "Redde has looked at \(seen) of \(all) pictures; the others couldn't be looked at."
+        if looked >= total { return String(localized: "Redde has looked at all \(all) pictures.") }
+        if working { return String(localized: "Redde has looked at \(seen) of \(all) pictures so far, and goes on while it is open.") }
+        return String(localized: "Redde has looked at \(seen) of \(all) pictures; the others couldn't be looked at.")
     }
 
     /// Where the pictures are looked at, and what of them leaves the phone: said under Photos
     /// before it is turned on. Only what is true is said: the list of matches and a photo the
     /// agent asks to look at do go to the person's own server.
     static func photosNote(on device: String) -> String {
-        "To find a photo by what it shows, Redde looks at your pictures on this \(device) and keeps what it finds here. "
-            + "Your agent is told only about the photos that match what it asks for, and gets a photo only when it asks to look at one. "
-            + "Redde sends both to your Hermes and nowhere else."
+        String(localized: "To find a photo by what it shows, Redde looks at your pictures on this \(device) and keeps what it finds here.")
+            + " " + String(localized: "Your agent is told only about the photos that match what it asks for, and gets a photo only when it asks to look at one.")
+            + " " + String(localized: "Redde sends both to your Hermes and nowhere else.")
     }
 
     private var device: String { UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone" }

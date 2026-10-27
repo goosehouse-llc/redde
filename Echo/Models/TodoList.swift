@@ -282,6 +282,8 @@ nonisolated enum TodoList {
     static func summary(_ items: [TodoItem]) -> String {
         let live = items.filter { $0.status != .cancelled }
         let done = live.filter { $0.status == .completed }.count
-        return live.isEmpty ? "Nothing left" : done == live.count ? "All \(live.count) done" : "\(done) of \(live.count) done"
+        if live.isEmpty { return String(localized: "Nothing left", comment: "The agent's task list: no tasks left to do") }
+        return done == live.count ? String(localized: "All \(live.count) done", comment: "The agent's task list: every task done")
+            : String(localized: "\(done) of \(live.count) done", comment: "The agent's task list: tasks done of all tasks")
     }
 }

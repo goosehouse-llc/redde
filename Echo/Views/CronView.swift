@@ -39,7 +39,7 @@ struct CronView: View {
                     .swipeActions(edge: .leading, allowsFullSwipe: true) {
                         if job.state == .scheduled || job.state == .paused {
                             Button { setPaused(job, job.state != .paused) } label: {
-                                Label(job.state == .paused ? "Resume" : "Pause", systemImage: job.state == .paused ? "play" : "pause")
+                                Label(job.state == .paused ? String(localized: "Resume") : String(localized: "Pause"), systemImage: job.state == .paused ? "play" : "pause")
                             }
                             .tint(job.state == .paused ? .green : .orange)
                         }
@@ -50,7 +50,7 @@ struct CronView: View {
                     }
                     .contextMenu {
                         Button("Run now", systemImage: "bolt") { runNow(job) }
-                        Button(job.state == .paused ? "Resume" : "Pause", systemImage: job.state == .paused ? "play" : "pause") { setPaused(job, job.state != .paused) }
+                        Button(job.state == .paused ? String(localized: "Resume") : String(localized: "Pause"), systemImage: job.state == .paused ? "play" : "pause") { setPaused(job, job.state != .paused) }
                         Button("Edit", systemImage: "pencil") { editing = job }
                         Divider()
                         Button("Delete", systemImage: "trash", role: .destructive) { delete(job) }
@@ -156,7 +156,10 @@ struct CronView: View {
 
     // (In the job's own store: a bot's is found only there.)
     private func setPaused(_ job: CronJob, _ paused: Bool) { perform(job) { try await $0.setPaused(job.id, paused, profile: job.profile) } }
-    private func runNow(_ job: CronJob) { perform(job, "Run finished") { try await $0.runNow(job.id, profile: job.profile) }; show("Running…") }
+    private func runNow(_ job: CronJob) {
+        perform(job, String(localized: "Run finished")) { try await $0.runNow(job.id, profile: job.profile) }
+        show(String(localized: "Running…"))
+    }
     private func delete(_ job: CronJob) { perform(job) { try await $0.delete(job.id, profile: job.profile) } }
 
     private func show(_ text: String) { toast = text }
@@ -202,7 +205,7 @@ struct CronJobEditor: View {
                 Section {
                     Picker("Deliver to", selection: $deliver) {
                         ForEach(targets) { t in
-                            Text(t.homeTargetSet ? t.name : "\(t.name) (no home channel)").tag(t.id)
+                            Text(t.homeTargetSet ? t.name : String(localized: "\(t.name) (no home channel)")).tag(t.id)
                         }
                         Text("Other…").tag("__custom__")
                     }
@@ -219,12 +222,12 @@ struct CronJobEditor: View {
                 }
                 if let error { Section { Text(error).font(.footnote).foregroundStyle(.red) } }
             }
-            .navigationTitle(job == nil ? "New job" : "Edit job")
+            .navigationTitle(job == nil ? String(localized: "New job") : String(localized: "Edit job"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(saving ? "Saving…" : "Save") { save() }
+                    Button(saving ? String(localized: "Saving…") : String(localized: "Save")) { save() }
                         .disabled(saving || schedule.trimmingCharacters(in: .whitespaces).isEmpty || prompt.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
@@ -241,7 +244,7 @@ struct CronJobEditor: View {
     }
 
     private func save() {
-        guard let backend = CronBackend.current() else { error = "No gateway configured."; return }
+        guard let backend = CronBackend.current() else { error = String(localized: "No gateway configured."); return }
         saving = true
         Task {
             defer { saving = false }
@@ -272,7 +275,7 @@ struct CronJobDetail: View {
             List {
                 Section {
                     LabeledContent("Schedule", value: job.schedule)
-                    LabeledContent("State", value: job.state.rawValue.capitalized)
+                    LabeledContent("State", value: Self.stateName(job.state))
                     if let n = job.nextRunAt { LabeledContent("Next run") { Text(n, format: .dateTime.weekday().hour().minute()) } }
                     if let l = job.lastRunAt { LabeledContent("Last run") { Text("\(l.relativeLabel) · \(job.lastStatus ?? "")") } }
                     if let d = job.deliver, !d.isEmpty { LabeledContent("Deliver to", value: d) }
@@ -301,15 +304,25 @@ struct CronJobDetail: View {
                 }
                 Section {
                     Button("Run now", systemImage: "bolt") { onAction(.run) }
-                    Button(job.state == .paused ? "Resume" : "Pause", systemImage: job.state == .paused ? "play" : "pause") { onAction(.toggle) }
+                    Button(job.state == .paused ? String(localized: "Resume") : String(localized: "Pause"), systemImage: job.state == .paused ? "play" : "pause") { onAction(.toggle) }
                     Button("Edit", systemImage: "pencil") { onAction(.edit) }
                     Button("Delete", systemImage: "trash", role: .destructive) { onAction(.delete) }
                 }
             }
-            .navigationTitle(job.name.isEmpty ? "Job" : job.name)
+            .navigationTitle(job.name.isEmpty ? String(localized: "Job", comment: "A scheduled job with no name") : job.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
             .task { runs = (try? await backend?.runs(job.id, profile: job.profile)) ?? [] }
+        }
+    }
+
+    /// A job's state, in words.
+    private static func stateName(_ state: CronJob.State) -> String {
+        switch state {
+        case .scheduled: String(localized: "Scheduled", comment: "A scheduled job's state")
+        case .paused: String(localized: "Paused", comment: "A scheduled job's state")
+        case .completed: String(localized: "Completed", comment: "A scheduled job's state")
+        case .error: String(localized: "Error", comment: "A scheduled job's state")
         }
     }
 }
@@ -326,7 +339,9 @@ struct BlueprintBrowser: View {
     @State private var chosen: CronBlueprint?
 
     private var grouped: [(String, [CronBlueprint])] {
-        let groups = Dictionary(grouping: blueprints) { $0.category.isEmpty ? "Other" : $0.category.capitalized }
+        let groups = Dictionary(grouping: blueprints) {
+            $0.category.isEmpty ? String(localized: "Other", comment: "Blueprints with no category") : $0.category.capitalized
+        }
         return groups.keys.sorted().map { ($0, groups[$0]!) }
     }
 
@@ -405,11 +420,13 @@ struct BlueprintForm: View {
                         } else if f.type == "text" {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(f.label).font(.footnote).foregroundStyle(.secondary)
-                                TextField(f.optional ? "Optional" : "Required", text: binding(f), axis: .vertical).lineLimit(1...5)
+                                TextField(f.optional ? String(localized: "Optional") : String(localized: "Required"), text: binding(f), axis: .vertical)
+                                    .lineLimit(1...5)
                             }
                         } else {
                             LabeledContent(f.label) {
-                                TextField(f.type == "time" ? "9:00 am" : f.optional ? "Optional" : "Required", text: binding(f))
+                                TextField(f.type == "time" ? "9:00 am" : f.optional ? String(localized: "Optional") : String(localized: "Required"),
+                                          text: binding(f))
                                     .multilineTextAlignment(.trailing)
                                     .autocorrectionDisabled().textInputAutocapitalization(.never)
                             }
@@ -428,7 +445,7 @@ struct BlueprintForm: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(saving ? "Creating…" : "Create job") { create() }.disabled(saving || !complete)
+                    Button(saving ? String(localized: "Creating…") : String(localized: "Create job")) { create() }.disabled(saving || !complete)
                 }
             }
         }
@@ -437,9 +454,19 @@ struct BlueprintForm: View {
     /// Enum options are raw ids ("telegram", "30"); show them a little friendlier.
     private static func pretty(_ option: String, field: CronBlueprint.Field) -> String {
         if field.name == "deliver" {
-            switch option { case "local": return "Local (save only)"; case "origin": return "Where the job was created"; default: return option.capitalized }
+            switch option {
+            case "local": return String(localized: "Local (save only)", comment: "Where a job's output goes: kept on the gateway")
+            case "origin": return String(localized: "Where the job was created", comment: "Where a job's output goes")
+            default: return option.capitalized
+            }
         }
-        if field.name.contains("min"), let n = Int(option) { return n < 60 ? "Every \(n) min" : n % 60 == 0 ? "Every \(n / 60) h" : "Every \(n) min" }
+        if field.name.contains("min"), let n = Int(option) {
+            // In minutes, or in hours when it is whole hours.
+            let every = n >= 60 && n % 60 == 0
+                ? Duration.seconds(n * 60).formatted(.units(allowed: [.hours], width: .abbreviated))
+                : Duration.seconds(n * 60).formatted(.units(allowed: [.minutes], width: .abbreviated))
+            return String(localized: "Every \(every)", comment: "How often a job runs, e.g. “Every 30 min”")
+        }
         return option.capitalized
     }
 

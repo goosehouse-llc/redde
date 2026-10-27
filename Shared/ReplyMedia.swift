@@ -169,7 +169,7 @@ nonisolated enum ServeMedia {
         let markers = ["@image:", "[Image attached at:", placeholder]
         guard let cut = markers.compactMap({ text.range(of: $0)?.lowerBound }).min() else { return text }
         let before = text[..<cut].trimmingCharacters(in: .whitespacesAndNewlines)
-        return before.isEmpty ? "Picture" : before
+        return before.isEmpty ? String(localized: "Picture", comment: "A chat's preview, when its first message was only a picture") : before
     }
 
     /// How a message names a picture on the server, as Hermes Desktop reads it back.

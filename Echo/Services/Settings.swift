@@ -16,9 +16,9 @@ nonisolated enum Transport: String, CaseIterable, Identifiable, Codable {
     var id: String { rawValue }
     var label: String {
         switch self {
-        case .hermesSessions: "Hermes API (shared sessions)"
-        case .hermesServe: "Hermes Dashboard (WebSocket)"
-        case .chatCompletions: "OpenAI-compatible (direct to a model)"
+        case .hermesSessions: String(localized: "Hermes API (shared sessions)")
+        case .hermesServe: String(localized: "Hermes Dashboard (WebSocket)")
+        case .chatCompletions: String(localized: "OpenAI-compatible (direct to a model)")
         }
     }
     /// Uses the API server (8642) with the bearer key.
@@ -72,8 +72,13 @@ final class Settings: ServeEndpoint {
     /// reasoning off. X-High and Max are for frontier models (Claude, GPT); the values are the
     /// ones their APIs use.
     static let reasoningEfforts: [(value: String, label: String)] = [
-        ("", "Default"), ("none", "None"), ("low", "Low"), ("medium", "Medium"), ("high", "High"),
-        ("xhigh", "X-High"), ("max", "Max"),
+        ("", String(localized: "Default", comment: "Reasoning effort: left to the server")),
+        ("none", String(localized: "None", comment: "Reasoning effort: reasoning off")),
+        ("low", String(localized: "Low", comment: "Reasoning effort")),
+        ("medium", String(localized: "Medium", comment: "Reasoning effort")),
+        ("high", String(localized: "High", comment: "Reasoning effort")),
+        ("xhigh", String(localized: "X-High", comment: "Reasoning effort, above High")),
+        ("max", String(localized: "Max", comment: "Reasoning effort: the most")),
     ]
 
     static func effortLabel(_ value: String) -> String {
@@ -246,7 +251,7 @@ final class Settings: ServeEndpoint {
 
         var name: String {
             switch self {
-            case .onDevice: "On-device"
+            case .onDevice: String(localized: "On-device", comment: "Reply voice: the iPhone's own voice")
             case .kokoro: "Kokoro"
             case .hermes: "Hermes"
             case .elevenLabs: "ElevenLabs"
@@ -402,7 +407,13 @@ final class Settings: ServeEndpoint {
     enum Appearance: String, CaseIterable, Identifiable {
         case system, light, dark
         var id: String { rawValue }
-        var label: String { switch self { case .system: "System"; case .light: "Light"; case .dark: "Dark" } }
+        var label: String {
+            switch self {
+            case .system: String(localized: "System", comment: "Appearance: follow the iPhone's light or dark setting")
+            case .light: String(localized: "Light", comment: "Appearance: light mode")
+            case .dark: String(localized: "Dark", comment: "Appearance: dark mode")
+            }
+        }
         var colorScheme: ColorScheme? { switch self { case .system: nil; case .light: .light; case .dark: .dark } }
     }
     var appearance: Appearance {

@@ -52,6 +52,9 @@ settings:
     MARKETING_VERSION: "2.2"
     CURRENT_PROJECT_VERSION: "277"
     ENABLE_USER_SCRIPT_SANDBOXING: true
+    # Translations: every target's text is pulled into the String Catalog beside its code
+    # (Localizable.xcstrings in each target's folder), which the build fills with the English.
+    SWIFT_EMIT_LOC_STRINGS: true
 targets:
   Echo:
     type: application

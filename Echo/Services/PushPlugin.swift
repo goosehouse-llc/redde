@@ -70,10 +70,10 @@ nonisolated enum PushPlugin {
     static func explain(_ error: Error) -> String {
         guard case let TransportError.http(status, body) = error else { return error.localizedDescription }
         if body.localizedCaseInsensitiveContains("timed out") {
-            return "Hermes couldn't download the plugin in time. It fetches it from GitHub, which can be slow the first time: try again."
+            return String(localized: "Hermes couldn't download the plugin in time. It fetches it from GitHub, which can be slow the first time: try again.")
         }
-        if status == 401 { return "The Hermes Dashboard login was refused." }
-        return body.isEmpty ? "The server answered \(status)." : body
+        if status == 401 { return String(localized: "The Hermes Dashboard login was refused.") }
+        return body.isEmpty ? String(localized: "The server answered \(status).") : body
     }
 }
 
@@ -126,8 +126,8 @@ final class PushPluginModel {
 
     /// What the button says for the state the plugin is in.
     var installTitle: String {
-        guard let state, state.installed else { return "Install the Plugin" }
-        return state.isOutdated ? "Update the Plugin" : "Turn the Plugin On"
+        guard let state, state.installed else { return String(localized: "Install the Plugin") }
+        return state.isOutdated ? String(localized: "Update the Plugin") : String(localized: "Turn the Plugin On")
     }
 
     func refresh() async {

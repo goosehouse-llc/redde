@@ -38,7 +38,8 @@ struct DictateButton: View {
     let toggle: () -> Void
 
     var body: some View {
-        Button(dictation.isActive ? "Stop dictating" : "Dictate", systemImage: dictation.isActive ? "waveform" : "mic", action: toggle)
+        Button(dictation.isActive ? String(localized: "Stop dictating") : String(localized: "Dictate"),
+               systemImage: dictation.isActive ? "waveform" : "mic", action: toggle)
             .labelStyle(.iconOnly)
             .font(.body.weight(.medium))
             .symbolEffect(.variableColor.iterative, isActive: dictation.phase == .listening)
@@ -46,7 +47,8 @@ struct DictateButton: View {
             .frame(width: 34, height: 38)
             .contentShape(.rect)
             .buttonStyle(.plain)
-            .accessibilityHint(dictation.isActive ? "Ends dictation; what was said stays in the message" : "Speak your message; it is written here, not sent")
+            .accessibilityHint(dictation.isActive ? String(localized: "Ends dictation; what was said stays in the message")
+                                                  : String(localized: "Speak your message; it is written here, not sent"))
     }
 }
 

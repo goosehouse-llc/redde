@@ -27,7 +27,7 @@ nonisolated struct WatchChat: Identifiable, Equatable, Sendable {
         let title = (session.title ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if !title.isEmpty { return title }
         let preview = ReplyLanguage.stripNote(session.preview ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        return preview.isEmpty ? "Untitled chat" : String(preview.prefix(60))
+        return preview.isEmpty ? String(localized: "Untitled chat") : String(preview.prefix(60))
     }
 
     /// Where a conversation stands, from the end of its transcript: the last thing the person
@@ -56,7 +56,7 @@ nonisolated struct WatchChat: Identifiable, Equatable, Sendable {
     /// "2 hr ago", for a row.
     func when(now: Date = .now) -> String? {
         guard let lastActive else { return nil }
-        if now.timeIntervalSince(lastActive) < 60 { return "just now" }
+        if now.timeIntervalSince(lastActive) < 60 { return String(localized: "just now", comment: "When a chat was last used: under a minute ago") }
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .abbreviated
         return formatter.localizedString(for: lastActive, relativeTo: now)

@@ -287,7 +287,7 @@ struct VoiceView: View {
                             let member = group.feed.room.member(draft.memberID)
                             MessageRow(message: Message(role: .assistant, text: draft.text, createdAt: draft.began), isLive: draft.finishedAt == nil,
                                        showActions: false)
-                                .environment(\.replySpeaker, member?.label ?? "A bot")
+                                .environment(\.replySpeaker, member?.label ?? String(localized: "A bot"))
                                 .environment(\.replyFace, member.map(group.face))
                         }
                         Color.clear.frame(height: 1).id("voice-bottom")
@@ -383,7 +383,7 @@ struct VoiceView: View {
     /// Type instead, replay or stop the reading, and end.
     private var controls: some View {
         HStack(spacing: 28) {
-            roundButton("Switch to typing", "keyboard") {
+            roundButton(String(localized: "Switch to typing"), "keyboard") {
                 session.cancel()
                 dismiss()
                 onSwitchToTyping()
@@ -392,19 +392,19 @@ struct VoiceView: View {
             if session.phase == .speaking {
                 // Pause holds the reply where it is; Play carries on. The red square still ends it.
                 if session.isPaused {
-                    roundButton("Resume", "play.fill") { session.resumeSpeaking() }
+                    roundButton(String(localized: "Resume"), "play.fill") { session.resumeSpeaking() }
                 } else {
-                    roundButton("Pause", "pause.fill") { session.pauseSpeaking() }
+                    roundButton(String(localized: "Pause"), "pause.fill") { session.pauseSpeaking() }
                 }
             } else if let group {
                 // A room's: the last bot's reply again, in its voice.
                 let last = group.feed.events.last { $0.kind == "message.member" && !$0.text.isEmpty }
-                roundButton("Replay the last answer", "arrow.counterclockwise") {
+                roundButton(String(localized: "Replay the last answer"), "arrow.counterclockwise") {
                     if let last { session.readAloud(last.text, speaker: group.feed.room.member(last.actorID)?.profile ?? last.actorID) }
                 }
                 .disabled(!canReplay || last == nil)
             } else {
-                roundButton("Replay the last answer", "arrow.counterclockwise") { session.replayLastReply() }
+                roundButton(String(localized: "Replay the last answer"), "arrow.counterclockwise") { session.replayLastReply() }
                     .disabled(!canReplay || session.lastReplyText == nil)
             }
             // While something is running (listening, thinking, reading the reply) the button is a
@@ -425,8 +425,8 @@ struct VoiceView: View {
             }
             .buttonStyle(.plain)
             .keyboardShortcut(.escape, modifiers: [])
-            .accessibilityLabel(solIsWorking ? "Stop" : "End voice mode")
-            .accessibilityHint(solIsWorking ? "Stops it. Press again to leave voice mode" : "Returns to the conversation")
+            .accessibilityLabel(solIsWorking ? String(localized: "Stop") : String(localized: "End voice mode"))
+            .accessibilityHint(solIsWorking ? String(localized: "Stops it. Press again to leave voice mode") : String(localized: "Returns to the conversation"))
         }
     }
 
@@ -456,37 +456,37 @@ struct VoiceView: View {
     }
 
     private var orbHint: String {
-        if session.isLive { return "Double tap to hang up" }
+        if session.isLive { return String(localized: "Double tap to hang up") }
         return switch session.phase {
-        case .idle, .error: "Double tap to start listening"
-        case .listening: "Double tap to stop listening and send"
-        case .thinking: "Double tap to cancel"
-        case .speaking: "Double tap to interrupt and speak"
+        case .idle, .error: String(localized: "Double tap to start listening")
+        case .listening: String(localized: "Double tap to stop listening and send")
+        case .thinking: String(localized: "Double tap to cancel")
+        case .speaking: String(localized: "Double tap to interrupt and speak")
         }
     }
 
     private var phaseTitle: String {
         if let group {
             switch phase {
-            case .speaking: return "\(groupSpeaker?.label ?? "A bot") is speaking"
-            case .idle where group.isTalking: return group.writer.map { "\($0.label) is writing" } ?? "The bots are talking"
+            case .speaking: return String(localized: "\(groupSpeaker?.label ?? String(localized: "A bot")) is speaking")
+            case .idle where group.isTalking: return group.writer.map { String(localized: "\($0.label) is writing") } ?? String(localized: "The bots are talking")
             default: break
             }
         }
         if session.isLive {
             switch phase {
-            case .thinking where session.liveConnecting: return "Calling \(session.liveEngine?.name ?? "GPT-Live")"
-            case .idle: return session.isMuted ? "Muted" : "Ready"
-            case .listening: return "On a call"
+            case .thinking where session.liveConnecting: return String(localized: "Calling \(session.liveEngine?.name ?? "GPT-Live")")
+            case .idle: return session.isMuted ? String(localized: "Muted") : String(localized: "Ready")
+            case .listening: return String(localized: "On a call")
             default: break
             }
         }
         return switch phase {
-        case .idle: "Ready"
-        case .listening: "Listening"
-        case .thinking: "\(replySpeaker ?? Settings.shared.headerTitle) is thinking"
-        case .speaking: "Speaking"
-        case .error: "Something went wrong"
+        case .idle: String(localized: "Ready")
+        case .listening: String(localized: "Listening")
+        case .thinking: String(localized: "\(replySpeaker ?? Settings.shared.headerTitle) is thinking")
+        case .speaking: String(localized: "Speaking")
+        case .error: String(localized: "Something went wrong")
         }
     }
 

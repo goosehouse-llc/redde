@@ -62,12 +62,12 @@ nonisolated struct RoutineWhen: Equatable, Sendable {
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .daily: "Every day"
-            case .weekdays: "Weekdays"
-            case .weekends: "Weekends"
-            case .weekly: "On some days"
-            case .hours: "Every few hours"
-            case .once: "Once"
+            case .daily: String(localized: "Every day", comment: "How often a bot's routine runs")
+            case .weekdays: String(localized: "Weekdays", comment: "How often a bot's routine runs")
+            case .weekends: String(localized: "Weekends", comment: "How often a bot's routine runs")
+            case .weekly: String(localized: "On some days", comment: "How often a bot's routine runs")
+            case .hours: String(localized: "Every few hours", comment: "How often a bot's routine runs")
+            case .once: String(localized: "Once", comment: "How often a bot's routine runs")
             }
         }
     }
@@ -138,14 +138,15 @@ nonisolated struct RoutineWhen: Equatable, Sendable {
         parts.minute = minute
         let time = (Calendar.current.date(from: parts) ?? .now).formatted(date: .omitted, time: .shortened)
         switch repeats {
-        case .daily: return "Every day at \(time)"
-        case .weekdays: return "Weekdays at \(time)"
-        case .weekends: return "Weekends at \(time)"
+        case .daily: return String(localized: "Every day at \(time)")
+        case .weekdays: return String(localized: "Weekdays at \(time)")
+        case .weekends: return String(localized: "Weekends at \(time)")
         case .weekly:
             let names = Calendar.current.shortWeekdaySymbols
-            return (days.isEmpty ? [1] : days).sorted().map { names[$0] }.formatted(.list(type: .and)) + " at \(time)"
-        case .hours: return everyHours == 1 ? "Every hour" : "Every \(everyHours) hours"
-        case .once: return "Once, \(once.formatted(date: .abbreviated, time: .shortened))"
+            let list = (days.isEmpty ? [1] : days).sorted().map { names[$0] }.formatted(.list(type: .and))
+            return String(localized: "\(list) at \(time)", comment: "When a bot's routine runs: some days of the week, then a time")
+        case .hours: return everyHours == 1 ? String(localized: "Every hour") : String(localized: "Every \(everyHours) hours")
+        case .once: return String(localized: "Once, \(once.formatted(date: .abbreviated, time: .shortened))")
         }
     }
 }

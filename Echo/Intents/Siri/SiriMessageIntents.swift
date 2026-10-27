@@ -243,13 +243,13 @@ enum SiriTurn {
         // says so, rather than sending it somewhere else.
         if let bot = route?.bot {
             do { _ = try await live.goToBot(bot, mainName: Settings.shared.headerTitle) } catch {
-                return Outcome(sent: [], reply: .failed("Couldn't open that bot's chat."))
+                return Outcome(sent: [], reply: .failed(String(localized: "Couldn't open that bot's chat.")))
             }
         }
         if let model = route?.model { try? await live.switchModel(model, provider: route?.provider) }
         let events = live.send(route?.text ?? text, attachments: attachments)
         if live.lastSendWasHeld { return Outcome(sent: [], reply: .queued) }
-        guard live.messages.count >= before + 2 else { return Outcome(sent: [], reply: .failed("Nothing was sent.")) }
+        guard live.messages.count >= before + 2 else { return Outcome(sent: [], reply: .failed(String(localized: "Nothing was sent."))) }
         let question = live.messages[before]
         let replyID = live.messages[before + 1].id
         let unread = ReadState.unreadIDs
@@ -287,17 +287,17 @@ nonisolated enum SiriError: LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case .disabled: "Siri access is off. Turn on “Let Siri use Redde” in Redde's Settings."
-        case .notRunning: "Open Redde once, then try again."
-        case .notConfigured: "Redde isn't connected to a server yet. Open Redde to finish setup."
-        case .busy: "Redde is in the middle of another reply. Try again when it's done."
-        case .scheduling: "Redde can't schedule messages. Ask it to set up a cron job instead."
-        case .audioOnly: "Redde needs the message as text."
-        case .emptyMessage: "The message was empty."
-        case let .unknownRecipient(name): "In Redde you can only message \(name)."
-        case .noSuchConversation: "I couldn't find that conversation in Redde."
-        case .noSuchMessage: "I couldn't find that message in Redde."
-        case .notYourMessage: "You can only change your own messages."
+        case .disabled: String(localized: "Siri access is off. Turn on “Let Siri use Redde” in Redde's Settings.")
+        case .notRunning: String(localized: "Open Redde once, then try again.")
+        case .notConfigured: String(localized: "Redde isn't connected to a server yet. Open Redde to finish setup.")
+        case .busy: String(localized: "Redde is in the middle of another reply. Try again when it's done.")
+        case .scheduling: String(localized: "Redde can't schedule messages. Ask it to set up a cron job instead.")
+        case .audioOnly: String(localized: "Redde needs the message as text.")
+        case .emptyMessage: String(localized: "The message was empty.")
+        case let .unknownRecipient(name): String(localized: "In Redde you can only message \(name).")
+        case .noSuchConversation: String(localized: "I couldn't find that conversation in Redde.")
+        case .noSuchMessage: String(localized: "I couldn't find that message in Redde.")
+        case .notYourMessage: String(localized: "You can only change your own messages.")
         }
     }
 }

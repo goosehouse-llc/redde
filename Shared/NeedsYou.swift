@@ -169,20 +169,20 @@ extension WaitingRequest {
     /// "Needs your approval", for the line above the command or the question.
     var headline: String {
         switch kind {
-        case .approval: "Needs your approval"
-        case .question: "Has a question"
-        case .sudo: "Needs the sudo password"
-        case .secret: "Needs a secret"
+        case .approval: String(localized: "Needs your approval")
+        case .question: String(localized: "Has a question", comment: "Widget: the agent has asked something")
+        case .sudo: String(localized: "Needs the sudo password")
+        case .secret: String(localized: "Needs a secret")
         }
     }
 
     /// The request in a word, where there is no room for more.
     var name: String {
         switch kind {
-        case .approval: "Approval"
-        case .question: "Question"
-        case .sudo: "Password"
-        case .secret: "Secret"
+        case .approval: String(localized: "Approval", comment: "Widget: a request in a word, a command waiting for a yes or no")
+        case .question: String(localized: "Question", comment: "Widget: a request in a word, a question from the agent")
+        case .sudo: String(localized: "Password", comment: "Widget: a request in a word, the sudo password")
+        case .secret: String(localized: "Secret", comment: "Widget: a request in a word, a secret such as an API key")
         }
     }
 
@@ -198,10 +198,10 @@ extension WaitingRequest {
     /// What stands in for the words when they are hidden.
     var hiddenLine: String {
         switch kind {
-        case .approval: "A command is waiting for a yes or no."
-        case .question: "The agent asked you something."
-        case .sudo: "A command is waiting for the sudo password."
-        case .secret: "A skill is waiting for a secret."
+        case .approval: String(localized: "A command is waiting for a yes or no.")
+        case .question: String(localized: "The agent asked you something.")
+        case .sudo: String(localized: "A command is waiting for the sudo password.")
+        case .secret: String(localized: "A skill is waiting for a secret.")
         }
     }
 }
@@ -227,11 +227,25 @@ nonisolated struct ContextReading: Codable, Sendable, Equatable {
     }
 
     /// "54k of 128k".
-    var amounts: String { "\(Self.compact(used)) of \(Self.compact(window))" }
+    var amounts: String {
+        String(localized: "\(Self.compact(used)) of \(Self.compact(window))", comment: "Context widget: tokens used of the model's window, as 54k of 128k")
+    }
 
+    /// "1.2M", "54k", "8.2k", "900": as `TurnMetrics.compact` writes a token count.
     static func compact(_ n: Int) -> String {
-        n >= 1_000_000 ? String(format: "%.1fM", Double(n) / 1_000_000) : n >= 10_000 ? String(format: "%.0fk", Double(n) / 1000)
-            : n >= 1000 ? String(format: "%.1fk", Double(n) / 1000) : String(n)
+        func scaled(_ value: Double, digits: Int) -> String {
+            value.formatted(.number.precision(.fractionLength(digits)).grouping(.never))
+        }
+        if n >= 1_000_000 {
+            return String(localized: "\(scaled(Double(n) / 1_000_000, digits: 1))M", comment: "A token count in millions, as 1.2M")
+        }
+        if n >= 10_000 {
+            return String(localized: "\(scaled(Double(n) / 1000, digits: 0))k", comment: "A token count in thousands, as 54k or 8.2k")
+        }
+        if n >= 1000 {
+            return String(localized: "\(scaled(Double(n) / 1000, digits: 1))k", comment: "A token count in thousands, as 54k or 8.2k")
+        }
+        return n.formatted()
     }
 
     static func load(in defaults: UserDefaults? = NeedsYou.shared) -> ContextReading? {

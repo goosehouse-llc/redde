@@ -22,14 +22,14 @@ nonisolated struct CustomHeader: Codable, Equatable, Identifiable, Sendable {
     /// spaces, no colon.
     static func problem(withName name: String) -> String? {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else { return "Give the header a name." }
+        guard !name.isEmpty else { return String(localized: "Give the header a name.") }
         let token = CharacterSet(charactersIn: "!#$%&'*+-.^_`|~").union(.alphanumerics)
         guard name.unicodeScalars.allSatisfy({ $0.isASCII && token.contains($0) }) else {
-            return "A header name is letters, digits and hyphens, without spaces or a colon."
+            return String(localized: "A header name is letters, digits and hyphens, without spaces or a colon.")
         }
         let lower = name.lowercased()
         guard !reserved.contains(lower), !lower.hasPrefix("sec-websocket-") else {
-            return "\(name) is set by the connection itself and can't be replaced."
+            return String(localized: "\(name) is set by the connection itself and can't be replaced.")
         }
         return nil
     }

@@ -333,11 +333,13 @@ struct ContentView: View {
                 Button("Save") { saveRename() }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text(conversation.serverSessionID == nil ? "Leave it empty to go back to the first question."
-                                                         : "The session is renamed on your server too.")
+                conversation.serverSessionID == nil ? Text("Leave it empty to go back to the first question.")
+                                                    : Text("The session is renamed on your server too.")
             }
             .modifier(ChatProjectPrompt(naming: $namingProject, problem: $projectProblem))
-            .confirmationDialog("Start a fresh chat with \(conversation.bot?.name ?? "this bot")?", isPresented: $confirmingFresh, titleVisibility: .visible) {
+            .confirmationDialog(conversation.bot.map { String(localized: "Start a fresh chat with \($0.name)?") }
+                                    ?? String(localized: "Start a fresh chat with this bot?"),
+                                isPresented: $confirmingFresh, titleVisibility: .visible) {
                 Button("Start Fresh") {
                     Task {
                         do { try await conversation.startBotChatFresh(mainName: settings.headerTitle) } catch { freshProblem = error.localizedDescription }
@@ -716,7 +718,7 @@ struct ContentView: View {
     private var headerTitle: String {
         if let bot = conversation.bot { return bot.name }
         if conversation.isIncognito { return IncognitoNote.title }
-        return !conversation.hasMessages && conversation.outbox.isEmpty ? "New conversation" : conversation.title
+        return !conversation.hasMessages && conversation.outbox.isEmpty ? String(localized: "New conversation") : conversation.title
     }
 
     /// What the title chip shows: the picked model, or the backend's default.
@@ -727,8 +729,8 @@ struct ContentView: View {
             return model
         }
         return switch settings.transport {
-        case .chatCompletions: settings.fastLaneModel.nilIfEmpty ?? "model"
-        default: settings.gatewayModel.nilIfEmpty ?? "default model"
+        case .chatCompletions: settings.fastLaneModel.nilIfEmpty ?? String(localized: "model", comment: "Under the chat's title when no model is named")
+        default: settings.gatewayModel.nilIfEmpty ?? String(localized: "default model", comment: "Under the chat's title: the server's own model")
         }
     }
 

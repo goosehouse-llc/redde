@@ -40,7 +40,7 @@ struct DeliveredFileChip: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(file.filename)
-            .accessibilityHint(problem ?? "Opens it, from your server")
+            .accessibilityHint(problem ?? String(localized: "Opens it, from your server"))
             if let problem {
                 Text(problem).font(.caption).foregroundStyle(.secondary)
             }
@@ -69,19 +69,19 @@ struct DeliveredFileChip: View {
     static func fetch(_ path: String, in source: FileSource?) async -> Result<URL, Problem> {
         let dashboard = HermesServeClient.shared
         guard await dashboard.canUse() else {
-            return .failure(Problem(text: "Files your agent sends come through the Hermes Dashboard. Add its login in Settings → Connection details."))
+            return .failure(Problem(text: String(localized: "Files your agent sends come through the Hermes Dashboard. Add its login in Settings → Connection details.")))
         }
         do {
             return .success(try await dashboard.downloadDelivered(path: path, in: source))
         } catch TransportError.http(let status, _) where status == 404 {
             let relative = !path.hasPrefix("/") && !path.hasPrefix("~")
             return .failure(Problem(text: relative && source?.sessionID == nil
-                ? "It isn't on the server where the reply says, or the chat isn't on the server yet."
-                : "It isn't on the server where the reply says."))
+                ? String(localized: "It isn't on the server where the reply says, or the chat isn't on the server yet.")
+                : String(localized: "It isn't on the server where the reply says.")))
         } catch TransportError.http(let status, _) where status == 403 {
-            return .failure(Problem(text: "The server won't share this file."))
+            return .failure(Problem(text: String(localized: "The server won't share this file.")))
         } catch {
-            return .failure(Problem(text: "Couldn't fetch it: \(error.localizedDescription)"))
+            return .failure(Problem(text: String(localized: "Couldn't fetch it: \(error.localizedDescription)")))
         }
     }
 }

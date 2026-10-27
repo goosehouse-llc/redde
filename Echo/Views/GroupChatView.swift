@@ -99,7 +99,8 @@ struct GroupChatView: View {
                         if feed.state.waitsOnPerson || (feed.discussing || feed.state.working) && !someoneIsWriting { talking }
                         ForEach(feed.state.approvals.filter { !feed.answering.contains($0.id) }) { approval in
                             VStack(alignment: .leading, spacing: 6) {
-                                Text("\(feed.room.member(approval.memberID)?.label ?? "A bot") wants to run a command")
+                                (feed.room.member(approval.memberID).map { Text("\($0.label) wants to run a command") }
+                                    ?? Text("A bot wants to run a command"))
                                     .font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
                                 ApprovalCard(request: approval.request) { feed.answer(approval, $0) }
                                 // Hermes's approvals.timeout, 300 s unless changed; unanswered, the command isn't run.
@@ -311,10 +312,10 @@ struct GroupChatView: View {
                 .submitLabel(.search)
             if !findText.isEmpty {
                 let count = matches.count
-                Text(count == 0 ? "0" : "\(findIndex + 1) of \(count)")
+                (count == 0 ? Text(0.formatted()) : Text("\(findIndex + 1) of \(count)", comment: "Find in chat: which match is shown, e.g. “2 of 5”"))
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
-                    .accessibilityLabel(count == 0 ? "No matches" : "Match \(findIndex + 1) of \(count)")
+                    .accessibilityLabel(count == 0 ? String(localized: "No matches") : String(localized: "Match \(findIndex + 1) of \(count)"))
             }
             Button("Previous match", systemImage: "chevron.up") { goToMatch(findIndex - 1, proxy) }
                 .disabled(matches.count < 2)
@@ -365,8 +366,8 @@ struct GroupChatView: View {
             FaceStack(faces: feed.room.members.map { (face($0), $0.label) }, size: 44)
             Text(feed.room.members.map(\.label).formatted(.list(type: .and)))
                 .font(.headline).multilineTextAlignment(.center)
-            Text(feed.room.inDesktop ? "Nothing said yet in Hermes Desktop."
-                 : "Say something to all of them, or start with @ and a name to ask one. A bot that has nothing to add stays quiet.")
+            (feed.room.inDesktop ? Text("Nothing said yet in Hermes Desktop.")
+                 : Text("Say something to all of them, or start with @ and a name to ask one. A bot that has nothing to add stays quiet."))
                 .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
@@ -387,7 +388,7 @@ struct GroupChatView: View {
                        onReadAloud: { @MainActor @Sendable in readAloud(id, event.text, speaker: member?.profile) },
                        isReading: readingID == id && voiceSession.phase == .speaking, highlight: highlight(event.seq))
                 .equatable()
-                .environment(\.replySpeaker, member?.label ?? "A bot")
+                .environment(\.replySpeaker, member?.label ?? String(localized: "A bot"))
                 .environment(\.replyFace, face(member))
         } else if let note = event.note(in: feed.room) {
             Text(note).font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity)
@@ -403,7 +404,7 @@ struct GroupChatView: View {
         return MessageRow(message: Message(id: Self.rowID("draft-" + draft.id), role: .assistant, text: draft.text, createdAt: draft.began),
                           isLive: draft.finishedAt == nil, showActions: false)
             .equatable()
-            .environment(\.replySpeaker, member?.label ?? "A bot")
+            .environment(\.replySpeaker, member?.label ?? String(localized: "A bot"))
             .environment(\.replyFace, face(member))
     }
 
@@ -445,10 +446,10 @@ struct GroupChatView: View {
     private var talking: some View {
         HStack(spacing: 8) {
             ProgressView().controlSize(.small)
-            Text(feed.state.waitsOnPerson ? "Waiting on you"
-                 : feed.state.stopping ? "Stopping…"
-                 : feed.state.blocked ? "Sorting out a reply that was cut off…"
-                 : "The bots are talking…")
+            Text(feed.state.waitsOnPerson ? String(localized: "Waiting on you")
+                 : feed.state.stopping ? String(localized: "Stopping…")
+                 : feed.state.blocked ? String(localized: "Sorting out a reply that was cut off…")
+                 : String(localized: "The bots are talking…"))
                 .font(.footnote).foregroundStyle(.secondary)
         }
     }
@@ -457,7 +458,8 @@ struct GroupChatView: View {
     /// runs again only when asked to, since Hermes can't tell how far it got.
     private func retryCard(_ task: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label("\(feed.member(forTask: task).map { "\($0.label)'s reply" } ?? "A reply") didn't finish", systemImage: "arrow.clockwise")
+            Label(feed.member(forTask: task).map { String(localized: "\($0.label)'s reply didn't finish") } ?? String(localized: "A reply didn't finish"),
+                  systemImage: "arrow.clockwise")
                 .font(.subheadline.weight(.semibold))
             Text("It stopped partway, and Hermes can't tell how far it got. Run it again?")
                 .font(.footnote).foregroundStyle(.secondary)
@@ -528,7 +530,7 @@ struct NewGroupChatView: View {
                     Text("Two to six. A message goes to all of them, or with an @tag to one; they answer one after another, and may ask each other.")
                 }
                 Section("Name") {
-                    TextField(defaultName.isEmpty ? "Group chat" : defaultName, text: $name)
+                    TextField(defaultName.isEmpty ? String(localized: "Group chat") : defaultName, text: $name)
                 }
                 if let problem {
                     Section { Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(.orange) }

@@ -31,7 +31,8 @@ struct ClarifyCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label(request.questions.count > 1 ? "Redde has a few questions" : "Redde has a question", systemImage: "questionmark.bubble")
+            Label(request.questions.count > 1 ? String(localized: "Redde has a few questions") : String(localized: "Redde has a question"),
+                  systemImage: "questionmark.bubble")
                 .font(.subheadline.weight(.semibold))
             ForEach(request.questions) { q in
                 VStack(alignment: .leading, spacing: 8) {
@@ -48,14 +49,15 @@ struct ClarifyCard: View {
                             }
                         }
                     }
-                    TextField(q.choices.isEmpty ? "Your answer" : "Or type something else", text: binding(for: q.id), axis: .vertical)
+                    TextField(q.choices.isEmpty ? String(localized: "Your answer") : String(localized: "Or type something else"),
+                              text: binding(for: q.id), axis: .vertical)
                         .textFieldStyle(.roundedBorder)
                         .font(.footnote)
                         .onSubmit { if request.questions.count == 1 { send() } }
                 }
             }
             if request.questions.count > 1 || request.questions.contains(where: \.multiSelect) || request.questions.contains(where: { $0.choices.isEmpty }) {
-                Button(action: send) { FilledButtonTitle(title: "Send answers") }
+                Button(action: send) { FilledButtonTitle(title: String(localized: "Send answers")) }
                     .buttonStyle(.borderedProminent)
                     .disabled(!allAnswered)
                     .font(.footnote)
@@ -99,7 +101,7 @@ struct SudoCard: View {
                 SecureField("Password", text: $password)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit(send)
-                Button(action: send) { FilledButtonTitle(title: "Send") }.buttonStyle(.borderedProminent).disabled(password.isEmpty)
+                Button(action: send) { FilledButtonTitle(title: String(localized: "Send")) }.buttonStyle(.borderedProminent).disabled(password.isEmpty)
                 Button("Cancel") { respond("") }.buttonStyle(.bordered)
             }
             .font(.footnote)
@@ -125,7 +127,7 @@ struct SecretCard: View {
         VStack(alignment: .leading, spacing: 10) {
             Label("Redde needs a secret", systemImage: "key")
                 .font(.subheadline.weight(.semibold))
-            Text(request.prompt.isEmpty ? "Provide a value for \(request.envVar)." : request.prompt)
+            Text(request.prompt.isEmpty ? String(localized: "Provide a value for \(request.envVar).") : request.prompt)
                 .font(.footnote)
             if !request.envVar.isEmpty {
                 Text("Stored on the gateway as \(request.envVar)").font(.caption.monospaced()).foregroundStyle(.secondary)
@@ -134,7 +136,7 @@ struct SecretCard: View {
                 SecureField("Value", text: $value)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit(send)
-                Button(action: send) { FilledButtonTitle(title: "Save") }.buttonStyle(.borderedProminent).disabled(value.isEmpty)
+                Button(action: send) { FilledButtonTitle(title: String(localized: "Save")) }.buttonStyle(.borderedProminent).disabled(value.isEmpty)
                 Button("Skip") { respond("") }.buttonStyle(.bordered)
             }
             .font(.footnote)

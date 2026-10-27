@@ -16,9 +16,11 @@ struct ReplyFooterTests {
     }
 
     @Test func durationsReadNaturally() {
-        #expect(MessageRow.duration(0.42) == "0.4 s")
-        #expect(MessageRow.duration(12.34) == "12.3 s")
+        // The system's own narrow style since the translations (2026-10-26), so each language
+        // writes them its way; these are English's.
+        #expect(MessageRow.duration(0.42) == "0.4s")
+        #expect(MessageRow.duration(12.34) == "12.3s")
         #expect(MessageRow.duration(192) == "3m 12s")
-        #expect(MessageRow.duration(65.4) == "1m 05s")
+        #expect(MessageRow.duration(65.4) == "1m 5s")
     }
 }

@@ -58,14 +58,14 @@ struct AppearanceSettings: View {
                     .accessibilityAddTraits(settings.theme == theme ? .isSelected : [])
                 }
             } label: {
-                DisclosureSummary(title: "Theme") {
+                DisclosureSummary(title: String(localized: "Theme")) {
                     Text("\(settings.theme.label), \(settings.appearance.label.lowercased())")
                 }
             }
 
             DisclosureGroup(isExpanded: $showColors) {
                 ColorPicker("Accent", selection: accent, supportsOpacity: false)
-                ColorPicker(active.promptPrefix != nil ? "Your messages" : "Your bubbles",
+                ColorPicker(active.promptPrefix != nil ? String(localized: "Your messages") : String(localized: "Your bubbles"),
                             selection: bubble, supportsOpacity: false)
                 ColorPicker("Wallpaper", selection: wallpaper, supportsOpacity: false)
                 if settings.themeColors[settings.theme.rawValue]?.wallpaper != nil {
@@ -77,7 +77,7 @@ struct AppearanceSettings: View {
                     }
                 }
             } label: {
-                DisclosureSummary(title: "\(settings.theme.label) colors") {
+                DisclosureSummary(title: String(localized: "\(settings.theme.label) colors")) {
                     HStack(spacing: 4) {
                         Circle().fill(accent.wrappedValue).frame(width: 14, height: 14)
                         Circle().fill(bubble.wrappedValue).frame(width: 14, height: 14)
@@ -211,9 +211,9 @@ struct ComposerSettings: View {
         } header: {
             Text("Writing")
         } footer: {
-            Text(settings.returnSends
-                ? "Return sends the message. On a keyboard, Shift-Return starts a new line; for a long message, the field's editor button opens a page where Return always does."
-                : "Return starts a new line, and the Send button sends. On a keyboard, ⌘Return sends.")
+            settings.returnSends
+                ? Text("Return sends the message. On a keyboard, Shift-Return starts a new line; for a long message, the field's editor button opens a page where Return always does.")
+                : Text("Return starts a new line, and the Send button sends. On a keyboard, ⌘Return sends.")
         }
     }
 }
@@ -236,7 +236,7 @@ struct ProfileSettings: View {
                 }
                 NavigationLink { ProfilePickerView() } label: {
                     LabeledContent {
-                        Text(settings.profileName ?? "Default").foregroundStyle(.secondary).lineLimit(1)
+                        Text(settings.profileName ?? String(localized: "Default", comment: "The Hermes server's main profile")).foregroundStyle(.secondary).lineLimit(1)
                     } label: {
                         Label("Profile", systemImage: "person.2")
                     }
@@ -244,10 +244,10 @@ struct ProfileSettings: View {
             } header: {
                 Text("Hermes server")
             } footer: {
-                Text("The server and agent profile Redde talks to. Chats, skills, tools, cron jobs and memory all follow them."
+                Text(String(localized: "The server and agent profile Redde talks to. Chats, skills, tools, cron jobs and memory all follow them.")
                      + (BotDirectory.reachable(settings)
-                        ? " Bots are your other profiles, as Hermes Desktop shows them: each has one chat of its own, listed under Bots once the server has more than one profile."
-                            + (settings.transport == .hermesSessions ? " On the Hermes API they go by the Dashboard's login." : "")
+                        ? " " + String(localized: "Bots are your other profiles, as Hermes Desktop shows them: each has one chat of its own, listed under Bots once the server has more than one profile.")
+                            + (settings.transport == .hermesSessions ? " " + String(localized: "On the Hermes API they go by the Dashboard's login.") : "")
                         : ""))
             }
         }
@@ -296,7 +296,7 @@ struct ModelSettings: View {
     }
 
     private var modelSummary: String {
-        let model = settings.transport == .chatCompletions ? settings.fastLaneModel : (settings.gatewayModel.isEmpty ? "Default" : settings.gatewayModel)
+        let model = settings.transport == .chatCompletions ? settings.fastLaneModel : (settings.gatewayModel.isEmpty ? String(localized: "Default", comment: "The model the gateway is set up with") : settings.gatewayModel)
         let effort = settings.reasoningEffort.isEmpty ? "" : " · \(Settings.effortLabel(settings.reasoningEffort))"
         return model + effort
     }
@@ -328,16 +328,16 @@ struct AgentSettings<Details: View>: View {
         }
 
         Section {
-            NavigationLink { PluginsView(profile: nil, owner: "Your agent") } label: { Label("Plugins", systemImage: "puzzlepiece.extension") }
+            NavigationLink { PluginsView(profile: nil, owner: String(localized: "Your agent")) } label: { Label("Plugins", systemImage: "puzzlepiece.extension") }
                 .disabled(!canEditFiles)
         } footer: {
-            Text(canEditFiles ? "Find and install Hermes plugins from Nous Research's catalog, and switch them on and off." : "Find and install Hermes plugins: needs the Hermes Dashboard login.")
+            canEditFiles ? Text("Find and install Hermes plugins from Nous Research's catalog, and switch them on and off.") : Text("Find and install Hermes plugins: needs the Hermes Dashboard login.")
         }
 
         Section {
             NavigationLink { PhoneToolsSettingsView() } label: {
                 LabeledContent {
-                    Text(Settings.shared.phoneTools.on ? "On" : "Off")
+                    Settings.shared.phoneTools.on ? Text("On") : Text("Off")
                 } label: {
                     Label("Phone tools", systemImage: "iphone.gen3")
                 }
@@ -358,12 +358,12 @@ struct AgentSettings<Details: View>: View {
             if !canEditFiles { filesLocked }
             NavigationLink {
                 ContextFileEditorView(title: "SOUL.md", file: "SOUL.md",
-                                      purpose: "The agent's persona: who Redde is, how it speaks, what it values.")
+                                      purpose: String(localized: "The agent's persona: who Redde is, how it speaks, what it values."))
             } label: { Label("SOUL.md", systemImage: "person.text.rectangle") }
             .disabled(!canEditFiles)
             NavigationLink {
                 ContextFileEditorView(title: "ENVIRONMENT.md", file: "ENVIRONMENT.md",
-                                      purpose: "Standing facts about your setup: machines, services, names, conventions.")
+                                      purpose: String(localized: "Standing facts about your setup: machines, services, names, conventions."))
             } label: { Label("ENVIRONMENT.md", systemImage: "server.rack") }
             .disabled(!canEditFiles)
         } header: {
@@ -376,18 +376,18 @@ struct AgentSettings<Details: View>: View {
         Section {
             NavigationLink {
                 ContextFileEditorView(title: "MEMORY.md", file: "memories/MEMORY.md",
-                                      purpose: "The agent's own notes: things it decided to remember across conversations. Injected into every system prompt.")
+                                      purpose: String(localized: "The agent's own notes: things it decided to remember across conversations. Injected into every system prompt."))
             } label: { Label("MEMORY.md", systemImage: "brain") }
             NavigationLink {
                 ContextFileEditorView(title: "USER.md", file: "memories/USER.md",
-                                      purpose: "What the agent knows about you: preferences, facts, how you like answers. Also injected into every prompt.")
+                                      purpose: String(localized: "What the agent knows about you: preferences, facts, how you like answers. Also injected into every prompt."))
             } label: { Label("USER.md", systemImage: "person.crop.circle") }
         } header: {
             Text("Memory")
         } footer: {
-            Text(canEditFiles
-                 ? "The files the memory tool writes when you say “remember that…”. Edit them here to correct or prune what Redde carries into every conversation."
-                 : "The files the memory tool writes when you say “remember that…”. Like the context files, they need the Hermes Dashboard login.")
+            canEditFiles
+                ? Text("The files the memory tool writes when you say “remember that…”. Edit them here to correct or prune what Redde carries into every conversation.")
+                : Text("The files the memory tool writes when you say “remember that…”. Like the context files, they need the Hermes Dashboard login.")
         }
         .disabled(!canEditFiles)
 
@@ -395,9 +395,9 @@ struct AgentSettings<Details: View>: View {
             NavigationLink { FilesView() } label: { Label("Files", systemImage: "folder") }
                 .disabled(!canBrowseFiles)
         } footer: {
-            Text(canBrowseFiles
-                 ? "The folders on the Hermes host: look at files, change text ones, upload from this iPhone, make folders and delete."
-                 : "The folders on the Hermes host: look at files, upload from this iPhone, make folders and delete. Needs the Hermes Dashboard login.")
+            canBrowseFiles
+                ? Text("The folders on the Hermes host: look at files, change text ones, upload from this iPhone, make folders and delete.")
+                : Text("The folders on the Hermes host: look at files, upload from this iPhone, make folders and delete. Needs the Hermes Dashboard login.")
         }
 
         Section {
@@ -410,9 +410,9 @@ struct AgentSettings<Details: View>: View {
             NavigationLink { GatewayView() } label: { Label("Gateway", systemImage: "gearshape.2") }
                 .disabled(!canAdminister)
         } footer: {
-            Text(canAdminister
-                 ? "The Hermes server itself: what it is connected to, its MCP servers and logs, and restarting or updating it."
-                 : "The Hermes server itself: what it is connected to, its MCP servers and logs, and restarting or updating it. Needs the Hermes Dashboard login.")
+            canAdminister
+                ? Text("The Hermes server itself: what it is connected to, its MCP servers and logs, and restarting or updating it.")
+                : Text("The Hermes server itself: what it is connected to, its MCP servers and logs, and restarting or updating it. Needs the Hermes Dashboard login.")
         }
     }
 
@@ -463,26 +463,26 @@ struct VoiceSettings: View {
     private var voiceFooter: String {
         switch settings.replyVoice {
         case .onDevice:
-            "Apple's on-device synthesizer. Zero network, fastest start. "
-                + "“Voice for replies”: Match each reply picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice. Download more voices in the iPhone's Settings → Accessibility → Read & Speak → Voices. "
+            String(localized: "Apple's on-device synthesizer. Zero network, fastest start.") + " "
+                + String(localized: "“Voice for replies”: Match each reply picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice. Download more voices in the iPhone's Settings → Accessibility → Read & Speak → Voices.") + " "
         case .kokoro:
-            "Streams audio from a Kokoro-compatible TTS server and starts playing before the sentence finishes. Falls back to the on-device voice if the server is unreachable. "
-                + "“Voice for replies”: Match each reply picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice (the built-in one when Kokoro has none for it). "
+            String(localized: "Streams audio from a Kokoro-compatible TTS server and starts playing before the sentence finishes. Falls back to the on-device voice if the server is unreachable.") + " "
+                + String(localized: "“Voice for replies”: Match each reply picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice (the built-in one when Kokoro has none for it).") + " "
         case .elevenLabs:
-            "ElevenLabs reads replies out on your own key, the one live calls with ElevenLabs use, starting before the sentence is finished, in any language. Each bot reads in an ElevenLabs voice of its own (Edit Bot → Voice), in group chats too. The reply's text goes from your iPhone to ElevenLabs, which bills your account by the character. ElevenLabs takes speeds from 0.7× to 1.2×. Falls back to the on-device voice without a key or a connection; the watch reads with its own. "
+            String(localized: "ElevenLabs reads replies out on your own key, the one live calls with ElevenLabs use, starting before the sentence is finished, in any language. Each bot reads in an ElevenLabs voice of its own (Edit Bot → Voice), in group chats too. The reply's text goes from your iPhone to ElevenLabs, which bills your account by the character. ElevenLabs takes speeds from 0.7× to 1.2×. Falls back to the on-device voice without a key or a connection; the watch reads with its own.") + " "
         case .hermes:
-            "Your Hermes reads replies out with the voice set under tts in its config.yaml (ElevenLabs, OpenAI, Gemini, a voice running on the server, and others), through the Dashboard connection. The phone needs no voice key and no second server. The reply's text goes from your Hermes to that provider; Hermes's default, Edge, is Microsoft's online voice. “Say a test sentence” shows which one speaks. Speed and language are Hermes's settings too. Falls back to the on-device voice when the Dashboard can't speak. "
+            String(localized: "Your Hermes reads replies out with the voice set under tts in its config.yaml (ElevenLabs, OpenAI, Gemini, a voice running on the server, and others), through the Dashboard connection. The phone needs no voice key and no second server. The reply's text goes from your Hermes to that provider; Hermes's default, Edge, is Microsoft's online voice. “Say a test sentence” shows which one speaks. Speed and language are Hermes's settings too. Falls back to the on-device voice when the Dashboard can't speak.") + " "
         }
     }
 
     /// Wake Phrase's row: off, the one phrase, or how many.
     private var wakeSummary: String {
         let targets = settings.wakeListening ? settings.wakeTargets : []
-        return targets.isEmpty ? "Off" : targets.count == 1 ? targets[0].phrase : "\(targets.count) phrases"
+        return targets.isEmpty ? String(localized: "Off") : targets.count == 1 ? targets[0].phrase : String(localized: "\(targets.count) phrases")
     }
 
     /// Voice mode as it is set: Redde's own, or a call.
-    static func modeName(_ engine: LiveEngine?) -> String { engine.map { "\($0.name) call" } ?? "Listen and read aloud" }
+    static func modeName(_ engine: LiveEngine?) -> String { engine.map { String(localized: "\($0.name) call") } ?? String(localized: "Listen and read aloud") }
 
     /// Two choices, kept apart (2026-10-26: "Conversation can be set to Redde, but the next down is
     /// kokoro, hermes, elevenlabs"): who holds voice mode, and which voice reads replies aloud.
@@ -498,8 +498,8 @@ struct VoiceSettings: View {
         } header: {
             Text("Voice mode")
         } footer: {
-            Text(settings.voiceEngine.live.map { "Voice mode is a \($0.name) call: \($0.company)'s voice talks and listens at once, and hands anything real to your agent. Bots can have their own (Edit Bot → Voice)." }
-                 ?? "Your iPhone listens, your agent answers, and the reading voice below reads the answer out. Or make voice mode a live call with GPT-Live, Gemini Live, Grok Voice or ElevenLabs. Bots can have their own (Edit Bot → Voice).")
+            Text(settings.voiceEngine.live.map { String(localized: "Voice mode is a \($0.name) call: \($0.company)'s voice talks and listens at once, and hands anything real to your agent. Bots can have their own (Edit Bot → Voice).") }
+                 ?? String(localized: "Your iPhone listens, your agent answers, and the reading voice below reads the answer out. Or make voice mode a live call with GPT-Live, Gemini Live, Grok Voice or ElevenLabs. Bots can have their own (Edit Bot → Voice)."))
         }
         Section {
             Picker("Reading voice", selection: $settings.replyVoice) {
@@ -532,14 +532,14 @@ struct VoiceSettings: View {
                 if settings.replyVoice != .elevenLabs {
                     Picker("Voice for replies", selection: $settings.matchReplyLanguage) {
                         Text("Match each reply").tag(true)
-                        Text(settings.useKokoro ? "Always your Kokoro voice" : "Always \(listeningLanguageName)").tag(false)
+                        (settings.useKokoro ? Text("Always your Kokoro voice") : Text("Always \(listeningLanguageName)")).tag(false)
                     }
                     .pickerStyle(.menu)
                 }
                 // Applies to Kokoro and the built-in fallback voice alike.
                 VStack(alignment: .leading, spacing: 2) {
                     LabeledContent("Voice speed") {
-                        Text(String(format: "%.2f×", settings.voiceSpeed)).monospacedDigit()
+                        Text(settings.voiceSpeed.formatted(.number.precision(.fractionLength(2))) + "×").monospacedDigit()
                     }
                     Slider(value: $settings.voiceSpeed, in: 0.5...2.0, step: 0.05)
                         .accessibilityLabel("Voice speed")
@@ -549,14 +549,14 @@ struct VoiceSettings: View {
         } header: {
             Text("Reading voice")
         } footer: {
-            Text(voiceFooter + "It reads replies aloud in voice mode (when that isn't a call), in group chats, in the car and with Read aloud, each bot in a voice of its own unless it has its own reading voice (Edit Bot → Voice). “Earpiece” plays replies through the earpiece when the phone is at your ear, like a call; turn it off for hands-free use with the phone face down.")
+            Text(voiceFooter + String(localized: "It reads replies aloud in voice mode (when that isn't a call), in group chats, in the car and with Read aloud, each bot in a voice of its own unless it has its own reading voice (Edit Bot → Voice). “Earpiece” plays replies through the earpiece when the phone is at your ear, like a call; turn it off for hands-free use with the phone face down."))
         }
         Section {
             NavigationLink {
                 SpeechLanguageView()
             } label: {
                 LabeledContent("Listening language") {
-                    Text(settings.speechLanguage.isEmpty ? "iPhone's language" : SpeechLanguageView.name(settings.speechLanguage))
+                    Text(settings.speechLanguage.isEmpty ? String(localized: "iPhone's language") : SpeechLanguageView.name(settings.speechLanguage))
                         .lineLimit(1)
                 }
             }
@@ -564,7 +564,7 @@ struct VoiceSettings: View {
                 ReplyLanguageView()
             } label: {
                 LabeledContent("Reply language") {
-                    Text(settings.replyLanguage.isEmpty ? "Automatic" : ReplyLanguage.displayName(settings.replyLanguage))
+                    Text(settings.replyLanguage.isEmpty ? String(localized: "Automatic") : ReplyLanguage.displayName(settings.replyLanguage))
                         .lineLimit(1)
                 }
             }
@@ -572,7 +572,7 @@ struct VoiceSettings: View {
                 SpokenPrefixesView()
             } label: {
                 LabeledContent("Spoken prefixes") {
-                    Text(settings.spokenPrefixes.isEmpty ? "Off" : "\(settings.spokenPrefixes.count)")
+                    (settings.spokenPrefixes.isEmpty ? Text("Off") : Text("\(settings.spokenPrefixes.count)"))
                         .lineLimit(1)
                 }
             }
@@ -607,7 +607,7 @@ struct VoiceSettings: View {
                 StopPhrasesView()
             } label: {
                 LabeledContent("Stop phrases") {
-                    Text(settings.stopPhrases.isEmpty ? "Built-in" : "+\(settings.stopPhrases.count)")
+                    (settings.stopPhrases.isEmpty ? Text("Built-in") : Text("+\(settings.stopPhrases.count)"))
                         .lineLimit(1)
                 }
             }
@@ -654,9 +654,9 @@ struct VoiceSettings: View {
         } header: {
             Text("Requests by voice")
         } footer: {
-            Text("In voice mode and in the car, Redde reads out a command that waits for your approval, or a question from your agent, and takes your spoken answer: “approve” or “deny”, or the answer to the question. Anyone in earshot can answer, and what the agent wants to run is said aloud, so it is off until you turn it on. Passwords and secrets are only ever asked for on the screen."
+            Text(String(localized: "In voice mode and in the car, Redde reads out a command that waits for your approval, or a question from your agent, and takes your spoken answer: “approve” or “deny”, or the answer to the question. Anyone in earshot can answer, and what the agent wants to run is said aloud, so it is off until you turn it on. Passwords and secrets are only ever asked for on the screen.")
                 + (HeadGestures.isAvailable
-                    ? " “Nod or shake to answer” adds your head, with AirPods that sense movement (AirPods Pro, AirPods Max, AirPods 3 or later): once the request has been read out, nod a couple of times to approve, or shake your head to deny. iOS asks for Motion & Fitness when you turn it on; the movement is read on this device and kept nowhere."
+                    ? " " + String(localized: "“Nod or shake to answer” adds your head, with AirPods that sense movement (AirPods Pro, AirPods Max, AirPods 3 or later): once the request has been read out, nod a couple of times to approve, or shake your head to deny. iOS asks for Motion & Fitness when you turn it on; the movement is read on this device and kept nowhere.")
                     : ""))
         }
         // An iPad has no car.
@@ -716,14 +716,14 @@ struct NotificationSettings: View {
         }
         Section {
             NavigationLink { PushSettingsView() } label: {
-                LabeledContent("Notify when Redde is closed", value: PushService.shared.pairings.contains(where: \.isPaired) ? "On" : "Off")
+                LabeledContent("Notify when Redde is closed", value: PushService.shared.pairings.contains(where: \.isPaired) ? String(localized: "On") : String(localized: "Off"))
             }
         } footer: {
             Text("Background notifications stop when iOS closes Redde; with this, your Hermes sends them from then on.")
         }
         Section {
             NavigationLink { AgentCallsSettingsView() } label: {
-                LabeledContent("Calls from Agents", value: settings.agentCalls ? "On" : "Off")
+                LabeledContent("Calls from Agents", value: settings.agentCalls ? String(localized: "On") : String(localized: "Off"))
             }
         } footer: {
             Text("An agent you allow rings this iPhone like a phone call when something shouldn't wait.")
@@ -751,9 +751,9 @@ struct SiriSettings: View {
         } header: {
             Text("Siri")
         } footer: {
-            Text("Lets Siri message \(settings.headerTitle) in your own words (“Hey Siri, ask \(settings.headerTitle) in Redde whether the backup ran”), read its replies, and find your conversations. Siri waits about 20 seconds and reads the reply; longer answers come back as a notification you can reply to by voice. Apple Intelligence processes what you say to Siri and can see Redde's recent conversations, so this is the one path where Apple, not only your own servers, handles your requests. Turning it off removes Redde from Spotlight. With App Lock on, only conversation titles are searchable. “Hey Siri, ask Redde” (open and listen) works either way."
+            Text(String(localized: "Lets Siri message \(settings.headerTitle) in your own words (“Hey Siri, ask \(settings.headerTitle) in Redde whether the backup ran”), read its replies, and find your conversations. Siri waits about 20 seconds and reads the reply; longer answers come back as a notification you can reply to by voice. Apple Intelligence processes what you say to Siri and can see Redde's recent conversations, so this is the one path where Apple, not only your own servers, handles your requests. Turning it off removes Redde from Spotlight. With App Lock on, only conversation titles are searchable. “Hey Siri, ask Redde” (open and listen) works either way.")
                  + (settings.siriAIEnabled
-                    ? " A message Siri drafts for you waits in the message field of the conversation you have open, or, with “Drafts in a new conversation”, of a new one."
+                    ? " " + String(localized: "A message Siri drafts for you waits in the message field of the conversation you have open, or, with “Drafts in a new conversation”, of a new one.")
                     : ""))
         }
     }
@@ -836,9 +836,9 @@ struct LockSettings: View {
         } header: {
             Text("Lock")
         } footer: {
-            Text(settings.requireBiometrics
-                ? "Redde locks when it's been in the background longer than this. The device passcode works as a fallback. Background Shortcuts runs aren't gated."
-                : "Gate the app behind \(AppLock.biometryName). The phone holds the Hermes API key and the dashboard password.")
+            settings.requireBiometrics
+                ? Text("Redde locks when it's been in the background longer than this. The device passcode works as a fallback. Background Shortcuts runs aren't gated.")
+                : Text("Gate the app behind \(AppLock.biometryName). The phone holds the Hermes API key and the dashboard password.")
         }
     }
 }
@@ -868,7 +868,7 @@ struct AboutSettings: View {
                 Task { try? await Task.sleep(for: .seconds(1.5)); copiedVersion = false }
             } label: {
                 LabeledContent("Version") {
-                    Text(copiedVersion ? "Copied" : SettingsView.versionLine).foregroundStyle(.secondary).monospacedDigit()
+                    Text(copiedVersion ? String(localized: "Copied") : SettingsView.versionLine).foregroundStyle(.secondary).monospacedDigit()
                 }
             }
             .buttonStyle(.plain)

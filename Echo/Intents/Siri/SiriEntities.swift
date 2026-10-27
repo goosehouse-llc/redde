@@ -114,12 +114,15 @@ struct ReddePersonEntity: IndexedEntity {
 
     static var me: ReddePersonEntity {
         ReddePersonEntity(id: meID, person: IntentPerson(identifier: .applicationDefined(meID),
-                                                         name: .displayName("Me"), handle: nil, isMe: true))
+                                                         name: .displayName(meName), handle: nil, isMe: true))
     }
+
+    /// You, as Siri names you in a Redde conversation.
+    private static var meName: String { String(localized: "Me", comment: "Siri: the person, in a Redde conversation with their agent") }
 
     var name: String {
         if case let .displayName(text) = person.name { return text }
-        return id == Self.agentID ? "Redde" : "Me"
+        return id == Self.agentID ? "Redde" : Self.meName
     }
 
     var displayRepresentation: DisplayRepresentation {

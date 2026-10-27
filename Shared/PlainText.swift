@@ -45,9 +45,12 @@ nonisolated enum PlainText {
         rule(#"\n{3,}"#, "\n\n"),
     ]
 
+    /// Shown in a block's place; read as words (a translation may hold `$` or `\`).
+    private static func shown(_ words: String) -> String { NSRegularExpression.escapedTemplate(for: words) }
+
     private static let displayRules: [(NSRegularExpression, String)] = [
-        rule(#"```[\s\S]*?```"#, "[code]"),
-        rule(#"\$\$[\s\S]*?\$\$"#, "[formula]"),
+        rule(#"```[\s\S]*?```"#, shown(String(localized: "[code]", comment: "In place of a code block, in a notification or widget"))),
+        rule(#"\$\$[\s\S]*?\$\$"#, shown(String(localized: "[formula]", comment: "In place of a math formula, in a notification or widget"))),
         rule(ServeMedia.voiceMarkerPattern, ""),
         rule(ServeMedia.mediaTagPattern, ""),
         rule(ServeMedia.imageTagPattern, ""),

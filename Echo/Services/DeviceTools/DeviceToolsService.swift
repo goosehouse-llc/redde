@@ -274,10 +274,10 @@ final class DeviceToolsService {
             guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first(where: { $0.activationState == .foregroundActive }),
                   var top = scene.keyWindow?.rootViewController else { done.resume(returning: .deny); return }
             while let presented = top.presentedViewController { top = presented }
-            let alert = UIAlertController(title: "\(Settings.shared.headerTitle) wants to:\n\(question.ask.title)",
+            let alert = UIAlertController(title: String(localized: "\(Settings.shared.headerTitle) wants to:\n\(question.ask.title)", comment: "Asking the person before a phone tool runs: the agent's name, then what it wants to do"),
                                           message: question.ask.detail.isEmpty ? nil : question.ask.detail, preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "Don't Allow", style: .cancel) { _ in done.resume(returning: .deny) })
-            alert.addAction(UIAlertAction(title: "Allow", style: .default) { _ in done.resume(returning: .allow) })
+            alert.addAction(UIAlertAction(title: String(localized: "Don't Allow"), style: .cancel) { _ in done.resume(returning: .deny) })
+            alert.addAction(UIAlertAction(title: String(localized: "Allow", comment: "Lets a phone tool run this once"), style: .default) { _ in done.resume(returning: .allow) })
             if question.offersAlways, let area = question.area {
                 alert.addAction(UIAlertAction(title: area.alwaysLabel, style: .default) { _ in done.resume(returning: .always) })
             }

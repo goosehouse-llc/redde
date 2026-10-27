@@ -41,9 +41,9 @@ struct SkillEditorView: View {
                         .autocorrectionDisabled()
                 }
             } header: {
-                Text(isNew ? "New skill" : "Skill")
+                isNew ? Text("New skill") : Text("Skill")
             } footer: {
-                Text(isNew ? "Lowercase with hyphens, like the folder it becomes in ~/.hermes/skills." : "Renaming isn't supported by the gateway; create a new skill instead.")
+                isNew ? Text("Lowercase with hyphens, like the folder it becomes in ~/.hermes/skills.") : Text("Renaming isn't supported by the gateway; create a new skill instead.")
             }
 
             Section {
@@ -68,11 +68,11 @@ struct SkillEditorView: View {
                 Section { Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.red).font(.footnote) }
             }
         }
-        .navigationTitle(isNew ? "New skill" : name)
+        .navigationTitle(isNew ? String(localized: "New skill") : name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button(saving ? "Saving…" : "Save", action: save).disabled(!canSave)
+                Button(saving ? String(localized: "Saving…") : String(localized: "Save"), action: save).disabled(!canSave)
             }
         }
         .overlay { if loading { ProgressView("Loading skill…") } }
@@ -99,7 +99,7 @@ struct SkillEditorView: View {
                 }
                 if drafting {
                     Section {
-                        ProgressView(draftProgress.isEmpty ? "Asking Redde…" : draftProgress)
+                        ProgressView(draftProgress.isEmpty ? String(localized: "Asking Redde…") : draftProgress)
                     }
                 }
             }
@@ -119,7 +119,7 @@ struct SkillEditorView: View {
     private func draft() async {
         let viaAPI = conversation.ledgerAPI() != nil
         guard viaAPI || HermesServeClient.shared.hasCredentials else {
-            error = "Drafting needs the Hermes API key or the Hermes Dashboard login in Settings."
+            error = String(localized: "Drafting needs the Hermes API key or the Hermes Dashboard login in Settings.")
             showDraft = false
             return
         }
@@ -150,9 +150,9 @@ struct SkillEditorView: View {
                 switch event {
                 case let .textDelta(delta):
                     text += delta
-                    draftProgress = "\(text.count) characters…"
+                    draftProgress = String(localized: "\(text.count) characters…")
                 case let .toolStarted(tool, _, _):
-                    draftProgress = "using \(tool)…"
+                    draftProgress = String(localized: "using \(tool)…", comment: "Drafting a skill: the agent is using a tool")
                 default: break
                 }
             }
@@ -160,7 +160,7 @@ struct SkillEditorView: View {
             if name.isEmpty, let drafted = Self.frontMatterValue("name", in: content) { name = drafted }
             showDraft = false
         } catch {
-            self.error = "Draft failed: \(error.localizedDescription)"
+            self.error = String(localized: "Draft failed: \(error.localizedDescription)")
             showDraft = false
         }
     }

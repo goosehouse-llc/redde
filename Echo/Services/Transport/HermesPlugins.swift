@@ -10,9 +10,9 @@ nonisolated struct CatalogPlugin: Identifiable, Equatable, Sendable {
 
         var label: String {
             switch self {
-            case .official: "Official"
-            case .verified: "Verified"
-            case .community: "Community"
+            case .official: String(localized: "Official", comment: "A plugin's tier: Nous's own")
+            case .verified: String(localized: "Verified", comment: "A plugin's tier: checked by Nous")
+            case .community: String(localized: "Community", comment: "A plugin's tier: anyone else's")
             }
         }
 
@@ -294,10 +294,11 @@ nonisolated struct PluginOutcome: Equatable, Sendable {
                 guard let name = server["name"]?.string else { return nil }
                 if server["connected"]?.bool == true {
                     let tools = (server["tools"]?.array ?? []).compactMap(\.string)
-                    return tools.isEmpty ? "\(name) (connected)" : "\(name): \(tools.joined(separator: ", "))"
+                    return tools.isEmpty ? String(localized: "\(name) (connected)", comment: "An MCP server a plugin added") : "\(name): \(tools.joined(separator: ", "))"
                 }
-                return "\(name) didn't connect: \(server["error"]?.string ?? "no reason given")"
-            } + (live?["skills"]?.array ?? []).compactMap { $0["name"]?.string.map { "the \($0) skill" } }
+                let why = server["error"]?.string ?? String(localized: "no reason given")
+                return String(localized: "\(name) didn't connect: \(why)")
+            } + (live?["skills"]?.array ?? []).compactMap { $0["name"]?.string.map { String(localized: "the \($0) skill") } }
             for (kind, names) in (activation["activated_now"]?.object ?? [:]).sorted(by: { $0.key < $1.key }) {
                 let list = (names.array ?? []).compactMap(\.string)
                 if !list.isEmpty { liveNow.append("\(kind.replacingOccurrences(of: "_", with: " ")): \(list.joined(separator: ", "))") }
@@ -351,7 +352,7 @@ extension HermesServeClient {
         let result = try await call("plugins.manage", params: Self.plugins(params, profile: profile), timeout: 600)
         if result["consent_required"]?.bool == true {
             let lines = (result["delta_lines"]?.array ?? []).compactMap(\.string)
-            return .wantsMore(lines.isEmpty ? [result["error"]?.string ?? "It does more than before."] : lines)
+            return .wantsMore(lines.isEmpty ? [result["error"]?.string ?? String(localized: "It does more than before.")] : lines)
         }
         return result["unchanged"]?.bool == true ? .unchanged : .updated(PluginOutcome(result, name: name))
     }

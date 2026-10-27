@@ -101,16 +101,16 @@ private struct MapCard: View {
                 .contentShape(.rect)
                 .onTapGesture { open() }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(card.title ?? "Map of \(pins.map(\.name).formatted())")
+                .accessibilityLabel(card.title ?? String(localized: "Map of \(pins.map(\.name).formatted())"))
                 .accessibilityAddTraits(.isButton)
-                .accessibilityHint(card.route == nil ? "Opens it in Maps" : "Opens the directions in Maps")
+                .accessibilityHint(card.route == nil ? String(localized: "Opens it in Maps") : String(localized: "Opens the directions in Maps"))
             HStack(spacing: 10) {
                 if let r = card.route {
                     Label(Self.modeName(r.mode), systemImage: Self.modeSymbol(r.mode)).font(.footnote.weight(.medium))
                     if let route {
                         Text("\(Self.duration(route.expectedTravelTime)) · \(Self.distance(route.distance))").font(.footnote).foregroundStyle(.secondary)
                     } else {
-                        Text("\(r.from?.name ?? "From here") to \(r.to.name)").font(.footnote).foregroundStyle(.secondary).lineLimit(1)
+                        Text("\(r.from?.name ?? String(localized: "From here")) to \(r.to.name)").font(.footnote).foregroundStyle(.secondary).lineLimit(1)
                     }
                     Spacer(minLength: 0)
                     Button("Directions", systemImage: "arrow.triangle.turn.up.right.diamond.fill", action: open)
@@ -154,7 +154,12 @@ private struct MapCard: View {
     }
 
     static func modeName(_ mode: ReplyCard.Route.Mode) -> String {
-        switch mode { case .driving: "Drive"; case .walking: "Walk"; case .transit: "Transit"; case .cycling: "Cycle" }
+        switch mode {
+        case .driving: String(localized: "Drive", comment: "A way to travel, on a map card")
+        case .walking: String(localized: "Walk", comment: "A way to travel, on a map card")
+        case .transit: String(localized: "Transit", comment: "A way to travel, on a map card")
+        case .cycling: String(localized: "Cycle", comment: "A way to travel, on a map card")
+        }
     }
 
     static func modeSymbol(_ mode: ReplyCard.Route.Mode) -> String {
@@ -239,7 +244,7 @@ private struct PlacesCard: View {
                 .background(.red, in: .circle)
             VStack(alignment: .leading, spacing: 2) {
                 Text(place.name).font(.subheadline.weight(.semibold))
-                let line = [place.category, place.rating.map { String(format: "★ %.1f", $0) }].compactMap(\.self)
+                let line = [place.category, place.rating.map { "★ " + $0.formatted(.number.precision(.fractionLength(1))) }].compactMap(\.self)
                 if !line.isEmpty { Text(line.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary) }
                 if let address = place.address { Text(address).font(.caption).foregroundStyle(.secondary).lineLimit(2) }
                 if let note = place.note { Text(note).font(.caption).lineLimit(3) }
@@ -275,7 +280,7 @@ private struct WeatherCard: View {
             reading
         } else if pending || lookup.isLooking(card.place) {
             // Only its place so far: the forecast is on its way, from the plugin or looked up here.
-            CardBox { LookingUp(text: "Looking up the weather in \(card.place)…") }
+            CardBox { LookingUp(text: String(localized: "Looking up the weather in \(card.place)…")) }
         }
     }
 
@@ -297,8 +302,9 @@ private struct WeatherCard: View {
                     }
                 }
                 .accessibilityElement(children: .combine)
-                let details = [now.feelsLike.map { "Feels like \(degrees($0))" }, now.wind.map { "Wind \($0)" },
-                               now.humidity.map { "Humidity \($0)%" }, now.precipitation.map { "Rain \($0)%" }].compactMap(\.self)
+                let details = [now.feelsLike.map { String(localized: "Feels like \(degrees($0))") }, now.wind.map { String(localized: "Wind \($0)") },
+                               now.humidity.map { String(localized: "Humidity \($0.formatted(.percent))") },
+                               now.precipitation.map { String(localized: "Rain \($0.formatted(.percent))", comment: "Chance of rain") }].compactMap(\.self)
                 if !details.isEmpty {
                     Text(details.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
                 }
@@ -314,7 +320,7 @@ private struct WeatherCard: View {
                                 Text(Self.hourLabel(hour.time)).font(.caption2).foregroundStyle(.secondary)
                                 Image(systemName: Self.symbol(hour.condition, night: hour.night == true)).symbolRenderingMode(.multicolor).font(.callout).frame(height: 22)
                                 Text(degrees(hour.temperature)).font(.caption.weight(.medium)).monospacedDigit()
-                                if let rain = hour.precipitation, rain > 0 { Text("\(rain)%").font(.caption2).foregroundStyle(.blue) }
+                                if let rain = hour.precipitation, rain > 0 { Text(rain.formatted(.percent)).font(.caption2).foregroundStyle(.blue) }
                             }
                             .accessibilityElement(children: .combine)
                         }
@@ -329,7 +335,7 @@ private struct WeatherCard: View {
                     HStack(spacing: 10) {
                         Text(Self.dayLabel(day.date)).font(.caption.weight(.medium)).frame(width: 44, alignment: .leading)
                         Image(systemName: Self.symbol(day.condition)).symbolRenderingMode(.multicolor).frame(width: 24)
-                        Text(day.precipitation.map { $0 > 0 ? "\($0)%" : "" } ?? "").font(.caption2).foregroundStyle(.blue).frame(width: 32, alignment: .leading)
+                        Text(day.precipitation.map { $0 > 0 ? $0.formatted(.percent) : "" } ?? "").font(.caption2).foregroundStyle(.blue).frame(width: 32, alignment: .leading)
                         Text(degrees(day.low)).font(.caption).foregroundStyle(.secondary).monospacedDigit().frame(width: 34, alignment: .trailing)
                         TemperatureBar(low: day.low, high: day.high, from: low, to: high)
                         Text(degrees(day.high)).font(.caption.weight(.medium)).monospacedDigit().frame(width: 34, alignment: .leading)
@@ -369,18 +375,18 @@ private struct WeatherCard: View {
 
     static func name(_ condition: ReplyCard.Condition) -> String {
         switch condition {
-        case .clear: "Clear"
-        case .partlyCloudy: "Partly cloudy"
-        case .cloudy: "Cloudy"
-        case .fog: "Fog"
-        case .drizzle: "Drizzle"
-        case .rain: "Rain"
-        case .heavyRain: "Heavy rain"
-        case .thunderstorm: "Thunderstorms"
-        case .snow: "Snow"
-        case .sleet: "Sleet"
-        case .hail: "Hail"
-        case .wind: "Windy"
+        case .clear: String(localized: "Clear", comment: "Weather")
+        case .partlyCloudy: String(localized: "Partly cloudy", comment: "Weather")
+        case .cloudy: String(localized: "Cloudy", comment: "Weather")
+        case .fog: String(localized: "Fog", comment: "Weather")
+        case .drizzle: String(localized: "Drizzle", comment: "Weather")
+        case .rain: String(localized: "Rain", comment: "Weather")
+        case .heavyRain: String(localized: "Heavy rain", comment: "Weather")
+        case .thunderstorm: String(localized: "Thunderstorms", comment: "Weather")
+        case .snow: String(localized: "Snow", comment: "Weather")
+        case .sleet: String(localized: "Sleet", comment: "Weather")
+        case .hail: String(localized: "Hail", comment: "Weather")
+        case .wind: String(localized: "Windy", comment: "Weather")
         case .unknown: ""
         }
     }
@@ -402,7 +408,7 @@ private struct WeatherCard: View {
     static func dayLabel(_ text: String) -> String {
         let parts = text.prefix(10).split(separator: "-").compactMap { Int($0) }
         guard parts.count == 3, let date = Calendar.current.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2])) else { return text }
-        return Calendar.current.isDateInToday(date) ? "Today" : date.formatted(.dateTime.weekday(.abbreviated))
+        return Calendar.current.isDateInToday(date) ? String(localized: "Today") : date.formatted(.dateTime.weekday(.abbreviated))
     }
 }
 
@@ -441,7 +447,7 @@ private struct TimeCard: View {
                 }
             }
         } else if let place = card.place, pending || lookup.isLooking(place) {
-            CardBox { LookingUp(text: "Looking up the time in \(place)…") }
+            CardBox { LookingUp(text: String(localized: "Looking up the time in \(place)…")) }
         }
     }
 
@@ -457,7 +463,7 @@ private struct TimeCard: View {
         return HStack(alignment: .center, spacing: 12) {
             ClockFace(date: date, zone: zone).frame(width: 44, height: 44)
             VStack(alignment: .leading, spacing: 0) {
-                Text(card.place ?? "Your time").font(.subheadline.weight(.semibold))
+                Text(card.place ?? String(localized: "Your time")).font(.subheadline.weight(.semibold))
                 Text(date.formatted(day)).font(.caption).foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)
@@ -473,13 +479,13 @@ private struct TimeCard: View {
 extension ReplyCard.Clock {
     /// "Same time", "4 hr behind", "5½ hr ahead": than here.
     static func difference(_ seconds: Int) -> String {
-        guard seconds != 0 else { return "Same time" }
+        guard seconds != 0 else { return String(localized: "Same time", comment: "A place's clock shows the same time as here") }
         let hours = Double(abs(seconds)) / 3600
         let whole = Int(hours)
         let part = hours - Double(whole)
         let fraction = [0.25: "¼", 0.5: "½", 0.75: "¾"][part]
-        let amount = part == 0 ? "\(whole)" : fraction.map { (whole == 0 ? "" : "\(whole)") + $0 } ?? String(format: "%.2g", hours)
-        return seconds > 0 ? "\(amount) hr ahead" : "\(amount) hr behind"
+        let amount = part == 0 ? "\(whole)" : fraction.map { (whole == 0 ? "" : "\(whole)") + $0 } ?? hours.formatted(.number.precision(.significantDigits(1 ... 2)))
+        return seconds > 0 ? String(localized: "\(amount) hr ahead", comment: "Hours a place's clock is ahead of here") : String(localized: "\(amount) hr behind", comment: "Hours a place's clock is behind here")
     }
 }
 

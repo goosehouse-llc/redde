@@ -16,10 +16,10 @@ nonisolated enum MuteSpan: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .hour: "For 1 Hour"
-        case .eightHours: "For 8 Hours"
-        case .untilTomorrow: "Until Tomorrow"
-        case .untilUnmuted: "Until I Turn It Back On"
+        case .hour: String(localized: "For 1 Hour", comment: "How long to mute a chat")
+        case .eightHours: String(localized: "For 8 Hours", comment: "How long to mute a chat")
+        case .untilTomorrow: String(localized: "Until Tomorrow", comment: "How long to mute a chat")
+        case .untilUnmuted: String(localized: "Until I Turn It Back On", comment: "How long to mute a chat")
         }
     }
 
@@ -64,12 +64,12 @@ enum Mutes {
 
     /// What reads "Muted until 3:40 PM", "Muted until tomorrow", or "Muted".
     static func describe(until: Date, now: Date = .now, calendar: Calendar = .current) -> String {
-        if until == .distantFuture { return "Muted" }
-        if calendar.isDate(until, inSameDayAs: now) { return "Muted until \(until.formatted(date: .omitted, time: .shortened))" }
+        if until == .distantFuture { return String(localized: "Muted") }
+        if calendar.isDate(until, inSameDayAs: now) { return String(localized: "Muted until \(until.formatted(date: .omitted, time: .shortened))") }
         if let tomorrow = calendar.date(byAdding: .day, value: 1, to: now), calendar.isDate(until, inSameDayAs: tomorrow) {
-            return "Muted until tomorrow, \(until.formatted(date: .omitted, time: .shortened))"
+            return String(localized: "Muted until tomorrow, \(until.formatted(date: .omitted, time: .shortened))")
         }
-        return "Muted until \(until.formatted(date: .abbreviated, time: .shortened))"
+        return String(localized: "Muted until \(until.formatted(date: .abbreviated, time: .shortened))")
     }
 
     /// The muted rows as the notes from a Hermes name them: a bot's chats by their sessions (the

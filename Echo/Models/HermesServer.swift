@@ -54,6 +54,6 @@ nonisolated struct HermesServer: Codable, Identifiable, Equatable, Sendable {
                 return host
             }
         }
-        return "New server"
+        return String(localized: "New server", comment: "A saved server's name until it is given one")
     }
 }

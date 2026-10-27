@@ -5,7 +5,7 @@ import SwiftUI
 /// this", which puts the selection in the composer as a quote for the next message.
 struct SelectableTextSheet: View {
     let text: String
-    var title = "Select text"
+    var title = String(localized: "Select text")
     /// For a tool's input and output, which are data, not prose.
     var monospaced = false
     @Environment(\.dismiss) private var dismiss
@@ -91,7 +91,7 @@ struct SelectableTextView: UIViewRepresentable {
             guard let onAsk, range.length > 0 else { return nil }
             let selection = (textView.text as NSString).substring(with: range)
             guard !selection.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
-            let ask = UIAction(title: "Ask about this", image: UIImage(systemName: "quote.bubble")) { _ in onAsk(selection) }
+            let ask = UIAction(title: String(localized: "Ask about this"), image: UIImage(systemName: "quote.bubble")) { _ in onAsk(selection) }
             return UIMenu(children: [ask] + suggestedActions)
         }
     }
@@ -127,11 +127,11 @@ struct ChatTextSize: ViewModifier {
     /// What Settings calls each step.
     nonisolated static func label(_ steps: Int) -> String {
         switch steps {
-        case ...(-2): "Smallest"
-        case -1: "Smaller"
-        case 0: "Same as iPhone"
-        case 1: "Larger"
-        default: "Largest"
+        case ...(-2): String(localized: "Smallest", comment: "Chat text size")
+        case -1: String(localized: "Smaller", comment: "Chat text size")
+        case 0: String(localized: "Same as iPhone", comment: "Chat text size")
+        case 1: String(localized: "Larger", comment: "Chat text size")
+        default: String(localized: "Largest", comment: "Chat text size")
         }
     }
 }
@@ -170,7 +170,7 @@ struct TurnFeedback: ViewModifier {
             .sensoryFeedback(.error, trigger: conversation.lastError) { _, new in new != nil }
             .onChange(of: conversation.isStreaming) { old, new in
                 if old, !new, UIAccessibility.isVoiceOverRunning {
-                    AccessibilityNotification.Announcement(conversation.lastError == nil ? "Redde replied" : "Redde couldn't reply").post()
+                    AccessibilityNotification.Announcement(conversation.lastError == nil ? String(localized: "Redde replied") : String(localized: "Redde couldn't reply")).post()
                 }
             }
     }

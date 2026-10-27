@@ -90,15 +90,15 @@ nonisolated enum Theme: String, CaseIterable, Identifiable, Codable {
     }
 
     private static let standardPalette = Palette(
-        label: "Messages",
-        blurb: "Redde blue on the system greys.",
+        label: String(localized: "Messages", comment: "Name of a color theme in Settings → Appearance"),
+        blurb: String(localized: "Redde blue on the system greys."),
         accent: Color(red: 0.180, green: 0.545, blue: 0.961),
         background: nil, surface: nil, userBubble: nil, flatReplies: true, text: nil,
         usesGlass: true)
 
     private static let paperPalette = Palette(
-        label: "Paper",
-        blurb: "Warm paper and ink; dark ink and parchment after dark.",
+        label: String(localized: "Paper", comment: "Name of a color theme in Settings → Appearance"),
+        blurb: String(localized: "Warm paper and ink; dark ink and parchment after dark."),
         accent: dyn((0.106, 0.114, 0.227), (0.847, 0.784, 0.651)),
         background: nil,
         surface: dyn((0.910, 0.894, 0.855), (0.169, 0.149, 0.122)),
@@ -109,8 +109,8 @@ nonisolated enum Theme: String, CaseIterable, Identifiable, Codable {
         replyDesign: .serif)
 
     private static let slatePalette = Palette(
-        label: "Slate",
-        blurb: "Cool grey-blue with a steel accent. The office option.",
+        label: String(localized: "Slate", comment: "Name of a color theme in Settings → Appearance"),
+        blurb: String(localized: "Cool grey-blue with a steel accent. The office option."),
         accent: dyn((0.239, 0.353, 0.502), (0.541, 0.651, 0.788)),
         background: dyn((0.855, 0.875, 0.905), (0.043, 0.055, 0.075)),
         surface: dyn((1, 1, 1), (0.122, 0.153, 0.200)),
@@ -124,8 +124,8 @@ nonisolated enum Theme: String, CaseIterable, Identifiable, Codable {
     /// OLED), its dark grey, SF Mono throughout, and the syntax hues Claude Code paints there.
     /// The prompt row takes the profile's pure-green bold, hotter than the reply green.
     private static let terminalPalette = Palette(
-        label: "Terminal",
-        blurb: "Green phosphor on the Mac terminal's grey; your messages become shell prompts.",
+        label: String(localized: "Terminal", comment: "Name of a color theme in Settings → Appearance"),
+        blurb: String(localized: "Green phosphor on the Mac terminal's grey; your messages become shell prompts."),
         accent: dyn((0.106, 0.541, 0.243), (0.180, 0.830, 0.440)),
         background: dyn((0.933, 0.953, 0.933), (0.113, 0.113, 0.113)),
         surface: dyn((0.875, 0.910, 0.875), (0.155, 0.170, 0.155)),
@@ -144,8 +144,8 @@ nonisolated enum Theme: String, CaseIterable, Identifiable, Codable {
         bubbleRadius: 12, bubbleVerticalPadding: 5)
 
     private static let amberPalette = Palette(
-        label: "Amber CRT",
-        blurb: "Amber phosphor on warm black; your messages become shell prompts.",
+        label: String(localized: "Amber CRT", comment: "Name of a color theme in Settings → Appearance"),
+        blurb: String(localized: "Amber phosphor on warm black; your messages become shell prompts."),
         accent: dyn((0.720, 0.450, 0.000), (0.780, 0.530, 0.000)),   // softened Wyse amber
         background: dyn((0.965, 0.945, 0.900), (0.030, 0.015, 0.000)),
         surface: dyn((0.925, 0.895, 0.830), (0.090, 0.055, 0.010)),
@@ -162,8 +162,8 @@ nonisolated enum Theme: String, CaseIterable, Identifiable, Codable {
     /// The Hermes docs site, sampled from a screenshot: pure gold on near-black,
     /// warm off-white text, gold "button" user bubbles with dark text, Source Code Pro.
     private static let githubDarkPalette = Palette(
-        label: "Hermes",
-        blurb: "Hermes gold on near-black, set in Inter; the docs-site look.",
+        label: String(localized: "Hermes", comment: "Name of a color theme in Settings → Appearance"),
+        blurb: String(localized: "Hermes gold on near-black, set in Inter; the docs-site look."),
         accent: dyn((0.604, 0.494, 0.000), (1.000, 0.843, 0.000)),   // #FFD700; deep gold by day
         background: dyn((0.973, 0.969, 0.949), (0.106, 0.106, 0.114)),   // #1b1b1d
         surface: dyn((0.933, 0.929, 0.902), (0.145, 0.145, 0.157)),
@@ -176,8 +176,8 @@ nonisolated enum Theme: String, CaseIterable, Identifiable, Codable {
         bubbleRadius: 12)
 
     private static let claudeCodePalette = Palette(
-        label: "Code",
-        blurb: "Warm near-black and bone with a pale sky accent; serif replies, sans questions, monospaced code.",
+        label: String(localized: "Code", comment: "Name of a color theme in Settings → Appearance"),
+        blurb: String(localized: "Warm near-black and bone with a pale sky accent; serif replies, sans questions, monospaced code."),
         accent: Color(red: 0.796, green: 0.941, blue: 1.0),   // #CBF0FF, both appearances
         background: dyn((0.973, 0.969, 0.949), (0.106, 0.106, 0.114)),   // same ground as Hermes
         surface: dyn((0.933, 0.929, 0.902), (0.145, 0.145, 0.157)),

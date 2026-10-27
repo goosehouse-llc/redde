@@ -21,6 +21,20 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
 
     var label: String {
         switch self {
+        case .calendar: String(localized: "Calendar", comment: "A phone tools area (Settings → Phone tools)")
+        case .reminders: String(localized: "Reminders", comment: "A phone tools area (Settings → Phone tools)")
+        case .contacts: String(localized: "Contacts", comment: "A phone tools area (Settings → Phone tools)")
+        case .photos: String(localized: "Photos", comment: "A phone tools area (Settings → Phone tools)")
+        case .files: String(localized: "Files", comment: "A phone tools area (Settings → Phone tools)")
+        case .alarms: String(localized: "Alarms", comment: "A phone tools area (Settings → Phone tools)")
+        case .widget: String(localized: "Widget", comment: "A phone tools area (Settings → Phone tools)")
+        case .people: String(localized: "Calls and Messages", comment: "A phone tools area (Settings → Phone tools)")
+        }
+    }
+
+    /// The area as the agent is told of it, in English whatever the phone's language.
+    var agentLabel: String {
+        switch self {
         case .calendar: "Calendar"
         case .reminders: "Reminders"
         case .contacts: "Contacts"
@@ -48,14 +62,14 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
     /// What turning it on lets the agent do, for Settings.
     var blurb: String {
         switch self {
-        case .calendar: "Look up your events and add new ones."
-        case .reminders: "Read your reminders, add one, mark one done."
-        case .contacts: "Look someone up: names, numbers, addresses. It can't change them."
-        case .photos: "Find photos by date, kind and what they show, look at one, and delete (iOS asks you each time)."
-        case .files: "Read and save files in Redde's folder in the Files app."
-        case .alarms: "Set an alarm or a timer, see the ones it set, and cancel one. They ring like the Clock app's."
-        case .widget: "Write a few lines on Redde's “From Your Agent” widget, for now or for later in the day."
-        case .people: "Start a call or a FaceTime, and write a message for you to send. iOS asks before a call goes out, and sending a message is your tap."
+        case .calendar: String(localized: "Look up your events and add new ones.")
+        case .reminders: String(localized: "Read your reminders, add one, mark one done.")
+        case .contacts: String(localized: "Look someone up: names, numbers, addresses. It can't change them.")
+        case .photos: String(localized: "Find photos by date, kind and what they show, look at one, and delete (iOS asks you each time).")
+        case .files: String(localized: "Read and save files in Redde's folder in the Files app.")
+        case .alarms: String(localized: "Set an alarm or a timer, see the ones it set, and cancel one. They ring like the Clock app's.")
+        case .widget: String(localized: "Write a few lines on Redde's “From Your Agent” widget, for now or for later in the day.")
+        case .people: String(localized: "Start a call or a FaceTime, and write a message for you to send. iOS asks before a call goes out, and sending a message is your tap.")
         }
     }
 
@@ -65,9 +79,15 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
 
     /// What the setting that lets it go ahead unasked is called: there is reading in every
     /// area but the widget's, which is only written on.
-    var allowLabel: String { self == .people ? "On" : self == .widget ? "Allow" : "Allow reading" }
+    var allowLabel: String {
+        self == .people ? String(localized: "On", comment: "A phone tools area's setting: switched on")
+            : self == .widget ? String(localized: "Allow", comment: "A phone tools area's setting: the agent goes ahead unasked")
+            : String(localized: "Allow reading", comment: "A phone tools area's setting: the agent reads unasked")
+    }
     /// The same, as the button on a question that offers it.
-    var alwaysLabel: String { self == .widget ? "Always Allow the Widget" : "Always Allow Reading \(label)" }
+    var alwaysLabel: String {
+        self == .widget ? String(localized: "Always Allow the Widget") : String(localized: "Always Allow Reading \(label)", comment: "A button: the phone tools area, named, may be read unasked from now on")
+    }
 }
 
 nonisolated enum DeviceTool: String, CaseIterable, Sendable {
@@ -159,10 +179,10 @@ nonisolated struct DeviceToolError: Error, Equatable, Sendable {
 
     static let off = DeviceToolError("Phone tools are turned off in Redde on the iPhone (Settings → Phone tools).")
     static func areaOff(_ area: DeviceArea) -> DeviceToolError {
-        DeviceToolError("\(area.label) is turned off in Redde on the iPhone (Settings → Phone tools).")
+        DeviceToolError("\(area.agentLabel) is turned off in Redde on the iPhone (Settings → Phone tools).")
     }
     static func refused(_ area: DeviceArea) -> DeviceToolError {
-        DeviceToolError("iOS doesn't let Redde use \(area.label): it has to be allowed in the iPhone's Settings → Privacy & Security.")
+        DeviceToolError("iOS doesn't let Redde use \(area.agentLabel): it has to be allowed in the iPhone's Settings → Privacy & Security.")
     }
     static let denied = DeviceToolError("The person said no on the iPhone.")
     static func missing(_ name: String) -> DeviceToolError { DeviceToolError("The argument \"\(name)\" is missing or isn't what it should be.") }

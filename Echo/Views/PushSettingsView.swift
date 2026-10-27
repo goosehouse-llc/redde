@@ -34,9 +34,9 @@ struct PushSettingsView: View {
                 ForEach(push.pairings) { pairing in
                     VStack(alignment: .leading, spacing: 2) {
                         Text(pairing.host.isEmpty ? "Hermes" : pairing.host)
-                        Text(pairing.confirmed ? "Paired \(pairing.pairedAt.formatted(date: .abbreviated, time: .omitted))"
-                             : pairing.isPaired ? "Paired; its first notification hasn't arrived yet"
-                             : "Waiting for its first notification")
+                        (pairing.confirmed ? Text("Paired \(pairing.pairedAt.formatted(date: .abbreviated, time: .omitted))")
+                             : pairing.isPaired ? Text("Paired; its first notification hasn't arrived yet")
+                             : Text("Waiting for its first notification"))
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
@@ -59,7 +59,7 @@ struct PushSettingsView: View {
                 if signedInToDashboard {
                     // Signed in to that Hermes's Dashboard: the two can agree on the key over it.
                     Button { pairingDirectly = true } label: {
-                        Label(serverName.map { "Pair with \($0)" } ?? "Pair with this Hermes", systemImage: "bell.badge")
+                        Label(serverName.map { String(localized: "Pair with \($0)") } ?? String(localized: "Pair with this Hermes"), systemImage: "bell.badge")
                     }
                     DisclosureGroup("Pair with a code instead") { byCode }
                 } else {
@@ -100,12 +100,13 @@ struct PushSettingsView: View {
 
     /// The plugin's state in a line.
     static func pluginLine(_ state: PushPlugin.State, restart: Bool) -> String {
-        guard state.installed else { return "The plugin isn't on this Hermes yet." }
+        guard state.installed else { return String(localized: "The plugin isn't on this Hermes yet.") }
+        // A space and the version, or nothing.
         let version = state.version.map { " \($0)" } ?? ""
-        if restart { return "The plugin\(version) is installed." }
-        if !state.enabled { return "The plugin\(version) is installed, but switched off." }
-        if state.isOutdated { return "The plugin\(version) is installed; this Redde goes with \(PushPlugin.version)." }
-        return "The plugin\(version) is on this Hermes."
+        if restart { return String(localized: "The plugin\(version) is installed.", comment: "The placeholder is a space and the plugin's version, or nothing") }
+        if !state.enabled { return String(localized: "The plugin\(version) is installed, but switched off.", comment: "The placeholder is a space and the plugin's version, or nothing") }
+        if state.isOutdated { return String(localized: "The plugin\(version) is installed; this Redde goes with \(PushPlugin.version).", comment: "The first placeholder is a space and the plugin's version, or nothing") }
+        return String(localized: "The plugin\(version) is on this Hermes.", comment: "The placeholder is a space and the plugin's version, or nothing")
     }
 
     /// The connection the app is on is a Dashboard it has a login for. Over the Hermes API there
@@ -134,7 +135,7 @@ struct PushSettingsView: View {
 
     private func paste() {
         guard let found = UIPasteboard.general.string.flatMap(PushOffer.init(text:)) else {
-            pasteProblem = "There is no pairing link on the clipboard. Copy the link the pairing command shows, then try again."
+            pasteProblem = String(localized: "There is no pairing link on the clipboard. Copy the link the pairing command shows, then try again.")
             return
         }
         pasteProblem = nil
@@ -157,14 +158,14 @@ struct CommandRow: View {
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
                 Spacer(minLength: 8)
-                Button(copied ? "Copied" : "Copy") {
+                Button(copied ? String(localized: "Copied") : String(localized: "Copy")) {
                     UIPasteboard.general.string = command
                     copied = true
                     Task { try? await Task.sleep(for: .seconds(2)); copied = false }
                 }
                 .font(.footnote.weight(.medium))
                 .buttonStyle(.borderless)
-                .accessibilityLabel(copied ? "Copied" : "Copy the command")
+                .accessibilityLabel(copied ? String(localized: "Copied") : String(localized: "Copy the command"))
             }
         }
     }
@@ -248,24 +249,24 @@ struct PushPairingSheet: View {
 
     private var headline: String {
         switch stage {
-        case .asking: server.map { "Get notifications from \($0)?" } ?? "Get notifications from this Hermes?"
-        case .working: "Pairing…"
-        case .waiting: "Waiting for your Hermes…"
-        case .done(let host): host.isEmpty ? "Paired" : "Paired with \(host)"
-        case .quiet(let host): host.isEmpty ? "Paired, but nothing has arrived" : "Paired with \(host), but nothing has arrived"
-        case .failed: "Pairing didn't finish"
+        case .asking: server.map { String(localized: "Get notifications from \($0)?") } ?? String(localized: "Get notifications from this Hermes?")
+        case .working: String(localized: "Pairing…")
+        case .waiting: String(localized: "Waiting for your Hermes…")
+        case .done(let host): host.isEmpty ? String(localized: "Paired") : String(localized: "Paired with \(host)")
+        case .quiet(let host): host.isEmpty ? String(localized: "Paired, but nothing has arrived") : String(localized: "Paired with \(host), but nothing has arrived")
+        case .failed: String(localized: "Pairing didn't finish")
         }
     }
 
     private var detail: String {
         switch stage {
         case .asking:
-            "It will tell this iPhone when a reply is ready, when the agent waits for you and when it couldn't reply, also when Redde is closed. Notifications are encrypted between that Hermes and this iPhone; the relay that carries them can't read them."
-        case .working: offer == nil ? "Registering this iPhone and asking your Hermes." : "Registering this iPhone and answering the code."
-        case .waiting: "It should send a notification within a few seconds."
-        case .done: "You will be notified here when that Hermes finishes a reply, waits for you, or couldn't reply."
+            String(localized: "It will tell this iPhone when a reply is ready, when the agent waits for you and when it couldn't reply, also when Redde is closed. Notifications are encrypted between that Hermes and this iPhone; the relay that carries them can't read them.")
+        case .working: offer == nil ? String(localized: "Registering this iPhone and asking your Hermes.") : String(localized: "Registering this iPhone and answering the code.")
+        case .waiting: String(localized: "It should send a notification within a few seconds.")
+        case .done: String(localized: "You will be notified here when that Hermes finishes a reply, waits for you, or couldn't reply.")
         case .quiet:
-            "Your Hermes has this iPhone, but its first notification hasn't arrived. It may not be able to reach the notification relay. On that machine, hermes redde-push test sends another."
+            String(localized: "Your Hermes has this iPhone, but its first notification hasn't arrived. It may not be able to reach the notification relay. On that machine, hermes redde-push test sends another.")
         case .failed(let reason): reason
         }
     }
@@ -283,7 +284,7 @@ struct PushPairingSheet: View {
                 } else if pairing.isPaired {
                     stage = .quiet(pairing.host)   // over the Dashboard the plugin has already said yes
                 } else {
-                    stage = .failed("This iPhone answered the code, but that Hermes hasn't sent anything back. The pairing command may have ended: run it again and scan the new code.")
+                    stage = .failed(String(localized: "This iPhone answered the code, but that Hermes hasn't sent anything back. The pairing command may have ended: run it again and scan the new code."))
                 }
             } catch {
                 stage = .failed(error.localizedDescription)

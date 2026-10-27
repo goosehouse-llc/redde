@@ -76,7 +76,7 @@ struct SessionUsageTests {
     @Test func formatsUsageLine() throws {
         let json = #"{"id":"s","input_tokens":8234,"output_tokens":1120,"estimated_cost_usd":0.0123}"#
         let s = try JSONDecoder().decode(HermesSessionsAPI.SessionSummary.self, from: Data(json.utf8))
-        #expect(s.usageLine == "▲ 8.2k ▼ 1.1k · $0.012")
+        #expect(s.usageLine == "▲ 8.2K ▼ 1.1K · $0.012", "the system's compact numbers, written each language's way")
         #expect(s.totalTokens == 9354)
         let local = try JSONDecoder().decode(HermesSessionsAPI.SessionSummary.self, from: Data(#"{"id":"l","input_tokens":500,"output_tokens":20,"estimated_cost_usd":0}"#.utf8))
         #expect(local.usageLine == "▲ 500 ▼ 20")

@@ -20,7 +20,7 @@ struct ProfilePickerView: View {
     var body: some View {
         Form {
             Section {
-                row(title: "Default", subtitle: "The server's main profile.", selected: settings.profileName == nil) {
+                row(title: String(localized: "Default", comment: "The Hermes server's main profile"), subtitle: String(localized: "The server's main profile."), selected: settings.profileName == nil) {
                     choose(nil, home: "")
                 }
                 ForEach(profiles.filter { !$0.isDefault }) { profile in
@@ -57,15 +57,15 @@ struct ProfilePickerView: View {
                 } header: {
                     Text("By name")
                 } footer: {
-                    Text(canList
-                         ? "Couldn't load the list, but you can still name a profile."
-                         : "Add the Hermes Dashboard login in Connection details to pick from a list. Over the Hermes API, a profile other than Default needs gateway.multiplex_profiles turned on in the gateway's config.")
+                    canList
+                        ? Text("Couldn't load the list, but you can still name a profile.")
+                        : Text("Add the Hermes Dashboard login in Connection details to pick from a list. Over the Hermes API, a profile other than Default needs gateway.multiplex_profiles turned on in the gateway's config.")
                 }
             }
 
             if let name = settings.profileName {
                 Section {
-                    SecureField(hasProfileKey ? "Saved. Enter a new key to replace it" : "API key", text: $profileKey)
+                    SecureField(hasProfileKey ? String(localized: "Saved. Enter a new key to replace it") : String(localized: "API key"), text: $profileKey)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .onSubmit { saveKey(for: name) }
@@ -146,7 +146,7 @@ struct ProfilePickerView: View {
 
     /// The name in the Siri example: a profile of this server's if there is one.
     private var siriExample: String {
-        profiles.first { !$0.isDefault }?.title ?? named.first?.title ?? settings.profileName ?? "Work"
+        profiles.first { !$0.isDefault }?.title ?? named.first?.title ?? settings.profileName ?? String(localized: "Work", comment: "An example profile name, in a Siri phrase")
     }
 
     /// The open conversation belongs to the old profile, so a switch starts a fresh one.

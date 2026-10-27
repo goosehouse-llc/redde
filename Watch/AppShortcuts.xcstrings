@@ -1,0 +1,203 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Ask ${applicationName}" : {
+      "localizations" : {
+        "da" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Spørg ${applicationName}",
+              "Stil ${applicationName} et spørgsmål",
+              "Hej ${applicationName}"
+            ]
+          }
+        },
+        "de" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Frag ${applicationName}",
+              "${applicationName} fragen",
+              "Stell ${applicationName} eine Frage",
+              "Frage an ${applicationName}",
+              "Hey ${applicationName}"
+            ]
+          }
+        },
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Ask ${applicationName}",
+              "Ask ${applicationName} a question",
+              "Hey ${applicationName}"
+            ]
+          }
+        },
+        "es" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Pregunta a ${applicationName}",
+              "Hazle una pregunta a ${applicationName}",
+              "Preguntar a ${applicationName}",
+              "Oye ${applicationName}"
+            ]
+          }
+        },
+        "fr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Demande à ${applicationName}",
+              "Pose une question à ${applicationName}",
+              "J’ai une question pour ${applicationName}",
+              "Dis ${applicationName}"
+            ]
+          }
+        },
+        "it" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Chiedi a ${applicationName}",
+              "Fai una domanda a ${applicationName}",
+              "Ehi ${applicationName}"
+            ]
+          }
+        },
+        "ja" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}に聞いて",
+              "${applicationName}に質問",
+              "${applicationName}に質問して",
+              "${applicationName}に話しかける"
+            ]
+          }
+        },
+        "ko" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}에게 물어봐",
+              "${applicationName}한테 물어봐",
+              "${applicationName}에게 질문하기",
+              "${applicationName}에게 질문할래"
+            ]
+          }
+        },
+        "nb" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Spør ${applicationName}",
+              "Still ${applicationName} et spørsmål",
+              "Hei ${applicationName}"
+            ]
+          }
+        },
+        "nl" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Vraag ${applicationName}",
+              "Stel ${applicationName} een vraag",
+              "Hé ${applicationName}",
+              "Vraag iets aan ${applicationName}"
+            ]
+          }
+        },
+        "pl" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Zapytaj ${applicationName}",
+              "Zadaj pytanie ${applicationName}",
+              "Pytanie do ${applicationName}",
+              "Hej ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Perguntar ao ${applicationName}",
+              "Pergunte ao ${applicationName}",
+              "Fazer uma pergunta ao ${applicationName}",
+              "Ei ${applicationName}"
+            ]
+          }
+        },
+        "ru" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Спроси ${applicationName}",
+              "Задай вопрос ${applicationName}",
+              "Привет, ${applicationName}",
+              "Вопрос для ${applicationName}"
+            ]
+          }
+        },
+        "sv" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Fråga ${applicationName}",
+              "Ställ en fråga till ${applicationName}",
+              "Hej ${applicationName}"
+            ]
+          }
+        },
+        "tr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}'ye sor",
+              "${applicationName} ile soru sor",
+              "${applicationName} uygulamasına bir soru sor",
+              "Hey ${applicationName}"
+            ]
+          }
+        },
+        "uk" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Запитай ${applicationName}",
+              "Постав запитання ${applicationName}",
+              "Привіт, ${applicationName}",
+              "Питання до ${applicationName}"
+            ]
+          }
+        },
+        "zh-Hans" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "问问${applicationName}",
+              "向${applicationName}提问",
+              "${applicationName}，我有个问题"
+            ]
+          }
+        },
+        "zh-Hant" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "問 ${applicationName}",
+              "問 ${applicationName} 一個問題",
+              "用 ${applicationName} 問問題",
+              "嘿 ${applicationName}"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

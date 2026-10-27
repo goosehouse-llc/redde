@@ -33,20 +33,20 @@ enum AppIconChoice: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .graphite: "Graphite"
-        case .graphiteBlock: "Graphite Block"
-        case .steelBlock: "Steel"
-        case .mist: "Mist"
-        case .graphiteFlat: "Matte Graphite"
-        case .graphiteBlockFlat: "Matte Graphite Block"
-        case .steelFlat: "Matte Steel"
-        case .mistFlat: "Matte Mist"
-        case .faceMist: "Redde Face"
-        case .navyBlock: "Navy"
-        case .ink: "Ink"
-        case .paperNavy: "Paper Navy"
-        case .gold: "Gold"
-        case .classic: "Classic"
+        case .graphite: String(localized: "Graphite")
+        case .graphiteBlock: String(localized: "Graphite Block", comment: "An app icon's name")
+        case .steelBlock: String(localized: "Steel", comment: "An app icon's name")
+        case .mist: String(localized: "Mist", comment: "An app icon's name")
+        case .graphiteFlat: String(localized: "Matte Graphite", comment: "An app icon's name")
+        case .graphiteBlockFlat: String(localized: "Matte Graphite Block", comment: "An app icon's name")
+        case .steelFlat: String(localized: "Matte Steel", comment: "An app icon's name")
+        case .mistFlat: String(localized: "Matte Mist", comment: "An app icon's name")
+        case .faceMist: String(localized: "Redde Face", comment: "An app icon's name: Redde's bot face")
+        case .navyBlock: String(localized: "Navy", comment: "An app icon's name")
+        case .ink: String(localized: "Ink", comment: "An app icon's name")
+        case .paperNavy: String(localized: "Paper Navy", comment: "An app icon's name")
+        case .gold: String(localized: "Gold")
+        case .classic: String(localized: "Classic", comment: "An app icon's name: the original icon")
         }
     }
 
@@ -103,7 +103,7 @@ struct AppIconSettings: View {
                     Text(failure).font(.footnote).foregroundStyle(.red)
                 }
             } label: {
-                DisclosureSummary(title: "App icon") {
+                DisclosureSummary(title: String(localized: "App icon")) {
                     HStack(spacing: 8) {
                         Text(selected.label)
                         Image("IconPreviews/\(selected.rawValue)")
@@ -127,7 +127,7 @@ struct AppIconSettings: View {
                 try await UIApplication.shared.setAlternateIconName(icon.alternateName)
             } catch {
                 selected = previous
-                failure = "Couldn't change the icon: \(error.localizedDescription)"
+                failure = String(localized: "Couldn't change the icon: \(error.localizedDescription)")
             }
         }
     }

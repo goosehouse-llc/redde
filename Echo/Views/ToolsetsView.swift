@@ -31,9 +31,9 @@ struct ToolsView: View {
                 } header: {
                     Text("Enabled · \(enabled.count)")
                 } footer: {
-                    Text(canToggle
-                        ? "Switches change the toolset's platform setting in Hermes's config, the same as the dashboard. The API server's own list (platform_toolsets.api_server) is separate and set in config.yaml on the Hermes host."
-                        : "Anything here can be used by asking in plain words. Add the Hermes Dashboard login to toggle toolsets from here.")
+                    canToggle
+                        ? Text("Switches change the toolset's platform setting in Hermes's config, the same as the dashboard. The API server's own list (platform_toolsets.api_server) is separate and set in config.yaml on the Hermes host.")
+                        : Text("Anything here can be used by asking in plain words. Add the Hermes Dashboard login to toggle toolsets from here.")
                 }
                 if !disabled.isEmpty {
                     Section("Not enabled · \(disabled.count)") {
@@ -113,7 +113,7 @@ struct SkillsView: View {
     @State private var canWrite = HermesServeClient.shared.hasCredentials
 
     private var byCategory: [(category: String, skills: [HermesSessionsAPI.Skill])] {
-        let grouped = Dictionary(grouping: skills) { ($0.category?.isEmpty == false ? $0.category! : "Other") }
+        let grouped = Dictionary(grouping: skills) { ($0.category?.isEmpty == false ? $0.category! : String(localized: "Other", comment: "Skills with no category")) }
         return grouped.keys.sorted().compactMap { key in grouped[key].map { (key, $0.sorted { $0.name < $1.name }) } }
     }
 
@@ -131,7 +131,7 @@ struct SkillsView: View {
                         .font(.footnote).foregroundStyle(.orange).listRowSeparator(.hidden)
                 }
                 Section {
-                    Label(canWrite ? "Switch a skill off and Redde stops loading it; edit or create with the editor." : "Add the Hermes Dashboard username and password in Settings to create, edit or toggle skills.",
+                    Label(canWrite ? String(localized: "Switch a skill off and Redde stops loading it; edit or create with the editor.") : String(localized: "Add the Hermes Dashboard username and password in Settings to create, edit or toggle skills."),
                           systemImage: canWrite ? "sparkles" : "pencil.slash")
                         .font(.footnote).foregroundStyle(.secondary)
                 }

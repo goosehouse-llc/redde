@@ -44,10 +44,9 @@ struct AgentCallsSettingsView: View {
                 Section {
                     Toggle("Talk While Locked", isOn: $settings.callsWhileLocked)
                 } footer: {
-                    Text((settings.callsWhileLocked
-                          ? "A call answered on a locked iPhone listens straight away, so whoever answers can talk with your agent, as with AirPods and the iPhone in a pocket."
-                          : "A call answered on a locked iPhone says why the agent called, then waits for you to unlock it before it listens, so nobody else who picks it up can talk with your agent.")
-                         + " With Redde's Face ID lock on, it always waits for Redde to be unlocked.")
+                    settings.callsWhileLocked
+                        ? Text("A call answered on a locked iPhone listens straight away, so whoever answers can talk with your agent, as with AirPods and the iPhone in a pocket. With Redde's Face ID lock on, it always waits for Redde to be unlocked.")
+                        : Text("A call answered on a locked iPhone says why the agent called, then waits for you to unlock it before it listens, so nobody else who picks it up can talk with your agent. With Redde's Face ID lock on, it always waits for Redde to be unlocked.")
                 }
                 Section {
                 } footer: {
@@ -90,23 +89,23 @@ struct AgentCallsSettingsView: View {
     /// What keeps calls from coming, if anything, and where to put it right.
     private var problem: Problem? {
         if !push.pairings.contains(where: \.isPaired) {
-            return Problem(text: "Pair this iPhone for notifications first: calls come the same way.",
-                           link: .init(title: "Notify When Redde Is Closed", destination: AnyView(PushSettingsView())))
+            return Problem(text: String(localized: "Pair this iPhone for notifications first: calls come the same way."),
+                           link: .init(title: String(localized: "Notify When Redde Is Closed"), destination: AnyView(PushSettingsView())))
         }
         if settings.serveBaseURL == nil {
-            return Problem(text: "Calls need the Dashboard login, which is how Redde tells your Hermes who may call.")
+            return Problem(text: String(localized: "Calls need the Dashboard login, which is how Redde tells your Hermes who may call."))
         }
         switch calls.status {
         case .oldPlugin, .noPlugin:
-            return Problem(text: "Calls need the Redde plugin 1.8.0 or later on your Hermes.",
-                           link: .init(title: "Redde Plugin", destination: AnyView(ReddePluginView())))
+            return Problem(text: String(localized: "Calls need the Redde plugin 1.8.0 or later on your Hermes."),
+                           link: .init(title: String(localized: "Redde Plugin"), destination: AnyView(ReddePluginView())))
         case .noPairing:
-            return Problem(text: "This iPhone isn't paired with the Hermes Redde is on now, so it can't call you. Pair it from Notify When Redde Is Closed.",
-                           link: .init(title: "Notify When Redde Is Closed", destination: AnyView(PushSettingsView())))
+            return Problem(text: String(localized: "This iPhone isn't paired with the Hermes Redde is on now, so it can't call you. Pair it from Notify When Redde Is Closed."),
+                           link: .init(title: String(localized: "Notify When Redde Is Closed"), destination: AnyView(PushSettingsView())))
         case .noDashboard:
-            return Problem(text: "Calls need the Dashboard login, which is how Redde tells your Hermes who may call.")
+            return Problem(text: String(localized: "Calls need the Dashboard login, which is how Redde tells your Hermes who may call."))
         case .failed(let reason):
-            return Problem(text: "Couldn't tell your Hermes who may call: \(reason)")
+            return Problem(text: String(localized: "Couldn't tell your Hermes who may call: \(reason)"))
         case .ready, .unknown:
             return nil
         }

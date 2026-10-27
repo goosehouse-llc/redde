@@ -275,13 +275,13 @@ nonisolated enum APIBotProblem: LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case let .noKey(name): "There's no API key for \(name) on this iPhone. Add the bot again with its profile's key."
-        case .isMain: "The main profile is there already."
-        case .noAPI: "Set the Hermes API's address and key in Settings first."
-        case .notKept: "The key couldn't be kept in the Keychain."
-        case let .needsKey(name): "Hermes refused your main API key for \(name). Put API_SERVER_KEY in that profile's .env on the server (your main key will do, and it takes effect at once), then add it again; or enter the key it has below."
-        case let .notServed(name): "Hermes doesn't serve the profile \(name) over its API. Check the name; on Hermes 0.21.3 and earlier, set gateway.multiplex_profiles: true in config.yaml and restart the gateway."
-        case let .wrongKey(name): "Hermes refused that key for \(name). It takes the API_SERVER_KEY in that profile's own .env."
+        case let .noKey(name): String(localized: "There's no API key for \(name) on this iPhone. Add the bot again with its profile's key.")
+        case .isMain: String(localized: "The main profile is there already.")
+        case .noAPI: String(localized: "Set the Hermes API's address and key in Settings first.")
+        case .notKept: String(localized: "The key couldn't be kept in the Keychain.")
+        case let .needsKey(name): String(localized: "Hermes refused your main API key for \(name). Put API_SERVER_KEY in that profile's .env on the server (your main key will do, and it takes effect at once), then add it again; or enter the key it has below.")
+        case let .notServed(name): String(localized: "Hermes doesn't serve the profile \(name) over its API. Check the name; on Hermes 0.21.3 and earlier, set gateway.multiplex_profiles: true in config.yaml and restart the gateway.")
+        case let .wrongKey(name): String(localized: "Hermes refused that key for \(name). It takes the API_SERVER_KEY in that profile's own .env.")
         }
     }
 }
@@ -409,8 +409,8 @@ nonisolated enum BotChat {
 
         var errorDescription: String? {
             switch self {
-            case let .unconfirmed(name): "Couldn't find \(name)'s chat on the server just now. Try again in a moment."
-            case .cantStartFresh: "Starting a bot's chat over needs Hermes 0.22 or later. On this server, send /compress in the chat to make it shorter."
+            case let .unconfirmed(name): String(localized: "Couldn't find \(name)'s chat on the server just now. Try again in a moment.")
+            case .cantStartFresh: String(localized: "Starting a bot's chat over needs Hermes 0.22 or later. On this server, send /compress in the chat to make it shorter.")
             }
         }
     }
@@ -509,7 +509,7 @@ extension HermesServeClient {
         let applied = result["applied"]
         // Someone set it up meanwhile (Hermes Desktop): it's on either way.
         if applied?["ui_meta_conflicts"] != nil { return }
-        guard applied?["ui_meta"]?.bool == true else { throw TransportError.malformed("Hermes didn't take the bot settings") }
+        guard applied?["ui_meta"]?.bool == true else { throw TransportError.malformed(String(localized: "Hermes didn't take the bot settings")) }
     }
 }
 
@@ -526,7 +526,7 @@ extension HermesServeClient {
             "ui_meta_expected_revisions": .object(["redde": .number(Double(bot.reddeRevision))])]))
         let applied = result["applied"]
         if applied?["ui_meta_conflicts"] != nil { throw BotFaceProblem.changedElsewhere }
-        guard applied?["ui_meta"]?.bool == true else { throw TransportError.malformed("Hermes didn't keep the face") }
+        guard applied?["ui_meta"]?.bool == true else { throw TransportError.malformed(String(localized: "Hermes didn't keep the face")) }
     }
 }
 
@@ -535,7 +535,7 @@ nonisolated enum BotFaceProblem: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .changedElsewhere: "This bot's face was changed somewhere else just now. Look again and pick once more."
+        case .changedElsewhere: String(localized: "This bot's face was changed somewhere else just now. Look again and pick once more.")
         }
     }
 }

@@ -173,15 +173,15 @@ nonisolated enum ServerFiles {
     static func explain(_ error: Error) -> String {
         guard case let TransportError.http(status, body) = error else { return error.localizedDescription }
         switch status {
-        case 403 where body.localizedCaseInsensitiveContains("sensitive"): return "Hermes doesn't hand this one out: it holds credentials."
-        case 403 where body.localizedCaseInsensitiveContains("outside"): return "That is outside the folder this server keeps its file manager to."
-        case 403: return "Hermes isn't allowed to do that there. (\(body))"
-        case 404: return "It isn't there any more."
-        case 409 where body.localizedCaseInsensitiveContains("already exists"): return "Something with that name is already there."
-        case 409: return "It couldn't be removed. (\(body))"
-        case 413: return "Too large: Hermes takes and gives at most \(size(largest)) as one file."
-        case 401: return "The Hermes Dashboard login was refused."
-        default: return body.isEmpty ? "The server answered \(status)." : body
+        case 403 where body.localizedCaseInsensitiveContains("sensitive"): return String(localized: "Hermes doesn't hand this one out: it holds credentials.")
+        case 403 where body.localizedCaseInsensitiveContains("outside"): return String(localized: "That is outside the folder this server keeps its file manager to.")
+        case 403: return String(localized: "Hermes isn't allowed to do that there. (\(body))")
+        case 404: return String(localized: "It isn't there any more.")
+        case 409 where body.localizedCaseInsensitiveContains("already exists"): return String(localized: "Something with that name is already there.")
+        case 409: return String(localized: "It couldn't be removed. (\(body))")
+        case 413: return String(localized: "Too large: Hermes takes and gives at most \(size(largest)) as one file.")
+        case 401: return String(localized: "The Hermes Dashboard login was refused.")
+        default: return body.isEmpty ? String(localized: "The server answered \(status).") : body
         }
     }
 
