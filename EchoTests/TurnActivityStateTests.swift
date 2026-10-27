@@ -8,6 +8,18 @@ struct TurnActivityStateTests {
         .init(phase: phase, detail: detail, startedAt: .now)
     }
 
+    /// The Lock Screen named Redde beside iOS's own card naming Sol (2026-10-26): it says who answers.
+    @Test func itNamesTheAgentAnswering() throws {
+        #expect(state(.thinking).title(stale: false, agent: "Sol") == "Sol is thinking")
+        #expect(state(.replying).title(stale: false, agent: "Home") == "Home is replying")
+        #expect(state(.done).title(stale: false, agent: "Home") == "Home replied")
+        #expect(state(.failed).title(stale: false, agent: "Sol") == "Sol couldn't reply")
+        #expect(state(.thinking).title(stale: false, agent: "  ") == "Redde is thinking", "no name: Redde")
+        // An activity an older build started has no agent, and still reads.
+        let old = try JSONDecoder().decode(EchoTurnAttributes.self, from: Data(#"{"question":"Is the tree on?"}"#.utf8))
+        #expect(old.agent == nil && old.question == "Is the tree on?")
+    }
+
     @Test func aRunningReplySaysWhatItIsDoing() {
         #expect(state(.thinking).title(stale: false) == "Redde is thinking")
         #expect(state(.tool, "terminal").title(stale: false) == "Using terminal")

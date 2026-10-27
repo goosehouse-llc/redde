@@ -35,6 +35,9 @@ nonisolated struct EchoTurnAttributes: ActivityAttributes {
 
     /// The question, trimmed for the banner.
     var question: String
+    /// Who is answering: the bot's name in its chat, else the main agent's, as Redde names it
+    /// ("Sol is thinking"). Optional, so an activity an older build started decodes, as "Redde".
+    var agent: String? = nil
 }
 
 extension EchoTurnAttributes {
@@ -58,15 +61,17 @@ extension EchoTurnAttributes.ContentState {
     /// The words and symbol for the banner and the Dynamic Island. `stale` is the system's word
     /// that updates stopped coming: a reply that was live then is shown as interrupted, not as
     /// still thinking with the clock running.
-    func title(stale: Bool) -> String {
+    /// `agent`: who is answering (`EchoTurnAttributes.agent`); "Redde" when not said.
+    func title(stale: Bool, agent: String? = nil) -> String {
         if stale, isLive { return "Reply interrupted" }
         if pendingApproval(stale: stale) != nil { return "Needs your approval" }
+        let name = agent.flatMap { $0.trimmingCharacters(in: .whitespaces).isEmpty ? nil : $0 } ?? "Redde"
         switch phase {
-        case .thinking: return "Redde is thinking"
+        case .thinking: return "\(name) is thinking"
         case .tool: return "Using \(detail)"
-        case .replying: return "Redde is replying"
-        case .done: return "Redde replied"
-        case .failed: return "Redde couldn't reply"
+        case .replying: return "\(name) is replying"
+        case .done: return "\(name) replied"
+        case .failed: return "\(name) couldn't reply"
         }
     }
 

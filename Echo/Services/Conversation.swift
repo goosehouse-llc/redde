@@ -32,6 +32,8 @@ final class Conversation {
     /// agent with what the person says first after it (`CallNote`), within ten minutes. Gone when
     /// another conversation opens.
     @ObservationIgnored var answeringCall: (line: String, at: Date)?
+    /// Who answers in this conversation, as the Lock Screen names it: its bot, else the main agent.
+    private var answeringName: String { bot?.name ?? settings.headerTitle }
     /// Words to find once this conversation is on screen: set when a message search opens it,
     /// taken by the transcript, which opens Find on them (`TranscriptView`).
     var findRequest: String?
@@ -349,8 +351,9 @@ final class Conversation {
 
         isStreaming = true
         // An incognito chat's words stay in the app: not on the Lock Screen or in a widget.
-        TurnActivity.shared.start(question: isIncognito ? IncognitoNote.title : trimmed)
-        BackgroundTurn.shared.begin(question: isIncognito ? IncognitoNote.title : trimmed)
+        // Both say who is answering: the bot in its chat, else the main agent ("Sol is thinking").
+        TurnActivity.shared.start(question: isIncognito ? IncognitoNote.title : trimmed, agent: answeringName)
+        BackgroundTurn.shared.begin(question: isIncognito ? IncognitoNote.title : trimmed, agent: answeringName)
         turnSerial += 1
         let myTurn = turnSerial
         let transportKind = connection
@@ -757,8 +760,8 @@ final class Conversation {
         }
         isStreaming = true
         joinedStop = joined.stop
-        TurnActivity.shared.start(question: joined.question)
-        BackgroundTurn.shared.begin(question: joined.question)
+        TurnActivity.shared.start(question: joined.question, agent: answeringName)
+        BackgroundTurn.shared.begin(question: joined.question, agent: answeringName)
         turnSerial += 1
         let myTurn = turnSerial
         streamTask = Task { [weak self] in

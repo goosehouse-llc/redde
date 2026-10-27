@@ -42,12 +42,13 @@ final class TurnActivity {
         }
     }
 
-    func start(question: String) {
+    /// `agent`: who is answering, for "Sol is thinking" (`EchoTurnAttributes.agent`).
+    func start(question: String, agent: String? = nil) {
         end(final: nil)
         clearStrays()
         guard Settings.shared.showLiveActivity else { return }
         preview = ""
-        let attributes = EchoTurnAttributes(question: String(question.prefix(120)))
+        let attributes = EchoTurnAttributes(question: String(question.prefix(120)), agent: agent.map { String($0.prefix(40)) })
         let state = EchoTurnAttributes.ContentState(phase: .thinking, detail: "", startedAt: .now)
         let turn = UUID()
         (requesting, turnStartedAt, lastState) = (turn, state.startedAt, state)

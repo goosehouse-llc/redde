@@ -39,7 +39,7 @@ struct EchoTurnLiveActivity: Widget {
                     }
                 }
                 DynamicIslandExpandedRegion(.center) {
-                    Text(state.title(stale: stale))
+                    Text(state.title(stale: stale, agent: context.attributes.agent))
                         .font(.subheadline.weight(.semibold))
                         .lineLimit(1)
                 }
@@ -90,7 +90,7 @@ struct EchoTurnLiveActivity: Widget {
                 .symbolEffect(.pulse, isActive: running)
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text(state.title(stale: stale)).font(.subheadline.weight(.semibold))
+                    Text(state.title(stale: stale, agent: context.attributes.agent)).font(.subheadline.weight(.semibold))
                     Spacer()
                     if running {
                         Text(state.startedAt, style: .timer)

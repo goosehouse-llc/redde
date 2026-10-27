@@ -264,7 +264,7 @@ enum DevHooks {
             }
         }
         if has("-echo.demoApproval") {
-            TurnActivity.shared.start(question: "Clear out the old build folders")
+            TurnActivity.shared.start(question: "Clear out the old build folders", agent: settings.headerTitle)
             TurnActivity.shared.tool("terminal")
             TurnActivity.shared.needsApproval(ApprovalRequest(id: "demo", command: "rm -rf ~/builds/2025-*", description: nil,
                                                               choices: ["once", "session", "always", "deny"]))
@@ -282,7 +282,7 @@ enum DevHooks {
                 }
             }
             let start = min(max(value("-echo.demoTasks").flatMap(Int.init) ?? 0, 0), titles.count)
-            TurnActivity.shared.start(question: "Move the blog to the new site")
+            TurnActivity.shared.start(question: "Move the blog to the new site", agent: settings.headerTitle)
             TurnActivity.shared.tool("terminal")
             TurnActivity.shared.tasks(list(done: start))
             if value("-echo.demoTasks") == "run" {

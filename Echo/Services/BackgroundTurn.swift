@@ -30,7 +30,8 @@ final class BackgroundTurn {
     private var ticker: Task<Void, Never>?
     private var startedAt = Date.now
 
-    func begin(question: String = "") {
+    /// `agent`: who is answering, for iOS's card ("Sol is working"); the main agent's name when not said.
+    func begin(question: String = "", agent: String? = nil) {
         if task == .invalid {
             expired = false
             task = UIApplication.shared.beginBackgroundTask(withName: "redde.turn") { [weak self] in
@@ -39,7 +40,7 @@ final class BackgroundTurn {
                 self?.endShortTask()
             }
         }
-        submitContinuedTask(question: question)
+        submitContinuedTask(question: question, agent: agent)
     }
 
     /// The turn is over. `success` only colours the system activity's last state.
@@ -65,7 +66,7 @@ final class BackgroundTurn {
 
     // MARK: - Continued processing
 
-    private func submitContinuedTask(question: String) {
+    private func submitContinuedTask(question: String, agent: String?) {
         // Only for a turn started in front of the person: iOS ties the request to the foreground
         // app. (Inactive is still in front: a Face ID sheet or a system alert is up.) An iOS app
         // on a Mac has no such scheduler.
@@ -77,7 +78,7 @@ final class BackgroundTurn {
             return
         }
         let subtitle = question.split(whereSeparator: \.isNewline).joined(separator: " ")
-        let request = BGContinuedProcessingTaskRequest(identifier: id, title: "\(Settings.shared.headerTitle) is working",
+        let request = BGContinuedProcessingTaskRequest(identifier: id, title: "\(agent ?? Settings.shared.headerTitle) is working",
                                                        subtitle: subtitle.isEmpty ? "Replying" : String(subtitle.prefix(80)))
         // Fail rather than queue: a reply that starts late in the background is no use, and the
         // 30-second task is already running.
