@@ -59,6 +59,11 @@ nonisolated enum LiveEngine: String, CaseIterable, Codable, Sendable {
     var voices: [String] { voiceGroups.flatMap(\.voices) }
     /// Its voices are the person's account's, listed when picked (`ElevenLabsVoice`), not Redde's to know.
     var voicesFromAccount: Bool { self == .elevenLabs }
+    /// Redde reads the agent's every answer itself, in the call's own voice, as it is written
+    /// (`LiveStoryReader`), the voice held meanwhile: ElevenLabs takes a tool's result only whole,
+    /// so the person waited for all of it, and its model then said it in other words (asked
+    /// 2026-10-27, quicker and more private: the agent's answers no longer reach that model).
+    var answersReadAloud: Bool { self == .elevenLabs }
     /// The voice nothing picked gives it; none for ElevenLabs: its agent's own.
     var defaultVoice: String { voices.first ?? "" }
 

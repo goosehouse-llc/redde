@@ -131,7 +131,20 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
     /// Which voice reads what `speaker` says: a preview's, the bot's own reading voice, else
     /// Settings' (`Settings.readingVoice`).
     private func reader(of speaker: String?) -> Settings.ReplyVoice {
-        voiceOverride?.reader ?? Settings.shared.readingVoice(for: speaker)
+        if let reader = voiceOverride?.reader { return reader }
+        let picked = Settings.shared.readingVoice(for: speaker)
+        // Talked with through ElevenLabs' live voice, with no reading voice picked: read in that
+        // voice too, a Replay as the call sounded (on-device read it, 2026-10-27).
+        if picked == .onDevice, liveVoice(of: speaker) != nil { return .elevenLabs }
+        return picked
+    }
+
+    /// The ElevenLabs voice `speaker` talks in on a live call, where that is how its chat talks
+    /// and nothing else reads it (`reader(of:)`); nil otherwise.
+    private func liveVoice(of speaker: String?) -> String? {
+        guard voiceOverride == nil, Settings.shared.readingVoice(for: speaker) == .onDevice,
+              Settings.shared.liveEngine(for: speaker) == .elevenLabs else { return nil }
+        return Settings.shared.liveVoice(for: speaker, engine: .elevenLabs).nilIfEmpty
     }
 
     /// The ElevenLabs voice Redde reads in: the one picked, else the account's first.
@@ -143,6 +156,7 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
     /// the one a preview names.
     private func elevenLabsVoice(of speaker: String?) -> String? {
         if let id = voiceOverride?.elevenLabs { return id }
+        if let live = liveVoice(of: speaker) { return live }
         guard voiceOverride == nil, let main = mainElevenLabsVoice else { return mainElevenLabsVoice }
         return BotVoices.elevenLabs(for: speaker, picked: Settings.shared.botVoicesHere, main: main,
                                     available: elevenLabsVoiceIDs?.ids ?? [], names: botNames) ?? main
@@ -312,7 +326,7 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         case .elevenLabs:
             // Without a key, or before a voice is known, the built-in voice reads it.
             loadElevenLabsVoices()
-            elevenLabsKey = mainElevenLabsVoice == nil ? nil : ElevenLabsSpeech.key
+            elevenLabsKey = (voiceOverride?.elevenLabs ?? mainElevenLabsVoice ?? liveVoice(of: speaker)) == nil ? nil : ElevenLabsSpeech.key
             usingPlayer = elevenLabsKey != nil
             if usingPlayer { player.begin() }
         case .onDevice:

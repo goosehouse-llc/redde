@@ -1198,6 +1198,11 @@ final class VoiceSession {
         metrics.speechDoneAt = .now
         lastMetrics = metrics
         log.info("turn: \(self.metrics.summary)")
+        #if DEBUG
+        // In a file too, to set beside a live call's (live-measure.log): the same requests, timed
+        // both ways (2026-10-27).
+        LiveMeasure.write("turn: \(metrics.summary)", to: "voice-turns.log")
+        #endif
         if monitoring, continuous {
             // Hands-free, and the mic is already open behind the reply: listen on it, rather
             // than close it and open it again. Nothing kept from while Redde spoke is used.

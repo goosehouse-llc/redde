@@ -132,8 +132,9 @@ nonisolated enum LiveVoiceNote {
         This message comes from a live spoken conversation: a voice model is talking with the user \
         and handed this request to you. The text is a voice transcript; it may contain mishearings, \
         hesitations and later corrections, so go by the latest intent. Your reply will be spoken \
-        aloud by that voice model, which paraphrases it: answer in plain conversational sentences, \
-        keep it short (a few sentences unless the user asked for detail), with no markdown, no lists, \
+        aloud in that voice, often word for word as you write it, so write the words to say to the \
+        user, addressed to them: answer in plain conversational sentences, keep it short (a few sentences unless the user asked for detail, or for a story or \
+        the like, which you write in full, with what you know about them), with no markdown, no lists, \
         no code blocks and no links read out. Do the work with your tools as usual; only the final \
         facts need to be spoken. Don't say an action succeeded before it actually did.
         """ + " " + lookAgain

@@ -117,6 +117,14 @@ final class LiveVoice {
     private var lastHeardVoice: ContinuousClock.Instant?
     /// The agent's answer went to the voice and it hasn't said it yet.
     private var answerUnsaid = false
+    /// A story (or the like) Redde is reading to the person itself, as the agent writes it: where
+    /// the voice takes an answer only whole (`LiveDialect.streamsAnswers`), it would wait for all of
+    /// it, and a long one never came (Marta, 2026-10-27). The voice is held meanwhile.
+    private var storyReader: (any StoryReading)?
+    /// A story just told: the voice stays held, its words unheard, until the person talks. Asked
+    /// to say nothing more, it still said "here's the story requested by the user" and told it
+    /// again (2026-10-27).
+    private var heldAfterStory = false
     private var answerCheck: Task<Void, Never>?
 
     init(conversation: Conversation, settings: Settings = .shared, engine: LiveEngine? = nil,
@@ -273,6 +281,7 @@ final class LiveVoice {
         self.problem = problem
         if let problem { log.error("\(self.engine.name, privacy: .public) call ended: \(problem, privacy: .public)") }
         state = .ended
+        stopStory()
         utteranceSettles?.cancel()
         quietWatch?.cancel()
         answerCheck?.cancel()
@@ -305,6 +314,13 @@ final class LiveVoice {
             case let .transcript(speaker, piece, startMs, endMs):
                 // "…" for a silence (ElevenLabs): nothing said.
                 if speaker == .person, !piece.contains(where: { $0.isLetter || $0.isNumber }) { continue }
+                if heldAfterStory {
+                    // Its words after a story aren't heard, nor kept; the person talking lets it go.
+                    guard speaker == .person else { continue }
+                    heldAfterStory = false
+                    call?.setVoiceHeld(false)
+                    note("the voice let go after the story: the person talked")
+                }
                 // Times where the service gives them (GPT-Live), else the call's own clock.
                 let now = callStarted.map { Int((ContinuousClock.now - $0) / .milliseconds(1)) } ?? 0
                 transcribed(LiveFragment(speaker: speaker, text: piece, startMs: startMs ?? now, endMs: endMs ?? now))
@@ -447,7 +463,13 @@ final class LiveVoice {
         turn = Task { [weak self] in
             if settle > .zero { try? await Task.sleep(for: settle) }
             guard let self, delegation == id, !Task.isCancelled else { return }
-            let (prompt, context) = asked(wording: request)
+            let (asked, context) = asked(wording: request)
+            // Read here as it is written: in an ElevenLabs call, every answer, in the call's own voice
+            // (`LiveEngine.answersReadAloud`); with the other voices that take an answer only whole,
+            // a story or the like, marked by the voice.
+            let marked = (request ?? asked).contains(LiveSetup.readAloudMark)
+            let readAloud = room == nil && (engine.answersReadAloud || !dialect.streamsAnswers && marked)
+            let prompt = asked.replacingOccurrences(of: LiveSetup.readAloudMark, with: "").trimmingCharacters(in: .whitespaces)
             if StopPhrase.matches(prompt, own: settings.stopPhrases) {
                 hangUp()
                 return
@@ -459,7 +481,7 @@ final class LiveVoice {
             #if DEBUG
             note("handed over: \(prompt)")
             #endif
-            await work(on: prompt, context: context, for: id)
+            await work(on: prompt, context: context, for: id, readAloud: readAloud, marked: marked)
         }
         posting?.cancel()
         // A room's members answer in their own time: nothing to keep the person posted on.
@@ -591,6 +613,7 @@ final class LiveVoice {
 
     /// The voice no longer wants what it asked (the person moved on): the agent stops too.
     private func withdraw() {
+        stopStory()
         turn?.cancel()
         turn = nil
         posting?.cancel()
@@ -612,7 +635,7 @@ final class LiveVoice {
         var wait = postEvery.first
         while true {
             try? await Task.sleep(for: wait)
-            guard delegation == id, !spokenAnything, !Task.isCancelled else { return }
+            guard delegation == id, !spokenAnything, storyReader == nil, !Task.isCancelled else { return }
             let seconds = Int((ContinuousClock.now - asked) / .seconds(1))
             let doing = tool.map { ", using \($0)" } ?? ""
             let update = "\(agentName) is still working on it\(doing): \(seconds) seconds so far, not done yet."
@@ -621,7 +644,7 @@ final class LiveVoice {
         }
     }
 
-    private func work(on prompt: String, context: String, for id: String) async {
+    private func work(on prompt: String, context: String, for id: String, readAloud: Bool = false, marked: Bool = false) async {
         // Spoken prefixes, as in Redde's own voice: "Home, …" goes to that bot's chat first.
         let route = VoiceRouting.route(prompt, rules: settings.spokenPrefixes)
         if let bot = route?.bot { await goToBot(conversation, bot, settings.headerTitle) }
@@ -631,28 +654,46 @@ final class LiveVoice {
         let handingOff = (conversation.bot?.profile ?? "default") != voiceOf
         collecting = handingOff
         let events = conversation.send(route?.text ?? prompt, live: LiveTurn(context: context, surface: hermesKnowsLiveTurns))
+        // Read here from its first words (until then the voice's waiting sound, and its word now and
+        // then on a long wait), where Redde can.
+        var reading = readAloud && !handingOff
         var used: [String] = []
         for await event in events {
             guard delegation == id, !Task.isCancelled else { return }
             lastActivity = .now
             switch event {
             case let .textDelta(delta):
-                chunker.append(delta).forEach { say($0, for: id) }
+                if reading, storyReader == nil { reading = beginStory(marked: marked) }
+                if let storyReader {
+                    storyReader.append(delta)
+                    answer += delta
+                } else {
+                    chunker.append(delta).forEach { say($0, for: id) }
+                }
             case let .toolStarted(name, _, _):
                 if !used.contains(name) { used.append(name) }
                 tool = name
-                think("\(agentName) is working: \(name). Not done yet.", for: id)
+                if storyReader == nil, !reading { think("\(agentName) is working: \(name). Not done yet.", for: id) }
                 changed()
             case .toolFinished:
                 tool = nil
                 changed()
             case .interrupt:
-                think("\(agentName) is waiting for the user to answer a request on their iPhone's screen.", for: id)
+                // While Redde reads, the held voice can't say it: Redde does.
+                if let storyReader {
+                    storyReader.append("\n\n\(agentName) needs your answer on your iPhone's screen.\n\n")
+                } else {
+                    think("\(agentName) is waiting for the user to answer a request on their iPhone's screen.", for: id)
+                }
             default:
                 break
             }
         }
         guard delegation == id, !Task.isCancelled else { return }
+        if storyReader != nil {
+            await finishStory(answer, for: id)
+            return
+        }
         if let tail = chunker.flush() { say(tail, for: id) }
         if conversation.lastSendWasHeld {
             say("That request is waiting behind another one; it goes as soon as that's done.", for: id)
@@ -688,6 +729,76 @@ final class LiveVoice {
         posting?.cancel()
         changed()
         checkAnswered()
+    }
+
+    // MARK: - A story read here
+
+    /// The voice held (its sound dropped, the microphone shut to it) and Redde's own reader set
+    /// going: in an ElevenLabs call, ElevenLabs' text to speech in the call's own voice, into the
+    /// call's own player (`LiveStoryReader`); otherwise the agent's reading voice (`SpokenStory`).
+    /// False where it can't: an answer the voice wasn't asked to leave to Redde (`marked`) goes to
+    /// it as before, rather than to another voice.
+    private func beginStory(marked: Bool) -> Bool {
+        guard let call else { return false }
+        let profile = conversation.bot?.profile
+        let live: (any StoryReading)? = engine.answersReadAloud ? LiveStoryReader(call: call, profile: profile) : nil
+        guard let reader = live ?? (marked ? SpokenStory(profile: profile) : nil) else { return false }
+        call.setVoiceHeld(true)
+        call.setMuted(true)
+        // What plays from now is the answer, not the service's waiting sound: the face's mouth
+        // moves with it (it stayed shut, the reading taken for the typing sound, 2026-10-27).
+        call.answered()
+        storyReader = reader
+        posting?.cancel()
+        note("reading the answer here as it is written")
+        changed()
+        return true
+    }
+
+    /// The agent is done: the rest is read, then the voice is let go and told it has just told
+    /// the story itself, start to finish, and what it was, so it doesn't tell it again or speak of
+    /// it as someone else's ("the story seems to have already been played", 2026-10-27), and a
+    /// question about it after makes sense.
+    private func finishStory(_ story: String, for id: String) async {
+        guard let reader = storyReader else { return }
+        let unread = await reader.finish()
+        guard storyReader === reader else { return }   // stopped meanwhile: the call is going away (it noted any problem)
+        if let problem = ElevenLabsSpeech.problem, unread != nil { note("story: ElevenLabs wouldn't read the rest of it, so the voice did: \(problem)") }
+        storyReader = nil
+        let told = conversation.lastError == nil && unread == nil
+        // Told: the voice stays held, whatever it says to the result unheard, until the person
+        // talks (`received`); otherwise it says what went wrong, or the rest.
+        heldAfterStory = told
+        if !told { call?.setVoiceHeld(false) }
+        call?.setMuted(isMuted)
+        call?.answered()
+        let heard = if let error = conversation.lastError {
+            "[Not to be read out: \(agentName) couldn't finish: \(error). Tell the user briefly.]"
+        } else if let unread {
+            "[Not to be read out: you were saying \(agentName)'s answer to the user in your own voice and were cut off. Carry on from where you stopped, word for word, with exactly this:]\n\n\(unread)"
+        } else {
+            "[Not to be read out: you have just said \(agentName)'s whole answer to the user yourself, in your own voice. It is over. Say nothing more about it.]"
+        }
+        send(dialect.answer(heard, to: id, final: true, eventID: nextID("say")))
+        answerUnsaid = !told
+        delegation = nil
+        tool = nil
+        changed()
+        checkAnswered()
+    }
+
+    /// A story being read stops (the call ends, or the person moved on).
+    private func stopStory() {
+        if heldAfterStory {
+            heldAfterStory = false
+            call?.setVoiceHeld(false)
+        }
+        guard let reader = storyReader else { return }
+        storyReader = nil   // (a wait on it ends)
+        reader.stop()
+        if let problem = ElevenLabsSpeech.problem, engine == .elevenLabs { note("story: ElevenLabs wouldn't read some of it: \(problem)") }
+        call?.setVoiceHeld(false)
+        call?.setMuted(isMuted)
     }
 
     /// How setting the call up went, in the log; with `-echo.liveMeasure` (DEBUG), in

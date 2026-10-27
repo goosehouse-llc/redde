@@ -37,6 +37,11 @@ struct LiveVoiceTests {
         }
         func setMuted(_ muted: Bool) { self.muted = muted }
         func close() { closed = true }
+        /// A story's sound it was given to play (`LiveStoryReader`), and whether the voice is held.
+        private(set) var story = Data()
+        private(set) var held = false
+        func playStory(_ pcm: Data) { story.append(pcm) }
+        func setVoiceHeld(_ held: Bool) { self.held = held }
 
         /// The service says something.
         func receive(_ event: String) { listener?.liveCallReceived(event) }
@@ -360,7 +365,60 @@ struct LiveVoiceTests {
         #expect(LiveSetup.persona(name: "Home", engine: .elevenLabs).contains("Never say your reasoning"))
         // ElevenLabs makes it speak before each tool call, and Haiku 5.5 said why: "The conversation
         // history shows conflicting answers about this, so I'll check the current state directly."
-        #expect(LiveSetup.persona(name: "Home", engine: .elevenLabs).contains("say a few words at most"))
+        // Where the voice says the answer itself, a few words at most; where Redde reads it in the
+        // voice (ElevenLabs, since 2026-10-27), none: they would be cut off when the answer begins.
+        #expect(LiveSetup.persona(name: "Home", engine: .gemini).contains("say a few words at most"))
+        #expect(LiveSetup.persona(name: "Home", engine: .elevenLabs).contains("Call the tool at once, saying nothing first"))
+        #expect(!LiveSetup.persona(name: "Home", engine: .elevenLabs).contains("say it in your own words"))
+    }
+
+    /// Asked for a story in a live call, the voice model wrote one itself, with none of the family
+    /// in it that only the agent knows (2026-10-27). Stories and anything about the person go to the agent, and what it wrote
+    /// to be heard is read in full, on every engine; the agent is told to write it in full.
+    @Test func storiesComeFromTheAgentAndAreReadInFull() {
+        for engine in LiveEngine.allCases {
+            let persona = LiveSetup.persona(name: "Sol", engine: engine)
+            #expect(persona.contains("asks for a story, a poem"), "\(engine)")
+            #expect(persona.contains("their family, friends, pets, home or past"), "\(engine)")
+            // Read word for word: by the voice, or, where Redde reads every answer, by Redde in the
+            // voice, the voice told not to say it again.
+            #expect(persona.contains(engine.answersReadAloud ? "Never repeat, summarize or add to it" : "read all of it, word for word"), "\(engine)")
+            // The mark that has Redde read it as it is written, on the engines that take an answer whole.
+            #expect(persona.contains("\"\(LiveSetup.readAloudMark)\" at its end"), "\(engine)")
+        }
+        #expect(LiveVoiceNote.instruction.contains("which you write in full, with what you know about them"))
+        // The agent's words are said as written: written to be said, to the person.
+        #expect(LiveVoiceNote.instruction.contains("write the words to say to the user, addressed to them"))
+        #expect(LiveEngine.elevenLabs.answersReadAloud && !LiveEngine.gptLive.answersReadAloud && !LiveEngine.gemini.answersReadAloud)
+    }
+
+    /// A story in an ElevenLabs call: each sentence made by ElevenLabs' text to speech and played
+    /// through the call's own player, in order, as it is written (2026-10-27: Redde's reply player
+    /// came out quieter than the voice).
+    @Test func aStoryIsReadIntoTheCallItself() async throws {
+        let server = try await DroppingSpeechServer.start(drops: 0, seconds: 0.3)
+        defer { server.stop() }
+        let call = FakeCall()
+        let reader = LiveStoryReader(call: call, voice: "voice", key: "key", speed: 1, host: server.baseURL.absoluteString)
+        reader.append("Pip laced his bowling shoes. He picked the green ball")
+        reader.append(", the heaviest one. It rolled straight down the lane.")
+        let unread = await reader.finish()
+        #expect(unread == nil)
+        #expect(server.connections == 3, "a sentence at a time")
+        #expect(call.story.count == 3 * Int(KokoroPlayer.sampleRate * 0.3) * 2, "all of each one's sound, into the call")
+    }
+
+    /// ElevenLabs won't make it (here: never answers): what wasn't read is handed back, for the
+    /// call's voice to say instead of the phone's.
+    @Test func aStoryElevenLabsWontReadIsLeftForTheVoice() async throws {
+        let server = try await DroppingSpeechServer.start(drops: 100)
+        defer { server.stop() }
+        let call = FakeCall()
+        let reader = LiveStoryReader(call: call, voice: "voice", key: "key", speed: 1, host: server.baseURL.absoluteString)
+        reader.append("Once upon a time. The end.")
+        let unread = await reader.finish()
+        #expect(unread == "Once upon a time. The end.")
+        #expect(call.story.isEmpty)
     }
 
     @Test func longAnswersGoInPiecesTheServiceTakes() {
@@ -800,6 +858,22 @@ struct LiveVoiceTests {
         #expect(answer.last?["type"]?.string == "response.create")
         let preview = LivePlan(voice: "eve", instructions: "", greeting: LiveGreeting(line: "Hi, I'm Sol.", language: "English"))
         #expect(dialect.afterStart(preview, eventID: "x").first?["item"]?["type"]?.string == "force_message", "a preview's line word for word")
+    }
+
+    /// "As private as possible" (2026-10-27): Redde's ElevenLabs agent records nothing and keeps
+    /// no transcript past the call; an agent made before gets it on its next call (`settle`),
+    /// with the rest of its platform settings sent whole, so none of them is lost.
+    @Test func elevenLabsKeepsNothingOfACall() {
+        let privacy = ElevenLabsDialect.privacy
+        #expect(privacy["record_voice"]?.bool == false)
+        #expect(privacy["retention_days"]?.int == 0)
+        #expect(privacy["delete_transcript_and_pii"]?.bool == true && privacy["delete_audio"]?.bool == true)
+        #expect(privacy["zero_retention_mode"] == nil, "Enterprise only: it could refuse the agent")
+        let settings = ElevenLabsDialect.platformSettings
+        #expect(settings["privacy"] == privacy)
+        #expect(settings["auth"]?["enable_auth"]?.bool == true)
+        #expect(settings["overrides"]?["conversation_config_override"]?["tts"]?["voice_id"]?.bool == true)
+        #expect(ElevenLabsDialect.settingsRevision >= 4)
     }
 
     @Test func elevenLabsSpeaksItsOwnWire() throws {

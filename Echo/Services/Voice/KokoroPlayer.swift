@@ -445,7 +445,7 @@ final class KokoroPlayer {
                 current = sentence
                 startFetch(sentence)
                 fetchAhead()
-                var attempt = sentence
+                var attempt = sentence, tries = 0
                 while true {
                     do {
                         for try await buffer in attempt.chunks {
@@ -454,12 +454,16 @@ final class KokoroPlayer {
                         }
                     } catch {
                         guard gen == generation else { return }
-                        if attempt === sentence, Self.worthAskingAgain(error) {
+                        tries += 1
+                        // Busy (ElevenLabs' limit on requests at once, which a live call with it
+                        // holds one of): asked again a few times, each after a longer wait.
+                        let busy = Self.isBusy(error)
+                        if busy ? tries <= 3 : tries == 1 && Self.worthAskingAgain(error) {
                             // Asked for once more before another voice says it: a connection
                             // that dropped (Redde was away in another app, the network changed)
                             // usually answers the second time. One cut off part-way starts over.
                             log.info("asking again for a sentence: \(error.localizedDescription)")
-                            try? await Task.sleep(for: .milliseconds(300))
+                            try? await Task.sleep(for: .milliseconds(busy ? 1_000 * tries : 300))
                             guard gen == generation else { return }
                             attempt = Sentence(text: sentence.text, source: sentence.source)
                             current = attempt
@@ -511,6 +515,12 @@ final class KokoroPlayer {
 
     /// Whether a sentence that failed is worth asking for again. Not after a wait that ran out:
     /// a server that said nothing for that long would only be waited on twice.
+    /// The voice's server is busy for now (HTTP 429), not refusing the request.
+    nonisolated static func isBusy(_ error: Error) -> Bool {
+        if case TransportError.http(status: 429, _) = error { return true }
+        return false
+    }
+
     nonisolated static func worthAskingAgain(_ error: Error) -> Bool {
         if error is CancellationError { return false }
         if let error = error as? URLError { return ![.timedOut, .cancelled].contains(error.code) }

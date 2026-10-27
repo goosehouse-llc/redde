@@ -24,6 +24,14 @@ protocol LiveCalling: AnyObject {
     func send(_ event: String) -> Bool
     /// The microphone held shut, or open again.
     func setMuted(_ muted: Bool)
+    /// The voice's sound held back (what it sends meanwhile is dropped), or let through again:
+    /// while Redde reads a story to the person itself (`LiveVoice`).
+    func setVoiceHeld(_ held: Bool)
+    /// A story's sound (`LiveStoryReader`): mono 16-bit PCM at the call's output rate, played as
+    /// the voice is, held or not: as loud, from the same speaker, its echo cancelled.
+    func playStory(_ pcm: Data)
+    /// How much sound is waiting to be played, in seconds.
+    var queuedSeconds: Double { get }
     /// How loud the person and the voice are right now, 0…1.
     var inputLevel: Float { get }
     var outputLevel: Float { get }
@@ -36,6 +44,9 @@ protocol LiveCalling: AnyObject {
 
 extension LiveCalling {
     func answered() {}
+    func setVoiceHeld(_ held: Bool) {}
+    func playStory(_ pcm: Data) {}
+    var queuedSeconds: Double { 0 }
 }
 
 /// What a call tells `LiveVoice`, on the main actor.
@@ -143,6 +154,10 @@ final class LiveCall: LiveCalling {
     }
 
     func setMuted(_ muted: Bool) { audio.setMuted(muted) }
+
+    func setVoiceHeld(_ held: Bool) { audio.setVoiceHeld(held) }
+    func playStory(_ pcm: Data) { audio.playStory(pcm) }
+    var queuedSeconds: Double { audio.queuedSeconds }
 
     func answered() { audio.waiting(false) }
 
@@ -300,6 +315,8 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
         var echo: Float = 0
         var openUntil: UInt64 = 0
         var muted = false
+        /// The voice's sound dropped as it comes (`setVoiceHeld`).
+        var voiceHeld = false
         var stopped = false
         var input: Float = 0, output: Float = 0
         var speaking = false
@@ -458,6 +475,12 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
     /// The session has started: the microphone's audio goes to it from now on.
     func connect(_ socket: URLSessionWebSocketTask?) { state.withLock { $0.socket = socket } }
     func setMuted(_ muted: Bool) { state.withLock { $0.muted = muted } }
+
+    /// The voice's sound held back, what is queued of it gone at once; or let through again.
+    func setVoiceHeld(_ held: Bool) {
+        state.withLock { $0.voiceHeld = held }
+        if held { flush() }
+    }
     /// How loud the person and the voice are: the voice as it plays, not as it came, which with
     /// Gemini's and ElevenLabs' audio, sent seconds ahead, left the face's mouth still through
     /// what it said (2026-10-25).
@@ -739,9 +762,17 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
 
     /// The voice's PCM16, read off the connection on the reading thread; queued on `sending`.
     func play(_ pcm: Data) {
+        guard pcm.count >= 2, !state.withLock({ $0.voiceHeld }) else { return }
+        sending.async { [weak self] in self?.queue(pcm) }
+    }
+
+    /// A story's sound, the voice's way, while the voice's own is held (`LiveCalling.playStory`).
+    func playStory(_ pcm: Data) {
         guard pcm.count >= 2 else { return }
         sending.async { [weak self] in self?.queue(pcm) }
     }
+
+    var queuedSeconds: Double { Double(voice.queued) / playing.sampleRate }
 
     /// The service's sound while a request is out (`LiveDialect.soundsWhileWaiting`, ElevenLabs'
     /// typing): what comes meanwhile isn't the voice, neither for whether it speaks nor for the

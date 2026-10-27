@@ -15,12 +15,34 @@ nonisolated struct ElevenLabsDialect: LiveDialect {
     /// Which agent Redde makes; a new one when what it asks of an agent changes.
     static let agentVersion = 1
     /// The settings Redde keeps on its agent, brought up to date on one made before (`settle`).
-    static let settingsRevision = 3
+    static let settingsRevision = 4
     /// Patient turn-taking: ElevenLabs answered as the person was finishing a sentence, and their
     /// last words cut it short (Marta, 2026-10-25). And its longest wait for the person before it
     /// asks "are you still there?": it counts from when it has sent its last words, seconds before
     /// they have played here, so 7 came three seconds after an answer was heard.
     static let turnSettings: JSONValue = .object(["turn_eagerness": .string("patient"), "turn_timeout": .number(30)])
+    /// What ElevenLabs keeps of a call: nothing it can be told not to (asked 2026-10-27, "as
+    /// private as possible"). No recording, and the transcript and anything personal in it deleted
+    /// once the call is over (its default: all of it, for two years). Calls made before are left as
+    /// they were. Redde never reads a call back from ElevenLabs. What it sees during one, it must:
+    /// the person's voice, the chat so far, the agent's answers. (Zero retention and redaction,
+    /// which would cover more, are for its Enterprise customers only.)
+    static let privacy: JSONValue = .object([
+        "record_voice": .bool(false),
+        "retention_days": .number(0),
+        "delete_transcript_and_pii": .bool(true),
+        "delete_audio": .bool(true),
+    ])
+    /// The agent's platform settings: a signed URL to call it, the prompt, first words, language and
+    /// voice set per call, and `privacy`.
+    static let platformSettings: JSONValue = .object([
+        "auth": .object(["enable_auth": .bool(true)]),
+        "overrides": .object(["conversation_config_override": .object([
+            "agent": .object(["first_message": .bool(true), "language": .bool(true), "prompt": .object(["prompt": .bool(true)])]),
+            "tts": .object(["voice_id": .bool(true)]),
+        ])]),
+        "privacy": privacy,
+    ])
 
     var engine: LiveEngine { .elevenLabs }
     var inputRate: Double { 16_000 }
@@ -151,13 +173,7 @@ nonisolated struct ElevenLabsDialect: LiveDialect {
                 "turn": turnSettings,
                 "conversation": .object(["max_duration_seconds": .number(3_600), "client_events": .array(events.map { .string($0) })]),
             ]),
-            "platform_settings": .object([
-                "auth": .object(["enable_auth": .bool(true)]),
-                "overrides": .object(["conversation_config_override": .object([
-                    "agent": .object(["first_message": .bool(true), "language": .bool(true), "prompt": .object(["prompt": .bool(true)])]),
-                    "tts": .object(["voice_id": .bool(true)]),
-                ])]),
-            ]),
+            "platform_settings": platformSettings,
         ]), field: "agent_id")
         var known = UserDefaults.standard.dictionary(forKey: agentsKey) ?? [:]
         known[fingerprint(key)] = agent
@@ -166,17 +182,32 @@ nonisolated struct ElevenLabsDialect: LiveDialect {
         return agent
     }
 
-    /// An agent made before Redde's latest settings for it gets them, once (a PATCH of just those).
-    /// A failure is let be: the call goes on, and the next one tries again.
+    /// An agent made before Redde's latest settings for it gets them, once (a PATCH of just those:
+    /// its turn-taking, and its platform settings whole, privacy with them). A failure is let be:
+    /// the call goes on, and the next one tries again.
     static func settle(agent: String, key: String) async {
         let had = UserDefaults.standard.dictionary(forKey: revisionsKey)?[fingerprint(key)] as? Int ?? 1
         guard had < settingsRevision else { return }
         var request = URLRequest(url: URL(string: host + "/v1/convai/agents/" + agent)!)
         request.httpMethod = "PATCH"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try? JSONEncoder().encode(JSONValue.object(["conversation_config": .object(["turn": turnSettings])]))
-        guard (try? await call(request, key: key)) != nil else { return }
+        request.httpBody = try? JSONEncoder().encode(JSONValue.object([
+            "conversation_config": .object(["turn": turnSettings]),
+            "platform_settings": platformSettings,
+        ]))
+        do {
+            _ = try await call(request, key: key)
+        } catch {
+            #if DEBUG
+            let said = error.localizedDescription
+            Task { @MainActor in LiveMeasure.write("ElevenLabs agent settings not updated (tried again next call): \(said)") }
+            #endif
+            return
+        }
         remember(settingsRevision, key: key)
+        #if DEBUG
+        Task { @MainActor in LiveMeasure.write("ElevenLabs agent settings updated to revision \(settingsRevision)") }
+        #endif
     }
 
     private static func remember(_ revision: Int, key: String) {

@@ -203,6 +203,14 @@ struct KokoroFailureTests {
         #expect(!KokoroPlayer.worthAskingAgain(TransportError.unreachable("Hermes stopped answering mid-sentence")))
         #expect(!KokoroPlayer.worthAskingAgain(CancellationError()))
     }
+
+    /// ElevenLabs busy (its limit on requests at once, a live call with it holding one): asked
+    /// again a few times, after longer waits, before the on-device voice reads the sentence.
+    @Test func busyIsWaitedOut() {
+        #expect(KokoroPlayer.isBusy(TransportError.http(status: 429, body: "too_many_concurrent_requests")))
+        #expect(!KokoroPlayer.isBusy(TransportError.http(status: 401, body: "missing the permission text_to_speech")))
+        #expect(!KokoroPlayer.isBusy(URLError(.networkConnectionLost)))
+    }
 }
 
 /// A group chat's next bot: its first sentence is fetched while another is read, and played from
