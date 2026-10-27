@@ -70,6 +70,41 @@ struct ThemeColorsTests {
         #expect(same(resolved.promptColor, cyan.color))
     }
 
+    /// The wallpaper (asked 2026-10-26): the page takes it, and the text on it, the lifted surface
+    /// and light or dark follow from how light it is.
+    @Test func aWallpaperSetsThePageAndWhatReadsOnIt() {
+        let butter = RGB(red: 0.99, green: 0.95, blue: 0.80)
+        let light = Theme.githubDark.resolved(with: ThemeColors(wallpaper: butter))
+        #expect(same(light.pageColor, butter.color))
+        #expect(same(light.textColor, nearBlack) && light.palette.scheme == .light)
+        #expect(!same(light.surfaceColor, butter.color), "the lifted surface still stands out")
+        #expect(same(light.accent, Theme.githubDark.accent), "the accent is the accent's pick")
+
+        let night = RGB(red: 0.05, green: 0.08, blue: 0.20)
+        let dark = Theme.paper.resolved(with: ThemeColors(wallpaper: night))
+        #expect(same(dark.pageColor, night.color) && dark.palette.scheme == .dark)
+        #expect(RGB(dark.textColor).red > 0.9, "light text on a dark wallpaper")
+
+        #expect(Theme.githubDark.resolved(with: ThemeColors(accent: butter)).palette.scheme == nil, "no wallpaper: Appearance decides")
+        #expect(!ThemeColors(wallpaper: night).isEmpty)
+    }
+
+    @Test func aWallpaperDecidesLightOrDarkOverAppearance() throws {
+        let suiteName = "theme-wallpaper-\(UUID().uuidString)"
+        let suite = try #require(UserDefaults(suiteName: suiteName))
+        defer { suite.removePersistentDomain(forName: suiteName) }
+        let settings = Settings(defaults: suite)
+        settings.theme = .standard
+        settings.appearance = .light
+        #expect(settings.effectiveColorScheme == .light)
+        settings.themeColors[Theme.standard.rawValue] = ThemeColors(wallpaper: RGB(red: 0.1, green: 0.1, blue: 0.12))
+        #expect(settings.effectiveColorScheme == .dark)
+        settings.theme = .paper
+        #expect(settings.effectiveColorScheme == .light, "another theme, without a wallpaper: Appearance again")
+        let reread = Settings(defaults: suite)
+        #expect(reread.themeColors[Theme.standard.rawValue]?.wallpaper == RGB(red: 0.1, green: 0.1, blue: 0.12))
+    }
+
     @Test func picksAreKeptPerThemeAndSurviveARelaunch() throws {
         let suiteName = "theme-colors-\(UUID().uuidString)"
         let suite = try #require(UserDefaults(suiteName: suiteName))

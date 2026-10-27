@@ -60,7 +60,8 @@ struct SettingsView: View {
             #if DEBUG
             // Dev hooks: `-echo.settingsAnchor` opens Agent on the context and memory files,
             // `-echo.settingsAnchor icloud` scrolls to Sync with iCloud and `-echo.settingsAnchor
-            // plugin` to the Redde Plugin row, `voice` opens Voice; `-echo.expandAppIcons`
+            // plugin` to the Redde Plugin row, `voice` opens Voice, `appearance` Appearance with its
+            // colors open; `-echo.expandAppIcons`
             // opens Appearance on the app icons (screenshots).
             .task {
                 if DevHooks.expandAppIcons { path = [.appearance] }
@@ -70,6 +71,8 @@ struct SettingsView: View {
                     proxy.scrollTo(anchor, anchor: anchor == "plugin" ? .center : .top)
                 } else if DevHooks.value("-echo.settingsAnchor") == "voice" {
                     path = [.voice]
+                } else if DevHooks.value("-echo.settingsAnchor") == "appearance" {
+                    path = [.appearance]
                 } else {
                     path = [.agent]
                 }
@@ -90,6 +93,9 @@ struct SettingsView: View {
             .sensoryFeedback(.success, trigger: secretSaved)
         }
         .holdsWakePhrases(.settings)
+        // Its own light or dark, kept up as it changes here (a wallpaper, Appearance): a sheet
+        // that is open keeps the one it was presented with otherwise.
+        .preferredColorScheme(Settings.shared.effectiveColorScheme)
     }
 
 

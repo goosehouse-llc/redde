@@ -18,8 +18,13 @@ struct NameSettings: View {
 
 struct AppearanceSettings: View {
     @State private var settings = Settings.shared
+    #if DEBUG
+    @State private var showThemes = false
+    @State private var showColors = DevHooks.value("-echo.settingsAnchor") == "appearance"
+    #else
     @State private var showThemes = false
     @State private var showColors = false
+    #endif
 
     var body: some View {
         Section {
@@ -30,6 +35,11 @@ struct AppearanceSettings: View {
                 .adaptiveSegmented()
                 .listRowInsets(.init(top: 8, leading: 16, bottom: 8, trailing: 16))
                 .accessibilityLabel("Light, dark or system appearance")
+                .disabled(active.palette.scheme != nil)
+                if active.palette.scheme != nil {
+                    Text("The wallpaper sets light or dark, so the text reads on it.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 ForEach(Theme.allCases) { theme in
                     Button { settings.theme = theme } label: {
                         HStack(spacing: 12) {
@@ -57,6 +67,10 @@ struct AppearanceSettings: View {
                 ColorPicker("Accent", selection: accent, supportsOpacity: false)
                 ColorPicker(active.promptPrefix != nil ? "Your messages" : "Your bubbles",
                             selection: bubble, supportsOpacity: false)
+                ColorPicker("Wallpaper", selection: wallpaper, supportsOpacity: false)
+                if settings.themeColors[settings.theme.rawValue]?.wallpaper != nil {
+                    Button("No wallpaper") { settings.themeColors[settings.theme.rawValue]?.wallpaper = nil }
+                }
                 if !(settings.themeColors[settings.theme.rawValue]?.isEmpty ?? true) {
                     Button("Use \(settings.theme.label)'s own colors") {
                         settings.themeColors[settings.theme.rawValue] = nil
@@ -67,6 +81,8 @@ struct AppearanceSettings: View {
                     HStack(spacing: 4) {
                         Circle().fill(accent.wrappedValue).frame(width: 14, height: 14)
                         Circle().fill(bubble.wrappedValue).frame(width: 14, height: 14)
+                        Circle().fill(wallpaper.wrappedValue).frame(width: 14, height: 14)
+                            .overlay(Circle().strokeBorder(.quaternary))
                     }
                     .accessibilityHidden(true)
                 }
@@ -150,6 +166,16 @@ struct AppearanceSettings: View {
             active.accent
         } set: {
             settings.themeColors[settings.theme.rawValue, default: ThemeColors()].accent = ThemeColors.RGB($0)
+        }
+    }
+
+    /// The page behind the chat, voice mode and group chats. Its text, and light or dark, follow
+    /// from it (`Theme.resolved(with:)`).
+    private var wallpaper: Binding<Color> {
+        Binding {
+            active.pageColor
+        } set: {
+            settings.themeColors[settings.theme.rawValue, default: ThemeColors()].wallpaper = ThemeColors.RGB($0)
         }
     }
 

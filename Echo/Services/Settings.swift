@@ -439,7 +439,8 @@ final class Settings: ServeEndpoint {
         didSet { if phoneTools != oldValue { store(try? JSONEncoder().encode(phoneTools), forKey: Keys.phoneTools) } }
     }
     /// What the app renders in: the appearance choice, nil meaning follow the system.
-    var effectiveColorScheme: ColorScheme? { appearance.colorScheme }
+    /// A wallpaper picked for the theme decides light or dark itself (`Theme.Palette.scheme`).
+    var effectiveColorScheme: ColorScheme? { resolvedTheme.palette.scheme ?? appearance.colorScheme }
     /// Local notifications for approvals / replies / failures while the app is in the background.
     var notifyInBackground: Bool {
         didSet { store(notifyInBackground, forKey: Keys.notifyInBackground) }

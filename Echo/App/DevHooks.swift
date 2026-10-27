@@ -106,6 +106,7 @@ import WidgetKit
 /// - `-echo.whatsNew`: show this version's "What's New" sheet (any other `-echo.` flag hides it).
 /// - `-echo.switchProfile <name>`: switch profile five seconds after launch.
 /// - `-echo.botKokoro <profile> <voice>`: that bot's Kokoro voice, a blend too ("bf_emma(1)+af_heart(4)").
+/// - `-echo.wallpaper <RRGGBB>`: the theme in use gets that wallpaper ("none" takes it off).
 /// - `-echo.ringMe <profile> <seconds>`: that agent calls ("default" the main one) that many seconds
 ///   after launch, as if its push had come (`AgentCalls.ring`): CallKit without the relay. Calls
 ///   must be on (Settings → Notifications → Calls from Agents), or `-echo.callsOn` turns them on.
@@ -359,6 +360,17 @@ enum DevHooks {
             var record = settings.botVoicesHere[args[at + 1]] ?? BotVoice()
             (record.kokoro, record.onDevice, record.elevenLabs, record.sameAsMain) = (args[at + 2], nil, nil, nil)
             settings.botVoicesHere[args[at + 1]] = record
+        }
+
+        // `-echo.wallpaper <RRGGBB>|none`: the theme in use's wallpaper (screenshots).
+        if let hex = value("-echo.wallpaper") {
+            let key = settings.theme.rawValue
+            if hex == "none" {
+                settings.themeColors[key]?.wallpaper = nil
+            } else if hex.count == 6, let n = Int(hex, radix: 16) {
+                settings.themeColors[key, default: ThemeColors()].wallpaper = ThemeColors.RGB(
+                    red: Double((n >> 16) & 0xFF) / 255, green: Double((n >> 8) & 0xFF) / 255, blue: Double(n & 0xFF) / 255)
+            }
         }
 
         // `-echo.ringMe <profile> <seconds>` (and `-echo.callsOn`): an agent's call, without the relay.

@@ -63,6 +63,9 @@ struct EchoApp: App {
             .environment(\.theme, settings.resolvedTheme)
             .tint(settings.resolvedTheme.accent)
             .preferredColorScheme(settings.effectiveColorScheme)
+            // And on the windows themselves: a sheet already open (Settings, as a wallpaper is
+            // picked) kept the old one with the preference alone.
+            .onChange(of: settings.effectiveColorScheme, initial: true) { _, scheme in WindowStyle.apply(scheme) }
             // With the CarPlay scene declared the app supports multiple scenes; keep widget and
             // Live Activity links (echo://) landing in this window instead of asking for a new one.
             .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
@@ -109,6 +112,30 @@ struct EchoApp: App {
                     // so that the agent can find a picture by what it shows.
                     PhotoLooking.shared.resume()
                 @unknown default: break
+                }
+            }
+        }
+    }
+}
+
+/// Light or dark on every window of the app's own scenes, sheets included (`Settings.effectiveColorScheme`).
+@MainActor
+enum WindowStyle {
+    static func apply(_ scheme: ColorScheme?) {
+        let style: UIUserInterfaceStyle = switch scheme {
+        case .light: .light
+        case .dark: .dark
+        default: .unspecified
+        }
+        for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
+            for window in scene.windows {
+                if window.overrideUserInterfaceStyle != style { window.overrideUserInterfaceStyle = style }
+                // A sheet up already keeps the style it was presented with, set on it by SwiftUI:
+                // Settings stayed light under a dark wallpaper picked while it was open.
+                var presented = window.rootViewController?.presentedViewController
+                while let controller = presented {
+                    if controller.overrideUserInterfaceStyle != style { controller.overrideUserInterfaceStyle = style }
+                    presented = controller.presentedViewController
                 }
             }
         }

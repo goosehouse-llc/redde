@@ -2836,7 +2836,12 @@ the handover itself is tested on a real watch.
 ## App and settings
 
 - **Themes:** seven (Messages, Paper, Slate, Terminal, Amber CRT, Hermes, Code), each with light and
-  dark faces and the user's own accent and bubble colours. 14 app icons (Redde Face the default) and 13 voice orbs, three lights inside the picture ones.
+  dark faces and the user's own accent, bubble and wallpaper colours (`ThemeColors`, per theme).
+  A wallpaper is the page behind the chat, voice mode and group chats; replies print straight on
+  it, so its text is near-black or near-white by its lightness, the lifted surface a step toward
+  that, and the app light or dark to match (`Palette.scheme`, over Settings → Appearance; set on
+  the windows and the Settings sheet too, `WindowStyle`, since a sheet already open kept the old
+  one). 14 app icons (Redde Face the default) and 13 voice orbs, three lights inside the picture ones.
 - **Model:** per-connection model and reasoning effort (Default, None, Low, Medium, High, and
   X-High / Max for frontier models; None on a fresh install). The level follows the phone, not the
   session: it goes with every fast-lane and Hermes API turn, with every new Dashboard session,

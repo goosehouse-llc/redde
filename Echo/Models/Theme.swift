@@ -63,6 +63,10 @@ nonisolated enum Theme: String, CaseIterable, Identifiable, Codable {
         var bubbleVerticalPadding: CGFloat = 10
         /// Text on your bubble when it's been recolored; set by `resolved(with:)`, never by a palette.
         var userBubbleTextColor: Color? = nil
+        /// Light or dark, fixed by a wallpaper the reader picked, so that the text on it, and the
+        /// system's own greys, read on it whatever Settings → Appearance says. Set by
+        /// `resolved(with:)`, never by a palette.
+        var scheme: ColorScheme? = nil
     }
 
     /// A colour with one value in light mode and another in dark.
@@ -205,6 +209,17 @@ nonisolated enum Theme: String, CaseIterable, Identifiable, Codable {
                 p.userBubbleTextColor = bubble.contrastingText
             }
         }
+        // The wallpaper: the page, and what stands on it. Replies print straight on the page, so
+        // its text is near-black or near-white by the wallpaper's own lightness, the lifted
+        // surface a step toward that ink, and the app light or dark to match.
+        if let wallpaper = colors?.wallpaper {
+            let dark = wallpaper.wantsLightText
+            let ink = dark ? ThemeColors.RGB(red: 0.941, green: 0.937, blue: 0.925) : ThemeColors.RGB(red: 0.106, green: 0.106, blue: 0.114)
+            p.background = wallpaper.color
+            p.surface = wallpaper.mixed(with: ink, 0.08).color
+            p.text = ink.color
+            p.scheme = dark ? .dark : .light
+        }
         return ResolvedTheme(base: self, palette: p)
     }
 }
@@ -222,7 +237,9 @@ nonisolated struct ResolvedTheme: ThemeStyle, Equatable, Sendable {
 nonisolated struct ThemeColors: Codable, Equatable, Sendable {
     var accent: RGB?
     var bubble: RGB?
-    var isEmpty: Bool { accent == nil && bubble == nil }
+    /// The page behind the chat, voice mode and group chats.
+    var wallpaper: RGB?
+    var isEmpty: Bool { accent == nil && bubble == nil && wallpaper == nil }
 
     /// An sRGB color that survives a round trip through UserDefaults. Picks are one color in
     /// both appearances; the theme's own colors keep their light and dark variants.
@@ -244,11 +261,22 @@ nonisolated struct ThemeColors: Codable, Equatable, Sendable {
 
         /// Near-black or white, whichever reads better on this color (WCAG relative luminance).
         var contrastingText: Color {
+            wantsLightText ? .white : Color(red: 0.106, green: 0.106, blue: 0.114)
+        }
+
+        /// White reads better on it than near-black does: a dark color.
+        var wantsLightText: Bool {
             func linear(_ c: Double) -> Double { c <= 0.04045 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4) }
             let luminance = 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue)
             let againstWhite = 1.05 / (luminance + 0.05)
             let againstDark = (luminance + 0.05) / 0.0569   // #1B1B1D's luminance + 0.05
-            return againstWhite >= againstDark ? .white : Color(red: 0.106, green: 0.106, blue: 0.114)
+            return againstWhite >= againstDark
+        }
+
+        /// `amount` of the way to `other`.
+        func mixed(with other: RGB, _ amount: Double) -> RGB {
+            RGB(red: red + (other.red - red) * amount, green: green + (other.green - green) * amount,
+                blue: blue + (other.blue - blue) * amount)
         }
     }
 }
