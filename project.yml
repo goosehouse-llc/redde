@@ -148,6 +148,8 @@ targets:
         UIBackgroundModes:
           - audio
           - processing
+          # Calls from agents (AgentCalls): a VoIP push wakes Redde to ring with CallKit.
+          - voip
         NSRemindersFullAccessUsageDescription: With Phone tools turned on, Redde reads and adds reminders when your assistant asks it to. They go only to the server you connect to.
         NSAlarmKitUsageDescription: With Phone tools turned on, Redde sets an alarm or a timer when your assistant asks it to, once you have said yes to it.
         NSContactsUsageDescription: With Phone tools turned on, Redde looks up a contact when your assistant asks it to. What it finds goes only to the server you connect to.

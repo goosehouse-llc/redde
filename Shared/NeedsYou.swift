@@ -112,7 +112,7 @@ nonisolated enum NeedsYou {
         case .sudo: waiting = .sudo
         case .secret: waiting = .secret
         case .reply, .failed: return settle(session, in: defaults)
-        case .task, .paired, .test, .widget, .group, .groupWait, .routine: return false
+        case .task, .paired, .test, .widget, .group, .groupWait, .routine, .call: return false
         }
         let since = pushed.at.map { Date(timeIntervalSince1970: $0) } ?? now
         let until = since.addingTimeInterval(lifetime(waiting))

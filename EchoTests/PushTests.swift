@@ -305,6 +305,8 @@ nonisolated final class RelayStub: URLProtocol {
         var path: String
         var headers: [String: String]
         var body: [String: String]
+        /// The body's fields sent as null (`"voip": null`, calls off).
+        var nulls: Set<String> = []
     }
 
     nonisolated(unsafe) static var calls: [Call] = []
@@ -332,9 +334,10 @@ nonisolated final class RelayStub: URLProtocol {
                 data.append(buffer, count: n)
             }
         }
+        let fields = ((try? JSONSerialization.jsonObject(with: data)) as? [String: Any]) ?? [:]
         let call = Call(method: request.httpMethod ?? "GET", path: request.url?.path() ?? "",
                         headers: request.allHTTPHeaderFields ?? [:],
-                        body: ((try? JSONSerialization.jsonObject(with: data)) as? [String: String]) ?? [:])
+                        body: fields.compactMapValues { $0 as? String }, nulls: Set(fields.filter { $0.value is NSNull }.keys))
         Self.calls.append(call)
         let (status, text) = Self.reply?(call) ?? (204, "")
         let response = HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
@@ -583,6 +586,38 @@ struct PushServiceTests {
         service.received(token: Data(repeating: 0xcd, count: 32))
         try await waitFor { RelayStub.calls.count == 1 }
         #expect(RelayStub.calls[0].body["token"] == String(repeating: "cd", count: 32))
+    }
+
+    /// Calls from agents (`AgentCalls`): the relay holds the address for calls while they are on,
+    /// and is told to forget it when they go off.
+    @Test func theRelayHoldsTheCallAddressWhileCallsAreOn() async throws {
+        RelayStub.reset()
+        defer { RelayStub.reset() }
+        final class Flag { var on = true }
+        let calls = Flag()
+        let box = Box()
+        box.pairings = [Vector.pairing]
+        let defaults = UserDefaults(suiteName: "push-test-\(UUID().uuidString)")!
+        defaults.set("https://relay.test", forKey: "push.relay")
+        let service = PushService(defaults: defaults, session: RelayStub.session, vault: ({ box.pairings }, { box.pairings = $0; return true }),
+                                  askForToken: {}, allowed: { true }, callsOn: { calls.on })
+        service.received(token: Self.token)
+        try await waitFor { RelayStub.calls.count == 1 }
+        #expect(RelayStub.calls[0].nulls == ["voip"], "no address for calls yet: none held")
+        RelayStub.calls = []
+        let voip = String(repeating: "ef", count: 32)
+        service.voipChanged(voip)
+        try await waitFor { RelayStub.calls.count == 1 }
+        #expect(RelayStub.calls[0].body["voip"] == voip && RelayStub.calls[0].body["token"] == Self.tokenHex)
+        RelayStub.calls = []
+        service.voipChanged(voip)
+        service.received(token: Self.token)   // (a launch: APNs again, PushKit's address kept)
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(RelayStub.calls.isEmpty, "the same, not said again")
+        calls.on = false
+        service.callsChanged()
+        try await waitFor { RelayStub.calls.count == 1 }
+        #expect(RelayStub.calls[0].nulls == ["voip"] && RelayStub.calls[0].body["voip"] == nil, "calls off: the relay forgets it")
     }
 
     @Test func aPhoneThatIsNotPairedNeverAsksForAPushAddress() async throws {

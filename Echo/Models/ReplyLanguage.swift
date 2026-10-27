@@ -38,7 +38,7 @@ nonisolated enum ReplyLanguage {
     /// from the car carries after it (`CarBrevity`), nor the one that says who an @mention is
     /// (`MentionNote`), which comes before both.
     static func stripNote(_ text: String) -> String {
-        var text = CarBrevity.strip(IncognitoNote.strip(LiveVoiceNote.strip(text)))
+        var text = CarBrevity.strip(IncognitoNote.strip(LiveVoiceNote.strip(CallNote.strip(text))))
         if text.hasSuffix(".)"), let range = text.range(of: "\n\n(Reply in ", options: .backwards),
            !text[range.upperBound...].contains("\n") {
             text = String(text[..<range.lowerBound])
@@ -178,6 +178,32 @@ nonisolated enum LiveVoiceNote {
     /// A message loaded back from the server, without the note.
     static func strip(_ text: String) -> String {
         guard let range = text.range(of: opening), text.hasSuffix("]") else { return text }
+        return String(text[..<range.lowerBound])
+    }
+}
+
+/// The person answered a call the agent made (`AgentCalls`): what they say first goes with a note
+/// saying so, and what the agent opened with, so the agent takes it as the answer to its call. Over
+/// the Hermes API among the turn's instructions; on the Dashboard on the message, last, where Redde
+/// hides it (`strip`).
+nonisolated enum CallNote {
+    /// The agent's line, as much of it as goes with the note.
+    static let lineLimit = 500
+
+    static func instruction(_ line: String) -> String {
+        "The user just answered your phone call (call_user) and is talking with you by voice. You opened with: \""
+            + String(line.prefix(lineLimit)) + "\" This message is their answer: carry on from there, briefly, as on a call."
+    }
+
+    static let opening = "\n\n[Answering your call. "
+    static func note(_ line: String) -> String {
+        opening + "You opened with: \"" + String(line.prefix(lineLimit)).replacingOccurrences(of: "\n", with: " ") + "\"]"
+    }
+
+    /// A message loaded back from the server, without the note.
+    static func strip(_ text: String) -> String {
+        guard text.hasSuffix("\"]"), let range = text.range(of: opening, options: .backwards),
+              !text[range.upperBound...].contains("\n") else { return text }
         return String(text[..<range.lowerBound])
     }
 }

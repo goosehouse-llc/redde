@@ -316,6 +316,28 @@ final class Settings: ServeEndpoint {
     var mutes: [String: [String: Date]] {
         didSet { store(try? JSONEncoder().encode(mutes), forKey: Keys.mutes) }
     }
+    /// Calls from agents (`AgentCalls`): an agent this phone lets call it rings it, like a phone
+    /// call, when it has something that shouldn't wait. Off until turned on here. This phone's
+    /// alone (it registers for calls itself): not synced.
+    var agentCalls: Bool {
+        didSet { store(agentCalls, forKey: Keys.agentCalls) }
+    }
+    /// A call answered on a locked iPhone listens straight away. Off: the agent's line is said, then
+    /// the microphone waits until the iPhone is unlocked, so whoever picks it up can't talk with
+    /// the agent (asked 2026-10-26). Redde's own lock always waits. Not synced, as `agentCalls`.
+    var callsWhileLocked: Bool {
+        didSet { store(callsWhileLocked, forKey: Keys.callsWhileLocked) }
+    }
+    /// The agents that may call, per server (its id): "default" for the main agent, else the bot's
+    /// profile. Not synced, as `agentCalls`.
+    var callers: [String: [String]] {
+        didSet { store(try? JSONEncoder().encode(callers), forKey: Keys.callers) }
+    }
+    /// `callers` for the server in use.
+    var callersHere: [String] {
+        get { callers[activeServerID.uuidString] ?? [] }
+        set { callers[activeServerID.uuidString] = newValue.isEmpty ? nil : newValue }
+    }
     /// Wake phrases, per server (its id), then agent: "default" for the main agent, else the
     /// bot's profile. None set for an agent: `Settings.wakePhrase(for:)`.
     var wakePhrases: [String: [String: WakePhrase]] {
@@ -713,6 +735,9 @@ final class Settings: ServeEndpoint {
         static let apiBots = "apiBots"
         static let botVoices = "botVoices"
         static let mutes = "mutes"
+        static let agentCalls = "agentCalls"
+        static let callsWhileLocked = "callsWhileLocked"
+        static let callers = "callers"
         static let contextWindow = "contextWindow"
         static let theme = "theme"
         static let themeColors = "themeColors"
@@ -809,6 +834,10 @@ final class Settings: ServeEndpoint {
             .flatMap { try? JSONDecoder().decode([String: [String: BotVoice]].self, from: $0) } ?? [:]
         mutes = defaults.data(forKey: Keys.mutes)
             .flatMap { try? JSONDecoder().decode([String: [String: Date]].self, from: $0) } ?? [:]
+        agentCalls = defaults.bool(forKey: Keys.agentCalls)
+        callsWhileLocked = defaults.bool(forKey: Keys.callsWhileLocked)
+        callers = defaults.data(forKey: Keys.callers)
+            .flatMap { try? JSONDecoder().decode([String: [String]].self, from: $0) } ?? [:]
         wakePhrases = defaults.data(forKey: Keys.wakePhrases)
             .flatMap { try? JSONDecoder().decode([String: [String: WakePhrase]].self, from: $0) } ?? [:]
         appearance = Appearance(rawValue: defaults.string(forKey: Keys.appearance) ?? "") ?? .system
@@ -1201,6 +1230,9 @@ final class Settings: ServeEndpoint {
         apiBots = [:]
         botVoices = [:]
         mutes = [:]
+        agentCalls = false
+        callsWhileLocked = false
+        callers = [:]
         wakePhrases = [:]
         theme = .standard
         themeColors = [:]

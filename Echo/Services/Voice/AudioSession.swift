@@ -196,10 +196,17 @@ final class AudioSessionController {
         release()
     }
 
+    /// An agent's call is on (`AgentCalls`): CallKit turned the session on for it and turns it
+    /// off when the call ends, so Redde never does meanwhile. Turned off between two of its
+    /// sentences, the session was taken again for the live call at the unlock, and the call
+    /// ended four seconds in (Marta, 2026-10-26).
+    var heldByCall = false
+
     private func release() {
         stopProximityRouting()
         activeMode = nil
         headsetSeen = false
+        if heldByCall { return }
         do {
             try AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
         } catch {
@@ -394,11 +401,17 @@ final class AudioSessionController {
         switch type {
         case .began:
             log.notice("audio session interrupted")
+            #if DEBUG
+            if heldByCall { LiveMeasure.write("audio session interrupted", to: "calls.log") }
+            #endif
             activeMode = nil
             onInterruption?()
         case .ended:
             let shouldResume = AVAudioSession.InterruptionOptions(rawValue: rawOptions).contains(.shouldResume)
             log.notice("audio session interruption ended, shouldResume=\(shouldResume)")
+            #if DEBUG
+            if heldByCall { LiveMeasure.write("audio interruption over, resume: \(shouldResume)", to: "calls.log") }
+            #endif
             onInterruptionEnded?(shouldResume)
         @unknown default:
             break

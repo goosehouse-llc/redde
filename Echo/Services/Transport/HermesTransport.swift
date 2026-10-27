@@ -246,6 +246,9 @@ nonisolated struct TurnRequest: Sendable {
     var fromPage = false
     /// Handed over by GPT-Live (`LiveVoice`): the agent is told so, each transport in its own way.
     var live: LiveTurn? = nil
+    /// The first words after the person answered an agent's call (`AgentCalls`): what the agent
+    /// opened with, for it to be told so (`CallNote`), each transport in its own way.
+    var answeringCall: String? = nil
 }
 
 /// A turn GPT-Live handed to the agent: the recent spoken exchange it refers to (the person's

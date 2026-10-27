@@ -28,6 +28,10 @@ final class Conversation {
     /// The profile this conversation lives in when it is another than the selected one and not a
     /// bot's chat: opened from the chat list with All Profiles on. Every call about it names it.
     private(set) var elsewhere: ProfileRoute?
+    /// An agent's call just answered in this conversation (`AgentCalls`): its line, told to the
+    /// agent with what the person says first after it (`CallNote`), within ten minutes. Gone when
+    /// another conversation opens.
+    @ObservationIgnored var answeringCall: (line: String, at: Date)?
     /// Words to find once this conversation is on screen: set when a message search opens it,
     /// taken by the transcript, which opens Find on them (`TranscriptView`).
     var findRequest: String?
@@ -317,6 +321,10 @@ final class Conversation {
         request.incognito = isIncognito
         request.fromPage = fromPage != nil
         request.live = live
+        if let call = answeringCall, fromPage == nil {
+            answeringCall = nil
+            if Date.now.timeIntervalSince(call.at) < 600 { request.answeringCall = call.line }
+        }
         // The Hermes API's run for this message, should it go again after a dropped connection.
         request.turnKey = userID.uuidString
         // The conversation's fast mode: the Hermes API keeps none for a session, so each turn asks.
@@ -1137,6 +1145,7 @@ final class Conversation {
                         elsewhere: ProfileRoute? = nil) {
         endIncognito()   // the one being left, if it was one, goes
         noteSeen()   // the one being left
+        answeringCall = nil
         identity += 1
         ledgerWatch?.cancel()
         ledgerWatch = nil

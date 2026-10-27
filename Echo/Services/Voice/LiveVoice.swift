@@ -34,6 +34,13 @@ final class LiveVoice {
     /// the lights off"): asked as the call's first, and the call opens saying the answer, as a
     /// call handed to another bot does (`handOff`). Set before `start`.
     var opening: String?
+    /// The agent's own line, which the call opens saying: an agent's call to the person, answered
+    /// (`AgentCalls`). The voice is given it as the agent's last words. Set before `start`.
+    var greeting: String?
+    /// The agent's line, said already by Redde's own voice (a call answered while locked, its
+    /// microphone opened at the unlock): the voice is given it as the agent's last words, and
+    /// doesn't say it again. Set before `start`.
+    var alreadySaid: String?
 
     var inputLevel: Float { call?.inputLevel ?? 0 }
     var outputLevel: Float { call?.outputLevel ?? 0 }
@@ -155,13 +162,15 @@ final class LiveVoice {
             let setup = if let room { try await setUpRoom(room, nil, settings, engine) } else { try await setUp(conversation, settings, engine) }
             guard state != .ended else { return }
             hermesKnowsLiveTurns = setup.hermesKnowsLiveTurns
-            var greeting: LiveGreeting?
+            var greeting: LiveGreeting? = self.greeting.flatMap { $0.isEmpty || room != nil ? nil : LiveGreeting(line: $0, language: "English") }
             if let opening, !opening.isEmpty, room == nil {
                 greeting = await answer(opening)
                 note("opening request answered after \(took())")
                 guard state != .ended else { return }
             }
-            var connection = try await setup.open(room?.history() ?? LiveSetup.history(conversation.messages))
+            var history = room?.history() ?? LiveSetup.history(conversation.messages)
+            if room == nil, let said = self.greeting ?? alreadySaid, !said.isEmpty { history.append(LiveLine(fromPerson: false, text: said)) }
+            var connection = try await setup.open(history)
             connection.plan.greeting = greeting
             note("set up with \(setup.label) after \(took())")
             guard state != .ended else { return }

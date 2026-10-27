@@ -653,6 +653,7 @@ final class PushDelegate: NSObject, UIApplicationDelegate {
     /// was locked and launch couldn't.
     func applicationProtectedDataDidBecomeAvailable(_ application: UIApplication) {
         Keychain.moveToAfterFirstUnlock()
+        AgentCalls.shared.unlocked()   // a call answered locked listens from now on
     }
 
     nonisolated func application(_ application: UIApplication,

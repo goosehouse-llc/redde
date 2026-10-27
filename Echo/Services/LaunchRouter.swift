@@ -121,6 +121,17 @@ final class LaunchRouter {
         return pendingSession
     }
 
+    /// An agent's call was answered (`AgentCalls`): voice mode is already in its chat, and the
+    /// voice screen comes up over it once Redde is in front (and unlocked).
+    private(set) var pendingCallScreen = false
+
+    func requestCallScreen() { pendingCallScreen = true }
+
+    func consumeCallScreen() -> Bool {
+        defer { pendingCallScreen = false }
+        return pendingCallScreen
+    }
+
     /// A bot's schedule's notification was tapped: open that bot's chat.
     private(set) var pendingBot: String?
 

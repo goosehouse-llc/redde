@@ -239,13 +239,55 @@ there a turn seldom outlives the app at all. 0.21.3 and later let it run.
 Twice the same thing: while the app is still alive in the background it posts its own banner,
 and the pushed one for the same event is removed (`Notifier.sweepRelayDuplicates`).
 
+## Calls from the agent
+
+Plugin 1.8.0 (`calls.py`) gives an agent `call_user` (toolset `redde_calls`): the phone rings
+like a phone call, for something that shouldn't wait until the person next looks. The agent
+gives one argument, `line`, what it says first when they answer.
+
+```
+agent: call_user(line)  ─▶  plugin seals a "call" note  ─▶  relay, kind "call"  ─▶  APNs VoIP push (.voip topic)  ─▶  PushKit wakes Redde: CallKit rings
+```
+
+- **Who may call** is the phone's to say, agent by agent: the app sends `/redde-push calls
+  <device,...> <profile,...>` (or `none`) over the Dashboard; the main agent is `default`. It is
+  kept in the main home's `redde-push/calls.json` beside the paired phones, whichever profile is
+  calling. Hermes keeps the tools a conversation started with (the lab measured this on 0.22.2),
+  so the tool's `check_fn` offers it to every agent once a phone takes calls from any, and
+  `ring` refuses one not allowed, saying so: Home, allowed with its chat open, had no tool and
+  sent a Home Assistant notification instead (2026-10-26). A chat open before calls were on at
+  all gets the tool once it is reopened. Hermes 0.22 lists a plugin's tools behind its tool
+  search, so a message asking to be called gets a note for that turn naming `call_user`
+  (`calls.turn_note`, `pre_llm_call`): without it the main agent said "calling you now" and
+  called nothing.
+- **The address.** A call goes to the phone's PushKit token, which the app gives the relay as
+  `voip` when it registers or updates the pairing (relay change of 2026-10-26). With none, the
+  relay answers 409 and the agent is told the phone isn't ready; the pairing stays.
+- **Limits**, kept in `calls.json` by the plugin: one call per agent in five minutes, or in one
+  minute after a call the person picked up (the app says `calls answered <id>` as it is answered:
+  a hang-up by mistake, 2026-10-26), twenty a day from all of them. A call that reached no phone
+  doesn't count.
+- **The push** carries the sealed note alone, lives 60 seconds (a call that rings late is worse
+  than none) and has no collapse id. iOS requires an app woken by a VoIP push to report a call to
+  CallKit at once, so the app has to ring for every one it is sent; that is why the gate is on
+  the plugin's side.
+- **The tool returns** once Apple has the push; it isn't told whether the person answered.
+- **On the phone** (`AgentCalls`, Settings → Notifications → Calls from Agents): PushKit gives
+  the address, set up at launch so a push can start the app; CallKit rings with the agent's name.
+  Answered: voice mode in that agent's chat, hands-free, saying the line first, and the person's
+  first words go to the agent with a note that they answer its call (`CallNote`). Not answered
+  in 30 seconds, or declined: a notification with the line. Every VoIP push is reported to
+  CallKit, as iOS requires; one that shouldn't ring is ended at once. `docs/ARCHITECTURE.md`,
+  "Calls from agents", has the rest; `-echo.ringMe <profile> <seconds>` rings without the relay.
+
 ## What is where
 
 | Where | What |
 |---|---|
 | Hermes, `$HERMES_HOME/redde-push/devices.json` (mode 600) | per phone: relay id, relay secret, the note key, a name |
 | Hermes, `…/watch.json` | which sessions each phone follows (the last 500) |
-| Relay (KV) | per pairing: APNs token, SHA-256 of the relay secret, sandbox or production, last check-in. Forgotten after 120 days without one, or when Apple says the token is dead |
+| Hermes, `…/calls.json` (the main home's) | which agents each phone takes calls from, and the calls of the last day |
+| Relay (KV) | per pairing: APNs token (and a PushKit token, once calls are on), SHA-256 of the relay secret, sandbox or production, last check-in. Forgotten after 120 days without one, or when Apple says the token is dead |
 | iPhone Keychain (app group, this device only, readable after first unlock) | per pairing: relay id, relay secret, the note key, the machine's name |
 
 Removing a pairing in the app deletes it from the phone and the relay; the plugin learns from its
@@ -278,7 +320,7 @@ opens only for the pairing it was sealed to. Inside:
 ```
 
 `k` is `reply`, `task`, `approval`, `question`, `sudo`, `secret`, `failed`, `paired`, `test`,
-`widget`, `group` or `group_wait`; what `b` and `d` hold for each is listed at `core.note` and
+`widget`, `group`, `group_wait` or `call`; what `b` and `d` hold for each is listed at `core.note` and
 `core.room_note`; `routine` (plugin 1.5.0, `core.routine_note`) says one of a bot's schedules
 ran: `p` the bot's profile, `d` its name, `t` the schedule's, `b` what it came up with (`w`
 "failed" when it didn't finish), from `routines.py`, which reads every profile's cron store each
@@ -286,7 +328,9 @@ half minute. The group chat's two (plugin 1.4.0) have no `s`: `g` is the room, `
 `d` the bot; `group` has the message in `b`; `group_wait` has `w`, "approval" (`b` the command,
 `r` why, `h` its digest, which the app answers by, finding that command in `groups.state`) or
 "retry" (`x` the task for `groups.retry`). Each has a collapse id of its own. A kind the app doesn't know
-leaves the relay's words in place. `widget` (plugin 1.3.0, `core.widget_note`) is not about a
+leaves the relay's words in place. `call` (plugin 1.8.0, `core.call_note`) goes only as a call,
+never as a notification: `p` the calling agent's profile, `d` its name, `b` its opening line,
+`s` the conversation it called from, `i` the call's own id. `widget` (plugin 1.3.0, `core.widget_note`) is not about a
 turn: it is what the agent wrote for its widget on the phone while no phone was following the
 conversation, with `t` the heading, `b` the lines, and `f` and `u` from and until when, as the
 agent wrote them (the phone reads them in its own time zone). It is sent only once the phone
@@ -308,6 +352,7 @@ node --test companion/push-relay/test/relay.test.mjs
 python -m unittest discover -s companion/hermes-plugin/tests   # needs `cryptography`
 scripts/hermes-lab/lab.sh push           # the plugin inside Hermes 0.21.0, 0.21.3 and 0.21.5
 scripts/hermes-lab/lab.sh push --app     # and the app in a simulator pairing with each
+scripts/hermes-lab/lab.sh calls          # calls from the agent: a bot let call rings a stand-in phone, as a VoIP push
 ```
 
 `EchoTests/PushTests.swift` checks the app against values the plugin's code produced, so the two

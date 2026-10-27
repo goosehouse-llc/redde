@@ -1803,6 +1803,39 @@ asked for, a turn that ended without a reply, and a handed-off task coming back;
 plugin hook for only the first two, and how the rest are told is in [docs/push.md](push.md), with
 the design, the wire formats and what has to happen before it ships.
 
+**Calls from agents** (`AgentCalls`, Settings → Notifications → Calls from Agents; off until
+turned on, this phone's alone, not synced). An agent the phone allows (`Settings.callers`, per
+server: "default" and bots' profiles) rings it like a phone call: the plugin's `call_user`
+(`calls.py`, 1.8.0) seals a `call` note (`p`, `d`, `b` its opening line, `s`, `i`) and the relay
+sends it to Apple as a VoIP push to the address PushKit gave the phone, which `PushService` hands
+the relay as `voip` while calls are on (and `null` when they go off, so the relay forgets it). iOS
+wakes the app, even from closed, and `AgentCalls` has CallKit ring (made at launch in
+`EchoApp.init`, before any scene, as PushKit hands a push only to a registry that exists). Every
+VoIP push is reported as a call, as iOS demands; one that shouldn't ring (calls off here, a call
+already on, a note the phone can't open, a note two minutes old: `AgentCallPlan.decide`) is
+reported and ended at once. Which agents may call is told to the plugin (`calls <pairing ids>
+<profiles|none>` over the Dashboard, `AgentCalls.publish`, at each foreground and each change),
+which lists `call_user` for every agent once calls are on (Hermes fixes a chat's tools as it starts),
+refuses one not allowed when it rings, and holds one agent to a call in five minutes (one minute
+after a call the person picked up, which the app says as it answers: `calls answered <id>`) and
+all of them to twenty a day. Answered: once CallKit turns the audio on (`didActivate`), the agent's chat
+opens (`goToBot`; the main agent's conversation it called from if the phone has it), voice mode
+runs on the shared `VoiceSession` without the screen, hands-free, saying the line in the agent's
+reading voice (`answerCall`), or opening a live call saying it where the chat has one
+(`LiveVoice.greeting`), and the voice screen comes up when Redde is in front
+(`LaunchRouter.pendingCallScreen`). The person's first words go to the agent with `CallNote`
+(the Dashboard: on the message, hidden by `stripNote`; the API and the fast lane: instructions).
+Voice mode ending (closed, a stop phrase, a live call over) ends the phone call
+(`VoiceSession.callEnded`), and hanging up on the call's screen ends voice mode. On a locked iPhone
+(`isProtectedDataAvailable` false) the line is said, then "Unlock your iPhone to answer", and the
+microphone waits for the unlock (`PushDelegate.applicationProtectedDataDidBecomeAvailable`),
+unless Talk While Locked (`Settings.callsWhileLocked`, off) is on; with Redde's own lock on it
+always waits (`AgentCallPlan.listens`). A live call opened at the unlock is given the line as said. Not answered in 30 seconds,
+declined, or kept quiet by a Focus: a notification with the line (`PushNote.fill`), which opens
+the bot's chat or the conversation. `-echo.ringMe <profile> <seconds>` rings without the relay
+(DEBUG). Hermes 0.21 runs a bot's Dashboard chat in the main profile's home, so there only the
+main agent can be told apart and call.
+
 **Notification sound.** Settings → Voice → "Notification sound" silences all of them. The app's
 own banners are posted without a sound; a pushed one arrives with Apple's default, which the
 relay always asks for, and the notification extension takes it off, reading the setting from the

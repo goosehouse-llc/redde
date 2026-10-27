@@ -216,9 +216,10 @@ struct ContentView: View {
             if let offer = PushOffer(url: url) { router.requestPushPairing(offer) }
             else if let offer = SetupCodeOffer(url: url) { router.requestSetup(offer) }
         }
-        .onAppear { consumeControlRequest(); handleLaunchRequest(); handleWake(); handleCaptureRequest(); handleDraftRequest(); handleSetupCode(); handlePushRequests() }
+        .onAppear { consumeControlRequest(); handleLaunchRequest(); handleWake(); handleCaptureRequest(); handleDraftRequest(); handleSetupCode(); handlePushRequests(); handleCallScreen() }
         .onChange(of: router.pendingVoice) { handleLaunchRequest() }
         .onChange(of: router.pendingWake) { handleWake() }
+        .onChange(of: router.pendingCallScreen) { handleCallScreen() }
         .onChange(of: router.pendingCapture) { handleCaptureRequest() }
         .onChange(of: router.pendingDraft) { handleDraftRequest() }
         .onChange(of: router.pendingSetupCode) { handleSetupCode() }
@@ -228,7 +229,9 @@ struct ContentView: View {
         .onChange(of: router.pendingBot) { handlePushRequests() }
         .onChange(of: lock.isLocked) { _, locked in
             // A Siri / control / share request that arrived while locked runs once unlocked.
-            if !locked { consumeControlRequest(); handleLaunchRequest(); handleWake(); handleCaptureRequest(); consumeSharedItems(); handleDraftRequest(); handleSetupCode(); handlePushRequests() }
+            if !locked { consumeControlRequest(); handleLaunchRequest(); handleWake(); handleCaptureRequest(); consumeSharedItems(); handleDraftRequest(); handleSetupCode(); handlePushRequests(); handleCallScreen() }
+            // An agent's call answered while Redde was locked: its microphone opens now.
+            if !locked { AgentCalls.shared.unlocked() }
             // "What's New" held back by the lock. A moment later, so a voice request opens first.
             if !locked { Task { try? await Task.sleep(for: .milliseconds(600)); presentWhatsNewIfDue() } }
         }
@@ -277,7 +280,9 @@ struct ContentView: View {
             conversation.retryOutbox()   // back in the foreground: try anything still waiting to send
             conversation.deleteLeftIncognitoChats()   // ones the app couldn't delete as they were left
             consumeSharedItems()
-            guard Settings.shared.listenOnOpen, router.pendingVoice == nil, !voiceSession.mightBeBusy else { return }
+            handleCallScreen()
+            // (On an agent's call, voice mode is the call's: nothing new is started over it.)
+            guard Settings.shared.listenOnOpen, router.pendingVoice == nil, !voiceSession.mightBeBusy, AgentCalls.shared.current == nil else { return }
             Task { await launchVoice(handsFree: showVoice ? voiceSession.continuous : settings.handsFreeByDefault, fromOutside: true) }
         }
     }
@@ -964,6 +969,25 @@ struct ContentView: View {
                 }
             }
             await launchVoice(handsFree: settings.handsFreeByDefault, fromOutside: false, asking: wake.asking)
+        }
+    }
+
+    /// An agent's call was answered (`AgentCalls`): voice mode runs in its chat already, and its
+    /// screen comes up once Redde is in front and unlocked.
+    private func handleCallScreen() {
+        guard !lock.isLocked, scenePhase == .active, router.pendingCallScreen else { return }
+        _ = router.consumeCallScreen()
+        guard !showVoice else { return }
+        // A cover can't present over a sheet: the sheet goes first.
+        let covered = showSettings || whatsNew != nil
+        if let shown = whatsNew {
+            deferredWhatsNew = shown
+            whatsNew = nil
+        }
+        showSettings = false
+        Task {
+            if covered { try? await Task.sleep(for: .milliseconds(500)) }
+            showVoice = true
         }
     }
 

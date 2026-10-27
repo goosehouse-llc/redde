@@ -106,6 +106,9 @@ import WidgetKit
 /// - `-echo.whatsNew`: show this version's "What's New" sheet (any other `-echo.` flag hides it).
 /// - `-echo.switchProfile <name>`: switch profile five seconds after launch.
 /// - `-echo.botKokoro <profile> <voice>`: that bot's Kokoro voice, a blend too ("bf_emma(1)+af_heart(4)").
+/// - `-echo.ringMe <profile> <seconds>`: that agent calls ("default" the main one) that many seconds
+///   after launch, as if its push had come (`AgentCalls.ring`): CallKit without the relay. Calls
+///   must be on (Settings → Notifications → Calls from Agents), or `-echo.callsOn` turns them on.
 /// - `-echo.askProfile <name>`: what Siri's "Ask <name> in Redde" does, at launch: the name is
 ///   made known, then voice mode is asked for on that profile ("default" is the main one).
 /// - `-echo.dropHint`: show the outline a drag over the chat brings up, without a drag.
@@ -356,6 +359,21 @@ enum DevHooks {
             var record = settings.botVoicesHere[args[at + 1]] ?? BotVoice()
             (record.kokoro, record.onDevice, record.elevenLabs, record.sameAsMain) = (args[at + 2], nil, nil, nil)
             settings.botVoicesHere[args[at + 1]] = record
+        }
+
+        // `-echo.ringMe <profile> <seconds>` (and `-echo.callsOn`): an agent's call, without the relay.
+        if has("-echo.callsOn") {
+            settings.agentCalls = true
+            if settings.callersHere.isEmpty { settings.callersHere = ["default"] }
+            AgentCalls.shared.start()
+        }
+        if let at = args.firstIndex(of: "-echo.ringMe"), at + 1 < args.count {
+            let profile = args[at + 1]
+            let delay = at + 2 < args.count ? Double(args[at + 2]) ?? 5 : 5
+            Task {
+                try? await Task.sleep(for: .seconds(delay))
+                AgentCalls.shared.ring(from: profile, saying: "This is a test call from Redde. The garage door has been open for an hour.")
+            }
         }
 
         if let name = value("-echo.askProfile") {

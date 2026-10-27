@@ -40,7 +40,8 @@ What the relay holds for each pairing:
 
 - your iPhone's push token: the address Apple issues so that notifications for Redde can reach that device;
 - a one-way hash of a random secret, which lets your server, and nobody else, send to that token;
-- whether the token belongs to a development or an App Store build, and when the iPhone last checked in.
+- whether the token belongs to a development or an App Store build, and when the iPhone last checked in;
+- if you turn on Calls from Agents, a second token for the same device, the address Apple issues for incoming calls to Redde, which the relay uses only to deliver an agent's call. Turning calls off has the relay delete it.
 
 What passes through and is not kept: the encrypted notifications. Inside the encryption is a short note saying what happened, the conversation's id and title, and up to the first 500 characters of the reply, or the command or question that is waiting. The relay has no key and cannot read any of it, and neither can Apple. The text Apple is given to display is always the same placeholder, which your iPhone replaces once it has decrypted the note. While you pair by scanning a code, the relay also holds your iPhone's half of the key exchange (a public key and an encrypted answer for your server) for at most ten minutes.
 
@@ -51,6 +52,10 @@ A pairing is deleted from the relay when you remove it in Redde (swipe it away u
 The Hermes server needs a small plugin for this. You can install it there yourself, or, when Redde is signed in to that server's Dashboard, have Redde ask the server to install it: the server then downloads the plugin from our public repository on GitHub. Redde passes the request to your own server and downloads nothing itself.
 
 Notifications that Redde posts itself while it is running do not involve the relay.
+
+### Calls from agents
+
+If you turn on Calls from Agents (Settings › Notifications), an agent you allow can ring your iPhone like a phone call. The call travels as a notification does: your Hermes server encrypts a short note (which agent is calling, what it will say first, the conversation it called from) with the pairing's key and sends it through the relay, which hands it to Apple to deliver as an incoming call to Redde. The relay and Apple cannot read it. Redde shows the call with Apple's CallKit, which iOS uses for every app's calls; Redde asks iOS not to add these calls to the Phone app's list of recent calls. When you answer, the conversation is voice mode in that agent's chat, and what you say goes to your own server as in any other conversation. A call you don't answer is shown as a notification that Redde posts on your iPhone. Which agents may call is kept by Redde on this iPhone and told to your own server; it is not synced to your other devices.
 
 ## Speech
 
@@ -117,7 +122,7 @@ Redde is not directed at children under 13, and has no accounts and no personal 
 
 ## Changes
 
-If this policy changes, the new version will be posted at this address with an updated effective date. The October 2026 version added the optional notification relay; before it, Goosehouse LLC ran no service for Redde at all. The October 25, 2026 version added live voice calls and wake phrases, and says what Sync with iCloud sends to your other devices. The October 26, 2026 version added the plugin catalog that Find Plugins downloads, ElevenLabs as a voice that reads replies, and group chats as live calls.
+If this policy changes, the new version will be posted at this address with an updated effective date. The October 2026 version added the optional notification relay; before it, Goosehouse LLC ran no service for Redde at all. The October 25, 2026 version added live voice calls and wake phrases, and says what Sync with iCloud sends to your other devices. The October 26, 2026 version added the plugin catalog that Find Plugins downloads, ElevenLabs as a voice that reads replies, group chats as live calls, and calls from agents.
 
 ## Contact
 

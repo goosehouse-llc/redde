@@ -696,6 +696,13 @@ struct NotificationSettings: View {
             Text("Background notifications stop when iOS closes Redde; with this, your Hermes sends them from then on.")
         }
         Section {
+            NavigationLink { AgentCallsSettingsView() } label: {
+                LabeledContent("Calls from Agents", value: settings.agentCalls ? "On" : "Off")
+            }
+        } footer: {
+            Text("An agent you allow rings this iPhone like a phone call when something shouldn't wait.")
+        }
+        Section {
             Toggle("Live Activity while Redde works", isOn: $settings.showLiveActivity)
         } footer: {
             Text("A reply being worked on shows on the Lock Screen and in the Dynamic Island.")

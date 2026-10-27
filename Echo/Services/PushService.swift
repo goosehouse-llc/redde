@@ -79,17 +79,21 @@ nonisolated struct PushRelay: Sendable {
     var session: URLSession = .shared
 
     /// Registers `token`; the relay keeps the hash of `sendKey`, never the key. Returns its id.
-    func register(token: String, environment: String, sendKey: String) async throws -> String {
+    /// `voip`: the address for an agent's calls (`AgentCalls`), when calls are on.
+    func register(token: String, environment: String, sendKey: String, voip: String? = nil) async throws -> String {
         let auth = PushSeal.hex(SHA256.hash(data: Data(sendKey.utf8)))
-        let reply = try await send("POST", "v1/devices", body: ["token": token, "env": environment, "auth": auth])
+        var body: [String: Any] = ["token": token, "env": environment, "auth": auth]
+        if let voip { body["voip"] = voip }
+        let reply = try await send("POST", "v1/devices", body: body)
         guard let id = reply["id"] as? String, !id.isEmpty else { throw PushError.relay("no id") }
         return id
     }
 
     /// A new push address for a registration, or just a sign of life: one unused for four months
-    /// is forgotten.
-    func update(id: String, sendKey: String, token: String, environment: String) async throws {
-        _ = try await send("PUT", "v1/devices/\(id)", body: ["token": token, "env": environment], bearer: sendKey)
+    /// is forgotten. `voip`: the address for an agent's calls, or nil to have the relay forget it
+    /// (calls off); a relay from before calls takes no notice.
+    func update(id: String, sendKey: String, token: String, environment: String, voip: String? = nil) async throws {
+        _ = try await send("PUT", "v1/devices/\(id)", body: ["token": token, "env": environment, "voip": voip ?? NSNull()], bearer: sendKey)
     }
 
     func remove(id: String, sendKey: String) async throws {
@@ -101,7 +105,7 @@ nonisolated struct PushRelay: Sendable {
                            bearer: sendKey, headers: ["X-Redde-Device": id])
     }
 
-    private func send(_ method: String, _ path: String, body: [String: String]? = nil, bearer: String? = nil,
+    private func send(_ method: String, _ path: String, body: [String: Any]? = nil, bearer: String? = nil,
                       headers: [String: String] = [:]) async throws -> [String: Any] {
         var request = URLRequest(url: base.appending(path: path))
         request.httpMethod = method
@@ -151,6 +155,7 @@ final class PushService {
     @ObservationIgnored private let allowed: () async -> Bool
     @ObservationIgnored private var token: String?
     @ObservationIgnored private var tokenWaiters: [CheckedContinuation<String, Error>] = []
+    @ObservationIgnored private let callsOn: () -> Bool
     /// Conversations already announced to the plugin since launch, and servers found to have no
     /// plugin (or none paired with this phone): neither is asked again until the next launch.
     @ObservationIgnored private var followed: Set<String> = []
@@ -161,13 +166,16 @@ final class PushService {
     @ObservationIgnored private var mutesSaid: [String: String] = [:]
 
     private static let uploadedKey = "push.uploaded"
+    private static let voipKey = "push.voip"
     private static let relayKey = "push.relay"
 
     init(defaults: UserDefaults = .standard, session: URLSession = .shared,
          vault: (load: () -> [PushPairing], save: ([PushPairing]) -> Bool) = ({ PushVault.load() }, { PushVault.save($0) }),
          askForToken: @escaping () -> Void = { UIApplication.shared.registerForRemoteNotifications() },
-         allowed: @escaping () async -> Bool = { await Notifier.shared.requestAuthorization() }) {
+         allowed: @escaping () async -> Bool = { await Notifier.shared.requestAuthorization() },
+         callsOn: @escaping () -> Bool = { Settings.shared.agentCalls }) {
         self.defaults = defaults
+        self.callsOn = callsOn
         self.session = session
         self.vault = vault
         self.askForToken = askForToken
@@ -212,6 +220,25 @@ final class PushService {
         Task { await refreshRegistrations(token: hex) }
     }
 
+    /// This phone's address for an agent's calls (PushKit's), as `AgentCalls` last had it. Kept, so
+    /// that a launch where APNs answers before PushKit doesn't tell the relay there is none.
+    private var voipToken: String? { defaults.string(forKey: Self.voipKey) }
+
+    /// The address for calls, from `AgentCalls` (nil: PushKit took it back): the relay told.
+    func voipChanged(_ voip: String?) {
+        guard voip != voipToken else { return }
+        defaults.set(voip, forKey: Self.voipKey)
+        callsChanged()
+    }
+
+    /// Calls turned on or off: the relay told, once the push address is known.
+    func callsChanged() {
+        if let token { Task { await refreshRegistrations(token: token) } } else if !pairings.isEmpty { askForToken() }
+    }
+
+    /// What the relay is to hold for calls: the address while they are on, else none.
+    var voipForRelay: String? { callsOn() ? voipToken : nil }
+
     func failedToRegister(_ error: PushError) {
         for waiter in tokenWaiters { waiter.resume(throwing: error) }
         tokenWaiters = []
@@ -242,14 +269,16 @@ final class PushService {
     /// the sign of life that keeps the registration.
     private func refreshRegistrations(token: String) async {
         guard !pairings.isEmpty else { return }
-        let stamp = "\(token)|\(Self.environment)|\(pairings.map(\.id).sorted().joined(separator: ","))"
+        let voip = voipForRelay
+        let stamp = "\(token)|\(Self.environment)|\(pairings.map(\.id).sorted().joined(separator: ","))|voip=\(voip ?? "")"
         let last = defaults.string(forKey: Self.uploadedKey).map { $0.split(separator: "@", maxSplits: 1).map(String.init) }
         if let last, last.count == 2, last[1] == stamp, let at = Double(last[0]), Date.now.timeIntervalSince1970 - at < 7 * 86_400 { return }
         var allSent = true
         for pairing in pairings {
             guard let base = URL(string: pairing.relay) else { continue }
             do {
-                try await PushRelay(base: base, session: session).update(id: pairing.id, sendKey: pairing.sendKey, token: token, environment: Self.environment)
+                try await PushRelay(base: base, session: session).update(id: pairing.id, sendKey: pairing.sendKey, token: token,
+                                                                        environment: Self.environment, voip: voip)
             } catch PushError.relay(let reason) where reason == "no such device" {
                 // The relay forgot it (unused for months, or that Hermes's notes bounced at Apple).
                 log.notice("a pairing is gone from the relay; removed here")
@@ -331,7 +360,7 @@ final class PushService {
         var bytes = [UInt8](repeating: 0, count: 32)
         guard SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes) == errSecSuccess else { throw PushError.relay("no randomness") }
         let sendKey = PushSeal.base64URL(Data(bytes))
-        let id = try await relay.register(token: token, environment: Self.environment, sendKey: sendKey)
+        let id = try await relay.register(token: token, environment: Self.environment, sendKey: sendKey, voip: voipForRelay)
         var pairing: PushPairing
         do {
             let answer = try PushSeal.answer(to: offered, deviceID: id, sendKey: sendKey, name: UIDevice.current.name)

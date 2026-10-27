@@ -19,6 +19,8 @@ struct EchoApp: App {
         Conversation.current = conversation   // Siri AI's intents send through it
         CloudSync.shared.start()   // with Sync with iCloud on, what other devices changed meanwhile
         Notifier.shared.attach(conversation: conversation)   // the delegate must exist before launch finishes
+        // An agent's call can be what started the app: PushKit hands it over once this is set up.
+        AgentCalls.shared.start()
         // Approve and Deny on the Live Activity run here, in the app, and answer the same way.
         ApprovalAnswer.deliver = { Notifier.shared.answerApproval(requestID: $0, choice: $1) }
         StatusWidgets.lockChanged(Settings.shared.requireBiometrics)   // a lock turned on before the widgets existed
@@ -101,6 +103,8 @@ struct EchoApp: App {
                     Task { await ReplyCardsSwitch.publish() }
                     // A timed mute may have run out meanwhile, or one been set on another device.
                     Mutes.publish()
+                    // Who may call this phone, said again in case this server hasn't heard.
+                    AgentCalls.shared.publish()
                     // With Photos among them, the library is looked through while Redde is open,
                     // so that the agent can find a picture by what it shows.
                     PhotoLooking.shared.resume()

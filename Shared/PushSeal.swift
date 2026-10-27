@@ -53,6 +53,11 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
         /// `b` what it came up with; `w` "failed" when it didn't finish). Its answer is in the
         /// bot's chat.
         case routine
+        /// An agent is calling (`p` its profile, `d` its name, `b` what it says first, `s` the
+        /// conversation it called from, `i` the call's id). It comes as a VoIP push, to the app
+        /// alone, which rings with CallKit (`AgentCalls`); a call not answered is shown with this
+        /// note's words (`fill`).
+        case call
     }
 
     var v = 1
@@ -83,8 +88,10 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
     var w: String?
     var r: String?
     var x: String?
-    /// On a bot's schedule's: the bot's profile.
+    /// On a bot's schedule's, and a call's: the bot's profile ("default", the main agent).
     var p: String?
+    /// On a call: its own id.
+    var i: String?
 
     /// Nil for a kind a newer plugin sends and this build doesn't know.
     var kind: Kind? { Kind(rawValue: k) }
@@ -388,6 +395,12 @@ nonisolated extension PushNote {
             if let d, !d.isEmpty { content.subtitle = d }
             content.body = String(PlainText.display(b ?? "").prefix(300))
             content.threadIdentifier = "redde.routine.\(p ?? "")"
+        case .call:
+            // Not answered: as the Phone app shows a missed call, with what the agent called about.
+            content.title = "Missed call from \(d.flatMap { $0.isEmpty ? nil : $0 } ?? "your agent")"
+            content.body = String(PlainText.display(b ?? "").prefix(300))
+            content.threadIdentifier = "redde.call"
+            content.interruptionLevel = .timeSensitive
         case .groupWait:
             let who = d.flatMap { $0.isEmpty ? nil : $0 } ?? "A bot"
             if let t, !t.isEmpty { content.subtitle = t }
@@ -409,6 +422,8 @@ nonisolated extension PushNote {
         if kind == .question, let h, !h.isEmpty { info[Self.questionKey] = h }
         if let g, !g.isEmpty { info[Self.roomKey] = g }
         if kind == .routine, let p, !p.isEmpty { info[Self.botKey] = p }
+        // A bot's missed call opens its chat; the main agent's, the conversation it called from.
+        if kind == .call, let p, !p.isEmpty, p != "default" { info[Self.botKey] = p }
         if let x, !x.isEmpty { info[Self.taskKey] = x }
         content.userInfo = info
         return true

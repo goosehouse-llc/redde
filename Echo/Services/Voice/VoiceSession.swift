@@ -141,6 +141,9 @@ final class VoiceSession {
 
     /// A member's reply, whole, for the group chat's call to say in its voice.
     func roomReplied(profile: String, text: String) { live?.roomReplied(profile: profile, text: text) }
+    /// An agent's call this conversation answers (`AgentCalls`): told once, when voice mode ends
+    /// (closed, hung up, a stop phrase, a live call that ended), so the phone call ends with it.
+    var callEnded: (() -> Void)?
     /// The mic is held shut in the middle of a conversation (the car screen's Pause while Redde
     /// listens): the session is idle but not over. `unmute()`, or the mic by any other route,
     /// listens again.
@@ -367,8 +370,16 @@ final class VoiceSession {
         // flow into listening without a tap once Siri's follow-up window closes.
         audio.onInterruption = { [weak self] in
             guard let self else { return }
-            resumeAfterInterruption = phase == .listening || phase == .thinking || phase == .speaking
-            cancel()
+            resumeAfterInterruption = phase == .listening || phase == .thinking || phase == .speaking || live != nil
+            // On an agent's call: paused, not hung up. The call goes on, and so does voice mode
+            // when the interruption is over.
+            if let call = callEnded {
+                callEnded = nil
+                cancel()
+                callEnded = call
+            } else {
+                cancel()
+            }
         }
         audio.onInterruptionEnded = { [weak self] shouldResume in
             guard let self, resumeAfterInterruption else { return }
@@ -511,7 +522,8 @@ final class VoiceSession {
         // chat's voice stay Redde's own.
         if !capturing, sendsTo == nil, liveWanted(conversation.bot?.profile) {
             output.stop()
-            startLive()
+            startLive(alreadySaid: callLineSaid)
+            callLineSaid = nil
             return
         }
         isCapturing = capturing
@@ -553,6 +565,49 @@ final class VoiceSession {
             }
             await handleUtterance(text)
         }
+    }
+
+    /// An agent's call, answered (`AgentCalls`): the agent's line said, in its voice, and then the
+    /// person heard, hands-free, as on a call, until it ends. Where the agent's chat has a live
+    /// voice, the call opens saying the line. `listen` false (a locked iPhone, or Redde's lock): the
+    /// line, then `untilThen` ("Unlock your iPhone to answer."), the microphone shut until
+    /// `beginListening`; a live call then knows the line was said. `ended`: told when voice mode
+    /// ends (`callEnded`).
+    func answerCall(saying line: String, listen: Bool, untilThen: String? = nil, ended: @escaping () -> Void) {
+        if live != nil || phase != .idle, !isErrored { cancel() }   // (what was going on is over; its own call, if any, with it)
+        callEnded = ended
+        continuous = true
+        callLineSaid = listen ? nil : line
+        if listen, sendsTo == nil, liveWanted(conversation.bot?.profile) {
+            output.stop()
+            startLive(greeting: line)
+            return
+        }
+        replaying = false
+        isCapturing = false
+        isMuted = false
+        output.speaker = conversation.bot?.profile
+        do { try audio.activateForVoice() } catch {
+            phase = .error(error.localizedDescription); return
+        }
+        replaying = true
+        replayResumesHandsFree = listen
+        phase = .speaking
+        output.beginReply()
+        output.append(line)
+        if !listen, let untilThen { output.append(" " + untilThen) }
+        output.endReply()
+    }
+
+    /// An agent's line said on a call answered while locked (`answerCall`), for a live call that
+    /// opens once unlocked to know of.
+    private var callLineSaid: String?
+
+    /// Voice mode is over: the agent's call it answered, if any, ends with it.
+    private func endCall() {
+        guard let callEnded else { return }
+        self.callEnded = nil
+        callEnded()
     }
 
     /// The phone locked, or Redde was left for another app, while the mic was open. Listening
@@ -676,7 +731,16 @@ final class VoiceSession {
     }
 
     func cancel() {
+        #if DEBUG
+        // What ends voice mode on an agent's call, for calls.log (a call ended 4 s in, 2026-10-26).
+        if callEnded != nil {
+            let from = Thread.callStackSymbols.dropFirst().prefix(4).map { $0.split(separator: " ", omittingEmptySubsequences: true).dropFirst(3).first.map(String.init) ?? "" }
+            LiveMeasure.write("voice mode stopped on a call, from: \(from.joined(separator: " < "))", to: "calls.log")
+        }
+        #endif
+        callLineSaid = nil
         if live != nil { endLive(); return }
+        defer { endCall() }
         replaying = false
         isMuted = false
         isCapturing = false
@@ -711,10 +775,13 @@ final class VoiceSession {
     /// Calls GPT-Live: the microphone allowed and the audio session set up for voice, as for
     /// listening, then the call (`LiveVoice`), whose state is shown as the phase from here on.
     /// `opening`: a request asked before the call opens (`ask`).
-    private func startLive(opening: String? = nil, room: LiveRoom? = nil, engine: LiveEngine? = nil) {
+    private func startLive(opening: String? = nil, greeting: String? = nil, alreadySaid: String? = nil, room: LiveRoom? = nil,
+                           engine: LiveEngine? = nil) {
         // A room's call is in the engine its group chats use, not the open chat's bot's.
         let live = room == nil ? makeLive(conversation) : LiveVoice(conversation: conversation, engine: engine)
         live.opening = opening
+        live.greeting = greeting
+        live.alreadySaid = alreadySaid
         live.room = room
         self.live = live
         isMuted = false
@@ -776,6 +843,9 @@ final class VoiceSession {
     /// The call is over: hung up here, or ended by the service or a lost connection (`problem`).
     private func endLive(problem: String? = nil) {
         guard let live else { return }
+        #if DEBUG
+        if callEnded != nil { LiveMeasure.write("the live call ended on an agent's call\(problem.map { ": " + $0 } ?? "")", to: "calls.log") }
+        #endif
         live.onChange = nil
         if live.state != .ended { live.hangUp() }
         isMuted = false
@@ -787,6 +857,7 @@ final class VoiceSession {
         if liveCued { earcon(.stopped) }
         liveCued = false
         releaseAudioAfterCue()
+        endCall()
     }
 
     // MARK: - Pipeline
@@ -1105,6 +1176,7 @@ final class VoiceSession {
             acknowledging = false
             phase = .idle
             output.releaseAudio(); audio.deactivate()
+            if !continuous { endCall() }   // ("Stop": the call too. "Noted." after a note goes on.)
             return
         }
         if replaying {
@@ -1136,6 +1208,7 @@ final class VoiceSession {
             beginListening()
         } else {
             output.releaseAudio(); audio.deactivate()
+            endCall()   // hands-free turned off on a call: it ends with this reply
         }
     }
 
