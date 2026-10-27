@@ -35,6 +35,8 @@ nonisolated enum WhatsNew {
                  detail: "With Redde open, say “Hey” and an agent's name to talk to it, or “Hey Home, turn the lights off” to ask at once. Turn it on, and change the phrases, in Settings → Voice → Wake Phrase. It listens on the device."),
             Item(symbol: "puzzlepiece.extension", title: "Plugins",
                  detail: "Settings → Plugins finds Hermes plugins in Nous Research's catalog and installs them on your server, for your agent or, in Edit Bot, for one bot. See what each sends, costs and adds first. It takes the Hermes Dashboard login."),
+            Item(symbol: "paintpalette", title: "A wallpaper",
+                 detail: "Pick the color behind your chats beside the accent and your bubbles, in Settings → Appearance. The text on it, and light or dark, follow it, so replies stay readable."),
             Item(symbol: "rectangle.split.3x1", title: "Kanban for bots",
                  detail: "Edit Bot → Tools offers Kanban, so a bot can make cards, in its own chat and in group chats."),
             Item(symbol: "applewatch", title: "Bots' voices on the watch",
