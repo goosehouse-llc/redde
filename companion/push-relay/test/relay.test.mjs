@@ -192,3 +192,65 @@ test("the household webhook routes are still there", async () => {
     r.restore();
   }
 });
+
+test("a phone with a PushKit token is rung as a call, the blob alone, on the voip topic", async () => {
+  const VOIP = "cd".repeat(32);
+  const r = relay();
+  try {
+    const made = await r.call("POST", "/v1/devices", { token: TOKEN, voip: VOIP, env: "dev", auth: auth(SECRET) });
+    assert.equal(made.status, 201);
+    const id = made.body.id;
+    const rung = await r.call("POST", `/v1/devices/${id}/push`, { payload: "Y2FsbA", kind: "call", ttl: 3600, collapse: "abcdef0123456789" }, bearer());
+    assert.equal(rung.status, 202);
+    const apple = r.sent[0];
+    assert.equal(apple.url, `http://apple.test/3/device/${VOIP}`);
+    assert.equal(apple.headers["apns-topic"], "com.example.app.voip");
+    assert.equal(apple.headers["apns-push-type"], "voip");
+    assert.equal(apple.headers["apns-collapse-id"], undefined, "a call isn't collapsed");
+    const life = Number(apple.headers["apns-expiration"]) - Math.floor(Date.now() / 1000);
+    assert.ok(life <= 60 && life >= 55, `a call waits a minute at most, not ${life} s`);
+    assert.deepEqual(apple.body, { e: "Y2FsbA" });
+    // Notes still go as alerts on the other token.
+    await r.call("POST", `/v1/devices/${id}/push`, { payload: "bm90ZQ" }, bearer());
+    assert.equal(r.sent[1].url, `http://apple.test/3/device/${TOKEN}`);
+    assert.equal(r.sent[1].headers["apns-push-type"], "alert");
+  } finally {
+    r.restore();
+  }
+});
+
+test("without a PushKit token a call is refused, and one given later or forgotten counts", async () => {
+  const VOIP = "ef".repeat(32);
+  const r = relay();
+  try {
+    const id = await registered(r);
+    assert.equal((await r.call("POST", `/v1/devices/${id}/push`, { payload: "Y2FsbA", kind: "call" }, bearer())).status, 409);
+    assert.equal(r.sent.length, 0);
+    assert.equal((await r.call("PUT", `/v1/devices/${id}`, { token: TOKEN, voip: "not-hex", env: "dev" }, bearer())).status, 400);
+    assert.equal((await r.call("PUT", `/v1/devices/${id}`, { token: TOKEN, voip: VOIP, env: "dev" }, bearer())).status, 204);
+    assert.equal((await r.call("POST", `/v1/devices/${id}/push`, { payload: "Y2FsbA", kind: "call" }, bearer())).status, 202);
+    // Updating the alert token alone keeps the PushKit one.
+    assert.equal((await r.call("PUT", `/v1/devices/${id}`, { token: TOKEN, env: "dev" }, bearer())).status, 204);
+    assert.equal((await r.call("POST", `/v1/devices/${id}/push`, { payload: "Y2FsbA", kind: "call" }, bearer())).status, 202);
+    assert.equal((await r.call("PUT", `/v1/devices/${id}`, { token: TOKEN, voip: null, env: "dev" }, bearer())).status, 204);
+    assert.equal((await r.call("POST", `/v1/devices/${id}/push`, { payload: "Y2FsbA", kind: "call" }, bearer())).status, 409);
+  } finally {
+    r.restore();
+  }
+});
+
+test("a PushKit token Apple no longer knows is forgotten, and the phone kept", async () => {
+  const VOIP = "12".repeat(32);
+  const r = relay((url) => String(url).includes(VOIP)
+    ? new Response(JSON.stringify({ reason: "BadDeviceToken" }), { status: 400, headers: { "content-type": "application/json" } })
+    : new Response(null, { status: 200 }));
+  try {
+    const made = await r.call("POST", "/v1/devices", { token: TOKEN, voip: VOIP, env: "dev", auth: auth(SECRET) });
+    const id = made.body.id;
+    assert.equal((await r.call("POST", `/v1/devices/${id}/push`, { payload: "Y2FsbA", kind: "call" }, bearer())).status, 409);
+    assert.equal((await r.call("POST", `/v1/devices/${id}/push`, { payload: "bm90ZQ" }, bearer())).status, 202, "its notes still go");
+    assert.equal((await r.call("POST", `/v1/devices/${id}/push`, { payload: "Y2FsbA", kind: "call" }, bearer())).status, 409, "no token left to ring");
+  } finally {
+    r.restore();
+  }
+});

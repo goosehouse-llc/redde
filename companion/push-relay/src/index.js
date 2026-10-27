@@ -8,10 +8,15 @@
 // token, the secret's hash and when the phone last checked in; what it sees pass is ciphertext
 // and its size. docs/push.md has the whole design.
 //
-//   POST   /v1/devices            {token, env: "dev"|"prod", auth: sha256(secret) hex}   -> 201 {id}
-//   PUT    /v1/devices/:id        {token, env}          Authorization: Bearer <secret>   -> 204
+//   POST   /v1/devices            {token, voip?, env: "dev"|"prod", auth: sha256(secret) hex} -> 201 {id}
+//   PUT    /v1/devices/:id        {token, voip?, env}   Authorization: Bearer <secret>   -> 204
 //   DELETE /v1/devices/:id                              Authorization: Bearer <secret>   -> 204
-//   POST   /v1/devices/:id/push   {payload, collapse?, ttl?}   Bearer <secret>   -> 202 | 410 gone
+//   POST   /v1/devices/:id/push   {payload, collapse?, ttl?, kind?}   Bearer <secret>   -> 202 | 410 gone
+//
+// `voip` is the phone's PushKit token, for the agent ringing it as a phone call ("Hermes calls
+// you"): a push with `kind: "call"` goes to Apple as a VoIP push on that token and the app's
+// `.voip` topic, with the blob alone and a short life (a call that rings late is worse than
+// none); a phone without one answers 409. null forgets it.
 //   PUT    /v1/pairings/:rid      {pub, box}   Bearer <secret>, X-Redde-Device: <id>     -> 204
 //   GET    /v1/pairings/:rid                                               -> 200 {pub, box} | 404
 //
@@ -197,6 +202,7 @@ const ID = /^[A-Za-z0-9_-]{16,64}$/;
 const BLOB = /^[A-Za-z0-9+/_=-]+$/;
 const DEVICE_TTL = 120 * 24 * 3600; // a phone that hasn't checked in for four months is forgotten
 const MAX_PAYLOAD = 3600; // base64 characters; APNs takes 4096 bytes in all
+const CALL_TTL = 60; // seconds a call push may wait for the phone: past that it would ring late
 const MAX_PAIRING = 1200;
 
 async function sha256Hex(text) {
@@ -232,11 +238,21 @@ async function readJSON(request, limit) {
   }
 }
 
+/** The PushKit token in a registration: the token, null to forget it, undefined when not given. */
+function voipToken(body) {
+  if (!("voip" in body)) return undefined;
+  if (body.voip === null) return null;
+  return TOKEN.test(body.voip || "") ? body.voip.toLowerCase() : false;
+}
+
 async function registerDevice(request, env) {
   const body = await readJSON(request, 1000);
   if (!body || !TOKEN.test(body.token || "") || !HASH.test(body.auth || "")) return json(400, { error: "bad registration" });
+  const voip = voipToken(body);
+  if (voip === false) return json(400, { error: "bad voip token" });
   const id = b64url(crypto.getRandomValues(new Uint8Array(16)));
   const device = { token: body.token.toLowerCase(), env: body.env === "dev" ? "dev" : "prod", auth: body.auth, seen: Date.now() };
+  if (voip) device.voip = voip;
   await env.STORE.put(`dev:${id}`, JSON.stringify(device), { expirationTtl: DEVICE_TTL });
   return json(201, { id });
 }
@@ -246,7 +262,11 @@ async function updateDevice(request, env, id) {
   if (!device) return json(404, { error: "no such device" });
   const body = await readJSON(request, 1000);
   if (!body || !TOKEN.test(body.token || "")) return json(400, { error: "bad token" });
+  const voip = voipToken(body);
+  if (voip === false) return json(400, { error: "bad voip token" });
   Object.assign(device, { token: body.token.toLowerCase(), env: body.env === "dev" ? "dev" : "prod", seen: Date.now() });
+  if (voip === null) delete device.voip;
+  else if (voip) device.voip = voip;
   await env.STORE.put(`dev:${id}`, JSON.stringify(device), { expirationTtl: DEVICE_TTL });
   return json(204);
 }
@@ -277,28 +297,37 @@ async function pushToDevice(request, env, id) {
   const body = await readJSON(request, MAX_PAYLOAD + 400);
   if (!body || typeof body.payload !== "string" || !BLOB.test(body.payload)) return json(400, { error: "bad payload" });
   if (body.payload.length > MAX_PAYLOAD) return json(413, { error: "too large" });
+  const call = body.kind === "call";
+  if (call && !device.voip) return json(409, { error: "no voip token" });
   const jwt = await apnsJWT(env);
   if (!jwt) {
     console.log(`APNS_KEY not configured; would push ${body.payload.length} sealed characters`);
     return json(202, { apns: 0 });
   }
-  const ttl = Math.max(0, Math.min(Number(body.ttl) || 3600, 24 * 3600));
+  const ttl = call ? CALL_TTL : Math.max(0, Math.min(Number(body.ttl) || 3600, 24 * 3600));
   const origin = env.APNS_ORIGIN || `https://${device.env === "dev" ? "api.sandbox.push.apple.com" : "api.push.apple.com"}`;
-  const res = await fetch(`${origin}/3/device/${device.token}`, {
+  const res = await fetch(`${origin}/3/device/${call ? device.voip : device.token}`, {
     method: "POST",
     headers: {
       authorization: `bearer ${jwt}`,
-      "apns-topic": env.APNS_TOPIC,
-      "apns-push-type": "alert",
+      "apns-topic": call ? `${env.APNS_TOPIC}.voip` : env.APNS_TOPIC,
+      "apns-push-type": call ? "voip" : "alert",
       "apns-priority": "10",
       "apns-expiration": String(Math.floor(Date.now() / 1000) + ttl),
-      ...(typeof body.collapse === "string" && ID.test(body.collapse) ? { "apns-collapse-id": body.collapse } : {}),
+      ...(!call && typeof body.collapse === "string" && ID.test(body.collapse) ? { "apns-collapse-id": body.collapse } : {}),
     },
-    body: JSON.stringify(sealedNotification(body.payload)),
+    // A call is the blob alone: PushKit hands it to the app, which rings.
+    body: JSON.stringify(call ? { e: body.payload } : sealedNotification(body.payload)),
   });
   if (res.ok) return json(202, { apns: res.status });
   const reason = (await res.json().catch(() => ({})))?.reason || "";
   if (res.status === 410 || reason === "Unregistered" || reason === "BadDeviceToken" || reason === "DeviceTokenNotForTopic") {
+    // A dead PushKit token is that token gone, not the phone: its notes still go.
+    if (call) {
+      delete device.voip;
+      await env.STORE.put(`dev:${id}`, JSON.stringify(device), { expirationTtl: DEVICE_TTL });
+      return json(409, { error: "no voip token" });
+    }
     await env.STORE.delete(`dev:${id}`);
     return json(410, { error: "gone" });
   }
