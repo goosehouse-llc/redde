@@ -35,13 +35,16 @@ nonisolated enum StopPhrase {
     static func matches(_ utterance: String, own: [String] = [], words: VoiceWords = .current) -> Bool {
         var text = normalize(utterance)
         let own = Self.own(own)
-        let phrases = Self.phrases.union(words.stop).union(own)
+        var phrases = Self.phrases   // (copied only where there is something to add)
+        if !words.stop.isEmpty { phrases.formUnion(words.stop) }
+        if !own.isEmpty { phrases.formUnion(own) }
         // Longer than any phrase with its polite wrapping: a sentence, not a goodbye.
         let longest = max(7, ((own + words.stop).map { $0.split(separator: " ").count }.max() ?? 0) + 3)
         guard !text.isEmpty, text.split(separator: " ").count <= longest else { return false }
         if phrases.contains(text) { return true }
         // Peel polite wrappers: "okay redde, that's all, thanks" → "that's all".
-        let leading = words.before + leadingFiller, trailing = words.after + trailingFiller
+        let leading = words.before.isEmpty ? leadingFiller : words.before + leadingFiller
+        let trailing = words.after.isEmpty ? trailingFiller : words.after + trailingFiller
         while let peeled = VoiceWords.peel(text, leading: leading) ?? VoiceWords.peel(text, trailing: trailing) {
             text = peeled
             if phrases.contains(text) { return true }

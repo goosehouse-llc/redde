@@ -90,7 +90,7 @@ nonisolated enum StopWord {
 
     private static func heard(any phrases: [[String]], in text: String, words table: VoiceWords) -> Bool {
         let words = Self.words(text)
-        let negations = Self.negations.union(table.negations)
+        let negations = table.negations.isEmpty ? Self.negations : Self.negations.union(table.negations)
         for phrase in phrases {
             guard words.count >= phrase.count else { continue }
             for i in 0 ... words.count - phrase.count where Array(words[i ..< i + phrase.count]) == phrase {

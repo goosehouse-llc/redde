@@ -44,21 +44,29 @@ nonisolated struct VoiceWords: Equatable, Sendable {
     init(locale: Locale) { self.locale = locale }
 
     /// The listening language's table: what the matchers use unless they are handed another.
-    static var current: VoiceWords { state.withLock { $0 } }
+    /// Made the first time something listens, not as Redde starts: launching costs nothing, and
+    /// English never reads `VoiceWords.json` at all.
+    static var current: VoiceWords {
+        state.withLock { state in
+            if let words = state.words { return words }
+            let words = table(for: state.locale)
+            state.words = words
+            return words
+        }
+    }
 
     /// Settings → Voice → Listening language changed (or Redde started): its table from now on.
     static func listen(in locale: Locale) {
-        let words = table(for: locale)
-        state.withLock { $0 = words }
+        state.withLock { $0 = (locale, nil) }
     }
 
     /// `locale`'s table, or English alone where there is none.
     static func table(for locale: Locale) -> VoiceWords {
-        guard let code = code(of: locale), let file = tables[code] else { return VoiceWords(locale: locale) }
+        guard let code = code(of: locale), code != "en", let file = tables[code] else { return VoiceWords(locale: locale) }
         return VoiceWords(locale: locale, file: file)
     }
 
-    private static let state = OSAllocatedUnfairLock(initialState: VoiceWords(locale: Locale(identifier: "en")))
+    private static let state = OSAllocatedUnfairLock<(locale: Locale, words: VoiceWords?)>(initialState: (Locale(identifier: "en"), nil))
 
     /// The table a locale reads: its language, Norwegian's two written forms and "no" as one.
     static func code(of locale: Locale) -> String? {
@@ -69,8 +77,18 @@ nonisolated struct VoiceWords: Equatable, Sendable {
     // MARK: - What Redde says
 
     /// The localization what Redde says aloud comes from: the listening language's when Redde has
-    /// one ("zh-TW" reads zh-Hant), else English, never the screen's.
+    /// one ("zh-TW" reads zh-Hant), else English, never the screen's. Found once per language.
     var bundle: Bundle {
+        let key = locale.identifier
+        if let known = Self.bundles.withLock({ $0[key] }) { return known }
+        let found = Self.bundle(for: locale)
+        Self.bundles.withLock { $0[key] = found }
+        return found
+    }
+
+    private static let bundles = OSAllocatedUnfairLock<[String: Bundle]>(initialState: [:])
+
+    private static func bundle(for locale: Locale) -> Bundle {
         let available = Bundle.main.localizations.filter { $0 != "Base" }
         let chosen = Bundle.preferredLocalizations(from: available, forPreferences: [locale.identifier]).first
         let match = chosen.flatMap { chosen in
