@@ -35,6 +35,7 @@ for line in md.splitlines():
     if m: meta[m.group(1)] = m.group(2); continue
     if s.startswith("# "): flush(); body.append(f"<h1>{inline(s[2:])}</h1>"); continue
     if s.startswith("## "): flush(); body.append(f"<h2>{inline(s[3:])}</h2>"); continue
+    if s.startswith("### "): flush(); body.append(f"<h3>{inline(s[4:])}</h3>"); continue
     if s.startswith("- "): 
         if para: flush()
         items.append(s[2:]); continue
