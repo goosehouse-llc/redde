@@ -218,6 +218,10 @@ class Store:
             self._write("watch.json", {"sessions": {s: ids for s, ids in sessions.items() if ids}})
             rooms = {r: [i for i in ids if i != device_id] for r, ids in self._rooms().items()}
             self._write("rooms.json", {"rooms": {r: ids for r, ids in rooms.items() if ids}})
+            calls = dict(self._read("calls.json"))
+            if device_id in (calls.get("devices") or {}):
+                calls["devices"] = {d: p for d, p in calls["devices"].items() if d != device_id}
+                self._write("calls.json", calls)
             return True
 
     def _sessions(self) -> dict[str, list[str]]:
@@ -338,6 +342,73 @@ class Store:
                     data.pop(device, None)
             self._write("mutes.json", {"devices": {d: m for d, m in data.items() if d in known}})
             return mine
+
+    # Calls (`calls.py`): which agents each phone takes calls from, by profile ("default" is the
+    # main agent), and the calls of the last day.
+
+    def set_callers(self, device_ids: list[str], profiles: list[str]) -> list[str]:
+        """The agents these phones take calls from, all of them: what they said before goes.
+        Returns the ones that are paired here."""
+        with self._lock:
+            known = {d.get("id") for d in self.devices}
+            mine = [i for i in device_ids if i in known]
+            if not mine:
+                return []
+            data = dict(self._read("calls.json"))
+            takes = {d: p for d, p in (data.get("devices") or {}).items() if d in known}
+            for device in mine:
+                if profiles:
+                    takes[device] = list(dict.fromkeys(profiles))
+                else:
+                    takes.pop(device, None)
+            data["devices"] = takes
+            self._write("calls.json", data)
+            return mine
+
+    def callers(self) -> dict[str, list[str]]:
+        """device id -> the agents it takes calls from, for the paired phones."""
+        with self._lock:
+            known = {d.get("id") for d in self.devices}
+            return {d: list(p) for d, p in (self._read("calls.json").get("devices") or {}).items() if d in known and p}
+
+    def call_takers(self, profile: str) -> list[dict]:
+        """The paired phones that take calls from this agent."""
+        with self._lock:
+            takes = self._read("calls.json").get("devices") or {}
+            return [d for d in self.devices if profile in (takes.get(d.get("id")) or [])]
+
+    def calls_made(self, now: float | None = None) -> list[tuple[str, float, str, bool]]:
+        """The calls of the last day: (profile, when, the call's id, whether the person answered it),
+        oldest first."""
+        with self._lock:
+            since = (time.time() if now is None else now) - 86400
+            made = []
+            for entry in self._read("calls.json").get("made") or []:
+                profile, at, call, answered = (list(entry) + ["", False])[:4]
+                if float(at) > since:
+                    made.append((str(profile), float(at), str(call), bool(answered)))
+            return made
+
+    def made_call(self, profile: str, now: float | None = None, call: str = "") -> None:
+        with self._lock:
+            data = dict(self._read("calls.json"))
+            data["made"] = [list(c) for c in self.calls_made(now)] + [[profile, time.time() if now is None else now, call, False]]
+            self._write("calls.json", data)
+
+    def answered_call(self, call: str) -> bool:
+        """The person picked this call up (the phone says so as it is answered). False for a call
+        this Hermes didn't make, or made over a day ago."""
+        with self._lock:
+            made = [list(c) for c in self.calls_made()]
+            found = False
+            for entry in made:
+                if call and entry[2] == call:
+                    entry[3] = found = True
+            if found:
+                data = dict(self._read("calls.json"))
+                data["made"] = made
+                self._write("calls.json", data)
+            return found
 
     def muted(self, device_id: str, key: str, now: float | None = None) -> bool:
         """Whether this phone has this chat muted now."""
@@ -469,6 +540,19 @@ def routine_note(profile: str, bot: str, title: str, body: str = "", failed: boo
     return made
 
 
+def call_note(profile: str, name: str, line: str, session: str = "", call: str = "") -> dict:
+    """An agent is calling (`calls.py`): `p` its profile ("default", the main agent), `d` what it
+    is called, `b` what it says first when the person answers, `s` the conversation it called
+    from, `i` the call's own id, which the phone's call and its missed-call notification share."""
+    made = {"v": 1, "k": "call", "at": int(time.time()), "n": host_name(), "p": clipped(profile, 64)}
+    for key, value, limit in (("d", name, 80), ("s", session, 120), ("i", call, 32)):
+        if value:
+            made[key] = clipped(value, limit)
+    if line:
+        made["b"] = clipped(line, BODY_LIMIT, lines=True)
+    return made
+
+
 def widget_note(title: str = "", text: str = "", start: str = "", end: str = "") -> dict:
     """What the agent wrote for its widget on the phone, for a phone that isn't following the
     turn: `t` the heading, `b` the lines, `f` and `u` from and until when, as the agent wrote
@@ -513,6 +597,11 @@ class Gone(Exception):
     """The relay no longer has this phone: it unpaired, or Apple retired its address."""
 
 
+class NoCalls(Exception):
+    """The phone can't be rung: the relay has no address for calls to it. Redde gives it one
+    when calls are turned on; an older Redde never does."""
+
+
 def _request(method: str, url: str, body: dict | None = None, bearer: str | None = None, timeout: float = 10) -> dict:
     headers = {"User-Agent": "redde-push/1", "Content-Type": "application/json"}
     if bearer:
@@ -533,14 +622,22 @@ def take_answer(relay: str, slot: str) -> dict | None:
         raise
 
 
-def push(device: dict, made: dict, ttl: int = 3600) -> None:
-    """Sends one note to one phone. Raises Gone when the phone is no longer registered."""
+def push(device: dict, made: dict, ttl: int = 3600, call: bool = False) -> None:
+    """Sends one note to one phone. Raises Gone when the phone is no longer registered. `call`:
+    rings it instead (`calls.py`), which the relay sends to Apple as a VoIP push; raises NoCalls
+    when it has nowhere to send that."""
+    body = {"payload": sealed(device, made), "ttl": ttl}
+    if call:
+        body["kind"] = "call"
+    else:
+        body["collapse"] = collapse_id(device, made)
     try:
-        _request("POST", f"{device['relay']}/v1/devices/{device['id']}/push",
-                 {"payload": sealed(device, made), "collapse": collapse_id(device, made), "ttl": ttl}, bearer=device["send"])
+        _request("POST", f"{device['relay']}/v1/devices/{device['id']}/push", body, bearer=device["send"])
     except urllib.error.HTTPError as error:
         if error.code == 410:
             raise Gone(device["id"]) from error
+        if error.code == 409 and call:
+            raise NoCalls(device["id"]) from error
         raise
 
 

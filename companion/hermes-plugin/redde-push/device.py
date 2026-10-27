@@ -346,8 +346,20 @@ def slash(phone: Phone, words: list[str]) -> str:
 _watching: set[str] = set()
 
 
-def _watch(phone, every: float = 2.0) -> None:
-    """Has this process list its tools afresh when the phone turns an area on or off.
+def watch(path_of, every: float = 2.0) -> None:
+    """Starts `_watch` on the file `path_of()` names, once for each file."""
+    try:
+        key = str(path_of())
+    except Exception:
+        key = ""
+    if key not in _watching:
+        _watching.add(key)
+        threading.Thread(target=_watch, args=(path_of, every), name="redde-tools-watch", daemon=True).start()
+
+
+def _watch(path_of, every: float = 2.0) -> None:
+    """Has this process list its tools afresh when the phone turns an area on or off (or, for
+    `calls.py`, changes which agents may call it): when the file `path_of()` names changes.
 
     Hermes remembers the list of tools it worked out (`model_tools.get_tool_definitions`), and
     what it remembers doesn't go by whether a tool is on offer: a process that listed its tools
@@ -359,7 +371,7 @@ def _watch(phone, every: float = 2.0) -> None:
     seen, first = None, True
     while True:
         try:
-            stamp = (phone().dir / "areas.json").stat().st_mtime_ns
+            stamp = path_of().stat().st_mtime_ns
         except Exception:
             stamp = None
         if not first and stamp != seen:
@@ -412,13 +424,7 @@ def register(ctx, phone, to_widget=None) -> None:
     """Offers the tools to the agent. `phone` gives the `Phone` of the Hermes home in use: asked
     for at each call, since a home is a profile's and a process can serve several. `to_widget`
     sends something for the widget as a notification (see `widget_by_note`)."""
-    try:
-        home = str(phone().dir)
-    except Exception:
-        home = ""
-    if home not in _watching:
-        _watching.add(home)
-        threading.Thread(target=_watch, args=(phone,), name="redde-phone-areas", daemon=True).start()
+    watch(lambda: phone().dir / "areas.json")
 
     def offered(area):
         def check() -> bool:

@@ -15,6 +15,7 @@ nothing of it.
 
 from __future__ import annotations
 
+import importlib
 import json
 import logging
 import threading
@@ -60,15 +61,26 @@ class Stores:
         return text.rpartition("## Response")[2].strip() if "## Response" in text else text.strip()
 
     def name(self, home: Path, profile: str) -> str:
-        """What the bot is called (its Bot Mode title), or its profile's name."""
+        """What the bot is called (its Bot Mode title), or its profile's name. Hermes's own reader
+        where it has one (0.22), else the file read here: 0.22 reads YAML with a module of its own,
+        and its Python has no `yaml`."""
         try:
-            import yaml
-            meta = (yaml.safe_load((home / "profile.yaml").read_text()) or {}).get("ui_meta") or {}
-            title = ((meta.get("hermes-bots") or {}).get("title") or "").strip()
+            from hermes_cli.profiles import read_profile_meta
+            title = str(read_profile_meta(Path(home)).get("bot_title") or "").strip()
             if title:
                 return title
         except Exception:
             pass
+        for module in ("hermes_yaml", "yaml"):
+            try:
+                loader = importlib.import_module(module)
+                meta = (loader.safe_load((Path(home) / "profile.yaml").read_text()) or {}).get("ui_meta") or {}
+                title = str((meta.get("hermes-bots") or {}).get("title") or "").strip()
+                if title:
+                    return title
+                break
+            except Exception:
+                continue
         return "Hermes" if profile == "default" else profile
 
 

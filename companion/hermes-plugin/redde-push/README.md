@@ -113,7 +113,8 @@ never sent the key, and it stores nothing that passes.
 secret and key), `watch.json` (which sessions each phone follows), `rooms.json` (which group
 chats), `mutes.json` (what each phone has muted, until when), `room-cursors.json` and `room-waits.json`
 (how far each group chat has been read, and what it has been said to wait on), and
-`routine-runs.json` (the last run of each bot's schedule it has told of). Delete the folder and nothing is paired.
+`routine-runs.json` (the last run of each bot's schedule it has told of), and `calls.json` (which
+agents each phone takes calls from, and the calls of the last day). Delete the folder and nothing is paired.
 
 ## Phone tools
 
@@ -139,6 +140,19 @@ in the Hermes home for a day.
 
 A conversation already open on the Dashboard keeps the tools it started with; a new one sees
 the change within a couple of seconds.
+
+## Calls
+
+From 1.8.0 an agent can ring the paired iPhone like a phone call, with `call_user` (toolset
+`redde_calls`), for something that shouldn't wait until you next look. Its one argument, `line`,
+is what it says first when you answer; a missed call shows it. The phone decides which agents may
+call it (Redde's Settings): with calls on, every agent sees the tool, and one you haven't allowed
+is refused when it tries, and told so. One agent calls
+at most once in five minutes (in one minute after a call you picked up), and all of them twenty
+times a day. A call goes through the relay
+as a VoIP push, sealed like any note, to an address Redde gives the relay once calls are on; the
+tool returns when Apple has it, without waiting to hear whether you answered. A conversation
+already open keeps the tools it started with: it gets `call_user` once it is opened again.
 
 ## Requirements
 

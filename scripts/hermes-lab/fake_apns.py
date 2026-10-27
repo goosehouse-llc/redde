@@ -26,7 +26,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         body = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
         record = {"token": self.path.rsplit("/", 1)[-1], "collapse": self.headers.get("apns-collapse-id"),
-                  "expiration": self.headers.get("apns-expiration"), "body": body}
+                  "expiration": self.headers.get("apns-expiration"), "type": self.headers.get("apns-push-type"),
+                  "topic": self.headers.get("apns-topic"), "body": body}
         with open(LOG, "a") as log:
             log.write(json.dumps(record) + "\n")
         if SIMULATOR:

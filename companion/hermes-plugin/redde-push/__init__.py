@@ -11,8 +11,9 @@ and `core.py` for how a note is sealed and sent.
 The app itself uses the slash command `/redde-push`, over the Dashboard: `watch <session>
 <device,...>` says which conversations it has taken part in (only those notify, and every turn
 over the Hermes API), `rooms <device,...> <room,...>` which group chats it follows (`rooms.py`),
-`mutes <device,...> <key=until,...>` which chats it has muted, and `offer` then `accept <offer>
-<key> <box>` pair it without a code.
+`mutes <device,...> <key=until,...>` which chats it has muted, `calls <device,...> <profile,...>`
+which agents may ring it (`calls.py`), and `offer` then `accept <offer> <key> <box>` pair it
+without a code.
 
 And cards (`cards.py`): `redde_show`, a map, places, the weather or the time the app draws under a reply;
 the weather and the time are looked up (`forecast.py`, Open-Meteo).
@@ -32,7 +33,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import cards, core, qr, rooms, routines
+from . import calls, cards, core, qr, rooms, routines
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
 
 log = logging.getLogger("redde_push")
@@ -80,6 +81,17 @@ def _to_widget(title: str, text: str, start: str = "", end: str = "") -> int:
     if not devices:
         return 0
     return pusher.send(devices, core.widget_note(title, text, start, end))
+
+
+_stores: dict[str, core.Store] = {}
+
+
+def _store_in(home: Path) -> core.Store:
+    """The paired phones a Hermes home keeps: for calls, the main home's, whichever profile calls."""
+    store, _ = _state()
+    if store.dir == Path(home) / "redde-push":
+        return store
+    return _stores.setdefault(str(home), core.Store(home))
 
 
 def _state() -> tuple[core.Store, core.Pusher]:
@@ -200,19 +212,25 @@ def _on_reply(session_id: str = "", assistant_response: str = "", platform: str 
 
 def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_message=None, **_) -> dict | None:
     """`pre_llm_call`: a turn starts. Asked the time or the weather, the agent is told the
-    person's time and to show the card (`cards.turn_note`)."""
+    person's time and to show the card (`cards.turn_note`); asked to call, how (`calls.turn_note`)."""
     try:
         _remember_platform(session_id, platform)
         if platform not in NOBODYS:
             _watchers()[0].began(session_id, turn_id)
     except Exception:
         log.debug("redde-push: turn hook failed", exc_info=True)
+    notes = []
     try:
-        note = cards.turn_note(_home(), user_message, platform)
-        return {"context": note} if note else None
+        notes.append(cards.turn_note(_home(), user_message, platform))
     except Exception:
         log.debug("redde-push: card note failed", exc_info=True)
-        return None
+    try:
+        # Asked to call: how (calls.py), for an agent the phone takes calls from.
+        notes.append(calls.turn_note(_home(), _store_in, user_message))
+    except Exception:
+        log.debug("redde-push: call note failed", exc_info=True)
+    notes = [n for n in notes if n]
+    return {"context": "\n".join(notes)} if notes else None
 
 
 def _on_request(session_id: str = "", **_) -> None:
@@ -374,6 +392,9 @@ def _slash(raw_args: str = "") -> str:
     if words[:1] == ["cards"]:
         # Cards in replies (cards.py): on unless the phone turned them off.
         return cards.slash(_home(), words[1:])
+    if words[:1] == ["calls"]:
+        # Which agents may ring the phone (calls.py): kept in the main home, with the phones.
+        return calls.slash(_store_in(calls.caller(_home())[1]), words[1:])
     store, pusher = _state()
     if len(words) == 3 and words[0] == "watch":
         following = store.watch(words[1], [w for w in words[2].split(",") if w])
@@ -526,6 +547,8 @@ def register(ctx) -> None:
                          args_hint="watch <session> <device> | rooms <device> <room,...>")
     # Phone tools (device.py): offered to the agent only for what the phone has turned on.
     phone_tools.register(ctx, lambda: phone_tools.Phone(_home()), to_widget=_to_widget)
+    # Calls (calls.py): the agent rings the phone, if the phone takes calls from it.
+    calls.register(ctx, _home, _store_in)
     # Cards (cards.py): a map, places, the weather, the time, drawn by the app under a reply.
     cards.register(ctx, _home)
     ctx.register_cli_command("redde-push", "Notifications on your iPhone from Redde", _cli_setup, _cli)

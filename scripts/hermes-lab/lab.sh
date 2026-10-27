@@ -673,6 +673,21 @@ routines() {
   echo "\nAll checks passed."
 }
 
+# Calls from the agent (calls_check.py): a stand-in phone with an address for calls lets a bot
+# call it; the bot's call_user reaches "Apple" as a VoIP push through the relay, a second within
+# five minutes is refused, the main agent, not let, rings nothing. The push scenario.
+calls() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  for tag in $tags; do
+    echo "===== Hermes $tag / calls"
+    if ! LAB_OWN_HOME=run up "$tag" push; then failed+=("$tag (lab)"); continue; fi
+    (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" calls_check.py "$LAB_HOME/hermes-$tag/.venv/bin/hermes") || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
 # Plugins (plugins_check.py, then the app's own client, HermesLabPluginsTests): a catalog plugin
 # installed by name through the Dashboard, for the main profile and for a bot alone, switched off
 # and on, removed. Needs the network (Nous Research's catalog, GitHub). In a home of the lab's own.
@@ -803,6 +818,7 @@ case "${1:-}" in
   templates) shift; templates "$@" ;;
   plugins) shift; plugins "$@" ;;
   routines) shift; routines "$@" ;;
+  calls) shift; calls "$@" ;;
   apibots) shift; apibots "$@" ;;
   search) shift; search "$@" ;;
   context) shift; context "$@" ;;

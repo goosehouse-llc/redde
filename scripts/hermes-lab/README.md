@@ -20,6 +20,7 @@ scripts/hermes-lab/lab.sh push           # the push plugin: pairing, and a note 
 scripts/hermes-lab/lab.sh push --app     # and the app in a simulator pairs with each release
 scripts/hermes-lab/lab.sh device         # phone tools: the agent calls one and a stand-in phone answers it
 scripts/hermes-lab/lab.sh device --app   # and the app's own service carries one out
+scripts/hermes-lab/lab.sh calls          # calls from the agent: a bot let call rings a stand-in phone through the relay, as a VoIP push
 scripts/hermes-lab/lab.sh switch         # a turn left for another conversation goes on, and is picked up on return
 scripts/hermes-lab/lab.sh projects       # projects made in the app: a folder in ~/Projects, a conversation in it, a move, rename, remove
 scripts/hermes-lab/lab.sh cards          # cards: the agent's redde_show reaches the app live and read back, on both connections
