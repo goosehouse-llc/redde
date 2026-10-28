@@ -2575,7 +2575,7 @@ its pixels for points, and a switch 46 points wide came out 132 wide in a row tw
 follows the phone's own toggle and the other way round.
 
 **The thinking sound** (Settings → Voice: Off, In the car, Always; off until chosen). While the
-agent works and nothing is being said, voice mode plays a soft double pulse round and round, so
+agent works and nothing is being said, voice mode plays someone typing, round and round, so
 that someone who can't look at the screen doesn't take the silence for a failure. It starts
 after two and a half seconds with nothing to hear, so an answer that comes at once has none,
 and stops with the reply's first sound. That covers the wait before the first word and also the
@@ -2590,12 +2590,15 @@ headphones the microphone hears none of it, and in a car the microphone is shut.
 is CarPlay connected or the car as the audio route, as for short answers.
 
 The sound is one file, `Echo/Resources/Earcons/thinking.wav`, made by
-`scripts/thinking-sound.py`: one note (442.5 Hz, the octave under the listening tones' upper
-note, with their overtones), two soft pulses a third of a second apart, every 3 seconds (0.22
-and 2.2 until 2026-10-13, when more room between them was asked for),
-peaking 6 dB under the listening tones. One pitch on purpose: the two-note tones mean the
-microphone has opened or closed. `ThinkingSoundPlayer` loops it through the app's audio session
-like those tones, so it goes where the reply goes, and fades it out in a tenth of a second.
+`scripts/thinking-sound.py` from a recording of the project owner's own keyboard (made for
+Redde, so Redde's to ship): about seven seconds of runs of keys and the pauses between them,
+starting and ending in a pause so the seam is one more, with the room's noise lowered, the keys
+evened out and the whole about 14 dB quieter than the old sound (as loud, it was "kind of loud"). Until 2026-10-27 it was a soft double pulse on one note; typing was asked for, as
+ElevenLabs' calls play while the agent works (typing made from noise was tried first, and
+sounded nothing like a keyboard). Nothing in it has a pitch to take for the two-note tones that
+mean the microphone has opened or closed. `ThinkingSoundPlayer` loops it through the app's audio
+session like those tones, so it goes where the reply goes, and fades it out in a tenth of a
+second; Settings plays six seconds of it as a sample.
 Choosing it in Settings plays it twice, like a ringtone. When it starts and stops is in
 `EchoTests/ThinkingSoundTests.swift`; what it sounds like, how loud it is beside a reply and
 how it carries in a car are for ears, and nobody has listened yet.

@@ -1,9 +1,9 @@
 import AVFoundation
 import Foundation
 
-/// The sound voice mode makes while the agent works and nothing is being said: a soft double
-/// pulse, round and round, so that silence isn't taken for a failure by someone who can't look
-/// at the screen. `VoiceSession` decides when; this plays it.
+/// The sound voice mode makes while the agent works and nothing is being said: someone typing,
+/// round and round (a soft double pulse until 2026-10-27), so that silence isn't taken for a
+/// failure by someone who can't look at the screen. `VoiceSession` decides when; this plays it.
 @MainActor
 protocol ThinkingSounding: AnyObject {
     func start()
@@ -60,7 +60,8 @@ final class ThinkingSoundPlayer: ThinkingSounding {
         }
     }
 
-    /// Plays it twice through, for Settings: what the choice there will sound like. Outside a
+    /// Plays it for Settings, twice through or six seconds, whichever is less (the typing loop is
+    /// seven): what the choice there will sound like. Outside a
     /// voice session it has to bring up an audio session of its own, and lets go of it after.
     func preview(audio: any VoiceAudioControlling = AudioSessionController.shared) {
         guard let player, !isPlaying, VoiceSession.current?.phase ?? .idle == .idle else { return }
@@ -68,7 +69,7 @@ final class ThinkingSoundPlayer: ThinkingSounding {
         sample = Task { [weak self] in
             guard (try? audio.activateForPlayback()) != nil else { return }
             self?.play()
-            try? await Task.sleep(for: .seconds(player.duration * 2))
+            try? await Task.sleep(for: .seconds(min(player.duration * 2, 6)))
             guard let self, !Task.isCancelled else { return }
             stop()
             try? await Task.sleep(for: .seconds(Self.fade + 0.05))

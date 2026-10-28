@@ -279,7 +279,7 @@ On devices, to check first:
 - Take a note by Siri, by the control and in the car. The filing was run with a scripted server; Siri, the control and a real agent's filing have not been tried.
 - CarPlay on a car's screen: Stop, Pause and Resume, the four looks and whether their pictures play as they do in Settings, the Short Answers row and its switch, and Take a Note. All drawn with `scripts/carplay-preview.sh`, which is not a car. Pause with a Kokoro voice has not been heard.
 - Short answers in the car against a real agent: what it makes of the request, and "more".
-- The thinking sound, by ear: beside a reply, and in a car. Its pulses were spaced out on 2026-10-13 and nobody has listened since.
+- The thinking sound, by ear: beside a reply, and in a car. It became a typing recording on 2026-10-27; heard on a phone only in Settings' sample so far.
 - The task list on the Live Activity: seen on the simulator's Lock Screen. Not seen: the Dynamic Island, a real agent's list, a phone.
 - Pictures: the group and the viewer were driven in the simulator (tap, swipe, pinch, double tap). Not on a phone, not with real photos, and not on an iPad.
 - "Jump to latest": fixed and tested in the simulator on iOS 26.3 and 27.0.

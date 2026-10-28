@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import Testing
 @testable import Echo
@@ -186,10 +187,12 @@ struct ThinkingSoundTests {
         #expect(Settings(defaults: defaults).thinkingSound == .car)
     }
 
-    /// The loop is in the app, and short enough to come round often.
+    /// The loop is in the app, long enough not to sound like the same few keys over and over (it
+    /// is typing since 2026-10-27, about seven seconds) and short enough to come round.
     @Test func theSoundIsBundled() throws {
         let url = try #require(Bundle.main.url(forResource: "thinking", withExtension: "wav"))
-        let size = try #require(try FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int)
-        #expect(size > 50_000 && size < 400_000)
+        let file = try AVAudioFile(forReading: url)
+        let seconds = Double(file.length) / file.fileFormat.sampleRate
+        #expect(seconds > 2 && seconds < 10)
     }
 }
