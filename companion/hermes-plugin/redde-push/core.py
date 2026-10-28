@@ -462,7 +462,8 @@ PASSWORD = "su" + "do"
 #: Hermes waits for the answer. Anything else: an hour.
 #: How long Apple keeps trying a phone that is off. What is on the widget is good for longer than
 #: a notification about a turn: half a day.
-TTL = {"approval": 600, "question": 600, "secret": 300, PASSWORD: 180, "widget": 43200, "group_wait": 600, "routine": 21600}
+TTL = {"approval": 600, "question": 600, "secret": 300, PASSWORD: 180, "widget": 43200, "group_wait": 600, "routine": 21600,
+       "ideas": 43200}
 
 
 def note(kind: str, session: str = "", body: str = "", title: str = "", detail: str = "", answerable: bool = False,
@@ -540,6 +541,23 @@ def routine_note(profile: str, bot: str, title: str, body: str = "", failed: boo
     return made
 
 
+def watch_note(profile: str, name: str, title: str, body: str, watch: str, failed: bool = False) -> dict:
+    """A watch saw something change (`watches.py`): `p` the agent's profile, `d` what it is called,
+    `t` what is watched, `b` what it says changed (or why it couldn't look, `w` "failed"), `i` the
+    watch's id."""
+    made = {"v": 1, "k": "watch", "at": int(time.time()), "n": host_name(), "p": clipped(profile, 64)}
+    for key, value, limit in (("d", name, 80), ("t", title, 80), ("i", watch, 40)):
+        if value:
+            made[key] = clipped(value, limit)
+    if failed:
+        made["w"] = "failed"
+    if body:
+        made["b"] = clipped(body, BODY_LIMIT, lines=True)
+    while len(json.dumps(made, ensure_ascii=False).encode()) > NOTE_LIMIT and len(made.get("b", "")) > 20:
+        made["b"] = clipped(made["b"], len(made["b"]) * 2 // 3, lines=True)
+    return made
+
+
 def call_note(profile: str, name: str, line: str, session: str = "", call: str = "") -> dict:
     """An agent is calling (`calls.py`): `p` its profile ("default", the main agent), `d` what it
     is called, `b` what it says first when the person answers, `s` the conversation it called
@@ -550,6 +568,21 @@ def call_note(profile: str, name: str, line: str, session: str = "", call: str =
             made[key] = clipped(value, limit)
     if line:
         made["b"] = clipped(line, BODY_LIMIT, lines=True)
+    return made
+
+
+def ideas_note(profile: str, name: str, ideas: list[dict], offer: str = "") -> dict:
+    """Things the agent could do for the person (`ideas.py`), as cards they take or put away:
+    `p` its profile ("default", the main agent), `d` what it is called, `i` this offer's id, `y`
+    the ideas, each `t` a heading, `w` why now, `r` the request it would carry out. The ideas
+    that don't fit the 4 KB a notification carries are left off, the last first."""
+    made = {"v": 1, "k": "ideas", "at": int(time.time()), "n": host_name(), "p": clipped(profile, 64)}
+    for key, value, limit in (("d", name, 80), ("i", offer, 32)):
+        if value:
+            made[key] = clipped(value, limit)
+    made["y"] = list(ideas)
+    while len(json.dumps(made, ensure_ascii=False).encode()) > NOTE_LIMIT and len(made["y"]) > 1:
+        made["y"] = made["y"][:-1]
     return made
 
 
@@ -585,6 +618,10 @@ def collapse_id(device: dict, made: dict) -> str:
         about = f"{made.get('g', '')}|{made.get('w', '')}|{made.get('h') or made.get('x', '')}"
     elif made.get("k") == "routine":
         about = f"{made.get('p', '')}|{made.get('t', '')}|{made.get('at', '')}"
+    elif made.get("k") == "watch":   # each change its own
+        about = f"{made.get('i', '')}|{made.get('at', '')}"
+    elif made.get("k") == "ideas":   # each offer its own notification
+        about = f"{made.get('p', '')}|{made.get('i', '')}"
     # How a turn ended is one thing, whichever way it ended: a reply that arrives after all
     # takes the place of "couldn't reply".
     kind = "reply" if made.get("k") in ("failed", "task") else made.get("k")

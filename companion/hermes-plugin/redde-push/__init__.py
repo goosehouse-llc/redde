@@ -33,7 +33,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import calls, cards, core, qr, rooms, routines
+from . import calls, cards, core, followups, ideas, qr, rooms, routines, watches
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
 
 log = logging.getLogger("redde_push")
@@ -229,6 +229,21 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_m
         notes.append(calls.turn_note(_home(), _store_in, user_message))
     except Exception:
         log.debug("redde-push: call note failed", exc_info=True)
+    try:
+        # A watch's run: what it told the person last time (watches.py).
+        notes.append(watches.turn_note(_home(), routines.Stores(_home()), user_message))
+    except Exception:
+        log.debug("redde-push: watch note failed", exc_info=True)
+    try:
+        # Asked for something on a schedule: how its answers reach the phone (routines.py).
+        notes.append(routines.turn_note(_home(), _store_in, user_message, platform))
+    except Exception:
+        log.debug("redde-push: schedule note failed", exc_info=True)
+    try:
+        # Something to do later, said in passing: that a follow-up can be set (followups.py).
+        notes.append(followups.turn_note(_home(), _store_in, user_message, platform))
+    except Exception:
+        log.debug("redde-push: follow-up note failed", exc_info=True)
     notes = [n for n in notes if n]
     return {"context": "\n".join(notes)} if notes else None
 
@@ -551,6 +566,10 @@ def register(ctx) -> None:
     calls.register(ctx, _home, _store_in)
     # Cards (cards.py): a map, places, the weather, the time, drawn by the app under a reply.
     cards.register(ctx, _home)
+    # Ideas (ideas.py): things the agent could do, as cards on the phone to take or put away.
+    ideas.register(ctx, _home, _store_in)
+    # Follow-ups (followups.py): a loose end the person mentioned, offered back as an idea later.
+    followups.register(ctx, _home, _store_in)
     ctx.register_cli_command("redde-push", "Notifications on your iPhone from Redde", _cli_setup, _cli)
     _follow_group_chats_if_any()
     _watch_schedules()

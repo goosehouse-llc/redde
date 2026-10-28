@@ -17,17 +17,44 @@ from __future__ import annotations
 
 import importlib
 import json
+import re
 import logging
 import threading
 import time
 from pathlib import Path
 
-from . import core
+from . import core, watches
 
 log = logging.getLogger("redde_push")
 
 #: How often the stores are read, in seconds.
 EVERY = 30.0
+#: A job the agent made for the person whose answers should reach the phone (asked 2026-10-28:
+#: "I want Sol to be able to do this", a daily meeting brief): its name starts with this.
+NOTIFY = "[redde-notify]"
+#: What sounds like asking for something on a schedule, in English: a turn's note, said then only.
+_SCHEDULED = re.compile(
+    r"\b(every (day|morning|evening|night|week|weekday|hour|monday|tuesday|wednesday|thursday|friday|saturday|sunday)|"
+    r"daily|weekly|each (morning|day|week)|on weekdays|schedule|cron|recurring)\b", re.IGNORECASE)
+NOTE = ("[Redde: if you make a scheduled job for this, make it yourself with cronjob_manage (don't hand the user a "
+        "command), start its name with \"[redde-notify] \" (\"[redde-notify] Daily meeting brief\") and deliver it "
+        "\"local\": each run's answer then reaches the user's iPhone as a notification through Redde, so no chat "
+        "platform is needed. Write the job's prompt so its answer is what they want to read.]")
+
+
+def turn_note(home, store_in, message, platform: str = "") -> str | None:
+    """For `pre_llm_call`: the person asks for something on a schedule, where a phone is paired."""
+    if platform in ("cron", "subagent", "bot_room"):
+        return None
+    text = message if isinstance(message, str) else " ".join(
+        str(p.get("text") or "") for p in message or [] if isinstance(p, dict)) if isinstance(message, list) else ""
+    if not text or text.lstrip().startswith("[") or not _SCHEDULED.search(text):
+        return None
+    try:
+        from .calls import caller
+        return NOTE if store_in(caller(Path(home))[1]).devices else None
+    except Exception:
+        return None
 
 
 class Stores:
@@ -85,8 +112,11 @@ class Stores:
 
 
 def untagged(name: str) -> str:
-    """A job's name less Hermes Desktop's tag for a bot's ("[bot:scout] What to wear")."""
-    return name.split("]", 1)[1].strip() if name.startswith("[bot:") and "]" in name else name
+    """A job's name less Hermes Desktop's tag for a bot's ("[bot:scout] What to wear"), or Redde's
+    for one whose answers go to the phone."""
+    if (name.startswith("[bot:") or name.startswith(NOTIFY)) and "]" in name:
+        return name.split("]", 1)[1].strip()
+    return name
 
 
 class Routines:
@@ -124,7 +154,9 @@ class Routines:
             seen, now = self.store.routine_runs(), {}
             for profile, home in self.stores.homes():
                 for job in self.stores.jobs(home):
-                    if not str(job.get("deliver") or "").startswith("bot-chat") or not job.get("id"):
+                    watching = watches.is_watch(job)
+                    told = str(job.get("name") or "").startswith(NOTIFY)
+                    if not (watching or told or str(job.get("deliver") or "").startswith("bot-chat")) or not job.get("id"):
                         continue
                     key, last = f"{profile}|{job['id']}", str(job.get("last_run_at") or "")
                     now[key] = last
@@ -134,6 +166,14 @@ class Routines:
                     failed = job.get("last_status") == "error"
                     words = (f"It didn't finish: {job.get('last_error') or 'an error'}" if failed
                              else self.stores.output(home, str(job["id"])))
+                    if watching:
+                        # A watch says something only when there is something to say.
+                        if not failed and (not words or watches.quiet(words)):
+                            continue
+                        name = str(job.get("name") or "")
+                        outgoing.append((profile, core.watch_note(profile, self.stores.name(home, profile), watches.title(name),
+                                                                  words, watches.watch_id(name) or "", failed=failed)))
+                        continue
                     outgoing.append((profile, core.routine_note(profile, self.stores.name(home, profile), untagged(str(job.get("name") or "")),
                                                                 words, failed=failed)))
             self.store.set_routine_runs(now)

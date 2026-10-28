@@ -154,6 +154,17 @@ as a VoIP push, sealed like any note, to an address Redde gives the relay once c
 tool returns when Apple has it, without waiting to hear whether you answered. A conversation
 already open keeps the tools it started with: it gets `call_user` once it is opened again.
 
+## Ideas
+
+From 1.9.0 an agent can offer things it could do for you, with `suggest_to_user` (toolset
+`redde_ideas`): up to five ideas, each a heading, a line on why now, and the request it would
+carry out. They come to every paired iPhone as one notification and as cards at the top of
+Redde's chats: swipe one right and its request goes to that agent as your message, in its chat;
+swipe left and it is put away. Nothing is done until you take one. Redde's Settings, Agent,
+Morning Ideas sets up a daily Hermes job that has the main agent look at your day and offer
+ideas this way. One agent sends ideas at most ten times an hour. The tool is offered once a
+phone is paired.
+
 ## Requirements
 
 Hermes 0.21.0 or later; 0.21.3 or later is the one to have. On 0.21.0 the Dashboard stops a turn
