@@ -37,10 +37,10 @@ struct LiveVoiceTests {
         }
         func setMuted(_ muted: Bool) { self.muted = muted }
         func close() { closed = true }
-        /// A story's sound it was given to play (`LiveStoryReader`), and whether the voice is held.
-        private(set) var story = Data()
+        /// An answer's sound it was given to play (`LiveAnswerReader`), and whether the voice is held.
+        private(set) var answerSound = Data()
         private(set) var held = false
-        func playStory(_ pcm: Data) { story.append(pcm) }
+        func playAnswer(_ pcm: Data) { answerSound.append(pcm) }
         func setVoiceHeld(_ held: Bool) { self.held = held }
 
         /// The service says something.
@@ -392,33 +392,33 @@ struct LiveVoiceTests {
         #expect(LiveEngine.elevenLabs.answersReadAloud && !LiveEngine.gptLive.answersReadAloud && !LiveEngine.gemini.answersReadAloud)
     }
 
-    /// A story in an ElevenLabs call: each sentence made by ElevenLabs' text to speech and played
+    /// An answer in an ElevenLabs call (a story here): each sentence made by ElevenLabs' text to speech and played
     /// through the call's own player, in order, as it is written (2026-10-27: Redde's reply player
     /// came out quieter than the voice).
-    @Test func aStoryIsReadIntoTheCallItself() async throws {
+    @Test func anAnswerIsReadIntoTheCallItself() async throws {
         let server = try await DroppingSpeechServer.start(drops: 0, seconds: 0.3)
         defer { server.stop() }
         let call = FakeCall()
-        let reader = LiveStoryReader(call: call, voice: "voice", key: "key", speed: 1, host: server.baseURL.absoluteString)
+        let reader = LiveAnswerReader(call: call, voice: "voice", key: "key", speed: 1, host: server.baseURL.absoluteString)
         reader.append("Pip laced his bowling shoes. He picked the green ball")
         reader.append(", the heaviest one. It rolled straight down the lane.")
         let unread = await reader.finish()
         #expect(unread == nil)
         #expect(server.connections == 3, "a sentence at a time")
-        #expect(call.story.count == 3 * Int(KokoroPlayer.sampleRate * 0.3) * 2, "all of each one's sound, into the call")
+        #expect(call.answerSound.count == 3 * Int(KokoroPlayer.sampleRate * 0.3) * 2, "all of each one's sound, into the call")
     }
 
     /// ElevenLabs won't make it (here: never answers): what wasn't read is handed back, for the
     /// call's voice to say instead of the phone's.
-    @Test func aStoryElevenLabsWontReadIsLeftForTheVoice() async throws {
+    @Test func anAnswerElevenLabsWontReadIsLeftForTheVoice() async throws {
         let server = try await DroppingSpeechServer.start(drops: 100)
         defer { server.stop() }
         let call = FakeCall()
-        let reader = LiveStoryReader(call: call, voice: "voice", key: "key", speed: 1, host: server.baseURL.absoluteString)
+        let reader = LiveAnswerReader(call: call, voice: "voice", key: "key", speed: 1, host: server.baseURL.absoluteString)
         reader.append("Once upon a time. The end.")
         let unread = await reader.finish()
         #expect(unread == "Once upon a time. The end.")
-        #expect(call.story.isEmpty)
+        #expect(call.answerSound.isEmpty)
     }
 
     @Test func longAnswersGoInPiecesTheServiceTakes() {

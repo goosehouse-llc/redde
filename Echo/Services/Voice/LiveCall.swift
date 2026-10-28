@@ -25,11 +25,11 @@ protocol LiveCalling: AnyObject {
     /// The microphone held shut, or open again.
     func setMuted(_ muted: Bool)
     /// The voice's sound held back (what it sends meanwhile is dropped), or let through again:
-    /// while Redde reads a story to the person itself (`LiveVoice`).
+    /// while Redde reads the agent's answer to the person itself (`LiveVoice`).
     func setVoiceHeld(_ held: Bool)
-    /// A story's sound (`LiveStoryReader`): mono 16-bit PCM at the call's output rate, played as
+    /// An answer's sound (`LiveAnswerReader`): mono 16-bit PCM at the call's output rate, played as
     /// the voice is, held or not: as loud, from the same speaker, its echo cancelled.
-    func playStory(_ pcm: Data)
+    func playAnswer(_ pcm: Data)
     /// How much sound is waiting to be played, in seconds.
     var queuedSeconds: Double { get }
     /// How loud the person and the voice are right now, 0…1.
@@ -45,7 +45,7 @@ protocol LiveCalling: AnyObject {
 extension LiveCalling {
     func answered() {}
     func setVoiceHeld(_ held: Bool) {}
-    func playStory(_ pcm: Data) {}
+    func playAnswer(_ pcm: Data) {}
     var queuedSeconds: Double { 0 }
 }
 
@@ -156,7 +156,7 @@ final class LiveCall: LiveCalling {
     func setMuted(_ muted: Bool) { audio.setMuted(muted) }
 
     func setVoiceHeld(_ held: Bool) { audio.setVoiceHeld(held) }
-    func playStory(_ pcm: Data) { audio.playStory(pcm) }
+    func playAnswer(_ pcm: Data) { audio.playAnswer(pcm) }
     var queuedSeconds: Double { audio.queuedSeconds }
 
     func answered() { audio.waiting(false) }
@@ -766,8 +766,8 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
         sending.async { [weak self] in self?.queue(pcm) }
     }
 
-    /// A story's sound, the voice's way, while the voice's own is held (`LiveCalling.playStory`).
-    func playStory(_ pcm: Data) {
+    /// An answer's sound, the voice's way, while the voice's own is held (`LiveCalling.playAnswer`).
+    func playAnswer(_ pcm: Data) {
         guard pcm.count >= 2 else { return }
         sending.async { [weak self] in self?.queue(pcm) }
     }

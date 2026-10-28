@@ -64,7 +64,7 @@ nonisolated enum ElevenLabsSpeech {
         return data
     }
 
-    /// One sentence as it comes, for a live call's own player (`LiveStoryReader`): mono 16-bit
+    /// One sentence as it comes, for a live call's own player (`LiveAnswerReader`): mono 16-bit
     /// PCM at 24 kHz, the rate ElevenLabs' calls play at, in pieces of whole samples. Asked for at
     /// once; what comes waits in the stream until it is read.
     static func pcm(_ text: String, voice: String, speed: Double, previous: String?, key: String,

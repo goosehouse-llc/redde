@@ -1,10 +1,11 @@
 import Foundation
 
-/// A story the agent writes for the person to hear, read in a live call as it is written
-/// (`LiveVoice`), while the call's voice is held: the voice services that take an answer only
-/// whole would have kept the person waiting for all of it (2026-10-27).
+/// The agent's answer, read to the person in a live call as it is written (`LiveVoice`), while
+/// the call's voice is held: the voice services that take an answer only whole would have kept
+/// the person waiting for all of it (a story first, 2026-10-27; in an ElevenLabs call, every
+/// answer since, `LiveEngine.answersReadAloud`).
 @MainActor
-protocol StoryReading: AnyObject {
+protocol AnswerReading: AnyObject {
     /// More of it, as the agent writes it.
     func append(_ text: String)
     /// The agent is done: returns once what was written has been heard. What couldn't be read
@@ -15,12 +16,12 @@ protocol StoryReading: AnyObject {
 }
 
 /// In an ElevenLabs call: a sentence at a time, by ElevenLabs' text to speech on the same key, in
-/// the call's own voice, into the call's own player (`LiveCalling.playStory`). So it sounds as the
+/// the call's own voice, into the call's own player (`LiveCalling.playAnswer`). So it sounds as the
 /// call does: as loud (the call levels what it plays), from the same speaker, its echo cancelled.
 /// Read by Redde's reply player instead, it came out quieter than the voice: a call's voice
 /// processing turns down whatever else plays (Marta, 2026-10-27).
 @MainActor
-final class LiveStoryReader: StoryReading {
+final class LiveAnswerReader: AnswerReading {
     private weak var call: (any LiveCalling)?
     private let voice: String, key: String, speed: Double, host: String
     private var chunker = SentenceChunker()
@@ -134,7 +135,7 @@ final class LiveStoryReader: StoryReading {
                     while !stopped, let call, call.queuedSeconds > Self.mostQueued {
                         try? await Task.sleep(for: .milliseconds(200))
                     }
-                    call?.playStory(piece)
+                    call?.playAnswer(piece)
                     played = true
                 }
                 return true
@@ -153,7 +154,7 @@ final class LiveStoryReader: StoryReading {
 
 /// With any other voice service: Redde's reply player, in the agent's reading voice.
 @MainActor
-final class SpokenStory: StoryReading {
+final class SpokenAnswer: AnswerReading {
     private let reader = SpeechOutput()
 
     init(profile: String?) {
