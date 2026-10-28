@@ -89,7 +89,14 @@ import WidgetKit
 ///   conversation with `-siriDraftsInNewConversation YES`).
 /// - `-echo.voiceView`: open voice mode without listening. `-echo.voiceDemo ["<words>"]` poses it mid-listen;
 ///   with `-echo.voiceDemoPhase speaking`, mid-reply instead (the words are the reply's), for screenshots;
-///   `-echo.autoVoice` opens it and starts listening.
+///   `-echo.autoVoice` opens it and starts listening. More poses for the promo video:
+///   `-echo.voiceDemoPhase thinking`; `-echo.voiceDemoPhase follow` (the pose follows the conversation
+///   played into it, as `-echo.demoCall` does); `-echo.voiceDemoCall` (on a call: "On a call" while
+///   listening); `-echo.voiceDemoSaid "<words>"` (speaking, the call's voice's words as its caption);
+///   `-echo.voiceDemoReveal <seconds a word>` (the words come in a word at a time).
+/// - `-echo.demoCall story [seconds]`: on a live call, a bedtime story asked for after that many
+///   seconds and its answer written a word at a time (`Conversation.streamCallDemo`), for voice mode
+///   posed with `-echo.voiceDemoPhase follow`.
 ///   `-echo.voiceHandoff` hands its face to other bots and back, as spoken prefixes do.
 /// - `-echo.demoBoard [clear]`: write on the agent's widget as its phone tool does (a day's plan
 ///   now, and a line that takes over in a minute), to look at it on the Home Screen.
@@ -217,6 +224,11 @@ enum DevHooks {
             for area in DeviceArea.allCases { tools.set(area, area == .reminders ? .ask : .allow) }
             settings.phoneTools = tools
             conversation.streamFunDemo(scene)
+        }
+        if value("-echo.demoCall") == "story" {
+            let at = args.firstIndex(of: "-echo.demoCall").map { $0 + 2 }
+            let delay = at.flatMap { $0 < args.count ? Double(args[$0]) : nil } ?? 3
+            conversation.streamCallDemo(after: delay)
         }
         if has("-echo.demoAudio") { conversation.seedAudioDemo() }
         if has("-echo.demoDocument") { conversation.seedDocumentDemo() }

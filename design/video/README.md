@@ -180,3 +180,44 @@ The simulator writes a frame only when the screen changes, so a take that ends o
 screen ends early: the Home Screen shot holds its last frame. Cut points were set by looking at
 frames, not from the marks alone. xcodebuild sometimes doesn't exit after a passing take, and
 the recording runs on until it is stopped (`pkill -f "only-testing:…/<test>"`).
+
+## The next release's cut
+
+`redde-next-app-preview.mp4` (886×1920, 29.4 s, with sound) and `redde-next-reddit.mp4` (49.4 s),
+not in git: made 2026-10-28 for the release after 2.2, by `make_next.py` (`long` for the second,
+`pages` for stills of the two pages). Cut as the cool cut is (a shot a 2.5 s bar of the deep song,
+landing on the downbeat, the footage still). The title: Redde drops in, a tiny phone pops into its
+mitten and rings, and it calls out "Hey! It's Redde! Pick up!"; then "Your agent / can call / you."
+The shots: an agent's call answered and talked on, a bedtime story asked for on a live call, the
+agent working on it with the typing heard (the thinking sound, `Earcons/thinking.wav`), its answer
+read in the call's voice as it is written, Settings in each of the 17 languages a beat apiece (and
+voice mode in Spanish in the long cut), and the Mac app's icon. The closing page: Redde drops onto
+the app icon on the last chord, its phone pops up and it says "Call you later!".
+
+The faces and the phone are drawn by the app: `TEST_RUNNER_BOT_FACES=$PWD/design/video/faces
+xcodebuild test … -only-testing:EchoTests/PromoCallingTests` writes `faces/redde-talk-0…3.png`,
+`redde-blink.png`, `redde-look.png`, `redde-phone.png` (and `redde-calling.png` to look at), in the
+Code theme. The lines: `KOKORO_URL=http://<host>:8880 /usr/bin/python3 next_voices.py` writes
+`voice-next-*.wav` (Redde's own voice; the person's is af_heart; the people are made up).
+
+The footage is voice mode posed (DEBUG flags in `VoiceView`, all in `DevHooks`' list), on an iOS 27
+simulator of its own, Code theme, dark, status bar at 9:41, Redde reinstalled before each so no
+conversation is left over. With `C="-echo.voiceView -echo.voiceDemoCall -theme claudeCode -appearance dark"`:
+
+    ./record.sh n1-call 12 ${=C} -echo.voiceDemo -echo.voiceDemoPhase speaking -echo.voiceDemoSaid "Hi, it's Redde! Your package just came!" -echo.voiceDemoReveal 0.36
+    ./record.sh n2-thanks 11 ${=C} -echo.voiceDemo "Thanks! Can you remind me to bring it in at six?" -echo.voiceDemoReveal 0.23
+    ./record.sh n2b-done 11 ${=C} -echo.voiceDemo -echo.voiceDemoPhase speaking -echo.voiceDemoSaid "Done! I'll remind you at six." -echo.voiceDemoReveal 0.36
+    ./record.sh n3-story 21 ${=C} -echo.voiceDemo "Tell Milo a bedtime story about our dog, Pickles." -echo.voiceDemoPhase follow -echo.voiceDemoReveal 0.32 -echo.demoCall story 4.5
+
+(`follow`: listening while the words come in, thinking once the question is there, speaking from
+the answer's first word; `-echo.demoCall story` plays the exchange.) The language stills are
+`xcrun simctl io <sim> screenshot lang-<code>.png` of a plain launch with `-echo.demo -echo.screen
+settings -AppleLanguages "(<code>)" -AppleLocale <locale>` (seven seconds after the launch), and
+`lang-es-voice.png` voice mode in Spanish (`-echo.voiceView -echo.voiceDemo "Recuérdame sacar la
+basura a las ocho."`). `cfr-` each take as above. Cut points were set from frames: the screen comes
+up five to seven seconds into a take, and the voices start where their first word shows.
+
+The Mac shot is the Mac app's icon because the Mac was locked when this was made: a locked Mac
+opens no windows to capture. With it unlocked, a window capture of the Mac app (built with another
+bundle id, unsigned, launched with `CFFIXED_USER_HOME` pointing at a folder of its own, so none of
+the real app's data is touched) could take its place as a `take`.

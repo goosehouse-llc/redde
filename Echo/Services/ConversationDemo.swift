@@ -345,6 +345,47 @@ extension Conversation {
         #endif
     }
 
+    /// The next release's video (`-echo.demoCall story [seconds]`): on a live call, a bedtime story
+    /// asked for after that many seconds (the time the voice screen's pose takes to hear the
+    /// question, `-echo.voiceDemo` with the same words and `-echo.voiceDemoPhase follow`), the
+    /// agent working on it for a while (the thinking sound's moment), then its answer written a
+    /// word at a time, as the call's voice reads it. The people in it are made up.
+    static let callDemoQuestion = "Tell Milo a bedtime story about our dog, Pickles."
+
+    func streamCallDemo(after delay: Double) {
+        cancel()
+        replaceForDemo(messages: [])
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(delay))
+            setStreamingForDemo(true)
+            defer { setStreamingForDemo(false) }
+            mutateMessagesForDemo { $0.append(Message(role: .user, text: Self.callDemoQuestion)) }
+            try? await Task.sleep(for: .seconds(0.4))
+            var reply = Message(role: .assistant, text: "")
+            let id = reply.id
+            mutateMessagesForDemo { $0.append(reply) }
+            let started = Date.now
+            try? await Task.sleep(for: .seconds(2.6))
+            let first = Date.now
+            let story = """
+                Once upon a time, a little dog named Pickles found a star in the backyard. It was small and warm, \
+                and it hummed when he sniffed it. So Pickles carried it inside, very gently, and tucked it under \
+                Milo's pillow. And every night after that, Milo's room glowed just a little, and Pickles slept \
+                right beside him. The end. Goodnight, Milo.
+                """
+            var rest = Substring(story)
+            while !rest.isEmpty {
+                let end = rest.firstIndex(of: " ").map { rest.index(after: $0) } ?? rest.endIndex
+                reply.text += rest[..<end]
+                rest = rest[end...]
+                mutateMessagesForDemo { if let i = $0.firstIndex(where: { $0.id == id }) { $0[i] = reply } }
+                try? await Task.sleep(for: .milliseconds(150))
+            }
+            reply.metrics = TurnMetrics(sentAt: started, firstTokenAt: first, completedAt: .now, characters: story.count, usage: nil, contextWindow: 131_072)
+            mutateMessagesForDemo { if let i = $0.firstIndex(where: { $0.id == id }) { $0[i] = reply } }
+        }
+    }
+
     /// One exchange played live: the question arrives (with `shown`, a picture sent with it),
     /// then thinking, each tool step in turn (a step with something to wait for waits for it),
     /// then the reply word by word.
