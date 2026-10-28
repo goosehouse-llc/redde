@@ -154,6 +154,9 @@ final class AudioSessionController {
             activeMode = nil
         }
         try session.setCategory(.playAndRecord, mode: .default, options: [.mixWithOthers, .defaultToSpeaker, .allowBluetoothA2DP])
+        // The keyboard's haptics and clicks, and the system's, go on while it listens: iOS turns
+        // them off for an app recording, and the composer's keyboard went still (2026-10-27).
+        try? session.setAllowHapticsAndSystemSoundsDuringRecording(true)
         try session.setActive(true, options: [])
         activeMode = .wake
         headsetSeen = false
