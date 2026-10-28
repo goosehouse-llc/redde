@@ -256,3 +256,36 @@ class CardTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AnnounceTests(unittest.TestCase):
+    """GitHub issue 35: on Hermes 0.22 the Dashboard tells a client of redde_show's calls live."""
+
+    def test_redde_show_joins_the_tools_the_dashboard_always_tells_of(self):
+        import types
+        server = types.ModuleType("tui_gateway.server")
+        server._TOOL_LIFECYCLE_UI_TOOLS = frozenset({"clarify", "write_file"})
+        before = sys.modules.get("tui_gateway.server")
+        sys.modules["tui_gateway.server"] = server
+        try:
+            self.assertTrue(plugin.cards.announce())
+            self.assertIn("redde_show", server._TOOL_LIFECYCLE_UI_TOOLS)
+            self.assertIn("clarify", server._TOOL_LIFECYCLE_UI_TOOLS)
+            self.assertTrue(plugin.cards.announce(), "again: nothing more to do")
+        finally:
+            if before is None:
+                sys.modules.pop("tui_gateway.server", None)
+            else:
+                sys.modules["tui_gateway.server"] = before
+
+    def test_without_the_list_nothing_is_changed(self):
+        import types
+        before = sys.modules.get("tui_gateway.server")
+        sys.modules["tui_gateway.server"] = types.ModuleType("tui_gateway.server")
+        try:
+            self.assertFalse(plugin.cards.announce())
+        finally:
+            if before is None:
+                sys.modules.pop("tui_gateway.server", None)
+            else:
+                sys.modules["tui_gateway.server"] = before

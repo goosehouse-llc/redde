@@ -165,6 +165,29 @@ Morning Ideas sets up a daily Hermes job that has the main agent look at your da
 ideas this way. One agent sends ideas at most ten times an hour. The tool is offered once a
 phone is paired.
 
+## Watches, follow-ups, heads-ups and briefings
+
+Also from 1.9.0, things the agent does for you on its own time, each a Hermes cron job:
+
+- **Watches**, made from Redde (Settings, Agent, Watches & Follow-ups, or a message's Watch
+  This…): jobs named `[redde-watch:<id>] …` that look at something on a schedule. Each run is told
+  what it said last time and answers NOTHING NEW or what changed; only a change reaches the phone.
+  A watch can be a bot's (its job in the bot's profile), and can hand what it sees to another
+  agent: its job delivers `bot-chat:<profile>`, so Hermes gives each change to that agent's Bot
+  Chat as a turn, where it acts with its own tools; it answers `[SILENT]` when nothing changed.
+- **Follow-ups**: when you mention something to do later, the agent may call `follow_up_later`
+  (toolset `redde_ideas`), which makes a job that runs once at that time and offers it back to
+  you as an idea card.
+- **Heads-ups**: `heads_up_before` makes a job that runs once, a few minutes before an event on
+  your calendar, named `[redde-notify] Heads-up: …`; its answer, what you need for the event,
+  comes as a notification. Redde's Settings, Agent, Heads-Ups sets up a morning job that has the
+  main agent set them for the day.
+- **Briefings**: the answer of any job whose name starts with `[redde-notify] ` comes to the
+  paired phones as a notification and is kept in Redde's Briefings, the whole of it. Redde's
+  Evening Wrap-up is one: what got done today, what waits on you, what carries over.
+
+The tools are offered once a phone is paired.
+
 ## Requirements
 
 Hermes 0.21.0 or later; 0.21.3 or later is the one to have. On 0.21.0 the Dashboard stops a turn

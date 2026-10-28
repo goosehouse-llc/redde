@@ -114,3 +114,71 @@ class NotifyJobTests(RoutinesTests):
         self.assertIn("[redde-notify]", routines.turn_note(self.root, lambda _: self.store, said))
         self.assertIsNone(routines.turn_note(self.root, lambda _: self.store, "What's on today?"))
         self.assertIsNone(routines.turn_note(self.root, lambda _: self.store, said, platform="cron"))
+
+
+class HeadsUpTests(RoutinesTests):
+    """Heads-ups before events (`headsup.py`, asked 2026-10-28)."""
+
+    def setUp(self):
+        super().setUp()
+        self.made = []
+
+    def make(self, prompt, schedule, name=None, deliver=None):
+        self.made.append({"prompt": prompt, "schedule": schedule, "name": name, "deliver": deliver})
+
+    def test_a_heads_up_runs_once_before_the_event_and_is_a_briefing(self):
+        headsup = plugin.headsup
+        now = datetime(2026, 10, 29, 10, 0, tzinfo=timezone.utc)
+        said = headsup.set_up(self.root, "Dentist", "2026-10-29T14:30:00-04:00", 20, "Dr. Lee, Main St; insurance card",
+                              make=self.make, now=now)
+        self.assertIn("14:10", said["set"])
+        job = self.made[0]
+        self.assertEqual(job["schedule"], "2026-10-29T14:10-04:00")
+        self.assertEqual(job["name"], "[redde-notify] Heads-up: Dentist")
+        self.assertIn("insurance card", job["prompt"])
+        self.assertIn("cancelled or moved", job["prompt"])
+
+    def test_the_lead_is_kept_within_bounds_and_not_in_the_past(self):
+        headsup = plugin.headsup
+        now = datetime(2026, 10, 29, 18, 20, tzinfo=timezone.utc)
+        headsup.set_up(self.root, "Call", "2026-10-29T14:30:00-04:00", 500, make=self.make, now=now)
+        at = datetime.fromisoformat(self.made[0]["schedule"])
+        self.assertEqual(at, now + timedelta(minutes=1), "two hours ahead at most, and never before now")
+        headsup.set_up(self.root, "Call", "2026-10-29T16:00:00-04:00", 1, make=self.make, now=now)
+        self.assertEqual(datetime.fromisoformat(self.made[1]["schedule"]), datetime(2026, 10, 29, 15, 55, tzinfo=timezone(timedelta(hours=-4))),
+                         "five minutes at least")
+
+    def test_a_briefing_is_marked_for_the_phone_to_keep(self):
+        home = self.job("default", last="2026-10-28T21:00:00", deliver="local", name="[redde-notify] Evening wrap-up")
+        self.watch.look()
+        self.output(home, "## Response\n\nDone: the vet booked. Waiting on you: one approval.")
+        self.job("default", last="2026-10-29T21:00:00", deliver="local", name="[redde-notify] Evening wrap-up")
+        self.assertEqual(self.watch.look(), 1)
+        made = self.sent[0][1]
+        self.assertEqual((made["k"], made["t"], made["x"]), ("routine", "Evening wrap-up", "brief"))
+        self.assertTrue(made["i"])
+
+
+class HandOffTests(RoutinesTests):
+    """A watch handed to another agent (asked 2026-10-28, "bots that bring each other in")."""
+
+    def test_silent_is_quiet_too(self):
+        self.assertTrue(watches.quiet("[SILENT]"))
+        self.assertTrue(watches.quiet("  [silent] "))
+        self.assertFalse(watches.quiet("The garage door is open."))
+
+    def test_a_handed_off_watch_is_told_to_answer_silent(self):
+        home = self.job("ops", last=None, deliver="bot-chat:default", name="[redde-watch:w2] Garage door at night")
+        note = watches.turn_note(home, routines.Stores(self.root), "[redde-watch:w2] Watch, for the user: the garage door.")
+        self.assertIn("[SILENT]", note)
+        self.assertIn("handed to", note)
+
+    def test_a_handed_off_watch_that_saw_nothing_sends_nothing(self):
+        home = self.job("ops", last="2026-10-28T22:00:00", deliver="bot-chat:default", name="[redde-watch:w2] Garage door")
+        self.watch.look()
+        self.output(home, "## Response\n\n[SILENT]")
+        self.job("ops", last="2026-10-28T22:15:00", deliver="bot-chat:default", name="[redde-watch:w2] Garage door")
+        self.assertEqual(self.watch.look(), 0)
+        self.output(home, "## Response\n\nThe garage door has been open since 22:10.")
+        self.job("ops", last="2026-10-28T22:30:00", deliver="bot-chat:default", name="[redde-watch:w2] Garage door")
+        self.assertEqual(self.watch.look(), 1, "a change still reaches the phone, as the agent takes it on")

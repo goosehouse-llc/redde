@@ -76,7 +76,8 @@ struct MessageRow: View, Equatable {
     @Environment(Toaster.self) private var toaster: Toaster?
 
     var body: some View {
-        if message.role == .user, let delivered = message.delivered {
+        // What the person asked a tagged bot is theirs, a bubble like any (`BotAsides`).
+        if message.role == .user, let delivered = message.delivered, delivered.kind != .asked {
             DeliveredMessage(message: message, delivered: delivered)
         } else {
             ownBody
@@ -709,8 +710,40 @@ struct DeliveredMessage: View {
     var body: some View {
         switch delivered.kind {
         case .process: processLine
-        case .message, .reply, .routine: botMessage
+        case .message, .reply, .routine, .asked: botMessage
+        case .answer: answer
         }
+    }
+
+    /// A tagged bot's answer in a normal chat (`BotAsides`): its face and name, its words as they
+    /// are written, in the quiet bubble of the bots' side.
+    private var answer: some View {
+        let live = message.metrics != nil && message.metrics?.completedAt == nil && message.error == nil
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                BotAvatar(face: face, name: name, size: 20)
+                Text(name).chatFont(.subheadline, weight: .semibold)
+            }
+            if message.text.isEmpty, live {
+                ShimmerText(text: String(localized: "Thinking"))
+                    .padding(.horizontal, 14)
+            } else if !message.text.isEmpty {
+                MarkdownView(text: message.text, isLive: live)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, theme.bubbleVerticalPadding)
+                    .background(RoundedRectangle(cornerRadius: theme.bubbleRadius).fill(theme.surfaceColor.opacity(0.6)))
+                    .overlay(RoundedRectangle(cornerRadius: theme.bubbleRadius).strokeBorder(.quaternary))
+                    .foregroundStyle(theme.textColor)
+                    .contextMenu {
+                        Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = message.text }
+                    }
+            }
+            if let error = message.error {
+                Text(error).chatFont(.footnote).foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
     }
 
     private var botMessage: some View {

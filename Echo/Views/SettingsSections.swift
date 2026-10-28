@@ -339,10 +339,19 @@ struct AgentSettings<Details: View>: View {
         }
 
         Section {
-            NavigationLink { MorningIdeasView() } label: { Label("Morning Ideas", systemImage: "lightbulb") }
+            NavigationLink { DailyJobView(daily: MorningIdeas.job) } label: { Label("Morning Ideas", systemImage: "lightbulb") }
                 .disabled(!canReachGateway)
+            NavigationLink { DailyJobView(daily: HeadsUps.job) } label: { Label("Heads-Ups", systemImage: "bell.badge") }
+                .disabled(!canReachGateway)
+            NavigationLink { DailyJobView(daily: EveningWrapUp.job) } label: { Label("Evening Wrap-up", systemImage: "moon.stars") }
+                .disabled(!canReachGateway)
+            NavigationLink { BriefingsList() } label: { Label("Briefings", systemImage: "doc.text") }
+            NavigationLink { TriggersView() } label: { Label("Triggers from Your iPhone", systemImage: "bolt.badge.clock") }
+            NavigationLink { AgentActivityView() } label: { Label("Agent Activity", systemImage: "list.bullet.rectangle") }
+        } header: {
+            Text("Your Day")
         } footer: {
-            Text("Each morning your agent offers a few things it could do for you, as cards you take or put away with a swipe.")
+            Text("Ideas each morning, cards you take or put away with a swipe; a heads-up before events; a wrap-up each evening. Heads-ups and wrap-ups stay in Briefings, at the top of your chats. Triggers start your agent's work from your iPhone: arriving home, a time of day, a Focus.")
         }
 
         Section {

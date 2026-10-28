@@ -175,7 +175,7 @@ class Routines:
                                                                   words, watches.watch_id(name) or "", failed=failed)))
                         continue
                     outgoing.append((profile, core.routine_note(profile, self.stores.name(home, profile), untagged(str(job.get("name") or "")),
-                                                                words, failed=failed)))
+                                                                words, failed=failed, brief=str(job["id"]) if told else "")))
             self.store.set_routine_runs(now)
         sent = 0
         for profile, made in outgoing:

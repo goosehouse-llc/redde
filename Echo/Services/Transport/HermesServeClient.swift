@@ -874,6 +874,21 @@ final class HermesServeClient {
         return result
     }
 
+    /// Hermes's refusal to resume a Kanban worker's session (RPC 4132, newer than 0.22.2): a
+    /// resumed chat would be a writer the board can't watch. Its transcript is still there to read.
+    nonisolated static func refusesWorkerRun(_ error: Error) -> Bool {
+        guard let refusal = error as? RPCError else { return false }
+        return refusal.code == 4132 || refusal.message.localizedCaseInsensitiveContains("Kanban worker transcript")
+    }
+
+    /// A stored session's newest 500 messages, oldest first, from the Dashboard's messages page
+    /// (0.21.0 onward): reading it doesn't resume the session.
+    func transcript(stored: String) async throws -> [HermesSessionsAPI.StoredMessage] {
+        struct Page: Decodable { var messages: [HermesSessionsAPI.StoredMessage] }
+        let data = try await rest("GET", "api/sessions/\(stored)/messages?order=latest&limit=500", body: nil, timeout: 120, about: stored)
+        return try JSONDecoder().decode(Page.self, from: data).messages
+    }
+
     func history(stored: String) async throws -> [JSONValue] {
         // The socket may have dropped since the list was fetched; opening a session must not
         // fail just because nothing has used the link in a while. A long transcript also takes
@@ -1280,6 +1295,7 @@ final class HermesServeClient {
         case ("PATCH", _) where route.hasPrefix("api/sessions/"): return .body
         case ("POST", "api/skills"), ("PUT", "api/skills/content"): return .body
         case (_, "api/sessions"): return method == "GET" ? .query : .none
+        case ("GET", _) where route.hasPrefix("api/sessions/") && route.hasSuffix("/messages"): return .query
         default:
             let queryRoutes = ["api/skills", "api/tools/toolsets", "api/cron/", "api/mcp/servers", "api/logs", "api/status", "api/gateway/restart",
                                "api/sessions/search", "api/audio/speak", "api/audio/voice-live/", "api/chat/image-upload"]

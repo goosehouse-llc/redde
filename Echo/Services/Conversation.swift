@@ -16,6 +16,9 @@ final class Conversation {
     private(set) var isStreaming = false { didSet { if isStreaming != oldValue { watchHostTurns() } } }
     private(set) var statusLine: String?
     private(set) var lastError: String?
+    /// A Kanban worker's run, open to read (GitHub issue 37): Hermes won't resume one, since a
+    /// second writer on the card's workspace would go unsupervised, so there is no writing to it.
+    private(set) var isWorkerTranscript = false
 
     /// Hermes ledger session id (sessions transport) or stored session id (hermes serve).
     private(set) var serverSessionID: String? { didSet { if serverSessionID != oldValue { watchHostTurns() } } }
@@ -252,6 +255,18 @@ final class Conversation {
     func send(_ text: String, attachments: [Attachment] = [], brief: Bool = false, live: LiveTurn? = nil) -> AsyncStream<TurnEvent> {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty || !attachments.isEmpty else { return Self.finishedStream() }
+        guard !isWorkerTranscript else {
+            lastError = String(localized: "This is a Kanban worker's run. To go on with it, retry or unblock its card on the board.")
+            return Self.finishedStream()
+        }
+        // A normal chat's message that tags bots goes to them (`BotAsides`).
+        if bot == nil, attachments.isEmpty, !isIncognito, connection.hasLedger, BotDirectory.available(settings, dashboard: dashboard) {
+            let tagged = BotAsides.tagged(in: trimmed, roster: BotDirectory.shared.bots(for: settings.connectionKey), speaking: speakingProfile)
+            if !tagged.isEmpty {
+                ask(trimmed, of: tagged)
+                return Self.finishedStream()
+            }
+        }
         userSendCount += 1
         var userMessage = Message(role: .user, text: trimmed)
         userMessage.attachments = attachments
@@ -329,6 +344,16 @@ final class Conversation {
         }
         // The Hermes API's run for this message, should it go again after a dropped connection.
         request.turnKey = userID.uuidString
+        // "Make This a Routine": what the agent is to keep, on this message alone.
+        if let note = pendingRoutineNote, fromPage == nil {
+            request.userText += note
+            pendingRoutineNote = nil
+        }
+        // Asides to tagged bots since the agent last heard: told with this message, kept with it on the host.
+        if bot == nil, connection.hasLedger, fromPage == nil, let note = AsideNote.note(for: AsideNote.pending(in: messages)) {
+            request.userText += note
+            for i in messages.indices where messages[i].isAside { messages[i].delivered?.noted = true }
+        }
         // The conversation's fast mode: the Hermes API keeps none for a session, so each turn asks.
         if connection == .hermesSessions, let stored = serverSessionID, store === ConversationStore.shared {
             request.fast = RunChatControls.shared.isFast(stored)
@@ -693,7 +718,7 @@ final class Conversation {
     /// The transcript ends with a question of the person's own and nothing after it, and nothing
     /// is being sent: the state a conversation is in when the app didn't live to see the reply.
     var endsUnanswered: Bool {
-        guard !isStreaming, outbox.isEmpty, let last = messages.last else { return false }
+        guard !isStreaming, outbox.isEmpty, let last = messages.last(where: { !$0.isAside }) else { return false }
         return last.role == .user && !last.isSteer
     }
 
@@ -701,10 +726,30 @@ final class Conversation {
     /// was cut off, usually by iOS closing the app while the agent worked. The host has gone on
     /// without it: the conversation is fetched again, with the reply if there is one by now, and
     /// on the Dashboard the turn is joined if it is still under way or waiting for an answer.
+    /// It is fetched again, too, when the server has moved on past what is here though nothing
+    /// was waiting: a turn the host began itself after a reply that arrived (a background job's
+    /// end, a delegation's result, a card waking the agent), while the phone slept. Only when the
+    /// session list says so, so a long chat isn't read again each time Redde comes forward
+    /// (GitHub issue 40).
     func catchUp() async {
         await initialLoad?.value   // at launch the conversation may still be coming off the disk
-        guard connection.hasLedger, endsUnanswered, let stored = serverSessionID else { return }
+        guard connection.hasLedger, !isStreaming, let stored = serverSessionID else { return }
+        if endsUnanswered {
+            try? await open(serverSession: stored)
+            return
+        }
+        guard let backend = SessionBackend.current(self),
+              let row = try? await backend.listSessions().first(where: { $0.id == stored }),
+              Self.serverIsAhead(lastActive: row.last_active, newest: messages.last(where: { !$0.isAside })?.createdAt),
+              serverSessionID == stored, !isStreaming else { return }
         try? await open(serverSession: stored)
+    }
+
+    /// The session was last active after the newest message here, by more than the two clocks
+    /// may differ.
+    nonisolated static func serverIsAhead(lastActive: Double?, newest: Date?) -> Bool {
+        guard let lastActive else { return false }
+        return lastActive > (newest?.timeIntervalSince1970 ?? 0) + ChatActivity.clockSlack
     }
 
     /// The open Dashboard conversation's watch, while nothing is being followed, for a turn the
@@ -1153,6 +1198,7 @@ final class Conversation {
         identity += 1
         ledgerWatch?.cancel()
         ledgerWatch = nil
+        if id != self.id { letGoOfAsides() }
         self.id = id
         self.createdAt = createdAt
         self.name = name
@@ -1161,6 +1207,7 @@ final class Conversation {
         var messages = messages
         TodoList.resolve(&messages)
         ReplyCards.resolve(&messages)
+        Self.settleAsides(&messages, except: asideAnswer)
         self.messages = messages
         self.outbox = outbox
         self.serverSessionID = serverSessionID
@@ -1170,6 +1217,7 @@ final class Conversation {
         if let profile = routeProfile, let serverSessionID { dashboard.noteProfile(profile, forStored: serverSessionID) }
         startsIn = nil
         lastError = nil
+        isWorkerTranscript = false
         publishContext()
     }
 
@@ -1520,15 +1568,26 @@ final class Conversation {
         if let profile = bot?.profile ?? elsewhere?.profile { dashboard.noteProfile(profile, forStored: summary.id) }
         // A chat made just now has nothing to fetch, and resuming it would start a second agent on it.
         var messages: [Message] = []
-        if !isNew { messages = Self.messages(fromServeRows: try await dashboard.history(stored: summary.id)) }
+        var workerRun = summary.source == "kanban"
+        if !isNew, !workerRun {
+            do {
+                messages = Self.messages(fromServeRows: try await dashboard.history(stored: summary.id))
+            } catch where HermesServeClient.refusesWorkerRun(error) {
+                workerRun = true
+            }
+        }
+        // A Kanban worker's run: its transcript from the Dashboard's messages page, as the desktop
+        // shows it, without resuming it (Hermes refuses that, RPC 4132).
+        if workerRun, !isNew { messages = Self.mapStored(try await dashboard.transcript(stored: summary.id)) }
         // The agent's task list: replayed from the transcript's to-do calls, then set against
         // what the host says the list is now.
         TodoList.resolve(&messages)
         ReplyCards.resolve(&messages)
         TodoList.reconcile(&messages, with: dashboard.hostTodos[summary.id])
         adopt(serverSession: summary, messages: messages, bot: bot, elsewhere: elsewhere)
+        isWorkerTranscript = workerRun && !isNew
         // The agent may still be at work in it, or waiting for an answer.
-        if !isNew { await rejoinIfWaiting() }
+        if !isNew, !isWorkerTranscript { await rejoinIfWaiting() }
     }
 
     /// Opens a bot's chat (the Dashboard's Bots): its one conversation, found on the server or
@@ -1653,6 +1712,9 @@ final class Conversation {
         let server = settings.activeServerID
         let existing = store.summaries.first { $0.serverSessionID == summary.id }
             ?? bot.flatMap { bot in store.summaries.first { $0.bot?.profile == bot.profile && ($0.serverID ?? server) == server } }
+        // Asides the agent hasn't been told of yet are only here: kept, where they came.
+        let here = serverSessionID == summary.id ? messages : (existing.flatMap { store.cachedRecord(id: $0.id)?.messages } ?? [])
+        let new = Self.keepingAsides(of: here, in: new)
         become(id: existing?.id ?? UUID(), createdAt: existing?.createdAt ?? summary.lastActiveDate ?? .now,
                messages: new, serverSessionID: summary.id,
                name: bot?.name ?? Self.name(fromServerTitle: summary.title, firstQuestion: new.first { $0.role == .user && !$0.isSteer }?.text),
@@ -1672,6 +1734,134 @@ final class Conversation {
     func noteSeen(onlyOnScreen: Bool = false) {
         guard store === ConversationStore.shared, let stored = serverSessionID else { return }
         ChatActivity.shared.markRead(stored, conversation: self, onlyOnScreen: onlyOnScreen, settings: settings)
+    }
+
+    // MARK: - Routines (`RoutineNote`)
+
+    private var pendingRoutineNote: String?
+
+    /// "Make This a Routine": a message asking the agent to keep what it did here as a skill.
+    func makeRoutine(name: String, skill: String, when: String?) {
+        pendingRoutineNote = RoutineNote.note(name: name, skill: skill, when: when)
+        _ = send(String(localized: "Make this a routine: “\(name)”.", comment: "The message a chat's Make This a Routine sends, with the routine's name"))
+    }
+
+    // MARK: - Asides (`BotAsides`)
+
+    /// Asides run one after another; the answer being written.
+    private var asideTask: Task<Void, Never>?
+    private var asideDeparture: TurnDeparture?
+    private var asideAnswer: UUID?
+
+    /// The profile this chat's agent is: the main one, or another profile's.
+    private var speakingProfile: String { elsewhere?.profile ?? settings.profileName ?? "default" }
+
+    private func ask(_ text: String, of bots: [HermesBot]) {
+        userSendCount += 1
+        lastError = nil
+        let mainName = settings.headerTitle
+        var asked = Message(role: .user, text: text)
+        asked.delivered = Delivered(kind: .asked, profile: bots.first?.name, name: bots.first?.label(mainName: mainName))
+        messages.append(asked)
+        persist()
+        let chat = answeringName, identity = identity, before = asideTask
+        asideTask = Task { [weak self] in
+            await before?.value
+            for bot in bots {
+                guard let self, self.identity == identity, !Task.isCancelled else { return }
+                await self.runAside(text, to: bot, mainName: mainName, chat: chat)
+            }
+        }
+    }
+
+    private func runAside(_ text: String, to bot: HermesBot, mainName: String, chat: String) async {
+        let name = bot.label(mainName: mainName)
+        var answer = Message(role: .user, text: "")
+        answer.delivered = Delivered(kind: .answer, profile: bot.name, name: name)
+        answer.metrics = TurnMetrics(sentAt: .now)
+        messages.append(answer)
+        let id = answer.id
+        asideAnswer = id
+        defer { if asideAnswer == id { asideAnswer = nil } }
+        let departure = TurnDeparture()
+        asideDeparture = departure
+        var written = ""
+        var shown = Date.distantPast
+        do {
+            let (transport, stored) = try await asideTransport(for: bot, mainName: mainName)
+            var request = TurnRequest(userText: text + BotAsides.note(from: chat), history: [], sessionID: stored, model: nil, provider: nil,
+                                      reasoningEffort: nil, instructions: nil, attachments: [],
+                                      replyLanguage: settings.replyLanguage.nilIfEmpty, brief: false)
+            request.departure = departure
+            stream: for try await event in transport.stream(request) {
+                switch event {
+                case let .textDelta(delta): written += delta
+                case let .textFinal(final): written = final
+                case .interrupt:
+                    // It waits on the person: in its own chat, where it can be answered.
+                    departure.leave()
+                    update(id) { $0.error = String(localized: "\(name) is waiting for you in its chat.") }
+                    break stream
+                default: continue
+                }
+                // Drawn ten times a second at most, as a reply's words are.
+                if Date.now.timeIntervalSince(shown) > 0.1 {
+                    shown = .now
+                    update(id) { $0.text = written }
+                }
+            }
+            update(id) { message in
+                message.text = written
+                message.metrics?.completedAt = .now
+                if written.isEmpty, message.error == nil { message.error = String(localized: "\(name) didn't answer.") }
+            }
+        } catch is CancellationError {
+            update(id) { $0.text = written }
+        } catch {
+            update(id) { $0.text = written; $0.error = error.localizedDescription; $0.metrics?.completedAt = .now }
+        }
+        persist()
+    }
+
+    /// Where a bot's turn goes: its Bot Chat, on the Dashboard or (one added for the Hermes API
+    /// alone) at /p/<profile>/ with its own key. A test's transport, for a test.
+    private func asideTransport(for bot: HermesBot, mainName: String) async throws -> (any HermesTransport, String) {
+        if let transportOverride { return (transportOverride, "aside-" + bot.name) }
+        return try await BotTurns.transport(for: bot, mainName: mainName, settings: settings, dashboard: dashboard)
+    }
+
+    /// Another chat opened: an aside under way goes on in its bot's chat, unwatched here.
+    private func letGoOfAsides() {
+        asideDeparture?.leave()
+        asideTask?.cancel()
+        asideTask = nil
+        asideDeparture = nil
+        asideAnswer = nil
+    }
+
+    /// An answer that was being written when its chat was left: over, and where it went.
+    nonisolated static func settleAsides(_ messages: inout [Message], except running: UUID?) {
+        for i in messages.indices where messages[i].delivered?.kind == .answer && messages[i].id != running
+            && messages[i].metrics != nil && messages[i].metrics?.completedAt == nil {
+            var answer = messages[i]
+            answer.metrics?.completedAt = answer.createdAt
+            if answer.text.isEmpty, answer.error == nil {
+                let name = answer.delivered?.name ?? ""
+                answer.error = String(localized: "Left before \(name) answered. Its answer is in its chat.")
+            }
+            messages[i] = answer
+        }
+    }
+
+    /// The host's transcript, with the asides here it doesn't have yet (not told to the agent)
+    /// put back where they came.
+    nonisolated static func keepingAsides(of here: [Message], in host: [Message]) -> [Message] {
+        var merged = host
+        for aside in here where aside.isAside && aside.delivered?.noted != true && !merged.contains(where: { $0.id == aside.id }) {
+            let at = merged.firstIndex { $0.createdAt > aside.createdAt && !$0.isAside } ?? merged.endIndex
+            merged.insert(aside, at: at)
+        }
+        return merged
     }
 
     private func update(_ id: UUID, _ body: (inout Message) -> Void) {

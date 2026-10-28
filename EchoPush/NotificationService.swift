@@ -27,6 +27,8 @@ final class NotificationService: UNNotificationServiceExtension {
             // And ideas it offered, for the chat list to show when Redde opens.
             AgentIdea.take(note)
             WatchReport.take(note)   // and what a watch saw, for the Watches list
+            AgentBriefing.take(note)   // and a briefing's whole text
+            AgentActivityNote.take(note)   // and, for Agent Activity, that it happened
             choices = note.choiceCategory
             // A chat the person muted (Mute… in Redde): in the list, without a sound or a banner.
             if MutedChats.isMuted(session: note.s, room: note.g, bot: note.p) { MutedChats.quiet(content) }

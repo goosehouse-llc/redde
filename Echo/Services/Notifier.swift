@@ -246,6 +246,8 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         StatusWidgets.heard(note)   // as the extension does, for the "Needs you" widget
         AgentIdea.take(note)
         WatchReport.take(note)
+        if AgentBriefing.take(note) { BriefingsInbox.shared.reload() }
+        AgentActivityNote.take(note)
         let content = UNMutableNotificationContent()
         content.sound = sound
         guard note.fill(content) else { return shown }
@@ -267,6 +269,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         if PushNote.Kind(rawValue: kind) == .widget { return [] }   // it is on the widget; nothing to say with Redde in front
         // Ideas: on the chat list now (the extension kept them), and said in a banner.
         if PushNote.Kind(rawValue: kind) == .ideas { IdeasInbox.shared.reload() }
+        if PushNote.Kind(rawValue: kind) == .routine { BriefingsInbox.shared.reload() }
         return shown
     }
 
@@ -283,6 +286,11 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
                approve: String?, deny: String?, userText: String?, conversationID: String? = nil, sessionID: String? = nil,
                approvalDigest: String? = nil, questionDigest: String? = nil, room: String? = nil, task: String? = nil,
                bot: String? = nil) -> Task<Void, Never>? {
+        // A briefing (a `[redde-notify]` job's answer): opened whole, over the chat list.
+        if task == "brief", room == nil, action == UNNotificationDefaultActionIdentifier {
+            BriefingsInbox.shared.showNewest()
+            return nil
+        }
         // A bot's schedule ran: its chat, where its answer is.
         if let bot, action == UNNotificationDefaultActionIdentifier {
             LaunchRouter.shared.requestBot(bot)

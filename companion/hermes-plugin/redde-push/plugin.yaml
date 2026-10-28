@@ -37,3 +37,6 @@ provides_tools:
   - phone_people_message
   - call_user
   - redde_show
+  - suggest_to_user
+  - follow_up_later
+  - heads_up_before

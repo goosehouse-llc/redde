@@ -736,6 +736,102 @@ struct BotsTests {
         conversation.reset()
         #expect(conversation.bot == nil, "a new conversation is with the agent")
         let fresh = try await ask(conversation, transport, "@scout hello")
-        #expect(fresh.mentionNote == nil, "@tags mean nothing outside a bot's chat")
+        #expect(fresh.mentionNote == nil, "outside a bot's chat, a tag asks that bot itself (`BotAsides`), with no note for an agent to pass it on")
+    }
+
+    /// @tags in a normal chat (asked 2026-10-28): the message goes to the bot tagged, in its own
+    /// chat, and its answer shows here; the agent hears of it with the next message to it, a note
+    /// that brings the exchange back when the chat is read from the host.
+    @Test func aTagInANormalChatAsksThatBotAndTellsTheAgentAfter() async throws {
+        let settings = Settings(defaults: UserDefaults(suiteName: "asides-\(UUID().uuidString)")!)
+        settings.transport = .hermesServe
+        let store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "asides-\(UUID().uuidString)"))
+        let transport = RecordingTransport()
+        let conversation = Conversation(settings: settings, store: store, transportOverride: transport)
+        BotDirectory.shared.set(try roster(Self.listing), key: settings.connectionKey)
+        defer { BotDirectory.shared.set(nil, key: "") }
+        conversation.reset()
+
+        let asked = try await ask(conversation, transport, "@research-buddy where is Lost Lake?")
+        #expect(asked.sessionID == "aside-scout", "to the bot's own chat")
+        #expect(asked.userText.hasPrefix("@research-buddy where is Lost Lake?") && asked.userText.contains("tagged you"))
+        for _ in 0 ..< 200 where conversation.messages.last?.metrics?.completedAt == nil { try await Task.sleep(for: .milliseconds(10)) }
+        #expect(conversation.messages.map(\.delivered?.kind) == [.asked, .answer])
+        #expect(conversation.messages.last?.text == "Done." && conversation.messages.last?.delivered?.profile == "scout")
+        #expect(!conversation.endsUnanswered, "an aside leaves nothing for the agent to answer")
+
+        let next = try await ask(conversation, transport, "Thanks. Plan the walk?")
+        #expect(next.sessionID == nil, "the agent's own conversation")
+        let (said, asides) = AsideNote.split(next.userText)
+        #expect(said == "Thanks. Plan the walk?")
+        #expect(asides == [AsideNote.Aside(agent: "scout", name: "Research Buddy", asked: "@research-buddy where is Lost Lake?", answer: "Done.")])
+        let again = try await ask(conversation, transport, "And lunch?")
+        #expect(again.userText == "And lunch?", "told once")
+
+        // Read back from the host: the exchange where it was, the note gone.
+        let rows: [JSONValue] = [.object(["role": .string("user"), "text": .string(next.userText), "timestamp": .number(1_800_000_000)]),
+                                 .object(["role": .string("assistant"), "text": .string("Sure."), "timestamp": .number(1_800_000_010)])]
+        let loaded = Conversation.messages(fromServeRows: rows)
+        #expect(loaded.map(\.text) == ["@research-buddy where is Lost Lake?", "Done.", "Thanks. Plan the walk?", "Sure."])
+        #expect(loaded.map(\.delivered?.kind) == [.asked, .answer, nil, nil])
+    }
+
+    /// A bot is shown and tagged by its bot name ("@coder" for the profile "claude" titled Coder),
+    /// as Hermes Desktop's picker tags it; one without a bot name by its profile's handle.
+    @Test func aBotIsShownByItsBotNamesTag() throws {
+        let roster = try roster(Self.listing)
+        #expect(BotMentions.shownTag(profile: "scout", handle: "scout", roster: roster) == "research-buddy")
+        #expect(BotMentions.shownTag(profile: "writer", handle: "writer", roster: roster) == "writer", "a display name alone isn't a tag Hermes's rooms take")
+        #expect(BotMentions.shownTag(profile: "gone", handle: "gone", roster: roster) == "gone")
+        #expect(BotMentions.shownTag(profile: "scout", handle: "scout", roster: nil) == "scout")
+    }
+
+    /// Shortcuts' Ask a Redde Bot a Question, from an automation (asked 2026-10-28): refused, with
+    /// why, when Bots aren't there or the bot isn't on this server.
+    @Test func aTriggerSaysWhyItCantAskABot() async throws {
+        let settings = Settings(defaults: UserDefaults(suiteName: "trigger-\(UUID().uuidString)")!)
+        settings.transport = .chatCompletions
+        await #expect(throws: BotTrigger.Problem.self) { _ = try await BotTrigger.run("scout", "Hi", settings: settings) }
+        await #expect(throws: ShortcutRunner.IntentError.self) { _ = try await BotTrigger.run("scout", "  ", settings: settings) }
+        #expect(BotTrigger.note.contains("automation") && BotTrigger.note.hasPrefix("\n\n["), "the bot is told, after the person's words")
+    }
+
+    /// Make This a Routine (asked 2026-10-28): a short message the person sees, the note asking the
+    /// agent to keep it as a skill on that message alone, hidden when the chat is read back.
+    @Test func aRoutineIsAskedForOnceAndItsNoteIsHidden() async throws {
+        #expect(RoutineNote.slug("Morning Report: Café ☕️") == "morning-report-cafe")
+        #expect(RoutineNote.slug("!!!") == "routine")
+        let settings = Settings(defaults: UserDefaults(suiteName: "routine-\(UUID().uuidString)")!)
+        settings.transport = .hermesServe
+        let store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "routine-\(UUID().uuidString)"))
+        let transport = RecordingTransport()
+        let conversation = Conversation(settings: settings, store: store, transportOverride: transport)
+        conversation.reset()
+        _ = try await ask(conversation, transport, "Check the three news sites and sum them up.")
+        conversation.makeRoutine(name: "Morning Report", skill: "morning-report", when: "every day at 07:30")
+        for _ in 0 ..< 200 where transport.requests.count < 2 || conversation.isStreaming { try await Task.sleep(for: .milliseconds(10)) }
+        let asked = try #require(transport.requests.last)
+        #expect(asked.userText.hasPrefix("Make this a routine: “Morning Report”."))
+        #expect(asked.userText.contains(#"skill named "morning-report""#) && asked.userText.contains("every day at 07:30"))
+        #expect(conversation.messages.last { $0.role == .user }?.text == "Make this a routine: “Morning Report”.", "the note isn't shown")
+        #expect(ReplyLanguage.stripNote(asked.userText) == "Make this a routine: “Morning Report”.", "nor when read back")
+        let next = try await ask(conversation, transport, "Thanks.")
+        #expect(next.userText == "Thanks.", "on that message alone")
+        #expect(RoutineNote.jobPrompt(name: "Morning Report", skill: "morning-report").contains(#"skill "morning-report""#))
+    }
+
+    @Test func asidesNotYetToldSurviveAReloadFromTheHost() {
+        var asked = Message(role: .user, text: "@scout hi", createdAt: Date(timeIntervalSince1970: 100))
+        asked.delivered = Delivered(kind: .asked, profile: "scout", name: "Scout")
+        var answer = Message(role: .user, text: "Hello!", createdAt: Date(timeIntervalSince1970: 101))
+        answer.delivered = Delivered(kind: .answer, profile: "scout", name: "Scout")
+        let host = [Message(role: .user, text: "Hi", createdAt: Date(timeIntervalSince1970: 50)),
+                    Message(role: .assistant, text: "Hey", createdAt: Date(timeIntervalSince1970: 60)),
+                    Message(role: .assistant, text: "A job finished", createdAt: Date(timeIntervalSince1970: 200))]
+        let merged = Conversation.keepingAsides(of: [asked, answer], in: host)
+        #expect(merged.map(\.text) == ["Hi", "Hey", "@scout hi", "Hello!", "A job finished"])
+        var told = answer
+        told.delivered?.noted = true
+        #expect(Conversation.keepingAsides(of: [told], in: host).count == 3, "one the agent was told of comes back from the host")
     }
 }

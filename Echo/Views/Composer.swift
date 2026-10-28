@@ -1,3 +1,6 @@
+#if os(iOS)
+import GameController
+#endif
 import SwiftUI
 
 /// Round glass button sized exactly to the composer's single-line text field.
@@ -318,6 +321,21 @@ final class WaveformBarsView: NSView {
 }
 #endif
 
+/// A tap on the transcript puts the keyboard away, as in Messages (GitHub issue 38). Alongside
+/// what the tap does there (a link, a button), never instead of it. On an iPhone and an iPad; a
+/// Mac's field keeps its cursor.
+struct TapHidesKeyboard: ViewModifier {
+    var focused: FocusState<Bool>.Binding
+
+    func body(content: Content) -> some View {
+        #if os(iOS)
+        content.simultaneousGesture(TapGesture().onEnded { if focused.wrappedValue { focused.wrappedValue = false } })
+        #else
+        content
+        #endif
+    }
+}
+
 /// Settings → Return key, for a message field: with Return set to send, Return sends and a
 /// keyboard's Shift-Return is the line break; otherwise Return is a line break and ⌘Return sends.
 /// Both composers have it: a conversation's, and a group chat's.
@@ -347,13 +365,26 @@ struct ReturnSends: ViewModifier {
             // again and the message goes.
             .onChange(of: draft) { old, new in
                 guard settings.returnSends, Self.isReturn(from: old, to: new) else { return }
-                if lineBreakMeant {
+                // Shift held on a keyboard: the line break is meant. Asked of the keyboard itself
+                // too, since an iPad's field can take the Return before the key press above is
+                // seen, and Shift-Return sent the message (GitHub issue 36).
+                if lineBreakMeant || Self.shiftHeld {
                     lineBreakMeant = false
                     return
                 }
                 draft = old
                 if canSend() { send() }
             }
+    }
+
+    /// Whether a keyboard's Shift is held down now.
+    static var shiftHeld: Bool {
+        #if os(iOS)
+        guard let keys = GCKeyboard.coalesced?.keyboardInput else { return false }
+        return keys.button(forKeyCode: .leftShift)?.isPressed == true || keys.button(forKeyCode: .rightShift)?.isPressed == true
+        #else
+        return NSEvent.modifierFlags.contains(.shift)
+        #endif
     }
 
     /// A draft that grew by exactly one line break: Return was pressed. (A paste or a deletion

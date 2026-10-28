@@ -67,15 +67,23 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
 /// bot's, delivered into this bot's chat (Bot Mode's `message_agent`); a bot's reply to one this
 /// bot sent, which comes back as a background process finishing; another background process
 /// reporting back; or what one of the bot's schedules came up with (`BotRoutines`), which the
-/// bot then answers. Read out of transcripts by `BotMessages`.
+/// bot then answers. Read out of transcripts by `BotMessages`. In a normal chat, too, the two
+/// sides of an aside (`BotAsides`): what the person asked a bot they tagged, and its answer.
 nonisolated struct Delivered: Codable, Equatable, Sendable {
-    enum Kind: String, Codable, Sendable { case message, reply, process, routine }
+    enum Kind: String, Codable, Sendable { case message, reply, process, routine, asked, answer }
     var kind: Kind
     /// The bot it is from: its profile, and what it called itself.
     var profile: String?
     var name: String?
     /// A process notice's one line (`display_text`), or the schedule's name.
     var title: String?
+    /// An aside the main agent has been told of (`AsideNote`), with the person's next message to it.
+    var noted: Bool?
+}
+
+nonisolated extension Message {
+    /// One side of an aside to a tagged bot (`BotAsides`): not a turn of this chat's agent.
+    var isAside: Bool { delivered?.kind == .asked || delivered?.kind == .answer }
 }
 
 /// How much of the model's context window a conversation fills, in tokens.

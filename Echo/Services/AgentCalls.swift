@@ -254,6 +254,7 @@ final class AgentCalls: NSObject {
 
     private func incoming(note: PushNote?, done: @escaping () -> Void) {
         listen()   // (the provider, when this push is what started the app)
+        if let note { AgentActivityNote.take(note) }   // for Agent Activity: it called
         guard let provider else { done(); return }
         let plan = AgentCallPlan.decide(note, callsOn: settings.agentCalls, busy: current != nil) { [settings] in
             Self.name(of: $0, settings: settings)

@@ -33,7 +33,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import calls, cards, core, followups, ideas, qr, rooms, routines, watches
+from . import calls, cards, core, followups, headsup, ideas, qr, rooms, routines, watches
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
 
 log = logging.getLogger("redde_push")
@@ -220,6 +220,10 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_m
     except Exception:
         log.debug("redde-push: turn hook failed", exc_info=True)
     notes = []
+    try:
+        cards.announce()   # its calls told to the Dashboard's clients as they happen (issue 35)
+    except Exception:
+        log.debug("redde-push: couldn't have redde_show announced", exc_info=True)
     try:
         notes.append(cards.turn_note(_home(), user_message, platform))
     except Exception:
@@ -570,6 +574,8 @@ def register(ctx) -> None:
     ideas.register(ctx, _home, _store_in)
     # Follow-ups (followups.py): a loose end the person mentioned, offered back as an idea later.
     followups.register(ctx, _home, _store_in)
+    # Heads-ups (headsup.py): before an event, what the person needs for it, as a notification.
+    headsup.register(ctx, _home, _store_in)
     ctx.register_cli_command("redde-push", "Notifications on your iPhone from Redde", _cli_setup, _cli)
     _follow_group_chats_if_any()
     _watch_schedules()

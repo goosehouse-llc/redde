@@ -111,6 +111,10 @@ private struct IdeaDeck: View {
             HStack(spacing: 10) {
                 BotAvatar(face: face(idea), name: idea.agent, size: 40,
                           pose: isTop ? BotPose(look: CGPoint(x: max(-1, min(1, moved / 90)), y: -0.2)) : nil)
+                    .padding(5)
+                    .background(Circle().fill(seat(for: colors.deep)))
+                    .overlay(Circle().stroke(colors.deep.opacity(0.45), lineWidth: 1.5))
+                    .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(idea.agent.isEmpty ? String(localized: "Your agent") : idea.agent).font(.subheadline.weight(.bold))
                     Text("has an idea", comment: "Under an agent's name on an idea card").font(.caption)
@@ -140,8 +144,9 @@ private struct IdeaDeck: View {
             LinearGradient(colors: [colors.deep.mix(with: .white, by: 0.82), colors.deep.mix(with: .white, by: 0.64)],
                            startPoint: .topLeading, endPoint: .bottomTrailing),
             in: .rect(cornerRadius: 22))
-        .overlay(alignment: .topTrailing) { if isTop { stamp(String(localized: "Do It"), color: .green, angle: 12).opacity(Double(max(0, moved) / Self.threshold)) } }
-        .overlay(alignment: .topLeading) { if isTop { stamp(String(localized: "Not Now"), color: .red, angle: -12).opacity(Double(max(0, -moved) / Self.threshold)) } }
+        // The stamp lands in the corner the card leaves behind, where the finger isn't (asked 2026-10-28).
+        .overlay(alignment: .topLeading) { if isTop { stamp(String(localized: "Do It"), color: .green, angle: -12).opacity(Double(max(0, moved) / Self.threshold)) } }
+        .overlay(alignment: .topTrailing) { if isTop { stamp(String(localized: "Not Now"), color: .red, angle: 12).opacity(Double(max(0, -moved) / Self.threshold)) } }
         .shadow(color: .black.opacity(isTop ? 0.14 : 0.06), radius: isTop ? 10 : 4, y: isTop ? 5 : 2)
         // The deck behind: smaller, lower, a little askew.
         .scaleEffect(1 - CGFloat(depth) * 0.05)
@@ -158,6 +163,14 @@ private struct IdeaDeck: View {
         .accessibilityAction(named: Text("Do It")) { take(idea) }
         .accessibilityAction(named: Text(done)) { put(idea) }
         .accessibilityAction(named: Text("Not Now")) { put(idea) }
+    }
+
+    /// What the face sits on, so it stands out from a card in its own colour: white, or ink for a
+    /// light colour (amber, lime, white, a pale theme's bubble), which white would swallow.
+    private func seat(for color: Color) -> Color {
+        let skin = color.resolve(in: EnvironmentValues())
+        let lightness = 0.2126 * skin.linearRed + 0.7152 * skin.linearGreen + 0.0722 * skin.linearBlue
+        return lightness > 0.62 ? Color(red: 0.09, green: 0.09, blue: 0.13).opacity(0.85) : .white
     }
 
     private func stamp(_ word: String, color: Color, angle: Double) -> some View {

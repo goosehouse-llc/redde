@@ -6,6 +6,10 @@
             naming the catalog entry and its tier (0.21.3 and later; 0.21.0 installs from git only).
   bot       installed for the main profile, a bot hasn't got it; installed for the bot, it has.
   toggle    off, and on again.
+  updates   what Redde's Check for Updates reads (0.22 and later): a row names the folder it is in,
+            the folder's `.install-metadata.json` is readable through the Dashboard's files and
+            names where the plugin came from and the commit, and installing it again from that
+            source (`install`, `force`) works, as Redde's Update does for a plugin from git.
   remove    gone from the list (0.21.5 and later).
 
 Needs the network: Hermes reads the catalog from Nous Research's site and clones from GitHub.
@@ -30,6 +34,20 @@ def release():
 async def listed(dash, profile=None):
     params = {"action": "list", **({"profile": profile} if profile else {})}
     return (await dash.call("plugins.manage", params)).get("plugins") or []
+
+
+def read_text(path):
+    """A file through the Dashboard's files (`/api/fs/read-text`), signed in as the app is."""
+    import http.cookiejar, urllib.parse, urllib.request
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+    login = urllib.request.Request(f"http://{check.SERVE}/auth/password-login", headers={"Content-Type": "application/json"},
+                                   data=json.dumps({"provider": "basic", "username": "lab", "password": "labpass-labpass"}).encode())
+    try:
+        opener.open(login, timeout=10).read()
+    except Exception:
+        pass   # a loopback Dashboard without a login
+    url = f"http://{check.SERVE}/api/fs/read-text?" + urllib.parse.urlencode({"path": path})
+    return json.loads(opener.open(url, timeout=20).read().decode()).get("text")
 
 
 def row(rows, name=PLUGIN):
@@ -69,6 +87,26 @@ async def main():
     on = row(await listed(dash, BOT))
     report((off or {}).get("status") != "enabled" and (on or {}).get("status") == "enabled", "switched off, and on again",
            f"{(off or {}).get('status')} → {(on or {}).get('status')}")
+
+    if release() >= (0, 22, 0):
+        folder = (bots or {}).get("install_dir") or ""
+        report(bool(folder), "a row names the folder it is in", json.dumps(bots)[:200])
+        records = {}
+        try:
+            records = json.loads(read_text(folder.rsplit("/", 1)[0] + "/.install-metadata.json") or "{}")
+        except Exception as error:
+            print(f"  info  reading the install records: {error}")
+        record = records.get(folder.rsplit("/", 1)[-1]) or {}
+        report(bool(record.get("source")) and bool(record.get("revision")),
+               "its install record, read through the Dashboard, names its source and commit", json.dumps(record)[:300])
+        if record.get("source", "").startswith("https://"):
+            again = await dash.call("plugins.manage", {"action": "install", "identifier": record["source"], "force": True,
+                                                       "enable": True, "profile": BOT})
+            after = row(await listed(dash, BOT), (bots or {}).get("name") or PLUGIN)
+            report(bool(again.get("ok")) and after is not None and after.get("status") == "enabled",
+                   "installed again from its source, still on", json.dumps(again)[:300])
+    else:
+        print("  info  rows name no folder before 0.22: Check for Updates goes by the catalog alone")
 
     if release() >= (0, 21, 5):
         await dash.call("plugins.manage", {"action": "remove", "name": (bots or {}).get("name") or PLUGIN, "profile": BOT})

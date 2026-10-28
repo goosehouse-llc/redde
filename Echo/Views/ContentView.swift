@@ -26,6 +26,8 @@ struct ContentView: View {
     @State private var shareItem: ShareItem?
     /// Rename, from the header's menu.
     @State private var showRename = false
+    /// ··· → Make This a Routine… (`RoutineSheet`).
+    @State private var makingRoutine = false
     @State private var renameText = ""
     @State private var renameError: String?
     /// "Add to Project" from the header's menu: the New Project prompt, and what went wrong.
@@ -144,6 +146,8 @@ struct ContentView: View {
         #if DEBUG
         .sheet(isPresented: $showProfilePicker) { NavigationStack { ProfilePickerView() } }
         .modifier(WatchDraftSheet())
+        .modifier(BriefingSheets())
+        .sheet(isPresented: $makingRoutine) { RoutineSheet(conversation: conversation) }
         .sheet(isPresented: $showTips) { NavigationStack { TipJarView() } }
         .sheet(isPresented: $showServers) { NavigationStack { ServersView() } }
         .sheet(isPresented: $showPush) { NavigationStack { PushSettingsView() } }
@@ -424,6 +428,7 @@ struct ContentView: View {
 
     private func transcriptScreen(showListButton: Bool) -> some View {
         TranscriptView(showSetup: $showSetup, showSearch: $showSearch, onEdit: beginEditing, onEditQueued: editQueued)
+            .modifier(TapHidesKeyboard(focused: $composerFocused))
             .environment(\.replySpeaker, conversation.bot?.name)
             .environment(\.replyFace, botFace)
             .environment(\.fileSource, conversation.fileSource)
@@ -433,11 +438,15 @@ struct ContentView: View {
             .foregroundStyle(theme.textColor)
             .safeAreaInset(edge: .bottom) {
                 VStack(spacing: 0) {
-                    FollowUpChips()
-                    ComposerView(draft: $draft, pendingAttachments: $pendingAttachments, editing: $editing,
-                                 focused: $composerFocused,
-                                 openHandsFree: { Task { await launchVoice(handsFree: settings.handsFreeByDefault, fromOutside: false) } },
-                                 openModelPicker: { showModelPicker = true })
+                    if conversation.isWorkerTranscript {
+                        WorkerRunNote()
+                    } else {
+                        FollowUpChips()
+                        ComposerView(draft: $draft, pendingAttachments: $pendingAttachments, editing: $editing,
+                                     focused: $composerFocused,
+                                     openHandsFree: { Task { await launchVoice(handsFree: settings.handsFreeByDefault, fromOutside: false) } },
+                                     openModelPicker: { showModelPicker = true })
+                    }
                 }
                     .animation(.snappy(duration: 0.3), value: conversation.followUps)
                     .frame(maxWidth: 820).frame(maxWidth: .infinity)
@@ -500,8 +509,8 @@ struct ContentView: View {
                             }
                             Button { showModelPicker = true } label: {
                                 HStack(spacing: 3) {
-                                    // A bot's chat names the bot's handle, what another bot's chat tags it with.
-                                    Text("\(conversation.bot.map { "@" + $0.handle } ?? conversation.elsewhere.map { profileTitle($0.profile) } ?? settings.headerTitle) · \(modelChipLabel)").font(.caption).lineLimit(1)
+                                    // A bot's chat names the tag another chat reaches it by.
+                                    Text("\(conversation.bot.map { "@" + BotMentions.shownTag(profile: $0.profile, handle: $0.handle, roster: BotDirectory.shared.roster) } ?? conversation.elsewhere.map { profileTitle($0.profile) } ?? settings.headerTitle) · \(modelChipLabel)").font(.caption).lineLimit(1)
                                     Image(systemName: "chevron.down").font(.system(size: 8, weight: .bold))
                                 }
                                 .foregroundStyle(.secondary)
@@ -553,6 +562,10 @@ struct ContentView: View {
                             }
                         }
                         .disabled(!conversation.hasMessages)
+                        if conversation.connection.hasLedger, !conversation.isIncognito, !conversation.isWorkerTranscript {
+                            Button("Make This a Routine…", systemImage: "repeat") { makingRoutine = true }
+                                .disabled(!conversation.hasMessages || conversation.isStreaming)
+                        }
                         // The Dashboard's projects, for a conversation on the server (a bot's chat is its bot's).
                         if settings.transport == .hermesServe, conversation.serverSessionID != nil, conversation.bot == nil, !conversation.isIncognito {
                             ChatProjectMenu(naming: $namingProject, problem: $projectProblem)
@@ -1353,5 +1366,20 @@ private struct DraftKeeper: View {
         Color.clear
             .onChange(of: draft) { if !editing { Drafts.shared.set(text: draft, for: key) } }
             .onChange(of: attachments) { if !editing { Drafts.shared.set(attachments: attachments, for: key) } }
+    }
+}
+
+/// In place of the composer under a Kanban worker's run (GitHub issue 37): there to read; going on
+/// with it is the board's to do.
+private struct WorkerRunNote: View {
+    var body: some View {
+        Label("A Kanban worker's run, to read. To go on with it, retry or unblock its card on the board.",
+              systemImage: "rectangle.split.3x1")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16).padding(.vertical, 12)
+            .background(.regularMaterial, in: .rect(cornerRadius: 18))
+            .padding(.horizontal, 12).padding(.bottom, 8)
     }
 }

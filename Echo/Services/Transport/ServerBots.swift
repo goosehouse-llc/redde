@@ -388,6 +388,14 @@ nonisolated enum BotMentions {
         }
     }
 
+    /// What Redde shows a bot as, and a room's tag inserts: its bot name's tag ("@coder" for a
+    /// profile "claude" titled "Coder", asked 2026-10-28), as Hermes Desktop's picker inserts it;
+    /// Hermes takes that form in rooms and Bot Chats alike. Its profile's handle otherwise.
+    static func shownTag(profile: String, handle: String, roster: BotRoster?) -> String {
+        guard let bot = roster?.named(profile), let form = nameForms(bot.title).first else { return handle }
+        return form
+    }
+
     /// `text` with the tag being typed finished as `bot`'s.
     static func complete(_ text: String, with bot: HermesBot) -> String {
         guard let typed = typing(in: text) else { return text }

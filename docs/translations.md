@@ -86,6 +86,7 @@ Keys with a count whose English has a singular and a plural form (`import en` gi
 `one`/`other` forms):
 
 - `%@ has %lld ideas for you` (one: `%@ has %lld idea for you`)
+- `%@ · %lld newer commits on GitHub` (one: `%@ · %lld newer commit on GitHub`)
 - `%lld attachments` (one: `%lld attachment`)
 - `%lld changes behind` (one: `%lld change behind`)
 - `%lld characters…` (one: `%lld character…`)
@@ -106,7 +107,9 @@ Keys with a count whose English has a singular and a plural form (`import en` gi
 - `Delete %lld conversations?` (one: `Delete %lld conversation?`)
 - `Delete %lld photos` (one: `Delete %lld photo`)
 - `Every %lld hours` (one: `Every %lld hour`)
+- `Looked %lld times: nothing new` (one: `Looked %lld time: nothing new`)
 - `Model · %lld bots` (one: `Model · %lld bot`)
+- `Offered %lld ideas` (one: `Offered %lld idea`)
 - `Only the first %lld items were attached.` (one: `Only the first %lld item was attached.`)
 - `Redde has %lld questions` (one: `Redde has %lld question`)
 - `Shows the %lld bots hidden from this list` (one: `Shows the %lld bot hidden from this list`)

@@ -149,6 +149,7 @@ struct GroupChatView: View {
                 }
                 #endif
             }
+            .modifier(TapHidesKeyboard(focused: focused))
             .chatTextSize()
             .background(theme.pageColor)
             .foregroundStyle(theme.textColor)

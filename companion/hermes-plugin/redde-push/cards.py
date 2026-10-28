@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 import time
 from datetime import datetime
 from pathlib import Path
@@ -290,6 +291,22 @@ def _text(message) -> str:
     return ""
 
 
+def announce() -> bool:
+    """Hermes 0.22's Dashboard tells a client of a tool call as it happens only when tool progress
+    is on, or for the tools whose card is the turn's answer (`_TOOL_LIFECYCLE_UI_TOOLS`); redde_show
+    wasn't among them, so its cards came only when the chat was opened again (GitHub issue 35). It
+    is added to them, in the Dashboard's process, once its chat server has loaded (this is called
+    as the plugin loads and as each turn starts). True once it is there; releases without the list
+    tell of every call already."""
+    server = sys.modules.get("tui_gateway.server")
+    shown = getattr(server, "_TOOL_LIFECYCLE_UI_TOOLS", None) if server else None
+    if shown is None:
+        return False
+    if TOOL not in shown:
+        server._TOOL_LIFECYCLE_UI_TOOLS = frozenset(shown) | {TOOL}
+    return True
+
+
 def turn_note(home: Path, message, platform: str = "", at: datetime | None = None) -> str | None:
     """For `pre_llm_call`: when the person asks the time or the weather, and cards are on, what
     their time is (in the zone their phone said) and to show the card before answering. Added to
@@ -369,6 +386,10 @@ def register(ctx, home) -> None:
     try:    # (a check that reads a file is quick and must not be remembered for half a minute)
         from tools.registry import no_cache_check_fn
         no_cache_check_fn(check_fn)
+    except Exception:
+        pass
+    try:
+        announce()
     except Exception:
         pass
     try:    # Shown outright, never behind tool search: a small local model doesn't search for it.

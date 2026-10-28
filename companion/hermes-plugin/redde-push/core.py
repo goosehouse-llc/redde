@@ -525,10 +525,14 @@ def room_note(kind: str, room: str, name: str = "", body: str = "", detail: str 
     return made
 
 
-def routine_note(profile: str, bot: str, title: str, body: str = "", failed: bool = False) -> dict:
+def routine_note(profile: str, bot: str, title: str, body: str = "", failed: bool = False, brief: str = "") -> dict:
     """One of a bot's schedules ran (`routines.py`): `p` the bot's profile, `d` what it is called,
-    `t` the schedule's name, `b` what it came up with (or why it didn't finish, `w` "failed")."""
+    `t` the schedule's name, `b` what it came up with (or why it didn't finish, `w` "failed"). A
+    `[redde-notify]` job's, whose answer has no chat to be in, is a briefing the phone keeps: `x`
+    "brief", `i` the job's id (`brief`)."""
     made = {"v": 1, "k": "routine", "at": int(time.time()), "n": host_name(), "p": clipped(profile, 64)}
+    if brief:
+        made["x"], made["i"] = "brief", clipped(brief, 40)
     for key, value, limit in (("d", bot, 80), ("t", title, 80)):
         if value:
             made[key] = clipped(value, limit)

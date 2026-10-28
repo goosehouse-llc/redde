@@ -32,6 +32,11 @@ struct PluginsView: View {
                     } label: {
                         Label("Find Plugins", systemImage: "magnifyingglass")
                     }
+                    NavigationLink {
+                        PluginUpdatesView(agents: profile == nil ? PluginUpdatesView.everyAgent() : [(profile, owner)])
+                    } label: {
+                        Label("Check for Updates", systemImage: "arrow.triangle.2.circlepath")
+                    }
                 } footer: {
                     Text("Nous Research's catalog of Hermes plugins. A plugin runs on your server inside Hermes and can do whatever Hermes can: Official ones are Nous Research's own, Verified ones Nous has checked, Community ones anyone's.")
                 }

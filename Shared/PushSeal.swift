@@ -51,7 +51,8 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
         case groupWait = "group_wait"
         /// One of a bot's schedules ran (`p` the bot's profile, `d` its name, `t` the schedule's,
         /// `b` what it came up with; `w` "failed" when it didn't finish). Its answer is in the
-        /// bot's chat.
+        /// bot's chat; a `[redde-notify]` job's, `x` "brief" and `i` the job, is a briefing,
+        /// kept by `AgentBriefing`.
         case routine
         /// An agent is calling (`p` its profile, `d` its name, `b` what it says first, `s` the
         /// conversation it called from, `i` the call's id). It comes as a VoIP push, to the app

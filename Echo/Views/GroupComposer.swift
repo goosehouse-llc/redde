@@ -171,19 +171,25 @@ struct GroupComposer: View {
         guard let typed = BotMentions.typing(in: draft)?.lowercased() else { return [] }
         return feed.room.members.filter {
             typed.isEmpty || $0.handle.lowercased().hasPrefix(typed) || $0.label.lowercased().hasPrefix(typed)
+                || tag($0).hasPrefix(typed)
         }
+    }
+
+    /// The tag a member is shown and tagged with: its bot name's, else its handle.
+    private func tag(_ member: GroupMember) -> String {
+        BotMentions.shownTag(profile: member.profile, handle: member.handle, roster: BotDirectory.shared.roster)
     }
 
     private func tags(_ suggestions: [GroupMember]) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(suggestions) { member in
                 Button {
-                    if let typed = BotMentions.typing(in: draft) { draft = String(draft.dropLast(typed.count + 1)) + "@" + member.handle + " " }
+                    if let typed = BotMentions.typing(in: draft) { draft = String(draft.dropLast(typed.count + 1)) + "@" + tag(member) + " " }
                     focused.wrappedValue = true
                 } label: {
                     HStack(spacing: 10) {
                         BotAvatar(face: face(member), name: member.label, size: 22)
-                        Text("@" + member.handle).font(.callout.weight(.medium))
+                        Text("@" + tag(member)).font(.callout.weight(.medium))
                         Text(member.label).font(.caption).foregroundStyle(.secondary)
                         Spacer(minLength: 0)
                     }

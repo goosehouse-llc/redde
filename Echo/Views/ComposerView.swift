@@ -66,13 +66,21 @@ struct ComposerView: View {
         conversation.connection == .hermesServe && draft.hasPrefix("/") && !draft.contains("\n") && !conversation.isStreaming
     }
 
-    /// In a bot's chat, the other bots a tag being typed ("@sc") could be.
+    /// The bots a tag being typed ("@sc") could be: in a bot's chat, the others, for it to pass the
+    /// message on to; in a normal chat, any but its agent, to ask them here (`BotAsides`).
     private var mentionSuggestions: [HermesBot] {
-        guard conversation.connection == .hermesServe, let bot = conversation.bot, !draft.contains("\n"),
-              let typed = BotMentions.typing(in: draft) else { return [] }
+        guard !draft.contains("\n"), let typed = BotMentions.typing(in: draft) else { return [] }
+        let speaking: String
+        if let bot = conversation.bot {
+            guard conversation.connection == .hermesServe else { return [] }
+            speaking = bot.profile
+        } else {
+            guard conversation.connection.hasLedger, !conversation.isIncognito, BotDirectory.available(settings) else { return [] }
+            speaking = conversation.elsewhere?.profile ?? settings.profileName ?? "default"
+        }
         let roster = BotDirectory.shared.roster?.listed ?? []
         return Array(BotMentions.suggestions(for: typed, roster: BotDirectory.shared.key == settings.connectionKey ? roster : [],
-                                             to: bot.profile).prefix(6))
+                                             to: speaking).prefix(6))
     }
 
     var body: some View {

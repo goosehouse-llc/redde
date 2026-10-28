@@ -401,6 +401,7 @@ struct ConversationsList: View {
                 if query.isEmpty, !selecting {
                     waitingNotesSection
                     IdeasSection(take: takeIdea)
+                    BriefingsSection()
                 }
                 if usesLedger {
                     if query.isEmpty, !selecting {
@@ -874,6 +875,7 @@ struct ConversationsList: View {
         let marks = ChatMarks(kind: activity.kind(of: bot, open: conversation), unread: !muted && activity.isUnread(bot, open: conversation),
                               muted: muted)
         let roster = botDirectory.roster?.bots ?? []
+        let tag = "@" + BotMentions.shownTag(profile: bot.name, handle: bot.handle, roster: botDirectory.roster)
         return Button { openBot(bot) } label: {
             HStack(spacing: 12) {
                 BotAvatar(face: face, name: name)
@@ -892,7 +894,7 @@ struct ConversationsList: View {
                     HStack(spacing: 6) {
                         if marks.kind == .needsYou { NeedsYouTag() }
                         Text(BotMessages.rowPreview(bot.preview, roster: roster, mainName: settings.headerTitle)
-                             ?? bot.description.nilIfEmpty ?? "@\(bot.handle)")
+                             ?? bot.description.nilIfEmpty ?? tag)
                             .lineLimit(1)
                     }
                     .font(.subheadline).foregroundStyle(.secondary)

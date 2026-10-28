@@ -24,15 +24,54 @@ enum Watches {
         }
     }
 
+    /// What happens when it sees a change (asked 2026-10-28, "bots that bring each other in"): the
+    /// person is told, or called, or another agent is handed it, in its Bot Chat, to act on
+    /// (`deliver: bot-chat:<profile>`; the watch answers [SILENT] when nothing changed, which
+    /// Hermes delivers nowhere).
+    enum Then: Hashable {
+        case tell, call
+        /// An agent's profile ("default", the main one), and what it is called.
+        case hand(String, String)
+
+        var deliver: String {
+            if case let .hand(profile, _) = self { return "bot-chat:" + profile }
+            return "local"
+        }
+    }
+
     /// What the agent is asked each time: look, and say NOTHING NEW or what changed. What it says
-    /// is what the person is sent (the plugin tells it, as the run starts, what it said last).
-    static func prompt(_ id: String, what: String) -> String {
-        """
-        \(watchTag)\(id)] Watch, for the user: \(what). Check it now with your tools. If nothing has changed since \
-        last time in a way they would want to know, answer with exactly NOTHING NEW. Otherwise answer with one or \
-        two short lines saying what changed: that is what they are sent. If it can't wait and you may call them, \
-        you can also use call_user.
-        """
+    /// is what the person is sent (the plugin tells it, as the run starts, what it said last), or
+    /// what the agent it is handed to is given.
+    static func prompt(_ id: String, what: String, then: Then = .tell) -> String {
+        switch then {
+        case .tell:
+            """
+            \(watchTag)\(id)] Watch, for the user: \(what). Check it now with your tools. If nothing has changed since \
+            last time in a way they would want to know, answer with exactly NOTHING NEW. Otherwise answer with one or \
+            two short lines saying what changed: that is what they are sent. If it can't wait and you may call them, \
+            you can also use call_user.
+            """
+        case .call:
+            """
+            \(watchTag)\(id)] Watch, for the user: \(what). Check it now with your tools. If nothing has changed since \
+            last time in a way they would want to know, answer with exactly NOTHING NEW. Otherwise call them with \
+            call_user (find it with tool_search if it isn't among your tools) and say what changed, then answer with \
+            one or two short lines saying what changed.
+            """
+        case let .hand(_, name):
+            """
+            \(watchTag)\(id)] Watch, for the user: \(what). Check it now with your tools. If nothing has changed since \
+            last time in a way that matters, answer with exactly [SILENT]. Otherwise answer with what changed and what \
+            should be done about it, in a few lines: your answer goes to \(name), another of the user's agents, who \
+            will act on it.
+            """
+        }
+    }
+
+    /// Where a watch's answers go, from its job: nil, to the person.
+    static func handedTo(_ job: CronJob) -> String? {
+        guard let deliver = job.deliver, deliver.hasPrefix("bot-chat:") else { return nil }
+        return String(deliver.dropFirst("bot-chat:".count))
     }
 
     static func id(of job: CronJob) -> String? {
@@ -46,11 +85,27 @@ enum Watches {
         return job.name[job.name.index(after: close)...].trimmingCharacters(in: .whitespaces)
     }
 
-    static func create(_ what: String, often: Often) async throws {
+    /// `watcher`: the agent that looks, a bot's profile; nil, the one Redde is on.
+    static func create(_ what: String, often: Often, watcher: String? = nil, then: Then = .tell) async throws {
         guard let backend = CronBackend.current() else { throw TransportError.malformed(String(localized: "Scheduled jobs need the Hermes Dashboard or the Hermes API.")) }
         let id = String(UUID().uuidString.lowercased().prefix(8))
         let name = String(what.split(whereSeparator: \.isNewline).first.map(String.init)?.prefix(60) ?? "")
-        try await backend.create(name: "\(watchTag)\(id)] \(name)", schedule: often.rawValue, prompt: prompt(id, what: what), deliver: "local")
+        try await backend.create(name: "\(watchTag)\(id)] \(name)", schedule: often.rawValue, prompt: prompt(id, what: what, then: then),
+                                 deliver: then.deliver, profile: watcher)
+    }
+
+    /// The agents a watch can be another's: the Dashboard's bots, which keep their jobs in their
+    /// own stores. Over the Hermes API only the agent Redde is on.
+    static var watchers: [HermesBot] {
+        guard let backend = CronBackend.current(), case .serve = backend, BotDirectory.available(),
+              BotDirectory.shared.key == Settings.shared.connectionKey else { return [] }
+        return (BotDirectory.shared.roster?.listed ?? []).filter { !$0.viaAPI }
+    }
+
+    /// The agents a change can be handed to.
+    static var takers: [HermesBot] {
+        guard BotDirectory.available(), BotDirectory.shared.key == Settings.shared.connectionKey else { return [] }
+        return (BotDirectory.shared.roster?.listed ?? []).filter { !$0.viaAPI }
     }
 }
 
@@ -121,6 +176,7 @@ struct WatchesView: View {
                 Spacer(minLength: 6)
                 if job.state == .paused { Text("Paused").font(.caption).foregroundStyle(.secondary) }
             }
+            if let line = who(job) { Text(line).font(.caption).foregroundStyle(.secondary) }
             if let report {
                 Text(report.text).font(.callout).foregroundStyle(report.failed ? .red : .primary).lineLimit(3)
                 Text(report.at, style: .relative).font(.caption).foregroundStyle(.secondary)
@@ -145,6 +201,22 @@ struct WatchesView: View {
         .swipeActions { Button("Cancel", systemImage: "trash", role: .destructive) { remove(job) } }
     }
 
+    /// Who looks, and who is handed what it sees, when it isn't the agent Redde is on, telling you.
+    private func who(_ job: CronJob) -> String? {
+        let settings = Settings.shared
+        func name(_ profile: String) -> String {
+            profile == "default" ? settings.headerTitle : BotDirectory.shared.roster?.named(profile)?.label(mainName: settings.headerTitle) ?? profile
+        }
+        let watcher = job.profile.flatMap { $0 == "default" || $0 == settings.profileName ? nil : name($0) }
+        let taker = Watches.handedTo(job).map(name)
+        switch (watcher, taker) {
+        case let (w?, t?): return String(localized: "\(w) watches · hands changes to \(t)")
+        case let (w?, nil): return String(localized: "\(w) watches")
+        case let (nil, t?): return String(localized: "Hands changes to \(t)")
+        default: return nil
+        }
+    }
+
     private func load() async {
         loading = true
         defer { loading = false }
@@ -160,7 +232,7 @@ struct WatchesView: View {
     private func remove(_ job: CronJob) {
         Task {
             do {
-                try await CronBackend.current()?.delete(job.id)
+                try await CronBackend.current()?.delete(job.id, profile: job.profile)
                 if let id = Watches.id(of: job) { WatchReport.forget(id) }
                 await load()
             } catch { problem = error.localizedDescription }
@@ -169,13 +241,13 @@ struct WatchesView: View {
 
     private func pause(_ job: CronJob) {
         Task {
-            do { try await CronBackend.current()?.setPaused(job.id, job.state != .paused); await load() } catch { problem = error.localizedDescription }
+            do { try await CronBackend.current()?.setPaused(job.id, job.state != .paused, profile: job.profile); await load() } catch { problem = error.localizedDescription }
         }
     }
 
     private func run(_ job: CronJob) {
         Task {
-            do { try await CronBackend.current()?.runNow(job.id); await load() } catch { problem = error.localizedDescription }
+            do { try await CronBackend.current()?.runNow(job.id, profile: job.profile); await load() } catch { problem = error.localizedDescription }
         }
     }
 }
@@ -184,6 +256,10 @@ struct WatchesView: View {
 struct NewWatchView: View {
     @State var text: String
     @State private var often = Watches.Often.hourly
+    /// The bot that looks ("" for the agent Redde is on), and what happens when it sees a change.
+    @State private var watcher = ""
+    @State private var then = "tell"
+    private let settings = Settings.shared
     @State private var saving = false
     @State private var problem: String?
     @Environment(\.dismiss) private var dismiss
@@ -201,8 +277,23 @@ struct NewWatchView: View {
                     Picker("How often", selection: $often) {
                         ForEach(Watches.Often.allCases) { Text($0.label).tag($0) }
                     }
+                    if !Watches.watchers.isEmpty {
+                        Picker("Who Watches", selection: $watcher) {
+                            Text(settings.headerTitle).tag("")
+                            ForEach(Watches.watchers.filter { !$0.isDefault && $0.name != settings.profileName }) { bot in
+                                Text(bot.label(mainName: settings.headerTitle)).tag(bot.name)
+                            }
+                        }
+                    }
+                    Picker("When It Changes", selection: $then) {
+                        Text("Tell Me").tag("tell")
+                        Text("Call Me").tag("call")
+                        ForEach(takers) { bot in
+                            Text("Hand It to \(bot.label(mainName: settings.headerTitle))").tag("hand:" + bot.name)
+                        }
+                    }
                 } footer: {
-                    Text("Your agent looks this often and tells you only when something changes, with a notification. Needs Redde's plugin 1.9 on your Hermes.")
+                    Text("It looks this often and does something only when it changes: a notification, a call (with Calls from Agents on for it), or, handed to another agent, that agent takes it on in its own chat with its own tools, and you're told. Needs Redde's plugin 1.9 on your Hermes.")
                 }
                 if let problem { Section { Text(problem).foregroundStyle(.red).font(.footnote) } }
             }
@@ -218,11 +309,26 @@ struct NewWatchView: View {
         }
     }
 
+    /// The agents a change can go to: any but the one that looks.
+    private var takers: [HermesBot] {
+        let looking = watcher.isEmpty ? (settings.profileName ?? "default") : watcher
+        return Watches.takers.filter { $0.name != looking && !($0.isDefault && looking == "default") }
+    }
+
+    private var chosen: Watches.Then {
+        if then == "call" { return .call }
+        if then.hasPrefix("hand:"), let bot = takers.first(where: { "hand:" + $0.name == then }) {
+            return .hand(bot.name, bot.label(mainName: settings.headerTitle))
+        }
+        return .tell
+    }
+
     private func save() {
         saving = true
         Task {
             do {
-                try await Watches.create(text.trimmingCharacters(in: .whitespacesAndNewlines), often: often)
+                try await Watches.create(text.trimmingCharacters(in: .whitespacesAndNewlines), often: often,
+                                         watcher: watcher.isEmpty ? nil : watcher, then: chosen)
                 dismiss()
             } catch {
                 problem = error.localizedDescription

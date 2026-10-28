@@ -206,6 +206,10 @@ nonisolated struct InstalledPlugin: Identifiable, Equatable, Sendable {
     var catalogName: String?
     var catalogTier: CatalogPlugin.Tier?
     var updateAvailable: Bool
+    /// The catalog's version of it, when it is a catalog install the catalog has.
+    var catalogVersion: String?
+    /// Where it is on the server (Hermes 0.22; empty before).
+    var installDir: String
     var settings: [PluginSetting]
     /// Its servers (an MCP server it runs, an app it talks to), each with how it stands.
     var servers: [(name: String, state: String, sentence: String)]
@@ -225,6 +229,8 @@ nonisolated struct InstalledPlugin: Identifiable, Equatable, Sendable {
         catalogName = json["catalog_name"]?.string?.nilIfEmpty
         catalogTier = json["catalog_tier"]?.string.flatMap(CatalogPlugin.Tier.init(rawValue:))
         updateAvailable = json["update_available"]?.bool ?? false
+        catalogVersion = json["catalog_version"]?.string?.nilIfEmpty
+        installDir = json["install_dir"]?.string ?? ""
         settings = (json["settings_schema"]?.array ?? []).compactMap(PluginSetting.init)
         servers = (json["servers"]?.array ?? []).compactMap { row in
             row["name"]?.string.map { ($0, row["state"]?.string ?? "", row["sentence"]?.string ?? "") }

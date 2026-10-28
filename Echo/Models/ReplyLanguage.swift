@@ -36,14 +36,16 @@ nonisolated enum ReplyLanguage {
 
     /// A message loaded back from the server, without the note, nor the one a question asked
     /// from the car carries after it (`CarBrevity`), nor the one that says who an @mention is
-    /// (`MentionNote`), which comes before both.
-    static func stripNote(_ text: String) -> String {
+    /// (`MentionNote`), which comes before both, nor the asides told with it (`AsideNote`), before
+    /// that, unless `keepingAsides` (the transcript reads them back out).
+    static func stripNote(_ text: String, keepingAsides: Bool = false) -> String {
         var text = CarBrevity.strip(IncognitoNote.strip(LiveVoiceNote.strip(CallNote.strip(text))))
         if text.hasSuffix(".)"), let range = text.range(of: "\n\n(Reply in ", options: .backwards),
            !text[range.upperBound...].contains("\n") {
             text = String(text[..<range.lowerBound])
         }
-        return MentionNote.strip(AttachedFileNote.strip(text))
+        let plain = RoutineNote.strip(MentionNote.strip(AttachedFileNote.strip(text)))
+        return keepingAsides ? plain : AsideNote.strip(plain)
     }
 }
 

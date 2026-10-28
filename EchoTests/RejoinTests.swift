@@ -200,4 +200,15 @@ struct RejoinTests {
         #expect(conversation.messages.count == 1, "no empty reply, and no error under a question that wasn't asked here")
         #expect(conversation.lastError == nil)
     }
+
+    /// Back in a chat that went on elsewhere (GitHub issue 40): the stored session is reloaded when
+    /// the host saw it after the newest message here, give or take the clocks' slack.
+    @Test func catchingUpReloadsOnlyWhenTheHostIsAhead() {
+        let newest = Date(timeIntervalSince1970: 1_000_000)
+        #expect(Conversation.serverIsAhead(lastActive: 1_000_060, newest: newest))
+        #expect(!Conversation.serverIsAhead(lastActive: 1_000_003, newest: newest))
+        #expect(!Conversation.serverIsAhead(lastActive: 999_000, newest: newest))
+        #expect(!Conversation.serverIsAhead(lastActive: nil, newest: newest))
+        #expect(Conversation.serverIsAhead(lastActive: 1_000_000, newest: nil))
+    }
 }
