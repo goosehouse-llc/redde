@@ -24,6 +24,9 @@ final class NotificationService: UNNotificationServiceExtension {
             if NeedsYou.take(note) { WidgetCenter.shared.reloadTimelines(ofKind: NeedsYou.widgetKind) }
             // And what the agent wrote for its own widget in a turn the phone wasn't following.
             if AgentBoard.take(note) { WidgetCenter.shared.reloadTimelines(ofKind: AgentBoard.widgetKind) }
+            // And ideas it offered, for the chat list to show when Redde opens.
+            AgentIdea.take(note)
+            WatchReport.take(note)   // and what a watch saw, for the Watches list
             choices = note.choiceCategory
             // A chat the person muted (Mute… in Redde): in the list, without a sound or a banner.
             if MutedChats.isMuted(session: note.s, room: note.g, bot: note.p) { MutedChats.quiet(content) }

@@ -244,6 +244,8 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         guard let (note, pairing) = PushSeal.note(from: sealed, pairings: vault()) else { return shown }
         confirm(pairing, note.n)
         StatusWidgets.heard(note)   // as the extension does, for the "Needs you" widget
+        AgentIdea.take(note)
+        WatchReport.take(note)
         let content = UNMutableNotificationContent()
         content.sound = sound
         guard note.fill(content) else { return shown }
@@ -263,6 +265,8 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         // A chat the person muted: in the list, not over the screen.
         if MutedChats.isMuted(session: sessionID, room: room, bot: bot) { return [.list] }
         if PushNote.Kind(rawValue: kind) == .widget { return [] }   // it is on the widget; nothing to say with Redde in front
+        // Ideas: on the chat list now (the extension kept them), and said in a banner.
+        if PushNote.Kind(rawValue: kind) == .ideas { IdeasInbox.shared.reload() }
         return shown
     }
 

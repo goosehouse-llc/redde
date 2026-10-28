@@ -313,6 +313,99 @@ nonisolated struct KanbanComment: Identifiable, Sendable {
     }
 }
 
+/// Something that happened to a card (Hermes's kanban events): its report's timeline.
+nonisolated struct KanbanEvent: Identifiable, Equatable, Sendable {
+    var id: Int
+    var kind: String
+    var at: Date?
+    /// What the event says about itself: a reason, a summary, who it went to.
+    var detail: String?
+
+    init?(_ j: JSONValue) {
+        guard let id = j["id"]?.int, let kind = j["kind"]?.string else { return nil }
+        self.id = id
+        self.kind = kind
+        at = j["created_at"]?.number.map { Date(timeIntervalSince1970: $0) }
+        let p = j["payload"]
+        detail = [p?["reason"], p?["summary"], p?["assignee"], p?["profile"], p?["status"]].lazy.compactMap { $0?.string }.first { !$0.isEmpty }
+    }
+
+    var label: String {
+        switch kind {
+        case "created": String(localized: "Created", comment: "A kanban card's timeline: the card was made")
+        case "claimed": String(localized: "Picked up", comment: "A kanban card's timeline: a worker started on it")
+        case "completed": String(localized: "Finished", comment: "A kanban card's timeline: a worker finished it")
+        case "blocked": String(localized: "Blocked", comment: "A Kanban column")
+        case "review_requested": String(localized: "Sent for review", comment: "A kanban card's timeline")
+        case "changes_requested": String(localized: "Changes asked for", comment: "A kanban card's timeline")
+        case "commented": String(localized: "Comment", comment: "A kanban card's timeline: someone commented")
+        case "edited": String(localized: "Edited", comment: "A kanban card's timeline")
+        case "assigned": String(localized: "Assigned", comment: "A kanban card's timeline")
+        case "scheduled": String(localized: "Scheduled", comment: "A Kanban column")
+        case "reclaimed": String(localized: "Taken back", comment: "A kanban card's timeline: a stalled worker's claim was ended")
+        case "archived": String(localized: "Archived", comment: "A Kanban column")
+        case "attached": String(localized: "File attached", comment: "A kanban card's timeline")
+        default: kind.replacingOccurrences(of: "_", with: " ").capitalized
+        }
+    }
+}
+
+/// One attempt at a card (Hermes's kanban runs): who worked on it, when, how it ended, and the
+/// summary it handed over.
+nonisolated struct KanbanRun: Identifiable, Equatable, Sendable {
+    var id: Int
+    var profile: String?
+    var outcome: String?
+    var summary: String?
+    var error: String?
+    var startedAt: Date?
+    var endedAt: Date?
+
+    init?(_ j: JSONValue) {
+        guard let id = j["id"]?.int else { return nil }
+        self.id = id
+        profile = j["profile"]?.string
+        outcome = j["outcome"]?.string ?? j["status"]?.string
+        summary = j["summary"]?.string
+        error = j["error"]?.string
+        startedAt = j["started_at"]?.number.map { Date(timeIntervalSince1970: $0) }
+        endedAt = j["ended_at"]?.number.map { Date(timeIntervalSince1970: $0) }
+    }
+}
+
+/// A card with all Hermes keeps of it: for its report.
+nonisolated struct KanbanDetail: Sendable {
+    var task: KanbanTask
+    var comments: [KanbanComment]
+    var attachments: [KanbanAttachment]
+    var events: [KanbanEvent]
+    var runs: [KanbanRun]
+
+    /// The web pages it relied on: the links in its result, its summaries and its comments,
+    /// each once, in the order they first appear.
+    var sources: [URL] {
+        let texts = [task.result, task.latestSummary] + runs.map(\.summary) + comments.map(\.body)
+        var seen = Set<String>(), found: [URL] = []
+        for text in texts.compactMap(\.self) {
+            for match in text.matches(of: /https?:\/\/[^\s<>"'\)\]]+/) {
+                let link = String(match.output).trimmingCharacters(in: CharacterSet(charactersIn: ".,;:!?"))
+                if seen.insert(link).inserted, let url = URL(string: link) { found.append(url) }
+            }
+        }
+        return found
+    }
+
+    /// Why it is waiting on the person, if it is: blocked (and the reason given), or waiting for
+    /// a review.
+    var waitingReason: String? {
+        switch task.status {
+        case "blocked": events.last { $0.kind == "blocked" }?.detail ?? task.lastFailure
+        case "review": runs.last?.summary ?? task.latestSummary
+        default: nil
+        }
+    }
+}
+
 /// A file on a card (Hermes's kanban attachments): one a person added, or a worker's work, as the
 /// claude bot leaves its patch.
 nonisolated struct KanbanAttachment: Identifiable, Equatable, Sendable {
@@ -429,12 +522,24 @@ struct KanbanClient {
     }
 
     static func task(_ id: String) async throws -> (KanbanTask, [KanbanComment], [KanbanAttachment]) {
+        let detail = try await detail(id)
+        return (detail.task, detail.comments, detail.attachments)
+    }
+
+    /// A card with its timeline and its runs (`/tasks/<id>` lists them beside its comments and
+    /// attachments).
+    static func detail(_ id: String) async throws -> KanbanDetail {
         #if DEBUG
-        if isDemo, let card = demoBoard().columns.flatMap(\.tasks).first(where: { $0.id == id }) { return (card, [], []) }
+        if isDemo, let card = demoBoard().columns.flatMap(\.tasks).first(where: { $0.id == id }) {
+            return KanbanDetail(task: card, comments: [], attachments: [], events: [], runs: [])
+        }
         #endif
         let json = try await HermesServeClient.shared.restJSON("GET", "\(base)/tasks/\(id)")
         guard let t = json["task"].flatMap(KanbanTask.init) else { throw TransportError.malformed("no task") }
-        return (t, (json["comments"]?.array ?? []).compactMap(KanbanComment.init), (json["attachments"]?.array ?? []).compactMap(KanbanAttachment.init))
+        return KanbanDetail(task: t, comments: (json["comments"]?.array ?? []).compactMap(KanbanComment.init),
+                            attachments: (json["attachments"]?.array ?? []).compactMap(KanbanAttachment.init),
+                            events: (json["events"]?.array ?? []).compactMap(KanbanEvent.init),
+                            runs: (json["runs"]?.array ?? []).compactMap(KanbanRun.init))
     }
 
     /// An attachment's contents, as text.

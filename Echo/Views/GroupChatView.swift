@@ -176,6 +176,8 @@ struct GroupChatView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) { menu }
             }
+            // Renamed from the chat list beside it (an iPad, a Mac): the header follows.
+            .onChange(of: listedName, followListedName)
             .alert("Rename group chat", isPresented: $renaming) {
                 TextField("Name", text: $renameText)
                 Button("Save") {
@@ -258,6 +260,13 @@ struct GroupChatView: View {
         let start = shownFrom.map { from in all.firstIndex { $0.seq >= from } ?? all.count } ?? all.count
         guard start > 0 else { return }
         shownFrom = all[max(0, start - Self.pageSize)].seq
+    }
+
+    /// The room's name in the chat list, which a rename from its row's menu changes.
+    private var listedName: String? { GroupDirectory.shared.rooms.first { $0.id == feed.room.id }?.name }
+
+    private func followListedName(_ old: String?, _ name: String?) {
+        if let name, name != feed.room.name { feed.named(name) }
     }
 
     // MARK: Parts

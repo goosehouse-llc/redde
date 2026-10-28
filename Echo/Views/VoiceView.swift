@@ -26,14 +26,35 @@ struct VoiceView: View {
     private static let demo = DevHooks.voiceDemo
     private static let demoWords = DevHooks.value("-echo.voiceDemo").flatMap { $0.hasPrefix("-") ? nil : $0 }
         ?? "Okay, prune anything older than thirty days and try the media share again"
-    /// `-echo.voiceDemoPhase speaking`: posed mid-reply instead.
-    private static let demoPhase: VoiceSession.Phase = DevHooks.voiceDemoSpeaking ? .speaking : .listening
+    /// `-echo.voiceDemoPhase speaking`: posed mid-reply instead; `thinking`, thinking.
+    private static let demoPhase: VoiceSession.Phase = DevHooks.voiceDemoSpeaking ? .speaking
+        : DevHooks.value("-echo.voiceDemoPhase") == "thinking" ? .thinking : .listening
+    /// `-echo.voiceDemoPhase follow`: the pose follows the conversation a demo plays into it
+    /// (`-echo.demoCall`): listening (the words coming in) until the question is there, thinking
+    /// until the reply starts, speaking from then on (the promo video's live call).
+    private static let demoFollows = DevHooks.value("-echo.voiceDemoPhase") == "follow"
+    /// `-echo.voiceDemoCall`: posed on a call, as an agent's call or a live voice has it ("On a call").
+    private static let demoOnCall = DevHooks.has("-echo.voiceDemoCall")
+    /// `-echo.voiceDemoSaid "<words>"`: speaking, what the call's voice says, as its caption, a
+    /// word at a time (an agent's call answered: its line).
+    private static let demoSaid = DevHooks.value("-echo.voiceDemoSaid")
+    /// `-echo.voiceDemoReveal <seconds a word>`: the demo's words come in a word at a time, as
+    /// they are heard, instead of all at once.
+    private static let demoReveal = DevHooks.value("-echo.voiceDemoReveal").flatMap(Double.init)
+    private var phase: VoiceSession.Phase {
+        guard Self.demo else { return session.phase }
+        guard Self.demoFollows else { return Self.demoPhase }
+        guard let last = conversation.messages.last else { return .listening }
+        return last.role == .user || last.text.isEmpty ? .thinking : .speaking
+    }
     #else
     private static let demo = false
     private static let demoWords = ""
-    private static let demoPhase: VoiceSession.Phase = .listening
+    private static let demoOnCall = false
+    private static let demoSaid: String? = nil
+    private static let demoReveal: Double? = nil
+    private var phase: VoiceSession.Phase { session.phase }
     #endif
-    private var phase: VoiceSession.Phase { Self.demo ? Self.demoPhase : session.phase }
 
     /// An iPhone Duo half open: where its fold lies across the screen (`Fold`).
     @State private var fold: Fold?
@@ -112,6 +133,9 @@ struct VoiceView: View {
             }
             .toggleStyle(.button)
             .buttonStyle(.glass)
+            // On, it is filled with the accent: its words in the theme's colour for that (white on
+            // the Code theme's pale sky could hardly be read, 2026-10-28).
+            .foregroundStyle(session.continuous ? theme.userText : Color.primary)
             if session.canLook {
                 Toggle(isOn: Binding(get: { session.isLooking }, set: { session.setLooking($0) })) {
                     Label("Camera", systemImage: "camera")
@@ -119,6 +143,7 @@ struct VoiceView: View {
                 .labelStyle(.iconOnly)
                 .toggleStyle(.button)
                 .buttonStyle(.glass)
+                .foregroundStyle(session.isLooking ? theme.userText : Color.primary)
                 .accessibilityHint("Sends what the camera sees with each question")
             }
             Spacer(minLength: 0)
@@ -224,7 +249,11 @@ struct VoiceView: View {
         switch phase {
         case .listening:
             let words = Self.demo ? Self.demoWords : session.liveTranscript
-            if words.isEmpty {
+            if Self.demo, let pace = Self.demoReveal {
+                DemoRevealedCaption(text: words, pace: pace)
+                    .font(.title2.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+            } else if words.isEmpty {
                 Text("Go ahead.")
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(.tertiary)
@@ -240,6 +269,10 @@ struct VoiceView: View {
             Text("Connecting…")
                 .font(.title2.weight(.semibold))
                 .foregroundStyle(.tertiary)
+                .frame(maxWidth: .infinity)
+        case .speaking where Self.demo && Self.demoSaid != nil:
+            DemoRevealedCaption(text: Self.demoSaid ?? "", pace: Self.demoReveal ?? 0.3)
+                .font(.title2.weight(.semibold))
                 .frame(maxWidth: .infinity)
         // GPT-Live's voice: what it is saying, as the person's words are shown while they talk.
         case .speaking where session.isLive && !session.liveSaid.isEmpty:
@@ -473,6 +506,7 @@ struct VoiceView: View {
             default: break
             }
         }
+        if Self.demoOnCall, phase == .listening { return String(localized: "On a call") }
         if session.isLive {
             switch phase {
             case .thinking where session.liveConnecting: return String(localized: "Calling \(session.liveEngine?.name ?? "GPT-Live")")
@@ -1281,6 +1315,22 @@ private struct RisingCaption: View {
         .animation(.easeOut(duration: 0.25), value: words.count)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(text)
+    }
+}
+
+/// The voice demo's caption a word at a time, `pace` seconds a word from when it is first shown,
+/// as words heard or said come in (`-echo.voiceDemoReveal`, `-echo.voiceDemoSaid`).
+private struct DemoRevealedCaption: View {
+    let text: String
+    let pace: Double
+    @State private var shownAt = Date.now
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 0.05)) { context in
+            let words = text.split(separator: " ")
+            let count = min(words.count, max(0, Int(context.date.timeIntervalSince(shownAt) / max(0.05, pace)) + 1))
+            RisingCaption(text: words.prefix(count).joined(separator: " "))
+        }
     }
 }
 

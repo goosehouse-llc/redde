@@ -603,6 +603,18 @@ struct ComposerView: View {
             conversation.send(text, attachments: attachments)
             if !conversation.isIncognito { SiriHooks.donateSend(text) }
         }
+        if Self.dropsKeyboardOnSend { focused = false }
+    }
+
+    /// After a message goes, an iPhone's keyboard goes down, so the reply has the screen (asked
+    /// 2026-10-28). An iPad or a Mac, often typed on with a real keyboard, keeps the cursor in the
+    /// field for the next one.
+    static var dropsKeyboardOnSend: Bool {
+        #if os(iOS)
+        UIDevice.current.userInterfaceIdiom == .phone
+        #else
+        false
+        #endif
     }
 
     private func cancelEditing() {

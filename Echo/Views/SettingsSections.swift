@@ -339,6 +339,26 @@ struct AgentSettings<Details: View>: View {
         }
 
         Section {
+            NavigationLink { MorningIdeasView() } label: { Label("Morning Ideas", systemImage: "lightbulb") }
+                .disabled(!canReachGateway)
+        } footer: {
+            Text("Each morning your agent offers a few things it could do for you, as cards you take or put away with a swipe.")
+        }
+
+        Section {
+            NavigationLink { WatchesView() } label: { Label("Watches & Follow-ups", systemImage: "eye") }
+                .disabled(!canReachGateway)
+        } footer: {
+            Text("Things your agent keeps an eye on and tells you only when they change, and loose ends it brings back to you when they're due.")
+        }
+
+        Section {
+            NavigationLink { ApprovalHistoryView() } label: { Label("Approval History", systemImage: "checkmark.shield") }
+        } footer: {
+            Text("Every time your agent asked before running something, what it was, why it asked and what you answered. Kept on this device only.")
+        }
+
+        Section {
             NavigationLink { PhoneToolsSettingsView() } label: {
                 LabeledContent {
                     Settings.shared.phoneTools.on ? Text("On") : Text("Off")

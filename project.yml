@@ -342,6 +342,9 @@ targets:
       - path: Shared/Attachment.swift
       # A muted chat's notification is delivered quietly.
       - path: Shared/MutedChats.swift
+      # The agent's ideas, and what its watches saw, kept as they arrive with Redde closed.
+      - path: Shared/AgentIdeas.swift
+      - path: Shared/AgentWatches.swift
     entitlements:
       path: EchoPush/EchoPush.entitlements
       properties:

@@ -1114,10 +1114,12 @@ final class VoiceSession {
         case .always: break
         }
         // Not while the turn waits for the person, which is not work; not over a reply that is
-        // held; and not into a microphone left open on the phone's own speaker, where a sound
-        // that starts can pass for a voice (`BargeInDetector`).
+        // held; and not into a microphone left open on the phone's own speaker in a reply's
+        // pause, where a sound that starts can pass for a voice (`BargeInDetector`). Before the
+        // reply nothing listens for a voice (the open microphone only holds its last second), so
+        // it plays then (2026-10-27: with Talk over replies on the speaker it never did).
         guard asking == nil, conversation.pendingInterrupt == nil, !isPaused, !acknowledging, !replaying,
-              !(micStaysOpen && audio.route == .speaker) else { return false }
+              !(micStaysOpen && audio.route == .speaker && phase == .speaking && !Self.thinkingIntoOpenMic) else { return false }
         switch phase {
         case .thinking: return true
         case .speaking: return turnOpen && output.meterLevel < 0.02
@@ -1131,6 +1133,9 @@ final class VoiceSession {
             quietTask?.cancel()
             quietTask = nil
             playThinkingSound(false)
+            #if DEBUG
+            quietBlockNoted = false
+            #endif
             return
         }
         guard quietTask == nil else { return }
@@ -1150,6 +1155,13 @@ final class VoiceSession {
     /// that is long enough and stopped as soon as it isn't so.
     private func heardNothing(since: ContinuousClock.Instant?) -> ContinuousClock.Instant? {
         guard isQuietlyWorking else {
+            #if DEBUG
+            // Why not, once a turn: it never started in voice mode on Marta (2026-10-27).
+            if phase == .thinking, !quietBlockNoted {
+                quietBlockNoted = true
+                LiveMeasure.write("no thinking sound while the agent works: \(quietBlocker)", to: "voice-turns.log")
+            }
+            #endif
             playThinkingSound(false)
             return nil
         }
@@ -1166,8 +1178,45 @@ final class VoiceSession {
             audio.refreshRoute()   // (starting a sound can put the output back on the earpiece)
         } else {
             thinkingSound.stop()
+            thinkingSoundStopped = .now
         }
+        #if DEBUG
+        let micOpen = micStaysOpen && audio.route == .speaker
+        LiveMeasure.write("thinking sound \(on ? "on" : "off") (\(phase), \(audio.route)\(micOpen ? ", the microphone open" : ""))", to: "voice-turns.log")
+        #endif
     }
+
+    /// Whether the thinking sound plays into a microphone left open on the phone's speaker in a
+    /// reply's pause, where talking over the reply is listened for: on in development builds,
+    /// while what it does there is measured (`voiceOverReply` notes a voice heard while it
+    /// plays), off in the App Store's until that shows it is never taken for one (2026-10-27).
+    #if DEBUG
+    static let thinkingIntoOpenMic = true
+    #else
+    static let thinkingIntoOpenMic = false
+    #endif
+    /// When the thinking sound last stopped: a voice heard just after may still be its tail.
+    private var thinkingSoundStopped: ContinuousClock.Instant?
+
+    #if DEBUG
+    private var quietBlockNoted = false
+    /// What keeps the thinking sound from playing now (`isQuietlyWorking`), for the log.
+    private var quietBlocker: String {
+        var why: [String] = []
+        switch thinkingSoundWanted() {
+        case .off: why.append("set to Off")
+        case .car: if !carConnected(), audio.route != .car { why.append("set to In the car, not in one") }
+        case .always: break
+        }
+        if asking != nil { why.append("a request asked of the person") }
+        if conversation.pendingInterrupt != nil { why.append("an approval waiting") }
+        if isPaused { why.append("paused") }
+        if acknowledging { why.append("acknowledging") }
+        if replaying { why.append("replaying") }
+        if micStaysOpen, audio.route == .speaker, phase == .speaking, !Self.thinkingIntoOpenMic { why.append("the microphone open on the speaker") }
+        return why.isEmpty ? "nothing found (phase \(phase), route \(audio.route))" : why.joined(separator: ", ")
+    }
+    #endif
 
     private func replyFinishedSpeaking() {
         if asking != nil {
@@ -1468,6 +1517,12 @@ final class VoiceSession {
     /// Interrupt with.
     private func voiceOverReply() {
         guard monitoring, phase == .speaking, confirmTask == nil else { return }
+        #if DEBUG
+        // Whether the thinking sound is taken for the person: a voice heard while it plays, or
+        // within half a second of it stopping, is noted as such.
+        let fromSound = thinkingSoundOn || thinkingSoundStopped.map { ContinuousClock.now - $0 < .milliseconds(500) } == true
+        LiveMeasure.write("a voice heard over the reply\(fromSound ? " WHILE THE THINKING SOUND PLAYED" : "") (\(audio.route), output \(String(format: "%.3f", output.meterLevel)))", to: "voice-turns.log")
+        #endif
         if inCar || interruption() == .stopWord { listenForStop() } else { holdToHearWords() }
     }
 

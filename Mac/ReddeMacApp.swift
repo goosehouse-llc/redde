@@ -91,6 +91,7 @@ struct ReddeMacApp: App {
                     // A conversation left without its reply fetches it, or picks the turn up.
                     Task { await conversation.catchUp() }
                     Task { await CaptureInbox.shared.file() }   // notes taken offline
+                    IdeasInbox.shared.reload()
                     Task { await ReplyCardsSwitch.publish() }
                     Mutes.publish()
                 @unknown default: break

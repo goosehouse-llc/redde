@@ -639,6 +639,13 @@ final class GroupDirectory {
         rooms.removeAll { $0.id == room }
         if open?.id == room { open = nil }
     }
+
+    /// A room renamed here (its row's menu, or the chat's): the list, and the chat if it is open,
+    /// show the new name at once, not at the next listing.
+    func renamed(_ room: String, to name: String) {
+        if let index = rooms.firstIndex(where: { $0.id == room }) { rooms[index].name = name }
+        if open?.id == room { open?.name = name }
+    }
 }
 
 /// One room as it is followed on screen: what was said, read from its log, and what it waits on,
@@ -844,6 +851,8 @@ final class GroupFeed {
     }
 
     func answer(_ approval: GroupApproval, _ choice: String) {
+        let asker = room.member(approval.memberID)?.label ?? String(localized: "A bot")
+        ApprovalHistory.shared.record(approval.request, choice: choice, agent: asker, chat: room.name)
         settle(approval.id) { try await $0.answerGroupApproval(self.room.id, approval, choice: choice) }
     }
 
@@ -877,6 +886,10 @@ final class GroupFeed {
     func rename(to name: String) async throws {
         try await client.renameGroup(room.id, to: name)
         room.name = name
+        GroupDirectory.shared.renamed(room.id, to: name)
         await look()
     }
+
+    /// Renamed elsewhere (the chat list's menu, beside the open chat on an iPad or a Mac).
+    func named(_ name: String) { room.name = name }
 }

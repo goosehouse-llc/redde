@@ -85,6 +85,7 @@ Everything else that a person reads is a `String`, and isn't, until it goes thro
 Keys with a count whose English has a singular and a plural form (`import en` gives English its
 `one`/`other` forms):
 
+- `%@ has %lld ideas for you` (one: `%@ has %lld idea for you`)
 - `%lld attachments` (one: `%lld attachment`)
 - `%lld changes behind` (one: `%lld change behind`)
 - `%lld characters…` (one: `%lld character…`)
@@ -110,6 +111,7 @@ Keys with a count whose English has a singular and a plural form (`import en` gi
 - `Redde has %lld questions` (one: `Redde has %lld question`)
 - `Shows the %lld bots hidden from this list` (one: `Shows the %lld bot hidden from this list`)
 - `This runs hermes update, %lld changes, and restarts Hermes.` (one: `This runs hermes update, %lld change, and restarts Hermes.`)
+- `Your agent has %lld ideas for you` (one: `Your agent has %lld idea for you`)
 - `its %lld custom headers` (one: `its custom header`)
 
 Two counts sit in a sentence with other values and stay plural in English, since a whole-string

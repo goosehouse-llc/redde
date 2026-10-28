@@ -18,8 +18,9 @@ struct ApprovalCard: View {
                 .padding(8)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color(.tertiarySystemBackground), in: .rect(cornerRadius: 8))
+            // Hermes's rule for asking ("recursive delete"), or a plugin's reason.
             if let description = request.description, !description.isEmpty {
-                Text(description).chatFont(.footnote).foregroundStyle(.secondary)
+                Text("Why: \(description)", comment: "Under an approval: the rule or reason the agent had to ask").chatFont(.footnote).foregroundStyle(.secondary)
             }
             if request.kanbanCard != nil, KanbanClient.isAvailable {
                 Button("View Changes", systemImage: "plus.forwardslash.minus") { showingChange = true }

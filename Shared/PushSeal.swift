@@ -58,6 +58,13 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
         /// alone, which rings with CallKit (`AgentCalls`); a call not answered is shown with this
         /// note's words (`fill`).
         case call
+        /// Things an agent could do for the person, as cards to take or put away (`p` its
+        /// profile, `d` its name, `i` the offer's id, `y` the ideas). Kept by `AgentIdeas`.
+        case ideas
+        /// A watch saw something change (`p` the agent's profile, `d` its name, `t` what is
+        /// watched, `b` what changed, or why it couldn't look with `w` "failed", `i` the watch).
+        /// Kept by `WatchReport`.
+        case watch
     }
 
     var v = 1
@@ -90,8 +97,16 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
     var x: String?
     /// On a bot's schedule's, and a call's: the bot's profile ("default", the main agent).
     var p: String?
-    /// On a call: its own id.
+    /// On a call: its own id. On ideas: the offer's.
     var i: String?
+    /// On ideas: each one's heading (`t`), why now (`w`) and the request it would carry out (`r`).
+    var y: [Idea]?
+
+    nonisolated struct Idea: Codable, Equatable, Sendable {
+        var t: String?
+        var w: String?
+        var r: String?
+    }
 
     /// Nil for a kind a newer plugin sends and this build doesn't know.
     var kind: Kind? { Kind(rawValue: k) }
@@ -412,6 +427,22 @@ nonisolated extension PushNote {
             content.body = String(PlainText.display(b ?? "").prefix(300))
             content.threadIdentifier = "redde.call"
             content.interruptionLevel = .timeSensitive
+        case .watch:
+            let what = t.flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "A watch", comment: "Notification: something the agent watches, when it has no name")
+            content.title = w == "failed" ? String(localized: "Couldn't check \(what)", comment: "Notification: a watch, by what it watches, couldn't look") : what
+            if let d, !d.isEmpty { content.subtitle = d }
+            content.body = String(PlainText.display(b ?? "").prefix(300))
+            content.threadIdentifier = "redde.watch.\(i ?? "")"
+        case .ideas:
+            let count = y?.count ?? 0
+            if let who = d.flatMap({ $0.isEmpty ? nil : $0 }) {
+                content.title = String(localized: "\(who) has \(count) ideas for you", comment: "Notification: an agent, by its name, offers things it could do")
+            } else {
+                content.title = String(localized: "Your agent has \(count) ideas for you")
+            }
+            content.body = (y ?? []).compactMap { $0.t ?? $0.r }.prefix(5).map { "• " + $0 }.joined(separator: "\n")
+            content.threadIdentifier = "redde.ideas"
+            content.interruptionLevel = .passive
         case .groupWait:
             let who = d.flatMap { $0.isEmpty ? nil : $0 }
             if let t, !t.isEmpty { content.subtitle = t }
@@ -433,7 +464,8 @@ nonisolated extension PushNote {
         if kind == .approval || kind == .groupWait, let h, !h.isEmpty { info[Self.approvalKey] = h }
         if kind == .question, let h, !h.isEmpty { info[Self.questionKey] = h }
         if let g, !g.isEmpty { info[Self.roomKey] = g }
-        if kind == .routine, let p, !p.isEmpty { info[Self.botKey] = p }
+        // A bot's opens its chat; the main agent's (a job Sol made) has none to open: Redde opens.
+        if kind == .routine, let p, !p.isEmpty, p != "default" { info[Self.botKey] = p }
         // A bot's missed call opens its chat; the main agent's, the conversation it called from.
         if kind == .call, let p, !p.isEmpty, p != "default" { info[Self.botKey] = p }
         if let x, !x.isEmpty { info[Self.taskKey] = x }

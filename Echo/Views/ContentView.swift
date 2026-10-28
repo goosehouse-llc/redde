@@ -143,6 +143,7 @@ struct ContentView: View {
         .sheet(item: $whatsNew) { WhatsNewView(release: $0, wide: sizeClass == .regular) }
         #if DEBUG
         .sheet(isPresented: $showProfilePicker) { NavigationStack { ProfilePickerView() } }
+        .modifier(WatchDraftSheet())
         .sheet(isPresented: $showTips) { NavigationStack { TipJarView() } }
         .sheet(isPresented: $showServers) { NavigationStack { ServersView() } }
         .sheet(isPresented: $showPush) { NavigationStack { PushSettingsView() } }
@@ -639,6 +640,16 @@ struct ContentView: View {
         case .kanban:
             NavigationStack { KanbanView().navigationTitle("Kanban").navigationBarTitleDisplayMode(.inline) }
                 .id(settings.connectionKey)
+        case .made:
+            NavigationStack {
+                MadeView { id in
+                    Task {
+                        if let full = await ConversationStore.shared.loadRecord(id: id) { conversation.load(full) }
+                        section = .sessions
+                    }
+                }
+                .navigationTitle("Made").navigationBarTitleDisplayMode(.inline)
+            }
         }
     }
 

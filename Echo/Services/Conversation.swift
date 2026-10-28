@@ -1445,6 +1445,9 @@ final class Conversation {
     func respond(approval choice: String) {
         guard let pendingInterrupt, case let .approval(request) = pendingInterrupt.interrupt else { return }
         clearInterrupt()
+        if !isIncognito {
+            ApprovalHistory.shared.record(request, choice: choice, agent: bot?.name ?? settings.headerTitle, chat: title)
+        }
         if connection == .hermesSessions {
             let api = ledgerAPI()
             run {
@@ -1596,11 +1599,15 @@ final class Conversation {
 
     /// Starts this bot's chat over (`HermesServeClient.startFresh`) and opens the new one, empty.
     func startBotChatFresh(mainName: String) async throws {
-        guard let ref = bot, !isStreaming else { return }
+        guard let ref = bot else { return }
+        // A reply still coming (or one just finishing) is stopped: Start Fresh was asked for, and
+        // returning here did nothing at all, so it took a second tap (2026-10-28).
+        if isStreaming { cancel() }
+        let old = serverSessionID
         if ref.viaAPI == true {
             // Over the API: the chat archived (kept, with its messages), and a new one made.
-            guard let api = ledgerAPI(for: ref), let stored = serverSessionID else { return }
-            try await api.updateSession(id: stored, archived: true)
+            guard let api = ledgerAPI(for: ref) else { throw APIBotProblem.noKey(ref.name) }
+            if let old { try await api.updateSession(id: old, archived: true) }
             let fresh = try await api.createSession(title: BotChat.title)
             return try await loadLedgerSession(fresh, bot: ref)
         }
@@ -1610,9 +1617,18 @@ final class Conversation {
         }
         try await client.startFresh(current)
         // Read again: the roster no longer names the chat put aside, so the bot gets a new one.
-        let roster = try await BotDirectory.shared.refresh()
-        guard let fresh = roster.bots.first(where: { $0.name == ref.profile }) else { return }
-        try await openBot(fresh, mainName: mainName)
+        // Just after, Hermes could still list the old one, which then opened again, as if nothing
+        // had happened: a new chat is waited for, a few seconds at most.
+        for attempt in 0 ..< 5 {
+            let roster = try await BotDirectory.shared.refresh()
+            guard let fresh = roster.bots.first(where: { $0.name == ref.profile }) else {
+                throw TransportError.malformed(String(localized: "\(ref.name) isn't on this server any more"))
+            }
+            try await openBot(fresh, mainName: mainName)
+            if serverSessionID != old { return }
+            if attempt < 4 { try await Task.sleep(for: .milliseconds(700)) }
+        }
+        throw TransportError.malformed(String(localized: "Hermes hasn't put the old chat aside yet. Try again in a moment."))
     }
 
     /// Opens the conversation a Hermes session id names, from the server the app is on: what a

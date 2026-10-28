@@ -164,14 +164,27 @@ struct ThinkingSoundTests {
         #expect(h.sound.starts == 1)
     }
 
-    /// A microphone left open on the phone's own speaker would hear the sound start, and a
-    /// sound that starts can pass for a voice. On headphones the microphone hears none of it.
-    @Test func notIntoAMicrophoneOpenOnTheSpeaker() async throws {
+    /// A microphone left open on the phone's own speaker hears the sound, and in a reply's pause,
+    /// where talking over the reply is listened for, a sound that starts can pass for a voice:
+    /// there it plays only while that is being measured (`VoiceSession.thinkingIntoOpenMic`,
+    /// development builds). Before the reply nothing listens for a voice, so it plays (with Talk
+    /// over replies on the speaker, it never did: 2026-10-27). On headphones the microphone
+    /// hears none of it.
+    @Test func intoAMicrophoneOpenOnTheSpeakerBeforeTheReply() async throws {
         let speaker = Harness(Held([], then: []), talkOver: .everywhere)
         try await speaker.ask()
-        try await speaker.wait()
-        #expect(speaker.sound.starts == 0)
+        try await SpokenRequestTests.waitUntil("the sound before the reply") { speaker.sound.isOn }
         speaker.session.cancel()
+
+        let transport = Held([.textDelta("Let me check. ")], then: [.textDelta("It finished at nine."), .done])
+        let pause = Harness(transport, talkOver: .everywhere)
+        pause.speaker.meterLevel = 0.5
+        try await pause.ask()
+        try await SpokenRequestTests.waitUntil("the first words") { pause.session.phase == .speaking }
+        pause.speaker.meterLevel = 0   // the agent at its tools, the microphone listening for a voice
+        try await pause.wait()
+        #expect(pause.sound.isOn == VoiceSession.thinkingIntoOpenMic)
+        pause.session.cancel()
 
         let headphones = Harness(Held([], then: []), route: .headphones, talkOver: .headphones)
         try await headphones.ask()

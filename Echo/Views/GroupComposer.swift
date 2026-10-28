@@ -147,6 +147,7 @@ struct GroupComposer: View {
         feed.send(draft, attachments: attachments)
         draft = ""
         attachments = []
+        if ComposerView.dropsKeyboardOnSend { focused.wrappedValue = false }
     }
 
     private func toggleDictation() {

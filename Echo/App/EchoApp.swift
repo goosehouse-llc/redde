@@ -98,6 +98,7 @@ struct EchoApp: App {
                     // without its reply fetches it, or picks the turn up where it stands.
                     Task { await conversation.catchUp() }
                     Task { await CaptureInbox.shared.file() }   // notes taken offline
+                    IdeasInbox.shared.reload()   // ideas that came while Redde was closed
                     // Which phone tools the agent is offered is this phone's to say, and the
                     // server may have been restarted, or reached for the first time, since it did.
                     if Settings.shared.phoneTools.on { Task { await DeviceToolsService.shared.publish() } }

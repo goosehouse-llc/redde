@@ -45,6 +45,9 @@ struct ConversationsList: View {
     @State private var query = ""
     @State private var renaming: HermesSessionsAPI.SessionSummary?
     @State private var renameText = ""
+    /// A group chat being renamed from its row's menu, and the name typed.
+    @State private var renamingRoom: GroupRoom?
+    @State private var roomRenameText = ""
     @State private var usageFor: HermesSessionsAPI.SessionSummary?
     @State private var projects: [HermesServeClient.Project] = []
     /// Every project that is a folder, with or without conversations: where one can be moved to.
@@ -127,18 +130,20 @@ struct ConversationsList: View {
         case move(HermesSessionsAPI.SessionSummary)
     }
 
-    /// Sessions, scheduled jobs, or the kanban board; the latter two live on the gateway.
+    /// Sessions, scheduled jobs, the kanban board (the two live on the gateway), or what the
+    /// agents made (from the replies on this device).
     enum Tab: String, CaseIterable, Identifiable {
-        case sessions, cron, kanban
+        case sessions, cron, kanban, made
         var id: String { rawValue }
         var title: String {
             switch self {
             case .sessions: String(localized: "Chats")
             case .cron: String(localized: "Cron", comment: "The list's section of scheduled jobs (cron jobs)")
             case .kanban: String(localized: "Kanban", comment: "The list's section with the kanban board")
+            case .made: String(localized: "Made", comment: "The list's section with the pages, pictures and files the agents made")
             }
         }
-        var icon: String { switch self { case .sessions: "bubble.left.and.bubble.right"; case .cron: "clock"; case .kanban: "rectangle.split.3x1" } }
+        var icon: String { switch self { case .sessions: "bubble.left.and.bubble.right"; case .cron: "clock"; case .kanban: "rectangle.split.3x1"; case .made: "square.stack" } }
     }
     /// Chats, Cron or Kanban: kept across launches, and shared with the iPad's detail pane.
     @AppStorage(Self.sectionKey) private var section: Tab = .sessions
@@ -166,6 +171,33 @@ struct ConversationsList: View {
         if let showSettingsSheet { showSettingsSheet() } else { showSettings = true }
     }
 
+    /// An idea taken: its request goes to the agent that offered it, as the person's message, in a
+    /// new conversation with the main agent or in the bot's chat. A bot gone since: the main agent.
+    private func takeIdea(_ idea: AgentIdea) {
+        IdeasInbox.shared.remove(idea)
+        Task {
+            do {
+                if idea.profile != "default", let bot = botDirectory.roster?.bots.first(where: { $0.name == idea.profile }) {
+                    try await conversation.openBot(bot, mainName: settings.headerTitle)
+                } else if conversation.bot != nil || conversation.hasMessages || !conversation.outbox.isEmpty {
+                    conversation.reset()
+                }
+                conversation.send(AgentIdea.message(for: idea))
+                opened()
+            } catch {
+                ledgerError = error.localizedDescription
+            }
+        }
+    }
+
+    /// From the Made tab: the chat a thing was made in.
+    private func openMadeIn(_ id: UUID) {
+        Task {
+            if let full = await store.loadRecord(id: id) { conversation.load(full) }
+            opened()
+        }
+    }
+
     private func opened(room: GroupRoom? = nil) {
         groups.open = room
         if wideDetail { section = .sessions }
@@ -181,6 +213,7 @@ struct ConversationsList: View {
             case .kanban:
                 // Gone once the panel has slid out (not as it starts to), taking its live socket along.
                 if !panelParked { KanbanView(topRow: AnyView(topRow)).id(settings.connectionKey) } else { Color.clear }
+            case .made: MadeView(topRow: AnyView(topRow), openChat: openMadeIn)
             }
         }
         // From inside the navigation stack: hiding the whole panel doesn't reach UIKit's list,
@@ -234,6 +267,7 @@ struct ConversationsList: View {
                 Button("Sessions") { section = .sessions }.keyboardShortcut("1", modifiers: .command)
                 Button("Cron") { section = .cron }.keyboardShortcut("2", modifiers: .command)
                 Button("Kanban") { section = .kanban }.keyboardShortcut("3", modifiers: .command)
+                Button("Made") { section = .made }.keyboardShortcut("4", modifiers: .command)
             }
             .frame(width: 0, height: 0).opacity(0).accessibilityHidden(true)
         }
@@ -364,7 +398,10 @@ struct ConversationsList: View {
                 botsSection
             } else {
                 topRow
-                if query.isEmpty, !selecting { waitingNotesSection }
+                if query.isEmpty, !selecting {
+                    waitingNotesSection
+                    IdeasSection(take: takeIdea)
+                }
                 if usesLedger {
                     if query.isEmpty, !selecting {
                         if botsHere { botsSection }
@@ -464,6 +501,7 @@ struct ConversationsList: View {
         .task(id: "\(query)|\(settings.connectionKey)") { await searchMessages() }
         .onChange(of: ledger) { filterLedger() }
         .sheet(item: $usageFor) { SessionUsageView(session: $0) }
+        .modifier(GroupRenameAlert(room: $renamingRoom, text: $roomRenameText, save: rename))
         .alert("Rename session", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
             TextField("Title", text: $renameText)
             Button("Save") { if let s = renaming { rename(s, to: renameText) } }
@@ -919,14 +957,32 @@ struct ConversationsList: View {
                     Button("Mark as Unread", systemImage: "envelope.badge") { activity.markUnread(room: room.id) }
                 }
             }
-            // Hermes Desktop's group chats never notify: nothing to mute.
-            if !room.inDesktop { MuteMenu(item: "room:" + room.id) }
+            // Hermes Desktop's group chats are its own to name, and never notify: nothing to mute.
+            if !room.inDesktop {
+                Button("Rename", systemImage: "pencil") { roomRenameText = room.name; renamingRoom = room }
+                MuteMenu(item: "room:" + room.id)
+            }
             Divider()
             orderingBots
         }
         .accessibilityElement(children: .combine)
         .accessibilityValue(marks.spoken)
         .accessibilityHint(room.inDesktop ? String(localized: "Shows this Hermes Desktop group chat's last messages") : String(localized: "Opens this group chat"))
+    }
+
+    /// A group chat's new name, on the server: the room is Hermes's, on either connection.
+    private func rename(_ room: GroupRoom, to text: String) {
+        let name = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        renamingRoom = nil
+        guard !name.isEmpty, name != room.name else { return }
+        Task {
+            do {
+                try await HermesServeClient.shared.renameGroup(room.id, to: name)
+                groups.renamed(room.id, to: name)
+            } catch {
+                ledgerError = String(localized: "Couldn't rename “\(room.name)”: \(error.localizedDescription)")
+            }
+        }
     }
 
     private func openBot(_ bot: HermesBot) {
@@ -2419,5 +2475,20 @@ private struct ListSearchCarry: ViewModifier {
                 LayoutCarry.shared.listSearch = .init(wide: wide, query: query)
             }
             .onChange(of: query) { LayoutCarry.shared.listSearch = .init(wide: wide, query: query) }
+    }
+}
+
+/// "Rename group chat", from a group chat's row: its own modifier, the list's chain being long.
+private struct GroupRenameAlert: ViewModifier {
+    @Binding var room: GroupRoom?
+    @Binding var text: String
+    let save: (GroupRoom, String) -> Void
+
+    func body(content: Content) -> some View {
+        content.alert("Rename group chat", isPresented: Binding(get: { room != nil }, set: { if !$0 { room = nil } })) {
+            TextField("Name", text: $text)
+            Button("Save") { if let room { save(room, text) } }
+            Button("Cancel", role: .cancel) { room = nil }
+        }
     }
 }

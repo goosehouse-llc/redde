@@ -341,6 +341,9 @@ struct KanbanCardDetail: View {
     @Environment(Conversation.self) private var conversation
     @State private var task: KanbanTask?
     @State private var comments: [KanbanComment] = []
+    /// All Hermes keeps of the card, for its report: what it needs, its attempts, its sources,
+    /// its timeline (asked 2026-10-28, after OpenDuet's task reports).
+    @State private var detail: KanbanDetail?
     /// The change the card carries (a worker's patch, as the claude bot leaves it), once read.
     @State private var change: KanbanClient.CardChange?
     @State private var showingChange = false
@@ -352,6 +355,7 @@ struct KanbanCardDetail: View {
         NavigationStack {
             List {
                 if let task {
+                    if let detail { needsYou(detail) }
                     Section {
                         Picker("Status", selection: $status) {
                             ForEach(Array(Set(KanbanStatus.movable + [task.status])).sorted { KanbanStatus.columns.firstIndex(of: $0) ?? 99 < KanbanStatus.columns.firstIndex(of: $1) ?? 99 }, id: \.self) {
@@ -369,6 +373,7 @@ struct KanbanCardDetail: View {
                     else if let s = task.latestSummary, !s.isEmpty { Section("Latest") { Text(s).font(.callout) } }
                     if let f = task.lastFailure, !f.isEmpty { Section("Last failure") { Text(f).font(.footnote).foregroundStyle(.red) } }
                     if let change { changeSection(change, task: task) }
+                    if let detail { report(detail) }
                     Section("Comments") {
                         ForEach(comments) { c in
                             VStack(alignment: .leading, spacing: 2) {
@@ -459,10 +464,85 @@ struct KanbanCardDetail: View {
 
     private func load() async {
         do {
-            let (t, c, attachments) = try await KanbanClient.task(taskID)
-            task = t; comments = c; status = t.status; error = nil
-            if attachments.contains(where: \.isPatch) { change = try? await KanbanClient.change(of: taskID) }
+            let found = try await KanbanClient.detail(taskID)
+            detail = found
+            task = found.task; comments = found.comments; status = found.task.status; error = nil
+            if found.attachments.contains(where: \.isPatch) { change = try? await KanbanClient.change(of: taskID) }
         } catch { self.error = error.localizedDescription }
+    }
+
+    // MARK: The report
+
+    /// What the card waits on the person for, at the top: blocked and why, or a review, with the
+    /// moves that answer it.
+    @ViewBuilder private func needsYou(_ detail: KanbanDetail) -> some View {
+        switch detail.task.status {
+        case "blocked":
+            Section {
+                Label("Blocked", systemImage: "exclamationmark.octagon").foregroundStyle(.orange)
+                if let why = detail.waitingReason, !why.isEmpty { Text(why).font(.callout) }
+                Button("Unblock", systemImage: "arrow.uturn.forward") { status = "ready" }
+            } header: { Text("Needs you") }
+        case "review":
+            Section {
+                Label("Waiting for your review", systemImage: "eye").foregroundStyle(.tint)
+                if let summary = detail.waitingReason, !summary.isEmpty { Text(summary).font(.callout) }
+                Button("Mark Done", systemImage: "checkmark.circle") { status = "done" }
+                Button("Send Back", systemImage: "arrow.uturn.backward") { status = "ready" }
+            } header: { Text("Needs you") }
+        default:
+            EmptyView()
+        }
+    }
+
+    /// Its attempts, the pages it relied on, and what happened to it, oldest first.
+    @ViewBuilder private func report(_ detail: KanbanDetail) -> some View {
+        if !detail.runs.isEmpty {
+            Section("Attempts") {
+                ForEach(detail.runs) { run in
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(spacing: 6) {
+                            Text(run.profile ?? String(localized: "A worker", comment: "A kanban run with no profile named")).font(.subheadline.weight(.semibold))
+                            if let outcome = run.outcome { Text(KanbanStatus.label(outcome == "completed" ? "done" : outcome)).font(.caption).foregroundStyle(.secondary) }
+                            Spacer(minLength: 4)
+                            if let started = run.startedAt {
+                                Text(run.endedAt.map { Duration.seconds($0.timeIntervalSince(started)).formatted(.units(allowed: [.hours, .minutes, .seconds], width: .narrow, maximumUnitCount: 2)) }
+                                     ?? started.formatted(.relative(presentation: .named)))
+                                    .font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                            }
+                        }
+                        if let summary = run.summary, !summary.isEmpty { Text(summary).font(.callout) }
+                        if let error = run.error, !error.isEmpty { Text(error).font(.footnote).foregroundStyle(.red) }
+                    }
+                }
+            }
+        }
+        let sources = detail.sources
+        if !sources.isEmpty {
+            Section("Sources") {
+                ForEach(sources, id: \.self) { url in
+                    Link(destination: url) {
+                        Label(url.host() ?? url.absoluteString, systemImage: "link").lineLimit(1).truncationMode(.middle)
+                    }
+                }
+            }
+        }
+        if !detail.events.isEmpty {
+            Section {
+                DisclosureGroup("Timeline") {
+                    ForEach(detail.events) { event in
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack {
+                                Text(event.label).font(.subheadline)
+                                Spacer(minLength: 4)
+                                if let at = event.at { Text(at, format: .dateTime.month().day().hour().minute()).font(.caption).foregroundStyle(.secondary) }
+                            }
+                            if let detail = event.detail { Text(detail).font(.footnote).foregroundStyle(.secondary).lineLimit(3) }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /// A card done with a change on it: the change, and asking the agent to put it in place (it

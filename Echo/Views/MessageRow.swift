@@ -523,6 +523,7 @@ struct MessageRow: View, Equatable {
         }
         ShareLink(item: message.text) { Label("Share…", systemImage: "square.and.arrow.up") }
         Button("Select text", systemImage: "text.cursor") { selecting = true }
+        Button("Watch This…", systemImage: "eye") { WatchDraft.shared.start(PlainText.display(message.text)) }
         if let onRegenerate {
             Divider()
             Button("Regenerate", systemImage: "arrow.clockwise", action: onRegenerate).disabled(isLive)
@@ -539,6 +540,7 @@ struct MessageRow: View, Equatable {
         if let onEdit, message.role == .user {
             Button("Edit & resend", systemImage: "pencil", action: onEdit).disabled(isLive)
         }
+        Button("Watch This…", systemImage: "eye") { WatchDraft.shared.start(message.text) }
         Divider()
         Text(message.createdAt.formatted(date: .abbreviated, time: .shortened))
     }

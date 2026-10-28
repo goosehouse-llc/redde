@@ -469,7 +469,8 @@ extension HermesServeClient {
     private func findBotChat(_ bot: HermesBot) async throws -> String? {
         let result = try await call("session.list", params: .object([
             "profile": .string(bot.name), "title": .string(BotChat.title), "include_hidden": .bool(true), "limit": .number(200)]))
-        guard let row = (result["sessions"]?.array ?? []).first(where: { $0["title"]?.string == BotChat.title }) else { return nil }
+        // Never one put aside (Start Fresh), should the list still have it.
+        guard let row = (result["sessions"]?.array ?? []).first(where: { $0["title"]?.string == BotChat.title && $0["archived"]?.bool != true }) else { return nil }
         return row["resolved_id"]?.string?.nilIfEmpty ?? row["id"]?.string
     }
 
@@ -485,7 +486,7 @@ extension HermesServeClient {
         let result = try await call("session.list", params: .object([
             "profile": .string(bot.name), "title": .string(BotChat.title), "include_hidden": .bool(true), "limit": .number(200)]))
         // The title is the first part's, when Hermes has compressed the chat into more.
-        guard let row = (result["sessions"]?.array ?? []).first(where: { $0["title"]?.string == BotChat.title }),
+        guard let row = (result["sessions"]?.array ?? []).first(where: { $0["title"]?.string == BotChat.title && $0["archived"]?.bool != true }),
               let root = row["id"]?.string else { return }
         noteProfile(bot.name, forStored: root)
         do {
