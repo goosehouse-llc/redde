@@ -226,7 +226,7 @@ struct BriefingCard: View {
                 Spacer(minLength: 0)
                 WeekStrip(plan: week)
             } else {
-                if let starts = briefing.eventAt {
+                if let starts = briefing.startsAt {
                     Label {
                         Text(briefing.leaveAt.map { "\(starts.formatted(date: .omitted, time: .shortened)) · " + String(localized: "Leave by \($0.formatted(date: .omitted, time: .shortened))") }
                              ?? starts.formatted(date: .omitted, time: .shortened))
@@ -237,7 +237,7 @@ struct BriefingCard: View {
                     Label(found.address, systemImage: "mappin.and.ellipse").font(.footnote.weight(.medium)).lineLimit(1)
                 }
                 Text(PlainText.display(briefing.text)).font(.subheadline).opacity(0.75)
-                    .lineLimit(briefing.eventAt == nil && briefing.mapPlace == nil ? 4 : 2)
+                    .lineLimit(briefing.startsAt == nil && briefing.mapPlace == nil ? 4 : 2)
                 Spacer(minLength: 0)
             }
         }
@@ -410,6 +410,7 @@ struct BriefingSheet: View {
                     if let week = briefing.week {
                         WeekCalendarView(plan: week)
                     } else {
+                        if let starts = briefing.startsAt { EventCard(briefing: briefing, starts: starts) }
                         MarkdownView(text: briefing.text, selectable: true)
                         if let found = briefing.mapPlace { AddressMapCard(found: found) }
                     }
