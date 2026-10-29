@@ -61,6 +61,56 @@ async def lookup(dash, profile):
     return next((r for r in rows if r.get("title") == "Bot Chat"), None)
 
 
+async def earlier_chats(dash, opener, old):
+    """A bot's earlier chats (Redde's Earlier Chats, 2026-10-29): Start Fresh archives the chat
+    (`session.archive`), the new one takes the title "Bot Chat" (Hermes clears it off the archived
+    one), the Dashboard lists the archived one (`GET /api/profiles/sessions?archived=only`, hidden
+    rows included), and bringing it back (the new one archived, the old one given the title and
+    unarchived, `PATCH /api/sessions/{id}`) makes it the bot's chat again. Hermes 0.22 and later."""
+    try:
+        await dash.call("session.archive", {"session_id": old, "profile": BOT, "archived": True})
+    except Exception as error:
+        print(f"  info  earlier chats: no session.archive here ({str(error)[:80]}), skipped")
+        return
+    made = await dash.call("session.create", {"profile": BOT, "title": "Bot Chat", "hidden": True, "follow_profile_config": True,
+                                              "source": "desktop", "close_on_disconnect": False})
+    await dash.call("session.title", {"session_id": made.get("session_id"), "title": "Bot Chat"})
+    new = made.get("stored_session_id") or made.get("session_id")
+    found = await lookup(dash, BOT)
+    report(found is not None and found.get("id") == new, "Start Fresh: the new chat takes the title from the archived one",
+           json.dumps(found)[:200])
+    rows = rest(opener, "GET", f"/api/profiles/sessions?profile={BOT}&archived=only&order=recent&limit=100").get("sessions") or []
+    kept = next((r for r in rows if r.get("id") == old), None)
+    report(kept is not None, "the Dashboard lists the archived chat, hidden as it is",
+           f"{len(rows)} archived; row {json.dumps({k: (kept or {}).get(k) for k in ('id', 'title', 'hidden', 'archived', 'source', 'message_count')})}")
+    rest(opener, "PATCH", f"/api/sessions/{new}", {"archived": True, "profile": BOT})
+    rest(opener, "PATCH", f"/api/sessions/{old}", {"title": "Bot Chat", "archived": False, "profile": BOT})
+    found = await lookup(dash, BOT)
+    report(found is not None and found.get("id") == old, "brought back, the old chat is the bot's chat again", json.dumps(found)[:200])
+    rows = rest(opener, "GET", f"/api/profiles/sessions?profile={BOT}&archived=only&order=recent&limit=100").get("sessions") or []
+    report(any(r.get("id") == new for r in rows) and not any(r.get("id") == old for r in rows),
+           "and the one it replaced is the earlier chat now", json.dumps([r.get("id") for r in rows]))
+    # The Hermes API: no listing of archived chats, but one is still had by its id.
+    sid = check.api_session(title="Lab earlier chat")
+    patched = check.api("PATCH", f"/api/sessions/{sid}", {"archived": True, "hidden": True})
+    status, body = check.api("GET", f"/api/sessions/{sid}")
+    got = json.loads(body or "{}")
+    listed = [s.get("id") for s in (json.loads(check.api("GET", "/api/sessions?limit=200")[1] or "{}").get("data") or [])]
+    report(patched[0] == 200 and status == 200 and (got.get("session") or got).get("id") == sid and sid not in listed,
+           "Hermes API: archived and hidden, a chat isn't listed but is had by its id", f"{patched[0]} {status} {body[:200]}")
+    status, body = check.api("GET", "/api/sessions?limit=200&title=Lab%20earlier%20chat&include_hidden=true")
+    report(sid not in [s.get("id") for s in json.loads(body or "{}").get("data") or []],
+           "Hermes API: the title lookup leaves an archived one out too", body[:200])
+    # A bot's chat made over the API is hidden like the Dashboard's, and still found by its title.
+    chat = check.api_session(title="Bot Chat")
+    hid = check.api("PATCH", f"/api/sessions/{chat}", {"hidden": True})
+    plain = [s.get("id") for s in json.loads(check.api("GET", "/api/sessions?limit=200")[1] or "{}").get("data") or []]
+    status, body = check.api("GET", "/api/sessions?limit=200&title=Bot%20Chat&include_hidden=true")
+    report(hid[0] == 200 and chat not in plain and chat in [s.get("id") for s in json.loads(body or "{}").get("data") or []],
+           "Hermes API: a hidden Bot Chat leaves the list and is found by its title", f"{hid[0]} {body[:200]}")
+    check.api("DELETE", f"/api/sessions/{chat}")
+
+
 async def main():
     dash = await Dashboard.connect()
     opener = rest_opener()
@@ -132,6 +182,8 @@ async def main():
     first = hits()[:1]
     report(bool(first) and not first[0].get("bots") and not first[0].get("message_agent"),
            "an ordinary conversation on the same profile has neither", json.dumps(first))
+
+    await earlier_chats(fresh, opener, stored)
 
     # Leave the lab as it was found: the next check starts with no bots.
     await fresh.call("profiles.configure", {"name": "default", "ui_meta": {"hermes-bots": None}})

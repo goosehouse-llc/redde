@@ -124,9 +124,11 @@ def text_of(message):
 
 
 def tool_call(body, name, arguments):
-    """How the model calls a tool it may be offered only through tool search."""
+    """How the model calls a tool it may be offered only through tool search. With LAB_DIRECT=1
+    it calls it by its own name anyway, as the local Qwen does (2026-10-29), for the check that a
+    patched Hermes sends such a call through the bridge itself."""
     offered = [tool.get("function", {}).get("name") for tool in body.get("tools") or []]
-    if name in offered or "tool_call" not in offered:
+    if name in offered or "tool_call" not in offered or os.environ.get("LAB_DIRECT") == "1":
         return "", (name, arguments)
     bridge = next(t.get("function", {}) for t in body.get("tools") or [] if t.get("function", {}).get("name") == "tool_call")
     batched = "calls" in (bridge.get("parameters") or {}).get("properties", {})
@@ -314,6 +316,9 @@ class Handler(BaseHTTPRequestHandler):
                 name = next((n for n in names if n in offered), None)
                 if name:
                     planned = (name, arguments)
+                elif os.environ.get("LAB_DIRECT") == "1" and "tool_call" in offered:
+                    # By its own name though only the bridge offers it, as the local Qwen does.
+                    planned = (names[0], arguments)
                 elif (names is TODO or names[0].startswith(("phone_", "redde_", "kanban_", "call_"))) and "tool_call" in offered:
                     # From Hermes 0.21.3 most tools are not offered outright: the model finds
                     # them and calls them through `tool_call`, by name. (0.21.0 does the same once
