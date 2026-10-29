@@ -17,11 +17,11 @@ from pathlib import Path
 
 from .calls import caller
 from .followups import when_of
-from .routines import NOTIFY
 
 TOOLSET = "redde_ideas"
 TOOL = "heads_up_before"
-PREFIX = f"{NOTIFY} Heads-up: "
+#: `routines.NOTIFY` and the event: its answer reaches the phone as a briefing.
+PREFIX = "[redde-notify] Heads-up: "
 #: At most this many waiting, and how far before an event one may come.
 MOST = 20
 LEADS = (5, 120)
@@ -36,12 +36,44 @@ DESCRIPTION = (
 EVENT = "The event as the calendar names it (\"Dentist\", \"Lunch with Ana\")."
 STARTS = ("When it starts, ISO 8601 with its UTC offset, in the user's time (\"2026-10-29T14:30:00-04:00\").")
 MINUTES = f"How many minutes before it starts to send the heads-up ({LEADS[0]} to {LEADS[1]}; {DEFAULT_LEAD} if not given)."
+WHERE = ("The event's address, when it has one (\"12 Main St, Springfield\"): the iPhone works out when to leave from it, "
+         "with where the user is, which stays on the phone.")
 CHECK = ("What to look at then, as notes to yourself: the place, who is coming, what to bring, whether it is "
          "outdoors (\"at Dr. Lee's on Main St; bring the insurance card\").")
 
 
 def name_of(event: str) -> str:
     return PREFIX + event
+
+
+def _known(home: Path) -> Path:
+    return Path(home) / "redde-push" / "headsups.json"
+
+
+def remember(home: Path, event: str, starts: datetime, where: str) -> None:
+    """When the event starts and where it is, by its job's name, for the note the heads-up's
+    answer goes in (`routines.py` adds them: the phone's widget counts down to it, and works out
+    when to leave)."""
+    import time
+    path = _known(home)
+    try:
+        known = json.loads(path.read_text())
+        known = known if isinstance(known, dict) else {}
+    except (OSError, ValueError):
+        known = {}
+    now = time.time()
+    known = {k: v for k, v in known.items() if isinstance(v, dict) and v.get("at", 0) > now - 3 * 86400}
+    known[name_of(event)] = {"starts": starts.isoformat(), "where": where, "at": now}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(known))
+
+
+def recall(home: Path, name: str) -> dict:
+    try:
+        found = json.loads(_known(home).read_text()).get(name)
+        return found if isinstance(found, dict) else {}
+    except (OSError, ValueError, AttributeError):
+        return {}
 
 
 def prompt(event: str, starts: datetime, check: str) -> str:
@@ -78,10 +110,11 @@ def _near(moment: datetime | None, at: datetime) -> bool:
 
 
 def set_up(home: Path, event: str, starts: str, minutes=None, check: str = "", make=None,
-           now: datetime | None = None) -> dict:
+           now: datetime | None = None, where: str = "") -> dict:
     """Makes the job; what the tool answers. `make` is Hermes's `cron.jobs.create_job` (a stand-in in tests)."""
     event = " ".join(str(event or "").split())[:80]
     check = " ".join(str(check or "").split())[:300]
+    where = " ".join(str(where or "").split())[:200]
     if not event:
         return {"error": "Say which event, as \"event\"."}
     moment = when_of(starts, now)
@@ -106,6 +139,10 @@ def set_up(home: Path, event: str, starts: str, minutes=None, check: str = "", m
         except Exception:
             return {"error": "This Hermes can't schedule heads-ups (no cron)."}
     make(prompt(event, moment, check), schedule, name=name_of(event), deliver="local")
+    try:
+        remember(home, event, moment, where)
+    except OSError:
+        pass
     return {"set": f"A heads-up for \"{event}\" comes at {at.strftime('%-H:%M')}."}
 
 
@@ -126,13 +163,15 @@ def register(ctx, home_of, store_in) -> None:
 
     def handle(args, **kwargs) -> str:
         args = args if isinstance(args, dict) else {}
-        return json.dumps(set_up(Path(home_of()), args.get("event"), args.get("starts"), args.get("minutes"), args.get("check") or ""))
+        return json.dumps(set_up(Path(home_of()), args.get("event"), args.get("starts"), args.get("minutes"), args.get("check") or "",
+                                 where=args.get("where") or ""))
 
     schema = {"name": TOOL, "description": DESCRIPTION,
               "parameters": {"type": "object",
                              "properties": {"event": {"type": "string", "description": EVENT},
                                             "starts": {"type": "string", "description": STARTS},
                                             "minutes": {"type": "integer", "description": MINUTES},
-                                            "check": {"type": "string", "description": CHECK}},
+                                            "check": {"type": "string", "description": CHECK},
+                                            "where": {"type": "string", "description": WHERE}},
                              "required": ["event", "starts"]}}
     ctx.register_tool(name=TOOL, toolset=TOOLSET, schema=schema, handler=handle, check_fn=offered, emoji="🔔")

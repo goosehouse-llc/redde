@@ -50,6 +50,9 @@ LINK = "https://redde.goosehouse.org/connect#push="
 #: note travels inside it encrypted and base64-encoded.
 NOTE_LIMIT = 2400
 BODY_LIMIT = 500
+#: A briefing's words: the whole of it is what the phone shows (a week ahead drawn as a calendar),
+#: so as much as a note carries; NOTE_LIMIT still has the last word.
+BRIEF_LIMIT = 1800
 WATCHED_SESSIONS = 500
 
 
@@ -525,7 +528,8 @@ def room_note(kind: str, room: str, name: str = "", body: str = "", detail: str 
     return made
 
 
-def routine_note(profile: str, bot: str, title: str, body: str = "", failed: bool = False, brief: str = "") -> dict:
+def routine_note(profile: str, bot: str, title: str, body: str = "", failed: bool = False, brief: str = "",
+                 starts: str = "", where: str = "") -> dict:
     """One of a bot's schedules ran (`routines.py`): `p` the bot's profile, `d` what it is called,
     `t` the schedule's name, `b` what it came up with (or why it didn't finish, `w` "failed"). A
     `[redde-notify]` job's, whose answer has no chat to be in, is a briefing the phone keeps: `x`
@@ -533,15 +537,20 @@ def routine_note(profile: str, bot: str, title: str, body: str = "", failed: boo
     made = {"v": 1, "k": "routine", "at": int(time.time()), "n": host_name(), "p": clipped(profile, 64)}
     if brief:
         made["x"], made["i"] = "brief", clipped(brief, 40)
+    # A heads-up's event: when it starts (`u`) and where (`r`), for the phone's widget and leave time.
+    if starts:
+        made["u"] = clipped(starts, 40)
+    if where:
+        made["r"] = clipped(where, 200)
     for key, value, limit in (("d", bot, 80), ("t", title, 80)):
         if value:
             made[key] = clipped(value, limit)
     if failed:
         made["w"] = "failed"
     if body:
-        made["b"] = clipped(body, BODY_LIMIT, lines=True)
+        made["b"] = clipped(body, BRIEF_LIMIT if brief else BODY_LIMIT, lines=True)
     while len(json.dumps(made, ensure_ascii=False).encode()) > NOTE_LIMIT and len(made.get("b", "")) > 20:
-        made["b"] = clipped(made["b"], len(made["b"]) * 2 // 3, lines=True)
+        made["b"] = clipped(made["b"], len(made["b"]) * 9 // 10 if brief else len(made["b"]) * 2 // 3, lines=True)
     return made
 
 

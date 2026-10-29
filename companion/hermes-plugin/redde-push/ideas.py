@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 import uuid
 from pathlib import Path
@@ -49,6 +50,31 @@ TITLE = "What you would do, in a few words, as a card's heading (\"Book the vet 
 WHY = "One short line on why now (\"His jab is due Friday and Thursday is free\")."
 REQUEST = ("The request you would carry out if they take the card, as they would say it to you, complete in itself "
            "(\"Book Pickles in at the vet on Thursday afternoon and add it to my calendar\").")
+
+
+#: Redde's own jobs whose ideas are the point (Settings, Agent: Morning Ideas, Routine
+#: Suggestions). A run of one that offered nothing with the tool still reaches the phone: the
+#: ideas it wrote out in its answer as cards, else the answer as a briefing (`routines.py`). Hermes
+#: 0.22 keeps plugin tools behind tool_search, and a model that doesn't look there writes the ideas
+#: out instead (the owner's first Morning Ideas, 2026-10-29: nothing came).
+JOBS = ("[redde] Morning ideas", "[redde] Routine suggestions")
+#: How such an answer writes an idea: "IDEA: Book the vet | His jab is due Friday | Book Pickles in…".
+_WRITTEN = re.compile(r"^\s*(?:[-*•]\s*)?\**IDEA\**\s*[:：]\**\s*(.+)$", re.IGNORECASE | re.MULTILINE)
+
+
+def from_answer(text: str) -> list[dict]:
+    """The ideas a job's answer wrote out ("IDEA: title | why | request"), as the tool keeps them."""
+    found = []
+    for line in _WRITTEN.findall(text or ""):
+        parts = [part.strip(" *") for part in line.split("|")]
+        if len(parts) >= 3:
+            title, why, request = parts[0], parts[1], " | ".join(parts[2:])
+        elif len(parts) == 2:
+            title, why, request = parts[0], "", parts[1]
+        else:
+            title, why, request = parts[0], "", parts[0]
+        found.append({"title": title, "why": why, "request": request})
+    return cleaned(found)
 
 
 def sent_lately(home: Path, profile: str, now: float) -> list[float]:

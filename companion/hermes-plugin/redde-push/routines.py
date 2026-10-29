@@ -21,6 +21,7 @@ import re
 import logging
 import threading
 import time
+import uuid
 from pathlib import Path
 
 from . import core, watches
@@ -151,12 +152,14 @@ class Routines:
         with self.store.rooms_lock("routines") as mine:
             if not mine:
                 return 0
+            from . import ideas   # (here: ideas reaches back to this module for Stores)
             seen, now = self.store.routine_runs(), {}
             for profile, home in self.stores.homes():
                 for job in self.stores.jobs(home):
                     watching = watches.is_watch(job)
                     told = str(job.get("name") or "").startswith(NOTIFY)
-                    if not (watching or told or str(job.get("deliver") or "").startswith("bot-chat")) or not job.get("id"):
+                    offering = str(job.get("name") or "") in ideas.JOBS
+                    if not (watching or told or offering or str(job.get("deliver") or "").startswith("bot-chat")) or not job.get("id"):
                         continue
                     key, last = f"{profile}|{job['id']}", str(job.get("last_run_at") or "")
                     now[key] = last
@@ -174,8 +177,26 @@ class Routines:
                         outgoing.append((profile, core.watch_note(profile, self.stores.name(home, profile), watches.title(name),
                                                                   words, watches.watch_id(name) or "", failed=failed)))
                         continue
+                    if offering:
+                        # The tool used during the run: the cards are on the phone already.
+                        if not failed and ideas.sent_lately(self.stores.root, profile, time.time()):
+                            continue
+                        written = [] if failed else ideas.from_answer(words)
+                        if written:
+                            outgoing.append((profile, core.ideas_note(profile, self.stores.name(home, profile), written,
+                                                                      uuid.uuid4().hex[:16])))
+                            ideas.remember(self.stores.root, profile, time.time())
+                        elif failed or (words and not watches.quiet(words)):
+                            # Neither: what it said, so the person sees the run wasn't for nothing.
+                            outgoing.append((profile, core.routine_note(profile, self.stores.name(home, profile),
+                                                                        untagged(str(job.get("name") or "")).removeprefix("[redde] ").capitalize(),
+                                                                        words, failed=failed, brief=str(job["id"]))))
+                        continue
+                    from . import headsup   # (here: headsup's own imports reach back to this module)
+                    event = headsup.recall(home, str(job.get("name") or "")) if told else {}
                     outgoing.append((profile, core.routine_note(profile, self.stores.name(home, profile), untagged(str(job.get("name") or "")),
-                                                                words, failed=failed, brief=str(job["id"]) if told else "")))
+                                                                words, failed=failed, brief=str(job["id"]) if told else "",
+                                                                starts=str(event.get("starts") or ""), where=str(event.get("where") or ""))))
             self.store.set_routine_runs(now)
         sent = 0
         for profile, made in outgoing:

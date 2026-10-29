@@ -212,3 +212,19 @@ class AgentWatchTests(RoutinesTests):
         for said in ("Let me know when Ana replies", "Can you keep an eye on the price of that kettle?", "tell me if the PR gets merged"):
             self.assertIn("keep_an_eye_on", watches.ask_note(self.root, lambda _: self.store, said) or "", said)
         self.assertIsNone(watches.ask_note(self.root, lambda _: self.store, "What's the weather?"))
+
+
+class HeadsUpEventTests(RoutinesTests):
+    def test_a_heads_ups_note_says_when_and_where_its_event_is(self):
+        headsup = plugin.headsup
+        now = datetime(2026, 10, 29, 10, 0, tzinfo=timezone.utc)
+        headsup.set_up(self.root, "Dentist", "2026-10-29T14:30:00-04:00", 30, where="12 Main St, Springfield",
+                       make=lambda *a, **k: None, now=now)
+        home = self.job("default", last="2026-10-29T14:00:00", deliver="local", name="[redde-notify] Heads-up: Dentist")
+        self.watch.look()
+        self.output(home, "## Response\\n\\nBring the insurance card.")
+        self.job("default", last="2026-10-29T14:01:00", deliver="local", name="[redde-notify] Heads-up: Dentist")
+        self.assertEqual(self.watch.look(), 1)
+        made = self.sent[0][1]
+        self.assertEqual(made["u"], "2026-10-29T14:30:00-04:00")
+        self.assertEqual(made["r"], "12 Main St, Springfield")

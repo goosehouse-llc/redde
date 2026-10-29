@@ -90,6 +90,54 @@ class RoutinesTests(unittest.TestCase):
         self.assertNotEqual(core.collapse_id(device, one), core.collapse_id(device, two))
         self.assertEqual(routines.untagged("[bot:scout] What to wear"), "What to wear")
 
+    def morning(self, last, answer=None, status="ok", error=None):
+        home = self.job("default", last=last, deliver="local", name="[redde] Morning ideas", status=status, error=error)
+        if answer is not None:
+            self.output(home, "# Cron Job: Morning ideas\n\n## Response\n\n" + answer)
+        return home
+
+    def test_morning_ideas_written_out_instead_of_offered_still_come_as_cards(self):
+        self.morning("2026-10-28T07:30:00")
+        self.watch.look()
+        self.morning("2026-10-29T07:30:00", "Here are a few:\n\nIDEA: Book the vet | His jab is due Friday | Book Pickles in at the vet on Thursday\n"
+                                            "- **IDEA:** Call the plumber | The tap still drips | Call the plumber about the kitchen tap")
+        self.assertEqual(self.watch.look(), 1)
+        made = self.sent[0][1]
+        self.assertEqual(made["k"], "ideas")
+        self.assertEqual([(i["t"], i.get("w"), i["r"]) for i in made["y"]],
+                         [("Book the vet", "His jab is due Friday", "Book Pickles in at the vet on Thursday"),
+                          ("Call the plumber", "The tap still drips", "Call the plumber about the kitchen tap")])
+        self.assertTrue(plugin.ideas.sent_lately(self.root, "default", time.time()), "counted like the tool's")
+
+    def test_morning_ideas_offered_with_the_tool_arent_sent_twice(self):
+        self.morning("2026-10-28T07:30:00")
+        self.watch.look()
+        plugin.ideas.remember(self.root, "default", time.time())
+        self.morning("2026-10-29T07:30:00", "IDEA: Book the vet | Due Friday | Book the vet")
+        self.assertEqual(self.watch.look(), 0)
+
+    def test_morning_ideas_with_no_cards_says_what_it_said_or_why_it_failed(self):
+        self.morning("2026-10-27T07:30:00")
+        self.watch.look()
+        self.morning("2026-10-28T07:30:00", "Your day looks clear; I'd suggest checking the board later.")
+        self.morning("2026-10-29T07:30:00", status="error", error="tool_search failed")
+        self.watch.look()
+        made = self.sent[0][1]
+        self.assertEqual((made["k"], made["x"], made["t"], made["w"]), ("routine", "brief", "Morning ideas", "failed"))
+        self.assertIn("tool_search failed", made["b"])
+
+    def test_morning_ideas_that_found_nothing_say_nothing(self):
+        self.morning("2026-10-28T07:30:00")
+        self.watch.look()
+        self.morning("2026-10-29T07:30:00", "NOTHING NEW")
+        self.assertEqual(self.watch.look(), 0)
+
+    def test_a_briefing_keeps_its_whole_week(self):
+        week = "The week.\n" + "\n".join(f"## Day {d}\n- 9:00 AM Something on day {d}\n- 1:00 PM Another thing" for d in range(7))
+        made = core.routine_note("default", "Sol", "Week ahead", week, brief="job1")
+        self.assertEqual(made["b"], week, "a briefing isn't cut at 500 like a schedule's line")
+        self.assertLessEqual(len(core.json.dumps(made, ensure_ascii=False).encode()), core.NOTE_LIMIT)
+
 
 if __name__ == "__main__":
     unittest.main()
