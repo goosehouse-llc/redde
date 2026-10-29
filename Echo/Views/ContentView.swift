@@ -528,7 +528,7 @@ struct ContentView: View {
                             Button { showModelPicker = true } label: {
                                 HStack(spacing: 3) {
                                     // A bot's chat names the tag another chat reaches it by.
-                                    Text("\(conversation.bot.map { "@" + BotMentions.shownTag(profile: $0.profile, handle: $0.handle, roster: BotDirectory.shared.roster) } ?? conversation.elsewhere.map { profileTitle($0.profile) } ?? settings.headerTitle) · \(modelChipLabel)").font(.caption).lineLimit(1)
+                                    Text("\(conversation.bot.map { "@" + BotMentions.shownTag(profile: $0.profile, handle: $0.handle, roster: BotDirectory.shared.roster) } ?? ProfileCatalog.agentName(conversation.elsewhere?.profile ?? settings.profileName, settings: settings)) · \(modelChipLabel)").font(.caption).lineLimit(1)
                                     Image(systemName: "chevron.down").font(.system(size: 8, weight: .bold))
                                 }
                                 .foregroundStyle(.secondary)
@@ -1037,8 +1037,11 @@ struct ContentView: View {
                 await launchVoice(handsFree: request.handsFree, fromOutside: false)
                 return
             }
-            if let profile = ProfileCatalog.find(asked, in: ProfileCatalog.known()), ProfileCatalog.use(profile, conversation: conversation), showVoice {
-                voiceSession.cancel()   // voice mode was open on the other profile: what it was saying is over
+            // A conversation on that profile, the app staying on its own: "Ask Work in Redde" once
+            // moved the whole app there for good, unseen (2026-10-29).
+            if let profile = ProfileCatalog.find(asked, in: ProfileCatalog.known()) {
+                if showVoice { voiceSession.cancel() }   // voice mode was open on another chat: what it was saying is over
+                ProfileCatalog.startConversation(on: profile.name, conversation: conversation, settings: settings)
             }
             await launchVoice(handsFree: request.handsFree, fromOutside: true)
         }

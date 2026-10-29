@@ -61,6 +61,12 @@ struct SwipeDeck<Item: Identifiable & Equatable, Face: View, Menu: View, Footer:
             }
             .frame(height: height)
             .frame(maxWidth: .infinity)
+            // Held, the top card's menu. On the deck, not on each card: on a card, the hold never
+            // opened it (2026-10-29, his "hold doesn't do anything").
+            #if os(iOS)
+            .contentShape(.contextMenuPreview, .rect(cornerRadius: 22))
+            #endif
+            .contextMenu { if let top { menu(top) } }
             HStack(spacing: 26) {
                 ForEach(buttons.indices, id: \.self) { i in
                     let choice = buttons[i]
@@ -77,10 +83,6 @@ struct SwipeDeck<Item: Identifiable & Equatable, Face: View, Menu: View, Footer:
         let isTop = depth == 0
         let moved = isTop ? drag + leaving : 0
         return face(item, isTop, moved)
-            #if os(iOS)
-            .contentShape(.contextMenuPreview, .rect(cornerRadius: 22))
-            #endif
-            .contextMenu { if isTop { menu(item) } }
             // The stamp lands in the corner the card leaves behind, where the finger isn't (asked 2026-10-28).
             .overlay(alignment: .topLeading) { if isTop { stamp(right.stamp, color: right.color, angle: -12).opacity(Double(max(0, moved) / Self.threshold)) } }
             .overlay(alignment: .topTrailing) { if isTop { stamp(left.stamp, color: left.color, angle: 12).opacity(Double(max(0, -moved) / Self.threshold)) } }
@@ -92,8 +94,10 @@ struct SwipeDeck<Item: Identifiable & Equatable, Face: View, Menu: View, Footer:
             .rotationEffect(.degrees(reduceMotion ? 0 : Double(moved / 18)), anchor: .bottom)
             .opacity(isTop && reduceMotion && leaving != 0 ? 0 : 1)
             .allowsHitTesting(isTop)
-            .onTapGesture { if isTop, let tap { tap(item) } }
             .simultaneousGesture(isTop ? dragging(item) : nil)
+            // A tap alongside, never in the way of the hold: a plain onTapGesture here, on every
+            // card, kept the menu from ever opening (2026-10-29, his "hold doesn't do anything").
+            .simultaneousGesture(TapGesture().onEnded { if isTop, let tap { tap(item) } }, including: tap == nil ? .subviews : .all)
             .accessibilityElement(children: .combine)
             .accessibilityHidden(!isTop)
             .accessibilityActions {

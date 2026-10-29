@@ -821,8 +821,10 @@ final class HermesServeClient {
     /// Returns (runtime id, stored id). A fresh session works in `folder` when one is given (a
     /// project's): that is what puts it in the project.
     /// `hidden`: a fresh session no app lists (an incognito chat's).
+    /// `profile`: a fresh session on that profile rather than the selected one; every later call
+    /// about it names it.
     func openSession(stored: String?, model: String? = nil, provider: String? = nil, reasoningEffort: String? = nil,
-                     folder: String? = nil, hidden: Bool = false) async throws -> (runtime: String, stored: String) {
+                     folder: String? = nil, hidden: Bool = false, profile: String? = nil) async throws -> (runtime: String, stored: String) {
         if let stored {
             let runtime: String
             if let cached = runtimeIDs[stored] {
@@ -856,9 +858,11 @@ final class HermesServeClient {
         if let reasoningEffort, !reasoningEffort.isEmpty { params["reasoning_effort"] = .string(reasoningEffort) }
         if let folder, !folder.isEmpty { params["cwd"] = .string(folder) }
         if hidden { params["hidden"] = .bool(true) }
+        if let profile { params["profile"] = .string(profile) }
         let result = try await call("session.create", params: .object(params))
         guard let runtime = result["session_id"]?.string else { throw TransportError.malformed("create: no session id") }
         let storedID = result["stored_session_id"]?.string ?? runtime
+        if let profile { noteProfile(profile, forStored: storedID) }
         runtimeIDs[storedID] = runtime
         if let info = result["info"] { ChatControlStore.shared.note(info, for: storedID) }
         if let reasoningEffort, !reasoningEffort.isEmpty { pinnedEfforts[runtime] = reasoningEffort }

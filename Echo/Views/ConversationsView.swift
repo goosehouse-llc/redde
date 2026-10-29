@@ -181,7 +181,12 @@ struct ConversationsList: View {
             do {
                 if idea.profile != "default", let bot = botDirectory.roster?.bots.first(where: { $0.name == idea.profile }) {
                     try await conversation.openBot(bot, mainName: settings.headerTitle)
-                } else if conversation.bot != nil || conversation.hasMessages || !conversation.outbox.isEmpty {
+                } else if idea.profile != (settings.profileName ?? ProfileCatalog.defaultID) {
+                    // The agent that offered it, whichever profile the app is on (2026-10-29: Sol's
+                    // ideas went to the research profile the app was left on, and Claude Code
+                    // answered them without the calendar).
+                    ProfileCatalog.startConversation(on: idea.profile, conversation: conversation, settings: settings)
+                } else if conversation.bot != nil || conversation.elsewhere != nil || conversation.hasMessages || !conversation.outbox.isEmpty {
                     conversation.reset()
                 }
                 conversation.send(AgentIdea.message(for: idea))
@@ -330,7 +335,11 @@ struct ConversationsList: View {
     /// a trip to Settings (a Reddit report, 2026-10-22: moving between profiles was clunky).
     private var profileMenu: some View {
         let current = settings.profileName ?? ProfileCatalog.defaultID
-        let title = allProfiles ? String(localized: "All Profiles") : profileLabel(current)
+        // With All Profiles on, where new chats start still shows when it isn't the main agent:
+        // the app was left on another profile once and nothing said so (2026-10-29).
+        let title = !allProfiles ? profileLabel(current)
+            : current == ProfileCatalog.defaultID ? String(localized: "All Profiles")
+            : String(localized: "All Profiles · new in \(profileLabel(current))", comment: "The chat list's profile menu: every profile's chats shown; new chats start on this one")
         return Menu {
             Button { allProfiles = true } label: {
                 Label("All Profiles", systemImage: allProfiles ? "checkmark" : "rectangle.stack")

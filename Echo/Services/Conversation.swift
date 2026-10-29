@@ -336,7 +336,10 @@ final class Conversation {
             replyLanguage: settings.replyLanguage.nilIfEmpty,
             brief: brief
         )
-        if connection == .hermesServe, serverSessionID == nil { request.folder = startsIn?.path }
+        if connection == .hermesServe, serverSessionID == nil {
+            request.folder = startsIn?.path
+            request.profile = bot == nil ? elsewhere?.profile : nil
+        }
         request.incognito = isIncognito
         request.fromPage = fromPage != nil
         request.live = live
@@ -1156,6 +1159,14 @@ final class Conversation {
         }
     }
     private static var deletingIncognito: Set<String> = []
+
+    /// Start a fresh conversation on another profile than the selected one, the app staying where
+    /// it is: its session is made on that profile, and every later call names it.
+    func startElsewhere(_ route: ProfileRoute) {
+        cancel(leaving: true)
+        persist()
+        become(elsewhere: route)
+    }
 
     /// Start a fresh conversation in a project: it works in the project's folder.
     func startNew(in place: ProjectPlace) {

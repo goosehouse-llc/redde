@@ -30,6 +30,23 @@ enum ProfileCatalog {
     /// The server's main profile first, then the ones kept, then the one in use if it is neither;
     /// each that is a bot by the name it was given as a bot ("Claude", not "claude"), so Siri
     /// learns that name.
+    /// What the agent of `profile` is called (nil or "default": the main agent's name): for the
+    /// header and the composer, which once said the main agent's name on every profile, so a chat
+    /// on another one looked like the main agent's (2026-10-29).
+    static func agentName(_ profile: String?, settings: Settings = .shared) -> String {
+        guard let profile, profile != defaultID else { return settings.headerTitle }
+        return known(settings: settings).first { same($0.name, profile) }?.title ?? profile
+    }
+
+    /// Starts a conversation on `profile`, leaving the app on the profile it is on: the
+    /// conversation alone goes there (an idea taken from another agent's cards, "Ask Work in
+    /// Redde" from Siri). Nothing to do for the profile in use but start a fresh conversation.
+    static func startConversation(on profile: String, conversation: Conversation, settings: Settings = .shared) {
+        let selected = settings.profileName ?? defaultID
+        if same(profile, selected) { return conversation.reset() }
+        conversation.startElsewhere(ProfileRoute(profile: profile, viaAPI: settings.transport == .hermesSessions))
+    }
+
     static func known(settings: Settings = .shared, defaults: UserDefaults = .standard) -> [KnownProfile] {
         var all = [main] + kept(settings: settings, defaults: defaults)
         if let current = settings.profileName, !all.contains(where: { same($0.name, current) }) {

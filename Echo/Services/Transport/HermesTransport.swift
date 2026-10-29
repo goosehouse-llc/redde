@@ -228,6 +228,9 @@ nonisolated struct TurnRequest: Sendable {
     /// The units the agent is to give measurements in (`MeasureUnits`), as the setting is when the
     /// turn is made; nil leaves it to the agent.
     var units: MeasureUnits? = MeasureUnits.forAgent()
+    /// On the Dashboard, the profile a new session is made on when it isn't the selected one
+    /// (`Conversation.startElsewhere`); nil for the selected one.
+    var profile: String? = nil
     /// Asked by voice in a car, with Settings → Voice → Short answers in the car on: the agent
     /// is asked to keep it short (`CarBrevity`), each transport in its own way.
     var brief = false

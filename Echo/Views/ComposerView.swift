@@ -468,7 +468,7 @@ struct ComposerView: View {
                 .accessibilityHint("Add a photo or file to your message")
                 TextField(dictation.isActive ? String(localized: "Listening…")
                           : conversation.canSteer ? String(localized: "Steer the reply…")
-                          : String(localized: "Ask \(conversation.bot?.name ?? settings.headerTitle)", comment: "The message field's placeholder: ask the agent, by its name"),
+                          : String(localized: "Ask \(conversation.bot?.name ?? ProfileCatalog.agentName(conversation.elsewhere?.profile ?? settings.profileName, settings: settings))", comment: "The message field's placeholder: ask the agent, by its name"),
                           text: $draft, axis: .vertical)
                     .lineLimit(1 ... 5)
                     .textFieldStyle(.plain)

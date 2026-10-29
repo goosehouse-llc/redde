@@ -46,7 +46,8 @@ nonisolated struct HermesServeTransport: HermesTransport {
                     try await client.ensureConnected()
                     let (runtime, stored) = try await client.openSession(
                         stored: request.sessionID, model: request.model, provider: request.provider,
-                        reasoningEffort: request.reasoningEffort, folder: request.folder, hidden: request.incognito)
+                        reasoningEffort: request.reasoningEffort, folder: request.folder, hidden: request.incognito,
+                        profile: request.profile)
                     let turn = TurnState(runtime: runtime, stored: stored)
                     state = turn
                     continuation.yield(.sessionID(stored))
