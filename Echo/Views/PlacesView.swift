@@ -108,9 +108,10 @@ struct PlaceEditor: View {
                         if finding { ProgressView() }
                     }
                     Picker("How Near", selection: $place.radius) {
-                        Text("Close (100 m)").tag(100.0)
-                        Text("Nearby (200 m)").tag(200.0)
-                        Text("Around (500 m)").tag(500.0)
+                        // In the person's units (`MeasureUnits`): 330 ft, 660 ft, 0.3 mi in the US.
+                        Text("Close (\(MeasureUnits.distance(100)))").tag(100.0)
+                        Text("Nearby (\(MeasureUnits.distance(200)))").tag(200.0)
+                        Text("Around (\(MeasureUnits.distance(500)))").tag(500.0)
                     }
                 } header: {
                     Text("Where")

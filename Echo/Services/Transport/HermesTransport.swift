@@ -225,6 +225,9 @@ nonisolated struct TurnRequest: Sendable {
     /// Settings → Voice → Reply language (an ISO code); nil lets the model choose. Each
     /// transport asks for it in its own way (`ReplyLanguage`).
     var replyLanguage: String? = nil
+    /// The units the agent is to give measurements in (`MeasureUnits`), as the setting is when the
+    /// turn is made; nil leaves it to the agent.
+    var units: MeasureUnits? = MeasureUnits.forAgent()
     /// Asked by voice in a car, with Settings → Voice → Short answers in the car on: the agent
     /// is asked to keep it short (`CarBrevity`), each transport in its own way.
     var brief = false

@@ -184,7 +184,7 @@ private struct MapCard: View {
     }
 
     static func distance(_ meters: CLLocationDistance) -> String {
-        Measurement(value: meters, unit: UnitLength.meters).formatted(.measurement(width: .abbreviated, usage: .road))
+        MeasureUnits.distance(meters)
     }
 }
 

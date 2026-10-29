@@ -188,6 +188,7 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
     /// reply language, the car's request for a short answer, and what a turn GPT-Live handed over is.
     static func instructions(for request: TurnRequest) -> String {
         ([clientHint] + [request.instructions?.nilIfEmpty, request.replyLanguage.map(ReplyLanguage.instruction),
+                         request.units.map(MeasureUnits.instruction),
                          request.brief ? CarBrevity.instruction : nil, request.incognito ? IncognitoNote.instruction : nil,
                          request.live.map { LiveVoiceNote.instruction(context: $0.context) },
                          request.answeringCall.map(CallNote.instruction)].compactMap { $0 })

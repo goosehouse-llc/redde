@@ -397,6 +397,14 @@ struct AgentSettings<Details: View>: View {
             Toggle(isOn: Binding(get: { Settings.shared.addressMaps }, set: { Settings.shared.addressMaps = $0 })) {
                 Label("Maps for addresses", systemImage: "mappin.and.ellipse")
             }
+            Picker(selection: Binding(get: { Settings.shared.measureUnits }, set: { Settings.shared.measureUnits = $0 })) {
+                Text(MeasureUnits.usesUS(.automatic) ? String(localized: "Automatic (US)") : String(localized: "Automatic (Metric)"))
+                    .tag(MeasureUnits.automatic)
+                Text("US (miles, °F)").tag(MeasureUnits.us)
+                Text("Metric (km, °C)").tag(MeasureUnits.metric)
+            } label: {
+                Label("Units", systemImage: "ruler")
+            }
         } footer: {
             Text("Your agent can show a map, places, the weather and the time under its reply, through Redde's Hermes plugin. The weather comes from Open-Meteo. Off, it isn't offered them, which makes every prompt a little shorter. With Maps for addresses on, a reply or a heads-up that names a street address gets a map of it, found by Apple Maps.")
         }

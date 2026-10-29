@@ -94,6 +94,14 @@ final class Settings: ServeEndpoint {
     var replyLanguage: String {
         didSet { store(replyLanguage, forKey: Keys.replyLanguage) }
     }
+    /// US or metric (`MeasureUnits`): Automatic follows the region. The plugin is told at once, for
+    /// the weather it looks up.
+    var measureUnits: MeasureUnits {
+        didSet {
+            store(measureUnits.rawValue, forKey: Keys.measureUnits)
+            if self === Settings.shared, oldValue != measureUnits { Task { await ReplyCardsSwitch.publish() } }
+        }
+    }
 
     /// Fresh installs start with reasoning off: a phone wants quick answers, and the gateway's
     /// own default is often tuned for a desk.
@@ -728,6 +736,7 @@ final class Settings: ServeEndpoint {
         static let gatewayProvider = "gatewayProvider"
         static let reasoningEffort = "reasoningEffort"
         static let replyLanguage = "replyLanguage"
+        static let measureUnits = MeasureUnits.key
         static let listenOnOpen = "listenOnOpen"
         static let wakeListening = "wakeListening"
         static let wakePhrases = "wakePhrases"
@@ -819,6 +828,7 @@ final class Settings: ServeEndpoint {
         gatewayProvider = defaults.string(forKey: Keys.gatewayProvider) ?? ""
         reasoningEffort = defaults.string(forKey: Keys.reasoningEffort) ?? Self.defaultReasoningEffort
         replyLanguage = defaults.string(forKey: Keys.replyLanguage) ?? ""
+        measureUnits = MeasureUnits(rawValue: defaults.string(forKey: Keys.measureUnits) ?? "") ?? .automatic
         listenOnOpen = defaults.bool(forKey: Keys.listenOnOpen)
         wakeListening = defaults.bool(forKey: Keys.wakeListening)
         launchScreen = defaults.string(forKey: Keys.launchScreen).flatMap(LaunchScreen.init(rawValue:))
@@ -961,7 +971,7 @@ final class Settings: ServeEndpoint {
     static let syncedKeys: [String] = [
         Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.botColors, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
         Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots, Keys.projectsInChatList,
-        Keys.fastLaneURL, Keys.fastLaneModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.contextWindow,
+        Keys.fastLaneURL, Keys.fastLaneModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.measureUnits, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
         Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopAndSkipInCar, Keys.stopPhrases,
         Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.voiceEngine, Keys.liveVoice, Keys.liveVoices, Keys.liveHangUp, Keys.liveWhenLocked, Keys.liveGroupCalls,
@@ -1004,6 +1014,7 @@ final class Settings: ServeEndpoint {
         case Keys.fastLaneModel: fastLaneModel = text(Self.defaultFastLaneModel)
         case Keys.reasoningEffort: reasoningEffort = text(Self.defaultReasoningEffort)
         case Keys.replyLanguage: replyLanguage = text()
+        case Keys.measureUnits: measureUnits = MeasureUnits(rawValue: text()) ?? .automatic
         case Keys.contextWindow: contextWindow = (value as? Int).flatMap { $0 > 0 ? $0 : nil } ?? Self.defaultContextWindow
         case Keys.suggestFollowUps: suggestFollowUps = flag()
         case Keys.showLiveActivity: showLiveActivity = flag(true)
@@ -1229,6 +1240,7 @@ final class Settings: ServeEndpoint {
         gatewayProvider = ""
         reasoningEffort = Self.defaultReasoningEffort
         replyLanguage = ""
+        measureUnits = .automatic
         listenOnOpen = false
         wakeListening = false
         launchScreen = .conversation

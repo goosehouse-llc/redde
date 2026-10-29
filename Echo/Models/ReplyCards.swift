@@ -262,9 +262,7 @@ nonisolated enum ReplyCards {
     static let lookedUpSource = "Open-Meteo.com"
 
     /// The temperature units this phone's person reads: "F" or "C".
-    static var preferredUnits: String {
-        UnitTemperature(forLocale: .current, usage: .weather) == .fahrenheit ? "F" : "C"
-    }
+    static var preferredUnits: String { MeasureUnits.temperature }
 
     static func parse(_ args: JSONValue?) -> [ReplyCard] {
         let list = args?["cards"]?.array ?? (args?["type"] != nil ? [args!] : [])
