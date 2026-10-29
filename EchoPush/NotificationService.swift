@@ -14,6 +14,7 @@ final class NotificationService: UNNotificationServiceExtension {
         self.content = content
         deliver = contentHandler
         var choices: UNNotificationCategory?
+        var headsUp: AgentBriefing?
         if let payload = request.content.userInfo[PushNote.sealedKey] as? String,
            let (note, pairing) = PushSeal.note(from: payload, pairings: PushVault.load()),
            note.fill(content) {
@@ -25,9 +26,13 @@ final class NotificationService: UNNotificationServiceExtension {
             // And what the agent wrote for its own widget in a turn the phone wasn't following.
             if AgentBoard.take(note) { WidgetCenter.shared.reloadTimelines(ofKind: AgentBoard.widgetKind) }
             // And ideas it offered, for the chat list to show when Redde opens.
-            AgentIdea.take(note)
+            if AgentIdea.take(note) { WidgetCenter.shared.reloadTimelines(ofKind: UpNext.widgetKind) }
             WatchReport.take(note)   // and what a watch saw, for the Watches list
-            AgentBriefing.take(note)   // and a briefing's whole text
+            // And a briefing's whole text; a heads-up's with when to leave for its event.
+            if AgentBriefing.take(note) { WidgetCenter.shared.reloadTimelines(ofKind: UpNext.widgetKind) }
+            if note.u != nil, note.r != nil, AgentBriefing.all().contains(where: { $0.title == note.t }) {
+                headsUp = AgentBriefing.all().first { $0.title == note.t && $0.eventAt != nil }
+            }
             AgentActivityNote.take(note)   // and, for Agent Activity, that it happened
             choices = note.choiceCategory
             // A chat the person muted (Mute… in Redde): in the list, without a sound or a banner.
@@ -48,6 +53,17 @@ final class NotificationService: UNNotificationServiceExtension {
             }
         }
         if !NotificationSound.isOn { content.sound = nil }
+        // A heads-up with an address: when to leave, worked out here from where the phone is, first.
+        if let headsUp {
+            nonisolated(unsafe) let content = content
+            nonisolated(unsafe) let contentHandler = contentHandler
+            Task {
+                if let line = await LeaveTime.work(out: headsUp) { content.body = line + "\n" + content.body }
+                WidgetCenter.shared.reloadTimelines(ofKind: UpNext.widgetKind)
+                contentHandler(content)
+            }
+            return
+        }
         // A question with choices: its buttons need a category of their own, registered now.
         if let category = choices {
             // (The system hands these over to be used once, from wherever the work finishes.)

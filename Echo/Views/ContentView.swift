@@ -389,7 +389,7 @@ struct ContentView: View {
                     }
                 }
             } message: {
-                Text("This chat is archived on your server with its messages, and the new one starts with no history. What the bot saved to its memory stays. To make this chat shorter instead, send /compress.")
+                Text("This chat is archived on your server with its messages, under Earlier Chats in the bot's menu, and the new one starts with no history. What the bot saved to its memory stays. To make this chat shorter instead, send /compress.")
             }
             .alert("Couldn't start fresh", isPresented: Binding(get: { freshProblem != nil }, set: { if !$0 { freshProblem = nil } })) {
                 Button("OK", role: .cancel) {}

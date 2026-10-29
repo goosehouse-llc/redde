@@ -571,6 +571,120 @@
         }
       }
     },
+    "NSHealthShareUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når Dage med blik for helbredet er slået til, læser Redde nattens søvn, dine skridt og dine træninger, så din agents morgenidéer og aftenopsummering tager højde for din dag. Kun et resumé på én linje sendes til din egen server."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn Gesundheitsbewusste Tage aktiviert ist, liest Redde den Schlaf der letzten Nacht, deine Schritte und deine Trainings, damit die Morgenideen und der Abendrückblick deines Agenten deinen Tag berücksichtigen. Nur eine einzeilige Zusammenfassung geht an deinen eigenen Server."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "With Health-Aware Days turned on, Redde reads last night's sleep, your steps and your workouts so your agent's morning ideas and evening wrap-up take your day into account. Only a one-line summary goes to your own server."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Días según tu salud activado, Redde lee el sueño de anoche, tus pasos y tus entrenamientos para que las ideas matutinas y el resumen de la noche de tu agente tengan en cuenta tu día. Solo un resumen de una línea llega a tu propio servidor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand Journées attentives à la santé est activé, Redde lit le sommeil de la nuit dernière, vos pas et vos entraînements pour que les idées du matin et le bilan du soir de votre agent tiennent compte de votre journée. Seul un résumé d’une ligne est envoyé à votre propre serveur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Giornate attente alla salute attivo, Redde legge il sonno della notte scorsa, i tuoi passi e i tuoi allenamenti perché le idee del mattino e il riepilogo serale del tuo agente tengano conto della tua giornata. Al tuo server arriva solo un riepilogo di una riga."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「健康を考慮した1日」をオンにすると、エージェントの朝のアイデアと夜の振り返りがあなたの1日を考慮できるよう、Reddeが昨夜の睡眠、歩数、ワークアウトを読み取ります。あなたのサーバに送られるのは1行の要約だけです。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "건강을 고려한 하루를 켜면 에이전트의 아침 아이디어와 저녁 하루 정리가 사용자의 하루를 반영할 수 있도록 Redde가 지난밤 수면, 걸음 수, 운동을 읽습니다. 사용자의 서버에는 한 줄 요약만 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når Dager med helse i tankene er slått på, leser Redde søvnen fra i natt, skrittene dine og treningsøktene dine, slik at morgenidéene og kveldsoppsummeringen til agenten tar hensyn til dagen din. Bare et sammendrag på én linje går til din egen tjener."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met Dagen met gezondheid in gedachten aan leest Redde de slaap van afgelopen nacht, je stappen en je trainingen, zodat de ochtendideeën en de avondterugblik van je agent rekening houden met je dag. Alleen een samenvatting van één regel gaat naar je eigen server."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy Dni z myślą o zdrowiu są włączone, Redde odczytuje sen z ostatniej nocy, Twoje kroki i treningi, aby poranne pomysły i wieczorne podsumowanie Twojego agenta uwzględniały Twój dzień. Do Twojego serwera trafia tylko jednowierszowe podsumowanie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com Dias Conforme a Saúde ativado, o Redde lê o sono da noite passada, seus passos e seus treinos para que as ideias matinais e o resumo da noite do seu agente levem seu dia em conta. Só um resumo de uma linha vai para o seu próprio servidor."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда «Дни с учетом здоровья» включены, Redde читает сон за прошлую ночь, ваши шаги и тренировки, чтобы утренние идеи и вечерние итоги агента учитывали ваш день. На ваш сервер уходит только сводка в одну строку."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Hälsomedvetna dagar på läser Redde nattens sömn, dina steg och dina träningspass så att din agents morgonidéer och kvällssammanfattning tar hänsyn till din dag. Bara en sammanfattning på en rad går till din egen server."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sağlığa Duyarlı Günler açıkken Redde, ajanınızın sabah fikirleri ve akşam özeti gününüzü hesaba katsın diye dün geceki uykunuzu, adımlarınızı ve antrenmanlarınızı okur. Kendi sunucunuza yalnızca tek satırlık bir özet gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли «Дні з урахуванням здоров’я» ввімкнено, Redde читає сон за минулу ніч, ваші кроки й тренування, щоб ранкові ідеї та вечірні підсумки агента враховували ваш день. На ваш сервер надходить лише зведення в один рядок."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开“关注健康的日子”后，Redde会读取你昨晚的睡眠、步数和体能训练，让智能体的早间想法和晚间总结考虑你的一天。只有一行摘要会发送到你自己的服务器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟「關注健康的日子」後，Redde 會讀取你昨晚的睡眠、步數和體能訓練，讓代理的晨間點子和晚間總結考量你的一天。只有一行摘要會傳送到你自己的伺服器。"
+          }
+        }
+      }
+    },
     "NSLocalNetworkUsageDescription" : {
       "comment" : "Why Redde asks for this permission",
       "extractionState" : "extracted_with_value",

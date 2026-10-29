@@ -100,6 +100,11 @@ targets:
         # Sync with iCloud (CloudSync): settings and servers in iCloud's key-value store. Their
         # secrets go in iCloud Keychain, which needs nothing more.
         com.apple.developer.ubiquity-kvstore-identifier: $(TeamIdentifierPrefix)$(CFBundleIdentifier)
+        # Health-Aware Days (HealthDays): reads sleep, steps and workouts, off until turned on;
+        # Health wakes Redde when new sleep or a workout is saved.
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
+        com.apple.developer.healthkit.background-delivery: true
     info:
       path: Echo/Info.plist
       properties:
@@ -169,6 +174,8 @@ targets:
         NSCameraUsageDescription: Redde uses the camera when you take a photo to attach to a message, when you show your assistant something in voice mode, and to scan a setup code. A photo goes only to the server you connect to.
         NSFaceIDUsageDescription: Redde uses Face ID to unlock the app, which holds your Hermes credentials.
         NSLocalNetworkUsageDescription: Redde connects to the Hermes gateway or model server you configure, which is often on your local network.
+        # Health-Aware Days (Settings → Agent → Health), off until turned on.
+        NSHealthShareUsageDescription: With Health-Aware Days turned on, Redde reads last night's sleep, your steps and your workouts so your agent's morning ideas and evening wrap-up take your day into account. Only a one-line summary goes to your own server.
         # Lets Siri accept "Hey Siri, ask Hermes" in addition to "ask Echo".
         INAlternativeAppNames:
           - INAlternativeAppName: Hermes
@@ -352,6 +359,7 @@ targets:
       - path: Shared/AgentBriefings.swift
       - path: Shared/AgentActivityLog.swift
       - path: Shared/QuietHours.swift
+      - path: Shared/LeaveTime.swift
     entitlements:
       path: EchoPush/EchoPush.entitlements
       properties:
@@ -479,6 +487,7 @@ targets:
       # (the file imports the app when WIDGET_VIEWS_IN_TESTS is set).
       - path: EchoControls/StatusWidgets.swift
       - path: EchoControls/BoardWidget.swift
+      - path: EchoControls/UpNextWidget.swift
     dependencies:
       - target: Echo
     settings:

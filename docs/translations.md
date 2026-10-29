@@ -93,6 +93,7 @@ Keys with a count whose English has a singular and a plural form (`import en` gi
 - `%lld characters…` (one: `%lld character…`)
 - `%lld chars` (one: `%lld char`)
 - `%lld conversations` (one: `%lld conversation`)
+- `%lld ideas` (one: `%lld idea`)
 - `%lld members` (one: `%lld member`)
 - `%lld messages` (one: `%lld message`)
 - `%lld minutes` (one: `%lld minute`)

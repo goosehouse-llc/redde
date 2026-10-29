@@ -95,6 +95,8 @@ struct ConversationsList: View {
     @State private var voicingMain = false
     /// The bot whose schedules are open (`BotSchedulesView`).
     @State private var scheduling: HermesBot?
+    /// The bot whose earlier chats are open (`EarlierChatsView`).
+    @State private var earlierFor: HermesBot?
     @State private var showingHiddenBots = false
     @AppStorage("sessions.showScheduled") private var showScheduled = false
     @State private var shareItem: ShareItem?
@@ -247,6 +249,10 @@ struct ConversationsList: View {
             .holdsWakePhrases(.voicePicker)
         }
         .sheet(item: $scheduling) { BotSchedulesView(bot: $0, mainName: settings.headerTitle) }
+        .sheet(item: $earlierFor) { bot in
+            EarlierChatsView(bot: bot, mainName: settings.headerTitle,
+                             read: { readEarlier($0, of: bot) }, bringBack: { bringBackEarlier($0, as: bot) })
+        }
         .sheet(item: $facing) { bot in
             BotFacePicker(bot: bot, name: bot.label(mainName: settings.headerTitle),
                           current: botDirectory.roster?.faces[bot.name] ?? BotFace(seed: bot.name)) {
@@ -547,7 +553,9 @@ struct ConversationsList: View {
         // Incognito chats aren't listed, here or (hidden on the Dashboard) by any app, until they go.
         let incognito = Incognito.sessions(on: settings.activeServerID.uuidString)
             .union(conversation.isIncognito ? [conversation.serverSessionID].compactMap(\.self) : [])
-        let listed = incognito.isEmpty ? ledger : ledger.filter { !incognito.contains($0.id) }
+        // A bot's chat is its bot's, in the Bots section, never a row: on the Dashboard it is hidden,
+        // and one made over the Hermes API before 2026-10-29 isn't.
+        let listed = ledger.filter { !incognito.contains($0.id) && $0.title != BotChat.title }
         let filtered = q.isEmpty ? listed : listed.filter {
             $0.displayTitle.lowercased().contains(q) || ($0.preview ?? "").lowercased().contains(q) || $0.sourceLabel.lowercased().contains(q)
         }
@@ -854,6 +862,7 @@ struct ConversationsList: View {
             Button("Voice…", systemImage: "waveform") { voicing = bot }
         }
         MuteMenu(item: "bot:" + bot.name)
+        Button("Earlier Chats…", systemImage: "clock.arrow.circlepath") { earlierFor = bot }
         // Its schedules are kept on the server through the Dashboard, delivered into its Bot Chat.
         if !bot.viaAPI {
             Button("Schedules…", systemImage: "clock") { scheduling = bot }
@@ -994,6 +1003,33 @@ struct ConversationsList: View {
             } catch {
                 ledgerError = String(localized: "Couldn't rename “\(room.name)”: \(error.localizedDescription)")
             }
+        }
+    }
+
+    /// An earlier chat of a bot's, opened to read (or carry on in): in the bot's profile, by the
+    /// connection the bot goes by.
+    private func readEarlier(_ chat: HermesSessionsAPI.SessionSummary, of bot: HermesBot) {
+        earlierFor = nil
+        var row = chat
+        if bot.name != (settings.profileName ?? ProfileCatalog.defaultID) {
+            row.elsewhere = ProfileRoute(profile: bot.name, viaAPI: bot.viaAPI)
+        }
+        if !bot.viaAPI { HermesServeClient.shared.noteProfile(bot.name, forStored: chat.id) }
+        open(row)
+    }
+
+    /// An earlier chat made the bot's chat again, and opened.
+    private func bringBackEarlier(_ chat: HermesSessionsAPI.SessionSummary, as bot: HermesBot) {
+        earlierFor = nil
+        openingBot = bot.name
+        Task {
+            do {
+                try await conversation.bringBack(chat, as: bot, mainName: settings.headerTitle)
+                opened()
+            } catch {
+                ledgerError = String(localized: "Couldn't bring that chat back: \(error.localizedDescription)")
+            }
+            openingBot = nil
         }
     }
 

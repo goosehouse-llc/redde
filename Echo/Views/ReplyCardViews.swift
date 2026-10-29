@@ -28,7 +28,7 @@ struct ReplyCardsView: View {
 }
 
 /// The frame every card sits in.
-private struct CardBox<Content: View>: View {
+struct CardBox<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {

@@ -47,9 +47,9 @@ struct AgentBriefingsTests {
             try #require(CronJob(.object(["id": .string("j"), "name": .string(HeadsUps.name), "schedule": .string("30 6 * * *"),
                                           "prompt_preview": .string(String(prompt.prefix(100)))])))
         }
-        let job = try listed(daily.prompt(45))
-        #expect(daily.option(in: job) == 45, "read from the preview a list sends")
-        #expect(daily.option(in: try listed("Something else")) == 30)
+        let job = try listed(daily.prompt(15))
+        #expect(daily.option(in: job) == 15, "read from the preview a list sends")
+        #expect(daily.option(in: try listed("Something else")) == 45, "else the default: time enough to work out leaving")
         let time = try #require(DailyJob.time(of: job))
         #expect(time.hour == 6 && time.minute == 30)
         #expect(daily.prompt(45).contains("minutes 45"))

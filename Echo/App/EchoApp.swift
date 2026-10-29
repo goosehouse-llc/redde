@@ -105,6 +105,11 @@ struct EchoApp: App {
                     IdeasInbox.shared.reload()   // ideas that came while Redde was closed
                     BriefingsInbox.shared.reload()   // and briefings
                     HeldNote.seen()   // what came in quiet hours is here to see: no digest of it later
+                    FeedbackFold.cameForward()   // a word on ideas or briefings that didn't reach the jobs yet
+                    #if os(iOS)
+                    Places.shared.noteWhereThePhoneIs()   // for when to leave for a heads-up's event
+                    Task { await HealthDays.refresh() }   // the day's steps, if Health-Aware Days is on
+                    #endif
                     // Which phone tools the agent is offered is this phone's to say, and the
                     // server may have been restarted, or reached for the first time, since it did.
                     if Settings.shared.phoneTools.on { Task { await DeviceToolsService.shared.publish() } }

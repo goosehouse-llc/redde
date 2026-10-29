@@ -1611,7 +1611,7 @@ final class Conversation {
         let ref = BotRef(profile: bot.name, name: bot.label(mainName: mainName), viaAPI: true)
         guard let api = ledgerAPI(for: ref) else { throw APIBotProblem.noKey(bot.label(mainName: mainName)) }
         var summary = try await APIBotChat.find(api)
-        if summary == nil { summary = try await api.createSession(title: BotChat.title) }
+        if summary == nil { summary = try await APIBotChat.make(api) }
         guard let summary else { return }
         try await loadLedgerSession(summary, bot: ref)
     }
@@ -1668,18 +1668,22 @@ final class Conversation {
         // returning here did nothing at all, so it took a second tap (2026-10-28).
         if isStreaming { cancel() }
         let old = serverSessionID
+        let server = settings.activeServerID.uuidString
         if ref.viaAPI == true {
             // Over the API: the chat archived (kept, with its messages), and a new one made.
             guard let api = ledgerAPI(for: ref) else { throw APIBotProblem.noKey(ref.name) }
-            if let old { try await api.updateSession(id: old, archived: true) }
-            let fresh = try await api.createSession(title: BotChat.title)
+            if let old {
+                try await APIBotChat.putAside(old, api)
+                EarlierBotChats.remember(old, profile: ref.profile, server: server)
+            }
+            let fresh = try await APIBotChat.make(api)
             return try await loadLedgerSession(fresh, bot: ref)
         }
         let client = dashboard
         guard let current = try await client.bots().bots.first(where: { $0.name == ref.profile }) else {
             throw TransportError.malformed(String(localized: "\(ref.name) isn't on this server any more"))
         }
-        try await client.startFresh(current)
+        if let aside = try await client.startFresh(current) { EarlierBotChats.remember(aside, profile: ref.profile, server: server) }
         // Read again: the roster no longer names the chat put aside, so the bot gets a new one.
         // Just after, Hermes could still list the old one, which then opened again, as if nothing
         // had happened: a new chat is waited for, a few seconds at most.
@@ -1690,6 +1694,58 @@ final class Conversation {
             }
             try await openBot(fresh, mainName: mainName)
             if serverSessionID != old { return }
+            if attempt < 4 { try await Task.sleep(for: .milliseconds(700)) }
+        }
+        throw TransportError.malformed(String(localized: "Hermes hasn't put the old chat aside yet. Try again in a moment."))
+    }
+
+    /// A bot's earlier chats (`EarlierBotChats`), newest first: on the Dashboard every one the
+    /// server has; over the Hermes API the ones put aside from Redde.
+    func earlierChats(of bot: HermesBot, mainName: String) async throws -> [HermesSessionsAPI.SessionSummary] {
+        let server = settings.activeServerID.uuidString
+        let incognito = Incognito.sessions(on: server)
+        guard bot.viaAPI else {
+            return EarlierBotChats.pick(try await dashboard.archivedSessions(profile: bot.name), incognito: incognito)
+        }
+        let ref = BotRef(profile: bot.name, name: bot.label(mainName: mainName), viaAPI: true)
+        guard let api = ledgerAPI(for: ref) else { throw APIBotProblem.noKey(ref.name) }
+        let ids = EarlierBotChats.remembered(profile: bot.name, server: server)
+        let found = await withTaskGroup(of: HermesSessionsAPI.SessionSummary?.self) { group in
+            for id in ids { group.addTask { try? await api.session(id: id) } }
+            var all: [HermesSessionsAPI.SessionSummary] = []
+            for await row in group { if let row { all.append(row) } }
+            return all
+        }
+        return EarlierBotChats.pick(found.filter { $0.archived == true }, incognito: incognito)
+    }
+
+    /// Makes an earlier chat the bot's chat again, the one it has put aside in its place (an earlier
+    /// chat then), and opens it.
+    func bringBack(_ earlier: HermesSessionsAPI.SessionSummary, as bot: HermesBot, mainName: String) async throws {
+        if isStreaming { cancel() }
+        let server = settings.activeServerID.uuidString
+        let ref = BotRef(profile: bot.name, name: bot.label(mainName: mainName), viaAPI: bot.viaAPI)
+        if bot.viaAPI {
+            guard let api = ledgerAPI(for: ref) else { throw APIBotProblem.noKey(ref.name) }
+            if let current = try await APIBotChat.find(api), current.id != earlier.id {
+                try await APIBotChat.putAside(current.id, api)
+                EarlierBotChats.remember(current.id, profile: bot.name, server: server)
+            }
+            try await api.updateSession(id: earlier.id, title: BotChat.title, archived: false, hidden: true)
+            EarlierBotChats.forget(earlier.id, profile: bot.name, server: server)
+            return try await loadLedgerSession(earlier, bot: ref)
+        }
+        let aside = try await dashboard.bringBack(earlier.id, for: bot)
+        if let aside { EarlierBotChats.remember(aside, profile: bot.name, server: server) }
+        EarlierBotChats.forget(earlier.id, profile: bot.name, server: server)
+        // As after Start Fresh: the roster read again until it names the chat brought back.
+        for attempt in 0 ..< 5 {
+            let roster = try await BotDirectory.shared.refresh()
+            guard let fresh = roster.bots.first(where: { $0.name == bot.name }) else {
+                throw TransportError.malformed(String(localized: "\(ref.name) isn't on this server any more"))
+            }
+            try await openBot(fresh, mainName: mainName)
+            if serverSessionID != aside { return }
             if attempt < 4 { try await Task.sleep(for: .milliseconds(700)) }
         }
         throw TransportError.malformed(String(localized: "Hermes hasn't put the old chat aside yet. Try again in a moment."))

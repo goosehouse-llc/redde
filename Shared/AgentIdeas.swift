@@ -16,6 +16,8 @@ nonisolated struct AgentIdea: Codable, Identifiable, Equatable, Sendable {
     /// What goes to the agent when the card is taken, as the person would say it.
     var request: String
     var at: Date
+    /// Put off until then ("Later"): out of the deck till it comes round.
+    var snoozedUntil: Date?
 
     private static let key = "agentIdeas"
     static let most = 20
@@ -23,7 +25,32 @@ nonisolated struct AgentIdea: Codable, Identifiable, Equatable, Sendable {
 
     static func all(in defaults: UserDefaults? = NeedsYou.shared, now: Date = .now) -> [AgentIdea] {
         guard let data = defaults?.data(forKey: key) else { return [] }
-        return ((try? JSONDecoder().decode([AgentIdea].self, from: data)) ?? []).filter { now.timeIntervalSince($0.at) < keptFor }
+        return ((try? JSONDecoder().decode([AgentIdea].self, from: data)) ?? []).filter { now.timeIntervalSince($0.shownAt) < keptFor }
+    }
+
+    /// When it came, or came back from Later.
+    var shownAt: Date { max(at, snoozedUntil ?? at) }
+    /// Showing now: not put off till later.
+    func showing(at now: Date = .now) -> Bool { (snoozedUntil ?? .distantPast) <= now }
+
+    /// The ones to show now, the ones back from Later first among them by when they came back.
+    static func showing(in defaults: UserDefaults? = NeedsYou.shared, now: Date = .now) -> [AgentIdea] {
+        let all = all(in: defaults, now: now)
+        let back = all.filter { $0.snoozedUntil != nil && $0.showing(at: now) }.sorted { $0.shownAt > $1.shownAt }
+        return back + all.filter { $0.snoozedUntil == nil }
+    }
+
+    /// When the next one put off comes back, for a reload then.
+    static func nextBack(in defaults: UserDefaults? = NeedsYou.shared, now: Date = .now) -> Date? {
+        all(in: defaults, now: now).compactMap(\.snoozedUntil).filter { $0 > now }.min()
+    }
+
+    /// Put off until `until` ("Later").
+    static func snooze(_ id: String, until: Date, in defaults: UserDefaults? = NeedsYou.shared) {
+        var kept = all(in: defaults)
+        guard let i = kept.firstIndex(where: { $0.id == id }) else { return }
+        kept[i].snoozedUntil = until
+        save(kept, in: defaults)
     }
 
     /// A note of ideas from the plugin: kept, ahead of the ones before. False for any other note.

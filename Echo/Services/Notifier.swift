@@ -664,6 +664,14 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
 final class PushDelegate: NSObject, UIApplicationDelegate {
     private let log = Logger(subsystem: "com.goosehouse.echo", category: "notify")
 
+    /// Health may have woken Redde for new sleep or a workout: its watch is set up again at once.
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        #if canImport(HealthKit)
+        HealthDays.startIfOn()
+        #endif
+        return true
+    }
+
     /// Portrait on an iPhone, unless it folds (`Foldable`); every way on an iPad.
     func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
         Foldable.orientations

@@ -26,15 +26,46 @@ final class IdeasInbox {
             return
         }
         #endif
-        ideas = AgentIdea.all()
+        ideas = AgentIdea.showing()
+        wakeForNextBack()
     }
+
+    private var waking: Task<Void, Never>?
 
     func reload() {
         #if DEBUG
         if DevHooks.has("-echo.demoIdeas") || DemoDay.on { return }
         #endif
-        let now = AgentIdea.all()
-        if now != ideas { ideas = now }
+        let now = AgentIdea.showing()
+        if now != ideas { withAnimation(.snappy) { ideas = now } }
+        wakeForNextBack()
+    }
+
+    /// With Redde open, one put off comes back into the deck when its time comes.
+    private func wakeForNextBack() {
+        waking?.cancel()
+        guard let back = AgentIdea.nextBack() else { return }
+        waking = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(max(1, back.timeIntervalSinceNow + 1)))
+            guard !Task.isCancelled else { return }
+            self?.reload()
+        }
+    }
+
+    /// Put off until `until`, with a quiet notification when it's back.
+    func later(_ idea: AgentIdea, until: Date) {
+        #if DEBUG
+        if DemoDay.on || DevHooks.has("-echo.demoIdeas") { ideas.removeAll { $0.id == idea.id }; return }
+        #endif
+        AgentIdea.snooze(idea.id, until: until)
+        LaterReminder.idea(idea, at: until)
+        reload()
+    }
+
+    /// More Like This, or Fewer Like This (which puts it away too).
+    func said(_ idea: AgentIdea, liked: Bool) {
+        FeedbackFold.said(.idea, title: idea.title, agent: idea.agent, liked: liked)
+        if !liked { remove(idea) }
     }
 
     /// Taken or put away.
@@ -43,6 +74,7 @@ final class IdeasInbox {
         if DemoDay.on { ideas.removeAll { $0.id == idea.id }; return }
         #endif
         AgentIdea.remove(idea.id)
+        LaterReminder.cancel(idea.id)
         reload()
     }
 }
@@ -60,7 +92,8 @@ struct IdeasSection: View {
     var body: some View {
         if !inbox.ideas.isEmpty {
             Section {
-                IdeaDeck(ideas: inbox.ideas, take: take, put: { idea in inbox.remove(idea) })
+                IdeaDeck(ideas: inbox.ideas, take: take, put: { idea in inbox.remove(idea) },
+                         later: { inbox.later($0, until: $1) }, said: { inbox.said($0, liked: $1) })
                     .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 10, trailing: 16))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
@@ -76,64 +109,42 @@ private struct IdeaDeck: View {
     let take: (AgentIdea) -> Void
     /// Put away: Not Now, or Done.
     let put: (AgentIdea) -> Void
-
-    @State private var drag: CGFloat = 0
-    /// The card on its way off, and which way (1 right, -1 left).
-    @State private var leaving: CGFloat = 0
-    @State private var armed: CGFloat = 0
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Hold a card: Later, and More or Fewer Like This (asked 2026-10-28, "Proactive").
+    let later: (AgentIdea, Date) -> Void
+    let said: (AgentIdea, Bool) -> Void
+    @State private var noted = 0
     @Environment(\.theme) private var theme
-    private let haptic = UIImpactFeedbackGenerator(style: .light)
-
-    /// How far a card goes before letting go of it is a choice.
-    private static let threshold: CGFloat = 100
-    private static let shown = 3
-
-    private var top: AgentIdea? { ideas.first }
 
     var body: some View {
-        VStack(spacing: 14) {
-            ZStack {
-                ForEach(Array(ideas.prefix(Self.shown).enumerated()).reversed(), id: \.element.id) { depth, idea in
-                    card(idea, depth: depth)
+        SwipeDeck(
+            items: ideas,
+            right: .init(stamp: String(localized: "Do It"), color: .green, act: take),
+            left: .init(stamp: String(localized: "Not Now"), color: .red, act: put),
+            // Not Now in red on the left, Do It in the middle and larger, Done on the right (his
+            // order, 2026-10-28); the bolt says "let's do it" more than sparkles did.
+            buttons: [.init(symbol: "xmark", label: String(localized: "Not Now"), color: .red, fly: -1, act: put),
+                      .init(symbol: "bolt.fill", label: String(localized: "Do It"), color: .green, size: 64, fly: 1, act: take),
+                      .init(symbol: "checkmark", label: done, color: .blue, fly: -1, act: put)],
+            actions: [(String(localized: "Later"), { later($0, Later.soon()) }),
+                      (String(localized: "More Like This"), { said($0, true); noted += 1 }),
+                      (String(localized: "Fewer Like This"), { said($0, false) })],
+            face: { idea, isTop, moved in cardFace(idea, isTop: isTop, moved: moved) },
+            menu: { menu($0) },
+            footer: {
+                if ideas.count > 1 {
+                    Text("\(1) of \(ideas.count) · Hold a card for more").monospacedDigit()
+                } else {
+                    Text("Hold the card for more")
                 }
-            }
-            .frame(height: 196)
-            .frame(maxWidth: .infinity)
-            buttons
-            if ideas.count > 1 {
-                Text("\(1) of \(ideas.count)").font(.caption2).foregroundStyle(.secondary).monospacedDigit()
-            }
-        }
-        .padding(.top, 2)
+            })
+        .sensoryFeedback(.success, trigger: noted)
     }
 
-    // MARK: The cards
-
-    private func card(_ idea: AgentIdea, depth: Int) -> some View {
-        let isTop = depth == 0
-        let moved = isTop ? drag + leaving : 0
-        let colors = BotAvatar.colors(of: face(idea), theme: theme)
-        let ink = Color(red: 0.09, green: 0.09, blue: 0.13)
+    private func cardFace(_ idea: AgentIdea, isTop: Bool, moved: CGFloat) -> some View {
+        let face = DeckCard.face(profile: idea.profile)
         return VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
-                BotAvatar(face: face(idea), name: idea.agent, size: 40,
-                          pose: isTop ? BotPose(look: CGPoint(x: max(-1, min(1, moved / 90)), y: -0.2)) : nil)
-                    .padding(5)
-                    .background(Circle().fill(seat(for: colors.deep)))
-                    .overlay(Circle().stroke(colors.deep.opacity(0.45), lineWidth: 1.5))
-                    .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(idea.agent.isEmpty ? String(localized: "Your agent") : idea.agent).font(.subheadline.weight(.bold))
-                    Text("has an idea", comment: "Under an agent's name on an idea card").font(.caption)
-                        .opacity(0.7)
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "lightbulb.max.fill")
-                    .font(.title2)
-                    .foregroundStyle(.yellow, ink.opacity(0.25))
-                    .symbolEffect(.bounce, value: isTop ? idea.id : "")
-            }
+            DeckCardHeader(face: face, name: idea.agent, subtitle: Text("has an idea", comment: "Under an agent's name on an idea card"),
+                           symbol: "lightbulb.max.fill", isTop: isTop, moved: moved, bounce: idea.id)
             Text(idea.title)
                 .font(.system(.title3, design: .rounded, weight: .bold))
                 .lineLimit(3)
@@ -143,119 +154,24 @@ private struct IdeaDeck: View {
             }
             Spacer(minLength: 0)
         }
-        .foregroundStyle(ink)
-        .padding(16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(
-            // A pastel of the agent's colour, so dark words read on any of them and its face,
-            // in the colour itself, stands out.
-            LinearGradient(colors: [colors.deep.mix(with: .white, by: 0.82), colors.deep.mix(with: .white, by: 0.64)],
-                           startPoint: .topLeading, endPoint: .bottomTrailing),
-            in: .rect(cornerRadius: 22))
-        // The stamp lands in the corner the card leaves behind, where the finger isn't (asked 2026-10-28).
-        .overlay(alignment: .topLeading) { if isTop { stamp(String(localized: "Do It"), color: .green, angle: -12).opacity(Double(max(0, moved) / Self.threshold)) } }
-        .overlay(alignment: .topTrailing) { if isTop { stamp(String(localized: "Not Now"), color: .red, angle: 12).opacity(Double(max(0, -moved) / Self.threshold)) } }
-        .shadow(color: .black.opacity(isTop ? 0.14 : 0.06), radius: isTop ? 10 : 4, y: isTop ? 5 : 2)
-        // The deck behind: smaller, lower, a little askew.
-        .scaleEffect(1 - CGFloat(depth) * 0.05)
-        .offset(y: CGFloat(depth) * 9)
-        .rotationEffect(.degrees(reduceMotion ? 0 : Double(depth) * (depth.isMultiple(of: 2) ? -1.5 : 1.5)))
-        // The top one follows the finger, tilting.
-        .offset(x: reduceMotion ? 0 : moved)
-        .rotationEffect(.degrees(reduceMotion ? 0 : Double(moved / 18)), anchor: .bottom)
-        .opacity(isTop && reduceMotion && leaving != 0 ? 0 : 1)
-        .allowsHitTesting(isTop)
-        .simultaneousGesture(isTop ? dragging(idea) : nil)
-        .accessibilityElement(children: .combine)
-        .accessibilityHidden(!isTop)
-        .accessibilityAction(named: Text("Do It")) { take(idea) }
-        .accessibilityAction(named: Text(done)) { put(idea) }
-        .accessibilityAction(named: Text("Not Now")) { put(idea) }
+        .deckCard(face, theme: theme)
     }
 
-    /// What the face sits on, so it stands out from a card in its own colour: white, or ink for a
-    /// light colour (amber, lime, white, a pale theme's bubble), which white would swallow.
-    private func seat(for color: Color) -> Color {
-        let skin = color.resolve(in: EnvironmentValues())
-        let lightness = 0.2126 * skin.linearRed + 0.7152 * skin.linearGreen + 0.0722 * skin.linearBlue
-        return lightness > 0.62 ? Color(red: 0.09, green: 0.09, blue: 0.13).opacity(0.85) : .white
-    }
-
-    private func stamp(_ word: String, color: Color, angle: Double) -> some View {
-        Text(word)
-            .font(.system(.headline, design: .rounded, weight: .heavy))
-            .textCase(.uppercase)
-            .foregroundStyle(color)
-            .padding(.horizontal, 10).padding(.vertical, 4)
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(color, lineWidth: 3))
-            .rotationEffect(.degrees(angle))
-            .padding(18)
-    }
-
-    private func dragging(_ idea: AgentIdea) -> some Gesture {
-        DragGesture(minimumDistance: 12)
-            .onChanged { value in
-                // Sideways only: a drag up or down is the list scrolling.
-                guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                drag = value.translation.width
-                let now: CGFloat = abs(drag) >= Self.threshold ? (drag > 0 ? 1 : -1) : 0
-                if now != armed { armed = now; if now != 0 { haptic.impactOccurred() } }
-            }
-            .onEnded { value in
-                armed = 0
-                if drag >= Self.threshold { send(idea, to: 1) } else if drag <= -Self.threshold { send(idea, to: -1) } else {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) { drag = 0 }
-                }
-            }
-    }
-
-    /// Off it goes, right to be done, left to be put away; then the deck closes up.
-    private func send(_ idea: AgentIdea, to direction: CGFloat, done: Bool = false) {
-        withAnimation(.easeIn(duration: 0.22)) { leaving = direction * 560 - drag; if reduceMotion { drag = 0 } }
-        Task {
-            try? await Task.sleep(for: .milliseconds(230))
-            var instant = Transaction()
-            instant.disablesAnimations = true
-            withTransaction(instant) { drag = 0; leaving = 0 }
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                if direction > 0, !done { take(idea) } else { put(idea) }
+    @ViewBuilder private func menu(_ idea: AgentIdea) -> some View {
+        Section("Later") {
+            ForEach(Later.choices(), id: \.0) { choice, when in
+                Button { later(idea, when) } label: { Label { Text(choice.label) } icon: { Image(systemName: choice.symbol) } }
             }
         }
-    }
-
-    // MARK: The buttons
-
-    private var buttons: some View {
-        HStack(spacing: 26) {
-            // Not Now in red on the left, Do It in the middle and larger, Done on the right (his
-            // order, 2026-10-28); the bolt says "let's do it" more than sparkles did.
-            round("xmark", label: String(localized: "Not Now"), color: .red, size: 50) { if let top { send(top, to: -1) } }
-            round("bolt.fill", label: String(localized: "Do It"), color: .green, size: 64) { if let top { send(top, to: 1) } }
-            round("checkmark", label: done, color: .blue, size: 50) { if let top { send(top, to: -1, done: true) } }
+        // Heard the next time the agent thinks of ideas (`FeedbackFold`).
+        Section("Tell Your Agent") {
+            Button("More Like This", systemImage: "hand.thumbsup") { said(idea, true); noted += 1 }
+            Button("Fewer Like This", systemImage: "hand.thumbsdown") { said(idea, false) }
         }
-        .disabled(top == nil)
-    }
-
-    private func round(_ symbol: String, label: String, color: Color, size: CGFloat, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: size * 0.38, weight: .bold))
-                .foregroundStyle(color)
-                .frame(width: size, height: size)
-                .background(Circle().fill(color.opacity(0.14)))
-                .overlay(Circle().stroke(color.opacity(0.35), lineWidth: 1.5))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(label)
     }
 
     /// "Done" as a thing finished, the word a finished task and the Kanban column have.
     private var done: String {
         String(localized: "task.done", defaultValue: "Done", comment: "A task, finished (not the Done button): a ticked checklist item, the agent's finished task, the Kanban column, the title after a plugin change")
-    }
-
-    private func face(_ idea: AgentIdea) -> BotFace {
-        let bots = BotDirectory.shared
-        return idea.profile == "default" ? bots.mainFace : (bots.roster?.faces[idea.profile] ?? BotFace(seed: idea.profile))
     }
 }

@@ -5,7 +5,7 @@ import UIKit
 
 /// The time iOS gives a woken app, handed back once.
 @MainActor
-private final class BackgroundTime: @unchecked Sendable {
+final class BackgroundTime: @unchecked Sendable {
     var id = UIBackgroundTaskIdentifier.invalid
     nonisolated func end() {
         Task { @MainActor in
@@ -62,6 +62,7 @@ final class Places: NSObject, CLLocationManagerDelegate {
     private var inside: [UUID: Bool]
     private let manager = CLLocationManager()
     private var monitor: CLMonitor?
+    private var making: Task<CLMonitor, Never>?
     private var listening: Task<Void, Never>?
     private var located: CheckedContinuation<CLLocation?, Never>?
 
@@ -113,6 +114,13 @@ final class Places: NSObject, CLLocationManagerDelegate {
         }
     }
 
+    /// Where the phone last was, kept on the phone for working out when to leave (`LeaveTime`):
+    /// what iOS already has, asked for nothing new. Each time Redde comes forward.
+    func noteWhereThePhoneIs() {
+        guard [.authorizedAlways, .authorizedWhenInUse].contains(authorization), let fix = manager.location else { return }
+        LeaveTime.remember(fix)
+    }
+
     /// Where the phone is now, once.
     func here() async -> CLLocation? {
         if authorization == .notDetermined { askPermission() }
@@ -134,6 +142,7 @@ final class Places: NSObject, CLLocationManagerDelegate {
 
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         let last = locations.last
+        if let last { LeaveTime.remember(last) }
         Task { @MainActor in located?.resume(returning: last); located = nil }
     }
 
@@ -147,16 +156,26 @@ final class Places: NSObject, CLLocationManagerDelegate {
     /// events are listened to (iOS wakes Redde for them when it is closed; they come here).
     func start() { Task { await watch() } }
 
+    /// The one monitor, made once: CoreLocation aborts when a second is made with the same name,
+    /// and making one waits, so two `watch()`es at once (a place saved as permission comes back,
+    /// 2026-10-28) both found none and both made one. They share the making now.
+    private func theMonitor() async -> CLMonitor {
+        if let monitor { return monitor }
+        if let making { return await making.value }
+        // Letters and digits only: iOS 27 aborts on "redde.places" ("Monitor name is not valid").
+        let task = Task { await CLMonitor("ReddePlaces") }
+        making = task
+        let made = await task.value
+        monitor = made
+        return made
+    }
+
     private func watch() async {
         guard !places.isEmpty, authorization == .authorizedAlways || authorization == .authorizedWhenInUse else {
             if let monitor { for id in await monitor.identifiers { await monitor.remove(id) } }
             return
         }
-        let monitor: CLMonitor
-        if let existing = self.monitor { monitor = existing } else {
-            monitor = await CLMonitor("redde.places")
-            self.monitor = monitor
-        }
+        let monitor = await theMonitor()
         let wanted = Set(places.map(\.id.uuidString))
         for id in await monitor.identifiers where !wanted.contains(id) { await monitor.remove(id) }
         for place in places {

@@ -12650,6 +12650,112 @@
         }
       }
     },
+    "%@'s idea, back" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idé fra %@, tilbage"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idee von %@, wieder da"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idea de %@, de vuelta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idée de %@, de retour"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idea di %@, di nuovo qui"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@のアイデアが戻ってきました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@의 아이디어가 돌아왔습니다"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idé fra %@, tilbake"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idee van %@, terug"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wraca pomysł od: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideia de %@, de volta"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Снова идея: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idé från %@, tillbaka"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir fikir geri geldi: %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Знову ідея: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@的想法又来了"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 的點子回來了"
+          }
+        }
+      }
+    },
     "%@'s own: each bot has its plugins, set in Edit Bot. A new bot starts with a copy of your agent's." : {
       "localizations" : {
         "da" : {
@@ -17909,6 +18015,324 @@
         }
       }
     },
+    "%lld min by car" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min. i bil"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Min. mit dem Auto"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min en coche"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min en voiture"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min in auto"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "車で%lld分"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "자동차로 %lld분"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min med bil"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min met de auto"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min samochodem"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min de carro"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld мин на машине"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min med bil"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arabayla %lld dk"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld хв автомобілем"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "驾车%lld分钟"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開車 %lld 分鐘"
+          }
+        }
+      }
+    },
+    "%lld min by transit" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min. med offentlig transport"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Min. mit ÖPNV"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min en transporte público"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min en transports"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min coi mezzi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "交通機関で%lld分"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "대중교통으로 %lld분"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min med kollektivtransport"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min met het ov"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min komunikacją"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min de transporte público"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld мин на транспорте"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min med kollektivtrafik"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toplu taşımayla %lld dk"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld хв транспортом"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "公交%lld分钟"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大眾運輸 %lld 分鐘"
+          }
+        }
+      }
+    },
+    "%lld min on foot" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min. til fods"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Min. zu Fuß"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min a pie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min à pied"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min a piedi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "徒歩%lld分"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "도보 %lld분"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min til fots"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min lopen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min pieszo"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min a pé"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld мин пешком"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min till fots"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yürüyerek %lld dk"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld хв пішки"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "步行%lld分钟"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "步行 %lld 分鐘"
+          }
+        }
+      }
+    },
     "%lld minutes" : {
       "localizations" : {
         "da" : {
@@ -19433,6 +19857,218 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$lld/%2$lld"
+          }
+        }
+      }
+    },
+    "%lld of %lld · Hold a card for more" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld af %lld · Hold på et kort for mere"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld von %lld · Für mehr eine Karte gedrückt halten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld de %lld · Mantén pulsada una tarjeta para ver más"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld sur %lld · Maintenez une carte pour plus d’options"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld di %lld · Tieni premuta una scheda per altre opzioni"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/%lld · カードを長押しするとその他の操作"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$lld개 중 %1$lld번째 · 카드를 길게 누르면 더 보기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld av %lld · Hold på et kort for mer"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld van %lld · Houd een kaart vast voor meer"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld z %lld · Przytrzymaj kartę, aby zobaczyć więcej"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld de %lld · Mantenha um cartão pressionado para mais"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld из %lld · Удерживайте карточку для других действий"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld av %lld · Håll på ett kort för mer"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld / %lld · Daha fazlası için bir karta basılı tutun"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld з %lld · Утримуйте картку для інших дій"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/%lld · 按住卡片查看更多"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/%lld · 按住卡片以查看更多"
+          }
+        }
+      }
+    },
+    "%lld of %lld · Tap to read, hold for more" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld af %lld · Tryk for at læse, hold for mere"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld von %lld · Tippen zum Lesen, gedrückt halten für mehr"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld de %lld · Toca para leer, mantén pulsado para ver más"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld sur %lld · Touchez pour lire, maintenez pour plus d’options"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld di %lld · Tocca per leggere, tieni premuto per altre opzioni"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/%lld · タップして読む、長押しでその他の操作"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$lld개 중 %1$lld번째 · 탭하여 읽기, 길게 누르면 더 보기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld av %lld · Trykk for å lese, hold for mer"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld van %lld · Tik om te lezen, houd vast voor meer"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld z %lld · Stuknij, aby przeczytać, przytrzymaj, aby zobaczyć więcej"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld de %lld · Toque para ler, mantenha pressionado para mais"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld из %lld · Коснитесь, чтобы прочитать, удерживайте для других действий"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld av %lld · Tryck för att läsa, håll för mer"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld / %lld · Okumak için dokunun, daha fazlası için basılı tutun"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld з %lld · Торкніться, щоб прочитати, утримуйте для інших дій"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/%lld · 轻点阅读，按住查看更多"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/%lld · 點一下閱讀，按住以查看更多"
           }
         }
       }
@@ -31595,6 +32231,119 @@
         }
       }
     },
+    "action.read" : {
+      "comment" : "Button and swipe stamp: opens a briefing (or an earlier chat) to read it. A verb, not 'has been read'.",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Læs"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lesen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leer"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lire"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leggi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "読む"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "읽기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lees"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czytaj"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ler"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Читать"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Läs"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oku"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Читати"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "阅读"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閱讀"
+          }
+        }
+      }
+    },
     "Activity" : {
       "localizations" : {
         "da" : {
@@ -40026,6 +40775,218 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "有核准請求正在等待。請在你 iPhone 上的 Redde 中打開 Apple Watch 對話。"
+          }
+        }
+      }
+    },
+    "An earlier chat" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En tidligere chat"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein früherer Chat"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un chat anterior"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une discussion précédente"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una chat precedente"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "以前のチャット"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이전 채팅"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En tidligere chat"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een eerdere chat"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wcześniejszy czat"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uma conversa anterior"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прежний чат"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En tidigare chatt"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Önceki bir sohbet"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попередній чат"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "之前的一段聊天"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "之前的一段聊天"
+          }
+        }
+      }
+    },
+    "An idea, back" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En idé, tilbage"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine Idee, wieder da"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una idea, de vuelta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une idée, de retour"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un'idea, di nuovo qui"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アイデアが戻ってきました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "아이디어가 돌아왔습니다"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En idé, tilbake"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een idee, terug"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pomysł wraca"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uma ideia, de volta"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Идея снова здесь"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En idé, tillbaka"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir fikir geri geldi"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ідея знову тут"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "想法又来了"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點子回來了"
           }
         }
       }
@@ -53121,6 +54082,113 @@
         }
       }
     },
+    "briefing · %@" : {
+      "comment" : "Under an agent's name on a briefing's card",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "briefing · %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Briefing · %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "informe · %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "briefing · %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "briefing · %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ブリーフィング · %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "브리핑 · %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "briefing · %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "briefing · %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "briefing · %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "briefing · %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "сводка · %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "briefing · %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "brifing · %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "зведення · %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "简报 · %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "簡報 · %@"
+          }
+        }
+      }
+    },
     "Briefings" : {
       "localizations" : {
         "da" : {
@@ -54187,6 +55255,112 @@
         }
       }
     },
+    "By Car" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I bil"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit dem Auto"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En coche"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En voiture"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In auto"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "車"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "자동차"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med bil"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met de auto"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Samochodem"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De Carro"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На машине"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med bil"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arabayla"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Автомобілем"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "驾车"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開車"
+          }
+        }
+      }
+    },
     "By name" : {
       "localizations" : {
         "da" : {
@@ -54289,6 +55463,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "依名稱"
+          }
+        }
+      }
+    },
+    "By Transit" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offentlig transport"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit ÖPNV"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En transporte público"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En transports"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coi mezzi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "交通機関"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "대중교통"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kollektivt"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met het ov"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Komunikacją"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transporte Público"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На транспорте"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kollektivt"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toplu Taşımayla"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Транспортом"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "公交"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大眾運輸"
           }
         }
       }
@@ -60243,6 +61523,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "透過 Hermes API 打開的聊天又能載入了，設定檔從伺服器消失時 Redde 會告訴你，切換到耳機時 Kokoro 也會繼續說話。"
+          }
+        }
+      }
+    },
+    "Chats you put aside with Start Fresh show here, with their messages." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats, du har lagt til side med Start forfra, vises her med deres beskeder."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats, die du mit „Neu beginnen“ beiseitegelegt hast, erscheinen hier mit ihren Nachrichten."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los chats que dejaste a un lado con Empezar de cero aparecen aquí, con sus mensajes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les discussions mises de côté avec Repartir de zéro s’affichent ici, avec leurs messages."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le chat messe da parte con Ricomincia da zero compaiono qui, con i loro messaggi."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「新しく始める」で脇に置いたチャットは、メッセージとともにここに表示されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새로 시작으로 치워 둔 채팅이 메시지와 함께 여기에 표시됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chatter du har lagt til side med Begynn på nytt, vises her med meldingene sine."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats die je met Begin opnieuw opzij hebt gezet, staan hier met hun berichten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czaty odłożone przez Zacznij od nowa pojawiają się tutaj razem z wiadomościami."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As conversas deixadas de lado com Começar do Zero aparecem aqui, com as mensagens."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чаты, отложенные с помощью «Начать заново», появляются здесь вместе с сообщениями."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chattar du har lagt undan med Börja om visas här, med sina meddelanden."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sıfırdan Başla ile kenara koyduğunuz sohbetler, mesajlarıyla birlikte burada görünür."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чати, відкладені за допомогою «Почати заново», з’являються тут разом із повідомленнями."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用“重新开始”搁置的聊天会连同消息显示在这里。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用「重新開始」擱置的聊天會連同訊息顯示在這裡。"
           }
         }
       }
@@ -72118,6 +73504,112 @@
         }
       }
     },
+    "Couldn't bring that chat back: %@" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunne ikke hente den chat tilbage: %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Chat konnte nicht zurückgeholt werden: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo recuperar ese chat: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de rétablir cette discussion : %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile ripristinare quella chat: %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "そのチャットを戻せませんでした：%@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "해당 채팅을 되돌릴 수 없음: %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunne ikke hente tilbake den chatten: %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kan die chat niet terughalen: %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się przywrócić tego czatu: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível trazer essa conversa de volta: %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось вернуть этот чат: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunde inte ta tillbaka den chatten: %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O sohbet geri getirilemedi: %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося повернути цей чат: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法恢复该聊天：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法恢復該聊天：%@"
+          }
+        }
+      }
+    },
     "Couldn't change the icon: %@" : {
       "localizations" : {
         "da" : {
@@ -75613,6 +77105,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "無法連線到你的 iPhone；當 Redde 使用 Dashboard 時，手錶需透過 iPhone 詢問。請在 iPhone 上加入 Hermes API（「設定」›「連線詳細資訊」），手錶就能自行詢問。"
+          }
+        }
+      }
+    },
+    "Couldn't read %@'s earlier chats: %@" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunne ikke læse tidligere chats fra %@: %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die früheren Chats von %@ konnten nicht gelesen werden: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudieron leer los chats anteriores de %@: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de lire les discussions précédentes de %@ : %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile leggere le chat precedenti di %@: %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@の以前のチャットを読み込めませんでした：%@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@의 이전 채팅을 읽을 수 없음: %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunne ikke lese de tidligere chattene til %@: %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kan de eerdere chats van %@ niet lezen: %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się odczytać wcześniejszych czatów z %@: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível ler as conversas anteriores de %@: %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось прочитать прежние чаты %@: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunde inte läsa tidigare chattar för %@: %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ önceki sohbetleri okunamadı: %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося прочитати попередні чати %@: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法读取%@之前的聊天：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法讀取 %@ 之前的聊天：%@"
           }
         }
       }
@@ -85398,6 +86996,112 @@
         }
       }
     },
+    "Don't Work It Out" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beregn ikke"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht berechnen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No calcularlo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne pas calculer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non calcolare"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "計算しない"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "계산 안 함"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ikke beregn"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet berekenen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie obliczaj"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não Calcular"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не рассчитывать"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beräkna inte"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hesaplama"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не розраховувати"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不计算"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不計算"
+          }
+        }
+      }
+    },
     "done" : {
       "comment" : "A subagent's state",
       "localizations" : {
@@ -89750,6 +91454,218 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "更早"
+          }
+        }
+      }
+    },
+    "Earlier Chats" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tidligere chats"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frühere Chats"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats anteriores"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discussions précédentes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat precedenti"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "以前のチャット"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이전 채팅"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tidligere chatter"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eerdere chats"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wcześniejsze czaty"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversas Anteriores"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прежние чаты"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tidigare chattar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Önceki Sohbetler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попередні чати"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "之前的聊天"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "之前的聊天"
+          }
+        }
+      }
+    },
+    "Earlier Chats…" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tidligere chats…"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frühere Chats …"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats anteriores…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discussions précédentes…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat precedenti…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "以前のチャット…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이전 채팅…"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tidligere chatter…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eerdere chats…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wcześniejsze czaty…"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversas Anteriores…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прежние чаты…"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tidigare chattar…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Önceki Sohbetler…"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попередні чати…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "之前的聊天…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "之前的聊天…"
           }
         }
       }
@@ -100382,6 +102298,112 @@
         }
       }
     },
+    "Fewer Like This" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Færre som denne"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weniger davon"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menos como esto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moins de ce genre"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meno cose così"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このようなものを減らす"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이런 항목 덜 보기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Færre som dette"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minder zoals dit"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mniej takich"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menos Assim"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Меньше такого"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Färre som denna"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bunun Gibi Daha Az"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Менше такого"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "少来点这类"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "少一些這類"
+          }
+        }
+      }
+    },
     "Fewer tools make a bot's every turn quicker to start on a model running on your own machine. Hermes 0.21.5 and later keep a bot to these; earlier ones give every bot all of %@'s." : {
       "localizations" : {
         "da" : {
@@ -106551,6 +108573,112 @@
         }
       }
     },
+    "Getting There" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vejen derhen"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anfahrt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cómo llegar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trajet"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Come arrivarci"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移動手段"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이동 방법"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Veien dit"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reis"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dojazd"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Como Chegar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дорога"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vägen dit"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ulaşım"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дорога"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "出行方式"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "交通方式"
+          }
+        }
+      }
+    },
     "Ghost" : {
       "comment" : "A bot face's shape",
       "localizations" : {
@@ -112617,6 +114745,113 @@
         }
       }
     },
+    "heads-up · %@" : {
+      "comment" : "Under an agent's name on a heads-up's card",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "forvarsel · %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorabhinweis · %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "aviso · %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "alerte · %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "avviso · %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "事前のお知らせ · %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사전 알림 · %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "forvarsel · %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "seintje · %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "zapowiedź · %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "aviso · %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "предупреждение · %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "förvarning · %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hatırlatma · %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "попередження · %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提前提醒 · %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "事前提醒 · %@"
+          }
+        }
+      }
+    },
     "Heads-Ups" : {
       "localizations" : {
         "da" : {
@@ -112825,6 +115060,218 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "行程前提醒"
+          }
+        }
+      }
+    },
+    "Health" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sundhed"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Health"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Santé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salute"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ヘルスケア"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "건강"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Helse"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gezondheid"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zdrowie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saúde"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Здоровье"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hälsa"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sağlık"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Здоров’я"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "健康"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "健康"
+          }
+        }
+      }
+    },
+    "Health-Aware Days" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dage med blik for helbredet"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gesundheitsbewusste Tage"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Días según tu salud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Journées attentives à la santé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giornate attente alla salute"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "健康を考慮した1日"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "건강을 고려한 하루"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dager med helse i tankene"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dagen met gezondheid in gedachten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dni z myślą o zdrowiu"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dias Conforme a Saúde"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дни с учетом здоровья"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hälsomedvetna dagar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sağlığa Duyarlı Günler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дні з урахуванням здоров’я"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关注健康的日子"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關注健康的日子"
           }
         }
       }
@@ -122082,6 +124529,112 @@
         }
       }
     },
+    "Hold the card for more" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hold på kortet for mere"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Für mehr die Karte gedrückt halten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantén pulsada la tarjeta para ver más"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maintenez la carte pour plus d’options"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tieni premuta la scheda per altre opzioni"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カードを長押しするとその他の操作"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "카드를 길게 누르면 더 보기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hold på kortet for mer"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Houd de kaart vast voor meer"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przytrzymaj kartę, aby zobaczyć więcej"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantenha o cartão pressionado para mais"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удерживайте карточку для других действий"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Håll på kortet för mer"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daha fazlası için karta basılı tutun"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Утримуйте картку для інших дій"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按住卡片查看更多"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按住卡片以查看更多"
+          }
+        }
+      }
+    },
     "Home" : {
       "comment" : "A kind of bot to start from (New Bot), and the name it gets: one that looks after the house",
       "localizations" : {
@@ -126004,6 +128557,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "通話中不會套用機器人的朗讀聲音和語音速度：使用的是 %@ 的聲音。"
+          }
+        }
+      }
+    },
+    "In an Hour" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Om en time"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In einer Stunde"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En una hora"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dans une heure"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tra un'ora"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1時間後"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1시간 후"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Om en time"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Over een uur"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Za godzinę"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Em Uma Hora"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Через час"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Om en timme"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir Saat Sonra"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Через годину"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1小时后"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 小時後"
           }
         }
       }
@@ -137639,6 +140298,112 @@
         }
       }
     },
+    "Last message %@" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seneste besked %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Letzte Nachricht %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Último mensaje %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dernier message %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ultimo messaggio %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最後のメッセージ：%@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "마지막 메시지 %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siste melding %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laatste bericht %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ostatnia wiadomość %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Última mensagem %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Последнее сообщение %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senaste meddelande %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Son mesaj %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Останнє повідомлення %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最后一条消息：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最後一則訊息：%@"
+          }
+        }
+      }
+    },
     "Last run" : {
       "localizations" : {
         "da" : {
@@ -137852,6 +140617,218 @@
         }
       }
     },
+    "Later" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senere"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Später"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más tarde"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus tard"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Più tardi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あとで"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "나중에"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senere"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Later"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Później"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mais Tarde"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Позже"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senare"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daha Sonra"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пізніше"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "稍后"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "稍後"
+          }
+        }
+      }
+    },
+    "Later, or Tell Your Agent" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senere, eller fortæl din agent"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Später oder deinem Agenten sagen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más tarde, o decírselo a tu agente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus tard, ou le dire à votre agent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Più tardi, o dillo al tuo agente"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あとで、またはエージェントに伝える"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "나중에 또는 에이전트에게 알리기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senere, eller si det til agenten din"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Later, of vertel het je agent"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Później lub powiedz agentowi"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mais Tarde, ou Dizer ao Seu Agente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Позже или сказать агенту"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senare, eller berätta för din agent"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daha Sonra veya Ajanınıza Söyleyin"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пізніше або сказати агенту"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "稍后，或告诉智能体"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "稍後，或告訴代理"
+          }
+        }
+      }
+    },
     "Latest" : {
       "localizations" : {
         "da" : {
@@ -137958,6 +140935,218 @@
         }
       }
     },
+    "Leave by %@" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tag af sted senest %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los bis %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sal antes de las %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partez avant %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parti entro le %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@までに出発"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@까지 출발"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dra senest %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vertrek uiterlijk %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyjdź do %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saia até %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выйти до %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Åk senast %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En geç %@ çık"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вийти до %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@前出发"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 前出發"
+          }
+        }
+      }
+    },
+    "Leave by %@ · %@" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tag af sted senest %@ · %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los bis %@ · %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sal antes de las %@ · %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partez avant %@ · %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parti entro le %@ · %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@までに出発 · %2$@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@까지 출발 · %2$@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dra senest %@ · %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vertrek uiterlijk %@ · %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyjdź do %@ · %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saia até %@ · %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выйти до %@ · %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Åk senast %@ · %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En geç %@ çık · %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вийти до %@ · %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@前出发 · %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 前出發 · %@"
+          }
+        }
+      }
+    },
     "Leave it empty to go back to the first question." : {
       "localizations" : {
         "da" : {
@@ -138060,6 +141249,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "留空即可回到第一個問題。"
+          }
+        }
+      }
+    },
+    "Leave now · %@" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tag af sted nu · %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt los · %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sal ahora · %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partez maintenant · %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parti ora · %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今すぐ出発 · %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "지금 출발 · %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dra nå · %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vertrek nu · %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyjdź teraz · %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saia agora · %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пора выходить · %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Åk nu · %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hemen çık · %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Час виходити · %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "现在出发 · %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "現在出發 · %@"
           }
         }
       }
@@ -146829,6 +150124,218 @@
         }
       }
     },
+    "Make It %@'s Chat" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gør den til chatten med %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Chat von %@ machen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hacerlo el chat de %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En faire la discussion de %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rendila la chat di %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@のチャットにする"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@의 채팅으로 설정"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gjør den til chatten til %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maak er de chat van %@ van"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustaw jako czat bota %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tornar a Conversa de %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сделать чатом бота %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gör den till chatten för %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ İçin Asıl Sohbet Yap"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зробити чатом бота %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设为%@的聊天"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設為 %@ 的聊天"
+          }
+        }
+      }
+    },
+    "Make It the Chat" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gør den til den aktuelle chat"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum aktuellen Chat machen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hacerlo el chat actual"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En faire la discussion actuelle"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rendila la chat attuale"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "現在のチャットにする"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "현재 채팅으로 설정"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gjør den til gjeldende chat"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maak er de huidige chat van"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustaw jako bieżący czat"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tornar a Conversa Atual"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сделать текущим чатом"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gör den till aktuell chatt"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Asıl Sohbet Yap"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зробити поточним чатом"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设为当前聊天"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設為目前聊天"
+          }
+        }
+      }
+    },
     "Make one in Redde on your iPhone" : {
       "localizations" : {
         "da" : {
@@ -148102,6 +151609,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ 的地圖"
+          }
+        }
+      }
+    },
+    "Maps for addresses" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kort over adresser"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Landkarten für Adressen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mapas de direcciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cartes pour les adresses"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mappe degli indirizzi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "住所の地図"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "주소 지도"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kart over adresser"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Landkaarten bij adressen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mapy dla adresów"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mapas para endereços"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Карты для адресов"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kartor för adresser"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adresler için haritalar"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Карти для адрес"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地址地图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地址地圖"
           }
         }
       }
@@ -153368,6 +156981,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "車上功能更多"
+          }
+        }
+      }
+    },
+    "More Like This" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flere som denne"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mehr davon"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más como esto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus de ce genre"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Più cose così"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このようなものを増やす"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이런 항목 더 보기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flere som dette"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meer zoals dit"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Więcej takich"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mais Assim"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Больше такого"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fler som denna"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bunun Gibi Daha Fazla"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Більше такого"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "多来点这类"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "多一些這類"
           }
         }
       }
@@ -166472,7 +170191,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Plus tard"
+            "value" : "Pas maintenant"
           }
         },
         "it" : {
@@ -166484,13 +170203,13 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "後で"
+            "value" : "今はしない"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "나중에"
+            "value" : "지금은 안 함"
           }
         },
         "nb" : {
@@ -166550,7 +170269,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "稍後"
+            "value" : "現在不要"
           }
         }
       }
@@ -167194,6 +170913,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未設定"
+          }
+        }
+      }
+    },
+    "Not Useful" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ikke nyttig"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht nützlich"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No es útil"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas utile"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non utile"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "役に立たなかった"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "유용하지 않음"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ikke nyttig"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet nuttig"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieprzydatne"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não Útil"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бесполезно"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inte användbart"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yararlı Değil"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Некорисно"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒用"
           }
         }
       }
@@ -167937,6 +171762,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "目前沒有變化"
+          }
+        }
+      }
+    },
+    "Nothing from Health yet: no sleep, steps or workouts saved today and yesterday, or Redde wasn't allowed to read them (Settings › Health › Data Access & Devices › Redde)." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intet fra Sundhed endnu: ingen søvn, skridt eller træninger gemt i dag og i går, eller Redde fik ikke lov til at læse dem (Indstillinger › Sundhed › Dataadgang og enheder › Redde)."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noch nichts aus Health: Heute und gestern wurden kein Schlaf, keine Schritte und keine Trainings gesichert, oder Redde durfte sie nicht lesen (Einstellungen › Health › Datenzugriff & Geräte › Redde)."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún no hay nada de Salud: no hay sueño, pasos ni entrenamientos guardados hoy y ayer, o Redde no tenía permiso para leerlos (Ajustes › Salud › Acceso a datos y dispositivos › Redde)."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien de Santé pour l’instant : aucun sommeil, aucun pas ni aucun entraînement enregistré aujourd’hui et hier, ou Redde n’a pas été autorisé à les lire (Réglages › Santé › Accès aux données et appareils › Redde)."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ancora niente da Salute: nessun dato su sonno, passi o allenamenti salvato oggi e ieri, oppure Redde non era autorizzata a leggerli (Impostazioni › Salute › Accesso ai dati e dispositivi › Redde)."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ヘルスケアからのデータはまだありません。今日と昨日の睡眠、歩数、ワークアウトが保存されていないか、Reddeに読み取りが許可されていません（設定 › ヘルスケア › データアクセスとデバイス › Redde）。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "아직 건강 데이터가 없습니다. 오늘과 어제 저장된 수면, 걸음 수, 운동이 없거나 Redde에 읽기가 허용되지 않았습니다(설정 › 건강 › 데이터 접근 및 기기 › Redde)."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingenting fra Helse ennå: ingen søvn, skritt eller treningsøkter lagret i dag og i går, eller Redde fikk ikke lov til å lese dem (Innstillinger › Helse › Datatilgang og enheter › Redde)."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nog niets uit Gezondheid: vandaag en gisteren zijn geen slaap, stappen of trainingen bewaard, of Redde mocht ze niet lezen (Instellingen › Gezondheid › Gegevenstoegang en apparaten › Redde)."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na razie nic ze Zdrowia: dziś i wczoraj nie zapisano snu, kroków ani treningów albo Redde nie ma pozwolenia na ich odczyt (Ustawienia › Zdrowie › Dostęp do danych i urządzenia › Redde)."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada do app Saúde ainda: nenhum sono, passo ou treino salvo hoje e ontem, ou o Redde não teve permissão para lê-los (Ajustes › Saúde › Acesso a Dados e Dispositivos › Redde)."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Из «Здоровья» пока ничего: сегодня и вчера не сохранено ни сна, ни шагов, ни тренировок, или Redde не разрешено их читать («Настройки» › «Здоровье» › «Доступ к данным и устройства» › Redde)."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inget från Hälsa än: ingen sömn, inga steg eller träningspass sparade i dag och i går, eller så fick Redde inte läsa dem (Inställningar › Hälsa › Dataåtkomst och enheter › Redde)."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sağlık'tan henüz bir şey yok: bugün ve dün kaydedilmiş uyku, adım ya da antrenman yok veya Redde'nin bunları okumasına izin verilmedi (Ayarlar › Sağlık › Veri Erişimi ve Aygıtlar › Redde)."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зі «Здоров’я» поки нічого: сьогодні й учора не збережено ні сну, ні кроків, ні тренувань, або Redde не дозволено їх читати (Параметри › Здоров’я › Доступ до даних і пристрої › Redde)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“健康”中还没有数据：今天和昨天没有保存睡眠、步数或体能训练，或者Redde未获准读取它们（设置 › 健康 › 数据访问与设备 › Redde）。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「健康」中還沒有資料：今天和昨天沒有儲存睡眠、步數或體能訓練，或 Redde 未獲准讀取（「設定」›「健康」›「資料取用與裝置」›「Redde」）。"
           }
         }
       }
@@ -172653,6 +176584,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在 Apple Watch 上，每個機器人都會用自己的聲音朗讀回覆，和在 iPhone 上一樣。"
+          }
+        }
+      }
+    },
+    "On Foot" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Til fods"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zu Fuß"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A pie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À pied"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A piedi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "徒歩"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "도보"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Til fots"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lopend"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pieszo"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Pé"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пешком"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Till fots"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yürüyerek"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пішки"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "步行"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "步行"
           }
         }
       }
@@ -183316,6 +187353,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "透過 Hermes API 無法讓對話不詢問直接執行指令；使用 Dashboard 連線則可以。"
+          }
+        }
+      }
+    },
+    "Over the Hermes API, only the chats put aside from this iPhone show here." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Over Hermes API vises kun de chats, der er lagt til side fra denne iPhone, her."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Über die Hermes API erscheinen hier nur die Chats, die auf diesem iPhone beiseitegelegt wurden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con la Hermes API, aquí solo aparecen los chats apartados desde este iPhone."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avec Hermes API, seules les discussions mises de côté depuis cet iPhone s’affichent ici."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con la Hermes API, qui compaiono solo le chat messe da parte da questo iPhone."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes APIでは、このiPhoneで脇に置いたチャットだけがここに表示されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes API에서는 이 iPhone에서 치워 둔 채팅만 여기에 표시됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Over Hermes API vises bare chattene som er lagt til side fra denne iPhonen, her."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Via de Hermes API staan hier alleen de chats die vanaf deze iPhone opzij zijn gezet."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przez Hermes API pojawiają się tu tylko czaty odłożone na tym iPhonie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na Hermes API, só as conversas deixadas de lado neste iPhone aparecem aqui."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Через Hermes API здесь показываются только чаты, отложенные на этом iPhone."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Via Hermes API visas bara chattar som lagts undan från den här iPhonen här."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes API üzerinden burada yalnızca bu iPhone'dan kenara konan sohbetler görünür."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Через Hermes API тут показуються лише чати, відкладені на цьому iPhone."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通过Hermes API时，这里只显示在这台iPhone上搁置的聊天。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "透過 Hermes API 時，這裡只會顯示在這部 iPhone 上擱置的聊天。"
           }
         }
       }
@@ -196656,6 +200799,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "讀取 Redde 檔案夾中的檔案"
+          }
+        }
+      }
+    },
+    "Read Again and Send" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Læs igen og send"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erneut lesen und senden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volver a leer y enviar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Relire et envoyer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rileggi e invia"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "もう一度読み込んで送信"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "다시 읽고 보내기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les på nytt og send"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lees opnieuw en verstuur"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odczytaj ponownie i wyślij"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ler de Novo e Enviar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прочитать снова и отправить"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Läs igen och skicka"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeniden Oku ve Gönder"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прочитати знову й надіслати"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新读取并发送"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新讀取並傳送"
           }
         }
       }
@@ -213940,6 +218189,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "南"
+          }
+        }
+      }
+    },
+    "Said again when new sleep or a workout is saved, and when you open Redde. Turn this off and it's taken out of the jobs." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sendes igen, når ny søvn eller en træning gemmes, og når du åbner Redde. Slå det fra, så tages det ud af jobbene."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wird erneut übermittelt, wenn neuer Schlaf oder ein Training gesichert wird und wenn du Redde öffnest. Schalte es aus, und es wird aus den Jobs entfernt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se vuelve a enviar cuando se guarda un nuevo sueño o entrenamiento, y cuando abres Redde. Desactívalo y se quita de las tareas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renvoyé quand un nouveau sommeil ou un entraînement est enregistré, et quand vous ouvrez Redde. Désactivez-le et il est retiré des tâches."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viene inviato di nuovo quando si salva un nuovo sonno o allenamento e quando apri Redde. Disattivalo e viene tolto dai job."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しい睡眠やワークアウトが保存されたときと、Reddeを開いたときに改めて送られます。オフにすると、ジョブから外されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새 수면이나 운동이 저장될 때와 Redde를 열 때 다시 전송됩니다. 끄면 작업에서 제외됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sendes på nytt når ny søvn eller en treningsøkt lagres, og når du åpner Redde. Slå det av, så tas det ut av jobbene."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opnieuw gestuurd als er nieuwe slaap of een training wordt bewaard, en als je Redde opent. Zet dit uit en het wordt uit de taken gehaald."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wysyłane ponownie, gdy zostanie zapisany nowy sen lub trening, i gdy otwierasz Redde. Wyłącz to, a zostanie usunięte z zadań."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviado de novo quando um novo sono ou treino é salvo e quando você abre o Redde. Desative e ele sai das tarefas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправляется снова, когда сохраняется новый сон или тренировка, и когда вы открываете Redde. Выключите, и это уберется из заданий."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skickas igen när ny sömn eller ett träningspass sparas och när du öppnar Redde. Stäng av det så tas det bort från jobben."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni uyku ya da antrenman kaydedildiğinde ve Redde'yi açtığınızda yeniden gönderilir. Kapatırsanız görevlerden çıkarılır."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Надсилається знову, коли зберігається новий сон чи тренування, і коли ви відкриваєте Redde. Вимкніть, і це буде прибрано із завдань."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存新的睡眠或体能训练时，以及你打开Redde时，会重新发送。关闭后，它会从任务中移除。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存新的睡眠或體能訓練時，以及你打開 Redde 時，會重新傳送。關閉後，它會從工作中移除。"
           }
         }
       }
@@ -248388,6 +252743,112 @@
         }
       }
     },
+    "Tap to read, hold for more" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryk for at læse, hold for mere"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippen zum Lesen, gedrückt halten für mehr"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca para leer, mantén pulsado para ver más"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez pour lire, maintenez pour plus d’options"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca per leggere, tieni premuto per altre opzioni"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タップして読む、長押しでその他の操作"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "탭하여 읽기, 길게 누르면 더 보기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trykk for å lese, hold for mer"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tik om te lezen, houd vast voor meer"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stuknij, aby przeczytać, przytrzymaj, aby zobaczyć więcej"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque para ler, mantenha pressionado para mais"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коснитесь, чтобы прочитать, удерживайте для других действий"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryck för att läsa, håll för mer"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Okumak için dokunun, daha fazlası için basılı tutun"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Торкніться, щоб прочитати, утримуйте для інших дій"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻点阅读，按住查看更多"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點一下閱讀，按住以查看更多"
+          }
+        }
+      }
+    },
     "Tap to try again" : {
       "comment" : "Voice mode's state, on the Lock Screen's player",
       "localizations" : {
@@ -249352,6 +253813,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "告訴我"
+          }
+        }
+      }
+    },
+    "Tell Your Agent" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fortæl din agent"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deinem Agenten sagen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decírselo a tu agente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le dire à votre agent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dillo al tuo agente"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントに伝える"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트에게 알리기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si det til agenten din"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vertel het je agent"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Powiedz agentowi"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dizer ao Seu Agente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сказать агенту"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Berätta för din agent"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınıza Söyleyin"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сказати агенту"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "告诉智能体"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "告訴代理"
           }
         }
       }
@@ -267647,6 +272214,7 @@
       }
     },
     "This chat is archived on your server with its messages, and the new one starts with no history. What the bot saved to its memory stays. To make this chat shorter instead, send /compress." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -267748,6 +272316,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "此聊天及其訊息會封存在你的伺服器上，新的聊天則沒有任何記錄。機器人存入記憶的內容會保留。若只想縮短此聊天，請改為傳送 /compress。"
+          }
+        }
+      }
+    },
+    "This chat is archived on your server with its messages, under Earlier Chats in the bot's menu, and the new one starts with no history. What the bot saved to its memory stays. To make this chat shorter instead, send /compress." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne chat arkiveres på din server med sine beskeder under Tidligere chats i bottens menu, og den nye starter uden historik. Det, botten har gemt i sin hukommelse, bliver. Send /compress for i stedet at gøre denne chat kortere."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Chat wird mit seinen Nachrichten auf deinem Server archiviert, unter „Frühere Chats“ im Menü des Bots, und der neue beginnt ohne Verlauf. Was der Bot in seinem Gedächtnis gesichert hat, bleibt. Um diesen Chat stattdessen zu kürzen, sende /compress."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este chat se archiva en tu servidor con sus mensajes, en Chats anteriores del menú del bot, y el nuevo empieza sin historial. Lo que el bot guardó en su memoria se queda. Para acortar este chat en su lugar, envía /compress."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette discussion est archivée sur votre serveur avec ses messages, sous Discussions précédentes dans le menu du bot, et la nouvelle commence sans historique. Ce que le bot a enregistré dans sa mémoire est conservé. Pour plutôt raccourcir cette discussion, envoyez /compress."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questa chat viene archiviata sul tuo server con i suoi messaggi, in Chat precedenti nel menu del bot, e quella nuova parte senza cronologia. Ciò che il bot ha salvato nella sua memoria resta. Per accorciare invece questa chat, invia /compress."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このチャットはメッセージとともにサーバにアーカイブされてボットのメニューの「以前のチャット」に入り、新しいチャットは履歴なしで始まります。ボットがメモリに保存した内容は残ります。代わりにこのチャットを短くするには、/compressを送信してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 채팅은 메시지와 함께 서버에 보관되어 봇 메뉴의 이전 채팅에 표시되며, 새로운 채팅은 기록 없이 시작됩니다. 봇이 메모리에 저장한 내용은 유지됩니다. 대신 이 채팅을 줄이려면 /compress를 보내십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne chatten arkiveres på tjeneren din med meldingene, under Tidligere chatter i botens meny, og den nye starter uten historikk. Det boten har lagret i minnet, blir værende. Send /compress hvis du heller vil gjøre denne chatten kortere."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deze chat wordt met zijn berichten gearchiveerd op je server, onder Eerdere chats in het menu van de bot, en de nieuwe begint zonder geschiedenis. Wat de bot in zijn geheugen heeft bewaard, blijft. Stuur /compress om deze chat in plaats daarvan korter te maken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten czat zostanie zarchiwizowany na Twoim serwerze razem z wiadomościami, w sekcji Wcześniejsze czaty w menu bota, a nowy zacznie się bez historii. To, co bot zapisał w pamięci, zostaje. Aby zamiast tego skrócić ten czat, wyślij /compress."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta conversa é arquivada no seu servidor com as mensagens, em Conversas Anteriores no menu do bot, e a nova começa sem histórico. O que o bot salvou na memória fica. Para apenas encurtar esta conversa, envie /compress."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот чат вместе с сообщениями архивируется на вашем сервере, в разделе «Прежние чаты» меню бота, а новый начинается без истории. То, что бот сохранил в память, остается. Чтобы вместо этого сократить чат, отправьте /compress."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den här chatten arkiveras på din server med sina meddelanden, under Tidigare chattar i botens meny, och den nya börjar utan historik. Det boten har sparat i sitt minne finns kvar. Skicka /compress för att i stället göra den här chatten kortare."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu sohbet mesajlarıyla birlikte sunucunuzda, botun menüsündeki Önceki Sohbetler altında arşivlenir ve yenisi geçmişsiz başlar. Botun belleğine kaydettikleri kalır. Bunun yerine bu sohbeti kısaltmak için /compress gönderin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей чат буде заархівовано на вашому сервері разом із повідомленнями, у розділі «Попередні чати» меню бота, а новий почнеться без історії. Те, що бот зберіг у пам’яті, залишиться. Щоб натомість скоротити цей чат, надішліть /compress."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此聊天会连同消息一起归档到你的服务器上，放在机器人菜单的“之前的聊天”里，新聊天从无历史记录开始。机器人存入记忆的内容会保留。若只想缩短此聊天，请发送/compress。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此聊天及其訊息會封存在你的伺服器上，放在機器人選單的「之前的聊天」中，新的聊天則沒有任何記錄。機器人存入記憶的內容會保留。若只想縮短此聊天，請改為傳送 /compress。"
           }
         }
       }
@@ -268278,6 +272952,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "此裝置無法建立或保存它的 SSH 金鑰。請解鎖後再試一次。"
+          }
+        }
+      }
+    },
+    "This Evening" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I aften"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heute Abend"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta noche"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce soir"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stasera"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今晩"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "오늘 저녁"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I kveld"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vanavond"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dziś wieczorem"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoje à Noite"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сегодня вечером"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I kväll"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu Akşam"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сьогодні ввечері"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今晚"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今晚"
           }
         }
       }
@@ -272563,6 +277343,112 @@
         }
       }
     },
+    "This Weekend" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I weekenden"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Am Wochenende"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este fin de semana"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce week-end"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo fine settimana"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今週末"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이번 주말"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I helgen"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit weekend"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W ten weekend"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neste Fim de Semana"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На выходных"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I helgen"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu Hafta Sonu"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На вихідних"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本周末"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這個週末"
+          }
+        }
+      }
+    },
     "Thought" : {
       "localizations" : {
         "da" : {
@@ -273303,6 +278189,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "時間"
+          }
+        }
+      }
+    },
+    "Time to leave for %@" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tid til at tage af sted til %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeit zum Aufbrechen: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hora de salir hacia %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il est temps de partir pour %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "È ora di partire per %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@に出発する時間です"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@에 갈 시간입니다"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "På tide å dra til %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tijd om te vertrekken naar %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czas wyjść: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hora de sair para %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пора выходить: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dags att åka till %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çıkma zamanı: %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Час виходити: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "该出发去%@了"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "該出發去 %@ 了"
           }
         }
       }
@@ -274896,6 +279888,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "明天 %@"
+          }
+        }
+      }
+    },
+    "Tomorrow Morning" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I morgen tidlig"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Morgen früh"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mañana por la mañana"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demain matin"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Domani mattina"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "明日の朝"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "내일 아침"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I morgen tidlig"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Morgenochtend"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jutro rano"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amanhã de Manhã"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Завтра утром"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I morgon bitti"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yarın Sabah"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Завтра вранці"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "明天早上"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "明天早上"
           }
         }
       }
@@ -283506,6 +288604,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "後端無法回報其視窗大小時，用於計算「上下文 %」數值。llama.cpp 伺服器會自動回報。"
+          }
+        }
+      }
+    },
+    "Useful" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nyttig"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nützlich"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Útil"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utile"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utile"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "役に立った"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "유용함"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nyttig"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuttig"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przydatne"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Útil"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Полезно"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Användbart"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yararlı"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Корисно"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有用"
           }
         }
       }
@@ -293074,6 +298278,112 @@
         }
       }
     },
+    "What Your Agent Gets" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hvad din agent får"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was dein Agent bekommt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo que recibe tu agente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce que reçoit votre agent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cosa riceve il tuo agente"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントに渡る内容"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트가 받는 내용"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hva agenten din får"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wat je agent krijgt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Co dostaje Twój agent"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Que Seu Agente Recebe"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что получает агент"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vad din agent får"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınızın Aldıkları"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Що отримує агент"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的智能体会收到什么"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的代理會收到什麼"
+          }
+        }
+      }
+    },
     "What your car's screen shows while Redde listens, thinks and speaks, in that order." : {
       "localizations" : {
         "da" : {
@@ -294025,6 +299335,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "何時"
+          }
+        }
+      }
+    },
+    "When an event has an address, your iPhone works out when to leave from where you are, with traffic, adds it to the heads-up and reminds you when it's time. Where you are stays on your iPhone. Needs Location for Redde." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når en begivenhed har en adresse, beregner din iPhone ud fra, hvor du er, og med trafik, hvornår du skal af sted, føjer det til forvarslet og minder dig om det, når det er tid. Hvor du er, bliver på din iPhone. Kræver lokalitet for Redde."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn ein Termin eine Adresse hat, berechnet dein iPhone von deinem Standort aus und mit Verkehr, wann du losmusst, fügt es dem Vorabhinweis hinzu und erinnert dich, wenn es Zeit ist. Wo du bist, bleibt auf deinem iPhone. Braucht den Standort für Redde."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando un evento tiene dirección, tu iPhone calcula cuándo salir desde donde estás, con el tráfico, lo añade al aviso y te lo recuerda cuando es la hora. Tu ubicación se queda en tu iPhone. Necesita la ubicación para Redde."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand un événement a une adresse, votre iPhone calcule l’heure de départ depuis votre position, avec la circulation, l’ajoute à l’alerte et vous prévient quand c’est l’heure. Votre position reste sur votre iPhone. Requiert la position pour Redde."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando un evento ha un indirizzo, il tuo iPhone calcola quando partire da dove ti trovi, considerando il traffico, lo aggiunge all'avviso e ti avvisa quando è ora. La tua posizione resta sul tuo iPhone. Serve la posizione per Redde."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "予定に住所がある場合、iPhoneが現在地から交通状況を考慮して出発時刻を計算し、お知らせに追加して、時間になったら知らせます。現在地はiPhoneの中にとどまります。Reddeの位置情報が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "일정에 주소가 있으면 iPhone이 현재 위치에서 교통 상황을 반영해 출발 시간을 계산하고, 사전 알림에 추가한 뒤 시간이 되면 알려줍니다. 현재 위치는 iPhone에 남습니다. Redde의 위치 접근이 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når en hendelse har en adresse, beregner iPhonen ut fra hvor du er, og med trafikk, når du må dra, legger det til i forvarselet og minner deg på det når det er tid. Hvor du er, blir på iPhonen din. Krever posisjon for Redde."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als een afspraak een adres heeft, berekent je iPhone vanaf waar je bent, met verkeer, wanneer je moet vertrekken, voegt dat toe aan het seintje en herinnert je als het tijd is. Waar je bent, blijft op je iPhone. Hiervoor is Locatie voor Redde nodig."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy wydarzenie ma adres, Twój iPhone oblicza, kiedy wyjść z miejsca, w którym jesteś, uwzględniając ruch, dodaje to do zapowiedzi i przypomina, gdy nadejdzie pora. To, gdzie jesteś, zostaje na Twoim iPhonie. Wymaga lokalizacji dla Redde."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando um evento tem endereço, seu iPhone calcula quando sair de onde você está, com o trânsito, adiciona isso ao aviso e lembra você na hora certa. Onde você está fica no seu iPhone. Requer a Localização para o Redde."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если у события есть адрес, iPhone рассчитывает, когда выходить, от того места, где вы находитесь, с учетом пробок, добавляет это в предупреждение и напоминает, когда пора. Ваше местоположение остается на iPhone. Нужна геопозиция для Redde."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "När en händelse har en adress räknar din iPhone ut när du ska åka från där du är, med trafik, lägger till det i förvarningen och påminner dig när det är dags. Var du är stannar på din iPhone. Kräver plats för Redde."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir etkinliğin adresi olduğunda iPhone'unuz bulunduğunuz yerden, trafiği de hesaba katarak ne zaman çıkmanız gerektiğini hesaplar, bunu hatırlatmaya ekler ve zamanı geldiğinde size hatırlatır. Nerede olduğunuz iPhone'unuzda kalır. Redde için Konum gerekir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Якщо подія має адресу, iPhone розраховує, коли виходити, від того місця, де ви є, з урахуванням заторів, додає це до попередження й нагадує, коли час. Ваше місцезнаходження лишається на iPhone. Потрібна локація для Redde."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日程有地址时，你的iPhone会根据你所在的位置并结合路况算出何时出发，加到提醒中，并在时间到时提醒你。你的位置保留在iPhone上。需要为Redde打开位置访问。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "行程有地址時，你的 iPhone 會根據你所在的位置並考量路況算出何時出發，加入提醒，並在時間到時提醒你。你的位置會保留在 iPhone 上。需要為 Redde 開啟位置取用。"
           }
         }
       }
@@ -302209,6 +307625,7 @@
       }
     },
     "Your agent can show a map, places, the weather and the time under its reply, through Redde's Hermes plugin. The weather comes from Open-Meteo. Off, it isn't offered them, which makes every prompt a little shorter." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -302310,6 +307727,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "透過 Redde 的 Hermes 外掛，你的代理可以在回覆下方顯示地圖、地點、天氣和時間。天氣資料來自 Open-Meteo。關閉時不會提供給代理，讓每個提示詞稍微短一些。"
+          }
+        }
+      }
+    },
+    "Your agent can show a map, places, the weather and the time under its reply, through Redde's Hermes plugin. The weather comes from Open-Meteo. Off, it isn't offered them, which makes every prompt a little shorter. With Maps for addresses on, a reply or a heads-up that names a street address gets a map of it, found by Apple Maps." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent kan vise et kort, steder, vejret og klokken under sit svar via Reddes Hermes-plugin. Vejret kommer fra Open-Meteo. Når det er slået fra, får den dem ikke tilbudt, hvilket gør hver prompt lidt kortere. Når Kort over adresser er slået til, får et svar eller et forvarsel, der nævner en gadeadresse, et kort over den, fundet af Apple Maps."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Agent kann unter seiner Antwort eine Karte, Orte, das Wetter und die Uhrzeit zeigen, über das Hermes-Plugin von Redde. Das Wetter kommt von Open-Meteo. Wenn aus, werden sie ihm nicht angeboten, was jeden Prompt etwas kürzer macht. Wenn „Landkarten für Adressen“ an ist, bekommt eine Antwort oder ein Vorabhinweis mit einer Straßenadresse eine Karte dazu, gefunden über Apple Maps."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu agente puede mostrar un mapa, lugares, el tiempo y la hora debajo de su respuesta, mediante el plugin de Hermes de Redde. El tiempo viene de Open-Meteo. Desactivado, no se le ofrecen, lo que acorta un poco cada prompt. Con Mapas de direcciones activado, una respuesta o un aviso que mencione una dirección postal incluye un mapa del lugar, encontrado con Apple Maps."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre agent peut afficher une carte, des lieux, la météo et l’heure sous sa réponse, grâce au plugin Hermes de Redde. La météo vient d’Open-Meteo. Désactivé, ces cartes ne lui sont pas proposées, ce qui raccourcit un peu chaque prompt. Avec Cartes pour les adresses activé, une réponse ou une alerte qui cite une adresse postale s’accompagne d’une carte de celle-ci, trouvée par Apple Maps."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo agente può mostrare una mappa, luoghi, il meteo e l'ora sotto la risposta, tramite il plugin Hermes di Redde. Il meteo arriva da Open-Meteo. Se disattivato, non gli vengono offerti, e ogni prompt è un po' più corto. Con Mappe degli indirizzi attivo, una risposta o un avviso che nomina un indirizzo stradale riceve una mappa del luogo, trovata da Apple Maps."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ReddeのHermesプラグインを通じて、エージェントが返答の下に地図、場所、天気、時刻を表示できます。天気はOpen-Meteoから取得します。オフにするとこれらは提供されず、その分プロンプトが少し短くなります。「住所の地図」をオンにすると、住所が書かれた返答や事前のお知らせに、Apple Mapsで見つけたその場所の地図が付きます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde의 Hermes 플러그인을 통해 에이전트가 응답 아래에 지도, 장소, 날씨 및 시간을 표시할 수 있습니다. 날씨는 Open-Meteo에서 가져옵니다. 끄면 에이전트에게 이 기능이 제공되지 않아 모든 프롬프트가 조금 짧아집니다. 주소 지도를 켜면 주소가 들어 있는 응답이나 사전 알림에 Apple Maps로 찾은 해당 위치의 지도가 표시됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten din kan vise et kart, steder, været og klokkeslettet under svaret, via Reddes Hermes-tillegg. Været kommer fra Open-Meteo. Når dette er av, får den ikke tilbud om dem, noe som gjør hver prompt litt kortere. Med Kart over adresser på får et svar eller et forvarsel som nevner en gateadresse, et kart over den, funnet av Apple Maps."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agent kan onder zijn antwoord een kaart, locaties, het weer en de tijd tonen, via de Hermes-plug-in van Redde. Het weer komt van Open-Meteo. Als dit uit staat, worden ze hem niet aangeboden, wat elke prompt iets korter maakt. Met Landkaarten bij adressen aan krijgt een antwoord of een seintje met een straatadres er een kaart van bij, gevonden door Apple Maps."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój agent może pokazać pod odpowiedzią mapę, miejsca, pogodę i czas dzięki wtyczce Redde dla Hermesa. Pogoda pochodzi z Open-Meteo. Gdy wyłączone, agent ich nie dostaje, co nieco skraca każdy prompt. Gdy włączone są Mapy dla adresów, odpowiedź lub zapowiedź zawierająca adres ulicy otrzymuje mapę tego miejsca, znalezioną przez Apple Maps."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu agente pode mostrar um mapa, locais, o tempo e a hora abaixo da resposta, pelo plugin do Redde para o Hermes. O tempo vem do Open-Meteo. Desativado, eles não são oferecidos ao agente, o que deixa cada prompt um pouco mais curto. Com Mapas para endereços ativado, uma resposta ou um aviso que cite um endereço ganha um mapa do local, encontrado pelo Apple Maps."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент может показывать под ответом карту, места, погоду и время через плагин Redde для Hermes. Погода берется из Open-Meteo. Если выключено, агенту это не предлагается, и каждый запрос становится немного короче. Если включены «Карты для адресов», к ответу или предупреждению с адресом добавляется карта этого места, найденная через Apple Maps."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent kan visa en karta, platser, vädret och tiden under sitt svar, via Reddes Hermes-tillägg. Vädret kommer från Open-Meteo. Avstängt erbjuds de inte, vilket gör varje prompt lite kortare. Med Kartor för adresser på får ett svar eller en förvarning som nämner en gatuadress en karta över den, hittad av Apple Maps."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınız, Redde'nin Hermes eklentisi aracılığıyla yanıtının altında harita, konumlar, hava durumu ve saat gösterebilir. Hava durumu Open-Meteo'dan gelir. Kapalıyken bunlar ajana sunulmaz, bu da her istemi biraz kısaltır. Adresler için haritalar açıkken, bir sokak adresi geçen yanıtlara ve hatırlatmalara Apple Maps ile bulunan bir harita eklenir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш агент може показувати під відповіддю карту, місця, погоду й час через плагін Redde для Hermes. Погода надходить від Open-Meteo. Якщо вимкнено, агенту їх не пропонують, і кожен промпт стає трохи коротшим. Якщо ввімкнено «Карти для адрес», до відповіді чи попередження з адресою додається карта цього місця, знайдена через Apple Maps."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通过Redde的Hermes插件，你的智能体可以在回复下方显示地图、地点、天气和时间。天气来自Open-Meteo。关闭后，智能体不会获得这些功能，每个提示词也会因此略短一些。打开“地址地图”后，提到街道地址的回复或提前提醒会附上由Apple Maps找到的该地址地图。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "透過 Redde 的 Hermes 外掛，你的代理可以在回覆下方顯示地圖、地點、天氣和時間。天氣資料來自 Open-Meteo。關閉時不會提供給代理，讓每個提示詞稍微短一些。開啟「地址地圖」後，提到街道地址的回覆或事前提醒會附上由 Apple Maps 找到的該地址地圖。"
           }
         }
       }
@@ -303411,6 +308934,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的代理的簡報會出現在這裡：晚間總結、行程前提醒，以及你要求的任何每日簡報。請在「設定」→「代理」中設定。"
+          }
+        }
+      }
+    },
+    "Your agent's Morning Ideas, Evening Wrap-up and Week Ahead take your day into account: a lighter set of ideas after a short night, a nudge after a day without moving. Redde reads last night's sleep, your steps and your workouts from Apple Health on this iPhone. Only a one-line summary goes to your Hermes, in those scheduled jobs; nothing from Health goes into your chats, and nothing is written to Health." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agents Morgenidéer, Aftenopsummering og Ugen, der kommer, tager højde for din dag: færre idéer efter en kort nat, et lille skub efter en dag uden bevægelse. Redde læser nattens søvn, dine skridt og dine træninger fra Sundhed på denne iPhone. Kun et resumé på én linje sendes til din Hermes i de planlagte job; intet fra Sundhed kommer i dine chats, og intet skrives til Sundhed."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Morgenideen, der Abendrückblick und der Wochenausblick deines Agenten berücksichtigen deinen Tag: weniger Ideen nach einer kurzen Nacht, ein Anstoß nach einem Tag ohne Bewegung. Redde liest den Schlaf der letzten Nacht, deine Schritte und deine Trainings aus Health auf diesem iPhone. Nur eine einzeilige Zusammenfassung geht an deinen Hermes, in diesen geplanten Jobs; nichts aus Health landet in deinen Chats, und nichts wird in Health geschrieben."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las Ideas matutinas, el Resumen de la noche y La semana que viene de tu agente tienen en cuenta tu día: menos ideas tras una noche corta, un empujoncito tras un día sin moverte. Redde lee el sueño de anoche, tus pasos y tus entrenamientos de Salud en este iPhone. Solo un resumen de una línea llega a tu Hermes, en esas tareas programadas; nada de Salud entra en tus chats y nada se escribe en Salud."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les Idées du matin, le Bilan du soir et la Semaine à venir de votre agent tiennent compte de votre journée : moins d’idées après une nuit courte, un petit coup de pouce après une journée sans bouger. Redde lit le sommeil de la nuit dernière, vos pas et vos entraînements dans Santé sur cet iPhone. Seul un résumé d’une ligne est envoyé à votre Hermes, dans ces tâches planifiées ; rien de Santé n’apparaît dans vos discussions, et rien n’est écrit dans Santé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le Idee del mattino, il Riepilogo serale e la Settimana in arrivo del tuo agente tengono conto della tua giornata: meno idee dopo una notte breve, una spinta dopo una giornata senza muoversi. Redde legge il sonno della notte scorsa, i tuoi passi e i tuoi allenamenti da Salute su questo iPhone. Al tuo Hermes arriva solo un riepilogo di una riga, in quei job pianificati; niente da Salute finisce nelle chat e niente viene scritto in Salute."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントの朝のアイデア、夜の振り返り、来週の見通しがあなたの1日を考慮します。短い睡眠の後はアイデアを少なめに、動かなかった日の後はひと押しを。ReddeはこのiPhoneのヘルスケアから昨夜の睡眠、歩数、ワークアウトを読み取ります。Hermesに送られるのは、これらのスケジュール済みジョブの中の1行の要約だけです。ヘルスケアのデータがチャットに入ることはなく、ヘルスケアに書き込まれることもありません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트의 아침 아이디어, 저녁 하루 정리, 다가오는 한 주가 사용자의 하루를 반영합니다. 잠이 부족했던 다음 날에는 아이디어를 줄이고, 움직이지 않은 날 뒤에는 가볍게 권합니다. Redde는 이 iPhone의 건강 앱에서 지난밤 수면, 걸음 수, 운동을 읽습니다. Hermes에는 이 예약된 작업 안에서 한 줄 요약만 전송되며, 건강 데이터가 채팅에 들어가거나 건강 앱에 기록되는 일은 없습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentens Morgenidéer, Kveldsoppsummering og Uken som kommer tar hensyn til dagen din: færre idéer etter en kort natt, et lite dytt etter en dag uten bevegelse. Redde leser søvnen fra i natt, skrittene dine og treningsøktene dine fra Helse på denne iPhonen. Bare et sammendrag på én linje går til din Hermes, i de planlagte jobbene; ingenting fra Helse havner i chattene dine, og ingenting skrives til Helse."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De Ochtendideeën, Avondterugblik en Komende week van je agent houden rekening met je dag: minder ideeën na een korte nacht, een duwtje na een dag zonder bewegen. Redde leest de slaap van afgelopen nacht, je stappen en je trainingen uit Gezondheid op deze iPhone. Alleen een samenvatting van één regel gaat naar je Hermes, in die geplande taken; niets uit Gezondheid komt in je chats, en er wordt niets naar Gezondheid geschreven."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poranne pomysły, Wieczorne podsumowanie i Nadchodzący tydzień Twojego agenta uwzględniają Twój dzień: mniej pomysłów po krótkiej nocy, zachęta po dniu bez ruchu. Redde odczytuje sen z ostatniej nocy, Twoje kroki i treningi ze Zdrowia na tym iPhonie. Do Twojego Hermesa trafia tylko jednowierszowe podsumowanie, w tych zaplanowanych zadaniach; nic ze Zdrowia nie trafia do czatów i nic nie jest zapisywane w Zdrowiu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As Ideias Matinais, o Resumo da Noite e a Semana que Vem do seu agente levam seu dia em conta: menos ideias depois de uma noite curta, um empurrão depois de um dia sem se mexer. O Redde lê o sono da noite passada, seus passos e seus treinos do app Saúde neste iPhone. Só um resumo de uma linha vai para o seu Hermes, nessas tarefas agendadas; nada do Saúde vai para suas conversas, e nada é gravado no Saúde."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Утренние идеи, Вечерние итоги и Обзор недели вашего агента учитывают ваш день: меньше идей после короткой ночи, напоминание подвигаться после дня без движения. Redde читает сон за прошлую ночь, ваши шаги и тренировки из «Здоровья» на этом iPhone. В Hermes уходит только сводка в одну строку, в этих запланированных заданиях; ничего из «Здоровья» не попадает в чаты, и ничего не записывается в «Здоровье»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agents Morgonidéer, Kvällssammanfattning och Veckan som kommer tar hänsyn till din dag: färre idéer efter en kort natt, en knuff efter en dag utan rörelse. Redde läser nattens sömn, dina steg och dina träningspass från Hälsa på den här iPhonen. Bara en sammanfattning på en rad går till din Hermes, i de schemalagda jobben; inget från Hälsa hamnar i dina chattar, och inget skrivs till Hälsa."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınızın Sabah Fikirleri, Akşam Özeti ve Haftaya Bakış'ı gününüzü hesaba katar: kısa bir geceden sonra daha az fikir, hareketsiz bir günden sonra küçük bir dürtme. Redde, dün geceki uykunuzu, adımlarınızı ve antrenmanlarınızı bu iPhone'daki Sağlık'tan okur. Hermes'inize, bu zamanlanmış görevlerde yalnızca tek satırlık bir özet gider; Sağlık'tan hiçbir şey sohbetlerinize girmez ve Sağlık'a hiçbir şey yazılmaz."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ранкові ідеї, Вечірні підсумки й Огляд тижня вашого агента враховують ваш день: менше ідей після короткої ночі, заклик порухатися після дня без руху. Redde читає сон за минулу ніч, ваші кроки й тренування зі «Здоров’я» на цьому iPhone. До Hermes надходить лише зведення в один рядок, у цих запланованих завданнях; нічого зі «Здоров’я» не потрапляє в чати, і нічого не записується в «Здоров’я»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的智能体的早间想法、晚间总结和下周概览会考虑你的一天：睡得少的第二天想法少一些，一天没怎么动之后会提醒你动一动。Redde从此iPhone上的“健康”读取你昨晚的睡眠、步数和体能训练。只有一行摘要会在这些计划任务中发送到你的Hermes；“健康”中的任何内容都不会进入你的聊天，也不会向“健康”写入任何内容。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的代理的晨間點子、晚間總結和下週概覽會考量你的一天：睡得少的隔天點子少一些，一整天沒怎麼動之後會提醒你動一動。Redde 從這部 iPhone 上的「健康」讀取你昨晚的睡眠、步數和體能訓練。只有一行摘要會在這些排程工作中傳送到你的 Hermes；「健康」的任何內容都不會進入你的聊天，也不會寫入「健康」。"
           }
         }
       }
@@ -307870,6 +313499,220 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的聲音"
+          }
+        }
+      }
+    },
+    "your week ahead · %@" : {
+      "comment" : "Under an agent's name on the Week Ahead's card",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "din kommende uge · %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dein Wochenausblick · %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tu semana que viene · %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "votre semaine à venir · %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "la tua settimana in arrivo · %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "来週の見通し · %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "다가오는 한 주 · %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "din kommende uke · %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "je komende week · %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nadchodzący tydzień · %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sua semana que vem · %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "обзор недели · %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "din vecka som kommer · %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "haftaya bakış · %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "огляд тижня · %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下周概览 · %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下週概覽 · %@"
+          }
+        }
+      }
+    },
+    "your wrap-up · %@" : {
+      "comment" : "Under an agent's name on the Evening Wrap-up's card",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "din opsummering · %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dein Rückblick · %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tu resumen · %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "votre bilan · %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "il tuo riepilogo · %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "夜の振り返り · %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "저녁 하루 정리 · %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "din oppsummering · %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "je terugblik · %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "podsumowanie dnia · %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "seu resumo · %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "итоги дня · %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "din sammanfattning · %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "gün özeti · %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "підсумки дня · %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "晚间总结 · %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "晚間總結 · %@"
           }
         }
       }

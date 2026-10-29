@@ -220,10 +220,84 @@ nonisolated struct APIBot: Codable, Equatable, Identifiable, Sendable {
     var id: String { profile }
 }
 
-/// An API bot's chat: the session titled "Bot Chat" on its profile, as on the Dashboard.
+/// An API bot's chat: the session titled "Bot Chat" on its profile, as on the Dashboard, and
+/// hidden as the Dashboard makes it, so it is no row in any app's list (it was one in Redde's own,
+/// 2026-10-29). Found by its title with hidden ones included: the plain list leaves out the chat
+/// the Dashboard made, and a second one was made beside it.
 nonisolated enum APIBotChat {
     static func find(_ api: HermesSessionsAPI) async throws -> HermesSessionsAPI.SessionSummary? {
-        try await api.listSessions(limit: 200).first { $0.title == BotChat.title }
+        try await api.listSessions(limit: 200, title: BotChat.title, includeHidden: true)
+            .first { $0.title == BotChat.title && $0.archived != true }
+    }
+
+    /// Made the first time, then hidden; shown again if this server couldn't find it hidden (the
+    /// lab's releases all can: 0.21.5, 0.22.2), so it is never lost.
+    static func make(_ api: HermesSessionsAPI) async throws -> HermesSessionsAPI.SessionSummary {
+        let made = try await api.createSession(title: BotChat.title)
+        guard (try? await api.updateSession(id: made.id, hidden: true)) != nil else { return made }
+        if try await find(api)?.id != made.id { try? await api.updateSession(id: made.id, hidden: false) }
+        return made
+    }
+
+    /// Put aside (Start Fresh): archived and hidden, so a new chat can take the title (Hermes frees a
+    /// title only from an archived hidden Bot Chat) and the old one is an earlier chat.
+    static func putAside(_ id: String, _ api: HermesSessionsAPI) async throws {
+        try await api.updateSession(id: id, archived: true, hidden: true)
+    }
+}
+
+/// A bot's earlier chats (asked 2026-10-29: "shouldn't previous bot chats show… ?"): the ones put
+/// aside with Start Fresh, kept on the server with their messages, newest first, in the bot's menu
+/// rather than among the conversations. The Dashboard lists a profile's archived sessions, hidden
+/// ones included: a bot's are titled "Bot Chat", or untitled once a new chat took the title (Hermes
+/// clears it then). The Hermes API lists no archived session, so the ones put aside from Redde are
+/// remembered on the phone, per server and profile, and asked for one by one.
+@MainActor
+enum EarlierBotChats {
+    private static let key = "earlierBotChats"
+    private static let most = 50
+
+    private static func slot(_ profile: String, server: String) -> String { server + "|" + profile }
+
+    static func remembered(profile: String, server: String, defaults: UserDefaults = .standard) -> [String] {
+        (defaults.dictionary(forKey: key)?[slot(profile, server: server)] as? [String]) ?? []
+    }
+
+    static func remember(_ id: String, profile: String, server: String, defaults: UserDefaults = .standard) {
+        var all = defaults.dictionary(forKey: key) ?? [:]
+        let kept = remembered(profile: profile, server: server, defaults: defaults).filter { $0 != id }
+        all[slot(profile, server: server)] = Array(([id] + kept).prefix(most))
+        defaults.set(all, forKey: key)
+    }
+
+    static func forget(_ id: String, profile: String, server: String, defaults: UserDefaults = .standard) {
+        var all = defaults.dictionary(forKey: key) ?? [:]
+        all[slot(profile, server: server)] = remembered(profile: profile, server: server, defaults: defaults).filter { $0 != id }
+        defaults.set(all, forKey: key)
+    }
+
+    /// Which of a profile's archived sessions are its bot's earlier chats: titled "Bot Chat", or
+    /// untitled and hidden (where the list says), never an incognito chat waiting to be deleted.
+    nonisolated static func pick(_ archived: [HermesSessionsAPI.SessionSummary], incognito: Set<String> = []) -> [HermesSessionsAPI.SessionSummary] {
+        archived.filter { row in
+            guard row.archived != false, row.hidden != false, !incognito.contains(row.id) else { return false }
+            let title = row.title?.trimmingCharacters(in: .whitespaces) ?? ""
+            return title == BotChat.title || title.isEmpty
+        }
+        .sorted { ($0.lastActiveDate ?? .distantPast) > ($1.lastActiveDate ?? .distantPast) }
+    }
+}
+
+extension HermesServeClient {
+    /// Makes an earlier chat the bot's chat again: the one it has put aside first (Hermes frees the
+    /// title from it), then the earlier one given the title back and taken out of the archive.
+    /// Returns the chat put aside, if there was one.
+    @discardableResult
+    func bringBack(_ earlier: String, for bot: HermesBot) async throws -> String? {
+        let current = try await startFresh(bot)
+        noteProfile(bot.name, forStored: earlier)
+        try await updateSession(stored: earlier, title: BotChat.title, archived: false)
+        return current
     }
 }
 
@@ -489,19 +563,21 @@ extension HermesServeClient {
     /// a bot's chat: its title is what makes it the bot's.) What the bot saved to its memory stays.
     /// Nothing to do if it has none. Read the roster again before opening the bot: the old one
     /// still names the chat put aside.
-    func startFresh(_ bot: HermesBot) async throws {
+    @discardableResult
+    func startFresh(_ bot: HermesBot) async throws -> String? {
         try await ensureConnected()
         let result = try await call("session.list", params: .object([
             "profile": .string(bot.name), "title": .string(BotChat.title), "include_hidden": .bool(true), "limit": .number(200)]))
         // The title is the first part's, when Hermes has compressed the chat into more.
         guard let row = (result["sessions"]?.array ?? []).first(where: { $0["title"]?.string == BotChat.title && $0["archived"]?.bool != true }),
-              let root = row["id"]?.string else { return }
+              let root = row["id"]?.string else { return nil }
         noteProfile(bot.name, forStored: root)
         do {
             try await call("session.archive", params: .object(["session_id": .string(root), "profile": .string(bot.name), "archived": .bool(true)]))
         } catch let error as RPCError where error.code == -32601 {
             throw BotChat.Problem.cantStartFresh
         }
+        return root
     }
 
     /// Lets the bots message each other: sets the main profile up as a bot, as Hermes Desktop does

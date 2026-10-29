@@ -996,6 +996,15 @@ final class HermesServeClient {
         return try JSONDecoder().decode(Page.self, from: data).sessions ?? []
     }
 
+    /// A profile's archived sessions, hidden ones included (the Dashboard's list, Hermes 0.22): a
+    /// bot's earlier chats are among them (`EarlierBotChats`).
+    func archivedSessions(profile: String, limit: Int = 100) async throws -> [HermesSessionsAPI.SessionSummary] {
+        let name = profile.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? profile
+        let data = try await rest("GET", "api/profiles/sessions?profile=\(name)&archived=only&order=recent&limit=\(limit)", body: nil as Data?)
+        struct Page: Decodable { var sessions: [HermesSessionsAPI.SessionSummary]? }
+        return try JSONDecoder().decode(Page.self, from: data).sessions ?? []
+    }
+
     // MARK: - Skills (dashboard REST, cookie-authenticated)
 
     nonisolated struct DashboardSkill: Decodable, Identifiable, Sendable {

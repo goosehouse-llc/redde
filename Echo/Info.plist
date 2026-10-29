@@ -70,6 +70,8 @@
 	<string>With Phone tools turned on, Redde looks up a contact when your assistant asks it to. What it finds goes only to the server you connect to.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Redde uses Face ID to unlock the app, which holds your Hermes credentials.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>With Health-Aware Days turned on, Redde reads last night's sleep, your steps and your workouts so your agent's morning ideas and evening wrap-up take your day into account. Only a one-line summary goes to your own server.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Redde connects to the Hermes gateway or model server you configure, which is often on your local network.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>

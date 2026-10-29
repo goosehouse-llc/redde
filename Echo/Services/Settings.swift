@@ -495,6 +495,12 @@ final class Settings: ServeEndpoint {
     var linkPreviews: Bool {
         didSet { store(linkPreviews, forKey: Keys.linkPreviews) }
     }
+    /// A map under a reply or a briefing that names a street address (`AddressMaps`, asked
+    /// 2026-10-29: "I want maps to be included in messages with addresses"). On unless turned off;
+    /// the address goes to Apple's maps to be found, as any map card's does.
+    var addressMaps: Bool {
+        didSet { store(addressMaps, forKey: Keys.addressMaps) }
+    }
     /// Settings → Appearance → Bot faces: off, every bot (Redde too) is drawn as a circle in its
     /// colour with its initial instead of a creature, and voice mode shows the voice orb (the
     /// Bubble one in place of Redde's face). The faces stay on the server. Asked 2026-10-21, for
@@ -780,6 +786,7 @@ final class Settings: ServeEndpoint {
         static let chatTextSize = "chatTextSize"
         static let botColors = "botColors"
         static let linkPreviews = "linkPreviews"
+        static let addressMaps = "addressMaps"
         static let botFaces = "botFaces"
         static let botPictures = "botPictures"
         static let replyCards = "replyCards"
@@ -883,6 +890,7 @@ final class Settings: ServeEndpoint {
         chatTextSize = min(max(defaults.integer(forKey: Keys.chatTextSize), Self.chatTextSizes.lowerBound), Self.chatTextSizes.upperBound)
         botColors = defaults.object(forKey: Keys.botColors) as? Bool ?? true
         linkPreviews = defaults.bool(forKey: Keys.linkPreviews)
+        addressMaps = defaults.object(forKey: Keys.addressMaps) as? Bool ?? true
         botFaces = defaults.object(forKey: Keys.botFaces) as? Bool ?? true
         botPictures = defaults.object(forKey: Keys.botPictures) as? Bool ?? true
         replyCards = defaults.object(forKey: Keys.replyCards) as? Bool ?? true
@@ -951,7 +959,7 @@ final class Settings: ServeEndpoint {
     /// Siri, Phone tools, what needs a permission of the device (notifications, motion), and the
     /// push relay.
     static let syncedKeys: [String] = [
-        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.botColors, Keys.linkPreviews, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
+        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.botColors, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
         Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots, Keys.projectsInChatList,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
@@ -980,6 +988,7 @@ final class Settings: ServeEndpoint {
         case Keys.chatTextSize: chatTextSize = min(max(value as? Int ?? 0, Self.chatTextSizes.lowerBound), Self.chatTextSizes.upperBound)
         case Keys.botColors: botColors = flag(true)
         case Keys.linkPreviews: linkPreviews = flag()
+        case Keys.addressMaps: addressMaps = flag(true)
         case Keys.botFaces: botFaces = flag(true)
         case Keys.botPictures: botPictures = flag(true)
         case Keys.replyCards: replyCards = flag(true)
@@ -1272,6 +1281,7 @@ final class Settings: ServeEndpoint {
         chatTextSize = 0
         botColors = true
         linkPreviews = false
+        addressMaps = true
         botFaces = true
         botPictures = true
         replyCards = true

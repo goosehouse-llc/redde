@@ -742,8 +742,11 @@ extension Conversation {
         let clockArgs = try? JSONValue.parse(Data(#"{"cards": [{"type": "time", "place": "Tokyo", "timezone": "Asia/Tokyo"}]}"#.utf8))
         clock.tools = [ToolActivity(name: ReplyCards.tool, preview: "time", status: .completed, args: ToolActivity.args(ReplyCards.tool, clockArgs))]
         clock.cards = ReplyCards.parse(clockArgs)
+        // A street address with no map of its own: Redde adds one (`AddressMaps`).
+        let address = Message(role: .assistant, text: "Your dentist is at **200 East Robinson St, Orlando, FL 32801**. Parking is behind the building; bring your insurance card.")
         replaceForDemo(messages: [Message(role: .user, text: "Where should we get coffee near the office, and is it going to rain?"), reply,
-                                  Message(role: .user, text: "What time is it in Tokyo?"), clock])
+                                  Message(role: .user, text: "What time is it in Tokyo?"), clock,
+                                  Message(role: .user, text: "Where's my dentist appointment?"), address])
     }
 
     /// `-echo.demoQuestion`: the agent stopped to ask (Hermes's clarify tool), with choices,

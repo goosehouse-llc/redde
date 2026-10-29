@@ -177,6 +177,8 @@ struct MessageRow: View, Equatable {
             if !isLive, !message.isSteer, message.error == nil, hasTextBubble { LinkPreviewSlot(text: message.text) }
             // A map, places, the weather, the time the reply shows (`ReplyCards`), as soon as they're asked for.
             if message.role == .assistant, let cards = message.cards, !cards.isEmpty { ReplyCardsView(cards: cards, pending: isLive) }
+            // A street address in a finished reply with no map of its own: a map of it (`AddressMaps`).
+            if !isLive, message.error == nil, let found = AddressMaps.forReply(message) { AddressMapCard(found: found) }
             // Pages the agent made for the chat, live, under what it said about them.
             if message.role == .assistant, !isLive {
                 ForEach(message.attachments.filter { $0.page != nil }) { AgentPage(attachment: $0, messageID: message.id) }

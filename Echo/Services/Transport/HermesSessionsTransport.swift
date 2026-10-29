@@ -16,6 +16,36 @@ nonisolated struct ProfileRoute: Codable, Equatable, Sendable {
     var viaAPI: Bool
 }
 
+/// A flag a server may send as true/false, 0/1 or a string of either, and may leave out.
+@propertyWrapper
+nonisolated struct LooseBool: Decodable, Equatable, Sendable {
+    var wrappedValue: Bool?
+
+    init(wrappedValue: Bool?) { self.wrappedValue = wrappedValue }
+
+    init(from decoder: Decoder) throws {
+        let value = try decoder.singleValueContainer()
+        if value.decodeNil() {
+            wrappedValue = nil
+        } else if let flag = try? value.decode(Bool.self) {
+            wrappedValue = flag
+        } else if let number = try? value.decode(Double.self) {
+            wrappedValue = number != 0
+        } else if let text = try? value.decode(String.self) {
+            wrappedValue = ["1", "true", "yes"].contains(text.lowercased())
+        } else {
+            wrappedValue = nil
+        }
+    }
+}
+
+nonisolated extension KeyedDecodingContainer {
+    /// A `LooseBool` whose key is missing is nil, as a plain optional's would be.
+    func decode(_ type: LooseBool.Type, forKey key: Key) throws -> LooseBool {
+        try decodeIfPresent(type, forKey: key) ?? LooseBool(wrappedValue: nil)
+    }
+}
+
 /// Hermes gateway sessions API: `/api/sessions/{id}/chat/stream`. This is the shared ledger every
 /// Hermes platform writes to, so a conversation started here shows up next to Telegram and CLI
 /// sessions, and any of theirs can be resumed here. Streams reasoning and tool activity live.
@@ -329,6 +359,11 @@ nonisolated struct HermesSessionsAPI: Sendable {
         var unread: Bool?
         /// The profile it belongs to, where the list says (the Dashboard's does).
         var profile: String?
+        /// Put aside, and kept out of every app's list (a bot's chat is born hidden), where the
+        /// server says: a bot's earlier chats are its archived ones (`EarlierBotChats`). Read as
+        /// either: the Dashboard's list of every profile sends SQLite's 0 and 1 for `hidden`.
+        @LooseBool var archived: Bool? = nil
+        @LooseBool var hidden: Bool? = nil
         /// Another profile than the selected one, and how to reach it: set by the chat list with All
         /// Profiles on (`SessionBackend.everyProfile`), never by the server.
         var elsewhere: ProfileRoute?
@@ -447,9 +482,25 @@ nonisolated struct HermesSessionsAPI: Sendable {
     private static let encoder = JSONEncoder()
     private static let decoder = JSONDecoder()
 
-    func listSessions(limit: Int = 100, offset: Int = 0) async throws -> [SessionSummary] {
-        try await get(ListEnvelope<SessionSummary>.self, "api/sessions",
-                      query: [.init(name: "limit", value: String(limit)), .init(name: "offset", value: String(offset))]).data
+    /// `title` with `includeHidden`: the sessions of exactly that title, hidden ones too (a bot's
+    /// chat; Hermes takes `include_hidden` only with a title). A release that knows neither lists as
+    /// without them, so callers match the title themselves.
+    func listSessions(limit: Int = 100, offset: Int = 0, title: String? = nil, includeHidden: Bool = false) async throws -> [SessionSummary] {
+        var query: [URLQueryItem] = [.init(name: "limit", value: String(limit)), .init(name: "offset", value: String(offset))]
+        if let title {
+            query.append(.init(name: "title", value: title))
+            if includeHidden { query.append(.init(name: "include_hidden", value: "true")) }
+        }
+        return try await get(ListEnvelope<SessionSummary>.self, "api/sessions", query: query).data
+    }
+
+    /// One session by its id, archived ones too (the list leaves those out); nil when it's gone.
+    func session(id: String) async throws -> SessionSummary? {
+        do {
+            return try await get(SessionEnvelope.self, "api/sessions/\(id)").session
+        } catch TransportError.http(404, _) {
+            return nil
+        }
     }
 
     /// A session's transcript, oldest first: its newest 500 messages, Hermes's most for a page
@@ -505,9 +556,11 @@ nonisolated struct HermesSessionsAPI: Sendable {
     }
 
     /// Rename / pin / archive / mark read or unread. Only the given fields are sent.
-    func updateSession(id: String, title: String? = nil, pinned: Bool? = nil, archived: Bool? = nil, unread: Bool? = nil) async throws {
-        struct Body: Encodable { var title: String?; var pinned: Bool?; var archived: Bool?; var unread: Bool? }
-        _ = try await send("PATCH", "api/sessions/\(id)", body: try Self.encoder.encode(Body(title: title, pinned: pinned, archived: archived, unread: unread)))
+    func updateSession(id: String, title: String? = nil, pinned: Bool? = nil, archived: Bool? = nil, unread: Bool? = nil,
+                       hidden: Bool? = nil) async throws {
+        struct Body: Encodable { var title: String?; var pinned: Bool?; var archived: Bool?; var unread: Bool?; var hidden: Bool? }
+        _ = try await send("PATCH", "api/sessions/\(id)", body: try Self.encoder.encode(Body(title: title, pinned: pinned, archived: archived,
+                                                                                               unread: unread, hidden: hidden)))
     }
 
     /// What has become of a run (`GET /v1/runs/{id}`): "queued", "running", "waiting_for_approval",

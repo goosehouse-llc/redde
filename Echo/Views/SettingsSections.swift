@@ -352,6 +352,9 @@ struct AgentSettings<Details: View>: View {
             NavigationLink { BriefingsList() } label: { Label("Briefings", systemImage: "doc.text") }
             #if os(iOS)
             NavigationLink { PlacesView() } label: { Label(String(localized: "places.title", defaultValue: "Places", comment: "Settings: places the iPhone notices arriving at or leaving"), systemImage: "mappin.and.ellipse") }
+            if HealthDays.available {
+                NavigationLink { HealthDaysView() } label: { Label("Health", systemImage: "heart.text.square") }
+            }
             #endif
             NavigationLink { BeforeActingView() } label: { Label("Before Acting", systemImage: "hand.raised") }
             NavigationLink { TriggersView() } label: { Label("Triggers from Your iPhone", systemImage: "bolt.badge.clock") }
@@ -391,8 +394,11 @@ struct AgentSettings<Details: View>: View {
             Toggle(isOn: Binding(get: { Settings.shared.replyCards }, set: { Settings.shared.replyCards = $0 })) {
                 Label("Cards in replies", systemImage: "map")
             }
+            Toggle(isOn: Binding(get: { Settings.shared.addressMaps }, set: { Settings.shared.addressMaps = $0 })) {
+                Label("Maps for addresses", systemImage: "mappin.and.ellipse")
+            }
         } footer: {
-            Text("Your agent can show a map, places, the weather and the time under its reply, through Redde's Hermes plugin. The weather comes from Open-Meteo. Off, it isn't offered them, which makes every prompt a little shorter.")
+            Text("Your agent can show a map, places, the weather and the time under its reply, through Redde's Hermes plugin. The weather comes from Open-Meteo. Off, it isn't offered them, which makes every prompt a little shorter. With Maps for addresses on, a reply or a heads-up that names a street address gets a map of it, found by Apple Maps.")
         }
 
         Section {
