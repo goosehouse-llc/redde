@@ -101,6 +101,13 @@ struct PluginUpdatesView: View {
     private func check() async {
         checking = true
         defer { checking = false }
+        #if DEBUG
+        if DemoDay.on {   // the day's video's
+            try? await Task.sleep(for: .milliseconds(600))
+            checks = DemoDay.pluginChecks
+            return
+        }
+        #endif
         var found: [PluginUpdateCheck] = [], failed: [String] = []
         // One agent after another: GitHub counts the checks, and a server answers one at a time.
         for agent in agents {
@@ -118,6 +125,13 @@ struct PluginUpdatesView: View {
     private func update(_ check: PluginUpdateCheck) async {
         updating.insert(check.id)
         defer { updating.remove(check.id) }
+        #if DEBUG
+        if DemoDay.on {   // the day's video: as if it went
+            try? await Task.sleep(for: .milliseconds(700))
+            outcomes[check.id] = String(localized: "Updated")
+            return
+        }
+        #endif
         do {
             switch check.state {
             case .catalog:

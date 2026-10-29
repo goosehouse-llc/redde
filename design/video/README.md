@@ -221,3 +221,71 @@ The Mac shot is the Mac app's icon because the Mac was locked when this was made
 opens no windows to capture. With it unlocked, a window capture of the Mac app (built with another
 bundle id, unsigned, launched with `CFFIXED_USER_HOME` pointing at a folder of its own, so none of
 the real app's data is touched) could take its place as a `take`.
+
+## A day with Redde
+
+`redde-day-app-preview.mp4` (886×1920, 29.4 s, with sound) and `redde-day-reddit.mp4` (66.9 s; a
+4.9 MB copy for posting, `redde-day-reddit-small.mp4`, 664×1440), not in git: made 2026-10-28 for
+the release with briefings, ideas, @tags, triggers, watches, routines and the interactive cards, by `make_day.py` (`long`
+for the Reddit cut, `pages` for stills of the title, ring and closing pages). Cut as the next
+release's is (a shot a 2.5 s bar of the deep song, landing on the downbeat, the footage still,
+`render_deep`), told as one day: each caption has the scene's time of day beside its colour bar
+(a sun or a moon), and the status bar in the footage says the same. The title: a sun comes up,
+Redde drops in, its tiny phone buzzes and it calls "Rise and shine! It's Redde!", then "A day /
+with / Redde.". The shots: 7:00 the dentist's heads-up arriving as a banner and in Briefings (Redde
+pops up in the corner to say it), the idea cards (the bagpipes swiped away, the vet swiped in, and,
+in the long cut, Sol booking it), @Home asked in a chat with Sol and answered under Home's face,
+Home's answer to the arrive-home automation as Redde's notification on the Home Screen (Triggers),
+6:30 PM "Where should we go for dinner?" answered with a choice card, Lupa Trattoria tapped (the
+others fade, Redde peeks in: "Ooh, pasta!") and Sol booking it, 8:00 PM the cabin's packing list as
+a checklist card, its last three things ticked ("Everything's done. Nice! 🎉"), the Evening wrap-up, then (long cut) Make This a Routine, Agent Activity and
+Plugin Updates, a new watch on the garage door (Home watches, a change handed to Sol), the tiny
+phone ringing ("Sol is calling…", long cut) and Sol's call. The closing page: night, Redde drops
+onto the icon, says "See you tomorrow!", tucks its phone away and nods off. The App Store cut has
+one bar each of the heads-up, the vet card, the @Home answer, the dinner card, the packing list and
+the watch, and two of Sol's call. (The first version, 59.4 s, had the Triggers page as a shot of
+its own; `testDayTriggers` and `d4-triggers` are kept, unused.)
+
+The lines: `KOKORO_URL=http://<host>:8880 /usr/bin/python3 day_voices.py` writes `voice-day-*.wav`
+(Redde's and Sol's in Redde's own voice, the person's af_heart; nobody real is named). The faces and
+the tiny phone are the next release's (`faces/`, PromoCallingTests).
+
+The footage is `-echo.demoDay <scene>` (`Echo/Services/DemoDay.swift`, DEBUG only) with
+`-echo.demoProjects -echo.demoBots -displayName Sol`: the agents Sol, Home and Coder, an ordinary
+day's chats, canned answers to a chat and an @tag (`DemoDayTransport`; dinner comes with a choice card and the
+packing list with a checklist card, each shown by a `redde_show` call as a live turn's are), sample Agent Activity and
+Plugin Updates (whose updates "go"), a new watch's agents and a routine's schedule as on the
+Dashboard. The takes are UI tests (`PromoVideoUITests`, `testDay…`), on an iOS 27 iPhone 18 Pro Max
+simulator made for them, Redde reinstalled before each, the status bar set to the scene's time
+(`xcrun simctl status_bar <sim> override --time 2026-10-28T07:00:00.000-04:00`: iOS 27 wants an ISO
+time with fractions of a second), Code theme, dark:
+
+    ./record.sh --test d1-morning testDayMorning      # 7:00   (asks to notify: the test taps Allow)
+    ./record.sh --test d2-ideas testDayIdeas          # 7:05
+    ./record.sh --test d3-aside testDayAside          # 12:30
+    ./record.sh --test d4-triggers testDayTriggers    # 18:05
+    ./record.sh --test d4b-home testDayHome           # 18:05  (run testDayTidy once first)
+    ./record.sh --test d9-dinner testDayDinner        # 18:30
+    ./record.sh --test d10-packing testDayPacking     # 20:00
+    ./record.sh --test d5-evening testDayEvening      # 21:00
+    ./record.sh --test d6-routine testDayRoutine      # 21:05
+    ./record.sh --test d6b-activity testDayActivity   # 21:05
+    ./record.sh --test d6c-plugins testDayPlugins     # 21:05
+    ./record.sh --test d7-watch testDayWatch          # 22:00
+
+`testDayTidy` takes the test runner's icon off the Home Screen (Remove App → Remove from Home
+Screen), so the arrive-home take shows only the simulator's own apps and Redde. The call is voice
+mode posed as last time; with `C="-echo.voiceView -echo.voiceDemoCall -theme claudeCode -appearance
+dark -displayName Sol -echo.demoProjects -echo.demoBots -echo.demoDay call"`, at 22:40:
+
+    ./record.sh d8-call 12 ${=C} -echo.voiceDemo -echo.voiceDemoPhase speaking -echo.voiceDemoSaid "Hi, it's Sol! Home says the garage door is still open. Want me to close it?" -echo.voiceDemoReveal 0.3
+    ./record.sh d8b-yes 10 ${=C} -echo.voiceDemo "Oh! Yes, please." -echo.voiceDemoReveal 0.25
+    ./record.sh d8c-done 10 ${=C} -echo.voiceDemo -echo.voiceDemoPhase speaking -echo.voiceDemoSaid "Done! It's shut. Sleep tight!" -echo.voiceDemoReveal 0.32
+
+Then `ffmpeg -i <take>.mov -vf fps=30 cfr-<take>.mov` for each and `/usr/bin/python3 make_day.py`
+(and `long`). A UI test's mark less its `t0`, plus 1.2 s (`record.sh` starts recording that long
+before), is its second in the take; the cut points in `SHOTS` were set from those and from frames.
+The voice screen is up about 5.7 s into each call take. Shortcuts itself isn't filmed (an
+automation can't be run convincingly on a simulator): Triggers from Your iPhone shows the recipe,
+and the notification is the one `BotTrigger.post` makes, posted by the demo at the time the
+automation would.

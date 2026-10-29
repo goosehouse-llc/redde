@@ -63,6 +63,11 @@ import WidgetKit
 ///   then one that names its files by path (links that open them).
 /// - `-echo.demoPage`: a reply with a page the agent made, live in the chat, with buttons that talk back.
 /// - `-echo.demoCards`: a reply with a map (a walk), three places and the weather, then the time in Tokyo (`ReplyCards`).
+/// - `-echo.demoQuestion <one|few|open>`: the agent's question card (Hermes's clarify), with
+///   choices, several questions, or one to answer in words.
+/// - `-echo.demoAsks`: cards answered with a tap: a review of a message, a choice of restaurants;
+///   with `-echo.demoAsksMore`, a packing checklist and a booking form instead (`-echo.demoAsksListOnly`:
+///   the list alone; `-echo.demoPinned`: the list pinned to the chat list).
 /// - `-echo.demoPhotos [n]`: messages with two photos, one, and n (five by default), to look at
 ///   how pictures are set out together and at the full-screen viewer.
 /// - `-echo.demoWidgets`: fill the "Needs you" and Context widgets with sample data (two requests
@@ -98,6 +103,13 @@ import WidgetKit
 ///   seconds and its answer written a word at a time (`Conversation.streamCallDemo`), for voice mode
 ///   posed with `-echo.voiceDemoPhase follow`.
 ///   `-echo.voiceHandoff` hands its face to other bots and back, as spoken prefixes do.
+/// - `-echo.demoDay [morning|ideas|evening|home|dinner|packing|routine|watch]`: the "A day with Redde" video
+///   (`DemoDay`), with `-echo.demoProjects -echo.demoBots -displayName Sol`: the agents Sol, Home and
+///   Coder, a day's chats, canned answers to chats and @tags, sample Agent Activity and Plugin
+///   Updates, and the scene's briefings, ideas, notification or sheet. `-echo.demoDayAt <seconds>`:
+///   when the morning's heads-up or Home's notification comes. With it, `-echo.screen
+///   activity|pluginUpdates|triggers` opens Agent Activity, Plugin Updates or Triggers from Your
+///   iPhone in a sheet.
 /// - `-echo.demoBoard [clear]`: write on the agent's widget as its phone tool does (a day's plan
 ///   now, and a line that takes over in a minute), to look at it on the Home Screen.
 /// - `-echo.demoAlarm [seconds]`: set a timer as the phone tool does (thirty seconds by default;
@@ -198,7 +210,7 @@ enum DevHooks {
         // The Projects section only shows on the Dashboard connection.
         if demoProjects { settings.transport = .hermesServe }
         if demoBots {
-            conversation.seedBotDemo()
+            if !DemoDay.on { conversation.seedBotDemo() }   // (the day's video starts on a chat of Sol's)
             BotDirectory.shared.set(ConversationsList.demoBots, key: settings.connectionKey)
             #if canImport(UIKit)
             if has("-echo.demoPicture") { BotPictures.shared.seed("scout", BotPictures.demoPicture) }
@@ -230,10 +242,13 @@ enum DevHooks {
             let delay = at.flatMap { $0 < args.count ? Double(args[$0]) : nil } ?? 3
             conversation.streamCallDemo(after: delay)
         }
+        DemoDay.applyAtLaunch(conversation: conversation, settings: settings)
         if has("-echo.demoAudio") { conversation.seedAudioDemo() }
         if has("-echo.demoDocument") { conversation.seedDocumentDemo() }
         if has("-echo.demoPage") { conversation.seedPageDemo() }
         if has("-echo.demoCards") { conversation.seedCardsDemo() }
+        if has("-echo.demoAsks") { conversation.seedAsksDemo(more: has("-echo.demoAsksMore")) }
+        if let kind = value("-echo.demoQuestion") { conversation.seedQuestionDemo(kind) }
         if has("-echo.demoPhotos") { conversation.seedPhotoDemo(count: value("-echo.demoPhotos").flatMap(Int.init) ?? 5) }
         if has("-echo.demoWidgets") {
             NeedsYou.clear()

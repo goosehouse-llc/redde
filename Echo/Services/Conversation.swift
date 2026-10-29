@@ -207,6 +207,8 @@ final class Conversation {
     func mutateMessagesForDemo(_ body: (inout [Message]) -> Void) { body(&messages) }
     /// Seeding seam: the played demo turn shows as live, the way a real one does.
     func setStreamingForDemo(_ on: Bool) { isStreaming = on }
+    /// Seeding seam: a question or an approval waiting, as a turn would leave one.
+    func setInterruptForDemo(_ interrupt: Interrupt?) { pendingInterrupt = interrupt.map { ($0, "demo") } }
 
     /// Seeding seam: the demo library writes canned records straight into the store.
     var storeForDemo: ConversationStore { store }
@@ -344,15 +346,15 @@ final class Conversation {
         }
         // The Hermes API's run for this message, should it go again after a dropped connection.
         request.turnKey = userID.uuidString
-        // "Make This a Routine": what the agent is to keep, on this message alone.
-        if let note = pendingRoutineNote, fromPage == nil {
-            request.userText += note
-            pendingRoutineNote = nil
-        }
         // Asides to tagged bots since the agent last heard: told with this message, kept with it on the host.
         if bot == nil, connection.hasLedger, fromPage == nil, let note = AsideNote.note(for: AsideNote.pending(in: messages)) {
             request.userText += note
             for i in messages.indices where messages[i].isAside { messages[i].delivered?.noted = true }
+        }
+        // On this message alone, last: "Make This a Routine"'s, or a card's answer.
+        if let note = pendingNote, fromPage == nil {
+            request.userText += note
+            pendingNote = nil
         }
         // The conversation's fast mode: the Hermes API keeps none for a session, so each turn asks.
         if connection == .hermesSessions, let stored = serverSessionID, store === ConversationStore.shared {
@@ -1476,6 +1478,9 @@ final class Conversation {
 
     private func makeTransport() -> (any HermesTransport)? {
         if let transportOverride { return transportOverride }
+        #if DEBUG
+        if DemoDay.on { return DemoDayTransport() }   // the day's video: canned answers
+        #endif
         guard let url = settings.activeBaseURL else { return nil }
         let key = settings.gatewayAPIKey
         switch connection {
@@ -1738,12 +1743,20 @@ final class Conversation {
 
     // MARK: - Routines (`RoutineNote`)
 
-    private var pendingRoutineNote: String?
+    /// A note for the next message alone (`RoutineNote`, `CardNote`).
+    private var pendingNote: String?
 
     /// "Make This a Routine": a message asking the agent to keep what it did here as a skill.
     func makeRoutine(name: String, skill: String, when: String?) {
-        pendingRoutineNote = RoutineNote.note(name: name, skill: skill, when: when)
+        pendingNote = RoutineNote.note(name: name, skill: skill, when: when)
         _ = send(String(localized: "Make this a routine: “\(name)”.", comment: "The message a chat's Make This a Routine sends, with the routine's name"))
+    }
+
+    /// A card answered with a tap: `shown` as the person's message, `said` in its note.
+    func answerCard(_ card: ReplyCard, shown: String, said: String) {
+        CardAnswers.shared.record(card.key, said: said)
+        pendingNote = CardNote.note(key: card.key, said: said)
+        _ = send(shown)
     }
 
     // MARK: - Asides (`BotAsides`)
@@ -1827,6 +1840,9 @@ final class Conversation {
     /// alone) at /p/<profile>/ with its own key. A test's transport, for a test.
     private func asideTransport(for bot: HermesBot, mainName: String) async throws -> (any HermesTransport, String) {
         if let transportOverride { return (transportOverride, "aside-" + bot.name) }
+        #if DEBUG
+        if DemoDay.on { return (DemoDayTransport(), "aside-" + bot.name) }   // the day's video: canned answers
+        #endif
         return try await BotTurns.transport(for: bot, mainName: mainName, settings: settings, dashboard: dashboard)
     }
 

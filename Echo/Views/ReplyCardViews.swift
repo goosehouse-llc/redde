@@ -16,6 +16,10 @@ struct ReplyCardsView: View {
                 case let .places(places): PlacesCard(card: places)
                 case let .weather(weather): WeatherCard(card: weather, pending: pending)
                 case let .time(clock): TimeCard(card: clock, pending: pending)
+                case let .review(review): ReviewCard(card: review, whole: card)
+                case let .choice(choice): ChoiceCard(card: choice, whole: card)
+                case let .checklist(list): ChecklistCard(card: list, whole: card)
+                case let .form(form): FormCard(card: form, whole: card)
                 }
             }
         }

@@ -1,5 +1,11 @@
 """Cards in Redde: a map, a list of places, the weather, the time, drawn by the app under the agent's reply.
 
+And, from 1.9.0, cards the person answers with a tap (asked 2026-10-28, after Meta's Muse): a
+`review` of what the agent made ready to send, buy, book or change, its details editable, with
+the button that lets it go ahead; a `choice` to pick from; a `checklist` to tick; a short `form`.
+The app draws them; the answer comes back as the person's next message, with a note of exactly
+what they picked or left in the fields ("[Redde card <key>: …]").
+
 The agent calls `redde_show` with the cards. Nothing travels to the phone: the app reads the call
 from the conversation, live and when it is read back, on either connection, and draws the cards
 itself (MapKit for maps and places, looked up on the phone when a place comes without
@@ -29,7 +35,10 @@ TOOL = "redde_show"
 TOOLSET = "redde_cards"
 MAX_CARDS = 4
 MAX_PLACES = 12
-TYPES = ("map", "places", "weather", "time")
+TYPES = ("map", "places", "weather", "time", "review", "choice", "checklist", "form")
+#: The cards the person answers.
+ASKS = ("review", "choice", "checklist", "form")
+FIELD_KINDS = ("text", "long", "number", "date", "time", "toggle", "choice")
 MODES = ("driving", "walking", "transit", "cycling")
 
 _PLACE = {
@@ -58,7 +67,12 @@ SCHEMA = {
         "answer from what it returns ('said'), never from memory or a guess: your own clock may be in another time "
         "zone. For a map or places, give what you found (from search or your other tools): coordinates when you "
         "have them, a name and street address otherwise, the phone looks them up. Up to 4 cards. Then answer in a "
-        "sentence or two: the cards are on the person's screen, so don't read out everything in them."),
+        "sentence or two: the cards are on the person's screen, so don't read out everything in them. "
+        "Cards they answer with a tap: before you send, buy, book or change anything for them, a 'review' (what "
+        "you'll do as 'fields' they can edit, 'action' the button, e.g. Send), then stop and act only on their "
+        "answer; 'choice' ('options' to pick from), 'checklist' (a list to tick off: 'items', each with a 'section' "
+        "to group them, and an 'emoji'), 'form' ('fields' to fill in, each with a 'kind'). Their answer is their next "
+        "message."),
     "parameters": {
         "type": "object",
         "properties": {
@@ -80,6 +94,18 @@ SCHEMA = {
                         "place": {"type": "string", "description": "weather and time: where, e.g. Lisbon, or Orlando, FL"},
                         "timezone": {"type": "string", "description": "time: an IANA zone, e.g. Europe/Lisbon, if you know it"},
                         "units": {"type": "string", "enum": ["C", "F"], "description": "weather: if the person said"},
+                        "action": {"type": "string"},
+                        "fields": {"type": "array", "items": {"type": "object", "properties": {
+                            "label": {"type": "string"}, "value": {"type": "string"},
+                            "kind": {"type": "string", "enum": list(FIELD_KINDS)}, "options": {"type": "array", "items": {"type": "string"}},
+                            "required": {"type": "boolean"}}, "required": ["label"]}},
+                        "options": {"type": "array", "items": {"type": "object", "properties": {
+                            "title": {"type": "string"}, "detail": {"type": "string"}, "image": {"type": "string"}}, "required": ["title"]}},
+                        "multiple": {"type": "boolean"},
+                        "items": {"type": "array", "items": {"type": "object", "properties": {
+                            "text": {"type": "string"}, "done": {"type": "boolean"}, "section": {"type": "string"}}}},
+                        "emoji": {"type": "string"},
+                        "note": {"type": "string"},
                     },
                     "required": ["type"],
                 },
@@ -125,7 +151,14 @@ def check(args) -> tuple[list[str], list[str]]:
     for n, card in enumerate(cards[:MAX_CARDS], 1):
         kind = str(card.get("type") or "").lower() if isinstance(card, dict) else ""
         if kind not in TYPES:
-            problems.append(f"card {n}: 'type' must be map, places, weather or time")
+            problems.append(f"card {n}: 'type' must be one of {', '.join(TYPES)}")
+            continue
+        if kind in ASKS:
+            said, problem = _ask(card, kind)
+            if problem:
+                problems.append(f"card {n}: {problem}")
+            else:
+                shown.append(said)
             continue
         if kind == "map":
             pins = [p for p in (_place(p) for p in card.get("places") or []) if p]
@@ -182,6 +215,38 @@ def check(args) -> tuple[list[str], list[str]]:
     if len(cards) > MAX_CARDS:
         problems.append(f"only the first {MAX_CARDS} cards are shown")
     return shown, problems
+
+
+def _labels(rows, *keys) -> list[str]:
+    out = []
+    for row in rows or []:
+        if isinstance(row, str) and row.strip():
+            out.append(row.strip())
+        elif isinstance(row, dict):
+            for key in keys:
+                if isinstance(row.get(key), str) and row[key].strip():
+                    out.append(row[key].strip())
+                    break
+    return out
+
+
+def _ask(card: dict, kind: str) -> tuple[str, str | None]:
+    """What a card the person answers will show, or why it can't be drawn."""
+    title = card.get("title") if isinstance(card.get("title"), str) else ""
+    if kind in ("review", "form"):
+        fields = _labels(card.get("fields"), "label", "name")
+        if not title.strip() or not fields:
+            return "", f"a {kind} needs a 'title' and 'fields', each with a 'label'"
+        return f"{kind}: {title.strip()} ({', '.join(fields[:5])}; button {card.get('action') or ('Do It' if kind == 'review' else 'Send')})", None
+    if kind == "choice":
+        options = _labels(card.get("options"), "title", "name", "label")
+        if len(options) < 2:
+            return "", "a choice needs at least two 'options', each with a 'title'"
+        return f"choice: {', '.join(options[:5])}{' (several may be picked)' if card.get('multiple') else ''}", None
+    items = _labels(card.get("items"), "text", "title")
+    if not items:
+        return "", "a checklist needs 'items', each with a 'text'"
+    return f"checklist: {title.strip() or 'list'} ({len(items)} items)", None
 
 
 def _listed(args):
@@ -261,8 +326,14 @@ def handle(args, home=None, **_) -> str:
     problems = missed + problems
     if not shown:
         return json.dumps({"error": "Nothing could be shown: " + "; ".join(problems) + "."})
-    answer = {"shown": shown, "note": "The cards are on the person's screen in Redde now. Answer in a sentence or two"
-                                      + (" from what 'said' gives" if said else "") + "; don't read out what the cards already show."}
+    asks = [c for c in args["cards"][:MAX_CARDS] if isinstance(c, dict) and str(c.get("type") or "").lower() in ASKS]
+    note = ("The cards are on the person's screen in Redde now. Answer in a sentence or two"
+            + (" from what 'said' gives" if said else "") + "; don't read out what the cards already show.")
+    if asks:
+        note += (" They answer the card with a tap: their answer comes as their next message. Stop here and wait for"
+                 " it; for a review, do nothing of it until they tap its button, and then do exactly what their answer"
+                 " says, with their changes.")
+    answer = {"shown": shown, "note": note}
     if said:
         answer["said"] = said
     if problems:
@@ -280,6 +351,27 @@ _ASKS_TIME = re.compile(r"\bwhat(?:'s|’s| is)? the time\b|\bwhat time\b|\btime
                         r"|\b(?:current|local) time\b|\bclock\b|\bo'?clock\b", re.IGNORECASE)
 _ASKS_WEATHER = re.compile(r"\bweather\b|\bforecast\b|\btemp(?:erature)?s?\b|\bdegrees\b|\bumbrella\b"
                            r"|\b(?:rain(?:ing|y)?|snow(?:ing)?|sunny|humid(?:ity)?|windy)\b", re.IGNORECASE)
+#: Asked to do something for them that is hard to undo, in English: a review card first.
+_ASKS_ACTION = re.compile(r"\b(?:send|email|e-mail|text|message|reply to|book|reserve|buy|order|purchase|pay|cancel my|"
+                          r"post|publish|schedule (?:a|the)|invite)\b", re.IGNORECASE)
+#: Asked for a list to tick off, in English: a checklist card, not the list in words.
+_ASKS_LIST = re.compile(r"\b(?:packing|shopping|grocery|to-?do|todo|check)\s*list\b|\bchecklist\b|\blist of (?:things|what) to "
+                        r"(?:pack|bring|buy|do|get)\b|\bwhat (?:do|should) (?:i|we) (?:pack|bring)\b", re.IGNORECASE)
+LIST_NOTE = (f"[Redde: show the list as a 'checklist' card with {TOOL} (its 'items' grouped by 'section', an 'emoji'), "
+             "then answer in a line: don't also write the list out in words.]")
+#: How much each agent may do unasked (asked 2026-10-28, "Proactive", after Muse's adjustable
+#: threshold): set per agent in Redde, kept in the main home. Hermes's own approvals for commands
+#: are untouched by it: this is about the person's own errands (a message, a booking, an order).
+LEVELS = ("ask", "routine", "act")
+LEVEL_NOTES = {
+    "routine": ("[Redde: small things that are easy to undo (a reminder, a calendar note, a light, a list), just do and say "
+                f"you did; before you send, pay, book, buy or delete anything, show a 'review' card with {TOOL} and stop until "
+                "they answer.]"),
+    "act": ("[Redde: they let you act on their behalf: do what they ask, then say exactly what you did. Only before paying "
+            f"or deleting something show a 'review' card with {TOOL} and wait for their answer.]"),
+}
+REVIEW_NOTE = ("[Redde: before you send, book, buy or change anything for them, show what you'll do as a 'review' "
+               f"card with {TOOL} and stop; do it only when their answer comes back.]")
 REDDES = ("desktop", "tui", "api_server", "")    # Redde's connections: the Dashboard, the Hermes API
 
 
@@ -316,7 +408,14 @@ def turn_note(home: Path, message, platform: str = "", at: datetime | None = Non
     text = _text(message)
     time_asked, weather_asked = bool(_ASKS_TIME.search(text)), bool(_ASKS_WEATHER.search(text))
     if not time_asked and not weather_asked:
-        return None
+        # A card's answer is the go-ahead itself, not a new ask.
+        if "[Redde card " in text:
+            return None
+        if _ASKS_LIST.search(text):
+            return LIST_NOTE
+        if not _ASKS_ACTION.search(text):
+            return None
+        return LEVEL_NOTES.get(autonomy(home), REVIEW_NOTE)
     asked = " and ".join(w for w, yes in (("the time", time_asked), ("the weather", weather_asked)) if yes)
     note = (f"[Redde: asked about {asked}. Call {TOOL} first (a "
             + " and a ".join(k for k, yes in (("'time'", time_asked), ("'weather'", weather_asked)) if yes)
@@ -328,6 +427,41 @@ def turn_note(home: Path, message, platform: str = "", at: datetime | None = Non
     else:
         note += " Don't guess the time: what the card returns has it.]"
     return note
+
+
+# ---- how much each agent may do unasked, the phone's to say
+
+def _autonomy_file(home: Path) -> Path:
+    from .calls import caller
+    return caller(Path(home))[1] / "redde-push" / "autonomy.json"
+
+
+def autonomy(home: Path) -> str:
+    """This agent's level: "ask" (the default), "routine" or "act"."""
+    try:
+        from .calls import caller
+        level = json.loads(_autonomy_file(home).read_text()).get(caller(Path(home))[0], "ask")
+        return level if level in LEVELS else "ask"
+    except (OSError, ValueError, AttributeError):
+        return "ask"
+
+
+def autonomy_slash(home: Path, words: list[str]) -> str:
+    """`autonomy <profile>=<level> ...`: the app's, each agent's level; `autonomy`: what they are."""
+    path = _autonomy_file(home)
+    try:
+        levels = json.loads(path.read_text())
+        levels = levels if isinstance(levels, dict) else {}
+    except (OSError, ValueError):
+        levels = {}
+    for word in words:
+        profile, _, level = word.partition("=")
+        if profile and level in LEVELS:
+            levels[profile] = level
+    if words:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(levels))
+    return "redde-push autonomy " + " ".join(f"{p}={l}" for p, l in sorted(levels.items()))
 
 
 # ---- on or off, the phone's to say

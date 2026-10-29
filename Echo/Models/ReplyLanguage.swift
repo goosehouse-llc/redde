@@ -44,7 +44,7 @@ nonisolated enum ReplyLanguage {
            !text[range.upperBound...].contains("\n") {
             text = String(text[..<range.lowerBound])
         }
-        let plain = RoutineNote.strip(MentionNote.strip(AttachedFileNote.strip(text)))
+        let plain = CardNote.strip(RoutineNote.strip(MentionNote.strip(AttachedFileNote.strip(text))))
         return keepingAsides ? plain : AsideNote.strip(plain)
     }
 }

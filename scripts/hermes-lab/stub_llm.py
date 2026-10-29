@@ -306,7 +306,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(*failure)
             planned = None
             for word, (names, arguments) in CALLS.items():
-                if word not in just_said:
+                # A whole word: "lab:card" (a kanban card) is no "lab:cards" (Redde's cards), which
+                # it took from 2026-10-14 until it was seen on 2026-10-28.
+                if not re.search(re.escape(word) + r"(?![\w:-])", just_said):
                     continue
                 names = (names,) if isinstance(names, str) else names
                 name = next((n for n in names if n in offered), None)

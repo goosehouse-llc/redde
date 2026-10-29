@@ -6,7 +6,8 @@ import Foundation
 /// failure by someone who can't look at the screen. `VoiceSession` decides when; this plays it.
 @MainActor
 protocol ThinkingSounding: AnyObject {
-    func start()
+    /// `volume`: 0 to 1, how loud against the reply (the car's is lower).
+    func start(volume: Float)
     func stop()
 }
 
@@ -33,19 +34,19 @@ final class ThinkingSoundPlayer: ThinkingSounding {
         player?.numberOfLoops = -1
     }
 
-    func start() {
+    func start(volume: Float) {
         // A sample being played in Settings is no longer that: it plays on, as the real thing.
         sample?.cancel()
         sample = nil
-        play()
+        play(volume: volume)
     }
 
-    private func play() {
+    private func play(volume: Float = 1) {
         guard let player, !isPlaying else { return }
         winding?.cancel()
         isPlaying = true
         player.currentTime = 0
-        player.volume = 1
+        player.volume = volume
         player.play()
     }
 

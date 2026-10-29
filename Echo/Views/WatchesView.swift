@@ -97,6 +97,9 @@ enum Watches {
     /// The agents a watch can be another's: the Dashboard's bots, which keep their jobs in their
     /// own stores. Over the Hermes API only the agent Redde is on.
     static var watchers: [HermesBot] {
+        #if DEBUG
+        if DemoDay.on { return DemoDay.roster.listed }   // the day's video's agents
+        #endif
         guard let backend = CronBackend.current(), case .serve = backend, BotDirectory.available(),
               BotDirectory.shared.key == Settings.shared.connectionKey else { return [] }
         return (BotDirectory.shared.roster?.listed ?? []).filter { !$0.viaAPI }
@@ -104,6 +107,9 @@ enum Watches {
 
     /// The agents a change can be handed to.
     static var takers: [HermesBot] {
+        #if DEBUG
+        if DemoDay.on { return DemoDay.roster.listed }
+        #endif
         guard BotDirectory.available(), BotDirectory.shared.key == Settings.shared.connectionKey else { return [] }
         return (BotDirectory.shared.roster?.listed ?? []).filter { !$0.viaAPI }
     }

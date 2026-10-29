@@ -157,6 +157,9 @@ targets:
         NSAlarmKitUsageDescription: With Phone tools turned on, Redde sets an alarm or a timer when your assistant asks it to, once you have said yes to it.
         NSContactsUsageDescription: With Phone tools turned on, Redde looks up a contact when your assistant asks it to. What it finds goes only to the server you connect to.
         NSPhotoLibraryUsageDescription: With Phone tools turned on, Redde finds photos, shows one to your assistant, or deletes the ones you confirm, when your assistant asks it to. A photo goes only to the server you connect to.
+        # Places (Settings → Agent → Places): arriving at or leaving a place the person set tells the bot they chose.
+        NSLocationWhenInUseUsageDescription: With Places turned on, Redde uses where you are to set a place and to notice when you arrive or leave. Where you are stays on your iPhone; only "arrived at Home" goes to your server.
+        NSLocationAlwaysAndWhenInUseUsageDescription: With Places turned on, Redde notices when you arrive at or leave a place you set, even when Redde is closed, and tells the bot you chose. Where you are stays on your iPhone; only "arrived at Home" goes to your server.
         # Redde's folder in the Files app ("On My iPhone › Redde"): what Phone tools' files read and write.
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
@@ -348,6 +351,7 @@ targets:
       - path: Shared/AgentWatches.swift
       - path: Shared/AgentBriefings.swift
       - path: Shared/AgentActivityLog.swift
+      - path: Shared/QuietHours.swift
     entitlements:
       path: EchoPush/EchoPush.entitlements
       properties:
@@ -440,6 +444,9 @@ targets:
         NSRemindersFullAccessUsageDescription: With Phone tools turned on, Redde reads and adds reminders when your assistant asks it to. They go only to the server you connect to.
         NSContactsUsageDescription: With Phone tools turned on, Redde looks up a contact when your assistant asks it to. What it finds goes only to the server you connect to.
         NSPhotoLibraryUsageDescription: With Phone tools turned on, Redde finds photos, shows one to your assistant, or deletes the ones you confirm, when your assistant asks it to. A photo goes only to the server you connect to.
+        # Places (Settings → Agent → Places): arriving at or leaving a place the person set tells the bot they chose.
+        NSLocationWhenInUseUsageDescription: With Places turned on, Redde uses where you are to set a place and to notice when you arrive or leave. Where you are stays on your iPhone; only "arrived at Home" goes to your server.
+        NSLocationAlwaysAndWhenInUseUsageDescription: With Places turned on, Redde notices when you arrive at or leave a place you set, even when Redde is closed, and tells the bot you chose. Where you are stays on your iPhone; only "arrived at Home" goes to your server.
         NSLocalNetworkUsageDescription: Redde connects to the Hermes gateway or model server you configure, which is often on your local network.
         # Hermes servers are often on a home network, without public certificates.
         NSAppTransportSecurity:

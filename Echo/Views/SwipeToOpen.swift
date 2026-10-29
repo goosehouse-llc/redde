@@ -78,6 +78,15 @@ struct SidePanel<Content: View, Panel: View>: View {
     var onOpening: () -> Void = {}
     @ViewBuilder var content: Content
     @ViewBuilder var panel: Panel
+
+    /// The colour a plain list draws on, which the panel's list is.
+    static var panelColor: Color {
+        #if canImport(UIKit)
+        Color(.systemBackground)
+        #else
+        Color(nsColor: .windowBackgroundColor)
+        #endif
+    }
     @Environment(\.theme) private var theme
     /// How far out a finger has the panel, while one is on the screen.
     @State private var drag: CGFloat?
@@ -127,7 +136,11 @@ struct SidePanel<Content: View, Panel: View>: View {
                     // find. UIKit's lists and bars inside ignore accessibilityHidden and opacity.
                     .frame(width: parked ? 0 : width)
                     .clipped()
-                    .background(theme.pageColor)
+                    // To the screen's edges, under the status bar and the home indicator too, in the
+                    // list's own colour (a plain list's, whatever the theme): the theme's page is a
+                    // wallpaper's colour when one is picked, and showed above and below the list as
+                    // a band of it (2026-10-28).
+                    .background(Self.panelColor.ignoresSafeArea())
                     .overlay(alignment: .trailing) { Rectangle().fill(.separator).frame(width: 0.5).ignoresSafeArea() }
                     .offset(x: shown - width)
                     .opacity(parked ? 0 : 1)

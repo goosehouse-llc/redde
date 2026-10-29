@@ -32,6 +32,9 @@ struct RoutineSheet: View {
     /// A schedule goes in the profile the chat is with: possible over the Dashboard for any, over
     /// the Hermes API for the agent Redde is on alone.
     private var canSchedule: Bool {
+        #if DEBUG
+        if DemoDay.on { return true }   // the day's video: as on the Dashboard
+        #endif
         guard let backend = CronBackend.current() else { return false }
         if case .serve = backend { return conversation.bot?.viaAPI != true }
         return conversation.bot == nil && conversation.elsewhere == nil

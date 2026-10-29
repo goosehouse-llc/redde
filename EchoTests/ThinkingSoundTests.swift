@@ -13,7 +13,8 @@ struct ThinkingSoundTests {
         private(set) var isOn = false
         private(set) var starts = 0
         private(set) var stops = 0
-        func start() { isOn = true; starts += 1 }
+        private(set) var volume: Float = 0
+        func start(volume: Float) { isOn = true; starts += 1; self.volume = volume }
         func stop() { isOn = false; stops += 1 }
     }
 
@@ -134,12 +135,20 @@ struct ThinkingSoundTests {
         let carPlay = Harness(Held([], then: []), .car, carPlay: true)
         try await carPlay.ask()
         try await SpokenRequestTests.waitUntil("the sound with CarPlay") { carPlay.sound.isOn }
+        #expect(carPlay.sound.volume == VoiceSession.carThinkingVolume, "quieter in the car")
         carPlay.session.cancel()
 
         let bluetooth = Harness(Held([], then: []), .car, route: .car)
         try await bluetooth.ask()
         try await SpokenRequestTests.waitUntil("the sound on the car's Bluetooth") { bluetooth.sound.isOn }
+        #expect(bluetooth.sound.volume == VoiceSession.carThinkingVolume)
         bluetooth.session.cancel()
+
+        let phone = Harness(Held([], then: []), .always)
+        try await phone.ask()
+        try await SpokenRequestTests.waitUntil("the sound on the phone") { phone.sound.isOn }
+        #expect(phone.sound.volume == 1, "the phone's as it was")
+        phone.session.cancel()
     }
 
     /// A turn that waits for an approval is not at work: the sound would say it was.

@@ -37,7 +37,7 @@ final class CardLookup {
         switch card {
         case let .weather(weather): weather.source != ReplyCards.lookedUpSource
         case let .time(clock): clock.timeZone == nil && clock.place != nil
-        case .map, .places: false
+        case .map, .places, .review, .choice, .checklist, .form: false
         }
     }
 
@@ -50,7 +50,7 @@ final class CardLookup {
                 if let found = await forecast(weather) { out[i] = .weather(found) }
             case let .time(clock):
                 if let place = clock.place, let zone = await zone(of: place) { out[i] = .time(.init(place: place, timeZone: zone)) }
-            case .map, .places:
+            case .map, .places, .review, .choice, .checklist, .form:
                 break
             }
         }

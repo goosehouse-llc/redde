@@ -175,6 +175,8 @@ Also from 1.9.0, things the agent does for you on its own time, each a Hermes cr
   A watch can be a bot's (its job in the bot's profile), and can hand what it sees to another
   agent: its job delivers `bot-chat:<profile>`, so Hermes gives each change to that agent's Bot
   Chat as a turn, where it acts with its own tools; it answers `[SILENT]` when nothing changed.
+- **Watches the agent sets**: asked to let you know when something happens, the agent calls
+  `keep_an_eye_on` (toolset `redde_ideas`), which makes the same kind of watch, for a number of days.
 - **Follow-ups**: when you mention something to do later, the agent may call `follow_up_later`
   (toolset `redde_ideas`), which makes a job that runs once at that time and offers it back to
   you as an idea card.

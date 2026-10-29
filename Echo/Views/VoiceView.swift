@@ -417,7 +417,8 @@ struct VoiceView: View {
     private var controls: some View {
         HStack(spacing: 28) {
             roundButton(String(localized: "Switch to typing"), "keyboard") {
-                session.cancel()
+                // The reply that's coming goes on, into the conversation: read there, not heard.
+                session.handOverToTyping()
                 dismiss()
                 onSwitchToTyping()
             }

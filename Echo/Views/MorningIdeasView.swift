@@ -20,6 +20,8 @@ struct DailyJob {
     var options: [Int] = []
     var optionLabel: LocalizedStringResource = ""
     var defaultOption = 0
+    /// The cron schedule's days of the week: "*" every day, "0" Sundays.
+    var days = "*"
 
     static func time(of job: CronJob) -> (hour: Int, minute: Int)? {
         let parts = job.schedule.split(separator: " ")
@@ -34,7 +36,7 @@ struct DailyJob {
 
     func set(at hour: Int, _ minute: Int, option: Int, replacing job: CronJob?) async throws {
         guard let backend = CronBackend.current() else { throw TransportError.malformed(String(localized: "Scheduled jobs need the Hermes Dashboard or the Hermes API.")) }
-        let schedule = "\(minute) \(hour) * * *"
+        let schedule = "\(minute) \(hour) * * \(days)"
         if let job {
             try await backend.update(job.id, name: name, schedule: schedule, prompt: prompt(option), deliver: "local")
         } else {
@@ -116,7 +118,47 @@ enum HeadsUps {
         options: [10, 15, 30, 45, 60], optionLabel: "How Long Before", defaultOption: 30)
 }
 
-/// Settings → Agent → Morning Ideas, Evening Wrap-up, Heads-Ups.
+/// "Make this a routine?" (asked 2026-10-28, "Proactive"): once a week the main agent looks for
+/// what the person asks again and again, on a rhythm, and offers each as an idea card; taken, the
+/// card's request has the agent set it up as a scheduled job that notifies.
+enum RoutineSuggestions {
+    static let name = "[redde] Routine suggestions"
+    static let prompt = """
+        Routine suggestions. Look over the user's conversations from the last two weeks (search them with your session \
+        search tool) for things they asked you more than once on a rhythm: each morning, before a run, on Mondays, after \
+        work. For up to three that aren't scheduled already (look at your scheduled jobs), offer each with \
+        suggest_to_user: the title saying what and when ("Weather before your run, weekdays 6:30"), why saying how often \
+        they asked ("You asked on four mornings"), and the request: "Make this a routine: <what to do>, <when>. Set it up \
+        as a scheduled job with cronjob_manage, its name starting [redde-notify] and delivered local, so its answer \
+        reaches my iPhone." Don't set anything up now. If nothing repeats, offer nothing and stop. If suggest_to_user \
+        isn't among your tools, find it with tool_search first.
+        """
+
+    static let job = DailyJob(
+        name: name, prompt: { _ in prompt }, hour: 17, minute: 0, title: "Routine Suggestions", toggle: "Routine Suggestions",
+        timeLabel: "Sundays At",
+        footer: "Once a week your agent looks for things you ask it again and again (the weather before a run, the board on Mondays) and offers each as an idea card. Take one and it becomes a routine that runs by itself and tells you. Needs Redde's plugin 1.9 on your Hermes.",
+        symbol: "repeat", runNow: "Look Now", asked: "Asked. Suggestions come as idea cards when your agent is done.", days: "0")
+}
+
+/// The week ahead (asked 2026-10-28, "Proactive"): on Sunday evening, the coming week as a briefing.
+enum WeekAhead {
+    static let name = "[redde-notify] Week ahead"
+    static let prompt = """
+        Week ahead for the user. Look at the coming week with the tools you have: their calendar for the seven days from \
+        tomorrow, reminders and tasks coming due, kanban cards waiting on them, and anything they said they would do. \
+        Answer in at most 150 words: the busy days and what is on them, what is due, and anything to get ready for (a \
+        trip, a deadline, a dinner). Your answer is what they read. If the week is empty, say so in one line.
+        """
+
+    static let job = DailyJob(
+        name: name, prompt: { _ in prompt }, hour: 18, minute: 0, title: "Week Ahead", toggle: "Week Ahead",
+        timeLabel: "Sundays At",
+        footer: "Each Sunday evening your agent looks at the week to come (your calendar, what's due, what's waiting on you) and sends you a short briefing. It stays in Briefings, at the top of your chats. Needs Redde's plugin 1.9 on your Hermes.",
+        symbol: "calendar", runNow: "Send It Now", asked: "Asked. The week ahead comes as a notification when your agent is done.", days: "0")
+}
+
+/// Settings → Agent → Morning Ideas, Evening Wrap-up, Heads-Ups, Routine Suggestions, Week Ahead.
 struct DailyJobView: View {
     let daily: DailyJob
     @State private var job: CronJob?

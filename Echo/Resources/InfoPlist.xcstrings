@@ -685,6 +685,234 @@
         }
       }
     },
+    "NSLocationAlwaysAndWhenInUseUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når Steder er slået til, opdager Redde, når du ankommer til eller forlader et sted, du har angivet, også når Redde er lukket, og giver besked til den bot, du har valgt. Hvor du er, bliver på din iPhone; kun “ankommet hjem” sendes til din server."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn Orte aktiviert ist, bemerkt Redde, wenn du an einem festgelegten Ort ankommst oder ihn verlässt, auch wenn Redde geschlossen ist, und sagt es dem Bot, den du gewählt hast. Wo du bist, bleibt auf deinem iPhone; nur „zu Hause angekommen“ geht an deinen Server."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "With Places turned on, Redde notices when you arrive at or leave a place you set, even when Redde is closed, and tells the bot you chose. Where you are stays on your iPhone; only \"arrived at Home\" goes to your server."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Lugares activado, Redde detecta cuándo llegas a un lugar que definiste o te vas de él, incluso con Redde cerrado, y avisa al bot que elegiste. Tu ubicación se queda en tu iPhone; solo “llegada a casa” llega a tu servidor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand Lieux est activé, Redde remarque quand vous arrivez dans un lieu défini ou le quittez, même quand Redde est fermé, et prévient le bot que vous avez choisi. Votre position reste sur votre iPhone ; seul « arrivée à la maison » est envoyé à votre serveur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Luoghi attivo, Redde si accorge di quando arrivi in un luogo impostato o te ne vai, anche quando Redde è chiusa, e lo dice al bot che hai scelto. La tua posizione resta sul tuo iPhone; al tuo server arriva solo “arrivo a casa”."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "場所をオンにすると、Reddeを閉じていても、設定した場所に到着したときや出発したときにReddeが気づき、選んだボットに知らせます。現在地はiPhoneの中にとどまり、サーバに送られるのは「自宅に到着」だけです。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "장소를 켜면 Redde가 닫혀 있어도 설정한 장소에 도착하거나 떠날 때 Redde가 알아채고 선택한 봇에게 알립니다. 현재 위치는 iPhone에 남으며, 서버에는 “집에 도착”만 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når Steder er slått på, merker Redde når du kommer til eller drar fra et sted du har angitt, også når Redde er lukket, og sier fra til boten du valgte. Hvor du er, blir på iPhonen din; bare «kommet hjem» går til tjeneren din."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met Locaties aan merkt Redde wanneer je aankomt bij of vertrekt van een ingestelde locatie, ook als Redde gesloten is, en laat het de gekozen bot weten. Waar je bent, blijft op je iPhone; alleen ‘thuis aangekomen’ gaat naar je server."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy Miejsca są włączone, Redde zauważa, kiedy przybywasz do ustawionego miejsca lub je opuszczasz, nawet gdy Redde jest zamknięte, i powiadamia wybranego bota. To, gdzie jesteś, zostaje na Twoim iPhonie; do Twojego serwera trafia tylko „przybycie do domu”."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com Locais ativado, o Redde percebe quando você chega a um local definido ou sai dele, mesmo com o Redde fechado, e avisa o bot escolhido. Onde você está fica no seu iPhone; só “chegou em casa” vai para o seu servidor."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда «Места» включены, Redde замечает, когда вы приходите в заданное место или уходите из него, даже если Redde закрыт, и сообщает выбранному боту. Ваше местоположение остается на iPhone; на сервер уходит только «прибытие домой»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Platser på märker Redde när du kommer fram till eller lämnar en plats du har angett, även när Redde är stängd, och säger till den bot du valt. Var du är stannar på din iPhone; bara ”kommit hem” går till din server."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yerler açıkken Redde, Redde kapalıyken bile belirlediğiniz bir yere vardığınızı ya da oradan ayrıldığınızı fark eder ve seçtiğiniz bota haber verir. Nerede olduğunuz iPhone'unuzda kalır; sunucunuza yalnızca “eve varıldı” gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли «Місця» ввімкнено, Redde помічає, коли ви приходите в задане місце чи йдете з нього, навіть коли Redde закрито, і повідомляє вибраному боту. Ваше місцезнаходження лишається на iPhone; на сервер надходить лише «прибуття додому»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开地点后，即使Redde已关闭，Redde也会在你到达或离开设置的地点时察觉，并告诉你选择的机器人。你的位置保留在iPhone上；只有“已到家”会发送到你的服务器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟地點後，即使 Redde 已關閉，Redde 也會在你抵達或離開設定的地點時察覺，並告訴你選擇的機器人。你的位置會保留在 iPhone 上；只有「已到家」會傳送到你的伺服器。"
+          }
+        }
+      }
+    },
+    "NSLocationWhenInUseUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når Steder er slået til, bruger Redde, hvor du er, til at angive et sted og opdage, når du ankommer eller tager af sted. Hvor du er, bliver på din iPhone; kun “ankommet hjem” sendes til din server."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn Orte aktiviert ist, verwendet Redde deinen Standort, um einen Ort festzulegen und zu bemerken, wann du ankommst oder gehst. Wo du bist, bleibt auf deinem iPhone; nur „zu Hause angekommen“ geht an deinen Server."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "With Places turned on, Redde uses where you are to set a place and to notice when you arrive or leave. Where you are stays on your iPhone; only \"arrived at Home\" goes to your server."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Lugares activado, Redde usa tu ubicación para definir un lugar y para detectar cuándo llegas o te vas. Tu ubicación se queda en tu iPhone; solo “llegada a casa” llega a tu servidor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand Lieux est activé, Redde utilise votre position pour définir un lieu et remarquer quand vous arrivez ou partez. Votre position reste sur votre iPhone ; seul « arrivée à la maison » est envoyé à votre serveur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Luoghi attivo, Redde usa la tua posizione per impostare un luogo e accorgersi di quando arrivi o te ne vai. La tua posizione resta sul tuo iPhone; al tuo server arriva solo “arrivo a casa”."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "場所をオンにすると、Reddeは現在地を使って場所を設定し、到着や出発に気づきます。現在地はiPhoneの中にとどまり、サーバに送られるのは「自宅に到着」だけです。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "장소를 켜면 Redde가 현재 위치를 사용해 장소를 설정하고 도착이나 출발을 알아챕니다. 현재 위치는 iPhone에 남으며, 서버에는 “집에 도착”만 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når Steder er slått på, bruker Redde hvor du er til å angi et sted og merke når du kommer eller drar. Hvor du er, blir på iPhonen din; bare «kommet hjem» går til tjeneren din."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met Locaties aan gebruikt Redde waar je bent om een locatie in te stellen en te merken wanneer je aankomt of vertrekt. Waar je bent, blijft op je iPhone; alleen ‘thuis aangekomen’ gaat naar je server."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy Miejsca są włączone, Redde używa Twojej lokalizacji, aby ustawić miejsce i zauważać, kiedy przybywasz lub wychodzisz. To, gdzie jesteś, zostaje na Twoim iPhonie; do Twojego serwera trafia tylko „przybycie do domu”."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com Locais ativado, o Redde usa onde você está para definir um local e perceber quando você chega ou sai. Onde você está fica no seu iPhone; só “chegou em casa” vai para o seu servidor."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда «Места» включены, Redde использует ваше местоположение, чтобы задать место и замечать, когда вы приходите или уходите. Ваше местоположение остается на iPhone; на сервер уходит только «прибытие домой»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Platser på använder Redde var du är för att ange en plats och märka när du kommer fram eller åker. Var du är stannar på din iPhone; bara ”kommit hem” går till din server."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yerler açıkken Redde, bir yer belirlemek ve vardığınızı ya da ayrıldığınızı fark etmek için nerede olduğunuzu kullanır. Nerede olduğunuz iPhone'unuzda kalır; sunucunuza yalnızca “eve varıldı” gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли «Місця» ввімкнено, Redde використовує ваше місцезнаходження, щоб задати місце й помічати, коли ви приходите або йдете. Ваше місцезнаходження лишається на iPhone; на сервер надходить лише «прибуття додому»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开地点后，Redde会使用你的位置来设置地点，并察觉你何时到达或离开。你的位置保留在iPhone上；只有“已到家”会发送到你的服务器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟地點後，Redde 會使用你的位置來設定地點，並察覺你何時抵達或離開。你的位置會保留在 iPhone 上；只有「已到家」會傳送到你的伺服器。"
+          }
+        }
+      }
+    },
     "NSMicrophoneUsageDescription" : {
       "comment" : "Why Redde asks for this permission",
       "extractionState" : "extracted_with_value",

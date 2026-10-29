@@ -267,6 +267,12 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         // A chat the person muted: in the list, not over the screen.
         if MutedChats.isMuted(session: sessionID, room: room, bot: bot) { return [.list] }
         if PushNote.Kind(rawValue: kind) == .widget { return [] }   // it is on the widget; nothing to say with Redde in front
+        // Quiet hours: what an agent sent on its own goes to the list, not over the screen.
+        if QuietHours.waits(kind: PushNote.Kind(rawValue: kind)), QuietHours.load().covers(.now) {
+            if PushNote.Kind(rawValue: kind) == .ideas { IdeasInbox.shared.reload() }
+            if PushNote.Kind(rawValue: kind) == .routine { BriefingsInbox.shared.reload() }
+            return [.list]
+        }
         // Ideas: on the chat list now (the extension kept them), and said in a banner.
         if PushNote.Kind(rawValue: kind) == .ideas { IdeasInbox.shared.reload() }
         if PushNote.Kind(rawValue: kind) == .routine { BriefingsInbox.shared.reload() }

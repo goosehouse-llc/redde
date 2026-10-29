@@ -389,6 +389,15 @@ struct ConversationsList: View {
         #endif
     }
 
+    /// `-echo.demoDay`: no Projects in the day's video (`DemoDay`).
+    private var hidesProjectsForDemo: Bool {
+        #if DEBUG
+        DemoDay.on
+        #else
+        false
+        #endif
+    }
+
     private var sessionsList: some View {
         // The selection binding belongs to "Select" mode only. A sidebar List that always has
         // one treats a row tap as selection and swallows the NavigationLink, so project folders
@@ -400,13 +409,14 @@ struct ConversationsList: View {
                 topRow
                 if query.isEmpty, !selecting {
                     waitingNotesSection
+                    PinnedCardsSection()
                     IdeasSection(take: takeIdea)
                     BriefingsSection()
                 }
                 if usesLedger {
                     if query.isEmpty, !selecting {
                         if botsHere { botsSection }
-                        if viaServe, settings.projectsInChatList { projectsSection }
+                        if viaServe, settings.projectsInChatList, !hidesProjectsForDemo { projectsSection }
                     }
                     ledgerSection
                     if searchesMessages, !selecting { messageHitsSection }
@@ -1719,6 +1729,13 @@ struct ConversationsList: View {
                     editingBot = which == "new" ? .new : Self.demoBots.bots.first { $0.name == which }.map { .edit($0) }
                 }
             }
+            // `-echo.demoDay`: an ordinary day's chats, no projects or group chats (`DemoDay`).
+            if DemoDay.on {
+                projects = []
+                folders = []
+                ledger = DemoDay.chats
+                groups.set(rooms: [], supported: false, writable: false, key: settings.connectionKey)
+            }
             if DevHooks.demoMarks {
                 ledger += Self.demoMarkedRows
                 activity.showDemo(["demo-1": .working, "demo-marks-2": .needsYou], bots: ["scout": .working, "fixit": .needsYou], unreadBots: ["writer"],
@@ -2389,6 +2406,8 @@ extension ConversationsList {
     /// One project Hermes found, with one lane and two sessions (enough to reach
     /// ProjectSessionsView and tap a row), and one someone made, still empty.
     static var demoBots: BotRoster {
+        // `-echo.demoDay`: the day's video's agents, Sol, Home and Coder (`DemoDay`).
+        if DemoDay.on { return DemoDay.roster }
         let all = [
             HermesBot(name: "default", isDefault: true, lastActive: .now.addingTimeInterval(-3_600), preview: "Done: the reminder is set for 4 pm."),
             HermesBot(name: "scout", title: "Scout", description: "Finds things out", lastActive: .now.addingTimeInterval(-600),

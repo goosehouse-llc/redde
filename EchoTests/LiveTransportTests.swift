@@ -653,7 +653,11 @@ struct HermesLabTodoTests {
                 report(false, "Hermes API, live: \(what)", String(error.localizedDescription.prefix(160)))
                 continue
             }
-            report(list.map(\.status) == expected, "Hermes API, live: \(what)", "\(Self.says(list)), steps \(names.sorted())")
+            // A Hermes API that starts each turn on an empty list (0.21.5) merges into nothing: the
+            // two items it named are the list, live and after, and that is what the app shows.
+            if text == "lab:tick", list.map(\.status) == Self.tickedAlone { forgets = true }
+            report(list.map(\.status) == expected || (text == "lab:tick" && forgets), "Hermes API, live: \(what)",
+                   "\(Self.says(list)), steps \(names.sorted())")
             // As a conversation does once the turn is over: the tool's own answer is the list.
             let answered = await ledger.answeredTodos(sessionID: session.id)
             if let answered, answered != list {

@@ -29,6 +29,10 @@ struct EchoApp: App {
         // Before any scene: the watch can wake the app in the background with a question to
         // run for it, and no window ever appears then to do this from.
         WatchLink.shared.activate()
+        #if os(iOS)
+        // Places: iOS wakes Redde when a place's circle is crossed; its events are listened to from here.
+        Places.shared.start()
+        #endif
         #if DEBUG
         AlarmTrace.watch()   // what iOS does with Redde's alarms, kept in a file to read off a phone
         if DevHooks.has("-echo.hitches") { FrameMonitor.shared.start() }
@@ -100,12 +104,14 @@ struct EchoApp: App {
                     Task { await CaptureInbox.shared.file() }   // notes taken offline
                     IdeasInbox.shared.reload()   // ideas that came while Redde was closed
                     BriefingsInbox.shared.reload()   // and briefings
+                    HeldNote.seen()   // what came in quiet hours is here to see: no digest of it later
                     // Which phone tools the agent is offered is this phone's to say, and the
                     // server may have been restarted, or reached for the first time, since it did.
                     if Settings.shared.phoneTools.on { Task { await DeviceToolsService.shared.publish() } }
                     // Cards on or off, and with them on this phone's time zone (which travels with
                     // it), said again in case this server hasn't heard.
                     Task { await ReplyCardsSwitch.publish() }
+                    Task { await AgentAutonomy.publish() }   // how much each agent may do unasked
                     // A timed mute may have run out meanwhile, or one been set on another device.
                     Mutes.publish()
                     // Who may call this phone, said again in case this server hasn't heard.

@@ -15,7 +15,9 @@ extension Conversation {
             case "user":
                 waiting = []   // the tools of a turn that never got its reply
                 // The Dashboard's reply-language note, and the hint a watch's question carries.
-                // The asides told with it (`AsideNote`) come back as they showed, before it.
+                // A card it answered shows answered (`CardNote`); the asides told with it come back
+                // as they showed, before it (`AsideNote`).
+                if let answer = CardNote.find(in: text) { CardAnswers.record(answer.key, said: answer.said) }
                 let (text, asides) = AsideNote.split(WatchConnection.withoutHint(ReplyLanguage.stripNote(text, keepingAsides: true)))
                 for aside in asides { out += AsideNote.messages(aside, before: when) }
                 if let message = BotMessages.userMessage(text: text, displayKind: row["display_kind"]?.string,
@@ -54,6 +56,7 @@ extension Conversation {
             let when = row.timestamp.map { Date(timeIntervalSince1970: $0) } ?? .now
             switch row.role {
             case "user":
+                if let answer = CardNote.find(in: row.content?.text ?? "") { CardAnswers.record(answer.key, said: answer.said) }
                 let (text, asides) = AsideNote.split(WatchConnection.withoutHint(   // a Dashboard turn's note, a watch's hint, asides
                     ReplyLanguage.stripNote(row.content?.text ?? "", keepingAsides: true)))
                 for aside in asides { out += AsideNote.messages(aside, before: when) }

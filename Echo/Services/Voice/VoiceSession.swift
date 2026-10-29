@@ -739,6 +739,47 @@ final class VoiceSession {
         cancel()
     }
 
+    /// Voice mode opened while a typed reply is still coming in (asked 2026-10-28: "make it fluid
+    /// between the two"): what the reply has said so far is read out, and the rest as it comes;
+    /// then voice mode goes on as after any reply (listening again, hands-free). Opening it used to
+    /// count as talking over the reply, and stopped it. Stop silences the reading; the reply goes
+    /// on, on the screen.
+    func joinReply() {
+        guard live == nil, asking == nil, conversation.isStreaming, replyTask == nil,
+              let reply = conversation.messages.last, reply.role == .assistant,
+              beginReading(resumeHandsFree: true, speaker: conversation.bot?.profile) else { beginListening(); return }
+        let id = reply.id
+        joinTask?.cancel()
+        joinTask = Task { [weak self] in
+            var said = 0
+            while let self, !Task.isCancelled, replaying, phase == .speaking {
+                let streaming = conversation.isStreaming
+                let text = conversation.messages.last { $0.id == id }?.text ?? ""
+                if text.count > said {
+                    continueReading(String(text.dropFirst(said)))
+                    said = text.count
+                }
+                if !streaming { break }
+                try? await Task.sleep(for: .milliseconds(150))
+            }
+            self?.endReading()
+        }
+    }
+
+    /// Following a typed reply (`joinReply`).
+    private var joinTask: Task<Void, Never>?
+
+    /// The keyboard button (asked 2026-10-28: "it starts but then I click the keyboard… the
+    /// message stops"): voice mode stops listening and reading, but the reply goes on, streaming
+    /// into the conversation on screen, where it is read instead of heard. On a live call there
+    /// is no reply apart from the call's: that ends as it would.
+    func handOverToTyping() {
+        if live != nil { cancel(); return }
+        replyTask?.cancel()   // the turn is the conversation's, and goes on there
+        replyTask = nil
+        cancel()
+    }
+
     func cancel() {
         #if DEBUG
         // What ends voice mode on an agent's call, for calls.log (a call ended 4 s in, 2026-10-26).
@@ -750,6 +791,8 @@ final class VoiceSession {
         callLineSaid = nil
         if live != nil { endLive(); return }
         defer { endCall() }
+        joinTask?.cancel()
+        joinTask = nil
         replaying = false
         isMuted = false
         isCapturing = false
@@ -1170,11 +1213,16 @@ final class VoiceSession {
         return start
     }
 
+    /// The thinking sound's level in the car: about 9 dB under the phone's.
+    nonisolated static let carThinkingVolume: Float = 0.35
+
     private func playThinkingSound(_ on: Bool) {
         guard on != thinkingSoundOn else { return }
         thinkingSoundOn = on
         if on {
-            thinkingSound.start()
+            // Quieter in the car (asked 2026-10-28: "the CarPlay thinking sound is way too loud"):
+            // its speakers play it far louder against the reply than the phone's do.
+            thinkingSound.start(volume: carConnected() || audio.route == .car ? Self.carThinkingVolume : 1)
             audio.refreshRoute()   // (starting a sound can put the output back on the earpiece)
         } else {
             thinkingSound.stop()

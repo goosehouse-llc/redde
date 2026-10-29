@@ -32,6 +32,13 @@ final class NotificationService: UNNotificationServiceExtension {
             choices = note.choiceCategory
             // A chat the person muted (Mute… in Redde): in the list, without a sound or a banner.
             if MutedChats.isMuted(session: note.s, room: note.g, bot: note.p) { MutedChats.quiet(content) }
+            // Quiet hours: what an agent sent on its own goes to the list only, and is told of
+            // in one notification when the quiet ends (`QuietHours`).
+            let quiet = QuietHours.load()
+            if quiet.covers(.now), QuietHours.waits(note) {
+                MutedChats.quiet(content)
+                HeldNote.scheduleDigest(HeldNote.hold(note), at: quiet.ends(after: .now))
+            }
             if note.repeatsTheApp() {
                 // The app said so when it happened. This takes its banner's place without
                 // sounding or lighting the screen a second time.

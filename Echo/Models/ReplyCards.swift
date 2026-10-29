@@ -16,6 +16,108 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
     case places(Places)
     case weather(Weather)
     case time(Clock)
+    /// Cards the person answers with a tap (asked 2026-10-28, after Meta's Muse, whose app, not
+    /// its model, shows what it is about to do): drawn by the app from the call; the answer goes to
+    /// the agent as the person's next message, with a note of exactly what was picked or left in
+    /// the fields (`CardNote`).
+    case review(Review)
+    case choice(Choice)
+    case checklist(Checklist)
+    case form(Form)
+
+    /// What the agent has made ready to send, buy, book or change: its details, which the person
+    /// can change, and the button that lets it go ahead ("Send").
+    nonisolated struct Review: Codable, Equatable, Sendable {
+        var title: String
+        var action: String
+        var fields: [Field]
+        var note: String?
+    }
+
+    nonisolated struct Field: Codable, Equatable, Sendable {
+        var label: String
+        var value: String
+        /// A message's body: several lines.
+        var long: Bool
+    }
+
+    /// Things to pick from: one, or several.
+    nonisolated struct Choice: Codable, Equatable, Sendable {
+        var title: String?
+        var options: [Option]
+        var multiple: Bool
+    }
+
+    nonisolated struct Option: Codable, Equatable, Sendable, Hashable {
+        var title: String
+        var detail: String?
+        /// A picture of it, by https.
+        var image: String?
+    }
+
+    /// A list to tick off (a packing or a shopping list), in sections when the agent groups it.
+    nonisolated struct Checklist: Codable, Equatable, Sendable {
+        var title: String
+        var items: [Item]
+        /// One emoji for its header ("🏕️").
+        var emoji: String?
+        nonisolated struct Item: Codable, Equatable, Sendable {
+            var text: String
+            var done: Bool
+            var section: String?
+        }
+
+        /// Its sections in order, each with its items' places in `items`.
+        var sections: [(title: String?, items: [Int])] {
+            var out: [(title: String?, items: [Int])] = []
+            for (index, item) in items.enumerated() {
+                if let last = out.indices.last, out[last].title == item.section { out[last].items.append(index) }
+                else if let found = out.firstIndex(where: { $0.title == item.section }) { out[found].items.append(index) }
+                else { out.append((item.section, [index])) }
+            }
+            return out
+        }
+    }
+
+    /// A few details the agent needs at once.
+    nonisolated struct Form: Codable, Equatable, Sendable {
+        var title: String
+        var action: String
+        var fields: [Entry]
+        nonisolated struct Entry: Codable, Equatable, Sendable {
+            enum Kind: String, Codable, Sendable { case text, long, number, date, time, toggle, choice }
+            var label: String
+            var kind: Kind
+            var value: String
+            var options: [String]
+            var required: Bool
+        }
+    }
+
+    /// A card that is answered, and so has a key its answer goes by.
+    var answerable: Bool {
+        switch self {
+        case .review, .choice, .checklist, .form: true
+        case .map, .places, .weather, .time: false
+        }
+    }
+
+    /// Its key: the same live and when the conversation is read back (from what it says), so an
+    /// answer, here or in the transcript's note, finds it.
+    var key: String {
+        let said: String
+        switch self {
+        case let .review(r): said = "review|" + r.title + "|" + r.fields.map(\.label).joined(separator: "|")
+        case let .choice(c): said = "choice|" + (c.title ?? "") + "|" + c.options.map(\.title).joined(separator: "|")
+        case let .checklist(c): said = "checklist|" + c.title + "|" + c.items.map(\.text).joined(separator: "|")
+        case let .form(f): said = "form|" + f.title + "|" + f.fields.map(\.label).joined(separator: "|")
+        default: return ""
+        }
+        // FNV-1a: short, and the same on every run (Hasher isn't).
+        var hash: UInt64 = 0xcbf29ce484222325
+        for byte in said.utf8 { hash = (hash ^ UInt64(byte)) &* 0x100000001b3 }
+        return String(hash, radix: 36)
+    }
 
     /// The time somewhere, drawn live on the phone: a place's, or with none the phone's own.
     nonisolated struct Clock: Codable, Equatable, Sendable {
@@ -196,10 +298,62 @@ nonisolated enum ReplyCards {
         case "time", "clock":
             let zone = text(value["timezone"] ?? value["time_zone"] ?? value["timeZone"]).flatMap { TimeZone(identifier: $0)?.identifier }
             return .time(.init(place: text(value["place"] ?? value["location"]).map { String($0.prefix(80)) }, timeZone: zone))
+        case "review", "confirm":
+            let fields: [ReplyCard.Field] = (value["fields"]?.array ?? []).prefix(maxFields).compactMap { f in
+                guard let label = text(f["label"] ?? f["name"]) else { return nil }
+                let value = text(f["value"]) ?? ""
+                return .init(label: String(label.prefix(60)), value: String(value.prefix(4000)),
+                             long: f["long"]?.bool ?? (value.count > 60 || value.contains("\n")))
+            }
+            guard let title = text(value["title"]), !fields.isEmpty else { return nil }
+            return .review(.init(title: String(title.prefix(120)), action: text(value["action"]).map { String($0.prefix(24)) } ?? String(localized: "Do It"),
+                                 fields: fields, note: text(value["note"]).map { String($0.prefix(300)) }))
+        case "choice", "choose", "options":
+            let options: [ReplyCard.Option] = (value["options"]?.array ?? []).prefix(maxOptions).compactMap { o in
+                if let plain = o.string?.nilIfEmpty { return .init(title: String(plain.prefix(120))) }
+                guard let title = text(o["title"] ?? o["name"] ?? o["label"]) else { return nil }
+                let image = text(o["image"]).flatMap { URL(string: $0)?.scheme == "https" ? $0 : nil }
+                return .init(title: String(title.prefix(120)), detail: text(o["detail"] ?? o["description"]).map { String($0.prefix(200)) }, image: image)
+            }
+            guard options.count >= 2 else { return nil }
+            return .choice(.init(title: text(value["title"]).map { String($0.prefix(120)) }, options: options, multiple: value["multiple"]?.bool ?? false))
+        case "checklist", "list":
+            func item(_ i: JSONValue, in section: String?) -> ReplyCard.Checklist.Item? {
+                if let plain = i.string?.nilIfEmpty { return .init(text: String(plain.prefix(200)), done: false, section: section) }
+                guard let text = text(i["text"] ?? i["title"]) else { return nil }
+                return .init(text: String(text.prefix(200)), done: i["done"]?.bool ?? false,
+                             section: self.text(i["section"]).map { String($0.prefix(60)) } ?? section)
+            }
+            // Items with their 'section', or 'sections' each with its items.
+            var items: [ReplyCard.Checklist.Item] = (value["items"]?.array ?? []).compactMap { item($0, in: nil) }
+            for group in value["sections"]?.array ?? [] {
+                let title = text(group["title"] ?? group["name"]).map { String($0.prefix(60)) }
+                items += (group["items"]?.array ?? []).compactMap { item($0, in: title) }
+            }
+            items = Array(items.prefix(maxItems))
+            guard !items.isEmpty else { return nil }
+            let emoji = text(value["emoji"]).flatMap { $0.first.map(String.init) }.flatMap { $0.unicodeScalars.first?.properties.isEmoji == true ? $0 : nil }
+            return .checklist(.init(title: text(value["title"]).map { String($0.prefix(120)) } ?? String(localized: "List"), items: items, emoji: emoji))
+        case "form":
+            let fields: [ReplyCard.Form.Entry] = (value["fields"]?.array ?? []).prefix(maxFields).compactMap { f in
+                guard let label = text(f["label"] ?? f["name"]) else { return nil }
+                let options = (f["options"]?.array ?? []).compactMap { text($0) }.prefix(maxOptions).map { String($0.prefix(80)) }
+                var kind = ReplyCard.Form.Entry.Kind(rawValue: text(f["kind"] ?? f["type"])?.lowercased() ?? "") ?? .text
+                if kind == .choice, options.isEmpty { kind = .text }
+                return .init(label: String(label.prefix(60)), kind: kind, value: text(f["value"]).map { String($0.prefix(2000)) } ?? "",
+                             options: Array(options), required: f["required"]?.bool ?? false)
+            }
+            guard let title = text(value["title"]), !fields.isEmpty else { return nil }
+            return .form(.init(title: String(title.prefix(120)), action: text(value["action"]).map { String($0.prefix(24)) } ?? String(localized: "Send"),
+                               fields: fields))
         default:
             return nil
         }
     }
+
+    static let maxFields = 8
+    static let maxOptions = 8
+    static let maxItems = 100
 
     static func placeList(_ value: JSONValue?) -> [ReplyCard.Place] {
         Array((value?.array ?? []).compactMap(place).prefix(maxPlaces))

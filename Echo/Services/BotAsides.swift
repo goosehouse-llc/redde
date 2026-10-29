@@ -44,9 +44,10 @@ enum BotTurns {
 
     /// The bot's answer to `text`, whole. A question it can only go on with the person's answer to
     /// (an approval) is left waiting in its chat.
-    static func ask(_ bot: HermesBot, _ text: String, settings: Settings = .shared) async throws -> String {
+    /// `departure`: left by the caller that can wait no longer (a place's trigger, in the
+    /// background): the turn goes on, on the host, its reply in the bot's chat.
+    static func ask(_ bot: HermesBot, _ text: String, settings: Settings = .shared, departure: TurnDeparture = TurnDeparture()) async throws -> String {
         let (transport, stored) = try await transport(for: bot, mainName: settings.headerTitle, settings: settings)
-        let departure = TurnDeparture()
         var request = TurnRequest(userText: text, history: [], sessionID: stored, model: nil, provider: nil, reasoningEffort: nil,
                                   instructions: nil, attachments: [], replyLanguage: settings.replyLanguage.nilIfEmpty, brief: false)
         request.departure = departure

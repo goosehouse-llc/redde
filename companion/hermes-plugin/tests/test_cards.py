@@ -213,7 +213,7 @@ class CardTests(unittest.TestCase):
         self.assertEqual(answer["shown"], ["map: route to Rossio Roasters (walking)"])
         self.assertEqual(len(answer["not_shown"]), 2)
         self.assertIn("card 2", answer["not_shown"][0])
-        self.assertIn("map, places, weather or time", answer["not_shown"][1])
+        self.assertIn("map, places, weather, time", answer["not_shown"][1])
 
     def test_the_description_says_to_answer_from_the_lookup(self):
         self.assertIn("look themselves up", cards.SCHEMA["description"])
@@ -289,3 +289,78 @@ class AnnounceTests(unittest.TestCase):
                 sys.modules.pop("tui_gateway.server", None)
             else:
                 sys.modules["tui_gateway.server"] = before
+
+
+class AnswerCardTests(unittest.TestCase):
+    """Cards the person answers with a tap (1.9.0, asked 2026-10-28)."""
+
+    def test_a_review_is_shown_and_the_agent_is_told_to_wait(self):
+        said = json.loads(cards.handle({"cards": [{"type": "review", "title": "Email to Ana", "action": "Send",
+                                                    "fields": [{"label": "To", "value": "ana@example.com"},
+                                                               {"label": "Message", "value": "See you at 3."}]}]}))
+        self.assertIn("review: Email to Ana", said["shown"][0])
+        self.assertIn("wait", said["note"])
+        self.assertIn("until they tap", said["note"])
+
+    def test_cards_that_cant_be_answered_say_why(self):
+        said = json.loads(cards.handle({"cards": [{"type": "choice", "options": [{"title": "Only one"}]}]}))
+        self.assertIn("at least two", said["error"])
+        said = json.loads(cards.handle({"cards": [{"type": "review", "title": "x"}]}))
+        self.assertIn("'fields'", said["error"])
+
+    def test_a_choice_a_checklist_and_a_form(self):
+        said = json.loads(cards.handle({"cards": [
+            {"type": "choice", "title": "Where to eat?", "options": [{"title": "Lupa"}, {"title": "Sushi Ko"}]},
+            {"type": "checklist", "title": "Packing", "items": [{"text": "Passport"}, "Charger"]},
+            {"type": "form", "title": "Dinner booking", "fields": [{"label": "Date", "kind": "date"}, {"label": "People", "kind": "number"}]}]}))
+        self.assertEqual(len(said["shown"]), 3)
+        self.assertIn("Lupa", said["shown"][0])
+        self.assertIn("2 items", said["shown"][1])
+        self.assertIn("Dinner booking", said["shown"][2])
+
+    def test_the_description_stays_short(self):
+        self.assertLess(len(cards.SCHEMA["description"]), 1700, "it is in every prompt")
+
+
+class ReviewNoteTests(unittest.TestCase):
+    def setUp(self):
+        self.home = Path(tempfile.mkdtemp())
+
+    def test_asked_to_act_the_agent_is_told_to_show_a_review_first(self):
+        note = cards.turn_note(self.home, "Email Ana that I'll be late", platform="desktop")
+        self.assertIn("'review'", note)
+        self.assertIsNone(cards.turn_note(self.home, "What's the capital of France?", platform="desktop"))
+        self.assertIsNone(cards.turn_note(self.home, "Send: Email to Ana\n\n[Redde card k1: the user tapped \"Send\"]", platform="desktop"),
+                          "the answer to a review is the go-ahead")
+
+
+class ListNoteTests(unittest.TestCase):
+    def setUp(self):
+        self.home = Path(tempfile.mkdtemp())
+
+    def test_asked_for_a_list_the_agent_is_told_to_show_a_checklist(self):
+        for asked in ("Make me a packing list for the cabin", "Can you give me a shopping list for tacos?",
+                      "what should we bring to the lake"):
+            self.assertIn("'checklist'", cards.turn_note(self.home, asked, platform="desktop") or "", asked)
+        self.assertNotIn("'checklist'", cards.turn_note(self.home, "Email Ana the list", platform="desktop") or "")
+
+    def test_a_sectioned_checklist_is_shown(self):
+        said = json.loads(cards.handle({"cards": [{"type": "checklist", "title": "Cabin", "emoji": "🏕️",
+                                                    "items": [{"text": "Swimsuits", "section": "Clothing"}, {"text": "Sunscreen", "section": "Toiletries"}]}]}))
+        self.assertIn("2 items", said["shown"][0])
+
+
+class AutonomyTests(unittest.TestCase):
+    def setUp(self):
+        self.root = Path(tempfile.mkdtemp())
+        (self.root / "profiles" / "ops").mkdir(parents=True)
+
+    def test_each_agent_has_its_level_and_the_nudge_follows_it(self):
+        self.assertEqual(cards.autonomy(self.root), "ask")
+        said = cards.autonomy_slash(self.root, ["default=routine", "ops=act", "bad=whatever"])
+        self.assertEqual(said, "redde-push autonomy default=routine ops=act")
+        self.assertEqual(cards.autonomy(self.root), "routine")
+        self.assertEqual(cards.autonomy(self.root / "profiles" / "ops"), "act")
+        self.assertIn("easy to undo", cards.turn_note(self.root, "Text Ana I'm late", platform="desktop"))
+        self.assertIn("act on their behalf", cards.turn_note(self.root / "profiles" / "ops", "Book the table", platform="desktop"))
+        self.assertIn("review", cards.turn_note(Path(tempfile.mkdtemp()), "Book the table", platform="desktop"), "ask first by default")

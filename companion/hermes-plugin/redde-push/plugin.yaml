@@ -40,3 +40,4 @@ provides_tools:
   - suggest_to_user
   - follow_up_later
   - heads_up_before
+  - keep_an_eye_on

@@ -13,6 +13,11 @@ final class BriefingsInbox {
 
     init() {
         #if DEBUG
+        // `-echo.demoDay`: the day's video's, by its scene (`DemoDay`).
+        if DemoDay.on {
+            briefings = DemoDay.briefings
+            return
+        }
         // `-echo.demoBriefings`: a wrap-up and a heads-up, for screenshots.
         if DevHooks.has("-echo.demoBriefings") {
             briefings = [
@@ -30,9 +35,16 @@ final class BriefingsInbox {
 
     var unread: [AgentBriefing] { briefings.filter { !$0.read } }
 
+    #if DEBUG
+    /// `-echo.demoDay morning`: a heads-up arriving, as one does with Redde open.
+    func arriveForDemo(_ briefing: AgentBriefing) {
+        withAnimation(.snappy) { briefings.insert(briefing, at: 0) }
+    }
+    #endif
+
     func reload() {
         #if DEBUG
-        if DevHooks.has("-echo.demoBriefings") { return }
+        if DevHooks.has("-echo.demoBriefings") || DemoDay.on { return }
         #endif
         let now = AgentBriefing.all()
         if now != briefings { briefings = now }

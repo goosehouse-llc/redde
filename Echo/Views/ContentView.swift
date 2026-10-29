@@ -86,6 +86,8 @@ struct ContentView: View {
     /// `-echo.screen botGallery`: every bot creature, large, to look them over.
     @State private var showBotGallery = false
     @State private var showDemoPatch = false
+    /// `-echo.screen activity|pluginUpdates|triggers`: that page, in a sheet (the day's video, `DemoDay`).
+    @State private var demoDayPage: String?
     #endif
     @State private var showFiles = false
     #endif
@@ -147,6 +149,11 @@ struct ContentView: View {
         .sheet(isPresented: $showProfilePicker) { NavigationStack { ProfilePickerView() } }
         .modifier(WatchDraftSheet())
         .modifier(BriefingSheets())
+        .modifier(PinnedCardSheets { id in
+            // A pinned card's chat, from wherever it was pinned: the copy on the iPhone.
+            if id != conversation.id, !conversation.isStreaming, let record = conversation.storeForContext.record(id: id) { conversation.load(record) }
+            setDrawer(open: false)
+        })
         .sheet(isPresented: $makingRoutine) { RoutineSheet(conversation: conversation) }
         .sheet(isPresented: $showTips) { NavigationStack { TipJarView() } }
         .sheet(isPresented: $showServers) { NavigationStack { ServersView() } }
@@ -155,6 +162,15 @@ struct ContentView: View {
         #if DEBUG
         .fullScreenCover(isPresented: $showBotGallery) { BotGallery() }
         .sheet(isPresented: $showDemoPatch) { PatchView(title: "Lab change one", patch: PatchView.demo, notes: PatchView.demoNotes, notesTitle: "Steps left with it") }
+        .sheet(isPresented: Binding(get: { demoDayPage != nil }, set: { if !$0 { demoDayPage = nil } })) {
+            NavigationStack {
+                switch demoDayPage {
+                case "activity": AgentActivityView()
+                case "pluginUpdates": PluginUpdatesView(agents: DemoDay.on ? DemoDay.pluginAgents : PluginUpdatesView.everyAgent())
+                default: TriggersView()
+                }
+            }
+        }
         #endif
         .sheet(isPresented: $showFiles) { NavigationStack { FilesView() } }
         #endif
@@ -433,6 +449,8 @@ struct ContentView: View {
             .environment(\.replyFace, botFace)
             .environment(\.fileSource, conversation.fileSource)
             .environment(\.sendFromPage, PageSender(conversation: conversation.id, send: conversation.sendFromPage))
+            .environment(\.answerCard, conversation.isWorkerTranscript ? nil
+                         : CardAnswerer(answer: conversation.answerCard, busy: conversation.isStreaming))
             .chatTextSize()
             .background(theme.pageColor)
             .foregroundStyle(theme.textColor)
@@ -1094,7 +1112,13 @@ struct ContentView: View {
             // Let the cover present before the audio session and mic spin up.
             try? await Task.sleep(for: .milliseconds(400))
         }
-        if let asking { voiceSession.ask(asking) } else { voiceSession.beginListening() }
+        if let asking {
+            voiceSession.ask(asking)
+        } else if conversation.isStreaming {
+            voiceSession.joinReply()   // a typed reply under way: heard from where it has got to, not stopped
+        } else {
+            voiceSession.beginListening()
+        }
     }
 
     #if DEBUG
@@ -1204,8 +1228,13 @@ struct ContentView: View {
         #if DEBUG
         case "botGallery": showBotGallery = true
         case "patch": showDemoPatch = true
+        case "activity", "pluginUpdates", "triggers": demoDayPage = DevHooks.value("-echo.screen")
         #endif
         default: break
+        }
+        // `-echo.demoDay routine`: Make This a Routine over the chat it seeded (`DemoDay`).
+        if DemoDay.scene == "routine" {
+            Task { try? await Task.sleep(for: .seconds(1.5)); makingRoutine = true }
         }
         if let text = DevHooks.value("-echo.draft") {
             draft = text

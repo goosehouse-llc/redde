@@ -345,7 +345,15 @@ struct AgentSettings<Details: View>: View {
                 .disabled(!canReachGateway)
             NavigationLink { DailyJobView(daily: EveningWrapUp.job) } label: { Label("Evening Wrap-up", systemImage: "moon.stars") }
                 .disabled(!canReachGateway)
+            NavigationLink { DailyJobView(daily: WeekAhead.job) } label: { Label("Week Ahead", systemImage: "calendar") }
+                .disabled(!canReachGateway)
+            NavigationLink { DailyJobView(daily: RoutineSuggestions.job) } label: { Label("Routine Suggestions", systemImage: "repeat") }
+                .disabled(!canReachGateway)
             NavigationLink { BriefingsList() } label: { Label("Briefings", systemImage: "doc.text") }
+            #if os(iOS)
+            NavigationLink { PlacesView() } label: { Label(String(localized: "places.title", defaultValue: "Places", comment: "Settings: places the iPhone notices arriving at or leaving"), systemImage: "mappin.and.ellipse") }
+            #endif
+            NavigationLink { BeforeActingView() } label: { Label("Before Acting", systemImage: "hand.raised") }
             NavigationLink { TriggersView() } label: { Label("Triggers from Your iPhone", systemImage: "bolt.badge.clock") }
             NavigationLink { AgentActivityView() } label: { Label("Agent Activity", systemImage: "list.bullet.rectangle") }
         } header: {
@@ -749,6 +757,7 @@ struct NotificationSettings: View {
         } footer: {
             Text("Background notifications tell you when Redde needs an approval or an answer, or when a reply finishes, while you're in another app. “Announce on AirPods” marks them time-sensitive so Siri can read them aloud through AirPods (turn on Announce Notifications for Redde in the iPhone's Settings) and so they reach you in a Focus. “Notification sound” off makes all of them silent, those from your Hermes too; they still appear.")
         }
+        QuietHoursSection()
         Section {
             NavigationLink { PushSettingsView() } label: {
                 LabeledContent("Notify when Redde is closed", value: PushService.shared.pairings.contains(where: \.isPaired) ? String(localized: "On") : String(localized: "Off"))
@@ -992,5 +1001,32 @@ struct ThemeSwatch: View {
             .padding(7)
         }
         .frame(width: 52, height: 40)
+    }
+}
+
+/// Settings → Notifications → Quiet Hours (`QuietHours`).
+struct QuietHoursSection: View {
+    @State private var quiet = QuietHours.load()
+
+    var body: some View {
+        Section {
+            Toggle("Quiet Hours", isOn: Binding(get: { quiet.on }, set: { quiet.on = $0; quiet.save() }))
+            if quiet.on {
+                DatePicker("From", selection: time(\.start), displayedComponents: .hourAndMinute)
+                DatePicker("Until", selection: time(\.end), displayedComponents: .hourAndMinute)
+            }
+        } footer: {
+            Text("Between these times, what your agents send on their own (ideas, briefings and heads-ups, watches, scheduled answers) arrives without a sound or a banner, and one notification when the quiet ends says what came. Approvals, questions, replies you're waiting for and calls come through as always.")
+        }
+    }
+
+    private func time(_ part: WritableKeyPath<QuietHours, Int>) -> Binding<Date> {
+        Binding(get: {
+            Calendar.current.date(bySettingHour: quiet[keyPath: part] / 60, minute: quiet[keyPath: part] % 60, second: 0, of: .now) ?? .now
+        }, set: { date in
+            let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+            quiet[keyPath: part] = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
+            quiet.save()
+        })
     }
 }

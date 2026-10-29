@@ -94,3 +94,118 @@ def turn_note(home: Path, stores, message) -> str | None:
     return (f"[Redde: the last time you had something to say about this watch, about {ago} hour"
             f"{'s' if ago != 1 else ''} ago, you said: \"{answer[:600]}\". Answer {quiet} unless it has changed "
             "since in a way that matters.]")
+
+
+# ---- watches the agent sets itself (asked 2026-10-28, "proactive": "when the agent says I'll keep an eye on it")
+
+TOOLSET = "redde_ideas"
+TOOL = "keep_an_eye_on"
+#: How often, as the app names them (Echo/Views/WatchesView.swift `Watches.Often`), and how many looks a day.
+EVERY = {"15m": ("*/15 * * * *", 96), "30m": ("*/30 * * * *", 48), "1h": ("0 * * * *", 24),
+         "4h": ("0 */4 * * *", 6), "morning": ("0 8 * * *", 1)}
+#: At most this many of the agent's own waiting, and this many days each.
+MOST = 15
+DAYS = (1, 30)
+
+DESCRIPTION = (
+    "Keeps an eye on something for the user and tells them, on their iPhone through Redde, only when it changes: "
+    "a reply they're waiting for, a parcel, a price, a page, a pull request, a sensor at home. Use it when they ask "
+    "you to let them know when something happens, or when you say you'll keep an eye on something. It looks on a "
+    "schedule with your tools, for a number of days, then stops; they see and stop it in Redde's Watches.")
+WHAT = ("What to look at and what counts as a change, as a note to yourself (\"the reply from Ana in my inbox, "
+        "subject 'Lease'; tell me when it comes\").")
+_LET_ME_KNOW = re.compile(r"\b(?:let me know|tell me|notify me|ping me|alert me)\b.{0,40}\b(?:when|if|once|as soon as)\b"
+                          r"|\bkeep an eye on\b|\bwatch (?:for|out for)\b|\bkeep (?:me )?posted\b", re.IGNORECASE)
+NOTE = (f"[Redde: if they want to hear when something happens, set a watch with {TOOL} (find it with tool_search "
+        "if it isn't among your tools) rather than promising to remember; say in a few words that you have.]")
+
+
+def title_of(what: str) -> str:
+    first = " ".join(str(what or "").split())
+    return first[:60]
+
+
+def prompt(watch: str, what: str) -> str:
+    """The same words the app's watches use (`Watches.prompt`), so the two kinds read alike."""
+    return (f"{TAG}{watch}] Watch, for the user: {what}. Check it now with your tools. If nothing has changed since "
+            f"last time in a way they would want to know, answer with exactly {QUIET}. Otherwise answer with one or "
+            "two short lines saying what changed: that is what they are sent. If it can't wait and you may call them, "
+            "you can also use call_user.")
+
+
+def mine(home: Path) -> int:
+    try:
+        import json
+        data = json.loads((Path(home) / "cron" / "jobs.json").read_text())
+    except (OSError, ValueError):
+        return 0
+    jobs = data.get("jobs") if isinstance(data, dict) else data
+    return sum(1 for j in jobs or [] if isinstance(j, dict) and str(j.get("name") or "").startswith(TAG))
+
+
+def set_up(home: Path, what: str, every: str = "1h", days=7, make=None) -> dict:
+    what = " ".join(str(what or "").split())[:400]
+    if not what:
+        return {"error": "Say what to keep an eye on, as \"what\"."}
+    schedule, per_day = EVERY.get(str(every or "1h").lower(), EVERY["1h"])
+    try:
+        days = max(DAYS[0], min(DAYS[1], int(days)))
+    except (TypeError, ValueError):
+        days = 7
+    if mine(home) >= MOST:
+        return {"error": f"There are already {MOST} watches: ask them which to stop first."}
+    if make is None:
+        try:
+            from cron.jobs import create_job as make
+        except Exception:
+            return {"error": "This Hermes can't schedule watches (no cron). Tell them in words instead."}
+    import uuid
+    watch = uuid.uuid4().hex[:8]
+    make(prompt(watch, what), schedule, name=f"{TAG}{watch}] {title_of(what)}", deliver="local", repeat=per_day * days)
+    return {"set": f"Watching for {days} day{'s' if days != 1 else ''}; they'll hear only when it changes, and can stop it "
+                   "in Redde's Watches. Tell them in a few words."}
+
+
+def ask_note(home: Path, store_in, message, platform: str = "") -> str | None:
+    """For `pre_llm_call`: the person wants to hear when something happens, where a watch can reach a phone."""
+    if platform in ("cron", "subagent", "bot_room"):
+        return None
+    text = message if isinstance(message, str) else " ".join(
+        str(p.get("text") or "") for p in message or [] if isinstance(p, dict)) if isinstance(message, list) else ""
+    if not text or text.lstrip().startswith("[") or not _LET_ME_KNOW.search(text):
+        return None
+    try:
+        from .calls import caller
+        return NOTE if store_in(caller(Path(home))[1]).devices else None
+    except Exception:
+        return None
+
+
+def register(ctx, home_of, store_in) -> None:
+    """Offers `keep_an_eye_on` once a phone is paired, as `suggest_to_user` is."""
+    import json
+
+    def offered() -> bool:
+        try:
+            from .calls import caller
+            return bool(store_in(caller(home_of())[1]).devices)
+        except Exception:
+            return False
+    offered.__qualname__ = "redde_watches_offered"
+    try:
+        from tools.registry import no_cache_check_fn
+        no_cache_check_fn(offered)
+    except Exception:
+        pass
+
+    def handle(args, **kwargs) -> str:
+        args = args if isinstance(args, dict) else {}
+        return json.dumps(set_up(Path(home_of()), args.get("what"), args.get("every") or "1h", args.get("days") or 7))
+
+    schema = {"name": TOOL, "description": DESCRIPTION,
+              "parameters": {"type": "object",
+                             "properties": {"what": {"type": "string", "description": WHAT},
+                                            "every": {"type": "string", "enum": list(EVERY)},
+                                            "days": {"type": "integer"}},
+                             "required": ["what"]}}
+    ctx.register_tool(name=TOOL, toolset=TOOLSET, schema=schema, handler=handle, check_fn=offered, emoji="👀")

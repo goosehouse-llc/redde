@@ -476,4 +476,275 @@ final class PromoVideoUITests: XCTestCase {
         hold(2)
         mark("end")
     }
+
+    // MARK: A day with Redde (design/video, `make_day.py`)
+
+    /// The day's agents (Sol, Home, Coder) and chats, canned answers (`DemoDay`), in the Code
+    /// theme, dark, as the other takes are.
+    private func day(_ scene: String, _ extra: [String] = []) throws -> XCUIApplication {
+        try launch(["-echo.demoProjects", "-echo.demoBots", "-echo.demoDay", scene, "-displayName", "Sol", "-echo.clearDrafts",
+                    "-sessions.botActionsShown", "NO", "-projectsInChatList", "NO",
+                    "-theme", "claudeCode", "-appearance", "dark"] + extra)
+    }
+
+    /// iOS asking to send notifications, answered (a fresh install's first launch of a scene that posts one).
+    private func allowNotifications() {
+        let allow = XCUIApplication(bundleIdentifier: "com.apple.springboard").alerts.buttons["Allow"]
+        if allow.waitForExistence(timeout: 12) { allow.tap() }
+        mark("allowed")
+    }
+
+    /// A slow drag from an element's middle, held at the end so what it shows there is seen.
+    private func slide(_ element: XCUIElement, by dx: CGFloat, hold seconds: TimeInterval = 0.7) {
+        let from = element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        from.press(forDuration: 0.08, thenDragTo: from.withOffset(CGVector(dx: dx, dy: 0)), withVelocity: 320, thenHoldForDuration: seconds)
+    }
+
+    /// A Form picker's menu, and one of its choices.
+    private func pick(_ app: XCUIApplication, _ picker: String, _ choice: String) {
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", picker)).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5), "no \(picker)")
+        row.tap()
+        hold(0.9)
+        let item = app.buttons.matching(NSPredicate(format: "label == %@", choice)).firstMatch
+        XCTAssertTrue(item.waitForExistence(timeout: 5), "no \(choice) in \(picker)")
+        item.tap()
+        mark(choice.lowercased().replacingOccurrences(of: " ", with: "-"))
+    }
+
+    /// The test runner's icon off the Home Screen (into the App Library), for the arrive-home take.
+    func testDayTidy() throws {
+        _ = try day("tidy")
+        XCUIDevice.shared.press(.home)
+        hold(1.5)
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let runner = springboard.icons.matching(NSPredicate(format: "label BEGINSWITH 'EchoUITests'")).firstMatch
+        XCTAssertTrue(runner.waitForExistence(timeout: 5), "no runner icon")
+        runner.press(forDuration: 1.4)
+        let remove = springboard.buttons.matching(NSPredicate(format: "label CONTAINS 'Remove'")).firstMatch
+        XCTAssertTrue(remove.waitForExistence(timeout: 5), "no Remove App")
+        remove.tap()
+        let fromHome = springboard.buttons.matching(NSPredicate(format: "label CONTAINS 'Home Screen'")).firstMatch
+        XCTAssertTrue(fromHome.waitForExistence(timeout: 5), "no Remove from Home Screen")
+        fromHome.tap()
+        hold(1.5)
+        XCUIDevice.shared.press(.home)
+        hold(1)
+    }
+
+    /// 7:00: the chat list; the dentist's heads-up comes, as a banner and at the top; opened.
+    func testDayMorning() throws {
+        let app = try day("morning", ["-echo.screen", "sessions", "-echo.demoDayAt", "3"])
+        allowNotifications()
+        let row = app.buttons.containing(NSPredicate(format: "label CONTAINS 'Dentist'")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 20), "the heads-up didn't come")
+        mark("arrived")
+        hold(3.2)
+        row.tap()
+        XCTAssertTrue(says(app, "insurance card"))
+        mark("opened")
+        hold(3.0)
+        mark("end")
+    }
+
+    /// Idea cards: one put away with a swipe left, one taken with a swipe right, and Sol doing it.
+    func testDayIdeas() throws {
+        let app = try day("ideas", ["-echo.screen", "sessions"])
+        let first = app.staticTexts["Learn the bagpipes"].firstMatch
+        XCTAssertTrue(first.waitForExistence(timeout: 20), "no idea cards")
+        hold(1.0)
+        mark("start")
+        hold(1.2)
+        slide(first, by: -230)
+        mark("notnow")
+        hold(1.4)
+        let second = app.staticTexts["Book the vet for Pickles"].firstMatch
+        XCTAssertTrue(second.waitForExistence(timeout: 5))
+        slide(second, by: 230)
+        mark("doit")
+        XCTAssertTrue(says(app, "Thursday at 3:30"))
+        mark("booked")
+        hold(3.0)
+        mark("end")
+    }
+
+    /// @Home in a chat with Sol: the bots offered, Home picked, the question sent, Home's answer
+    /// here under its face.
+    func testDayAside() throws {
+        let app = try day("aside", ["-echo.fresh"])
+        let field = app.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 20))
+        hold(1.5)
+        mark("start")
+        hold(0.8)
+        field.tap()
+        hold(0.5)
+        field.typeText("@Ho")
+        let home = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "@home")).firstMatch
+        XCTAssertTrue(home.waitForExistence(timeout: 5), "Home wasn't offered")
+        mark("offered")
+        hold(1.2)
+        home.tap()
+        field.typeText("is the garage shut?")
+        hold(0.6)
+        app.buttons.matching(identifier: "Send").allElementsBoundByIndex.last { $0.isHittable }?.tap()
+        mark("sent")
+        XCTAssertTrue(says(app, "8:12"))
+        mark("answered")
+        hold(3.0)
+        mark("end")
+    }
+
+    /// A question typed to Sol and sent; the reply's own words, once they show.
+    private func ask(_ app: XCUIApplication, _ question: String) {
+        let field = app.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 20))
+        hold(1.5)
+        mark("start")
+        hold(0.6)
+        field.tap()
+        hold(0.4)
+        field.typeText(question)
+        hold(0.5)
+        app.buttons.matching(identifier: "Send").allElementsBoundByIndex.last { $0.isHittable }?.tap()
+        mark("sent")
+    }
+
+    /// 6:30 PM: "Where should we go for dinner?", Sol's choice card, one picked, and Sol on it.
+    func testDayDinner() throws {
+        let app = try day("dinner", ["-echo.fresh"])
+        ask(app, "Where should we go for dinner?")
+        let lupa = app.buttons.containing(NSPredicate(format: "label CONTAINS 'Lupa Trattoria'")).firstMatch
+        XCTAssertTrue(lupa.waitForExistence(timeout: 15), "no choice card")
+        mark("card")
+        XCTAssertTrue(says(app, "all open now"))
+        hold(2.0)
+        lupa.tap()
+        mark("picked")
+        XCTAssertTrue(says(app, "Table for four"))
+        mark("confirmed")
+        hold(3.0)
+        mark("end")
+    }
+
+    /// 8:00 PM: the cabin's packing list as a checklist card, the last three things ticked off.
+    func testDayPacking() throws {
+        let app = try day("packing", ["-echo.fresh"])
+        ask(app, "Make me a packing list for the cabin")
+        XCTAssertTrue(says(app, "Cabin weekend"), "no checklist card")
+        mark("card")
+        XCTAssertTrue(says(app, "packed already"))
+        hold(1.6)
+        for item in ["Rain jackets", "S'mores supplies", "Fishing rods"] {
+            let row = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", item)).firstMatch
+            XCTAssertTrue(row.waitForExistence(timeout: 5), "no \(item)")
+            row.tap()
+            mark("ticked")
+            hold(0.9)
+        }
+        XCTAssertTrue(says(app, "Everything's done"))
+        mark("done")
+        hold(3.0)
+        mark("end")
+    }
+
+    /// Triggers from Your iPhone, down to its ideas (arriving home first among them).
+    func testDayTriggers() throws {
+        let app = try day("triggers", ["-echo.screen", "triggers"])
+        XCTAssertTrue(app.navigationBars["Triggers from Your iPhone"].waitForExistence(timeout: 20))
+        hold(1.0)
+        mark("start")
+        hold(1.0)
+        drag(app, from: CGVector(dx: 0.5, dy: 0.78), to: CGVector(dx: 0.5, dy: 0.42), velocity: 260)
+        mark("scrolled")
+        hold(3.0)
+        mark("end")
+    }
+
+    /// Arriving home: Redde in the background, as an automation runs it, and Home's answer comes
+    /// as Redde's notification over the Home Screen.
+    func testDayHome() throws {
+        let app = try day("home", ["-echo.demoDayAt", "7"])
+        allowNotifications()
+        XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 20))
+        hold(0.8)
+        XCUIDevice.shared.press(.home)
+        mark("home")
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let banner = springboard.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Welcome home'")).firstMatch
+        XCTAssertTrue(banner.waitForExistence(timeout: 20), "no notification")
+        mark("banner")
+        hold(4.0)
+        mark("end")
+    }
+
+    /// 21:00: the Evening wrap-up in Briefings, opened.
+    func testDayEvening() throws {
+        let app = try day("evening", ["-echo.screen", "sessions"])
+        let row = app.buttons.containing(NSPredicate(format: "label CONTAINS 'Evening wrap-up'")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 20), "no wrap-up")
+        hold(1.0)
+        mark("start")
+        hold(1.8)
+        row.tap()
+        XCTAssertTrue(says(app, "Waiting on you"))
+        mark("opened")
+        hold(3.5)
+        mark("end")
+    }
+
+    /// Make This a Routine over the dinner plan: every week, on Sundays.
+    func testDayRoutine() throws {
+        let app = try day("routine")
+        XCTAssertTrue(app.navigationBars["Make This a Routine"].waitForExistence(timeout: 20))
+        hold(0.8)
+        mark("start")
+        hold(0.8)
+        pick(app, "Run It", "Every week")
+        hold(0.8)
+        pick(app, "Day", "Sunday")
+        hold(2.0)
+        mark("end")
+    }
+
+    /// Agent Activity, the day so far.
+    func testDayActivity() throws {
+        let app = try day("activity", ["-echo.screen", "activity"])
+        XCTAssertTrue(app.navigationBars["Agent Activity"].waitForExistence(timeout: 20))
+        XCTAssertTrue(says(app, "nothing new"))
+        hold(0.8)
+        mark("start")
+        hold(3.5)
+        mark("end")
+    }
+
+    /// Plugin Updates: three, all updated at once.
+    func testDayPlugins() throws {
+        let app = try day("plugins", ["-echo.screen", "pluginUpdates"])
+        let all = app.buttons["Update All"].firstMatch
+        XCTAssertTrue(all.waitForExistence(timeout: 20))
+        hold(0.8)
+        mark("start")
+        hold(1.0)
+        all.tap()
+        mark("updating")
+        hold(3.2)
+        mark("end")
+    }
+
+    /// New Watch on the garage door: how often, Home watching, a change handed to Sol.
+    func testDayWatch() throws {
+        let app = try day("watch")
+        XCTAssertTrue(app.navigationBars["New Watch"].waitForExistence(timeout: 20))
+        hold(0.8)
+        mark("start")
+        hold(0.6)
+        pick(app, "How often", "Every 15 minutes")
+        hold(0.6)
+        pick(app, "Who Watches", "Home")
+        hold(0.6)
+        pick(app, "When It Changes", "Hand It to Sol")
+        hold(2.2)
+        mark("end")
+    }
 }

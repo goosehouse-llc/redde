@@ -746,6 +746,76 @@ extension Conversation {
                                   Message(role: .user, text: "What time is it in Tokyo?"), clock])
     }
 
+    /// `-echo.demoQuestion`: the agent stopped to ask (Hermes's clarify tool), with choices,
+    /// several questions at once, or one answered in words.
+    func seedQuestionDemo(_ kind: String) {
+        reset()
+        replaceForDemo(messages: [Message(role: .user, text: "Plan a dinner for Saturday with the Okafors."),
+                                  Message(role: .assistant, text: "Happy to. A couple of things first.")])
+        let questions: [ClarifyQuestion] = switch kind {
+        case "few": [
+            ClarifyQuestion(id: "q1", question: "What kind of food?", choices: ["Italian", "Japanese", "Mexican", "Surprise me"], multiSelect: false),
+            ClarifyQuestion(id: "q2", question: "Any of these to avoid?", choices: ["Nuts", "Shellfish", "Gluten", "Dairy"], multiSelect: true),
+            ClarifyQuestion(id: "q3", question: "Anything else I should know?", choices: [], multiSelect: false)]
+        case "open": [ClarifyQuestion(id: "", question: "Which day works best for the Okafors?", choices: [], multiSelect: false)]
+        default: [ClarifyQuestion(id: "", question: "Should I book a table or plan to cook at home?",
+                                  choices: ["Book a table", "Cook at home", "Order in"], multiSelect: false)]
+        }
+        setInterruptForDemo(.clarify(ClarifyRequest(id: "demo", questions: questions, isBatch: questions.count > 1)))
+    }
+
+    /// `-echo.demoAsks`: cards the person answers with a tap, as an agent would ask with them
+    /// (made-up people and places).
+    func seedAsksDemo(more: Bool) {
+        reset()
+        func reply(_ text: String, _ json: String) -> Message {
+            var m = Message(role: .assistant, text: text)
+            let args = try? JSONValue.parse(Data(json.utf8))
+            m.tools = [ToolActivity(name: ReplyCards.tool, preview: "cards", status: .completed, args: ToolActivity.args(ReplyCards.tool, args))]
+            m.cards = ReplyCards.parse(args)
+            return m
+        }
+        if more {
+            var shown = [
+                Message(role: .user, text: "Make me a packing list for the cabin."),
+                reply("Here's your list for the lake cabin. Tick things off as you pack.", #"""
+                {"cards": [{"type": "checklist", "title": "Lake cabin weekend", "emoji": "🏕️", "sections": [
+                  {"title": "Clothing", "items": [{"text": "Swimsuits (two each)", "done": true}, {"text": "Hoodies for the evenings", "done": true}, "Rain shell", "Water shoes", "Sun hats"]},
+                  {"title": "Water & beach", "items": ["Beach towels", "Float toys for Nico", "Dry bags", "Sunglasses"]},
+                  {"title": "Food & kitchen", "items": ["Cooler and ice", "Coffee and filters", "S'mores supplies", "Trash bags"]},
+                  {"title": "Toiletries", "items": [{"text": "Sunscreen", "done": true}, {"text": "Bug spray", "done": true}, {"text": "First-aid kit", "done": true}]}]}]}
+                """#),
+            ]
+            if !DevHooks.has("-echo.demoAsksListOnly") { shown += [
+                Message(role: .user, text: "And book dinner for Saturday."),
+                reply("A few details and I'll book it.", #"""
+                {"cards": [{"type": "form", "title": "Dinner on Saturday", "action": "Book", "fields": [
+                  {"label": "Time", "kind": "time", "value": "19:30"}, {"label": "People", "kind": "number", "value": "4", "required": true},
+                  {"label": "Where", "kind": "choice", "options": ["Lakeside Grill", "The Boathouse", "Pine & Oak"]},
+                  {"label": "Outside if warm", "kind": "toggle", "value": "yes"}, {"label": "Note for them", "kind": "text"}]}]}
+                """#)] }
+            replaceForDemo(messages: shown)
+            // `-echo.demoPinned`: the list pinned to the chat list, as its menu's Pin to Chats does.
+            if DevHooks.has("-echo.demoPinned"), let list = shown[1].cards?.first {
+                PinnedCards.shared.pin(list, title: "Lake cabin weekend", conversation: id, agent: nil)
+            }
+            return
+        }
+        replaceForDemo(messages: [
+            Message(role: .user, text: "Tell Milo I'll be twenty minutes late for practice."),
+            reply("Here's the message. Change anything, then send it.", #"""
+            {"cards": [{"type": "review", "title": "Message to Milo", "action": "Send", "note": "Sent from your number by Messages.",
+              "fields": [{"label": "To", "value": "Milo"}, {"label": "Message", "value": "Hi Milo! Running about 20 minutes late for practice. Start warm-ups without me?", "long": true}]}]}
+            """#),
+            Message(role: .user, text: "Where should we eat after?"),
+            reply("Three close to the field, all open late:", #"""
+            {"cards": [{"type": "choice", "title": "Dinner after practice", "options": [
+              {"title": "Lupa Trattoria", "detail": "Italian · ★ 4.6 · 0.4 mi · $$"},
+              {"title": "Sushi Ko", "detail": "Japanese · ★ 4.7 · 0.9 mi · $$$"},
+              {"title": "Big Pickle Deli", "detail": "Sandwiches · ★ 4.4 · 0.2 mi · $"}]}]}
+            """#)])
+    }
+
     /// `-echo.demoPage`: a reply with a page the agent made (`::preview`), drawn by its own script,
     /// with buttons that send the agent a message.
     func seedPageDemo() {

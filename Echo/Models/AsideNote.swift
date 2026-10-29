@@ -91,3 +91,33 @@ nonisolated enum RoutineNote {
             + "Your answer is what the user reads, as a notification: keep it short. If the skill isn't there, say so in one line."
     }
 }
+
+/// A tap on a card the agent asked with (`ReplyCard.review`, `.choice`, `.checklist`, `.form`):
+/// the note on the person's message that says exactly what they picked or left in the fields,
+/// with the card's key, so the card shows it answered when the conversation is read back. Words
+/// to the model: English. Other clients see it; Redde hides it.
+nonisolated enum CardNote {
+    static let opening = "\n\n[Redde card "
+
+    static func note(key: String, said: String) -> String { opening + key + ": " + said + "]" }
+
+    /// A message loaded back: its own words, and the answered card's key and what was said.
+    static func split(_ text: String) -> (text: String, key: String?, said: String?) {
+        guard text.hasSuffix("]"), let range = text.range(of: opening, options: .backwards) else { return (text, nil, nil) }
+        let body = text[range.upperBound ..< text.index(before: text.endIndex)]
+        guard let colon = body.range(of: ": ") else { return (text, nil, nil) }
+        return (String(text[..<range.lowerBound]), String(body[..<colon.lowerBound]), String(body[colon.upperBound...]))
+    }
+
+    static func strip(_ text: String) -> String { split(text).text }
+
+    /// The card a message answered, wherever the note sits among the message's others.
+    static func find(in text: String) -> (key: String, said: String)? {
+        guard let range = text.range(of: opening) else { return nil }
+        let rest = text[range.upperBound...]
+        let end = rest.range(of: "]\n\n[")?.lowerBound ?? rest.lastIndex(of: "]") ?? rest.endIndex
+        let body = rest[..<end]
+        guard let colon = body.range(of: ": ") else { return nil }
+        return (String(body[..<colon.lowerBound]), String(body[colon.upperBound...]))
+    }
+}

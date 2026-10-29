@@ -10,6 +10,11 @@ final class IdeasInbox {
 
     init() {
         #if DEBUG
+        // `-echo.demoDay ideas`: the day's video's (`DemoDay`).
+        if DemoDay.on {
+            ideas = DemoDay.scene == "ideas" ? DemoDay.ideas : []
+            return
+        }
         // `-echo.demoIdeas`: three made-up ideas, for screenshots.
         if DevHooks.has("-echo.demoIdeas") {
             ideas = [AgentIdea(id: "demo/0", profile: "default", agent: "Sol", title: "Book the vet for Pickles",
@@ -26,7 +31,7 @@ final class IdeasInbox {
 
     func reload() {
         #if DEBUG
-        if DevHooks.has("-echo.demoIdeas") { return }
+        if DevHooks.has("-echo.demoIdeas") || DemoDay.on { return }
         #endif
         let now = AgentIdea.all()
         if now != ideas { ideas = now }
@@ -34,6 +39,9 @@ final class IdeasInbox {
 
     /// Taken or put away.
     func remove(_ idea: AgentIdea) {
+        #if DEBUG
+        if DemoDay.on { ideas.removeAll { $0.id == idea.id }; return }
+        #endif
         AgentIdea.remove(idea.id)
         reload()
     }

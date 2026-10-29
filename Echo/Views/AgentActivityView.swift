@@ -193,6 +193,9 @@ struct AgentActivityView: View {
     private func load() async {
         loading = true
         defer { loading = false }
+        #if DEBUG
+        if DemoDay.on { entries = DemoDay.activity; return }   // the day's video's
+        #endif
         let notes = AgentActivityNote.all()
         var jobs: [CronJob] = [], runs: [String: [Date]] = [:], tasks: [KanbanTask] = []
         var failed: [String] = []

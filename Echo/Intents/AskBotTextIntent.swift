@@ -50,7 +50,8 @@ enum BotTrigger {
     }
 
     /// The bot's name and its answer.
-    static func run(_ profile: String, _ text: String, settings: Settings = .shared) async throws -> (String, String) {
+    static func run(_ profile: String, _ text: String, note: String = note, settings: Settings = .shared,
+                    departure: TurnDeparture = TurnDeparture()) async throws -> (String, String) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw ShortcutRunner.IntentError.emptyQuestion }
         // As "Ask Redde a Question": with App lock on, it waits for the iPhone to be unlocked.
@@ -59,7 +60,7 @@ enum BotTrigger {
         var roster = BotDirectory.shared.key == settings.connectionKey ? BotDirectory.shared.roster : nil
         if roster?.named(profile) == nil { roster = try? await BotDirectory.shared.refresh() }
         guard let bot = roster?.named(profile) ?? roster?.asked(profile) else { throw Problem.noSuchBot(profile) }
-        let answer = try await BotTurns.ask(bot, trimmed + note, settings: settings)
+        let answer = try await BotTurns.ask(bot, trimmed + note, settings: settings, departure: departure)
         let name = bot.label(mainName: settings.headerTitle)
         return (name, answer.isEmpty ? String(localized: "\(name) didn't answer.") : PlainText.spoken(answer))
     }

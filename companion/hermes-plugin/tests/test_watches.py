@@ -182,3 +182,33 @@ class HandOffTests(RoutinesTests):
         self.output(home, "## Response\n\nThe garage door has been open since 22:10.")
         self.job("ops", last="2026-10-28T22:30:00", deliver="bot-chat:default", name="[redde-watch:w2] Garage door")
         self.assertEqual(self.watch.look(), 1, "a change still reaches the phone, as the agent takes it on")
+
+
+class AgentWatchTests(RoutinesTests):
+    """Watches the agent sets itself (asked 2026-10-28)."""
+
+    def setUp(self):
+        super().setUp()
+        self.made = []
+
+    def make(self, prompt, schedule, name=None, deliver=None, repeat=None):
+        self.made.append({"prompt": prompt, "schedule": schedule, "name": name, "deliver": deliver, "repeat": repeat})
+
+    def test_a_watch_the_agent_sets_is_one_the_app_lists_and_it_stops(self):
+        said = watches.set_up(self.root, "the reply from Ana about the lease", "4h", 3, make=self.make)
+        self.assertIn("3 days", said["set"])
+        job = self.made[0]
+        self.assertTrue(job["name"].startswith("[redde-watch:") and job["name"].endswith("] the reply from Ana about the lease"))
+        self.assertEqual((job["schedule"], job["repeat"], job["deliver"]), ("0 */4 * * *", 18, "local"))
+        self.assertIn("NOTHING NEW", job["prompt"])
+        self.assertEqual(watches.watch_id(job["prompt"]), watches.watch_id(job["name"]))
+
+    def test_odd_asks_are_made_sensible(self):
+        watches.set_up(self.root, "x", "every minute", 400, make=self.make)
+        self.assertEqual((self.made[0]["schedule"], self.made[0]["repeat"]), ("0 * * * *", 24 * 30))
+        self.assertIn("error", watches.set_up(self.root, " ", make=self.make))
+
+    def test_asked_to_be_told_when_something_happens(self):
+        for said in ("Let me know when Ana replies", "Can you keep an eye on the price of that kettle?", "tell me if the PR gets merged"):
+            self.assertIn("keep_an_eye_on", watches.ask_note(self.root, lambda _: self.store, said) or "", said)
+        self.assertIsNone(watches.ask_note(self.root, lambda _: self.store, "What's the weather?"))

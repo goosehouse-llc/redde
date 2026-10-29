@@ -246,6 +246,8 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_m
     try:
         # Something to do later, said in passing: that a follow-up can be set (followups.py).
         notes.append(followups.turn_note(_home(), _store_in, user_message, platform))
+        # Asked to hear when something happens: that a watch can be set (watches.py).
+        notes.append(watches.ask_note(_home(), _store_in, user_message, platform))
     except Exception:
         log.debug("redde-push: follow-up note failed", exc_info=True)
     notes = [n for n in notes if n]
@@ -411,6 +413,9 @@ def _slash(raw_args: str = "") -> str:
     if words[:1] == ["cards"]:
         # Cards in replies (cards.py): on unless the phone turned them off.
         return cards.slash(_home(), words[1:])
+    if words[:1] == ["autonomy"]:
+        # How much each agent may do unasked (cards.py), kept in the main home.
+        return cards.autonomy_slash(_home(), words[1:])
     if words[:1] == ["calls"]:
         # Which agents may ring the phone (calls.py): kept in the main home, with the phones.
         return calls.slash(_store_in(calls.caller(_home())[1]), words[1:])
@@ -576,6 +581,8 @@ def register(ctx) -> None:
     followups.register(ctx, _home, _store_in)
     # Heads-ups (headsup.py): before an event, what the person needs for it, as a notification.
     headsup.register(ctx, _home, _store_in)
+    # Watches the agent sets itself (watches.py): "let me know when…".
+    watches.register(ctx, _home, _store_in)
     ctx.register_cli_command("redde-push", "Notifications on your iPhone from Redde", _cli_setup, _cli)
     _follow_group_chats_if_any()
     _watch_schedules()
