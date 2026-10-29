@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- mac-capture.sh's throwaway build (com.goosehouse.echo.shots, signed ad hoc): the sandbox
+	     and nothing that needs a profile, so it has no iCloud, no app group and no Keychain group,
+	     and the demo's example hosts never reach a real Redde's settings. -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<key>com.apple.security.network.client</key>
+	<true/>
+</dict>
+</plist>

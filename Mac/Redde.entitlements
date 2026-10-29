@@ -27,12 +27,12 @@
 	<true/>
 	<key>com.apple.security.personal-information.photos-library</key>
 	<true/>
-	<!-- The app's own keychain (the data protection keychain, as on the iPhone): its access group.
-	     The Mac app's own while it has its own id, so it never shares a login with the iPad app
-	     that a Mac can run; shipped under the iPhone's id, it is the iPhone's (and iCloud's). -->
+	<!-- The app's own keychain (the data protection keychain, as on the iPhone): its access group,
+	     the bundle id's. Shipped, that is the iPhone's (and iCloud Keychain's); the Debug build's own
+	     id keeps its logins apart from the iPad app a Mac can run. -->
 	<key>keychain-access-groups</key>
 	<array>
-		<string>$(AppIdentifierPrefix)com.goosehouse.echo.mac</string>
+		<string>$(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	</array>
 	<!-- The iPhone's app group: drafts and flags shared with Redde's extensions. -->
 	<key>com.apple.security.application-groups</key>

@@ -443,12 +443,17 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSApplicationCategoryType: public.app-category.productivity
+        # As the iPhone's: only Apple's encryption (HTTPS, CryptoKit), no export documents.
+        ITSAppUsesNonExemptEncryption: false
         # The bundled fonts (the Terminal theme's), from the app's resources.
         ATSApplicationFontsPath: .
         # The permission texts the Mac can ask with, as the iPhone's say them.
         NSMicrophoneUsageDescription: Redde listens so you can talk to your assistant. Speech is transcribed on this device and only your own server receives the text, unless you start a live voice call, which goes to the voice service you chose.
         NSSpeechRecognitionUsageDescription: Redde turns what you say into text on this Mac, so you can talk to your assistant.
         NSCameraUsageDescription: Redde uses the camera when you show your assistant something in voice mode. A picture goes only to the server you connect to.
+        # The AirPods' nod and shake (HeadGestures) is compiled in: App Store processing refused the
+        # first upload (278, ITMS-90683) without it.
+        NSMotionUsageDescription: Redde reads head movement from your AirPods so you can nod to approve, or shake your head to deny, a request from your assistant. It is read on this Mac and never stored or sent.
         NSCalendarsFullAccessUsageDescription: Redde can show your next event when you start a conversation, and attach a day's events to a message for your assistant. Events go only to your own server.
         NSRemindersFullAccessUsageDescription: With Phone tools turned on, Redde reads and adds reminders when your assistant asks it to. They go only to the server you connect to.
         NSContactsUsageDescription: With Phone tools turned on, Redde looks up a contact when your assistant asks it to. What it finds goes only to the server you connect to.
@@ -462,10 +467,15 @@ targets:
           NSAllowsArbitraryLoads: true
     settings:
       base:
-        # Its own while it is being made: the iPad app on this Mac is com.goosehouse.echo, with
-        # its person's data and notification settings. Shipped, it shares that id (one purchase).
-        PRODUCT_BUNDLE_IDENTIFIER: com.goosehouse.echo.mac
+        # Shipped under the iPhone's id: one purchase, one App Store record, and the container of the
+        # iPad app a Mac may already run. Debug keeps an id of its own (below), so a build made here
+        # never opens that iPad app's data.
+        PRODUCT_BUNDLE_IDENTIFIER: com.goosehouse.echo
         PRODUCT_NAME: Redde
+        # The Mac's first release (2026-10-29) is made from 2.3's code while the iPhone's 2.2 is in
+        # review, numbered after the iPhone's last build. Drop both once the iPhone reaches 2.3.
+        MARKETING_VERSION: "2.3"
+        CURRENT_PROJECT_VERSION: "279"
         # Redde Face on the Mac's icon grid (Mac/Assets.xcassets), made from the iPhone's default.
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIconMac
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
@@ -477,6 +487,8 @@ targets:
         CODE_SIGN_ENTITLEMENTS: Mac/Redde.entitlements
         ENABLE_HARDENED_RUNTIME: true
       configs:
+        Debug:
+          PRODUCT_BUNDLE_IDENTIFIER: com.goosehouse.echo.mac
         Release:
           EXCLUDED_SOURCE_FILE_NAMES: LocalDefaults.json
   EchoTests:

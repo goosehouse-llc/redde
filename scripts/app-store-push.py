@@ -11,6 +11,10 @@
     scripts/app-store-push.py attach [--dry-run]     attach the uploaded build to the version, nothing sent to App Review
     scripts/app-store-push.py submit [--dry-run]     attach the uploaded build and send the version to App Review
 
+    --mac with any of them: the Mac app's version instead (platform MAC_OS, the ReddeMac target's
+    version and build in project.yml, docs/app-store-listing-mac.md, docs/app-review-notes-mac.md,
+    the pictures in design/screenshots/mac). One App Store record holds both (universal purchase).
+
 The copy is read from docs/app-store-listing.md (the sections named for those four fields, the
 What's New being the one for the version in project.yml) and the pictures from
 design/screenshots/, in the order listed below. The version has to be editable in App Store
@@ -51,6 +55,15 @@ LIMITS = {'promotionalText': 170, 'keywords': 100, 'description': 4000, 'whatsNe
 # The App Preview videos, by the type App Store Connect files them under: each file (rendered by
 # design/video/make_preview.py, not kept in git) and the frame shown before it plays.
 PREVIEWS = [('IPHONE_67', [('design/video/redde-app-preview-bots.mp4', '00:00:02:00')])]
+# The Mac's (`--mac`): 2880 × 1800, App Store Connect's largest 16:10 size, made by
+# design/screenshots/mac.py.
+MAC = '--mac' in sys.argv
+PLATFORM = 'MAC_OS' if MAC else 'IOS'
+if MAC:
+    SETS = [('mac', 'APP_DESKTOP', ['01-mac', '02-mac-bots', '03-mac-crew', '04-mac-rich', '05-mac-backend'])]
+    PREVIEWS = []
+LISTING = 'app-store-listing-mac.md' if MAC else 'app-store-listing.md'
+NOTES = 'app-review-notes-mac.md' if MAC else 'app-review-notes.md'
 
 
 def credentials():
@@ -129,26 +142,38 @@ def every(path):
         page = api('GET', following)
 
 
-def project_version():
+def project_text():
+    """project.yml, or with --mac its ReddeMac target, whose version and build are its own."""
     text = open(os.path.join(ROOT, 'project.yml')).read()
-    return re.search(r'MARKETING_VERSION:\s*"?([0-9.]+)"?', text).group(1)
+    if MAC:
+        start = text.index('\n  ReddeMac:\n')
+        following = re.search(r'^  [A-Za-z]+:$', text[start + 2:], re.M)
+        text = text[start: start + 2 + following.start()] if following else text[start:]
+    return text
+
+
+def project_version():
+    return re.search(r'MARKETING_VERSION:\s*"?([0-9.]+)"?', project_text()).group(1)
 
 
 def copy_fields(version):
-    text = open(os.path.join(ROOT, 'docs', 'app-store-listing.md')).read()
+    text = open(os.path.join(ROOT, 'docs', LISTING)).read()
     heads = [(m.start(), m.end(), m.group(1)) for m in re.finditer(r'^## (.*)$', text, re.M)]
     def section(starts_with):
         for i, (start, end, title) in enumerate(heads):
             if title.startswith(starts_with):
                 stop = heads[i + 1][0] if i + 1 < len(heads) else len(text)
                 return text[end:stop].strip()
-        sys.exit(f'docs/app-store-listing.md has no section "{starts_with}"')
+        sys.exit(f'docs/{LISTING} has no section "{starts_with}"')
     fields = {
         'promotionalText': section('Promotional text'),
         'keywords': section('Keywords'),
         'description': section('Description'),
         'whatsNew': section(f"What's New in {version} "),
     }
+    if MAC and not fields['whatsNew'].strip():
+        # A platform's first version takes no What's New (App Store Connect refuses the field).
+        del fields['whatsNew']
     for name, value in fields.items():
         if len(value) > LIMITS[name]:
             sys.exit(f'{name} is {len(value)} characters, over the limit of {LIMITS[name]}')
@@ -163,7 +188,7 @@ def app_id():
 
 
 def versions(app):
-    return every(f'/v1/apps/{app}/appStoreVersions?filter[platform]=IOS&limit=20&fields[appStoreVersions]=versionString,appStoreState,appVersionState,createdDate')
+    return every(f'/v1/apps/{app}/appStoreVersions?filter[platform]={PLATFORM}&limit=20&fields[appStoreVersions]=versionString,appStoreState,appVersionState,createdDate')
 
 
 def state(version):
@@ -178,7 +203,7 @@ def editable_version(app, wanted, make):
     if not make:
         return None
     print(f'No {wanted} in App Store Connect yet: making it')
-    body = {'data': {'type': 'appStoreVersions', 'attributes': {'platform': 'IOS', 'versionString': wanted},
+    body = {'data': {'type': 'appStoreVersions', 'attributes': {'platform': PLATFORM, 'versionString': wanted},
                      'relationships': {'app': {'data': {'type': 'apps', 'id': app}}}}}
     return api('POST', '/v1/appStoreVersions', body)['data']
 
@@ -332,11 +357,11 @@ def push_previews(loc, dry):
 
 
 def push_notes(app, version, dry):
-    text = open(os.path.join(ROOT, 'docs', 'app-review-notes.md')).read()
+    text = open(os.path.join(ROOT, 'docs', NOTES)).read()
     start = text.index('```text\n') + len('```text\n')
     notes = text[start:text.index('\n```', start)]
     if PLACEHOLDER not in notes:
-        sys.exit(f'docs/app-review-notes.md has no {PLACEHOLDER} for the key to go in')
+        sys.exit(f'docs/{NOTES} has no {PLACEHOLDER} for the key to go in')
     key, where = review_key(app)
     notes = notes.replace(PLACEHOLDER, key)
     if len(notes) > 4000:
@@ -353,15 +378,14 @@ def push_notes(app, version, dry):
 
 
 def project_build():
-    text = open(os.path.join(ROOT, 'project.yml')).read()
-    return re.search(r'CURRENT_PROJECT_VERSION:\s*"?([0-9]+)"?', text).group(1)
+    return re.search(r'CURRENT_PROJECT_VERSION:\s*"?([0-9]+)"?', project_text()).group(1)
 
 
 def submit(app, version, wanted, dry, attach_only=False):
     """Attaches the build in project.yml to the version and sends the version to App Review, once
     the build has finished processing; `attach_only` (the `attach` command), the build alone."""
     number = project_build()
-    builds = api('GET', f'/v1/builds?filter[app]={app}&filter[version]={number}&filter[preReleaseVersion.version]={wanted}'
+    builds = api('GET', f'/v1/builds?filter[app]={app}&filter[version]={number}&filter[preReleaseVersion.version]={wanted}&filter[preReleaseVersion.platform]={PLATFORM}'
                         '&fields[builds]=version,processingState,usesNonExemptEncryption,expired')['data']
     if not builds:
         print(f'  build {number}: not in App Store Connect yet')
@@ -382,9 +406,9 @@ def submit(app, version, wanted, dry, attach_only=False):
         print('  build attached')
     if attach_only:
         return True
-    open_ones = api('GET', f'/v1/reviewSubmissions?filter[app]={app}&filter[platform]=IOS&filter[state]=READY_FOR_REVIEW')['data']
+    open_ones = api('GET', f'/v1/reviewSubmissions?filter[app]={app}&filter[platform]={PLATFORM}&filter[state]=READY_FOR_REVIEW')['data']
     submission = open_ones[0] if open_ones else api('POST', '/v1/reviewSubmissions', {'data': {'type': 'reviewSubmissions',
-        'attributes': {'platform': 'IOS'}, 'relationships': {'app': {'data': {'type': 'apps', 'id': app}}}}})['data']
+        'attributes': {'platform': PLATFORM}, 'relationships': {'app': {'data': {'type': 'apps', 'id': app}}}}})['data']
     items = every(f"/v1/reviewSubmissions/{submission['id']}/items?fields[reviewSubmissionItems]=appStoreVersion&include=appStoreVersion")
     if not any((i.get('relationships', {}).get('appStoreVersion', {}).get('data') or {}).get('id') == version['id'] for i in items):
         api('POST', '/v1/reviewSubmissionItems', {'data': {'type': 'reviewSubmissionItems', 'relationships': {

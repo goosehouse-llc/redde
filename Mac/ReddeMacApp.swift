@@ -33,6 +33,21 @@ struct ReddeMacApp: App {
         if DevHooks.has("-echo.hitches") { FrameMonitor.shared.start() }
         // `-echo.keychainProbe`: a throwaway secret written, read back and removed, the result in
         // the log, category keychain (whether this build's Keychain keeps what it is given).
+        // `-echo.syncProbe`: whether Sync with iCloud is on here, and the servers' addresses, here
+        // and in iCloud, in the log (category sync). Addresses only; keys stay in the Keychain.
+        if DevHooks.has("-echo.syncProbe") {
+            let log = Logger(subsystem: "com.goosehouse.echo", category: "sync")
+            log.notice("probe: sync on \(CloudSync.shared.isOn), fast lane \(Settings.shared.fastLaneURL, privacy: .public) \(Settings.shared.fastLaneModel, privacy: .public)")
+            for server in Settings.shared.servers {
+                log.notice("probe: here \(server.name, privacy: .public) \(server.transport.rawValue, privacy: .public) \(server.gatewayURL, privacy: .public) \(server.serveURL, privacy: .public)")
+            }
+            let cloud = NSUbiquitousKeyValueStore.default
+            cloud.synchronize()
+            for (key, value) in cloud.dictionaryRepresentation where key.hasPrefix(CloudSync.serverPrefix) || key == "setting.fastLaneURL" {
+                let text = (value as? Data).flatMap { String(data: $0, encoding: .utf8) } ?? "\(value)"
+                log.notice("probe: icloud \(key, privacy: .public) \(text.prefix(400), privacy: .public)")
+            }
+        }
         if DevHooks.has("-echo.keychainProbe") {
             let account = "probe@keychain-test"
             let wrote = Keychain.write(account: account, value: "probe")
@@ -74,6 +89,20 @@ struct ReddeMacApp: App {
             // Menus as the iPhone draws them: the symbol alone, no bezel and no arrow.
             .menuStyle(PlainMenu())
             .onAppear {
+                #if DEBUG
+                // The store's pictures (design/screenshots/mac.py): `-echo.windowSize 1440x900`
+                // sizes the window, whatever size it was left at, and brings it to the front.
+                if let size = UserDefaults.standard.string(forKey: "echo.windowSize")?.split(separator: "x").compactMap({ Double($0) }),
+                   size.count == 2 {
+                    DispatchQueue.main.async {
+                        guard let window = NSApp.windows.first(where: { $0.isVisible && $0.styleMask.contains(.titled) }) else { return }
+                        window.setContentSize(NSSize(width: size[0], height: size[1]))
+                        window.center()
+                        NSApp.activate()
+                        window.makeKeyAndOrderFront(nil)
+                    }
+                }
+                #endif
                 lock.appDidLaunch()
                 Settings.shared.applyLateLocalDefaults()
                 Notifier.shared.registerCategories()

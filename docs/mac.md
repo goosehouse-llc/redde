@@ -42,9 +42,15 @@ another class).
 
 ## What is the Mac's own
 
-- **Bundle id**: `com.goosehouse.echo.mac` while it is being made, so it never shares a container,
-  notification settings or links with the iPad app a Mac can already run. To ship it takes the
-  iPhone's id, `com.goosehouse.echo`, for one purchase on both.
+- **Bundle id**: Release is the iPhone's, `com.goosehouse.echo`: one App Store record and one
+  purchase for iPhone, iPad and Mac (universal purchase), and on a Mac the container of the iPad app
+  it replaces. Debug keeps `com.goosehouse.echo.mac`, so a build made here never opens the data of
+  the iPad app a Mac may already run. The Mac target has its own version and build in
+  `project.yml` while it runs ahead of the iPhone's.
+- **Shipping**: `scripts/app-store-push.py --mac` sends the Mac version's copy
+  (`docs/app-store-listing-mac.md`), pictures (`design/screenshots/mac`, made by `mac-capture.sh`
+  and `mac.py`) and review notes (`docs/app-review-notes-mac.md`). Never take pictures with the
+  Debug app itself: with Sync with iCloud on, the demo's example hosts go to iCloud.
 - **Sandbox** (`Mac/Redde.entitlements`): the network, a listener on its own loopback address (the
   Dashboard's browser sign-in comes back to one), the microphone and camera, files the person
   picks, calendars, contacts and photos for the phone tools, the app group, and the iPhone's iCloud
