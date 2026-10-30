@@ -104,7 +104,7 @@ import WidgetKit
 ///   seconds and its answer written a word at a time (`Conversation.streamCallDemo`), for voice mode
 ///   posed with `-echo.voiceDemoPhase follow`.
 ///   `-echo.voiceHandoff` hands its face to other bots and back, as spoken prefixes do.
-/// - `-echo.demoDay [morning|ideas|evening|home|dinner|packing|routine|watch]`: the "A day with Redde" video
+/// - `-echo.demoDay [morning|week|ideas|evening|home|dinner|packing|routine|watch]`: the "A day with Redde" video
 ///   (`DemoDay`), with `-echo.demoProjects -echo.demoBots -displayName Sol`: the agents Sol, Home and
 ///   Coder, a day's chats, canned answers to chats and @tags, sample Agent Activity and Plugin
 ///   Updates, and the scene's briefings, ideas, notification or sheet. `-echo.demoDayAt <seconds>`:

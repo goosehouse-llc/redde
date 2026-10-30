@@ -26,6 +26,9 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 LONG = 'long' in sys.argv[1:]
 PAGES_ONLY = 'pages' in sys.argv[1:]
+# The App Store cut is full frame, the captions laid over the footage (store_cut.py, App Review's
+# rule of 2026-10-29); `framed` draws it as the Reddit cut is, framed, to look at only.
+FRAMED = LONG or 'framed' in sys.argv[1:]
 sys.argv = sys.argv[:1]          # make_preview and make_cool read their modes from the arguments
 import make_preview as mp
 import make_cool as mc
@@ -53,26 +56,35 @@ CALL = ('It calls you', 'Your agent rings when there’s news.')
 STORY = ('In the call’s voice', 'Its answer, read out as it’s written.')
 LANGS = ('17 languages', 'All of Redde, in yours.')
 MAC = ('Now on the Mac', 'A native app, made for macOS.')
+# What the person says: a caption's third part, drawn in “quotes” and italics in place of its line
+# (make_cool.caption), so it reads as them talking (asked 2026-10-29).
+THANKS = 'Thanks! Can you remind me to bring it in at six?'
+ASK = 'Tell Milo a bedtime story about our dog, Pickles.'
 # (kind, take or stills, start, end, caption, colour, transition in, voices, bars). Kinds: 'take',
 # footage from cfr-<take>.mov sped to fit its bars and the slide before them; 'flip', stills a beat
 # each; 'mac', drawn. A voice is (line, when it starts in the take, seconds of it or None for all).
 if not LONG:
     SHOTS = [
         ('take', 'n1-call', 7.05, 9.8, CALL, ORANGE, 'slideleft', [('call', 7.0, None)], 1),
-        ('take', 'n2-thanks', 4.75, 7.5, CALL, ORANGE, 'fade', [('thanks', 4.62, None)], 1),
+        ('take', 'n2-thanks', 4.75, 7.5, CALL + (THANKS,), ORANGE, 'fade', [('thanks', 4.62, None)], 1),
         ('take', 'n2b-done', 4.75, 7.5, CALL, ORANGE, 'fade', [('done', 4.62, None)], 1),
-        ('take', 'n3-story', 11.9, 17.15, STORY, TEAL, 'slideup', [('story', 13.15, 3.95)], 2),
+        ('take', 'n3-story', 11.9, 14.65, STORY + (ASK,), TEAL, 'slideup', [('story', 13.15, 3.95)], 1),
+        ('take', 'n3-story', 14.4, 17.15, STORY, TEAL, 'fade', [], 1),
         ('flip', ['ja', 'de', 'es', 'ko', 'fr', 'zh-Hans', 'pt-BR', 'it'], 0, 0, LANGS, PURPLE, 'slideleft', [], 2),
-        ('mac', None, 0, 0, MAC, BLUE, 'slideleft', [], 1),
+        ('mac', None, 0, 0, MAC, BLUE, 'slideleft', [], 1) if FRAMED else
+        # Full frame, the Mac (only its icon, drawn) gives way to voice mode in Spanish.
+        ('flip', ['es-voice'], 0, 0, ('Voice mode too', 'Its words, in the language you speak.'), GREEN, 'slideleft', [], 1),
     ]
-    TITLE_BARS, OUT, P = 2, 'redde-next-app-preview.mp4', 'next'
+    TITLE_BARS, OUT, P = 2, 'redde-next-app-preview.mp4' if not FRAMED else 'redde-next-app-preview-framed.mp4', 'next'
+    TITLE_TAKE = ('nt-hey', 6.0)       # full frame: Redde on a call saying "Hey! It's Redde! Pick up!"
+    END_TAKE = ('nt-bye', 6.4)         # and "Call you later!"
     TYPING_IN = [3]          # the shots the typing sound is laid under (the agent working)
 else:
     SHOTS = [
         ('take', 'n1-call', 6.95, 12.2, CALL, ORANGE, 'slideleft', [('call', 7.0, None)], 2),
-        ('take', 'n2-thanks', 4.75, 7.5, CALL, ORANGE, 'fade', [('thanks', 4.62, None)], 1),
+        ('take', 'n2-thanks', 4.75, 7.5, CALL + (THANKS,), ORANGE, 'fade', [('thanks', 4.62, None)], 1),
         ('take', 'n2b-done', 4.75, 7.5, CALL, ORANGE, 'fade', [('done', 4.62, None)], 1),
-        ('take', 'n3-story', 5.65, 10.4, ('On a live call', 'Ask for anything. Even a story.'), CORAL, 'slideup', [('ask', 5.75, None)], 2),
+        ('take', 'n3-story', 5.65, 10.4, ('On a live call', 'Ask for anything. Even a story.', ASK), CORAL, 'slideup', [('ask', 5.75, None)], 2),
         ('take', 'n3-story', 10.4, 13.15, ('It types', 'While it works, you hear it typing.'), YELLOW, 'slideleft', [], 1),
         ('take', 'n3-story', 13.15, 20.9, STORY, TEAL, 'slideleft', [('story', 13.15, None)], 3),
         ('flip', ['ja', 'de', 'fr', 'ko', 'it', 'zh-Hans', 'pt-BR', 'nl', 'sv', 'pl', 'uk', 'ru', 'tr', 'da', 'nb', 'zh-Hant'],
@@ -286,13 +298,14 @@ def name_font(text, size):
     return _fonts[(path, size)]
 
 def labelled(code):
-    """A still with its language's name on a pill near its foot (at the take's own size)."""
+    """A still with its language's name on a pill near its foot (at the take's own size); full
+    frame, about the middle, clear of the caption laid over the foot."""
     im = Image.open(f'{V}/lang-{code}.png').convert('RGBA')
     name = NAMES[code.split('-voice')[0]]
     f = name_font(name, 150)
     d = ImageDraw.Draw(im)
     w = d.textlength(name, font=f)
-    x0, y0 = (im.width - w) / 2 - 90, im.height - 700
+    x0, y0 = (im.width - w) / 2 - 90, im.height - 700 if FRAMED else round(im.height * 0.56)
     layer = Image.new('RGBA', im.size, (0, 0, 0, 0)); ld = ImageDraw.Draw(layer)
     ld.rounded_rectangle((x0, y0, x0 + w + 180, y0 + 260), 130, fill=(250, 252, 255, 245))
     ld.text((x0 + 90, y0 + 130), name, font=f, fill=INK + (255,), anchor='lm')
@@ -338,7 +351,7 @@ def shot(i):
     mc.caption(f'{V}/{P}-cap{i}.png', words, colour)
     mc.glow_card(f'{V}/{P}-glow{i}.png', colour)
     out = f'{V}/{P}-seg{i}.mp4'
-    if i and SHOTS[i - 1][4] == words:
+    if i and SHOTS[i - 1][4][0] == words[0]:     # the same big words: no slide in (the line cross-fades)
         place = '[s][4:v]overlay=0:0'
     else:
         place = (f'[4:v]format=rgba,fade=t=in:st={SLIDE}:d=0.2:alpha=1[c];'
@@ -451,7 +464,7 @@ def main():
     swishes = [at - SLIDE - 0.05 for at, kind in zip(lands_at, kinds) if kind != 'fade']
     hi = BAR * (TITLE_BARS - 1)
     lands = [(hi + n * BEAT + 0.02, note) for n, note in ((1, 64), (2, 67), (3, 72))]
-    story = next(at for s, at in zip(SHOTS, LANDS_AT) if s[4] == STORY or s[4][0] == 'On a live call')
+    story = next(at for s, at in zip(SHOTS, LANDS_AT) if s[4][0] in (STORY[0], 'On a live call'))
     after = next(at for s, at in zip(SHOTS, LANDS_AT) if s[0] == 'flip')
     cues = {'groove': BAR * TITLE_BARS, 'quiet': story, 'back': after - 0.6, 'outro': END_AT + SLIDE}
     sound = soundtrack(voices, typing, cues, lands, boings=[0.14, END_AT + LAND], pops=[HEY_AT - 0.05, END_AT + BYE_AT - 0.05],
@@ -466,5 +479,69 @@ def main():
     if not LONG and TOTAL > 29.8: raise SystemExit('over the App Store’s 30 s')
 
 
+# --- The App Store cut, full frame (store_cut.py): the footage fills the frame and the captions
+# are laid over it; the title and the closing are footage too, Redde saying its lines on a call,
+# with their words over it. No drawn pages, faces or phone: the voices stay.
+
+def store_title(t):
+    """Over Redde on a call saying "Hey! It's Redde! Pick up!": on the second bar "Your agent /
+    can call / you." a word a beat."""
+    import store_cut as sc
+    return sc.words_over(W, H, t, [('Your agent', mp.font(92, 'Bold'), WHITE, 1130), ('can call', mp.font(92, 'Bold'), WHITE, 1250),
+                                   ('you.', mp.font(118, 'Bold'), YELLOW, 1370)], start=BAR + BEAT, beat=BEAT, shown=BAR - 0.1)
+
+STORE_END = ['Your agent calls you.', 'Answers in the call’s voice.', 'In 17 languages.']
+
+def store_ending(t):
+    """Over "Call you later!": the name and what the release brings, a line a beat."""
+    import store_cut as sc
+    lines = [('Redde', mp.font(120, 'Bold'), WHITE, 1120)]
+    lines += [(line, mp.font(44, 'Semibold'), YELLOW if n == len(STORE_END) - 1 else MIST, 1290 + n * 66) for n, line in enumerate(STORE_END)]
+    return sc.words_over(W, H, t, lines, start=SLIDE + 0.25, beat=BEAT, shown=SLIDE)
+
+def store_main():
+    import store_cut as sc
+    take, a = TITLE_TAKE
+    segs = [sc.page(f'{V}/{P}-title.mp4', f'{V}/cfr-{take}.mov', a, a + BAR * TITLE_BARS, BAR * TITLE_BARS, store_title, W, H, f'{P}-title')]
+    for i, (kind, take, a, b, words, colour, _, _, bars) in enumerate(SHOTS):
+        length = BAR * bars + SLIDE
+        if kind == 'flip':
+            source, a, b = flip_video(i, take, length), 0, length
+        else:
+            source = f'{V}/cfr-{take}.mov'
+        png = f'{V}/{P}-band{i}.png'
+        sc.band(png, words, colour, W, H)
+        same = i and SHOTS[i - 1][4][0] == words[0]
+        segs.append(sc.shot(f'{V}/{P}-seg{i}.mp4', source, a, b, length, png, W, H, slide_in=not same))
+    take, a = END_TAKE
+    segs.append(sc.page(f'{V}/{P}-end.mp4', f'{V}/cfr-{take}.mov', a, a + TOTAL - END_AT, TOTAL - END_AT, store_ending, W, H, f'{P}-end'))
+    lands_at = LANDS_AT + [END_AT + SLIDE]
+    kinds = [s[6] for s in SHOTS] + ['slideup']
+    voices = [(0.05, f'{V}/voice-next-hey.wav'), (END_AT + SLIDE + 0.15, f'{V}/voice-next-bye.wav')]
+    for (kind, take, a, b, *_, lines, bars), at in zip(SHOTS, LANDS_AT):
+        speed = (b - a) / (BAR * bars + SLIDE) if kind == 'take' else 1
+        for line, said, keep in lines:
+            voices.append((at - SLIDE + (said - a) / speed, f'{V}/voice-next-{line}.wav', *([keep] if keep else [])))
+    typing = []
+    for i in TYPING_IN:
+        kind, take, a, b, *_, bars = SHOTS[i]
+        speed = (b - a) / (BAR * bars + SLIDE)
+        start = LANDS_AT[i] - SLIDE + max(0, 10.3 - a) / speed
+        typing.append((start, (13.1 - max(a, 10.3)) / speed))
+    swishes = [at - SLIDE - 0.05 for at, kind in zip(lands_at, kinds) if kind != 'fade']
+    hi = BAR * (TITLE_BARS - 1)
+    lands = [(hi + n * BEAT + 0.02, note) for n, note in ((1, 64), (2, 67), (3, 72))]
+    story = next(at for s, at in zip(SHOTS, LANDS_AT) if s[4][0] in (STORY[0], 'On a live call'))
+    after = next(at for s, at in zip(SHOTS, LANDS_AT) if s[0] == 'flip')
+    cues = {'groove': BAR * TITLE_BARS, 'quiet': story, 'back': after - 0.6, 'outro': END_AT + SLIDE}
+    global END_RINGS
+    END_RINGS = []           # (the closing's phone isn't drawn here)
+    sound = soundtrack(voices, typing, cues, lands, boings=[], pops=[], swishes=swishes)
+    out = f'{V}/{OUT}'
+    sc.assemble(out, segs, kinds, lands_at, sound)
+    print(f'{out}  {TOTAL:.2f}s  (full frame)')
+    if TOTAL > 29.8: raise SystemExit('over the App Store’s 30 s')
+
+
 if __name__ == '__main__':
-    main()
+    store_main() if not FRAMED and not PAGES_ONLY else main()

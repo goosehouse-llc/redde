@@ -16,7 +16,7 @@ whole line, in time with its face.
   /usr/bin/python3 make_cool.py [long]
 """
 import math, os, shutil, subprocess, sys
-from PIL import Image, ImageChops, ImageDraw, ImageFilter
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 LONG = 'long' in sys.argv[1:]
 sys.argv = sys.argv[:1]          # make_preview reads its modes from the arguments
@@ -105,15 +105,57 @@ def ground_video(path):
     shutil.rmtree(frames)
 
 
+_italics = {}
+def italic(size, weight='Medium Italic'):
+    """SF's italic, for what the person says (`said`)."""
+    if (size, weight) not in _italics:
+        f = ImageFont.truetype('/System/Library/Fonts/SFNSItalic.ttf', size)
+        f.set_variation_by_name(weight)
+        _italics[(size, weight)] = f
+    return _italics[(size, weight)]
+
+def said(words):
+    """What the person says in a shot, when its caption carries it: `words` (big words, line)
+    or (big words, line, said)."""
+    return words[2] if len(words) > 2 and words[2] else None
+
+def wrapped(d, text, font, width):
+    """`text` in lines no wider than `width`; two lines evened out, so neither is a word or two."""
+    lines = ['']
+    for word in text.split():
+        joined = f'{lines[-1]} {word}'.strip()
+        if not lines[-1] or d.textlength(joined, font=font) <= width: lines[-1] = joined
+        else: lines.append(word)
+    if len(lines) == 2:
+        words = text.split()
+        splits = [(' '.join(words[:k]), ' '.join(words[k:])) for k in range(1, len(words))]
+        fits = [pair for pair in splits if max(d.textlength(x, font=font) for x in pair) <= width]
+        if fits: lines = list(min(fits, key=lambda pair: max(d.textlength(x, font=font) for x in pair)))
+    return lines
+
 def caption(path, words, colour):
     """The big words, a bar of their colour over them, and the line under them: bold and medium,
-    as the story preview's captions are."""
+    as the story preview's captions are. When the person is talking in the shot (asked
+    2026-10-29: "put the request in quotes and italics to clearly identify it's a user talking"),
+    their words take the line's place, in “quotes” and SF's medium italic, white, on one line or
+    two; the line itself is left out then."""
     im = Image.new('RGBA', (W, 400), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
     size = 112
     while d.textlength(words[0], font=mp.font(size, 'Bold')) > W - 128: size -= 4
     d.rounded_rectangle((64, 118, 64 + 120, 132), 7, fill=colour + (255,))
     d.text((60, 150), words[0], font=mp.font(size, 'Bold'), fill=WHITE + (255,))
-    d.text((66, 150 + round(size * 1.24) + 6), words[1], font=mp.font(36, 'Medium'), fill=MIST + (255,))
+    under = 150 + round(size * 1.24) + 6
+    if said(words):
+        quote = f'“{said(words)}”'
+        f = italic(40)
+        lines = wrapped(d, quote, f, W - 136)
+        if len(lines) > 1:
+            f = italic(36)
+            lines = wrapped(d, quote, f, W - 136)[:2]
+        for n, line in enumerate(lines):
+            d.text((64, under - 2 + n * 44), line, font=f, fill=WHITE + (255,))
+    else:
+        d.text((66, under), words[1], font=mp.font(36, 'Medium'), fill=MIST + (255,))
     im.save(path)
 
 

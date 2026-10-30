@@ -6,30 +6,36 @@ land on the downbeat, the footage held still, big captions in SF Bold and Medium
 each with the time of day it happens at beside its colour bar.
 
   make_day.py          the App Store cut, under 30 s (redde-day-app-preview.mp4, 886×1920)
-  make_day.py long     the whole day, for Reddit, about 67 s (redde-day-reddit.mp4)
+  make_day.py long     the whole day, for Reddit, about 77 s (redde-day-reddit.mp4)
   make_day.py pages    the title, the call and the closing pages only, as stills (day-page-*.png)
 
 The title: a sun comes up, Redde drops in, its tiny phone pops into its mitten and buzzes, and it
 calls out "Rise and shine! It's Redde!"; then "A day / with / Redde." a word a beat. The shots: the
-dentist's heads-up arriving (Redde peeking in from the corner to say it), the morning's idea cards
-(the bagpipes put away, the vet taken, and Sol booking it), @Home asked in a chat with Sol, Home's
-answer to the arrive-home automation as a notification (a Triggers shot), "Where should we go for
-dinner?" answered with a choice card and one tapped (Redde peeking in: "Ooh, pasta!"), the cabin's
-packing list as a checklist card ticked to done, the Evening wrap-up, Make This a Routine, Agent
-Activity and Plugin Updates, a new watch on the garage door (Home watches, Sol takes over), the tiny
-phone ringing ("Sol is calling"), and Sol's call. The
+dentist's heads-up arriving on top of the Briefings deck, its time, Leave by and address on its card
+(Redde peeking in from the corner to say it), opened as an event card with a map ("Where and
+when"), the Week Ahead's card and its calendar, the morning's idea cards (the bagpipes put away, the
+vet taken, and Sol booking it), @Home asked in a chat with Sol, Home's answer to the arrive-home
+automation as a notification (a Triggers shot), "Where should we go for dinner?" answered with a
+choice card and one tapped (Redde peeking in: "Ooh, pasta!"), Sol's booking with the place's map,
+the cabin's packing list as a checklist card ticked to done, the Evening wrap-up, Make This a
+Routine, Agent Activity and Plugin Updates, a new watch on the garage door (Home watches, Sol takes
+over), the tiny phone ringing ("Sol is calling"), and Sol's call. Where the person talks or types,
+the caption shows their words in “quotes” and italics in place of its line (2026-10-29). The
 closing page: night, Redde drops onto the app icon on the last chord, says "See you tomorrow!",
 tucks its phone away and nods off.
 
-Takes (iOS 27 simulator of its own, Code theme, dark, the status bar at each scene's time; README
-"A day with Redde"): cfr-d1-morning … cfr-d10-packing. The faces are drawn by the app
-(EchoTests/PromoCallingTests): faces/redde-*.png. The lines: day_voices.py.
+Takes (iOS 27 simulator of its own, Code theme, dark, the status bar at each scene's time,
+day_status.sh; README "A day with Redde"): cfr-d1-morning … cfr-d11-week. The faces are drawn by
+the app (EchoTests/PromoCallingTests): faces/redde-*.png. The lines: day_voices.py.
 """
 import math, os, shutil, sys
 from PIL import Image, ImageDraw, ImageFilter
 
 LONG = 'long' in sys.argv[1:]
 PAGES_ONLY = 'pages' in sys.argv[1:]
+# The App Store cut is full frame, the captions laid over the footage (store_cut.py, App Review's
+# rule of 2026-10-29); `framed` draws it as the Reddit cut is, framed, to look at only.
+FRAMED = LONG or 'framed' in sys.argv[1:]
 sys.argv = sys.argv[:1]          # the modules below read their modes from the arguments
 import make_preview as mp
 import make_cool as mc
@@ -47,14 +53,19 @@ TEAL, PERIWINKLE, YELLOW, CORAL = mc.TEAL, mc.PERIWINKLE, mc.YELLOW, mc.CORAL
 SUN, MOON = (255, 196, 92), (214, 224, 255)
 
 HEADS = ('Heads-ups', 'Before each event, what to bring.')
+WHEN = ('Where and when', 'A countdown, when to leave, a map.')
+WEEK = ('Your week', 'The week ahead, drawn as a calendar.')
 IDEAS = ('Ideas for you', 'Swipe right: do it. Left: not now.')
-TAG = ('@ any bot', 'Ask Home from your chat with Sol.')
+TAG = ('@ any bot', 'Ask Home from your chat with Sol.', '@home is the garage shut?')
 WRAP = ('Evening wrap-up', 'Done, waiting on you, and tomorrow.')
-WATCH = ('Watches', 'Home keeps an eye out. Sol takes over.')
+WATCH = ('Watches', 'Home keeps an eye out. Sol takes over.',
+         'The garage door. If it’s still open after 10 pm, that’s a change.')
 CALL = ('It calls you', 'When something can’t wait.')
-DINNER = ('Pick one', 'Sol asks with a card. One tap answers.')
-PACK = ('Checklists', 'Tick it off, right in the chat.')
+DINNER = ('Pick one', 'Sol asks with a card. One tap answers.', 'Where should we go for dinner?')
+PACK = ('Checklists', 'Tick it off, right in the chat.', 'Make me a packing list for the cabin')
 TRIGGERS = ('Triggers', 'Get home, and Home warms the house.')
+# A caption's third part is what the person says in the shot: drawn in “quotes” and italics in
+# place of the line (make_cool.caption), so it reads as them talking (asked 2026-10-29).
 # (kind, take, start, end, caption, colour, transition in, voices, bars, extra). Kinds: 'take',
 # footage from cfr-<take>.mov sped to fit its bars and the slide before them; 'ring', the tiny phone
 # ringing, drawn. A voice is (line, when it starts in the take, seconds of it or None for all).
@@ -62,27 +73,37 @@ TRIGGERS = ('Triggers', 'Get home, and Home warms the house.')
 # line (line, when in the take), 'fix' a filter for the footage.
 if not LONG:
     SHOTS = [
-        ('take', 'd1-morning', 21.4, 25.6, HEADS, ORANGE, 'slideleft', [], 1,
-         {'clock': '7:00 AM', 'peek': ('headsup', 22.15)}),
-        ('take', 'd2-ideas', 26.3, 28.4, IDEAS, GREEN, 'slideleft', [], 1, {'clock': '7:05 AM'}),
-        ('take', 'd3-aside', 25.0, 30.0, TAG, BLUE, 'slideup', [], 1, {'clock': '12:30 PM'}),
-        ('take', 'd9-dinner', 30.4, 36.6, DINNER, ORANGE, 'slideleft', [], 1, {'clock': '6:30 PM', 'peek': ('pasta', 34.0)}),
+        ('take', 'd1-morning', 22.9, 27.6, HEADS, ORANGE, 'slideleft', [], 1,
+         {'clock': '7:00 AM', 'peek': ('headsup', 23.95)}),
+        ('take', 'd1-morning', 31.4, 35.6, WHEN, YELLOW, 'slideup', [], 1, {'clock': '7:01 AM'}),
+        ('take', 'd11-week', 28.4, 33.6, WEEK, PURPLE, 'slideleft', [], 1, {'clock': '7:02 AM'}),
+        ('take', 'd2-ideas', 25.4, 28.4, IDEAS, GREEN, 'slideleft', [], 1, {'clock': '7:05 AM'}),
+        ('take', 'd9-dinner', 24.2, 31.4, DINNER, ORANGE, 'slideleft', [], 1,
+         {'clock': '6:30 PM', 'peek': ('pasta', 28.9)}),
         ('take', 'd10-packing', 32.8, 38.8, PACK, GREEN, 'slideup', [], 1, {'clock': '8:00 PM'}),
-        ('take', 'd7-watch', 35.4, 40.6, WATCH, TEAL, 'slideup', [], 1, {'clock': '10:00 PM'}),
-        ('take', 'd8-call', 5.75, 10.95, CALL, CORAL, 'slideleft', [('call', 5.75, None)], 2, {'clock': '10:40 PM'}),
+        ('take', 'd8-call', 5.75, 10.95, ('It calls you', 'Home saw the garage open. Sol rang.'), CORAL, 'slideleft',
+         [('call', 5.75, None)], 2, {'clock': '10:40 PM'}),
     ]
-    TITLE_BARS, OUT, P = 2, 'redde-day-app-preview.mp4', 'day'
+    TITLE_BARS, OUT, P = 2, 'redde-day-app-preview.mp4' if not FRAMED else 'redde-day-app-preview-framed.mp4', 'day'
+    TITLE_TAKE = ('d1-morning', 20.6, 22.95)     # full frame: the chat list at 7:00, before the heads-up
+    END_TAKE = ('d12-bye', 6.4)                 # and Sol saying "See you tomorrow!" on the call
 else:
     SHOTS = [
-        ('take', 'd1-morning', 21.0, 28.6, HEADS, ORANGE, 'slideleft', [], 2,
-         {'clock': '7:00 AM', 'peek': ('headsup', 22.15)}),
-        ('take', 'd2-ideas', 20.3, 28.1, IDEAS, GREEN, 'slideleft', [('pipes', 20.55, None)], 2, {'clock': '7:05 AM'}),
-        ('take', 'd2-ideas', 28.5, 33.2, ('Do it', 'Sol takes it from there.'), GREEN, 'fade', [], 1, {'clock': '7:06 AM'}),
+        ('take', 'd1-morning', 21.0, 27.9, HEADS, ORANGE, 'slideleft', [], 2,
+         {'clock': '7:00 AM', 'peek': ('headsup', 23.95)}),
+        ('take', 'd1-morning', 31.2, 35.9, WHEN, YELLOW, 'slideup', [], 1, {'clock': '7:01 AM'}),
+        ('take', 'd11-week', 28.3, 36.0, WEEK, PURPLE, 'slideleft', [], 2, {'clock': '7:02 AM'}),
+        ('take', 'd2-ideas', 19.4, 28.0, IDEAS + ('Bagpipes? Not now.',), GREEN, 'slideleft',
+         [('pipes', 20.2, None)], 2, {'clock': '7:05 AM'}),
+        ('take', 'd2-ideas', 28.4, 33.4, ('Do it', 'Sol takes it from there.'), GREEN, 'fade', [], 1, {'clock': '7:06 AM'}),
         ('take', 'd3-aside', 21.8, 30.6, TAG, BLUE, 'slideup', [], 2, {'clock': '12:30 PM'}),
         ('take', 'd4b-home', 23.4, 27.0, TRIGGERS, YELLOW, 'slideleft', [], 1, {'clock': '6:05 PM'}),
-        ('take', 'd9-dinner', 28.6, 37.6, DINNER, ORANGE, 'slideleft', [], 2, {'clock': '6:30 PM', 'peek': ('pasta', 34.0)}),
+        ('take', 'd9-dinner', 23.0, 31.8, DINNER, ORANGE, 'slideleft', [], 2,
+         {'clock': '6:30 PM', 'peek': ('pasta', 28.9)}),
+        ('take', 'd9-dinner', 31.6, 36.2, ('Maps for addresses', 'Any address in a reply gets one.'), TEAL, 'slideup', [], 1,
+         {'clock': '6:31 PM'}),
         ('take', 'd10-packing', 27.0, 38.8, PACK, GREEN, 'slideup', [], 2, {'clock': '8:00 PM'}),
-        ('take', 'd5-evening', 21.0, 25.8, WRAP, PURPLE, 'slideleft', [], 1, {'clock': '9:00 PM'}),
+        ('take', 'd5-evening', 20.0, 24.6, WRAP, PURPLE, 'slideleft', [], 1, {'clock': '9:00 PM'}),
         ('take', 'd6-routine', 22.6, 27.2, ('Routines', 'Teach it once. It runs every week.'), PERIWINKLE, 'slideleft', [], 1,
          {'clock': '9:05 PM'}),
         ('take', 'd6b-activity', 19.4, 22.9, ('Agent activity', 'All your agents did on their own.'), PERIWINKLE, 'slideup', [], 1,
@@ -92,10 +113,13 @@ else:
         ('take', 'd7-watch', 27.6, 40.8, WATCH, TEAL, 'slideleft', [], 2, {'clock': '10:00 PM'}),
         ('ring', None, 0, 0, CALL, CORAL, 'slideup', [], 1, {'clock': '10:40 PM'}),
         ('take', 'd8-call', 5.75, 11.0, CALL, CORAL, 'fade', [('call', 5.75, None)], 2, {'clock': '10:40 PM'}),
-        ('take', 'd8b-yes', 5.55, 8.4, CALL, CORAL, 'fade', [('yes', 5.6, None)], 1, {'clock': '10:40 PM'}),
+        ('take', 'd8b-yes', 5.55, 8.4, CALL + ('Oh! Yes, please.',), CORAL, 'fade', [('yes', 5.6, None)], 1, {'clock': '10:40 PM'}),
         ('take', 'd8c-done', 5.55, 8.4, CALL, CORAL, 'fade', [('done', 5.6, None)], 1, {'clock': '10:41 PM'}),
     ]
     TITLE_BARS, OUT, P = 2, 'redde-day-reddit.mp4', 'day-long'
+# What the release brings, on the closing page a line a beat, the last in yellow.
+END_LINES = ['Heads-ups, briefings and ideas.', 'Your week, maps, cards to tap.'] + (['@ any bot. Triggers. Routines.'] if LONG else []) \
+    + ['Watchers that call you.']
 LANDS_AT = [BAR * (TITLE_BARS + sum(s[8] for s in SHOTS[:i])) for i in range(len(SHOTS))]
 END_BARS = 2
 END_AT = BAR * (TITLE_BARS + sum(s[8] for s in SHOTS)) - SLIDE
@@ -273,11 +297,11 @@ def ending(t):
                 im.alpha_composite(layer)
     d = ImageDraw.Draw(im)
     mp.centered(d, 720, 'Redde', mp.font(128, 'Bold'), WHITE)
-    for n, line in enumerate(['Heads-ups, ideas and wrap-ups.', '@ any bot. Triggers. Routines.', 'Watchers that call you.']):
+    for n, line in enumerate(END_LINES):
         u = mp.ease((t - 0.25 - n * BEAT) / 0.25)
         if u <= 0: continue
         layer = Image.new('RGBA', (W, H), (0, 0, 0, 0)); ld = ImageDraw.Draw(layer)
-        mp.centered(ld, 900 + n * 70, line, mp.font(46, 'Semibold'), (YELLOW if n == 2 else MIST) + (255,))
+        mp.centered(ld, 900 + n * 70, line, mp.font(46, 'Semibold'), (YELLOW if n == len(END_LINES) - 1 else MIST) + (255,))
         layer.putalpha(layer.getchannel('A').point(lambda v: int(v * u)))
         im = Image.alpha_composite(im, layer)
     return im.convert('RGB')
@@ -361,7 +385,9 @@ def shot(i):
     caption(f'{V}/{P}-cap{i}.png', words, colour, extra.get('clock'))
     mc.glow_card(f'{V}/{P}-glow{i}.png', colour)
     out = f'{V}/{P}-seg{i}.mp4'
-    same = i and SHOTS[i - 1][4] == words and SHOTS[i - 1][9].get('clock') == extra.get('clock')
+    # The same big words and time as the shot before: no slide in (the line under them, or the
+    # person's words in its place, cross-fade with the shots).
+    same = i and SHOTS[i - 1][4][0] == words[0] and SHOTS[i - 1][9].get('clock') == extra.get('clock')
     if same:
         place = '[s][4:v]overlay=0:0[p]'
     else:
@@ -465,7 +491,7 @@ def main():
     swishes = [at - SLIDE - 0.05 for at, kind in zip(lands_at, kinds) if kind != 'fade']
     hi = BAR * (TITLE_BARS - 1)
     lands = [(hi + n * BEAT + 0.02, note) for n, note in ((1, 64), (2, 67), (3, 72))]
-    call = next(at for s, at in zip(SHOTS, LANDS_AT) if s[4] == CALL)
+    call = next(at for s, at in zip(SHOTS, LANDS_AT) if s[4][0] == CALL[0])
     cues = {'groove': BAR * TITLE_BARS, 'quiet': call, 'back': END_AT, 'outro': END_AT + SLIDE}
     pops = [HEY_AT - 0.05, END_AT + BYE_AT - 0.05]
     sound = soundtrack(voices, rings, cues, lands, boings=[0.14, END_AT + LAND], pops=pops, swishes=swishes)
@@ -479,5 +505,62 @@ def main():
     if not LONG and TOTAL > 29.8: raise SystemExit('over the App Store’s 30 s')
 
 
+# --- The App Store cut, full frame (store_cut.py): the footage fills the frame and the captions
+# are laid over it; the title and the closing are footage too, with their words over it. No
+# drawn pages, faces or phone: the voices stay, as narration.
+
+def store_title(t):
+    """Over the chat list at 7:00: "Rise and shine! / It's Redde." as Redde says it, then on the
+    second bar "A day / with / Redde." a word a beat."""
+    import store_cut as sc
+    first = sc.words_over(W, H, t, [('Rise and shine!', mp.font(96, 'Bold'), WHITE, 1290),
+                                    ('It’s Redde.', mp.font(50, 'Semibold'), MIST, 1418)], start=HEY_AT, beat=0.55)
+    if t < BAR - 0.25: return first
+    second = sc.words_over(W, H, t, [('A day', mp.font(92, 'Bold'), WHITE, 1180), ('with', mp.font(92, 'Bold'), WHITE, 1300),
+                                     ('Redde.', mp.font(118, 'Bold'), YELLOW, 1420)], start=BAR + BEAT, beat=BEAT, shown=-1)
+    if t >= BAR: return second
+    return Image.blend(second, first, (BAR - t) / 0.25)
+
+def store_ending(t):
+    """Over Sol's "See you tomorrow!": the name and what the release brings, a line a beat."""
+    import store_cut as sc
+    lines = [('Redde', mp.font(120, 'Bold'), WHITE, 1120)]
+    lines += [(line, mp.font(44, 'Semibold'), YELLOW if n == len(END_LINES) - 1 else MIST, 1290 + n * 66) for n, line in enumerate(END_LINES)]
+    return sc.words_over(W, H, t, lines, start=SLIDE + 0.25, beat=BEAT, shown=SLIDE)
+
+def store_main():
+    import store_cut as sc
+    take, a, b = TITLE_TAKE
+    segs = [sc.page(f'{V}/{P}-title.mp4', f'{V}/cfr-{take}.mov', a, b, BAR * TITLE_BARS, store_title, W, H, f'{P}-title')]
+    for i, (kind, take, a, b, words, colour, _, _, bars, extra) in enumerate(SHOTS):
+        png = f'{V}/{P}-band{i}.png'
+        sc.band(png, words, colour, W, H, extra.get('clock'))
+        same = i and SHOTS[i - 1][4][0] == words[0] and SHOTS[i - 1][9].get('clock') == extra.get('clock')
+        segs.append(sc.shot(f'{V}/{P}-seg{i}.mp4', f'{V}/cfr-{take}.mov', a, b, BAR * bars + SLIDE, png, W, H,
+                            slide_in=not same, fix=extra.get('fix')))
+    take, a = END_TAKE
+    segs.append(sc.page(f'{V}/{P}-end.mp4', f'{V}/cfr-{take}.mov', a, a + TOTAL - END_AT, TOTAL - END_AT, store_ending, W, H, f'{P}-end'))
+    lands_at = LANDS_AT + [END_AT + SLIDE]
+    # Into the first shot and into the closing the footage goes on as it was: a fade.
+    kinds = ['fade'] + [s[6] for s in SHOTS[1:]] + ['fade']
+    voices = [(HEY_AT, f'{V}/voice-day-hey.wav'), (END_AT + SLIDE + 0.15, f'{V}/voice-day-bye.wav')]
+    for (kind, take, a, b, *_, lines, bars, extra), at in zip(SHOTS, LANDS_AT):
+        speed = (b - a) / (BAR * bars + SLIDE)
+        for line, said, keep in lines:
+            voices.append((at - SLIDE + (said - a) / speed, f'{V}/voice-day-{line}.wav', *([keep] if keep else [])))
+        if 'peek' in extra:          # Redde's line, heard (its face isn't drawn in this cut)
+            line, said = extra['peek']
+            voices.append((at - SLIDE + (said - a) / speed, f'{V}/voice-day-{line}.wav'))
+    swishes = [at - SLIDE - 0.05 for at, kind in zip(lands_at, kinds) if kind != 'fade']
+    lands = [(BAR * (TITLE_BARS - 1) + n * BEAT + 0.02, note) for n, note in ((1, 64), (2, 67), (3, 72))]
+    call = next(at for s, at in zip(SHOTS, LANDS_AT) if s[4][0] == CALL[0])
+    cues = {'groove': BAR * TITLE_BARS, 'quiet': call, 'back': END_AT, 'outro': END_AT + SLIDE}
+    sound = soundtrack(voices, [], cues, lands, boings=[], pops=[], swishes=swishes)
+    out = f'{V}/{OUT}'
+    sc.assemble(out, segs, kinds, lands_at, sound)
+    print(f'{out}  {TOTAL:.2f}s  (full frame)')
+    if TOTAL > 29.8: raise SystemExit('over the App Store’s 30 s')
+
+
 if __name__ == '__main__':
-    main()
+    store_main() if not FRAMED and not PAGES_ONLY else main()

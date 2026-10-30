@@ -18,7 +18,7 @@ struct EventCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(briefing.heading).font(.headline).lineLimit(2)
                     TimelineView(.everyMinute) { context in
-                        Text("\(starts.formatted(date: .omitted, time: .shortened)) · \(EventDetails.until(starts, now: context.date))")
+                        Text("\(starts.formatted(date: .omitted, time: .shortened)) · \(EventDetails.until(starts, now: Self.now(context.date)))")
                             .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
                     }
                     if let place = briefing.place, !place.isEmpty {
@@ -27,7 +27,7 @@ struct EventCard: View {
                         Label(online.service.map { String(localized: "Online · \($0)") } ?? String(localized: "Online"), systemImage: "video")
                             .font(.subheadline)
                     }
-                    if let leave = briefing.leaveAt, leave > .now {
+                    if let leave = briefing.leaveAt, leave > Self.now(.now) {
                         Label(String(localized: "Leave by \(leave.formatted(date: .omitted, time: .shortened))"), systemImage: "car")
                             .font(.subheadline.weight(.semibold))
                     }
@@ -46,6 +46,14 @@ struct EventCard: View {
                 }
             }
         }
+    }
+
+    /// What it counts down from: the phone's clock, or the story's in the day's video (`DemoDay`).
+    private static func now(_ clock: Date) -> Date {
+        #if DEBUG
+        if let story = DemoDay.storyNow { return story }
+        #endif
+        return clock
     }
 
     /// The day as Calendar's icon has it: the weekday in red over the date.

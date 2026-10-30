@@ -532,18 +532,46 @@ final class PromoVideoUITests: XCTestCase {
         hold(1)
     }
 
-    /// 7:00: the chat list; the dentist's heads-up comes, as a banner and at the top; opened.
+    /// A briefing's card on the deck at the top of the chat list (its words read as one element).
+    private func deckCard(_ app: XCUIApplication, _ words: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", words)).firstMatch
+    }
+
+    /// 7:00: the chat list, the Week Ahead waiting in Briefings; the dentist's heads-up comes, as a
+    /// banner and on top of the deck (its time, Leave by, the address); opened: the event card and
+    /// the map.
     func testDayMorning() throws {
         let app = try day("morning", ["-echo.screen", "sessions", "-echo.demoDayAt", "3"])
         allowNotifications()
-        let row = app.buttons.containing(NSPredicate(format: "label CONTAINS 'Dentist'")).firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 20), "the heads-up didn't come")
+        let card = deckCard(app, "Leave by")
+        XCTAssertTrue(card.waitForExistence(timeout: 20), "the heads-up didn't come")
         mark("arrived")
         hold(3.2)
-        row.tap()
-        XCTAssertTrue(says(app, "insurance card"))
+        card.tap()
+        XCTAssertTrue(says(app, "Open in Calendar"), "no event card")
         mark("opened")
-        hold(3.0)
+        XCTAssertTrue(app.buttons["Directions"].firstMatch.waitForExistence(timeout: 15), "no map")
+        mark("map")
+        hold(5.5)
+        mark("end")
+    }
+
+    /// 7:02: the Week Ahead on top of the deck, its strip of days; opened: the week as a calendar,
+    /// scrolled to its end.
+    func testDayWeek() throws {
+        let app = try day("week", ["-echo.screen", "sessions"])
+        let card = deckCard(app, "Week ahead")
+        XCTAssertTrue(card.waitForExistence(timeout: 20), "no Week Ahead")
+        hold(1.0)
+        mark("start")
+        hold(1.8)
+        card.tap()
+        XCTAssertTrue(says(app, "Team planning"), "no calendar")
+        mark("opened")
+        hold(2.2)
+        drag(app, from: CGVector(dx: 0.5, dy: 0.8), to: CGVector(dx: 0.5, dy: 0.45), velocity: 260)
+        mark("scrolled")
+        hold(2.5)
         mark("end")
     }
 
@@ -562,7 +590,7 @@ final class PromoVideoUITests: XCTestCase {
         XCTAssertTrue(second.waitForExistence(timeout: 5))
         slide(second, by: 230)
         mark("doit")
-        XCTAssertTrue(says(app, "Thursday at 3:30"))
+        XCTAssertTrue(says(app, "tomorrow at 3:30"))
         mark("booked")
         hold(3.0)
         mark("end")
@@ -610,7 +638,8 @@ final class PromoVideoUITests: XCTestCase {
         mark("sent")
     }
 
-    /// 6:30 PM: "Where should we go for dinner?", Sol's choice card, one picked, and Sol on it.
+    /// 6:30 PM: "Where should we go for dinner?", Sol's choice card, one picked, and Sol on it, with
+    /// a map of the place's address.
     func testDayDinner() throws {
         let app = try day("dinner", ["-echo.fresh"])
         ask(app, "Where should we go for dinner?")
@@ -623,7 +652,13 @@ final class PromoVideoUITests: XCTestCase {
         mark("picked")
         XCTAssertTrue(says(app, "Table for four"))
         mark("confirmed")
-        hold(3.0)
+        // Its address gets a map (`AddressMaps`), under the reply: brought up over the composer.
+        XCTAssertTrue(app.buttons["Directions"].firstMatch.waitForExistence(timeout: 15), "no map")
+        mark("map")
+        hold(1.2)
+        drag(app, from: CGVector(dx: 0.5, dy: 0.72), to: CGVector(dx: 0.5, dy: 0.52), velocity: 220)
+        mark("scrolled")
+        hold(3.5)
         mark("end")
     }
 
@@ -678,10 +713,10 @@ final class PromoVideoUITests: XCTestCase {
         mark("end")
     }
 
-    /// 21:00: the Evening wrap-up in Briefings, opened.
+    /// 21:00: the Evening wrap-up on top of the Briefings deck, opened.
     func testDayEvening() throws {
         let app = try day("evening", ["-echo.screen", "sessions"])
-        let row = app.buttons.containing(NSPredicate(format: "label CONTAINS 'Evening wrap-up'")).firstMatch
+        let row = deckCard(app, "Evening wrap-up")
         XCTAssertTrue(row.waitForExistence(timeout: 20), "no wrap-up")
         hold(1.0)
         mark("start")

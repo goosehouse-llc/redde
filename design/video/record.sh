@@ -3,6 +3,7 @@
 # record.sh --test <name> <TestName>           records a PromoVideoUITests test, prints its marks
 set -u
 S=${SIM:-"iPhone 18 Pro Max"}   # a UDID works too
+DD=${DD:-DerivedData}           # where the UI tests were built (build-for-testing)
 V=${0:A:h}
 cd "$V/../.."
 now() { /usr/bin/python3 -c 'import time; print(time.time())'; }
@@ -11,7 +12,7 @@ if [[ $1 == --test ]]; then
   xcrun simctl io $S recordVideo --codec=h264 --force $V/$name.mov > $V/$name.rec.log 2>&1 &
   rec=$!; sleep 1.2; t0=$(now)
   TEST_RUNNER_PROMO_VIDEO=1 xcodebuild -project Echo.xcodeproj -scheme EchoUITests -destination "id=$S" \
-    -derivedDataPath DerivedData test-without-building -only-testing:EchoUITests/PromoVideoUITests/$test > $V/$name.test.log 2>&1
+    -derivedDataPath $DD test-without-building -only-testing:EchoUITests/PromoVideoUITests/$test > $V/$name.test.log 2>&1
   kill -INT $rec; wait $rec 2>/dev/null
   echo "t0 $t0"; grep -a -o "PROMO [a-z]* [0-9.]*" $V/$name.test.log | sort -u; grep -a -E "passed|failed|skipped" $V/$name.test.log | head -3
 else

@@ -1,7 +1,36 @@
 # App Store preview video
 
+## App Store cuts: full frame, overlays only (standing rule)
+
+App Review turned down 2.2's App Preview on 2026-10-29 (Guideline 2.3.4): "The app preview includes
+framing around the video screen capture of the app. App previews should allow users to see what
+the app does and how it will appear on their device when the preview is played in full screen.
+Revise the app preview to only use video screen captures of the app that may include narration and
+video or textual overlays." So every cut meant for App Store Connect (the `*app-preview*` files):
+
+- The screen capture fills the whole frame, edge to edge, at the device's own aspect: 886×1920 for
+  the 6.9" iPhone (a 1320×2868 capture scaled to 886 wide, 2 or 3 rows cropped top and bottom),
+  1200×1600 for the 13" iPad (its 2064×2752 capture, 3:4, scaled).
+- No ground, device frame, rounded inset, glow, colour bars beside the footage, or drawn pages.
+- Captions, the person's quoted words and the titles are text laid over the footage, on a dark
+  scrim fading up from the foot of the screen (the app shows through it); the title and the
+  closing are app footage with their words over it. No drawn faces or props (the Redde bot, its
+  tiny phone): its lines stay as narration, heard. Music and voices are fine.
+- At most 30 s (the scripts stop at 29.8).
+
+`store_cut.py` holds the pieces (`band`, `shot`, `page`, `words_over`, `assemble`); `make_day.py`
+and `make_next.py` cut their App Store versions this way by default (`framed` draws the old framed
+look, to `…-app-preview-framed.mp4`, only to compare), and `make_preview.py [ipad] fullframe` the
+general previews. The Reddit cuts (`long`) may keep the framed style.
+
 `redde-app-preview-iphone.mp4` (886×1920, about 29 s) and `redde-app-preview-ipad.mp4`
-(1200×1600, about 29 s), not in git: rebuild them. 30 fps, H.264, silent stereo AAC. Upload in
+(1200×1600, about 29 s), not in git: rebuild them. These two are framed (footage inset on a navy
+ground) and no longer pass App Review; their full-frame versions, made 2026-10-29 from the same
+takes, are `redde-app-preview-iphone-fullframe.mp4` (29.6 s) and `redde-app-preview-ipad-fullframe.mp4`
+(29.1 s), by `/usr/bin/python3 make_preview.py fullframe` and `make_preview.py ipad fullframe`: the same
+shots and cross-fades, each take filling the frame with its caption (gold bar, title, line) over its
+foot, "Redde / for Hermes / Talk, chat and run your agent" over the first shot's start screen, held,
+and the feature list over the last shot's last frame, held; silent, as before. 30 fps, H.264, silent stereo AAC. Upload in
 App Store Connect → the version → App Previews (6.9" iPhone, 13" iPad). Apple takes 15 to 30
 seconds; `make_preview.py` stops if the cut runs longer.
 
@@ -183,9 +212,19 @@ the recording runs on until it is stopped (`pkill -f "only-testing:…/<test>"`)
 
 ## The next release's cut
 
-`redde-next-app-preview.mp4` (886×1920, 29.4 s, with sound) and `redde-next-reddit.mp4` (49.4 s),
-not in git: made 2026-10-28 for the release after 2.2, by `make_next.py` (`long` for the second,
-`pages` for stills of the two pages). Cut as the cool cut is (a shot a 2.5 s bar of the deep song,
+`redde-next-app-preview.mp4` (886×1920, 29.4 s, with sound) and `redde-next-reddit.mp4` (49.4 s;
+`redde-next-reddit-small.mp4`, 664×1440, under 5 MB, for posting), not in git: made 2026-10-28 for
+the release after 2.2, by `make_next.py` (`long` for the second, `pages` for stills of the two
+pages). Since 2026-10-29 the App Store cut is full frame (see "App Store cuts"): the title is Redde
+on a call saying "Hey! It's Redde! Pick up!" (`nt-hey`) with "Your agent / can call / you." over it,
+then the call, "Thanks!…", "Done!…", the story in two bars, the languages, voice mode in Spanish in
+the Mac's place (the Mac shot is a drawn icon, not footage), and the closing over Redde saying
+"Call you later!" (`nt-bye`). Those two takes:
+
+    ./record.sh nt-hey 12 ${=C} -echo.voiceDemo -echo.voiceDemoPhase speaking -echo.voiceDemoSaid "Hey! It's Redde! Pick up!" -echo.voiceDemoReveal 0.3
+    ./record.sh nt-bye 12 ${=C} -echo.voiceDemo -echo.voiceDemoPhase speaking -echo.voiceDemoSaid "Call you later!" -echo.voiceDemoReveal 0.3
+
+(the words are up by 6.4 s into each). The framed description below is the Reddit cut's. Cut as the cool cut is (a shot a 2.5 s bar of the deep song,
 landing on the downbeat, the footage still). The title: Redde drops in, a tiny phone pops into its
 mitten and rings, and it calls out "Hey! It's Redde! Pick up!"; then "Your agent / can call / you."
 The shots: an agent's call answered and talked on, a bedtime story asked for on a live call, the
@@ -193,6 +232,17 @@ agent working on it with the typing heard (the thinking sound, `Earcons/thinking
 read in the call's voice as it is written, Settings in each of the 17 languages a beat apiece (and
 voice mode in Spanish in the long cut), and the Mac app's icon. The closing page: Redde drops onto
 the app icon on the last chord, its phone pops up and it says "Call you later!".
+
+What the person says is in the captions, in “quotes” and SF's medium italic, white, in place of the
+line under the big words (made 2026-10-29, at his word: "When the 'user' is prompting in the video,
+put the request in quotes and italics to clearly identify it's a user talking"): on voice mode's
+screen the person's words and the agent's look the same. A caption is (big words, line) or (big
+words, line, what the person says); `make_cool.caption` draws the third on one line or two, evened
+out. Here: “Thanks! Can you remind me to bring it in at six?” on the call, and “Tell Milo a bedtime
+story about our dog, Pickles.” (the App Store cut's story shot is two of a bar each, the first with
+the request and the second with the line; in the long cut, on "On a live call"). Narration and
+feature captions stay upright and unquoted. Shots with the same big words don't slide in again;
+the line, or the person's words, cross-fades with the shot.
 
 The faces and the phone are drawn by the app: `TEST_RUNNER_BOT_FACES=$PWD/design/video/faces
 xcodebuild test … -only-testing:EchoTests/PromoCallingTests` writes `faces/redde-talk-0…3.png`,
@@ -224,56 +274,101 @@ the real app's data is touched) could take its place as a `take`.
 
 ## A day with Redde
 
-`redde-day-app-preview.mp4` (886×1920, 29.4 s, with sound) and `redde-day-reddit.mp4` (66.9 s; a
-4.9 MB copy for posting, `redde-day-reddit-small.mp4`, 664×1440), not in git: made 2026-10-28 for
-the release with briefings, ideas, @tags, triggers, watches, routines and the interactive cards, by `make_day.py` (`long`
-for the Reddit cut, `pages` for stills of the title, ring and closing pages). Cut as the next
-release's is (a shot a 2.5 s bar of the deep song, landing on the downbeat, the footage still,
-`render_deep`), told as one day: each caption has the scene's time of day beside its colour bar
-(a sun or a moon), and the status bar in the footage says the same. The title: a sun comes up,
-Redde drops in, its tiny phone buzzes and it calls "Rise and shine! It's Redde!", then "A day /
-with / Redde.". The shots: 7:00 the dentist's heads-up arriving as a banner and in Briefings (Redde
-pops up in the corner to say it), the idea cards (the bagpipes swiped away, the vet swiped in, and,
-in the long cut, Sol booking it), @Home asked in a chat with Sol and answered under Home's face,
-Home's answer to the arrive-home automation as Redde's notification on the Home Screen (Triggers),
-6:30 PM "Where should we go for dinner?" answered with a choice card, Lupa Trattoria tapped (the
-others fade, Redde peeks in: "Ooh, pasta!") and Sol booking it, 8:00 PM the cabin's packing list as
-a checklist card, its last three things ticked ("Everything's done. Nice! 🎉"), the Evening wrap-up, then (long cut) Make This a Routine, Agent Activity and
-Plugin Updates, a new watch on the garage door (Home watches, a change handed to Sol), the tiny
-phone ringing ("Sol is calling…", long cut) and Sol's call. The closing page: night, Redde drops
-onto the icon, says "See you tomorrow!", tucks its phone away and nods off. The App Store cut has
-one bar each of the heads-up, the vet card, the @Home answer, the dinner card, the packing list and
-the watch, and two of Sol's call. (The first version, 59.4 s, had the Triggers page as a shot of
-its own; `testDayTriggers` and `d4-triggers` are kept, unused.)
+`redde-day-app-preview.mp4` (886×1920, 29.4 s, with sound; full frame since 2026-10-29, see "App Store
+cuts") and `redde-day-reddit.mp4` (76.9 s; a
+copy for posting under 5 MB, `redde-day-reddit-small.mp4`, 664×1440), not in git: made 2026-10-28 for
+the release with briefings, ideas, @tags, triggers, watches, routines and the interactive cards, by
+`make_day.py` (`long` for the Reddit cut, `pages` for stills of the title, ring and closing pages),
+and redone 2026-10-29 for round 3 (the Briefings deck, the Week Ahead as a calendar, a heads-up's
+event card, maps for addresses) and with the person's words in “quotes” and italics. Cut as the
+next release's is (a shot a 2.5 s bar of the deep song, landing on the downbeat, the footage still,
+`render_deep`), told as one day: each caption has the scene's time of day beside its colour bar (a
+sun or a moon), and the status bar in the footage says the same. The title: a sun comes up, Redde
+drops in, its tiny phone buzzes and it calls "Rise and shine! It's Redde!", then "A day / with /
+Redde.".
+
+The App Store cut, full frame: the chat list at 7:00 before the heads-up (`d1-morning` 20.6–22.95,
+held) with "Rise and shine! / It's Redde." and then "A day / with / Redde." over it; the starred
+shots below, each with its caption over the foot of the screen; and the closing ("Redde" and three
+lines) over Sol saying "See you tomorrow!" on the call (`d12-bye`, at 22:41: `./record.sh d12-bye 12
+${=C} -echo.voiceDemo -echo.voiceDemoPhase speaking -echo.voiceDemoSaid "See you tomorrow!"
+-echo.voiceDemoReveal 0.3`). Redde's peeks are heard only.
+
+The shots, the long cut's (the App Store cut's marked *):
+- 7:00 AM Heads-ups*: the Week Ahead's card on the Briefings deck, then the dentist's heads-up
+  arriving as a banner and on top of the deck with "7:30 AM · Leave by 7:10 AM" and the address
+  (Redde pops up in the corner to say it).
+- 7:01 AM Where and when*: the heads-up opened: its event card (THU 29 badge, 7:30 AM · in 30 min,
+  the address, Leave by 7:10 AM, Open in Calendar) and the map of the address with Directions.
+- 7:02 AM Your week*: the Week Ahead on top of the deck, its strip of days, then opened as a calendar.
+- 7:05 AM Ideas for you*: the bagpipes swiped away (the long cut: the person's “Bagpipes? Not
+  now.”), the vet swiped in; 7:06 AM Do it (long): Sol booking it.
+- 12:30 PM @ any bot (long): “@home is the garage shut?” in a chat with Sol, answered under Home's face.
+- 6:05 PM Triggers (long): Home's answer to the arrive-home automation as Redde's notification.
+- 6:30 PM Pick one*: “Where should we go for dinner?” answered with a choice card, Lupa Trattoria
+  tapped (the others fade, Redde peeks in: "Ooh, pasta!") and Sol booking it; 6:31 PM Maps for
+  addresses (long): the booking names Lupa's address, and a map with Directions comes under it.
+- 8:00 PM Checklists*: “Make me a packing list for the cabin”, its last three things ticked
+  ("Everything's done. Nice! 🎉").
+- 9:00 PM Evening wrap-up (long), on top of the deck and opened; 9:05 Routines, Agent activity,
+  Plugin updates (long).
+- 10:00 PM Watches (long): “The garage door. If it's still open after 10 pm, that's a change.”,
+  Home watching, a change handed to Sol.
+- 10:40 PM It calls you: the tiny phone ringing ("Sol is calling…", long), Sol's call* (in the App
+  Store cut, two bars with "Home saw the garage open. Sol rang.", for the watch it leaves out), the
+  person's “Oh! Yes, please.” (long), "Done! It's shut. Sleep tight!" (long).
+
+The long cut's closing page: night, Redde drops onto the icon, says "See you tomorrow!", tucks its phone away and
+nods off, over "Heads-ups, briefings and ideas. / Your week, maps, cards to tap. / (long: @ any bot.
+Triggers. Routines.) / Watchers that call you.". (The first version, 59.4 s, had the Triggers page
+as a shot of its own; `testDayTriggers` and `d4-triggers` are kept, unused. The 2026-10-28 cut had
+the old Briefings list, no week, event card or maps, and @ any bot and Watches in the App Store cut.)
+Where the person talks or types, the caption carries their words in quotes and italics in place of
+its line (see "The next release's cut").
 
 The lines: `KOKORO_URL=http://<host>:8880 /usr/bin/python3 day_voices.py` writes `voice-day-*.wav`
-(Redde's and Sol's in Redde's own voice, the person's af_heart; nobody real is named). The faces and
-the tiny phone are the next release's (`faces/`, PromoCallingTests).
+(Redde's and Sol's in Redde's own voice, the person's af_heart; nobody real is named). The 10-29
+redo said nothing new, so the files were kept. The faces and the tiny phone are the next release's
+(`faces/`, PromoCallingTests).
 
 The footage is `-echo.demoDay <scene>` (`Echo/Services/DemoDay.swift`, DEBUG only) with
 `-echo.demoProjects -echo.demoBots -displayName Sol`: the agents Sol, Home and Coder, an ordinary
 day's chats, canned answers to a chat and an @tag (`DemoDayTransport`; dinner comes with a choice card and the
 packing list with a checklist card, each shown by a `redde_show` call as a live turn's are), sample Agent Activity and
 Plugin Updates (whose updates "go"), a new watch's agents and a routine's schedule as on the
-Dashboard. The takes are UI tests (`PromoVideoUITests`, `testDay…`), on an iOS 27 iPhone 18 Pro Max
-simulator made for them, Redde reinstalled before each, the status bar set to the scene's time
-(`xcrun simctl status_bar <sim> override --time 2026-10-28T07:00:00.000-04:00`: iOS 27 wants an ISO
-time with fractions of a second), Code theme, dark:
+Dashboard. The heads-up carries its event's start, its place and when to leave, as the plugin (1.9)
+and `LeaveTime` give them; the Week Ahead is written in its job's layout, dated from the day it is
+shown; the addresses are made-up places on real streets of Burlington, VT, so the maps have
+somewhere to put the pin (`DemoDay.dentistAddress`, `lupaAddress`). The event card counts down from
+the story's clock, 7:00 (`DemoDay.storyNow`, DEBUG), as the simulator's own clock is the Mac's. The
+vet is booked "tomorrow" so no weekday disagrees with the badge's.
 
-    ./record.sh --test d1-morning testDayMorning      # 7:00   (asks to notify: the test taps Allow)
-    ./record.sh --test d2-ideas testDayIdeas          # 7:05
-    ./record.sh --test d3-aside testDayAside          # 12:30
-    ./record.sh --test d4-triggers testDayTriggers    # 18:05
-    ./record.sh --test d4b-home testDayHome           # 18:05  (run testDayTidy once first)
-    ./record.sh --test d9-dinner testDayDinner        # 18:30
-    ./record.sh --test d10-packing testDayPacking     # 20:00
-    ./record.sh --test d5-evening testDayEvening      # 21:00
-    ./record.sh --test d6-routine testDayRoutine      # 21:05
-    ./record.sh --test d6b-activity testDayActivity   # 21:05
-    ./record.sh --test d6c-plugins testDayPlugins     # 21:05
-    ./record.sh --test d7-watch testDayWatch          # 22:00
+The takes are UI tests (`PromoVideoUITests`, `testDay…`), on an iOS 27 iPhone 18 Pro Max simulator
+made for them (10-29: "Redde day video 10-29", 395C295F-FB35-4596-9100-4CE66EE9E725), Redde
+reinstalled before each (`xcrun simctl uninstall $SIM com.goosehouse.echo`), the status bar set to
+the scene's time by `day_status.sh HH:MM` (full bars, charging; iOS 27 wants an ISO time with
+fractions of a second), Code theme, dark. Build the tests into a DerivedData of their own when
+another build may be running in `DerivedData` (`DD=DerivedData-day`, which `record.sh` reads):
 
-`testDayTidy` takes the test runner's icon off the Home Screen (Remove App → Remove from Home
+    xcodebuild -project Echo.xcodeproj -scheme EchoUITests -destination "id=$SIM" -derivedDataPath DerivedData-day build-for-testing
+    export SIM=<udid> DD=DerivedData-day
+    ./day_status.sh 07:00; ./record.sh --test d1-morning testDayMorning    # asks to notify: the test taps Allow
+    ./day_status.sh 07:02; ./record.sh --test d11-week testDayWeek
+    ./day_status.sh 07:05; ./record.sh --test d2-ideas testDayIdeas
+    ./day_status.sh 12:30; ./record.sh --test d3-aside testDayAside
+    ./day_status.sh 18:05; ./record.sh --test d4-triggers testDayTriggers
+    ./day_status.sh 18:05; ./record.sh --test d4b-home testDayHome        # (run testDayTidy once first)
+    ./day_status.sh 18:30; ./record.sh --test d9-dinner testDayDinner
+    ./day_status.sh 20:00; ./record.sh --test d10-packing testDayPacking
+    ./day_status.sh 21:00; ./record.sh --test d5-evening testDayEvening
+    ./day_status.sh 21:05; ./record.sh --test d6-routine testDayRoutine
+    ./day_status.sh 21:05; ./record.sh --test d6b-activity testDayActivity
+    ./day_status.sh 21:05; ./record.sh --test d6c-plugins testDayPlugins
+    ./day_status.sh 22:00; ./record.sh --test d7-watch testDayWatch
+
+On 10-29 `d1-morning`, `d11-week`, `d2-ideas`, `d9-dinner` and `d5-evening` were taken again (the
+chat list's Briefings became a deck, the heads-up an event card, and dinner's answer a map); the
+rest are the 10-28 takes, whose screens didn't change. `testDayTidy` takes the test runner's icon off the Home Screen (Remove App → Remove from Home
 Screen), so the arrive-home take shows only the simulator's own apps and Redde. The call is voice
 mode posed as last time; with `C="-echo.voiceView -echo.voiceDemoCall -theme claudeCode -appearance
 dark -displayName Sol -echo.demoProjects -echo.demoBots -echo.demoDay call"`, at 22:40:
@@ -283,9 +378,17 @@ dark -displayName Sol -echo.demoProjects -echo.demoBots -echo.demoDay call"`, at
     ./record.sh d8c-done 10 ${=C} -echo.voiceDemo -echo.voiceDemoPhase speaking -echo.voiceDemoSaid "Done! It's shut. Sleep tight!" -echo.voiceDemoReveal 0.32
 
 Then `ffmpeg -i <take>.mov -vf fps=30 cfr-<take>.mov` for each and `/usr/bin/python3 make_day.py`
-(and `long`). A UI test's mark less its `t0`, plus 1.2 s (`record.sh` starts recording that long
+(and `long`). The small copy: `ffmpeg -i redde-day-reddit.mp4 -vf scale=664:1440 -c:v libx264 -b:v
+420k -pass 1 …` then `-pass 2` with `-c:a aac -b:a 64k` (two passes at a set rate, so it lands under
+5 MB). A UI test's mark less its `t0`, plus 1.2 s (`record.sh` starts recording that long
 before), is its second in the take; the cut points in `SHOTS` were set from those and from frames.
-The voice screen is up about 5.7 s into each call take. Shortcuts itself isn't filmed (an
+In the 10-29 takes: the heads-up lands 23.8 s into `d1-morning` and its sheet opens at 28.3 (the
+banner over it until about 31.3); the week's card is up at 28.3 in `d11-week` and its calendar at
+31; in `d9-dinner` the card is up at 25.2, Lupa tapped at 28.6, the map under the answer at 33.3
+and in full view at 34.3; in `d2-ideas` the bagpipes go at 21.4 and the vet at 27. The voice screen
+is up about 5.7 s into each call take. Shortcuts itself isn't filmed (an
 automation can't be run convincingly on a simulator): Triggers from Your iPhone shows the recipe,
 and the notification is the one `BotTrigger.post` makes, posted by the demo at the time the
-automation would.
+automation would. Not filmed either: the Up Next Lock Screen widget (a Lock Screen widget can't be
+added and shown convincingly on the simulator from a test) and Earlier Chats (it doesn't fit the
+day's story).

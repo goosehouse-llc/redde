@@ -10,6 +10,9 @@ a time). Apple takes 15 to 30 seconds: the script stops if the cut runs longer.
   make_preview.py          the 6.9" iPhone version
   make_preview.py ipad     the 13" iPad version, 1200×1600
   make_preview.py [ipad] pages   only the two pages, as stills in pages-*.png, to look at
+  make_preview.py [ipad] fullframe   the same cut full frame, the footage edge to edge and the words
+                           over it (redde-app-preview-iphone-fullframe.mp4, -ipad-fullframe.mp4): what
+                           App Review takes since 2026-10-29
   make_preview.py phone    the Phone tools cut (redde-phone-tools.mp4), for a post: the agent using
                            the iPhone, the question before a change, a photo found, the switches
   make_preview.py fun      the fun Phone tools cut (redde-phone-fun.mp4): a day with the agent, every
@@ -40,6 +43,9 @@ FUN = ('fun' in sys.argv[1:] or BOTS) and not STORY
 STORE = FUN and 'store' in sys.argv[1:]
 PHONE = 'phone' in sys.argv[1:] or FUN or STORY
 PAGES_ONLY = 'pages' in sys.argv[1:]
+# `fullframe`: the general preview as App Review wants it (2026-10-29, Guideline 2.3.4): the screen
+# capture filling the frame, the captions and the two pages' words laid over it (store_cut.py).
+FULLFRAME = 'fullframe' in sys.argv[1:] and not PHONE
 
 V = os.path.dirname(os.path.abspath(__file__))
 REDDE = os.path.abspath(os.path.join(V, '..', '..'))
@@ -667,5 +673,50 @@ def main():
          '-c:a', 'aac', '-b:a', '256k', '-ar', '44100', '-ac', '2', '-shortest', '-movflags', '+faststart', out])
     print(f'{out}  {total:.2f}s')
 
+def main_fullframe():
+    """The general preview, full frame (store_cut.py): the same shots and cross-fades, each take
+    filling the frame with its caption over its foot; the title over the first shot's start screen,
+    held, and the feature list over the last shot's last frame, held. Silent, as before."""
+    import store_cut as sc
+    scale = 1.2 if IPAD else 1.0
+    kind = 'ipad' if IPAD else 'iphone'
+    clip, a, *_ = SHOTS[0]
+    def title(t):
+        k = ease(t / 0.3) if t > 0.05 else 0
+        return sc.fade(sc.words_over(W, H, t, [('Redde', font(round(128 * scale), 'Bold'), WHITE, H - round(640 * scale)),
+                                               (TITLE_LINES[0], font(round(50 * scale), 'Semibold'), GOLD, H - round(470 * scale)),
+                                               (TITLE_LINES[1], font(round(42 * scale), 'Medium'), MIST, H - round(380 * scale))],
+                                       start=0.1, beat=0.12, shown=0, depth=round(900 * scale)), max(k, 0.001))
+    segs = [sc.page(f'{V}/ff-{kind}-title.mp4', f'{V}/cfr-{clip}.mov', a, a + 0.05, TITLE_SECONDS, title, W, H, f'ff-{kind}-title')]
+    for i, (clip, a, b, bg, hold, *rest) in enumerate(SHOTS):
+        speed = rest[0] if rest else 1.0
+        dur = hold if hold else (b - a) / speed
+        png = f'{V}/ff-{kind}-band{i}.png'
+        sc.band(png, CAPTIONS[bg], GOLD, W, H, scale=scale)
+        same = i and SHOTS[i - 1][3] == bg
+        segs.append(sc.shot(f'{V}/ff-{kind}-seg{i}.mp4', f'{V}/cfr-{clip}.mov', a, b, dur, png, W, H, slide_in=not same))
+    clip, a, b, *_ = SHOTS[-1]
+    def ending(t):
+        lines = [('Redde', font(round(96 * scale), 'Bold'), WHITE, H - round(900 * scale))]
+        lines += [(line, font(round(40 * scale), 'Semibold'), WHITE, H - round((760 - 68 * n) * scale)) for n, line in enumerate(FEATURES)]
+        lines += [(LAST_LINE, font(round(40 * scale), 'Semibold'), GOLD, H - round((760 - 68 * len(FEATURES) - 24) * scale))]
+        return sc.words_over(W, H, t, lines, start=0.2, beat=0.13, shown=0, depth=round(1500 * scale), solid=0.9)
+    segs.append(sc.page(f'{V}/ff-{kind}-end.mp4', f'{V}/cfr-{clip}.mov', b - 0.05, b, END_SECONDS, ending, W, H, f'ff-{kind}-end'))
+    inputs, chain, last, total = [], [], '[0:v]', segs[0][1]
+    for path, _ in segs: inputs += ['-i', path]
+    for i in range(1, len(segs)):
+        offset = total - FADE
+        chain.append(f'{last}[{i}:v]xfade=transition=fade:duration={FADE}:offset={offset:.3f}[x{i}]')
+        last = f'[x{i}]'
+        total = offset + segs[i][1]
+    if total > 29.8: raise SystemExit(f'{total:.2f}s: an App Store preview is at most 30 seconds; shorten a shot')
+    out = f'{V}/redde-app-preview-{kind}-fullframe.mp4'
+    run(['ffmpeg', '-v', 'error', '-y', *inputs, '-f', 'lavfi', '-t', f'{total:.3f}', '-i', 'anullsrc=channel_layout=stereo:sample_rate=44100',
+         '-filter_complex', ';'.join(chain), '-map', last, '-map', f'{len(segs)}:a',
+         '-c:v', 'libx264', '-profile:v', 'high', '-level', '4.0', '-pix_fmt', 'yuv420p', '-r', '30',
+         '-b:v', '10M', '-maxrate', '11M', '-bufsize', '20M', '-g', '30',
+         '-c:a', 'aac', '-b:a', '256k', '-ar', '44100', '-ac', '2', '-shortest', '-movflags', '+faststart', out])
+    print(f'{out}  {total:.2f}s  (full frame)')
+
 if __name__ == '__main__':
-    main()
+    main_fullframe() if FULLFRAME else main()
