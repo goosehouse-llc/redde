@@ -115,11 +115,47 @@ nonisolated enum LeaveTime {
     static func work(out briefing: AgentBriefing, in defaults: UserDefaults? = NeedsYou.shared) async -> String? {
         let mode = mode(in: defaults)
         guard mode != .off, let event = briefing.eventAt, event > .now, let address = briefing.place,
-              let origin = here(in: defaults),
+              EventPlace.isAddress(address), let origin = here(in: defaults),
               let travel = await travel(from: origin, to: address, mode: mode, arriveBy: event) else { return nil }
         let leave = leave(for: event, travel: travel)
         AgentBriefing.setLeave(briefing.id, at: leave, in: defaults)
         remind(event: briefing.heading, id: briefing.id, at: leave, travel: travel, mode: mode)
         return line(leave: leave, travel: travel, mode: mode)
+    }
+}
+
+/// Whether an event's place is somewhere to go (asked 2026-10-30: "calendar events that do not
+/// have an address, should not create a directions card"): a street address with its number, as
+/// the system's address reader finds one, not a room ("Office · Room 4"), a meeting link or an
+/// app's name, which Maps would otherwise search for and find somewhere. Read once per place.
+nonisolated enum EventPlace {
+    nonisolated(unsafe) private static let known = NSCache<NSString, NSNumber>()   // (NSCache is thread-safe)
+
+    static func isAddress(_ place: String?) -> Bool {
+        guard let place = place?.trimmingCharacters(in: .whitespacesAndNewlines), !place.isEmpty,
+              place.count < 400, place.contains(where: \.isNumber), !place.contains("://") else { return false }
+        if let kept = known.object(forKey: place as NSString) { return kept.boolValue }
+        var found = false
+        if let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.address.rawValue) {
+            found = detector.matches(in: place, range: NSRange(place.startIndex..., in: place)).contains { match in
+                // A street with a number, not a city or a state alone.
+                match.addressComponents?[.street]?.contains(where: \.isNumber) ?? false
+            }
+        }
+        known.setObject(NSNumber(value: found), forKey: place as NSString)
+        return found
+    }
+
+    /// The links in an event's words (a meeting's, a document's), for a card to make tappable.
+    static func linked(_ text: String) -> AttributedString {
+        var out = AttributedString(text)
+        guard text.contains("."), let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else { return out }
+        for match in detector.matches(in: text, range: NSRange(text.startIndex..., in: text)) {
+            guard let url = match.url, let span = Range(match.range, in: text),
+                  let lower = AttributedString.Index(span.lowerBound, within: out),
+                  let upper = AttributedString.Index(span.upperBound, within: out) else { continue }
+            out[lower..<upper].link = url
+        }
+        return out
     }
 }

@@ -83,6 +83,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
                     // A bot's chat: who the message's @tags are, before the other notes.
                     let text = Self.prompt(request.userText, naming: references) + (request.mentionNote ?? "")
                         + (request.replyLanguage.map(ReplyLanguage.note) ?? "") + (request.units.map(MeasureUnits.note) ?? "")
+                        + (request.calendars.map(CalendarChoice.note) ?? "")
                         + (request.brief ? CarBrevity.note : "")
                         + (request.incognito ? IncognitoNote.note : "")
                         + (request.live.flatMap { $0.surface ? nil : LiveVoiceNote.note(context: $0.context) } ?? "")

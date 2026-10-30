@@ -22,7 +22,9 @@ struct EventCard: View {
                             .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
                     }
                     if let place = briefing.place, !place.isEmpty {
-                        Label(place, systemImage: "mappin.and.ellipse").font(.subheadline).lineLimit(2)
+                        // Its links tappable: a meeting's place may be its link (asked 2026-10-30).
+                        Label { Text(EventPlace.linked(place)) } icon: { Image(systemName: EventPlace.isAddress(place) ? "mappin.and.ellipse" : "location") }
+                            .font(.subheadline).lineLimit(2)
                     } else if let online {
                         Label(online.service.map { String(localized: "Online · \($0)") } ?? String(localized: "Online"), systemImage: "video")
                             .font(.subheadline)

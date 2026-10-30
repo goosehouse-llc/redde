@@ -102,6 +102,21 @@ struct AppearanceSettings: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
+            Picker(selection: $settings.eventColor) {
+                ForEach(Settings.EventColor.allCases) { choice in
+                    if let color = choice.color {
+                        Label { Text(choice.label) } icon: { Image(systemName: "circle.fill").foregroundStyle(color) }.tag(choice)
+                    } else {
+                        Text(choice.label).tag(choice)
+                    }
+                }
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Calendar Events")
+                    Text("On a calendar card: each calendar in its own color, or every event in one.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
             Toggle(isOn: $settings.botColors) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Bot colors in their chats")
@@ -394,6 +409,19 @@ struct AgentSettings<Details: View>: View {
             }
         } footer: {
             Text("Let your agent use this device's calendar, reminders, contacts, photos and a folder of files, set alarms, write on a widget, and start calls and messages, through Redde.")
+        }
+
+        // Which calendars the agent looks at and cards show (`CalendarChoice`, asked 2026-10-30).
+        Section {
+            NavigationLink { CalendarsSettingsView() } label: {
+                LabeledContent {
+                    (Settings.shared.agendaCalendars.isEmpty ? Text("All") : Text(Settings.shared.agendaCalendars.joined(separator: ", "))).lineLimit(1)
+                } label: {
+                    Label("Calendars", systemImage: "calendar")
+                }
+            }
+        } footer: {
+            Text("The calendars your agent looks at when you ask what's on, and the events calendar cards show.")
         }
 
         Section {

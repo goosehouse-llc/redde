@@ -435,6 +435,44 @@ final class Settings: ServeEndpoint {
     var appearance: Appearance {
         didSet { store(appearance.rawValue, forKey: Keys.appearance) }
     }
+    /// Settings → Appearance → Calendar Events: each calendar in its own colour on an agenda card,
+    /// or every event in one (asked 2026-10-30: "I'd like them yellow").
+    enum EventColor: String, CaseIterable, Identifiable {
+        case byCalendar, yellow, orange, pink, purple, blue, teal, green
+        var id: String { rawValue }
+        var color: Color? {
+            switch self {
+            case .byCalendar: nil
+            case .yellow: .yellow
+            case .orange: .orange
+            case .pink: .pink
+            case .purple: .purple
+            case .blue: .blue
+            case .teal: .teal
+            case .green: .green
+            }
+        }
+        var label: String {
+            switch self {
+            case .byCalendar: String(localized: "By Calendar", comment: "Calendar Events setting: each calendar in its own colour")
+            case .yellow: String(localized: "Yellow")
+            case .orange: String(localized: "Orange")
+            case .pink: String(localized: "Pink")
+            case .purple: String(localized: "Purple")
+            case .blue: String(localized: "Blue")
+            case .teal: String(localized: "Teal")
+            case .green: String(localized: "Green")
+            }
+        }
+    }
+    var eventColor: EventColor {
+        didSet { store(eventColor.rawValue, forKey: Keys.eventColor) }
+    }
+    /// Settings → Agent → Calendars (`CalendarChoice`, asked 2026-10-30): the calendars the agent
+    /// looks at and agenda cards show, by title; empty for all of them.
+    var agendaCalendars: [String] {
+        didSet { store(agendaCalendars, forKey: Keys.agendaCalendars) }
+    }
     /// The orb at the centre of voice mode.
     var voiceOrb: VoiceOrb {
         didSet { store(voiceOrb.rawValue, forKey: Keys.voiceOrb) }
@@ -794,6 +832,8 @@ final class Settings: ServeEndpoint {
         static let returnSends = "returnSends"
         static let chatTextSize = "chatTextSize"
         static let botColors = "botColors"
+        static let eventColor = "eventColor"
+        static let agendaCalendars = CalendarChoice.key
         static let linkPreviews = "linkPreviews"
         static let addressMaps = "addressMaps"
         static let botFaces = "botFaces"
@@ -899,6 +939,8 @@ final class Settings: ServeEndpoint {
         returnSends = defaults.bool(forKey: Keys.returnSends)
         chatTextSize = min(max(defaults.integer(forKey: Keys.chatTextSize), Self.chatTextSizes.lowerBound), Self.chatTextSizes.upperBound)
         botColors = defaults.object(forKey: Keys.botColors) as? Bool ?? true
+        eventColor = EventColor(rawValue: defaults.string(forKey: Keys.eventColor) ?? "") ?? .byCalendar
+        agendaCalendars = defaults.stringArray(forKey: Keys.agendaCalendars) ?? []
         linkPreviews = defaults.bool(forKey: Keys.linkPreviews)
         addressMaps = defaults.object(forKey: Keys.addressMaps) as? Bool ?? true
         botFaces = defaults.object(forKey: Keys.botFaces) as? Bool ?? true
@@ -969,7 +1011,7 @@ final class Settings: ServeEndpoint {
     /// Siri, Phone tools, what needs a permission of the device (notifications, motion), and the
     /// push relay.
     static let syncedKeys: [String] = [
-        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.botColors, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
+        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.botColors, Keys.eventColor, Keys.agendaCalendars, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
         Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots, Keys.projectsInChatList,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.measureUnits, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
@@ -997,6 +1039,8 @@ final class Settings: ServeEndpoint {
         case Keys.appearance: appearance = pick(Appearance.system)
         case Keys.chatTextSize: chatTextSize = min(max(value as? Int ?? 0, Self.chatTextSizes.lowerBound), Self.chatTextSizes.upperBound)
         case Keys.botColors: botColors = flag(true)
+        case Keys.eventColor: eventColor = pick(EventColor.byCalendar)
+        case Keys.agendaCalendars: agendaCalendars = value as? [String] ?? []
         case Keys.linkPreviews: linkPreviews = flag()
         case Keys.addressMaps: addressMaps = flag(true)
         case Keys.botFaces: botFaces = flag(true)
@@ -1292,6 +1336,8 @@ final class Settings: ServeEndpoint {
         returnSends = false
         chatTextSize = 0
         botColors = true
+        eventColor = .byCalendar
+        agendaCalendars = []
         linkPreviews = false
         addressMaps = true
         botFaces = true

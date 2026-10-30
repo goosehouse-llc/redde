@@ -349,9 +349,11 @@ extension AgentBriefing {
     var mapPlace: AddressMaps.Found? {
         guard Settings.shared.addressMaps, title != WeekAhead.title else { return nil }
         let name = isHeadsUp ? heading : nil
-        if let place = place?.trimmingCharacters(in: .whitespacesAndNewlines), !place.isEmpty {
+        // The event's place only when it's an address: a room or a meeting link gets no map.
+        if let place = place?.trimmingCharacters(in: .whitespacesAndNewlines), EventPlace.isAddress(place) {
             return AddressMaps.Found(name: name ?? place, address: place)
         }
+        if isHeadsUp, place?.isEmpty == false { return nil }
         guard var found = AddressMaps.first(in: text) else { return nil }
         if let name { found.name = name }
         return found

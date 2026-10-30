@@ -67,6 +67,13 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
             }
         }
 
+        /// The days to draw, each with only the chosen calendars' events (`CalendarChoice`): a day
+        /// whose events are all hidden is still drawn, with nothing on it.
+        func byDay(showing calendars: [String]) -> [(day: String, events: [Event])] {
+            guard !calendars.isEmpty else { return byDay }
+            return byDay.map { ($0.day, $0.events.filter { CalendarChoice.shows($0.calendar, among: calendars) }) }
+        }
+
         /// A start or an end as an agent writes it: "2026-10-30T09:30:00-04:00" (or with Z, or
         /// seconds' fractions), "2026-10-30T09:30" or "2026-10-30 09:30" (this phone's time), or
         /// "2026-10-30", all day. The day is the phone's, for a time given in another zone.

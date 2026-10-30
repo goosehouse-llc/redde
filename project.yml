@@ -226,6 +226,7 @@ targets:
       - path: WatchWidgets/AskComplication.swift
       - path: Echo/Models/ReplyLanguage.swift
       - path: Echo/Models/MeasureUnits.swift
+      - path: Echo/Models/CalendarChoice.swift
       - path: Echo/Models/AsideNote.swift
       - path: Echo/Services/Transport/HermesTransport.swift
       - path: Echo/Services/Transport/HermesSessionsTransport.swift

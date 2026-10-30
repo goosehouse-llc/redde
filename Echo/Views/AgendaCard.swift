@@ -1,4 +1,8 @@
 import SwiftUI
+#if os(iOS)
+import EventKit
+import EventKitUI
+#endif
 
 /// What's on the calendar, under the reply that read it (`ReplyCard.agenda`, asked 2026-10-29),
 /// drawn as a day timeline (the "Calendar A" design, approved 2026-10-30): each day headed by a
@@ -8,14 +12,20 @@ import SwiftUI
 /// nothing on it says so. Tapping an event opens its details in place: how long, its place (in
 /// Maps), which calendar, its notes, and Calendar at its time; a day's header and the button under
 /// the card open the day in Calendar. Everything tapped is 44 pt to tap, and says what it does.
+///
+/// Only the calendars chosen in Settings → Agent → Calendars show (`CalendarChoice`, asked
+/// 2026-10-30), and a tap on a free spot of the rail, or on a free stretch, adds an event there
+/// (asked 2026-10-30: "tap a spot on the card to add an appointment"): Apple's editor on the iPhone
+/// and iPad, a line to finish in the message field on the Mac (`DaySection.add`).
 struct AgendaCard: View {
     let card: ReplyCard.Agenda
     /// Each day as drawn, its timeline worked out once for the card, not on every pass of its body.
     private let days: [Day]
 
-    init(card: ReplyCard.Agenda) {
+    /// `calendars`: the ones to show, by title (Settings' choice); empty for all.
+    init(card: ReplyCard.Agenda, calendars: [String] = Settings.shared.agendaCalendars) {
         self.card = card
-        days = card.byDay.map { Day(day: $0.day, events: $0.events) }
+        days = card.byDay(showing: calendars).map { Day(day: $0.day, events: $0.events) }
     }
 
     var body: some View {
@@ -49,6 +59,8 @@ struct AgendaCard: View {
         .background(.background.secondary, in: .rect(cornerRadius: 20))
         .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(.separator.opacity(0.5), lineWidth: 0.5) }
         .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
+        // The calendars it names, for Settings → Agent → Calendars to offer.
+        .onAppear { CalendarChoice.saw(card.events.compactMap(\.calendar)) }
     }
 }
 
@@ -64,6 +76,10 @@ private struct DaySection: View {
     @State private var open: Set<Event> = []
     /// What an open event's block measures with its details, to make room for them.
     @State private var grown: [Event: CGFloat] = [:]
+    #if os(iOS)
+    /// The new event being added in Apple's editor.
+    @State private var adding: AgendaCard.Slot?
+    #endif
     @Environment(\.openURL) private var openURL
 
     var body: some View {
@@ -78,19 +94,34 @@ private struct DaySection: View {
                 rail(timeline)
             }
         }
+        #if os(iOS)
+        .sheet(item: $adding) { slot in
+            NewEventEditor(slot: slot) { adding = nil }
+                .ignoresSafeArea()
+        }
+        #endif
+        #if DEBUG
+        .task { if let slot = await DevHooks.demoNewEvent(day.timeline) { add(slot) } }
+        #endif
     }
 
     // MARK: Header
 
     /// The day's badge and name; on the iPhone and iPad a tap opens the day in Calendar (asked
     /// 2026-10-30: "the card must be fully interactive"). Calendar has no such link on the Mac.
-    @ViewBuilder private var header: some View {
-        if let calendar = AgendaCard.calendarURL(for: day) {
-            Button { openURL(calendar) } label: { title }
-                .buttonStyle(Roomy(extra: 0))
-                .accessibilityHint(AgendaCard.dayHint)
-        } else {
-            title
+    /// With VoiceOver, the day also adds an event, at the next whole hour.
+    private var header: some View {
+        Group {
+            if let calendar = AgendaCard.calendarURL(for: day) {
+                Button { openURL(calendar) } label: { title }
+                    .buttonStyle(Roomy(extra: 0))
+                    .accessibilityHint(AgendaCard.dayHint)
+            } else {
+                title
+            }
+        }
+        .accessibilityAction(named: Text("Add an event…", comment: "An agenda card's day: the VoiceOver action that adds an event at the next whole hour")) {
+            if let date = day.date, let slot = AgendaCard.Slot.nextHour(on: date) { add(slot) }
         }
     }
 
@@ -184,7 +215,9 @@ private struct DaySection: View {
                 }
                 ForEach(Array(timeline.free.enumerated()), id: \.offset) { _, free in
                     let top = shift.top(free.y)
-                    FreeStretch(minutes: free.minutes)
+                    Button { if let slot = timeline.slot(for: free) { add(slot) } } label: { FreeStretch(minutes: free.minutes) }
+                        .buttonStyle(Roomy(extra: 0))
+                        .accessibilityHint(Text("Adds an event at this time", comment: "An agenda card's free stretch, as VoiceOver hints it"))
                         .frame(height: max(0, shift.bottom(free.y + free.height) - top))
                         .offset(y: top)
                 }
@@ -201,6 +234,12 @@ private struct DaySection: View {
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .frame(height: height, alignment: .top)
+            // A free spot (the events and free stretches are buttons, and take their own taps): a
+            // new event there, at the quarter hour nearest the tap.
+            .contentShape(.rect)
+            .onTapGesture(coordinateSpace: .local) { point in
+                if let slot = timeline.slot(atY: shift.unshift(point.y)) { add(slot) }
+            }
         }
         .padding(.vertical, 8)
     }
@@ -337,13 +376,18 @@ private struct DaySection: View {
                 }
                 .buttonStyle(Roomy(extra: 14))
                 .accessibilityHint(placeHint)
+            } else if let location = event.location {
+                // A room, a meeting link, an app: no map, its links tappable (asked 2026-10-30).
+                Label { Text(EventPlace.linked(location)).textSelection(.enabled) } icon: {
+                    Image(systemName: EventDetails.online(in: location) != nil ? "video" : "mappin.and.ellipse")
+                }
             }
             if let calendar = event.calendar {
                 Label(calendar, systemImage: "calendar")
                     .allowsHitTesting(false)
             }
             if let notes = event.notes {
-                Text(notes).lineLimit(8).textSelection(.enabled)
+                Text(EventPlace.linked(notes)).lineLimit(8).textSelection(.enabled)
             }
             // Side by side when they fit; in a narrow column, one under the other.
             ViewThatFits(in: .horizontal) {
@@ -361,6 +405,14 @@ private struct DaySection: View {
     /// Open in Maps and Open in Calendar (at the event's time), each 44 pt to tap: side by side
     /// reaching above and below their line, stacked a full 44 pt each.
     @ViewBuilder private func links(_ event: Event, stacked: Bool) -> some View {
+        // An online meeting's own link, from its place or its notes: Join.
+        if let join = EventDetails.online(in: [event.location, event.notes].compactMap(\.self).joined(separator: "\n"))?.link {
+            Button { openURL(join) } label: {
+                Label("Join", systemImage: "video.fill").frame(minHeight: stacked ? 44 : nil)
+            }
+            .buttonStyle(Roomy(extra: stacked ? 0 : 14))
+            .accessibilityHint(Text("Opens the meeting's link", comment: "An agenda card's event: its Join button, as VoiceOver hints it"))
+        }
         if let location = event.location, let maps = AgendaCard.mapsURL(location) {
             Button { openURL(maps) } label: {
                 Label("Open in Maps", systemImage: "map").frame(minHeight: stacked ? 44 : nil)
@@ -368,15 +420,13 @@ private struct DaySection: View {
             .buttonStyle(Roomy(extra: stacked ? 0 : 14))
             .accessibilityHint(placeHint)
         }
-        #if os(iOS)
-        if let calendar = EventDetails.calendarURL(for: event.start) {
+        if let calendar = AgendaCard.calendarURL(at: event.start) {
             Button { openURL(calendar) } label: {
                 Label("Open in Calendar", systemImage: "calendar").frame(minHeight: stacked ? 44 : nil)
             }
             .buttonStyle(Roomy(extra: stacked ? 0 : 14))
             .accessibilityHint(Text("Opens Calendar at this event's time", comment: "An agenda card's event: its Open in Calendar button, as VoiceOver hints it"))
         }
-        #endif
     }
 
     private var placeHint: Text {
@@ -385,6 +435,17 @@ private struct DaySection: View {
 
     private func hint(_ isOpen: Bool) -> Text {
         Text(isOpen ? "Hides the details" : "Shows the details", comment: "An agenda card's event, as VoiceOver hints it")
+    }
+
+    /// A new event at `slot`: Apple's editor on the iPhone and iPad, which needs no access to the
+    /// calendar (from iOS 17 it runs outside Redde when Redde has none, so nothing is asked for); on
+    /// the Mac, which has no such editor, a line in the message field for the person to finish.
+    private func add(_ slot: AgendaCard.Slot) {
+        #if os(iOS)
+        adding = slot
+        #else
+        LaunchRouter.shared.requestDraft(text: AgendaCard.addLine(slot), attachments: [])
+        #endif
     }
 
     private func toggle(_ event: Event) {
@@ -567,6 +628,8 @@ extension AgendaCard {
             var y: CGFloat
             var height: CGFloat
             var minutes: Int
+            /// The clock's minute of the day it starts.
+            var start: Int
         }
 
         var dayStart: Date
@@ -651,7 +714,7 @@ extension AgendaCard {
             for span in spans.dropFirst() {
                 let top = foot + 4, bottom = y(span.start) - 4
                 if span.start - busyUntil >= freeAfter, bottom - top >= shortest {
-                    free.append(Free(y: top, height: bottom - top, minutes: span.start - busyUntil))
+                    free.append(Free(y: top, height: bottom - top, minutes: span.start - busyUntil, start: busyUntil))
                 }
                 busyUntil = max(busyUntil, span.end)
                 foot = max(foot, y(span.start) + max(shortest, y(span.end) - y(span.start)))
@@ -660,6 +723,39 @@ extension AgendaCard {
             let height = max(CGFloat(lastHour - firstHour) * hourHeight, blocks.map { $0.y + $0.height }.max() ?? 0)
             return Timeline(dayStart: dayStart, calendar: calendar, firstHour: firstHour, lastHour: lastHour,
                             height: height, clusters: clusters, free: free)
+        }
+
+        /// A new event where the rail was tapped: at the quarter hour nearest `y` (no earlier than
+        /// the rail's start), an hour long.
+        func slot(atY y: CGFloat) -> Slot? {
+            let minute = Double(firstHour * 60) + Double(max(0, y) / Self.hourHeight) * 60
+            let start = min(24 * 60 - 15, max(firstHour * 60, Int((minute / 15).rounded()) * 15))
+            return slot(minute: start, minutes: 60)
+        }
+
+        /// A new event in a free stretch: from its start, for its length up to an hour.
+        func slot(for free: Free) -> Slot? {
+            slot(minute: free.start, minutes: min(60, free.minutes))
+        }
+
+        private func slot(minute: Int, minutes: Int) -> Slot? {
+            guard let start = calendar.date(bySettingHour: minute / 60, minute: minute % 60, second: 0, of: dayStart) else { return nil }
+            return Slot(start: start, end: start.addingTimeInterval(TimeInterval(minutes * 60)))
+        }
+    }
+
+    /// The times of an event being added from the card.
+    nonisolated struct Slot: Identifiable, Equatable, Sendable {
+        var start: Date
+        var end: Date
+        var id: Date { start }
+
+        /// The next whole hour on `day`, by the clock now (VoiceOver's "Add an event…"): at 2:20 PM,
+        /// 3 PM that day; no later than 11 PM.
+        static func nextHour(on day: Date, now: Date = .now, calendar: Calendar = .current) -> Slot? {
+            let hour = min(23, calendar.component(.hour, from: now) + 1)
+            guard let start = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: calendar.startOfDay(for: day)) else { return nil }
+            return Slot(start: start, end: start.addingTimeInterval(3600))
         }
     }
 
@@ -689,6 +785,19 @@ extension AgendaCard {
         /// Where something that ends at `y` now ends (a block's own growth aside).
         func bottom(_ y: CGFloat) -> CGFloat {
             y + steps.reduce(0) { $1.at < y - 0.01 ? $0 + $1.by : $0 }
+        }
+
+        /// Where on the timeline as worked out a point drawn at `y` is (`top` the other way round);
+        /// in what an open event grew, at that event's foot.
+        func unshift(_ y: CGFloat) -> CGFloat {
+            var moved: CGFloat = 0
+            for step in steps.sorted(by: { $0.at < $1.at }) {
+                let drawn = step.at + moved
+                if y < drawn - 0.01 { break }
+                if y < drawn + step.by { return step.at }
+                moved += step.by
+            }
+            return y - moved
         }
 
         func frame(of block: Timeline.Block) -> (y: CGFloat, height: CGFloat) {
@@ -794,7 +903,9 @@ extension AgendaCard {
     }
 
     /// Each calendar's own colour, the same every time it is named; the theme's tint with no name.
+    /// Or every event in the one colour picked in Settings (Calendar Events).
     static func color(of calendar: String?) -> AnyShapeStyle {
+        if let picked = Settings.shared.eventColor.color { return AnyShapeStyle(picked) }
         guard let calendar, !calendar.isEmpty else { return AnyShapeStyle(.tint) }
         let colors: [Color] = [.blue, .orange, .green, .purple, .pink, .teal, .red, .indigo, .brown, .mint]
         var hash: UInt64 = 0xcbf29ce484222325
@@ -802,23 +913,80 @@ extension AgendaCard {
         return AnyShapeStyle(colors[Int(hash % UInt64(colors.count))])
     }
 
-    /// Calendar opened on the day (`calshow:` at its start), on the iPhone and iPad; none on the
-    /// Mac, where Calendar takes no such link (as an event's Open in Calendar).
+    /// Calendar opened on the day (`calshow:` at its start), on the iPhone and iPad; on the Mac,
+    /// Calendar itself (`ical:`, the one link it takes: it opens on no date of ours).
     static func calendarURL(for day: Day) -> URL? {
         #if os(iOS)
         day.date.flatMap { EventDetails.calendarURL(for: $0) }
         #else
-        nil
+        URL(string: "ical://")
         #endif
+    }
+
+    /// An event's Open in Calendar: at its time on the iPhone and iPad, Calendar on the Mac.
+    static func calendarURL(at date: Date) -> URL? {
+        #if os(iOS)
+        EventDetails.calendarURL(for: date)
+        #else
+        URL(string: "ical://")
+        #endif
+    }
+
+    /// On the Mac, the line a tap puts in the message field: "Add to my calendar Saturday,
+    /// October 31 at 2:00 PM: ", for the person to say what.
+    nonisolated static func addLine(_ slot: Slot) -> String {
+        String(localized: "Add to my calendar \(slot.start.formatted(.dateTime.weekday(.wide).month(.wide).day().hour().minute())): ",
+               comment: "On the Mac, what tapping a free time on an agenda card puts in the message field, for the person to finish (\"Add to my calendar Saturday, October 31 at 2:00 PM: \")")
     }
 
     static var dayHint: Text {
         Text("Opens this day in Calendar", comment: "An agenda card's day header and its Open in Calendar button, as VoiceOver hints them")
     }
 
+    /// Maps for an event's place, only when it is an address (`EventPlace`): a room ("Office ·
+    /// Room 4"), a meeting link or an app's name gets none, where Maps found somewhere by its name.
     static func mapsURL(_ place: String) -> URL? {
+        guard EventPlace.isAddress(place) else { return nil }
         var parts = URLComponents(string: "https://maps.apple.com/")
         parts?.queryItems = [URLQueryItem(name: "q", value: place)]
         return parts?.url
     }
 }
+
+#if os(iOS)
+/// Apple's new-event editor with the times filled in, and nothing else. From iOS 17 it is drawn
+/// outside Redde when Redde has no access to the calendar, and saves without any: nothing is asked
+/// for here. With full access (Phone tools, the start screen's card), it is drawn in Redde.
+private struct NewEventEditor: UIViewControllerRepresentable {
+    let slot: AgendaCard.Slot
+    let done: () -> Void
+
+    final class Coordinator: NSObject, EKEventEditViewDelegate {
+        var done: () -> Void
+        init(done: @escaping () -> Void) { self.done = done }
+
+        // EventKitUI calls it on a thread of its choosing: back on the main actor by hand.
+        nonisolated func eventEditViewController(_ controller: EKEventEditViewController, didCompleteWith action: EKEventEditViewAction) {
+            Task { @MainActor in self.done() }
+        }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(done: done) }
+
+    func makeUIViewController(context: Context) -> EKEventEditViewController {
+        let store = EKEventStore()
+        let event = EKEvent(eventStore: store)
+        event.startDate = slot.start
+        event.endDate = slot.end
+        let editor = EKEventEditViewController()
+        editor.eventStore = store
+        editor.event = event
+        editor.editViewDelegate = context.coordinator
+        return editor
+    }
+
+    func updateUIViewController(_ editor: EKEventEditViewController, context: Context) {
+        context.coordinator.done = done
+    }
+}
+#endif

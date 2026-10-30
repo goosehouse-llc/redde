@@ -65,6 +65,9 @@ import WidgetKit
 /// - `-echo.demoCards`: a reply with a map (a walk), three places and the weather, then the time in Tokyo (`ReplyCards`).
 ///   `-echo.demoCards weather` (or `places`): that card alone.
 /// - `-echo.demoAgenda`: what's on the calendar tomorrow, then the rest of the week with a free day, as agenda cards (`AgendaCard`); `-echo.demoAgenda tomorrow` the first alone.
+///   `-echo.demoAddEvent`: the first day with a timeline adds an event at its first free stretch, as a tap
+///   there does (Apple's editor on the iPhone, the message field's line on the Mac). `-agendaCalendars "(Family, Home)"`
+///   shows those calendars only; `-echo.screen calendars` opens Settings → Agent → Calendars.
 /// - `-echo.demoApprovalCard <coder|command|push|script>`: an approval waiting, in words (`ApprovalSummary`).
 /// - `-echo.demoQuestion <one|few|open>`: the agent's question card (Hermes's clarify), with
 ///   choices, several questions, or one to answer in words.
@@ -174,6 +177,16 @@ enum DevHooks {
     /// Any demo or screen flag: an App Store capture or a test, which the "What's New" sheet
     /// must not cover (`-echo.whatsNew` shows it on purpose).
     static var screenshotRun: Bool { args.contains { $0.hasPrefix("-echo.") } }
+
+    private static var demoNewEventShown = false
+    /// `-echo.demoAddEvent`: once, a moment after the card shows, the first free stretch of the
+    /// first timeline (else 2 PM on it), to add an event at.
+    static func demoNewEvent(_ timeline: AgendaCard.Timeline?) async -> AgendaCard.Slot? {
+        guard has("-echo.demoAddEvent"), !demoNewEventShown, let timeline else { return nil }
+        demoNewEventShown = true
+        try? await Task.sleep(for: .seconds(2))
+        return timeline.free.first.flatMap(timeline.slot(for:)) ?? timeline.slot(atY: CGFloat(14 - timeline.firstHour) * AgendaCard.Timeline.hourHeight)
+    }
 
     static var demoKanban: Bool { has("-echo.demoKanban") }
     static var demoProjects: Bool { has("-echo.demoProjects") }

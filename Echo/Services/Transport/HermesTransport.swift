@@ -228,6 +228,9 @@ nonisolated struct TurnRequest: Sendable {
     /// The units the agent is to give measurements in (`MeasureUnits`), as the setting is when the
     /// turn is made; nil leaves it to the agent.
     var units: MeasureUnits? = MeasureUnits.forAgent()
+    /// On a question about the calendar, the calendars chosen in Settings → Agent → Calendars, for
+    /// the agent to look at only (`CalendarChoice`); nil for every other message, and with all chosen.
+    var calendars: [String]? { CalendarChoice.forAgent(asked: userText) }
     /// On the Dashboard, the profile a new session is made on when it isn't the selected one
     /// (`Conversation.startElsewhere`); nil for the selected one.
     var profile: String? = nil
