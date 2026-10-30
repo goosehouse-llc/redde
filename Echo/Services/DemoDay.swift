@@ -30,13 +30,38 @@ enum DemoDay {
     static var scene: String? { DevHooks.value("-echo.demoDay") }
     static var arrivesAfter: Double { DevHooks.value("-echo.demoDayAt").flatMap(Double.init) ?? 5 }
 
-    /// The story's clock, for what counts down from now (`EventCard`): the simulator's clock is
-    /// the Mac's, and the status bar is set to the scene's time. Nil outside the morning.
-    static var storyNow: Date? { on && scene == "morning" ? today(7, 0) : nil }
+    /// The story's clock, for what reads the time (`EventCard`'s countdown, the calendar card's now
+    /// line and what's over, the weather card's "Now"): the simulator's clock is the Mac's, and the
+    /// status bar is set to the scene's time. `-echo.demoDayClock HH:MM` sets it for any scene.
+    static var storyNow: Date? {
+        guard on else { return nil }
+        if let clock = DevHooks.value("-echo.demoDayClock")?.split(separator: ":").compactMap({ Int($0) }), clock.count == 2 {
+            return today(clock[0], clock[1])
+        }
+        return switch scene {
+        case "morning", "ideas": today(7, 0)
+        case "today": today(7, 50)
+        case "coffee": today(10, 15)
+        case "rain": today(12, 10)
+        case "approval": today(11, 30)
+        case "afternoon": today(13, 30)
+        case "leave": today(14, 0)
+        case "email": today(15, 35)
+        case "packing": today(20, 0)
+        case "evening": today(21, 0)
+        default: nil
+        }
+    }
+
+    /// The 2.3 cut's day (`make_day23.py`): the dentist in the afternoon, 2:30, where the first
+    /// cut's morning scenes (`morning`, `week`) have it at 7:30.
+    static var afternoon: Bool { !["morning", "week"].contains(scene ?? "") }
 
     /// The made-up places' addresses (real streets, so the map has somewhere to put its pin).
     nonisolated static let dentistAddress = "214 Pine Street, Burlington, VT 05401"
     nonisolated static let lupaAddress = "36 Maple Street, Burlington, VT 05401"
+    /// Where the person is in the coffee scene: by City Hall Park, Burlington.
+    nonisolated static let here = (latitude: 44.47622, longitude: -73.21310)
 
     // MARK: The agents
 
@@ -88,12 +113,13 @@ enum DemoDay {
     /// The dentist's, as Redde's plugin (1.9) sends one: when the event starts and where, and when
     /// to leave (worked out on the phone from the travel time, here set).
     static var headsUp: AgentBriefing {
+        let text = afternoon ? "Dentist at 2:30, in an hour. Bring your insurance card! Parking is round the back."
+            : "Dentist at 7:30, in 30 minutes. Bring your insurance card! Parking is round the back."
         var briefing = AgentBriefing(id: "day/heads-up", title: AgentBriefing.headsUpPrefix + "Dentist", agent: "Sol",
-                                     text: "Dentist at 7:30, in 30 minutes. Bring your insurance card! Parking is round the back.",
-                                     at: today(7, 0), failed: false)
-        briefing.eventAt = today(7, 30)
+                                     text: text, at: afternoon ? today(13, 30) : today(7, 0), failed: false)
+        briefing.eventAt = afternoon ? today(14, 30) : today(7, 30)
         briefing.place = dentistAddress
-        briefing.leaveAt = today(7, 10)
+        briefing.leaveAt = afternoon ? today(14, 5) : today(7, 10)
         briefing.profile = "default"
         return briefing
     }
@@ -125,16 +151,17 @@ enum DemoDay {
     static var wrapUp: AgentBriefing {
         AgentBriefing(id: "day/wrap-up", title: EveningWrapUp.title, agent: "Sol", text: """
             ### Done
-            - The dentist, on time 🦷
+            - The dentist, on time: you left at 2:05 🦷
             - Pickles booked at the vet, tomorrow at 3:30
-            - The house warm when you got home
-            - Dinner at Lupa Trattoria 🍝
+            - Coder cleared out the old build folders
+            - Ana knew you'd be late for pickup
 
             ### Waiting on you
-            - One approval from Coder
+            - Two things to pack for the cabin
 
             ### Tomorrow
-            - Call the plumber: it comes back as an idea at 9
+            - Pickles at the vet at 3:30. Leave by 3:10
+            - Sunny, 64°: a good day for the lake
             """, at: today(21, 0), failed: false)
     }
 
@@ -143,6 +170,7 @@ enum DemoDay {
         switch scene {
         case "morning": [weekAhead]
         case "week": [weekAhead, read(headsUp)]
+        case "ideas", "today", "coffee", "rain", "approval", "afternoon": [read(weekAhead)]
         case "evening": [wrapUp, read(headsUp), read(weekAhead)]
         default: [read(headsUp), read(weekAhead)]
         }
@@ -159,7 +187,23 @@ enum DemoDay {
     static func applyAtLaunch(conversation: Conversation, settings: Settings) {
         guard on else { return }
         switch scene {
-        case "morning":
+        case "leave":
+            Task {
+                _ = await allowNotifications()
+                try? await Task.sleep(for: .seconds(arrivesAfter))
+                postLeaveBy()
+            }
+        case "coffee":
+            PlaceLookup.shared.pretend(latitude: here.latitude, longitude: here.longitude)
+        case "approval":
+            conversation.replaceForDemo(id: UUID(uuidString: "DE300000-0000-4000-8000-0000000000D2")!, messages: [
+                Message(role: .user, text: "Clear out last year's build folders, and keep an archive folder for new ones."),
+                Message(role: .assistant, text: "On it. That's one command; it needs your OK first."),
+            ], bot: BotRef(profile: "coder", name: "Coder"))
+            conversation.setInterruptForDemo(.approval(ApprovalRequest(
+                id: "demo", command: "rm -rf ~/builds/2025-* && mkdir -p ~/builds/archive", description: "recursive delete",
+                choices: ["once", "session", "always", "deny"])))
+        case "morning", "afternoon":
             Task {
                 _ = await allowNotifications()
                 try? await Task.sleep(for: .seconds(arrivesAfter))
@@ -205,8 +249,29 @@ enum DemoDay {
         }
     }
 
+    /// What Coder says once its approval is answered (`-echo.demoDay approval`).
+    static func approved(_ choice: String) -> String {
+        choice == "deny" ? "Okay, I've left them as they are."
+            : "Done 🧹 Deleted 14 old build folders (3.2 GB back), and `~/builds/archive` is ready for new ones."
+    }
+
     private static func allowNotifications() async -> Bool {
         (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])) ?? false
+    }
+
+    /// The dentist's Leave-By Alert, as `LeaveByAlerts` sets one (its words, its Maps button, its
+    /// id, which Redde in front shows as a banner): 25 minutes by car, leave by 2:05.
+    private static func postLeaveBy() {
+        let start = today(14, 30), leave = today(14, 5)
+        let content = LeaveTime.content(event: "Dentist", startsAt: start, leave: leave, travel: 25 * 60, mode: .driving,
+                                        worked: today(13, 55), saying: .distantPast)
+        content.categoryIdentifier = LeaveBy.mapsCategory
+        content.userInfo[LeaveBy.latitudeKey] = 44.46970
+        content.userInfo[LeaveBy.longitudeKey] = -73.21470
+        content.userInfo[LeaveBy.modeKey] = LeaveTime.Mode.driving.rawValue
+        content.sound = .default
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: LeaveBy.alertID(event: "Dentist", start: start),
+                                                                     content: content, trigger: nil))
     }
 
     private static func post(_ note: PushNote) {
@@ -230,7 +295,7 @@ enum DemoDay {
             ActivityEntry(id: "a4", source: .ideas, profile: "default", title: "Ideas for you",
                           detail: "Book the vet for Pickles · Learn the bagpipes · Turn the heating down", at: at(7, 5)),
             ActivityEntry(id: "a5", source: .brief, profile: "default", title: "Heads-up: Dentist",
-                          detail: "Dentist at 7:30, in 30 minutes. Bring your insurance card!", at: at(7, 0)),
+                          detail: headsUp.text, at: headsUp.at),
             ActivityEntry(id: "a6", source: .job, profile: "default", title: "Heads-ups", detail: "", at: at(6, 30)),
             ActivityEntry(id: "a7", source: .brief, profile: "default", title: EveningWrapUp.title,
                           detail: "Done: the bike's brake, the birthday cake ordered. Tomorrow: the dentist at 7:30.", at: at(21, 0, daysAgo: 1)),
@@ -268,14 +333,88 @@ nonisolated struct DemoDayTransport: HermesTransport {
           {"title": "Big Pickle Deli", "detail": "Sandwiches · ★ 4.4 · 0.2 mi · $"}]}]}
         """#
     static let packingCard = #"""
-        {"cards": [{"type": "checklist", "title": "Cabin weekend", "emoji": "🏕️", "sections": [
-          {"title": "Clothes", "items": [{"text": "Swimsuits", "done": true}, {"text": "Hoodies for the evenings", "done": true}, "Rain jackets"]},
-          {"title": "Food", "items": [{"text": "Coffee", "done": true}, "S'mores supplies", {"text": "Cooler and ice", "done": true}]},
-          {"title": "Fun", "items": [{"text": "Board games", "done": true}, "Fishing rods"]}]}]}
+        {"cards": [{"type": "checklist", "title": "Cabin weekend", "emoji": "🏕️", "subtitle": "Sat – Sun · Lake cabin", "verb": "packed", "groups": [
+          {"name": "Clothes", "items": [{"text": "Swimsuits", "note": "×3", "done": true}, {"text": "Hoodies for the evenings", "note": "48° at night", "done": true}, "Rain jackets"]},
+          {"name": "Food", "items": [{"text": "Coffee", "done": true}, "S'mores supplies", {"text": "Cooler and ice", "done": true}]},
+          {"name": "Fun", "items": [{"text": "Board games", "done": true}, {"text": "Fishing rods", "note": "×2"}]}]}]}
+        """#
+
+    /// The 2.3 cut's cards (`make_day23.py`), dated today, at the story's times.
+    nonisolated static func day(_ offset: Int = 0) -> String {
+        let calendar = Calendar.current
+        let p = calendar.dateComponents([.year, .month, .day], from: calendar.date(byAdding: .day, value: offset, to: .now) ?? .now)
+        return String(format: "%04d-%02d-%02d", p.year ?? 2026, p.month ?? 1, p.day ?? 1)
+    }
+
+    /// What's on today, asked at 7:30: the walk is over, a free stretch before lunch, the dentist at 2:30.
+    static var todayCard: String {
+        let d = day()
+        return """
+        {"cards": [{"type": "agenda", "title": "Today", "date": "\(d)", "events": [
+          {"title": "Walk Pickles", "start": "\(d)T07:00:00", "end": "\(d)T07:20:00", "calendar": "Family"},
+          {"title": "School drop-off", "start": "\(d)T08:15:00", "end": "\(d)T08:40:00", "calendar": "Family"},
+          {"title": "Team planning", "start": "\(d)T09:00:00", "end": "\(d)T10:00:00", "calendar": "Work"},
+          {"title": "Lunch with Dana", "start": "\(d)T12:30:00", "end": "\(d)T13:15:00", "calendar": "Personal", "location": "Maple Table"},
+          {"title": "Dentist", "start": "\(d)T14:30:00", "end": "\(d)T15:30:00", "calendar": "Family", "location": "\(DemoDay.dentistAddress)",
+           "notes": "Bring the insurance card."},
+          {"title": "Pick Milo up from soccer", "start": "\(d)T15:45:00", "end": "\(d)T16:15:00", "calendar": "Family"}]}]}
+        """
+    }
+
+    /// Coffee near where the person is (made-up cafés on real streets of Burlington, VT).
+    static let coffeeCard = #"""
+        {"cards": [{"type": "places", "title": "Coffee near you", "places": [
+          {"name": "Northbound Coffee", "category": "Coffee", "price": "$$", "rating": 4.7, "hours": "Open until 6 PM", "pick": true,
+           "address": "96 Church Street, Burlington, VT", "latitude": 44.47845, "longitude": -73.21262},
+          {"name": "Little Kettle Café", "category": "Café", "price": "$", "rating": 4.5, "closes": "3 PM",
+           "address": "112 College Street, Burlington, VT", "latitude": 44.47716, "longitude": -73.21110},
+          {"name": "Old Mill Roasters", "category": "Coffee and bakery", "price": "$$", "rating": "4.8", "open_until": "5 PM",
+           "address": "205 Main Street, Burlington, VT", "latitude": 44.47575, "longitude": -73.21180}]}]}
+        """#
+
+    /// The afternoon's forecast, from 12 on (asked at 12:10): storms 2 to 5, worst at 3.
+    static var rainCard: String {
+        let d = day()
+        let skies = ["partly_cloudy", "cloudy", "thunderstorm", "thunderstorm", "rain", "cloudy", "partly_cloudy", "partly_cloudy", "clear", "clear", "clear", "clear"]
+        let temperatures = [61, 63, 62, 58, 57, 58, 59, 57, 55, 53, 52, 51], chances = [10, 30, 70, 80, 60, 25, 10, 5, 0, 0, 0, 0]
+        let gusts = [8, 10, 22, 30, 24, 14, 10, 8, 6, 6, 5, 5]
+        let hours = (0 ..< 12).map { i in
+            #"{"time": "\#(d)T\#(String(format: "%02d", 12 + i)):00", "temperature": \#(temperatures[i]), "condition": "\#(skies[i])", "#
+                + #""precipitation": \#(chances[i]), "gusts": \#(gusts[i])\#(12 + i >= 18 ? ", \"night\": true" : "")}"#
+        }.joined(separator: ", ")
+        let updated = ISO8601DateFormatter()
+        updated.timeZone = .current
+        let calendar = Calendar.current
+        let stamp = updated.string(from: calendar.date(bySettingHour: 12, minute: 10, second: 0, of: .now) ?? .now)
+        return """
+        {"cards": [{"type": "weather", "place": "Burlington", "units": "F", "source": "From the forecast the agent looked up", "updated": "\(stamp)",
+         "now": {"temperature": 61, "condition": "partly_cloudy", "high": 64, "low": 49, "feels_like": 60, "wind": "8 mph S", "humidity": 70, "precipitation": 10},
+         "hours": [\(hours)],
+         "days": [{"date": "\(d)", "high": 64, "low": 49, "condition": "thunderstorm", "precipitation": 80},
+                  {"date": "\(day(1))", "high": 66, "low": 48, "condition": "clear"},
+                  {"date": "\(day(2))", "high": 63, "low": 47, "condition": "partly_cloudy", "precipitation": 10},
+                  {"date": "\(day(3))", "high": 58, "low": 45, "condition": "rain", "precipitation": 70}]}]}
+        """
+    }
+
+    /// The email to the soccer coach, for the person to send.
+    static let emailCard = #"""
+        {"cards": [{"type": "review", "kind": "email", "title": "Email to send", "subtitle": "From your Gmail · as you", "action": "Send",
+          "note": "Pickup is at 3:45 PM", "fields": [{"label": "To", "value": "Ana Okafor"},
+          {"label": "Subject", "value": "Running late for pickup"},
+          {"label": "Body", "value": "Hi Ana,\n\nThe dentist ran long, so I'll be about 15 minutes late for pickup. Could Milo wait with you?\n\nThanks so much!"}]}]}
         """#
 
     /// The card to show, if any, and the words.
     static func reply(to asked: String) -> (card: String?, answer: String) {
+        // The 2.3 cut's.
+        if asked.contains("tapped \"send\"") { return (nil, "Sent ✉️ I'll tell you when Ana writes back.") }
+        if asked.contains("my day") { return (todayCard, "A full morning, a free stretch before lunch, and the dentist at 2:30. I'll tell you when to leave.") }
+        if asked.contains("coffee") {
+            return (coffeeCard, "**Northbound Coffee** is the pick: a few minutes' walk from you, by City Hall Park, and open till 6.")
+        }
+        if asked.contains("rain") { return (rainCard, "Yes: storms from about 2 to 5, worst around 3. Take the umbrella to the dentist. ☔️") }
+        if asked.contains("ana") && asked.contains("late") { return (emailCard, "Here's the email. Nothing goes until you tap Send.") }
         if asked.contains("lupa") {
             return (nil, "Great pick! 🍝 Table for four at **Lupa Trattoria**, 7:00, at \(DemoDay.lupaAddress). I'll tell you when it's time to leave.")
         }

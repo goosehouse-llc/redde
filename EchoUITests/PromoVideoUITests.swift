@@ -671,14 +671,121 @@ final class PromoVideoUITests: XCTestCase {
         XCTAssertTrue(says(app, "packed already"))
         hold(1.6)
         for item in ["Rain jackets", "S'mores supplies", "Fishing rods"] {
-            let row = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", item)).firstMatch
+            // (a toggle since the 10-30 redesign, not a button)
+            let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", item)).firstMatch
             XCTAssertTrue(row.waitForExistence(timeout: 5), "no \(item)")
             row.tap()
             mark("ticked")
             hold(0.9)
         }
-        XCTAssertTrue(says(app, "Everything's done"))
         mark("done")
+        hold(3.0)
+        mark("end")
+    }
+
+    // MARK: The 2.3 day (design/video, `make_day23.py`): the new cards and proactive moments
+
+    /// 7:30: "What's my day look like?", today as a timeline (the walk over, a free stretch, the
+    /// now line); the dentist tapped open in place.
+    func testDayToday() throws {
+        let app = try day("today", ["-echo.fresh"])
+        ask(app, "What's my day look like?")
+        XCTAssertTrue(says(app, "Free for"), "no timeline")
+        mark("card")
+        XCTAssertTrue(says(app, "when to leave"))
+        mark("answered")
+        hold(2.6)
+        let dentist = app.buttons.containing(NSPredicate(format: "label CONTAINS 'Dentist'")).firstMatch
+        if dentist.waitForExistence(timeout: 5) { dentist.tap() }
+        mark("opened")
+        hold(3.0)
+        mark("end")
+    }
+
+    /// 10:15: "Good coffee near me?", answered from where the phone is: the places on a map,
+    /// walks measured from here.
+    func testDayCoffee() throws {
+        let app = try day("coffee", ["-echo.fresh"])
+        ask(app, "Good coffee near me?")
+        XCTAssertTrue(app.buttons.containing(NSPredicate(format: "label CONTAINS 'Directions to'")).firstMatch.waitForExistence(timeout: 30), "no places card")
+        mark("card")
+        hold(5.0)
+        mark("end")
+    }
+
+    /// 12:10: "Will it rain this afternoon?", the weather card with the storms called out.
+    func testDayRain() throws {
+        let app = try day("rain", ["-echo.fresh"])
+        ask(app, "Will it rain this afternoon?")
+        XCTAssertTrue(says(app, "Storms likely"), "no weather card")
+        mark("card")
+        hold(5.0)
+        mark("end")
+    }
+
+    /// 1:30 PM: the dentist's heads-up arriving (banner, deck), opened: the event card and the map.
+    func testDayAfternoon() throws {
+        let app = try day("afternoon", ["-echo.screen", "sessions", "-echo.demoDayAt", "3"])
+        allowNotifications()
+        let card = deckCard(app, "Leave by")
+        XCTAssertTrue(card.waitForExistence(timeout: 20), "the heads-up didn't come")
+        mark("arrived")
+        hold(3.2)
+        card.tap()
+        XCTAssertTrue(says(app, "Open in Calendar"), "no event card")
+        mark("opened")
+        XCTAssertTrue(app.buttons["Directions"].firstMatch.waitForExistence(timeout: 15), "no map")
+        mark("map")
+        hold(5.5)
+        mark("end")
+    }
+
+    /// 2:00 PM: the Leave-By Alert, worked out on the phone, as a banner over the chat list; then
+    /// held open, with Open in Maps.
+    func testDayLeave() throws {
+        _ = try day("leave", ["-echo.screen", "sessions", "-echo.demoDayAt", "3"])
+        allowNotifications()
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let banner = springboard.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Time to leave'")).firstMatch
+        XCTAssertTrue(banner.waitForExistence(timeout: 20), "no Leave-By Alert")
+        mark("banner")
+        hold(3.0)
+        if ProcessInfo.processInfo.environment["PROMO_EXPAND"] == "1" {
+            banner.press(forDuration: 1.0)
+            mark("expanded")
+            hold(3.5)
+        }
+        mark("end")
+    }
+
+    /// 11:30: Coder's approval card in plain words (the delete in red); Allow Once.
+    func testDayApproval() throws {
+        let app = try day("approval")
+        let allow = app.buttons["Allow Once"].firstMatch
+        XCTAssertTrue(allow.waitForExistence(timeout: 20), "no approval card")
+        hold(1.0)
+        mark("start")
+        hold(3.0)
+        allow.tap()
+        mark("allowed")
+        hold(3.0)
+        mark("end")
+    }
+
+    /// 3:35 PM: "Tell Ana I'm running 15 minutes late for pickup", the email drawn as itself; Send.
+    func testDayEmail() throws {
+        let app = try day("email", ["-echo.fresh"])
+        ask(app, "Tell Ana I'm running 15 minutes late for pickup")
+        XCTAssertTrue(says(app, "Running late for pickup"), "no email card")
+        mark("card")
+        XCTAssertTrue(says(app, "tap Send"))
+        hold(2.8)
+        let send = app.buttons.matching(NSPredicate(format: "label == 'Send'")).allElementsBoundByIndex.last { $0.isHittable }
+        XCTAssertNotNil(send, "no Send on the card")
+        send?.tap()
+        mark("sent")
+        XCTAssertTrue(says(app, "writes back"))
+        mark("answered")
         hold(3.0)
         mark("end")
     }

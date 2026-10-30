@@ -25,7 +25,15 @@ struct AgendaCard: View {
     /// `calendars`: the ones to show, by title (Settings' choice); empty for all.
     init(card: ReplyCard.Agenda, calendars: [String] = Settings.shared.agendaCalendars) {
         self.card = card
-        days = card.byDay(showing: calendars).map { Day(day: $0.day, events: $0.events) }
+        days = card.byDay(showing: calendars).map { Day(day: $0.day, events: $0.events, now: Self.now()) }
+    }
+
+    /// The clock the card reads: the phone's, or the story's in the day's video (`DemoDay`).
+    static func now(_ clock: Date = .now) -> Date {
+        #if DEBUG
+        if let story = DemoDay.storyNow { return story }
+        #endif
+        return clock
     }
 
     var body: some View {
@@ -226,7 +234,7 @@ private struct DaySection: View {
                 }
                 if day.isToday {
                     TimelineView(.everyMinute) { context in
-                        if let now = timeline.y(of: context.date) {
+                        if let now = timeline.y(of: AgendaCard.now(context.date)) {
                             NowLine().offset(y: shift.top(now))
                         }
                     }
@@ -268,7 +276,7 @@ private struct DaySection: View {
 
     private func block(_ event: Event, height: CGFloat) -> some View {
         let isOpen = open.contains(event)
-        let over = (event.end ?? event.start) < .now
+        let over = (event.end ?? event.start) < AgendaCard.now()
         let color = AgendaCard.color(of: event.calendar)
         let shape = RoundedRectangle(cornerRadius: 10)
         return VStack(alignment: .leading, spacing: 2) {

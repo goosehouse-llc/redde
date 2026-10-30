@@ -89,7 +89,7 @@ struct StartScreen: View {
             VStack(spacing: 24) {
                 mark.modifier(Arriving(index: 0, shown: shown))
                 VStack(spacing: 6) {
-                    Text(Self.greeting(for: .now))
+                    Text(Self.greeting(for: AgendaCard.now()))   // (the story's clock in the day's video)
                         .font(.system(.title, weight: .bold))
                         .modifier(Arriving(index: 1, shown: shown))
                     Text("What should \(conversation.bot?.name ?? settings.headerTitle) look into?")

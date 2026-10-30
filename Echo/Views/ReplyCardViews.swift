@@ -628,7 +628,7 @@ private struct WeatherCard: View {
     init(card: ReplyCard.Weather, pending: Bool = false) {
         self.card = card
         self.pending = pending
-        shown = Shown(card)
+        shown = Shown(card, now: AgendaCard.now())
     }
 
     /// Days shown before "All 7 days".

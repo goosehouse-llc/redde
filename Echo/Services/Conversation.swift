@@ -1515,6 +1515,15 @@ final class Conversation {
         if !isIncognito {
             ApprovalHistory.shared.record(request, choice: choice, agent: bot?.name ?? settings.headerTitle, chat: title)
         }
+        #if DEBUG
+        if DemoDay.on {   // the day's video: the agent carries on, canned (`DemoDay.approved`)
+            Task {
+                try? await Task.sleep(for: .seconds(0.9))
+                messages.append(Message(role: .assistant, text: DemoDay.approved(choice)))
+            }
+            return
+        }
+        #endif
         if connection == .hermesSessions {
             let api = ledgerAPI()
             run {
@@ -2035,6 +2044,9 @@ final class Conversation {
     /// than 1.7.0, or its answer not read), looked up on the phone (`CardLookup`). Only a reply
     /// coming in: one read back later keeps what it was saved with.
     private func fillCards(_ id: UUID) async {
+        #if DEBUG
+        if DemoDay.on { return }   // the day's video: its made-up forecast stays as written
+        #endif
         guard let cards = messages.last(where: { $0.id == id })?.cards, cards.contains(where: CardLookup.needsLookup) else { return }
         let filled = await cardLookup.fill(cards)
         guard filled != cards else { return }
