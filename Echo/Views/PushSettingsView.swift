@@ -126,10 +126,12 @@ struct PushSettingsView: View {
     }
 
     /// The connection the app is on is a Dashboard it has a login for. Over the Hermes API there
-    /// is no way to reach the plugin, and the code is how to pair.
-    private var signedInToDashboard: Bool {
-        settings.transport == .hermesServe && HermesServeClient.shared.hasCredentials
+    /// is no way to reach the plugin, and the code is how to pair. (Ahead of Your Day asks too.)
+    static var signedInToDashboard: Bool {
+        Settings.shared.transport == .hermesServe && HermesServeClient.shared.hasCredentials
     }
+
+    private var signedInToDashboard: Bool { settings.transport == .hermesServe && Self.signedInToDashboard }
 
     private var serverName: String? {
         settings.activeServer.flatMap { $0.name.isEmpty ? nil : $0.name }

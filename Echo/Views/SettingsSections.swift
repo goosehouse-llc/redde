@@ -520,6 +520,8 @@ struct AgentSettings<Details: View>: View {
         }
 
         Section {
+            // All of the day's at once (`AheadOfYourDay`, asked 2026-10-30): the one-step sheet.
+            AheadOfYourDayRow()
             NavigationLink { DailyJobView(daily: MorningIdeas.job) } label: { Label("Morning Ideas", systemImage: "lightbulb") }
                 .disabled(!canReachGateway)
             NavigationLink { DailyJobView(daily: HeadsUps.job) } label: { Label("Heads-Ups", systemImage: "bell.badge") }

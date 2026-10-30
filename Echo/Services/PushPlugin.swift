@@ -11,7 +11,7 @@ nonisolated enum PushPlugin {
     static let identifier = "goosehouse-llc/redde/companion/hermes-plugin/redde-push"
     /// The plugin's version in this build's source (`companion/hermes-plugin/redde-push/plugin.yaml`):
     /// one on a Hermes that is older than this can be brought up to it.
-    static let version = "1.9.0"
+    static let version = "1.10.0"
 
     /// Whether the plugin is on a Hermes, and in what state.
     struct State: Equatable, Sendable {
@@ -163,7 +163,7 @@ final class DemoPushPlugin: PushPluginManaging {
 
     init(_ named: String, needsRestart: Bool = false) {
         state = switch named {
-        case "old": PushPlugin.State(installed: true, version: "1.0.0", enabled: true)
+        case "old": PushPlugin.State(installed: true, version: "1.9.0", enabled: true)   // from before 1.10.0 (2026-10-30)
         case "off": PushPlugin.State(installed: true, version: PushPlugin.version, enabled: false)
         case "there": PushPlugin.State(installed: true, version: PushPlugin.version, enabled: true)
         default: PushPlugin.State()

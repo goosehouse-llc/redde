@@ -14,7 +14,7 @@ struct PluginUpdatesTests {
 
     private func state(_ plugin: InstalledPlugin, _ record: PluginInstallRecord?, behind: Int = 0, feed: String = "",
                        asked: (@Sendable (String, String, String?, String) -> Void)? = nil) async -> PluginUpdateState {
-        await PluginUpdates.state(of: plugin, record: record, appPlugin: "1.9.0",
+        await PluginUpdates.state(of: plugin, record: record, appPlugin: "1.10.0",
                                   commitsBehind: { asked?($0, $1, $2, $3); return behind }, feed: { _ in feed })
     }
 
@@ -59,8 +59,8 @@ struct PluginUpdatesTests {
         #expect(await state(try plugin([:]), fed, feed: "version: 1.4.0") == .feed("1.4.0"))
         // Installed by hand: nothing to go by. Redde's own: this app's version.
         #expect(await !state(try plugin([:]), nil).hasUpdate)
-        #expect(await state(try plugin(["name": .string("redde-push"), "version": .string("1.8.0")]), nil) == .redde("1.9.0"))
-        #expect(await state(try plugin(["name": .string("redde-push"), "version": .string("1.9.0")]), nil) == .current)
+        #expect(await state(try plugin(["name": .string("redde-push"), "version": .string("1.9.0")]), nil) == .redde("1.10.0"), "a 1.9.0 from before the bump is offered it")
+        #expect(await state(try plugin(["name": .string("redde-push"), "version": .string("1.10.0")]), nil) == .current)
     }
 
     @Test func theInstallRecordsAreReadByFolder() {

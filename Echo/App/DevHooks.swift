@@ -144,6 +144,14 @@ import WidgetKit
 ///   on a device that has the newer one too.
 /// - `-echo.demoTips`: sample tips on Settings → About → Support Redde (App Review screenshot).
 /// - `-echo.whatsNew`: show this version's "What's New" sheet (any other `-echo.` flag hides it).
+///   Its "Set Up Ahead of Your Day…" button shows until it has been offered once
+///   (`-aheadOfYourDay.answered NO` brings it back for a launch).
+/// - `-echo.screen aheadOfYourDay`: Ahead of Your Day's sheet (`AheadOfYourDay`). With
+///   `-echo.demoAhead old|missing|there|restart|api|none` on a made-up server (`DemoAheadHost`: the
+///   plugin 1.9.0, none, current, 1.9.0 that needs a restart once updated, the Hermes API alone
+///   with Location not allowed, no connection for jobs); nothing is made and no setting changes.
+///   `-echo.demoAheadRun` presses Turn On a second after the sheet opens (`-echo.demoAheadRun bottom`:
+///   and then scrolls to What It Takes).
 /// - `-echo.switchProfile <name>`: switch profile five seconds after launch.
 /// - `-echo.botKokoro <profile> <voice>`: that bot's Kokoro voice, a blend too ("bf_emma(1)+af_heart(4)").
 /// - `-echo.wallpaper <RRGGBB>`: the theme in use gets that wallpaper ("none" takes it off).

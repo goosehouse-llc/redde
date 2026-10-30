@@ -11,7 +11,15 @@ nonisolated enum WhatsNew {
         var phoneOnly = false
         /// Only on iPad.
         var padOnly = false
+        /// A button under it that sets the thing up (`WhatsNewView`).
+        var action: Action?
         var id: String { title }
+    }
+
+    /// What an item's button does.
+    enum Action: Equatable, Sendable {
+        /// Opens the Ahead of Your Day setup (`AheadOfYourDay`), offered once (asked 2026-10-30).
+        case aheadOfYourDay
     }
 
     struct Release: Identifiable, Equatable, Sendable {
@@ -24,7 +32,8 @@ nonisolated enum WhatsNew {
     static let releases: [Release] = [
         Release(version: "2.3", items: [
             Item(symbol: "sunrise", title: String(localized: "Ahead of your day"),
-                 detail: String(localized: "Morning Ideas to swipe, a Week Ahead, an Evening Wrap-up, and heads-ups before events with what to bring. Turn them on in Settings → Agent. They take the Redde plugin 1.9 on your Hermes.")),
+                 detail: String(localized: "Morning Ideas to swipe, a Week Ahead, an Evening Wrap-up, and heads-ups before events with what to bring. Turn them on in Settings → Agent. They take the Redde plugin 1.10 on your Hermes."),
+                 action: .aheadOfYourDay),
             Item(symbol: "car", title: String(localized: "Leave-By Alerts"),
                  detail: String(localized: "Redde looks at your calendar and Apple Maps on this device and tells you when to leave, a few minutes early. Only events with a street address. Settings → Agent.")),
             Item(symbol: "calendar.day.timeline.left", title: String(localized: "Your day as a timeline"),

@@ -98,6 +98,8 @@ struct ContentView: View {
     @State private var showDemoPatch = false
     /// `-echo.screen activity|pluginUpdates|triggers`: that page, in a sheet (the day's video, `DemoDay`).
     @State private var demoDayPage: String?
+    /// `-echo.screen aheadOfYourDay`: Ahead of Your Day's sheet (screenshots; `-echo.demoAhead` for a made-up server).
+    @State private var showAheadOfYourDay = false
     #endif
     @State private var showFiles = false
     #endif
@@ -182,6 +184,7 @@ struct ContentView: View {
                 }
             }
         }
+        .sheet(isPresented: $showAheadOfYourDay) { AheadOfYourDayView() }
         #endif
         .sheet(isPresented: $showFiles) { NavigationStack { FilesView() } }
         #endif
@@ -1243,6 +1246,7 @@ struct ContentView: View {
         case "botGallery": showBotGallery = true
         case "patch": showDemoPatch = true
         case "activity", "pluginUpdates", "triggers", "calendars", "headsUps": demoDayPage = DevHooks.value("-echo.screen")
+        case "aheadOfYourDay": showAheadOfYourDay = true
         #endif
         default: break
         }

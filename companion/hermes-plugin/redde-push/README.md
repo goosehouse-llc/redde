@@ -46,7 +46,8 @@ and read by the gateway and the Dashboard from there.
 The install line again, with `--force` on the end, then restart Hermes as above. Your pairings are
 kept: they live beside the plugin, not in it. (`hermes plugins update redde-push` works from Hermes
 0.21.5; earlier releases answer that the plugin wasn't installed from git, which is how they see
-one that came out of a folder of a repository.)
+one that came out of a folder of a repository.) What each version changed is in
+[CHANGELOG.md](CHANGELOG.md).
 
 ## Commands
 
@@ -157,7 +158,8 @@ at most once in five minutes (in one minute after a call you picked up), and all
 times a day. A call goes through the relay
 as a VoIP push, sealed like any note, to an address Redde gives the relay once calls are on; the
 tool returns when Apple has it, without waiting to hear whether you answered. A conversation
-already open keeps the tools it started with: it gets `call_user` once it is opened again.
+already open keeps the tools it started with: it gets `call_user` once it is opened again. From
+1.10.0 a device says at pairing whether it is an iPhone, an iPad or a Mac, and a Mac is never rung.
 
 ## Ideas
 
@@ -168,11 +170,14 @@ Redde's chats: swipe one right and its request goes to that agent as your messag
 swipe left and it is put away. Nothing is done until you take one. Redde's Settings, Agent,
 Morning Ideas sets up a daily Hermes job that has the main agent look at your day and offer
 ideas this way. One agent sends ideas at most ten times an hour. The tool is offered once a
-phone is paired.
+phone is paired. From 1.10.0 a run of that job, or of Routine Suggestions, that wrote its ideas
+out instead of calling the tool (a model that didn't find it behind Hermes 0.22's `tool_search`)
+still reaches the phone: lines `IDEA: title | why now | the request` become the cards, and any
+other answer but NOTHING NEW comes as a briefing.
 
 ## Keys asked for
 
-From 1.9.0 an agent that needs a key it hasn't got (an API key for a plugin or an MCP server it is
+From 1.10.0 an agent that needs a key it hasn't got (an API key for a plugin or an MCP server it is
 setting up) asks for it by name with `request_secret` (toolset `redde_keys`), and never in the
 chat: you get a card in Redde (a notification on each paired iPhone, the call's card in the chat,
 and Settings, Agent, Keys Asked For) with the name, which profile's `.env` it goes in, and why.
@@ -210,9 +215,11 @@ Also from 1.9.0, things the agent does for you on its own time, each a Hermes cr
 - **Heads-ups**: `heads_up_before` makes a job that runs once, a few minutes before an event on
   your calendar, named `[redde-notify] Heads-up: …`; its answer, what you need for the event,
   comes as a notification. Redde's Settings, Agent, Heads-Ups sets up a morning job that has the
-  main agent set them for the day.
+  main agent set them for the day. From 1.10.0 the notification carries the event's start and
+  address, for Redde's leave time and its Up Next widget.
 - **Briefings**: the answer of any job whose name starts with `[redde-notify] ` comes to the
-  paired phones as a notification and is kept in Redde's Briefings, the whole of it. Redde's
+  paired phones as a notification and is kept in Redde's Briefings, the whole of it (up to 1,800
+  characters from 1.10.0; 500 before). Redde's
   Evening Wrap-up is one: what got done today, what waits on you, what carries over.
 
 The tools are offered once a phone is paired.
@@ -250,10 +257,10 @@ answers with the numbers and the filled card, so what the agent says and what th
 agree. This is the only thing the plugin asks of a service outside your Hermes and your phone:
 the place's name goes to geocoding-api.open-meteo.com and its coordinates to api.open-meteo.com.
 Open-Meteo is free without a key for non-commercial use, and its data is under CC BY 4.0 (the card
-credits it). Each hour of the card has its chance of rain and its wind gusts, and the card says
+credits it). Each hour of the card has its chance of rain and, from 1.10.0, its wind gusts, and the card says
 when it was read (`updated`, the place's time with its offset); the app draws the hours with the
 rain to scale and calls out the first run of hours at 50 % or more, which the tool's answer says
-too ("storms likely 14:00–17:00, likeliest 80% at 15:00"). A place in a `places` card can carry
+too ("storms likely 14:00–17:00, likeliest 80% at 15:00"). From 1.10.0 a place in a `places` card can carry
 its `price` ("$$"), `hours` (whether it is open, in words: "Open until 9 PM", "Closes at 5 PM")
 and `pick` (the agent's pick); the app adds the walk to each from where the phone is, where it
 already knows. Older apps ignore all of these. Redde tells the plugin the phone's time zone and temperature units
@@ -262,7 +269,7 @@ the weather (in English), the plugin adds a line to that turn only: the person's
 zone, and to show the card before answering. An agent asked "what time is it" otherwise answers
 from Hermes's clock, which is the server's.
 
-Asked what is on the calendar ("what's on my calendar tomorrow", "what do I have today", "am I
+From 1.10.0, asked what is on the calendar ("what's on my calendar tomorrow", "what do I have today", "am I
 free Friday", "when is my next meeting"), in English, the plugin adds a line to that turn: look
 the events up with the calendar tool, show them as an `agenda` card, then answer in a line. An
 `agenda` holds the `events` as the calendar tool gave them (each a `title` and a `start`: an ISO
@@ -275,11 +282,11 @@ Asked to send, book, buy or change something for you, an agent is told to show a
 first and wait for your tap (how much it may do unasked is set per agent in Redde, Settings →
 Agent → Before Acting). An agent whose actions Hermes itself already asks you about, such as a
 coding bot whose writes and commands a `pre_tool_call` hook sends for approval, would ask twice:
-`/redde-push gated <profile> on` leaves the review card out for that agent, and Hermes's approval
+from 1.10.0, `/redde-push gated <profile> on` leaves the review card out for that agent, and Hermes's approval
 is the one ask (`/redde-push gated <profile> off` undoes it; the list is kept on the server, in
 the main home's `redde-push/gated.json`).
 
-A review may say its `kind` (`email`, `message`, `event`, `purchase`, `other`) and a `subtitle`
+From 1.10.0 a review may say its `kind` (`email`, `message`, `event`, `purchase`, `other`) and a `subtitle`
 ("From your Gmail · as you"): the app draws an email or a message as itself, who it's to, its
 subject and its words, and anything else as rows. Without a kind it goes by the fields' labels
 (To and Subject, an email). A checklist's items each take a `section` (or `group`), or come in

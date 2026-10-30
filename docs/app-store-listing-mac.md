@@ -54,7 +54,7 @@ Hermes is an open-source project by Nous Research. Redde is an independent clien
 ## What's New in 2.3.1 (4000)
 Your agent, ahead of your day, and new cards.
 
-• Ahead of your day. Turn them on in Settings → Agent: Morning Ideas to swipe, a Week Ahead, an Evening Wrap-up, and heads-ups before events. They take the Redde plugin 1.9 on your Hermes.
+• Ahead of your day. Turn them on in one step, in Settings → Agent → Ahead of Your Day: Morning Ideas to swipe, a Week Ahead, an Evening Wrap-up, and heads-ups before events. They take the Redde plugin 1.10 on your Hermes.
 • Your day as a timeline. Ask what's on your calendar and the answer is a card: your events to scale, free time marked. Click an empty spot to start a message that adds one. Pick which calendars your agent looks at, and one color for every event if you like.
 • New answer cards: the weather by the hour, places on a map with hours and walks, an email to check before it goes, and a checklist to tick.
 • Approvals in plain words: before your agent runs something, the card says what it deletes, in red, and what it changes.

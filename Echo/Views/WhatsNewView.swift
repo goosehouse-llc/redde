@@ -9,6 +9,10 @@ struct WhatsNewView: View {
     var onContinue: () -> Void = {}
     @Environment(\.theme) private var theme
     @Environment(\.dismiss) private var dismiss
+    /// Ahead of Your Day's button under its item: once, to someone not offered it before
+    /// (`AheadOfYourDay.offersSetup`); set as the sheet first appears, so it stays while it is up.
+    @State private var offersSetup: Bool?
+    @State private var settingUp = false
 
     var body: some View {
         ScrollView {
@@ -39,6 +43,18 @@ struct WhatsNewView: View {
                         }
                     }
                     .accessibilityElement(children: .combine)
+                    if item.action == .aheadOfYourDay, offersSetup == true {
+                        Button { settingUp = true } label: {
+                            Label(String(localized: "Set Up Ahead of Your Day…", comment: "What's New: the button under Ahead of your day that opens its one-step setup"),
+                                  systemImage: "sparkles")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(theme.accent)
+                        .controlSize(.regular)
+                        .padding(.leading, 52)
+                        .padding(.top, -16)
+                    }
                 }
             }
             .padding(.horizontal, 28)
@@ -63,5 +79,13 @@ struct WhatsNewView: View {
             .frame(maxWidth: .infinity)
             .background(.bar)
         }
+        .onAppear {
+            if offersSetup == nil {
+                offersSetup = AheadOfYourDay.offersSetup(in: release, answered: AheadOfYourDay.answered())
+            }
+        }
+        // Offered once: closing What's New answers it, taken or not; Settings → Agent keeps it.
+        .onDisappear { if offersSetup == true, !settingUp { AheadOfYourDay.markAnswered() } }
+        .sheet(isPresented: $settingUp) { AheadOfYourDayView() }
     }
 }

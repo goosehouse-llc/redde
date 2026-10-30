@@ -67,7 +67,7 @@ struct DailyJob {
 }
 
 /// Morning Ideas: each morning the main agent looks at the day and offers what it could do, as
-/// cards (`suggest_to_user`, Redde's plugin 1.9).
+/// cards (`suggest_to_user`, Redde's plugin 1.9; its written-out ideas from 1.10).
 enum MorningIdeas {
     static let name = "[redde] Morning ideas"
     static let prompt = """
@@ -83,7 +83,7 @@ enum MorningIdeas {
 
     static let job = DailyJob(
         name: name, prompt: { _ in prompt }, hour: 7, minute: 30, title: "Morning Ideas", toggle: "Morning Ideas",
-        footer: "Each morning your agent looks at your day (your calendar, reminders, the board, what you asked it lately) and offers up to five things it could do, as cards at the top of your chats and a notification. Swipe one right to have it done, left to put it away. Nothing is done until you take one. Needs Redde's plugin 1.9 on your Hermes, and notifications from it turned on.",
+        footer: "Each morning your agent looks at your day (your calendar, reminders, the board, what you asked it lately) and offers up to five things it could do, as cards at the top of your chats and a notification. Swipe one right to have it done, left to put it away. Nothing is done until you take one. Needs Redde's plugin 1.10 on your Hermes, and notifications from it turned on.",
         symbol: "lightbulb", runNow: "Send Ideas Now", asked: "Asked. The ideas come as a notification when your agent is done.",
         heard: [.idea], health: true)
 }
@@ -107,7 +107,7 @@ enum EveningWrapUp {
 
     static let job = DailyJob(
         name: name, prompt: { _ in prompt }, hour: 21, minute: 0, title: "Evening Wrap-up", toggle: "Evening Wrap-up",
-        footer: "Each evening your agent sums up your day: what got done, what's waiting on you, and what carries over. It comes as a notification and stays in Briefings, at the top of your chats. What carries over it can bring back tomorrow morning as idea cards. Needs Redde's plugin 1.9 on your Hermes.",
+        footer: "Each evening your agent sums up your day: what got done, what's waiting on you, and what carries over. It comes as a notification and stays in Briefings, at the top of your chats. What carries over it can bring back tomorrow morning as idea cards. Needs Redde's plugin 1.10 on your Hermes.",
         symbol: "moon.stars", runNow: "Send a Wrap-up Now", asked: "Asked. The wrap-up comes as a notification when your agent is done.",
         heard: [.briefing], health: true)
 }
@@ -130,7 +130,7 @@ enum HeadsUps {
     static let job = DailyJob(
         name: name, prompt: { prompt(minutes: $0) }, hour: 6, minute: 30, title: "Heads-Ups", toggle: "Heads-Ups Before Events",
         timeLabel: "Plan the Day At",
-        footer: "Each morning your agent looks at the day's calendar and, before each event that needs it, sends you a heads-up: where it is, who's coming, what to bring, the weather if it's outdoors. They come as notifications and stay in Briefings. Events added later in the day are picked up the next time it plans. Needs Redde's plugin 1.9 on your Hermes and a calendar your agent can read.",
+        footer: "Each morning your agent looks at the day's calendar and, before each event that needs it, sends you a heads-up: where it is, who's coming, what to bring, the weather if it's outdoors. They come as notifications and stay in Briefings. Events added later in the day are picked up the next time it plans. Needs Redde's plugin 1.10 on your Hermes and a calendar your agent can read.",
         symbol: "bell.badge", runNow: "Plan Today Now", asked: "Asked. Heads-ups come before each event.",
         options: [10, 15, 30, 45, 60], optionLabel: "How Long Before", defaultOption: 45, travel: true, heard: [.headsUp])
 }
@@ -155,7 +155,7 @@ enum RoutineSuggestions {
     static let job = DailyJob(
         name: name, prompt: { _ in prompt }, hour: 17, minute: 0, title: "Routine Suggestions", toggle: "Routine Suggestions",
         timeLabel: "Sundays At",
-        footer: "Once a week your agent looks for things you ask it again and again (the weather before a run, the board on Mondays) and offers each as an idea card. Take one and it becomes a routine that runs by itself and tells you. Needs Redde's plugin 1.9 on your Hermes.",
+        footer: "Once a week your agent looks for things you ask it again and again (the weather before a run, the board on Mondays) and offers each as an idea card. Take one and it becomes a routine that runs by itself and tells you. Needs Redde's plugin 1.10 on your Hermes.",
         symbol: "repeat", runNow: "Look Now", asked: "Asked. Suggestions come as idea cards when your agent is done.", days: "0",
         heard: [.idea])
 }
@@ -179,7 +179,7 @@ enum WeekAhead {
     static let job = DailyJob(
         name: name, prompt: { _ in prompt }, hour: 18, minute: 0, title: "Week Ahead", toggle: "Week Ahead",
         timeLabel: "Sundays At",
-        footer: "Each Sunday evening your agent looks at the week to come (your calendar, what's due, what's waiting on you) and sends you a short briefing. It stays in Briefings, at the top of your chats. Needs Redde's plugin 1.9 on your Hermes.",
+        footer: "Each Sunday evening your agent looks at the week to come (your calendar, what's due, what's waiting on you) and sends you a short briefing. It stays in Briefings, at the top of your chats. Needs Redde's plugin 1.10 on your Hermes.",
         symbol: "calendar", runNow: "Send It Now", asked: "Asked. The week ahead comes as a notification when your agent is done.", days: "0",
         heard: [.briefing], health: true)
 }
