@@ -806,6 +806,32 @@ extension Conversation {
         setInterruptForDemo(.clarify(ClarifyRequest(id: "demo", questions: questions, isBatch: questions.count > 1)))
     }
 
+    /// `-echo.demoApprovalCard <coder|command|push|script>`: an approval waiting, as Hermes sends
+    /// one: Coder's change to Hermes's settings (the approval hook's words), a delete Hermes's own
+    /// rule caught, a push the hook asks about, the agent's own script.
+    func seedApprovalDemo(_ kind: String) {
+        reset()
+        let (asked, said, request): (String, String, ApprovalRequest) = switch kind {
+        case "command": ("Clear out the old build folders.", "On it.", ApprovalRequest(
+            id: "demo", command: "rm -rf ~/builds/2025-* && mkdir -p ~/builds/archive", description: "recursive delete",
+            choices: ["once", "session", "always", "deny"]))
+        case "push": ("Commit the README fix and push it.", "Committing and pushing.", ApprovalRequest(
+            id: "demo", command: "<terminal> (plugin approval rule)",
+            description: "Sol wants to run: cd ~/homelab-config && git add README.md && git commit -m \"Fix the backup steps\" && git push origin main",
+            choices: ["once", "session", "always", "deny"]))
+        case "script": ("Tidy the downloads folder by type.", "I'll sort them with a short script.", ApprovalRequest(
+            id: "demo", command: "import shutil\nfrom pathlib import Path\nfor f in Path('~/Downloads').expanduser().iterdir():\n    if f.suffix == '.dmg':\n        f.unlink()\n    else:\n        shutil.move(f, f.parent / f.suffix.strip('.') / f.name)",
+            description: "execute_code script execution. The script can spawn subprocesses or mutate files without passing through terminal command approval; approval is one-shot for this run.",
+            choices: ["once", "deny"]))
+        default: ("Add the weather skill to Home, and take out the old forecast one.", "Done in the copy and tried on the test Hermes. Putting it in now.", ApprovalRequest(
+            id: "demo", command: "<apply_claude_work> (plugin approval rule)",
+            description: "The claude bot wants to put Claude's change in place to Hermes's own settings (Hermes restarts after, and rolls back if it isn't well). DELETES 1 file(s): skills/old-forecast/SKILL.md; adds 2: skills/weather/SKILL.md, skills/weather/lookup.py; edits 1: profiles/home/config.yaml. +86 −41 lines. Card c4f1a2.",
+            choices: ["once", "session", "always", "deny"]))
+        }
+        replaceForDemo(messages: [Message(role: .user, text: asked), Message(role: .assistant, text: said)])
+        setInterruptForDemo(.approval(request))
+    }
+
     /// `-echo.demoAsks`: cards the person answers with a tap, as an agent would ask with them
     /// (made-up people and places).
     func seedAsksDemo(more: Bool) {

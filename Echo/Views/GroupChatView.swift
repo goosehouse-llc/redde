@@ -68,6 +68,9 @@ struct GroupChatView: View {
 
     private var faces: [String: BotFace] { BotDirectory.shared.roster?.faces ?? [:] }
     private func face(_ member: GroupMember?) -> BotFace { faces[member?.profile ?? ""] ?? BotFace(seed: member?.profile ?? "bot") }
+    private func asker(_ id: String?) -> (name: String, face: BotFace)? {
+        feed.room.member(id).map { ($0.label, face($0)) }
+    }
     /// The voice screen's view of the room.
     private var voiceScene: GroupVoiceScene { GroupVoiceScene(voice: voice, feed: feed, face: face) }
 
@@ -99,10 +102,8 @@ struct GroupChatView: View {
                         if feed.state.waitsOnPerson || (feed.discussing || feed.state.working) && !someoneIsWriting { talking }
                         ForEach(feed.state.approvals.filter { !feed.answering.contains($0.id) }) { approval in
                             VStack(alignment: .leading, spacing: 6) {
-                                (feed.room.member(approval.memberID).map { Text("\($0.label) wants to run a command") }
-                                    ?? Text("A bot wants to run a command"))
-                                    .chatFont(.footnote, weight: .semibold).foregroundStyle(.secondary)
-                                ApprovalCard(request: approval.request) { feed.answer(approval, $0) }
+                                // Headed by the bot asking, its face and name.
+                                ApprovalCard(request: approval.request, asker: asker(approval.memberID)) { feed.answer(approval, $0) }
                                 // Hermes's approvals.timeout, 300 s unless changed; unanswered, the command isn't run.
                                 Text("Not answered in about 5 minutes, it isn't run.")
                                     .chatFont(.caption).foregroundStyle(.secondary)

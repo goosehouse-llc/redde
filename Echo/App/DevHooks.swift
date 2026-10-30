@@ -64,6 +64,7 @@ import WidgetKit
 /// - `-echo.demoPage`: a reply with a page the agent made, live in the chat, with buttons that talk back.
 /// - `-echo.demoCards`: a reply with a map (a walk), three places and the weather, then the time in Tokyo (`ReplyCards`).
 /// - `-echo.demoAgenda`: what's on the calendar tomorrow, then the rest of the week with a free day, as agenda cards (`AgendaCard`); `-echo.demoAgenda tomorrow` the first alone.
+/// - `-echo.demoApprovalCard <coder|command|push|script>`: an approval waiting, in words (`ApprovalSummary`).
 /// - `-echo.demoQuestion <one|few|open>`: the agent's question card (Hermes's clarify), with
 ///   choices, several questions, or one to answer in words.
 /// - `-echo.demoAsks`: cards answered with a tap: a review of a message, a choice of restaurants;
@@ -253,6 +254,7 @@ enum DevHooks {
         if has("-echo.demoKeyRequest") { KeyRequests.shared.showDemo() }
         if has("-echo.demoAsks") { conversation.seedAsksDemo(more: has("-echo.demoAsksMore")) }
         if let kind = value("-echo.demoQuestion") { conversation.seedQuestionDemo(kind) }
+        if let kind = value("-echo.demoApprovalCard") { conversation.seedApprovalDemo(kind) }
         if has("-echo.demoPhotos") { conversation.seedPhotoDemo(count: value("-echo.demoPhotos").flatMap(Int.init) ?? 5) }
         if has("-echo.demoWidgets") {
             NeedsYou.clear()

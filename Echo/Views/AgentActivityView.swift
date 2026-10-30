@@ -148,6 +148,13 @@ struct AgentActivityView: View {
         }
         .navigationTitle("Agent Activity")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            // The whole week as text, to paste into a chat or a note (asked 2026-10-30).
+            ToolbarItem(placement: .primaryAction) {
+                Button("Copy All", systemImage: "doc.on.doc") { UIPasteboard.general.string = everything }
+                    .disabled(entries.isEmpty)
+            }
+        }
         .refreshable { await load() }
         .task { await load() }
     }
@@ -176,6 +183,25 @@ struct AgentActivityView: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        // Held (on the Mac, the right click): one entry, whole, its answer not cut short.
+        .contextMenu {
+            Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = text(entry) }
+        }
+    }
+
+    /// One entry as text: its time, agent and title, then what it said.
+    private func text(_ entry: ActivityEntry) -> String {
+        let line = "\(entry.at.formatted(.dateTime.hour().minute())) · \(name(entry.profile)) · \(entry.title)"
+        let detail = PlainText.display(entry.detail).trimmingCharacters(in: .whitespacesAndNewlines)
+        return detail.isEmpty ? line : line + "\n" + detail
+    }
+
+    /// Every entry, by day as the screen has them.
+    private var everything: String {
+        days.map { day in
+            ([heading(day.day)] + day.entries.map(text)).joined(separator: "\n\n")
+        }
+        .joined(separator: "\n\n\n")
     }
 
     private func heading(_ day: Date) -> String {
