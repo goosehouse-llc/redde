@@ -228,3 +228,11 @@ credits it). Redde tells the plugin the phone's time zone and temperature units
 the weather (in English), the plugin adds a line to that turn only: the person's time in that
 zone, and to show the card before answering. An agent asked "what time is it" otherwise answers
 from Hermes's clock, which is the server's.
+
+Asked to send, book, buy or change something for you, an agent is told to show a review card
+first and wait for your tap (how much it may do unasked is set per agent in Redde, Settings →
+Agent → Before Acting). An agent whose actions Hermes itself already asks you about, such as a
+coding bot whose writes and commands a `pre_tool_call` hook sends for approval, would ask twice:
+`/redde-push gated <profile> on` leaves the review card out for that agent, and Hermes's approval
+is the one ask (`/redde-push gated <profile> off` undoes it; the list is kept on the server, in
+the main home's `redde-push/gated.json`).

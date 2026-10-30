@@ -416,6 +416,9 @@ def _slash(raw_args: str = "") -> str:
     if words[:1] == ["autonomy"]:
         # How much each agent may do unasked (cards.py), kept in the main home.
         return cards.autonomy_slash(_home(), words[1:])
+    if words[:1] == ["gated"]:
+        # Agents whose actions Hermes already asks about: no review cards first (cards.py).
+        return cards.gated_slash(_home(), words[1:])
     if words[:1] == ["calls"]:
         # Which agents may ring the phone (calls.py): kept in the main home, with the phones.
         return calls.slash(_store_in(calls.caller(_home())[1]), words[1:])

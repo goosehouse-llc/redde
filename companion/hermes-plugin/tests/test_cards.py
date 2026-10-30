@@ -364,3 +364,28 @@ class AutonomyTests(unittest.TestCase):
         self.assertIn("easy to undo", cards.turn_note(self.root, "Text Ana I'm late", platform="desktop"))
         self.assertIn("act on their behalf", cards.turn_note(self.root / "profiles" / "ops", "Book the table", platform="desktop"))
         self.assertIn("review", cards.turn_note(Path(tempfile.mkdtemp()), "Book the table", platform="desktop"), "ask first by default")
+
+
+class GatedTests(unittest.TestCase):
+    """A coding bot whose writes Hermes already asks about gets no review card first (2026-10-29:
+    the person was asked twice for each change)."""
+    def setUp(self):
+        self.root = Path(tempfile.mkdtemp())
+        (self.root / "profiles" / "claude").mkdir(parents=True)
+        self.coder = self.root / "profiles" / "claude"
+
+    def test_a_gated_agent_gets_no_review_note_and_the_others_still_do(self):
+        asked = "Fix the error message in the POST handler"
+        self.assertIn("'review'", cards.turn_note(self.coder, asked, platform="desktop"))
+        self.assertEqual(cards.gated_slash(self.root, ["claude", "on"]), "redde-push gated claude")
+        self.assertIsNone(cards.turn_note(self.coder, asked, platform="desktop"))
+        self.assertIn("'review'", cards.turn_note(self.root, "Email Ana that I'll be late", platform="desktop"), "Sol still asks first")
+        self.assertIn("'checklist'", cards.turn_note(self.coder, "Make me a packing list", platform="desktop") or "", "other notes stay")
+
+    def test_the_list_is_set_on_the_server_and_survives_the_apps_levels(self):
+        cards.gated_slash(self.root, ["claude", "on"])
+        cards.autonomy_slash(self.root, ["claude=ask"])
+        self.assertTrue(cards.gated(self.coder))
+        self.assertEqual(cards.gated_slash(self.root, ["claude", "off"]), "redde-push gated none")
+        self.assertFalse(cards.gated(self.coder))
+        self.assertTrue(cards.gated_slash(self.root, ["../x", "on"]).endswith("not a profile name"))

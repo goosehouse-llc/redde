@@ -413,7 +413,7 @@ def turn_note(home: Path, message, platform: str = "", at: datetime | None = Non
             return None
         if _ASKS_LIST.search(text):
             return LIST_NOTE
-        if not _ASKS_ACTION.search(text):
+        if not _ASKS_ACTION.search(text) or gated(home):
             return None
         return LEVEL_NOTES.get(autonomy(home), REVIEW_NOTE)
     asked = " and ".join(w for w, yes in (("the time", time_asked), ("the weather", weather_asked)) if yes)
@@ -462,6 +462,49 @@ def autonomy_slash(home: Path, words: list[str]) -> str:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(levels))
     return "redde-push autonomy " + " ".join(f"{p}={l}" for p, l in sorted(levels.items()))
+
+
+# ---- agents whose actions Hermes already asks about, the server's to say
+
+def _gated_file(home: Path) -> Path:
+    from .calls import caller
+    return caller(Path(home))[1] / "redde-push" / "gated.json"
+
+
+def gated(home: Path) -> bool:
+    """Whether this agent's actions already wait for the person in Hermes itself (a coding bot
+    whose writes and commands a `pre_tool_call` hook sends for approval): then no review card
+    first, or every change is asked twice, once by its card and once by Hermes (2026-10-29: the
+    errand words caught coding requests, "the error message", "the POST handler", "sort order").
+    Set on the server, never by the app's levels, which each phone sends again as it comes
+    forward."""
+    try:
+        from .calls import caller
+        names = json.loads(_gated_file(home).read_text())
+        return isinstance(names, list) and caller(Path(home))[0] in names
+    except (OSError, ValueError, AttributeError):
+        return False
+
+
+def gated_slash(home: Path, words: list[str]) -> str:
+    """`gated <profile> on|off`: whether Hermes's own approvals stand in for that agent's review
+    cards; `gated`: which agents. Kept in the main home."""
+    path = _gated_file(home)
+    try:
+        names = json.loads(path.read_text())
+        names = [n for n in names if isinstance(n, str)] if isinstance(names, list) else []
+    except (OSError, ValueError):
+        names = []
+    if len(words) == 2 and words[1] in ("on", "off"):
+        from .calls import PROFILE
+        if not PROFILE.fullmatch(words[0]):
+            return "redde-push gated: not a profile name"
+        names = sorted(set(names) | {words[0]}) if words[1] == "on" else [n for n in names if n != words[0]]
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(names))
+    elif words:
+        return "redde-push gated: /redde-push gated <profile> on|off"
+    return "redde-push gated " + (" ".join(names) or "none")
 
 
 # ---- on or off, the phone's to say
