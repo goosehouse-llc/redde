@@ -94,7 +94,8 @@ final class CardLookup {
 }
 
 /// Open-Meteo's forecast (api.open-meteo.com, free without a key; data under CC BY 4.0) as a
-/// weather card: now, the next 12 hours, 7 days. The plugin's `forecast.py` reads it the same way.
+/// weather card: now, the next 12 hours (with their gusts, for the rain callout: 2026-10-30), 7
+/// days, and when it was read. The plugin's `forecast.py` reads it the same way.
 nonisolated enum OpenMeteo {
     static func url(at coordinate: CLLocationCoordinate2D, units: String) -> URL {
         var parts = URLComponents(string: "https://api.open-meteo.com/v1/forecast")!
@@ -102,7 +103,7 @@ nonisolated enum OpenMeteo {
         parts.queryItems = [
             .init(name: "latitude", value: round(coordinate.latitude)), .init(name: "longitude", value: round(coordinate.longitude)),
             .init(name: "current", value: "temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,is_day"),
-            .init(name: "hourly", value: "temperature_2m,weather_code,precipitation_probability,is_day"),
+            .init(name: "hourly", value: "temperature_2m,weather_code,precipitation_probability,is_day,wind_gusts_10m"),
             .init(name: "daily", value: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max"),
             .init(name: "temperature_unit", value: units == "F" ? "fahrenheit" : "celsius"),
             .init(name: "wind_speed_unit", value: units == "F" ? "mph" : "kmh"),
@@ -134,7 +135,8 @@ nonisolated enum OpenMeteo {
             guard let time = time.string, let temperature = at(hourly?["temperature_2m"], i)?.number else { return nil }
             return .init(time: time, temperature: temperature, condition: condition(at(hourly?["weather_code"], i)?.number),
                          precipitation: at(hourly?["precipitation_probability"], i)?.number.map { Int($0.rounded()) },
-                         night: at(hourly?["is_day"], i)?.number.map { $0 == 0 })
+                         night: at(hourly?["is_day"], i)?.number.map { $0 == 0 },
+                         gusts: at(hourly?["wind_gusts_10m"], i)?.number)
         }
         let days: [ReplyCard.Weather.Day] = (daily?["time"]?.array ?? []).prefix(7).enumerated().compactMap { i, date in
             guard let date = date.string, let high = at(daily?["temperature_2m_max"], i)?.number,
@@ -142,7 +144,15 @@ nonisolated enum OpenMeteo {
             return .init(date: date, high: high, low: low, condition: condition(at(daily?["weather_code"], i)?.number),
                          precipitation: at(daily?["precipitation_probability_max"], i)?.number.map { Int($0.rounded()) })
         }
-        return .init(place: place, units: units, now: reading, hours: hours, days: days, source: ReplyCards.lookedUpSource)
+        return .init(place: place, units: units, now: reading, hours: hours, days: days, source: ReplyCards.lookedUpSource,
+                     updated: stamp(now?["time"]?.string, offset: json["utc_offset_seconds"]?.number))
+    }
+
+    /// The reading's time ("2026-10-23T17:45", the place's) with its offset: "2026-10-23T17:45:00-04:00".
+    static func stamp(_ time: String?, offset: Double?) -> String? {
+        guard let time, time.count == 16, let offset else { return nil }
+        let minutes = Int(offset) / 60
+        return time + String(format: ":00%@%02d:%02d", minutes < 0 ? "-" : "+", abs(minutes) / 60, abs(minutes) % 60)
     }
 
     /// A WMO weather code as the card's condition.

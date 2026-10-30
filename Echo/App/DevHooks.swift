@@ -63,6 +63,7 @@ import WidgetKit
 ///   then one that names its files by path (links that open them).
 /// - `-echo.demoPage`: a reply with a page the agent made, live in the chat, with buttons that talk back.
 /// - `-echo.demoCards`: a reply with a map (a walk), three places and the weather, then the time in Tokyo (`ReplyCards`).
+///   `-echo.demoCards weather` (or `places`): that card alone.
 /// - `-echo.demoAgenda`: what's on the calendar tomorrow, then the rest of the week with a free day, as agenda cards (`AgendaCard`); `-echo.demoAgenda tomorrow` the first alone.
 /// - `-echo.demoApprovalCard <coder|command|push|script>`: an approval waiting, in words (`ApprovalSummary`).
 /// - `-echo.demoQuestion <one|few|open>`: the agent's question card (Hermes's clarify), with
@@ -70,6 +71,7 @@ import WidgetKit
 /// - `-echo.demoAsks`: cards answered with a tap: a review of a message, a choice of restaurants;
 ///   with `-echo.demoAsksMore`, a packing checklist and a booking form instead (`-echo.demoAsksListOnly`:
 ///   the list alone; `-echo.demoPinned`: the list pinned to the chat list).
+///   `-echo.demoAsksReviewOnly`: the email alone; `-echo.demoAsksBooking`: a text's review, then a booking's (rows).
 /// - `-echo.demoPhotos [n]`: messages with two photos, one, and n (five by default), to look at
 ///   how pictures are set out together and at the full-screen viewer.
 /// - `-echo.demoWidgets`: fill the "Needs you" and Context widgets with sample data (two requests
@@ -248,7 +250,7 @@ enum DevHooks {
         if has("-echo.demoAudio") { conversation.seedAudioDemo() }
         if has("-echo.demoDocument") { conversation.seedDocumentDemo() }
         if has("-echo.demoPage") { conversation.seedPageDemo() }
-        if has("-echo.demoCards") { conversation.seedCardsDemo() }
+        if has("-echo.demoCards") { conversation.seedCardsDemo(only: value("-echo.demoCards")) }
         if has("-echo.demoAgenda") { conversation.seedAgendaDemo(tomorrowOnly: value("-echo.demoAgenda") == "tomorrow") }
         // A key a bot asked for, its card open over the app, answered by nothing (screenshots).
         if has("-echo.demoKeyRequest") { KeyRequests.shared.showDemo() }

@@ -48,7 +48,8 @@ def forecast_answer(temperature=75.5, units="F"):
                        "temperature_2m": [77.3, 74.9, 70.1, 68, 67, 66, 65, 64, 64, 63, 63, 62],
                        "weather_code": [0, 0, 1, 2, 2, 3, 3, 3, 61, 61, 3, 2],
                        "precipitation_probability": [0, 0, 0, 0, 5, 5, 10, 10, 40, 35, 10, 5],
-                       "is_day": [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
+                       "is_day": [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                       "wind_gusts_10m": [18.6, 17.2, 14.1, 12, 11, 10, 10, 9, 15, 16, 12, 10]},
             "daily": {"time": [f"2026-10-{d}" for d in range(23, 30)], "weather_code": [0, 2, 61, 3, 0, 0, 95],
                       "temperature_2m_max": [81.9, 80.6, 78, 79, 82, 83, 84], "temperature_2m_min": [64, 63, 62, 61, 62, 63, 66],
                       "precipitation_probability_max": [0, 10, 60, 20, 0, 0, 70]}}
@@ -103,7 +104,9 @@ class CardTests(unittest.TestCase):
             card = answer["cards"][0]
             self.assertEqual(card["now"], {"temperature": 75.5, "condition": "clear", "night": False, "feels_like": 71.9, "humidity": 49,
                                            "wind": "12 mph NE", "high": 81.9, "low": 64, "precipitation": 0})
-            self.assertEqual(card["hours"][2], {"time": "2026-10-23T19:00", "temperature": 70.1, "condition": "clear", "night": True, "precipitation": 0})
+            self.assertEqual(card["hours"][2], {"time": "2026-10-23T19:00", "temperature": 70.1, "condition": "clear", "night": True,
+                                                "precipitation": 0, "gusts": 14})
+            self.assertEqual(card["updated"], "2026-10-23T17:45:00-04:00", "when it was read, with the place's offset")
             self.assertEqual(card["days"][2], {"date": "2026-10-25", "high": 78, "low": 62, "condition": "rain", "precipitation": 60})
             self.assertIn("now 76°F clear; feels like 72°F; today high 82°F, low 64°F; rain chance 0% this hour; humidity 49%; "
                           "wind 12 mph NE; tomorrow 81°F/63°F partly cloudy, rain 10%", answer["said"][0])
@@ -189,6 +192,33 @@ class CardTests(unittest.TestCase):
         self.assertEqual([c(0), c(1), c(2), c(3), c(45), c(53), c(56), c(63), c(65), c(82), c(75), c(95), c(99), c(None)],
                          ["clear", "clear", "partly_cloudy", "cloudy", "fog", "drizzle", "sleet", "rain", "heavy_rain", "heavy_rain",
                           "snow", "thunderstorm", "thunderstorm", "cloudy"])
+
+    def test_rain_coming_is_said_as_the_card_calls_it_out(self):
+        # The weather card's callout (asked 2026-10-30): the first run of hours at 50 % or more.
+        answer = forecast_answer()
+        answer["hourly"]["precipitation_probability"] = [0, 10, 55, 80, 70, 20, 10, 5, 0, 0, 0, 0]
+        answer["hourly"]["weather_code"] = [0, 2, 61, 95, 95, 3, 3, 3, 3, 3, 3, 3]
+        answer["hourly"]["wind_gusts_10m"] = [10, 12, 24, 34.6, 30, 15, 10, 9, 9, 9, 9, 9]
+        card = cards.forecast.card_from(answer, "Orlando FL", "F")
+        self.assertEqual(cards.forecast.spell(card), {"kind": "storms", "from": "2026-10-23T19:00", "to": "2026-10-23T21:00",
+                                                      "peak": "2026-10-23T20:00", "chance": 80, "gusts": 35})
+        self.assertIn("storms likely 19:00–22:00, likeliest 80% at 20:00, gusts to 35 mph", cards.forecast.said(card))
+        answer["hourly"]["precipitation_probability"] = [0] * 10 + [60, 65]
+        answer["hourly"]["weather_code"] = [0] * 12
+        late = cards.forecast.card_from(answer, "Orlando FL", "F")
+        self.assertIn("rain likely from 03:00", cards.forecast.said(late), "it runs past the last hour: no end is made up")
+        self.assertIsNone(cards.forecast.spell(cards.forecast.card_from(forecast_answer(), "Orlando FL", "F")), "40 % isn't likely")
+
+    def test_a_list_of_places_says_what_the_card_shows_of_each(self):
+        listed = cards.SCHEMA["parameters"]["properties"]["cards"]["items"]["properties"]["places"]["items"]["properties"]
+        self.assertTrue({"price", "hours", "pick", "rating"} <= set(listed))
+        route = cards.SCHEMA["parameters"]["properties"]["cards"]["items"]["properties"]["route"]["properties"]["to"]["properties"]
+        self.assertNotIn("pick", route, "a route's ends show only a name")
+        found = {"type": "places", "places": [{"name": "Rossio Roasters", "price": "$$", "rating": 4.7, "hours": "Open until 9 PM", "pick": True},
+                                               {"name": "Tram 28 Café", "price_level": 1, "closes": "5 PM"}]}
+        answer = json.loads(cards.handle({"cards": [found]}))
+        self.assertEqual(answer["shown"], ["places: 2 (Rossio Roasters, Tram 28 Café)"])
+        self.assertEqual(answer["cards"], [found], "passed on as given: the app reads them")
 
     def test_offline_the_agent_hears_it_and_its_own_numbers_stand(self):
         self.open_meteo.down = True
@@ -320,6 +350,26 @@ class AnswerCardTests(unittest.TestCase):
 
     def test_the_description_stays_short(self):
         self.assertLess(len(cards.SCHEMA["description"]), 1700, "it is in every prompt")
+
+    def test_a_review_says_what_it_is_and_a_checklist_its_groups(self):
+        """2026-10-30: drawn as the thing itself, an email as an email; a list in its groups, a word by an item."""
+        said = json.loads(cards.handle({"cards": [
+            {"type": "review", "kind": "Email", "title": "Email to send", "subtitle": "From your Gmail · as you", "action": "Send",
+             "fields": [{"label": "To", "value": "Ana Okafor"}, {"label": "Subject", "value": "Late"}, {"label": "Body", "value": "Hi Ana"}]},
+            {"type": "review", "kind": "a fax", "title": "Table at Lupa", "action": "Book", "fields": [{"label": "When", "value": "Sat 7:30"}]},
+            {"type": "checklist", "title": "Beach", "subtitle": "Nov 7 – 8", "verb": "packed",
+             "groups": [{"name": "Clothes", "items": [{"text": "Swimsuits", "note": "×2"}, "Sandals"]}, {"name": "Beach", "items": ["Towels"]}]},
+            {"type": "checklist", "title": "Shop", "items": [{"text": "Eggs", "group": "Dairy"}, {"text": "Milk", "group": "Dairy"}]}]}))
+        self.assertNotIn("error", said)
+        self.assertIn("as an email", said["shown"][0])
+        self.assertNotIn(" as ", said["shown"][1], "a kind it doesn't know is left out, not an error")
+        self.assertIn("3 items in 2 groups", said["shown"][2], "groups each with their items count")
+        self.assertIn("(2 items)", said["shown"][3], "one group is just the list")
+        props = cards.SCHEMA["parameters"]["properties"]["cards"]["items"]["properties"]
+        self.assertEqual(props["kind"]["enum"], list(cards.REVIEW_KINDS))
+        self.assertIn("subtitle", props)
+        self.assertIn("verb", props)
+        self.assertIn("note", props["items"]["items"]["properties"])
 
 
 class ReviewNoteTests(unittest.TestCase):

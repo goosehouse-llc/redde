@@ -113,6 +113,83 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
         var action: String
         var fields: [Field]
         var note: String?
+        /// What it is, when the agent says (asked 2026-10-30, with the card drawn as the thing
+        /// itself: an email as an email); else told by its fields (`shownKind`).
+        var kind: Kind? = nil
+        /// A line under its title, when the agent gives one ("From your Gmail · as you").
+        var subtitle: String? = nil
+
+        nonisolated enum Kind: String, Codable, Sendable, CaseIterable {
+            case email, message, event, purchase, other
+
+            /// Read leniently: "Email", "e-mail", "text", "booking"; nil for what it can't place.
+            init?(lenient text: String?) {
+                let key = (text ?? "").lowercased().trimmingCharacters(in: .whitespaces)
+                if let exact = Kind(rawValue: key) { self = exact; return }
+                switch key {
+                case "e-mail", "mail", "gmail": self = .email
+                case "text", "sms", "imessage", "chat", "dm": self = .message
+                case "calendar", "meeting", "appointment", "invite", "invitation": self = .event
+                case "booking", "reservation", "order", "payment", "buy": self = .purchase
+                default: return nil
+                }
+            }
+        }
+
+        /// Where a message's parts are among the fields: who it's to, its subject, its body; and
+        /// the rest, as rows, in their order. Anything else is all rows.
+        nonisolated struct Layout: Equatable, Sendable {
+            var to: Int?
+            var subject: Int?
+            var body: Int?
+            var rows: [Int]
+        }
+
+        /// Its kind as the agent said, else by its fields' labels (To and Subject: an email; To
+        /// and a Message: a message, an email when it's to an address).
+        var shownKind: Kind {
+            if let kind { return kind }
+            let labels = fields.map { Self.plain($0.label) }
+            let to = labels.firstIndex { Self.toLabels.contains($0) }
+            if labels.contains(where: Self.subjectLabels.contains) || labels.contains(where: ["cc", "bcc"].contains) { return .email }
+            if to != nil, labels.contains(where: Self.bodyLabels.contains) {
+                return to.map { fields[$0].value.contains("@") } == true ? .email : .message
+            }
+            if labels.contains(where: Self.purchaseLabels.contains) { return .purchase }
+            if labels.contains(where: Self.eventLabels.contains) { return .event }
+            return .other
+        }
+
+        var layout: Layout {
+            let all = Array(fields.indices)
+            guard [.email, .message].contains(shownKind) else { return .init(rows: all) }
+            let labels = fields.map { Self.plain($0.label) }
+            let to = labels.firstIndex { Self.toLabels.contains($0) }
+            let subject = labels.firstIndex { Self.subjectLabels.contains($0) }
+            let body = labels.firstIndex { Self.bodyLabels.contains($0) }
+                ?? all.last { $0 != to && $0 != subject && fields[$0].long }
+            return .init(to: to, subject: subject, body: body, rows: all.filter { ![to, subject, body].contains($0) })
+        }
+
+        /// A person's initials for their mark ("Ana Okafor" AO, "ana@example.com" A): the first
+        /// of several, and the name before an address.
+        static func initials(_ to: String) -> String {
+            var name = to.split(separator: ",").first.map(String.init) ?? to
+            if let open = name.firstIndex(of: "<") { name = String(name[..<open]) }
+            if !name.contains(" "), let at = name.firstIndex(of: "@") { name = String(name[..<at]) }
+            let words = name.split { !$0.isLetter }
+            let letters = [words.first, words.count > 1 ? words.last : nil].compactMap { $0?.first }
+            return String(letters).uppercased()
+        }
+
+        private static func plain(_ label: String) -> String {
+            label.lowercased().trimmingCharacters(in: .whitespaces.union(.punctuationCharacters))
+        }
+        private static let toLabels: Set = ["to", "recipient", "recipients", "send to"]
+        private static let subjectLabels: Set = ["subject", "re"]
+        private static let bodyLabels: Set = ["body", "message", "text", "content"]
+        private static let eventLabels: Set = ["when", "date", "time", "start", "starts", "where", "location", "attendees", "invitees"]
+        private static let purchaseLabels: Set = ["price", "total", "cost", "amount", "payment", "pay with", "card", "quantity"]
     }
 
     nonisolated struct Field: Codable, Equatable, Sendable {
@@ -142,10 +219,16 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
         var items: [Item]
         /// One emoji for its header ("🏕️").
         var emoji: String?
+        /// A line under its title ("Nov 7 – 8"), and what doing an item is ("packed": "3 of 8
+        /// packed"), when the agent gives them (asked 2026-10-30).
+        var subtitle: String? = nil
+        var verb: String? = nil
         nonisolated struct Item: Codable, Equatable, Sendable {
             var text: String
             var done: Bool
             var section: String?
+            /// A word beside it ("×2", "SPF 50").
+            var note: String? = nil
         }
 
         /// Its sections in order, each with its items' places in `items`.
@@ -226,6 +309,9 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
     nonisolated struct Places: Codable, Equatable, Sendable {
         var title: String?
         var places: [Place]
+
+        /// The one Directions goes to: the agent's pick, else the first.
+        var lead: Place? { places.first { $0.pick == true } ?? places.first }
     }
 
     /// A place as the agent knows it. Without coordinates, the phone looks it up by its name and
@@ -241,10 +327,30 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
         var note: String?
         var phone: String?
         var url: String?
+        /// How dear, as the agent found it: "$$" (asked 2026-10-30, with the places card's new look).
+        var price: String?
+        /// Whether it is open, in the agent's words ("Open until 9 PM", "Closes at 5 PM", "Closed").
+        var hours: String?
+        /// Open now, where the agent said so without words.
+        var open: Bool?
+        /// The agent's pick of the list.
+        var pick: Bool?
 
         var hasCoordinate: Bool {
             guard let latitude, let longitude else { return false }
             return (-90 ... 90).contains(latitude) && (-180 ... 180).contains(longitude)
+        }
+
+        enum Opening: Equatable, Sendable { case open, closing, closed }
+
+        /// Open, closing soon or closed, read from its words ("Closes at 5 PM" is closing soon: a
+        /// place open late says "Open until"); else from `open`. Nil when neither says.
+        var opening: Opening? {
+            let said = (hours ?? "").lowercased().trimmingCharacters(in: .whitespaces)
+            if said.hasPrefix("closed") || said.contains("closed now") { return .closed }
+            if said.hasPrefix("closes") || said.hasPrefix("closing") { return .closing }
+            if said.hasPrefix("open") || said.contains("open now") || said.contains("24 hours") { return .open }
+            return open.map { $0 ? .open : .closed }
         }
     }
 
@@ -256,9 +362,62 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
         var hours: [Hour]
         var days: [Day]
         var source: String?
+        /// When the reading was taken, in the place's time with its offset ("2026-10-23T17:45:00-04:00"),
+        /// as the plugin and the phone write it from the forecast.
+        var updated: String?
 
         /// Whether there is anything to draw: a card with only its place is waiting for its forecast.
         var hasReading: Bool { now != nil || !hours.isEmpty || !days.isEmpty }
+
+        /// When the reading was taken, where `updated` says with its offset ("2026-10-23T17:45:00-04:00").
+        var updatedAt: Date? { updated.flatMap { ISO8601DateFormatter().date(from: $0) } }
+
+        /// Rain (or storms, or snow) likely in the hours ahead (asked 2026-10-30, with the weather
+        /// card's hour-by-hour strip): the first run of hours at 50 % or more, and its likeliest hour.
+        /// Read from the hours alone; nil when none reach it, or they don't say.
+        var spell: Spell? {
+            let ahead = Array(hours.prefix(12))
+            guard let first = ahead.firstIndex(where: { ($0.precipitation ?? 0) >= Spell.likely }) else { return nil }
+            var last = first
+            while last + 1 < ahead.count, (ahead[last + 1].precipitation ?? 0) >= Spell.likely { last += 1 }
+            let run = ahead[first ... last]
+            let peak = run.indices.max { (ahead[$0].precipitation ?? 0) < (ahead[$1].precipitation ?? 0) } ?? first
+            let kind: Spell.Kind = run.contains { $0.condition == .thunderstorm } ? .storms
+                : run.contains { [.snow, .sleet, .hail].contains($0.condition) } ? .snow : .rain
+            return Spell(first: first, last: last, peak: peak, chance: ahead[peak].precipitation ?? 0, kind: kind,
+                         gusts: run.compactMap(\.gusts).max(), open: last == ahead.count - 1)
+        }
+
+        nonisolated struct Spell: Equatable, Sendable {
+            /// How likely an hour's rain must be to count.
+            static let likely = 50
+            enum Kind: Equatable, Sendable { case rain, storms, snow }
+            /// Its hours, as places in `hours`.
+            var first: Int
+            var last: Int
+            var peak: Int
+            var chance: Int
+            var kind: Kind
+            /// The strongest gust in it, where the hours give gusts.
+            var gusts: Double?
+            /// It runs to the last hour there is: when it ends isn't known.
+            var open: Bool
+        }
+
+        /// An hour as the forecast or an agent writes it ("2026-10-23T14:00", "14:00", "2 PM",
+        /// "2pm", "2026-10-23T17:45:00-04:00"), as the hour and minute of the day there. Nil for anything else.
+        static func clock(_ text: String) -> (hour: Int, minute: Int)? {
+            let time = (text.split(separator: "T").last.map(String.init) ?? text).trimmingCharacters(in: .whitespaces).lowercased()
+            guard let match = time.wholeMatch(of: /(\d{1,2})(?::(\d{2}))?(?::\d{2}(?:\.\d+)?)?\s*(?:([ap])\.?\s*m\.?)?(?:z|[+-]\d{2}:?\d{2})?/),
+                  var hour = Int(match.1), let minute = Int(match.2 ?? "0"), minute < 60 else { return nil }
+            if let half = match.3 {
+                guard (1 ... 12).contains(hour) else { return nil }
+                hour = hour % 12 + (half == "p" ? 12 : 0)
+            } else if match.2 == nil {
+                return nil   // a bare number isn't an hour
+            }
+            return (0 ... 23).contains(hour) ? (hour, minute) : nil
+        }
 
         nonisolated struct Now: Codable, Equatable, Sendable {
             var temperature: Double
@@ -280,6 +439,8 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
             var condition: Condition
             var precipitation: Int?
             var night: Bool?
+            /// Wind gusts, in the card's speed: mph with °F, km/h with °C.
+            var gusts: Double?
         }
 
         nonisolated struct Day: Codable, Equatable, Sendable {
@@ -403,7 +564,8 @@ nonisolated enum ReplyCards {
             }
             guard let title = text(value["title"]), !fields.isEmpty else { return nil }
             return .review(.init(title: String(title.prefix(120)), action: text(value["action"]).map { String($0.prefix(24)) } ?? String(localized: "Do It"),
-                                 fields: fields, note: text(value["note"]).map { String($0.prefix(300)) }))
+                                 fields: fields, note: text(value["note"]).map { String($0.prefix(300)) },
+                                 kind: .init(lenient: text(value["kind"])), subtitle: text(value["subtitle"]).map { String($0.prefix(80)) }))
         case "choice", "choose", "options":
             let options: [ReplyCard.Option] = (value["options"]?.array ?? []).prefix(maxOptions).compactMap { o in
                 if let plain = o.string?.nilIfEmpty { return .init(title: String(plain.prefix(120))) }
@@ -418,18 +580,20 @@ nonisolated enum ReplyCards {
                 if let plain = i.string?.nilIfEmpty { return .init(text: String(plain.prefix(200)), done: false, section: section) }
                 guard let text = text(i["text"] ?? i["title"]) else { return nil }
                 return .init(text: String(text.prefix(200)), done: i["done"]?.bool ?? false,
-                             section: self.text(i["section"]).map { String($0.prefix(60)) } ?? section)
+                             section: self.text(i["section"] ?? i["group"]).map { String($0.prefix(60)) } ?? section,
+                             note: self.text(i["note"]).map { String($0.prefix(40)) })
             }
-            // Items with their 'section', or 'sections' each with its items.
+            // Items with their 'section' (or 'group'), or 'sections' (or 'groups') each with its items.
             var items: [ReplyCard.Checklist.Item] = (value["items"]?.array ?? []).compactMap { item($0, in: nil) }
-            for group in value["sections"]?.array ?? [] {
+            for group in value["sections"]?.array ?? value["groups"]?.array ?? [] {
                 let title = text(group["title"] ?? group["name"]).map { String($0.prefix(60)) }
                 items += (group["items"]?.array ?? []).compactMap { item($0, in: title) }
             }
             items = Array(items.prefix(maxItems))
             guard !items.isEmpty else { return nil }
             let emoji = text(value["emoji"]).flatMap { $0.first.map(String.init) }.flatMap { $0.unicodeScalars.first?.properties.isEmoji == true ? $0 : nil }
-            return .checklist(.init(title: text(value["title"]).map { String($0.prefix(120)) } ?? String(localized: "List"), items: items, emoji: emoji))
+            return .checklist(.init(title: text(value["title"]).map { String($0.prefix(120)) } ?? String(localized: "List"), items: items, emoji: emoji,
+                                    subtitle: text(value["subtitle"]).map { String($0.prefix(80)) }, verb: text(value["verb"]).map { String($0.prefix(24)) }))
         case "form":
             let fields: [ReplyCard.Form.Entry] = (value["fields"]?.array ?? []).prefix(maxFields).compactMap { f in
                 guard let label = text(f["label"] ?? f["name"]) else { return nil }
@@ -496,7 +660,37 @@ nonisolated enum ReplyCards {
         place.note = text(value["note"] ?? value["description"]).map { String($0.prefix(300)) }
         place.phone = text(value["phone"])
         place.url = text(value["url"] ?? value["website"]).flatMap { URL(string: $0)?.scheme?.hasPrefix("http") == true ? $0 : nil }
+        place.price = price(value["price"] ?? value["price_level"] ?? value["priceLevel"])
+        place.open = (value["open_now"] ?? value["openNow"] ?? value["open"])?.bool
+        place.hours = hours(value)
+        place.pick = (value["pick"] ?? value["best"] ?? value["recommended"])?.bool == true ? true : nil
         return place
+    }
+
+    /// "$$" as given, or a level of 1 to 4 as that many dollar signs.
+    static func price(_ value: JSONValue?) -> String? {
+        if let level = value?.number ?? value?.string.flatMap({ Double($0.trimmingCharacters(in: .whitespaces)) }) {
+            let whole = Int(level.rounded())
+            return (1 ... 4).contains(whole) ? String(repeating: "$", count: whole) : nil
+        }
+        return text(value).flatMap { $0.count <= 5 ? $0 : nil }
+    }
+
+    /// Whether a place is open, in words: as the agent wrote them ("Open until 9 PM"), or made from
+    /// the time it closes ("open_until": "9 PM", "closes": "5 PM").
+    static func hours(_ value: JSONValue) -> String? {
+        if let said = text(value["hours"] ?? value["status"] ?? value["opening_hours"]) ?? value["open"]?.string?.nilIfEmpty {
+            return String(said.prefix(60))
+        }
+        if let until = text(value["open_until"] ?? value["openUntil"]) {
+            return String((until.lowercased().hasPrefix("open") ? until
+                : String(localized: "Open until \(until)", comment: "A place on a places card is open until a time, e.g. 9 PM")).prefix(60))
+        }
+        if let closes = text(value["closes"] ?? value["closes_at"] ?? value["closesAt"]) {
+            return String((closes.lowercased().hasPrefix("close") ? closes
+                : String(localized: "Closes at \(closes)", comment: "A place on a places card closes soon, at a time, e.g. 5 PM")).prefix(60))
+        }
+        return nil
     }
 
     static func route(_ value: JSONValue?) -> ReplyCard.Route? {
@@ -522,7 +716,8 @@ nonisolated enum ReplyCards {
         let hours: [ReplyCard.Weather.Hour] = (value["hours"]?.array ?? []).compactMap { h in
             guard let time = text(h["time"]), let temperature = number(h["temperature"] ?? h["temp"]), text(h["condition"]) != nil else { return nil }
             return .init(time: time, temperature: temperature, condition: .init(lenient: text(h["condition"])),
-                         precipitation: number(h["precipitation"]).map { Int($0.rounded()) }, night: h["night"]?.bool)
+                         precipitation: number(h["precipitation"] ?? h["chance_of_rain"]).map { min(100, max(0, Int($0.rounded()))) },
+                         night: h["night"]?.bool, gusts: number(h["gusts"] ?? h["wind_gusts"]).flatMap { $0 >= 0 ? $0 : nil })
         }
         let days: [ReplyCard.Weather.Day] = (value["days"]?.array ?? []).compactMap { d in
             guard let date = text(d["date"] ?? d["day"]), let high = number(d["high"]), let low = number(d["low"]), text(d["condition"]) != nil else { return nil }
@@ -536,7 +731,7 @@ nonisolated enum ReplyCards {
         // Nothing read is kept all the same: the place is all a card needs to be looked up. Drawn
         // only once it has a forecast (`hasReading`).
         return .init(place: String(place.prefix(80)), units: units, now: now, hours: Array(hours.prefix(24)), days: Array(days.prefix(10)),
-                     source: text(value["source"]))
+                     source: text(value["source"]), updated: text(value["updated"]).map { String($0.prefix(40)) })
     }
 
     private static func text(_ value: JSONValue?) -> String? {

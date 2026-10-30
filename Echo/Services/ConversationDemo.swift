@@ -704,8 +704,6 @@ extension Conversation {
                                   Message(role: .user, text: "And a couple of voice samples?"), samples])
     }
 
-    /// `-echo.demoCards`: a reply that shows a walk on a map, three places and the weather, asked
-    /// for with `redde_show` as an agent would (made-up cafés, real streets of Lisbon).
     /// What's on the calendar as an agenda card (`-echo.demoAgenda`): tomorrow's day, then the
     /// rest of the week with a free day in it. Dates from today, times in this phone's zone.
     func seedAgendaDemo(tomorrowOnly: Bool = false) {
@@ -719,16 +717,19 @@ extension Conversation {
         let tomorrow = day(1)
         let json = """
         {"cards": [{"type": "agenda", "title": "Tomorrow", "date": "\(tomorrow)", "events": [
-          {"title": "Standup", "start": "\(tomorrow)T09:30:00", "end": "\(tomorrow)T09:45:00", "calendar": "Work", "location": "Zoom"},
-          {"title": "Dentist", "start": "\(tomorrow)T11:00:00", "end": "\(tomorrow)T12:00:00", "calendar": "Family",
-           "location": "200 East Robinson St, Orlando, FL", "notes": "Bring the insurance card. Parking is behind the building."},
+          {"title": "Milo's soccer", "start": "\(tomorrow)T09:00:00", "end": "\(tomorrow)T10:15:00", "calendar": "Family", "location": "Lake Eola Park"},
+          {"title": "Call with Mom", "start": "\(tomorrow)T11:00:00", "end": "\(tomorrow)T11:30:00", "calendar": "Personal"},
           {"title": "Lunch with Dana", "start": "\(tomorrow)T12:30:00", "end": "\(tomorrow)T13:30:00", "calendar": "Personal", "location": "Rossio Roasters"},
-          {"title": "Milo's soccer practice", "start": "\(tomorrow)T17:00:00", "end": "\(tomorrow)T18:15:00", "calendar": "Family", "location": "Lake Baldwin Park"},
+          {"title": "Dentist", "start": "\(tomorrow)T16:00:00", "end": "\(tomorrow)T17:00:00", "calendar": "Family",
+           "location": "200 East Robinson St, Orlando, FL", "notes": "Bring the insurance card. Parking is behind the building."},
+          {"title": "Book club", "start": "\(tomorrow)T18:00:00", "end": "\(tomorrow)T20:00:00", "calendar": "Family", "location": "Thornton Park",
+           "notes": "Finish chapter twelve"},
           {"title": "Recycling day", "start": "\(tomorrow)", "calendar": "Home"}]}]}
         """
         let week = """
         {"cards": [{"type": "agenda", "title": "This week", "dates": ["\(day(2))", "\(day(3))", "\(day(4))"], "events": [
           {"title": "Planning session", "start": "\(day(2))T10:00:00", "end": "\(day(2))T11:30:00", "calendar": "Work"},
+          {"title": "Design review", "start": "\(day(2))T11:00:00", "end": "\(day(2))T12:00:00", "calendar": "Work", "location": "Zoom"},
           {"title": "Haircut", "start": "\(day(2))T16:00:00", "end": "\(day(2))T16:45:00", "calendar": "Personal", "location": "Fade Bros"},
           {"title": "Dinner at the Pecks'", "start": "\(day(4))T18:30:00", "calendar": "Family"}]}]}
         """
@@ -740,42 +741,77 @@ extension Conversation {
             return reply
         }
         let first = [Message(role: .user, text: "What's on my calendar tomorrow?"),
-                     reply("Four things and recycling day; the dentist at 11 is the one to leave early for.", json)]
+                     reply("Five things and recycling day, with a free stretch after lunch; the dentist at 4 is the one to leave early for.", json)]
         replaceForDemo(messages: tomorrowOnly ? first : first + [Message(role: .user, text: "And the rest of the week?"),
                                                                  reply("A light week: the day after next is free.", week)])
     }
 
-    func seedCardsDemo() {
+    /// `-echo.demoCards`: a reply that shows a walk on a map, three places and the weather, asked
+    /// for with `redde_show` as an agent would (made-up cafés, real streets of Lisbon), the person
+    /// said to be at the office. The forecast is from this hour on, with storms coming in two hours'
+    /// time. `only` "weather" or "places": that card alone, first on the screen.
+    func seedCardsDemo(only: String? = nil) {
         reset()
-        let json = """
-        {"cards": [
+        let calendar = Calendar.current
+        let hour = calendar.date(bySettingHour: calendar.component(.hour, from: .now), minute: 0, second: 0, of: .now) ?? .now
+        let stamp = DateFormatter()
+        stamp.locale = Locale(identifier: "en_US_POSIX")
+        stamp.dateFormat = "yyyy-MM-dd'T'HH:00"
+        let updated = ISO8601DateFormatter()
+        updated.timeZone = .current
+        let skies = ["partly_cloudy", "partly_cloudy", "rain", "thunderstorm", "thunderstorm", "rain", "cloudy", "partly_cloudy", "clear", "clear", "clear", "clear"]
+        let temperatures = [19, 20, 20, 17, 16, 17, 18, 17, 16, 15, 15, 14], chances = [10, 20, 55, 80, 75, 40, 15, 5, 5, 0, 0, 0]
+        let gusts = [14, 16, 30, 48, 41, 26, 18, 14, 12, 10, 10, 9]
+        let hours = (0 ..< 12).map { i in
+            #"{"time": "\#(stamp.string(from: hour.addingTimeInterval(Double(i) * 3600)))", "temperature": \#(temperatures[i]), "condition": "\#(skies[i])", "#
+                + #""precipitation": \#(chances[i]), "gusts": \#(gusts[i])}"#
+        }.joined(separator: ", ")
+        func day(_ offset: Int) -> String {
+            let p = calendar.dateComponents([.year, .month, .day], from: calendar.date(byAdding: .day, value: offset, to: .now) ?? .now)
+            return String(format: "%04d-%02d-%02d", p.year ?? 2026, p.month ?? 1, p.day ?? 1)
+        }
+        let map = """
           {"type": "map", "title": "To Rossio Roasters", "route": {"mode": "walking",
             "from": {"name": "The office", "address": "Praça do Comércio, Lisbon", "latitude": 38.7076, "longitude": -9.1365},
-            "to": {"name": "Rossio Roasters", "address": "Rua das Portas de Santo Antão 136, Lisbon", "latitude": 38.7176, "longitude": -9.1404}}},
-          {"type": "places", "title": "Coffee near the office", "places": [
-            {"name": "Rossio Roasters", "category": "Coffee roaster", "rating": 4.7, "address": "Rua das Portas de Santo Antão 136",
-             "note": "Pour-over and a quiet back room.", "latitude": 38.7176, "longitude": -9.1404, "phone": "+351 21 000 0001"},
-            {"name": "Tram 28 Café", "category": "Café", "rating": 4.4, "address": "Rua da Conceição 22",
-             "latitude": 38.7103, "longitude": -9.1378},
-            {"name": "Alfama Bean", "category": "Café and bakery", "rating": "4.6", "address": "Largo do Chafariz de Dentro 5",
-             "note": "Pastéis de nata from 8.", "latitude": 38.7116, "longitude": -9.1279}]},
-          {"type": "weather", "place": "Lisbon", "units": "C", "source": "From the forecast the agent looked up",
-           "now": {"temperature": 19, "condition": "partly_cloudy", "high": 21, "low": 15, "feels_like": 18, "wind": "14 km/h NW", "humidity": 62, "precipitation": 10},
-           "hours": [{"time": "10:00", "temperature": 19, "condition": "partly cloudy"}, {"time": "11:00", "temperature": 20, "condition": "clear"},
-                     {"time": "12:00", "temperature": 21, "condition": "clear"}, {"time": "13:00", "temperature": 21, "condition": "partly_cloudy"},
-                     {"time": "14:00", "temperature": 20, "condition": "cloudy", "precipitation": 30}, {"time": "15:00", "temperature": 18, "condition": "rain", "precipitation": 70},
-                     {"time": "16:00", "temperature": 17, "condition": "rain", "precipitation": 60}, {"time": "17:00", "temperature": 17, "condition": "cloudy", "precipitation": 20}],
-           "days": [{"date": "2026-10-23", "high": 21, "low": 15, "condition": "rain", "precipitation": 70},
-                    {"date": "2026-10-24", "high": 22, "low": 16, "condition": "clear"},
-                    {"date": "2026-10-25", "high": 20, "low": 15, "condition": "partly_cloudy", "precipitation": 10},
-                    {"date": "2026-10-26", "high": 18, "low": 13, "condition": "thunderstorm", "precipitation": 80},
-                    {"date": "2026-10-27", "high": 19, "low": 14, "condition": "cloudy"}]}
-        ]}
+            "to": {"name": "Rossio Roasters", "address": "Rua das Portas de Santo Antão 136, Lisbon", "latitude": 38.7176, "longitude": -9.1404}}}
         """
-        var reply = Message(role: .assistant, text: "Rossio Roasters is a twelve-minute walk, and the closest of three good ones. Go before three: rain comes in after.")
-        let args = try? JSONValue.parse(Data(json.utf8))
+        let places = """
+          {"type": "places", "title": "Coffee near the office", "places": [
+            {"name": "Rossio Roasters", "category": "Coffee", "price": "$$", "rating": 4.7, "hours": "Open until 9 PM", "pick": true,
+             "address": "Rua das Portas de Santo Antão 136", "latitude": 38.7176, "longitude": -9.1404, "phone": "+351 21 000 0001"},
+            {"name": "Tram 28 Café", "category": "Café", "price_level": 1, "rating": 4.5, "closes": "5 PM", "address": "Rua da Conceição 22",
+             "latitude": 38.7103, "longitude": -9.1378},
+            {"name": "Alfama Bean", "category": "Café and bakery", "price": "$$", "rating": "4.8", "open_until": "7 PM",
+             "address": "Largo do Chafariz de Dentro 5", "latitude": 38.7116, "longitude": -9.1279}]}
+        """
+        let weather = """
+          {"type": "weather", "place": "Lisbon", "units": "C", "source": "From the forecast the agent looked up", "updated": "\(updated.string(from: .now))",
+           "now": {"temperature": 19, "condition": "partly_cloudy", "high": 21, "low": 15, "feels_like": 18, "wind": "14 km/h NW", "humidity": 62, "precipitation": 10},
+           "hours": [\(hours)],
+           "days": [{"date": "\(day(0))", "high": 21, "low": 15, "condition": "thunderstorm", "precipitation": 80},
+                    {"date": "\(day(1))", "high": 22, "low": 16, "condition": "clear"},
+                    {"date": "\(day(2))", "high": 20, "low": 15, "condition": "partly_cloudy", "precipitation": 10},
+                    {"date": "\(day(3))", "high": 18, "low": 12, "condition": "rain", "precipitation": 70},
+                    {"date": "\(day(4))", "high": 19, "low": 14, "condition": "cloudy"},
+                    {"date": "\(day(5))", "high": 23, "low": 15, "condition": "clear"},
+                    {"date": "\(day(6))", "high": 24, "low": 16, "condition": "clear"}]}
+        """
+        let only = only.flatMap { ["weather", "places"].contains($0) ? $0 : nil }   // else the next launch flag
+        let shown = switch only ?? "" {
+        case "weather": [weather]
+        case "places": [places]
+        default: [map, places, weather]
+        }
+        PlaceLookup.shared.pretend(latitude: 38.7076, longitude: -9.1365)   // at the office
+        var reply = Message(role: .assistant, text: only == "weather" ? "Probably: storms roll in a couple of hours from now and peak an hour later. Take the umbrella."
+                            : "Rossio Roasters is the pick: a short walk, and open late. Go soon: storms are due in a couple of hours.")
+        let args = try? JSONValue.parse(Data(#"{"cards": [\#(shown.joined(separator: ", "))]}"#.utf8))
         reply.tools = [ToolActivity(name: ReplyCards.tool, preview: "map, places, weather", status: .completed, args: ToolActivity.args(ReplyCards.tool, args))]
         reply.cards = ReplyCards.parse(args)
+        if only != nil {
+            replaceForDemo(messages: [Message(role: .user, text: only == "weather" ? "Is it going to rain this afternoon?" : "Good coffee near the office?"), reply])
+            return
+        }
         // The time somewhere: drawn running, from the phone's clock.
         var clock = Message(role: .assistant, text: "Tokyo's time is on the card, and it keeps running.")
         let clockArgs = try? JSONValue.parse(Data(#"{"cards": [{"type": "time", "place": "Tokyo", "timezone": "Asia/Tokyo"}]}"#.utf8))
@@ -845,13 +881,12 @@ extension Conversation {
         }
         if more {
             var shown = [
-                Message(role: .user, text: "Make me a packing list for the cabin."),
-                reply("Here's your list for the lake cabin. Tick things off as you pack.", #"""
-                {"cards": [{"type": "checklist", "title": "Lake cabin weekend", "emoji": "🏕️", "sections": [
-                  {"title": "Clothing", "items": [{"text": "Swimsuits (two each)", "done": true}, {"text": "Hoodies for the evenings", "done": true}, "Rain shell", "Water shoes", "Sun hats"]},
-                  {"title": "Water & beach", "items": ["Beach towels", "Float toys for Nico", "Dry bags", "Sunglasses"]},
-                  {"title": "Food & kitchen", "items": ["Cooler and ice", "Coffee and filters", "S'mores supplies", "Trash bags"]},
-                  {"title": "Toiletries", "items": [{"text": "Sunscreen", "done": true}, {"text": "Bug spray", "done": true}, {"text": "First-aid kit", "done": true}]}]}]}
+                Message(role: .user, text: "Packing list for the beach next weekend"),
+                reply("Warm days and a cool night, so a layer for the evening. Tick things off as you go.", #"""
+                {"cards": [{"type": "checklist", "title": "Cocoa Beach weekend", "emoji": "🏖️", "subtitle": "Nov 7 – 8", "verb": "packed", "groups": [
+                  {"name": "Clothes", "items": [{"text": "Swimsuits", "note": "×2", "done": true}, {"text": "A warm layer", "note": "64° at night"}, "Sandals"]},
+                  {"name": "Beach", "items": [{"text": "Sunscreen", "note": "SPF 50", "done": true}, {"text": "Beach towels", "note": "×3"}, "Umbrella"]},
+                  {"name": "Everything else", "items": [{"text": "Phone chargers", "done": true}, {"text": "Snacks for the drive", "note": "1 h 10 min"}]}]}]}
                 """#),
             ]
             if !DevHooks.has("-echo.demoAsksListOnly") { shown += [
@@ -865,23 +900,45 @@ extension Conversation {
             replaceForDemo(messages: shown)
             // `-echo.demoPinned`: the list pinned to the chat list, as its menu's Pin to Chats does.
             if DevHooks.has("-echo.demoPinned"), let list = shown[1].cards?.first {
-                PinnedCards.shared.pin(list, title: "Lake cabin weekend", conversation: id, agent: nil)
+                PinnedCards.shared.pin(list, title: "Cocoa Beach weekend", conversation: id, agent: nil)
             }
             return
         }
-        replaceForDemo(messages: [
-            Message(role: .user, text: "Tell Milo I'll be twenty minutes late for practice."),
-            reply("Here's the message. Change anything, then send it.", #"""
-            {"cards": [{"type": "review", "title": "Message to Milo", "action": "Send", "note": "Sent from your number by Messages.",
-              "fields": [{"label": "To", "value": "Milo"}, {"label": "Message", "value": "Hi Milo! Running about 20 minutes late for practice. Start warm-ups without me?", "long": true}]}]}
+        // `-echo.demoAsksBooking`: a review of a text, then of a booking, its details as rows.
+        if DevHooks.has("-echo.demoAsksBooking") {
+            replaceForDemo(messages: [
+                Message(role: .user, text: "Text Milo I'll be late for practice."),
+                reply("Here's the text.", #"""
+                {"cards": [{"type": "review", "title": "Message to Milo", "action": "Send", "note": "Sent from your number by Messages.",
+                  "fields": [{"label": "To", "value": "Milo"}, {"label": "Message", "value": "Hi Milo! Running about 20 minutes late for practice. Start warm-ups without me?", "long": true}]}]}
+                """#),
+                Message(role: .user, text: "And book us a table at Lupa for Saturday."),
+                reply("They have 7:30 by the window. I'll book it when you say.", #"""
+                {"cards": [{"type": "review", "title": "Table at Lupa Trattoria", "action": "Book", "note": "Free to cancel until Friday noon.",
+                  "fields": [{"label": "When", "value": "Sat, Nov 1 · 7:30 PM"}, {"label": "Party", "value": "4 people"},
+                  {"label": "Where", "value": "Lupa Trattoria, 170 Thompson St"}, {"label": "Note for them", "value": "A table by the window if you can, and a high chair for the little one, please."}]}]}
+                """#)])
+            return
+        }
+        var shown = [
+            Message(role: .user, text: "Tell Ana I'll be 20 minutes late to book club"),
+            reply("Here's the email. Nothing goes until you tap Send.", #"""
+            {"cards": [{"type": "review", "kind": "email", "title": "Email to send", "subtitle": "From your Gmail · as you", "action": "Send",
+              "note": "Book club starts at 7:00 PM at Ana's place", "fields": [{"label": "To", "value": "Ana Okafor"},
+              {"label": "Subject", "value": "Running a little late tonight"},
+              {"label": "Body", "value": "Hi Ana,\n\nI'm running about 20 minutes behind, so start without me. I'll bring the lemon bars.\n\nSee you soon!"}]}]}
             """#),
+        ]
+        // `-echo.demoAsksReviewOnly`: the email alone.
+        if !DevHooks.has("-echo.demoAsksReviewOnly") { shown += [
             Message(role: .user, text: "Where should we eat after?"),
-            reply("Three close to the field, all open late:", #"""
-            {"cards": [{"type": "choice", "title": "Dinner after practice", "options": [
+            reply("Three close to Ana's, all open late:", #"""
+            {"cards": [{"type": "choice", "title": "Dinner after book club", "options": [
               {"title": "Lupa Trattoria", "detail": "Italian · ★ 4.6 · 0.4 mi · $$"},
               {"title": "Sushi Ko", "detail": "Japanese · ★ 4.7 · 0.9 mi · $$$"},
               {"title": "Big Pickle Deli", "detail": "Sandwiches · ★ 4.4 · 0.2 mi · $"}]}]}
-            """#)])
+            """#)] }
+        replaceForDemo(messages: shown)
     }
 
     /// `-echo.demoPage`: a reply with a page the agent made (`::preview`), drawn by its own script,

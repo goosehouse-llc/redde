@@ -45,6 +45,9 @@ MAX_EVENTS = 50
 #: The cards the person answers.
 ASKS = ("review", "choice", "checklist", "form")
 FIELD_KINDS = ("text", "long", "number", "date", "time", "toggle", "choice")
+#: What a review is, which the app draws it as (2026-10-30: an email as a sheet with who it's to,
+#: its subject and its words). Optional: the app tells an email by its fields too.
+REVIEW_KINDS = ("email", "message", "event", "purchase", "other")
 MODES = ("driving", "walking", "transit", "cycling")
 
 _PLACE = {
@@ -63,6 +66,15 @@ _PLACE = {
     "required": ["name"],
 }
 
+# A place in a list, with what the places card shows of it (its new look, asked 2026-10-30): the
+# price, whether it is open, and the agent's pick, as found. Not on a route's ends, which show a name.
+_LISTED = {**_PLACE, "properties": {
+    **_PLACE["properties"],
+    "price": {"type": "string", "description": "e.g. $$"},
+    "hours": {"type": "string", "description": "e.g. Open until 9 PM, Closed"},
+    "pick": {"type": "boolean", "description": "your pick of them"},
+}}
+
 SCHEMA = {
     "name": TOOL,
     "description": (
@@ -77,8 +89,8 @@ SCHEMA = {
         "Cards they answer with a tap: before you send, buy, book or change anything for them, a 'review' (what "
         "you'll do as 'fields' they can edit, 'action' the button, e.g. Send), then stop and act only on their "
         "answer; 'choice' ('options' to pick from), 'checklist' (a list to tick off: 'items', each with a 'section' "
-        "to group them, and an 'emoji'), 'form' ('fields' to fill in, each with a 'kind'). Their answer is their next "
-        "message. "
+        "to group them and a short 'note', and an 'emoji'), 'form' ('fields' to fill in, each with a 'kind'). Their "
+        "answer is their next message. "
         "An 'agenda' shows calendar events by day: 'events' as your calendar tool gave them, each with a 'title' and "
         "'start' (ISO date-time with the offset the calendar gave, or just the date for an all-day event), and 'end', "
         "'location', 'calendar' if known; 'date' (or 'dates') names the day or days asked about, so a day with nothing "
@@ -94,7 +106,7 @@ SCHEMA = {
                     "properties": {
                         "type": {"type": "string", "enum": list(TYPES)},
                         "title": {"type": "string"},
-                        "places": {"type": "array", "items": _PLACE, "description": "map: its pins; places: the list"},
+                        "places": {"type": "array", "items": _LISTED, "description": "map: its pins; places: the list"},
                         "route": {
                             "type": "object",
                             "description": "map only: from a place (or omit 'from' for where the person is) to a place",
@@ -105,6 +117,9 @@ SCHEMA = {
                         "timezone": {"type": "string", "description": "time: an IANA zone, e.g. Europe/Lisbon, if you know it"},
                         "units": {"type": "string", "enum": ["C", "F"], "description": "weather: if the person said"},
                         "action": {"type": "string"},
+                        "kind": {"type": "string", "enum": list(REVIEW_KINDS), "description": "review: what it is"},
+                        "subtitle": {"type": "string", "description": "review, checklist: a line under the title"},
+                        "verb": {"type": "string", "description": "checklist: an item done is, e.g. packed"},
                         "fields": {"type": "array", "items": {"type": "object", "properties": {
                             "label": {"type": "string"}, "value": {"type": "string"},
                             "kind": {"type": "string", "enum": list(FIELD_KINDS)}, "options": {"type": "array", "items": {"type": "string"}},
@@ -113,7 +128,8 @@ SCHEMA = {
                             "title": {"type": "string"}, "detail": {"type": "string"}, "image": {"type": "string"}}, "required": ["title"]}},
                         "multiple": {"type": "boolean"},
                         "items": {"type": "array", "items": {"type": "object", "properties": {
-                            "text": {"type": "string"}, "done": {"type": "boolean"}, "section": {"type": "string"}}}},
+                            "text": {"type": "string"}, "done": {"type": "boolean"}, "section": {"type": "string"},
+                            "note": {"type": "string", "description": "e.g. ×2"}}}},
                         "emoji": {"type": "string"},
                         "events": {"type": "array", "description": "agenda: the events, from your calendar tool", "items": {
                             "type": "object", "properties": {
@@ -297,16 +313,25 @@ def _ask(card: dict, kind: str) -> tuple[str, str | None]:
         fields = _labels(card.get("fields"), "label", "name")
         if not title.strip() or not fields:
             return "", f"a {kind} needs a 'title' and 'fields', each with a 'label'"
-        return f"{kind}: {title.strip()} ({', '.join(fields[:5])}; button {card.get('action') or ('Do It' if kind == 'review' else 'Send')})", None
+        drawn = str(card.get("kind") or "").strip().lower() if kind == "review" else ""
+        drawn = f"; as {'an' if drawn in ('email', 'event') else 'a'} {drawn}" if drawn in REVIEW_KINDS[:4] else ""
+        return f"{kind}: {title.strip()} ({', '.join(fields[:5])}; button {card.get('action') or ('Do It' if kind == 'review' else 'Send')}{drawn})", None
     if kind == "choice":
         options = _labels(card.get("options"), "title", "name", "label")
         if len(options) < 2:
             return "", "a choice needs at least two 'options', each with a 'title'"
         return f"choice: {', '.join(options[:5])}{' (several may be picked)' if card.get('multiple') else ''}", None
+    # Its items, or 'sections' (or 'groups') each with its items, as the app reads them.
     items = _labels(card.get("items"), "text", "title")
+    groups = {str(i.get("section") or i.get("group") or "").strip() for i in card.get("items") or [] if isinstance(i, dict)} - {""}
+    for n, group in enumerate(card.get("sections") or card.get("groups") or [], 1):
+        found = _labels(group.get("items"), "text", "title") if isinstance(group, dict) else []
+        if found:
+            items += found
+            groups.add(str(group.get("title") or group.get("name") or "").strip() or f"group {n}")
     if not items:
         return "", "a checklist needs 'items', each with a 'text'"
-    return f"checklist: {title.strip() or 'list'} ({len(items)} items)", None
+    return f"checklist: {title.strip() or 'list'} ({len(items)} items{f' in {len(groups)} groups' if len(groups) > 1 else ''})", None
 
 
 def _listed(args):
@@ -435,7 +460,8 @@ AGENDA_NOTE = (f"[Redde: asked what's on the calendar. Look the events up with t
                f"with {TOOL} as an 'agenda' card ('events' with title, start and end as the tool gave them, location, "
                "calendar; 'date' for each day asked about, so a free day shows too), then answer in a line: don't list the "
                "events again in words.")
-LIST_NOTE = (f"[Redde: show the list as a 'checklist' card with {TOOL} (its 'items' grouped by 'section', an 'emoji'), "
+LIST_NOTE = (f"[Redde: show the list as a 'checklist' card with {TOOL} (its 'items' grouped by 'section', a short 'note' "
+             "beside an item where it helps, e.g. ×2, an 'emoji', and a 'verb' for an item done, e.g. packed), "
              "then answer in a line: don't also write the list out in words.]")
 #: How much each agent may do unasked (asked 2026-10-28, "Proactive", after Muse's adjustable
 #: threshold): set per agent in Redde, kept in the main home. Hermes's own approvals for commands
@@ -449,7 +475,8 @@ LEVEL_NOTES = {
             f"or deleting something show a 'review' card with {TOOL} and wait for their answer.]"),
 }
 REVIEW_NOTE = ("[Redde: before you send, book, buy or change anything for them, show what you'll do as a 'review' "
-               f"card with {TOOL} and stop; do it only when their answer comes back.]")
+               f"card with {TOOL} (its 'kind': email, message, event or purchase) and stop; do it only when their "
+               "answer comes back.]")
 REDDES = ("desktop", "tui", "api_server", "")    # Redde's connections: the Dashboard, the Hermes API
 
 

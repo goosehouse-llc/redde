@@ -17,7 +17,7 @@ import math
 import time
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 SOURCE = "Open-Meteo.com"
@@ -154,7 +154,7 @@ def weather_card(place: str, latitude: float, longitude: float, units: str) -> d
         query = urllib.parse.urlencode({
             "latitude": round(latitude, 3), "longitude": round(longitude, 3),
             "current": "temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,is_day",
-            "hourly": "temperature_2m,weather_code,precipitation_probability,is_day",
+            "hourly": "temperature_2m,weather_code,precipitation_probability,is_day,wind_gusts_10m",
             "daily": "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max",
             "temperature_unit": "fahrenheit" if units == "F" else "celsius",
             "wind_speed_unit": "mph" if units == "F" else "kmh",
@@ -195,6 +195,9 @@ def card_from(data: dict, place: str, units: str) -> dict:
         chance = _at(hourly.get("precipitation_probability"), i)
         if isinstance(chance, (int, float)):
             hour["precipitation"] = round(chance)
+        gusts = _at(hourly.get("wind_gusts_10m"), i)
+        if isinstance(gusts, (int, float)):
+            hour["gusts"] = round(gusts)
         hours.append(hour)
     days = []
     for i, date in enumerate((daily.get("time") or [])[:DAYS]):
@@ -206,7 +209,42 @@ def card_from(data: dict, place: str, units: str) -> dict:
         if isinstance(chance, (int, float)):
             day["precipitation"] = round(chance)
         days.append(day)
-    return {"type": "weather", "place": place, "units": units, "now": reading, "hours": hours, "days": days, "source": SOURCE}
+    card = {"type": "weather", "place": place, "units": units, "now": reading, "hours": hours, "days": days, "source": SOURCE}
+    updated = _stamp(now.get("time"), data.get("utc_offset_seconds"))
+    if updated:
+        card["updated"] = updated
+    return card
+
+
+def _stamp(at, offset) -> str | None:
+    """The reading's time ("2026-10-23T17:45", the place's) with its offset: "2026-10-23T17:45:00-04:00"."""
+    if not isinstance(at, str) or len(at) != 16 or not isinstance(offset, (int, float)):
+        return None
+    minutes = int(offset) // 60
+    sign = "-" if minutes < 0 else "+"
+    return f"{at}:00{sign}{abs(minutes) // 60:02d}:{abs(minutes) % 60:02d}"
+
+
+LIKELY = 50     # an hour's chance of rain that counts, as the app's callout counts it
+
+
+def spell(card: dict) -> dict | None:
+    """Rain (or storms, or snow) likely in the hours ahead, as the app's callout reads it
+    (2026-10-30): the first run of hours at 50 % or more, and its likeliest hour."""
+    hours = (card.get("hours") or [])[:HOURS]
+    first = next((i for i, h in enumerate(hours) if (h.get("precipitation") or 0) >= LIKELY), None)
+    if first is None:
+        return None
+    last = first
+    while last + 1 < len(hours) and (hours[last + 1].get("precipitation") or 0) >= LIKELY:
+        last += 1
+    run = hours[first:last + 1]
+    peak = max(run, key=lambda h: h.get("precipitation") or 0)
+    kinds = {h.get("condition") for h in run}
+    kind = "storms" if "thunderstorm" in kinds else "snow" if kinds & {"snow", "sleet", "hail"} else "rain"
+    gusts = [h["gusts"] for h in run if isinstance(h.get("gusts"), (int, float))]
+    return {"kind": kind, "from": run[0]["time"], "to": None if last == len(hours) - 1 else run[-1]["time"],
+            "peak": peak["time"], "chance": peak.get("precipitation") or 0, "gusts": max(gusts) if gusts else None}
 
 
 def said(card: dict) -> str:
@@ -226,6 +264,19 @@ def said(card: dict) -> str:
         bits.append(f"humidity {now['humidity']}%")
     if "wind" in now:
         bits.append(f"wind {now['wind']}")
+    coming = spell(card)
+    if coming:
+        # Said as the card's callout says it, so the agent's words and the card agree.
+        def clock(at, later=0):
+            try:
+                return f"{datetime.fromisoformat(at) + timedelta(hours=later):%H:%M}"
+            except (TypeError, ValueError):
+                return str(at)
+        when = f"{clock(coming['from'])}–{clock(coming['to'], 1)}" if coming["to"] else f"from {clock(coming['from'])}"
+        line = f"{coming['kind']} likely {when}, likeliest {coming['chance']}% at {clock(coming['peak'])}"
+        if coming["gusts"] is not None:
+            line += f", gusts to {_whole(coming['gusts'])} {'mph' if u == 'F' else 'km/h'}"
+        bits.append(line)
     days = card.get("days") or []
     if len(days) > 1:
         tomorrow = days[1]

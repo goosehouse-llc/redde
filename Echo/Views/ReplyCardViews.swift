@@ -29,16 +29,30 @@ struct ReplyCardsView: View {
     }
 }
 
-/// The frame every card sits in.
+/// The frame every card sits in: the newer cards' (the agent's questions, approvals), from
+/// 2026-10-30 with the weather and places cards' new look.
 struct CardBox<Content: View>: View {
+    var spacing: CGFloat = 8
     @ViewBuilder var content: Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) { content }
-            .padding(12)
+        VStack(alignment: .leading, spacing: spacing) { content }
+            .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.background.secondary, in: .rect(cornerRadius: 16))
-            .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(.separator.opacity(0.6), lineWidth: 0.5) }
+            .cardGround()
+    }
+}
+
+extension View {
+    /// A card's ground, edge and shadow, for a card drawn to its edges too (the places card's map).
+    /// The shadow is the ground's alone, not cast again by everything on it, which a scrolling
+    /// chat would pay for.
+    func cardGround() -> some View {
+        background {
+            RoundedRectangle(cornerRadius: 20).fill(.background.secondary)
+                .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
+        }
+        .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(.separator.opacity(0.5), lineWidth: 0.5) }
     }
 }
 
@@ -69,6 +83,69 @@ final class PlaceLookup {
                 found[place] = item.location.coordinate
             }
         }
+    }
+
+    // MARK: How far
+
+    /// How far a place is from the person: on foot by Apple Maps where it is close enough to walk
+    /// to, else as the crow flies.
+    enum Away: Equatable {
+        case walk(TimeInterval)
+        case distance(CLLocationDistance)
+    }
+
+    /// How far each place is (asked 2026-10-30, the places card's walk times), where Redde already
+    /// knows where the phone is (Places, heads-ups: `LeaveTime.here`); it never asks for it.
+    private(set) var away: [ReplyCard.Place: Away] = [:]
+    /// Where the phone was when they were measured.
+    private(set) var here: CLLocation?
+    @ObservationIgnored private var measuring: Set<ReplyCard.Place> = []
+
+    /// Walked to, up to this far; a place further than `farthest` is too far to say.
+    static let walkable: CLLocationDistance = 2_000
+    static let farthest: CLLocationDistance = 50_000
+
+    /// Where a demo says the person is (`-echo.demoCards`), in place of the phone's; never kept.
+    @ObservationIgnored private var pretended: CLLocation?
+
+    func pretend(latitude: Double, longitude: Double) {
+        pretended = CLLocation(latitude: latitude, longitude: longitude)
+        away = [:]
+    }
+
+    /// Measures the places not measured yet (the first eight), once each while the phone stays put.
+    func measure(_ places: [ReplyCard.Place]) async {
+        guard var fix = pretended ?? LeaveTime.here() else { return }
+        if let here, here.distance(from: fix) <= 200 { fix = here } else { away = [:]; here = fix }   // moved: measured afresh
+        for place in places.prefix(8) where away[place] == nil && !measuring.contains(place) {
+            guard let at = coordinate(of: place) else { continue }
+            let meters = fix.distance(from: CLLocation(latitude: at.latitude, longitude: at.longitude))
+            guard meters <= Self.farthest else { continue }
+            measuring.insert(place)
+            defer { measuring.remove(place) }
+            var found = Away.distance(meters)
+            if meters <= Self.walkable, let item = mapItem(place) {
+                let request = MKDirections.Request()
+                request.source = MKMapItem(location: fix, address: nil)
+                request.destination = item
+                request.transportType = .walking
+                if let eta = try? await MKDirections(request: request).calculateETA() { found = .walk(eta.expectedTravelTime) }
+            }
+            away[place] = found
+        }
+    }
+
+    /// Where the person is, for a map of places near them (one within 5 km); else nil.
+    func nearby(_ places: [ReplyCard.Place]) -> CLLocationCoordinate2D? {
+        guard let here else { return nil }
+        let near = places.contains { place in
+            switch away[place] {
+            case .walk: true
+            case let .distance(meters): meters <= 5_000
+            case nil: false
+            }
+        }
+        return near ? here.coordinate : nil
     }
 
     /// The place as Apple Maps should open it.
@@ -121,10 +198,14 @@ private struct MapCard: View {
                     Spacer(minLength: 0)
                     Button("Directions", systemImage: "arrow.triangle.turn.up.right.diamond.fill", action: open)
                         .chatFont(.footnote, weight: .semibold).buttonStyle(.borderless)
+                        .frame(minHeight: 44).contentShape(.rect)
+                        .accessibilityHint(String(localized: "Opens the directions in Maps"))
                 } else {
                     Text(pins.map(\.name).formatted()).chatFont(.footnote).foregroundStyle(.secondary).lineLimit(2)
                     Spacer(minLength: 0)
                     Button("Open in Maps", systemImage: "map", action: open).chatFont(.footnote, weight: .semibold).buttonStyle(.borderless)
+                        .frame(minHeight: 44).contentShape(.rect)
+                        .accessibilityHint(String(localized: "Opens it in Maps"))
                 }
             }
         }
@@ -194,23 +275,35 @@ private struct MapCard: View {
 private struct MapPicture: View {
     let places: [ReplyCard.Place]
     let route: MKRoute?
-    /// The pins numbered as the list under them is.
-    var numbered = false
+    /// The pins numbered as the list under them is, each in its colour; none: plain pins.
+    var tints: [Color] = []
+    /// Where the person is, when they are near the places.
+    var here: CLLocationCoordinate2D?
+    /// A numbered pin tapped: its place (asked 2026-10-30: every card fully interactive).
+    var onPin: ((ReplyCard.Place) -> Void)?
     @State private var lookup = PlaceLookup.shared
 
     var body: some View {
         let shown = places.compactMap { place in lookup.coordinate(of: place).map { (place, $0) } }
         Map(initialPosition: .automatic, interactionModes: []) {
             ForEach(Array(shown.enumerated()), id: \.offset) { index, item in
-                if numbered, let number = places.firstIndex(of: item.0) {
-                    Marker(item.0.name, monogram: Text("\(number + 1)"), coordinate: item.1)
+                if !tints.isEmpty, let number = places.firstIndex(of: item.0) {
+                    Annotation(item.0.name, coordinate: item.1) {
+                        NumberedPin(number: number + 1, tint: tints[number % tints.count]) { onPin?(item.0) }
+                    }
+                    .annotationTitles(.hidden)
                 } else {
                     Marker(item.0.name, systemImage: index == shown.count - 1 && route != nil ? "flag.fill" : "mappin", coordinate: item.1)
                 }
             }
+            if let here {
+                Annotation(coordinate: here) { HereDot() } label: { EmptyView() }
+            }
             if let route { MapPolyline(route.polyline).stroke(.blue, lineWidth: 5) }
         }
-        .id(shown.count + (route == nil ? 0 : 100))   // framed again once looked-up places arrive
+        // Numbered pins on a map of their own: the shops and stations round them would crowd them.
+        .mapStyle(.standard(pointsOfInterest: tints.isEmpty ? .all : .excludingAll))
+        .id(shown.count + (route == nil ? 0 : 100) + (here == nil ? 0 : 1000))   // framed again once looked-up places arrive
         .overlay {
             if shown.isEmpty { ProgressView().controlSize(.small) }
         }
@@ -219,67 +312,300 @@ private struct MapPicture: View {
 
 // MARK: - Places
 
+/// A numbered pin in its place's colour, as the list under the map numbers it. Tapped (44 pt
+/// round it), its place opens in Maps.
+private struct NumberedPin: View {
+    let number: Int
+    let tint: Color
+    let open: () -> Void
+
+    var body: some View {
+        Button(action: open) {
+            Text("\(number)")
+                .font(.system(size: 13, weight: .bold)).monospacedDigit()
+                .foregroundStyle(.white)
+                .frame(width: 28, height: 28)
+                .background(tint, in: .circle)
+                .overlay { Circle().strokeBorder(.white, lineWidth: 2) }
+                .shadow(color: .black.opacity(0.25), radius: 3, y: 2)
+                .frame(width: 44, height: 44)
+                .contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// Where the person is, on a map of places near them.
+private struct HereDot: View {
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        Circle().fill(theme.accent)
+            .frame(width: 16, height: 16)
+            .overlay { Circle().strokeBorder(.white, lineWidth: 3) }
+            .background { Circle().fill(theme.accent.opacity(0.22)).frame(width: 28, height: 28) }
+            .accessibilityHidden(true)
+    }
+}
+
+/// A list of places (its look approved 2026-10-30): a map across the top, each place's pin
+/// numbered in its own colour and the person on it where Redde knows where they are; then the
+/// places with what the agent found (its pick, the price, the rating, whether open) and how far
+/// each is; Directions to the pick, and all of them in Maps.
 private struct PlacesCard: View {
     let card: ReplyCard.Places
     @State private var lookup = PlaceLookup.shared
+    @Environment(\.theme) private var theme
 
     var body: some View {
-        CardBox {
-            if let title = card.title { Text(title).chatFont(.subheadline, weight: .semibold) }
-            if card.places.count > 1 {
-                MapPicture(places: card.places, route: nil, numbered: true)
-                    .frame(height: 140)
-                    .clipShape(.rect(cornerRadius: 12))
-                    .onTapGesture { MKMapItem.openMaps(with: card.places.compactMap(lookup.mapItem)) }
+        let mapped = card.places.count > 1
+        let tints = card.places.indices.map { Self.tint($0, accent: theme.accent) }
+        VStack(alignment: .leading, spacing: 0) {
+            if mapped {
+                MapPicture(places: card.places, route: nil, tints: tints, here: lookup.nearby(card.places)) { lookup.mapItem($0)?.openInMaps() }
+                    .frame(height: 180)
+                    .contentShape(.rect)
+                    .onTapGesture(perform: openAll)
                     .accessibilityHidden(true)
+                    .overlay(alignment: .bottomLeading) {
+                        if let title = card.title {
+                            Text(title).chatFont(.caption2, weight: .semibold).lineLimit(1)
+                                .padding(.horizontal, 8).padding(.vertical, 4)
+                                .background(.regularMaterial, in: .rect(cornerRadius: 8))
+                                .padding(10)
+                                .accessibilityAddTraits(.isHeader)
+                        }
+                    }
             }
-            ForEach(Array(card.places.enumerated()), id: \.offset) { index, place in
-                if index > 0 { Divider() }
-                row(place, index: index)
+            VStack(alignment: .leading, spacing: 0) {
+                if !mapped, let title = card.title {
+                    Text(title).chatFont(.subheadline, weight: .semibold).padding(.top, 10).accessibilityAddTraits(.isHeader)
+                }
+                ForEach(Array(card.places.enumerated()), id: \.offset) { index, place in
+                    if index > 0 { Divider() }
+                    PlaceRow(place: place, number: index + 1, tint: tints[index], away: lookup.away[place])
+                }
+                if let lead = card.lead { buttons(lead) }
             }
+            .padding(.horizontal, 16)
+            .padding(.top, 6)
+            .padding(.bottom, 14)
         }
-        .task(id: card.places) { await lookup.look(up: card.places) }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .clipShape(.rect(cornerRadius: 20))
+        .cardGround()
+        .task(id: card.places) {
+            await lookup.look(up: card.places)
+            await lookup.measure(card.places)
+        }
     }
 
-    private func row(_ place: ReplyCard.Place, index: Int) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            Text("\(index + 1)")
-                .chatFont(.caption, weight: .bold).monospacedDigit()
-                .foregroundStyle(.white)
-                .frame(width: 20, height: 20)
-                .background(.red, in: .circle)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(place.name).chatFont(.subheadline, weight: .semibold)
-                let line = [place.category, place.rating.map { "★ " + $0.formatted(.number.precision(.fractionLength(1))) }].compactMap(\.self)
-                if !line.isEmpty { Text(line.joined(separator: " · ")).chatFont(.caption).foregroundStyle(.secondary) }
-                if let address = place.address { Text(address).chatFont(.caption).foregroundStyle(.secondary).lineLimit(2) }
-                if let note = place.note { Text(note).chatFont(.caption).lineLimit(3) }
+    private func buttons(_ lead: ReplyCard.Place) -> some View {
+        let ready = lookup.coordinate(of: lead) != nil
+        return HStack(spacing: 10) {
+            Button { directions(to: lead) } label: {
+                Text("Directions to \(lead.name)", comment: "The wide button under a places card: directions to the agent's pick")
+                    .chatFont(.subheadline, weight: .semibold).lineLimit(1)
+                    .foregroundStyle(theme.userText)
+                    .padding(.horizontal, 14)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .background(theme.accent, in: .capsule)
+                    .contentShape(.capsule)
             }
-            Spacer(minLength: 0)
-            HStack(spacing: 14) {
-                if let phone = place.phone, let url = URL(string: "tel:" + phone.filter { "+0123456789".contains($0) }) {
-                    Link(destination: url) { Image(systemName: "phone.fill") }.accessibilityLabel("Call \(place.name)")
-                }
-                if let site = place.url, let url = URL(string: site) {
-                    Link(destination: url) { Image(systemName: "safari") }.accessibilityLabel("\(place.name)'s website")
-                }
-                Button { lookup.mapItem(place)?.openInMaps() } label: { Image(systemName: "map") }
-                    .buttonStyle(.borderless)
-                    .disabled(lookup.coordinate(of: place) == nil)
-                    .accessibilityLabel("Open \(place.name) in Maps")
+            .disabled(!ready)
+            .opacity(ready ? 1 : 0.5)
+            .accessibilityHint(String(localized: "Opens the directions in Maps"))
+            Button(action: openAll) {
+                Text("Maps", comment: "The button under a places card that opens them all in Apple Maps")
+                    .chatFont(.subheadline, weight: .semibold)
+                    .foregroundStyle(theme.accent)
+                    .padding(.horizontal, 18)
+                    .frame(minHeight: 44)
+                    .background(.background.tertiary, in: .capsule)
+                    .contentShape(.capsule)
             }
-            .chatFont(.callout)
+            .accessibilityHint(String(localized: "Opens it in Maps"))
         }
-        .accessibilityElement(children: .contain)
+        .buttonStyle(.plain)
+        .padding(.top, 12)
     }
+
+    /// On foot (asked 2026-10-30), or by car where it is known to be further than a walk.
+    private func directions(to place: ReplyCard.Place) {
+        guard let item = lookup.mapItem(place) else { return }
+        let far = if case let .distance(meters) = lookup.away[place] { meters > PlaceLookup.walkable } else { false }
+        item.openInMaps(launchOptions: [MKLaunchOptionsDirectionsModeKey: far ? MKLaunchOptionsDirectionsModeDriving : MKLaunchOptionsDirectionsModeWalking])
+    }
+
+    private func openAll() {
+        let items = card.places.compactMap(lookup.mapItem)
+        if items.count == 1 { items[0].openInMaps() } else if !items.isEmpty { MKMapItem.openMaps(with: items) }
+    }
+
+    /// Each place's colour, its pin's and its number's: the accent, a red and a purple as
+    /// designed, then the system's.
+    static func tint(_ index: Int, accent: Color) -> Color {
+        let rest: [Color] = [Color(red: 0.898, green: 0.282, blue: 0.231), Color(red: 0.545, green: 0.361, blue: 0.965),
+                             .orange, .teal, .pink, .indigo, .brown]
+        return index == 0 ? accent : rest[(index - 1) % rest.count]
+    }
+}
+
+/// One place on a places card. Tapped, it opens in Maps; held, it can be called or its site opened.
+private struct PlaceRow: View {
+    let place: ReplyCard.Place
+    let number: Int
+    let tint: Color
+    let away: PlaceLookup.Away?
+    @State private var lookup = PlaceLookup.shared
+    @Environment(\.theme) private var theme
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        let facts = Self.facts(place)
+        let hours = Self.hours(place)
+        Button(action: open) {
+            HStack(alignment: .top, spacing: 12) {
+                Text("\(number)")
+                    .chatFont(.footnote, weight: .bold).monospacedDigit()
+                    .foregroundStyle(.white)
+                    .frame(width: 26, height: 26)
+                    .background(tint, in: .circle)
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(place.name).chatFont(.callout, weight: .semibold).lineLimit(2)
+                        if place.pick == true {
+                            Text("Pick", comment: "A tag on the agent's pick of a list of places")
+                                .textCase(.uppercase)
+                                .chatFont(.caption2, weight: .bold).tracking(0.4)
+                                .foregroundStyle(theme.accent)
+                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                .background(theme.accent.opacity(0.14), in: .rect(cornerRadius: 6))
+                        }
+                    }
+                    if let facts { Text(facts).chatFont(.footnote).foregroundStyle(.secondary).lineLimit(1) }
+                    if let hours { Text(hours).chatFont(.footnote, weight: .medium).foregroundStyle(Self.colour(place.opening)).lineLimit(1) }
+                    if let note = place.note { Text(note).chatFont(.footnote).foregroundStyle(.secondary).lineLimit(2) }
+                }
+                Spacer(minLength: 0)
+                if let away {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(away.amount).chatFont(.subheadline, weight: .semibold).monospacedDigit().lineLimit(1)
+                        Text(away.kind).chatFont(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .padding(.vertical, 12)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .contextMenu { actions }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(spoken(hours: hours))
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint(String(localized: "Opens it in Maps"))
+        .accessibilityActions { actions }
+    }
+
+    @ViewBuilder private var actions: some View {
+        Button("Open in Maps", systemImage: "map", action: open)
+        if let phone = place.phone, let url = URL(string: "tel:" + phone.filter { "+0123456789".contains($0) }) {
+            Button("Call \(place.name)", systemImage: "phone") { openURL(url) }
+        }
+        if let site = place.url, let url = URL(string: site) {
+            Button("\(place.name)'s website", systemImage: "safari") { openURL(url) }
+        }
+    }
+
+    private func open() { lookup.mapItem(place)?.openInMaps() }
+
+    /// "Coffee · $$ · ★ 4.7"; with none of those, its address.
+    static func facts(_ place: ReplyCard.Place) -> String? {
+        let said = [place.category, place.price, place.rating.map { "★ " + $0.formatted(.number.precision(.fractionLength(1))) }].compactMap(\.self)
+        return said.isEmpty ? place.address : said.joined(separator: " · ")
+    }
+
+    static func hours(_ place: ReplyCard.Place) -> String? {
+        place.hours ?? place.open.map {
+            $0 ? String(localized: "Open now", comment: "A place on a places card is open") : String(localized: "Closed", comment: "A place on a places card is closed")
+        }
+    }
+
+    /// Open green, closing soon orange, closed red.
+    static func colour(_ opening: ReplyCard.Place.Opening?) -> Color {
+        switch opening {
+        case .open: shade(light: (0.118, 0.541, 0.235), dark: (0.298, 0.761, 0.420))
+        case .closing: shade(light: (0.698, 0.369, 0), dark: (0.941, 0.627, 0.251))
+        case .closed: .red
+        case nil: .secondary
+        }
+    }
+
+    /// "1, Rossio Roasters, Pick, Coffee, $$, rated 4.7, Open until 9 PM, 6 min walk".
+    private func spoken(hours: String?) -> String {
+        let rating = place.rating.map { String(localized: "rated \($0.formatted(.number.precision(.fractionLength(1))))", comment: "A place's rating out of five, read by VoiceOver") }
+        let pick = place.pick == true ? String(localized: "Pick", comment: "A tag on the agent's pick of a list of places") : nil
+        let parts: [String?] = ["\(number)", place.name, pick, place.category, place.price, rating, hours, place.note,
+                                away.map { "\($0.amount) \($0.kind)" }]
+        return parts.compactMap(\.self).joined(separator: ", ")
+    }
+}
+
+extension PlaceLookup.Away {
+    /// "6 min", "1.2 mi".
+    var amount: String {
+        switch self {
+        case let .walk(seconds): Duration.seconds(max(60, seconds)).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
+        case let .distance(meters): MeasureUnits.distance(meters)
+        }
+    }
+
+    var kind: String {
+        switch self {
+        case .walk: String(localized: "walk", comment: "Under a walking time on a places card: 6 min / walk")
+        case .distance: String(localized: "away", comment: "Under a distance on a places card: 4.2 mi / away")
+        }
+    }
+}
+
+/// A colour with one value in light mode and another in dark.
+private func shade(light: (Double, Double, Double), dark: (Double, Double, Double)) -> Color {
+    #if canImport(UIKit)
+    Color(uiColor: UIColor { traits in
+        let c = traits.userInterfaceStyle == .dark ? dark : light
+        return UIColor(red: c.0, green: c.1, blue: c.2, alpha: 1)
+    })
+    #else
+    Color(nsColor: NSColor(name: nil) { appearance in
+        let c = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light
+        return NSColor(srgbRed: c.0, green: c.1, blue: c.2, alpha: 1)
+    })
+    #endif
 }
 
 // MARK: - Weather
 
+/// The weather somewhere (its look approved 2026-10-30): the reading now in large type; a callout
+/// when rain is likely in the hours ahead; those hours, each with how likely rain is drawn to
+/// scale; then the next days on the week's scale. What it shows is worked out once, as the card is
+/// made (`Shown`), never as it draws; only what the forecast has is shown.
 private struct WeatherCard: View {
     let card: ReplyCard.Weather
     var pending = false
     @State private var lookup = CardLookup.shared
+    @State private var allDays = false
+    @Environment(\.theme) private var theme
+    @Environment(\.openURL) private var openURL
+    private let shown: Shown
+
+    init(card: ReplyCard.Weather, pending: Bool = false) {
+        self.card = card
+        self.pending = pending
+        shown = Shown(card)
+    }
+
+    /// Days shown before "All 7 days".
+    static let firstDays = 3
 
     var body: some View {
         if card.hasReading {
@@ -291,75 +617,273 @@ private struct WeatherCard: View {
     }
 
     private var reading: some View {
-        CardBox {
-            if let now = card.now {
-                HStack(alignment: .center, spacing: 12) {
-                    Image(systemName: Self.symbol(now.condition, night: now.night == true)).symbolRenderingMode(.multicolor).font(.system(size: 40))
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(card.place).chatFont(.subheadline, weight: .semibold)
-                        Text(now.summary ?? Self.name(now.condition)).chatFont(.caption).foregroundStyle(.secondary)
+        CardBox(spacing: 16) {
+            header
+            if let callout = shown.callout {
+                HStack(spacing: 10) {
+                    Image(systemName: callout.symbol).chatFont(.title3).foregroundStyle(theme.accent).frame(width: 24)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(callout.title).chatFont(.subheadline, weight: .semibold)
+                        Text(callout.detail).chatFont(.footnote).foregroundStyle(.secondary)
                     }
                     Spacer(minLength: 0)
-                    VStack(alignment: .trailing, spacing: 0) {
-                        Text(degrees(now.temperature)).chatFont(size: 34, weight: .semibold).monospacedDigit()
-                        if let high = now.high, let low = now.low {
-                            Text("H \(degrees(high))  L \(degrees(low))").chatFont(.caption).foregroundStyle(.secondary).monospacedDigit()
-                        }
-                    }
                 }
+                .padding(.vertical, 10).padding(.horizontal, 12)
+                .background(Color.blue.opacity(0.14), in: .rect(cornerRadius: 14))
                 .accessibilityElement(children: .combine)
-                let details = [now.feelsLike.map { String(localized: "Feels like \(degrees($0))") }, now.wind.map { String(localized: "Wind \($0)") },
-                               now.humidity.map { String(localized: "Humidity \($0.formatted(.percent))") },
-                               now.precipitation.map { String(localized: "Rain \($0.formatted(.percent))", comment: "Chance of rain") }].compactMap(\.self)
-                if !details.isEmpty {
-                    Text(details.joined(separator: " · ")).chatFont(.caption).foregroundStyle(.secondary)
-                }
-            } else {
-                Text(card.place).chatFont(.subheadline, weight: .semibold)
             }
-            if !card.hours.isEmpty {
-                Divider()
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 16) {
-                        ForEach(Array(card.hours.enumerated()), id: \.offset) { _, hour in
-                            VStack(spacing: 4) {
-                                Text(Self.hourLabel(hour.time)).chatFont(.caption2).foregroundStyle(.secondary)
-                                Image(systemName: Self.symbol(hour.condition, night: hour.night == true)).symbolRenderingMode(.multicolor).chatFont(.callout).frame(height: 22)
-                                Text(degrees(hour.temperature)).chatFont(.caption, weight: .medium).monospacedDigit()
-                                if let rain = hour.precipitation, rain > 0 { Text(rain.formatted(.percent)).chatFont(.caption2).foregroundStyle(.blue) }
-                            }
-                            .accessibilityElement(children: .combine)
-                        }
+            if !shown.hours.isEmpty { strip }
+            if !shown.days.isEmpty { days }
+            footer
+        }
+        // Tapped anywhere but its buttons, the Weather app (asked 2026-10-30: every card fully
+        // interactive). The Mac's Weather answers weather:// too.
+        .contentShape(.rect(cornerRadius: 20))
+        .onTapGesture(perform: openWeather)
+    }
+
+    private func openWeather() { openURL(URL(string: "weather://")!) }
+
+    private var header: some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    Image(systemName: "location.fill").imageScale(.small)
+                    Text(shown.heading)
+                }
+                .chatFont(.footnote, weight: .semibold).foregroundStyle(.secondary)
+                if let now = card.now {
+                    HStack(alignment: .top, spacing: 2) {
+                        Text(verbatim: "\(Int(now.temperature.rounded()))").chatFont(size: 56, weight: .light).monospacedDigit().tracking(-1.5)
+                        Text(verbatim: "°").chatFont(size: 26, weight: .light).padding(.top, 8)
                     }
-                    .padding(.vertical, 2)
+                    if !shown.sky.isEmpty { Text(shown.sky).chatFont(.subheadline).foregroundStyle(.secondary) }
                 }
             }
-            if !card.days.isEmpty {
-                Divider()
-                let low = card.days.map(\.low).min() ?? 0, high = card.days.map(\.high).max() ?? 1
-                ForEach(Array(card.days.enumerated()), id: \.offset) { _, day in
-                    HStack(spacing: 10) {
-                        Text(Self.dayLabel(day.date)).chatFont(.caption, weight: .medium).frame(width: 44, alignment: .leading)
-                        Image(systemName: Self.symbol(day.condition)).symbolRenderingMode(.multicolor).frame(width: 24)
-                        Text(day.precipitation.map { $0 > 0 ? $0.formatted(.percent) : "" } ?? "").chatFont(.caption2).foregroundStyle(.blue).frame(width: 32, alignment: .leading)
-                        Text(degrees(day.low)).chatFont(.caption).foregroundStyle(.secondary).monospacedDigit().frame(width: 34, alignment: .trailing)
-                        TemperatureBar(low: day.low, high: day.high, from: low, to: high)
-                        Text(degrees(day.high)).chatFont(.caption, weight: .medium).monospacedDigit().frame(width: 34, alignment: .leading)
+            Spacer(minLength: 0)
+            if let now = card.now {
+                Image(systemName: Self.symbol(now.condition, night: now.night == true))
+                    .symbolRenderingMode(.multicolor)
+                    .chatFont(size: 50)
+                    .frame(width: 72, height: 72)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(shown.details)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint(String(localized: "Opens the Weather app", comment: "VoiceOver hint on a weather card"))
+        .accessibilityAction(.default, openWeather)
+    }
+
+    /// The hours ahead, side by side: each one's hour, sky, temperature, and how likely rain is as
+    /// a bar to scale (40 pt for certain) where the forecast says.
+    private var strip: some View {
+        HStack(alignment: .top, spacing: 2) {
+            ForEach(shown.hours) { hour in
+                VStack(spacing: 6) {
+                    Text(hour.label).chatFont(.caption, weight: .semibold)
+                        .foregroundStyle(hour.now ? theme.accent : Color.secondary)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                    Image(systemName: hour.symbol).symbolRenderingMode(.multicolor).chatFont(.title3).frame(height: 24)
+                    Text(hour.temperature).chatFont(.subheadline, weight: .semibold).monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
+                    if shown.bars {
+                        RainBar(chance: hour.chance)
+                        Text(verbatim: hour.chance.map { $0.formatted(.percent) } ?? " ")
+                            .chatFont(.caption2).foregroundStyle(.secondary).monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
                     }
-                    .accessibilityElement(children: .combine)
                 }
-            }
-            if card.source == ReplyCards.lookedUpSource {
-                // Open-Meteo's data is under CC BY 4.0: credited, with a link.
-                Link("Weather data by Open-Meteo.com", destination: URL(string: "https://open-meteo.com/")!)
-                    .chatFont(.caption2).foregroundStyle(.tertiary)
-            } else if let source = card.source {
-                Text(source).chatFont(.caption2).foregroundStyle(.tertiary)
+                .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(hour.spoken)
             }
         }
     }
 
+    private var days: some View {
+        let more = shown.days.count > Self.firstDays
+        return VStack(alignment: .leading, spacing: 0) {
+            Divider()
+            ForEach(allDays ? shown.days : Array(shown.days.prefix(Self.firstDays))) { day in
+                HStack(spacing: 12) {
+                    Text(day.label).chatFont(.subheadline, weight: .semibold).lineLimit(1).minimumScaleFactor(0.8)
+                        .frame(width: 44, alignment: .leading)
+                    HStack(spacing: 4) {
+                        Text(day.sky).lineLimit(1)
+                        if let chance = day.chance { Text(verbatim: chance.formatted(.percent)).foregroundStyle(.blue).monospacedDigit() }
+                    }
+                    .chatFont(.subheadline).foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(degrees(day.low)).chatFont(.footnote).foregroundStyle(.secondary).monospacedDigit()
+                        .frame(width: 40, alignment: .trailing)
+                    TemperatureBar(low: day.low, high: day.high, from: shown.coldest, to: shown.warmest).frame(width: 72)
+                    Text(degrees(day.high)).chatFont(.subheadline, weight: .semibold).monospacedDigit()
+                        .frame(width: 34, alignment: .trailing)
+                }
+                .padding(.vertical, 10)
+                .accessibilityElement(children: .combine)
+                Divider()
+            }
+            if more {
+                Button(allDays ? String(localized: "Fewer days", comment: "Shows only the first days of a weather card's forecast")
+                       : String(localized: "All \(shown.days.count) days", comment: "Shows every day of a weather card's forecast")) {
+                    withAnimation(.snappy) { allDays.toggle() }
+                }
+                .chatFont(.footnote, weight: .semibold).foregroundStyle(theme.accent).buttonStyle(.borderless)
+                .frame(minHeight: 44).contentShape(.rect)
+                .accessibilityHint(allDays ? String(localized: "Shows the next three days", comment: "VoiceOver hint on a weather card's Fewer days")
+                                   : String(localized: "Shows every day of the forecast", comment: "VoiceOver hint on a weather card's All days"))
+            }
+        }
+    }
+
+    @ViewBuilder private var footer: some View {
+        let updated = shown.updated.map { String(localized: "updated \($0)", comment: "When a weather card's forecast was read, e.g. updated 12:04 PM") }
+        if card.source == ReplyCards.lookedUpSource {
+            // Open-Meteo's data is under CC BY 4.0: credited, with a link.
+            HStack(spacing: 4) {
+                Link("Weather data by Open-Meteo.com", destination: URL(string: "https://open-meteo.com/")!)
+                    .frame(minHeight: 44).contentShape(.rect)   // a finger's height, though the line is small
+                    .accessibilityHint(String(localized: "Opens Open-Meteo's website", comment: "VoiceOver hint on the weather card's credit"))
+                if let updated { Text(verbatim: "· " + updated) }
+            }
+            .chatFont(.caption2).foregroundStyle(.secondary).tint(Color.secondary)
+            .padding(.vertical, -12)
+        } else if let source = card.source {
+            Text(verbatim: [source, updated].compactMap(\.self).joined(separator: " · ")).chatFont(.caption2).foregroundStyle(.secondary)
+        }
+    }
+
     private func degrees(_ value: Double) -> String { "\(Int(value.rounded()))°" }
+
+    /// What the card shows, worked out from its forecast once.
+    struct Shown {
+        struct Hour: Identifiable {
+            var id: Int
+            var label: String
+            var spoken: String
+            /// The hour the reading is from, labelled Now.
+            var now: Bool
+            var symbol: String
+            var temperature: String
+            var chance: Int?
+        }
+
+        struct Day: Identifiable {
+            var id: Int
+            var label: String
+            var sky: String
+            /// How likely rain is, where it is worth saying.
+            var chance: Int?
+            var low: Double
+            var high: Double
+        }
+
+        /// "Orlando · Now": now only while the reading is fresh, the card read back later being that day's.
+        var heading: String
+        var sky = ""
+        /// Feels like, the wind, the humidity: for VoiceOver.
+        var details = ""
+        var callout: (symbol: String, title: String, detail: String)?
+        var hours: [Hour] = []
+        /// Whether any hour says how likely rain is.
+        var bars = false
+        var days: [Day] = []
+        var coldest = 0.0
+        var warmest = 1.0
+        var updated: String?
+
+        /// How long a reading is still "now".
+        static let freshFor: TimeInterval = 90 * 60
+        /// Hours across the strip.
+        static let stripHours = 8
+
+        init(_ card: ReplyCard.Weather, now: Date = .now) {
+            func degrees(_ value: Double) -> String { "\(Int(value.rounded()))°" }
+            let fresh = card.updatedAt.map { abs($0.timeIntervalSince(now)) < Self.freshFor } ?? false
+            let nowWord = String(localized: "Now", comment: "A weather card's reading, and its first hour: now")
+            heading = fresh ? card.place + " · " + nowWord : card.place
+            if let reading = card.now {
+                let range = reading.high.flatMap { high in reading.low.map { low in String(localized: "H \(degrees(high))  L \(degrees(low))") } }
+                sky = [reading.summary ?? WeatherCard.name(reading.condition), range].compactMap { $0?.nilIfEmpty }.joined(separator: " · ")
+                details = [reading.feelsLike.map { String(localized: "Feels like \(degrees($0))") }, reading.wind.map { String(localized: "Wind \($0)") },
+                           reading.humidity.map { String(localized: "Humidity \($0.formatted(.percent))") }].compactMap(\.self).joined(separator: ", ")
+            }
+            let updatedClock = card.updated.flatMap(ReplyCard.Weather.clock)
+            updated = updatedClock.flatMap(Self.date).map { $0.formatted(date: .omitted, time: .shortened) }
+
+            // The strip: "Now", "1 PM", "2", "3", …: the half of the day said where it changes.
+            let ahead = Array(card.hours.prefix(Self.stripHours))
+            var half: Bool?
+            for (i, hour) in ahead.enumerated() {
+                let clock = ReplyCard.Weather.clock(hour.time)
+                let at = clock.flatMap(Self.date)
+                let style: Date.FormatStyle = clock?.minute == 0 ? .dateTime.hour() : .dateTime.hour().minute()
+                let full = at.map { $0.formatted(style) } ?? hour.time
+                let isNow = i == 0 && fresh && clock != nil && clock?.hour == updatedClock?.hour
+                var label = full
+                if isNow {
+                    label = nowWord
+                    half = nil
+                } else if let clock, let at {
+                    if half == (clock.hour >= 12), clock.minute == 0 { label = at.formatted(.dateTime.hour(.defaultDigits(amPM: .omitted))) }
+                    half = clock.hour >= 12
+                }
+                let spoken = [isNow ? nowWord : full, degrees(hour.temperature), WeatherCard.name(hour.condition).nilIfEmpty,
+                              hour.precipitation.map { String(localized: "Rain \($0.formatted(.percent))", comment: "Chance of rain") }]
+                hours.append(Hour(id: i, label: label, spoken: spoken.compactMap(\.self).joined(separator: ", "), now: isNow,
+                                  symbol: WeatherCard.symbol(hour.condition, night: hour.night == true),
+                                  temperature: degrees(hour.temperature), chance: hour.precipitation))
+            }
+            bars = ahead.contains { $0.precipitation != nil }
+            callout = Self.callout(card)
+
+            // The next days, today's left out when the reading has its high and low; on the scale of them all.
+            var list = card.days
+            if let first = list.first, WeatherCard.day(first.date).map(Calendar.current.isDateInToday) == true, card.now?.high != nil, card.now?.low != nil {
+                list.removeFirst()
+            }
+            days = list.enumerated().map { i, day in
+                Day(id: i, label: WeatherCard.dayLabel(day.date), sky: WeatherCard.name(day.condition),
+                    chance: day.precipitation.flatMap { $0 >= 20 ? $0 : nil }, low: day.low, high: day.high)
+            }
+            coldest = card.days.map(\.low).min() ?? 0
+            warmest = card.days.map(\.high).max() ?? 1
+        }
+
+        /// "Storms likely 2 – 5 PM", "80% at 3 PM · gusts to 30 mph".
+        static func callout(_ card: ReplyCard.Weather) -> (symbol: String, title: String, detail: String)? {
+            guard let spell = card.spell, let first = ReplyCard.Weather.clock(card.hours[spell.first].time).flatMap(date),
+                  let peak = ReplyCard.Weather.clock(card.hours[spell.peak].time).flatMap(date) else { return nil }
+            let start = first.formatted(.dateTime.hour())
+            var range = start
+            if !spell.open, var last = ReplyCard.Weather.clock(card.hours[spell.last].time).flatMap(date) {
+                if last < first { last = last.addingTimeInterval(86_400) }   // past midnight
+                range = (first ..< last.addingTimeInterval(3600)).formatted(.interval.hour())
+            }
+            let (symbol, title): (String, String) = switch (spell.kind, spell.open) {
+            case (.storms, false): ("cloud.bolt.rain", String(localized: "Storms likely \(range)", comment: "A weather card's callout: storms likely between two hours, e.g. 2 – 5 PM"))
+            case (.storms, true): ("cloud.bolt.rain", String(localized: "Storms likely from \(start)", comment: "A weather card's callout: storms likely from an hour on, e.g. 9 PM"))
+            case (.snow, false): ("cloud.snow", String(localized: "Snow likely \(range)", comment: "A weather card's callout: snow likely between two hours, e.g. 2 – 5 PM"))
+            case (.snow, true): ("cloud.snow", String(localized: "Snow likely from \(start)", comment: "A weather card's callout: snow likely from an hour on, e.g. 9 PM"))
+            case (.rain, false): ("cloud.rain", String(localized: "Rain likely \(range)", comment: "A weather card's callout: rain likely between two hours, e.g. 2 – 5 PM"))
+            case (.rain, true): ("cloud.rain", String(localized: "Rain likely from \(start)", comment: "A weather card's callout: rain likely from an hour on, e.g. 9 PM"))
+            }
+            var detail = [String(localized: "\(spell.chance.formatted(.percent)) at \(peak.formatted(.dateTime.hour()))",
+                                 comment: "A weather card's callout: the likeliest hour for rain, e.g. 80% at 3 PM")]
+            let fahrenheit = card.units == "F"
+            if let gusts = spell.gusts, gusts >= (fahrenheit ? 25 : 40) {
+                let speed = Measurement(value: gusts.rounded(), unit: fahrenheit ? UnitSpeed.milesPerHour : UnitSpeed.kilometersPerHour)
+                    .formatted(.measurement(width: .abbreviated, usage: .asProvided, numberFormatStyle: .number.precision(.fractionLength(0))))
+                detail.append(String(localized: "gusts to \(speed)", comment: "A weather card's callout: the strongest wind gust, e.g. gusts to 30 mph"))
+            }
+            return (symbol, title, detail.joined(separator: " · "))
+        }
+
+        /// An hour of today, to be written in the phone's way ("2 PM", "14:00").
+        static func date(_ clock: (hour: Int, minute: Int)) -> Date? {
+            Calendar.current.date(bySettingHour: clock.hour, minute: clock.minute, second: 0, of: .now)
+        }
+    }
 
     static func symbol(_ condition: ReplyCard.Condition, night: Bool = false) -> String {
         switch condition {
@@ -397,24 +921,17 @@ private struct WeatherCard: View {
         }
     }
 
-    /// "14:00", "2026-10-22T14:00" or "2 PM" as the phone writes an hour; else as it came.
-    static func hourLabel(_ text: String) -> String {
-        let clock = text.split(separator: "T").last.map(String.init) ?? text
-        let parts = clock.split(separator: ":")
-        guard parts.count >= 2, let hour = Int(parts[0]), (0 ... 23).contains(hour) else { return text }
-        var components = DateComponents()
-        components.hour = hour
-        components.minute = Int(parts[1].prefix(2)) ?? 0
-        guard let date = Calendar.current.date(from: components) else { return text }
-        return date.formatted(.dateTime.hour())
-    }
-
     /// "2026-10-23" as a weekday ("Fri"), today as "Today"; else as it came. Read as that day on the
     /// phone's calendar: as an instant (midnight UTC) it was the day before anywhere west of Greenwich.
     static func dayLabel(_ text: String) -> String {
-        let parts = text.prefix(10).split(separator: "-").compactMap { Int($0) }
-        guard parts.count == 3, let date = Calendar.current.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2])) else { return text }
+        guard let date = day(text) else { return text }
         return Calendar.current.isDateInToday(date) ? String(localized: "Today") : date.formatted(.dateTime.weekday(.abbreviated))
+    }
+
+    static func day(_ text: String) -> Date? {
+        let parts = text.prefix(10).split(separator: "-").compactMap { Int($0) }
+        guard parts.count == 3 else { return nil }
+        return Calendar.current.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))
     }
 }
 
@@ -541,11 +1058,27 @@ private struct TemperatureBar: View {
             let width = max((high - low) / span * proxy.size.width, 4)
             Capsule().fill(.quaternary)
                 .overlay(alignment: .leading) {
-                    Capsule().fill(LinearGradient(colors: [.cyan, .yellow, .orange], startPoint: .leading, endPoint: .trailing))
-                        .frame(width: width).offset(x: start)
+                    Capsule().fill(Self.warming).frame(width: width).offset(x: start)
                 }
         }
         .frame(height: 5)
         .accessibilityHidden(true)
+    }
+
+    /// Cool blue to warm amber, as designed.
+    private static let warming = LinearGradient(colors: [Color(red: 0.353, green: 0.690, blue: 0.941), Color(red: 0.961, green: 0.722, blue: 0.239)],
+                                                startPoint: .leading, endPoint: .trailing)
+}
+
+/// How likely rain is in an hour, as a bar to scale: 40 pt for certain, blue once it is likely.
+private struct RainBar: View {
+    let chance: Int?
+
+    var body: some View {
+        UnevenRoundedRectangle(topLeadingRadius: 4, bottomLeadingRadius: 2, bottomTrailingRadius: 2, topTrailingRadius: 4)
+            .fill((chance ?? 0) >= ReplyCard.Weather.Spell.likely ? Color.blue : Color.primary.opacity(0.2))
+            .frame(width: 12, height: chance.map { max(3, CGFloat($0) * 0.4) } ?? 0)
+            .frame(height: 40, alignment: .bottom)
+            .accessibilityHidden(true)
     }
 }

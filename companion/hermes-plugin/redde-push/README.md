@@ -247,7 +247,13 @@ answers with the numbers and the filled card, so what the agent says and what th
 agree. This is the only thing the plugin asks of a service outside your Hermes and your phone:
 the place's name goes to geocoding-api.open-meteo.com and its coordinates to api.open-meteo.com.
 Open-Meteo is free without a key for non-commercial use, and its data is under CC BY 4.0 (the card
-credits it). Redde tells the plugin the phone's time zone and temperature units
+credits it). Each hour of the card has its chance of rain and its wind gusts, and the card says
+when it was read (`updated`, the place's time with its offset); the app draws the hours with the
+rain to scale and calls out the first run of hours at 50 % or more, which the tool's answer says
+too ("storms likely 14:00–17:00, likeliest 80% at 15:00"). A place in a `places` card can carry
+its `price` ("$$"), `hours` (whether it is open, in words: "Open until 9 PM", "Closes at 5 PM")
+and `pick` (the agent's pick); the app adds the walk to each from where the phone is, where it
+already knows. Older apps ignore all of these. Redde tells the plugin the phone's time zone and temperature units
 (`/redde-push cards on tz=… units=…`) for "what time is it" with no place. When a message asks the time or
 the weather (in English), the plugin adds a line to that turn only: the person's time in that
 zone, and to show the card before answering. An agent asked "what time is it" otherwise answers
@@ -269,3 +275,10 @@ coding bot whose writes and commands a `pre_tool_call` hook sends for approval, 
 `/redde-push gated <profile> on` leaves the review card out for that agent, and Hermes's approval
 is the one ask (`/redde-push gated <profile> off` undoes it; the list is kept on the server, in
 the main home's `redde-push/gated.json`).
+
+A review may say its `kind` (`email`, `message`, `event`, `purchase`, `other`) and a `subtitle`
+("From your Gmail · as you"): the app draws an email or a message as itself, who it's to, its
+subject and its words, and anything else as rows. Without a kind it goes by the fields' labels
+(To and Subject, an email). A checklist's items each take a `section` (or `group`), or come in
+`sections` (or `groups`) each with its `items`; an item may have a short `note` ("×2"), and the
+list a `subtitle` ("Nov 7 – 8") and a `verb` ("packed": "3 of 8 packed"). All optional.
