@@ -50,13 +50,31 @@ nonisolated enum ConnectionTester {
         guard status == 200 else { return .failed(String(localized: "Hermes Dashboard answered HTTP \(status).")) }
         let json = (try? JSONDecoder().decode(JSONValue.self, from: data)) ?? .null
         let version = json["version"]?.string ?? String(localized: "unknown version", comment: "Stands in for the Hermes Dashboard's version number")
-        guard json["auth_required"]?.bool == true else { return .ok(String(localized: "Connected to Hermes Dashboard \(version) (no login required).")) }
+        guard json["auth_required"]?.bool == true else {
+            // No sign-in (asked 2026-10-30): proven the way the app goes in, by the token off its
+            // page; a login saved for it is said to be of no use.
+            do {
+                try await HermesServeClient.shared.ensureLoggedIn()
+                return .ok(String(localized: "Connected to Hermes Dashboard \(version). It has no sign-in.", comment: "Connection test passed; the Dashboard's version"))
+            } catch {
+                return .failed(error.localizedDescription)
+            }
+        }
         do {
             try await HermesServeClient.shared.ensureLoggedIn()
             return .ok(String(localized: "Connected to Hermes Dashboard \(version). Login accepted."))
         } catch {
             return .failed(String(localized: "Hermes Dashboard \(version) reachable, but login failed: \(error.localizedDescription)"))
         }
+    }
+
+    /// Whether the Dashboard at `url` asks for a login (`auth_required` in its public status),
+    /// for the form to show the right fields; nil when nothing answered as a Dashboard.
+    @MainActor
+    static func dashboardAsksForLogin(url: URL) async -> Bool? {
+        guard let (data, status) = try? await get(url.appending(path: "api/status"), key: nil, headers: Settings.shared.accessHeaders),
+              status == 200, let json = try? JSONValue.parse(data), json["version"] != nil || json["auth_required"] != nil else { return nil }
+        return json["auth_required"]?.bool == true
     }
 
     /// OpenAI-compatible endpoint: /v1/models, with the optional key.

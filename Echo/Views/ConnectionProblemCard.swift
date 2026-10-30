@@ -10,7 +10,7 @@ struct ConnectionProblemCard: View {
     @State private var showDetails = false
     @Environment(\.theme) private var theme
 
-    private enum Kind { case login, key, profileKey, profileNotServed, profileMissing, unreachable, other }
+    private enum Kind { case login, loginNowAsked, loginNoLongerAsked, addressRefused, key, profileKey, profileNotServed, profileMissing, unreachable, other }
 
     private var kind: Kind {
         let m = message.lowercased()
@@ -20,6 +20,10 @@ struct ConnectionProblemCard: View {
         if m.contains("profile '"), m.contains("does not exist") { return .profileMissing }
         // Redde's own messages, also as this phone's language words them (`TransportError`).
         func says(_ text: String) -> Bool { m.contains(text.lowercased()) }
+        // The Dashboard's sign-in changed since the server was set up (`DashboardSignInChange`).
+        if says(DashboardSignInChange.nowAsksText) { return .loginNowAsked }
+        if says(DashboardSignInChange.noLongerAsksText) { return .loginNoLongerAsked }
+        if says(DashboardSignInChange.addressRefusedText) { return .addressRefused }
         if m.contains("rejected the key") || says(TransportError.keyRejectedText) { return settings.profileName == nil ? .key : .profileKey }
         if says(TransportError.missingLoginText) { return .login }
         if says(TransportError.missingKeyText) || says(TransportError.addKeyText) { return .key }
@@ -32,7 +36,9 @@ struct ConnectionProblemCard: View {
 
     private var symbol: String {
         switch kind {
-        case .login, .key, .profileKey: "key"
+        case .login, .loginNowAsked, .key, .profileKey: "key"
+        case .loginNoLongerAsked: "lock.open"
+        case .addressRefused: "network.slash"
         case .profileNotServed, .profileMissing: "person.2.slash"
         case .unreachable: "wifi.slash"
         case .other: "exclamationmark.triangle"
@@ -42,6 +48,9 @@ struct ConnectionProblemCard: View {
     private var title: String {
         switch kind {
         case .login: String(localized: "Sign in to the Hermes Dashboard")
+        case .loginNowAsked: String(localized: "Your Hermes Dashboard asks for a login now", comment: "Connection problem card title: a Dashboard set up with no sign-in has one now")
+        case .loginNoLongerAsked: String(localized: "Your Hermes Dashboard has no sign-in now", comment: "Connection problem card title: a Dashboard saved with a login no longer asks for one")
+        case .addressRefused: String(localized: "Your Hermes Dashboard turned the address away", comment: "Connection problem card title: the Dashboard refused the host name it was reached at")
         case .key: String(localized: "Add your gateway key")
         case .profileKey: settings.profileName.map { String(localized: "Add the key for \($0)") } ?? String(localized: "Add the key for this profile")
         case .profileNotServed: String(localized: "This profile isn't available")
@@ -54,6 +63,9 @@ struct ConnectionProblemCard: View {
     private var explanation: String {
         switch kind {
         case .login: String(localized: "Your conversations live on the desktop gateway, and it needs you to sign in before it will share them.")
+        case .loginNowAsked: DashboardSignInChange.nowAsksText
+        case .loginNoLongerAsked: DashboardSignInChange.noLongerAsksText + " " + DashboardFormMode.openWarning
+        case .addressRefused: DashboardSignInChange.addressRefusedText
         case .key: String(localized: "Redde needs the gateway's API key before it can read your conversations.")
         case .profileKey: String(localized: "Each Hermes profile has its own API key (API_SERVER_KEY in the profile's .env). Enter it under Settings → Profile.")
         case .profileMissing: String(localized: "This server has no profile by that name; it may have been renamed or deleted. Pick another under Settings → Profile.")
@@ -64,7 +76,7 @@ struct ConnectionProblemCard: View {
     }
 
     /// The fix lives in Settings, so it gets the prominent button.
-    private var needsSettings: Bool { [.login, .key, .profileKey, .profileNotServed, .profileMissing].contains(kind) }
+    private var needsSettings: Bool { [.login, .loginNowAsked, .key, .profileKey, .profileNotServed, .profileMissing].contains(kind) }
 
     /// Fast lane talks to the model directly, so it works when the gateway doesn't.
     private var canUseFastLane: Bool {
@@ -84,9 +96,23 @@ struct ConnectionProblemCard: View {
                 Text(explanation).chatFont(.subheadline).foregroundStyle(.secondary)
             }
             .accessibilityElement(children: .combine)
+            if kind == .loginNoLongerAsked {
+                // The fix itself, the person having just read what it means (asked 2026-10-30).
+                Button {
+                    Settings.shared.useDashboardWithoutLogin()
+                    HermesServeClient.shared.signOut()
+                    retry()
+                } label: {
+                    Text(String(localized: "Use without a login", comment: "Button: go on with a Dashboard that has no sign-in, forgetting any saved login"))
+                        .foregroundStyle(theme.userText)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+            }
             if needsSettings {
                 Button(action: openSettings) {
-                    Text(kind == .login ? String(localized: "Add login")
+                    Text(kind == .login || kind == .loginNowAsked ? String(localized: "Add login")
                          : kind == .profileNotServed || kind == .profileMissing ? String(localized: "Change profile") : String(localized: "Add key"))
                         .foregroundStyle(theme.userText)   // readable on every theme's accent
                         .frame(maxWidth: .infinity)

@@ -105,6 +105,7 @@ final class RemoteServer: ServeEndpoint {
     }
 
     var serveUsername: String { server.serveUsername }
+    var serveOpenAccess: Bool { server.serveOpenAccess }
     var profileName: String? { Self.profile(of: server) }
 
     var accessHeaders: [String: String] {

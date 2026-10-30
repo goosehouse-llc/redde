@@ -664,6 +664,10 @@ final class Settings: ServeEndpoint {
     var serveUsername: String {
         didSet { store(serveUsername, forKey: Keys.serveUsername); syncActiveServer() }
     }
+    /// The active server's Dashboard has no sign-in and is used that way (`HermesServer.serveOpenAccess`).
+    var serveOpenAccess: Bool {
+        didSet { store(serveOpenAccess, forKey: Keys.serveOpenAccess); syncActiveServer() }
+    }
     /// The Hermes profile Redde talks to; empty means the server's default profile. Nothing
     /// profile-related is sent for the default, so servers without profile support keep working.
     var hermesProfile: String {
@@ -872,6 +876,7 @@ final class Settings: ServeEndpoint {
         static let pushRelayURL = "pushRelayURL"
         static let serveURL = "serveURL"
         static let serveUsername = "serveUsername"
+        static let serveOpenAccess = "serveOpenAccess"
         static let hermesProfile = "hermesProfile"
         static let hermesProfileHome = "hermesProfileHome"
         static let cfAccessClientID = "cfAccessClientID"
@@ -979,6 +984,7 @@ final class Settings: ServeEndpoint {
         setupDone = defaults.bool(forKey: Keys.setupDone)
         serveURL = defaults.string(forKey: Keys.serveURL) ?? Self.defaultServeURL
         serveUsername = defaults.string(forKey: Keys.serveUsername) ?? ""
+        serveOpenAccess = defaults.bool(forKey: Keys.serveOpenAccess)
         hermesProfile = defaults.string(forKey: Keys.hermesProfile) ?? ""
         hermesProfileHome = defaults.string(forKey: Keys.hermesProfileHome) ?? ""
         cfAccessClientID = defaults.string(forKey: Keys.cfAccessClientID) ?? ""
@@ -1005,7 +1011,8 @@ final class Settings: ServeEndpoint {
                                      gatewayURL: stored(Keys.gatewayURL), serveURL: stored(Keys.serveURL),
                                      serveUsername: stored(Keys.serveUsername), cfAccessClientID: stored(Keys.cfAccessClientID),
                                      gatewayModel: stored(Keys.gatewayModel), gatewayProvider: stored(Keys.gatewayProvider),
-                                     hermesProfile: stored(Keys.hermesProfile), hermesProfileHome: stored(Keys.hermesProfileHome))
+                                     hermesProfile: stored(Keys.hermesProfile), hermesProfileHome: stored(Keys.hermesProfileHome),
+                                     serveOpenAccess: defaults.bool(forKey: Keys.serveOpenAccess))
             servers = [first]
             activeServerID = first.id
             defaults.set(try? JSONEncoder().encode(servers), forKey: Keys.hermesServers)
@@ -1151,6 +1158,7 @@ final class Settings: ServeEndpoint {
         gatewayURL = after.gatewayURL
         serveURL = after.serveURL
         serveUsername = after.serveUsername
+        serveOpenAccess = after.serveOpenAccess
         cfAccessClientID = after.cfAccessClientID
         if transport != .chatCompletions { transport = after.transport }
         return true
@@ -1224,6 +1232,7 @@ final class Settings: ServeEndpoint {
         server.gatewayURL = gatewayURL
         server.serveURL = serveURL
         server.serveUsername = serveUsername
+        server.serveOpenAccess = serveOpenAccess
         server.cfAccessClientID = cfAccessClientID
         server.gatewayModel = gatewayModel
         server.gatewayProvider = gatewayProvider
@@ -1245,6 +1254,7 @@ final class Settings: ServeEndpoint {
         gatewayURL = target.gatewayURL
         serveURL = target.serveURL
         serveUsername = target.serveUsername
+        serveOpenAccess = target.serveOpenAccess
         cfAccessClientID = target.cfAccessClientID
         gatewayModel = target.gatewayModel
         gatewayProvider = target.gatewayProvider
@@ -1377,6 +1387,7 @@ final class Settings: ServeEndpoint {
         displayName = ""
         serveURL = Self.defaultServeURL
         serveUsername = ""
+        serveOpenAccess = false
         hermesProfile = ""
         hermesProfileHome = ""
         cfAccessClientID = ""
@@ -1393,13 +1404,23 @@ final class Settings: ServeEndpoint {
         return profileName.map { base.appending(path: "p/\($0)") } ?? base
     }
 
+    /// The active server's Dashboard used as one with no sign-in, the person having been warned
+    /// (asked 2026-10-30). The saved login goes (username, password, a browser sign-in): the
+    /// Dashboard has nothing to check it against, and with it saved the app would keep trying it.
+    func useDashboardWithoutLogin() {
+        serveUsername = ""
+        Keychain.delete(.serveDashboardPassword)
+        DashboardTokenStore.keychain.write(nil)
+        serveOpenAccess = true
+    }
+
     /// True once the selected transport has what it needs to make a request.
     var isConfigured: Bool {
         switch transport {
         case .hermesSessions: return gatewayBaseURL != nil && gatewayAPIKey != nil
         case .hermesServe:
             return serveBaseURL != nil && (DashboardSignIn.tokens(for: serveBaseURL, in: .keychain) != nil
-                || (!serveUsername.isEmpty && Keychain.read(.serveDashboardPassword) != nil))
+                || (!serveUsername.isEmpty && Keychain.read(.serveDashboardPassword) != nil) || serveOpenAccess)
         case .chatCompletions: return activeBaseURL != nil && !fastLaneModel.isEmpty
         }
     }

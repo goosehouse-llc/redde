@@ -292,6 +292,12 @@ struct TransportSettings: View {
                 .sheet(item: $sharing) { SetupCodeView(server: $0) }
         } header: {
             Text("Connection")
+        } footer: {
+            // Kept in sight while the server is used with no sign-in (asked 2026-10-30).
+            if settings.serveOpenAccess, settings.serveUsername.isEmpty, !settings.serveURL.isEmpty {
+                Label(DashboardFormMode.openWarning, systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+            }
         }
     }
 }

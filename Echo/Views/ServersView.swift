@@ -78,6 +78,9 @@ struct ServersView: View {
         let address = server.transport == .hermesSessions ? server.gatewayURL : server.serveURL
         let connection = server.transport == .hermesSessions ? "Hermes API" : "Hermes Dashboard"
         var parts = [connection, address.isEmpty ? String(localized: "not set up", comment: "A server with no address yet") : address]
+        if server.transport == .hermesServe, server.serveOpenAccess, server.serveUsername.isEmpty {
+            parts.append(String(localized: "no sign-in", comment: "Servers list: a Dashboard used with no sign-in, open to anyone who reaches it"))
+        }
         let profile = server.hermesProfile.trimmingCharacters(in: .whitespaces)
         if !profile.isEmpty, profile.lowercased() != "default" { parts.append(String(localized: "profile \(profile)", comment: "A Hermes profile, by name")) }
         return parts.joined(separator: " · ")

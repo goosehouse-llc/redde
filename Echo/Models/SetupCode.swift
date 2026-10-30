@@ -16,6 +16,9 @@ import Foundation
 ///
 /// - `name`: what the server is called in Settings › Servers.
 /// - `dashboard`, `user`, `password`: the Hermes Dashboard (`hermes serve`).
+/// - `sign-in`: `none` for a Dashboard with no sign-in, used that way on purpose (asked
+///   2026-10-30): the other device sets it up the same, with the same warning. Ignored with a
+///   `user` or `password`.
 /// - `api`, `key`: the Hermes API server. `profile` names a Hermes profile, `profile-key` is that
 ///   profile's own API key when it has one.
 /// - `access-id`, `access-secret`: a Cloudflare Access service token for a server behind Access.
@@ -35,6 +38,9 @@ nonisolated struct SetupCode: Equatable, Sendable {
     var dashboardURL = ""
     var dashboardUser = ""
     var dashboardPassword = ""
+    /// The Dashboard has no sign-in (`sign-in=none`): no login is needed, and anyone who can reach
+    /// it can use it. No secret goes along: each device reads the session token off its page.
+    var dashboardOpen = false
     var apiURL = ""
     var apiKey = ""
     var profile = ""
@@ -131,6 +137,8 @@ nonisolated struct SetupCode: Equatable, Sendable {
         code.dashboardURL = try address(fields["dashboard"])
         code.dashboardUser = fields["user"] ?? ""
         code.dashboardPassword = fields["password"] ?? ""
+        code.dashboardOpen = !code.dashboardURL.isEmpty && code.dashboardUser.isEmpty && code.dashboardPassword.isEmpty
+            && fields["sign-in"]?.lowercased() == "none"
         code.apiURL = try address(fields["api"])
         code.apiKey = fields["key"] ?? ""
         code.profile = fields["profile"] ?? ""
@@ -206,6 +214,7 @@ nonisolated struct SetupCode: Equatable, Sendable {
         add("dashboard", dashboardURL)
         add("user", dashboardUser)
         add("password", dashboardPassword)
+        if dashboardOpen, !dashboardURL.isEmpty, dashboardUser.isEmpty, dashboardPassword.isEmpty { add("sign-in", "none") }
         add("api", apiURL)
         add("key", apiKey)
         add("profile", profile)

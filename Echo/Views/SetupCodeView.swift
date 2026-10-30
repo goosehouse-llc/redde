@@ -73,7 +73,9 @@ struct SetupCodeView: View {
     /// What is in the code, in words.
     private var holds: String {
         var parts: [String] = []
-        if !code.dashboardURL.isEmpty { parts.append(withSecrets ? String(localized: "the Dashboard address and login") : String(localized: "the Dashboard address and user name")) }
+        if code.dashboardOpen {
+            parts.append(String(localized: "the Dashboard address, which has no sign-in", comment: "Set up another device: what the setup code holds"))
+        } else if !code.dashboardURL.isEmpty { parts.append(withSecrets ? String(localized: "the Dashboard address and login") : String(localized: "the Dashboard address and user name")) }
         if !code.apiURL.isEmpty { parts.append(withSecrets ? String(localized: "the Hermes API address and key") : String(localized: "the Hermes API address")) }
         if !code.accessID.isEmpty { parts.append(withSecrets ? String(localized: "the Cloudflare Access token") : String(localized: "the Cloudflare Access client ID")) }
         if withSecrets, !(code.pangolin.isEmpty && code.pangolinAPI.isEmpty) { parts.append(String(localized: "the Pangolin access token")) }

@@ -49,7 +49,8 @@ final class WatchLink: NSObject, WCSessionDelegate {
         let viaPhone: WatchConnection? = {
             let password = dashboardPassword() ?? ""
             let signedIn = dashboardSignedIn?() ?? (DashboardSignIn.tokens(for: settings.serveBaseURL, in: .keychain) != nil)
-            guard settings.serveBaseURL != nil, signedIn || (!settings.serveUsername.isEmpty && !password.isEmpty) else { return nil }
+            // (A Dashboard with no sign-in needs neither: the phone reads its token itself.)
+            guard settings.serveBaseURL != nil, signedIn || (!settings.serveUsername.isEmpty && !password.isEmpty) || settings.serveOpenAccess else { return nil }
             return made(.phone, model: settings.gatewayModel, provider: settings.gatewayProvider)
         }()
         let fastLane: WatchConnection? = Settings.normalizedBase(settings.fastLaneURL).map { base in

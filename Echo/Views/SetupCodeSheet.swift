@@ -81,9 +81,14 @@ struct SetupCodeSheet: View {
                 if !code.name.isEmpty { LabeledContent("Name", value: code.name) }
                 if !code.dashboardURL.isEmpty {
                     row("Hermes Dashboard", code.dashboardURL,
-                        note: [code.dashboardUser.isEmpty ? nil : String(localized: "user \(code.dashboardUser)", comment: "A Dashboard login's user name"),
+                        note: code.dashboardOpen
+                            ? [String(localized: "no sign-in", comment: "Servers list: a Dashboard used with no sign-in, open to anyone who reaches it")]
+                            : [code.dashboardUser.isEmpty ? nil : String(localized: "user \(code.dashboardUser)", comment: "A Dashboard login's user name"),
                                code.dashboardPassword.isEmpty ? String(localized: "no password") : String(localized: "password included")],
                         used: plan.transport == .hermesServe)
+                    if code.dashboardOpen {
+                        DashboardSignInNotice(mode: .open)
+                    }
                 }
                 if !code.apiURL.isEmpty {
                     row("Hermes API", code.apiURL, note: [code.apiKey.isEmpty && code.profileKey.isEmpty ? String(localized: "no key") : String(localized: "key included")],
@@ -189,7 +194,7 @@ struct SetupCodeSheet: View {
             }
         } footer: {
             if case .tested(let outcome) = stage, !outcome.isOK {
-                code.hasSecrets
+                code.hasSecrets || code.dashboardOpen
                     ? Text("The code is saved. If the address is only reachable on your home network or VPN, connect to that and test again.")
                     : Text("The code is saved, but it came without a password or key. \(offersEditing ? String(localized: "Add it under Edit connection.") : String(localized: "Tap Done and add it in the form."))")
             }

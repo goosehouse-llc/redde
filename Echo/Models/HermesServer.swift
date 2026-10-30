@@ -16,14 +16,19 @@ nonisolated struct HermesServer: Codable, Identifiable, Equatable, Sendable {
     var gatewayProvider = ""
     var hermesProfile = ""
     var hermesProfileHome = ""
+    /// The Dashboard has no sign-in, and the person chose to use it that way, warned that anyone
+    /// who reaches its address can use the agent (asked 2026-10-30). No secret goes with it: the
+    /// Dashboard's session token is read off its page each time and never stored.
+    var serveOpenAccess = false
 
     init(id: UUID, name: String, transport: Transport = .hermesServe, gatewayURL: String = "", serveURL: String = "",
          serveUsername: String = "", cfAccessClientID: String = "", gatewayModel: String = "", gatewayProvider: String = "",
-         hermesProfile: String = "", hermesProfileHome: String = "") {
+         hermesProfile: String = "", hermesProfileHome: String = "", serveOpenAccess: Bool = false) {
         self.id = id; self.name = name; self.transport = transport
         self.gatewayURL = gatewayURL; self.serveURL = serveURL; self.serveUsername = serveUsername
         self.cfAccessClientID = cfAccessClientID; self.gatewayModel = gatewayModel; self.gatewayProvider = gatewayProvider
         self.hermesProfile = hermesProfile; self.hermesProfileHome = hermesProfileHome
+        self.serveOpenAccess = serveOpenAccess
     }
 
     /// Every field but the id may be missing, so a record written by another version still
@@ -42,6 +47,7 @@ nonisolated struct HermesServer: Codable, Identifiable, Equatable, Sendable {
         gatewayProvider = try c.decodeIfPresent(String.self, forKey: .gatewayProvider) ?? ""
         hermesProfile = try c.decodeIfPresent(String.self, forKey: .hermesProfile) ?? ""
         hermesProfileHome = try c.decodeIfPresent(String.self, forKey: .hermesProfileHome) ?? ""
+        serveOpenAccess = try c.decodeIfPresent(Bool.self, forKey: .serveOpenAccess) ?? false
     }
 
     /// Its name, else the host of whichever address it uses, else a placeholder.

@@ -15,6 +15,8 @@ struct SetupView: View {
     /// Signed in to the Dashboard through a browser: no username or password needed.
     @State private var signedIn = false
     @State private var hasFastLaneKey = false
+    /// Whether the Dashboard at the address asks for a login; nil until it answers.
+    @State private var dashboardAsks: Bool?
     @State private var testing = false
     @State private var outcome: ConnectionTester.Outcome?
     /// A setup code: the scanner, the code it read (held until the scanner has closed), the
@@ -105,7 +107,17 @@ struct SetupView: View {
                     Section {
                         TextField("http://your-redde:9119", text: $settings.serveURL).urlFieldStyle()
                             .onChange(of: settings.serveURL) { signedIn = HermesServeClient.shared.isSignedIn }
-                        if signedIn {
+                        // Its test saves a Dashboard with no sign-in as one: no confirming here.
+                        DashboardSignInNotice(mode: dashboardMode) {
+                            settings.useDashboardWithoutLogin()
+                            HermesServeClient.shared.signOut()
+                            servePassword = ""
+                            readStoredSecrets()
+                            outcome = nil
+                        }
+                        if dashboardMode == .open {
+                            EmptyView()   // no sign-in: nothing to type
+                        } else if signedIn {
                             Label("Signed in through a browser", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
                         } else {
                             TextField("Dashboard username", text: $settings.serveUsername)
@@ -113,13 +125,21 @@ struct SetupView: View {
                             SecureField(hasServePassword ? String(localized: "Replace stored password") : String(localized: "Dashboard password"), text: $servePassword)
                             BrowserSignInButton {
                                 signedIn = true
+                                settings.serveOpenAccess = false
                                 Task { await test() }
                             }
                         }
                     } header: {
                         Text("Hermes Dashboard")
                     } footer: {
-                        Text("The same login as the Hermes Dashboard: its username and password, or Sign in with a browser where it uses Google or another provider. Adds tool approvals and slash commands.")
+                        dashboardMode == .open
+                            ? Text(String(localized: "This Dashboard has no sign-in, so there is nothing to type: Redde reads its session token from the Dashboard each time it connects and never stores it. Adds tool approvals and slash commands.",
+                                          comment: "Setup footer for a Hermes Dashboard with no sign-in"))
+                            : Text("The same login as the Hermes Dashboard: its username and password, or Sign in with a browser where it uses Google or another provider. Adds tool approvals and slash commands.")
+                    }
+                    .task(id: settings.serveURL) {
+                        dashboardAsks = nil
+                        dashboardAsks = await DashboardFormMode.probe(settings)
                     }
                 case .chatCompletions:
                     Section {
@@ -209,14 +229,26 @@ struct SetupView: View {
         switch settings.transport {
         case .hermesSessions: settings.gatewayBaseURL != nil && (!apiKey.isEmpty || hasAPIKey)
         case .hermesServe:
-            settings.serveBaseURL != nil && (signedIn || (!settings.serveUsername.isEmpty && (!servePassword.isEmpty || hasServePassword)))
+            settings.serveBaseURL != nil
+                && (dashboardMode == .open || signedIn || (!settings.serveUsername.isEmpty && (!servePassword.isEmpty || hasServePassword)))
         case .chatCompletions: settings.activeBaseURL != nil
         }
     }
 
+    /// The Dashboard's form, by what its address says about signing in (asked 2026-10-30).
+    private var dashboardMode: DashboardFormMode {
+        .decide(asksForLogin: dashboardAsks, hasLogin: signedIn || (!settings.serveUsername.isEmpty && hasServePassword),
+                savedOpen: settings.serveOpenAccess)
+    }
+
     private func persistSecrets() {
         if !apiKey.isEmpty, Keychain.write(.gatewayAPIKey, value: apiKey) { hasAPIKey = true }
-        if !servePassword.isEmpty, Keychain.write(.serveDashboardPassword, value: servePassword) { hasServePassword = true }
+        // A password typed before the address said it has no sign-in goes nowhere.
+        if settings.transport == .hermesServe, dashboardMode == .open { servePassword = "" }
+        if !servePassword.isEmpty, Keychain.write(.serveDashboardPassword, value: servePassword) {
+            hasServePassword = true
+            settings.serveOpenAccess = false
+        }
         if !fastLaneKey.isEmpty, Keychain.write(.fastLaneAPIKey, value: fastLaneKey) { hasFastLaneKey = true }
         HermesServeClient.shared.disconnect()
     }
@@ -231,7 +263,11 @@ struct SetupView: View {
             outcome = await ConnectionTester.hermesAPI(url: url, apiKey: apiKey.isEmpty ? Keychain.read(.gatewayAPIKey) : apiKey, headers: settings.apiHeaders)
         case .hermesServe:
             guard let url = settings.serveBaseURL else { outcome = .failed(String(localized: "Enter a valid URL.")); return }
+            let open = dashboardMode == .open
             outcome = await ConnectionTester.hermesServe(url: url)
+            // Connected with no sign-in, the warning on screen: the server is saved as one, so it
+            // keeps the warning and another device set up from it does the same.
+            if open, outcome?.isOK == true, !settings.serveOpenAccess { settings.useDashboardWithoutLogin() }
         case .chatCompletions:
             guard let url = settings.activeBaseURL else { outcome = .failed(String(localized: "Enter a valid URL.")); return }
             outcome = await ConnectionTester.fastLane(url: url, apiKey: fastLaneKey.isEmpty ? Keychain.read(.fastLaneAPIKey) : fastLaneKey, model: settings.fastLaneModel)

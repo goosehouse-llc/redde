@@ -31,6 +31,7 @@
 #   scripts/hermes-lab/lab.sh butler [--app] [tag ...]  the main profile hands coding to a claude bot (kanban), Claude Code
 #                                                  runs on another machine over SSH, the patch comes back and is applied
 #                                                  after asking; --app: the app's open conversation gets that question
+#   scripts/hermes-lab/lab.sh open [tag ...]      a Dashboard with no sign-in: the app reads its token off the page, survives restarts
 #   scripts/hermes-lab/lab.sh up <tag> <scenario>  leave one lab running (API :18642, Dashboard :19119)
 #   scripts/hermes-lab/lab.sh down
 #
@@ -793,8 +794,31 @@ speech() {
   echo "\nAll checks passed."
 }
 
+# A Dashboard with no sign-in (asked 2026-10-30, as Hermex uses one): the `named` scenario's
+# Dashboard is on 127.0.0.1 with no public address and no login, so it says auth_required false and
+# hands its session token out on its page. The app's own client goes in with nothing stored, and
+# restart_dashboard.py restarts the Dashboard when the test asks (a new token; the whole page as
+# `hermes dashboard` serves it; a login turned on), as HermesLabOpenAccessTests says.
+open_access() {
+  local tags=("${@:-v0.22.2}") failed=()
+  app_prepare HermesLabOpenAccessTests || exit 1
+  for tag in $tags; do
+    echo "===== Hermes $tag / named (no sign-in)"
+    if ! up "$tag" named; then failed+=("$tag (lab)"); continue; fi
+    local run=(${LAB_HOME}/run-*(N))
+    LAB_HOME="$LAB_HOME" nohup python3 "$HERE/restart_dashboard.py" 18979 "$LAB_HOME/hermes-$tag/.venv/bin/hermes" "${run[1]}" \
+      > "${run[1]}/restarter.log" 2>&1 & echo $! >> "$LAB_HOME/pids"
+    sleep 1
+    app_check || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
 mkdir -p "$LAB_HOME"
 case "${1:-}" in
+  open) shift; open_access "$@" ;;
   run) shift; run "$@" ;;
   approvals) shift; approvals "$@" ;;
   signin) shift; signin "$@" ;;

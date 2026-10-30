@@ -45623,6 +45623,113 @@
         }
       }
     },
+    "Anyone who can reach this address can use your agent. Only use it over a private network like Tailscale." : {
+      "comment" : "Warning shown for a Hermes Dashboard with no sign-in",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle, der kan nå denne adresse, kan bruge din agent. Brug den kun via et privat netværk som Tailscale."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeder, der diese Adresse erreicht, kann deinen Agenten nutzen. Verwende sie nur über ein privates Netzwerk wie Tailscale."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cualquiera que pueda llegar a esta dirección puede usar tu agente. Úsala solo a través de una red privada como Tailscale."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toute personne pouvant joindre cette adresse peut utiliser votre agent. Ne l’utilisez que sur un réseau privé comme Tailscale."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiunque possa raggiungere questo indirizzo può usare il tuo agente. Usalo solo su una rete privata come Tailscale."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このアドレスにアクセスできる人は誰でもエージェントを使用できます。Tailscaleのようなプライベートネットワーク経由でのみ使用してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 주소에 접근할 수 있는 누구나 에이전트를 사용할 수 있습니다. Tailscale 같은 사설 네트워크를 통해서만 사용하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle som kan nå denne adressen, kan bruke agenten din. Bruk den bare over et privat nettverk som Tailscale."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iedereen die dit adres kan bereiken, kan je agent gebruiken. Gebruik het alleen via een privénetwerk zoals Tailscale."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Każdy, kto może dotrzeć pod ten adres, może używać Twojego agenta. Korzystaj z niego tylko przez sieć prywatną, taką jak Tailscale."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qualquer pessoa que consiga acessar este endereço pode usar seu agente. Use-o só por uma rede privada como o Tailscale."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Любой, кто может открыть этот адрес, может пользоваться вашим агентом. Используйте его только через частную сеть, например Tailscale."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alla som kan nå den här adressen kan använda din agent. Använd den bara över ett privat nätverk som Tailscale."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu adrese ulaşabilen herkes ajanınızı kullanabilir. Yalnızca Tailscale gibi özel bir ağ üzerinden kullanın."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Будь-хто, хто може відкрити цю адресу, може користуватися вашим агентом. Використовуйте її лише через приватну мережу, як-от Tailscale."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "任何能访问此地址的人都能使用你的智能体。请仅通过Tailscale这样的私有网络使用。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "任何能連到此位址的人都能使用你的代理。請僅透過 Tailscale 這類私人網路使用。"
+          }
+        }
+      }
+    },
     "Anything here can be used by asking in plain words. Add the Hermes Dashboard login to toggle toolsets from here." : {
       "localizations" : {
         "da" : {
@@ -74608,6 +74715,113 @@
         }
       }
     },
+    "Connected to Hermes Dashboard %@. It has no sign-in." : {
+      "comment" : "Connection test passed; the Dashboard's version",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forbundet til Hermes Dashboard %@. Det har intet login."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit Hermes Dashboard %@ verbunden. Es hat keine Anmeldung."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectado al Hermes Dashboard %@. No tiene inicio de sesión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecté au Hermes Dashboard %@. Il n’a pas d’identifiant."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connesso alla Hermes Dashboard %@. Non ha un accesso."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard %@に接続しました。ログインはありません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard %@에 연결됨. 로그인이 없습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koblet til Hermes Dashboard %@. Det har ingen pålogging."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbonden met Hermes Dashboard %@. Het heeft geen login."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Połączono z Hermes Dashboard %@. Nie ma logowania."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectado ao Hermes Dashboard %@. Ele não tem login."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключено к Hermes Dashboard %@. Вход не используется."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ansluten till Hermes Dashboard %@. Den har ingen inloggning."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bağlandı: Hermes Dashboard %@. Girişi yok."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Під’єднано до Hermes Dashboard %@. Вхід не використовується."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已连接到Hermes Dashboard %@。它没有登录。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已連線到 Hermes Dashboard %@。它沒有登入。"
+          }
+        }
+      }
+    },
     "Connected to Hermes Dashboard %@. Login accepted." : {
       "localizations" : {
         "da" : {
@@ -98677,112 +98891,6 @@
         }
       }
     },
-    "Each evening your agent sums up your day: what got done, what's waiting on you, and what carries over. It comes as a notification and stays in Briefings, at the top of your chats. What carries over it can bring back tomorrow morning as idea cards. Needs Redde's plugin 1.9 on your Hermes." : {
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hver aften opsummerer din agent din dag: hvad der blev gjort, hvad der venter på dig, og hvad der rykkes videre. Det kommer som en meddelelse og bliver i Briefinger øverst i dine chats. Det, der rykkes videre, kan den bringe tilbage næste morgen som idékort. Kræver Redde-plugin 1.9 på din Hermes."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jeden Abend fasst dein Agent deinen Tag zusammen: was erledigt ist, was auf dich wartet und was liegen bleibt. Das kommt als Mitteilung und bleibt in den Briefings oben in deinen Chats. Was liegen bleibt, kann er dir am nächsten Morgen als Ideenkarten wieder vorlegen. Dafür braucht es das Redde-Plugin 1.9 auf deinem Hermes."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cada noche tu agente resume tu día: lo que se hizo, lo que te espera y lo que queda pendiente. Llega como notificación y se queda en Informes, en la parte superior de tus chats. Lo pendiente puede traértelo de vuelta a la mañana siguiente como tarjetas de idea. Necesita el plugin de Redde 1.9 en tu Hermes."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chaque soir, votre agent résume votre journée : ce qui est fait, ce qui vous attend et ce qui est reporté. Le bilan arrive par notification et reste dans Briefings, en haut de vos discussions. Ce qui est reporté, il peut vous le reproposer le lendemain matin sous forme de cartes d’idée. Requiert le plugin Redde 1.9 sur votre Hermes."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ogni sera il tuo agente riassume la tua giornata: cosa è stato fatto, cosa aspetta te e cosa resta in sospeso. Arriva come notifica e resta in Briefing, in cima alle chat. Ciò che resta in sospeso può riproportelo la mattina dopo come schede idea. Serve il plugin Redde 1.9 sul tuo Hermes."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "毎晩、エージェントがあなたの1日をまとめます。終わったこと、あなたを待っていること、持ち越すことです。通知で届き、チャットの上部の「ブリーフィング」に残ります。持ち越した内容は、翌朝アイデアカードとして戻せます。HermesにReddeプラグイン1.9が必要です。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "매일 저녁 에이전트가 사용자의 하루를 정리합니다. 완료된 일, 사용자를 기다리는 일, 다음으로 넘어가는 일을 알려줍니다. 알림으로 도착하며 채팅 상단의 브리핑에 남습니다. 넘어가는 일은 다음 날 아침 아이디어 카드로 다시 가져올 수 있습니다. Hermes에 Redde 플러그인 1.9가 필요합니다."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hver kveld oppsummerer agenten din dagen din: hva som ble gjort, hva som venter på deg, og hva som skyves videre. Det kommer som en varsling og blir liggende i Briefinger øverst i chattene dine. Det som skyves videre, kan den ta opp igjen neste morgen som idékort. Krever Redde-tillegget 1.9 på din Hermes."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Elke avond vat je agent je dag samen: wat er gedaan is, wat op je wacht en wat doorschuift. Dat komt als melding en blijft in Briefings staan, bovenaan je chats. Wat doorschuift, kan hij de volgende ochtend terugbrengen als ideekaarten. Hiervoor is de Redde-plug-in 1.9 op je Hermes nodig."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Każdego wieczoru Twój agent podsumowuje Twój dzień: co zostało zrobione, co czeka na Ciebie i co przechodzi na później. Przychodzi to w powiadomieniu i zostaje w Briefingach na górze czatów. To, co przechodzi na później, może wrócić następnego ranka jako karty pomysłów. Wymaga wtyczki Redde 1.9 na Twoim Hermesie."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toda noite seu agente resume o seu dia: o que foi feito, o que está esperando por você e o que fica para depois. Chega como notificação e fica em Briefings, no topo das suas conversas. O que ficou para depois ele pode trazer de volta na manhã seguinte como cartões de ideia. Requer o plugin do Redde 1.9 no seu Hermes."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Каждый вечер агент подводит итоги вашего дня: что сделано, что ждет вас и что переносится. Итоги приходят уведомлением и остаются в «Сводках» вверху чатов. То, что переносится, агент может вернуть следующим утром карточками идей. Нужен плагин Redde 1.9 на вашем Hermes."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Varje kväll sammanfattar din agent din dag: vad som blev gjort, vad som väntar på dig och vad som flyttas över. Det kommer som en notis och ligger kvar i Briefingar överst i dina chattar. Det som flyttas över kan den ta upp igen nästa morgon som idékort. Kräver Redde-tillägget 1.9 på din Hermes."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajanınız her akşam gününüzü özetler: neler yapıldı, neler sizi bekliyor ve neler ertesi güne kalıyor. Özet bildirim olarak gelir ve sohbetlerinizin üstündeki Brifingler'de kalır. Ertesi güne kalanları ertesi sabah fikir kartları olarak geri getirebilir. Hermes'inizde Redde eklentisi 1.9 gerekir."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Щовечора агент підбиває підсумки вашого дня: що зроблено, що чекає на вас і що переноситься. Підсумки надходять сповіщенням і лишаються в «Зведеннях» угорі чатів. Те, що переноситься, агент може повернути наступного ранку картками ідей. Потрібен плагін Redde 1.9 на вашому Hermes."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每天晚上，你的智能体会总结你的一天：完成了什么、有什么在等你处理、有什么要延续到明天。总结以通知形式送达，并保留在聊天列表顶部的“简报”中。要延续的事项，它可以在第二天早上以想法卡片的形式带回给你。需要你的Hermes上安装Redde插件1.9。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每天晚上，你的代理會總結你的一天：完成了什麼、有什麼在等你處理、有什麼要延到明天。總結會以通知送達，並保留在聊天列表頂端的「簡報」中。要延續的事項，它可以在隔天早上以點子卡片帶回給你。需要你的 Hermes 上有 Redde 外掛 1.9。"
-          }
-        }
-      }
-    },
     "Each Hermes profile has its own API key (API_SERVER_KEY in the profile's .env). Enter it under Settings → Profile." : {
       "localizations" : {
         "da" : {
@@ -98885,218 +98993,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "每個 Hermes 設定檔都有自己的 API 金鑰（設定檔 .env 中的 API_SERVER_KEY）。請在「設定」→「設定檔」中輸入。"
-          }
-        }
-      }
-    },
-    "Each morning your agent looks at the day's calendar and, before each event that needs it, sends you a heads-up: where it is, who's coming, what to bring, the weather if it's outdoors. They come as notifications and stay in Briefings. Events added later in the day are picked up the next time it plans. Needs Redde's plugin 1.9 on your Hermes and a calendar your agent can read." : {
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hver morgen ser din agent på dagens kalender og sender dig et forvarsel før hver begivenhed, der har brug for det: hvor det er, hvem der kommer, hvad du skal have med, og vejret, hvis det er udendørs. De kommer som meddelelser og bliver i Briefinger. Begivenheder, der tilføjes senere på dagen, kommer med næste gang den planlægger. Kræver Redde-plugin 1.9 på din Hermes og en kalender, din agent kan læse."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jeden Morgen schaut sich dein Agent die Termine des Tages an und schickt dir vor jedem Termin, bei dem es sich lohnt, einen Vorabhinweis: wo er ist, wer kommt, was du mitbringen sollst, das Wetter, wenn er draußen ist. Die Hinweise kommen als Mitteilungen und bleiben in den Briefings. Termine, die später am Tag dazukommen, werden bei der nächsten Planung berücksichtigt. Dafür braucht es das Redde-Plugin 1.9 auf deinem Hermes und einen Kalender, den dein Agent lesen kann."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cada mañana tu agente mira el calendario del día y, antes de cada evento que lo necesite, te envía un aviso: dónde es, quién va, qué llevar y el tiempo si es al aire libre. Llegan como notificaciones y se quedan en Informes. Los eventos añadidos más tarde ese día se tienen en cuenta la próxima vez que planifique. Necesita el plugin de Redde 1.9 en tu Hermes y un calendario que tu agente pueda leer."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chaque matin, votre agent regarde le calendrier du jour et, avant chaque événement qui le mérite, vous envoie une alerte : où c’est, qui vient, quoi apporter, la météo si c’est en extérieur. Elles arrivent par notification et restent dans Briefings. Les événements ajoutés plus tard dans la journée sont pris en compte à la planification suivante. Requiert le plugin Redde 1.9 sur votre Hermes et un calendrier que votre agent peut lire."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ogni mattina il tuo agente guarda il calendario del giorno e, prima di ogni evento che lo richiede, ti manda un avviso: dove si trova, chi viene, cosa portare, il meteo se è all'aperto. Arrivano come notifiche e restano in Briefing. Gli eventi aggiunti più tardi nella giornata vengono considerati alla pianificazione successiva. Serve il plugin Redde 1.9 sul tuo Hermes e un calendario che il tuo agente possa leggere."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "毎朝、エージェントがその日のカレンダーを確認し、必要な予定の前にお知らせを送ります。場所、参加者、持ち物、屋外なら天気などです。通知で届き、「ブリーフィング」に残ります。その日のうちに後から追加された予定は、次回の計画時に反映されます。HermesにReddeプラグイン1.9と、エージェントが読めるカレンダーが必要です。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "매일 아침 에이전트가 그날의 캘린더를 살펴보고, 필요한 일정 전에 사전 알림을 보냅니다. 장소, 참석자, 챙길 것, 야외라면 날씨까지 알려줍니다. 알림으로 도착하며 브리핑에 남습니다. 그날 나중에 추가된 일정은 다음 계획 때 반영됩니다. Hermes에 Redde 플러그인 1.9와 에이전트가 읽을 수 있는 캘린더가 필요합니다."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hver morgen ser agenten din på dagens kalender og sender deg et forvarsel før hver hendelse som trenger det: hvor det er, hvem som kommer, hva du skal ta med, og været hvis det er utendørs. De kommer som varslinger og blir liggende i Briefinger. Hendelser som legges til senere på dagen, blir tatt med neste gang den planlegger. Krever Redde-tillegget 1.9 på din Hermes og en kalender agenten din kan lese."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Elke ochtend bekijkt je agent de agenda van de dag en stuurt hij je voor elke afspraak waar het nodig is een seintje: waar het is, wie er komt, wat je mee moet nemen, het weer als het buiten is. Ze komen als meldingen en blijven in Briefings staan. Afspraken die later op de dag worden toegevoegd, neemt hij mee bij de volgende planning. Hiervoor is de Redde-plug-in 1.9 op je Hermes nodig, en een agenda die je agent kan lezen."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Każdego ranka Twój agent przegląda kalendarz na dany dzień i przed każdym wydarzeniem, które tego wymaga, wysyła zapowiedź: gdzie się odbywa, kto przyjdzie, co zabrać i jaka będzie pogoda, jeśli to na zewnątrz. Przychodzą w powiadomieniach i zostają w Briefingach. Wydarzenia dodane później w ciągu dnia zostaną uwzględnione przy następnym planowaniu. Wymaga wtyczki Redde 1.9 na Twoim Hermesie i kalendarza, który Twój agent może odczytać."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toda manhã seu agente olha o calendário do dia e, antes de cada evento que precise, envia um aviso: onde é, quem vai, o que levar, o tempo se for ao ar livre. Eles chegam como notificações e ficam em Briefings. Eventos adicionados mais tarde no dia são considerados na próxima vez que ele planejar. Requer o plugin do Redde 1.9 no seu Hermes e um calendário que seu agente consiga ler."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Каждое утро агент смотрит календарь на день и перед каждым событием, где это нужно, присылает предупреждение: где оно, кто придет, что взять с собой и какая погода, если это на улице. Они приходят уведомлениями и остаются в «Сводках». События, добавленные позже в течение дня, учитываются при следующем планировании. Нужен плагин Redde 1.9 на вашем Hermes и календарь, который агент может читать."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Varje morgon tittar din agent på dagens kalender och skickar en förvarning före varje händelse som behöver det: var det är, vem som kommer, vad du ska ta med och vädret om det är utomhus. De kommer som notiser och ligger kvar i Briefingar. Händelser som läggs till senare under dagen kommer med nästa gång den planerar. Kräver Redde-tillägget 1.9 på din Hermes och en kalender som din agent kan läsa."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajanınız her sabah günün takvimine bakar ve gerektiren her etkinlikten önce size bir hatırlatma gönderir: nerede olduğu, kimlerin geleceği, yanınıza ne almanız gerektiği ve dışarıdaysa hava durumu. Bunlar bildirim olarak gelir ve Brifingler'de kalır. Gün içinde sonradan eklenen etkinlikler bir sonraki planlamada dikkate alınır. Hermes'inizde Redde eklentisi 1.9 ve ajanınızın okuyabileceği bir takvim gerekir."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Щоранку агент переглядає календар на день і перед кожною подією, де це потрібно, надсилає попередження: де вона, хто прийде, що взяти з собою і яка погода, якщо це надворі. Вони надходять сповіщеннями й лишаються в «Зведеннях». Події, додані пізніше протягом дня, враховуються під час наступного планування. Потрібен плагін Redde 1.9 на вашому Hermes і календар, який агент може читати."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每天早上，你的智能体会查看当天的日历，并在每个需要提醒的日程开始前给你发送提醒：地点、参与者、要带什么，如果在户外还有天气。提醒以通知形式送达，并保留在“简报”中。当天稍后添加的日程会在下次计划时纳入。需要你的Hermes上安装Redde插件1.9，以及一个智能体可以读取的日历。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每天早上，你的代理會查看當天的行事曆，並在每個需要提醒的行程開始前傳送提醒給你：地點、誰會來、要帶什麼，如果在戶外還有天氣。提醒會以通知送達，並保留在「簡報」中。當天稍後新增的行程會在下次規劃時納入。需要你的 Hermes 上有 Redde 外掛 1.9，以及一個代理可以讀取的行事曆。"
-          }
-        }
-      }
-    },
-    "Each morning your agent looks at your day (your calendar, reminders, the board, what you asked it lately) and offers up to five things it could do, as cards at the top of your chats and a notification. Swipe one right to have it done, left to put it away. Nothing is done until you take one. Needs Redde's plugin 1.9 on your Hermes, and notifications from it turned on." : {
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hver morgen ser din agent på din dag (din kalender, påmindelser, tavlen, hvad du har bedt den om for nylig) og tilbyder op til fem ting, den kunne gøre, som kort øverst i dine chats og en meddelelse. Skub et til højre for at få det gjort, til venstre for at lægge det væk. Intet bliver gjort, før du tager et. Kræver Redde-plugin 1.9 på din Hermes og meddelelser fra den slået til."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jeden Morgen schaut sich dein Agent deinen Tag an (deinen Kalender, deine Erinnerungen, das Board, worum du ihn zuletzt gebeten hast) und bietet bis zu fünf Dinge an, die er tun könnte, als Karten oben in deinen Chats und als Mitteilung. Streiche eine nach rechts, damit es erledigt wird, nach links, um sie wegzulegen. Nichts wird getan, bevor du eine annimmst. Dafür braucht es das Redde-Plugin 1.9 auf deinem Hermes und aktivierte Mitteilungen davon."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cada mañana tu agente mira tu día (tu calendario, tus recordatorios, el tablero, lo que le has pedido últimamente) y te ofrece hasta cinco cosas que podría hacer, como tarjetas en la parte superior de tus chats y una notificación. Desliza una hacia la derecha para que se haga, hacia la izquierda para guardarla. No se hace nada hasta que aceptes una. Necesita el plugin de Redde 1.9 en tu Hermes y sus notificaciones activadas."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chaque matin, votre agent regarde votre journée (votre calendrier, vos rappels, le tableau, ce que vous lui avez demandé récemment) et propose jusqu’à cinq choses qu’il pourrait faire, sous forme de cartes en haut de vos discussions et d’une notification. Balayez-en une vers la droite pour qu’elle soit faite, vers la gauche pour la mettre de côté. Rien n’est fait tant que vous n’en prenez pas une. Requiert le plugin Redde 1.9 sur votre Hermes, avec ses notifications activées."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ogni mattina il tuo agente guarda la tua giornata (il calendario, i promemoria, la bacheca, cosa gli hai chiesto di recente) e ti offre fino a cinque cose che potrebbe fare, come schede in cima alle chat e una notifica. Scorrine una verso destra per farla fare, verso sinistra per metterla da parte. Non viene fatto nulla finché non ne accetti una. Serve il plugin Redde 1.9 sul tuo Hermes, con le sue notifiche attive."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "毎朝、エージェントがあなたの1日（カレンダー、リマインダー、ボード、最近頼んだこと）を確認し、できることを最大5つ、チャットの上部のカードと通知で提案します。右にスワイプすると実行、左にスワイプすると片付けます。どれかを選ぶまで何も実行されません。HermesにReddeプラグイン1.9が必要で、その通知をオンにしておく必要があります。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "매일 아침 에이전트가 사용자의 하루(캘린더, 미리 알림, 보드, 최근에 요청한 내용)를 살펴보고 할 수 있는 일을 최대 다섯 가지 제안합니다. 제안은 채팅 상단의 카드와 알림으로 표시됩니다. 카드를 오른쪽으로 쓸어넘기면 실행되고, 왼쪽으로 쓸어넘기면 치워집니다. 카드를 선택하기 전까지는 아무것도 실행되지 않습니다. Hermes에 Redde 플러그인 1.9가 필요하며 해당 알림이 켜져 있어야 합니다."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hver morgen ser agenten din på dagen din (kalenderen, påminnelsene, tavlen, hva du har bedt den om nylig) og tilbyr opptil fem ting den kunne gjøre, som kort øverst i chattene dine og en varsling. Sveip ett til høyre for å få det gjort, til venstre for å legge det bort. Ingenting blir gjort før du tar ett. Krever Redde-tillegget 1.9 på din Hermes, og at varslinger fra det er slått på."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Elke ochtend bekijkt je agent je dag (je agenda, herinneringen, het bord, wat je hem onlangs vroeg) en biedt hij tot vijf dingen aan die hij zou kunnen doen, als kaarten bovenaan je chats en een melding. Veeg er een naar rechts om het te laten doen, naar links om het weg te leggen. Er gebeurt niets tot je er een aanneemt. Hiervoor is de Redde-plug-in 1.9 op je Hermes nodig, met meldingen ervan aan."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Każdego ranka Twój agent przegląda Twój dzień (kalendarz, przypomnienia, tablicę, ostatnie prośby do niego) i proponuje do pięciu rzeczy, które mógłby zrobić, jako karty na górze czatów i powiadomienie. Przesuń kartę w prawo, aby to zostało zrobione, w lewo, aby ją odłożyć. Nic nie zostanie zrobione, dopóki którejś nie przyjmiesz. Wymaga wtyczki Redde 1.9 na Twoim Hermesie i włączonych powiadomień z niej."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toda manhã seu agente olha o seu dia (seu calendário, lembretes, o quadro, o que você pediu ultimamente) e oferece até cinco coisas que poderia fazer, como cartões no topo das suas conversas e uma notificação. Deslize um para a direita para que seja feito, para a esquerda para guardá-lo. Nada é feito até você aceitar um. Requer o plugin do Redde 1.9 no seu Hermes, com as notificações dele ativadas."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Каждое утро агент смотрит на ваш день (календарь, напоминания, доску, ваши недавние просьбы) и предлагает до пяти дел, которые мог бы сделать, — карточками вверху чатов и уведомлением. Смахните карточку вправо, чтобы дело было сделано, влево — чтобы отложить. Ничего не делается, пока вы не примете карточку. Нужен плагин Redde 1.9 на вашем Hermes и включенные уведомления от него."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Varje morgon tittar din agent på din dag (din kalender, påminnelser, tavlan, vad du bett den om nyligen) och erbjuder upp till fem saker den kunde göra, som kort överst i dina chattar och en notis. Svep ett åt höger för att få det gjort, åt vänster för att lägga undan det. Inget görs förrän du tar ett. Kräver Redde-tillägget 1.9 på din Hermes och att notiser från det är påslagna."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajanınız her sabah gününüze bakar (takviminiz, anımsatıcılarınız, pano, son zamanlarda ondan istedikleriniz) ve yapabileceği en fazla beş şeyi sohbetlerinizin üstünde kartlar ve bir bildirim olarak sunar. Yapılmasını istediğinizi sağa, kaldırmak istediğinizi sola kaydırın. Siz birini kabul edene kadar hiçbir şey yapılmaz. Hermes'inizde Redde eklentisi 1.9 ve ondan gelen bildirimlerin açık olması gerekir."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Щоранку агент переглядає ваш день (календар, нагадування, дошку, ваші недавні прохання) і пропонує до п’яти справ, які міг би зробити, — картками вгорі чатів і сповіщенням. Посуньте картку праворуч, щоб справу було зроблено, ліворуч — щоб відкласти. Нічого не робиться, доки ви не приймете картку. Потрібен плагін Redde 1.9 на вашому Hermes і ввімкнені сповіщення від нього."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每天早上，你的智能体会查看你的一天（日历、提醒事项、看板、你最近让它做的事），并提出最多五件它可以做的事，以卡片形式显示在聊天列表顶部，同时发送一条通知。向右轻扫一张即可让它去做，向左轻扫则收起。在你接受之前，什么都不会执行。需要你的Hermes上安装Redde插件1.9，并打开它的通知。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每天早上，你的代理會查看你的一天（行事曆、提醒事項、看板、你最近要求它做的事），並提出最多五件它可以做的事，以卡片顯示在聊天列表頂端，並傳送一則通知。向右滑動一張就讓它去做，向左滑動則收起。在你接受之前，什麼都不會執行。需要你的 Hermes 上有 Redde 外掛 1.9，並開啟它的通知。"
           }
         }
       }
@@ -99628,112 +99524,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "排程工作的每次執行都是獨立的對話。它們現在會收合在列表末端，直到你打開為止，也不會出現在車上的「聊天」中。"
-          }
-        }
-      }
-    },
-    "Each Sunday evening your agent looks at the week to come (your calendar, what's due, what's waiting on you) and sends you a short briefing. It stays in Briefings, at the top of your chats. Needs Redde's plugin 1.9 on your Hermes." : {
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hver søndag aften ser din agent på ugen, der kommer (din kalender, hvad der forfalder, hvad der venter på dig), og sender dig en kort briefing. Den bliver i Briefinger øverst i dine chats. Kræver Redde-plugin 1.9 på din Hermes."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jeden Sonntagabend schaut sich dein Agent die kommende Woche an (deinen Kalender, was fällig ist, was auf dich wartet) und schickt dir ein kurzes Briefing. Es bleibt in den Briefings oben in deinen Chats. Dafür braucht es das Redde-Plugin 1.9 auf deinem Hermes."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cada domingo por la noche tu agente mira la semana que viene (tu calendario, lo que vence, lo que te espera) y te envía un informe breve. Se queda en Informes, en la parte superior de tus chats. Necesita el plugin de Redde 1.9 en tu Hermes."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chaque dimanche soir, votre agent regarde la semaine à venir (votre calendrier, les échéances, ce qui vous attend) et vous envoie un court briefing. Il reste dans Briefings, en haut de vos discussions. Requiert le plugin Redde 1.9 sur votre Hermes."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ogni domenica sera il tuo agente guarda la settimana in arrivo (il calendario, le scadenze, cosa ti aspetta) e ti manda un breve briefing. Resta in Briefing, in cima alle chat. Serve il plugin Redde 1.9 sul tuo Hermes."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "毎週日曜の夜、エージェントが来週の予定（カレンダー、期限のあること、あなたを待っていること）を確認し、短いブリーフィングを送ります。チャットの上部の「ブリーフィング」に残ります。HermesにReddeプラグイン1.9が必要です。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "매주 일요일 저녁 에이전트가 다가오는 한 주(캘린더, 마감, 사용자를 기다리는 일)를 살펴보고 짧은 브리핑을 보냅니다. 채팅 상단의 브리핑에 남습니다. Hermes에 Redde 플러그인 1.9가 필요합니다."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hver søndag kveld ser agenten din på uken som kommer (kalenderen, hva som forfaller, hva som venter på deg), og sender deg en kort briefing. Den blir liggende i Briefinger øverst i chattene dine. Krever Redde-tillegget 1.9 på din Hermes."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Elke zondagavond bekijkt je agent de komende week (je agenda, wat er moet gebeuren, wat op je wacht) en stuurt je een korte briefing. Die blijft in Briefings staan, bovenaan je chats. Hiervoor is de Redde-plug-in 1.9 op je Hermes nodig."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "W każdą niedzielę wieczorem Twój agent przegląda nadchodzący tydzień (kalendarz, terminy, to, co na Ciebie czeka) i wysyła krótki briefing. Zostaje on w Briefingach na górze czatów. Wymaga wtyczki Redde 1.9 na Twoim Hermesie."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Todo domingo à noite seu agente olha a semana que vem (seu calendário, o que vence, o que está esperando por você) e envia um briefing curto. Ele fica em Briefings, no topo das suas conversas. Requer o plugin do Redde 1.9 no seu Hermes."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Каждое воскресенье вечером агент смотрит на предстоящую неделю (календарь, сроки, то, что ждет вас) и присылает короткую сводку. Она остается в «Сводках» вверху чатов. Нужен плагин Redde 1.9 на вашем Hermes."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Varje söndagskväll tittar din agent på veckan som kommer (din kalender, vad som ska vara klart, vad som väntar på dig) och skickar en kort briefing. Den ligger kvar i Briefingar överst i dina chattar. Kräver Redde-tillägget 1.9 på din Hermes."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajanınız her pazar akşamı gelecek haftaya bakar (takviminiz, vadesi gelenler, sizi bekleyenler) ve size kısa bir brifing gönderir. Brifing, sohbetlerinizin üstündeki Brifingler'de kalır. Hermes'inizde Redde eklentisi 1.9 gerekir."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Щонеділі ввечері агент переглядає наступний тиждень (календар, терміни, те, що чекає на вас) і надсилає коротке зведення. Воно лишається в «Зведеннях» угорі чатів. Потрібен плагін Redde 1.9 на вашому Hermes."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每个星期日晚上，你的智能体会查看接下来的一周（你的日历、到期事项、等你处理的事）并发给你一份简短的简报。它会保留在聊天列表顶部的“简报”中。需要你的Hermes上安装Redde插件1.9。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每個星期日晚上，你的代理會查看接下來的一週（你的行事曆、到期事項、等你處理的事），並傳給你一份簡短的簡報。它會保留在聊天列表頂端的「簡報」中。需要你的 Hermes 上有 Redde 外掛 1.9。"
           }
         }
       }
@@ -128051,6 +127841,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "無法連線到 Hermes Dashboard"
+          }
+        }
+      }
+    },
+    "Hermes Dashboard says it has no sign-in, but its page at %@ has no session token. Something in front of it may be answering instead." : {
+      "comment" : "The Dashboard's page, read for its session token, had none; the host name",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard siger, at det ikke har noget login, men dets side på %@ har intet sessionstoken. Noget foran det svarer måske i stedet."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Hermes Dashboard gibt an, keine Anmeldung zu haben, aber seine Seite unter %@ enthält kein Sitzungstoken. Vielleicht antwortet stattdessen etwas, das davor sitzt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El Hermes Dashboard dice que no tiene inicio de sesión, pero su página en %@ no tiene token de sesión. Puede que algo delante de él esté respondiendo en su lugar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le Hermes Dashboard indique qu’il n’a pas d’identifiant, mais sa page à %@ n’a pas de jeton de session. Quelque chose placé devant lui répond peut-être à sa place."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La Hermes Dashboard dice di non avere un accesso, ma la sua pagina su %@ non ha un token di sessione. Forse risponde al suo posto qualcosa che le sta davanti."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboardはログインがないと示していますが、%@のページにセッショントークンがありません。手前にある別のものが代わりに応答している可能性があります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard는 로그인이 없다고 하지만 %@의 페이지에 세션 토큰이 없습니다. 앞단의 다른 무언가가 대신 응답하고 있을 수 있습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard sier at det ikke har pålogging, men siden på %@ har ikke noe sesjonstoken. Noe foran det svarer kanskje i stedet."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Het Hermes Dashboard zegt dat het geen login heeft, maar de pagina op %@ heeft geen sessietoken. Misschien antwoordt iets ervoor in zijn plaats."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard podaje, że nie ma logowania, ale jego strona pod adresem %@ nie zawiera tokenu sesji. Być może zamiast niego odpowiada coś, co stoi przed nim."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Hermes Dashboard diz que não tem login, mas a página dele em %@ não tem token de sessão. Talvez algo na frente dele esteja respondendo no lugar."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard сообщает, что вход не нужен, но на его странице по адресу %@ нет токена сеанса. Возможно, вместо него отвечает что-то, стоящее перед ним."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard säger att den saknar inloggning, men dess sida på %@ har ingen sessionstoken. Något framför den kanske svarar i stället."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard girişi olmadığını söylüyor ama %@ adresindeki sayfasında oturum token'ı yok. Önündeki başka bir şey onun yerine yanıt veriyor olabilir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard повідомляє, що входу немає, але на його сторінці за адресою %@ немає токена сеансу. Можливо, замість нього відповідає щось, що стоїть перед ним."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard表示它没有登录，但它在%@的页面上没有会话令牌。可能是它前面的其他东西在代为响应。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard 表示它沒有登入，但它在 %@ 的頁面上沒有工作階段權杖。可能是它前方的其他東西在代為回應。"
           }
         }
       }
@@ -170095,113 +169992,6 @@
         }
       }
     },
-    "Morning Ideas to swipe, a Week Ahead, an Evening Wrap-up, and heads-ups before events with what to bring. Turn them on in Settings → Agent. They take the Redde plugin 1.9 on your Hermes." : {
-      "comment" : "In-app What's New for Redde 2.3: an item's text (a few short sentences)",
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morgenidéer at swipe igennem, Ugen, der kommer, en Aftenopsummering og besked før begivenheder om, hvad du skal have med. Slå dem til i Indstillinger → Agent. De kræver Redde-plugin 1.9 på din Hermes."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morgenideen zum Wischen, ein Wochenausblick, ein Abendrückblick und Hinweise vor Terminen, was du mitbringen solltest. Schalte sie unter Einstellungen → Agent ein. Sie brauchen das Redde-Plug-in 1.9 auf deinem Hermes."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ideas matutinas para deslizar, La semana que viene, un Resumen de la noche y avisos antes de los eventos con lo que debes llevar. Actívalos en Ajustes → Agente. Necesitan el plugin de Redde 1.9 en tu Hermes."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Des Idées du matin à faire défiler, une Semaine à venir, un Bilan du soir et des alertes avant les événements avec ce qu’il faut emporter. Activez-les dans Réglages → Agent. Ils nécessitent le plug-in Redde 1.9 sur votre Hermes."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Idee del mattino da scorrere, una Settimana in arrivo, un Riepilogo serale e avvisi prima degli eventi con cosa portare. Attivali in Impostazioni → Agente. Richiedono il plugin Redde 1.9 sul tuo Hermes."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "スワイプで見る朝のアイデア、来週の見通し、夜の振り返り、そしてイベント前に持ち物を知らせる通知。設定 → エージェントでオンにできます。HermesにReddeプラグイン1.9が必要です。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "넘겨 보는 아침 아이디어, 다가오는 한 주, 저녁 하루 정리, 그리고 이벤트 전에 챙길 물건을 알려 주는 알림. 설정 → 에이전트에서 켜십시오. Hermes에 Redde 플러그인 1.9가 필요합니다."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morgenidéer å sveipe gjennom, Uken som kommer, en Kveldsoppsummering og varsler før hendelser om hva du skal ha med. Slå dem på i Innstillinger → Agent. De krever Redde-plugin 1.9 på Hermes."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ochtendideeën om door te vegen, een Komende week, een Avondterugblik en seintjes vóór afspraken met wat je mee moet nemen. Zet ze aan in Instellingen → Agent. Ze hebben de Redde-plug-in 1.9 op je Hermes nodig."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Poranne pomysły do przesuwania, Nadchodzący tydzień, Wieczorne podsumowanie i przypomnienia przed wydarzeniami o tym, co zabrać. Włącz je w Ustawienia → Agent. Wymagają wtyczki Redde 1.9 na Twoim Hermes."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ideias Matinais para deslizar, a Semana que Vem, o Resumo da Noite e avisos antes dos eventos com o que levar. Ative em Ajustes → Agente. Eles precisam do plugin Redde 1.9 no seu Hermes."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Утренние идеи, которые можно листать, Обзор недели, Вечерние итоги и подсказки перед событиями о том, что взять с собой. Включите их в Настройки → Агент. Нужен плагин Redde 1.9 на вашем Hermes."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morgonidéer att svepa mellan, Veckan som kommer, en Kvällssammanfattning och påminnelser före händelser om vad du ska ta med. Slå på dem i Inställningar → Agent. De kräver Redde-pluginet 1.9 på din Hermes."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kaydırarak göz atılan Sabah Fikirleri, Haftaya Bakış, Akşam Özeti ve etkinliklerden önce yanınıza ne almanız gerektiğini söyleyen uyarılar. Ayarlar → Ajan bölümünden açın. Hermes’inizde Redde eklentisi 1.9 gerekir."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ранкові ідеї, які можна гортати, Огляд тижня, Вечірні підсумки та підказки перед подіями про те, що взяти з собою. Увімкніть їх у Параметри → Агент. Потрібен плагін Redde 1.9 на вашому Hermes."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "可滑动浏览的早间想法、下周概览、晚间总结，以及在日程开始前提醒你要带什么。在“设置 → 智能体”中打开。需要你的 Hermes 装有 Redde 插件 1.9。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "可滑動瀏覽的晨間點子、下週概覽、晚間總結，以及在行程開始前提醒你要帶什麼。在「設定 → 代理」中開啟。需要你的 Hermes 安裝 Redde 外掛 1.9。"
-          }
-        }
-      }
-    },
     "Mouth" : {
       "localizations" : {
         "da" : {
@@ -181134,6 +180924,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "尚無排程"
+          }
+        }
+      }
+    },
+    "no sign-in" : {
+      "comment" : "Servers list: a Dashboard used with no sign-in, open to anyone who reaches it",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "intet login"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "keine Anmeldung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sin inicio de sesión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sans identifiant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "senza accesso"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ログインなし"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로그인 없음"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ingen pålogging"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "geen login"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bez logowania"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sem login"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "без входа"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ingen inloggning"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "giriş yok"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "без входу"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无登录"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無登入"
           }
         }
       }
@@ -192688,112 +192585,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "僅此一次"
-          }
-        }
-      }
-    },
-    "Once a week your agent looks for things you ask it again and again (the weather before a run, the board on Mondays) and offers each as an idea card. Take one and it becomes a routine that runs by itself and tells you. Needs Redde's plugin 1.9 on your Hermes." : {
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En gang om ugen leder din agent efter ting, du beder den om igen og igen (vejret før en løbetur, tavlen om mandagen), og tilbyder hver som et idékort. Tag et, så bliver det til en rutine, der kører af sig selv og giver dig besked. Kræver Redde-plugin 1.9 på din Hermes."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Einmal pro Woche sucht dein Agent nach Dingen, um die du immer wieder bittest (das Wetter vor dem Laufen, montags das Board), und bietet jedes als Ideenkarte an. Nimm eine an, und sie wird zu einer Routine, die von selbst läuft und dir Bescheid sagt. Dafür braucht es das Redde-Plugin 1.9 auf deinem Hermes."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Una vez por semana tu agente busca cosas que le pides una y otra vez (el tiempo antes de correr, el tablero los lunes) y ofrece cada una como tarjeta de idea. Acepta una y se convierte en una rutina que se ejecuta sola y te avisa. Necesita el plugin de Redde 1.9 en tu Hermes."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Une fois par semaine, votre agent repère ce que vous lui demandez encore et encore (la météo avant une course, le tableau le lundi) et propose chaque chose sous forme de carte d’idée. Acceptez-en une et elle devient une routine qui s’exécute toute seule et vous prévient. Requiert le plugin Redde 1.9 sur votre Hermes."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Una volta alla settimana il tuo agente cerca le cose che gli chiedi più e più volte (il meteo prima di una corsa, la bacheca il lunedì) e propone ciascuna come scheda idea. Accettane una e diventa una routine che si esegue da sola e ti avvisa. Serve il plugin Redde 1.9 sul tuo Hermes."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "週に一度、エージェントが何度も頼まれていること（ランニング前の天気、月曜日のボードなど）を探し、それぞれをアイデアカードとして提案します。1つ選ぶと、自動で実行されて知らせてくれるルーチンになります。HermesにReddeプラグイン1.9が必要です。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "에이전트가 일주일에 한 번 사용자가 반복해서 요청하는 일(달리기 전 날씨, 월요일의 보드 등)을 찾아 각각 아이디어 카드로 제안합니다. 하나를 받으면 스스로 실행되고 알려주는 루틴이 됩니다. Hermes에 Redde 플러그인 1.9가 필요합니다."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En gang i uken ser agenten din etter ting du ber den om igjen og igjen (været før en løpetur, tavlen på mandager), og tilbyr hver som et idékort. Ta ett, så blir det en rutine som kjører av seg selv og sier fra. Krever Redde-tillegget 1.9 på din Hermes."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eens per week zoekt je agent naar dingen die je steeds opnieuw vraagt (het weer voor het hardlopen, het bord op maandag) en biedt elk ervan aan als ideekaart. Neem er een aan en het wordt een routine die vanzelf draait en het je laat weten. Hiervoor is de Redde-plug-in 1.9 op je Hermes nodig."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Raz w tygodniu Twój agent szuka rzeczy, o które prosisz raz po raz (pogoda przed bieganiem, tablica w poniedziałki), i proponuje każdą jako kartę pomysłu. Przyjmij jedną, a stanie się rutyną, która działa sama i daje znać. Wymaga wtyczki Redde 1.9 na Twoim Hermesie."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uma vez por semana seu agente procura coisas que você pede várias vezes (o tempo antes de uma corrida, o quadro às segundas) e oferece cada uma como cartão de ideia. Aceite uma e ela vira uma rotina que roda sozinha e avisa você. Requer o plugin do Redde 1.9 no seu Hermes."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Раз в неделю агент ищет то, о чем вы просите снова и снова (погода перед пробежкой, доска по понедельникам), и предлагает каждое карточкой идеи. Примите карточку, и это станет сценарием, который запускается сам и сообщает вам. Нужен плагин Redde 1.9 на вашем Hermes."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En gång i veckan letar din agent efter saker du ber den om om och om igen (vädret före en löprunda, tavlan på måndagar) och erbjuder var och en som ett idékort. Ta ett så blir det en rutin som körs av sig själv och säger till. Kräver Redde-tillägget 1.9 på din Hermes."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajanınız haftada bir, ondan tekrar tekrar istediğiniz şeyleri (koşudan önce hava durumu, pazartesileri pano) arar ve her birini bir fikir kartı olarak sunar. Birini kabul edin; kendi kendine çalışan ve size haber veren bir rutine dönüşsün. Hermes'inizde Redde eklentisi 1.9 gerekir."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Раз на тиждень агент шукає те, про що ви просите знову і знову (погода перед пробіжкою, дошка щопонеділка), і пропонує кожне карткою ідеї. Прийміть картку, і це стане сценарієм, який запускається сам і повідомляє вам. Потрібен плагін Redde 1.9 на вашому Hermes."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "你的智能体每周会找出你反复要求的事（跑步前的天气、周一的看板），并把每一项作为想法卡片提出。接受一张，它就会成为自动运行并告诉你结果的例行任务。需要你的Hermes上安装Redde插件1.9。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "你的代理每週會找出你一再要求的事（跑步前的天氣、週一的看板），並把每一項作為點子卡片提出。接受一張，它就會成為自動執行並告訴你結果的例行程序。需要你的 Hermes 上有 Redde 外掛 1.9。"
           }
         }
       }
@@ -284106,6 +283897,113 @@
         }
       }
     },
+    "the Dashboard address, which has no sign-in" : {
+      "comment" : "Set up another device: what the setup code holds",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard-adressen, som ikke har noget login"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "die Dashboard-Adresse, die keine Anmeldung hat"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "la dirección del Dashboard, que no tiene inicio de sesión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "l’adresse du Dashboard, qui n’a pas d’identifiant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "l'indirizzo della Dashboard, che non ha un accesso"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ログインのないDashboardのアドレス"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로그인이 없는 Dashboard 주소"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard-adressen, som ikke har pålogging"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "het Dashboard-adres, dat geen login heeft"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "adres Dashboard, który nie ma logowania"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "o endereço do Dashboard, que não tem login"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "адрес Dashboard без входа"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard-adressen, som saknar inloggning"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "girişi olmayan Dashboard adresi"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "адресу Dashboard без входу"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有登录的Dashboard地址"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有登入的 Dashboard 位址"
+          }
+        }
+      }
+    },
     "The endpoint address isn't a valid URL." : {
       "localizations" : {
         "da" : {
@@ -296463,6 +296361,220 @@
         }
       }
     },
+    "This Dashboard has no sign-in, so there is nothing to type: Redde reads its session token from the Dashboard each time it connects and never stores it. Adds tool approvals and slash commands." : {
+      "comment" : "Setup footer for a Hermes Dashboard with no sign-in",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dette Dashboard har intet login, så der er intet at skrive: Redde læser dets sessionstoken fra Dashboard ved hver forbindelse og gemmer det aldrig. Tilføjer godkendelse af værktøjer og skråstregkommandoer."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Dashboard hat keine Anmeldung, du musst also nichts eingeben: Redde liest sein Sitzungstoken bei jeder Verbindung aus dem Dashboard und speichert es nie. Bringt Tool-Genehmigungen und Slash-Befehle."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este Dashboard no tiene inicio de sesión, así que no hay nada que escribir: Redde lee su token de sesión del Dashboard cada vez que se conecta y nunca lo guarda. Añade las aprobaciones de herramientas y los comandos con barra."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce Dashboard n’a pas d’identifiant, il n’y a donc rien à saisir : Redde lit son jeton de session sur le Dashboard à chaque connexion et ne le conserve jamais. Ajoute les approbations d’outils et les commandes slash."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questa Dashboard non ha un accesso, quindi non c'è niente da scrivere: Redde legge il suo token di sessione dalla Dashboard a ogni connessione e non lo salva mai. Aggiunge le approvazioni degli strumenti e i comandi slash."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このDashboardにはログインがないため、入力するものはありません。Reddeは接続するたびにDashboardからセッショントークンを読み取り、保存することはありません。ツールの承認とスラッシュコマンドが使えるようになります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 Dashboard에는 로그인이 없으므로 입력할 것이 없습니다. Redde는 연결할 때마다 Dashboard에서 세션 토큰을 읽어 오며 저장하지 않습니다. 도구 승인과 슬래시 명령이 추가됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dette Dashboard har ingen pålogging, så det er ingenting å skrive inn: Redde leser sesjonstokenet fra Dashboard ved hver tilkobling og lagrer det aldri. Legger til godkjenning av verktøy og skråstrekkommandoer."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit Dashboard heeft geen login, dus er valt niets in te vullen: Redde leest het sessietoken bij elke verbinding uit het Dashboard en bewaart het nooit. Voegt goedkeuringen voor tools en slash-commando’s toe."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten Dashboard nie ma logowania, więc nie trzeba nic wpisywać: Redde przy każdym połączeniu odczytuje jego token sesji z Dashboard i nigdy go nie zapisuje. Dodaje zatwierdzanie narzędzi i polecenia z ukośnikiem."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este Dashboard não tem login, então não há nada para digitar: o Redde lê o token de sessão do Dashboard sempre que se conecta e nunca o guarda. Adiciona aprovações de ferramentas e comandos de barra."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У этого Dashboard нет входа, поэтому вводить ничего не нужно: Redde при каждом подключении считывает его токен сеанса из Dashboard и никогда его не сохраняет. Добавляет одобрение инструментов и слэш-команды."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den här Dashboard har ingen inloggning, så det finns inget att skriva: Redde läser dess sessionstoken från Dashboard vid varje anslutning och sparar den aldrig. Lägger till verktygsgodkännanden och snedstreckskommandon."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu Dashboard'da giriş yok, bu yüzden yazacak bir şey yok: Redde her bağlandığında oturum token'ını Dashboard'dan okur ve asla saklamaz. Araç onaylarını ve eğik çizgi komutlarını ekler."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей Dashboard не має входу, тож нічого вводити не потрібно: Redde під час кожного під’єднання зчитує його токен сеансу з Dashboard і ніколи його не зберігає. Додає схвалення інструментів і слеш-команди."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此Dashboard没有登录，因此无需输入任何内容：Redde每次连接时都会从Dashboard读取其会话令牌，且从不存储。可增加工具批准和斜杠命令。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此 Dashboard 沒有登入，因此不需輸入任何內容：Redde 每次連線時都會從 Dashboard 讀取其工作階段權杖，且從不儲存。可加入工具核准和斜線指令。"
+          }
+        }
+      }
+    },
+    "This Dashboard has no sign-in. Redde reads its session token from the Dashboard each time it connects and never stores it. Gives live reasoning, tool approvals and slash commands over one WebSocket." : {
+      "comment" : "Settings › Connection details footer for a Dashboard with no sign-in",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dette Dashboard har intet login. Redde læser dets sessionstoken fra Dashboard ved hver forbindelse og gemmer det aldrig. Giver live-ræsonnement, godkendelse af værktøjer og skråstregkommandoer via én WebSocket."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Dashboard hat keine Anmeldung. Redde liest sein Sitzungstoken bei jeder Verbindung aus dem Dashboard und speichert es nie. Bietet Live-Denkprozess, Tool-Genehmigungen und Slash-Befehle über einen WebSocket."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este Dashboard no tiene inicio de sesión. Redde lee su token de sesión del Dashboard cada vez que se conecta y nunca lo guarda. Ofrece razonamiento en vivo, aprobaciones de herramientas y comandos con barra por un solo WebSocket."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce Dashboard n’a pas d’identifiant. Redde lit son jeton de session sur le Dashboard à chaque connexion et ne le conserve jamais. Apporte le raisonnement en direct, les approbations d’outils et les commandes slash sur un seul WebSocket."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questa Dashboard non ha un accesso. Redde legge il suo token di sessione dalla Dashboard a ogni connessione e non lo salva mai. Offre il ragionamento in tempo reale, le approvazioni degli strumenti e i comandi slash su un unico WebSocket."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このDashboardにはログインがありません。Reddeは接続するたびにDashboardからセッショントークンを読み取り、保存することはありません。1つのWebSocketで、ライブの推論、ツールの承認、スラッシュコマンドが使えます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 Dashboard에는 로그인이 없습니다. Redde는 연결할 때마다 Dashboard에서 세션 토큰을 읽어 오며 저장하지 않습니다. 하나의 WebSocket으로 실시간 추론, 도구 승인 및 슬래시 명령을 제공합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dette Dashboard har ingen pålogging. Redde leser sesjonstokenet fra Dashboard ved hver tilkobling og lagrer det aldri. Gir resonnering i sanntid, godkjenning av verktøy og skråstrekkommandoer over én WebSocket."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit Dashboard heeft geen login. Redde leest het sessietoken bij elke verbinding uit het Dashboard en bewaart het nooit. Geeft live redenering, goedkeuringen voor tools en slash-commando’s via één WebSocket."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten Dashboard nie ma logowania. Redde przy każdym połączeniu odczytuje jego token sesji z Dashboard i nigdy go nie zapisuje. Daje rozumowanie na żywo, zatwierdzanie narzędzi i polecenia z ukośnikiem przez jedno połączenie WebSocket."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este Dashboard não tem login. O Redde lê o token de sessão do Dashboard sempre que se conecta e nunca o guarda. Oferece raciocínio ao vivo, aprovações de ferramentas e comandos de barra por um único WebSocket."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У этого Dashboard нет входа. Redde при каждом подключении считывает его токен сеанса из Dashboard и никогда его не сохраняет. Дает рассуждения в реальном времени, одобрение инструментов и слэш-команды через один WebSocket."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den här Dashboard har ingen inloggning. Redde läser dess sessionstoken från Dashboard vid varje anslutning och sparar den aldrig. Ger resonemang i realtid, verktygsgodkännanden och snedstreckskommandon över en enda WebSocket."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu Dashboard'da giriş yok. Redde her bağlandığında oturum token'ını Dashboard'dan okur ve asla saklamaz. Tek bir WebSocket üzerinden canlı akıl yürütme, araç onayları ve eğik çizgi komutları sağlar."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей Dashboard не має входу. Redde під час кожного під’єднання зчитує його токен сеансу з Dashboard і ніколи його не зберігає. Дає міркування наживо, схвалення інструментів і слеш-команди через один WebSocket."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此Dashboard没有登录。Redde每次连接时都会从Dashboard读取其会话令牌，且从不存储。通过单个WebSocket提供实时推理、工具批准和斜杠命令。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此 Dashboard 沒有登入。Redde 每次連線時都會從 Dashboard 讀取其工作階段權杖，且從不儲存。透過單一 WebSocket 提供即時推理、工具核准和斜線指令。"
+          }
+        }
+      }
+    },
     "This device answered the code, but that Hermes hasn't sent anything back. The pairing command may have ended: run it again and use the new code." : {
       "comment" : "Pairing sheet: the plugin never confirmed a pairing made with a code",
       "localizations" : {
@@ -297313,6 +297425,220 @@
         }
       }
     },
+    "This Hermes Dashboard asks for a login now. It had no sign-in when this server was set up. Add its username and password, or sign in with a browser, under Settings › Connection details." : {
+      "comment" : "A Dashboard set up with no sign-in has turned its login on",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dette Hermes Dashboard beder nu om login. Det havde intet login, da denne server blev sat op. Tilføj dets brugernavn og adgangskode, eller log ind med en browser, under Indstillinger › Forbindelsesdetaljer."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Hermes Dashboard verlangt jetzt eine Anmeldung. Als dieser Server eingerichtet wurde, hatte es keine. Füge Benutzername und Passwort hinzu oder melde dich mit einem Browser an, unter Einstellungen › Verbindungsdetails."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este Hermes Dashboard ahora pide iniciar sesión. No tenía inicio de sesión cuando se configuró este servidor. Añade su usuario y contraseña, o inicia sesión con un navegador, en Ajustes › Datos de conexión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce Hermes Dashboard demande désormais un identifiant. Il n’en avait pas quand ce serveur a été configuré. Ajoutez son nom d’utilisateur et son mot de passe, ou connectez-vous avec un navigateur, dans Réglages › Détails de connexion."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questa Hermes Dashboard ora chiede l'accesso. Non lo aveva quando questo server è stato configurato. Aggiungi nome utente e password, o accedi con un browser, in Impostazioni › Dettagli connessione."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このHermes Dashboardは現在ログインを求めています。このサーバを設定したときはログインがありませんでした。設定 › 接続の詳細で、ユーザ名とパスワードを追加するか、ブラウザでサインインしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 Hermes Dashboard는 이제 로그인을 요구합니다. 이 서버를 설정했을 때는 로그인이 없었습니다. 설정 › 연결 세부사항에서 사용자 이름과 암호를 추가하거나 브라우저로 로그인하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dette Hermes Dashboard ber nå om pålogging. Det hadde ingen pålogging da denne tjeneren ble satt opp. Legg til brukernavnet og passordet, eller logg på med en nettleser, under Innstillinger › Tilkoblingsdetaljer."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit Hermes Dashboard vraagt nu om een login. Het had geen login toen deze server werd ingesteld. Voeg de gebruikersnaam en het wachtwoord toe, of log in met een browser, onder Instellingen › Verbindingsgegevens."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten Hermes Dashboard prosi teraz o logowanie. Nie miał logowania, gdy konfigurowano ten serwer. Dodaj jego nazwę użytkownika i hasło albo zaloguj się przez przeglądarkę w Ustawienia › Szczegóły połączenia."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este Hermes Dashboard agora pede login. Ele não tinha login quando este servidor foi configurado. Adicione o usuário e a senha, ou inicie sessão com um navegador, em Ajustes › Detalhes da conexão."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот Hermes Dashboard теперь требует вход. Когда этот сервер настраивали, входа не было. Добавьте имя пользователя и пароль или войдите через браузер в «Настройки» › «Сведения о подключении»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den här Hermes Dashboard ber nu om inloggning. Den hade ingen inloggning när servern konfigurerades. Lägg till dess användarnamn och lösenord, eller logga in med en webbläsare, under Inställningar › Anslutningsuppgifter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu Hermes Dashboard artık giriş istiyor. Bu sunucu ayarlandığında girişi yoktu. Ayarlar › Bağlantı ayrıntıları bölümünde kullanıcı adını ve parolasını ekleyin ya da tarayıcıyla giriş yapın."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей Hermes Dashboard тепер вимагає входу. Коли цей сервер налаштовували, входу не було. Додайте ім’я користувача й пароль або увійдіть через браузер у Параметри › Відомості про з’єднання."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此Hermes Dashboard现在要求登录。设置此服务器时它没有登录。请在设置 › 连接详细信息中添加其用户名和密码，或使用浏览器登录。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此 Hermes Dashboard 現在要求登入。設定此伺服器時它沒有登入。請在「設定」›「連線詳細資訊」中加入其使用者名稱和密碼，或使用瀏覽器登入。"
+          }
+        }
+      }
+    },
+    "This Hermes Dashboard doesn't ask for a login any more, so the saved login can't be used. Without one, anyone who can reach its address can use your agent." : {
+      "comment" : "A Dashboard saved with a username and password has no sign-in now",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dette Hermes Dashboard beder ikke længere om login, så det gemte login kan ikke bruges. Uden login kan alle, der kan nå dets adresse, bruge din agent."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Hermes Dashboard verlangt keine Anmeldung mehr, daher kann die gespeicherte Anmeldung nicht verwendet werden. Ohne Anmeldung kann jeder, der seine Adresse erreicht, deinen Agenten nutzen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este Hermes Dashboard ya no pide iniciar sesión, así que el inicio de sesión guardado no se puede usar. Sin él, cualquiera que pueda llegar a su dirección puede usar tu agente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce Hermes Dashboard ne demande plus d’identifiant, l’identifiant enregistré ne peut donc pas être utilisé. Sans identifiant, toute personne pouvant joindre son adresse peut utiliser votre agent."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questa Hermes Dashboard non chiede più l'accesso, quindi l'accesso salvato non si può usare. Senza, chiunque possa raggiungere il suo indirizzo può usare il tuo agente."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このHermes Dashboardはログインを求めなくなったため、保存済みのログイン情報は使えません。ログインがないと、そのアドレスにアクセスできる人は誰でもエージェントを使用できます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 Hermes Dashboard는 더 이상 로그인을 요구하지 않으므로 저장된 로그인을 사용할 수 없습니다. 로그인이 없으면 이 주소에 접근할 수 있는 누구나 에이전트를 사용할 수 있습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dette Hermes Dashboard ber ikke lenger om pålogging, så den lagrede påloggingen kan ikke brukes. Uten pålogging kan alle som når adressen, bruke agenten din."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit Hermes Dashboard vraagt niet meer om een login, dus de bewaarde login kan niet worden gebruikt. Zonder login kan iedereen die het adres kan bereiken je agent gebruiken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten Hermes Dashboard nie prosi już o logowanie, więc zapisanego loginu nie można użyć. Bez niego każdy, kto może dotrzeć pod jego adres, może używać Twojego agenta."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este Hermes Dashboard não pede mais login, então o login salvo não pode ser usado. Sem login, qualquer pessoa que consiga acessar o endereço dele pode usar seu agente."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот Hermes Dashboard больше не требует вход, поэтому сохраненные данные входа использовать нельзя. Без входа любой, кто может открыть его адрес, может пользоваться вашим агентом."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den här Hermes Dashboard ber inte längre om inloggning, så den sparade inloggningen kan inte användas. Utan inloggning kan alla som når dess adress använda din agent."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu Hermes Dashboard artık giriş istemiyor, bu yüzden kayıtlı giriş kullanılamaz. Giriş olmadan adresine ulaşabilen herkes ajanınızı kullanabilir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей Hermes Dashboard більше не вимагає входу, тому збережені дані входу використати не можна. Без входу будь-хто, хто може відкрити його адресу, може користуватися вашим агентом."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此Hermes Dashboard不再要求登录，因此无法使用已存储的登录信息。没有登录时，任何能访问其地址的人都能使用你的智能体。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此 Hermes Dashboard 不再要求登入，因此無法使用已儲存的登入資訊。沒有登入時，任何能連到其位址的人都能使用你的代理。"
+          }
+        }
+      }
+    },
     "This Hermes Dashboard doesn't ask for a login." : {
       "localizations" : {
         "da" : {
@@ -297521,6 +297847,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "此 Hermes Dashboard 不提供瀏覽器登入。需要 Hermes 0.21 或以上版本。"
+          }
+        }
+      }
+    },
+    "This Hermes Dashboard has no sign-in, so it only answers requests addressed to 127.0.0.1 or localhost. Have the proxy in front of it send the Host header as 127.0.0.1." : {
+      "comment" : "A Dashboard with no sign-in refused the host name a proxy passed on (Hermes's \"Invalid Host header\")",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dette Hermes Dashboard har intet login, så det svarer kun på anmodninger rettet til 127.0.0.1 eller localhost. Få proxyen foran det til at sende Host-headeren som 127.0.0.1."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Hermes Dashboard hat keine Anmeldung und beantwortet daher nur Anfragen an 127.0.0.1 oder localhost. Lass den Proxy davor den Host-Header als 127.0.0.1 senden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este Hermes Dashboard no tiene inicio de sesión, así que solo responde a solicitudes dirigidas a 127.0.0.1 o localhost. Haz que el proxy que tiene delante envíe la cabecera Host como 127.0.0.1."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce Hermes Dashboard n’a pas d’identifiant ; il ne répond donc qu’aux requêtes adressées à 127.0.0.1 ou localhost. Faites envoyer l’en-tête Host avec la valeur 127.0.0.1 par le proxy placé devant lui."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questa Hermes Dashboard non ha un accesso, quindi risponde solo alle richieste indirizzate a 127.0.0.1 o localhost. Fai inviare al proxy che le sta davanti l'header Host come 127.0.0.1."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このHermes Dashboardにはログインがないため、127.0.0.1またはlocalhost宛てのリクエストにのみ応答します。手前のプロキシがHostヘッダを127.0.0.1として送信するよう設定してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 Hermes Dashboard에는 로그인이 없으므로 127.0.0.1 또는 localhost로 보낸 요청에만 응답합니다. 앞단의 프록시가 Host 헤더를 127.0.0.1로 보내도록 설정하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dette Hermes Dashboard har ingen pålogging, så det svarer bare på forespørsler til 127.0.0.1 eller localhost. Få proxyen foran det til å sende Host-headeren som 127.0.0.1."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit Hermes Dashboard heeft geen login, dus het beantwoordt alleen verzoeken aan 127.0.0.1 of localhost. Laat de proxy ervoor de Host-header als 127.0.0.1 sturen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten Hermes Dashboard nie ma logowania, więc odpowiada tylko na żądania kierowane do 127.0.0.1 lub localhost. Ustaw proxy przed nim tak, by wysyłało nagłówek Host jako 127.0.0.1."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este Hermes Dashboard não tem login, então só responde a pedidos endereçados a 127.0.0.1 ou localhost. Faça o proxy na frente dele enviar o cabeçalho Host como 127.0.0.1."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У этого Hermes Dashboard нет входа, поэтому он отвечает только на запросы к 127.0.0.1 или localhost. Настройте прокси перед ним, чтобы он отправлял заголовок Host как 127.0.0.1."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den här Hermes Dashboard har ingen inloggning, så den svarar bara på begäranden till 127.0.0.1 eller localhost. Låt proxyn framför den skicka Host-huvudet som 127.0.0.1."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu Hermes Dashboard'da giriş yok, bu yüzden yalnızca 127.0.0.1 veya localhost adresine gönderilen isteklere yanıt verir. Önündeki proxy'nin Host başlığını 127.0.0.1 olarak göndermesini sağlayın."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей Hermes Dashboard не має входу, тому відповідає лише на запити до 127.0.0.1 або localhost. Налаштуйте проксі перед ним, щоб він надсилав заголовок Host як 127.0.0.1."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此Hermes Dashboard没有登录，因此只响应发往127.0.0.1或localhost的请求。请让它前面的代理将Host标头设为127.0.0.1。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此 Hermes Dashboard 沒有登入，因此只回應傳往 127.0.0.1 或 localhost 的請求。請讓它前方的代理伺服器將 Host 標頭設為 127.0.0.1。"
           }
         }
       }
@@ -313504,6 +313937,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用我的位置"
+          }
+        }
+      }
+    },
+    "Use without a login" : {
+      "comment" : "Button: go on with a Dashboard that has no sign-in, forgetting any saved login",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brug uden login"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ohne Anmeldung verwenden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar sin iniciar sesión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utiliser sans identifiant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa senza accesso"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ログインなしで使用"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로그인 없이 사용"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bruk uten pålogging"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gebruik zonder login"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Używaj bez logowania"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar sem Login"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Использовать без входа"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Använd utan inloggning"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş Yapmadan Kullan"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Використовувати без входу"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不登录使用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不登入使用"
           }
         }
       }
@@ -336615,6 +337155,327 @@
     "Your Hermes" : {
       "extractionState" : "stale"
     },
+    "Your Hermes Dashboard asks for a login now" : {
+      "comment" : "Connection problem card title: a Dashboard set up with no sign-in has one now",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit Hermes Dashboard beder nu om login"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Hermes Dashboard verlangt jetzt eine Anmeldung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu Hermes Dashboard ahora pide iniciar sesión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre Hermes Dashboard demande désormais un identifiant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La tua Hermes Dashboard ora chiede l'accesso"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboardがログインを求めるようになりました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard가 이제 로그인을 요구합니다"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard ber nå om pålogging"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je Hermes Dashboard vraagt nu om een login"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój Hermes Dashboard prosi teraz o logowanie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu Hermes Dashboard agora pede login"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш Hermes Dashboard теперь требует вход"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din Hermes Dashboard ber nu om inloggning"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard'unuz artık giriş istiyor"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш Hermes Dashboard тепер вимагає входу"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的Hermes Dashboard现在要求登录"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的 Hermes Dashboard 現在要求登入"
+          }
+        }
+      }
+    },
+    "Your Hermes Dashboard has no sign-in now" : {
+      "comment" : "Connection problem card title: a Dashboard saved with a login no longer asks for one",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit Hermes Dashboard har ikke længere login"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Hermes Dashboard hat jetzt keine Anmeldung mehr"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu Hermes Dashboard ya no tiene inicio de sesión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre Hermes Dashboard n’a plus d’identifiant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La tua Hermes Dashboard ora non ha un accesso"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboardのログインがなくなりました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard에 이제 로그인이 없습니다"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard har ikke lenger pålogging"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je Hermes Dashboard heeft nu geen login meer"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój Hermes Dashboard nie ma już logowania"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu Hermes Dashboard não tem mais login"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У вашего Hermes Dashboard больше нет входа"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din Hermes Dashboard har inte längre någon inloggning"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard'unuzun artık girişi yok"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш Hermes Dashboard більше не має входу"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的Hermes Dashboard现在没有登录"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的 Hermes Dashboard 現在沒有登入"
+          }
+        }
+      }
+    },
+    "Your Hermes Dashboard turned the address away" : {
+      "comment" : "Connection problem card title: the Dashboard refused the host name it was reached at",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit Hermes Dashboard afviste adressen"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Hermes Dashboard hat die Adresse abgewiesen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu Hermes Dashboard rechazó la dirección"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre Hermes Dashboard a refusé l’adresse"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La tua Hermes Dashboard ha rifiutato l'indirizzo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboardがアドレスを拒否しました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard가 주소를 거부했습니다"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard avviste adressen"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je Hermes Dashboard wees het adres af"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój Hermes Dashboard odrzucił adres"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu Hermes Dashboard recusou o endereço"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш Hermes Dashboard отклонил адрес"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din Hermes Dashboard avvisade adressen"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard'unuz adresi reddetti"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш Hermes Dashboard відхилив адресу"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的Hermes Dashboard拒绝了该地址"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的 Hermes Dashboard 拒絕了該位址"
+          }
+        }
+      }
+    },
     "Your Hermes didn't take it (%@). Nothing was saved." : {
 
     },
@@ -340546,6 +341407,643 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已放大，%@"
+          }
+        }
+      }
+    },
+    "Each evening your agent sums up your day: what got done, what's waiting on you, and what carries over. It comes as a notification and stays in Briefings, at the top of your chats. What carries over it can bring back tomorrow morning as idea cards. Needs Redde's plugin 1.9 on your Hermes." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hver aften opsummerer din agent din dag: hvad der blev gjort, hvad der venter på dig, og hvad der rykkes videre. Det kommer som en meddelelse og bliver i Briefinger øverst i dine chats. Det, der rykkes videre, kan den bringe tilbage næste morgen som idékort. Kræver Redde-plugin 1.9 på din Hermes."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeden Abend fasst dein Agent deinen Tag zusammen: was erledigt ist, was auf dich wartet und was liegen bleibt. Das kommt als Mitteilung und bleibt in den Briefings oben in deinen Chats. Was liegen bleibt, kann er dir am nächsten Morgen als Ideenkarten wieder vorlegen. Dafür braucht es das Redde-Plugin 1.9 auf deinem Hermes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada noche tu agente resume tu día: lo que se hizo, lo que te espera y lo que queda pendiente. Llega como notificación y se queda en Informes, en la parte superior de tus chats. Lo pendiente puede traértelo de vuelta a la mañana siguiente como tarjetas de idea. Necesita el plugin de Redde 1.9 en tu Hermes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaque soir, votre agent résume votre journée : ce qui est fait, ce qui vous attend et ce qui est reporté. Le bilan arrive par notification et reste dans Briefings, en haut de vos discussions. Ce qui est reporté, il peut vous le reproposer le lendemain matin sous forme de cartes d’idée. Requiert le plugin Redde 1.9 sur votre Hermes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ogni sera il tuo agente riassume la tua giornata: cosa è stato fatto, cosa aspetta te e cosa resta in sospeso. Arriva come notifica e resta in Briefing, in cima alle chat. Ciò che resta in sospeso può riproportelo la mattina dopo come schede idea. Serve il plugin Redde 1.9 sul tuo Hermes."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "毎晩、エージェントがあなたの1日をまとめます。終わったこと、あなたを待っていること、持ち越すことです。通知で届き、チャットの上部の「ブリーフィング」に残ります。持ち越した内容は、翌朝アイデアカードとして戻せます。HermesにReddeプラグイン1.9が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "매일 저녁 에이전트가 사용자의 하루를 정리합니다. 완료된 일, 사용자를 기다리는 일, 다음으로 넘어가는 일을 알려줍니다. 알림으로 도착하며 채팅 상단의 브리핑에 남습니다. 넘어가는 일은 다음 날 아침 아이디어 카드로 다시 가져올 수 있습니다. Hermes에 Redde 플러그인 1.9가 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hver kveld oppsummerer agenten din dagen din: hva som ble gjort, hva som venter på deg, og hva som skyves videre. Det kommer som en varsling og blir liggende i Briefinger øverst i chattene dine. Det som skyves videre, kan den ta opp igjen neste morgen som idékort. Krever Redde-tillegget 1.9 på din Hermes."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elke avond vat je agent je dag samen: wat er gedaan is, wat op je wacht en wat doorschuift. Dat komt als melding en blijft in Briefings staan, bovenaan je chats. Wat doorschuift, kan hij de volgende ochtend terugbrengen als ideekaarten. Hiervoor is de Redde-plug-in 1.9 op je Hermes nodig."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Każdego wieczoru Twój agent podsumowuje Twój dzień: co zostało zrobione, co czeka na Ciebie i co przechodzi na później. Przychodzi to w powiadomieniu i zostaje w Briefingach na górze czatów. To, co przechodzi na później, może wrócić następnego ranka jako karty pomysłów. Wymaga wtyczki Redde 1.9 na Twoim Hermesie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toda noite seu agente resume o seu dia: o que foi feito, o que está esperando por você e o que fica para depois. Chega como notificação e fica em Briefings, no topo das suas conversas. O que ficou para depois ele pode trazer de volta na manhã seguinte como cartões de ideia. Requer o plugin do Redde 1.9 no seu Hermes."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Каждый вечер агент подводит итоги вашего дня: что сделано, что ждет вас и что переносится. Итоги приходят уведомлением и остаются в «Сводках» вверху чатов. То, что переносится, агент может вернуть следующим утром карточками идей. Нужен плагин Redde 1.9 на вашем Hermes."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Varje kväll sammanfattar din agent din dag: vad som blev gjort, vad som väntar på dig och vad som flyttas över. Det kommer som en notis och ligger kvar i Briefingar överst i dina chattar. Det som flyttas över kan den ta upp igen nästa morgon som idékort. Kräver Redde-tillägget 1.9 på din Hermes."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınız her akşam gününüzü özetler: neler yapıldı, neler sizi bekliyor ve neler ertesi güne kalıyor. Özet bildirim olarak gelir ve sohbetlerinizin üstündeki Brifingler'de kalır. Ertesi güne kalanları ertesi sabah fikir kartları olarak geri getirebilir. Hermes'inizde Redde eklentisi 1.9 gerekir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Щовечора агент підбиває підсумки вашого дня: що зроблено, що чекає на вас і що переноситься. Підсумки надходять сповіщенням і лишаються в «Зведеннях» угорі чатів. Те, що переноситься, агент може повернути наступного ранку картками ідей. Потрібен плагін Redde 1.9 на вашому Hermes."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每天晚上，你的智能体会总结你的一天：完成了什么、有什么在等你处理、有什么要延续到明天。总结以通知形式送达，并保留在聊天列表顶部的“简报”中。要延续的事项，它可以在第二天早上以想法卡片的形式带回给你。需要你的Hermes上安装Redde插件1.9。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每天晚上，你的代理會總結你的一天：完成了什麼、有什麼在等你處理、有什麼要延到明天。總結會以通知送達，並保留在聊天列表頂端的「簡報」中。要延續的事項，它可以在隔天早上以點子卡片帶回給你。需要你的 Hermes 上有 Redde 外掛 1.9。"
+          }
+        }
+      }
+    },
+    "Each morning your agent looks at the day's calendar and, before each event that needs it, sends you a heads-up: where it is, who's coming, what to bring, the weather if it's outdoors. They come as notifications and stay in Briefings. Events added later in the day are picked up the next time it plans. Needs Redde's plugin 1.9 on your Hermes and a calendar your agent can read." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hver morgen ser din agent på dagens kalender og sender dig et forvarsel før hver begivenhed, der har brug for det: hvor det er, hvem der kommer, hvad du skal have med, og vejret, hvis det er udendørs. De kommer som meddelelser og bliver i Briefinger. Begivenheder, der tilføjes senere på dagen, kommer med næste gang den planlægger. Kræver Redde-plugin 1.9 på din Hermes og en kalender, din agent kan læse."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeden Morgen schaut sich dein Agent die Termine des Tages an und schickt dir vor jedem Termin, bei dem es sich lohnt, einen Vorabhinweis: wo er ist, wer kommt, was du mitbringen sollst, das Wetter, wenn er draußen ist. Die Hinweise kommen als Mitteilungen und bleiben in den Briefings. Termine, die später am Tag dazukommen, werden bei der nächsten Planung berücksichtigt. Dafür braucht es das Redde-Plugin 1.9 auf deinem Hermes und einen Kalender, den dein Agent lesen kann."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada mañana tu agente mira el calendario del día y, antes de cada evento que lo necesite, te envía un aviso: dónde es, quién va, qué llevar y el tiempo si es al aire libre. Llegan como notificaciones y se quedan en Informes. Los eventos añadidos más tarde ese día se tienen en cuenta la próxima vez que planifique. Necesita el plugin de Redde 1.9 en tu Hermes y un calendario que tu agente pueda leer."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaque matin, votre agent regarde le calendrier du jour et, avant chaque événement qui le mérite, vous envoie une alerte : où c’est, qui vient, quoi apporter, la météo si c’est en extérieur. Elles arrivent par notification et restent dans Briefings. Les événements ajoutés plus tard dans la journée sont pris en compte à la planification suivante. Requiert le plugin Redde 1.9 sur votre Hermes et un calendrier que votre agent peut lire."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ogni mattina il tuo agente guarda il calendario del giorno e, prima di ogni evento che lo richiede, ti manda un avviso: dove si trova, chi viene, cosa portare, il meteo se è all'aperto. Arrivano come notifiche e restano in Briefing. Gli eventi aggiunti più tardi nella giornata vengono considerati alla pianificazione successiva. Serve il plugin Redde 1.9 sul tuo Hermes e un calendario che il tuo agente possa leggere."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "毎朝、エージェントがその日のカレンダーを確認し、必要な予定の前にお知らせを送ります。場所、参加者、持ち物、屋外なら天気などです。通知で届き、「ブリーフィング」に残ります。その日のうちに後から追加された予定は、次回の計画時に反映されます。HermesにReddeプラグイン1.9と、エージェントが読めるカレンダーが必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "매일 아침 에이전트가 그날의 캘린더를 살펴보고, 필요한 일정 전에 사전 알림을 보냅니다. 장소, 참석자, 챙길 것, 야외라면 날씨까지 알려줍니다. 알림으로 도착하며 브리핑에 남습니다. 그날 나중에 추가된 일정은 다음 계획 때 반영됩니다. Hermes에 Redde 플러그인 1.9와 에이전트가 읽을 수 있는 캘린더가 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hver morgen ser agenten din på dagens kalender og sender deg et forvarsel før hver hendelse som trenger det: hvor det er, hvem som kommer, hva du skal ta med, og været hvis det er utendørs. De kommer som varslinger og blir liggende i Briefinger. Hendelser som legges til senere på dagen, blir tatt med neste gang den planlegger. Krever Redde-tillegget 1.9 på din Hermes og en kalender agenten din kan lese."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elke ochtend bekijkt je agent de agenda van de dag en stuurt hij je voor elke afspraak waar het nodig is een seintje: waar het is, wie er komt, wat je mee moet nemen, het weer als het buiten is. Ze komen als meldingen en blijven in Briefings staan. Afspraken die later op de dag worden toegevoegd, neemt hij mee bij de volgende planning. Hiervoor is de Redde-plug-in 1.9 op je Hermes nodig, en een agenda die je agent kan lezen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Każdego ranka Twój agent przegląda kalendarz na dany dzień i przed każdym wydarzeniem, które tego wymaga, wysyła zapowiedź: gdzie się odbywa, kto przyjdzie, co zabrać i jaka będzie pogoda, jeśli to na zewnątrz. Przychodzą w powiadomieniach i zostają w Briefingach. Wydarzenia dodane później w ciągu dnia zostaną uwzględnione przy następnym planowaniu. Wymaga wtyczki Redde 1.9 na Twoim Hermesie i kalendarza, który Twój agent może odczytać."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toda manhã seu agente olha o calendário do dia e, antes de cada evento que precise, envia um aviso: onde é, quem vai, o que levar, o tempo se for ao ar livre. Eles chegam como notificações e ficam em Briefings. Eventos adicionados mais tarde no dia são considerados na próxima vez que ele planejar. Requer o plugin do Redde 1.9 no seu Hermes e um calendário que seu agente consiga ler."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Каждое утро агент смотрит календарь на день и перед каждым событием, где это нужно, присылает предупреждение: где оно, кто придет, что взять с собой и какая погода, если это на улице. Они приходят уведомлениями и остаются в «Сводках». События, добавленные позже в течение дня, учитываются при следующем планировании. Нужен плагин Redde 1.9 на вашем Hermes и календарь, который агент может читать."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Varje morgon tittar din agent på dagens kalender och skickar en förvarning före varje händelse som behöver det: var det är, vem som kommer, vad du ska ta med och vädret om det är utomhus. De kommer som notiser och ligger kvar i Briefingar. Händelser som läggs till senare under dagen kommer med nästa gång den planerar. Kräver Redde-tillägget 1.9 på din Hermes och en kalender som din agent kan läsa."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınız her sabah günün takvimine bakar ve gerektiren her etkinlikten önce size bir hatırlatma gönderir: nerede olduğu, kimlerin geleceği, yanınıza ne almanız gerektiği ve dışarıdaysa hava durumu. Bunlar bildirim olarak gelir ve Brifingler'de kalır. Gün içinde sonradan eklenen etkinlikler bir sonraki planlamada dikkate alınır. Hermes'inizde Redde eklentisi 1.9 ve ajanınızın okuyabileceği bir takvim gerekir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Щоранку агент переглядає календар на день і перед кожною подією, де це потрібно, надсилає попередження: де вона, хто прийде, що взяти з собою і яка погода, якщо це надворі. Вони надходять сповіщеннями й лишаються в «Зведеннях». Події, додані пізніше протягом дня, враховуються під час наступного планування. Потрібен плагін Redde 1.9 на вашому Hermes і календар, який агент може читати."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每天早上，你的智能体会查看当天的日历，并在每个需要提醒的日程开始前给你发送提醒：地点、参与者、要带什么，如果在户外还有天气。提醒以通知形式送达，并保留在“简报”中。当天稍后添加的日程会在下次计划时纳入。需要你的Hermes上安装Redde插件1.9，以及一个智能体可以读取的日历。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每天早上，你的代理會查看當天的行事曆，並在每個需要提醒的行程開始前傳送提醒給你：地點、誰會來、要帶什麼，如果在戶外還有天氣。提醒會以通知送達，並保留在「簡報」中。當天稍後新增的行程會在下次規劃時納入。需要你的 Hermes 上有 Redde 外掛 1.9，以及一個代理可以讀取的行事曆。"
+          }
+        }
+      }
+    },
+    "Each morning your agent looks at your day (your calendar, reminders, the board, what you asked it lately) and offers up to five things it could do, as cards at the top of your chats and a notification. Swipe one right to have it done, left to put it away. Nothing is done until you take one. Needs Redde's plugin 1.9 on your Hermes, and notifications from it turned on." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hver morgen ser din agent på din dag (din kalender, påmindelser, tavlen, hvad du har bedt den om for nylig) og tilbyder op til fem ting, den kunne gøre, som kort øverst i dine chats og en meddelelse. Skub et til højre for at få det gjort, til venstre for at lægge det væk. Intet bliver gjort, før du tager et. Kræver Redde-plugin 1.9 på din Hermes og meddelelser fra den slået til."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeden Morgen schaut sich dein Agent deinen Tag an (deinen Kalender, deine Erinnerungen, das Board, worum du ihn zuletzt gebeten hast) und bietet bis zu fünf Dinge an, die er tun könnte, als Karten oben in deinen Chats und als Mitteilung. Streiche eine nach rechts, damit es erledigt wird, nach links, um sie wegzulegen. Nichts wird getan, bevor du eine annimmst. Dafür braucht es das Redde-Plugin 1.9 auf deinem Hermes und aktivierte Mitteilungen davon."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada mañana tu agente mira tu día (tu calendario, tus recordatorios, el tablero, lo que le has pedido últimamente) y te ofrece hasta cinco cosas que podría hacer, como tarjetas en la parte superior de tus chats y una notificación. Desliza una hacia la derecha para que se haga, hacia la izquierda para guardarla. No se hace nada hasta que aceptes una. Necesita el plugin de Redde 1.9 en tu Hermes y sus notificaciones activadas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaque matin, votre agent regarde votre journée (votre calendrier, vos rappels, le tableau, ce que vous lui avez demandé récemment) et propose jusqu’à cinq choses qu’il pourrait faire, sous forme de cartes en haut de vos discussions et d’une notification. Balayez-en une vers la droite pour qu’elle soit faite, vers la gauche pour la mettre de côté. Rien n’est fait tant que vous n’en prenez pas une. Requiert le plugin Redde 1.9 sur votre Hermes, avec ses notifications activées."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ogni mattina il tuo agente guarda la tua giornata (il calendario, i promemoria, la bacheca, cosa gli hai chiesto di recente) e ti offre fino a cinque cose che potrebbe fare, come schede in cima alle chat e una notifica. Scorrine una verso destra per farla fare, verso sinistra per metterla da parte. Non viene fatto nulla finché non ne accetti una. Serve il plugin Redde 1.9 sul tuo Hermes, con le sue notifiche attive."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "毎朝、エージェントがあなたの1日（カレンダー、リマインダー、ボード、最近頼んだこと）を確認し、できることを最大5つ、チャットの上部のカードと通知で提案します。右にスワイプすると実行、左にスワイプすると片付けます。どれかを選ぶまで何も実行されません。HermesにReddeプラグイン1.9が必要で、その通知をオンにしておく必要があります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "매일 아침 에이전트가 사용자의 하루(캘린더, 미리 알림, 보드, 최근에 요청한 내용)를 살펴보고 할 수 있는 일을 최대 다섯 가지 제안합니다. 제안은 채팅 상단의 카드와 알림으로 표시됩니다. 카드를 오른쪽으로 쓸어넘기면 실행되고, 왼쪽으로 쓸어넘기면 치워집니다. 카드를 선택하기 전까지는 아무것도 실행되지 않습니다. Hermes에 Redde 플러그인 1.9가 필요하며 해당 알림이 켜져 있어야 합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hver morgen ser agenten din på dagen din (kalenderen, påminnelsene, tavlen, hva du har bedt den om nylig) og tilbyr opptil fem ting den kunne gjøre, som kort øverst i chattene dine og en varsling. Sveip ett til høyre for å få det gjort, til venstre for å legge det bort. Ingenting blir gjort før du tar ett. Krever Redde-tillegget 1.9 på din Hermes, og at varslinger fra det er slått på."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elke ochtend bekijkt je agent je dag (je agenda, herinneringen, het bord, wat je hem onlangs vroeg) en biedt hij tot vijf dingen aan die hij zou kunnen doen, als kaarten bovenaan je chats en een melding. Veeg er een naar rechts om het te laten doen, naar links om het weg te leggen. Er gebeurt niets tot je er een aanneemt. Hiervoor is de Redde-plug-in 1.9 op je Hermes nodig, met meldingen ervan aan."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Każdego ranka Twój agent przegląda Twój dzień (kalendarz, przypomnienia, tablicę, ostatnie prośby do niego) i proponuje do pięciu rzeczy, które mógłby zrobić, jako karty na górze czatów i powiadomienie. Przesuń kartę w prawo, aby to zostało zrobione, w lewo, aby ją odłożyć. Nic nie zostanie zrobione, dopóki którejś nie przyjmiesz. Wymaga wtyczki Redde 1.9 na Twoim Hermesie i włączonych powiadomień z niej."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toda manhã seu agente olha o seu dia (seu calendário, lembretes, o quadro, o que você pediu ultimamente) e oferece até cinco coisas que poderia fazer, como cartões no topo das suas conversas e uma notificação. Deslize um para a direita para que seja feito, para a esquerda para guardá-lo. Nada é feito até você aceitar um. Requer o plugin do Redde 1.9 no seu Hermes, com as notificações dele ativadas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Каждое утро агент смотрит на ваш день (календарь, напоминания, доску, ваши недавние просьбы) и предлагает до пяти дел, которые мог бы сделать, — карточками вверху чатов и уведомлением. Смахните карточку вправо, чтобы дело было сделано, влево — чтобы отложить. Ничего не делается, пока вы не примете карточку. Нужен плагин Redde 1.9 на вашем Hermes и включенные уведомления от него."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Varje morgon tittar din agent på din dag (din kalender, påminnelser, tavlan, vad du bett den om nyligen) och erbjuder upp till fem saker den kunde göra, som kort överst i dina chattar och en notis. Svep ett åt höger för att få det gjort, åt vänster för att lägga undan det. Inget görs förrän du tar ett. Kräver Redde-tillägget 1.9 på din Hermes och att notiser från det är påslagna."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınız her sabah gününüze bakar (takviminiz, anımsatıcılarınız, pano, son zamanlarda ondan istedikleriniz) ve yapabileceği en fazla beş şeyi sohbetlerinizin üstünde kartlar ve bir bildirim olarak sunar. Yapılmasını istediğinizi sağa, kaldırmak istediğinizi sola kaydırın. Siz birini kabul edene kadar hiçbir şey yapılmaz. Hermes'inizde Redde eklentisi 1.9 ve ondan gelen bildirimlerin açık olması gerekir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Щоранку агент переглядає ваш день (календар, нагадування, дошку, ваші недавні прохання) і пропонує до п’яти справ, які міг би зробити, — картками вгорі чатів і сповіщенням. Посуньте картку праворуч, щоб справу було зроблено, ліворуч — щоб відкласти. Нічого не робиться, доки ви не приймете картку. Потрібен плагін Redde 1.9 на вашому Hermes і ввімкнені сповіщення від нього."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每天早上，你的智能体会查看你的一天（日历、提醒事项、看板、你最近让它做的事），并提出最多五件它可以做的事，以卡片形式显示在聊天列表顶部，同时发送一条通知。向右轻扫一张即可让它去做，向左轻扫则收起。在你接受之前，什么都不会执行。需要你的Hermes上安装Redde插件1.9，并打开它的通知。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每天早上，你的代理會查看你的一天（行事曆、提醒事項、看板、你最近要求它做的事），並提出最多五件它可以做的事，以卡片顯示在聊天列表頂端，並傳送一則通知。向右滑動一張就讓它去做，向左滑動則收起。在你接受之前，什麼都不會執行。需要你的 Hermes 上有 Redde 外掛 1.9，並開啟它的通知。"
+          }
+        }
+      }
+    },
+    "Each Sunday evening your agent looks at the week to come (your calendar, what's due, what's waiting on you) and sends you a short briefing. It stays in Briefings, at the top of your chats. Needs Redde's plugin 1.9 on your Hermes." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hver søndag aften ser din agent på ugen, der kommer (din kalender, hvad der forfalder, hvad der venter på dig), og sender dig en kort briefing. Den bliver i Briefinger øverst i dine chats. Kræver Redde-plugin 1.9 på din Hermes."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeden Sonntagabend schaut sich dein Agent die kommende Woche an (deinen Kalender, was fällig ist, was auf dich wartet) und schickt dir ein kurzes Briefing. Es bleibt in den Briefings oben in deinen Chats. Dafür braucht es das Redde-Plugin 1.9 auf deinem Hermes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada domingo por la noche tu agente mira la semana que viene (tu calendario, lo que vence, lo que te espera) y te envía un informe breve. Se queda en Informes, en la parte superior de tus chats. Necesita el plugin de Redde 1.9 en tu Hermes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaque dimanche soir, votre agent regarde la semaine à venir (votre calendrier, les échéances, ce qui vous attend) et vous envoie un court briefing. Il reste dans Briefings, en haut de vos discussions. Requiert le plugin Redde 1.9 sur votre Hermes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ogni domenica sera il tuo agente guarda la settimana in arrivo (il calendario, le scadenze, cosa ti aspetta) e ti manda un breve briefing. Resta in Briefing, in cima alle chat. Serve il plugin Redde 1.9 sul tuo Hermes."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "毎週日曜の夜、エージェントが来週の予定（カレンダー、期限のあること、あなたを待っていること）を確認し、短いブリーフィングを送ります。チャットの上部の「ブリーフィング」に残ります。HermesにReddeプラグイン1.9が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "매주 일요일 저녁 에이전트가 다가오는 한 주(캘린더, 마감, 사용자를 기다리는 일)를 살펴보고 짧은 브리핑을 보냅니다. 채팅 상단의 브리핑에 남습니다. Hermes에 Redde 플러그인 1.9가 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hver søndag kveld ser agenten din på uken som kommer (kalenderen, hva som forfaller, hva som venter på deg), og sender deg en kort briefing. Den blir liggende i Briefinger øverst i chattene dine. Krever Redde-tillegget 1.9 på din Hermes."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elke zondagavond bekijkt je agent de komende week (je agenda, wat er moet gebeuren, wat op je wacht) en stuurt je een korte briefing. Die blijft in Briefings staan, bovenaan je chats. Hiervoor is de Redde-plug-in 1.9 op je Hermes nodig."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W każdą niedzielę wieczorem Twój agent przegląda nadchodzący tydzień (kalendarz, terminy, to, co na Ciebie czeka) i wysyła krótki briefing. Zostaje on w Briefingach na górze czatów. Wymaga wtyczki Redde 1.9 na Twoim Hermesie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todo domingo à noite seu agente olha a semana que vem (seu calendário, o que vence, o que está esperando por você) e envia um briefing curto. Ele fica em Briefings, no topo das suas conversas. Requer o plugin do Redde 1.9 no seu Hermes."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Каждое воскресенье вечером агент смотрит на предстоящую неделю (календарь, сроки, то, что ждет вас) и присылает короткую сводку. Она остается в «Сводках» вверху чатов. Нужен плагин Redde 1.9 на вашем Hermes."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Varje söndagskväll tittar din agent på veckan som kommer (din kalender, vad som ska vara klart, vad som väntar på dig) och skickar en kort briefing. Den ligger kvar i Briefingar överst i dina chattar. Kräver Redde-tillägget 1.9 på din Hermes."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınız her pazar akşamı gelecek haftaya bakar (takviminiz, vadesi gelenler, sizi bekleyenler) ve size kısa bir brifing gönderir. Brifing, sohbetlerinizin üstündeki Brifingler'de kalır. Hermes'inizde Redde eklentisi 1.9 gerekir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Щонеділі ввечері агент переглядає наступний тиждень (календар, терміни, те, що чекає на вас) і надсилає коротке зведення. Воно лишається в «Зведеннях» угорі чатів. Потрібен плагін Redde 1.9 на вашому Hermes."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每个星期日晚上，你的智能体会查看接下来的一周（你的日历、到期事项、等你处理的事）并发给你一份简短的简报。它会保留在聊天列表顶部的“简报”中。需要你的Hermes上安装Redde插件1.9。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每個星期日晚上，你的代理會查看接下來的一週（你的行事曆、到期事項、等你處理的事），並傳給你一份簡短的簡報。它會保留在聊天列表頂端的「簡報」中。需要你的 Hermes 上有 Redde 外掛 1.9。"
+          }
+        }
+      }
+    },
+    "Morning Ideas to swipe, a Week Ahead, an Evening Wrap-up, and heads-ups before events with what to bring. Turn them on in Settings → Agent. They take the Redde plugin 1.9 on your Hermes." : {
+      "comment" : "In-app What's New for Redde 2.3: an item's text (a few short sentences)",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Morgenidéer at swipe igennem, Ugen, der kommer, en Aftenopsummering og besked før begivenheder om, hvad du skal have med. Slå dem til i Indstillinger → Agent. De kræver Redde-plugin 1.9 på din Hermes."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Morgenideen zum Wischen, ein Wochenausblick, ein Abendrückblick und Hinweise vor Terminen, was du mitbringen solltest. Schalte sie unter Einstellungen → Agent ein. Sie brauchen das Redde-Plug-in 1.9 auf deinem Hermes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideas matutinas para deslizar, La semana que viene, un Resumen de la noche y avisos antes de los eventos con lo que debes llevar. Actívalos en Ajustes → Agente. Necesitan el plugin de Redde 1.9 en tu Hermes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des Idées du matin à faire défiler, une Semaine à venir, un Bilan du soir et des alertes avant les événements avec ce qu’il faut emporter. Activez-les dans Réglages → Agent. Ils nécessitent le plug-in Redde 1.9 sur votre Hermes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idee del mattino da scorrere, una Settimana in arrivo, un Riepilogo serale e avvisi prima degli eventi con cosa portare. Attivali in Impostazioni → Agente. Richiedono il plugin Redde 1.9 sul tuo Hermes."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スワイプで見る朝のアイデア、来週の見通し、夜の振り返り、そしてイベント前に持ち物を知らせる通知。設定 → エージェントでオンにできます。HermesにReddeプラグイン1.9が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "넘겨 보는 아침 아이디어, 다가오는 한 주, 저녁 하루 정리, 그리고 이벤트 전에 챙길 물건을 알려 주는 알림. 설정 → 에이전트에서 켜십시오. Hermes에 Redde 플러그인 1.9가 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Morgenidéer å sveipe gjennom, Uken som kommer, en Kveldsoppsummering og varsler før hendelser om hva du skal ha med. Slå dem på i Innstillinger → Agent. De krever Redde-plugin 1.9 på Hermes."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ochtendideeën om door te vegen, een Komende week, een Avondterugblik en seintjes vóór afspraken met wat je mee moet nemen. Zet ze aan in Instellingen → Agent. Ze hebben de Redde-plug-in 1.9 op je Hermes nodig."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poranne pomysły do przesuwania, Nadchodzący tydzień, Wieczorne podsumowanie i przypomnienia przed wydarzeniami o tym, co zabrać. Włącz je w Ustawienia → Agent. Wymagają wtyczki Redde 1.9 na Twoim Hermes."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideias Matinais para deslizar, a Semana que Vem, o Resumo da Noite e avisos antes dos eventos com o que levar. Ative em Ajustes → Agente. Eles precisam do plugin Redde 1.9 no seu Hermes."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Утренние идеи, которые можно листать, Обзор недели, Вечерние итоги и подсказки перед событиями о том, что взять с собой. Включите их в Настройки → Агент. Нужен плагин Redde 1.9 на вашем Hermes."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Morgonidéer att svepa mellan, Veckan som kommer, en Kvällssammanfattning och påminnelser före händelser om vad du ska ta med. Slå på dem i Inställningar → Agent. De kräver Redde-pluginet 1.9 på din Hermes."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kaydırarak göz atılan Sabah Fikirleri, Haftaya Bakış, Akşam Özeti ve etkinliklerden önce yanınıza ne almanız gerektiğini söyleyen uyarılar. Ayarlar → Ajan bölümünden açın. Hermes’inizde Redde eklentisi 1.9 gerekir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ранкові ідеї, які можна гортати, Огляд тижня, Вечірні підсумки та підказки перед подіями про те, що взяти з собою. Увімкніть їх у Параметри → Агент. Потрібен плагін Redde 1.9 на вашому Hermes."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可滑动浏览的早间想法、下周概览、晚间总结，以及在日程开始前提醒你要带什么。在“设置 → 智能体”中打开。需要你的 Hermes 装有 Redde 插件 1.9。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可滑動瀏覽的晨間點子、下週概覽、晚間總結，以及在行程開始前提醒你要帶什麼。在「設定 → 代理」中開啟。需要你的 Hermes 安裝 Redde 外掛 1.9。"
+          }
+        }
+      }
+    },
+    "Once a week your agent looks for things you ask it again and again (the weather before a run, the board on Mondays) and offers each as an idea card. Take one and it becomes a routine that runs by itself and tells you. Needs Redde's plugin 1.9 on your Hermes." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En gang om ugen leder din agent efter ting, du beder den om igen og igen (vejret før en løbetur, tavlen om mandagen), og tilbyder hver som et idékort. Tag et, så bliver det til en rutine, der kører af sig selv og giver dig besked. Kræver Redde-plugin 1.9 på din Hermes."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einmal pro Woche sucht dein Agent nach Dingen, um die du immer wieder bittest (das Wetter vor dem Laufen, montags das Board), und bietet jedes als Ideenkarte an. Nimm eine an, und sie wird zu einer Routine, die von selbst läuft und dir Bescheid sagt. Dafür braucht es das Redde-Plugin 1.9 auf deinem Hermes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una vez por semana tu agente busca cosas que le pides una y otra vez (el tiempo antes de correr, el tablero los lunes) y ofrece cada una como tarjeta de idea. Acepta una y se convierte en una rutina que se ejecuta sola y te avisa. Necesita el plugin de Redde 1.9 en tu Hermes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une fois par semaine, votre agent repère ce que vous lui demandez encore et encore (la météo avant une course, le tableau le lundi) et propose chaque chose sous forme de carte d’idée. Acceptez-en une et elle devient une routine qui s’exécute toute seule et vous prévient. Requiert le plugin Redde 1.9 sur votre Hermes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una volta alla settimana il tuo agente cerca le cose che gli chiedi più e più volte (il meteo prima di una corsa, la bacheca il lunedì) e propone ciascuna come scheda idea. Accettane una e diventa una routine che si esegue da sola e ti avvisa. Serve il plugin Redde 1.9 sul tuo Hermes."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "週に一度、エージェントが何度も頼まれていること（ランニング前の天気、月曜日のボードなど）を探し、それぞれをアイデアカードとして提案します。1つ選ぶと、自動で実行されて知らせてくれるルーチンになります。HermesにReddeプラグイン1.9が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트가 일주일에 한 번 사용자가 반복해서 요청하는 일(달리기 전 날씨, 월요일의 보드 등)을 찾아 각각 아이디어 카드로 제안합니다. 하나를 받으면 스스로 실행되고 알려주는 루틴이 됩니다. Hermes에 Redde 플러그인 1.9가 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En gang i uken ser agenten din etter ting du ber den om igjen og igjen (været før en løpetur, tavlen på mandager), og tilbyr hver som et idékort. Ta ett, så blir det en rutine som kjører av seg selv og sier fra. Krever Redde-tillegget 1.9 på din Hermes."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eens per week zoekt je agent naar dingen die je steeds opnieuw vraagt (het weer voor het hardlopen, het bord op maandag) en biedt elk ervan aan als ideekaart. Neem er een aan en het wordt een routine die vanzelf draait en het je laat weten. Hiervoor is de Redde-plug-in 1.9 op je Hermes nodig."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raz w tygodniu Twój agent szuka rzeczy, o które prosisz raz po raz (pogoda przed bieganiem, tablica w poniedziałki), i proponuje każdą jako kartę pomysłu. Przyjmij jedną, a stanie się rutyną, która działa sama i daje znać. Wymaga wtyczki Redde 1.9 na Twoim Hermesie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uma vez por semana seu agente procura coisas que você pede várias vezes (o tempo antes de uma corrida, o quadro às segundas) e oferece cada uma como cartão de ideia. Aceite uma e ela vira uma rotina que roda sozinha e avisa você. Requer o plugin do Redde 1.9 no seu Hermes."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Раз в неделю агент ищет то, о чем вы просите снова и снова (погода перед пробежкой, доска по понедельникам), и предлагает каждое карточкой идеи. Примите карточку, и это станет сценарием, который запускается сам и сообщает вам. Нужен плагин Redde 1.9 на вашем Hermes."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En gång i veckan letar din agent efter saker du ber den om om och om igen (vädret före en löprunda, tavlan på måndagar) och erbjuder var och en som ett idékort. Ta ett så blir det en rutin som körs av sig själv och säger till. Kräver Redde-tillägget 1.9 på din Hermes."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınız haftada bir, ondan tekrar tekrar istediğiniz şeyleri (koşudan önce hava durumu, pazartesileri pano) arar ve her birini bir fikir kartı olarak sunar. Birini kabul edin; kendi kendine çalışan ve size haber veren bir rutine dönüşsün. Hermes'inizde Redde eklentisi 1.9 gerekir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Раз на тиждень агент шукає те, про що ви просите знову і знову (погода перед пробіжкою, дошка щопонеділка), і пропонує кожне карткою ідеї. Прийміть картку, і це стане сценарієм, який запускається сам і повідомляє вам. Потрібен плагін Redde 1.9 на вашому Hermes."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的智能体每周会找出你反复要求的事（跑步前的天气、周一的看板），并把每一项作为想法卡片提出。接受一张，它就会成为自动运行并告诉你结果的例行任务。需要你的Hermes上安装Redde插件1.9。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的代理每週會找出你一再要求的事（跑步前的天氣、週一的看板），並把每一項作為點子卡片提出。接受一張，它就會成為自動執行並告訴你結果的例行程序。需要你的 Hermes 上有 Redde 外掛 1.9。"
           }
         }
       }

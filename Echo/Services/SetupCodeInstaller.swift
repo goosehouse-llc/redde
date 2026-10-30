@@ -87,6 +87,7 @@ extension SetupCode {
             // Every field, so nothing typed there before is left mixed in with the code.
             settings.serveURL = dashboardURL
             settings.serveUsername = dashboardUser
+            settings.serveOpenAccess = dashboardOpen
             settings.gatewayURL = apiURL
             settings.hermesProfile = profile
             settings.hermesProfileHome = ""
@@ -148,6 +149,9 @@ extension SetupCode {
         name = server.name.trimmingCharacters(in: .whitespacesAndNewlines)
         dashboardURL = Settings.normalizedBase(server.serveURL)?.absoluteString ?? ""
         dashboardUser = dashboardURL.isEmpty ? "" : server.serveUsername
+        // Said with or without the secrets: there is no secret to it, and the other device needs it
+        // to set the Dashboard up the same way.
+        dashboardOpen = !dashboardURL.isEmpty && dashboardUser.isEmpty && server.serveOpenAccess
         apiURL = Settings.normalizedBase(server.gatewayURL)?.absoluteString ?? ""
         let profileName = server.hermesProfile.trimmingCharacters(in: .whitespacesAndNewlines)
         let namedProfile = !profileName.isEmpty && profileName.lowercased() != "default"
@@ -187,7 +191,8 @@ extension Settings {
     /// has never connected: a first run, a server just added, an address typed and left. When
     /// the Keychain can't be read the answer is no, so a server is never taken for unused.
     var activeServerIsUnused: Bool {
-        Keychain.hasAccount(endingWith: "@\(activeServerID.uuidString)") == false
+        // A Dashboard with no sign-in has no secret to store, but was set up all the same.
+        !serveOpenAccess && Keychain.hasAccount(endingWith: "@\(activeServerID.uuidString)") == false
     }
 }
 

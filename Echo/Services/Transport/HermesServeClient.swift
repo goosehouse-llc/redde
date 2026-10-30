@@ -10,6 +10,12 @@ protocol ServeEndpoint: AnyObject {
     var serveUsername: String { get }
     var profileName: String? { get }
     var accessHeaders: [String: String] { get }
+    /// The server was set up as a Dashboard with no sign-in (`HermesServer.serveOpenAccess`).
+    var serveOpenAccess: Bool { get }
+}
+
+extension ServeEndpoint {
+    var serveOpenAccess: Bool { false }
 }
 
 /// JSON-RPC 2.0 over WebSocket to `hermes serve` (the desktop gateway). One shared connection.
@@ -19,6 +25,14 @@ protocol ServeEndpoint: AnyObject {
 /// REST calls ride on the same cookie jar. A Dashboard that signs people in some other way
 /// (Google or another OIDC provider) has no password to send: there the person signs in through
 /// a browser (`signIn`, `DashboardSignIn`) and every request carries the bearer token instead.
+///
+/// A Dashboard with no sign-in at all (asked 2026-10-30, after Hermex: bound to 127.0.0.1 with no
+/// `dashboard.public_url`, reached through `tailscale serve` or another proxy on that machine)
+/// says `auth_required: false` and hands its session token to whoever loads its page at `/`, as
+/// the desktop app reads it (`SessionPage`). With no login stored, that is the login: REST calls
+/// carry it as `X-Hermes-Session-Token`, the WebSocket as `?token=` (the ticket route refuses this
+/// mode). It is held in memory only, never stored: a restart of the host makes a new one, and a
+/// 401 or a refused upgrade reads the page again, once.
 @Observable
 final class HermesServeClient {
     #if !os(watchOS)
@@ -66,7 +80,25 @@ final class HermesServeClient {
         // Fail fast offline; the reconnect loop and the conversation's outbox do the retrying.
         config.waitsForConnectivity = false
         if !headers.isEmpty { config.httpAdditionalHeaders = headers }
-        return URLSession(configuration: config)
+        return URLSession(configuration: config, delegate: RedirectGuard(), delegateQueue: nil)
+    }
+
+    /// Keeps the login from leaving the server: a redirect to another origin loses the session
+    /// token and a bearer token before it is followed (asked 2026-10-30).
+    nonisolated final class RedirectGuard: NSObject, URLSessionTaskDelegate, Sendable {
+        func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
+                        newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) {
+            completionHandler(HermesServeClient.redirected(request, from: task.originalRequest?.url))
+        }
+    }
+
+    /// `request` as a redirect from `origin` may follow it: with no login on it when it goes elsewhere.
+    nonisolated static func redirected(_ request: URLRequest, from origin: URL?) -> URLRequest {
+        guard !SessionPage.sameOrigin(origin, request.url) else { return request }
+        var request = request
+        request.setValue(nil, forHTTPHeaderField: SessionPage.header)
+        request.setValue(nil, forHTTPHeaderField: "Authorization")
+        return request
     }
 
     /// Apply the server's current headers; drops the socket and cookies if they changed.
@@ -139,14 +171,28 @@ final class HermesServeClient {
         guard let baseURL else { throw TransportError.badURL }
         if case .reconnecting = state {} else { state = .connecting }
         do {
-            let ticket = try await authenticate()
-            try await openSocket(baseURL: baseURL, ticket: ticket)
+            let pass = try await socketPass()
+            do {
+                try await openSocket(baseURL: baseURL, pass: pass)
+            } catch let error where !(error is CancellationError) {
+                // A Dashboard with no sign-in that refused the page's token: it restarted since and
+                // made a new one. The page once more, and once more only.
+                guard case let .token(spent) = pass, let fresh = try await rereadPage(baseURL: baseURL, spent: spent) else { throw error }
+                try await openSocket(baseURL: baseURL, pass: .token(fresh))
+            }
             try Task.checkCancellation()   // disconnect() while the handshake ran: don't keep the link
             // Once per connection: this client answers the Dashboard's own requests (approvals,
             // questions, passwords). Hermes 0.21.5 withholds them from a client that hasn't said
             // so, and withdraws the approval on the spot; an older host doesn't know the method.
+            let opened = socket
             _ = try? await call("client.capabilities", params: .object(["server_requests": .bool(true)]), timeout: 15)
             try Task.checkCancellation()
+            // The link closed again while it was being set up (a host restarting under it, seen in
+            // the no-sign-in lab 2026-10-30): "connected" with no socket left a reconnect waiting
+            // on nothing. Failed, the loop tries again.
+            guard let opened, socket === opened else {
+                throw TransportError.unreachable(String(localized: "the connection to Hermes Dashboard closed"))
+            }
             state = .connected
         } catch {
             // A cancelled attempt was disconnect()'s doing: it already tore down and set the
@@ -178,6 +224,7 @@ final class HermesServeClient {
         refreshTask?.cancel(); refreshTask = nil
         authenticatedAt = nil
         letInWithoutLogin = nil
+        pageToken = nil
         ChatControlStore.shared.removeAll()
         disconnect()
         if let host, let cookies = HTTPCookieStorage.shared.cookies {
@@ -263,6 +310,8 @@ final class HermesServeClient {
             if tokens.expires(within: 60) { try await refreshTokens(baseURL: baseURL, spent: tokens.accessToken) }
             return
         }
+        // No login stored: a Dashboard with no sign-in, whose page holds the token.
+        guard hasStoredLogin else { return try await openLogin(baseURL: baseURL) }
         if let at = authenticatedAt, Date.now.timeIntervalSince(at) < authTTL { return }
         // Cookie may still be live from an earlier session: cheap probe before a real login.
         guard var comps = URLComponents(url: baseURL.appending(path: "api/sessions"), resolvingAgainstBaseURL: false) else { throw TransportError.badURL }
@@ -270,7 +319,6 @@ final class HermesServeClient {
         if let probeURL = comps.url, let (_, r) = try? await session.data(for: URLRequest(url: probeURL)),
            (r as? HTTPURLResponse)?.statusCode == 200 {
             authenticatedAt = .now
-            if !hasStoredLogin { letInWithoutLogin = baseURL }
             return
         }
         letInWithoutLogin = nil
@@ -287,17 +335,146 @@ final class HermesServeClient {
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else {
             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            // A Dashboard that took its login away has nothing to log in to (it answers "Unknown
+            // provider", not a refusal): said as that, so the person can choose to go on without
+            // one (asked 2026-10-30).
+            if status != 401, (try? await asksForLogin(baseURL: baseURL)) == false { throw DashboardSignInChange.noLongerAsks }
             throw TransportError.http(status: status, body: status == 401 ? String(localized: "login rejected", comment: "Follows \"Server returned HTTP 401.\"") : String(decoding: data.prefix(200), as: UTF8.self))
         }
         authenticatedAt = .now
         log.info("hermes serve login ok")
     }
 
+    // MARK: - No sign-in
+
+    /// The session token of the Dashboard at `url`, read off its page: the login of a Dashboard
+    /// with no sign-in. Memory only (asked 2026-10-30): a restart of the host makes a new one.
+    private var pageToken: (url: URL, token: String)?
+    /// The page being read, once however many requests want it.
+    private var pageTask: Task<String, Error>?
+
+    /// The Dashboard with no login stored for it. A cookie from a login since forgotten still
+    /// lets this phone in as before; otherwise it is one with no sign-in at all, whose status
+    /// says so (`auth_required: false`) and whose page holds the token.
+    private func openLogin(baseURL: URL) async throws {
+        // The page's token stands until the host refuses it (`send`, `connectOnce`).
+        if pageToken?.url == baseURL { return }
+        if letInWithoutLogin == baseURL, let at = authenticatedAt, Date.now.timeIntervalSince(at) < authTTL { return }
+        if let probe = URL(string: "api/sessions?limit=1", relativeTo: baseURL.appending(path: "/")),
+           let (_, answer) = try? await session.data(for: URLRequest(url: probe)), (answer as? HTTPURLResponse)?.statusCode == 200 {
+            authenticatedAt = .now
+            letInWithoutLogin = baseURL
+            return
+        }
+        _ = try await readPage(baseURL: baseURL)
+    }
+
+    /// Reads the page and proves its token, sharing a read already under way.
+    private func readPage(baseURL: URL) async throws -> String {
+        if let pageTask { return try await pageTask.value }
+        let task = Task { [self] in
+            defer { pageTask = nil }
+            let token = try await fetchPageToken(baseURL: baseURL)
+            try Task.checkCancellation()   // the server changed meanwhile (resetForServerChange)
+            pageToken = (baseURL, token)
+            authenticatedAt = .now
+            letInWithoutLogin = baseURL
+            return token
+        }
+        pageTask = task
+        return try await task.value
+    }
+
+    /// After the host refused `spent`: its page once more, for the token it has now. Nil when it
+    /// still has the same one (the refusal was about something else).
+    private func rereadPage(baseURL: URL, spent: String) async throws -> String? {
+        if let current = pageToken, current.url == baseURL, current.token != spent { return current.token }   // read again meanwhile
+        pageToken = nil
+        authenticatedAt = nil
+        letInWithoutLogin = nil
+        let fresh = try await readPage(baseURL: baseURL)
+        return fresh == spent ? nil : fresh
+    }
+
+    private func fetchPageToken(baseURL: URL) async throws -> String {
+        // The status first: it is public on every release, and only a Dashboard that says it has
+        // no sign-in puts the token in its page.
+        if try await asksForLogin(baseURL: baseURL) {
+            throw settings.serveOpenAccess ? DashboardSignInChange.nowAsksForLogin : TransportError.malformed(TransportError.missingLoginText)
+        }
+        var request = URLRequest(url: baseURL.appending(path: "/"))
+        request.timeoutInterval = 15
+        request.setValue("text/html", forHTTPHeaderField: "Accept")
+        let (data, response) = try await session.data(for: request)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if let refusal = SessionPage.hostRefusal(status: status, body: data) { throw refusal }
+        guard let token = SessionPage.token(in: data) else {
+            throw TransportError.malformed(String(localized: "Hermes Dashboard says it has no sign-in, but its page at \(baseURL.host() ?? baseURL.absoluteString) has no session token. Something in front of it may be answering instead.",
+                                                  comment: "The Dashboard's page, read for its session token, had none; the host name"))
+        }
+        // Proven by a read the token alone opens: the conversation list, there on every release.
+        // (`api/auth/me` answers it too from 0.22, as "Local", but not on 0.21.)
+        guard let url = URL(string: "api/sessions?limit=1", relativeTo: baseURL.appending(path: "/")) else { throw TransportError.badURL }
+        var probe = URLRequest(url: url)
+        probe.timeoutInterval = 15
+        let (said, answer) = try await session.data(for: SessionPage.apply(token, to: probe))
+        let proved = (answer as? HTTPURLResponse)?.statusCode ?? 0
+        if let refusal = SessionPage.hostRefusal(status: proved, body: said) { throw refusal }
+        guard (200 ..< 300).contains(proved) else { throw Self.refusal(proved, said) }
+        log.info("hermes serve: no sign-in, the session token read from its page")
+        return token
+    }
+
+    /// Whether the Dashboard says it asks for a login (`GET api/status`, public on every release).
+    private func asksForLogin(baseURL: URL) async throws -> Bool {
+        var request = URLRequest(url: baseURL.appending(path: "api/status"))
+        request.timeoutInterval = 10
+        let (data, response) = try await session.data(for: request)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if let refusal = SessionPage.hostRefusal(status: status, body: data) { throw refusal }
+        guard status == 200 else { throw Self.refusal(status, data) }
+        return try JSONValue.parse(data)["auth_required"]?.bool == true
+    }
+
+    /// True while this client goes in on a Dashboard's page token: one with no sign-in.
+    var usesPageToken: Bool { pageToken != nil && pageToken?.url == baseURL && signInTokens() == nil }
+
     /// Proves the cookie (logging in if needed) and mints a single-use WebSocket ticket.
     func authenticate() async throws -> String {
         guard let baseURL else { throw TransportError.badURL }
         try await login(baseURL: baseURL)
         return try await mintTicket(baseURL: baseURL)
+    }
+
+    /// What opens a WebSocket: a single-use ticket bought with the login, or, on a Dashboard with
+    /// no sign-in, its session token itself (it sells no tickets there).
+    nonisolated enum SocketPass: Equatable, Sendable {
+        case ticket(String)
+        case token(String)
+
+        /// The query item an upgrade presents it as, with no subprotocol.
+        var queryItem: URLQueryItem {
+            switch self {
+            case let .ticket(ticket): URLQueryItem(name: "ticket", value: ticket)
+            case let .token(token): URLQueryItem(name: "token", value: token)
+            }
+        }
+    }
+
+    /// Logs in if needed, then what the next WebSocket opens with.
+    func socketPass() async throws -> SocketPass {
+        guard let baseURL else { throw TransportError.badURL }
+        try await login(baseURL: baseURL)
+        if usesPageToken, let token = pageToken?.token { return .token(token) }
+        return .ticket(try await mintTicket(baseURL: baseURL))
+    }
+
+    /// A WebSocket address on the Dashboard: `path` with `query`, then the pass.
+    nonisolated static func socketURL(baseURL: URL, path: String, query: [URLQueryItem] = [], pass: SocketPass) -> URL? {
+        guard var comps = URLComponents(url: baseURL.appending(path: path), resolvingAgainstBaseURL: false) else { return nil }
+        comps.scheme = baseURL.scheme == "https" ? "wss" : "ws"
+        comps.queryItems = query + [pass.queryItem]
+        return comps.url
     }
 
     private func mintTicket(baseURL: URL) async throws -> String {
@@ -315,9 +492,24 @@ final class HermesServeClient {
         return ticket
     }
 
-    /// One round trip with whatever proves the login: the cookie jar, or a browser sign-in's
-    /// bearer token. A 401 gets one fresh proof and one more try: the cookie the TTL vouched for
-    /// is dead (gateway restart, password change), or the access token lapsed early.
+    /// What proves the login on a request, besides the cookie jar.
+    private enum Proof: Equatable {
+        /// A browser sign-in's access token.
+        case bearer(String)
+        /// A Dashboard with no sign-in: the token off its page.
+        case page(String)
+    }
+
+    private var proof: Proof? {
+        if let token = signInTokens()?.accessToken { return .bearer(token) }
+        if usesPageToken, let token = pageToken?.token { return .page(token) }
+        return nil
+    }
+
+    /// One round trip with whatever proves the login: the cookie jar, a browser sign-in's bearer
+    /// token, or the session token off a Dashboard's page. A 401 gets one fresh proof and one more
+    /// try: the cookie the TTL vouched for is dead (gateway restart, password change), the access
+    /// token lapsed early, or the host restarted and made itself a new session token.
     private func send(_ request: URLRequest, baseURL: URL) async throws -> (Data, URLResponse) {
         try await send(request, baseURL: baseURL) { try await self.session.data(for: $0) }
     }
@@ -326,25 +518,32 @@ final class HermesServeClient {
     /// an answer saved to one (`perform`).
     private func send<Answer>(_ request: URLRequest, baseURL: URL,
                               perform: (URLRequest) async throws -> (Answer, URLResponse)) async throws -> (Answer, URLResponse) {
-        func authorized(_ token: String?) -> URLRequest {
-            guard let token else { return request }
-            var request = request
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            return request
+        func authorized(_ proof: Proof?) -> URLRequest {
+            switch proof {
+            case let .bearer(token)?:
+                var request = request
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                return request
+            case let .page(token)?: return SessionPage.apply(token, to: request)
+            case nil: return request
+            }
         }
-        let used = signInTokens()?.accessToken
+        let used = proof
         let first = try await perform(authorized(used))
         guard (first.1 as? HTTPURLResponse)?.statusCode == 401 else { return first }
-        if let used {
-            try await refreshTokens(baseURL: baseURL, spent: used)
-        } else if authenticatedAt != nil {
+        switch used {
+        case let .bearer(token)?:
+            try await refreshTokens(baseURL: baseURL, spent: token)
+        case let .page(token)?:
+            guard try await rereadPage(baseURL: baseURL, spent: token) != nil else { return first }
+        case nil where authenticatedAt != nil:
             authenticatedAt = nil
             letInWithoutLogin = nil
             try await login(baseURL: baseURL)
-        } else {
+        case nil:
             return first
         }
-        return try await perform(authorized(signInTokens()?.accessToken))
+        return try await perform(authorized(proof))
     }
 
     // MARK: - Browser sign-in
@@ -437,14 +636,12 @@ final class HermesServeClient {
     }
 
     /// Opens a WebSocket to a dashboard plugin path (e.g. `api/plugins/kanban/events`) after
-    /// logging in and minting a ticket. The caller owns the task.
+    /// logging in and minting a ticket (or, on a Dashboard with no sign-in, with the page's
+    /// token). The caller owns the task.
     func openPluginSocket(path: String, query: [URLQueryItem]) async throws -> URLSessionWebSocketTask {
         guard let baseURL else { throw TransportError.badURL }
-        let ticket = try await authenticate()
-        guard var comps = URLComponents(url: baseURL.appending(path: path), resolvingAgainstBaseURL: false) else { throw TransportError.badURL }
-        comps.scheme = baseURL.scheme == "https" ? "wss" : "ws"
-        comps.queryItems = query + [.init(name: "ticket", value: ticket)]
-        guard let url = comps.url else { throw TransportError.badURL }
+        let pass = try await socketPass()
+        guard let url = Self.socketURL(baseURL: baseURL, path: path, query: query, pass: pass) else { throw TransportError.badURL }
         let task = session.webSocketTask(with: url)
         task.maximumMessageSize = Self.maxFrameBytes
         task.resume()
@@ -457,13 +654,8 @@ final class HermesServeClient {
                                    query: settings.profileName.map { [URLQueryItem(name: "profile", value: $0)] } ?? [])
     }
 
-    private func openSocket(baseURL: URL, ticket: String) async throws {
-        guard var comps = URLComponents(url: baseURL.appending(path: "api/ws"), resolvingAgainstBaseURL: false) else {
-            throw TransportError.badURL
-        }
-        comps.scheme = baseURL.scheme == "https" ? "wss" : "ws"
-        comps.queryItems = [.init(name: "ticket", value: ticket)]
-        guard let wsURL = comps.url else { throw TransportError.badURL }
+    private func openSocket(baseURL: URL, pass: SocketPass) async throws {
+        guard let wsURL = Self.socketURL(baseURL: baseURL, path: "api/ws", pass: pass) else { throw TransportError.badURL }
         let task = session.webSocketTask(with: wsURL)
         // URLSession defaults to a 1 MiB frame ceiling and kills the socket when a reply
         // is bigger. Resuming a long session sends the whole transcript in one frame.
@@ -1116,10 +1308,11 @@ final class HermesServeClient {
         }
     }
 
-    /// True when the Dashboard can be used: a browser sign-in, a username and stored password, or
-    /// it let this phone in without either at the last look (`letInWithoutLogin`).
+    /// True when the Dashboard can be used: a browser sign-in, a username and stored password, a
+    /// server set up as one with no sign-in, or it let this phone in without either at the last
+    /// look (`letInWithoutLogin`).
     var hasCredentials: Bool {
-        hasStoredLogin || (letInWithoutLogin != nil && letInWithoutLogin == baseURL)
+        hasStoredLogin || settings.serveOpenAccess || (letInWithoutLogin != nil && letInWithoutLogin == baseURL)
     }
 
     /// A browser sign-in, or a username and stored password.

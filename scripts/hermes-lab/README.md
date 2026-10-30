@@ -95,6 +95,26 @@ WebSocket's ticket, a token the Dashboard refuses has to be refreshed and the ca
 refresh token it no longer takes has to end in "sign in again". The lab's login is a password, so
 what a real identity provider adds (its own pages, in the browser) is not covered.
 
+## No sign-in
+
+`open` (0.22.2 by default) runs the `named` scenario, whose Dashboard is on 127.0.0.1 with no
+public address and no login: it says `auth_required: false` and puts its session token in the page
+at `/`, which is how the desktop app (and Hermex) gets in. `EchoTests/HermesLabOpenAccessTests`
+uses the app's client with nothing stored: the token read off the page, the conversation list
+with it in `X-Hermes-Session-Token`, the WebSocket and the Kanban board's events socket on
+`?token=` (the ticket route refuses this mode), and a message the stub answers. Then it asks
+`restart_dashboard.py` (on 18979, started by `lab.sh open`) to restart the Dashboard, which gives
+it a new token: the socket has to come back by itself and REST calls have to read the page once
+and go through. The same with the whole Dashboard page, `hermes dashboard` with a stand-in page in
+`HERMES_WEB_DIST` (the lab installs no web build); then with a login turned on (a public address
+and the lab's basic login), which has to be said as "asks for a login now"; and a client with a
+login saved for the Dashboard with none, which has to be told the login is of no use.
+
+On a 127.0.0.1 bind Hermes answers only requests addressed to 127.0.0.1 or localhost (the Host
+header; a guard against DNS rebinding), on every release from 0.21.0: whatever forwards a phone's
+requests to it has to send that Host. That isn't something the lab can show; `curl -H "Host:
+other.name"` gets the 400 the app turns into words.
+
 ## A conversation's switches
 
 `controls` runs `EchoTests/HermesLabChatControlsTests` on the `approval` scenario. The app's

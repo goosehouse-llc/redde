@@ -110,30 +110,31 @@ struct ServeLoginSettings: View {
     @State private var serve = HermesServeClient.shared
     @State private var signedIn = false
     @State private var signedInName = ""
+    /// Whether the Dashboard at the address asks for a login; nil until it answers.
+    @State private var asksForLogin: Bool?
+    /// A password is in the Keychain for this server (`hasServePassword` also counts a Dashboard
+    /// that lets the phone in without one).
+    @State private var storedPassword = false
+
+    private var mode: DashboardFormMode {
+        .decide(asksForLogin: asksForLogin, hasLogin: signedIn || (!settings.serveUsername.isEmpty && storedPassword),
+                savedOpen: settings.serveOpenAccess)
+    }
 
     var body: some View {
         Section {
             TextField("http://your-redde:9119", text: $settings.serveURL)
                 .urlFieldStyle()
-            if signedIn {
-                LabeledContent("Signed in") {
-                    Text(signedInName.isEmpty ? String(localized: "through a browser", comment: "Signed in: through a browser, with no name to show")
-                                              : signedInName).foregroundStyle(.secondary)
-                }
-                Button("Sign out", role: .destructive) {
-                    serve.signOut()
-                    readSignIn()
-                    hasServePassword = Keychain.read(.serveDashboardPassword) != nil
-                }
-            } else {
-                TextField("Dashboard username", text: $settings.serveUsername)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                SecretField(item: .serveDashboardPassword, prompt: String(localized: "Dashboard password"),
-                            replacePrompt: String(localized: "Replace stored password"),
-                            saveTitle: String(localized: "Save password"), hasValue: $hasServePassword,
-                            onSaved: { saved.toggle(); serve.disconnect() }, onRemoved: { serve.disconnect() })
-                BrowserSignInButton { readSignIn(); hasServePassword = true; saved.toggle() }
+            DashboardSignInNotice(mode: mode, confirmsOpen: !settings.serveOpenAccess) {
+                settings.useDashboardWithoutLogin()
+                serve.signOut()   // forgets this server's link and any browser sign-in
+                readSignIn()
+                // The Dashboard is there to use all the same: Settings → Agent goes by this.
+                hasServePassword = true
+                saved.toggle()
+            }
+            if mode != .open {
+                login
             }
             LabeledContent("Connection") {
                 Text(stateLabel).foregroundStyle(.secondary)
@@ -141,14 +142,53 @@ struct ServeLoginSettings: View {
         } header: {
             Text("Hermes Dashboard (WebSocket)")
         } footer: {
-            Text("The same login as the Hermes Dashboard: its username and password, or, where it signs you in with Google or another provider, Sign in with a browser. Gives live reasoning, tool approvals and slash commands over one WebSocket.")
+            mode == .open
+                ? Text(String(localized: "This Dashboard has no sign-in. Redde reads its session token from the Dashboard each time it connects and never stores it. Gives live reasoning, tool approvals and slash commands over one WebSocket.",
+                              comment: "Settings › Connection details footer for a Dashboard with no sign-in"))
+                : Text("The same login as the Hermes Dashboard: its username and password, or, where it signs you in with Google or another provider, Sign in with a browser. Gives live reasoning, tool approvals and slash commands over one WebSocket.")
         }
         // Keyed on the server and its address: another one has its own sign-in, and a sign-in
         // isn't used at an address it wasn't made at.
-        .task(id: settings.connectionKey + settings.serveURL) { readSignIn() }
+        .task(id: settings.connectionKey + settings.serveURL) {
+            readSignIn()
+            asksForLogin = nil
+            asksForLogin = await DashboardFormMode.probe(settings)
+        }
+    }
+
+    /// The login: a browser sign-in, or the username and password.
+    @ViewBuilder private var login: some View {
+        if signedIn {
+            LabeledContent("Signed in") {
+                Text(signedInName.isEmpty ? String(localized: "through a browser", comment: "Signed in: through a browser, with no name to show")
+                                          : signedInName).foregroundStyle(.secondary)
+            }
+            Button("Sign out", role: .destructive) {
+                serve.signOut()
+                readSignIn()
+                hasServePassword = Keychain.read(.serveDashboardPassword) != nil
+            }
+        } else {
+            TextField("Dashboard username", text: $settings.serveUsername)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+            SecretField(item: .serveDashboardPassword, prompt: String(localized: "Dashboard password"),
+                        replacePrompt: String(localized: "Replace stored password"),
+                        saveTitle: String(localized: "Save password"), hasValue: $storedPassword,
+                        onSaved: {
+                            // A login now: the server isn't one with no sign-in any more.
+                            settings.serveOpenAccess = false
+                            hasServePassword = true
+                            saved.toggle()
+                            serve.disconnect()
+                        },
+                        onRemoved: { hasServePassword = serve.isSignedIn; serve.disconnect() })
+            BrowserSignInButton { readSignIn(); settings.serveOpenAccess = false; hasServePassword = true; saved.toggle() }
+        }
     }
 
     private func readSignIn() {
+        storedPassword = Keychain.read(.serveDashboardPassword) != nil
         signedIn = serve.isSignedIn
         signedInName = ""
         guard signedIn else { return }
@@ -163,6 +203,59 @@ struct ServeLoginSettings: View {
         case let .reconnecting(attempt): String(localized: "reconnecting (try \(attempt))…", comment: "The Dashboard connection's state, with the attempt's number")
         case let .failed(reason): String(localized: "failed: \(reason)", comment: "The Dashboard connection's state, with why")
         }
+    }
+}
+
+/// What the Dashboard's form says about signing in besides its fields (asked 2026-10-30): the
+/// warning for a Dashboard with no sign-in, kept while the server has no login, and a sign-in that
+/// changed since the server was saved, with its fix.
+struct DashboardSignInNotice: View {
+    let mode: DashboardFormMode
+    /// Offers "Use without a login" for a Dashboard with no sign-in that the server isn't yet saved
+    /// as (Setup does that when its test passes instead).
+    var confirmsOpen = false
+    var onUseWithoutLogin: () -> Void = {}
+
+    var body: some View {
+        switch mode {
+        case .open:
+            warning
+            if confirmsOpen { useWithoutLogin }
+        case .loginNoLongerAsked:
+            Label(DashboardSignInChange.noLongerAsksText, systemImage: "lock.open")
+                .font(.footnote)
+            warning
+            useWithoutLogin
+        case .loginNowAsked:
+            Label(DashboardSignInChange.nowAsksText, systemImage: "key")
+                .font(.footnote)
+                .foregroundStyle(.orange)
+        case .login:
+            EmptyView()
+        }
+    }
+
+    private var warning: some View {
+        Label(DashboardFormMode.openWarning, systemImage: "exclamationmark.triangle.fill")
+            .font(.footnote)
+            .foregroundStyle(.orange)
+            .accessibilityIdentifier("dashboard-open-warning")
+    }
+
+    private var useWithoutLogin: some View {
+        Button(String(localized: "Use without a login", comment: "Button: go on with a Dashboard that has no sign-in, forgetting any saved login"),
+               action: onUseWithoutLogin)
+    }
+}
+
+extension DashboardFormMode {
+    /// Asks the Dashboard at Settings' address whether it signs people in, a moment after the
+    /// address stops changing; nil until it answers.
+    @MainActor
+    static func probe(_ settings: Settings) async -> Bool? {
+        try? await Task.sleep(for: .milliseconds(400))   // still typing
+        guard !Task.isCancelled, let url = settings.serveBaseURL else { return nil }
+        return await ConnectionTester.dashboardAsksForLogin(url: url)
     }
 }
 

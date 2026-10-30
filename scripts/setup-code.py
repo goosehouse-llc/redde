@@ -65,6 +65,9 @@ def main():
     parser.add_argument("--name", default="", help="what the server is called in Redde")
     parser.add_argument("--dashboard", type=address, default="", help="Hermes Dashboard address (hermes serve, port 9119)")
     parser.add_argument("--user", default="", help="Dashboard user name")
+    parser.add_argument("--no-sign-in", action="store_true",
+                        help="the Dashboard has no sign-in (127.0.0.1, no public_url, behind tailscale serve or a proxy): "
+                             "no password is asked for, and anyone who can reach it can use your agent")
     parser.add_argument("--api", type=address, default="", help="Hermes API server address (port 8642)")
     parser.add_argument("--profile", default="", help="Hermes profile, when it isn't the default one")
     parser.add_argument("--access-id", default="", help="Cloudflare Access service token client ID")
@@ -81,12 +84,15 @@ def main():
     if not (args.dashboard or args.api or args.model_url):
         parser.error("give at least one of --dashboard, --api or --model-url")
 
+    if args.no_sign_in and args.user:
+        parser.error("--no-sign-in is for a Dashboard with no login: leave out --user")
     ask = not args.no_secrets
     fields = [
         ("name", args.name),
         ("dashboard", args.dashboard),
         ("user", args.user if args.dashboard else ""),
-        ("password", secret("REDDE_PASSWORD", "Dashboard password", ask and args.dashboard)),
+        ("password", secret("REDDE_PASSWORD", "Dashboard password", ask and args.dashboard and not args.no_sign_in)),
+        ("sign-in", "none" if args.no_sign_in and args.dashboard else ""),
         ("api", args.api),
         ("key", secret("REDDE_KEY", "Hermes API key (API_SERVER_KEY)", ask and args.api)),
         ("profile", args.profile),
