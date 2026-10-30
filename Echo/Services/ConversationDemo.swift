@@ -842,7 +842,7 @@ extension Conversation {
         setInterruptForDemo(.clarify(ClarifyRequest(id: "demo", questions: questions, isBatch: questions.count > 1)))
     }
 
-    /// `-echo.demoApprovalCard <coder|command|push|script>`: an approval waiting, as Hermes sends
+    /// `-echo.demoApprovalCard <coder|command|push|script|skill>`: an approval waiting, as Hermes sends
     /// one: Coder's change to Hermes's settings (the approval hook's words), a delete Hermes's own
     /// rule caught, a push the hook asks about, the agent's own script.
     func seedApprovalDemo(_ kind: String) {
@@ -859,12 +859,25 @@ extension Conversation {
             id: "demo", command: "import shutil\nfrom pathlib import Path\nfor f in Path('~/Downloads').expanduser().iterdir():\n    if f.suffix == '.dmg':\n        f.unlink()\n    else:\n        shutil.move(f, f.parent / f.suffix.strip('.') / f.name)",
             description: "execute_code script execution. The script can spawn subprocesses or mutate files without passing through terminal command approval; approval is one-shot for this run.",
             choices: ["once", "deny"]))
+        case "skill":   // the store screenshot: a fuller chat above the card, and Coder named in the headline
+            ("Put it in.", "Putting it in now. Hermes restarts after, for about ten seconds.", ApprovalRequest(
+                id: "demo", command: "<apply_claude_work> (plugin approval rule)",
+                description: "Sol wants to put Claude's change in place to Hermes's own settings (Hermes restarts after, and rolls back if it isn't well). DELETES 1 file(s): skills/old-forecast/SKILL.md; adds 2: skills/weather/SKILL.md, skills/weather/lookup.py; edits 1: profiles/home/config.yaml. +86 −41 lines. Card c4f1a2.",
+                choices: ["once", "session", "always", "deny"]))
         default: ("Add the weather skill to Home, and take out the old forecast one.", "Done in the copy and tried on the test Hermes. Putting it in now.", ApprovalRequest(
             id: "demo", command: "<apply_claude_work> (plugin approval rule)",
             description: "The claude bot wants to put Claude's change in place to Hermes's own settings (Hermes restarts after, and rolls back if it isn't well). DELETES 1 file(s): skills/old-forecast/SKILL.md; adds 2: skills/weather/SKILL.md, skills/weather/lookup.py; edits 1: profiles/home/config.yaml. +86 −41 lines. Card c4f1a2.",
             choices: ["once", "session", "always", "deny"]))
         }
-        replaceForDemo(messages: [Message(role: .user, text: asked), Message(role: .assistant, text: said)])
+        var earlier: [Message] = []
+        if kind == "skill" {
+            var fixed = Message(role: .assistant, text: "Coder rewrote Home's weather skill: it asks for the forecast by the hour now, in your units. "
+                                + "It passed every check on the test Hermes, so it's ready to go in.")
+            fixed.tools = [ToolActivity(name: "delegate_task", preview: "Coder: rewrite the weather skill", status: .completed),
+                           ToolActivity(name: "terminal", preview: "hermes skills test weather", status: .completed)]
+            earlier = [Message(role: .user, text: "Home keeps getting the forecast wrong. Can Coder fix its weather skill?"), fixed]
+        }
+        replaceForDemo(messages: earlier + [Message(role: .user, text: asked), Message(role: .assistant, text: said)])
         setInterruptForDemo(.approval(request))
     }
 

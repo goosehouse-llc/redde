@@ -46,10 +46,11 @@ API = 'https://api.appstoreconnect.apple.com'
 LOCALE = 'en-US'
 # Folder, the display type App Store Connect files it under, and the upload order.
 SETS = [
-    ('iphone-6.9', 'APP_IPHONE_67', ['pano-01a', 'pano-01b', '03-bots', '04-crew', '05-work', '06-rich',
-                                    '07-backend', '08-car', '09-tools', '10-privacy']),
-    ('ipad-13', 'APP_IPAD_PRO_3GEN_129', ['pano-01a', 'pano-01b', '03-ipad-bots', '04-ipad-crew', '05-ipad-work',
-                                          '06-ipad-rich', '07-ipad-backend', '08-ipad-tools', '09-ipad-privacy']),
+    ('iphone-6.9', 'APP_IPHONE_67', ['pano-01a', 'pano-01b', '03-ahead', '04-day', '05-answers', '06-bots',
+                                    '07-crew', '08-approve', '09-car', '10-privacy']),
+    ('ipad-13', 'APP_IPAD_PRO_3GEN_129', ['pano-01a', 'pano-01b', '03-ipad-ahead', '04-ipad-day', '05-ipad-answers',
+                                          '06-ipad-bots', '07-ipad-crew', '08-ipad-approve', '09-ipad-backend',
+                                          '10-ipad-privacy']),
 ]
 LIMITS = {'promotionalText': 170, 'keywords': 100, 'description': 4000, 'whatsNew': 4000}
 # The App Preview videos, by the type App Store Connect files them under: each file (rendered by

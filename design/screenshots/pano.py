@@ -1,5 +1,6 @@
 import sys, math
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
+import zoom   # zoom.py, beside this file
 SHOTS, OUT = sys.argv[1], sys.argv[2]
 FONT = '/System/Library/Fonts/SFNS.ttf'
 def font(size, bold=True):
@@ -8,7 +9,8 @@ def font(size, bold=True):
     except Exception: pass
     return f
 
-def pano(left_src, right_src, W, H, out_a, out_b, headline, sub, pad=False):
+def pano(left_src, right_src, W, H, out_a, out_b, headline, sub, pad=False, right_panel=None):
+    # `right_panel`: what fills the right half's frame instead of its screen scaled down (zoom.py).
     CW = W * 2
     canvas = Image.new('RGBA', (CW, H), (41, 73, 127, 255))
     # gradient: brand navy → deeper navy left→right, subtle
@@ -43,7 +45,7 @@ def pano(left_src, right_src, W, H, out_a, out_b, headline, sub, pad=False):
     for i, src in enumerate((left_src, right_src)):
         shot = Image.open(src).convert('RGBA')
         dw, dh = int(W * scale), int(H * scale)
-        dev = shot.resize((dw, dh), Image.LANCZOS)
+        dev = right_panel(shot, dw, dh, H - top) if i == 1 and right_panel else shot.resize((dw, dh), Image.LANCZOS)
         rad = int(W * (0.09 if not pad else 0.03))
         mask = Image.new('L', (dw, dh), 0); ImageDraw.Draw(mask).rounded_rectangle((0, 0, dw, dh), rad, fill=255)
         x = i * W + (W - dw) // 2
@@ -60,4 +62,5 @@ pano(f'{SHOTS}/ph-chat-hermes.png', f'{SHOTS}/ph-voice.png', 1320, 2868,
      'Type it.|Or just say it.', 'One agent, two ways in.|The answer comes back either way.')
 pano(f'{SHOTS}/pad-hermes.png', f'{SHOTS}/pad-voice.png', 2064, 2752,
      f'{OUT}/ipad-13/pano-01a.png', f'{OUT}/ipad-13/pano-01b.png',
-     'Type it.|Or just say it.', 'One agent, two ways in.|The answer comes back either way.', pad=True)
+     'Type it.|Or just say it.', 'One agent, two ways in.|The answer comes back either way.', pad=True,
+     right_panel=zoom.voice)   # 2.3: the iPad's voice screen restacked larger

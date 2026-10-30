@@ -70,7 +70,8 @@ import WidgetKit
 ///   `-echo.demoAddEvent`: the first day with a timeline adds an event at its first free stretch, as a tap
 ///   there does (Apple's editor on the iPhone, the message field's line on the Mac). `-agendaCalendars "(Family, Home)"`
 ///   shows those calendars only; `-echo.screen calendars` opens Settings → Agent → Calendars.
-/// - `-echo.demoApprovalCard <coder|command|push|script>`: an approval waiting, in words (`ApprovalSummary`).
+/// - `-echo.demoApprovalCard <coder|command|push|script|skill>`: an approval waiting, in words (`ApprovalSummary`);
+///   `skill` is Coder's change put in place by the main agent, under the chat that asked for it (the store screenshot).
 /// - `-echo.demoQuestion <one|few|open>`: the agent's question card (Hermes's clarify), with
 ///   choices, several questions, or one to answer in words.
 /// - `-echo.demoAsks`: cards answered with a tap: a review of a message, a choice of restaurants;
@@ -88,6 +89,9 @@ import WidgetKit
 ///   `-push.relay <url>` points the app at another push relay (the lab's, on this Mac).
 /// - `-echo.demoNotify [seconds]`: ask to send notifications, then post one that many seconds
 ///   later (twelve by default), for the test that closes the app and taps it.
+/// - `-echo.demoLeaveBy [seconds]`: a Leave-By Alert for a made-up dentist's appointment (leave in five
+///   minutes, 25 minutes by car), posted that many seconds after launch (three by default), as a banner
+///   over the screen (App Store screenshots; notifications must be allowed already).
 /// - `-echo.leaveByTest`: on the simulator only, two test events in its calendar (one at a street
 ///   address 90 minutes from now, one in a room), Leave-By Alerts on by car, one run, and the
 ///   alerts pending in the log (category leaveby). `-echo.leaveByClean` deletes the test events,
@@ -313,6 +317,24 @@ enum DevHooks {
             }
         }
         #endif
+        // `-echo.demoLeaveBy [seconds]`: the dentist's Leave-By Alert, as `LeaveByAlerts` posts one
+        // (leave in five minutes, 25 minutes by car), that many seconds after launch (three by default),
+        // with Redde in front: a banner over what is on the screen (the store screenshot).
+        if has("-echo.demoLeaveBy") {
+            let wait = value("-echo.demoLeaveBy").flatMap(Double.init) ?? 3
+            Task {
+                let center = UNUserNotificationCenter.current()
+                guard (try? await center.requestAuthorization(options: [.alert, .sound])) == true else { return }
+                try? await Task.sleep(for: .seconds(wait))
+                let minute = Calendar.current.dateInterval(of: .minute, for: .now)?.start ?? .now
+                let leave = minute.addingTimeInterval(5 * 60), start = leave.addingTimeInterval(25 * 60)
+                let content = LeaveTime.content(event: "Dentist", startsAt: start, leave: leave, travel: 25 * 60, mode: .driving,
+                                                worked: minute, saying: .distantPast)
+                content.categoryIdentifier = LeaveBy.mapsCategory
+                content.sound = .default
+                try? await center.add(UNNotificationRequest(identifier: LeaveBy.alertID(event: "Dentist", start: start), content: content, trigger: nil))
+            }
+        }
         if has("-echo.demoNotify") {
             let wait = value("-echo.demoNotify").flatMap(Double.init) ?? 12
             Task {

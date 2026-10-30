@@ -6,6 +6,10 @@
 #
 # Builds the Debug app, then launches it on the iPhone 18 Pro Max (6.9") and iPad Pro 13-inch
 # simulators with the dev flags for each slot and a 9:41 status bar. Example endpoints only.
+# The 2.3 set (2026-10-30) was taken on simulators of its own, made for it on iOS 27.0:
+#   PHONE=<iPhone 17 Pro Max UDID> PAD=<iPad Pro 13-inch (M5) UDID> design/screenshots/capture.sh <raw>
+# Its Leave-By banner needs notifications allowed on each first: run PromoVideoUITests.testDayLeave
+# there once (it taps Allow), as the README says.
 set -euo pipefail
 cd "${0:A:h}/../.."
 RAW="${1:?raw shots dir}"; mkdir -p "$RAW"
@@ -18,7 +22,9 @@ xcodebuild -project Echo.xcodeproj -scheme Echo -destination "generic/platform=i
   -derivedDataPath DerivedData -quiet build
 APP=DerivedData/Build/Products/Debug-iphonesimulator/Echo.app
 
-BASE=(-setupDone YES -openToVoiceScreen NO -listenOnOpen NO -requireBiometrics NO -echo.demoHosts)
+# Setup is marked done in the app's defaults (prepare), not with -setupDone YES on the command line,
+# which keeps the demo flags from taking.
+BASE=(-openToVoiceScreen NO -listenOnOpen NO -requireBiometrics NO -echo.demoHosts)
 # iPad: the sidebar on Chats and the chat in the wide pane, whatever was last picked there.
 CHATS=(-conversations.section sessions)
 FAST=(-transport chatCompletions)      # chat shots: fast-lane footer metrics
@@ -30,6 +36,7 @@ prepare() {   # device
   xcrun simctl status_bar "$1" override --time 9:41 --batteryState charged --batteryLevel 100 \
     --cellularMode active --cellularBars 4 --wifiBars 3 --dataNetwork wifi
   xcrun simctl install "$1" "$APP"
+  xcrun simctl spawn "$1" defaults write com.goosehouse.echo setupDone -bool YES
   # A fresh install's first launch is still setting up (the iPad sidebar showed a key prompt), so
   # throw one away. With the demo conversation, so its diagram and math have been drawn once:
   # drawn for the first time they arrive late, and the shot caught the transcript short of its end.
@@ -40,9 +47,33 @@ shot() {   # device name args...
   local dev="$1" name="$2"; shift 2
   xcrun simctl terminate "$dev" $BUNDLE 2>/dev/null || true
   xcrun simctl launch "$dev" $BUNDLE "${BASE[@]}" "$@" >/dev/null
-  sleep $WAIT
+  sleep ${PAUSE:-$WAIT}
   xcrun simctl io "$dev" screenshot "$RAW/$name.png" >/dev/null
   echo "$name"
+}
+
+# The status bar at the Mac's clock (24-hour, so the iPad says PM), for screens that show the time
+# of day themselves (the weather, a briefing, a leaving time); `clock 9:41` puts it back.
+clock() {   # device [time]
+  xcrun simctl status_bar "$1" clear
+  xcrun simctl status_bar "$1" override --time "${2:-$(date +%H:%M)}" --batteryState charged --batteryLevel 100 \
+    --cellularMode active --cellularBars 4 --wifiBars 3 --dataNetwork wifi
+}
+
+# 2.3's "Ahead of your day": the chat list's ideas and briefings, and the Leave-By Alert's banner
+# over them (-echo.demoLeaveBy 3). When the banner lands depends on how busy the Mac is (6 to 20
+# seconds after launch on 2026-10-30), so this takes a burst into <raw>/<name>-burst/: copy the one
+# with the banner in it to <raw>/<name>.png (the last one is put there to begin with).
+ahead() {   # device name args...
+  local dev="$1" name="$2"; shift 2
+  clock "$dev"
+  PAUSE=4 shot "$dev" "$name" -echo.demoIdeas -echo.demoBriefings -displayName Sol -theme standard -appearance dark \
+    -echo.demoLeaveBy 3 "$@"
+  mkdir -p "$RAW/$name-burst"
+  for i in {01..24}; do xcrun simctl io "$dev" screenshot "$RAW/$name-burst/$i.png" >/dev/null 2>&1; sleep 0.4; done
+  cp "$RAW/$name-burst/24.png" "$RAW/$name.png"
+  echo "$name: pick the picture with the banner from $name-burst"
+  clock "$dev" 9:41
 }
 
 # ONLY=phone or ONLY=pad retakes one device's shots into a folder that has the other's.
@@ -66,6 +97,17 @@ shot "$PHONE" ph-chat      -echo.demo -echo.screen settings -echo.expandAppIcons
 shot "$PHONE" ph-phone     -echo.demoPhoneShot -theme standard -appearance dark "${FAST[@]}"
 shot "$PHONE" ph-gateway   -echo.demo -echo.demoGateway -echo.screen gateway -theme standard -appearance dark "${FAST[@]}"
 shot "$PHONE" ph-files     -echo.demo -echo.demoFiles -echo.screen files -theme standard -appearance light "${FAST[@]}"
+# 2.3: ahead of your day, the day's timeline, answer cards (the weather, and the places and the
+# email that compose.py cuts out and sets over a screen), and an approval in plain words.
+ahead "$PHONE" ph-ahead -echo.demoProjects -echo.demoBots -echo.screen sessions -transport hermesServe
+CARDS=(-theme standard -appearance dark "${FAST[@]}")
+shot "$PHONE" ph-day       -echo.demoAgenda tomorrow "${CARDS[@]}"
+clock "$PHONE"
+shot "$PHONE" ph-weather   -echo.demoCards weather "${CARDS[@]}"
+shot "$PHONE" ph-places    -echo.demoCards places "${CARDS[@]}"
+clock "$PHONE" 9:41
+shot "$PHONE" ph-review    -echo.demoAsks -echo.demoAsksReviewOnly "${CARDS[@]}"
+shot "$PHONE" ph-approve   -echo.demoApprovalCard skill "${CARDS[@]}"
 # Website only: the Kanban board (demo cards, no server) and typing with the keyboard up.
 shot "$PHONE" ph-kanban    -echo.demo -echo.demoKanban -echo.screen sessions -echo.section kanban -theme claudeCode -appearance dark "${FAST[@]}"
 # A headless simulator hides the software keyboard; turn that off for this one shot.
@@ -85,10 +127,19 @@ shot "$PAD" pad-voice        -echo.demo -echo.voiceView -echo.voiceDemo -voiceOr
 shot "$PAD" pad-work         -echo.demo -echo.demoTwo -echo.demoLibrary -theme paper -appearance light "${FAST[@]}" "${CHATS[@]}"
 shot "$PAD" pad-dark         -echo.demo -echo.demoTwo -echo.demoLibrary -theme claudeCode -appearance dark "${FAST[@]}" "${CHATS[@]}"
 # iPad keeps the fast lane here: with the gateway selected the sidebar tries the example host and shows an error.
-shot "$PAD" pad-settings     -echo.demo -echo.demoLibrary -echo.screen setup -theme standard -appearance light "${FAST[@]}" "${CHATS[@]}"
 shot "$PAD" pad-split        -echo.demo -echo.demoLibrary -echo.screen settings -echo.expandAppIcons -theme standard -appearance light "${FAST[@]}" "${CHATS[@]}"
 shot "$PAD" pad-phone        -echo.demoPhoneShot -echo.demoLibrary -theme standard -appearance dark "${FAST[@]}" "${CHATS[@]}"
 shot "$PAD" pad-gateway      -echo.demo -echo.demoLibrary -echo.demoGateway -echo.screen gateway -theme standard -appearance dark "${FAST[@]}" "${CHATS[@]}"
+# 2.3: as on the phone; the detail pane beside the decks shows the packing list and a booking form.
+# The backend slot is dark from 2.3, as the rest of the set.
+ahead "$PAD" pad-ahead -echo.demoAsks -echo.demoAsksMore -echo.demoLibrary "${FAST[@]}" "${CHATS[@]}"
+PADCARDS=(-echo.demoLibrary -theme standard -appearance dark "${FAST[@]}" "${CHATS[@]}")
+shot "$PAD" pad-day          -echo.demoAgenda tomorrow "${PADCARDS[@]}"
+clock "$PAD"
+shot "$PAD" pad-weather      -echo.demoCards weather "${PADCARDS[@]}"
+clock "$PAD" 9:41
+shot "$PAD" pad-approve      -echo.demoApprovalCard skill "${PADCARDS[@]}"
+shot "$PAD" pad-settings     -echo.demo -echo.screen setup "${PADCARDS[@]}"
 fi
 
 # 2.0's bot slots (ph-bots, ph-crew, pad-bots, pad-crew) come from PromoVideoUITests.testBotsShots, which
