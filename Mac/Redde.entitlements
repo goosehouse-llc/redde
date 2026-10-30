@@ -27,6 +27,9 @@
 	<true/>
 	<key>com.apple.security.personal-information.photos-library</key>
 	<true/>
+	<!-- Current Location: roughly where the Mac is, for the agent, with the setting on. -->
+	<key>com.apple.security.personal-information.location</key>
+	<true/>
 	<!-- The app's own keychain (the data protection keychain, as on the iPhone): its access group,
 	     the bundle id's. Shipped, that is the iPhone's (and iCloud Keychain's); the Debug build's own
 	     id keeps its logins apart from the iPad app a Mac can run. -->

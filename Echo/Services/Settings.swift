@@ -473,6 +473,15 @@ final class Settings: ServeEndpoint {
     var agendaCalendars: [String] {
         didSet { store(agendaCalendars, forKey: Keys.agendaCalendars) }
     }
+    /// Settings → Agent → Current Location (`CurrentLocation`, asked 2026-10-30): the agent hears
+    /// roughly where this device is with a question about places, directions or the weather. Off
+    /// until turned on; this device's alone, as its permission is: not synced.
+    var currentLocation: Bool {
+        didSet {
+            store(currentLocation, forKey: Keys.currentLocation)
+            if !currentLocation, self === Settings.shared { CurrentLocation.forget() }   // nothing kept while off
+        }
+    }
     /// The orb at the centre of voice mode.
     var voiceOrb: VoiceOrb {
         didSet { store(voiceOrb.rawValue, forKey: Keys.voiceOrb) }
@@ -834,6 +843,7 @@ final class Settings: ServeEndpoint {
         static let botColors = "botColors"
         static let eventColor = "eventColor"
         static let agendaCalendars = CalendarChoice.key
+        static let currentLocation = CurrentLocation.key
         static let linkPreviews = "linkPreviews"
         static let addressMaps = "addressMaps"
         static let botFaces = "botFaces"
@@ -941,6 +951,7 @@ final class Settings: ServeEndpoint {
         botColors = defaults.object(forKey: Keys.botColors) as? Bool ?? true
         eventColor = EventColor(rawValue: defaults.string(forKey: Keys.eventColor) ?? "") ?? .byCalendar
         agendaCalendars = defaults.stringArray(forKey: Keys.agendaCalendars) ?? []
+        currentLocation = defaults.bool(forKey: Keys.currentLocation)
         linkPreviews = defaults.bool(forKey: Keys.linkPreviews)
         addressMaps = defaults.object(forKey: Keys.addressMaps) as? Bool ?? true
         botFaces = defaults.object(forKey: Keys.botFaces) as? Bool ?? true
@@ -1338,6 +1349,7 @@ final class Settings: ServeEndpoint {
         botColors = true
         eventColor = .byCalendar
         agendaCalendars = []
+        currentLocation = false
         linkPreviews = false
         addressMaps = true
         botFaces = true

@@ -231,6 +231,9 @@ nonisolated struct TurnRequest: Sendable {
     /// On a question about the calendar, the calendars chosen in Settings → Agent → Calendars, for
     /// the agent to look at only (`CalendarChoice`); nil for every other message, and with all chosen.
     var calendars: [String]? { CalendarChoice.forAgent(asked: userText) }
+    /// On a question about places, directions, maps or the weather, with Settings → Agent → Current
+    /// Location on, roughly where the person is (`CurrentLocation`), as last kept; nil otherwise.
+    var location: CurrentLocation.Here? { CurrentLocation.forAgent(asked: userText) }
     /// On the Dashboard, the profile a new session is made on when it isn't the selected one
     /// (`Conversation.startElsewhere`); nil for the selected one.
     var profile: String? = nil

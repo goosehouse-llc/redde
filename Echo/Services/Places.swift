@@ -105,8 +105,12 @@ final class Places: NSObject, CLLocationManagerDelegate {
 
     // MARK: Permission and where the phone is
 
+    /// Places asked for permission itself, so "While Using" is followed by "Always".
+    private var wantsAlways = false
+
     /// Asks for "While Using" then "Always", which watching places when Redde is closed needs.
     func askPermission() {
+        wantsAlways = true
         switch authorization {
         case .notDetermined: manager.requestWhenInUseAuthorization()
         case .authorizedWhenInUse: manager.requestAlwaysAuthorization()
@@ -135,7 +139,8 @@ final class Places: NSObject, CLLocationManagerDelegate {
         let status = manager.authorizationStatus
         Task { @MainActor in
             authorization = status
-            if status == .authorizedWhenInUse { self.manager.requestAlwaysAuthorization() }
+            // "Always" only for places: "While Using" given for Current Location alone stays so.
+            if status == .authorizedWhenInUse, wantsAlways || !places.isEmpty { self.manager.requestAlwaysAuthorization() }
             await watch()
         }
     }

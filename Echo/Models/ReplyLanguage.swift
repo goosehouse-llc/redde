@@ -39,7 +39,7 @@ nonisolated enum ReplyLanguage {
     /// (`MentionNote`), which comes before both, nor the asides told with it (`AsideNote`), before
     /// that, unless `keepingAsides` (the transcript reads them back out).
     static func stripNote(_ text: String, keepingAsides: Bool = false) -> String {
-        var text = MeasureUnits.strip(CalendarChoice.strip(CarBrevity.strip(IncognitoNote.strip(LiveVoiceNote.strip(CallNote.strip(text))))))
+        var text = MeasureUnits.strip(CalendarChoice.strip(CurrentLocation.strip(CarBrevity.strip(IncognitoNote.strip(LiveVoiceNote.strip(CallNote.strip(text)))))))
         if text.hasSuffix(".)"), let range = text.range(of: "\n\n(Reply in ", options: .backwards),
            !text[range.upperBound...].contains("\n") {
             text = String(text[..<range.lowerBound])

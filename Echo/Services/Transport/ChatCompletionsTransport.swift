@@ -62,6 +62,7 @@ nonisolated struct ChatCompletionsTransport: HermesTransport {
             var messages: [Body.Msg] = []
             let system = [request.instructions?.nilIfEmpty, request.replyLanguage.map(ReplyLanguage.instruction),
                           request.units.map(MeasureUnits.instruction), request.calendars.map(CalendarChoice.instruction),
+                          request.location.map(CurrentLocation.instruction),
                           request.brief ? CarBrevity.instruction : nil,
                           request.live.map { LiveVoiceNote.instruction(context: $0.context) },
                           request.answeringCall.map(CallNote.instruction)].compactMap { $0 }

@@ -349,6 +349,9 @@ final class Conversation {
         }
         // The Hermes API's run for this message, should it go again after a dropped connection.
         request.turnKey = userID.uuidString
+        // A place question with Current Location on: the place kept goes with it as it is (never
+        // waited for), and a fresh fix is asked for if that one is a few minutes old.
+        if CurrentLocation.isOn, CurrentLocation.asksPlace(trimmed) { CurrentLocationService.shared.refresh() }
         // Asides to tagged bots since the agent last heard: told with this message, kept with it on the host.
         if bot == nil, connection.hasLedger, fromPage == nil, let note = AsideNote.note(for: AsideNote.pending(in: messages)) {
             request.userText += note

@@ -165,6 +165,8 @@ private struct MapCard: View {
     let card: ReplyCard.Map
     @State private var lookup = PlaceLookup.shared
     @State private var route: MKRoute?
+    /// Where a route from here starts, with Current Location on: a dot on the map.
+    @State private var start: CLLocationCoordinate2D?
 
     private var pins: [ReplyCard.Place] {
         var all = card.places
@@ -178,7 +180,7 @@ private struct MapCard: View {
     var body: some View {
         CardBox {
             if let title = card.title { Text(title).chatFont(.subheadline, weight: .semibold) }
-            MapPicture(places: pins, route: route)
+            MapPicture(places: pins, route: route, here: start)
                 .frame(height: 190)
                 .clipShape(.rect(cornerRadius: 12))
                 .contentShape(.rect)
@@ -213,12 +215,24 @@ private struct MapCard: View {
             await lookup.look(up: pins)
             await findRoute()
         }
+        // A fresher fix while the card is up: the way from here again.
+        .onChange(of: CurrentLocationService.fixedAt) { if card.route?.from == nil { Task { await findRoute() } } }
     }
 
-    /// Between two named places, the route itself on the map; from where the person is, Maps
-    /// works it out when it opens (the app never asks for the phone's location).
+    /// Between two named places, the route itself on the map. From where the person is, with
+    /// Current Location on (asked 2026-10-30), from the phone's recent fix; else Maps works it
+    /// out when it opens (Redde doesn't ask for the phone's location).
     private func findRoute() async {
-        guard let r = card.route, let from = r.from, let a = lookup.mapItem(from), let b = lookup.mapItem(r.to) else { return }
+        guard let r = card.route, let b = lookup.mapItem(r.to) else { return }
+        let a: MKMapItem
+        if let from = r.from {
+            guard let item = lookup.mapItem(from) else { return }
+            a = item
+        } else {
+            guard let fix = Self.here() else { return }
+            a = MKMapItem(location: fix, address: nil)
+            start = fix.coordinate
+        }
         let request = MKDirections.Request()
         request.source = a
         request.destination = b
@@ -238,6 +252,15 @@ private struct MapCard: View {
             let items = pins.compactMap(lookup.mapItem)
             if items.count == 1 { items[0].openInMaps() } else if !items.isEmpty { MKMapItem.openMaps(with: items) }
         }
+    }
+
+    /// Where the person is, for a route from here: only with Current Location on, and a fix of the
+    /// last half hour (`CurrentLocation.freshFor`); a fresh one is asked for meanwhile.
+    private static func here() -> CLLocation? {
+        guard CurrentLocation.isOn else { return nil }
+        CurrentLocationService.shared.refresh()
+        guard let fix = LeaveTime.here(), Date.now.timeIntervalSince(fix.timestamp) < CurrentLocation.freshFor else { return nil }
+        return fix
     }
 
     static func modeName(_ mode: ReplyCard.Route.Mode) -> String {
@@ -395,9 +418,13 @@ private struct PlacesCard: View {
         .clipShape(.rect(cornerRadius: 20))
         .cardGround()
         .task(id: card.places) {
+            // With Current Location on, a fresh fix if the last is a few minutes old (asked 2026-10-30).
+            if CurrentLocation.isOn { CurrentLocationService.shared.refresh() }
             await lookup.look(up: card.places)
             await lookup.measure(card.places)
         }
+        // It came: the walks measured from there (`measure` keeps them while the phone stays put).
+        .onChange(of: CurrentLocationService.fixedAt) { Task { await lookup.measure(card.places) } }
     }
 
     private func buttons(_ lead: ReplyCard.Place) -> some View {

@@ -106,6 +106,8 @@ struct EchoApp: App {
                     BriefingsInbox.shared.reload()   // and briefings
                     HeldNote.seen()   // what came in quiet hours is here to see: no digest of it later
                     FeedbackFold.cameForward()   // a word on ideas or briefings that didn't reach the jobs yet
+                    // With Current Location on, where the person is, for their next place question.
+                    if CurrentLocation.isOn { CurrentLocationService.shared.cameForward() }
                     #if os(iOS)
                     Places.shared.noteWhereThePhoneIs()   // for when to leave for a heads-up's event
                     Task { await HealthDays.refresh() }   // the day's steps, if Health-Aware Days is on

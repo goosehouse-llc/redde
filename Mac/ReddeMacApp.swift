@@ -136,6 +136,8 @@ struct ReddeMacApp: App {
                     Task { await conversation.catchUp() }
                     Task { await CaptureInbox.shared.file() }   // notes taken offline
                     IdeasInbox.shared.reload()
+                    // With Current Location on, where the Mac is, for the next place question.
+                    if CurrentLocation.isOn { CurrentLocationService.shared.cameForward() }
                     Task { await ReplyCardsSwitch.publish() }
                     Mutes.publish()
                 @unknown default: break

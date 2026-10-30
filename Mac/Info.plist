@@ -41,8 +41,10 @@
 	<string>Redde connects to the Hermes gateway or model server you configure, which is often on your local network.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>With Places turned on, Redde notices when you arrive at or leave a place you set, even when Redde is closed, and tells the bot you chose. Where you are stays on your iPhone; only "arrived at Home" goes to your server.</string>
+	<key>NSLocationUsageDescription</key>
+	<string>With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather. It goes to your own server and nowhere else.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>With Places turned on, Redde uses where you are to set a place and to notice when you arrive or leave. Where you are stays on your iPhone; only "arrived at Home" goes to your server.</string>
+	<string>With Places on, Redde uses where you are to set a place and to notice when you arrive or leave; only "arrived at Home" goes to your server. With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Redde listens so you can talk to your assistant. Speech is transcribed on this device and only your own server receives the text, unless you start a live voice call, which goes to the voice service you chose.</string>
 	<key>NSMotionUsageDescription</key>

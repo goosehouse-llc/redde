@@ -913,6 +913,120 @@
         }
       }
     },
+    "NSLocationUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når Aktuel placering er slået til, får din egen agent at vide omtrent, hvor du er, når du spørger om steder, vejvisning eller vejret. Det går til din egen server og ingen andre steder."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn Aktueller Standort aktiviert ist, erfährt dein eigener Agent ungefähr, wo du bist, wenn du nach Orten, Wegbeschreibungen oder dem Wetter fragst. Das geht an deinen eigenen Server und nirgendwo sonst hin."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather. It goes to your own server and nowhere else."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Ubicación actual activada, tu propio agente sabe aproximadamente dónde estás cuando preguntas por lugares, indicaciones o el tiempo. Va a tu propio servidor y a ningún otro sitio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand Position actuelle est activé, votre propre agent apprend à peu près où vous êtes lorsque vous posez une question sur des lieux, un itinéraire ou la météo. Cela va à votre propre serveur et nulle part ailleurs."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Posizione attuale attiva, il tuo agente sa più o meno dove sei quando chiedi di luoghi, indicazioni o meteo. Va al tuo server e da nessun’altra parte."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "現在地をオンにすると、場所、経路、天気について尋ねたときに、あなた自身のエージェントにおおよその現在地が伝わります。送られるのはあなた自身のサーバだけです。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "현재 위치를 켜면 장소, 길 안내, 날씨를 물어볼 때 내 에이전트가 대략적인 위치를 알게 됩니다. 위치는 내 서버로만 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når Nåværende posisjon er slått på, får din egen agent vite omtrent hvor du er når du spør om steder, veibeskrivelser eller været. Det går til din egen tjener og ingen andre steder."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met Huidige locatie aan hoort je eigen agent ongeveer waar je bent als je vraagt naar plekken, routes of het weer. Het gaat naar je eigen server en nergens anders heen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy Bieżąca lokalizacja jest włączona, Twój własny agent dowiaduje się, mniej więcej gdzie jesteś, kiedy pytasz o miejsca, trasy lub pogodę. Trafia to tylko na Twój własny serwer."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com Localização atual ativada, seu próprio agente fica sabendo mais ou menos onde você está quando você pergunta sobre lugares, rotas ou o tempo. Isso vai para o seu próprio servidor e para nenhum outro lugar."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда включена «Текущая геопозиция», ваш собственный агент узнаёт, где вы примерно находитесь, когда вы спрашиваете о местах, маршрутах или погоде. Это уходит только на ваш собственный сервер."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Aktuell plats på får din egen agent veta ungefär var du är när du frågar om platser, vägbeskrivningar eller vädret. Det går till din egen server och ingen annanstans."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mevcut Konum açıkken yerler, yol tarifleri veya hava durumu hakkında sorduğunuzda kendi ajanınız yaklaşık nerede olduğunuzu öğrenir. Bu bilgi yalnızca kendi sunucunuza gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли ввімкнено «Поточне місцезнаходження», ваш власний агент дізнається, де ви приблизно перебуваєте, коли ви питаєте про місця, маршрути чи погоду. Це надходить лише на ваш власний сервер."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开当前位置后，当你询问地点、路线或天气时，你自己的智能体会知道你的大致位置。它只会发送到你自己的服务器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟目前位置後，當你詢問地點、路線或天氣時，你自己的代理會知道你的大概位置。它只會傳送到你自己的伺服器。"
+          }
+        }
+      }
+    },
     "NSLocationWhenInUseUsageDescription" : {
       "comment" : "Why Redde asks for this permission",
       "extractionState" : "extracted_with_value",
@@ -920,109 +1034,109 @@
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Når Steder er slået til, bruger Redde, hvor du er, til at angive et sted og opdage, når du ankommer eller tager af sted. Hvor du er, bliver på din iPhone; kun “ankommet hjem” sendes til din server."
+            "value" : "Når Steder er slået til, bruger Redde, hvor du er, til at angive et sted og opdage, når du ankommer eller tager af sted; kun “ankommet hjem” sendes til din server. Når Aktuel placering er slået til, får din egen agent at vide omtrent, hvor du er, når du spørger om steder, vejvisning eller vejret."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wenn Orte aktiviert ist, verwendet Redde deinen Standort, um einen Ort festzulegen und zu bemerken, wann du ankommst oder gehst. Wo du bist, bleibt auf deinem iPhone; nur „zu Hause angekommen“ geht an deinen Server."
+            "value" : "Wenn Orte aktiviert ist, verwendet Redde deinen Standort, um einen Ort festzulegen und zu bemerken, wann du ankommst oder gehst; nur „zu Hause angekommen“ geht an deinen Server. Wenn Aktueller Standort aktiviert ist, erfährt dein eigener Agent ungefähr, wo du bist, wenn du nach Orten, Wegbeschreibungen oder dem Wetter fragst."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "With Places turned on, Redde uses where you are to set a place and to notice when you arrive or leave. Where you are stays on your iPhone; only \"arrived at Home\" goes to your server."
+            "value" : "With Places on, Redde uses where you are to set a place and to notice when you arrive or leave; only \"arrived at Home\" goes to your server. With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Con Lugares activado, Redde usa tu ubicación para definir un lugar y para detectar cuándo llegas o te vas. Tu ubicación se queda en tu iPhone; solo “llegada a casa” llega a tu servidor."
+            "value" : "Con Lugares activado, Redde usa tu ubicación para definir un lugar y para detectar cuándo llegas o te vas; solo “llegada a casa” llega a tu servidor. Con Ubicación actual activada, tu propio agente sabe aproximadamente dónde estás cuando preguntas por lugares, indicaciones o el tiempo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quand Lieux est activé, Redde utilise votre position pour définir un lieu et remarquer quand vous arrivez ou partez. Votre position reste sur votre iPhone ; seul « arrivée à la maison » est envoyé à votre serveur."
+            "value" : "Quand Lieux est activé, Redde utilise votre position pour définir un lieu et remarquer quand vous arrivez ou partez ; seul « arrivée à la maison » est envoyé à votre serveur. Quand Position actuelle est activé, votre propre agent apprend à peu près où vous êtes lorsque vous posez une question sur des lieux, un itinéraire ou la météo."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Con Luoghi attivo, Redde usa la tua posizione per impostare un luogo e accorgersi di quando arrivi o te ne vai. La tua posizione resta sul tuo iPhone; al tuo server arriva solo “arrivo a casa”."
+            "value" : "Con Luoghi attivo, Redde usa la tua posizione per impostare un luogo e accorgersi di quando arrivi o te ne vai; al tuo server arriva solo “arrivo a casa”. Con Posizione attuale attiva, il tuo agente sa più o meno dove sei quando chiedi di luoghi, indicazioni o meteo."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "場所をオンにすると、Reddeは現在地を使って場所を設定し、到着や出発に気づきます。現在地はiPhoneの中にとどまり、サーバに送られるのは「自宅に到着」だけです。"
+            "value" : "場所をオンにすると、Reddeは現在地を使って場所を設定し、到着や出発に気づきます。サーバに送られるのは「自宅に到着」だけです。現在地をオンにすると、場所、経路、天気について尋ねたときに、あなた自身のエージェントにおおよその現在地が伝わります。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "장소를 켜면 Redde가 현재 위치를 사용해 장소를 설정하고 도착이나 출발을 알아챕니다. 현재 위치는 iPhone에 남으며, 서버에는 “집에 도착”만 전송됩니다."
+            "value" : "장소를 켜면 Redde가 현재 위치를 사용해 장소를 설정하고 도착이나 출발을 알아채며, 서버에는 “집에 도착”만 전송됩니다. 현재 위치를 켜면 장소, 길 안내, 날씨를 물어볼 때 내 에이전트가 대략적인 위치를 알게 됩니다."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Når Steder er slått på, bruker Redde hvor du er til å angi et sted og merke når du kommer eller drar. Hvor du er, blir på iPhonen din; bare «kommet hjem» går til tjeneren din."
+            "value" : "Når Steder er slått på, bruker Redde hvor du er til å angi et sted og merke når du kommer eller drar; bare «kommet hjem» går til tjeneren din. Når Nåværende posisjon er slått på, får din egen agent vite omtrent hvor du er når du spør om steder, veibeskrivelser eller været."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Met Locaties aan gebruikt Redde waar je bent om een locatie in te stellen en te merken wanneer je aankomt of vertrekt. Waar je bent, blijft op je iPhone; alleen ‘thuis aangekomen’ gaat naar je server."
+            "value" : "Met Locaties aan gebruikt Redde waar je bent om een locatie in te stellen en te merken wanneer je aankomt of vertrekt; alleen ‘thuis aangekomen’ gaat naar je server. Met Huidige locatie aan hoort je eigen agent ongeveer waar je bent als je vraagt naar plekken, routes of het weer."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gdy Miejsca są włączone, Redde używa Twojej lokalizacji, aby ustawić miejsce i zauważać, kiedy przybywasz lub wychodzisz. To, gdzie jesteś, zostaje na Twoim iPhonie; do Twojego serwera trafia tylko „przybycie do domu”."
+            "value" : "Gdy Miejsca są włączone, Redde używa Twojej lokalizacji, aby ustawić miejsce i zauważać, kiedy przybywasz lub wychodzisz; do Twojego serwera trafia tylko „przybycie do domu”. Gdy Bieżąca lokalizacja jest włączona, Twój własny agent dowiaduje się, mniej więcej gdzie jesteś, kiedy pytasz o miejsca, trasy lub pogodę."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Com Locais ativado, o Redde usa onde você está para definir um local e perceber quando você chega ou sai. Onde você está fica no seu iPhone; só “chegou em casa” vai para o seu servidor."
+            "value" : "Com Locais ativado, o Redde usa onde você está para definir um local e perceber quando você chega ou sai; só “chegou em casa” vai para o seu servidor. Com Localização atual ativada, seu próprio agente fica sabendo mais ou menos onde você está quando você pergunta sobre lugares, rotas ou o tempo."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Когда «Места» включены, Redde использует ваше местоположение, чтобы задать место и замечать, когда вы приходите или уходите. Ваше местоположение остается на iPhone; на сервер уходит только «прибытие домой»."
+            "value" : "Когда «Места» включены, Redde использует ваше местоположение, чтобы задать место и замечать, когда вы приходите или уходите; на сервер уходит только «прибытие домой». Когда включена «Текущая геопозиция», ваш собственный агент узнаёт, где вы примерно находитесь, когда вы спрашиваете о местах, маршрутах или погоде."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Med Platser på använder Redde var du är för att ange en plats och märka när du kommer fram eller åker. Var du är stannar på din iPhone; bara ”kommit hem” går till din server."
+            "value" : "Med Platser på använder Redde var du är för att ange en plats och märka när du kommer fram eller åker; bara ”kommit hem” går till din server. Med Aktuell plats på får din egen agent veta ungefär var du är när du frågar om platser, vägbeskrivningar eller vädret."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Yerler açıkken Redde, bir yer belirlemek ve vardığınızı ya da ayrıldığınızı fark etmek için nerede olduğunuzu kullanır. Nerede olduğunuz iPhone'unuzda kalır; sunucunuza yalnızca “eve varıldı” gider."
+            "value" : "Yerler açıkken Redde, bir yer belirlemek ve vardığınızı ya da ayrıldığınızı fark etmek için nerede olduğunuzu kullanır; sunucunuza yalnızca “eve varıldı” gider. Mevcut Konum açıkken yerler, yol tarifleri veya hava durumu hakkında sorduğunuzda kendi ajanınız yaklaşık nerede olduğunuzu öğrenir."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Коли «Місця» ввімкнено, Redde використовує ваше місцезнаходження, щоб задати місце й помічати, коли ви приходите або йдете. Ваше місцезнаходження лишається на iPhone; на сервер надходить лише «прибуття додому»."
+            "value" : "Коли «Місця» ввімкнено, Redde використовує ваше місцезнаходження, щоб задати місце й помічати, коли ви приходите або йдете; на сервер надходить лише «прибуття додому». Коли ввімкнено «Поточне місцезнаходження», ваш власний агент дізнається, де ви приблизно перебуваєте, коли ви питаєте про місця, маршрути чи погоду."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "打开地点后，Redde会使用你的位置来设置地点，并察觉你何时到达或离开。你的位置保留在iPhone上；只有“已到家”会发送到你的服务器。"
+            "value" : "打开地点后，Redde会使用你的位置来设置地点，并察觉你何时到达或离开；只有“已到家”会发送到你的服务器。打开当前位置后，当你询问地点、路线或天气时，你自己的智能体会知道你的大致位置。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "開啟地點後，Redde 會使用你的位置來設定地點，並察覺你何時抵達或離開。你的位置會保留在 iPhone 上；只有「已到家」會傳送到你的伺服器。"
+            "value" : "開啟地點後，Redde 會使用你的位置來設定地點，並察覺你何時抵達或離開；只有「已到家」會傳送到你的伺服器。開啟目前位置後，當你詢問地點、路線或天氣時，你自己的代理會知道你的大概位置。"
           }
         }
       }

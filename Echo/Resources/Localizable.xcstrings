@@ -85572,6 +85572,112 @@
         }
       }
     },
+    "Current Location" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktuel placering"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktueller Standort"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ubicación actual"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Position actuelle"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Posizione attuale"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "現在地"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "현재 위치"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nåværende posisjon"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Huidige locatie"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bieżąca lokalizacja"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Localização atual"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Текущая геопозиция"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktuell plats"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mevcut Konum"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поточне місцезнаходження"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前位置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前位置"
+          }
+        }
+      }
+    },
     "Current voice" : {
       "localizations" : {
         "da" : {
@@ -111311,6 +111417,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "尋找外掛"
+          }
+        }
+      }
+    },
+    "Finding where you are…" : {
+      "comment" : "Settings → Agent → Current Location, while the first fix is found",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finder ud af, hvor du er…"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standort wird ermittelt …"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscando dónde estás…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recherche de votre position…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sto cercando dove sei…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "現在地を確認しています…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "현재 위치를 찾는 중…"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finner ut hvor du er…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoeken waar je bent…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustalanie, gdzie jesteś…"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descobrindo onde você está…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Определяем, где вы находитесь…"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tar reda på var du är…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konumunuz bulunuyor…"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Визначаємо, де ви перебуваєте…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在确定你的位置…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在確定你的位置…"
           }
         }
       }
@@ -192182,6 +192395,112 @@
         }
       }
     },
+    "Only when you ask about places, directions, maps or the weather does your agent hear roughly where you are, the neighborhood and town. It goes to your own server and nowhere else." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kun når du spørger om steder, vejvisning, kort eller vejret, får din agent at vide omtrent, hvor du er: kvarteret og byen. Det går til din egen server og ingen andre steder."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nur wenn du nach Orten, Wegbeschreibungen, Karten oder dem Wetter fragst, erfährt dein Agent ungefähr, wo du bist: das Viertel und die Stadt. Das geht an deinen eigenen Server und nirgendwo sonst hin."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo cuando preguntas por lugares, indicaciones, mapas o el tiempo, tu agente sabe aproximadamente dónde estás: el barrio y la ciudad. Va a tu propio servidor y a ningún otro sitio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre agent n’apprend à peu près où vous êtes, le quartier et la ville, que lorsque vous posez une question sur des lieux, un itinéraire, une carte ou la météo. Cela va à votre propre serveur et nulle part ailleurs."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo quando chiedi di luoghi, indicazioni, mappe o meteo il tuo agente sa più o meno dove sei: il quartiere e la città. Va al tuo server e da nessun’altra parte."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "場所、経路、地図、天気について尋ねたときだけ、エージェントにおおよその現在地（地区と市町村）が伝わります。送られるのはあなた自身のサーバだけです。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "장소, 길 안내, 지도, 날씨를 물어볼 때만 에이전트가 대략적인 위치(동네와 도시)를 알게 됩니다. 위치는 내 서버로만 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bare når du spør om steder, veibeskrivelser, kart eller været, får agenten din vite omtrent hvor du er: nabolaget og byen. Det går til din egen tjener og ingen andre steder."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alleen als je vraagt naar plekken, routes, kaarten of het weer, hoort je agent ongeveer waar je bent: de buurt en de plaats. Het gaat naar je eigen server en nergens anders heen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tylko gdy pytasz o miejsca, trasy, mapy lub pogodę, Twój agent dowiaduje się, mniej więcej gdzie jesteś: dzielnica i miasto. Trafia to tylko na Twój własny serwer."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Só quando você pergunta sobre lugares, rotas, mapas ou o tempo é que seu agente fica sabendo mais ou menos onde você está: o bairro e a cidade. Isso vai para o seu próprio servidor e para nenhum outro lugar."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Только когда вы спрашиваете о местах, маршрутах, картах или погоде, ваш агент узнаёт, где вы примерно находитесь: район и город. Это уходит только на ваш собственный сервер."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bara när du frågar om platser, vägbeskrivningar, kartor eller vädret får din agent veta ungefär var du är: området och orten. Det går till din egen server och ingen annanstans."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınız yaklaşık nerede olduğunuzu, yani semti ve şehri, yalnızca yerler, yol tarifleri, haritalar veya hava durumu hakkında sorduğunuzda öğrenir. Bu bilgi yalnızca kendi sunucunuza gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Лише коли ви питаєте про місця, маршрути, карти чи погоду, ваш агент дізнається, де ви приблизно перебуваєте: район і місто. Це надходить лише на ваш власний сервер."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只有在你询问地点、路线、地图或天气时，你的智能体才会知道你的大致位置：街区和城市。它只会发送到你自己的服务器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只有在你詢問地點、路線、地圖或天氣時，你的代理才會知道你的大概位置：街區和城市。它只會傳送到你自己的伺服器。"
+          }
+        }
+      }
+    },
     "Open" : {
       "localizations" : {
         "da" : {
@@ -220696,6 +221015,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Redde 沒有提醒事項的取用權限。請在「設定」→「App」→「Redde」中開啟。"
+          }
+        }
+      }
+    },
+    "Redde isn't allowed your location. Open Settings…" : {
+      "comment" : "Settings → Agent → Current Location, when location is denied for Redde",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde har ikke adgang til din placering. Åbn Indstillinger…"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde hat keinen Zugriff auf deinen Standort. Einstellungen öffnen …"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde no tiene permiso para usar tu ubicación. Abrir Ajustes…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde n’a pas accès à votre position. Ouvrir Réglages…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde non ha accesso alla tua posizione. Apri Impostazioni…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeに位置情報の使用が許可されていません。設定を開く…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde에 위치 접근이 허용되지 않았습니다. 설정 열기…"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde har ikke tilgang til posisjonen din. Åpne Innstillinger…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde heeft geen toegang tot je locatie. Open Instellingen…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde nie ma dostępu do Twojej lokalizacji. Otwórz Ustawienia…"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde não tem permissão para usar sua localização. Abra os Ajustes…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У Redde нет доступа к вашей геопозиции. Откройте Настройки…"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde har inte tillgång till din plats. Öppna Inställningar…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde'nin konumunuza erişim izni yok. Ayarlar'ı açın…"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde не має доступу до вашого місцезнаходження. Відкрийте Параметри…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde未获准使用你的位置。打开设置…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 未獲准使用你的位置。打開「設定」…"
           }
         }
       }
@@ -329783,6 +330209,113 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Your agent hears “near %@”." : {
+      "comment" : "Settings → Agent → Current Location: the place the agent is told, e.g. near Thornton Park, Orlando, FL",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent får at vide: “nær %@”."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Agent erfährt: „in der Nähe von %@“."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu agente sabe: “cerca de %@”."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre agent apprend : « près de %@ »."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo agente sa: “vicino a %@”."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントに伝わる内容：「%@付近」"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트에게 전달되는 내용: “%@ 근처”"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten din får høre: «nær %@»."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agent hoort: ‘in de buurt van %@’."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój agent dowiaduje się: „w pobliżu %@”."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu agente fica sabendo: “perto de %@”."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш агент узнаёт: «рядом с %@»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent får veta: ”nära %@”."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınız şunu öğrenir: “%@ yakınında”."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш агент дізнається: «поблизу %@»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的智能体会得知：“在%@附近”。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的代理會得知：「在%@附近」。"
           }
         }
       }

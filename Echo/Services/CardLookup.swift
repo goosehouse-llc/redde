@@ -6,7 +6,8 @@ import MapKit
 /// found with MapKit (on the phone, as the map cards' places are), its forecast asked of Open-Meteo
 /// by coordinates only, the same service the plugin asks, so the card and what the agent said agree.
 /// Only for a reply coming in (`Conversation.fillCards`): a card read back later stays as it was
-/// saved, its weather being that day's.
+/// saved, its weather being that day's. A card for here, with Current Location on, is for the place
+/// kept (`CurrentLocation.standIn`).
 @MainActor
 @Observable
 final class CardLookup {
@@ -15,7 +16,7 @@ final class CardLookup {
     /// A place as MapKit finds it: where it is and its time zone.
     struct Found: Sendable {
         var coordinate: CLLocationCoordinate2D
-        var timeZone: String?
+        var timeZone: String? = nil
     }
 
     /// The places being looked up now: their cards say so instead of drawing nothing.
@@ -62,7 +63,10 @@ final class CardLookup {
         if let kept = forecasts[key], kept.at.timeIntervalSinceNow > -600 { return kept.weather }
         looking.insert(Self.key(card.place))
         defer { looking.remove(Self.key(card.place)) }
-        guard let found = await find(card.place),
+        // For here, with Current Location on (asked 2026-10-30): the place kept, not a search.
+        var here = CurrentLocation.standIn(for: card.place).map { Found(coordinate: $0) }
+        if here == nil { here = await find(card.place) }
+        guard let found = here,
               let data = await fetch(OpenMeteo.url(at: found.coordinate, units: card.units)),
               let json = try? JSONValue.parse(data),
               let weather = OpenMeteo.weather(json, place: card.place, units: card.units) else { return nil }

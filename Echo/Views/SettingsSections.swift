@@ -321,6 +321,67 @@ struct ModelSettings: View {
     }
 }
 
+/// Settings → Agent → Current Location (`CurrentLocation`, asked 2026-10-30): the switch, and
+/// under it, while on, what the agent hears, or that the device doesn't allow it, with the way to
+/// Settings. Turning it on asks for the permission the first time.
+struct CurrentLocationSection: View {
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        Section {
+            Toggle(isOn: Binding(get: { Settings.shared.currentLocation }, set: { on in
+                Settings.shared.currentLocation = on
+                CurrentLocationService.shared.turned(on: on)
+            })) {
+                Label("Current Location", systemImage: "location")
+            }
+            if Settings.shared.currentLocation { status }
+        } footer: {
+            Text("Only when you ask about places, directions, maps or the weather does your agent hear roughly where you are, the neighborhood and town. It goes to your own server and nowhere else.")
+        }
+        .id("currentLocation")
+    }
+
+    @ViewBuilder private var status: some View {
+        let service = CurrentLocationService.shared
+        Group {
+            if service.refused {
+                Button(String(localized: "Redde isn't allowed your location. Open Settings…",
+                              comment: "Settings → Agent → Current Location, when location is denied for Redde")) {
+                    if let url = URL(string: Self.settingsLink) { openURL(url) }
+                }
+            } else if let kept = service.kept {
+                let place = kept.words ?? String(format: "%.3f, %.3f", kept.latitude, kept.longitude)
+                Label {
+                    Text("Your agent hears “near \(place)”.", comment: "Settings → Agent → Current Location: the place the agent is told, e.g. near Thornton Park, Orlando, FL")
+                } icon: {
+                    Image(systemName: "location.fill").foregroundStyle(.tint)
+                }
+                .foregroundStyle(.secondary)
+            } else if service.allowed || service.finding {
+                Label {
+                    Text("Finding where you are…", comment: "Settings → Agent → Current Location, while the first fix is found")
+                } icon: {
+                    ProgressView().controlSize(.small)
+                }
+                .foregroundStyle(.secondary)
+            }
+        }
+        .font(.footnote)
+        .onAppear { service.cameForward() }   // a fresh fix, if the last is a few minutes old
+    }
+
+    /// Location Services in the system's settings: the app's own page on the iPhone, the
+    /// Location Services list on the Mac.
+    private static var settingsLink: String {
+        #if os(macOS)
+        "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices"
+        #else
+        UIApplication.openSettingsURLString
+        #endif
+    }
+}
+
 /// Skills, tools and the agent's context and memory files. All live on the gateway.
 struct AgentSettings<Details: View>: View {
     /// An API key or a Dashboard login is stored.
@@ -423,6 +484,8 @@ struct AgentSettings<Details: View>: View {
         } footer: {
             Text("The calendars your agent looks at when you ask what's on, and the events calendar cards show.")
         }
+
+        CurrentLocationSection()
 
         Section {
             Toggle(isOn: Binding(get: { Settings.shared.replyCards }, set: { Settings.shared.replyCards = $0 })) {
