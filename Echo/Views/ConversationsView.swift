@@ -309,9 +309,9 @@ struct ConversationsList: View {
                 if allServers, let here = settings.activeServer?.title {
                     Text("· new chats on \(here)").foregroundStyle(.secondary).lineLimit(1)
                 }
-                Image(systemName: "chevron.up.chevron.down").font(.caption2.weight(.semibold))
+                Image(systemName: "chevron.up.chevron.down").chatFont(.caption2, weight: .semibold)
             }
-            .font(.subheadline.weight(.medium))
+            .chatFont(.subheadline, weight: .medium)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityLabel("Server")
@@ -358,9 +358,9 @@ struct ConversationsList: View {
             HStack(spacing: 6) {
                 Image(systemName: allProfiles ? "rectangle.stack" : "person.crop.circle")
                 Text(title).lineLimit(1)
-                Image(systemName: "chevron.up.chevron.down").font(.caption2.weight(.semibold))
+                Image(systemName: "chevron.up.chevron.down").chatFont(.caption2, weight: .semibold)
             }
-            .font(.subheadline.weight(.medium))
+            .chatFont(.subheadline, weight: .medium)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityLabel("Profile")
@@ -639,10 +639,10 @@ struct ConversationsList: View {
             } footer: {
                 if arrangingBots {
                     Text("Drag bots and group chats by their handles into the order you want.")
-                        .font(.footnote).foregroundStyle(.secondary)
+                        .chatFont(.footnote).foregroundStyle(.secondary)
                 } else if apiBotsOnly, showBotRows, !others {
                     Text("Bots are your server's other profiles. On the Hermes API, add each by its name and its own API key; with the Dashboard login saved in Settings, Redde lists them and has group chats too.")
-                        .font(.footnote).foregroundStyle(.secondary)
+                        .chatFont(.footnote).foregroundStyle(.secondary)
                 }
             }
             .sheet(isPresented: $addingAPIBot) {
@@ -685,7 +685,7 @@ struct ConversationsList: View {
                 Image(systemName: systemImage)
                     .foregroundStyle(Settings.shared.resolvedTheme.accent)
                     .frame(width: 32, height: 32)
-                Text(title).font(.body)
+                Text(title).chatFont(.body)
             }
             // The whole row: a short title ("Topology") left most of it dead to a tap.
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -744,7 +744,7 @@ struct ConversationsList: View {
             if folds, botsExpanded {
                 Button { withAnimation { botsExpanded = false } } label: {
                     Label("Fewer", systemImage: "chevron.up")
-                        .font(.caption.weight(.medium))
+                        .chatFont(.caption, weight: .medium)
                         .foregroundStyle(Settings.shared.resolvedTheme.accent)
                         .padding(.horizontal, 12).padding(.vertical, 4)
                         .contentShape(.rect)
@@ -789,7 +789,7 @@ struct ConversationsList: View {
                                 .offset(x: 8, y: -4)
                         } else if marks.kind == .needsYou {
                             Image(systemName: "exclamationmark.circle.fill")
-                                .font(.caption).foregroundStyle(.orange)
+                                .chatFont(.caption).foregroundStyle(.orange)
                                 .background(.background, in: .circle)
                                 .offset(x: 6, y: -4)
                         } else if marks.unread {
@@ -799,7 +799,7 @@ struct ConversationsList: View {
                     .overlay(alignment: .bottomTrailing) {
                         if muted {
                             Image(systemName: "bell.slash.fill")
-                                .font(.system(size: 9)).foregroundStyle(.secondary)
+                                .chatFont(size: 9).foregroundStyle(.secondary)
                                 .padding(2)
                                 .background(.background, in: .circle)
                                 .offset(x: 5, y: 3)
@@ -808,7 +808,7 @@ struct ConversationsList: View {
                     .overlay(alignment: .bottomLeading) {
                         if let engine = settings.liveEngine(for: bot.name) {
                             Image(systemName: "phone.fill")
-                                .font(.system(size: 9)).foregroundStyle(.secondary)
+                                .chatFont(size: 9).foregroundStyle(.secondary)
                                 .padding(2)
                                 .background(.background, in: .circle)
                                 .offset(x: -5, y: 3)
@@ -816,7 +816,7 @@ struct ConversationsList: View {
                         }
                     }
                 Text(name).lineLimit(1).truncationMode(.tail)
-                    .font(.caption.weight(isOpen ? .semibold : .regular))
+                    .chatFont(.caption, weight: isOpen ? .semibold : .regular)
                     .foregroundStyle(isOpen ? accent : .primary)
             }
             .frame(maxWidth: .infinity)
@@ -841,10 +841,10 @@ struct ConversationsList: View {
         Button(action: action) {
             VStack(spacing: 3) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 24, weight: .medium))
+                    .chatFont(size: 24, weight: .medium)
                     .foregroundStyle(Settings.shared.resolvedTheme.accent)
                     .frame(width: Self.tileFace, height: Self.tileFace)
-                Text(title).font(.caption).lineLimit(1)
+                Text(title).chatFont(.caption).lineLimit(1)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 4)
@@ -909,14 +909,14 @@ struct ConversationsList: View {
                 BotAvatar(face: face, name: name)
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
-                        Text(name).font(.body.weight(.semibold)).lineLimit(1)
+                        Text(name).chatFont(.body, weight: .semibold).lineLimit(1)
                         if let engine = settings.liveEngine(for: bot.name) { LiveCallMark(engine: engine) }
                         if muted { MutedMark() }
                         Spacer(minLength: 8)
                         if openingBot == bot.name || marks.kind == .working {
                             ProgressView().controlSize(.small)
                         } else if let when = bot.lastActive {
-                            Text(DateGroup.rowTime(when)).font(.caption).foregroundStyle(.secondary)
+                            Text(DateGroup.rowTime(when)).chatFont(.caption).foregroundStyle(.secondary)
                         }
                     }
                     HStack(spacing: 6) {
@@ -925,7 +925,7 @@ struct ConversationsList: View {
                              ?? bot.description.nilIfEmpty ?? tag)
                             .lineLimit(1)
                     }
-                    .font(.subheadline).foregroundStyle(.secondary)
+                    .chatFont(.subheadline).foregroundStyle(.secondary)
                 }
             }
             .padding(.vertical, 2)
@@ -954,13 +954,13 @@ struct ConversationsList: View {
                     .frame(width: 32, alignment: .leading)
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
-                        Text(room.name).font(.body.weight(.semibold)).lineLimit(1)
+                        Text(room.name).chatFont(.body, weight: .semibold).lineLimit(1)
                         if muted { MutedMark() }
                         Spacer(minLength: 8)
                         if marks.kind == .working {
                             ProgressView().controlSize(.small)
                         } else if let when = room.updatedAt {
-                            Text(DateGroup.rowTime(when)).font(.caption).foregroundStyle(.secondary)
+                            Text(DateGroup.rowTime(when)).chatFont(.caption).foregroundStyle(.secondary)
                         }
                     }
                     HStack(spacing: 5) {
@@ -970,7 +970,7 @@ struct ConversationsList: View {
                         }
                         Text(room.members.map(\.label).formatted(.list(type: .and)))
                     }
-                    .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
+                    .chatFont(.subheadline).foregroundStyle(.secondary).lineLimit(1)
                 }
             }
             .padding(.vertical, 2)
@@ -1124,12 +1124,12 @@ struct ConversationsList: View {
                             .frame(width: 28, height: 28)
                             .background(.quaternary, in: .rect(cornerRadius: 7))
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(project.label).font(.body).lineLimit(1)
+                            Text(project.label).chatFont(.body).lineLimit(1)
                             HStack(spacing: 4) {
                                 Text(String(localized: "\(project.sessionCount) conversations"))
                                 if let when = project.lastActive { Text("·"); Text(when, format: .relative(presentation: .named)) }
                             }
-                            .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                            .chatFont(.caption).foregroundStyle(.secondary).lineLimit(1)
                         }
                     }
                 }
@@ -1145,7 +1145,7 @@ struct ConversationsList: View {
                         .foregroundStyle(Settings.shared.resolvedTheme.accent)
                         .frame(width: 28, height: 28)
                         .background(.quaternary, in: .rect(cornerRadius: 7))
-                    Text("New Project").font(.body)
+                    Text("New Project").chatFont(.body)
                 }
                 .contentShape(.rect)
             }
@@ -1165,13 +1165,13 @@ struct ConversationsList: View {
             HStack(spacing: 6) {
                 Text(title)
                 if !isOpen.wrappedValue {
-                    Text("\(count)").font(.caption2.weight(.semibold)).monospacedDigit()
+                    Text("\(count)").chatFont(.caption2, weight: .semibold).monospacedDigit()
                         .padding(.horizontal, 6).padding(.vertical, 1)
                         .background(.quaternary, in: .capsule)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
+                    .chatFont(.caption, weight: .semibold)
                     .rotationEffect(.degrees(isOpen.wrappedValue ? 90 : 0))
             }
             .contentShape(.rect)
@@ -1260,10 +1260,10 @@ struct ConversationsList: View {
         } else if let ledgerError {
             // A failed rename/pin/delete must not blank the loaded list; show it inline.
             Label(ledgerError, systemImage: "exclamationmark.triangle")
-                .font(.footnote).foregroundStyle(.orange).listRowSeparator(.hidden)
+                .chatFont(.footnote).foregroundStyle(.orange).listRowSeparator(.hidden)
             if let id = savedCopyOffered, let copy = store.summaries.first(where: { $0.id == id }) {
                 Button("Open the copy on this iPhone, from \(DateGroup.rowTime(copy.updatedAt))", systemImage: "internaldrive") { openSaved(copy) }
-                    .font(.footnote)
+                    .chatFont(.footnote)
                     .listRowSeparator(.hidden)
             }
         } else if ledger.isEmpty && !loading {
@@ -1276,7 +1276,7 @@ struct ConversationsList: View {
                   ? String(localized: "\(serversUnreachable.formatted()) didn't answer, so its chats aren't here.", comment: "%@ is one server's name")
                   : String(localized: "\(serversUnreachable.formatted()) didn't answer, so their chats aren't here.", comment: "%@ is a list of servers' names"),
                   systemImage: "wifi.exclamationmark")
-                .font(.footnote).foregroundStyle(.secondary).listRowSeparator(.hidden)
+                .chatFont(.footnote).foregroundStyle(.secondary).listRowSeparator(.hidden)
         }
         let rows = visibleLedger
         let pinned = rows.filter { $0.pinned == true }
@@ -1318,7 +1318,7 @@ struct ConversationsList: View {
                 }
                 if let messageSearchProblem {
                     Label(messageSearchProblem, systemImage: "exclamationmark.triangle")
-                        .font(.footnote).foregroundStyle(.secondary).listRowSeparator(.hidden)
+                        .chatFont(.footnote).foregroundStyle(.secondary).listRowSeparator(.hidden)
                 }
             } header: {
                 HStack(spacing: 6) {
@@ -1334,16 +1334,16 @@ struct ConversationsList: View {
         let session = hit.session
         return VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 6) {
-                Text(session.displayTitle).font(.body.weight(.semibold)).lineLimit(1)
+                Text(session.displayTitle).chatFont(.body, weight: .semibold).lineLimit(1)
                 Spacer(minLength: 8)
                 if opening == session.id {
                     ProgressView().controlSize(.small)
                 } else if let when = session.lastActiveDate {
-                    Text(DateGroup.rowTime(when)).font(.caption).foregroundStyle(.secondary)
+                    Text(DateGroup.rowTime(when)).chatFont(.caption).foregroundStyle(.secondary)
                 }
             }
             Text(Self.snippetText(hit, accent: Settings.shared.resolvedTheme.accent))
-                .font(.subheadline)
+                .chatFont(.subheadline)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
             if hit.archived || !["api_server", "api-server", ""].contains(session.source ?? "") {
@@ -1361,7 +1361,7 @@ struct ConversationsList: View {
 
     private func capsule(_ text: String) -> some View {
         Text(text)
-            .font(.caption2.weight(.semibold))
+            .chatFont(.caption2, weight: .semibold)
             .foregroundStyle(.secondary)
             .padding(.horizontal, 6).padding(.vertical, 1)
             .background(.quaternary, in: .capsule)
@@ -1427,7 +1427,7 @@ struct ConversationsList: View {
                 ForEach(notes) { note in
                     VStack(alignment: .leading, spacing: 3) {
                         Text(note.text).lineLimit(3)
-                        Text(DateGroup.rowTime(note.at)).font(.caption).foregroundStyle(.secondary)
+                        Text(DateGroup.rowTime(note.at)).chatFont(.caption).foregroundStyle(.secondary)
                     }
                     .accessibilityElement(children: .combine)
                     .selectionDisabled()
@@ -1443,7 +1443,7 @@ struct ConversationsList: View {
 
     private func groupHeader(_ title: String) -> some View {
         Text(title)
-            .font(.footnote.weight(.semibold))
+            .chatFont(.footnote, weight: .semibold)
             .foregroundStyle(.secondary)
             .textCase(.uppercase)
     }
@@ -1653,14 +1653,14 @@ struct ConversationsList: View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 6) {
                 if session.pinned == true {
-                    Image(systemName: "pin.fill").font(.caption2).foregroundStyle(.orange).accessibilityLabel("Pinned")
+                    Image(systemName: "pin.fill").chatFont(.caption2).foregroundStyle(.orange).accessibilityLabel("Pinned")
                 }
-                Text(session.displayTitle).font(.body.weight(.semibold)).lineLimit(1)
+                Text(session.displayTitle).chatFont(.body, weight: .semibold).lineLimit(1)
                 Spacer(minLength: 8)
                 if opening == session.id || marks.kind == .working {
                     ProgressView().controlSize(.small)
                 } else if let when = session.lastActiveDate {
-                    Text(DateGroup.rowTime(when)).font(.caption).foregroundStyle(.secondary)
+                    Text(DateGroup.rowTime(when)).chatFont(.caption).foregroundStyle(.secondary)
                 }
             }
             HStack(spacing: 6) {
@@ -1670,7 +1670,7 @@ struct ConversationsList: View {
                 if let server = session.otherServer {
                     Label(server.name, systemImage: "server.rack")
                         .labelStyle(.titleAndIcon)
-                        .font(.caption2.weight(.semibold))
+                        .chatFont(.caption2, weight: .semibold)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 6).padding(.vertical, 1)
                         .background(.quaternary, in: .capsule)
@@ -1680,7 +1680,7 @@ struct ConversationsList: View {
                 // Another profile's, with All Profiles on: whose it is.
                 if let route = session.elsewhere {
                     Text(profileLabel(route.profile))
-                        .font(.caption2.weight(.semibold))
+                        .chatFont(.caption2, weight: .semibold)
                         .foregroundStyle(Settings.shared.resolvedTheme.accent)
                         .padding(.horizontal, 6).padding(.vertical, 1)
                         .background(Settings.shared.resolvedTheme.accent.opacity(0.14), in: .capsule)
@@ -1689,14 +1689,14 @@ struct ConversationsList: View {
                 }
                 if let source = session.source, !["api_server", "api-server"].contains(source) {
                     Text(session.sourceLabel)
-                        .font(.caption2.weight(.semibold))
+                        .chatFont(.caption2, weight: .semibold)
                         .padding(.horizontal, 6).padding(.vertical, 1)
                         .background(.quaternary, in: .capsule)
                 }
                 Text(session.preview?.nilIfEmpty.map(ServeMedia.preview) ?? session.message_count.map { String(localized: "\($0) messages") } ?? " ")
                     .lineLimit(1)
             }
-            .font(.subheadline)
+            .chatFont(.subheadline)
             .foregroundStyle(.secondary)
         }
         .padding(.vertical, 2)
@@ -1706,7 +1706,7 @@ struct ConversationsList: View {
     /// "Draft", in front of a row's second line: something was written there and not sent.
     private var draftMark: some View {
         Text("Draft")
-            .font(.subheadline.weight(.semibold))
+            .chatFont(.subheadline, weight: .semibold)
             .foregroundStyle(Settings.shared.resolvedTheme.accent)
             .accessibilityLabel("Has a draft")
     }
@@ -2096,9 +2096,9 @@ struct ConversationsList: View {
     private func keptRow(_ record: ConversationSummary, caption: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 6) {
-                Text(record.title).font(.body.weight(.semibold)).lineLimit(1)
+                Text(record.title).chatFont(.body, weight: .semibold).lineLimit(1)
                 Spacer(minLength: 8)
-                Text(DateGroup.rowTime(record.updatedAt)).font(.caption).foregroundStyle(.secondary)
+                Text(DateGroup.rowTime(record.updatedAt)).chatFont(.caption).foregroundStyle(.secondary)
             }
             HStack(spacing: 6) {
                 if drafts.isWaiting(record.id) { draftMark }
@@ -2106,7 +2106,7 @@ struct ConversationsList: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-            .font(.subheadline)
+            .chatFont(.subheadline)
         }
         .padding(.vertical, 2)
         .contentShape(Rectangle())
@@ -2183,7 +2183,7 @@ struct SessionUsageView: View {
                 if (session.cost ?? 0) > 0 {
                     Section {
                         Text("Costs are the gateway's own estimate from provider pricing.")
-                            .font(.footnote).foregroundStyle(.secondary)
+                            .chatFont(.footnote).foregroundStyle(.secondary)
                     }
                 }
             }
@@ -2238,7 +2238,7 @@ struct ProjectSessionsView: View {
                     if canStart, let path = project.path {
                         VStack(spacing: 6) {
                             Text("Conversations started here work in its folder on your server:")
-                            Text(path).font(.footnote.monospaced()).textSelection(.enabled)
+                            Text(path).chatFont(.footnote, design: .monospaced).textSelection(.enabled)
                         }
                     }
                 } actions: {
@@ -2336,7 +2336,7 @@ struct ProjectSessionsView: View {
                               unread: activity.isUnread(session, open: conversation))
         return VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(session.displayTitle).font(.body).lineLimit(1)
+                Text(session.displayTitle).chatFont(.body).lineLimit(1)
                 Spacer()
                 if opening == session.id || marks.kind == .working {
                     ProgressView().controlSize(.small)
@@ -2346,13 +2346,13 @@ struct ProjectSessionsView: View {
             }
             HStack(spacing: 6) {
                 if marks.kind == .needsYou { NeedsYouTag() }
-                Text(session.sourceLabel).font(.caption2.weight(.semibold))
+                Text(session.sourceLabel).chatFont(.caption2, weight: .semibold)
                     .padding(.horizontal, 6).padding(.vertical, 2).background(.quaternary, in: .capsule)
                 if let when = session.lastActiveDate { Text(when, format: .relative(presentation: .named)) }
                 if let n = session.message_count { Text("·"); Text("\(n) messages") }
             }
-            .font(.caption).foregroundStyle(.secondary).lineLimit(1)
-            if let p = session.preview, !p.isEmpty { Text(ServeMedia.preview(p)).font(.footnote).foregroundStyle(.secondary).lineLimit(2) }
+            .chatFont(.caption).foregroundStyle(.secondary).lineLimit(1)
+            if let p = session.preview, !p.isEmpty { Text(ServeMedia.preview(p)).chatFont(.footnote).foregroundStyle(.secondary).lineLimit(2) }
         }
         .padding(.vertical, 2)
         .contentShape(.rect)
@@ -2403,7 +2403,7 @@ struct ChatMarks: Equatable {
 struct NeedsYouTag: View {
     var body: some View {
         Text("Needs you")
-            .font(.caption2.weight(.semibold))
+            .chatFont(.caption2, weight: .semibold)
             .foregroundStyle(.orange)
             .padding(.horizontal, 6).padding(.vertical, 1)
             .background(.orange.opacity(0.15), in: .capsule)

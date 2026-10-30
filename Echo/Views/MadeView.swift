@@ -140,13 +140,13 @@ struct MadeView: View {
     private func row(_ item: MadeItem) -> some View {
         HStack(spacing: 12) {
             Image(systemName: Self.symbol(item.kind))
-                .font(.title3)
+                .chatFont(.title3)
                 .foregroundStyle(.tint)
                 .frame(width: 32)
             VStack(alignment: .leading, spacing: 3) {
-                Text(item.name).font(.body).lineLimit(1).truncationMode(.middle)
+                Text(item.name).chatFont(.body).lineLimit(1).truncationMode(.middle)
                 Text([item.agent, item.chat, item.at.formatted(date: .omitted, time: .shortened)].compactMap { $0 }.joined(separator: " · "))
-                    .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    .chatFont(.caption).foregroundStyle(.secondary).lineLimit(1)
             }
             Spacer(minLength: 0)
         }

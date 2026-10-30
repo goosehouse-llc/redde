@@ -74,14 +74,14 @@ struct ConnectionProblemCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Image(systemName: symbol)
-                .font(.title2)
+                .chatFont(.title2)
                 .foregroundStyle(.orange)
                 .frame(width: 44, height: 44)
                 .background(.orange.opacity(0.14), in: .rect(cornerRadius: 12))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 6) {
-                Text(title).font(.title3.weight(.bold))
-                Text(explanation).font(.subheadline).foregroundStyle(.secondary)
+                Text(title).chatFont(.title3, weight: .bold)
+                Text(explanation).chatFont(.subheadline).foregroundStyle(.secondary)
             }
             .accessibilityElement(children: .combine)
             if needsSettings {
@@ -107,13 +107,13 @@ struct ConnectionProblemCard: View {
             .controlSize(.large)
             DisclosureGroup("Details", isExpanded: $showDetails) {
                 Text(message)
-                    .font(.caption.monospaced())
+                    .chatFont(.caption, design: .monospaced)
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 4)
             }
-            .font(.footnote)
+            .chatFont(.footnote)
             .tint(.secondary)
         }
         .padding(20)

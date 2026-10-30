@@ -6,6 +6,16 @@ struct ContentView: View {
     @Environment(Conversation.self) private var conversation
     @Environment(VoiceSession.self) private var voiceSession
     @Environment(\.theme) private var theme
+
+    /// The side panel's width: the fold's, on a half-open Duo; else the width given, which widens
+    /// on the Mac with the text zoom (`textScale`).
+    private func sidebarWidth(_ width: CGFloat) -> CGFloat {
+        #if os(macOS)
+        splitFold.map { $0.frame.midX } ?? width * theme.textScale
+        #else
+        splitFold.map { $0.frame.midX } ?? width
+        #endif
+    }
     @State private var settings = Settings.shared
     @State private var router = LaunchRouter.shared
     @State private var lock = AppLock.shared
@@ -111,9 +121,7 @@ struct ContentView: View {
                     // An iPhone Duo half open, folded down the middle: the list on the left page and the
                     // chat on the right, the line between them on the fold (as Apple's split views
                     // go), so that the chat and its message field are clear of it.
-                    .navigationSplitViewColumnWidth(min: splitFold.map { $0.frame.midX } ?? 280,
-                                                    ideal: splitFold.map { $0.frame.midX } ?? 340,
-                                                    max: splitFold.map { $0.frame.midX } ?? 420)
+                    .navigationSplitViewColumnWidth(min: sidebarWidth(280), ideal: sidebarWidth(340), max: sidebarWidth(420))
                 } detail: {
                     padDetail
                 }
@@ -504,7 +512,7 @@ struct ContentView: View {
                                                isPlaceholder: !conversation.hasMessages && conversation.outbox.isEmpty)
                                 }
                             }
-                            .font(.headline)
+                            .chatFont(.headline)
                             .foregroundStyle(theme.textColor)
                             .contentShape(Rectangle())
                         }
@@ -516,9 +524,9 @@ struct ContentView: View {
                                 // Its own width, a long name cut short in words: a frame with a
                                 // most width took all of it and pushed the model off the line.
                                 HStack(spacing: 2) {
-                                    Image(systemName: "folder.fill").font(.system(size: 9, weight: .semibold))
+                                    Image(systemName: "folder.fill").chatFont(size: 9, weight: .semibold)
                                     Text(projectName.count > 16 ? projectName.prefix(15) + "…" : projectName)
-                                        .font(.caption.weight(.medium)).lineLimit(1)
+                                        .chatFont(.caption, weight: .medium).lineLimit(1)
                                 }
                                 .foregroundStyle(chatTheme.accent)
                                 .fixedSize()
@@ -528,8 +536,8 @@ struct ContentView: View {
                             Button { showModelPicker = true } label: {
                                 HStack(spacing: 3) {
                                     // A bot's chat names the tag another chat reaches it by.
-                                    Text("\(conversation.bot.map { "@" + BotMentions.shownTag(profile: $0.profile, handle: $0.handle, roster: BotDirectory.shared.roster) } ?? ProfileCatalog.agentName(conversation.elsewhere?.profile ?? settings.profileName, settings: settings)) · \(modelChipLabel)").font(.caption).lineLimit(1)
-                                    Image(systemName: "chevron.down").font(.system(size: 8, weight: .bold))
+                                    Text("\(conversation.bot.map { "@" + BotMentions.shownTag(profile: $0.profile, handle: $0.handle, roster: BotDirectory.shared.roster) } ?? ProfileCatalog.agentName(conversation.elsewhere?.profile ?? settings.profileName, settings: settings)) · \(modelChipLabel)").chatFont(.caption).lineLimit(1)
+                                    Image(systemName: "chevron.down").chatFont(size: 8, weight: .bold)
                                 }
                                 .foregroundStyle(.secondary)
                                 .contentShape(Rectangle())
@@ -538,7 +546,7 @@ struct ContentView: View {
                             .accessibilityHidden(true)   // the line above says it, with the same action
                             if runsWithoutAsking {
                                 Image(systemName: "bolt.fill")
-                                    .font(.system(size: 9, weight: .bold))
+                                    .chatFont(size: 9, weight: .bold)
                                     .foregroundStyle(.orange)
                                     .accessibilityLabel("Commands run without asking")
                                     .accessibilityHint("Change it in the model menu")
@@ -1407,7 +1415,7 @@ private struct WorkerRunNote: View {
     var body: some View {
         Label("A Kanban worker's run, to read. To go on with it, retry or unblock its card on the board.",
               systemImage: "rectangle.split.3x1")
-            .font(.footnote)
+            .chatFont(.footnote)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16).padding(.vertical, 12)

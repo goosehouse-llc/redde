@@ -23,11 +23,11 @@ struct PinnedCardsSection: View {
     private func row(_ pin: PinnedCards.Pin) -> some View {
         HStack(spacing: 12) {
             if case let .checklist(list) = pin.card {
-                Text(list.emoji ?? "✅").font(.title2).frame(width: 32)
+                Text(list.emoji ?? "✅").chatFont(.title2).frame(width: 32)
                 let done = answers.ticks[pin.key].map(Set.init) ?? Set(list.items.indices.filter { list.items[$0].done })
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(pin.title).font(.body.weight(.semibold)).lineLimit(1)
-                    Text("\(done.count) of \(list.items.count) done").font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                    Text(pin.title).chatFont(.body, weight: .semibold).lineLimit(1)
+                    Text("\(done.count) of \(list.items.count) done").chatFont(.caption).foregroundStyle(.secondary).monospacedDigit()
                 }
                 Spacer(minLength: 6)
                 let part = list.items.isEmpty ? 0 : Double(done.count) / Double(list.items.count)
@@ -39,7 +39,7 @@ struct PinnedCardsSection: View {
                 .accessibilityHidden(true)
             } else {
                 Image(systemName: "pin.fill").foregroundStyle(.tint).frame(width: 32)
-                Text(pin.title).font(.body.weight(.semibold)).lineLimit(1)
+                Text(pin.title).chatFont(.body, weight: .semibold).lineLimit(1)
                 Spacer(minLength: 0)
             }
         }

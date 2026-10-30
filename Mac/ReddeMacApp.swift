@@ -60,6 +60,15 @@ struct ReddeMacApp: App {
         #endif
     }
 
+    private static func controlSize(_ scale: CGFloat) -> ControlSize {
+        switch scale {
+        case ..<0.95: .small
+        case ..<1.15: .regular
+        case ..<1.6: .large
+        default: .extraLarge
+        }
+    }
+
     var body: some Scene {
         WindowGroup("Redde") {
             ZStack {
@@ -75,6 +84,12 @@ struct ReddeMacApp: App {
                 }
             }
             .animation(.easeOut(duration: 0.2), value: lock.isLocked || lock.isCovered)
+            // The text zoom for whatever sets no font of its own (labels, list rows): the Mac's
+            // body size, scaled. The sidebar and the chat's own views set theirs with `chatFont`.
+            .chatFont(.body)
+            // And the controls the system draws (the sidebar's switch, search, buttons), a size up
+            // as the text grows.
+            .controlSize(Self.controlSize(zoom.scale))
             // The iPad's layout: the conversations in a sidebar, the chat beside them.
             .environment(\.horizontalSizeClass, .regular)
             .environment(conversation)
@@ -91,15 +106,14 @@ struct ReddeMacApp: App {
             .onAppear {
                 #if DEBUG
                 // The store's pictures (design/screenshots/mac.py): `-echo.windowSize 1440x900`
-                // sizes the window, whatever size it was left at, and brings it to the front.
+                // sizes the window, whatever size it was left at. (Never brings it forward: that took the
+                // keyboard from whatever the person was typing in, 2026-10-29.)
                 if let size = UserDefaults.standard.string(forKey: "echo.windowSize")?.split(separator: "x").compactMap({ Double($0) }),
                    size.count == 2 {
                     DispatchQueue.main.async {
                         guard let window = NSApp.windows.first(where: { $0.isVisible && $0.styleMask.contains(.titled) }) else { return }
                         window.setContentSize(NSSize(width: size[0], height: size[1]))
                         window.center()
-                        NSApp.activate()
-                        window.makeKeyAndOrderFront(nil)
                     }
                 }
                 #endif

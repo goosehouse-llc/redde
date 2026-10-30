@@ -218,11 +218,11 @@ struct BriefingCard: View {
                            symbol: briefing.failed ? "exclamationmark.triangle.fill" : briefing.cardSymbol,
                            symbolColor: briefing.failed ? .red : .yellow, isTop: isTop, moved: moved, bounce: briefing.id)
             Text(briefing.heading)
-                .font(.system(.title3, design: .rounded, weight: .bold))
+                .chatFont(.title3, weight: .bold, design: .rounded)
                 .lineLimit(2)
                 .minimumScaleFactor(0.85)
             if let week {
-                if !week.intro.isEmpty { Text(week.intro).font(.subheadline).opacity(0.75).lineLimit(2) }
+                if !week.intro.isEmpty { Text(week.intro).chatFont(.subheadline).opacity(0.75).lineLimit(2) }
                 Spacer(minLength: 0)
                 WeekStrip(plan: week)
             } else {
@@ -231,12 +231,12 @@ struct BriefingCard: View {
                         Text(briefing.leaveAt.map { "\(starts.formatted(date: .omitted, time: .shortened)) · " + String(localized: "Leave by \($0.formatted(date: .omitted, time: .shortened))") }
                              ?? starts.formatted(date: .omitted, time: .shortened))
                     } icon: { Image(systemName: "clock") }
-                    .font(.subheadline.weight(.semibold)).lineLimit(1)
+                    .chatFont(.subheadline, weight: .semibold).lineLimit(1)
                 }
                 if let found = briefing.mapPlace {
-                    Label(found.address, systemImage: "mappin.and.ellipse").font(.footnote.weight(.medium)).lineLimit(1)
+                    Label(found.address, systemImage: "mappin.and.ellipse").chatFont(.footnote, weight: .medium).lineLimit(1)
                 }
-                Text(PlainText.display(briefing.text)).font(.subheadline).opacity(0.75)
+                Text(PlainText.display(briefing.text)).chatFont(.subheadline).opacity(0.75)
                     .lineLimit(briefing.startsAt == nil && briefing.mapPlace == nil ? 4 : 2)
                 Spacer(minLength: 0)
             }
@@ -260,8 +260,8 @@ struct WeekStrip: View {
         HStack(spacing: 4) {
             ForEach(plan.days.prefix(7)) { day in
                 VStack(spacing: 2) {
-                    Text(day.weekday).font(.system(size: 10, weight: .bold)).opacity(0.65)
-                    Text(day.number ?? "·").font(.system(.headline, design: .rounded, weight: .bold)).monospacedDigit()
+                    Text(day.weekday).chatFont(size: 10, weight: .bold).opacity(0.65)
+                    Text(day.number ?? "·").chatFont(.headline, weight: .bold, design: .rounded).monospacedDigit()
                     HStack(spacing: 2) {
                         ForEach(0..<min(day.items.count, 4), id: \.self) { _ in Circle().frame(width: 4, height: 4) }
                     }
@@ -285,7 +285,7 @@ struct WeekCalendarView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             if !plan.intro.isEmpty {
-                Text(plan.intro).font(.headline)
+                Text(plan.intro).chatFont(.headline)
             }
             VStack(spacing: 0) {
                 ForEach(Array(plan.days.enumerated()), id: \.element.id) { i, day in
@@ -297,7 +297,7 @@ struct WeekCalendarView: View {
             if !plan.after.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     ForEach(plan.after, id: \.self) { line in
-                        Label(line, systemImage: "checklist").font(.subheadline)
+                        Label(line, systemImage: "checklist").chatFont(.subheadline)
                     }
                 }
             }
@@ -308,21 +308,21 @@ struct WeekCalendarView: View {
     private func row(_ day: WeekPlan.Day) -> some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(spacing: 0) {
-                Text(day.weekday).font(.caption.weight(.bold)).foregroundStyle(.tint)
-                Text(day.number ?? "").font(.system(.title2, design: .rounded, weight: .semibold)).monospacedDigit()
+                Text(day.weekday).chatFont(.caption, weight: .bold).foregroundStyle(.tint)
+                Text(day.number ?? "").chatFont(.title2, weight: .semibold, design: .rounded).monospacedDigit()
             }
             .frame(width: 40)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(day.title)
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(day.notes, id: \.self) { note in
-                    Text(note).font(.footnote.weight(.medium)).foregroundStyle(.secondary)
+                    Text(note).chatFont(.footnote, weight: .medium).foregroundStyle(.secondary)
                 }
                 ForEach(Array(day.items.enumerated()), id: \.offset) { _, item in
                     HStack(alignment: .firstTextBaseline, spacing: 10) {
-                        Text(item.time ?? "").font(.subheadline).monospacedDigit().foregroundStyle(.secondary)
+                        Text(item.time ?? "").chatFont(.subheadline).monospacedDigit().foregroundStyle(.secondary)
                             .frame(width: 74, alignment: .leading)
-                        Text(item.what).font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
+                        Text(item.what).chatFont(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
             }
@@ -373,16 +373,16 @@ struct BriefingRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: briefing.symbol)
-                .font(.title3)
+                .chatFont(.title3)
                 .foregroundStyle(briefing.failed ? AnyShapeStyle(.red) : AnyShapeStyle(.tint))
                 .frame(width: 28)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text(briefing.heading).font(.body.weight(briefing.read ? .regular : .semibold)).lineLimit(1)
+                    Text(briefing.heading).chatFont(.body, weight: briefing.read ? .regular : .semibold).lineLimit(1)
                     Spacer(minLength: 6)
-                    Text(briefing.at, format: .dateTime.hour().minute()).font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                    Text(briefing.at, format: .dateTime.hour().minute()).chatFont(.caption).foregroundStyle(.secondary).monospacedDigit()
                 }
-                Text(PlainText.display(briefing.text)).font(.subheadline).foregroundStyle(.secondary).lineLimit(lines)
+                Text(PlainText.display(briefing.text)).chatFont(.subheadline).foregroundStyle(.secondary).lineLimit(lines)
             }
         }
         .padding(.vertical, 2)
@@ -406,7 +406,7 @@ struct BriefingSheet: View {
                     } icon: {
                         Image(systemName: briefing.symbol)
                     }
-                    .font(.subheadline).foregroundStyle(.secondary)
+                    .chatFont(.subheadline).foregroundStyle(.secondary)
                     if let week = briefing.week {
                         WeekCalendarView(plan: week)
                     } else {
@@ -458,7 +458,7 @@ struct BriefingsList: View {
             List {
                 if inbox.briefings.isEmpty {
                     Text("Your agent's briefings come here: the Evening Wrap-up, heads-ups before events, and any daily brief you ask it for. Set them up in Settings, Agent.")
-                        .font(.footnote).foregroundStyle(.secondary)
+                        .chatFont(.footnote).foregroundStyle(.secondary)
                 }
                 ForEach(inbox.briefings) { briefing in
                     Button { inbox.markRead(briefing); open = briefing } label: { BriefingRow(briefing: briefing, lines: 2) }

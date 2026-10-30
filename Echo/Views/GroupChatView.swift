@@ -78,7 +78,7 @@ struct GroupChatView: View {
                     let page = shownRows
                     VStack(alignment: .leading, spacing: 18) {
                         if feed.room.omitted > 0 {
-                            Text("Earlier messages are in Hermes Desktop.").font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity)
+                            Text("Earlier messages are in Hermes Desktop.").chatFont(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity)
                         }
                         if page.hidden > 0 {
                             Button {
@@ -86,7 +86,7 @@ struct GroupChatView: View {
                                 showEarlier()
                                 if let anchor { Task { proxy.scrollTo(anchor, anchor: .top) } }
                             } label: {
-                                Label("Show earlier messages (\(page.hidden))", systemImage: "arrow.up.circle").font(.footnote)
+                                Label("Show earlier messages (\(page.hidden))", systemImage: "arrow.up.circle").chatFont(.footnote)
                             }
                             .buttonStyle(.bordered)
                             .frame(maxWidth: .infinity)
@@ -101,16 +101,16 @@ struct GroupChatView: View {
                             VStack(alignment: .leading, spacing: 6) {
                                 (feed.room.member(approval.memberID).map { Text("\($0.label) wants to run a command") }
                                     ?? Text("A bot wants to run a command"))
-                                    .font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+                                    .chatFont(.footnote, weight: .semibold).foregroundStyle(.secondary)
                                 ApprovalCard(request: approval.request) { feed.answer(approval, $0) }
                                 // Hermes's approvals.timeout, 300 s unless changed; unanswered, the command isn't run.
                                 Text("Not answered in about 5 minutes, it isn't run.")
-                                    .font(.caption).foregroundStyle(.secondary)
+                                    .chatFont(.caption).foregroundStyle(.secondary)
                             }
                         }
                         ForEach(feed.state.retries.filter { !feed.answering.contains($0) }, id: \.self) { retryCard($0) }
                         if let problem = feed.problem {
-                            Label(problem, systemImage: "exclamationmark.triangle").font(.footnote).foregroundStyle(.orange)
+                            Label(problem, systemImage: "exclamationmark.triangle").chatFont(.footnote).foregroundStyle(.orange)
                         }
                         Color.clear.frame(height: 1).id("bottom")
                     }
@@ -332,7 +332,7 @@ struct GroupChatView: View {
             Button("Next match", systemImage: "chevron.down") { goToMatch(findIndex + 1, proxy) }
                 .disabled(matches.count < 2)
             Button("Done") { withAnimation { finding = false } }
-                .font(.body.weight(.semibold))
+                .chatFont(.body, weight: .semibold)
         }
         .labelStyle(.iconOnly)
         .padding(.horizontal, 14).padding(.vertical, 8)
@@ -358,7 +358,7 @@ struct GroupChatView: View {
     private var desktopNote: some View {
         Label("This group chat runs in Hermes Desktop. Its last messages show here; to talk in it, use Desktop.",
               systemImage: "desktopcomputer")
-            .font(.footnote).foregroundStyle(.secondary)
+            .chatFont(.footnote).foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal).padding(.vertical, 12)
     }
@@ -366,7 +366,7 @@ struct GroupChatView: View {
     private var title: some View {
         HStack(spacing: 8) {
             FaceStack(faces: feed.room.members.prefix(3).map { (face($0), $0.label) }, size: 22)
-            Text(feed.room.name).font(.headline).lineLimit(1)
+            Text(feed.room.name).chatFont(.headline).lineLimit(1)
         }
         .accessibilityElement(children: .combine)
     }
@@ -375,10 +375,10 @@ struct GroupChatView: View {
         VStack(spacing: 12) {
             FaceStack(faces: feed.room.members.map { (face($0), $0.label) }, size: 44)
             Text(feed.room.members.map(\.label).formatted(.list(type: .and)))
-                .font(.headline).multilineTextAlignment(.center)
+                .chatFont(.headline).multilineTextAlignment(.center)
             (feed.room.inDesktop ? Text("Nothing said yet in Hermes Desktop.")
                  : Text("Say something to all of them, or start with @ and a name to ask one. A bot that has nothing to add stays quiet."))
-                .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                .chatFont(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 40)
@@ -401,7 +401,7 @@ struct GroupChatView: View {
                 .environment(\.replySpeaker, member?.label ?? String(localized: "A bot"))
                 .environment(\.replyFace, face(member))
         } else if let note = event.note(in: feed.room) {
-            Text(note).font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity)
+            Text(note).chatFont(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity)
         }
     }
 
@@ -434,7 +434,7 @@ struct GroupChatView: View {
                 VStack(alignment: .trailing, spacing: 6) {
                     ForEach(paths, id: \.self) { GroupFileChip(path: $0) }
                     ForEach(Array(files.enumerated()), id: \.offset) { _, name in
-                        Label(name, systemImage: "arrow.up.circle").font(.footnote).lineLimit(1)
+                        Label(name, systemImage: "arrow.up.circle").chatFont(.footnote).lineLimit(1)
                             .padding(.horizontal, 10).padding(.vertical, 6)
                             .background(.quaternary, in: .capsule)
                     }
@@ -460,7 +460,7 @@ struct GroupChatView: View {
                  : feed.state.stopping ? String(localized: "Stopping…")
                  : feed.state.blocked ? String(localized: "Sorting out a reply that was cut off…")
                  : String(localized: "The bots are talking…"))
-                .font(.footnote).foregroundStyle(.secondary)
+                .chatFont(.footnote).foregroundStyle(.secondary)
         }
     }
 
@@ -470,12 +470,12 @@ struct GroupChatView: View {
         VStack(alignment: .leading, spacing: 10) {
             Label(feed.member(forTask: task).map { String(localized: "\($0.label)'s reply didn't finish") } ?? String(localized: "A reply didn't finish"),
                   systemImage: "arrow.clockwise")
-                .font(.subheadline.weight(.semibold))
+                .chatFont(.subheadline, weight: .semibold)
             Text("It stopped partway, and Hermes can't tell how far it got. Run it again?")
-                .font(.footnote).foregroundStyle(.secondary)
+                .chatFont(.footnote).foregroundStyle(.secondary)
             Button("Retry") { feed.retry(task) }
                 .buttonStyle(.bordered)
-                .font(.footnote)
+                .chatFont(.footnote)
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)

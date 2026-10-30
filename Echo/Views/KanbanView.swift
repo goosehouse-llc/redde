@@ -82,7 +82,7 @@ struct KanbanView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 if available {
                     Image(systemName: live.isLive ? "dot.radiowaves.left.and.right" : "arrow.clockwise")
-                        .font(.caption)
+                        .chatFont(.caption)
                         .foregroundStyle(live.isLive ? .green : .secondary)
                         .accessibilityLabel(live.isLive ? String(localized: "Live updates on") : String(localized: "Polling for updates"))
                 }
@@ -149,12 +149,12 @@ struct KanbanView: View {
                             Image(systemName: KanbanStatus.icon(col.name))
                             Text(KanbanStatus.label(col.name))
                             if !col.tasks.isEmpty {
-                                Text("\(col.tasks.count)").font(.caption2.weight(.semibold)).monospacedDigit()
+                                Text("\(col.tasks.count)").chatFont(.caption2, weight: .semibold).monospacedDigit()
                                     .padding(.horizontal, 5).padding(.vertical, 1)
                                     .background((on ? Color.white.opacity(0.25) : theme.accent.opacity(0.15)), in: .capsule)
                             }
                         }
-                        .font(.footnote.weight(.medium))
+                        .chatFont(.footnote, weight: .medium)
                         .padding(.horizontal, 10).padding(.vertical, 6)
                         .background(on ? theme.accent : Color.primary.opacity(0.06), in: .capsule)
                         .foregroundStyle(on ? theme.userText : Color.primary)
@@ -170,17 +170,17 @@ struct KanbanView: View {
     private func row(_ task: KanbanTask) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(alignment: .firstTextBaseline) {
-                Text(task.title).font(.body.weight(.medium)).lineLimit(2)
+                Text(task.title).chatFont(.body, weight: .medium).lineLimit(2)
                 Spacer(minLength: 0)
                 if task.priority != 0 {
-                    Text("P\(task.priority)").font(.caption2.weight(.semibold))
+                    Text("P\(task.priority)").chatFont(.caption2, weight: .semibold)
                         .padding(.horizontal, 5).padding(.vertical, 1)
                         .background((task.priority > 0 ? Color.orange : Color.secondary).opacity(0.15), in: .capsule)
                         .foregroundStyle(task.priority > 0 ? Color.orange : Color.secondary)
                 }
             }
             if let s = task.latestSummary ?? task.body, !s.isEmpty {
-                Text(s).font(.footnote).foregroundStyle(.secondary).lineLimit(2)
+                Text(s).chatFont(.footnote).foregroundStyle(.secondary).lineLimit(2)
             }
             HStack(spacing: 6) {
                 if let a = task.assignee, !a.isEmpty { Label(a, systemImage: "person").labelStyle(.titleAndIcon) }
@@ -188,7 +188,7 @@ struct KanbanView: View {
                 if task.commentCount > 0 { Label("\(task.commentCount)", systemImage: "text.bubble") }
                 if task.lastFailure != nil { Image(systemName: "exclamationmark.triangle").foregroundStyle(.red) }
             }
-            .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            .chatFont(.caption).foregroundStyle(.secondary).lineLimit(1)
         }
         .padding(.vertical, 2)
         .contentShape(.rect)
@@ -290,7 +290,7 @@ struct KanbanCardEditor: View {
                 } footer: {
                     if task == nil { Text("Ready cards with an assignee are picked up by the dispatcher; others wait in Triage.") }
                 }
-                if let error { Section { Text(error).font(.footnote).foregroundStyle(.red) } }
+                if let error { Section { Text(error).chatFont(.footnote).foregroundStyle(.red) } }
             }
             .navigationTitle(task == nil ? String(localized: "New card") : String(localized: "Edit card"))
             .navigationBarTitleDisplayMode(.inline)
@@ -370,15 +370,15 @@ struct KanbanCardDetail: View {
                     }
                     if let b = task.body, !b.isEmpty { Section("Details") { MarkdownView(text: b) } }
                     if let r = task.result, !r.isEmpty { Section("Result") { MarkdownView(text: r) } }
-                    else if let s = task.latestSummary, !s.isEmpty { Section("Latest") { Text(s).font(.callout) } }
-                    if let f = task.lastFailure, !f.isEmpty { Section("Last failure") { Text(f).font(.footnote).foregroundStyle(.red) } }
+                    else if let s = task.latestSummary, !s.isEmpty { Section("Latest") { Text(s).chatFont(.callout) } }
+                    if let f = task.lastFailure, !f.isEmpty { Section("Last failure") { Text(f).chatFont(.footnote).foregroundStyle(.red) } }
                     if let change { changeSection(change, task: task) }
                     if let detail { report(detail) }
                     Section("Comments") {
                         ForEach(comments) { c in
                             VStack(alignment: .leading, spacing: 2) {
-                                HStack { Text(c.author).font(.caption.weight(.semibold)); if let d = c.createdAt { Text(d, style: .relative).font(.caption).foregroundStyle(.secondary) } }
-                                Text(c.body).font(.callout)
+                                HStack { Text(c.author).chatFont(.caption, weight: .semibold); if let d = c.createdAt { Text(d, style: .relative).chatFont(.caption).foregroundStyle(.secondary) } }
+                                Text(c.body).chatFont(.callout)
                             }
                         }
                         HStack {
@@ -394,7 +394,7 @@ struct KanbanCardDetail: View {
                                 Label {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("Ask in the open conversation")
-                                        Text(conversation.title).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                        Text(conversation.title).chatFont(.caption).foregroundStyle(.secondary).lineLimit(1)
                                     }
                                 } icon: {
                                     Image(systemName: "bubble.left.and.text.bubble.right")
@@ -480,13 +480,13 @@ struct KanbanCardDetail: View {
         case "blocked":
             Section {
                 Label("Blocked", systemImage: "exclamationmark.octagon").foregroundStyle(.orange)
-                if let why = detail.waitingReason, !why.isEmpty { Text(why).font(.callout) }
+                if let why = detail.waitingReason, !why.isEmpty { Text(why).chatFont(.callout) }
                 Button("Unblock", systemImage: "arrow.uturn.forward") { status = "ready" }
             } header: { Text("Needs you") }
         case "review":
             Section {
                 Label("Waiting for your review", systemImage: "eye").foregroundStyle(.tint)
-                if let summary = detail.waitingReason, !summary.isEmpty { Text(summary).font(.callout) }
+                if let summary = detail.waitingReason, !summary.isEmpty { Text(summary).chatFont(.callout) }
                 Button("Mark Done", systemImage: "checkmark.circle") { status = "done" }
                 Button("Send Back", systemImage: "arrow.uturn.backward") { status = "ready" }
             } header: { Text("Needs you") }
@@ -502,17 +502,17 @@ struct KanbanCardDetail: View {
                 ForEach(detail.runs) { run in
                     VStack(alignment: .leading, spacing: 3) {
                         HStack(spacing: 6) {
-                            Text(run.profile ?? String(localized: "A worker", comment: "A kanban run with no profile named")).font(.subheadline.weight(.semibold))
-                            if let outcome = run.outcome { Text(KanbanStatus.label(outcome == "completed" ? "done" : outcome)).font(.caption).foregroundStyle(.secondary) }
+                            Text(run.profile ?? String(localized: "A worker", comment: "A kanban run with no profile named")).chatFont(.subheadline, weight: .semibold)
+                            if let outcome = run.outcome { Text(KanbanStatus.label(outcome == "completed" ? "done" : outcome)).chatFont(.caption).foregroundStyle(.secondary) }
                             Spacer(minLength: 4)
                             if let started = run.startedAt {
                                 Text(run.endedAt.map { Duration.seconds($0.timeIntervalSince(started)).formatted(.units(allowed: [.hours, .minutes, .seconds], width: .narrow, maximumUnitCount: 2)) }
                                      ?? started.formatted(.relative(presentation: .named)))
-                                    .font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                                    .chatFont(.caption).foregroundStyle(.secondary).monospacedDigit()
                             }
                         }
-                        if let summary = run.summary, !summary.isEmpty { Text(summary).font(.callout) }
-                        if let error = run.error, !error.isEmpty { Text(error).font(.footnote).foregroundStyle(.red) }
+                        if let summary = run.summary, !summary.isEmpty { Text(summary).chatFont(.callout) }
+                        if let error = run.error, !error.isEmpty { Text(error).chatFont(.footnote).foregroundStyle(.red) }
                     }
                 }
             }
@@ -533,11 +533,11 @@ struct KanbanCardDetail: View {
                     ForEach(detail.events) { event in
                         VStack(alignment: .leading, spacing: 2) {
                             HStack {
-                                Text(event.label).font(.subheadline)
+                                Text(event.label).chatFont(.subheadline)
                                 Spacer(minLength: 4)
-                                if let at = event.at { Text(at, format: .dateTime.month().day().hour().minute()).font(.caption).foregroundStyle(.secondary) }
+                                if let at = event.at { Text(at, format: .dateTime.month().day().hour().minute()).chatFont(.caption).foregroundStyle(.secondary) }
                             }
-                            if let detail = event.detail { Text(detail).font(.footnote).foregroundStyle(.secondary).lineLimit(3) }
+                            if let detail = event.detail { Text(detail).chatFont(.footnote).foregroundStyle(.secondary).lineLimit(3) }
                         }
                     }
                 }

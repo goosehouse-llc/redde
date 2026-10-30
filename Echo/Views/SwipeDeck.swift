@@ -74,7 +74,7 @@ struct SwipeDeck<Item: Identifiable & Equatable, Face: View, Menu: View, Footer:
                 }
             }
             .disabled(top == nil)
-            footer().font(.caption2).foregroundStyle(.secondary)
+            footer().chatFont(.caption2).foregroundStyle(.secondary)
         }
         .padding(.top, 2)
     }
@@ -112,7 +112,7 @@ struct SwipeDeck<Item: Identifiable & Equatable, Face: View, Menu: View, Footer:
 
     private func stamp(_ word: String, color: Color, angle: Double) -> some View {
         Text(word)
-            .font(.system(.headline, design: .rounded, weight: .heavy))
+            .chatFont(.headline, weight: .heavy, design: .rounded)
             .textCase(.uppercase)
             .foregroundStyle(color)
             .padding(.horizontal, 10).padding(.vertical, 4)
@@ -187,12 +187,12 @@ struct DeckCardHeader: View {
                 .overlay(Circle().stroke(colors.deep.opacity(0.45), lineWidth: 1.5))
                 .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
             VStack(alignment: .leading, spacing: 1) {
-                Text(name.isEmpty ? String(localized: "Your agent") : name).font(.subheadline.weight(.bold))
-                subtitle.font(.caption).opacity(0.7)
+                Text(name.isEmpty ? String(localized: "Your agent") : name).chatFont(.subheadline, weight: .bold)
+                subtitle.chatFont(.caption).opacity(0.7)
             }
             Spacer(minLength: 0)
             Image(systemName: symbol)
-                .font(.title2)
+                .chatFont(.title2)
                 .foregroundStyle(symbolColor, DeckCard.ink.opacity(0.25))
                 .symbolEffect(.bounce, value: isTop ? bounce : "")
         }

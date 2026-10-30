@@ -94,11 +94,11 @@ struct CronView: View {
         HStack(alignment: .top, spacing: 10) {
             Circle().fill(color(job.state)).frame(width: 9, height: 9).padding(.top, 6)
             VStack(alignment: .leading, spacing: 3) {
-                Text(job.name.isEmpty ? job.prompt : job.title).font(.body.weight(.medium)).lineLimit(2)
+                Text(job.name.isEmpty ? job.prompt : job.title).chatFont(.body, weight: .medium).lineLimit(2)
                 // A bot's: whose, and when in words.
                 Text([job.profile.flatMap(BotRoutines.botName), RoutineWhen(schedule: job.schedule)?.summary ?? job.schedule]
                     .compactMap(\.self).joined(separator: " · "))
-                    .font(.footnote).foregroundStyle(.secondary)
+                    .chatFont(.footnote).foregroundStyle(.secondary)
                 HStack(spacing: 6) {
                     if job.state == .paused { Text("Paused") }
                     else if job.state == .completed { Text("Completed") }
@@ -108,7 +108,7 @@ struct CronView: View {
                         Text("· last \(status) \(last.relativeLabel)")
                     }
                 }
-                .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                .chatFont(.caption).foregroundStyle(.secondary).lineLimit(1)
             }
             Spacer(minLength: 0)
             if busy.contains(job.id) { ProgressView().controlSize(.small) }
@@ -193,7 +193,7 @@ struct CronJobEditor: View {
                         HStack(spacing: 6) {
                             ForEach(Self.examples, id: \.self) { ex in
                                 Button(ex) { schedule = ex }
-                                    .font(.caption).buttonStyle(.bordered).buttonBorderShape(.capsule)
+                                    .chatFont(.caption).buttonStyle(.bordered).buttonBorderShape(.capsule)
                             }
                         }
                     }
@@ -218,9 +218,9 @@ struct CronJobEditor: View {
                 }
                 Section {
                     Text("Recurring: “30m”, “every hour”, “every day at 9am”, “weekdays at 9am”, or a cron expression. Once: “in 30m” or an ISO time. Bare “30m” repeats; “in 30m” runs once.")
-                        .font(.footnote).foregroundStyle(.secondary)
+                        .chatFont(.footnote).foregroundStyle(.secondary)
                 }
-                if let error { Section { Text(error).font(.footnote).foregroundStyle(.red) } }
+                if let error { Section { Text(error).chatFont(.footnote).foregroundStyle(.red) } }
             }
             .navigationTitle(job == nil ? String(localized: "New job") : String(localized: "Edit job"))
             .navigationBarTitleDisplayMode(.inline)
@@ -282,10 +282,10 @@ struct CronJobDetail: View {
                     if let m = job.model, !m.isEmpty { LabeledContent("Model", value: m) }
                 }
                 Section("Prompt") {
-                    Text(job.prompt).font(.callout).textSelection(.enabled)
+                    Text(job.prompt).chatFont(.callout).textSelection(.enabled)
                 }
                 if let e = job.lastError, !e.isEmpty {
-                    Section("Last error") { Text(e).font(.footnote).foregroundStyle(.red).textSelection(.enabled) }
+                    Section("Last error") { Text(e).chatFont(.footnote).foregroundStyle(.red).textSelection(.enabled) }
                 }
                 if backend?.supportsRunHistory == true {
                     Section("Recent runs") {
@@ -294,10 +294,10 @@ struct CronJobDetail: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 HStack {
                                     if let s = run.startedAt { Text(s, format: .dateTime.month().day().hour().minute()) }
-                                    if run.active { Text("running").font(.caption).foregroundStyle(.green) }
+                                    if run.active { Text("running").chatFont(.caption).foregroundStyle(.green) }
                                 }
-                                .font(.footnote.weight(.medium))
-                                if let p = run.preview, !p.isEmpty { Text(p).font(.caption).foregroundStyle(.secondary).lineLimit(3) }
+                                .chatFont(.footnote, weight: .medium)
+                                if let p = run.preview, !p.isEmpty { Text(p).chatFont(.caption).foregroundStyle(.secondary).lineLimit(3) }
                             }
                         }
                     }
@@ -358,9 +358,9 @@ struct BlueprintBrowser: View {
                         ForEach(items) { bp in
                             Button { chosen = bp } label: {
                                 VStack(alignment: .leading, spacing: 3) {
-                                    Text(bp.title).font(.body.weight(.medium))
-                                    if !bp.description.isEmpty { Text(bp.description).font(.footnote).foregroundStyle(.secondary).lineLimit(3) }
-                                    if !bp.scheduleHuman.isEmpty { Label(bp.scheduleHuman, systemImage: "clock").font(.caption).foregroundStyle(.secondary) }
+                                    Text(bp.title).chatFont(.body, weight: .medium)
+                                    if !bp.description.isEmpty { Text(bp.description).chatFont(.footnote).foregroundStyle(.secondary).lineLimit(3) }
+                                    if !bp.scheduleHuman.isEmpty { Label(bp.scheduleHuman, systemImage: "clock").chatFont(.caption).foregroundStyle(.secondary) }
                                 }
                                 .contentShape(.rect)
                             }
@@ -408,7 +408,7 @@ struct BlueprintForm: View {
         NavigationStack {
             Form {
                 if !blueprint.description.isEmpty {
-                    Section { Text(blueprint.description).font(.footnote).foregroundStyle(.secondary) }
+                    Section { Text(blueprint.description).chatFont(.footnote).foregroundStyle(.secondary) }
                 }
                 Section {
                     ForEach(blueprint.fields) { f in
@@ -419,7 +419,7 @@ struct BlueprintForm: View {
                             }
                         } else if f.type == "text" {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(f.label).font(.footnote).foregroundStyle(.secondary)
+                                Text(f.label).chatFont(.footnote).foregroundStyle(.secondary)
                                 TextField(f.optional ? String(localized: "Optional") : String(localized: "Required"), text: binding(f), axis: .vertical)
                                     .lineLimit(1...5)
                             }
@@ -432,13 +432,13 @@ struct BlueprintForm: View {
                             }
                         }
                         if let help = f.help, !help.isEmpty {
-                            Text(help).font(.caption).foregroundStyle(.secondary)
+                            Text(help).chatFont(.caption).foregroundStyle(.secondary)
                         }
                     }
                 } footer: {
                     if !blueprint.scheduleHuman.isEmpty { Text("Runs \(blueprint.scheduleHuman).") }
                 }
-                if let error { Section { Text(error).font(.footnote).foregroundStyle(.red) } }
+                if let error { Section { Text(error).chatFont(.footnote).foregroundStyle(.red) } }
             }
             .navigationTitle(blueprint.title)
             .navigationBarTitleDisplayMode(.inline)

@@ -146,11 +146,11 @@ private struct IdeaDeck: View {
             DeckCardHeader(face: face, name: idea.agent, subtitle: Text("has an idea", comment: "Under an agent's name on an idea card"),
                            symbol: "lightbulb.max.fill", isTop: isTop, moved: moved, bounce: idea.id)
             Text(idea.title)
-                .font(.system(.title3, design: .rounded, weight: .bold))
+                .chatFont(.title3, weight: .bold, design: .rounded)
                 .lineLimit(3)
                 .minimumScaleFactor(0.85)
             if let why = idea.why {
-                Text(why).font(.subheadline).opacity(0.75).lineLimit(3)
+                Text(why).chatFont(.subheadline).opacity(0.75).lineLimit(3)
             }
             Spacer(minLength: 0)
         }

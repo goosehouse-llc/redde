@@ -92,7 +92,7 @@ struct ComposerView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "pencil").foregroundStyle(.secondary)
                     Text("Editing. Sending replaces this message and everything after it.")
-                        .font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                        .chatFont(.caption).foregroundStyle(.secondary).lineLimit(2)
                     Spacer()
                     Button("Cancel editing", systemImage: "xmark.circle.fill") { cancelEditing() }
                         .labelStyle(.iconOnly).foregroundStyle(.secondary)
@@ -112,10 +112,10 @@ struct ComposerView: View {
                     ProgressView().controlSize(.mini)
                     Text("Preparing the video…")
                 }
-                .font(.caption).foregroundStyle(.secondary)
+                .chatFont(.caption).foregroundStyle(.secondary)
             }
             if let attachmentError {
-                Text(attachmentError).font(.caption).foregroundStyle(.red)
+                Text(attachmentError).chatFont(.caption).foregroundStyle(.red)
             }
             composerRow
         }
@@ -273,12 +273,12 @@ struct ComposerView: View {
                 Button { applySlash(item) } label: {
                     HStack(alignment: .firstTextBaseline, spacing: 10) {
                         Image(systemName: item.kind == "skill" ? "sparkles" : "terminal")
-                            .font(.caption).foregroundStyle(theme.accent).frame(width: 16)
+                            .chatFont(.caption).foregroundStyle(theme.accent).frame(width: 16)
                         Text(item.display.trimmingCharacters(in: .whitespaces))
                             .font(.callout.monospaced().weight(.medium))
                             .lineLimit(1)
                         if !item.meta.isEmpty {
-                            Text(item.meta).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                            Text(item.meta).chatFont(.caption).foregroundStyle(.secondary).lineLimit(1)
                         }
                         Spacer(minLength: 0)
                     }
@@ -306,8 +306,8 @@ struct ComposerView: View {
                 } label: {
                     HStack(spacing: 10) {
                         BotAvatar(face: faces[bot.name] ?? BotFace(seed: bot.name), name: bot.label(mainName: settings.headerTitle), size: 22)
-                        Text("@" + BotMentions.tag(for: bot)).font(.callout.weight(.medium)).lineLimit(1)
-                        Text(bot.label(mainName: settings.headerTitle)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        Text("@" + BotMentions.tag(for: bot)).chatFont(.callout, weight: .medium).lineLimit(1)
+                        Text(bot.label(mainName: settings.headerTitle)).chatFont(.caption).foregroundStyle(.secondary).lineLimit(1)
                         Spacer(minLength: 0)
                     }
                     .padding(.horizontal, 12).padding(.vertical, 8)
@@ -345,12 +345,12 @@ struct ComposerView: View {
                         Button {
                             pendingAttachments.removeAll { $0.id == att.id }
                         } label: {
-                            Image(systemName: "xmark").font(.caption2.weight(.bold))
+                            Image(systemName: "xmark").chatFont(.caption2, weight: .bold)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Remove \(att.filename)")
                     }
-                    .font(.caption.weight(.semibold))
+                    .chatFont(.caption, weight: .semibold)
                     .foregroundStyle(theme.userBubbleText)
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .background(theme.accent, in: .capsule)
@@ -376,12 +376,12 @@ struct ComposerView: View {
                             dismissedContext.insert(suggestion.id)
                             refreshContext(draft)
                         } label: {
-                            Image(systemName: "xmark").font(.caption2.weight(.bold))
+                            Image(systemName: "xmark").chatFont(.caption2, weight: .bold)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Dismiss")
                     }
-                    .font(.caption.weight(.semibold))
+                    .chatFont(.caption, weight: .semibold)
                     .foregroundStyle(theme.accent)
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .background(theme.accent.opacity(0.14), in: .capsule)
@@ -459,7 +459,7 @@ struct ComposerView: View {
                     }
                 } label: {
                     Image(systemName: "plus")
-                        .font(.title3.weight(.medium))
+                        .chatFont(.title3, weight: .medium)
                         .foregroundStyle(.secondary)
                         .frame(width: 38, height: 38)
                         .contentShape(.circle)
@@ -479,7 +479,7 @@ struct ComposerView: View {
                     .modifier(ReturnSends(draft: $draft, canSend: { hasDraft }, send: send))
                 if draftIsLong {
                     Button("Open the editor", systemImage: "arrow.up.left.and.arrow.down.right") { showEditor = true }
-                        .font(.footnote.weight(.semibold))
+                        .chatFont(.footnote, weight: .semibold)
                         .foregroundStyle(.secondary)
                         .frame(width: 30, height: 38)
                         .contentShape(.rect)
