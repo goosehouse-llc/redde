@@ -4,7 +4,7 @@ title: Redde Privacy Policy
 
 # Redde Privacy Policy
 
-**Effective date:** October 26, 2026
+**Effective date:** October 30, 2026
 **Publisher:** Goosehouse LLC
 
 Redde is a voice and chat client for an AI assistant that you run yourself. This policy explains what the app does with your information. The short version: Redde has no account, no analytics and no tracking, and your conversations go only to the server you configure. One optional feature, notifications when Redde is closed, uses a relay that we run. It holds your iPhone's push address and passes on notifications it cannot read.
@@ -27,6 +27,16 @@ Link previews (Settings → Appearance) are off unless you turn them on. With th
 When your assistant shows a map or places in a reply, the map is drawn by Apple Maps, and a place it names without coordinates is looked up with Apple's map search, under Apple's privacy policy, as the Maps app does. Unless you turn on Current Location, directions from where you are are worked out by Maps when you open them.
 
 Current Location (Settings → Agent) is off unless you turn it on, and is set on each device. With it on, and location allowed for Redde, your device takes one approximate fix of where it is when you open Redde or ask about a place, at most every few minutes (never tracking, never in the background), has Apple's maps put it in words (the neighborhood and town), and keeps that on the device. Only when a message asks about places, directions, maps or the weather does Redde send that place to your own server with the message, in words and with coordinates rounded to about 100 meters. On your device, the same fix measures the walk to the places on a places card and draws the route on a map card. None of it goes to Goosehouse LLC. Turning it off deletes the place kept.
+
+Places is off unless you add a place (Home, Work, the gym) in Redde. iOS then tells Redde when your iPhone arrives at or leaves one, even when Redde is closed. Where you are stays on the iPhone: your own server hears only that you arrived at or left that place, with what you wrote for it.
+
+Heads-ups and Leave-By Alerts work out when to leave on your device. When a heads-up for an event with a street address arrives, or with Leave-By Alerts on (Settings → Agent, off unless you turn it on, and set on each device), your device asks Apple Maps how long the way from where it is to the event's address takes, under Apple's privacy policy, and sets a notification on the device. For Leave-By Alerts, Redde reads the next day and a half of events from the calendars on your device that you chose. The events and where you are go only to Apple Maps, for the way there: not to your server, and not to Goosehouse LLC.
+
+Calendars (Settings → Agent): to list your calendars, Redde reads their names on your device, with your permission. The names you pick are kept with your settings (and in iCloud, if you sync settings), and sent to your own server only with a message that asks what's on your calendar, so your assistant looks at those calendars alone.
+
+Health-aware days is off unless you turn it on. With it on, Redde reads last night's sleep, today's and yesterday's steps and your recent workouts from Apple Health on your iPhone, and sends a short summary of them, in words, to your own server, only for Morning Ideas, the Evening Wrap-up and the Week Ahead. Nothing from Health is sent with your chats, and none of it goes to Goosehouse LLC.
+
+When your assistant needs a key it doesn't have (an API key for a plugin, say), it can ask for it in Redde instead of in a chat. What you paste is encrypted on your device to that one request and goes over your Hermes Dashboard connection straight into that profile's settings file on your server. It is not shown in a chat, sent to a model, or kept on your device, and none of it goes to Goosehouse LLC.
 
 When your assistant shows the weather or the time somewhere, the place it names is looked up to find its forecast or its time zone. Redde's plugin on your Hermes server does this, asking Open-Meteo (open-meteo.com) with the place's name and then its coordinates, and Redde draws what comes back. Where the plugin hasn't filled the card in, your device looks the place up with Apple's map search and asks Open-Meteo for the forecast of its coordinates. Open-Meteo sees those requests coming from your server or your device; nothing else from the conversation is sent to it, and nothing goes to Goosehouse LLC. The time is drawn from your device's own clock. So that "what time is it" can be answered for where you are, Redde tells the plugin on your server your device's time zone and temperature units.
 
