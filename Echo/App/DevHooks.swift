@@ -63,6 +63,7 @@ import WidgetKit
 ///   then one that names its files by path (links that open them).
 /// - `-echo.demoPage`: a reply with a page the agent made, live in the chat, with buttons that talk back.
 /// - `-echo.demoCards`: a reply with a map (a walk), three places and the weather, then the time in Tokyo (`ReplyCards`).
+/// - `-echo.demoAgenda`: what's on the calendar tomorrow, then the rest of the week with a free day, as agenda cards (`AgendaCard`); `-echo.demoAgenda tomorrow` the first alone.
 /// - `-echo.demoQuestion <one|few|open>`: the agent's question card (Hermes's clarify), with
 ///   choices, several questions, or one to answer in words.
 /// - `-echo.demoAsks`: cards answered with a tap: a review of a message, a choice of restaurants;
@@ -247,6 +248,9 @@ enum DevHooks {
         if has("-echo.demoDocument") { conversation.seedDocumentDemo() }
         if has("-echo.demoPage") { conversation.seedPageDemo() }
         if has("-echo.demoCards") { conversation.seedCardsDemo() }
+        if has("-echo.demoAgenda") { conversation.seedAgendaDemo(tomorrowOnly: value("-echo.demoAgenda") == "tomorrow") }
+        // A key a bot asked for, its card open over the app, answered by nothing (screenshots).
+        if has("-echo.demoKeyRequest") { KeyRequests.shared.showDemo() }
         if has("-echo.demoAsks") { conversation.seedAsksDemo(more: has("-echo.demoAsksMore")) }
         if let kind = value("-echo.demoQuestion") { conversation.seedQuestionDemo(kind) }
         if has("-echo.demoPhotos") { conversation.seedPhotoDemo(count: value("-echo.demoPhotos").flatMap(Int.init) ?? 5) }

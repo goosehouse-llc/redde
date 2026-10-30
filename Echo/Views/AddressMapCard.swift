@@ -35,7 +35,8 @@ enum AddressMaps {
         guard Settings.shared.addressMaps, message.role == .assistant, !message.text.isEmpty else { return nil }
         let hasMap = (message.cards ?? []).contains { card in
             switch card {
-            case .map, .places: true
+            // An agenda names its events' places itself: no map of a first address beside it.
+            case .map, .places, .agenda: true
             default: false
             }
         }

@@ -11,6 +11,11 @@ from the conversation, live and when it is read back, on either connection, and 
 itself (MapKit for maps and places, looked up on the phone when a place comes without
 coordinates). This tool checks them, so the agent hears at once about a card that can't be drawn.
 
+An `agenda` (asked 2026-10-29: "when I ask what's on my calendar for tomorrow or what's on my
+calendar in general, make it appear in a calendar card"): the events the agent read with its
+calendar tool, drawn by day, or a day with nothing on it. The agent looks them up; this tool only
+checks and passes them on, as for a map.
+
 A weather or a time card names only its place: the forecast and the time zone are looked up here
 (forecast.py, Open-Meteo), handed back to the agent to answer from, and returned as filled cards
 (`cards` in the answer), which the app draws when it can read them (else it looks them up itself).
@@ -35,7 +40,8 @@ TOOL = "redde_show"
 TOOLSET = "redde_cards"
 MAX_CARDS = 4
 MAX_PLACES = 12
-TYPES = ("map", "places", "weather", "time", "review", "choice", "checklist", "form")
+TYPES = ("map", "places", "weather", "time", "agenda", "review", "choice", "checklist", "form")
+MAX_EVENTS = 50
 #: The cards the person answers.
 ASKS = ("review", "choice", "checklist", "form")
 FIELD_KINDS = ("text", "long", "number", "date", "time", "toggle", "choice")
@@ -72,7 +78,11 @@ SCHEMA = {
         "you'll do as 'fields' they can edit, 'action' the button, e.g. Send), then stop and act only on their "
         "answer; 'choice' ('options' to pick from), 'checklist' (a list to tick off: 'items', each with a 'section' "
         "to group them, and an 'emoji'), 'form' ('fields' to fill in, each with a 'kind'). Their answer is their next "
-        "message."),
+        "message. "
+        "An 'agenda' shows calendar events by day: 'events' as your calendar tool gave them, each with a 'title' and "
+        "'start' (ISO date-time with the offset the calendar gave, or just the date for an all-day event), and 'end', "
+        "'location', 'calendar' if known; 'date' (or 'dates') names the day or days asked about, so a day with nothing "
+        "on it shows too. Look the events up first; never make them up."),
     "parameters": {
         "type": "object",
         "properties": {
@@ -105,6 +115,15 @@ SCHEMA = {
                         "items": {"type": "array", "items": {"type": "object", "properties": {
                             "text": {"type": "string"}, "done": {"type": "boolean"}, "section": {"type": "string"}}}},
                         "emoji": {"type": "string"},
+                        "events": {"type": "array", "description": "agenda: the events, from your calendar tool", "items": {
+                            "type": "object", "properties": {
+                                "title": {"type": "string"},
+                                "start": {"type": "string", "description": "2026-10-30T09:30:00-04:00, or 2026-10-30 for all day"},
+                                "end": {"type": "string"}, "all_day": {"type": "boolean"}, "location": {"type": "string"},
+                                "calendar": {"type": "string"}, "notes": {"type": "string"}},
+                            "required": ["title", "start"]}},
+                        "date": {"type": "string", "description": "agenda: the day asked about, e.g. 2026-10-30"},
+                        "dates": {"type": "array", "items": {"type": "string"}, "description": "agenda: the days asked about"},
                         "note": {"type": "string"},
                     },
                     "required": ["type"],
@@ -155,6 +174,13 @@ def check(args) -> tuple[list[str], list[str]]:
             continue
         if kind in ASKS:
             said, problem = _ask(card, kind)
+            if problem:
+                problems.append(f"card {n}: {problem}")
+            else:
+                shown.append(said)
+            continue
+        if kind == "agenda":
+            said, problem = _agenda(card)
             if problem:
                 problems.append(f"card {n}: {problem}")
             else:
@@ -215,6 +241,40 @@ def check(args) -> tuple[list[str], list[str]]:
     if len(cards) > MAX_CARDS:
         problems.append(f"only the first {MAX_CARDS} cards are shown")
     return shown, problems
+
+
+_DAY = re.compile(r"^\d{4}-\d{2}-\d{2}")
+
+
+def _agenda(card: dict) -> tuple[str, str | None]:
+    """What an agenda will show: its events (a title and a start that begins with a date), and the
+    days asked about, which show even with nothing on them. Lenient as the app is."""
+    events, dropped = [], 0
+    for event in (card.get("events") or card.get("items") or [])[:MAX_EVENTS]:
+        if not isinstance(event, dict):
+            dropped += 1
+            continue
+        title = next((event[k].strip() for k in ("title", "summary", "name") if isinstance(event.get(k), str) and event[k].strip()), "")
+        start = next((event[k].strip() for k in ("start", "starts", "start_time", "when", "date") if isinstance(event.get(k), str)), "")
+        if title and _DAY.match(start):
+            events.append((start, title))
+        else:
+            dropped += 1
+    days = [d.strip() for d in ([card.get("date")] if isinstance(card.get("date"), str) else []) + list(card.get("dates") or [])
+            if isinstance(d, str) and _DAY.match(d.strip())]
+    title = card.get("title").strip() if isinstance(card.get("title"), str) else ""
+    if not events and not days and not title:
+        return "", ("an agenda needs 'events' (each a 'title' and a 'start' that begins with its date, 2026-10-30T09:30:00-04:00), "
+                    "or the 'date' asked about when there is nothing on it")
+    if not events:
+        said = f"agenda: {title or ', '.join(days[:3])}, nothing on the calendar"
+    else:
+        events.sort()
+        listed = ", ".join(f"{t} {s[11:16] if len(s) > 15 else '(all day)'}".strip() for s, t in events[:4])
+        said = f"agenda: {title + ', ' if title else ''}{len(events)} event{'s' if len(events) != 1 else ''} ({listed}{'…' if len(events) > 4 else ''})"
+    if dropped:
+        said += f"; {dropped} left out (each needs a 'title' and a 'start' with its date)"
+    return said, None
 
 
 def _labels(rows, *keys) -> list[str]:
@@ -357,6 +417,24 @@ _ASKS_ACTION = re.compile(r"\b(?:send|email|e-mail|text|message|reply to|book|re
 #: Asked for a list to tick off, in English: a checklist card, not the list in words.
 _ASKS_LIST = re.compile(r"\b(?:packing|shopping|grocery|to-?do|todo|check)\s*list\b|\bchecklist\b|\blist of (?:things|what) to "
                         r"(?:pack|bring|buy|do|get)\b|\bwhat (?:do|should) (?:i|we) (?:pack|bring)\b", re.IGNORECASE)
+#: Asked what is on the calendar, in English (2026-10-29): an 'agenda' card. Not when asked to put
+#: something on it: that's an errand, the review note's.
+_ASKS_CALENDAR = re.compile(
+    r"\b(?:my|the|our) (?:calendar|agenda|schedule)\b|\bcalendar\b.*\?|\bagenda\b"
+    r"|\bwhat(?:'s|’s| is) (?:on|happening|planned|going on)\b[^.?!]*\b(?:today|tonight|tomorrow|this (?:week|weekend|morning|"
+    r"afternoon|evening)|next week|(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|the \d)"
+    r"|\bwhat(?:'s|’s| is) on\s*(?:\?|$)|\bwhat (?:do|did) (?:i|we) have\b|\bwhat have (?:i|we) got\b"
+    r"|\b(?:am i|are we) (?:free|busy|booked)\b|\bany (?:meetings|appointments|events|plans)\b"
+    r"|\b(?:what|when)(?:'s|’s| is) (?:my )?next (?:meeting|appointment|event)\b|\b(?:when|what time) (?:is|does|do) my\b[^.?!]*\b(?:meeting|appointment|event|call|class|game)s?\b",
+    re.IGNORECASE)
+_NAMES_CALENDAR = re.compile(r"\b(?:calendar|agenda|schedule|meetings?|appointments?|events?|free|busy)\b", re.IGNORECASE)
+_PUTS_ON_CALENDAR = re.compile(
+    r"\b(?:add|put|create|make|book|set up|move|reschedule|cancel|delete|remove|invite|block(?: off| out)?)\b"
+    r"|\bschedule (?:a|an|the|me|it|that|this|my)\b|\bremind me\b", re.IGNORECASE)
+AGENDA_NOTE = (f"[Redde: asked what's on the calendar. Look the events up with the calendar tool first, then show them "
+               f"with {TOOL} as an 'agenda' card ('events' with title, start and end as the tool gave them, location, "
+               "calendar; 'date' for each day asked about, so a free day shows too), then answer in a line: don't list the "
+               "events again in words.")
 LIST_NOTE = (f"[Redde: show the list as a 'checklist' card with {TOOL} (its 'items' grouped by 'section', an 'emoji'), "
              "then answer in a line: don't also write the list out in words.]")
 #: How much each agent may do unasked (asked 2026-10-28, "Proactive", after Muse's adjustable
@@ -406,6 +484,20 @@ def turn_note(home: Path, message, platform: str = "", at: datetime | None = Non
     if platform not in REDDES or not offered(home):
         return None
     text = _text(message)
+    # A card's answer is the go-ahead itself, not a new ask.
+    calendar_asked = bool(_ASKS_CALENDAR.search(text)) and not _PUTS_ON_CALENDAR.search(text)
+    # "What's the weather tomorrow" is the weather's, unless the calendar is named too.
+    if calendar_asked and (_ASKS_WEATHER.search(text) or _ASKS_TIME.search(text)) and not _NAMES_CALENDAR.search(text):
+        calendar_asked = False
+    if "[Redde card " not in text and calendar_asked and not gated(home):
+        note = AGENDA_NOTE
+        tz = forecast.zone(preferences(home).get("tz"))
+        if tz is not None:
+            # "Tomorrow" is the person's: the server's clock may be in another zone.
+            note += f" Where the person is, it is now {forecast.time_said(None, tz, at).split(': ', 1)[1]} ({tz.key}).]"
+        else:
+            note += "]"
+        return note
     time_asked, weather_asked = bool(_ASKS_TIME.search(text)), bool(_ASKS_WEATHER.search(text))
     if not time_asked and not weather_asked:
         # A card's answer is the go-ahead itself, not a new ask.

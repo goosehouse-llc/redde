@@ -389,3 +389,46 @@ class GatedTests(unittest.TestCase):
         self.assertEqual(cards.gated_slash(self.root, ["claude", "off"]), "redde-push gated none")
         self.assertFalse(cards.gated(self.coder))
         self.assertTrue(cards.gated_slash(self.root, ["../x", "on"]).endswith("not a profile name"))
+
+
+class AgendaTests(unittest.TestCase):
+    """What's on the calendar as an 'agenda' card (asked 2026-10-29)."""
+    def setUp(self):
+        self.home = Path(tempfile.mkdtemp())
+
+    def test_an_agenda_is_checked_leniently_and_an_empty_day_still_shows(self):
+        shown, problems = cards.check({"cards": [{"type": "agenda", "title": "Tomorrow", "date": "2026-10-30", "events": [
+            {"title": "Standup", "start": "2026-10-30T09:30:00-04:00", "end": "2026-10-30T09:45:00-04:00", "calendar": "Work"},
+            {"summary": "Day off", "start": "2026-10-30"}, {"title": "no start"}]}]})
+        self.assertEqual(problems, [])
+        self.assertIn("2 events", shown[0])
+        self.assertIn("1 left out", shown[0])
+        shown, problems = cards.check({"cards": [{"type": "agenda", "date": "2026-10-31", "events": []}]})
+        self.assertIn("nothing on the calendar", shown[0])
+        shown, problems = cards.check({"cards": [{"type": "agenda"}]})
+        self.assertEqual(shown, [])
+        self.assertIn("needs 'events'", problems[0])
+
+    def test_the_card_is_passed_on_as_given(self):
+        said = json.loads(cards.handle({"cards": [{"type": "agenda", "date": "2026-10-30",
+                                                    "events": [{"title": "Standup", "start": "2026-10-30T09:30:00-04:00"}]}]}))
+        self.assertEqual(said["cards"][0]["events"][0]["title"], "Standup")
+
+    def test_asked_what_is_on_the_calendar_the_agent_is_told_to_show_an_agenda(self):
+        for asked in ("What's on my calendar tomorrow?", "what's on my calendar", "What do I have today?", "Am I free Friday afternoon?",
+                      "Any meetings this week?", "What's my schedule tomorrow", "when is my next meeting", "what's on tomorrow",
+                      "what time is my dentist appointment tomorrow?"):
+            self.assertIn("'agenda'", cards.turn_note(self.home, asked, platform="desktop") or "", asked)
+        for not_asked in ("Add dentist to my calendar Friday at 3", "Put lunch with Dana on my calendar", "Schedule a call with Ana tomorrow",
+                          "what's the weather tomorrow", "what's for dinner tonight?", "what time is it in Tokyo", "Remind me to call the vet"):
+            self.assertNotIn("'agenda'", cards.turn_note(self.home, not_asked, platform="desktop") or "", not_asked)
+
+    def test_the_person_s_time_comes_with_it_and_cards_off_or_a_gated_agent_get_none(self):
+        cards.slash(self.home, ["on", "tz=America/New_York"])
+        self.assertIn("America/New_York", cards.turn_note(self.home, "What's on my calendar tomorrow?", platform="desktop"))
+        cards.slash(self.home, ["off"])
+        self.assertIsNone(cards.turn_note(self.home, "What's on my calendar tomorrow?", platform="desktop"))
+        root = Path(tempfile.mkdtemp())
+        (root / "profiles" / "claude").mkdir(parents=True)
+        cards.gated_slash(root, ["claude", "on"])
+        self.assertIsNone(cards.turn_note(root / "profiles" / "claude", "What's on my calendar tomorrow?", platform="desktop"))

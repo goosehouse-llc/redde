@@ -157,6 +157,7 @@ struct ContentView: View {
         .sheet(isPresented: $showProfilePicker) { NavigationStack { ProfilePickerView() } }
         .modifier(WatchDraftSheet())
         .modifier(BriefingSheets())
+        .modifier(KeyRequestSheets())
         .modifier(PinnedCardSheets { id in
             // A pinned card's chat, from wherever it was pinned: the copy on the iPhone.
             if id != conversation.id, !conversation.isStreaming, let record = conversation.storeForContext.record(id: id) { conversation.load(record) }

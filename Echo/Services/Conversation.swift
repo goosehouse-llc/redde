@@ -619,7 +619,7 @@ final class Conversation {
                     finished = message.tools[i]
                     // A card call: the plugin's answer has the weather and the time filled in, and a
                     // call it turned down shows nothing after all.
-                    if message.tools[i].name == ReplyCards.tool {
+                    if ReplyCards.carriesCards(message.tools[i].name) {
                         let kept = message.tools.compactMap(ReplyCards.cards(from:)).flatMap { $0 }
                         message.cards = kept.isEmpty ? nil : kept
                     }
@@ -2014,12 +2014,12 @@ final class Conversation {
         update(id) { if $0.todos != answered { $0.todos = answered } }
     }
 
-    /// Over the Hermes API a card call (`redde_show`) comes in the stream by its name alone, its
+    /// Over the Hermes API a card call (`redde_show`, `request_secret`) comes in the stream by its name alone, its
     /// arguments left out: the transcript has them, read once the reply is done. Only the newest
     /// reply's, and only for a reply that made such a call and has no cards yet.
     private func settleCards(_ id: UUID) async {
         guard let session = serverSessionID, let reply = messages.last(where: { $0.id == id }), (reply.cards ?? []).isEmpty,
-              reply.tools.contains(where: { $0.name == ReplyCards.tool && $0.status != .failed }),
+              reply.tools.contains(where: { ReplyCards.carriesCards($0.name) && $0.status != .failed }),
               let rows = try? await ledgerAPI()?.newestMessages(sessionID: session, limit: 60) else { return }
         var read = Conversation.mapStored(rows)
         ReplyCards.resolve(&read)

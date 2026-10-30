@@ -16,6 +16,10 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
     case places(Places)
     case weather(Weather)
     case time(Clock)
+    /// What's on the calendar (asked 2026-10-29: "when I ask what's on my calendar for tomorrow or
+    /// what's on my calendar in general, make it appear in a calendar card"): the events the agent
+    /// read with its calendar tool, by day, and the days asked about, which show even when free.
+    case agenda(Agenda)
     /// Cards the person answers with a tap (asked 2026-10-28, after Meta's Muse, whose app, not
     /// its model, shows what it is about to do): drawn by the app from the call; the answer goes to
     /// the agent as the person's next message, with a note of exactly what was picked or left in
@@ -24,6 +28,83 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
     case choice(Choice)
     case checklist(Checklist)
     case form(Form)
+    /// A key a bot asked for (`request_secret`, `KeyRequests`): which, for which profile, why. It
+    /// opens the card the key is pasted into; nothing of the key is in the chat.
+    case key(KeyAsk)
+
+    nonisolated struct KeyAsk: Codable, Equatable, Sendable {
+        var id: String
+        var name: String
+        var profile: String
+        var why: String
+    }
+
+    nonisolated struct Agenda: Codable, Equatable, Sendable {
+        var title: String?
+        var events: [Event]
+        /// The days asked about ("2026-10-30"), shown even with nothing on them.
+        var days: [String]
+
+        nonisolated struct Event: Codable, Equatable, Sendable, Hashable {
+            var title: String
+            var start: Date
+            var end: Date?
+            var allDay: Bool
+            /// Its day on this phone ("2026-10-30"); an all-day event's as the calendar gave it.
+            var day: String
+            var location: String?
+            var calendar: String?
+            var notes: String?
+        }
+
+        /// The days to draw in order, each with its events: all-day ones first, then by start.
+        var byDay: [(day: String, events: [Event])] {
+            let all = Set(days).union(events.map(\.day)).sorted()
+            return all.map { day in
+                (day, events.filter { $0.day == day }.sorted { a, b in
+                    a.allDay != b.allDay ? a.allDay : (a.start, a.title) < (b.start, b.title)
+                })
+            }
+        }
+
+        /// A start or an end as an agent writes it: "2026-10-30T09:30:00-04:00" (or with Z, or
+        /// seconds' fractions), "2026-10-30T09:30" or "2026-10-30 09:30" (this phone's time), or
+        /// "2026-10-30", all day. The day is the phone's, for a time given in another zone.
+        static func when(_ written: String, timeZone: TimeZone = .current) -> (date: Date, day: String, allDay: Bool)? {
+            let text = written.trimmingCharacters(in: .whitespaces)
+            guard text.count >= 10, text.prefix(10).wholeMatch(of: /\d{4}-\d{2}-\d{2}/) != nil else { return nil }
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.timeZone = timeZone
+            let dayOnly = String(text.prefix(10))
+            if text.count == 10 {
+                let parts = dayOnly.split(separator: "-").compactMap { Int($0) }
+                guard parts.count == 3, let date = calendar.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2])) else { return nil }
+                return (date, dayOnly, true)
+            }
+            let iso = text.replacingOccurrences(of: " ", with: "T", options: [], range: text.index(text.startIndex, offsetBy: 10)..<text.index(text.startIndex, offsetBy: 11))
+            var date: Date?
+            if iso.range(of: #"(Z|[+-]\d{2}:?\d{2})$"#, options: .regularExpression) != nil {
+                for options: ISO8601DateFormatter.Options in [[.withInternetDateTime], [.withInternetDateTime, .withFractionalSeconds],
+                                                              [.withFullDate, .withTime, .withColonSeparatorInTime, .withTimeZone]] {
+                    let formatter = ISO8601DateFormatter()
+                    formatter.formatOptions = options
+                    if let found = formatter.date(from: iso) { date = found; break }
+                }
+            } else {
+                let formatter = DateFormatter()
+                formatter.locale = Locale(identifier: "en_US_POSIX")
+                formatter.timeZone = timeZone
+                for format in ["yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd'T'HH:mm", "yyyy-MM-dd'T'HH:mm:ss.SSS"] {
+                    formatter.dateFormat = format
+                    if let found = formatter.date(from: iso) { date = found; break }
+                }
+            }
+            guard let date else { return nil }
+            let parts = calendar.dateComponents([.year, .month, .day], from: date)
+            guard let year = parts.year, let month = parts.month, let day = parts.day else { return nil }
+            return (date, String(format: "%04d-%02d-%02d", year, month, day), false)
+        }
+    }
 
     /// What the agent has made ready to send, buy, book or change: its details, which the person
     /// can change, and the button that lets it go ahead ("Send").
@@ -98,7 +179,7 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
     var answerable: Bool {
         switch self {
         case .review, .choice, .checklist, .form: true
-        case .map, .places, .weather, .time: false
+        case .map, .places, .weather, .time, .agenda, .key: false
         }
     }
 
@@ -237,6 +318,11 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
 nonisolated enum ReplyCards {
     /// The Redde plugin's tool that shows them.
     static let tool = "redde_show"
+    /// Its tool a bot asks for a key with: its answer becomes the card the key is pasted into.
+    static let keyTool = "request_secret"
+
+    /// Whether a step's call is one cards come from.
+    static func carriesCards(_ name: String) -> Bool { name == tool || name == keyTool }
     static let maxCards = 4
     static let maxPlaces = 12
 
@@ -250,12 +336,22 @@ nonisolated enum ReplyCards {
     /// plugin's answer, where it can be read, has the cards filled in (from 1.7.0: the weather and
     /// the time looked up), and wins over what the agent wrote.
     static func cards(from step: ToolActivity) -> [ReplyCard]? {
+        if step.name == keyTool { return keyCard(from: step) }
         guard step.name == tool, step.status != .failed else { return nil }
         if let output = step.output, let answer = try? JSONValue.parse(Data(output.utf8)), answer["cards"]?.array != nil {
             return parse(answer)
         }
         guard let text = step.args, let args = try? JSONValue.parse(Data(text.utf8)) else { return nil }
         return parse(args)
+    }
+
+    /// A key request's card, from the plugin's answer to the call: only a request it took (one
+    /// with an id) has one. The answer holds no key: there is none yet.
+    static func keyCard(from step: ToolActivity) -> [ReplyCard]? {
+        guard step.status != .failed, let output = step.output,
+              let answer = try? JSONValue.parse(Data(output.utf8)),
+              let id = answer["id"]?.string, !id.isEmpty, let name = answer["name"]?.string, !name.isEmpty else { return nil }
+        return [.key(.init(id: id, name: name, profile: answer["profile"]?.string ?? "default", why: answer["why"]?.string ?? ""))]
     }
 
     /// Where the forecasts the plugin and the phone look up come from, credited on the card.
@@ -296,6 +392,8 @@ nonisolated enum ReplyCards {
         case "time", "clock":
             let zone = text(value["timezone"] ?? value["time_zone"] ?? value["timeZone"]).flatMap { TimeZone(identifier: $0)?.identifier }
             return .time(.init(place: text(value["place"] ?? value["location"]).map { String($0.prefix(80)) }, timeZone: zone))
+        case "agenda", "calendar", "events", "schedule":
+            return agenda(value).map(ReplyCard.agenda)
         case "review", "confirm":
             let fields: [ReplyCard.Field] = (value["fields"]?.array ?? []).prefix(maxFields).compactMap { f in
                 guard let label = text(f["label"] ?? f["name"]) else { return nil }
@@ -347,6 +445,33 @@ nonisolated enum ReplyCards {
         default:
             return nil
         }
+    }
+
+    static let maxEvents = 50
+
+    /// An agenda: its events (each a title and a start with its date; the rest as given), and the
+    /// days asked about. With neither, and no title, there is nothing to draw.
+    static func agenda(_ value: JSONValue, timeZone: TimeZone = .current) -> ReplyCard.Agenda? {
+        let events: [ReplyCard.Agenda.Event] = (value["events"]?.array ?? value["items"]?.array ?? []).prefix(maxEvents).compactMap { e in
+            guard let title = text(e["title"] ?? e["summary"] ?? e["name"]),
+                  let written = text(e["start"] ?? e["starts"] ?? e["start_time"] ?? e["when"] ?? e["date"]),
+                  let start = ReplyCard.Agenda.when(written, timeZone: timeZone) else { return nil }
+            let allDay = e["all_day"]?.bool ?? e["allDay"]?.bool ?? start.allDay
+            let end = text(e["end"] ?? e["ends"] ?? e["end_time"]).flatMap { ReplyCard.Agenda.when($0, timeZone: timeZone)?.date }
+            return .init(title: String(title.prefix(160)), start: start.date, end: end.flatMap { $0 > start.date ? $0 : nil }, allDay: allDay,
+                         day: start.day, location: text(e["location"] ?? e["where"] ?? e["place"]).map { String($0.prefix(200)) },
+                         calendar: text(e["calendar"] ?? e["calendar_name"]).map { String($0.prefix(60)) },
+                         notes: text(e["notes"] ?? e["description"]).map { String($0.prefix(600)) })
+        }
+        var days: [String] = []
+        for written in [value["date"]].compactMap({ $0 }) + (value["dates"]?.array ?? []) {
+            if let day = text(written).flatMap({ ReplyCard.Agenda.when(String($0.prefix(10)), timeZone: timeZone)?.day }), !days.contains(day) {
+                days.append(day)
+            }
+        }
+        let title = text(value["title"]).map { String($0.prefix(80)) }
+        guard !events.isEmpty || !days.isEmpty || title != nil else { return nil }
+        return .init(title: title, events: events, days: Array(days.prefix(14)))
     }
 
     static let maxFields = 8

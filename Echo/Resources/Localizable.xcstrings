@@ -2818,6 +2818,7 @@
       }
     },
     "%@ · %@" : {
+      "comment" : "Keys asked for: who asked, and where the key goes",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3927,6 +3928,9 @@
           }
         }
       }
+    },
+    "%@ asks for a key" : {
+      "comment" : "Key request card: heading, by the agent that asks"
     },
     "%@ at %@" : {
       "comment" : "When a bot's routine runs: some days of the week, then a time",
@@ -7705,6 +7709,9 @@
         }
       }
     },
+    "%@ is saved. Hermes reads it on its next restart." : {
+      "comment" : "Key request card: saved, by the key's name"
+    },
     "%@ is set by the connection itself and can't be replaced." : {
       "localizations" : {
         "da" : {
@@ -10586,6 +10593,7 @@
       }
     },
     "%@ to %@" : {
+      "comment" : "An agenda card's event, as VoiceOver reads its time",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -12431,6 +12439,9 @@
           }
         }
       }
+    },
+    "%@'s .env" : {
+      "comment" : "Key request card: the key goes into a bot's settings file, by its profile name"
     },
     "%@'s blend" : {
       "localizations" : {
@@ -27776,6 +27787,9 @@
         }
       }
     },
+    "A key is one line: this has more than one." : {
+
+    },
     "A key is stored in the Keychain. It is never shown again. Redde on Apple Watch asks through this connection and keeps its own copy of the key." : {
       "localizations" : {
         "da" : {
@@ -34152,6 +34166,9 @@
         }
       }
     },
+    "Add Key…" : {
+
+    },
     "Add login" : {
       "localizations" : {
         "da" : {
@@ -37804,6 +37821,9 @@
         }
       }
     },
+    "All day" : {
+      "comment" : "An agenda card: an event without a time"
+    },
     "All done!" : {
       "localizations" : {
         "da" : {
@@ -40567,6 +40587,9 @@
           }
         }
       }
+    },
+    "An agent that needs a key asks for it here instead of in a chat. What you paste goes sealed into that profile's .env on your Hermes: never into a chat, a model or this device." : {
+
     },
     "An agent you allow rings this iPhone like a phone call when something shouldn't wait, on the Lock Screen too. Answer, and voice mode opens in its chat: it says why it called, and you talk, hands-free, until one of you hangs up. Not answered, it is a missed call that says what it was about." : {
       "localizations" : {
@@ -56214,7 +56237,7 @@
       }
     },
     "Calendar" : {
-      "comment" : "A phone tools area (Settings → Phone tools)",
+      "comment" : "An agenda card's title",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -78914,6 +78937,9 @@
         }
       }
     },
+    "Couldn't restart Hermes: %@" : {
+
+    },
     "Couldn't rewind the gateway session: %@" : {
       "localizations" : {
         "da" : {
@@ -82206,6 +82232,12 @@
           }
         }
       }
+    },
+    "Decline" : {
+
+    },
+    "Declined. The agent is told, and nothing was saved." : {
+
     },
     "Default" : {
       "comment" : "An on-device voice's quality: the ordinary one",
@@ -111018,6 +111050,15 @@
         }
       }
     },
+    "Goes into" : {
+
+    },
+    "Goes into %@'s .env, never into this chat." : {
+      "comment" : "Key request card in a chat: the key goes into a bot's settings file, by its profile name"
+    },
+    "Goes into your main agent's .env, never into this chat." : {
+
+    },
     "Goes to this bot's chat before sending, and voice stays with it until another rule moves it. On the Dashboard connection, or the Hermes API with the Dashboard's login saved." : {
       "localizations" : {
         "da" : {
@@ -121027,6 +121068,9 @@
         }
       }
     },
+    "Hermes is restarting. It takes about a minute." : {
+
+    },
     "Hermes isn't allowed to do that there. (%@)" : {
       "localizations" : {
         "da" : {
@@ -124635,6 +124679,9 @@
           }
         }
       }
+    },
+    "Hides the details" : {
+
     },
     "Hides what %@ said" : {
       "localizations" : {
@@ -133892,6 +133939,9 @@
         }
       }
     },
+    "It goes sealed to your Hermes and straight into that file. It's never shown in a chat, sent to a model, or kept on this device." : {
+
+    },
     "It has no source to install from." : {
       "localizations" : {
         "da" : {
@@ -139556,6 +139606,9 @@
         }
       }
     },
+    "Key Asked For" : {
+
+    },
     "key included" : {
       "localizations" : {
         "da" : {
@@ -139661,6 +139714,9 @@
           }
         }
       }
+    },
+    "Keys Asked For" : {
+
     },
     "Keys it needs" : {
       "localizations" : {
@@ -149701,6 +149757,9 @@
           }
         }
       }
+    },
+    "Looking…" : {
+
     },
     "Looks after the house: lights, heating, sensors and routines." : {
       "localizations" : {
@@ -165798,6 +165857,9 @@
         }
       }
     },
+    "No agent is waiting for a key." : {
+
+    },
     "No API key is stored. Add one in Settings." : {
       "localizations" : {
         "da" : {
@@ -173786,6 +173848,9 @@
           }
         }
       }
+    },
+    "Nothing on your calendar" : {
+      "comment" : "An agenda card: a day with no events"
     },
     "Nothing said yet in Hermes Desktop." : {
       "localizations" : {
@@ -192162,6 +192227,12 @@
           }
         }
       }
+    },
+    "Paste the key" : {
+
+    },
+    "Paste the key first." : {
+
     },
     "Paste the pairing link" : {
       "localizations" : {
@@ -215750,6 +215821,9 @@
         }
       }
     },
+    "Restart Hermes Now" : {
+
+    },
     "Restart the gateway?" : {
       "localizations" : {
         "da" : {
@@ -221487,6 +221561,9 @@
           }
         }
       }
+    },
+    "Saving a key needs this server's Hermes Dashboard login (Settings › Connection). Over the Hermes API alone there's no safe way to hand it over, so nothing was sent." : {
+
     },
     "Saving…" : {
       "localizations" : {
@@ -236906,6 +236983,9 @@
           }
         }
       }
+    },
+    "Shows the details" : {
+
     },
     "Shows the message on a page of its own" : {
       "localizations" : {
@@ -254234,6 +254314,9 @@
         }
       }
     },
+    "Tap to paste it into Redde. It never goes through a chat." : {
+
+    },
     "Tap to read, hold for more" : {
       "localizations" : {
         "da" : {
@@ -257853,6 +257936,9 @@
           }
         }
       }
+    },
+    "That request was answered already, or it expired." : {
+
     },
     "that user" : {
       "localizations" : {
@@ -272748,6 +272834,9 @@
         }
       }
     },
+    "There's a key by this name already. Saving replaces it." : {
+
+    },
     "There's no API key for %@ on this iPhone. Add the bot again with its profile's key." : {
       "localizations" : {
         "da" : {
@@ -275400,6 +275489,9 @@
           }
         }
       }
+    },
+    "This Hermes's Redde plugin can't take keys yet. Update the plugin there, restart Hermes, and try again." : {
+
     },
     "This iPhone answered the code, but that Hermes hasn't sent anything back. The pairing command may have ended: run it again and scan the new code." : {
       "localizations" : {
@@ -280854,6 +280946,7 @@
       }
     },
     "Today" : {
+      "comment" : "An agenda card's day",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -281276,6 +281369,9 @@
           }
         }
       }
+    },
+    "Tomorrow" : {
+      "comment" : "An agenda card's day"
     },
     "Tomorrow at %@" : {
       "localizations" : {
@@ -301042,6 +301138,9 @@
         }
       }
     },
+    "When an agent needs a key, it asks here, not in a chat. What you paste goes sealed straight into that profile's .env on your Hermes." : {
+
+    },
     "When an event has an address, your iPhone works out when to leave from where you are, with traffic, adds it to the heads-up and reminds you when it's time. Where you are stays on your iPhone. Needs Location for Redde." : {
       "localizations" : {
         "da" : {
@@ -308370,6 +308469,7 @@
       }
     },
     "Yesterday" : {
+      "comment" : "An agenda card's day",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -309220,6 +309320,9 @@
           }
         }
       }
+    },
+    "Your agent asks for a key" : {
+
     },
     "Your agent can show a map with pins or a route, a list of places and the weather under its reply. Tap a map for directions. It takes the Redde plugin on your Hermes." : {
       "localizations" : {
@@ -312023,6 +312126,9 @@
     "Your Hermes" : {
       "extractionState" : "stale"
     },
+    "Your Hermes didn't take it (%@). Nothing was saved." : {
+
+    },
     "Your Hermes didn't take the pairing: %@. Try again." : {
       "localizations" : {
         "da" : {
@@ -313615,6 +313721,9 @@
           }
         }
       }
+    },
+    "Your main agent's .env" : {
+      "comment" : "Key request card: the key goes into the main agent's settings file"
     },
     "Your message wasn't sent" : {
       "localizations" : {

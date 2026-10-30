@@ -66,6 +66,10 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
         /// watched, `b` what changed, or why it couldn't look with `w` "failed", `i` the watch).
         /// Kept by `WatchReport`.
         case watch
+        /// A bot asks for a key (`request_secret`): `i` the request, `t` the variable, `b` why,
+        /// `g` the profile whose .env it goes in, `p` and `d` the asking agent, `r` "1" when it
+        /// replaces one. Never a value: the person pastes it into Redde's card (`KeyRequests`).
+        case key
     }
 
     var v = 1
@@ -349,6 +353,8 @@ nonisolated extension PushNote {
     static let roomKey = "room"
     static let botKey = "bot"
     static let taskKey = "task"
+    /// On a key request's notification: the request, whose card a tap opens.
+    static let keyRequestKey = "keyRequest"
     /// The sealed note, as the relay hands it to Apple. Gone once the note has been opened.
     static let sealedKey = "e"
 
@@ -444,6 +450,17 @@ nonisolated extension PushNote {
             content.body = (y ?? []).compactMap { $0.t ?? $0.r }.prefix(5).map { "• " + $0 }.joined(separator: "\n")
             content.threadIdentifier = "redde.ideas"
             content.interruptionLevel = .passive
+        case .key:
+            if let who = d.flatMap({ $0.isEmpty ? nil : $0 }) {
+                content.title = String(localized: "\(who) asks for a key", comment: "Notification: an agent, by its name, asks for a key to be pasted into Redde")
+            } else {
+                content.title = String(localized: "Your agent asks for a key")
+            }
+            content.subtitle = t ?? ""
+            content.body = [b ?? "", String(localized: "Tap to paste it into Redde. It never goes through a chat.")]
+                .filter { !$0.isEmpty }.joined(separator: "\n")
+            content.threadIdentifier = "redde.key"
+            content.interruptionLevel = .timeSensitive
         case .groupWait:
             let who = d.flatMap { $0.isEmpty ? nil : $0 }
             if let t, !t.isEmpty { content.subtitle = t }
@@ -470,6 +487,7 @@ nonisolated extension PushNote {
         // A bot's missed call opens its chat; the main agent's, the conversation it called from.
         if kind == .call, let p, !p.isEmpty, p != "default" { info[Self.botKey] = p }
         if let x, !x.isEmpty { info[Self.taskKey] = x }
+        if kind == .key, let i, !i.isEmpty { info[Self.keyRequestKey] = i }
         content.userInfo = info
         return true
     }

@@ -215,6 +215,9 @@
         }
       }
     },
+    "%@ asks for a key" : {
+      "comment" : "Notification: an agent, by its name, asks for a key to be pasted into Redde"
+    },
     "%@ attachments aren't supported on %@. Switch to the Hermes Dashboard in Settings." : {
       "localizations" : {
         "da" : {
@@ -7894,6 +7897,9 @@
         }
       }
     },
+    "Tap to paste it into Redde. It never goes through a chat." : {
+
+    },
     "The agent asked you something." : {
       "localizations" : {
         "da" : {
@@ -8211,6 +8217,9 @@
           }
         }
       }
+    },
+    "Your agent asks for a key" : {
+
     },
     "Your agent has %lld ideas for you" : {
       "localizations" : {

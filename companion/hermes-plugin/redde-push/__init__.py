@@ -33,7 +33,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import calls, cards, core, followups, headsup, ideas, qr, rooms, routines, watches
+from . import calls, cards, core, followups, headsup, ideas, keys, qr, rooms, routines, watches
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
 
 log = logging.getLogger("redde_push")
@@ -222,6 +222,7 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_m
     notes = []
     try:
         cards.announce()   # its calls told to the Dashboard's clients as they happen (issue 35)
+        keys.announce()    # and request_secret's, so its card shows at once
     except Exception:
         log.debug("redde-push: couldn't have redde_show announced", exc_info=True)
     try:
@@ -250,6 +251,11 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_m
         notes.append(watches.ask_note(_home(), _store_in, user_message, platform))
     except Exception:
         log.debug("redde-push: follow-up note failed", exc_info=True)
+    try:
+        # A key it asked for (keys.py): set or declined since, said once.
+        notes.append(keys.turn_note(_home()))
+    except Exception:
+        log.debug("redde-push: key note failed", exc_info=True)
     notes = [n for n in notes if n]
     return {"context": "\n".join(notes)} if notes else None
 
@@ -419,6 +425,10 @@ def _slash(raw_args: str = "") -> str:
     if words[:1] == ["gated"]:
         # Agents whose actions Hermes already asks about: no review cards first (cards.py).
         return cards.gated_slash(_home(), words[1:])
+    if words[:1] == ["keys"]:
+        # Keys a bot asked for (keys.py): the app lists them, and answers one with the key sealed
+        # to that request alone, or declines it. Kept in the main home.
+        return keys.slash(calls.caller(_home())[1], words[1:])
     if words[:1] == ["calls"]:
         # Which agents may ring the phone (calls.py): kept in the main home, with the phones.
         return calls.slash(_store_in(calls.caller(_home())[1]), words[1:])
@@ -586,6 +596,8 @@ def register(ctx) -> None:
     headsup.register(ctx, _home, _store_in)
     # Watches the agent sets itself (watches.py): "let me know when…".
     watches.register(ctx, _home, _store_in)
+    # Keys a bot asks for (keys.py): pasted into a card in Redde, straight into the profile's .env.
+    keys.register(ctx, _home, _store_in, lambda home, profile: routines.Stores(calls.caller(home)[1]).name(home, profile))
     ctx.register_cli_command("redde-push", "Notifications on your iPhone from Redde", _cli_setup, _cli)
     _follow_group_chats_if_any()
     _watch_schedules()

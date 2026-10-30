@@ -114,7 +114,9 @@ secret and key), `watch.json` (which sessions each phone follows), `rooms.json` 
 chats), `mutes.json` (what each phone has muted, until when), `room-cursors.json` and `room-waits.json`
 (how far each group chat has been read, and what it has been said to wait on), and
 `routine-runs.json` (the last run of each bot's schedule it has told of), and `calls.json` (which
-agents each phone takes calls from, and the calls of the last day). Delete the folder and nothing is paired.
+agents each phone takes calls from, and the calls of the last day), and `keys.json` with `keys/`
+(the keys agents have asked for: each request's name, profile and why, never a value, and a key
+pair made for that request alone, deleted once it is answered). Delete the folder and nothing is paired.
 
 ## Phone tools
 
@@ -164,6 +166,28 @@ swipe left and it is put away. Nothing is done until you take one. Redde's Setti
 Morning Ideas sets up a daily Hermes job that has the main agent look at your day and offer
 ideas this way. One agent sends ideas at most ten times an hour. The tool is offered once a
 phone is paired.
+
+## Keys asked for
+
+From 1.9.0 an agent that needs a key it hasn't got (an API key for a plugin or an MCP server it is
+setting up) asks for it by name with `request_secret` (toolset `redde_keys`), and never in the
+chat: you get a card in Redde (a notification on each paired iPhone, the call's card in the chat,
+and Settings, Agent, Keys Asked For) with the name, which profile's `.env` it goes in, and why.
+Paste the key there and it goes straight into that `.env`; or decline. The agent learns only
+that it is set or declined, on its next turn or with `secret_status`, and refers to it in config
+as `${env:NAME}`.
+
+The key travels sealed to that one request: the plugin makes a key pair for each request
+(X25519), Redde seals what you paste to it (HKDF-SHA256, AES-GCM, bound to the request's id,
+name and profile) and hands it to the plugin over the Hermes Dashboard, as a plugin command,
+which Hermes keeps in no session and no log. The plugin opens it once, writes it with Hermes's
+own `.env` writer (its lock and quoting; the line replaced if the name is there), and deletes the
+request's private half. Nothing of the value is kept by the plugin, the relay, the notification or
+the app. Over the Hermes API alone there is no such command, so Redde needs the Dashboard login
+for that server to answer (Settings, Connection); without it, it says so and sends nothing.
+Requests wait a day; one agent may ask ten times an hour; names that change how programs run
+(`PATH`, `LD_…`, `PYTHON…`, `HERMES_HOME`) are refused. Hermes reads `.env` when it starts, so a
+key counts after the next restart, which the card offers.
 
 ## Watches, follow-ups, heads-ups and briefings
 
@@ -228,6 +252,15 @@ credits it). Redde tells the plugin the phone's time zone and temperature units
 the weather (in English), the plugin adds a line to that turn only: the person's time in that
 zone, and to show the card before answering. An agent asked "what time is it" otherwise answers
 from Hermes's clock, which is the server's.
+
+Asked what is on the calendar ("what's on my calendar tomorrow", "what do I have today", "am I
+free Friday", "when is my next meeting"), in English, the plugin adds a line to that turn: look
+the events up with the calendar tool, show them as an `agenda` card, then answer in a line. An
+`agenda` holds the `events` as the calendar tool gave them (each a `title` and a `start`: an ISO
+date-time with its offset, or a date for all day; `end`, `location`, `calendar` if known) and the
+`date` or `dates` asked about, so a free day shows as one. The app draws it by day. The plugin
+looks nothing up for it and checks only that each event has a title and a dated start. Asked to
+put something on the calendar, the line isn't added: that's an errand (below).
 
 Asked to send, book, buy or change something for you, an agent is told to show a review card
 first and wait for your tap (how much it may do unasked is set per agent in Redde, Settings →

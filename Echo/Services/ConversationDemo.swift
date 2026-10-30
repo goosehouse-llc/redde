@@ -706,6 +706,45 @@ extension Conversation {
 
     /// `-echo.demoCards`: a reply that shows a walk on a map, three places and the weather, asked
     /// for with `redde_show` as an agent would (made-up cafés, real streets of Lisbon).
+    /// What's on the calendar as an agenda card (`-echo.demoAgenda`): tomorrow's day, then the
+    /// rest of the week with a free day in it. Dates from today, times in this phone's zone.
+    func seedAgendaDemo(tomorrowOnly: Bool = false) {
+        reset()
+        let calendar = Calendar.current
+        func day(_ offset: Int) -> String {
+            let date = calendar.date(byAdding: .day, value: offset, to: .now) ?? .now
+            let p = calendar.dateComponents([.year, .month, .day], from: date)
+            return String(format: "%04d-%02d-%02d", p.year ?? 2026, p.month ?? 1, p.day ?? 1)
+        }
+        let tomorrow = day(1)
+        let json = """
+        {"cards": [{"type": "agenda", "title": "Tomorrow", "date": "\(tomorrow)", "events": [
+          {"title": "Standup", "start": "\(tomorrow)T09:30:00", "end": "\(tomorrow)T09:45:00", "calendar": "Work", "location": "Zoom"},
+          {"title": "Dentist", "start": "\(tomorrow)T11:00:00", "end": "\(tomorrow)T12:00:00", "calendar": "Family",
+           "location": "200 East Robinson St, Orlando, FL", "notes": "Bring the insurance card. Parking is behind the building."},
+          {"title": "Lunch with Dana", "start": "\(tomorrow)T12:30:00", "end": "\(tomorrow)T13:30:00", "calendar": "Personal", "location": "Rossio Roasters"},
+          {"title": "Milo's soccer practice", "start": "\(tomorrow)T17:00:00", "end": "\(tomorrow)T18:15:00", "calendar": "Family", "location": "Lake Baldwin Park"},
+          {"title": "Recycling day", "start": "\(tomorrow)", "calendar": "Home"}]}]}
+        """
+        let week = """
+        {"cards": [{"type": "agenda", "title": "This week", "dates": ["\(day(2))", "\(day(3))", "\(day(4))"], "events": [
+          {"title": "Planning session", "start": "\(day(2))T10:00:00", "end": "\(day(2))T11:30:00", "calendar": "Work"},
+          {"title": "Haircut", "start": "\(day(2))T16:00:00", "end": "\(day(2))T16:45:00", "calendar": "Personal", "location": "Fade Bros"},
+          {"title": "Dinner at the Pecks'", "start": "\(day(4))T18:30:00", "calendar": "Family"}]}]}
+        """
+        func reply(_ text: String, _ cards: String) -> Message {
+            var reply = Message(role: .assistant, text: text)
+            let args = try? JSONValue.parse(Data(cards.utf8))
+            reply.tools = [ToolActivity(name: ReplyCards.tool, preview: "agenda", status: .completed, args: ToolActivity.args(ReplyCards.tool, args))]
+            reply.cards = ReplyCards.parse(args)
+            return reply
+        }
+        let first = [Message(role: .user, text: "What's on my calendar tomorrow?"),
+                     reply("Four things and recycling day; the dentist at 11 is the one to leave early for.", json)]
+        replaceForDemo(messages: tomorrowOnly ? first : first + [Message(role: .user, text: "And the rest of the week?"),
+                                                                 reply("A light week: the day after next is free.", week)])
+    }
+
     func seedCardsDemo() {
         reset()
         let json = """

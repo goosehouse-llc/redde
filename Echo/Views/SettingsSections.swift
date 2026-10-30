@@ -339,6 +339,12 @@ struct AgentSettings<Details: View>: View {
         }
 
         Section {
+            NavigationLink { KeyRequestsView() } label: { Label("Keys Asked For", systemImage: "key") }
+        } footer: {
+            Text("When an agent needs a key, it asks here, not in a chat. What you paste goes sealed straight into that profile's .env on your Hermes.")
+        }
+
+        Section {
             NavigationLink { DailyJobView(daily: MorningIdeas.job) } label: { Label("Morning Ideas", systemImage: "lightbulb") }
                 .disabled(!canReachGateway)
             NavigationLink { DailyJobView(daily: HeadsUps.job) } label: { Label("Heads-Ups", systemImage: "bell.badge") }
