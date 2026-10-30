@@ -61,7 +61,7 @@ struct SettingsView: View {
             // Dev hooks: `-echo.settingsAnchor` opens Agent on the context and memory files,
             // `-echo.settingsAnchor icloud` scrolls to Sync with iCloud and `-echo.settingsAnchor
             // plugin` to the Redde Plugin row, `voice` opens Voice, `appearance` Appearance with its
-            // colors open, `location` Agent on Current Location; `-echo.expandAppIcons`
+            // colors open, `location` Agent on Current Location, `leaveBy` on Leave-By Alerts; `-echo.expandAppIcons`
             // opens Appearance on the app icons (screenshots).
             .task {
                 if DevHooks.expandAppIcons { path = [.appearance] }
@@ -195,6 +195,8 @@ private struct SettingsPageForm<Content: View>: View {
                     try? await Task.sleep(for: .milliseconds(500))
                     if DevHooks.value("-echo.settingsAnchor") == "location" {
                         proxy.scrollTo("currentLocation", anchor: .center)
+                    } else if DevHooks.value("-echo.settingsAnchor") == "leaveBy" {
+                        proxy.scrollTo("leaveByAlerts", anchor: .center)
                     } else {
                         proxy.scrollTo("agentFiles", anchor: .top)
                     }

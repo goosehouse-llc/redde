@@ -69,13 +69,24 @@ nonisolated enum LeaveTime {
 
     /// How long the way there takes, arriving by `arriveBy`; nil when it can't be told.
     static func travel(from origin: CLLocation, to address: String, mode: Mode, arriveBy: Date) async -> TimeInterval? {
+        guard let destination = await place(of: address, near: origin) else { return nil }
+        return await travel(from: origin, to: destination, mode: mode, arriveBy: arriveBy)
+    }
+
+    /// Where an address is, as Apple Maps finds it near the phone; nil when it can't be found.
+    static func place(of address: String, near origin: CLLocation) async -> CLLocationCoordinate2D? {
         let search = MKLocalSearch.Request()
         search.naturalLanguageQuery = address
         search.region = MKCoordinateRegion(center: origin.coordinate, latitudinalMeters: 200_000, longitudinalMeters: 200_000)
-        guard let destination = try? await MKLocalSearch(request: search).start().mapItems.first else { return nil }
+        return try? await MKLocalSearch(request: search).start().mapItems.first?.location.coordinate
+    }
+
+    /// How long the way to a place already found takes, with the traffic Apple Maps expects for
+    /// arriving by `arriveBy` (an estimate alone, not the route: the cheapest ask there is).
+    static func travel(from origin: CLLocation, to destination: CLLocationCoordinate2D, mode: Mode, arriveBy: Date) async -> TimeInterval? {
         let request = MKDirections.Request()
         request.source = MKMapItem(location: origin, address: nil)
-        request.destination = destination
+        request.destination = MKMapItem(location: CLLocation(latitude: destination.latitude, longitude: destination.longitude), address: nil)
         request.transportType = mode.transport
         request.arrivalDate = arriveBy
         return try? await MKDirections(request: request).calculateETA().expectedTravelTime
@@ -95,19 +106,90 @@ nonisolated enum LeaveTime {
         return String(localized: "Leave by \(leave.formatted(date: .omitted, time: .shortened)) · \(way)")
     }
 
-    /// A reminder at the leaving time, replacing one set for the same event.
-    static func remind(event title: String, id: String, at leave: Date, travel: TimeInterval, mode: Mode,
-                       center: UNUserNotificationCenter = .current(), now: Date = .now) {
+    /// A reminder at the leaving time, replacing one set for the same event; then, should a
+    /// Leave-By Alert be set for the same event too, only the fresher of the two is kept.
+    static func remind(event title: String, id: String, startsAt start: Date?, at leave: Date, travel: TimeInterval, mode: Mode,
+                       center: UNUserNotificationCenter = .current(), now: Date = .now) async {
         guard leave > now.addingTimeInterval(60) else { return }
+        let content = content(event: title, startsAt: start, leave: leave, travel: travel, mode: mode, worked: now)
+        content.userInfo[PushNote.taskKey] = "brief"
+        let parts = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: leave)
+        try? await center.add(UNNotificationRequest(identifier: reminderPrefix + id, content: content,
+                                                    trigger: UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)))
+        await keepOne(in: center)
+    }
+
+    /// What a leaving reminder says ("Time to leave for Dentist", "Leave now · 25 min by car", as
+    /// it would `saying` then), time-sensitive, with the event it is for, for `keepOne` to tell.
+    static func content(event title: String, startsAt start: Date?, leave: Date, travel: TimeInterval, mode: Mode, worked: Date,
+                        saying: Date? = nil) -> UNMutableNotificationContent {
         let content = UNMutableNotificationContent()
         content.title = String(localized: "Time to leave for \(title)")
-        content.body = line(leave: leave, travel: travel, mode: mode, now: leave)
+        content.body = line(leave: leave, travel: travel, mode: mode, now: saying ?? leave)
         content.interruptionLevel = .timeSensitive
         content.threadIdentifier = "redde.leave"
-        content.userInfo = [PushNote.taskKey: "brief"]
-        let parts = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: leave)
-        center.add(UNNotificationRequest(identifier: reminderPrefix + id, content: content,
-                                         trigger: UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)))
+        var info: [String: Any] = [eventTitleKey: title, workedKey: worked.timeIntervalSince1970]
+        if let start { info[eventStartKey] = start.timeIntervalSince1970 }
+        content.userInfo = info
+        return content
+    }
+
+    // MARK: One reminder an event
+
+    /// A leaving reminder waiting to go off: a heads-up's or a Leave-By Alert's.
+    struct Reminder: Equatable, Sendable {
+        var id: String
+        var title: String
+        var start: Date
+        /// When it goes off; nil for one that goes off at once.
+        var fireAt: Date?
+        /// When its leaving time was worked out.
+        var worked: Date
+    }
+
+    static let eventTitleKey = "leaveEvent", eventStartKey = "leaveStart", workedKey = "leaveWorked"
+
+    /// A pending request read back as a reminder; nil for anything else, or one set before
+    /// reminders said which event they are for.
+    static func reminder(_ request: UNNotificationRequest) -> Reminder? {
+        let info = request.content.userInfo
+        guard request.identifier.hasPrefix(reminderPrefix), let title = info[eventTitleKey] as? String,
+              let start = info[eventStartKey] as? Double else { return nil }
+        let fireAt = (request.trigger as? UNCalendarNotificationTrigger)?.nextTriggerDate()
+            ?? (request.trigger as? UNTimeIntervalNotificationTrigger)?.nextTriggerDate()
+        return Reminder(id: request.identifier, title: title, start: Date(timeIntervalSince1970: start), fireAt: fireAt,
+                        worked: Date(timeIntervalSince1970: info[workedKey] as? Double ?? 0))
+    }
+
+    /// The same event: names alike (one may be the other's shorter name, "Dentist" for "Dentist
+    /// appointment", as a heads-up's often is) and starting within a minute of each other.
+    static func sameEvent(_ a: Reminder, _ b: Reminder) -> Bool {
+        guard abs(a.start.timeIntervalSince(b.start)) < 60 else { return false }
+        let one = folded(a.title), other = folded(b.title)
+        guard !one.isEmpty, !other.isEmpty else { return false }
+        if one == other { return true }
+        let (short, long) = one.count < other.count ? (one, other) : (other, one)
+        return short.count >= 4 && long.contains(short)
+    }
+
+    private static func folded(_ title: String) -> String {
+        title.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters))
+    }
+
+    /// Of reminders for the same event, the ones to take away: all but the one worked out last.
+    static func losers(_ reminders: [Reminder]) -> [String] {
+        let ordered = reminders.sorted { ($0.worked, $0.id) > ($1.worked, $1.id) }
+        var kept: [Reminder] = [], gone: [String] = []
+        for reminder in ordered {
+            if kept.contains(where: { sameEvent($0, reminder) }) { gone.append(reminder.id) } else { kept.append(reminder) }
+        }
+        return gone
+    }
+
+    /// A heads-up's reminder and a Leave-By Alert for the same event never both go off.
+    static func keepOne(in center: UNUserNotificationCenter = .current()) async {
+        let gone = losers(await center.pendingNotificationRequests().compactMap(reminder))
+        if !gone.isEmpty { center.removePendingNotificationRequests(withIdentifiers: gone) }
     }
 
     /// For a heads-up as it arrives: the line for its notification, its leaving time kept with
@@ -119,7 +201,7 @@ nonisolated enum LeaveTime {
               let travel = await travel(from: origin, to: address, mode: mode, arriveBy: event) else { return nil }
         let leave = leave(for: event, travel: travel)
         AgentBriefing.setLeave(briefing.id, at: leave, in: defaults)
-        remind(event: briefing.heading, id: briefing.id, at: leave, travel: travel, mode: mode)
+        await remind(event: briefing.heading, id: briefing.id, startsAt: event, at: leave, travel: travel, mode: mode)
         return line(leave: leave, travel: travel, mode: mode)
     }
 }

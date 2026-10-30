@@ -8,7 +8,8 @@ import MapKit
 /// is sent with the kept place gone stale; never followed, never in the background. Each new fix is
 /// put in words once (Apple's maps), and kept with them, rounded; sending reads what is kept and
 /// never waits. The fix also goes to `LeaveTime.remember`, for the places card's walks and the
-/// heads-ups' leaving times.
+/// heads-ups' leaving times, and to Leave-By Alerts (`LeaveByAlerts`), which ask for one as Redde
+/// comes forward too, with Current Location off (never put in words then, nor kept for the agent).
 @MainActor
 @Observable
 final class CurrentLocationService: NSObject, CLLocationManagerDelegate {
@@ -24,6 +25,8 @@ final class CurrentLocationService: NSObject, CLLocationManagerDelegate {
     @ObservationIgnored private var lastAsked: Date?
     @ObservationIgnored private var naming: Task<Void, Never>?
     @ObservationIgnored private let defaults: UserDefaults
+    /// Leave-By Alerts waiting for the answer to the permission they asked for.
+    @ObservationIgnored private var asking: CheckedContinuation<Void, Never>?
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -68,6 +71,20 @@ final class CurrentLocationService: NSObject, CLLocationManagerDelegate {
         }
     }
 
+    /// For Leave-By Alerts, as they are turned on: "While Using" asked for if it never was, the
+    /// answer waited for. Whether location is allowed.
+    func askToUse() async -> Bool {
+        authorization = manager.authorizationStatus
+        if authorization == .notDetermined {
+            asking?.resume()
+            await withCheckedContinuation { continuation in
+                asking = continuation
+                manager.requestWhenInUseAuthorization()
+            }
+        }
+        return allowed
+    }
+
     /// Redde came forward: a fresh fix, if the last is a few minutes old.
     func cameForward() {
         authorization = manager.authorizationStatus
@@ -76,7 +93,7 @@ final class CurrentLocationService: NSObject, CLLocationManagerDelegate {
 
     /// A fix, once, unless one was asked for or taken in the last few minutes, or one is on its way.
     func refresh(force: Bool = false, now: Date = .now) {
-        guard CurrentLocation.isOn, allowed, !finding else { return }
+        guard CurrentLocation.isOn || LeaveBy.isOn, allowed, !finding else { return }
         if !force {
             if let lastAsked, now.timeIntervalSince(lastAsked) < CurrentLocation.askEvery { return }
             if let kept, now.timeIntervalSince(kept.at) < CurrentLocation.askEvery { return }
@@ -90,6 +107,7 @@ final class CurrentLocationService: NSObject, CLLocationManagerDelegate {
 
     private func found(_ fix: CLLocation) {
         LeaveTime.remember(fix)
+        if LeaveBy.isOn { LeaveByAlerts.shared.moved(to: fix) }   // far from where the ways were worked out: again
         guard CurrentLocation.isOn else { finding = false; return }
         // Not far from the place in words already: the same words, at the new time.
         if let kept, kept.words != nil,
@@ -137,6 +155,10 @@ final class CurrentLocationService: NSObject, CLLocationManagerDelegate {
         Task { @MainActor in
             let was = allowed
             authorization = status
+            if status != .notDetermined, let asking {
+                self.asking = nil
+                asking.resume()
+            }
             // Just allowed, with the setting on: where the person is, now. Taken back: nothing kept.
             if allowed, !was { refresh(force: true) }
             if refused, kept != nil {

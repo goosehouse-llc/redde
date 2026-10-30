@@ -147,9 +147,11 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         ITSAppUsesNonExemptEncryption: false
         # A reply the person started keeps streaming after the phone locks (BackgroundTurn): an
-        # iOS 26 continued-processing task, one identifier per turn under this wildcard.
+        # iOS 26 continued-processing task, one identifier per turn under this wildcard. Leave-By
+        # Alerts (LeaveByAlerts): a background refresh shortly before the next alert, to move it with the traffic.
         BGTaskSchedulerPermittedIdentifiers:
           - com.goosehouse.echo.turn.*
+          - com.goosehouse.echo.leaveby
         # `audio`: a voice conversation goes on when Redde isn't in front — the car screen switched
         # to navigation, the phone locked in a pocket — so listening and the spoken reply aren't
         # cut off with the foreground. Without it iOS stops the microphone and silences playback.
@@ -158,20 +160,22 @@ targets:
           - processing
           # Calls from agents (AgentCalls): a VoIP push wakes Redde to ring with CallKit.
           - voip
+          # Leave-By Alerts (LeaveByAlerts): the background refresh above.
+          - fetch
         NSRemindersFullAccessUsageDescription: With Phone tools turned on, Redde reads and adds reminders when your assistant asks it to. They go only to the server you connect to.
         NSAlarmKitUsageDescription: With Phone tools turned on, Redde sets an alarm or a timer when your assistant asks it to, once you have said yes to it.
         NSContactsUsageDescription: With Phone tools turned on, Redde looks up a contact when your assistant asks it to. What it finds goes only to the server you connect to.
         NSPhotoLibraryUsageDescription: With Phone tools turned on, Redde finds photos, shows one to your assistant, or deletes the ones you confirm, when your assistant asks it to. A photo goes only to the server you connect to.
         # Places (Settings → Agent → Places): arriving at or leaving a place the person set tells the bot they chose.
         # Current Location (Settings → Agent → Current Location): roughly where the person is, for the agent.
-        NSLocationWhenInUseUsageDescription: With Places on, Redde uses where you are to set a place and to notice when you arrive or leave; only "arrived at Home" goes to your server. With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather.
+        NSLocationWhenInUseUsageDescription: With Places on, Redde uses where you are to set a place and to notice when you arrive or leave; only "arrived at Home" goes to your server. With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather. With Leave-By Alerts on, Redde works out from where you are when to leave for an event; where you are goes only to Apple Maps, for the way there.
         NSLocationAlwaysAndWhenInUseUsageDescription: With Places turned on, Redde notices when you arrive at or leave a place you set, even when Redde is closed, and tells the bot you chose. Where you are stays on your iPhone; only "arrived at Home" goes to your server.
         # Redde's folder in the Files app ("On My iPhone › Redde"): what Phone tools' files read and write.
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
         NSMotionUsageDescription: Redde reads head movement from your AirPods so you can nod to approve, or shake your head to deny, a request from your assistant. It is read on this device and never stored or sent.
         NSMicrophoneUsageDescription: Redde listens so you can talk to your assistant. Speech is transcribed on this device and only your own server receives the text, unless you start a live voice call, which goes to the voice service you chose.
-        NSCalendarsFullAccessUsageDescription: Redde can show your next event when you start a conversation, and attach a day's events to a message for your assistant. With Phone tools turned on, your assistant can also look up events and add them. Events go only to your own server.
+        NSCalendarsFullAccessUsageDescription: Redde can show your next event when you start a conversation, and attach a day's events to a message for your assistant. With Phone tools turned on, your assistant can also look up events and add them. Events go only to your own server. With Leave-By Alerts on, Redde also reads your next events on this device and asks Apple Maps how long the way to their address takes, to tell you when to leave.
         NSCameraUsageDescription: Redde uses the camera when you take a photo to attach to a message, when you show your assistant something in voice mode, and to scan a setup code. A photo goes only to the server you connect to.
         NSFaceIDUsageDescription: Redde uses Face ID to unlock the app, which holds your Hermes credentials.
         NSLocalNetworkUsageDescription: Redde connects to the Hermes gateway or model server you configure, which is often on your local network.
@@ -457,16 +461,16 @@ targets:
         # The AirPods' nod and shake (HeadGestures) is compiled in: App Store processing refused the
         # first upload (278, ITMS-90683) without it.
         NSMotionUsageDescription: Redde reads head movement from your AirPods so you can nod to approve, or shake your head to deny, a request from your assistant. It is read on this Mac and never stored or sent.
-        NSCalendarsFullAccessUsageDescription: Redde can show your next event when you start a conversation, and attach a day's events to a message for your assistant. Events go only to your own server.
+        NSCalendarsFullAccessUsageDescription: Redde can show your next event when you start a conversation, and attach a day's events to a message for your assistant. Events go only to your own server. With Leave-By Alerts on, Redde also reads your next events on this device and asks Apple Maps how long the way to their address takes, to tell you when to leave.
         NSRemindersFullAccessUsageDescription: With Phone tools turned on, Redde reads and adds reminders when your assistant asks it to. They go only to the server you connect to.
         NSContactsUsageDescription: With Phone tools turned on, Redde looks up a contact when your assistant asks it to. What it finds goes only to the server you connect to.
         NSPhotoLibraryUsageDescription: With Phone tools turned on, Redde finds photos, shows one to your assistant, or deletes the ones you confirm, when your assistant asks it to. A photo goes only to the server you connect to.
         # Places (Settings → Agent → Places): arriving at or leaving a place the person set tells the bot they chose.
         # Current Location (Settings → Agent → Current Location): roughly where the person is, for the agent.
-        NSLocationWhenInUseUsageDescription: With Places on, Redde uses where you are to set a place and to notice when you arrive or leave; only "arrived at Home" goes to your server. With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather.
+        NSLocationWhenInUseUsageDescription: With Places on, Redde uses where you are to set a place and to notice when you arrive or leave; only "arrived at Home" goes to your server. With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather. With Leave-By Alerts on, Redde works out from where you are when to leave for an event; where you are goes only to Apple Maps, for the way there.
         NSLocationAlwaysAndWhenInUseUsageDescription: With Places turned on, Redde notices when you arrive at or leave a place you set, even when Redde is closed, and tells the bot you chose. Where you are stays on your iPhone; only "arrived at Home" goes to your server.
         # Current Location (Settings → Agent → Current Location): what the Mac asks with.
-        NSLocationUsageDescription: With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather. It goes to your own server and nowhere else.
+        NSLocationUsageDescription: With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather. It goes to your own server and nowhere else. With Leave-By Alerts on, Redde works out from where you are when to leave for an event; where you are goes only to Apple Maps, for the way there.
         NSLocalNetworkUsageDescription: Redde connects to the Hermes gateway or model server you configure, which is often on your local network.
         # Hermes servers are often on a home network, without public certificates.
         NSAppTransportSecurity:

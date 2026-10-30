@@ -137,7 +137,10 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let groupApproval = UNNotificationCategory(identifier: PushNote.groupApprovalCategory, actions: [pushedApprove, pushedDeny], intentIdentifiers: [])
         let retry = UNNotificationAction(identifier: PushNote.retryAction, title: String(localized: "Retry", comment: "Notification button: asks the agent for the reply again"), options: [.authenticationRequired])
         let groupRetry = UNNotificationCategory(identifier: PushNote.groupRetryCategory, actions: [retry], intentIdentifiers: [])
-        fixedCategories = [category, clarifyText, replied, pushed, pushedApproval, pushedQuestion, groupReplied, groupApproval, groupRetry]
+        // A Leave-By Alert: the way there in Apple Maps (`LeaveBy`).
+        let maps = UNNotificationAction(identifier: LeaveBy.mapsAction, title: String(localized: "Open in Maps"), options: [.foreground])
+        let leave = UNNotificationCategory(identifier: LeaveBy.mapsCategory, actions: [maps], intentIdentifiers: [])
+        fixedCategories = [category, clarifyText, replied, pushed, pushedApproval, pushedQuestion, groupReplied, groupApproval, groupRetry, leave]
         center.setNotificationCategories(fixedCategories)
     }
 
@@ -204,8 +207,17 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let bot = info[PushNote.botKey] as? String
         let keyRequest = info[PushNote.keyRequestKey] as? String
         let userText = (response as? UNTextInputNotificationResponse)?.userText
+        let leaveTitle = info[LeaveTime.eventTitleKey] as? String
+        let leaveAt = (info[LeaveBy.latitudeKey] as? Double).flatMap { lat in (info[LeaveBy.longitudeKey] as? Double).map { (lat, $0) } }
+        let leaveMode = info[LeaveBy.modeKey] as? String
         nonisolated(unsafe) let handled = completionHandler   // iOS's own; only ever called below
         Task { @MainActor in
+            // A Leave-By Alert's Open in Maps: the way there.
+            if action == LeaveBy.mapsAction, let leaveAt {
+                LeaveByAlerts.openInMaps(title: leaveTitle, latitude: leaveAt.0, longitude: leaveAt.1, mode: leaveMode)
+                handled()
+                return
+            }
             let work = self.route(action: action, requestID: requestID, questionID: questionID, approve: approve, deny: deny,
                                   userText: userText, conversationID: conversationID, sessionID: sessionID, approvalDigest: digest,
                                   questionDigest: asked, room: room, task: task, bot: bot, keyRequest: keyRequest)
@@ -226,8 +238,13 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let room = info[PushNote.roomKey] as? String
         let bot = info[PushNote.botKey] as? String
         let sealed = info[PushNote.sealedKey] as? String
+        let leaving = notification.request.identifier.hasPrefix(LeaveTime.reminderPrefix)
         nonisolated(unsafe) let show = completionHandler
         Task { @MainActor in
+            // Time to leave: said over Redde too (the app's own, set for then, `LeaveTime`).
+            if leaving { return show(self.shown) }
+            // A heads-up came: its leaving reminder and a Leave-By Alert for the same event become one.
+            if kind == PushNote.Kind.routine.rawValue { LeaveByAlerts.shared.headsUpArrived() }
             if kind == nil, let sealed {
                 show(self.presentUnopened(sealed))
             } else {
@@ -677,6 +694,8 @@ final class PushDelegate: NSObject, UIApplicationDelegate {
         #if canImport(HealthKit)
         HealthDays.startIfOn()
         #endif
+        // Leave-By Alerts' background refresh: registered before launch finishes, as iOS requires.
+        LeaveByAlerts.registerRefresh()
         return true
     }
 

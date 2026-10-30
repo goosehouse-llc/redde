@@ -382,6 +382,99 @@ struct CurrentLocationSection: View {
     }
 }
 
+/// Settings → Agent → Leave-By Alerts (`LeaveBy`, asked 2026-10-30), and the Heads-Ups page under
+/// Getting There: the switch; under it, while on, the way of getting about (`showsWay`) and the
+/// next alert, or what the device doesn't allow, with the way to Settings. Turning it on asks for
+/// what it needs (`LeaveByAlerts.turned`).
+struct LeaveByAlertsSection: View {
+    var showsWay = true
+    @State private var mode = LeaveTime.mode()
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        Section {
+            Toggle(isOn: Binding(get: { Settings.shared.leaveByAlerts }, set: { on in
+                Settings.shared.leaveByAlerts = on
+                if on { Task { await LeaveByAlerts.shared.turned(on: true) } }
+            })) {
+                Label("Leave-By Alerts", systemImage: symbol)
+            }
+            if Settings.shared.leaveByAlerts {
+                if showsWay {
+                    Picker("Getting There", selection: $mode) {
+                        Text("By Car").tag(LeaveTime.Mode.driving)
+                        Text("By Transit").tag(LeaveTime.Mode.transit)
+                        Text("On Foot").tag(LeaveTime.Mode.walking)
+                        Text("Don't Work It Out").tag(LeaveTime.Mode.off)
+                    }
+                    .onChange(of: mode) { _, mode in
+                        LeaveTime.setMode(mode)
+                        LeaveByAlerts.shared.wayChanged()
+                    }
+                }
+                status
+            }
+        } footer: {
+            Text("Redde looks at your calendar and Apple Maps on this device and tells you when to leave, a few minutes early. Only events with a street address.")
+        }
+        .id("leaveByAlerts")
+        .onAppear { mode = LeaveTime.mode() }   // (the Heads-Ups page's picker may have changed it)
+        .task { await LeaveByAlerts.shared.check() }
+    }
+
+    private var symbol: String {
+        switch mode {
+        case .transit: "tram"
+        case .walking: "figure.walk"
+        default: "car"
+        }
+    }
+
+    @ViewBuilder private var status: some View {
+        let alerts = LeaveByAlerts.shared
+        Group {
+            if !alerts.missing.isEmpty {
+                Button(String(localized: "Redde needs access to \(missing(alerts.missing)). Open Settings…",
+                              comment: "Settings → Leave-By Alerts, when a permission is denied: e.g. Calendars and Location")) {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                }
+            } else if mode == .off {
+                Text("No alerts while Getting There is set to Don't Work It Out.", comment: "Settings → Leave-By Alerts, with the way of getting about set to none")
+            } else if let next = alerts.next {
+                Label {
+                    Text("Next: \(next.title), leave by \(Self.when(next.leave))", comment: "Settings → Leave-By Alerts: the next alert, e.g. Next: Dentist, leave by 2:05 PM")
+                } icon: {
+                    Image(systemName: "clock").foregroundStyle(.tint)
+                }
+            } else if alerts.working {
+                Label {
+                    Text("Working out when to leave…", comment: "Settings → Leave-By Alerts, while the calendar and Apple Maps are looked at")
+                } icon: {
+                    ProgressView().controlSize(.small)
+                }
+            } else {
+                Text("Nothing with a street address on your calendar in the next day and a half.", comment: "Settings → Leave-By Alerts, with no event to leave for")
+            }
+        }
+        .font(.footnote)
+        .foregroundStyle(.secondary)
+    }
+
+    /// "Calendars, Location and Notifications", as the device's own settings name them.
+    private func missing(_ missing: Set<LeaveByAlerts.Missing>) -> String {
+        let names = [(LeaveByAlerts.Missing.calendar, String(localized: "Calendars")),
+                     (.location, String(localized: "Location", comment: "The location permission, as the device's settings name it")),
+                     (.notifications, String(localized: "Notifications"))]
+        return ListFormatter.localizedString(byJoining: names.filter { missing.contains($0.0) }.map(\.1))
+    }
+
+    /// A time today ("2:05 PM"), or with its day ("Sat 8:10 AM").
+    private static func when(_ date: Date) -> String {
+        Calendar.current.isDateInToday(date) ? date.formatted(date: .omitted, time: .shortened)
+            : date.formatted(.dateTime.weekday(.abbreviated).hour().minute())
+    }
+}
+
 /// Skills, tools and the agent's context and memory files. All live on the gateway.
 struct AgentSettings<Details: View>: View {
     /// An API key or a Dashboard login is stored.
@@ -486,6 +579,8 @@ struct AgentSettings<Details: View>: View {
         }
 
         CurrentLocationSection()
+
+        LeaveByAlertsSection()
 
         Section {
             Toggle(isOn: Binding(get: { Settings.shared.replyCards }, set: { Settings.shared.replyCards = $0 })) {

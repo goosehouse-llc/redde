@@ -177,6 +177,7 @@ struct ContentView: View {
                 case "activity": AgentActivityView()
                 case "pluginUpdates": PluginUpdatesView(agents: DemoDay.on ? DemoDay.pluginAgents : PluginUpdatesView.everyAgent())
                 case "calendars": CalendarsSettingsView()
+                case "headsUps": DailyJobView(daily: HeadsUps.job)
                 default: TriggersView()
                 }
             }
@@ -1241,7 +1242,7 @@ struct ContentView: View {
         #if DEBUG
         case "botGallery": showBotGallery = true
         case "patch": showDemoPatch = true
-        case "activity", "pluginUpdates", "triggers", "calendars": demoDayPage = DevHooks.value("-echo.screen")
+        case "activity", "pluginUpdates", "triggers", "calendars", "headsUps": demoDayPage = DevHooks.value("-echo.screen")
         #endif
         default: break
         }

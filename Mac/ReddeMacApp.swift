@@ -29,6 +29,8 @@ struct ReddeMacApp: App {
         Conversation.current = conversation   // Siri's intents send through it
         CloudSync.shared.start()   // with Sync with iCloud on, what other devices changed meanwhile
         Notifier.shared.attach(conversation: conversation)
+        // With Leave-By Alerts on, the calendar is followed, and a run every ten minutes while Redde runs.
+        LeaveByAlerts.shared.start()
         #if DEBUG
         if DevHooks.has("-echo.hitches") { FrameMonitor.shared.start() }
         // `-echo.keychainProbe`: a throwaway secret written, read back and removed, the result in
@@ -136,8 +138,10 @@ struct ReddeMacApp: App {
                     Task { await conversation.catchUp() }
                     Task { await CaptureInbox.shared.file() }   // notes taken offline
                     IdeasInbox.shared.reload()
-                    // With Current Location on, where the Mac is, for the next place question.
-                    if CurrentLocation.isOn { CurrentLocationService.shared.cameForward() }
+                    // With Current Location on, where the Mac is, for the next place question; with
+                    // Leave-By Alerts on, for when to leave.
+                    if CurrentLocation.isOn || LeaveBy.isOn { CurrentLocationService.shared.cameForward() }
+                    LeaveByAlerts.shared.cameForward()
                     Task { await ReplyCardsSwitch.publish() }
                     Mutes.publish()
                 @unknown default: break

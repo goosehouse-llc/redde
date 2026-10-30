@@ -32,7 +32,7 @@
 		<true/>
 	</dict>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>Redde can show your next event when you start a conversation, and attach a day's events to a message for your assistant. Events go only to your own server.</string>
+	<string>Redde can show your next event when you start a conversation, and attach a day's events to a message for your assistant. Events go only to your own server. With Leave-By Alerts on, Redde also reads your next events on this device and asks Apple Maps how long the way to their address takes, to tell you when to leave.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Redde uses the camera when you show your assistant something in voice mode. A picture goes only to the server you connect to.</string>
 	<key>NSContactsUsageDescription</key>
@@ -42,9 +42,9 @@
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>With Places turned on, Redde notices when you arrive at or leave a place you set, even when Redde is closed, and tells the bot you chose. Where you are stays on your iPhone; only "arrived at Home" goes to your server.</string>
 	<key>NSLocationUsageDescription</key>
-	<string>With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather. It goes to your own server and nowhere else.</string>
+	<string>With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather. It goes to your own server and nowhere else. With Leave-By Alerts on, Redde works out from where you are when to leave for an event; where you are goes only to Apple Maps, for the way there.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>With Places on, Redde uses where you are to set a place and to notice when you arrive or leave; only "arrived at Home" goes to your server. With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather.</string>
+	<string>With Places on, Redde uses where you are to set a place and to notice when you arrive or leave; only "arrived at Home" goes to your server. With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather. With Leave-By Alerts on, Redde works out from where you are when to leave for an event; where you are goes only to Apple Maps, for the way there.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Redde listens so you can talk to your assistant. Speech is transcribed on this device and only your own server receives the text, unless you start a live voice call, which goes to the voice service you chose.</string>
 	<key>NSMotionUsageDescription</key>

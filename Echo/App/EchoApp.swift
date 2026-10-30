@@ -33,6 +33,7 @@ struct EchoApp: App {
         // Places: iOS wakes Redde when a place's circle is crossed; its events are listened to from here.
         Places.shared.start()
         #endif
+        LeaveByAlerts.shared.start()   // with Leave-By Alerts on, the calendar is followed from here
         #if DEBUG
         AlarmTrace.watch()   // what iOS does with Redde's alarms, kept in a file to read off a phone
         if DevHooks.has("-echo.hitches") { FrameMonitor.shared.start() }
@@ -106,8 +107,10 @@ struct EchoApp: App {
                     BriefingsInbox.shared.reload()   // and briefings
                     HeldNote.seen()   // what came in quiet hours is here to see: no digest of it later
                     FeedbackFold.cameForward()   // a word on ideas or briefings that didn't reach the jobs yet
-                    // With Current Location on, where the person is, for their next place question.
-                    if CurrentLocation.isOn { CurrentLocationService.shared.cameForward() }
+                    // With Current Location on, where the person is, for their next place question;
+                    // with Leave-By Alerts on, for when to leave.
+                    if CurrentLocation.isOn || LeaveBy.isOn { CurrentLocationService.shared.cameForward() }
+                    LeaveByAlerts.shared.cameForward()   // when to leave for the next events, a moment later
                     #if os(iOS)
                     Places.shared.noteWhereThePhoneIs()   // for when to leave for a heads-up's event
                     Task { await HealthDays.refresh() }   // the day's steps, if Health-Aware Days is on

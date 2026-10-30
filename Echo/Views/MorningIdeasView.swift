@@ -222,7 +222,10 @@ struct DailyJobView: View {
             }
             if daily.travel, on {
                 Section {
-                    Picker("Getting There", selection: Binding(get: { LeaveTime.mode() }, set: { LeaveTime.setMode($0) })) {
+                    Picker("Getting There", selection: Binding(get: { LeaveTime.mode() }, set: {
+                        LeaveTime.setMode($0)
+                        LeaveByAlerts.shared.wayChanged()
+                    })) {
                         Text("By Car").tag(LeaveTime.Mode.driving)
                         Text("By Transit").tag(LeaveTime.Mode.transit)
                         Text("On Foot").tag(LeaveTime.Mode.walking)
@@ -231,6 +234,11 @@ struct DailyJobView: View {
                 } footer: {
                     Text("When an event has an address, your iPhone works out when to leave from where you are, with traffic, adds it to the heads-up and reminds you when it's time. Where you are stays on your iPhone. Needs Location for Redde.")
                 }
+            }
+            // Leave-By Alerts, worked out on this device whether heads-ups are on or not; their own
+            // Getting There while the one above isn't there.
+            if daily.travel {
+                LeaveByAlertsSection(showsWay: !on)
             }
             if sent {
                 Section { Label { Text(daily.asked) } icon: { Image(systemName: "checkmark.circle") } }

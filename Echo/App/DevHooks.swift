@@ -2,7 +2,9 @@
 #if canImport(AlarmKit)
 import AlarmKit
 #endif
+import EventKit
 import Foundation
+import os
 import UserNotifications
 import WidgetKit
 
@@ -86,6 +88,12 @@ import WidgetKit
 ///   `-push.relay <url>` points the app at another push relay (the lab's, on this Mac).
 /// - `-echo.demoNotify [seconds]`: ask to send notifications, then post one that many seconds
 ///   later (twelve by default), for the test that closes the app and taps it.
+/// - `-echo.leaveByTest`: on the simulator only, two test events in its calendar (one at a street
+///   address 90 minutes from now, one in a room), Leave-By Alerts on by car, one run, and the
+///   alerts pending in the log (category leaveby). `-echo.leaveByClean` deletes the test events,
+///   logs what is pending once the calendar's change has been followed, and turns the switch off.
+///   `-echo.settingsAnchor leaveBy` opens Settings → Agent on Leave-By Alerts; `-echo.screen headsUps`
+///   the Heads-Ups page, where they are too.
 /// - `-echo.section cron|kanban`: open the conversation list on that tab.
 /// - `-echo.settingsAnchor [icloud|plugin|location]`: scroll Settings to the context and memory files, to iCloud,
 ///   to the Redde Plugin row, or (Agent) to Current Location.
@@ -317,6 +325,18 @@ enum DevHooks {
                                                             trigger: UNTimeIntervalNotificationTrigger(timeInterval: wait, repeats: false)))
             }
         }
+        #if targetEnvironment(simulator)
+        if has("-echo.leaveByTest") { Task { await LeaveByTest.seed(settings: settings) } }
+        if has("-echo.leaveByClean") {
+            Task {
+                await LeaveByTest.clean()
+                // The calendar's change takes the alerts of the events gone; then the switch goes off.
+                try? await Task.sleep(for: .seconds(6))
+                await LeaveByTest.logPending()
+                settings.leaveByAlerts = false
+            }
+        }
+        #endif
         if has("-echo.demoApproval") {
             TurnActivity.shared.start(question: "Clear out the old build folders", agent: settings.headerTitle)
             TurnActivity.shared.tool("terminal")
@@ -461,4 +481,57 @@ enum DevHooks {
         }
     }
 }
+
+#if targetEnvironment(simulator)
+/// `-echo.leaveByTest` and `-echo.leaveByClean`: test events in the simulator's own calendar, for
+/// Leave-By Alerts (`LeaveByAlerts`). Their titles start with `prefix`; nothing else is touched.
+@MainActor
+enum LeaveByTest {
+    static let prefix = "Redde Test: "
+    private static let log = Logger(subsystem: "com.goosehouse.echo", category: "leaveby")
+
+    static func seed(settings: Settings) async {
+        guard await DeviceCalendar.allowed(.event) else { return log.notice("test: no calendar access") }
+        await clean()
+        let store = EKEventStore()
+        guard let calendar = store.defaultCalendarForNewEvents else { return log.notice("test: no calendar") }
+        let start = Date(timeIntervalSince1970: (Date.now.addingTimeInterval(90 * 60).timeIntervalSince1970 / 300).rounded() * 300)
+        for (title, place) in [("Dentist", "200 East Robinson St, Orlando, FL 32801"), ("Standup", "Office · Room 4")] {
+            let event = EKEvent(eventStore: store)
+            event.calendar = calendar
+            event.title = prefix + title
+            event.location = place
+            event.startDate = start
+            event.endDate = start.addingTimeInterval(3600)
+            do { try store.save(event, span: .thisEvent) } catch { log.notice("test: not saved \(error.localizedDescription, privacy: .public)") }
+        }
+        LeaveTime.setMode(.driving)
+        // Notifications quietly allowed (provisional), with no prompt for a test to tap.
+        _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .provisional])
+        settings.leaveByAlerts = true
+        await LeaveByAlerts.shared.turned(on: true)
+        await logPending()
+        log.notice("test: next \(LeaveByAlerts.shared.next.map { "\($0.title) \($0.leave.formatted())" } ?? "none", privacy: .public); missing \(LeaveByAlerts.shared.missing.count)")
+    }
+
+    static func logPending() async {
+        let pending = await UNUserNotificationCenter.current().pendingNotificationRequests().filter { $0.identifier.hasPrefix(LeaveTime.reminderPrefix) }
+        for request in pending {
+            let at = (request.trigger as? UNCalendarNotificationTrigger)?.nextTriggerDate()
+            log.notice("test: pending \(request.identifier, privacy: .public) at \(at?.formatted() ?? "now", privacy: .public): \(request.content.title, privacy: .public) / \(request.content.body, privacy: .public)")
+        }
+        log.notice("test: \(pending.count) leaving reminders pending")
+    }
+
+    static func clean() async {
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else { return }
+        let store = EKEventStore()
+        let found = store.events(matching: store.predicateForEvents(withStart: .now.addingTimeInterval(-86_400), end: .now.addingTimeInterval(3 * 86_400), calendars: nil))
+            .filter { $0.title?.hasPrefix(prefix) == true }
+        for event in found { try? store.remove(event, span: .thisEvent, commit: false) }
+        try? store.commit()
+        log.notice("test: removed \(found.count) test events")
+    }
+}
+#endif
 #endif
