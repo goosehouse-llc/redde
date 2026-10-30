@@ -143,12 +143,15 @@ def every(path):
 
 
 def project_text():
-    """project.yml, or with --mac its ReddeMac target, whose version and build are its own."""
+    """project.yml, or with --mac its ReddeMac target when that target has a version and build of
+    its own (the Mac's 2.3 had; from 2.3.1 both platforms share the project's)."""
     text = open(os.path.join(ROOT, 'project.yml')).read()
     if MAC:
         start = text.index('\n  ReddeMac:\n')
         following = re.search(r'^  [A-Za-z]+:$', text[start + 2:], re.M)
-        text = text[start: start + 2 + following.start()] if following else text[start:]
+        target = text[start: start + 2 + following.start()] if following else text[start:]
+        if re.search(r'^ *MARKETING_VERSION:', target, re.M):
+            return target
     return text
 
 

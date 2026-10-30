@@ -29,7 +29,8 @@ Outgoing network: the user's servers and model endpoints.
 Incoming network: only a listener on the Mac's own loopback address while the user signs in to a Hermes Dashboard with a browser, which returns to it.
 Microphone, camera: voice mode and showing the agent something in it, only when the user starts them; speech is transcribed on the device.
 User-selected files: attaching a file, saving one a reply sent, exporting a conversation.
-Calendars, contacts, photos: Settings > Phone tools, each area off until the user turns it on, when macOS asks its permission; data goes only to the user's server.
+Calendars, contacts, photos: Settings > Phone tools, each area off until the user turns it on, when macOS asks its permission; data goes only to the user's server. Calendars also: Settings > Agent > Calendars (their names) and Leave-By Alerts (next events, to Apple Maps only).
+Location (off by default, Settings > Agent): Current Location sends roughly where the Mac is (neighborhood, ~100 m) to the user's own server only with a question about places, directions or weather; Leave-By Alerts send it to Apple Maps only, for the travel time.
 
 APP TRANSPORT SECURITY
 Plain HTTP is allowed (NSAllowsArbitraryLoads): self-hosted servers on private networks usually have no public TLS certificate. The review endpoint is HTTPS.

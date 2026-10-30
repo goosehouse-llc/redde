@@ -49,8 +49,8 @@ settings:
     SWIFT_STRICT_CONCURRENCY: complete
     SWIFT_TREAT_WARNINGS_AS_ERRORS: true
     CODE_SIGN_STYLE: Automatic
-    MARKETING_VERSION: "2.2"
-    CURRENT_PROJECT_VERSION: "277"
+    MARKETING_VERSION: "2.3.1"
+    CURRENT_PROJECT_VERSION: "280"
     ENABLE_USER_SCRIPT_SANDBOXING: true
     # Translations: every target's text is pulled into the String Catalog beside its code
     # (Localizable.xcstrings in each target's folder), which the build fills with the English.
@@ -387,6 +387,70 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.goosehouse.echo.push
         SKIP_INSTALL: true
+  # The same for the Mac (asked 2026-10-30, "pair the mac and ipad for push"): EchoPush's code and
+  # the same shared files, so a paired Hermes's notes open with Redde closed there too. Sandboxed,
+  # as a Mac App Store extension must be; the pairings are in a Keychain group it shares with the
+  # app (`PushVault.keychainGroup`): its own id's, which the app lists second.
+  EchoPushMac:
+    type: app-extension
+    platform: macOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: EchoPush
+        excludes:
+          # The iPhone's: this one's own are in EchoPushMac/.
+          - EchoPush.entitlements
+          - Info.plist
+      - path: Shared/PushSeal.swift
+      - path: Shared/NeedsYou.swift
+      - path: Shared/AgentBoard.swift
+      - path: Shared/DeviceDates.swift
+      - path: Shared/PlainText.swift
+      - path: Shared/ReplyMedia.swift
+      - path: Shared/Attachment.swift
+      - path: Shared/MutedChats.swift
+      - path: Shared/AgentIdeas.swift
+      - path: Shared/AgentWatches.swift
+      - path: Shared/AgentBriefings.swift
+      - path: Shared/AgentActivityLog.swift
+      - path: Shared/QuietHours.swift
+      - path: Shared/LeaveTime.swift
+    entitlements:
+      path: EchoPushMac/EchoPushMac.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        # Ideas, briefings, what waits on the person: kept in the app group for the app to show.
+        com.apple.security.application-groups:
+          - group.com.goosehouse.echo
+        # The pairings: this extension's own Keychain group, which the app shares (Mac/Redde.entitlements).
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)
+        # A heads-up's leaving time asks Apple Maps the way (`LeaveTime.work`), from where the Mac
+        # last was (the app keeps it in the app group): the extension never asks for a fix of its own.
+        com.apple.security.network.client: true
+    info:
+      path: EchoPushMac/Info.plist
+      properties:
+        CFBundleDisplayName: Redde
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.usernotifications.service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationService
+    settings:
+      base:
+        # The iPhone extension's id, as the app is the iPhone's (one App ID for both); the Debug
+        # app's own id has its own (below), the prefix an extension's id must start with.
+        PRODUCT_BUNDLE_IDENTIFIER: com.goosehouse.echo.push
+        # Numbered as the Mac app is: an extension's version must match its app's.
+        MARKETING_VERSION: "2.3"
+        CURRENT_PROJECT_VERSION: "279"
+        SKIP_INSTALL: true
+        ENABLE_HARDENED_RUNTIME: true
+        SWIFT_TREAT_WARNINGS_AS_ERRORS: false
+      configs:
+        Debug:
+          PRODUCT_BUNDLE_IDENTIFIER: com.goosehouse.echo.mac.push
   # Redde for the Mac (started 2026-10-27): a native SwiftUI app on the iPhone app's models,
   # services and views (Mac/ReddeMacApp.swift), in the iPad's layout, sandboxed (Mac/Redde.entitlements).
   ReddeMac:
@@ -482,10 +546,6 @@ targets:
         # never opens that iPad app's data.
         PRODUCT_BUNDLE_IDENTIFIER: com.goosehouse.echo
         PRODUCT_NAME: Redde
-        # The Mac's first release (2026-10-29) is made from 2.3's code while the iPhone's 2.2 is in
-        # review, numbered after the iPhone's last build. Drop both once the iPhone reaches 2.3.
-        MARKETING_VERSION: "2.3"
-        CURRENT_PROJECT_VERSION: "279"
         # Redde Face on the Mac's icon grid (Mac/Assets.xcassets), made from the iPhone's default.
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIconMac
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor

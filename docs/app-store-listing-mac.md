@@ -51,6 +51,23 @@ A Hermes agent (github.com/NousResearch/hermes-agent) or an OpenAI-compatible en
 
 Hermes is an open-source project by Nous Research. Redde is an independent client, not affiliated with it.
 
+## What's New in 2.3.1 (4000)
+Your agent, ahead of your day, and new cards.
+
+• Ahead of your day. Turn them on in Settings → Agent: Morning Ideas to swipe, a Week Ahead, an Evening Wrap-up, and heads-ups before events. They take the Redde plugin 1.9 on your Hermes.
+• Your day as a timeline. Ask what's on your calendar and the answer is a card: your events to scale, free time marked. Click an empty spot to start a message that adds one. Pick which calendars your agent looks at, and one color for every event if you like.
+• New answer cards: the weather by the hour, places on a map with hours and walks, an email to check before it goes, and a checklist to tick.
+• Approvals in plain words: before your agent runs something, the card says what it deletes, in red, and what it changes.
+• Leave-By Alerts: while Redde is open, it looks at your calendar and Apple Maps and tells you when to leave.
+• Current Location: your agent hears roughly where you are, only when you ask about places, directions or the weather.
+• Keys asked for: when your agent needs an API key, it asks in Redde, and what you paste goes sealed to your server.
+• Settings is a window of its own, with the back button where you expect it, and sections open from anywhere on their row. Text zoom reaches the sidebar too.
+
+## Before submitting the Mac's 2.3.1
+- The Mac's 2.3 (279) released first: App Store Connect makes no new macOS version while 2.3 waits.
+- Try on the Mac first (none of this has run on a Mac yet, only built): the calendar timeline and click-to-add line, the new cards, Current Location's permission and answer, Leave-By Alerts with Calendar access and a notification, the Settings window and its sections, Keys Asked For.
+- `scripts/app-store-push.py copy --mac`, then `notes --mac` (the notes gain location and calendar uses).
+
 ## What's New in 2.3 (4000)
 
 ## Before submitting the Mac's 2.3

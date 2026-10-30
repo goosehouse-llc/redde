@@ -9,49 +9,47 @@ Hermes Redde
 Talk, chat and run your agent
 
 ## Promotional text (170, editable without a new build)
-New in 2.2: your agents can call you, live voice with ElevenLabs, GPT-Live, Gemini Live, or Grok Voice, wake phrases, and Hermes plugins from Nous Research's catalog.
+New in 2.3.1: your agent works ahead with morning ideas, heads-ups, leave-by alerts and a week ahead, plus a calendar timeline, new cards, Redde for Mac and 17 languages.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name)
 voice,assistant,ai,agent,carplay,self-hosted,llm,ollama,bots,watch,siri,shortcuts,private,openai
 
 ## Description (4000)
 
-Redde is a complete iPhone and iPad client for Hermes, the open-source AI agent, with CarPlay and an Apple Watch app. Talk or type, watch it think and use tools, approve what it runs, and give it a crew: bots with faces and voices of their own, alone or in group chats.
+Redde is a complete iPhone, iPad and Mac client for Hermes, the open-source AI agent, with CarPlay and an Apple Watch app. Talk or type, watch it work, let it get ahead of your day, and give it a crew: bots with faces and voices of their own.
 
 You bring the backend. Redde has no account and no analytics, and your conversations go only to your server, and to a voice service if you pick one.
 
+AHEAD OF YOUR DAY
+• Morning Ideas, a Week Ahead and an Evening Wrap-up arrive as cards to swipe. Before an event, a heads-up says what to bring, and Leave-By Alerts work out from your calendar and Apple Maps when to go.
+• "Let me know when it ships", "check back Friday": watches and follow-ups come back on their own. Places tell your agent you've arrived; Health-aware days, if you allow.
+• Answers come as cards: your day as a timeline, the weather by the hour, places on a map, an email to check before it sends, a list to tick off. Approvals say in plain words what will happen.
+
 BOTS
-• Each Hermes profile is a bot with a face, a voice and a chat of its own. Start one from a template (Researcher, Writer, Coder, Home, Planner) and make its job, personality, model, face and tools your own.
-• Type @ to hand work to another bot. Put two to six in a group chat and they answer in turn; talk to the room and each answers in its own voice.
-• Give a bot a schedule and its answer arrives in its chat, with a notification, even with Redde closed. Mute any chat.
-• Ask a bot from Siri, CarPlay, the Apple Watch or a spoken word.
+• Each Hermes profile is a bot with a face, a voice and a chat of its own. Start from a template (Researcher, Writer, Coder, Home, Planner) and make its job, model and tools your own.
+• Type @ to hand work to another bot, or put two to six in a group chat. Give one a schedule and its answer arrives with a notification, even with Redde closed.
 
 TALK, DON'T TYPE
-• Tap the mic or say "Hey" and your agent's name, ask, hear the answer, or show it what the camera sees. Speech is recognized on your iPhone; the reply is spoken by the built-in voice, Kokoro, ElevenLabs or your Hermes.
-• Or talk live, interrupting any time, with GPT-Live, Gemini Live, Grok Voice or ElevenLabs on your own key.
-• Hands-free keeps the conversation going until you say "that's all". Talk over an answer or type to steer it.
-• In CarPlay, ask in a new chat, a recent one or a bot's. On Apple Watch, raise your wrist and ask.
-• "Hey Siri, ask Redde…" works from the Lock Screen and AirPods, and Siri takes notes for your agent. A control, widget or the Action Button starts listening.
-• Spoken prefixes add text, switch models or go to a bot: "Opus, review this diff".
+• Tap the mic or say "Hey" and your agent's name, ask, hear the answer, or show it what the camera sees. Speech is recognized on your device; replies are read by the built-in voice, Kokoro, ElevenLabs or your Hermes.
+• Or talk live, interrupting any time, with GPT-Live, Gemini Live, Grok Voice or ElevenLabs on your own key. An agent you allow can call you.
+• Hands-free until you say "that's all". CarPlay, Apple Watch, Siri, widgets and the Action Button. Spoken prefixes switch models or go to a bot: "Opus, review this diff".
 
 SEE THE AGENT WORK
-• Watch reasoning and tool calls live, with a Live Activity; lock the phone and it carries on. The list shows what's working or needs you.
-• Approve a risky command or answer the agent's question from a notification, out loud, or with a nod in AirPods. Pair your Hermes and notifications arrive with Redde closed, encrypted end to end, and an agent you allow can call you.
+• Reasoning and tool calls live, with a Live Activity; lock the phone and it carries on.
+• Approve or answer from a notification, out loud, or with a nod in AirPods. Notifications reach you with Redde closed, encrypted end to end.
 
-A FULL CLIENT, NOT JUST A MIC
-• Chats live in your gateway's session ledger: start on the phone, continue on the desktop or the CLI. Search them, pin, rename, fork, archive, or go incognito.
-• Projects, scheduled jobs and the Kanban board.
-• Phone tools: your agent can use your iPhone's calendar, reminders, contacts, photos and files, set alarms, write on a widget, and start calls and texts, each only if you allow it.
-• Rich replies: Markdown, code, tables, Mermaid diagrams, math, and cards with maps, places and the weather. Pictures, PDFs and audio open in place.
-• Ask about part of a reply, regenerate, edit and resend, or switch models with /model.
-• Attach photos, videos, files or a day's calendar, or share from any app.
-• Skills, tools, plugins, memory and context files; on the server, MCP servers, logs, updates, files and an SSH terminal.
+A FULL CLIENT
+• Chats live in your gateway's session ledger: start on the phone, continue on the desktop. Search, pin, fork, archive, or go incognito.
+• Projects, scheduled jobs, the Kanban board, skills, plugins, memory, MCP servers, files and an SSH terminal.
+• Phone tools: your agent can use your calendar, reminders, contacts, photos and files, set alarms and start calls and texts, each only if you allow it.
+• Markdown, code, tables, diagrams and math; pictures, PDFs and audio open in place.
+• Attach photos, files or a day's calendar, or share from any app. Regenerate, edit and resend, or switch models with /model.
 
 YOUR BACKEND, YOUR RULES
-• Connect to Hermes through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access, Pangolin or a reverse proxy. Save several servers, see all their chats in one list, and sync them with iCloud. Sign in with a password or a browser.
-• Or go straight to any OpenAI-compatible endpoint: llama.cpp, llama-swap, vLLM or Ollama on your hardware, or a hosted provider with your key.
-• Set up by QR code or link. Credentials stay in the Keychain.
-• Face ID lock, seven themes with your own colors, app icons and voice orbs, iPad split view, iPhone Duo.
+• Connect through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access, Pangolin or a reverse proxy. Several servers in one list, synced with iCloud. Sign in with a password or a browser.
+• Or go straight to any OpenAI-compatible endpoint: llama.cpp, llama-swap, vLLM, Ollama or a hosted provider.
+• Set up by QR code or link. Credentials stay in the Keychain; a key your agent asks for goes sealed straight to your server.
+• In 17 languages. Face ID lock, seven themes, iPad split view, iPhone Duo, and a native Mac app.
 • The one service we run is an optional relay for notifications, which can't read them.
 
 REQUIRES
@@ -66,6 +64,40 @@ Two pictures App Store Connect has taken since October 2026, on the version page
 - Search results (`search-3840x2560.png`, 3:2): "Talk to your own AI agent. Voice and chat for Hermes." beside voice mode and a chat. Shown with the app in search in place of the first screenshots.
 
 The words in both sit inside the "art safe area" of Apple's templates. Use Preview in App Store Connect before submitting: it shows each on iPhone and iPad, both ways up.
+
+## What's New in 2.3.1 (4000)
+Your agent, ahead of your day. New cards. Redde for Mac. And 17 languages.
+
+• Ahead of your day. Turn them on in Settings → Agent: Morning Ideas (a few things worth doing, as cards to swipe; More, Fewer or Later on each), a Week Ahead, an Evening Wrap-up, and heads-ups before events with what to bring and who's coming. It takes the Redde plugin 1.9 on your Hermes.
+• Leave-By Alerts. Redde looks at your calendar and Apple Maps on your iPhone and tells you when to leave, a few minutes early, by car, transit or on foot. Only events with a street address.
+• Your day as a timeline. Ask what's on your calendar and the answer is a card: your events to scale, free time marked, a red line for now. Tap an event to open it, or an empty spot to add one. Pick which calendars your agent looks at, and one color for every event if you like.
+• New answer cards. The weather by the hour, with a heads-up when rain is coming; places on a map with ratings, hours and how far a walk; an email or message to check before it goes, with Edit; a checklist with a progress ring.
+• Approvals in plain words. Before your agent runs something, the card says what will happen: what it deletes (in red), what it changes, and that Hermes restarts after.
+• Watches and follow-ups. "Let me know when it ships." "Check back Friday." Your agent comes back on its own.
+• Current Location. Turn it on and your agent hears roughly where you are, only when you ask about places, directions or the weather.
+• Places. Set Home, Work or the gym, and arriving or leaving tells the agent you choose. Up Next on the Home Screen counts down to your next event.
+• Health-aware days. If you allow it, last night's sleep and today's steps shape your morning ideas and wrap-up.
+• Keys asked for. When your agent needs an API key, it asks in Redde, not in a chat, and what you paste goes sealed straight to your server.
+• Redde for Mac: a native app with the conversations beside the chat, menus, shortcuts and text zoom, in the same purchase.
+• Redde speaks your language: the whole app in 17 languages, and voice mode listens and answers in the one you pick.
+• Units: US or metric, for your agent, the weather and distances.
+
+## Before submitting 2.3.1
+Written 2026-10-30, ahead of the release. The plan (his, 2026-10-29/30): 2.2 is released first; the iPhone goes straight to 2.3.1 (no iOS 2.3) after a few days of use on Marta. The Mac's 2.3 (279, yesterday's code) is released when App Review passes it, as the Mac's first version, since App Store Connect takes a new Mac version only after it; then the Mac's 2.3.1 carries today's work, and both 2.3.1s are released together, by hand. The in-app What's New entry stays "2.3": 2.3.1 shows it.
+
+In App Store Connect and on the web:
+- 2.2 (277) released first (it was WAITING_FOR_REVIEW on 2026-10-30; resubmitted 10-29 with its framed previews removed).
+- The build is 2.3.1 (280) for both platforms, from main (project.yml: 2.3.1/280 since 2026-10-30; the Mac target no longer has numbers of its own).
+- New capabilities since 2.2, all explained in the review notes: the `fetch` background mode (BGAppRefreshTask `com.goosehouse.echo.leaveby`, Leave-By Alerts only); location When In Use (Places, Current Location, Leave-By Alerts) and Always (Places' region monitoring); HealthKit read with background delivery (Health-aware days); calendar full access gains Leave-By Alerts and the calendar picker. HealthKit apps need the privacy policy URL (set) and keep no health data in iCloud (Redde doesn't).
+- The copy: promotional text, description (3,713) and What's New (2,186) are new; `scripts/app-store-push.py all`, then `notes` (3,822 with the placeholder).
+- App Previews: the full-frame cuts of "A day with Redde" for 2.3 (design/video README: iPhone 886×1920, iPad 1200×1600, at most 29.8 s); Media Manager by hand, or the script's `previews`. No framed preview goes up again (2.3.4, 2026-10-29).
+- Screenshots show 2.2's app: the new calendar timeline, cards and proactive screens are not in them. Retake before submitting if the store should show 2.3.
+- The privacy policy was published for 2.3 on 2026-10-30 (Current Location, Places, leave times, Calendars, Health-aware days, keys asked for). App Privacy stays "Data Not Collected": location, health and calendar data go only to Apple Maps or the person's own server.
+- The in-app What's New has a 2.3 entry (nine items, translated).
+- The website says "coming soon in 2.3": change it to "new in 2.3" at release (deploys are his word). Close GitHub #35–#38 and #40 at release.
+- The plugin's new card fields and Morning Ideas/heads-ups need the Redde plugin 1.9 on a Hermes; publish it on GitHub at release.
+
+Tried on a phone: not yet. Owed before submitting: Leave-By Alerts firing on time (and the background refresh), Current Location answers, the new cards' taps (map pins, free gap, the new-event editor), the calendar picker with full access, Places and Health-aware days on Marta.
 
 ## What's New in 2.2 (4000)
 Live voice. Calls from your agents. Wake phrases. And plugins.

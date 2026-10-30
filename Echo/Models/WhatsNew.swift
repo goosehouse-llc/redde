@@ -22,6 +22,28 @@ nonisolated enum WhatsNew {
 
     /// Newest first. Keep each to a handful of lines a person reads in ten seconds.
     static let releases: [Release] = [
+        Release(version: "2.3", items: [
+            Item(symbol: "sunrise", title: String(localized: "Ahead of your day"),
+                 detail: String(localized: "Morning Ideas to swipe, a Week Ahead, an Evening Wrap-up, and heads-ups before events with what to bring. Turn them on in Settings → Agent. They take the Redde plugin 1.9 on your Hermes.")),
+            Item(symbol: "car", title: String(localized: "Leave-By Alerts"),
+                 detail: String(localized: "Redde looks at your calendar and Apple Maps on this device and tells you when to leave, a few minutes early. Only events with a street address. Settings → Agent.")),
+            Item(symbol: "calendar.day.timeline.left", title: String(localized: "Your day as a timeline"),
+                 detail: String(localized: "Ask what's on your calendar: your events to scale, free time marked, a line for now. Tap an empty spot to add one. Pick the calendars your agent looks at in Settings → Agent → Calendars.")),
+            Item(symbol: "rectangle.on.rectangle", title: String(localized: "New answer cards"),
+                 detail: String(localized: "The weather by the hour with rain called out, places on a map with hours and walks, an email to check before it goes, and a checklist to tick.")),
+            Item(symbol: "hand.raised", title: String(localized: "Approvals in plain words"),
+                 detail: String(localized: "Before your agent runs something, the card says what will happen: what it deletes, in red, and what it changes.")),
+            Item(symbol: "location", title: String(localized: "Current Location"),
+                 detail: String(localized: "Turn it on in Settings → Agent and your agent hears roughly where you are, only when you ask about places, directions or the weather.")),
+            Item(symbol: "mappin.and.ellipse", title: String(localized: "Places and Health"),
+                 detail: String(localized: "Arriving at Home or Work can tell the agent you pick, and, if you allow it, last night's sleep and today's steps shape your morning ideas. Settings → Agent."),
+                 phoneOnly: true),
+            Item(symbol: "globe", title: String(localized: "Your language"),
+                 detail: String(localized: "Redde in 17 languages, and voice mode listens and answers in the one you pick.")),
+            Item(symbol: "laptopcomputer", title: String(localized: "Redde for Mac"),
+                 detail: String(localized: "A native Mac app in the same purchase, with your conversations beside the chat, menus and shortcuts."),
+                 phoneOnly: true),
+        ]),
         Release(version: "2.2", items: [
             Item(symbol: "waveform.and.mic", title: String(localized: "Live voice"),
                  detail: String(localized: "Pick GPT-Live, Gemini Live, Grok Voice or ElevenLabs in Settings → Voice → Voice mode and add your key for it: voice mode becomes a call you can interrupt, and the voice hands real work to your agent. Each bot can have its own (Edit Bot → Voice). The service bills your key by the minute.")),

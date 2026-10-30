@@ -30265,6 +30265,113 @@
         }
       }
     },
+    "A native Mac app in the same purchase, with your conversations beside the chat, menus and shortcuts." : {
+      "comment" : "In-app What's New for Redde 2.3: an item's text (a few short sentences)",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En ægte Mac-app i samme køb med dine samtaler ved siden af chatten, menuer og genveje."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine native Mac-App im selben Kauf, mit deinen Unterhaltungen neben dem Chat, Menüs und Tastaturkurzbefehlen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una app nativa para Mac en la misma compra, con tus conversaciones junto al chat, menús y atajos de teclado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une app Mac native incluse dans le même achat, avec vos conversations à côté du chat, des menus et des raccourcis clavier."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un’app nativa per Mac nello stesso acquisto, con le conversazioni accanto alla chat, menu e abbreviazioni da tastiera."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同じ購入で使えるネイティブのMacアプリ。チャットの横に会話一覧、メニュー、キーボードショートカットを備えています。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "같은 구입으로 사용하는 Mac 전용 앱. 채팅 옆에 대화 목록, 메뉴, 키보드 단축키를 갖췄습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En ekte Mac-app i samme kjøp, med samtalene dine ved siden av chatten, menyer og snarveier."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een echte Mac-app bij dezelfde aankoop, met je gesprekken naast de chat, menu's en toetscombinaties."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Natywna aplikacja na Maca w ramach tego samego zakupu, z rozmowami obok czatu, menu i skrótami klawiszowymi."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um app nativo para Mac na mesma compra, com suas conversas ao lado do chat, menus e atalhos de teclado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нативное приложение для Mac в той же покупке: беседы рядом с чатом, меню и сочетания клавиш."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En riktig Mac-app i samma köp, med dina konversationer bredvid chatten, menyer och kortkommandon."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aynı satın almaya dahil yerel bir Mac uygulaması: sohbetin yanında konuşmalarınız, menüler ve klavye kısayolları."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нативна програма для Mac у тій самій покупці: розмови поруч із чатом, меню та клавіатурні скорочення."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同一次购买即可使用的原生 Mac App，对话列表就在聊天旁边，还有菜单和键盘快捷键。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同一次購買即可使用的原生 Mac App，對話列表就在聊天旁邊，還有選單和鍵盤快速鍵。"
+          }
+        }
+      }
+    },
     "A new conversation opens with what's next on your calendar and the conversation you just left, one tap each." : {
       "localizations" : {
         "da" : {
@@ -39194,6 +39301,113 @@
         }
       }
     },
+    "Ahead of your day" : {
+      "comment" : "In-app What's New for Redde 2.3: an item's title",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et skridt foran dagen"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dem Tag einen Schritt voraus"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adelántate a tu día"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En avance sur votre journée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un passo avanti alla giornata"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一日を先取り"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "하루를 한발 앞서"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et steg foran dagen"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je dag een stap voor"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Krok przed dniem"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À frente do seu dia"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На шаг впереди дня"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ett steg före dagen"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Güne bir adım önde"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На крок попереду дня"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提前安排你的一天"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提前掌握你的一天"
+          }
+        }
+      }
+    },
     "Alarms" : {
       "comment" : "A phone tools area (Settings → Phone tools)",
       "localizations" : {
@@ -47000,6 +47214,113 @@
         }
       }
     },
+    "Approvals in plain words" : {
+      "comment" : "In-app What's New for Redde 2.3: an item's title",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Godkendelser i klart sprog"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Genehmigungen in klaren Worten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aprobaciones en palabras sencillas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des approbations en clair"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Approvazioni in parole semplici"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "わかりやすい言葉で承認"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "쉬운 말로 보는 승인"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Godkjenninger i klartekst"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goedkeuringen in gewone taal"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zatwierdzenia prostymi słowami"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aprovações em palavras simples"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Одобрения простыми словами"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Godkännanden i klartext"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sade bir dille onaylar"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Схвалення простими словами"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用浅白的话说明批准"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用淺白的話說明核准"
+          }
+        }
+      }
+    },
     "Approve" : {
       "comment" : "Notification button: approves the command once",
       "localizations" : {
@@ -48402,6 +48723,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "抵達：%@"
+          }
+        }
+      }
+    },
+    "Arriving at Home or Work can tell the agent you pick, and, if you allow it, last night's sleep and today's steps shape your morning ideas. Settings → Agent." : {
+      "comment" : "In-app What's New for Redde 2.3: an item's text (a few short sentences)",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når du kommer hjem eller på arbejde, kan den agent, du vælger, få besked, og hvis du tillader det, former nattens søvn og dagens skridt dine morgenidéer. Indstillinger → Agent."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn du zu Hause oder bei der Arbeit ankommst, kann der Agent deiner Wahl davon erfahren, und wenn du es erlaubst, prägen der Schlaf der letzten Nacht und die heutigen Schritte deine Morgenideen. Einstellungen → Agent."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Llegar a casa o al trabajo puede avisar al agente que elijas y, si lo permites, el sueño de anoche y los pasos de hoy dan forma a tus ideas matutinas. Ajustes → Agente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arriver à la maison ou au travail peut prévenir l’agent de votre choix et, si vous l’autorisez, le sommeil de la nuit et les pas du jour orientent vos idées du matin. Réglages → Agent."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arrivare a casa o al lavoro può avvisare l’agente che scegli e, se lo consenti, il sonno della notte e i passi di oggi danno forma alle tue idee del mattino. Impostazioni → Agente."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自宅や職場に着いたことを、選んだエージェントに知らせられます。許可すれば、昨夜の睡眠と今日の歩数が朝のアイデアに反映されます。設定 → エージェント。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "집이나 직장에 도착하면 선택한 에이전트에게 알릴 수 있고, 허용하면 지난밤 수면과 오늘 걸음 수가 아침 아이디어에 반영됩니다. 설정 → 에이전트."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når du kommer hjem eller på jobb, kan agenten du velger få beskjed, og hvis du tillater det, former nattens søvn og dagens skritt morgenidéene dine. Innstillinger → Agent."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thuis of op je werk aankomen kan de agent die je kiest laten weten, en als je het toestaat, bepalen de slaap van afgelopen nacht en de stappen van vandaag je ochtendideeën. Instellingen → Agent."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przyjazd do domu lub pracy może powiadomić wybranego agenta, a jeśli pozwolisz, wczorajszy sen i dzisiejsze kroki wpłyną na Twoje poranne pomysły. Ustawienia → Agent."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chegar em casa ou no trabalho pode avisar o agente que você escolher e, se você permitir, o sono da noite passada e os passos de hoje moldam suas ideias matinais. Ajustes → Agente."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда вы приходите домой или на работу, об этом может узнать выбранный агент, а если разрешите, вчерашний сон и сегодняшние шаги повлияют на утренние идеи. Настройки → Агент."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "När du kommer hem eller till jobbet kan agenten du väljer få veta det, och om du tillåter det formar nattens sömn och dagens steg dina morgonidéer. Inställningar → Agent."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eve veya işe varmanız seçtiğiniz ajana bildirilebilir; izin verirseniz dün geceki uykunuz ve bugünkü adımlarınız sabah fikirlerinizi şekillendirir. Ayarlar → Ajan."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли ви приходите додому чи на роботу, про це може дізнатися вибраний агент, а якщо дозволите, вчорашній сон і сьогоднішні кроки вплинуть на ранкові ідеї. Параметри → Агент."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "到达“家”或“工作”时，可以通知你选定的智能体；如果你允许，昨晚的睡眠和今天的步数还会影响你的早间想法。设置 → 智能体。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "抵達「住家」或「公司」時，可以通知你選定的代理；如果你允許，昨晚的睡眠和今天的步數還會影響你的晨間點子。設定 → 代理。"
           }
         }
       }
@@ -50842,6 +51270,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "詢問 Redde 以開始"
+          }
+        }
+      }
+    },
+    "Ask what's on your calendar: your events to scale, free time marked, a line for now. Tap an empty spot to add one. Pick the calendars your agent looks at in Settings → Agent → Calendars." : {
+      "comment" : "In-app What's New for Redde 2.3: an item's text (a few short sentences)",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spørg, hvad der står i din kalender: dine begivenheder i rette størrelse, fri tid markeret og en streg for nu. Tryk på et tomt sted for at tilføje en. Vælg de kalendere, din agent kigger i, i Indstillinger → Agent → Kalendere."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frag, was in deinem Kalender steht: deine Termine maßstabsgetreu, freie Zeit markiert, eine Linie für jetzt. Tippe auf eine leere Stelle, um einen hinzuzufügen. Wähle die Kalender, die dein Agent sieht, unter Einstellungen → Agent → Kalender."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pregunta qué tienes en el calendario: tus eventos a escala, el tiempo libre marcado y una línea para ahora. Toca un hueco vacío para añadir uno. Elige los calendarios que mira tu agente en Ajustes → Agente → Calendarios."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demandez ce qu’il y a dans votre calendrier : vos événements à l’échelle, le temps libre signalé, une ligne pour maintenant. Touchez un espace vide pour en ajouter un. Choisissez les calendriers que consulte votre agent dans Réglages → Agent → Calendriers."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiedi cosa c’è nel calendario: i tuoi eventi in scala, il tempo libero segnato, una linea per adesso. Tocca uno spazio vuoto per aggiungerne uno. Scegli i calendari che guarda il tuo agente in Impostazioni → Agente → Calendari."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カレンダーの予定を尋ねると、イベントが時間の長さどおりに表示され、空き時間が示され、現在時刻に線が引かれます。空いている場所をタップすると追加できます。エージェントが見るカレンダーは設定 → エージェント → カレンダーで選べます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "캘린더 일정을 물어보면 이벤트가 시간 비율대로 표시되고, 빈 시간이 표시되며, 현재 시각에 선이 그어집니다. 빈 곳을 탭하면 이벤트를 추가할 수 있습니다. 에이전트가 볼 캘린더는 설정 → 에이전트 → 캘린더에서 선택하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spør hva som står i kalenderen: hendelsene dine i riktig skala, ledig tid markert og en linje for nå. Trykk på et tomt sted for å legge til en. Velg kalenderne agenten ser i, i Innstillinger → Agent → Kalendere."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vraag wat er in je agenda staat: je afspraken op schaal, vrije tijd gemarkeerd, een lijn voor nu. Tik op een lege plek om er een toe te voegen. Kies de agenda's die je agent bekijkt in Instellingen → Agent → Agenda's."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapytaj, co masz w kalendarzu: wydarzenia w skali, zaznaczony wolny czas i linia dla teraz. Stuknij puste miejsce, aby dodać wydarzenie. Wybierz kalendarze, które widzi Twój agent, w Ustawienia → Agent → Kalendarze."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pergunte o que tem no seu calendário: seus eventos em escala, o tempo livre marcado e uma linha para agora. Toque em um espaço vazio para adicionar um. Escolha os calendários que seu agente vê em Ajustes → Agente → Calendários."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Спросите, что в календаре: события в масштабе, отмеченное свободное время и линия текущего момента. Коснитесь пустого места, чтобы добавить событие. Выберите календари, которые видит агент, в Настройки → Агент → Календари."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fråga vad som står i kalendern: dina händelser i skala, ledig tid markerad och en linje för nu. Tryck på en tom plats för att lägga till en. Välj vilka kalendrar agenten tittar i under Inställningar → Agent → Kalendrar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Takviminizde ne olduğunu sorun: etkinlikleriniz süresine göre, boş zaman işaretli, şu an için bir çizgi. Eklemek için boş bir yere dokunun. Ajanınızın baktığı takvimleri Ayarlar → Ajan → Takvimler’den seçin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запитайте, що в календарі: події в масштабі, позначений вільний час і лінія поточного моменту. Торкніться порожнього місця, щоб додати подію. Виберіть календарі, які бачить агент, у Параметри → Агент → Календарі."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "问问日历上有什么：日程按时长显示，空闲时间有标注，还有一条线表示现在。轻点空白处即可添加日程。在“设置 → 智能体 → 日历”中选择智能体查看的日历。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "問問行事曆上有什麼：行程按時長顯示，空閒時間有標示，還有一條線表示現在。點一下空白處即可加入行程。在「設定 → 代理 → 行事曆」中選擇代理查看的行事曆。"
           }
         }
       }
@@ -55309,6 +55844,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "行動之前"
+          }
+        }
+      }
+    },
+    "Before your agent runs something, the card says what will happen: what it deletes, in red, and what it changes." : {
+      "comment" : "In-app What's New for Redde 2.3: an item's text (a few short sentences)",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Før din agent kører noget, fortæller kortet, hvad der vil ske: hvad den sletter, med rødt, og hvad den ændrer."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bevor dein Agent etwas ausführt, sagt die Karte, was passiert: was gelöscht wird, in Rot, und was sich ändert."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antes de que tu agente ejecute algo, la tarjeta dice qué pasará: lo que elimina, en rojo, y lo que cambia."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avant que votre agent exécute quoi que ce soit, la carte indique ce qui va se passer : ce qu’il supprime, en rouge, et ce qu’il modifie."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prima che il tuo agente esegua qualcosa, la scheda dice cosa succederà: cosa elimina, in rosso, e cosa modifica."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントが何かを実行する前に、何が起きるかをカードで確認できます。削除するものは赤で、変更するものも示されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트가 무언가를 실행하기 전에 카드가 무슨 일이 일어날지 알려 줍니다. 삭제하는 것은 빨간색으로, 변경하는 것도 함께 표시됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Før agenten kjører noe, sier kortet hva som vil skje: hva den sletter, i rødt, og hva den endrer."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voordat je agent iets uitvoert, zegt de kaart wat er gaat gebeuren: wat hij verwijdert, in rood, en wat hij wijzigt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zanim agent coś uruchomi, karta mówi, co się stanie: co usunie (na czerwono) i co zmieni."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antes que seu agente execute algo, o cartão diz o que vai acontecer: o que ele apaga, em vermelho, e o que ele altera."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прежде чем агент что-то запустит, карточка скажет, что произойдёт: что он удалит (красным) и что изменит."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Innan agenten kör något säger kortet vad som kommer att hända: vad den raderar, i rött, och vad den ändrar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınız bir şey çalıştırmadan önce kart ne olacağını söyler: neyi sileceğini kırmızıyla, neyi değiştireceğini de."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перш ніж агент щось запустить, картка скаже, що станеться: що він видалить (червоним) і що змінить."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在智能体运行任何操作之前，卡片会说明将发生什么：要删除的内容以红色显示，还有要更改的内容。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在代理執行任何操作之前，卡片會說明將發生什麼：要刪除的內容以紅色顯示，還有要更改的內容。"
           }
         }
       }
@@ -169025,6 +169667,113 @@
         }
       }
     },
+    "Morning Ideas to swipe, a Week Ahead, an Evening Wrap-up, and heads-ups before events with what to bring. Turn them on in Settings → Agent. They take the Redde plugin 1.9 on your Hermes." : {
+      "comment" : "In-app What's New for Redde 2.3: an item's text (a few short sentences)",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Morgenidéer at swipe igennem, Ugen, der kommer, en Aftenopsummering og besked før begivenheder om, hvad du skal have med. Slå dem til i Indstillinger → Agent. De kræver Redde-plugin 1.9 på din Hermes."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Morgenideen zum Wischen, ein Wochenausblick, ein Abendrückblick und Hinweise vor Terminen, was du mitbringen solltest. Schalte sie unter Einstellungen → Agent ein. Sie brauchen das Redde-Plug-in 1.9 auf deinem Hermes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideas matutinas para deslizar, La semana que viene, un Resumen de la noche y avisos antes de los eventos con lo que debes llevar. Actívalos en Ajustes → Agente. Necesitan el plugin de Redde 1.9 en tu Hermes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des Idées du matin à faire défiler, une Semaine à venir, un Bilan du soir et des alertes avant les événements avec ce qu’il faut emporter. Activez-les dans Réglages → Agent. Ils nécessitent le plug-in Redde 1.9 sur votre Hermes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idee del mattino da scorrere, una Settimana in arrivo, un Riepilogo serale e avvisi prima degli eventi con cosa portare. Attivali in Impostazioni → Agente. Richiedono il plugin Redde 1.9 sul tuo Hermes."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スワイプで見る朝のアイデア、来週の見通し、夜の振り返り、そしてイベント前に持ち物を知らせる通知。設定 → エージェントでオンにできます。HermesにReddeプラグイン1.9が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "넘겨 보는 아침 아이디어, 다가오는 한 주, 저녁 하루 정리, 그리고 이벤트 전에 챙길 물건을 알려 주는 알림. 설정 → 에이전트에서 켜십시오. Hermes에 Redde 플러그인 1.9가 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Morgenidéer å sveipe gjennom, Uken som kommer, en Kveldsoppsummering og varsler før hendelser om hva du skal ha med. Slå dem på i Innstillinger → Agent. De krever Redde-plugin 1.9 på Hermes."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ochtendideeën om door te vegen, een Komende week, een Avondterugblik en seintjes vóór afspraken met wat je mee moet nemen. Zet ze aan in Instellingen → Agent. Ze hebben de Redde-plug-in 1.9 op je Hermes nodig."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poranne pomysły do przesuwania, Nadchodzący tydzień, Wieczorne podsumowanie i przypomnienia przed wydarzeniami o tym, co zabrać. Włącz je w Ustawienia → Agent. Wymagają wtyczki Redde 1.9 na Twoim Hermes."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideias Matinais para deslizar, a Semana que Vem, o Resumo da Noite e avisos antes dos eventos com o que levar. Ative em Ajustes → Agente. Eles precisam do plugin Redde 1.9 no seu Hermes."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Утренние идеи, которые можно листать, Обзор недели, Вечерние итоги и подсказки перед событиями о том, что взять с собой. Включите их в Настройки → Агент. Нужен плагин Redde 1.9 на вашем Hermes."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Morgonidéer att svepa mellan, Veckan som kommer, en Kvällssammanfattning och påminnelser före händelser om vad du ska ta med. Slå på dem i Inställningar → Agent. De kräver Redde-pluginet 1.9 på din Hermes."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kaydırarak göz atılan Sabah Fikirleri, Haftaya Bakış, Akşam Özeti ve etkinliklerden önce yanınıza ne almanız gerektiğini söyleyen uyarılar. Ayarlar → Ajan bölümünden açın. Hermes’inizde Redde eklentisi 1.9 gerekir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ранкові ідеї, які можна гортати, Огляд тижня, Вечірні підсумки та підказки перед подіями про те, що взяти з собою. Увімкніть їх у Параметри → Агент. Потрібен плагін Redde 1.9 на вашому Hermes."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可滑动浏览的早间想法、下周概览、晚间总结，以及在日程开始前提醒你要带什么。在“设置 → 智能体”中打开。需要你的 Hermes 装有 Redde 插件 1.9。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可滑動瀏覽的晨間點子、下週概覽、晚間總結，以及在行程開始前提醒你要帶什麼。在「設定 → 代理」中開啟。需要你的 Hermes 安裝 Redde 外掛 1.9。"
+          }
+        }
+      }
+    },
     "Mouth" : {
       "localizations" : {
         "da" : {
@@ -173379,6 +174128,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "新增"
+          }
+        }
+      }
+    },
+    "New answer cards" : {
+      "comment" : "In-app What's New for Redde 2.3: an item's title",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nye svarkort"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue Antwortkarten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuevas tarjetas de respuesta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvelles cartes de réponse"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuove schede di risposta"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しい回答カード"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새로운 답변 카드"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nye svarkort"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuwe antwoordkaarten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowe karty odpowiedzi"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novos cartões de resposta"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новые карточки ответов"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nya svarskort"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni yanıt kartları"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нові картки відповідей"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新的回答卡片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新的回答卡片"
           }
         }
       }
@@ -209760,6 +210616,113 @@
         }
       }
     },
+    "Places and Health" : {
+      "comment" : "In-app What's New for Redde 2.3: an item's title",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Steder og Sundhed"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Orte und Health"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lugares y Salud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Emplacements et Santé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Posizioni e Salute"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "場所とヘルスケア"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "위치 및 건강"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Steder og Helse"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Locaties en Gezondheid"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Miejsca i Zdrowie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Locais e Saúde"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Места и Здоровье"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Platser och Hälsa"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konumlar ve Sağlık"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Місця і Здоров’я"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置与健康"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置與健康"
+          }
+        }
+      }
+    },
     "places.title" : {
       "comment" : "Settings: places the iPhone notices arriving at or leaving",
       "localizations" : {
@@ -220136,6 +221099,113 @@
         }
       }
     },
+    "Redde for Mac" : {
+      "comment" : "In-app What's New for Redde 2.3: an item's title",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde til Mac"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde für Mac"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde para Mac"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde pour Mac"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde per Mac"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mac版Redde"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mac용 Redde"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde for Mac"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde voor Mac"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde na Maca"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde para Mac"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde для Mac"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde för Mac"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mac için Redde"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde для Mac"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mac 版 Redde"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mac 版 Redde"
+          }
+        }
+      }
+    },
     "Redde has %lld questions" : {
       "localizations" : {
         "da" : {
@@ -221343,6 +222413,113 @@
         }
       }
     },
+    "Redde in 17 languages, and voice mode listens and answers in the one you pick." : {
+      "comment" : "In-app What's New for Redde 2.3: an item's text (a few short sentences)",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde på 17 sprog, og stemmetilstand lytter og svarer på det, du vælger."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde in 17 Sprachen, und der Sprachmodus hört zu und antwortet in der Sprache deiner Wahl."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde en 17 idiomas, y el modo de voz escucha y responde en el que elijas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde en 17 langues, et le mode vocal écoute et répond dans celle que vous choisissez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde in 17 lingue, e la modalità vocale ascolta e risponde in quella che scegli."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeが17の言語に対応。音声モードは選んだ言語で聞き取り、答えます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde가 17개 언어를 지원하며, 음성 모드는 선택한 언어로 듣고 답합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde på 17 språk, og stemmemodus lytter og svarer på det du velger."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde in 17 talen, en de spraakmodus luistert en antwoordt in de taal die je kiest."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde w 17 językach, a tryb głosowy słucha i odpowiada w tym, który wybierzesz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde em 17 idiomas, e o modo de voz ouve e responde no que você escolher."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde на 17 языках, а голосовой режим слушает и отвечает на выбранном вами."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde på 17 språk, och röstläget lyssnar och svarar på det du väljer."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 17 dilde; sesli mod seçtiğiniz dilde dinler ve yanıt verir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 17 мовами, а голосовий режим слухає й відповідає тією, яку ви виберете."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 支持 17 种语言，语音模式会用你选择的语言聆听和回答。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 支援 17 種語言，語音模式會用你選擇的語言聆聽和回答。"
+          }
+        }
+      }
+    },
     "Redde is in the middle of another reply. Try again when it's done." : {
       "localizations" : {
         "da" : {
@@ -222188,6 +223365,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Redde 在背景超過這段時間就會鎖定。裝置密碼可作為備用解鎖方式。在背景執行的捷徑不受此鎖定限制。"
+          }
+        }
+      }
+    },
+    "Redde looks at your calendar and Apple Maps on this device and tells you when to leave, a few minutes early. Only events with a street address. Settings → Agent." : {
+      "comment" : "In-app What's New for Redde 2.3: an item's text (a few short sentences)",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kigger i din kalender og Apple Kort på denne enhed og fortæller dig, hvornår du skal gå, et par minutter før. Kun begivenheder med en gadeadresse. Indstillinger → Agent."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde schaut auf diesem Gerät in deinen Kalender und Apple Karten und sagt dir ein paar Minuten vorher, wann du losmusst. Nur Termine mit Straßenadresse. Einstellungen → Agent."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde consulta tu calendario y Mapas de Apple en este dispositivo y te dice cuándo salir, unos minutos antes. Solo eventos con dirección. Ajustes → Agente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde consulte votre calendrier et Plans d’Apple sur cet appareil et vous dit quand partir, quelques minutes à l’avance. Seulement les événements avec une adresse. Réglages → Agent."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde guarda il calendario e Mappe di Apple su questo dispositivo e ti dice quando partire, qualche minuto prima. Solo eventi con un indirizzo. Impostazioni → Agente."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeはこのデバイス上のカレンダーとAppleマップを見て、出発すべき時刻を数分前に知らせます。住所のあるイベントのみが対象です。設定 → エージェント。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde가 이 기기에서 캘린더와 Apple 지도를 확인해 출발할 때를 몇 분 일찍 알려 줍니다. 주소가 있는 이벤트만 해당됩니다. 설정 → 에이전트."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde ser i kalenderen din og Apple Kart på denne enheten og sier fra når du bør dra, noen minutter i forveien. Bare hendelser med gateadresse. Innstillinger → Agent."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kijkt op dit apparaat in je agenda en Apple Kaarten en zegt je een paar minuten van tevoren wanneer je moet vertrekken. Alleen afspraken met een adres. Instellingen → Agent."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde sprawdza na tym urządzeniu Twój kalendarz i Mapy Apple i mówi, kiedy wyjść, kilka minut wcześniej. Tylko wydarzenia z adresem. Ustawienia → Agent."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde consulta seu calendário e o Mapas da Apple neste dispositivo e avisa quando sair, alguns minutos antes. Só eventos com endereço. Ajustes → Agente."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde смотрит ваш календарь и Apple Карты на этом устройстве и за несколько минут подсказывает, когда выходить. Только события с адресом. Настройки → Агент."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde tittar i din kalender och Apple Kartor på den här enheten och säger till när du ska gå, några minuter i förväg. Bara händelser med gatuadress. Inställningar → Agent."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde bu aygıtta takviminize ve Apple Haritalar’a bakar ve ne zaman çıkmanız gerektiğini birkaç dakika önceden söyler. Yalnızca sokak adresi olan etkinlikler. Ayarlar → Ajan."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde переглядає ваш календар і Apple Карти на цьому пристрої та за кілька хвилин підказує, коли виходити. Лише події з адресою. Параметри → Агент."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 会在此设备上查看你的日历和 Apple 地图，提前几分钟告诉你何时出发。仅限有街道地址的日程。设置 → 智能体。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 會在此裝置上查看你的行事曆和 Apple 地圖，提前幾分鐘告訴你何時出發。僅限有街道地址的行程。設定 → 代理。"
           }
         }
       }
@@ -291663,6 +292947,113 @@
         }
       }
     },
+    "The weather by the hour with rain called out, places on a map with hours and walks, an email to check before it goes, and a checklist to tick." : {
+      "comment" : "In-app What's New for Redde 2.3: an item's text (a few short sentences)",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vejret time for time med regn fremhævet, steder på et kort med åbningstider og gåafstand, en e-mail at tjekke, før den sendes, og en tjekliste at krydse af."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Wetter Stunde für Stunde mit Regenhinweisen, Orte auf einer Karte mit Öffnungszeiten und Fußwegen, eine E-Mail zum Prüfen vor dem Senden und eine Checkliste zum Abhaken."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El tiempo hora a hora con la lluvia destacada, lugares en un mapa con horarios y distancias a pie, un correo para revisar antes de que salga y una lista para marcar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La météo heure par heure avec la pluie signalée, des lieux sur une carte avec horaires et trajets à pied, un e-mail à vérifier avant l’envoi et une liste à cocher."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il meteo ora per ora con la pioggia in evidenza, luoghi su una mappa con orari e distanze a piedi, un’email da controllare prima dell’invio e una checklist da spuntare."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "雨を強調した1時間ごとの天気、営業時間と徒歩時間付きの地図上の場所、送信前に確認するメール、チェックを付けるチェックリスト。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "비 소식을 강조한 시간별 날씨, 영업시간과 도보 시간이 있는 지도 위 장소, 보내기 전에 확인하는 이메일, 체크하는 체크리스트."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Været time for time med regn fremhevet, steder på et kart med åpningstider og gangavstand, en e-post å sjekke før den sendes, og en sjekkliste å krysse av."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Het weer per uur met regen uitgelicht, plaatsen op een kaart met openingstijden en looptijden, een e-mail om te controleren voordat die verstuurd wordt, en een checklist om af te vinken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pogoda godzina po godzinie z wyróżnionym deszczem, miejsca na mapie z godzinami otwarcia i czasem dojścia, e-mail do sprawdzenia przed wysłaniem i lista do odhaczania."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O tempo hora a hora com a chuva destacada, locais num mapa com horários e caminhadas, um e-mail para conferir antes de sair e uma lista para marcar."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Погода по часам с отмеченным дождём, места на карте с часами работы и временем пешком, письмо для проверки перед отправкой и список с галочками."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vädret timme för timme med regn utmärkt, platser på en karta med öppettider och gångtid, ett mejl att kolla innan det skickas och en checklista att bocka av."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yağmurun belirtildiği saatlik hava durumu, çalışma saatleri ve yürüme süreleriyle haritada yerler, gönderilmeden önce kontrol edilecek bir e-posta ve işaretlenecek bir kontrol listesi."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Погода щогодини з позначеним дощем, місця на мапі з годинами роботи й часом пішки, лист для перевірки перед надсиланням і список із позначками."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按小时显示的天气并标出降雨，地图上的地点附营业时间和步行时间，发送前可检查的邮件，以及可勾选的清单。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按小時顯示的天氣並標出降雨，地圖上的地點附營業時間和步行時間，傳送前可檢查的郵件，以及可勾選的檢查清單。"
+          }
+        }
+      }
+    },
     "the web" : {
       "localizations" : {
         "da" : {
@@ -303818,6 +305209,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "TTFT %@"
+          }
+        }
+      }
+    },
+    "Turn it on in Settings → Agent and your agent hears roughly where you are, only when you ask about places, directions or the weather." : {
+      "comment" : "In-app What's New for Redde 2.3: an item's text (a few short sentences)",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slå det til i Indstillinger → Agent, så får din agent at vide, cirka hvor du er, kun når du spørger om steder, rutevejledning eller vejret."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schalte es unter Einstellungen → Agent ein, und dein Agent erfährt ungefähr, wo du bist – nur wenn du nach Orten, Routen oder dem Wetter fragst."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actívalo en Ajustes → Agente y tu agente sabrá más o menos dónde estás, solo cuando preguntes por lugares, rutas o el tiempo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activez-la dans Réglages → Agent et votre agent saura à peu près où vous êtes, uniquement quand vous posez une question sur des lieux, un itinéraire ou la météo."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attivala in Impostazioni → Agente e il tuo agente saprà più o meno dove sei, solo quando chiedi di luoghi, indicazioni o meteo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定 → エージェントでオンにすると、場所、経路、天気について尋ねたときだけ、エージェントにおおよその現在地が伝わります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "설정 → 에이전트에서 켜면 장소, 경로 또는 날씨를 물어볼 때만 에이전트가 대략적인 위치를 알게 됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slå det på i Innstillinger → Agent, så får agenten vite omtrent hvor du er, bare når du spør om steder, veibeskrivelser eller været."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zet het aan in Instellingen → Agent en je agent hoort ongeveer waar je bent, alleen als je vraagt naar plaatsen, routes of het weer."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Włącz to w Ustawienia → Agent, a agent pozna Twoje przybliżone położenie, tylko gdy pytasz o miejsca, trasy lub pogodę."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ative em Ajustes → Agente e seu agente saberá mais ou menos onde você está, só quando você perguntar sobre lugares, rotas ou o tempo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включите это в Настройки → Агент, и агент узнает, где вы примерно находитесь, только когда вы спрашиваете о местах, маршрутах или погоде."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slå på det i Inställningar → Agent så får agenten veta ungefär var du är, bara när du frågar om platser, vägbeskrivningar eller vädret."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayarlar → Ajan bölümünden açın; ajanınız yalnızca yerler, yol tarifleri veya hava durumu hakkında sorduğunuzda aşağı yukarı nerede olduğunuzu öğrenir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Увімкніть це в Параметри → Агент, і агент дізнається, де ви приблизно, лише коли ви питаєте про місця, маршрути чи погоду."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在“设置 → 智能体”中打开后，只有当你询问地点、路线或天气时，智能体才会得知你的大致位置。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在「設定 → 代理」中開啟後，只有當你詢問地點、路線或天氣時，代理才會得知你的大略位置。"
           }
         }
       }
@@ -333079,6 +334577,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的一天"
+          }
+        }
+      }
+    },
+    "Your day as a timeline" : {
+      "comment" : "In-app What's New for Redde 2.3: an item's title",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din dag som en tidslinje"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Tag als Zeitleiste"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu día como línea de tiempo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre journée en chronologie"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La tua giornata come timeline"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一日をタイムラインで"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "타임라인으로 보는 하루"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dagen din som tidslinje"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je dag als tijdlijn"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój dzień na osi czasu"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu dia em uma linha do tempo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш день на шкале времени"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din dag som tidslinje"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gününüz zaman çizelgesinde"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш день на шкалі часу"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "时间线上的一天"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "時間軸上的一天"
           }
         }
       }
