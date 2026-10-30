@@ -31,7 +31,7 @@ struct ContentView: View {
     @State private var draftBeforeEditing: (text: String, attachments: [Attachment])?
     @State private var showSettings = false
     #if os(macOS)
-    @Environment(\.openSettings) private var openSettings
+    @Environment(\.openWindow) private var openWindow
     #endif
     @State private var shareItem: ShareItem?
     /// Rename, from the header's menu.
@@ -137,11 +137,11 @@ struct ContentView: View {
         #if os(iOS)
         .sheet(isPresented: $showSettings, onDismiss: { WatchLink.shared.push() }) { SettingsView() }
         #else
-        // The Mac's Settings window, wherever the iPhone opens its sheet.
+        // The Settings window (`ReddeMacApp`), wherever the iPhone opens its sheet.
         .onChange(of: showSettings) { _, show in
             guard show else { return }
             showSettings = false
-            openSettings()
+            openWindow(id: ReddeMacApp.settingsWindow)
         }
         .focusedSceneValue(\.chatCommands, chatCommands)
         #endif

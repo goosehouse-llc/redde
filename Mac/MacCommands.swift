@@ -25,6 +25,9 @@ struct ReddeCommands: Commands {
 
     var body: some Commands {
         SidebarCommands()
+        // Redde → Settings… (⌘,): Settings is a window of its own (`ReddeMacApp`), not the Mac's
+        // Settings window, whose toolbar centres its items and the back button with them.
+        CommandGroup(replacing: .appSettings) { SettingsCommand() }
         CommandGroup(replacing: .newItem) {
             Button("New Conversation") { chat?.newConversation() }
                 .keyboardShortcut("n")
@@ -62,6 +65,16 @@ struct ReddeCommands: Commands {
                 .keyboardShortcut(".")
                 .disabled(chat?.stop == nil)
         }
+    }
+}
+
+/// Redde → Settings…, opening (or bringing forward) the Settings window.
+private struct SettingsCommand: View {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Button("Settings…") { openWindow(id: ReddeMacApp.settingsWindow) }
+            .keyboardShortcut(",")
     }
 }
 

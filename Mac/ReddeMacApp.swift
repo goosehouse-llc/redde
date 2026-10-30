@@ -103,6 +103,7 @@ struct ReddeMacApp: App {
             .toolbar(removing: .title)
             // Menus as the iPhone draws them: the symbol alone, no bezel and no arrow.
             .menuStyle(PlainMenu())
+            .disclosureGroupStyle(WholeRowDisclosure())
             .onAppear {
                 #if DEBUG
                 // The store's pictures (design/screenshots/mac.py): `-echo.windowSize 1440x900`
@@ -148,8 +149,10 @@ struct ReddeMacApp: App {
         .defaultSize(width: 1120, height: 780)
         .commands { ReddeCommands() }
 
-        // Redde → Settings… (⌘,): the iPhone's Settings, in the Mac's Settings window.
-        SwiftUI.Settings {
+        // Redde → Settings… (⌘,): the iPhone's Settings in a window of its own, with a normal
+        // toolbar, so a page's back button sits at the top left as a browser's does (asked
+        // 2026-10-30; the Mac's Settings window centred it under the title).
+        Window(String(localized: "Settings"), id: Self.settingsWindow) {
             SettingsView()
                 .environment(conversation)
                 .environment(voiceSession)
@@ -157,9 +160,14 @@ struct ReddeMacApp: App {
                 .tint(theme.accent)
                 .preferredColorScheme(settings.effectiveColorScheme)
                 .menuStyle(PlainMenu())
+                .disclosureGroupStyle(WholeRowDisclosure())
                 .frame(minWidth: 560, idealWidth: 640, minHeight: 560, idealHeight: 760)
         }
+        .windowToolbarStyle(.unified)
+        .defaultSize(width: 640, height: 760)
     }
+
+    static let settingsWindow = "settings"
 }
 
 /// A menu drawn as the iPhone draws one: its label alone, without the Mac's bezel and arrow.
@@ -169,5 +177,23 @@ struct PlainMenu: MenuStyle {
             .menuStyle(.button)
             .buttonStyle(.plain)   // (borderless lets go of the label's own frame)
             .menuIndicator(.hidden)
+    }
+}
+
+/// A section that folds open from anywhere on its row, as on the iPhone, not from its arrow alone
+/// (asked 2026-10-30). The Mac's own disclosure group draws it; its label takes the click.
+struct WholeRowDisclosure: DisclosureGroupStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        DisclosureGroup(isExpanded: configuration.$isExpanded) {
+            configuration.content
+        } label: {
+            configuration.label
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(.rect)
+                .onTapGesture { withAnimation(.snappy(duration: 0.2)) { configuration.isExpanded.toggle() } }
+                .accessibilityAddTraits(.isButton)
+        }
+        // The Mac's own look inside, so this style isn't asked for again.
+        .disclosureGroupStyle(.automatic)
     }
 }
