@@ -6,8 +6,9 @@ import UserNotifications
 /// Notifications when Redde isn't running come from the person's own Hermes: a plugin there
 /// (`companion/hermes-plugin/redde-push`) writes a short note when a reply finishes, when the
 /// agent waits on a person (an approval, a question, a password, a secret) or when a turn fails,
-/// seals it with a key only it and this iPhone hold, and hands it to a relay that passes it to
-/// Apple unread. The notification extension (`EchoPush`) opens it here.
+/// seals it with a key only it and this device hold, and hands it to a relay that passes it to
+/// Apple unread. The notification extension (`EchoPush` on the iPhone and the iPad, `EchoPushMac`
+/// on the Mac) opens it here.
 ///
 /// The key comes from pairing. `hermes redde-push pair` shows a link with a fresh public key; the
 /// app answers with its own through the relay, and both derive the same secret (X25519, then
@@ -117,7 +118,7 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
     var kind: Kind? { Kind(rawValue: k) }
 }
 
-/// One Hermes this iPhone is paired with.
+/// One Hermes this device (an iPhone, an iPad, a Mac) is paired with.
 nonisolated struct PushPairing: Codable, Equatable, Identifiable, Sendable {
     /// The relay's name for this phone as that Hermes knows it. Not a secret.
     var id: String
@@ -177,13 +178,17 @@ nonisolated enum PushSeal {
     }
 
     /// The phone's half of a pairing: its public key, and its relay id and send key sealed for
-    /// the plugin. `noteKey` is what both ends will seal notes with.
-    static func answer(to offered: Data, deviceID: String, sendKey: String, name: String,
+    /// the plugin. `noteKey` is what both ends will seal notes with. `kind`: what this device is
+    /// ("iphone", "ipad", "mac"), so the plugin lists it as that and never rings a Mac (asked
+    /// 2026-10-30, "pair the mac and ipad for push"); a plugin from before takes no notice.
+    static func answer(to offered: Data, deviceID: String, sendKey: String, name: String, kind: String? = nil,
                        with privateKey: Curve25519.KeyAgreement.PrivateKey = .init()) throws -> (pub: String, box: String, noteKey: Data) {
         let shared = try privateKey.sharedSecretFromKeyAgreement(with: .init(rawRepresentation: offered))
         let mine = privateKey.publicKey.rawRepresentation
         let keys = keys(shared: shared, offered: offered, answered: mine)
-        let inside = try JSONSerialization.data(withJSONObject: ["id": deviceID, "send": sendKey, "name": name])
+        var said = ["id": deviceID, "send": sendKey, "name": name]
+        if let kind { said["kind"] = kind }
+        let inside = try JSONSerialization.data(withJSONObject: said)
         return (base64URL(mine), base64URL(try seal(inside, key: keys.box, aad: pairingAAD)), keys.note)
     }
 
@@ -216,23 +221,38 @@ nonisolated enum PushSeal {
     }
 }
 
-/// Where the pairings are kept: one Keychain item in the app group, so the notification
-/// extension can read it, and readable after the first unlock, since a notification can arrive
-/// while the phone is locked. It never leaves this device.
+/// Where the pairings are kept: one Keychain item the notification extension can read too, and
+/// readable after the first unlock, since a notification can arrive while the phone is locked. It
+/// never leaves this device.
 nonisolated enum PushVault {
     static let group = "group.com.goosehouse.echo"
     private static let service = "com.goosehouse.echo.push"
     /// The item's name. Tests keep theirs under another, beside the real one.
     static let account = "pairings"
 
+    /// The Keychain access group the app and its notification extension share. On the iPhone and
+    /// the iPad, the app group. On the Mac, an app group is a Keychain access group only "should"
+    /// be, by Apple's word (2025), so it is one of the restricted kind, which every Mac keychain
+    /// honours: `<team>.<the app's id>.push`, the second the app lists (`Mac/Redde.entitlements`)
+    /// and the extension's own (`EchoPushMac`), read off this process's entitlements. A Debug
+    /// build's app has an id of its own, and so a group of its own.
+    static let keychainGroup: String = {
+        #if os(macOS)
+        return MacEntitlements.value("keychain-access-groups").flatMap { $0 as? [String] }?
+            .first { $0.hasSuffix(".push") } ?? group
+        #else
+        return group
+        #endif
+    }()
+
     private static func query(_ account: String) -> [String: Any] {
         #if os(macOS)
-        // A Mac's data protection keychain, the app group's: the file-based one asks.
+        // A Mac's data protection keychain: the file-based one asks.
         [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
-         kSecAttrAccount as String: account, kSecAttrAccessGroup as String: group, kSecUseDataProtectionKeychain as String: true]
+         kSecAttrAccount as String: account, kSecAttrAccessGroup as String: keychainGroup, kSecUseDataProtectionKeychain as String: true]
         #else
         [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
-         kSecAttrAccount as String: account, kSecAttrAccessGroup as String: group]
+         kSecAttrAccount as String: account, kSecAttrAccessGroup as String: keychainGroup]
         #endif
     }
 
@@ -273,6 +293,17 @@ nonisolated enum PushVault {
         save(all, account: account)
     }
 }
+
+#if os(macOS)
+/// What this Mac process was signed with: its Keychain groups (`PushVault.keychainGroup`), and
+/// whether Apple routes its notifications through the sandbox (`PushService.environment`).
+nonisolated enum MacEntitlements {
+    static func value(_ key: String) -> Any? {
+        guard let task = SecTaskCreateFromSelf(nil) else { return nil }
+        return SecTaskCopyValueForEntitlement(task, key as CFString, nil)
+    }
+}
+#endif
 
 /// Whether Redde's notifications make a sound (Settings › Voice › Notification sound). In the app
 /// group, because the notification extension decides for the ones a paired Hermes sends: the
@@ -396,12 +427,12 @@ nonisolated extension PushNote {
             content.categoryIdentifier = Self.repliedCategory
             content.threadIdentifier = "redde.turn"
         case .paired:
-            content.title = host.map { String(localized: "Paired with \($0)", comment: "Notification: this iPhone was paired with a Hermes server, by its name") }
-                ?? String(localized: "Paired", comment: "Notification: this iPhone was paired with a Hermes server")
+            content.title = host.map { String(localized: "Paired with \($0)", comment: "Notification: this device was paired with a Hermes server, by its name") }
+                ?? String(localized: "Paired", comment: "Notification: this device was paired with a Hermes server")
             content.body = String(localized: "Redde will tell you here when this Hermes finishes a reply, waits for you, or couldn't reply.")
         case .test:
             content.title = host.map { "Redde · \($0)" } ?? "Redde"
-            content.body = b ?? String(localized: "Notifications from your Hermes reach this iPhone.")
+            content.body = b ?? String(localized: "Notifications from your Hermes reach this device.", comment: "Notification: hermes redde-push test, when it says nothing of its own")
         case .widget:
             // Not something to be told: it is on the widget. iOS shows every notification that
             // reaches the extension, so this one says what was written and makes no sound.

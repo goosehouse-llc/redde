@@ -1,11 +1,7 @@
 import Foundation
 import Observation
 #if canImport(UIKit)
-#if canImport(UIKit)
 import UIKit
-#else
-import AppKit
-#endif
 #else
 import AppKit
 #endif
@@ -720,6 +716,23 @@ final class PushDelegate: NSObject, UIApplicationDelegate {
 
     nonisolated func application(_ application: UIApplication,
                                  didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        log.error("push registration failed: \(error.localizedDescription)")
+        let reason = error.localizedDescription
+        Task { @MainActor in PushService.shared.failedToRegister(PushError.noToken(reason)) }
+    }
+}
+#elseif os(macOS)
+/// The Mac's APNs registration callbacks, as `PushDelegate` takes the iPhone's (asked 2026-10-30,
+/// "pair the mac and ipad for push"): the address goes to `PushService`, which pairs with it and
+/// keeps the relay's registration current. The notes themselves are opened by `EchoPushMac`.
+final class MacPushDelegate: NSObject, NSApplicationDelegate {
+    private let log = Logger(subsystem: "com.goosehouse.echo", category: "notify")
+
+    nonisolated func application(_ application: NSApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        Task { @MainActor in PushService.shared.received(token: deviceToken) }
+    }
+
+    nonisolated func application(_ application: NSApplication, didFailToRegisterForRemoteNotificationsWithError error: any Error) {
         log.error("push registration failed: \(error.localizedDescription)")
         let reason = error.localizedDescription
         Task { @MainActor in PushService.shared.failedToRegister(PushError.noToken(reason)) }

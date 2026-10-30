@@ -7,7 +7,7 @@ title: Redde Privacy Policy
 **Effective date:** October 30, 2026
 **Publisher:** Goosehouse LLC
 
-Redde is a voice and chat client for an AI assistant that you run yourself. This policy explains what the app does with your information. The short version: Redde has no account, no analytics and no tracking, and your conversations go only to the server you configure. One optional feature, notifications when Redde is closed, uses a relay that we run. It holds your iPhone's push address and passes on notifications it cannot read.
+Redde is a voice and chat client for an AI assistant that you run yourself. This policy explains what the app does with your information. The short version: Redde has no account, no analytics and no tracking, and your conversations go only to the server you configure. One optional feature, notifications when Redde is closed, uses a relay that we run. It holds the push address of each device you pair and passes on notifications it cannot read.
 
 ## What Redde does not do
 
@@ -44,22 +44,22 @@ When you open Find Plugins (Settings → Plugins), your device downloads Nous Re
 
 ## Notifications when Redde is closed (optional, off by default)
 
-iOS closes an app in the background after a few minutes, and from then on Redde cannot tell you that a reply is ready or that your assistant is waiting for you. If you want to be told anyway, you can pair your own Hermes server with your iPhone in Settings → Voice → Notify when Redde is closed. Nothing in this section happens unless you do.
+iOS closes an app in the background after a few minutes, and from then on Redde cannot tell you that a reply is ready or that your assistant is waiting for you. If you want to be told anyway, you can pair your own Hermes server with your iPhone, iPad or Mac in Settings → Notifications → Notify when Redde is closed, each device on its own. Nothing in this section happens unless you do.
 
-Once paired, your Hermes server sends a notification when a reply finishes, when the assistant waits for you (to approve a command, answer a question, or enter a password or a secret), when a turn fails, and when a task it handed off comes back. Your server encrypts each one with a key that only it and your iPhone hold, and sends it to a relay operated by Goosehouse LLC (redde-push.goosehouse.org, hosted on Cloudflare). The relay hands it to Apple's push notification service, which delivers it, and your iPhone decrypts it.
+Once paired, your Hermes server sends a notification when a reply finishes, when the assistant waits for you (to approve a command, answer a question, or enter a password or a secret), when a turn fails, and when a task it handed off comes back. Your server encrypts each one with a key that only it and that device hold, and sends it to a relay operated by Goosehouse LLC (redde-push.goosehouse.org, hosted on Cloudflare). The relay hands it to Apple's push notification service, which delivers it, and your device decrypts it.
 
 What the relay holds for each pairing:
 
-- your iPhone's push token: the address Apple issues so that notifications for Redde can reach that device;
+- the device's push token: the address Apple issues so that notifications for Redde can reach that device;
 - a one-way hash of a random secret, which lets your server, and nobody else, send to that token;
-- whether the token belongs to a development or an App Store build, and when the iPhone last checked in;
+- whether the token belongs to a development or an App Store build (and, for a development build of the Mac app, which app it is), and when the device last checked in;
 - if you turn on Calls from Agents, a second token for the same device, the address Apple issues for incoming calls to Redde, which the relay uses only to deliver an agent's call. Turning calls off has the relay delete it.
 
-What passes through and is not kept: the encrypted notifications. Inside the encryption is a short note saying what happened, the conversation's id and title, and up to the first 500 characters of the reply, or the command or question that is waiting. The relay has no key and cannot read any of it, and neither can Apple. The text Apple is given to display is always the same placeholder, which your iPhone replaces once it has decrypted the note. While you pair by scanning a code, the relay also holds your iPhone's half of the key exchange (a public key and an encrypted answer for your server) for at most ten minutes.
+What passes through and is not kept: the encrypted notifications. Inside the encryption is a short note saying what happened, the conversation's id and title, and up to the first 500 characters of the reply, or the command or question that is waiting. The relay has no key and cannot read any of it, and neither can Apple. The text Apple is given to display is always the same placeholder, which your device replaces once it has decrypted the note. While you pair by scanning a code, the relay also holds your device's half of the key exchange (a public key and an encrypted answer for your server) for at most ten minutes.
 
 The relay has no accounts and nothing that says who you are: no name, no email address, no contact details. Like any internet service, it and its host see the network address a request comes from, and the host keeps routine request logs (the time, the path and the result, never a notification's content) for a few days. We use what the relay holds only to deliver your notifications. We do not combine it with anything else, share it, or sell it.
 
-A pairing is deleted from the relay when you remove it in Redde (swipe it away under Notify when Redde is closed), when Apple reports that the token is no longer valid, for example after the app is deleted, or after 120 days in which the iPhone has not checked in. Your Hermes server keeps its own record of the pairing until it next tries to send; `hermes redde-push remove` deletes it there.
+A pairing is deleted from the relay when you remove it in Redde (swipe it away under Notify when Redde is closed), when Apple reports that the token is no longer valid, for example after the app is deleted, or after 120 days in which the device has not checked in. Your Hermes server keeps its own record of the pairing until it next tries to send; `hermes redde-push remove` deletes it there.
 
 The Hermes server needs a small plugin for this. You can install it there yourself, or, when Redde is signed in to that server's Dashboard, have Redde ask the server to install it: the server then downloads the plugin from our public repository on GitHub. Redde passes the request to your own server and downloads nothing itself.
 

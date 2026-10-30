@@ -91,6 +91,24 @@ def key_id(key: bytes) -> bytes:
     return hashlib.sha256(b"redde-push key id" + key).digest()[:4]
 
 
+#: What a paired device can be (asked 2026-10-30, "pair the mac and ipad for push"): the app says
+#: in its answer. One paired by a Redde from before says nothing, and was an iPhone or an iPad.
+KINDS = ("iphone", "ipad", "mac")
+KIND_NAMES = {"iphone": "iPhone", "ipad": "iPad", "mac": "Mac"}
+
+
+def device_kind(device: dict) -> str:
+    """What a device is: its answer's word, or an iPhone for one that gave none (or one this plugin
+    doesn't know)."""
+    kind = str(device.get("kind") or "")
+    return kind if kind in KINDS else "iphone"
+
+
+def rings(device: dict) -> bool:
+    """Whether a device can take a call (`calls.py`): a Mac has no CallKit, and is never rung."""
+    return device_kind(device) != "mac"
+
+
 class Offer:
     """One run of `hermes redde-push pair`: a key pair, and the link that carries its public half."""
 
@@ -114,10 +132,13 @@ class Offer:
             shared = self._private.exchange(X25519PublicKey.from_public_bytes(theirs))
             note_key, box_key = derive(shared, self.public, theirs)
             inside = json.loads(unseal(box_key, unb64u(answer["box"]), b"redde-push pairing"))
-            device = {"id": str(inside["id"]), "send": str(inside["send"]), "name": str(inside.get("name") or "iPhone")[:60]}
+            kind = device_kind(inside)
+            device = {"id": str(inside["id"]), "send": str(inside["send"]), "name": str(inside.get("name") or KIND_NAMES[kind])[:60]}
         except Exception as error:   # a wrong key fails the same way as a mangled answer
             raise ValueError("that answer isn't to this pairing code") from error
         device.update(key=b64u(note_key), relay=self.relay, paired_at=int(time.time()))
+        if "kind" in inside:
+            device["kind"] = kind
         return device
 
 
@@ -375,10 +396,10 @@ class Store:
             return {d: list(p) for d, p in (self._read("calls.json").get("devices") or {}).items() if d in known and p}
 
     def call_takers(self, profile: str) -> list[dict]:
-        """The paired phones that take calls from this agent."""
+        """The paired phones that take calls from this agent (never a Mac, whatever it said)."""
         with self._lock:
             takes = self._read("calls.json").get("devices") or {}
-            return [d for d in self.devices if profile in (takes.get(d.get("id")) or [])]
+            return [d for d in self.devices if rings(d) and profile in (takes.get(d.get("id")) or [])]
 
     def calls_made(self, now: float | None = None) -> list[tuple[str, float, str, bool]]:
         """The calls of the last day: (profile, when, the call's id, whether the person answered it),

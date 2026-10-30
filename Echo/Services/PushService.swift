@@ -2,11 +2,7 @@ import CryptoKit
 import Foundation
 import Observation
 #if canImport(UIKit)
-#if canImport(UIKit)
 import UIKit
-#else
-import AppKit
-#endif
 #else
 import AppKit
 #endif
@@ -71,8 +67,16 @@ nonisolated enum PushError: LocalizedError, Equatable {
         case .oldPlugin: String(localized: "The Redde plugin on this Hermes is an older one that pairs only by code. Update it there by running the install command again with --force, restart Hermes, then pair again.")
         case .noDashboard(let reason): String(localized: "Couldn't ask your Hermes over the Dashboard: \(reason)")
         case .refused(let reason): String(localized: "Your Hermes didn't take the pairing: \(reason). Try again.")
-        case .notAllowed: String(localized: "Notifications are off for Redde. Turn them on in the iPhone's Settings › Notifications › Redde, then pair again.")
-        case .noToken(let reason): String(localized: "This iPhone couldn't register for notifications: \(reason)")
+        case .notAllowed:
+            #if os(macOS)
+            String(localized: "Notifications are off for Redde. Turn them on in System Settings › Notifications › Redde, then pair again.",
+                   comment: "Pairing on the Mac, with Redde's notifications turned off")
+            #else
+            String(localized: "Notifications are off for Redde. Turn them on in Settings › Notifications › Redde, then pair again.",
+                   comment: "Pairing on an iPhone or an iPad, with Redde's notifications turned off")
+            #endif
+        case .noToken(let reason): String(localized: "This device couldn't register for notifications: \(reason)",
+                                          comment: "Pairing: the system gave no push address; the placeholder is why")
         case .otherRelay(let host): String(localized: "That Hermes is set to send through another relay (\(host)), which this copy of Redde doesn't use.")
         case .relay(let reason): String(localized: "The notification relay refused: \(reason)")
         case .unreachable: String(localized: "Couldn't reach the notification relay. Check the connection and try again.")
@@ -81,17 +85,20 @@ nonisolated enum PushError: LocalizedError, Equatable {
 }
 
 /// The app's side of the push relay (`companion/push-relay`, the /v1 routes): registers this
-/// iPhone's push address under a secret, and leaves the answer to a pairing offer.
+/// device's push address under a secret, and leaves the answer to a pairing offer.
 nonisolated struct PushRelay: Sendable {
     var base: URL
     var session: URLSession = .shared
 
     /// Registers `token`; the relay keeps the hash of `sendKey`, never the key. Returns its id.
-    /// `voip`: the address for an agent's calls (`AgentCalls`), when calls are on.
-    func register(token: String, environment: String, sendKey: String, voip: String? = nil) async throws -> String {
+    /// `voip`: the address for an agent's calls (`AgentCalls`), when calls are on. `topic`: the
+    /// app the token is for, when it isn't the shipped one (`PushService.topic`).
+    func register(token: String, environment: String, sendKey: String, voip: String? = nil,
+                  topic: String? = PushService.topic) async throws -> String {
         let auth = PushSeal.hex(SHA256.hash(data: Data(sendKey.utf8)))
         var body: [String: Any] = ["token": token, "env": environment, "auth": auth]
         if let voip { body["voip"] = voip }
+        if let topic { body["topic"] = topic }
         let reply = try await send("POST", "v1/devices", body: body)
         guard let id = reply["id"] as? String, !id.isEmpty else { throw PushError.relay("no id") }
         return id
@@ -100,8 +107,11 @@ nonisolated struct PushRelay: Sendable {
     /// A new push address for a registration, or just a sign of life: one unused for four months
     /// is forgotten. `voip`: the address for an agent's calls, or nil to have the relay forget it
     /// (calls off); a relay from before calls takes no notice.
-    func update(id: String, sendKey: String, token: String, environment: String, voip: String? = nil) async throws {
-        _ = try await send("PUT", "v1/devices/\(id)", body: ["token": token, "env": environment, "voip": voip ?? NSNull()], bearer: sendKey)
+    func update(id: String, sendKey: String, token: String, environment: String, voip: String? = nil,
+                topic: String? = PushService.topic) async throws {
+        var body: [String: Any] = ["token": token, "env": environment, "voip": voip ?? NSNull()]
+        if let topic { body["topic"] = topic }
+        _ = try await send("PUT", "v1/devices/\(id)", body: body, bearer: sendKey)
     }
 
     func remove(id: String, sendKey: String) async throws {
@@ -140,9 +150,12 @@ nonisolated struct PushRelay: Sendable {
 }
 
 /// Notifications from the person's own Hermes when Redde isn't running: pairing with the plugin
-/// there, keeping this iPhone's registration at the relay current, and telling the plugin which
-/// conversations this phone has taken part in. `Shared/PushSeal.swift` has the design; the
-/// notification itself is opened by the `EchoPush` extension, not here.
+/// there, keeping this device's registration at the relay current, and telling the plugin which
+/// conversations this device has taken part in. `Shared/PushSeal.swift` has the design; the
+/// notification itself is opened by the `EchoPush` extension (`EchoPushMac` on the Mac), not here.
+/// An iPhone, an iPad and a Mac each pair on their own, and each hears everything the plugin
+/// sends (asked 2026-10-30, "pair the mac and ipad for push"); only calls are an iPhone's and an
+/// iPad's (`AgentCalls`).
 @MainActor
 @Observable
 final class PushService {
@@ -158,7 +171,7 @@ final class PushService {
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let session: URLSession
     @ObservationIgnored private let vault: (load: () -> [PushPairing], save: ([PushPairing]) -> Bool)
-    /// Asks iOS for this iPhone's push address; the answer comes back through `received(token:)`.
+    /// Asks the system for this device's push address; the answer comes back through `received(token:)`.
     @ObservationIgnored private let askForToken: () -> Void
     @ObservationIgnored private let allowed: () async -> Bool
     @ObservationIgnored private var token: String?
@@ -198,10 +211,14 @@ final class PushService {
     }
 
     /// Sandbox or production, as Apple will route this build's notifications. A build installed
-    /// from Xcode carries a provisioning profile that says; one from the App Store has none.
+    /// from Xcode carries a provisioning profile that says; one from the App Store has none. A
+    /// Mac app says it itself, in the entitlement it was signed with (Xcode's development, the
+    /// App Store's production).
     nonisolated static let environment: String = {
         #if targetEnvironment(simulator)
         return "dev"
+        #elseif os(macOS)
+        return MacEntitlements.value("com.apple.developer.aps-environment") as? String == "development" ? "dev" : "prod"
         #else
         guard let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
               let profile = try? String(contentsOf: url, encoding: .isoLatin1),
@@ -210,6 +227,25 @@ final class PushService {
         #endif
     }()
 
+    /// The app Apple's notifications for this build are addressed to, for the relay, when it isn't
+    /// the one the relay knows: the shipped iPhone, iPad and Mac apps are all com.goosehouse.echo;
+    /// the Mac's Debug build is com.goosehouse.echo.mac (`project.yml`).
+    nonisolated static let topic: String? = {
+        guard let id = Bundle.main.bundleIdentifier, id != "com.goosehouse.echo", id.hasPrefix("com.goosehouse.echo") else { return nil }
+        return id
+    }()
+
+    /// What this device is, for the plugin (`core.KINDS` there): which it lists, and whether it may
+    /// be rung (never a Mac, the iPad app on one included).
+    static var kind: String {
+        #if os(macOS)
+        "mac"
+        #else
+        if ProcessInfo.processInfo.isiOSAppOnMac { return "mac" }
+        return UIDevice.current.userInterfaceIdiom == .pad ? "ipad" : "iphone"
+        #endif
+    }
+
     /// The pairings as the Keychain has them now: the notification extension marks one
     /// confirmed, and names its machine, when the first note from it opens.
     func reload() {
@@ -217,9 +253,9 @@ final class PushService {
         if stored != pairings { pairings = stored }
     }
 
-    // MARK: - This iPhone's push address
+    // MARK: - This device's push address
 
-    /// From the app delegate, whenever iOS hands over (or renews) the address.
+    /// From the app delegate, whenever the system hands over (or renews) the address.
     func received(token data: Data) {
         let hex = PushSeal.hex(data)
         token = hex
@@ -244,8 +280,15 @@ final class PushService {
         if let token { Task { await refreshRegistrations(token: token) } } else if !pairings.isEmpty { askForToken() }
     }
 
-    /// What the relay is to hold for calls: the address while they are on, else none.
-    var voipForRelay: String? { callsOn() ? voipToken : nil }
+    /// What the relay is to hold for calls: the address while they are on, else none. A Mac takes
+    /// no calls (whatever Sync with iCloud brought over of the setting).
+    var voipForRelay: String? {
+        #if os(macOS)
+        nil
+        #else
+        callsOn() ? voipToken : nil
+        #endif
+    }
 
     func failedToRegister(_ error: PushError) {
         for waiter in tokenWaiters { waiter.resume(throwing: error) }
@@ -257,7 +300,8 @@ final class PushService {
         let timeout = Task { [weak self] in
             try? await Task.sleep(for: .seconds(20))
             guard !Task.isCancelled, let self else { return }
-            self.failedToRegister(.noToken(String(localized: "iOS didn't answer. Check the connection and try again.")))
+            self.failedToRegister(.noToken(String(localized: "Apple's push service didn't answer. Check the connection and try again.",
+                                                            comment: "Completes \"This device couldn't register for notifications: …\"")))
         }
         defer { timeout.cancel() }
         return try await withCheckedThrowingContinuation { waiter in
@@ -266,8 +310,8 @@ final class PushService {
         }
     }
 
-    /// At launch: a phone that is paired asks for its address again, which iOS answers through
-    /// `received(token:)`. One that isn't never registers for remote notifications at all.
+    /// At launch: a device that is paired asks for its address again, which the system answers
+    /// through `received(token:)`. One that isn't never registers for remote notifications at all.
     func refreshAtLaunch() {
         guard !pairings.isEmpty else { return }
         askForToken()
@@ -371,7 +415,7 @@ final class PushService {
         let id = try await relay.register(token: token, environment: Self.environment, sendKey: sendKey, voip: voipForRelay)
         var pairing: PushPairing
         do {
-            let answer = try PushSeal.answer(to: offered, deviceID: id, sendKey: sendKey, name: AppState.deviceName)
+            let answer = try PushSeal.answer(to: offered, deviceID: id, sendKey: sendKey, name: AppState.deviceName, kind: Self.kind)
             let host = try await deliver((answer.pub, answer.box), relay, id, sendKey)
             pairing = PushPairing(id: id, sendKey: sendKey, key: answer.noteKey, relay: relayURL)
             if let host {
@@ -387,7 +431,7 @@ final class PushService {
         let stale = pairings.filter { !$0.isPaired }
         guard vault.save(pairings.filter(\.isPaired) + [pairing]) else {
             try? await relay.remove(id: id, sendKey: sendKey)
-            throw PushError.relay(String(localized: "the pairing couldn't be saved on this iPhone", comment: "Completes \"The notification relay refused: …\""))
+            throw PushError.relay(String(localized: "the pairing couldn't be saved on this device", comment: "Completes \"The notification relay refused: …\""))
         }
         reload()
         for old in stale { try? await PushRelay(base: URL(string: old.relay) ?? base, session: session).remove(id: old.id, sendKey: old.sendKey) }

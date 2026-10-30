@@ -1,6 +1,7 @@
 // Redde push relay. Two services share this Worker.
 //
-// The public one, /v1: a pipe that cannot read what it carries. A phone registers its APNs token
+// The public one, /v1: a pipe that cannot read what it carries. A device (an iPhone, an iPad, a
+// Mac) registers its APNs token
 // and the hash of a secret; whoever holds that secret (the Redde plugin on that person's own
 // Hermes, paired with the phone) may post an opaque blob, which goes to APNs as it came. The blob
 // is encrypted between the plugin and the phone with a key the two agreed on directly; the relay
@@ -8,8 +9,8 @@
 // token, the secret's hash and when the phone last checked in; what it sees pass is ciphertext
 // and its size. docs/push.md has the whole design.
 //
-//   POST   /v1/devices            {token, voip?, env: "dev"|"prod", auth: sha256(secret) hex} -> 201 {id}
-//   PUT    /v1/devices/:id        {token, voip?, env}   Authorization: Bearer <secret>   -> 204
+//   POST   /v1/devices            {token, voip?, topic?, env: "dev"|"prod", auth: sha256(secret) hex} -> 201 {id}
+//   PUT    /v1/devices/:id        {token, voip?, topic?, env}   Authorization: Bearer <secret>   -> 204
 //   DELETE /v1/devices/:id                              Authorization: Bearer <secret>   -> 204
 //   POST   /v1/devices/:id/push   {payload, collapse?, ttl?, kind?}   Bearer <secret>   -> 202 | 410 gone
 //
@@ -17,6 +18,12 @@
 // you"): a push with `kind: "call"` goes to Apple as a VoIP push on that token and the app's
 // `.voip` topic, with the blob alone and a short life (a call that rings late is worse than
 // none); a phone without one answers 409. null forgets it.
+//
+// `topic` is the app the token is for, when it isn't APNS_TOPIC: the shipped apps on the iPhone,
+// the iPad and the Mac are all APNS_TOPIC, and say nothing; the Mac app's Debug build has a bundle
+// id of its own (asked 2026-10-30, "pair the mac and ipad for push"). Only the ids in APNS_TOPICS
+// are taken (by default APNS_TOPIC and APNS_TOPIC.mac): no one can have the relay sign for another
+// app's notifications.
 //   PUT    /v1/pairings/:rid      {pub, box}   Bearer <secret>, X-Redde-Device: <id>     -> 204
 //   GET    /v1/pairings/:rid                                               -> 200 {pub, box} | 404
 //
@@ -238,6 +245,19 @@ async function readJSON(request, limit) {
   }
 }
 
+/** The bundle ids a device may register under: APNS_TOPICS, or APNS_TOPIC and its Mac Debug build's. */
+function topics(env) {
+  const listed = (env.APNS_TOPICS || "").split(",").map((t) => t.trim()).filter(Boolean);
+  return new Set([env.APNS_TOPIC, ...(listed.length ? listed : [`${env.APNS_TOPIC}.mac`])]);
+}
+
+/** The app a registration is for: its topic, null for APNS_TOPIC (not given, or given as that),
+ *  false for one this relay won't sign for. */
+function appTopic(body, env) {
+  if (body.topic === undefined || body.topic === null || body.topic === env.APNS_TOPIC) return null;
+  return typeof body.topic === "string" && topics(env).has(body.topic) ? body.topic : false;
+}
+
 /** The PushKit token in a registration: the token, null to forget it, undefined when not given. */
 function voipToken(body) {
   if (!("voip" in body)) return undefined;
@@ -250,9 +270,12 @@ async function registerDevice(request, env) {
   if (!body || !TOKEN.test(body.token || "") || !HASH.test(body.auth || "")) return json(400, { error: "bad registration" });
   const voip = voipToken(body);
   if (voip === false) return json(400, { error: "bad voip token" });
+  const topic = appTopic(body, env);
+  if (topic === false) return json(400, { error: "unknown app" });
   const id = b64url(crypto.getRandomValues(new Uint8Array(16)));
   const device = { token: body.token.toLowerCase(), env: body.env === "dev" ? "dev" : "prod", auth: body.auth, seen: Date.now() };
   if (voip) device.voip = voip;
+  if (topic) device.topic = topic;
   await env.STORE.put(`dev:${id}`, JSON.stringify(device), { expirationTtl: DEVICE_TTL });
   return json(201, { id });
 }
@@ -264,9 +287,14 @@ async function updateDevice(request, env, id) {
   if (!body || !TOKEN.test(body.token || "")) return json(400, { error: "bad token" });
   const voip = voipToken(body);
   if (voip === false) return json(400, { error: "bad voip token" });
+  const topic = appTopic(body, env);
+  if (topic === false) return json(400, { error: "unknown app" });
   Object.assign(device, { token: body.token.toLowerCase(), env: body.env === "dev" ? "dev" : "prod", seen: Date.now() });
   if (voip === null) delete device.voip;
   else if (voip) device.voip = voip;
+  // The token says which app it is for each time: one that names none is APNS_TOPIC's.
+  if (topic) device.topic = topic;
+  else delete device.topic;
   await env.STORE.put(`dev:${id}`, JSON.stringify(device), { expirationTtl: DEVICE_TTL });
   return json(204);
 }
@@ -310,7 +338,7 @@ async function pushToDevice(request, env, id) {
     method: "POST",
     headers: {
       authorization: `bearer ${jwt}`,
-      "apns-topic": call ? `${env.APNS_TOPIC}.voip` : env.APNS_TOPIC,
+      "apns-topic": call ? `${device.topic || env.APNS_TOPIC}.voip` : device.topic || env.APNS_TOPIC,
       "apns-push-type": call ? "voip" : "alert",
       "apns-priority": "10",
       "apns-expiration": String(Math.floor(Date.now() / 1000) + ttl),

@@ -27,7 +27,7 @@ core, qr = plugin.core, plugin.qr
 class Phone:
     """What Redde does with a pairing link, for the tests."""
 
-    def __init__(self, link, device_id="dev-1234567890abcdef", send="send-key", name="Test phone"):
+    def __init__(self, link, device_id="dev-1234567890abcdef", send="send-key", name="Test phone", kind=None):
         self.device_id = device_id
         offered = core.unb64u(link.split("#push=")[1].split("&")[0])
         private = X25519PrivateKey.generate()
@@ -35,7 +35,10 @@ class Phone:
         from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PublicKey
         shared = private.exchange(X25519PublicKey.from_public_bytes(offered))
         self.note_key, box_key = core.derive(shared, offered, self.public)
-        inside = json.dumps({"id": device_id, "send": send, "name": name}).encode()
+        said = {"id": device_id, "send": send, "name": name}
+        if kind is not None:
+            said["kind"] = kind   # (a Redde from before 2026-10-30 says nothing of it)
+        inside = json.dumps(said).encode()
         self.answer = {"pub": core.b64u(self.public), "box": core.b64u(core.seal(box_key, inside, b"redde-push pairing"))}
         self.slot = core.rendezvous(offered)
 
@@ -94,6 +97,21 @@ class PairingTests(unittest.TestCase):
         self.assertEqual(device["relay"], core.DEFAULT_RELAY)
         other = core.Offer("http://127.0.0.1:18980/")
         self.assertTrue(other.link.endswith("&relay=http%3A%2F%2F127.0.0.1%3A18980"))
+
+    def test_an_ipad_or_a_mac_says_what_it_is_and_one_from_before_is_taken_for_an_iphone(self):
+        offer = core.Offer()
+        device = offer.accept(Phone(offer.link, name="Studio Mac", kind="mac").answer)
+        self.assertEqual((device["name"], device["kind"]), ("Studio Mac", "mac"))
+        self.assertFalse(core.rings(device), "a Mac is never rung")
+        device = offer.accept(Phone(offer.link, name="", kind="ipad").answer)
+        self.assertEqual((device["name"], device["kind"]), ("iPad", "ipad"), "unnamed, it is called what it is")
+        self.assertTrue(core.rings(device))
+        device = offer.accept(Phone(offer.link).answer)
+        self.assertNotIn("kind", device, "what an older Redde paired is kept as it was")
+        self.assertEqual(core.device_kind(device), "iphone")
+        self.assertTrue(core.rings(device))
+        device = offer.accept(Phone(offer.link, kind="toaster").answer)
+        self.assertEqual(device["kind"], "iphone", "a word this plugin doesn't know")
 
     def test_an_answer_to_another_offer_is_refused(self):
         offer, other = core.Offer(), core.Offer()

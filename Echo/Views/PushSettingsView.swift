@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Settings › Notifications when Redde is closed: the Hermes machines this iPhone is paired with,
-/// and how to pair one. It takes a plugin on the Hermes. An app with that Hermes's Dashboard login
+/// Settings › Notifications when Redde is closed: the Hermes machines this device is paired with,
+/// and how to pair one. The same on an iPhone, an iPad and the Mac, each paired on its own (asked
+/// 2026-10-30, "pair the mac and ipad for push"). It takes a plugin on the Hermes. An app with that Hermes's Dashboard login
 /// can have Hermes install it and then pairs with one tap; any other is shown the command for a
 /// terminal there, and scans the code the plugin's command shows.
 struct PushSettingsView: View {
@@ -43,11 +44,17 @@ struct PushSettingsView: View {
                     .swipeActions {
                         Button("Remove", role: .destructive) { Task { await push.unpair(pairing) } }
                     }
+                    #if os(macOS)
+                    // A Mac list's rows have no swipe to speak of: their menu.
+                    .contextMenu {
+                        Button("Remove", role: .destructive) { Task { await push.unpair(pairing) } }
+                    }
+                    #endif
                 }
             } header: {
                 Text("Paired")
             } footer: {
-                Text("While Redde is running it notifies you itself. Once iOS has closed it, a paired Hermes does: it tells this iPhone when a reply is ready, when the agent waits for you (an approval, a question, a password) and when it couldn't reply, for conversations you have taken part in from here. Swipe a pairing to remove it.")
+                Text(Self.pairedFooter)
             }
 
             Section {
@@ -68,7 +75,7 @@ struct PushSettingsView: View {
             } header: {
                 Text("Pair a Hermes")
             } footer: {
-                Text("What a notification says is encrypted on your Hermes and opened on this iPhone, with a key the two agree on when you pair. On the way it passes through a relay run by Goosehouse and through Apple; neither can read it. The relay keeps this iPhone's notification address so it can deliver, and never has the key. Removing a pairing deletes the address there.")
+                Text(String(localized: "What a notification says is encrypted on your Hermes and opened on this device, with a key the two agree on when you pair. On the way it passes through a relay run by Goosehouse and through Apple; neither can read it. The relay keeps this device's notification address so it can deliver, and never has the key. Removing a pairing deletes the address there.", comment: "Footer under Pair a Hermes, in Settings › Notifications › Notify when Redde is closed"))
             }
         }
         .navigationTitle("When Redde is closed")
@@ -88,6 +95,15 @@ struct PushSettingsView: View {
         .sheet(isPresented: $pairingDirectly, onDismiss: { push.reload() }) { PushPairingSheet(offer: nil, server: serverName) }
         .onAppear { push.reload() }
         .onChange(of: scenePhase) { push.reload() }
+    }
+
+    /// What pairing does, under the pairings: the same everywhere but how a pairing is removed.
+    private static var pairedFooter: String {
+        #if os(macOS)
+        String(localized: "While Redde is running it notifies you itself. Once it is closed, a paired Hermes does: it tells this Mac when a reply is ready, when the agent waits for you (an approval, a question, a password) and when it couldn't reply, for conversations you have taken part in from here, and brings your agents' ideas, briefings and heads-ups. Pair each iPhone, iPad and Mac you want them on. Control-click a pairing to remove it.", comment: "Footer under the paired Hermes machines on the Mac, in Settings › Notifications › Notify when Redde is closed")
+        #else
+        String(localized: "While Redde is running it notifies you itself. Once it is closed, a paired Hermes does: it tells this device when a reply is ready, when the agent waits for you (an approval, a question, a password) and when it couldn't reply, for conversations you have taken part in from here, and brings your agents' ideas, briefings and heads-ups. Pair each iPhone, iPad and Mac you want them on. Swipe a pairing to remove it.", comment: "Footer under the paired Hermes machines on an iPhone or an iPad, in Settings › Notifications › Notify when Redde is closed")
+        #endif
     }
 
     /// There is a Dashboard login to ask about the plugin with, whichever connection chats use.
@@ -174,7 +190,7 @@ struct CommandRow: View {
 /// A pairing link was scanned, pasted or opened, or "Pair with this Hermes" was tapped (no offer:
 /// it is asked for over the Dashboard): say what pairing means, and do it only once the person
 /// agrees. Then wait for the Hermes at the other end to send its first notification, which is the
-/// proof that its notes reach this iPhone.
+/// proof that its notes reach this device.
 struct PushPairingSheet: View {
     var offer: PushOffer?
     var server: String?
@@ -261,12 +277,13 @@ struct PushPairingSheet: View {
     private var detail: String {
         switch stage {
         case .asking:
-            String(localized: "It will tell this iPhone when a reply is ready, when the agent waits for you and when it couldn't reply, also when Redde is closed. Notifications are encrypted between that Hermes and this iPhone; the relay that carries them can't read them.")
-        case .working: offer == nil ? String(localized: "Registering this iPhone and asking your Hermes.") : String(localized: "Registering this iPhone and answering the code.")
+            String(localized: "It will tell this device when a reply is ready, when the agent waits for you and when it couldn't reply, also when Redde is closed. Notifications are encrypted between that Hermes and this device; the relay that carries them can't read them.", comment: "Pairing sheet: what pairing this device with a Hermes does")
+        case .working: offer == nil ? String(localized: "Registering this device and asking your Hermes.", comment: "Pairing sheet, while pairing over the Dashboard")
+            : String(localized: "Registering this device and answering the code.", comment: "Pairing sheet, while pairing with a scanned or pasted code")
         case .waiting: String(localized: "It should send a notification within a few seconds.")
         case .done: String(localized: "You will be notified here when that Hermes finishes a reply, waits for you, or couldn't reply.")
         case .quiet:
-            String(localized: "Your Hermes has this iPhone, but its first notification hasn't arrived. It may not be able to reach the notification relay. On that machine, hermes redde-push test sends another.")
+            String(localized: "Your Hermes has this device, but its first notification hasn't arrived. It may not be able to reach the notification relay. On that machine, hermes redde-push test sends another.", comment: "Pairing sheet: paired, but no notification came")
         case .failed(let reason): reason
         }
     }
@@ -284,7 +301,7 @@ struct PushPairingSheet: View {
                 } else if pairing.isPaired {
                     stage = .quiet(pairing.host)   // over the Dashboard the plugin has already said yes
                 } else {
-                    stage = .failed(String(localized: "This iPhone answered the code, but that Hermes hasn't sent anything back. The pairing command may have ended: run it again and scan the new code."))
+                    stage = .failed(String(localized: "This device answered the code, but that Hermes hasn't sent anything back. The pairing command may have ended: run it again and use the new code.", comment: "Pairing sheet: the plugin never confirmed a pairing made with a code"))
                 }
             } catch {
                 stage = .failed(error.localizedDescription)

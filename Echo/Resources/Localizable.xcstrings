@@ -44135,6 +44135,113 @@
     "An agent that needs a key asks for it here instead of in a chat. What you paste goes sealed into that profile's .env on your Hermes: never into a chat, a model or this device." : {
 
     },
+    "An agent you allow rings this device like a phone call when something shouldn't wait." : {
+      "comment" : "Footer under Calls from Agents, in Settings › Notifications (an iPhone or an iPad)",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En agent, du tillader, ringer til denne enhed som et telefonopkald, når noget ikke bør vente."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Agent, den du erlaubst, ruft dieses Gerät wie ein Telefonanruf an, wenn etwas nicht warten sollte."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un agente al que se lo permitas llama a este dispositivo como una llamada telefónica cuando algo no debe esperar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un agent que vous autorisez fait sonner cet appareil comme un appel téléphonique quand quelque chose ne peut pas attendre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un agente che autorizzi fa squillare questo dispositivo come una telefonata quando qualcosa non può aspettare."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "許可したエージェントは、急ぎの用件があるときに電話のようにこのデバイスを鳴らします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "허용한 에이전트는 미룰 수 없는 일이 있을 때 전화처럼 이 기기를 울립니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En agent du tillater, ringer denne enheten som en telefonsamtale når noe ikke bør vente."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een agent die je toestaat, belt dit apparaat als een telefoongesprek wanneer iets niet kan wachten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent, któremu pozwolisz, dzwoni na to urządzenie jak przy zwykłym połączeniu, gdy coś nie może czekać."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um agente que você permitir toca neste dispositivo como uma ligação quando algo não pode esperar."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент, которому вы разрешите, звонит на это устройство как по телефону, когда что-то не терпит отлагательств."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En agent du tillåter ringer den här enheten som ett telefonsamtal när något inte bör vänta."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İzin verdiğiniz bir ajan, bekleyemeyecek bir şey olduğunda bu aygıtı bir telefon araması gibi çaldırır."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дозволений вами агент дзвонить на цей пристрій, як під час телефонного виклику, коли щось не може чекати."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当有事不宜等待时，你允许的智能体会像打电话一样呼叫此设备。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有事不宜等待時，你允許的代理會像打電話一樣讓此裝置 響鈴。"
+          }
+        }
+      }
+    },
     "An agent you allow rings this iPhone like a phone call when something shouldn't wait, on the Lock Screen too. Answer, and voice mode opens in its chat: it says why it called, and you talk, hands-free, until one of you hangs up. Not answered, it is a missed call that says what it was about." : {
       "localizations" : {
         "da" : {
@@ -46678,6 +46785,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apple 的裝置上語音合成器。完全不用網路，啟動最快。"
+          }
+        }
+      }
+    },
+    "Apple's push service didn't answer. Check the connection and try again." : {
+      "comment" : "Completes \"This device couldn't register for notifications: …\"",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apples push-tjeneste svarede ikke. Tjek forbindelsen, og prøv igen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Push-Dienst von Apple hat nicht geantwortet. Prüfe die Verbindung und versuch es erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El servicio de notificaciones push de Apple no respondió. Comprueba la conexión y vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le service de notifications push d’Apple n’a pas répondu. Vérifiez la connexion et réessayez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il servizio di notifiche push di Apple non ha risposto. Controlla la connessione e riprova."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appleのプッシュサービスから応答がありませんでした。接続を確認して、もう一度お試しください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple 푸시 서비스가 응답하지 않았습니다. 연결을 확인하고 다시 시도하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apples push-tjeneste svarte ikke. Sjekk tilkoblingen og prøv igjen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De pushdienst van Apple antwoordde niet. Controleer de verbinding en probeer het opnieuw."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usługa powiadomień push Apple nie odpowiedziała. Sprawdź połączenie i spróbuj ponownie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O serviço de push da Apple não respondeu. Verifique a conexão e tente de novo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Служба push-уведомлений Apple не ответила. Проверьте подключение и повторите попытку."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apples pushtjänst svarade inte. Kontrollera anslutningen och försök igen."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple'ın anında bildirim hizmeti yanıt vermedi. Bağlantıyı denetleyin ve yeniden deneyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Служба push-сповіщень Apple не відповіла. Перевірте з’єднання й повторіть спробу."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple推送服务没有响应。请检查连接并重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple 推播服務沒有回應。請檢查連線並再試一次。"
           }
         }
       }
@@ -55313,6 +55527,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "iOS 關閉 Redde 時，背景通知就會停止；開啟此功能後，之後改由你的 Hermes 傳送。"
+          }
+        }
+      }
+    },
+    "Background notifications stop when Redde is closed; with this, your Hermes sends them from then on, to each iPhone, iPad and Mac you pair." : {
+      "comment" : "Footer under Notify when Redde is closed, in Settings › Notifications",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meddelelser i baggrunden stopper, når Redde er lukket; med dette sender din Hermes dem fra da af til hver iPhone, iPad og Mac, du parrer."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hintergrundmitteilungen enden, wenn Redde geschlossen ist; damit sendet dein Hermes sie ab dann an jedes iPhone, iPad und jeden Mac, die du koppelst."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las notificaciones en segundo plano se detienen cuando Redde está cerrado; con esto, tu Hermes las envía a partir de entonces a cada iPhone, iPad y Mac que vincules."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les notifications en arrière-plan s’arrêtent quand Redde est fermé ; avec ceci, votre Hermes prend le relais pour les envoyer à chaque iPhone, iPad et Mac que vous jumelez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le notifiche in background si interrompono quando Redde è chiusa; con questa opzione, da quel momento le invia il tuo Hermes, a ogni iPhone, iPad e Mac che abbini."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeが閉じているとバックグラウンド通知は止まります。これをオンにすると、それ以降はHermesが、ペアリングした各iPhone、iPad、Macに通知を送信します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde가 닫혀 있으면 백그라운드 알림이 중지됩니다. 이 기능을 사용하면 그 이후에는 Hermes가 페어링한 각 iPhone, iPad, Mac으로 알림을 보냅니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bakgrunnsvarslinger stopper når Redde er lukket; med dette sender din Hermes dem fra da av til hver iPhone, iPad og Mac du sammenkobler."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meldingen op de achtergrond stoppen als Redde gesloten is; hiermee stuurt je Hermes ze vanaf dat moment naar elke iPhone, iPad en Mac die je koppelt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Powiadomienia w tle ustają, gdy Redde jest zamknięte; dzięki temu od tej chwili wysyła je Twój Hermes na każdy sparowany iPhone, iPad i Maca."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As notificações em segundo plano param quando o Redde está fechado; com isto, seu Hermes passa a enviá-las a partir daí para cada iPhone, iPad e Mac que você emparelhar."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фоновые уведомления прекращаются, когда Redde закрыт; с этой функцией их дальше отправляет ваш Hermes — на каждый iPhone, iPad и Mac, для которых создана пара."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bakgrundsnotiser upphör när Redde är stängd; med det här skickar din Hermes dem från och med då till varje iPhone, iPad och Mac du parkopplar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kapalıyken arka plan bildirimleri durur; bu açıkken o andan itibaren bildirimleri Hermes'iniz, eşlediğiniz her iPhone, iPad ve Mac'e gönderir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фонові сповіщення припиняються, коли Redde закрито; з цим параметром далі їх надсилає ваш Hermes — на кожен iPhone, iPad і Mac, з якими створено пару."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde关闭后，后台通知会停止；打开此项后，之后将由你的Hermes向每台已配对的iPhone、iPad和Mac发送通知。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 關閉時，背景通知就會停止；開啟此功能後，之後改由你的 Hermes 傳送到每部已配對的 iPhone、iPad 和 Mac。"
           }
         }
       }
@@ -145596,6 +145917,113 @@
         }
       }
     },
+    "It will tell this device when a reply is ready, when the agent waits for you and when it couldn't reply, also when Redde is closed. Notifications are encrypted between that Hermes and this device; the relay that carries them can't read them." : {
+      "comment" : "Pairing sheet: what pairing this device with a Hermes does",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den giver denne enhed besked, når et svar er klar, når agenten venter på dig, og når den ikke kunne svare, også når Redde er lukket. Meddelelser krypteres mellem den Hermes og denne enhed; relæet, der bringer dem frem, kan ikke læse dem."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Er sagt diesem Gerät Bescheid, wenn eine Antwort fertig ist, wenn der Agent auf dich wartet und wenn er nicht antworten konnte, auch wenn Redde geschlossen ist. Mitteilungen sind zwischen diesem Hermes und diesem Gerät verschlüsselt; das Relay, das sie überträgt, kann sie nicht lesen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisará a este dispositivo cuando una respuesta esté lista, cuando el agente te espere y cuando no haya podido responder, también con Redde cerrado. Las notificaciones van cifradas entre ese Hermes y este dispositivo; el relé que las transporta no puede leerlas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il préviendra cet appareil quand une réponse est prête, quand l’agent vous attend et quand il n’a pas pu répondre, même quand Redde est fermé. Les notifications sont chiffrées entre cet Hermes et cet appareil ; le relais qui les transporte ne peut pas les lire."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avviserà questo dispositivo quando una risposta è pronta, quando l'agente ti aspetta e quando non è riuscito a rispondere, anche quando Redde è chiusa. Le notifiche sono crittografate tra quell'Hermes e questo dispositivo; il relay che le trasporta non può leggerle."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返答の準備ができたとき、エージェントが対応を待っているとき、返答できなかったときに、Reddeが閉じていてもこのデバイスに通知します。通知はそのHermesとこのデバイスの間で暗号化され、中継するリレーは内容を読み取れません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde가 닫혀 있을 때도 응답이 준비되었을 때, 에이전트가 사용자를 기다릴 때, 응답하지 못했을 때 이 기기에 알립니다. 알림은 해당 Hermes와 이 기기 사이에서 암호화되며, 알림을 전달하는 릴레이는 내용을 읽을 수 없습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den gir beskjed til denne enheten når et svar er klart, når agenten venter på deg, og når den ikke kunne svare, også når Redde er lukket. Varslinger krypteres mellom den Hermes og denne enheten; reléet som formidler dem, kan ikke lese dem."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die laat dit apparaat weten als een antwoord klaar is, als de agent op je wacht en als hij niet kon antwoorden, ook als Redde gesloten is. Meldingen zijn versleuteld tussen die Hermes en dit apparaat; de relay die ze doorgeeft, kan ze niet lezen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Będzie informować to urządzenie, gdy odpowiedź jest gotowa, gdy agent na Ciebie czeka i gdy nie zdołał odpowiedzieć – także gdy Redde jest zamknięte. Powiadomienia są szyfrowane między tym Hermesem a tym urządzeniem; przekaźnik, który je przenosi, nie może ich odczytać."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ele vai avisar este dispositivo quando uma resposta estiver pronta, quando o agente esperar por você e quando não conseguir responder, também com o Redde fechado. As notificações são criptografadas entre esse Hermes e este dispositivo; o retransmissor que as leva não consegue lê-las."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Он будет сообщать этому устройству, когда ответ готов, когда агент ждет вас и когда он не смог ответить, даже если Redde закрыт. Уведомления шифруются между тем Hermes и этим устройством; ретранслятор, который их передает, не может их прочитать."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den meddelar den här enheten när ett svar är klart, när agenten väntar på dig och när den inte kunde svara, även när Redde är stängd. Notiserna är krypterade mellan den Hermes och den här enheten; reläet som förmedlar dem kan inte läsa dem."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kapalıyken de bir yanıt hazır olduğunda, ajan sizi beklediğinde ve yanıt veremediğinde bunu bu aygıta bildirir. Bildirimler o Hermes ile bu aygıt arasında şifrelenir; onları taşıyan aktarıcı okuyamaz."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Він повідомлятиме цей пристрій, коли відповідь готова, коли агент чекає на вас і коли не вдалося відповісти, навіть якщо Redde закрито. Сповіщення шифруються між тим Hermes і цим пристроєм; ретранслятор, що їх передає, не може їх прочитати."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当回复就绪、智能体等待你处理以及无法回复时，它会通知此设备，Redde关闭时也是如此。通知在该Hermes与此设备之间加密；传送通知的中继无法读取其内容。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "它會在回覆準備好、代理等你回應，以及無法回覆時通知此裝置，即使 Redde 已關閉也一樣。通知在該 Hermes 與此裝置 之間加密；負責傳遞的中繼無法讀取。"
+          }
+        }
+      }
+    },
     "It will tell this iPhone when a reply is ready, when the agent waits for you and when it couldn't reply, also when Redde is closed. Notifications are encrypted between that Hermes and this iPhone; the relay that carries them can't read them." : {
       "localizations" : {
         "da" : {
@@ -186262,6 +186690,220 @@
         }
       }
     },
+    "Notifications are off for Redde. Turn them on in Settings › Notifications › Redde, then pair again." : {
+      "comment" : "Pairing on an iPhone or an iPad, with Redde's notifications turned off",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meddelelser er slået fra for Redde. Slå dem til i Indstillinger › Meddelelser › Redde, og par så igen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mitteilungen sind für Redde aus. Aktiviere sie in Einstellungen › Mitteilungen › Redde und kopple dann erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las notificaciones están desactivadas para Redde. Actívalas en Ajustes › Notificaciones › Redde y vuelve a vincular."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les notifications sont désactivées pour Redde. Activez-les dans Réglages › Notifications › Redde, puis jumelez à nouveau."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le notifiche sono disattivate per Redde. Attivale in Impostazioni › Notifiche › Redde, poi esegui di nuovo l'abbinamento."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeの通知がオフになっています。設定 › 通知 › Reddeでオンにしてから、もう一度ペアリングしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde의 알림이 꺼져 있습니다. 설정 › 알림 › Redde에서 켠 다음 다시 페어링하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Varslinger er slått av for Redde. Slå dem på i Innstillinger › Varslinger › Redde, og sammenkoble på nytt."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meldingen staan uit voor Redde. Zet ze aan in Instellingen › Meldingen › Redde en koppel daarna opnieuw."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Powiadomienia dla Redde są wyłączone. Włącz je w Ustawieniach › Powiadomienia › Redde, a potem sparuj ponownie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As notificações estão desativadas para o Redde. Ative-as em Ajustes › Notificações › Redde e emparelhe de novo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уведомления для Redde выключены. Включите их в «Настройки» › «Уведомления» › Redde и снова создайте пару."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notiser är av för Redde. Slå på dem i Inställningar › Notiser › Redde och parkoppla sedan igen."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde için bildirimler kapalı. Ayarlar › Bildirimler › Redde bölümünden açın, sonra yeniden eşleyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сповіщення для Redde вимкнено. Увімкніть їх у Параметри › Сповіщення › Redde, а потім створіть пару знову."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde的通知已关闭。请在设置 › 通知 › Redde中打开，然后重新配对。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 的通知已關閉。請在「設定」›「通知」›「Redde」中開啟，然後重新配對。"
+          }
+        }
+      }
+    },
+    "Notifications are off for Redde. Turn them on in System Settings › Notifications › Redde, then pair again." : {
+      "comment" : "Pairing on the Mac, with Redde's notifications turned off",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meddelelser er slået fra for Redde. Slå dem til i Systemindstillinger › Meddelelser › Redde, og par så igen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mitteilungen sind für Redde aus. Aktiviere sie in Systemeinstellungen › Mitteilungen › Redde und kopple dann erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las notificaciones están desactivadas para Redde. Actívalas en Ajustes del Sistema › Notificaciones › Redde y vuelve a vincular."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les notifications sont désactivées pour Redde. Activez-les dans Réglages Système › Notifications › Redde, puis jumelez à nouveau."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le notifiche sono disattivate per Redde. Attivale in Impostazioni di Sistema › Notifiche › Redde, poi esegui di nuovo l'abbinamento."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeの通知がオフになっています。システム設定 › 通知 › Reddeでオンにしてから、もう一度ペアリングしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde의 알림이 꺼져 있습니다. 시스템 설정 › 알림 › Redde에서 켠 다음 다시 페어링하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Varslinger er slått av for Redde. Slå dem på i Systeminnstillinger › Varslinger › Redde, og sammenkoble på nytt."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meldingen staan uit voor Redde. Zet ze aan in Systeeminstellingen › Meldingen › Redde en koppel daarna opnieuw."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Powiadomienia dla Redde są wyłączone. Włącz je w Ustawieniach systemowych › Powiadomienia › Redde, a potem sparuj ponownie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As notificações estão desativadas para o Redde. Ative-as em Ajustes do Sistema › Notificações › Redde e emparelhe de novo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уведомления для Redde выключены. Включите их в «Системные настройки» › «Уведомления» › Redde и снова создайте пару."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notiser är av för Redde. Slå på dem i Systeminställningar › Notiser › Redde och parkoppla sedan igen."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde için bildirimler kapalı. Sistem Ayarları › Bildirimler › Redde bölümünden açın, sonra yeniden eşleyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сповіщення для Redde вимкнено. Увімкніть їх у Системні параметри › Сповіщення › Redde, а потім створіть пару знову."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde的通知已关闭。请在系统设置 › 通知 › Redde中打开，然后重新配对。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 的通知已關閉。請在「系統設定」›「通知」›「Redde」中開啟，然後重新配對。"
+          }
+        }
+      }
+    },
     "Notifications are off for Redde. Turn them on in the iPhone's Settings › Notifications › Redde, then pair again." : {
       "localizations" : {
         "da" : {
@@ -186364,6 +187006,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Redde 的通知已關閉。請在 iPhone 的「設定」›「通知」›「Redde」中開啟，然後重新配對。"
+          }
+        }
+      }
+    },
+    "Notifications from your Hermes reach this device." : {
+      "comment" : "Notification: hermes redde-push test, when it says nothing of its own",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meddelelser fra din Hermes når frem til denne enhed."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mitteilungen von deinem Hermes erreichen dieses Gerät."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las notificaciones de tu Hermes llegan a este dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les notifications de votre Hermes arrivent sur cet appareil."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le notifiche del tuo Hermes arrivano su questo dispositivo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermesからの通知がこのデバイスに届きます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes의 알림이 이 기기로 전달됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Varslinger fra din Hermes når frem til denne enheten."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meldingen van je Hermes bereiken dit apparaat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Powiadomienia z Twojego Hermesa docierają na to urządzenie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As notificações do seu Hermes chegam a este dispositivo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уведомления от вашего Hermes приходят на это устройство."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notiser från din Hermes når den här enheten."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes'inizden gelen bildirimler bu aygıta ulaşıyor."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сповіщення від вашого Hermes надходять на цей пристрій."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "来自你的Hermes的通知会送达此设备。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "來自你的 Hermes 的通知會送達此裝置。"
           }
         }
       }
@@ -225380,6 +226129,220 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重新產生"
+          }
+        }
+      }
+    },
+    "Registering this device and answering the code." : {
+      "comment" : "Pairing sheet, while pairing with a scanned or pasted code",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrerer denne enhed og besvarer koden."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Gerät wird registriert und der Code beantwortet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrando este dispositivo y respondiendo al código."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrement de cet appareil et réponse au code."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrazione di questo dispositivo e risposta al codice."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このデバイスを登録してコードに応答しています。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 기기를 등록하고 코드에 응답하는 중."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrerer denne enheten og svarer på koden."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit apparaat registreren en de code beantwoorden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rejestrowanie tego urządzenia i odpowiadanie na kod."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrando este dispositivo e respondendo ao código."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Регистрация этого устройства и ответ на код."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrerar den här enheten och besvarar koden."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu aygıt kaydediliyor ve koda yanıt veriliyor."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Реєстрація цього пристрою і відповідь на код."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在注册此设备并响应配对码。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在註冊此裝置 並回應代碼。"
+          }
+        }
+      }
+    },
+    "Registering this device and asking your Hermes." : {
+      "comment" : "Pairing sheet, while pairing over the Dashboard",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrerer denne enhed og spørger din Hermes."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Gerät wird registriert und dein Hermes gefragt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrando este dispositivo y preguntando a tu Hermes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrement de cet appareil et demande à votre Hermes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrazione di questo dispositivo e richiesta al tuo Hermes."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このデバイスを登録してHermesに問い合わせています。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 기기를 등록하고 Hermes에 요청하는 중."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrerer denne enheten og spør Hermes."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit apparaat registreren en je Hermes vragen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rejestrowanie tego urządzenia i wysyłanie zapytania do Hermesa."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrando este dispositivo e perguntando ao seu Hermes."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Регистрация этого устройства и запрос к Hermes."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrerar den här enheten och frågar din Hermes."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu aygıt kaydediliyor ve Hermes'inize soruluyor."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Реєстрація цього пристрою і запит до вашого Hermes."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在注册此设备并询问你的Hermes。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在註冊此裝置 並詢問你的 Hermes。"
           }
         }
       }
@@ -288021,6 +288984,113 @@
         }
       }
     },
+    "the pairing couldn't be saved on this device" : {
+      "comment" : "Completes \"The notification relay refused: …\"",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "parringen kunne ikke gemmes på denne enhed"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "die Kopplung konnte auf diesem Gerät nicht gesichert werden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "no se pudo guardar la vinculación en este dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "le jumelage n’a pas pu être enregistré sur cet appareil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "impossibile salvare l'abbinamento su questo dispositivo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このデバイスにペアリングを保存できませんでした"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 기기에 페어링을 저장할 수 없음"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sammenkoblingen kunne ikke lagres på denne enheten"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "de koppeling kan niet op dit apparaat worden bewaard"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nie udało się zapisać parowania na tym urządzeniu"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "não foi possível salvar o emparelhamento neste dispositivo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "не удалось сохранить пару на этом устройстве"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "parkopplingen kunde inte sparas på den här enheten"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "eşleme bu aygıta kaydedilemedi"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "не вдалося зберегти пару на цьому пристрої"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法在此设备上保存配对"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "配對無法儲存在此裝置 上"
+          }
+        }
+      }
+    },
     "the pairing couldn't be saved on this iPhone" : {
       "comment" : "Completes \"The notification relay refused: …\"",
       "localizations" : {
@@ -295393,6 +296463,113 @@
         }
       }
     },
+    "This device answered the code, but that Hermes hasn't sent anything back. The pairing command may have ended: run it again and use the new code." : {
+      "comment" : "Pairing sheet: the plugin never confirmed a pairing made with a code",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne enhed besvarede koden, men den Hermes har ikke sendt noget tilbage. Parringskommandoen er måske afsluttet: kør den igen, og brug den nye kode."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Gerät hat auf den Code geantwortet, aber dieser Hermes hat nichts zurückgesendet. Der Kopplungsbefehl ist vielleicht beendet: Führe ihn erneut aus und verwende den neuen Code."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este dispositivo respondió al código, pero ese Hermes no ha devuelto nada. Puede que el comando de vinculación haya terminado: vuelve a ejecutarlo y usa el código nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cet appareil a répondu au code, mais cet Hermes n’a rien renvoyé. La commande de jumelage s’est peut-être terminée : exécutez-la à nouveau et utilisez le nouveau code."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo dispositivo ha risposto al codice, ma quell'Hermes non ha rimandato niente. Il comando di abbinamento potrebbe essere terminato: eseguilo di nuovo e usa il nuovo codice."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このデバイスはコードに応答しましたが、そのHermesから何も返ってきていません。ペアリングコマンドが終了した可能性があります。もう一度実行して、新しいコードを使ってください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 기기가 코드에 응답했지만 해당 Hermes가 아무것도 보내지 않았습니다. 페어링 명령이 종료되었을 수 있습니다. 다시 실행하고 새로운 코드를 사용하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne enheten svarte på koden, men den Hermes har ikke sendt noe tilbake. Sammenkoblingskommandoen kan ha avsluttet: kjør den på nytt og bruk den nye koden."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit apparaat heeft de code beantwoord, maar die Hermes heeft niets teruggestuurd. Het koppelcommando is misschien beëindigd: voer het opnieuw uit en gebruik de nieuwe code."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To urządzenie odpowiedziało na kod, ale ten Hermes nic nie odesłał. Polecenie parowania mogło się zakończyć: uruchom je ponownie i użyj nowego kodu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este dispositivo respondeu ao código, mas esse Hermes não enviou nada de volta. O comando de emparelhamento pode ter terminado: execute-o de novo e use o novo código."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это устройство ответило на код, но тот Hermes ничего не прислал в ответ. Возможно, команда создания пары завершилась: выполните ее снова и используйте новый код."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den här enheten besvarade koden, men den Hermes har inte skickat något tillbaka. Parkopplingskommandot kan ha avslutats: kör det igen och använd den nya koden."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu aygıt koda yanıt verdi ama o Hermes geri bir şey göndermedi. Eşleme komutu sona ermiş olabilir: yeniden çalıştırın ve yeni kodu kullanın."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей пристрій відповів на код, але той Hermes нічого не надіслав у відповідь. Можливо, команда створення пари завершилася: запустіть її знову й використайте новий код."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此设备已响应配对码，但该Hermes尚未回复任何内容。配对命令可能已结束：请再次运行并使用新的码。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此裝置已回應代碼，但該 Hermes 尚未傳回任何內容。配對指令可能已結束：請重新執行並使用新的代碼。"
+          }
+        }
+      }
+    },
     "This device couldn't make or keep its SSH key. Unlock it and try again." : {
       "localizations" : {
         "da" : {
@@ -295495,6 +296672,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "此裝置無法建立或保存它的 SSH 金鑰。請解鎖後再試一次。"
+          }
+        }
+      }
+    },
+    "This device couldn't register for notifications: %@" : {
+      "comment" : "Pairing: the system gave no push address; the placeholder is why",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne enhed kunne ikke registrere sig til meddelelser: %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Gerät konnte sich nicht für Mitteilungen registrieren: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este dispositivo no pudo registrarse para recibir notificaciones: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cet appareil n’a pas pu s’inscrire aux notifications : %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo dispositivo non è riuscito a registrarsi per le notifiche: %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このデバイスを通知に登録できませんでした：%@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 기기를 알림에 등록할 수 없음: %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne enheten kunne ikke registrere seg for varslinger: %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit apparaat kan zich niet registreren voor meldingen: %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To urządzenie nie mogło zarejestrować się do powiadomień: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este dispositivo não conseguiu se registrar para notificações: %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этому устройству не удалось зарегистрироваться для уведомлений: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den här enheten kunde inte registrera sig för notiser: %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu aygıt bildirimler için kaydolamadı: %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося зареєструвати цей пристрій для сповіщень: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此设备无法注册通知：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此裝置 無法註冊通知：%@"
           }
         }
       }
@@ -319879,6 +321163,113 @@
         }
       }
     },
+    "What a notification says is encrypted on your Hermes and opened on this device, with a key the two agree on when you pair. On the way it passes through a relay run by Goosehouse and through Apple; neither can read it. The relay keeps this device's notification address so it can deliver, and never has the key. Removing a pairing deletes the address there." : {
+      "comment" : "Footer under Pair a Hermes, in Settings › Notifications › Notify when Redde is closed",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indholdet af en meddelelse krypteres på din Hermes og åbnes på denne enhed med en nøgle, som de to bliver enige om, når du parrer. Undervejs går den gennem et relæ, som Goosehouse driver, og gennem Apple; ingen af dem kan læse den. Relæet gemmer denne enheds meddelelsesadresse, så det kan levere, og har aldrig nøglen. Når du fjerner en parring, slettes adressen der."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Inhalt einer Mitteilung wird auf deinem Hermes verschlüsselt und auf diesem Gerät geöffnet, mit einem Schlüssel, auf den sich beide beim Koppeln einigen. Unterwegs läuft sie über ein Relay von Goosehouse und über Apple; keiner von beiden kann sie lesen. Das Relay behält die Mitteilungsadresse dieses Geräts, um zustellen zu können, und hat nie den Schlüssel. Das Entfernen einer Kopplung löscht die Adresse dort."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo que dice una notificación se cifra en tu Hermes y se abre en este dispositivo, con una clave que ambos acuerdan al vincularlos. Por el camino pasa por un relé gestionado por Goosehouse y por Apple; ninguno puede leerlo. El relé guarda la dirección de notificaciones de este dispositivo para poder entregarlas, y nunca tiene la clave. Quitar una vinculación elimina allí la dirección."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le contenu d’une notification est chiffré sur votre Hermes et déchiffré sur cet appareil, avec une clé dont les deux conviennent lors du jumelage. En chemin, il passe par un relais géré par Goosehouse et par Apple ; aucun des deux ne peut le lire. Le relais conserve l’adresse de notification de cet appareil pour pouvoir livrer, et n’a jamais la clé. Retirer un jumelage y supprime l’adresse."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il contenuto di una notifica viene crittografato sul tuo Hermes e aperto su questo dispositivo, con una chiave che i due concordano durante l'abbinamento. Lungo il percorso passa per un relay gestito da Goosehouse e per Apple; nessuno dei due può leggerlo. Il relay conserva l'indirizzo di notifica di questo dispositivo per poterle consegnare, e non ha mai la chiave. Rimuovere un abbinamento elimina l'indirizzo dal relay."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通知の内容は、ペアリング時に両者で取り決めたキーを使い、Hermes上で暗号化され、このデバイス上で復号されます。途中でGoosehouseが運営するリレーとAppleを経由しますが、どちらも内容を読み取れません。リレーは配信のためにこのデバイスの通知アドレスを保持しますが、キーは持ちません。ペアリングを削除すると、リレー上のアドレスも削除されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "알림 내용은 페어링할 때 두 기기가 합의한 키로 Hermes에서 암호화되고 이 기기에서 열립니다. 전달 과정에서 Goosehouse가 운영하는 릴레이와 Apple을 거치지만 둘 다 내용을 읽을 수 없습니다. 릴레이는 전달을 위해 이 기기의 알림 주소를 보관하지만 키는 절대 갖지 않습니다. 페어링을 제거하면 릴레이에서 주소가 삭제됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Innholdet i et varsel krypteres på din Hermes og åpnes på denne enheten, med en nøkkel de to blir enige om når du sammenkobler. På veien går det gjennom et relé som drives av Goosehouse, og gjennom Apple; ingen av dem kan lese det. Reléet tar vare på varseladressen til denne enheten så det kan levere, og har aldri nøkkelen. Når du fjerner en sammenkobling, slettes adressen der."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wat een melding zegt, wordt op je Hermes versleuteld en op dit apparaat geopend, met een sleutel die de twee bij het koppelen afspreken. Onderweg gaat het door een relay van Goosehouse en door Apple; geen van beide kan het lezen. De relay bewaart het meldingsadres van dit apparaat om te kunnen bezorgen, en heeft nooit de sleutel. Een koppeling verwijderen wist het adres daar."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Treść powiadomienia jest szyfrowana na Twoim Hermesie i odszyfrowywana na tym urządzeniu kluczem, który oba urządzenia uzgadniają podczas parowania. Po drodze przechodzi przez przekaźnik prowadzony przez Goosehouse i przez Apple; żadne z nich nie może jej odczytać. Przekaźnik przechowuje adres powiadomień tego urządzenia, aby móc je dostarczać, i nigdy nie ma klucza. Usunięcie parowania usuwa tam ten adres."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O conteúdo de uma notificação é criptografado no seu Hermes e aberto neste dispositivo, com uma chave que os dois combinam quando você emparelha. No caminho, passa por um retransmissor operado pela Goosehouse e pela Apple; nenhum dos dois consegue lê-lo. O retransmissor guarda o endereço de notificações deste dispositivo para poder entregar, e nunca tem a chave. Remover um emparelhamento apaga o endereço lá."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Содержимое уведомления шифруется на вашем Hermes и расшифровывается на этом устройстве ключом, о котором они договариваются при создании пары. По пути оно проходит через ретранслятор Goosehouse и через Apple; ни тот, ни другой не могут его прочитать. Ретранслятор хранит адрес уведомлений этого устройства, чтобы доставлять их, и никогда не получает ключ. При удалении пары адрес там удаляется."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det en notis säger krypteras på din Hermes och öppnas på den här enheten, med en nyckel som de två kommer överens om när du parkopplar. På vägen passerar den ett relä som drivs av Goosehouse, och Apple; ingen av dem kan läsa den. Reläet sparar den här enhetens notisadress för att kunna leverera, och har aldrig nyckeln. När du tar bort en parkoppling raderas adressen där."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir bildirimin içeriği, eşlediğinizde ikisinin üzerinde anlaştığı bir anahtarla Hermes'inizde şifrelenir ve bu aygıtta açılır. Yolda Goosehouse'un işlettiği bir aktarıcıdan ve Apple'dan geçer; ikisi de onu okuyamaz. Aktarıcı, teslim edebilmek için bu aygıtın bildirim adresini saklar ve anahtara hiçbir zaman sahip olmaz. Bir eşlemeyi kaldırmak oradaki adresi siler."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вміст сповіщення шифрується на вашому Hermes і розшифровується на цьому пристрої ключем, про який вони домовляються під час створення пари. Дорогою воно проходить через ретранслятор Goosehouse і через Apple; жоден із них не може його прочитати. Ретранслятор зберігає адресу сповіщень цього пристрою, щоб доставляти їх, і ніколи не має ключа. Вилучення пари видаляє там цю адресу."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通知内容在你的Hermes上加密，在此设备上解密，所用密钥由两者在配对时商定。传送途中会经过Goosehouse运营的中继和Apple；两者都无法读取。中继会保留此设备的通知地址以便投递，但从不持有密钥。移除配对会删除中继上的该地址。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通知內容會在你的 Hermes 上加密，並在此裝置 上解開，所用的金鑰是兩者在配對時協商的。傳送途中會經過 Goosehouse 營運的中繼和 Apple；兩者都無法讀取。中繼會保存此裝置 的通知位址以便傳遞，但從不持有金鑰。移除配對會刪除中繼上的該位址。"
+          }
+        }
+      }
+    },
     "What a notification says is encrypted on your Hermes and opened on this iPhone, with a key the two agree on when you pair. On the way it passes through a relay run by Goosehouse and through Apple; neither can read it. The relay keeps this iPhone's notification address so it can deliver, and never has the key. Removing a pairing deletes the address there." : {
       "localizations" : {
         "da" : {
@@ -326139,6 +327530,220 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Redde 執行時會自己通知你。iOS 關閉它之後，則由已配對的 Hermes 通知：對於你曾在這裡參與的對話，它會在回覆準備好、代理等你回應（核准、問題、密碼），以及無法回覆時通知這部 iPhone。滑動配對項目即可移除。"
+          }
+        }
+      }
+    },
+    "While Redde is running it notifies you itself. Once it is closed, a paired Hermes does: it tells this device when a reply is ready, when the agent waits for you (an approval, a question, a password) and when it couldn't reply, for conversations you have taken part in from here, and brings your agents' ideas, briefings and heads-ups. Pair each iPhone, iPad and Mac you want them on. Swipe a pairing to remove it." : {
+      "comment" : "Footer under the paired Hermes machines on an iPhone or an iPad, in Settings › Notifications › Notify when Redde is closed",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mens Redde kører, giver den dig selv besked. Når den er lukket, gør en parret Hermes det: den giver denne enhed besked, når et svar er klar, når agenten venter på dig (en godkendelse, et spørgsmål, en adgangskode), og når den ikke kunne svare, for samtaler, du har deltaget i herfra, og bringer dine agenters idéer, briefinger og forvarsler. Par hver iPhone, iPad og Mac, du vil have dem på. Skub en parring for at fjerne den."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solange Redde läuft, benachrichtigt es dich selbst. Ist es geschlossen, übernimmt das ein gekoppelter Hermes: Er sagt diesem Gerät Bescheid, wenn eine Antwort fertig ist, wenn der Agent auf dich wartet (eine Genehmigung, eine Frage, ein Passwort) und wenn er nicht antworten konnte, für Konversationen, an denen du von hier aus teilgenommen hast, und bringt die Ideen, Briefings und Vorabhinweise deiner Agenten. Kopple jedes iPhone, iPad und jeden Mac, auf dem du sie haben möchtest. Streiche über eine Kopplung, um sie zu entfernen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mientras Redde está en marcha, te avisa él mismo. Cuando está cerrado, lo hace un Hermes vinculado: avisa a este dispositivo cuando una respuesta está lista, cuando el agente te espera (una aprobación, una pregunta, una contraseña) y cuando no ha podido responder, en las conversaciones en las que has participado desde aquí, y trae las ideas, informes y avisos de tus agentes. Vincula cada iPhone, iPad y Mac en el que los quieras. Desliza una vinculación para quitarla."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tant que Redde fonctionne, il vous avertit lui-même. Une fois qu’il est fermé, c’est un Hermes jumelé qui le fait : il prévient cet appareil quand une réponse est prête, quand l’agent vous attend (une approbation, une question, un mot de passe) et quand il n’a pas pu répondre, pour les conversations auxquelles vous avez participé d’ici, et apporte les idées, briefings et alertes de vos agents. Jumelez chaque iPhone, iPad et Mac sur lequel vous les voulez. Balayez un jumelage pour le retirer."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mentre Redde è in esecuzione ti avvisa da sola. Quando è chiusa, lo fa un Hermes abbinato: avvisa questo dispositivo quando una risposta è pronta, quando l'agente ti aspetta (un'approvazione, una domanda, una password) e quando non è riuscito a rispondere, per le conversazioni a cui hai partecipato da qui, e porta idee, briefing e avvisi dei tuoi agenti. Abbina ogni iPhone, iPad e Mac su cui li vuoi. Scorri su un abbinamento per rimuoverlo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeの実行中はRedde自身が通知します。Reddeが閉じているときは、ペアリングしたHermesが通知します。ここから参加した会話について、返答の準備ができたとき、エージェントが対応を待っているとき（承認、質問、パスワード）、返答できなかったときにこのデバイスに通知し、エージェントからのアイデア、ブリーフィング、お知らせも届けます。受け取りたいiPhone、iPad、Macをそれぞれペアリングしてください。ペアリングを削除するにはスワイプします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde가 실행 중일 때는 Redde가 직접 알립니다. Redde가 닫혀 있으면 페어링된 Hermes가 알립니다. 여기에서 참여한 대화에 대해 응답이 준비되었을 때, 에이전트가 사용자를 기다릴 때(승인, 질문, 암호), 응답하지 못했을 때 이 기기에 알리고, 에이전트의 아이디어, 브리핑, 사전 알림도 전달합니다. 받을 iPhone, iPad, Mac을 각각 페어링하십시오. 페어링을 제거하려면 쓸어넘기십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mens Redde kjører, varsler appen deg selv. Når den er lukket, gjør en sammenkoblet Hermes det: den gir denne enheten beskjed når et svar er klart, når agenten venter på deg (en godkjenning, et spørsmål, et passord), og når den ikke kunne svare, for samtaler du har deltatt i herfra, og kommer med agentenes idéer, briefinger og forvarsler. Sammenkoble hver iPhone, iPad og Mac du vil ha dem på. Sveip på en sammenkobling for å fjerne den."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zolang Redde draait, stuurt het zelf meldingen. Als het gesloten is, doet een gekoppelde Hermes dat: die laat dit apparaat weten als een antwoord klaar is, als de agent op je wacht (een goedkeuring, een vraag, een wachtwoord) en als hij niet kon antwoorden, voor gesprekken waaraan je hiervandaan hebt deelgenomen, en brengt de ideeën, briefings en seintjes van je agents. Koppel elke iPhone, iPad en Mac waarop je ze wilt. Veeg over een koppeling om die te verwijderen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy Redde działa, samo wysyła powiadomienia. Gdy jest zamknięte, robi to sparowany Hermes: informuje to urządzenie, gdy odpowiedź jest gotowa, gdy agent na Ciebie czeka (zatwierdzenie, pytanie, hasło) i gdy nie zdołał odpowiedzieć – w rozmowach prowadzonych z tego urządzenia – a także przynosi pomysły, briefingi i zapowiedzi Twoich agentów. Sparuj każdy iPhone, iPad i Maca, na których chcesz je dostawać. Przesuń parowanie, aby je usunąć."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enquanto o Redde está em execução, ele mesmo notifica você. Quando ele está fechado, um Hermes emparelhado faz isso: ele avisa este dispositivo quando uma resposta está pronta, quando o agente espera por você (uma aprovação, uma pergunta, uma senha) e quando não conseguiu responder, nas conversas de que você participou daqui, e traz as ideias, briefings e avisos dos seus agentes. Emparelhe cada iPhone, iPad e Mac em que você quiser recebê-los. Deslize um emparelhamento para removê-lo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пока Redde работает, он сам присылает уведомления. Когда он закрыт, это делает связанный Hermes: он сообщает этому устройству, когда ответ готов, когда агент ждет вас (одобрение, вопрос, пароль) и когда он не смог ответить — в разговорах, в которых вы участвовали отсюда, — а также доставляет идеи, сводки и предупреждения ваших агентов. Создайте пару для каждого iPhone, iPad и Mac, на которых они вам нужны. Смахните пару, чтобы удалить ее."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medan Redde körs skickar den notiser själv. När den är stängd gör en parkopplad Hermes det: den meddelar den här enheten när ett svar är klart, när agenten väntar på dig (ett godkännande, en fråga, ett lösenord) och när den inte kunde svara, för konversationer du har deltagit i härifrån, och kommer med dina agenters idéer, briefingar och förvarningar. Parkoppla varje iPhone, iPad och Mac du vill ha dem på. Svep på en parkoppling för att ta bort den."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde çalışırken size kendisi bildirir. Kapalıyken eşlenmiş bir Hermes bildirir: buradan katıldığınız konuşmalar için bir yanıt hazır olduğunda, ajan sizi beklediğinde (bir onay, bir soru, bir parola) ve yanıt veremediğinde bunu bu aygıta söyler; ajanlarınızın fikirlerini, brifinglerini ve hatırlatmalarını da getirir. Bildirimleri almak istediğiniz her iPhone, iPad ve Mac'i eşleyin. Bir eşlemeyi kaldırmak için kaydırın."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поки Redde працює, він сповіщає вас сам. Коли його закрито, це робить Hermes, з яким створено пару: він повідомляє цей пристрій, коли відповідь готова, коли агент чекає на вас (схвалення, запитання, пароль) і коли не вдалося відповісти, — для розмов, у яких ви брали участь звідси, — а також доставляє ідеї, зведення й попередження ваших агентів. Створіть пару для кожного iPhone, iPad і Mac, на яких вони вам потрібні. Посуньте пару, щоб вилучити її."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde运行时会自己通知你。它关闭后，则由已配对的Hermes通知：对于你在此参与过的对话，当回复就绪、智能体等待你处理（批准、问题、密码）以及无法回复时，它都会通知此设备，还会送来智能体的想法、简报和提前提醒。请为每台想接收通知的iPhone、iPad和Mac分别配对。轻扫某个配对即可将其移除。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 執行時會自己通知你。它關閉之後，則由已配對的 Hermes 通知：對於你曾在這裡參與的對話，它會在回覆準備好、代理等你回應（核准、問題、密碼），以及無法回覆時通知此裝置，也會送來代理的點子、簡報和事前提醒。請為每部想接收通知的 iPhone、iPad 和 Mac 分別配對。滑動配對項目即可移除。"
+          }
+        }
+      }
+    },
+    "While Redde is running it notifies you itself. Once it is closed, a paired Hermes does: it tells this Mac when a reply is ready, when the agent waits for you (an approval, a question, a password) and when it couldn't reply, for conversations you have taken part in from here, and brings your agents' ideas, briefings and heads-ups. Pair each iPhone, iPad and Mac you want them on. Control-click a pairing to remove it." : {
+      "comment" : "Footer under the paired Hermes machines on the Mac, in Settings › Notifications › Notify when Redde is closed",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mens Redde kører, giver den dig selv besked. Når den er lukket, gør en parret Hermes det: den giver denne Mac besked, når et svar er klar, når agenten venter på dig (en godkendelse, et spørgsmål, en adgangskode), og når den ikke kunne svare, for samtaler, du har deltaget i herfra, og bringer dine agenters idéer, briefinger og forvarsler. Par hver iPhone, iPad og Mac, du vil have dem på. Ctrl-klik på en parring for at fjerne den."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solange Redde läuft, benachrichtigt es dich selbst. Ist es geschlossen, übernimmt das ein gekoppelter Hermes: Er sagt diesem Mac Bescheid, wenn eine Antwort fertig ist, wenn der Agent auf dich wartet (eine Genehmigung, eine Frage, ein Passwort) und wenn er nicht antworten konnte, für Konversationen, an denen du von hier aus teilgenommen hast, und bringt die Ideen, Briefings und Vorabhinweise deiner Agenten. Kopple jedes iPhone, iPad und jeden Mac, auf dem du sie haben möchtest. Klicke bei gedrückter Control-Taste auf eine Kopplung, um sie zu entfernen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mientras Redde está en marcha, te avisa él mismo. Cuando está cerrado, lo hace un Hermes vinculado: avisa a este Mac cuando una respuesta está lista, cuando el agente te espera (una aprobación, una pregunta, una contraseña) y cuando no ha podido responder, en las conversaciones en las que has participado desde aquí, y trae las ideas, informes y avisos de tus agentes. Vincula cada iPhone, iPad y Mac en el que los quieras. Haz clic con la tecla Control pulsada en una vinculación para quitarla."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tant que Redde fonctionne, il vous avertit lui-même. Une fois qu’il est fermé, c’est un Hermes jumelé qui le fait : il prévient ce Mac quand une réponse est prête, quand l’agent vous attend (une approbation, une question, un mot de passe) et quand il n’a pas pu répondre, pour les conversations auxquelles vous avez participé d’ici, et apporte les idées, briefings et alertes de vos agents. Jumelez chaque iPhone, iPad et Mac sur lequel vous les voulez. Cliquez sur un jumelage en maintenant la touche Contrôle enfoncée pour le retirer."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mentre Redde è in esecuzione ti avvisa da sola. Quando è chiusa, lo fa un Hermes abbinato: avvisa questo Mac quando una risposta è pronta, quando l'agente ti aspetta (un'approvazione, una domanda, una password) e quando non è riuscito a rispondere, per le conversazioni a cui hai partecipato da qui, e porta idee, briefing e avvisi dei tuoi agenti. Abbina ogni iPhone, iPad e Mac su cui li vuoi. Fai clic su un abbinamento tenendo premuto il tasto Ctrl per rimuoverlo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeの実行中はRedde自身が通知します。Reddeが閉じているときは、ペアリングしたHermesが通知します。ここから参加した会話について、返答の準備ができたとき、エージェントが対応を待っているとき（承認、質問、パスワード）、返答できなかったときにこのMacに通知し、エージェントからのアイデア、ブリーフィング、お知らせも届けます。受け取りたいiPhone、iPad、Macをそれぞれペアリングしてください。ペアリングを削除するには、Controlキーを押しながらクリックします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde가 실행 중일 때는 Redde가 직접 알립니다. Redde가 닫혀 있으면 페어링된 Hermes가 알립니다. 여기에서 참여한 대화에 대해 응답이 준비되었을 때, 에이전트가 사용자를 기다릴 때(승인, 질문, 암호), 응답하지 못했을 때 이 Mac에 알리고, 에이전트의 아이디어, 브리핑, 사전 알림도 전달합니다. 받을 iPhone, iPad, Mac을 각각 페어링하십시오. 페어링을 제거하려면 Control-클릭하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mens Redde kjører, varsler appen deg selv. Når den er lukket, gjør en sammenkoblet Hermes det: den gir denne Mac-en beskjed når et svar er klart, når agenten venter på deg (en godkjenning, et spørsmål, et passord), og når den ikke kunne svare, for samtaler du har deltatt i herfra, og kommer med agentenes idéer, briefinger og forvarsler. Sammenkoble hver iPhone, iPad og Mac du vil ha dem på. Kontroll-klikk på en sammenkobling for å fjerne den."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zolang Redde draait, stuurt het zelf meldingen. Als het gesloten is, doet een gekoppelde Hermes dat: die laat deze Mac weten als een antwoord klaar is, als de agent op je wacht (een goedkeuring, een vraag, een wachtwoord) en als hij niet kon antwoorden, voor gesprekken waaraan je hiervandaan hebt deelgenomen, en brengt de ideeën, briefings en seintjes van je agents. Koppel elke iPhone, iPad en Mac waarop je ze wilt. Klik met de Control-toets ingedrukt op een koppeling om die te verwijderen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy Redde działa, samo wysyła powiadomienia. Gdy jest zamknięte, robi to sparowany Hermes: informuje ten Mac, gdy odpowiedź jest gotowa, gdy agent na Ciebie czeka (zatwierdzenie, pytanie, hasło) i gdy nie zdołał odpowiedzieć – w rozmowach prowadzonych z tego Maca – a także przynosi pomysły, briefingi i zapowiedzi Twoich agentów. Sparuj każdy iPhone, iPad i Maca, na których chcesz je dostawać. Kliknij parowanie z naciśniętym klawiszem Control, aby je usunąć."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enquanto o Redde está em execução, ele mesmo notifica você. Quando ele está fechado, um Hermes emparelhado faz isso: ele avisa este Mac quando uma resposta está pronta, quando o agente espera por você (uma aprovação, uma pergunta, uma senha) e quando não conseguiu responder, nas conversas de que você participou daqui, e traz as ideias, briefings e avisos dos seus agentes. Emparelhe cada iPhone, iPad e Mac em que você quiser recebê-los. Clique em um emparelhamento com a tecla Control pressionada para removê-lo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пока Redde работает, он сам присылает уведомления. Когда он закрыт, это делает связанный Hermes: он сообщает этому Mac, когда ответ готов, когда агент ждет вас (одобрение, вопрос, пароль) и когда он не смог ответить — в разговорах, в которых вы участвовали отсюда, — а также доставляет идеи, сводки и предупреждения ваших агентов. Создайте пару для каждого iPhone, iPad и Mac, на которых они вам нужны. Нажмите на пару, удерживая клавишу Control, чтобы удалить ее."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medan Redde körs skickar den notiser själv. När den är stängd gör en parkopplad Hermes det: den meddelar den här Macen när ett svar är klart, när agenten väntar på dig (ett godkännande, en fråga, ett lösenord) och när den inte kunde svara, för konversationer du har deltagit i härifrån, och kommer med dina agenters idéer, briefingar och förvarningar. Parkoppla varje iPhone, iPad och Mac du vill ha dem på. Kontrollklicka på en parkoppling för att ta bort den."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde çalışırken size kendisi bildirir. Kapalıyken eşlenmiş bir Hermes bildirir: buradan katıldığınız konuşmalar için bir yanıt hazır olduğunda, ajan sizi beklediğinde (bir onay, bir soru, bir parola) ve yanıt veremediğinde bunu bu Mac'e söyler; ajanlarınızın fikirlerini, brifinglerini ve hatırlatmalarını da getirir. Bildirimleri almak istediğiniz her iPhone, iPad ve Mac'i eşleyin. Bir eşlemeyi kaldırmak için Control tuşuna basılı tutarak tıklayın."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поки Redde працює, він сповіщає вас сам. Коли його закрито, це робить Hermes, з яким створено пару: він повідомляє цей Mac, коли відповідь готова, коли агент чекає на вас (схвалення, запитання, пароль) і коли не вдалося відповісти, — для розмов, у яких ви брали участь звідси, — а також доставляє ідеї, зведення й попередження ваших агентів. Створіть пару для кожного iPhone, iPad і Mac, на яких вони вам потрібні. Клацніть пару з натиснутою клавішею Control, щоб вилучити її."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde运行时会自己通知你。它关闭后，则由已配对的Hermes通知：对于你在此参与过的对话，当回复就绪、智能体等待你处理（批准、问题、密码）以及无法回复时，它都会通知这台Mac，还会送来智能体的想法、简报和提前提醒。请为每台想接收通知的iPhone、iPad和Mac分别配对。按住Control键点按某个配对即可将其移除。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 執行時會自己通知你。它關閉之後，則由已配對的 Hermes 通知：對於你曾在這裡參與的對話，它會在回覆準備好、代理等你回應（核准、問題、密碼），以及無法回覆時通知這部 Mac，也會送來代理的點子、簡報和事前提醒。請為每部想接收通知的 iPhone、iPad 和 Mac 分別配對。按住 Control 鍵並點一下配對項目即可移除。"
           }
         }
       }
@@ -335115,6 +336720,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的 Hermes 未接受配對：%@。請再試一次。"
+          }
+        }
+      }
+    },
+    "Your Hermes has this device, but its first notification hasn't arrived. It may not be able to reach the notification relay. On that machine, hermes redde-push test sends another." : {
+      "comment" : "Pairing sheet: paired, but no notification came",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din Hermes kender denne enhed, men dens første meddelelse er ikke kommet frem. Den kan måske ikke nå meddelelsesrelæet. På den maskine sender hermes redde-push test endnu en."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Hermes kennt dieses Gerät, aber seine erste Mitteilung ist nicht angekommen. Vielleicht erreicht er das Mitteilungs-Relay nicht. Auf diesem Rechner sendet hermes redde-push test eine weitere."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu Hermes tiene este dispositivo, pero su primera notificación no ha llegado. Puede que no consiga contactar con el relé de notificaciones. En esa máquina, hermes redde-push test envía otra."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre Hermes connaît cet appareil, mais sa première notification n’est pas arrivée. Il ne parvient peut-être pas à joindre le relais de notifications. Sur cette machine, hermes redde-push test en envoie une autre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo Hermes conosce questo dispositivo, ma la sua prima notifica non è arrivata. Potrebbe non riuscire a raggiungere il relay delle notifiche. Su quella macchina, hermes redde-push test ne invia un'altra."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermesにこのデバイスは登録されていますが、最初の通知が届いていません。通知リレーに接続できていない可能性があります。そのマシンでhermes redde-push testを実行すると、もう一度送信されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes에 이 기기가 등록되었지만 첫 번째 알림이 도착하지 않았습니다. 알림 릴레이에 연결하지 못하는 것일 수 있습니다. 해당 컴퓨터에서 hermes redde-push test를 실행하면 알림을 다시 보냅니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din Hermes kjenner denne enheten, men det første varselet har ikke kommet. Den når kanskje ikke varselreléet. På den maskinen sender hermes redde-push test et nytt."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je Hermes kent dit apparaat, maar de eerste melding is niet binnengekomen. Misschien kan hij de meldingsrelay niet bereiken. Op die machine stuurt hermes redde-push test er nog een."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój Hermes ma to urządzenie, ale jego pierwsze powiadomienie nie dotarło. Może nie mieć połączenia z przekaźnikiem powiadomień. Na tamtym komputerze hermes redde-push test wyśle kolejne."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu Hermes tem este dispositivo, mas a primeira notificação dele não chegou. Talvez ele não consiga acessar o retransmissor de notificações. Naquela máquina, hermes redde-push test envia outra."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш Hermes знает это устройство, но первое уведомление еще не пришло. Возможно, он не может связаться с ретранслятором уведомлений. На том компьютере команда hermes redde-push test отправит еще одно."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din Hermes känner till den här enheten, men dess första notis har inte kommit. Den kanske inte kan nå notisreläet. På den datorn skickar hermes redde-push test en till."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes'iniz bu aygıtı tanıyor ama ilk bildirimi gelmedi. Bildirim aktarıcısına ulaşamıyor olabilir. O makinede hermes redde-push test bir tane daha gönderir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш Hermes знає цей пристрій, але перше сповіщення не надійшло. Можливо, він не може зв’язатися з ретранслятором сповіщень. На тому комп’ютері команда hermes redde-push test надішле ще одне."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的Hermes已登记此设备，但它的第一条通知尚未到达。它可能无法连接通知中继。在那台机器上运行hermes redde-push test可再发送一条。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的 Hermes 已登記此裝置，但尚未收到它的第一則通知。它可能無法連線到通知中繼。在那台機器上執行 hermes redde-push test 可再傳送一則。"
           }
         }
       }

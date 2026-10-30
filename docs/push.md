@@ -31,6 +31,33 @@ Hermes (yours)                    relay (Goosehouse)            Apple           
   shown as it came. If the app is in front it does the same itself (`Notifier.presentUnopened`),
   which also covers the simulator, where a simulated push skips extensions.
 
+## iPhone, iPad and Mac
+
+Every device pairs on its own, and every paired device gets every note: replies, approvals and
+questions, ideas, briefings and heads-ups, watches, group chats (asked 2026-10-30, "pair the mac
+and ipad for push"). The iPad runs the iPhone's app and its `EchoPush` extension; the Mac app
+(`ReddeMac`) has `EchoPushMac`, compiled from the same files. Each device's answer to the pairing
+says what it is (`kind`: `iphone`, `ipad` or `mac`; an answer from an older Redde has none and is
+taken for an iPhone), so `hermes redde-push list` can say, and a Mac is never rung for a call: it
+has no CallKit, and the plugin leaves it out of `call_takers` whatever it says.
+
+On the Mac:
+
+- **The push address** comes from `NSApplication.registerForRemoteNotifications()` to
+  `MacPushDelegate`, and the app is signed with `com.apple.developer.aps-environment`
+  (`Mac/Redde.entitlements`; development in the source, production as the App Store export signs
+  it). The app reads which from its own signature (`MacEntitlements`) to tell the relay sandbox or
+  production.
+- **The relay** sends a Mac's notes to `APNS_TOPIC`, the same bundle id as the iPhone's, for the
+  shipped app. The Debug build is `com.goosehouse.echo.mac`, and says so at registration
+  (`topic`), which the relay takes only for the ids it lists (`APNS_TOPICS`).
+- **The pairings** are in a Keychain access group of the restricted kind,
+  `<team>.<app id>.push`, which the app lists second and the extension as its own: Apple says only
+  that an iOS-style app group "should" work as a Keychain group on a Mac. Ideas, briefings and
+  the rest go to the app group, `group.com.goosehouse.echo`, as on the iPhone.
+- **A heads-up's leaving time**: the extension has no location of its own, so it works from where
+  the app last saw the Mac (`LeaveTime.lastKnown`, twelve hours at most), or adds none.
+
 ## Pairing
 
 The key is agreed between the plugin and the phone; the relay only carries the two halves.
@@ -288,7 +315,8 @@ agent: call_user(line)  ─▶  plugin seals a "call" note  ─▶  relay, kind 
 | Hermes, `…/watch.json` | which sessions each phone follows (the last 500) |
 | Hermes, `…/calls.json` (the main home's) | which agents each phone takes calls from, and the calls of the last day |
 | Relay (KV) | per pairing: APNs token (and a PushKit token, once calls are on), SHA-256 of the relay secret, sandbox or production, last check-in. Forgotten after 120 days without one, or when Apple says the token is dead |
-| iPhone Keychain (app group, this device only, readable after first unlock) | per pairing: relay id, relay secret, the note key, the machine's name |
+| iPhone and iPad Keychain (app group, this device only, readable after first unlock) | per pairing: relay id, relay secret, the note key, the machine's name |
+| Mac Keychain (data protection keychain, group `<team>.<app id>.push`, this device only) | the same |
 
 Removing a pairing in the app deletes it from the phone and the relay; the plugin learns from its
 next note, which the relay turns away with 410, and forgets the phone. `hermes redde-push remove`
@@ -308,7 +336,8 @@ Answer, at `PUT /v1/pairings/<rid>` where `rid` is the first 32 hex digits of
 ```
 
 The box is AES-256-GCM under the box key, additional data `redde-push pairing`, around
-`{"id": "<relay id>", "send": "<relay secret>", "name": "<device name>"}`.
+`{"id": "<relay id>", "send": "<relay secret>", "name": "<device name>", "kind": "iphone" | "ipad" | "mac"}`
+(`kind` from Redde 2.3 on).
 
 Note, the `payload` of `POST /v1/devices/<id>/push` and the `e` of the notification: standard
 base64 of `key id (4 bytes) ‖ nonce (12) ‖ ciphertext ‖ tag (16)`. The key id is the first four
@@ -379,6 +408,11 @@ from Apple, so a phone and the deployed relay.
   system's own; the reasoning is in `docs/app-store-listing.md`, "Export compliance".
 - **A new bundle id**, `com.goosehouse.echo.push`, for the extension: an App ID with the app
   group, which Xcode's automatic signing creates on the first archive.
+- **The Mac** (2026-10-30): Push Notifications on the Debug app's App ID, `com.goosehouse.echo.mac`
+  (the shipped id, `com.goosehouse.echo`, has it already), and the extension's ids,
+  `com.goosehouse.echo.mac.push` for Debug and `com.goosehouse.echo.push` for the Mac App Store,
+  with the app group: Xcode's automatic signing makes both, signed in to the team. The relay
+  deployed with `topic` for the Debug build to be reached at all.
 - **On a phone**: pair with a real Hermes; lock the phone and close the app; a reply and an
   approval each arrive with their text; tapping one opens its conversation, the approval's with
   its card; Approve and Deny on the approval answer it; Reply on a reply's banner sends into it.

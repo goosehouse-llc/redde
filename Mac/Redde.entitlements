@@ -33,10 +33,17 @@
 	<!-- The app's own keychain (the data protection keychain, as on the iPhone): its access group,
 	     the bundle id's. Shipped, that is the iPhone's (and iCloud Keychain's); the Debug build's own
 	     id keeps its logins apart from the iPad app a Mac can run. -->
+	<!-- The second, shared with the notification extension (EchoPushMac, whose own it is): the
+	     pairings with Hermes machines (PushVault), and nothing else of the app's. -->
 	<key>keychain-access-groups</key>
 	<array>
 		<string>$(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+		<string>$(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER).push</string>
 	</array>
+	<!-- Notifications from a paired Hermes, through the push relay (PushService), as on the iPhone.
+	     "development" is what the source carries; the App Store export rewrites it to production. -->
+	<key>com.apple.developer.aps-environment</key>
+	<string>development</string>
 	<!-- The iPhone's app group: drafts and flags shared with Redde's extensions. -->
 	<key>com.apple.security.application-groups</key>
 	<array>

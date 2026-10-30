@@ -52,6 +52,11 @@ nonisolated enum LeaveTime {
 
     /// The phone's own fix where it may ask, else where it last was.
     static func here(in defaults: UserDefaults? = NeedsYou.shared) -> CLLocation? {
+        #if os(macOS)
+        // The Mac's notification extension (`EchoPushMac`) has no location in its sandbox: where
+        // the app last saw the Mac, or no leaving time (asked 2026-10-30).
+        if Bundle.main.bundleURL.pathExtension == "appex" { return lastKnown(in: defaults) }
+        #endif
         let manager = CLLocationManager()
         #if os(macOS)
         let allowed = manager.authorizationStatus == .authorizedAlways

@@ -7,6 +7,8 @@ import SwiftUI
 /// watch) is the iPhone's alone (`project.yml`, `MacShims`).
 @main
 struct ReddeMacApp: App {
+    /// The push address for a paired Hermes's notifications (`MacPushDelegate`).
+    @NSApplicationDelegateAdaptor(MacPushDelegate.self) private var pushDelegate
     @State private var conversation: Conversation
     @State private var voiceSession: VoiceSession
     @State private var settings = Settings.shared
@@ -123,6 +125,8 @@ struct ReddeMacApp: App {
                 lock.appDidLaunch()
                 Settings.shared.applyLateLocalDefaults()
                 Notifier.shared.registerCategories()
+                // Paired with a Hermes: the push address asked for again, for the relay to keep.
+                PushService.shared.refreshAtLaunch()
                 EchoShortcuts.updateAppShortcutParameters()
             }
             .onChange(of: scenePhase) { _, phase in
@@ -137,7 +141,10 @@ struct ReddeMacApp: App {
                     // A conversation left without its reply fetches it, or picks the turn up.
                     Task { await conversation.catchUp() }
                     Task { await CaptureInbox.shared.file() }   // notes taken offline
-                    IdeasInbox.shared.reload()
+                    IdeasInbox.shared.reload()   // ideas that came while Redde was closed (`EchoPushMac`)
+                    BriefingsInbox.shared.reload()   // and briefings
+                    HeldNote.seen()   // what came in quiet hours is here to see: no digest of it later
+                    FeedbackFold.cameForward()   // a word on ideas or briefings that didn't reach the jobs yet
                     // With Current Location on, where the Mac is, for the next place question; with
                     // Leave-By Alerts on, for when to leave.
                     if CurrentLocation.isOn || LeaveBy.isOn { CurrentLocationService.shared.cameForward() }

@@ -56,14 +56,18 @@ class Relay:
         self.server.server_close()
 
 
-def paired(store, relay, device_id):
-    """Pairs a phone with the store as `hermes redde-push pair` does; its note key, to read with."""
+def paired(store, relay, device_id, kind=None):
+    """Pairs a phone with the store as `hermes redde-push pair` does; its note key, to read with.
+    `kind`: what the app says it is ("mac", "ipad"); a Redde from before says nothing."""
     offer = core.Offer(relay)
     offered = core.unb64u(offer.link.split("#push=")[1].split("&")[0])
     private = X25519PrivateKey.generate()
     public = private.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
     note_key, box_key = core.derive(private.exchange(X25519PublicKey.from_public_bytes(offered)), offered, public)
-    inside = json.dumps({"id": device_id, "send": f"send-{device_id}", "name": device_id}).encode()
+    said = {"id": device_id, "send": f"send-{device_id}", "name": device_id}
+    if kind:
+        said["kind"] = kind
+    inside = json.dumps(said).encode()
     store.add(offer.accept({"pub": core.b64u(public), "box": core.b64u(core.seal(box_key, inside, b"redde-push pairing"))}))
     return note_key
 
@@ -98,6 +102,14 @@ class CallTests(unittest.TestCase):
         self.store.remove("dev-pad")
         self.assertEqual(self.store.callers(), {}, "a phone that is gone takes no calls")
         self.assertEqual(calls.slash(self.store, ["dev-marta"]), "redde-push calls: this command is for the Redde app.")
+
+    def test_a_mac_is_never_rung_whatever_it_says(self):
+        paired(self.store, self.relay.url, "dev-studio", kind="mac")
+        calls.slash(self.store, ["dev-studio,dev-pad", "ops"])
+        self.assertEqual([d["id"] for d in self.store.call_takers("ops")], ["dev-pad"])
+        said = calls.ring(self.store, "ops", "Home", "The garage door is open.")
+        self.assertEqual(said["phones"], 1, said)
+        self.assertEqual([p["path"] for p in self.relay.pushes], ["/v1/devices/dev-pad/push"])
 
     def test_a_call_goes_to_the_relay_as_a_call_sealed_like_any_note(self):
         calls.slash(self.store, ["dev-marta", "ops"])

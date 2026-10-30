@@ -1,9 +1,9 @@
-"""Redde push: notifications on a paired iPhone when the agent finishes a reply, waits on a person
+"""Redde push: notifications on a paired iPhone, iPad or Mac when the agent finishes a reply, waits on a person
 (an approval, a question, a sudo password, a secret) or gives up on a turn. See README.md here,
 and `core.py` for how a note is sealed and sent.
 
-    hermes redde-push pair      pair a phone (shows a QR code for Redde to scan)
-    hermes redde-push list      the paired phones
+    hermes redde-push pair      pair a device (shows a QR code for Redde to scan)
+    hermes redde-push list      the paired devices
     hermes redde-push test      send each of them a test notification
     hermes redde-push remove <name>
     hermes redde-push notify mine|all
@@ -479,15 +479,15 @@ def _slash(raw_args: str = "") -> str:
 
 def _cli_setup(parser) -> None:
     actions = parser.add_subparsers(dest="action")
-    pair = actions.add_parser("pair", help="pair an iPhone: shows a QR code for Redde to scan")
+    pair = actions.add_parser("pair", help="pair an iPhone, iPad or Mac: shows a QR code for Redde to scan")
     pair.add_argument("--relay", default=_relay(), help="the push relay to use")
-    pair.add_argument("--wait", type=int, default=600, help="seconds to wait for the phone")
-    actions.add_parser("list", help="the paired phones")
-    actions.add_parser("test", help="send each paired phone a test notification")
-    remove = actions.add_parser("remove", help="forget a phone")
+    pair.add_argument("--wait", type=int, default=600, help="seconds to wait for the device")
+    actions.add_parser("list", help="the paired devices")
+    actions.add_parser("test", help="send each paired device a test notification")
+    remove = actions.add_parser("remove", help="forget a device")
     remove.add_argument("phone", help="its name or id, as `list` shows them")
     notify = actions.add_parser("notify", help="which conversations notify")
-    notify.add_argument("which", choices=["mine", "all"], help="mine: the ones the phone took part in. all: every one")
+    notify.add_argument("which", choices=["mine", "all"], help="mine: the ones the device took part in. all: every one")
 
 
 def _cli(args) -> None:
@@ -497,43 +497,45 @@ def _cli(args) -> None:
         _pair(store, pusher, args.relay, args.wait)
     elif action == "list":
         if not store.devices:
-            print("No phone is paired. Run: hermes redde-push pair")
+            print("No device is paired. Run: hermes redde-push pair")
         for device in store.devices:
-            print(f"{device.get('name', 'iPhone')}  {device['id']}  paired {time.strftime('%Y-%m-%d', time.localtime(device.get('paired_at', 0)))}")
+            # Which it is, when the app said (a Redde from before 2026-10-30 didn't): an iPhone, an iPad, a Mac.
+            kind = f" ({core.KIND_NAMES[core.device_kind(device)]})" if device.get("kind") else ""
+            print(f"{device.get('name', 'iPhone')}{kind}  {device['id']}  paired {time.strftime('%Y-%m-%d', time.localtime(device.get('paired_at', 0)))}")
         if store.devices:
-            print("Notifying about: " + ("every conversation" if store.notify_all else "the conversations the phone took part in"))
+            print("Notifying about: " + ("every conversation" if store.notify_all else "the conversations each device took part in"))
     elif action == "test":
         if not store.devices:
-            print("No phone is paired. Run: hermes redde-push pair")
+            print("No device is paired. Run: hermes redde-push pair")
             return
         count = len(store.devices)
-        sent = pusher.send(store.devices, core.note("test", body="Notifications from this Hermes reach your phone."))
-        print(f"Sent to {sent} of {count} phone{'s' if count != 1 else ''}.")
+        sent = pusher.send(store.devices, core.note("test", body="Notifications from this Hermes reach you here."))
+        print(f"Sent to {sent} of {count} device{'s' if count != 1 else ''}.")
     elif action == "remove":
         matches = [d for d in store.devices if args.phone in (d["id"], d.get("name"))]
         if len(matches) != 1:
-            print("No phone by that name or id." if not matches else "More than one phone has that name; use its id.")
+            print("No device by that name or id." if not matches else "More than one device has that name; use its id.")
             return
         store.remove(matches[0]["id"])
-        print(f"Forgot {matches[0].get('name', 'the phone')}. It can be paired again from Redde.")
+        print(f"Forgot {matches[0].get('name', 'the device')}. It can be paired again from Redde.")
     elif action == "notify":
         store.set_notify_all(args.which == "all")
-        print("Every conversation on this Hermes notifies." if args.which == "all" else "Only the conversations the phone took part in notify.")
+        print("Every conversation on this Hermes notifies." if args.which == "all" else "Only the conversations each device took part in notify.")
     else:
         print(__doc__.strip())
 
 
 def _pair(store: core.Store, pusher: core.Pusher, relay: str, wait: int) -> None:
     offer = core.Offer(relay)
-    print("In Redde on your iPhone: Settings › Notifications › When Redde is closed › Scan pairing code.")
-    print("Or open this link on the phone:\n")
+    print("In Redde on your iPhone, iPad or Mac: Settings › Notifications › Notify when Redde is closed, then scan the code or paste the link.")
+    print("Or open this link on the device:\n")
     print("  " + offer.link + "\n")
     if sys.stdout.isatty():
         try:
             print(qr.render(qr.matrix(offer.link.encode())) + "\n")
         except ValueError:
             pass   # a relay address too long for the code: the link still works
-    print("Waiting for the phone… (Ctrl-C to give up)", flush=True)
+    print("Waiting for the device… (Ctrl-C to give up)", flush=True)
     deadline, complained = time.time() + wait, False
     answer = None
     try:
@@ -550,7 +552,7 @@ def _pair(store: core.Store, pusher: core.Pusher, relay: str, wait: int) -> None
         print("\nStopped. Nothing was paired.")
         return
     if answer is None:
-        print("No phone answered. Run the command again for a new code.")
+        print("No device answered. Run the command again for a new code.")
         return
     try:
         device = offer.accept(answer)
@@ -598,6 +600,6 @@ def register(ctx) -> None:
     watches.register(ctx, _home, _store_in)
     # Keys a bot asks for (keys.py): pasted into a card in Redde, straight into the profile's .env.
     keys.register(ctx, _home, _store_in, lambda home, profile: routines.Stores(calls.caller(home)[1]).name(home, profile))
-    ctx.register_cli_command("redde-push", "Notifications on your iPhone from Redde", _cli_setup, _cli)
+    ctx.register_cli_command("redde-push", "Notifications on your iPhone, iPad or Mac from Redde", _cli_setup, _cli)
     _follow_group_chats_if_any()
     _watch_schedules()

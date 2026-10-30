@@ -254,3 +254,31 @@ test("a PushKit token Apple no longer knows is forgotten, and the phone kept", a
     r.restore();
   }
 });
+
+test("a Mac's Debug build registers under its own app, and no other app is taken", async () => {
+  const r = relay();
+  try {
+    const made = await r.call("POST", "/v1/devices", { token: TOKEN, env: "dev", auth: auth(SECRET), topic: "com.example.app.mac" });
+    assert.equal(made.status, 201);
+    const id = made.body.id;
+    assert.equal(JSON.parse(await r.env.STORE.get(`dev:${id}`)).topic, "com.example.app.mac");
+    await r.call("POST", `/v1/devices/${id}/push`, { payload: "c2VhbGVk" }, bearer());
+    assert.equal(r.sent[0].headers["apns-topic"], "com.example.app.mac");
+    // A shipped app (iPhone, iPad or Mac) names none, or the usual one: kept without it.
+    assert.equal((await r.call("PUT", `/v1/devices/${id}`, { token: TOKEN, env: "prod", topic: "com.example.app" }, bearer())).status, 204);
+    assert.equal(JSON.parse(await r.env.STORE.get(`dev:${id}`)).topic, undefined);
+    await r.call("POST", `/v1/devices/${id}/push`, { payload: "c2VhbGVk" }, bearer());
+    assert.equal(r.sent[1].headers["apns-topic"], "com.example.app");
+    for (const topic of ["com.someone.else", "", 7, "com.example.app.mac.extra"]) {
+      const refused = await r.call("POST", "/v1/devices", { token: TOKEN, env: "dev", auth: auth(SECRET), topic });
+      assert.equal(refused.status, 400, `topic ${topic}`);
+      assert.equal((await r.call("PUT", `/v1/devices/${id}`, { token: TOKEN, env: "dev", topic }, bearer())).status, 400);
+    }
+    // The ids the account lists, when it lists some.
+    r.env.APNS_TOPICS = "com.example.other";
+    assert.equal((await r.call("POST", "/v1/devices", { token: TOKEN, env: "dev", auth: auth(SECRET), topic: "com.example.other" })).status, 201);
+    assert.equal((await r.call("POST", "/v1/devices", { token: TOKEN, env: "dev", auth: auth(SECRET), topic: "com.example.app.mac" })).status, 400);
+  } finally {
+    r.restore();
+  }
+});

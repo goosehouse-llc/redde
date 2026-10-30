@@ -969,7 +969,7 @@ struct NotificationSettings: View {
                 LabeledContent("Notify when Redde is closed", value: PushService.shared.pairings.contains(where: \.isPaired) ? String(localized: "On") : String(localized: "Off"))
             }
         } footer: {
-            Text("Background notifications stop when iOS closes Redde; with this, your Hermes sends them from then on.")
+            Text(String(localized: "Background notifications stop when Redde is closed; with this, your Hermes sends them from then on, to each iPhone, iPad and Mac you pair.", comment: "Footer under Notify when Redde is closed, in Settings › Notifications"))
         }
         #if os(iOS)
         Section {
@@ -977,7 +977,7 @@ struct NotificationSettings: View {
                 LabeledContent("Calls from Agents", value: settings.agentCalls ? String(localized: "On") : String(localized: "Off"))
             }
         } footer: {
-            Text("An agent you allow rings this iPhone like a phone call when something shouldn't wait.")
+            Text(String(localized: "An agent you allow rings this device like a phone call when something shouldn't wait.", comment: "Footer under Calls from Agents, in Settings › Notifications (an iPhone or an iPad)"))
         }
         #endif
         Section {

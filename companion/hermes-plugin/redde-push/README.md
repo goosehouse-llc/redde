@@ -1,10 +1,12 @@
 # redde-push
 
-A Hermes plugin that notifies your iPhone, through [Redde](https://redde.goosehouse.org), when the
-agent finishes a reply, waits for you, or gives up on a turn, also when Redde isn't running.
+A Hermes plugin that notifies your iPhone, iPad or Mac, through [Redde](https://redde.goosehouse.org),
+when the agent finishes a reply, waits for you, or gives up on a turn, also when Redde isn't running.
+Each device pairs on its own and gets every note (ideas, briefings, heads-ups, approvals waiting,
+replies); calls (`call_user`) ring only an iPhone or an iPad, never a Mac.
 
 What a notification says is encrypted here, on your Hermes, with a key that only this plugin and
-your phone hold. It travels through a relay run by Goosehouse and through Apple's push service;
+that device hold. It travels through a relay run by Goosehouse and through Apple's push service;
 both carry it without being able to read it. The design is in
 [docs/push.md](https://github.com/goosehouse-llc/redde/blob/main/docs/push.md).
 
@@ -22,18 +24,19 @@ and enable the same plugin. Hermes 0.21.5 and later load it at once; earlier one
 restart above.
 
 **If Redde is connected through the Dashboard**, that is all there is to do here. In Redde:
-Settings › Voice › Notify when Redde is closed › Pair with your server. A notification on the
-phone confirms the pairing.
+Settings › Notifications › Notify when Redde is closed › Pair with your server, on each iPhone,
+iPad or Mac. A notification on the device confirms the pairing.
 
-**Otherwise** (Redde on the Hermes API, or a phone that isn't signed in to this Hermes), pair
+**Otherwise** (Redde on the Hermes API, or a device that isn't signed in to this Hermes), pair
 with a code:
 
 ```
 hermes redde-push pair
 ```
 
-It shows a QR code and a link, and waits. In Redde: Settings › Voice › Notify when Redde is
-closed › Pair with a code. A notification on the phone confirms the pairing.
+It shows a QR code and a link, and waits. In Redde: Settings › Notifications › Notify when Redde
+is closed › Pair with a code (on a Mac, copy the link and paste it). A notification on the device
+confirms the pairing. Run it once for each device.
 
 Run the command as the user Hermes runs as, without `-p`: the pairing is kept in that Hermes home
 and read by the gateway and the Dashboard from there.
@@ -49,11 +52,11 @@ one that came out of a folder of a repository.)
 
 | | |
 |---|---|
-| `hermes redde-push pair` | pair a phone |
-| `hermes redde-push list` | the paired phones |
+| `hermes redde-push pair` | pair a device |
+| `hermes redde-push list` | the paired devices (and which kind each is, for one paired from Redde 2.3 on) |
 | `hermes redde-push test` | send each a test notification |
-| `hermes redde-push remove <name or id>` | forget a phone |
-| `hermes redde-push notify mine` | notify about conversations the phone took part in (the default) |
+| `hermes redde-push remove <name or id>` | forget a device |
+| `hermes redde-push notify mine` | notify about conversations each device took part in (the default) |
 | `hermes redde-push notify all` | notify about every conversation on this Hermes |
 
 ## What is sent, and when
@@ -109,8 +112,8 @@ never sent the key, and it stores nothing that passes.
 
 ## What it keeps
 
-`$HERMES_HOME/redde-push/`, readable only by you: `devices.json` (each phone's relay id, relay
-secret and key), `watch.json` (which sessions each phone follows), `rooms.json` (which group
+`$HERMES_HOME/redde-push/`, readable only by you: `devices.json` (each device's relay id, relay
+secret, key, name and kind: `iphone`, `ipad` or `mac`, absent for one paired by an older Redde), `watch.json` (which sessions each phone follows), `rooms.json` (which group
 chats), `mutes.json` (what each phone has muted, until when), `room-cursors.json` and `room-waits.json`
 (how far each group chat has been read, and what it has been said to wait on), and
 `routine-runs.json` (the last run of each bot's schedule it has told of), and `calls.json` (which

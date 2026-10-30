@@ -1,6 +1,7 @@
 import CryptoKit
 import Foundation
 import Testing
+import UIKit
 import UserNotifications
 @testable import Echo
 
@@ -49,6 +50,18 @@ struct PushSealTests {
         let fields = try #require(try JSONSerialization.jsonObject(with: inside) as? [String: String])
         #expect(fields == ["id": Vector.deviceID, "send": "send-key", "name": "Test phone"])
         #expect(throws: (any Error).self) { try PushSeal.open(box, key: SymmetricKey(data: Vector.noteKey), aad: PushSeal.pairingAAD) }
+    }
+
+    /// An iPad or a Mac says what it is, for the plugin to list it as that and never ring a Mac
+    /// (asked 2026-10-30); left out, the box is what a plugin from before always took.
+    @Test func anAnswerSaysWhatKindOfDeviceItIsFrom() throws {
+        let answer = try PushSeal.answer(to: Vector.offered, deviceID: Vector.deviceID, sendKey: "send-key", name: "Studio",
+                                         kind: "mac", with: Vector.phoneKey)
+        #expect(answer.pub == Vector.answered && answer.noteKey == Vector.noteKey, "the keys are the same whatever it is")
+        let box = try #require(PushSeal.data(base64URL: answer.box))
+        let inside = try PushSeal.open(box, key: SymmetricKey(data: Vector.boxKey), aad: PushSeal.pairingAAD)
+        let fields = try #require(try JSONSerialization.jsonObject(with: inside) as? [String: String])
+        #expect(fields == ["id": Vector.deviceID, "send": "send-key", "name": "Studio", "kind": "mac"])
     }
 
     @Test func aBoxThePluginSealedOpensHere() throws {
@@ -399,6 +412,9 @@ struct PushServiceTests {
         let inside = try PushSeal.open(try #require(PushSeal.data(base64URL: left.body["box"] ?? "")), key: keys.box, aad: PushSeal.pairingAAD)
         let fields = try #require(try JSONSerialization.jsonObject(with: inside) as? [String: String])
         #expect(fields["id"] == "relay-id-0123456789" && fields["send"] == pairing.sendKey)
+        // What it is, as this simulator is: an iPad pairs as one, an iPhone as one.
+        #expect(fields["kind"] == (UIDevice.current.userInterfaceIdiom == .pad ? "ipad" : "iphone"))
+        #expect(registration.body["topic"] == nil, "the shipped app's notifications go to the topic the relay knows")
         #expect(keys.note == pairing.key, "both ends will seal notes with the same key")
         #expect(!left.body.values.joined().contains(pairing.sendKey), "and the relay can't read the answer")
 

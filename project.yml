@@ -500,6 +500,8 @@ targets:
           - EchoTurnAttributes.swift
           - ApprovalIntents.swift
     dependencies:
+      # Opens a paired Hermes's notes with Redde closed (Contents/PlugIns).
+      - target: EchoPushMac
       - package: SwiftTerm
       - package: swift-nio-ssh
         product: NIOSSH

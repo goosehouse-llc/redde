@@ -336,7 +336,7 @@ def main():
     before = len(phone.notes())
     api_turn("hi")
     time.sleep(4)
-    report(len(phone.notes()) == before and "No phone is paired" in hermes("list"), "a removed phone hears nothing more")
+    report(len(phone.notes()) == before and "No device is paired" in hermes("list"), "a removed phone hears nothing more")
     sys.exit(1 if failures else 0)
 
 
