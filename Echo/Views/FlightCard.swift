@@ -131,7 +131,7 @@ struct FlightCard: View {
 
     /// "7h 45m".
     static func length(_ seconds: TimeInterval) -> String {
-        Duration.seconds(seconds.rounded()).formatted(.units(allowed: [.hours, .minutes], width: .narrow))
+        ReplyCards.lasting(seconds).formatted(.units(allowed: [.hours, .minutes], width: .narrow))
     }
 }
 

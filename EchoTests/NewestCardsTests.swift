@@ -290,4 +290,20 @@ struct NewestCardsTests {
         let settings = Settings(defaults: UserDefaults(suiteName: "newest-\(UUID().uuidString)")!)
         #expect(ProductImages.allowed(url, settings: settings) == nil, "off: no site sees a visit")
     }
+
+    /// UAT 2.3.1 (2026-10-31): a 25-digit amount showed a Double's noise ("…001,000,000,000.00"), and
+    /// unit words stayed English.
+    @Test func hugeAmountsAndUnitsInOtherLanguages() throws {
+        #expect(ConversionCard.figure(9.214e27, locale: us) == "9.214E27", "\(ConversionCard.figure(9.214e27, locale: us))")
+        #expect(ConversionCard.figure(123_456_789_012, locale: us) == "123,456,789,012", "below a quadrillion: every figure")
+        guard case let .conversion(c) = try card(#"{"type": "conversion", "amount": 9214000, "from": "USD", "to": "EUR", "rate": 1e21}"#) else { Issue.record("currency"); return }
+        let money = try #require(ConversionCard.Shown(c, locale: us).money(9.214e27, in: "EUR"))
+        #expect(money.contains("E27") && !money.contains("000,000"), "\(money)")
+        guard case let .conversion(cups) = try card(#"{"type": "conversion", "amount": 2, "from": "cups", "to": "ml"}"#) else { Issue.record("cups"); return }
+        #expect(ConversionCard.Shown(cups, locale: us).fromSymbol == "cups", "English: as the card was drawn")
+        let french = ConversionCard.Shown(cups, locale: Locale(identifier: "fr_FR")).fromSymbol
+        #expect(french != "cups" && !french.isEmpty, "French: Foundation's (\(french))")
+        guard case let .conversion(f) = try card(#"{"type": "conversion", "amount": 350, "from": "°F", "to": "°C"}"#) else { Issue.record("°F"); return }
+        #expect(ConversionCard.Shown(f, locale: Locale(identifier: "ru_RU")).formula == "°C = (°F − 32) × 5/9")
+    }
 }

@@ -228,7 +228,8 @@ extension DeliveryCard {
             case .delivered:
                 if let at = card.deliveredAt {
                     headline = String(localized: "Delivered \(DeliveryCard.day(at, now: now, calendar: calendar))", comment: "A delivery card: the day it came, e.g. Delivered today")
-                    detail = String(localized: "at \(time(at))", comment: "A delivery card: the time it came, after its day, e.g. at 2:14 PM")
+                    // Its own key (UAT 2.3.1): "at %@" is also a product's store, translated "sold at" ("14:14で販売").
+                    detail = String(localized: "delivery.atTime", defaultValue: "at \(time(at))", comment: "A delivery card: the time of day the package came, after its day (Delivered today), e.g. at 2:14 PM. A time, not a place")
                 } else {
                     headline = DeliveryCard.name(.delivered)
                 }

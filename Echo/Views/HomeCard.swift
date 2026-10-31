@@ -41,7 +41,8 @@ struct HomeCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             CardBox(spacing: 12) {
-                CardTitle(symbol: "house", title: card.title ?? String(localized: "Home", comment: "A home card's title when the agent gave none"),
+                // Its own key: "Home" is also a bot's name, translated as one ("管家", a butler).
+                CardTitle(symbol: "house", title: card.title ?? String(localized: "home.card.title", defaultValue: "Home", comment: "A home card's title when the agent gave none: the house and its devices"),
                           subtitle: Self.summary(card))
                 VStack(spacing: 0) {
                     ForEach(Array(card.devices.enumerated()), id: \.offset) { index, device in
@@ -135,19 +136,16 @@ struct HomeCard: View {
                 .disabled(busy)
                 .accessibilityHint(Text("Asks your agent to turn it on or off", comment: "VoiceOver hint: a home card's switch"))
         case .media:
-            pill(isOn(index) ? String(localized: "Pause", comment: "A home card's media player: pause") : String(localized: "Play", comment: "A home card's media player: play"),
-                 symbol: isOn(index) ? "pause.fill" : "play.fill") { ask(.play(!isOn(index)), index) }
+            pill(.play(!isOn(index)), device, symbol: isOn(index) ? "pause.fill" : "play.fill") { ask(.play(!isOn(index)), index) }
                 .disabled(busy)
         case .climate:
             EmptyView()
         case .cover:
-            pill(isOn(index) ? String(localized: "Close", comment: "A home card's door or blind: close it") : String(localized: "Open", comment: "A home card's door or blind: open it"),
-                 symbol: isOn(index) ? "arrow.down.to.line" : "arrow.up.to.line") { ask(.open(!isOn(index)), index) }
+            pill(.open(!isOn(index)), device, symbol: isOn(index) ? "arrow.down.to.line" : "arrow.up.to.line") { ask(.open(!isOn(index)), index) }
                 .disabled(busy)
         case .lock:
             let locked = !isOn(index)
-            pill(locked ? String(localized: "Unlock", comment: "A home card's lock: unlock it") : String(localized: "Lock", comment: "A home card's lock: lock it"),
-                 symbol: locked ? "lock.open" : "lock") { ask(.lock(!locked), index) }
+            pill(.lock(!locked), device, symbol: locked ? "lock.open" : "lock") { ask(.lock(!locked), index) }
                 .disabled(busy)
         case .sensor:
             if let value = Self.reading(device) {
@@ -156,9 +154,11 @@ struct HomeCard: View {
         }
     }
 
-    private func pill(_ title: String, symbol: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Label(title, systemImage: symbol)
+    /// A device's button: its verb shown ("Unlock"), and to VoiceOver with the device's name
+    /// ("Unlock Front door", UAT 2.3.1: a row of "Open" and "Unlock" said nothing of which).
+    private func pill(_ action: Action, _ device: ReplyCard.Home.Device, symbol: String, perform: @escaping () -> Void) -> some View {
+        Button(action: perform) {
+            Label(Self.verb(action), systemImage: symbol)
                 .chatFont(.subheadline, weight: .semibold)
                 .foregroundStyle(.tint)
                 .padding(.horizontal, 14)
@@ -168,6 +168,7 @@ struct HomeCard: View {
                 .contentShape(.capsule)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(Self.message(action, device).shown)
     }
 
     private func round(_ symbol: String, action: @escaping () -> Void) -> some View {
@@ -334,21 +335,59 @@ struct HomeCard: View {
         let state = (device.state ?? "").lowercased()
         switch device.kind {
         case .light, .switch, .fan:
-            parts.append(device.isOn ? String(localized: "On", comment: "A home card's device is on") : String(localized: "Off", comment: "A home card's device is off"))
+            parts.append(stateWord(device.isOn ? "on" : "off"))
             if device.kind == .light, device.isOn, let b = device.brightness { parts.append("\(b)%") }
         case .climate:
-            if !state.isEmpty { parts.append(state.replacingOccurrences(of: "_", with: " ").capitalized) }
+            if !state.isEmpty { parts.append(stateWord(state)) }
             if let now = device.temperature { parts.append(String(localized: "\(degrees(now)) now", comment: "A home card's thermostat: the room's temperature now, e.g. 68° now")) }
         case .cover:
-            parts.append(device.isOn ? String(localized: "Open", comment: "A home card's door or blind is open") : String(localized: "Closed", comment: "A home card's door or blind is closed"))
+            // On its way, or stuck, as said; else open or closed.
+            parts.append(stateWord(["opening", "closing", "jammed", "unavailable"].contains(state) ? state : device.isOn ? "open" : "closed"))
         case .lock:
-            parts.append(device.isOn ? String(localized: "Unlocked", comment: "A home card's lock is unlocked") : String(localized: "Locked", comment: "A home card's lock is locked"))
+            parts.append(stateWord(["locking", "unlocking", "jammed", "open", "opening", "unavailable"].contains(state) ? state : device.isOn ? "unlocked" : "locked"))
         case .media:
-            parts.append(device.isOn ? String(localized: "Playing", comment: "A home card's media player is playing") : (state.isEmpty ? String(localized: "Off", comment: "A home card's device is off") : state.capitalized))
+            parts.append(device.isOn ? stateWord("playing") : stateWord(state.isEmpty ? "off" : state))
         case .sensor:
-            if reading(device) == nil, !state.isEmpty { parts.append(state.capitalized) }
+            if reading(device) == nil, !state.isEmpty { parts.append(stateWord(state)) }
         }
         return parts.joined(separator: " · ")
+    }
+
+    /// A state as Home Assistant says it ("heat_cool", "fan_only", "unavailable"), in the person's
+    /// words (UAT 2.3.1, 2026-10-31: a Russian card read "Heat"); one it doesn't know, as given.
+    /// Keys of their own: "On", "Open" and "Closed" elsewhere are a plugin's switch, a button's verb
+    /// and a shop's hours, and were translated so.
+    static func stateWord(_ state: String) -> String {
+        let said = state.lowercased().trimmingCharacters(in: .whitespaces)
+        return switch said {
+        case "on": String(localized: "home.state.on", defaultValue: "On", comment: "A home card: a device's state, switched on")
+        case "off": String(localized: "home.state.off", defaultValue: "Off", comment: "A home card: a device's state, switched off")
+        case "open": String(localized: "home.state.open", defaultValue: "Open", comment: "A home card: a door's, a blind's or a garage door's state, open (not a button)")
+        case "closed": String(localized: "home.state.closed", defaultValue: "Closed", comment: "A home card: a door's, a blind's or a garage door's state, closed (not a shop's hours)")
+        case "opening": String(localized: "home.state.opening", defaultValue: "Opening", comment: "A home card: a door, a blind or a lock is opening now")
+        case "closing": String(localized: "home.state.closing", defaultValue: "Closing", comment: "A home card: a door or a blind is closing now")
+        case "locked": String(localized: "Locked", comment: "A home card's lock is locked")
+        case "unlocked": String(localized: "Unlocked", comment: "A home card's lock is unlocked")
+        case "locking": String(localized: "home.state.locking", defaultValue: "Locking", comment: "A home card: a lock is locking now")
+        case "unlocking": String(localized: "home.state.unlocking", defaultValue: "Unlocking", comment: "A home card: a lock is unlocking now")
+        case "jammed": String(localized: "home.state.jammed", defaultValue: "Jammed", comment: "A home card: a lock or a door is stuck")
+        case "heat", "heating": String(localized: "home.state.heat", defaultValue: "Heat", comment: "A home card: a thermostat's mode, heating")
+        case "cool", "cooling": String(localized: "home.state.cool", defaultValue: "Cool", comment: "A home card: a thermostat's mode, cooling")
+        case "auto": String(localized: "home.state.auto", defaultValue: "Auto", comment: "A home card: a thermostat's mode, automatic")
+        case "heat_cool": String(localized: "home.state.heatCool", defaultValue: "Heat/Cool", comment: "A home card: a thermostat's mode, heating or cooling to keep a range")
+        case "dry", "drying": String(localized: "home.state.dry", defaultValue: "Dry", comment: "A home card: an air conditioner's mode, drying the air")
+        case "fan_only", "fan": String(localized: "home.state.fanOnly", defaultValue: "Fan only", comment: "A home card: an air conditioner's mode, the fan alone")
+        case "idle": String(localized: "home.state.idle", defaultValue: "Idle", comment: "A home card: a device on but doing nothing now (a thermostat, a media player)")
+        case "playing": String(localized: "Playing", comment: "A home card's media player is playing")
+        case "paused": String(localized: "home.state.paused", defaultValue: "Paused", comment: "A home card: a media player is paused")
+        case "standby": String(localized: "home.state.standby", defaultValue: "Standby", comment: "A home card: a media player on standby")
+        case "buffering": String(localized: "home.state.buffering", defaultValue: "Loading", comment: "A home card: a media player is buffering")
+        case "home": String(localized: "home.state.home", defaultValue: "Home", comment: "A home card: someone, or the alarm, is at home")
+        case "away", "not_home": String(localized: "home.state.away", defaultValue: "Away", comment: "A home card: someone, or the alarm, is away")
+        case "unavailable": String(localized: "home.state.unavailable", defaultValue: "Unavailable", comment: "A home card: Home Assistant can't reach the device")
+        case "unknown": String(localized: "home.state.unknown", defaultValue: "Unknown", comment: "A home card: Home Assistant doesn't know the device's state")
+        default: said.replacingOccurrences(of: "_", with: " ").capitalized
+        }
     }
 
     /// A sensor's value with its unit ("21.5 °C", "48 %"), or its state where it is a number.

@@ -105,4 +105,13 @@ struct AnswerCardTests {
         #expect(CardAnswers.shared.said[other.key] != nil)
         #expect(ChecklistCard.ticked(in: CardAnswers.shared.said[other.key] ?? "") == [0])
     }
+
+    /// UAT 2.3.1 (2026-10-31): "Tea" showed as picked once "Green Tea" was, read as a part of the note.
+    @Test func aPickIsReadWholeFromItsNote() {
+        let said = #"from "Drinks" the user picked: "Green Tea", "Black""#
+        #expect(ChoiceCard.picked(in: said) == ["Green Tea", "Black"])
+        #expect(!ChoiceCard.picked(in: said).contains("Tea"))
+        #expect(ChoiceCard.picked(in: #"from the options the user picked: "Tea, with milk""#) == ["Tea, with milk"])
+        #expect(ChoiceCard.picked(in: "Green Tea, Black") == ["Green Tea", "Black"], "a note in no such words: the titles it lists")
+    }
 }

@@ -7,9 +7,14 @@ final class ReplyCardsUITests: XCTestCase {
     func testAReplyShowsAMapPlacesAndTheWeather() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoCards"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        // Without -setupDone YES, which keeps demo flags from working (UAT 2.3.1): as the newer card
+        // tests launch, the setup a simulator never had skipped over the demo.
+        app.launchArguments = ["-echo.demoCards", "-openToVoiceScreen", "NO", "-listenOnOpen", "NO", "-requireBiometrics", "NO"]
         app.launch()
-        XCTAssertTrue(app.text(containing: "twelve-minute walk").waitForExistence(timeout: 20), "The demo reply didn't appear")
+        if app.buttons["Skip"].waitForExistence(timeout: 4) { app.buttons["Skip"].tap() }
+        XCTAssertTrue(app.text(containing: "Rossio Roasters is the pick").waitForExistence(timeout: 20), "The demo reply didn't appear")
+        // (Its words and the cards as drawn since the places and weather cards' new look, 2026-10-30.)
+        let any = { (fragment: String) in app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", fragment)).firstMatch }
         XCTAssertFalse(app.text(containing: "\"cards\"").exists, "The card call shows as text")
 
         // The map: the walk, with a way to get directions.
@@ -23,19 +28,20 @@ final class ReplyCardsUITests: XCTestCase {
         shot.lifetime = .keepAlways
         add(shot)
 
-        // The places, each with its rating and a way to open it in Maps.
-        for _ in 0 ..< 4 where !app.text(containing: "Alfama Bean").isHittable { window.swipeUp() }
+        // The places, each with its rating, each opening in Maps, and Directions to the pick.
+        for _ in 0 ..< 4 where !any("Alfama Bean").isHittable { window.swipeUp() }
         XCTAssertTrue(app.text(containing: "Coffee near the office").exists, "The places card's title isn't there")
-        XCTAssertTrue(app.text(containing: "★ 4.7").exists, "A place's rating isn't shown")
-        XCTAssertTrue(app.text(containing: "★ 4.6").exists, "A rating given as text isn't read")
-        XCTAssertTrue(app.buttons["Open Alfama Bean in Maps"].exists, "A place can't be opened in Maps")
-        XCTAssertTrue(app.links["Call Rossio Roasters"].exists || app.buttons["Call Rossio Roasters"].exists, "A place with a phone can't be called")
+        XCTAssertTrue(app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "rated 4.7")).firstMatch.exists
+                      || any("rated 4.7").exists, "A place's rating isn't shown")
+        XCTAssertTrue(any("rated 4.8").exists, "A rating given as text isn't read")
+        XCTAssertTrue(app.buttons["Directions to Rossio Roasters"].exists, "No Directions to the pick")
+        XCTAssertTrue(app.buttons["Maps"].exists, "The places can't be opened in Maps")
 
         // The weather: now, the hours, the days.
-        for _ in 0 ..< 4 where !app.text(containing: "Feels like").isHittable { window.swipeUp() }
-        XCTAssertTrue(app.text(containing: "Lisbon").exists, "The weather's place isn't there")
-        XCTAssertTrue(app.text(containing: "Humidity 62%").exists, "Today's details aren't shown")
-        XCTAssertTrue(app.text(containing: "70%").exists, "The chance of rain isn't shown")
+        for _ in 0 ..< 4 where !any("Lisbon · Now").isHittable { window.swipeUp() }
+        XCTAssertTrue(any("Lisbon · Now").exists, "The weather's place isn't there")
+        XCTAssertTrue(any("Partly cloudy · H 21°").exists, "Today's reading isn't shown")
+        XCTAssertTrue(any("Rain 80%").exists, "The chance of rain isn't shown")
         let weather = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         weather.name = "cards-weather"
         weather.lifetime = .keepAlways

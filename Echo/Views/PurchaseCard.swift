@@ -139,7 +139,7 @@ struct PurchaseCard: View {
                         Text(item.product.name).chatFont(.subheadline, weight: .semibold).lineLimit(2)
                         if let facts = item.facts {
                             HStack(spacing: 3) {
-                                if item.rating != nil { Image(systemName: "star.fill").imageScale(.small).foregroundStyle(Self.star) }
+                                if item.rating != nil { Image(systemName: "star.fill").imageScale(.small).foregroundStyle(Self.star).accessibilityHidden(true) }
                                 Text(verbatim: facts).lineLimit(1)
                             }
                             .chatFont(.caption).foregroundStyle(.secondary)
@@ -406,6 +406,8 @@ extension PurchaseCard {
             /// "View at Best Buy".
             var view: String
             var spoken: String
+            /// "rated 4.5 out of 5, 12,480 reviews": the stars, to VoiceOver.
+            var spokenStars: String?
             var hasDetails: Bool
         }
 
@@ -451,6 +453,7 @@ extension PurchaseCard {
                             facts: facts.isEmpty ? nil : facts.joined(separator: " · "), badge: badge, tone: Tone(badge ?? "", pick: p.pick),
                             symbol: PurchaseCard.symbol(for: [p.name, p.brand ?? ""].joined(separator: " "), else: title),
                             url: p.url.flatMap(URL.init(string:)), image: p.image.flatMap(URL.init(string:)), view: view, spoken: spoken,
+                            spokenStars: [spokenRating, spokenReviews].compactMap(\.self).joined(separator: ", ").nilIfEmpty,
                             hasDetails: !p.pros.isEmpty || !p.cons.isEmpty || !p.specs.isEmpty)
             }
             lead = card.lead
@@ -618,7 +621,7 @@ private struct Stars: View {
         HStack(spacing: 6) {
             HStack(spacing: 1) {
                 ForEach(0 ..< 5, id: \.self) { i in
-                    Image(systemName: Self.symbol(item.rating ?? 0, i))
+                    Image(systemName: Self.symbol(item.rating ?? 0, i)).accessibilityHidden(true)
                 }
             }
             .chatFont(.caption2)
@@ -627,6 +630,10 @@ private struct Stars: View {
                 Text(verbatim: text).chatFont(.footnote).monospacedDigit().foregroundStyle(.secondary)
             }
         }
+        // One line to VoiceOver (UAT 2.3.1: each star read as "Favorite", a half one as "Star With
+        // The Leading Half Filled").
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(item.spokenStars ?? "")
     }
 
     /// The `index`th star of a rating: full, half or empty.

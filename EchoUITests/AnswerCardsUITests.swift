@@ -19,6 +19,12 @@ final class AnswerCardsUITests: XCTestCase {
         app.buttons.matching(NSPredicate(format: "label == %@", label)).hittable(within: 10)
     }
 
+    /// A checklist's row: a switch from iOS 27 (its `isToggle` trait), a button before.
+    private func row(_ app: XCUIApplication, _ text: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "(elementType == %d OR elementType == %d) AND label BEGINSWITH %@",
+                                                             XCUIElement.ElementType.switch.rawValue, XCUIElement.ElementType.button.rawValue, text)).firstMatch
+    }
+
     private func assertFingerSized(_ element: XCUIElement, _ name: String) {
         XCTAssertGreaterThanOrEqual(element.frame.height, 43.5, "\(name) is shorter than a finger")
         XCTAssertGreaterThanOrEqual(element.frame.width, 43.5, "\(name) is narrower than a finger")
@@ -73,7 +79,7 @@ final class AnswerCardsUITests: XCTestCase {
         XCTAssertTrue(ring("3 of 8 packed").exists, "The ring doesn't say how it stands")
 
         // Each row ticks, and the ring follows.
-        let layer = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "A warm layer")).firstMatch
+        let layer = row(app, "A warm layer")
         XCTAssertTrue(layer.waitForExistence(timeout: 5), "No row for an item")
         assertFingerSized(layer, "A row")
         XCTAssertEqual(layer.value as? String, "Not done")
@@ -85,19 +91,19 @@ final class AnswerCardsUITests: XCTestCase {
         layer.tap()
         XCTAssertTrue(ring("3 of 8 packed").waitForExistence(timeout: 5), "The ring didn't follow an untick")
         for text in ["Swimsuits", "Sandals", "Sunscreen", "Beach towels", "Umbrella", "Phone chargers", "Snacks for the drive"] {
-            let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", text)).firstMatch
-            XCTAssertTrue(row.isHittable, "\(text) can't be tapped")
+            XCTAssertTrue(row(app, text).isHittable, "\(text) can't be tapped")
         }
 
         // A group's name folds it away and back.
-        let clothes = app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Clothes")).firstMatch
+        // Folded, it says how many are done too ("Clothes, 1/3").
+        let clothes = app.buttons.matching(NSPredicate(format: "label ==[c] %@ OR label BEGINSWITH[c] %@", "Clothes", "Clothes,")).firstMatch
         XCTAssertTrue(clothes.exists, "A group's name isn't a button")
         assertFingerSized(clothes, "A group's name")
         clothes.tap()
-        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Sandals")).firstMatch.waitForExistence(timeout: 2),
+        XCTAssertFalse(row(app, "Sandals").waitForExistence(timeout: 2),
                        "The group didn't fold")
         clothes.tap()
-        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Sandals")).firstMatch.waitForExistence(timeout: 5),
+        XCTAssertTrue(row(app, "Sandals").waitForExistence(timeout: 5),
                       "The group didn't open again")
 
         let more = app.buttons["More for Cocoa Beach weekend"]

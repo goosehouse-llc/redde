@@ -134,13 +134,13 @@ nonisolated enum OpenMeteo {
             temperature: temperature, condition: condition(now?["weather_code"]?.number),
             feelsLike: now?["apparent_temperature"]?.number,
             high: at(daily?["temperature_2m_max"], 0)?.number, low: at(daily?["temperature_2m_min"], 0)?.number,
-            wind: wind, humidity: now?["relative_humidity_2m"]?.number.map { Int($0.rounded()) },
-            precipitation: at(hourly?["precipitation_probability"], 0)?.number.map { Int($0.rounded()) },
+            wind: wind, humidity: now?["relative_humidity_2m"]?.number.flatMap { $0.nearestInt(in: 0 ... 100) },
+            precipitation: at(hourly?["precipitation_probability"], 0)?.number.flatMap { $0.nearestInt(in: 0 ... 100) },
             summary: nil, night: now?["is_day"]?.number.map { $0 == 0 })
         let hours: [ReplyCard.Weather.Hour] = (hourly?["time"]?.array ?? []).prefix(12).enumerated().compactMap { i, time in
             guard let time = time.string, let temperature = at(hourly?["temperature_2m"], i)?.number else { return nil }
             return .init(time: time, temperature: temperature, condition: condition(at(hourly?["weather_code"], i)?.number),
-                         precipitation: at(hourly?["precipitation_probability"], i)?.number.map { Int($0.rounded()) },
+                         precipitation: at(hourly?["precipitation_probability"], i)?.number.flatMap { $0.nearestInt(in: 0 ... 100) },
                          night: at(hourly?["is_day"], i)?.number.map { $0 == 0 },
                          gusts: at(hourly?["wind_gusts_10m"], i)?.number)
         }
@@ -148,7 +148,7 @@ nonisolated enum OpenMeteo {
             guard let date = date.string, let high = at(daily?["temperature_2m_max"], i)?.number,
                   let low = at(daily?["temperature_2m_min"], i)?.number else { return nil }
             return .init(date: date, high: high, low: low, condition: condition(at(daily?["weather_code"], i)?.number),
-                         precipitation: at(daily?["precipitation_probability_max"], i)?.number.map { Int($0.rounded()) })
+                         precipitation: at(daily?["precipitation_probability_max"], i)?.number.flatMap { $0.nearestInt(in: 0 ... 100) })
         }
         return .init(place: place, units: units, now: reading, hours: hours, days: days, source: ReplyCards.lookedUpSource,
                      updated: stamp(now?["time"]?.string, offset: json["utc_offset_seconds"]?.number))

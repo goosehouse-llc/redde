@@ -24,16 +24,26 @@ struct ApprovalCard: View {
         return (settings.headerTitle, directory.mainFace)
     }
 
-    private var summary: ApprovalSummary {
+    /// Worked out once for a request and who asks, not on each pass of the body (UAT 2.3.1 review,
+    /// 2026-10-31: its parsing ran again whenever the chat redrew).
+    private func summary(by name: String) -> ApprovalSummary {
+        let key = [request.id, request.command, request.description ?? "", name].joined(separator: "\u{1F}")
+        if let kept = Self.summaries[key] { return kept }
         let settings = Settings.shared
-        return ApprovalSummary(request, agent: agent.name) { profile in
+        let made = ApprovalSummary(request, agent: name) { profile in
             if profile == "default" || profile == settings.profileName { return settings.headerTitle }
             return BotDirectory.shared.roster?.named(profile)?.label(mainName: settings.headerTitle) ?? profile.capitalized
         }
+        if Self.summaries.count > 40 { Self.summaries.removeAll() }
+        Self.summaries[key] = made
+        return made
     }
 
+    private static var summaries: [String: ApprovalSummary] = [:]
+
     var body: some View {
-        let summary = summary
+        let agent = agent
+        let summary = summary(by: agent.name)
         let warn = summary.risky ? Color.red : Color.orange
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top, spacing: 10) {

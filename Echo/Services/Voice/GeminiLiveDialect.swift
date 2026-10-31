@@ -18,7 +18,8 @@ nonisolated struct GeminiLiveDialect: LiveDialect {
                           "Laomedeia", "Achernar", "Alnilam", "Schedar", "Gacrux", "Pulcherrima", "Achird", "Zubenelgenubi",
                           "Vindemiatrix", "Sadachbia", "Sadaltager", "Sulafat"]),
     ]
-    /// How Google describes each.
+    /// How Google describes each. "Clear" has a key of its own (2026-10-31): the weather card's
+    /// "Clear" was translated as a sky ("Despejado").
     static let styles: [String: String] = [
         "Zephyr": String(localized: "Bright", comment: "How Google describes one of its voices"),
         "Puck": String(localized: "Upbeat", comment: "How Google describes one of its voices"),
@@ -31,11 +32,11 @@ nonisolated struct GeminiLiveDialect: LiveDialect {
         "Callirrhoe": String(localized: "Easy-going", comment: "How Google describes one of its voices"),
         "Autonoe": String(localized: "Bright", comment: "How Google describes one of its voices"),
         "Enceladus": String(localized: "Breathy", comment: "How Google describes one of its voices"),
-        "Iapetus": String(localized: "Clear", comment: "How Google describes one of its voices"),
+        "Iapetus": String(localized: "voice.clear", defaultValue: "Clear", comment: "How Google describes one of its voices: clear to hear (not the weather)"),
         "Umbriel": String(localized: "Easy-going", comment: "How Google describes one of its voices"),
         "Algieba": String(localized: "Smooth", comment: "How Google describes one of its voices"),
         "Despina": String(localized: "Smooth", comment: "How Google describes one of its voices"),
-        "Erinome": String(localized: "Clear", comment: "How Google describes one of its voices"),
+        "Erinome": String(localized: "voice.clear", defaultValue: "Clear", comment: "How Google describes one of its voices: clear to hear (not the weather)"),
         "Algenib": String(localized: "Gravelly", comment: "How Google describes one of its voices"),
         "Rasalgethi": String(localized: "Informative", comment: "How Google describes one of its voices"),
         "Laomedeia": String(localized: "Upbeat", comment: "How Google describes one of its voices"),

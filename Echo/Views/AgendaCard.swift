@@ -82,6 +82,9 @@ private struct DaySection: View {
     /// The card's one day: the full-size header.
     let large: Bool
     @State private var open: Set<Event> = []
+    /// What an open event's details show, worked out once as it opens (UAT 2.3.1, 2026-10-31: its
+    /// links' data detectors ran again on every pass of the body, twice over in `ViewThatFits`).
+    @State private var opened: [Event: Opened] = [:]
     /// What an open event's block measures with its details, to make room for them.
     @State private var grown: [Event: CGFloat] = [:]
     #if os(iOS)
@@ -96,7 +99,8 @@ private struct DaySection: View {
             header
             if !day.allDay.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
-                    ForEach(day.allDay, id: \.self) { allDay($0) }
+                    // By place: two all-day events can be alike in every field (UAT 2.3.1).
+                    ForEach(Array(day.allDay.enumerated()), id: \.offset) { allDay($0.element) }
                 }
             }
             if let timeline = day.timeline {
@@ -105,8 +109,7 @@ private struct DaySection: View {
         }
         #if os(iOS)
         .sheet(item: $adding) { slot in
-            NewEventEditor(slot: slot) { adding = nil }
-                .ignoresSafeArea()
+            NewEventSheet(slot: slot) { adding = nil }
         }
         #endif
         #if DEBUG
@@ -376,13 +379,13 @@ private struct DaySection: View {
 
     /// An open event: how long, where (in Maps), which calendar, its notes, and its links.
     private func details(_ event: Event) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            if !event.allDay, let end = event.end {
-                Label(Duration.seconds(end.timeIntervalSince(event.start)).formatted(.units(allowed: [.hours, .minutes], width: .wide)),
-                      systemImage: "clock")
+        let info = opened[event] ?? Opened(event)
+        return VStack(alignment: .leading, spacing: 6) {
+            if let length = info.length {
+                Label(length, systemImage: "clock")
                     .allowsHitTesting(false)
             }
-            if let location = event.location, let maps = AgendaCard.mapsURL(location) {
+            if let location = event.location, let maps = info.maps {
                 Button { openURL(maps) } label: {
                     Label(location, systemImage: "mappin.and.ellipse")
                         .multilineTextAlignment(.leading)
@@ -391,23 +394,23 @@ private struct DaySection: View {
                 }
                 .buttonStyle(Roomy(extra: 14))
                 .accessibilityHint(placeHint)
-            } else if let location = event.location {
+            } else if let place = info.place {
                 // A room, a meeting link, an app: no map, its links tappable (asked 2026-10-30).
-                Label { Text(EventPlace.linked(location)).textSelection(.enabled) } icon: {
-                    Image(systemName: EventDetails.online(in: location) != nil ? "video" : "mappin.and.ellipse")
+                Label { Text(place).textSelection(.enabled) } icon: {
+                    Image(systemName: info.placeOnline ? "video" : "mappin.and.ellipse")
                 }
             }
             if let calendar = event.calendar {
                 Label(calendar, systemImage: "calendar")
                     .allowsHitTesting(false)
             }
-            if let notes = event.notes {
-                Text(EventPlace.linked(notes)).lineLimit(8).textSelection(.enabled)
+            if let notes = info.notes {
+                Text(notes).lineLimit(8).textSelection(.enabled)
             }
             // Side by side when they fit; in a narrow column, one under the other.
             ViewThatFits(in: .horizontal) {
-                HStack(spacing: 18) { links(event, stacked: false) }
-                VStack(alignment: .leading, spacing: 0) { links(event, stacked: true) }
+                HStack(spacing: 18) { links(info, stacked: false) }
+                VStack(alignment: .leading, spacing: 0) { links(info, stacked: true) }
             }
             .chatFont(.caption, weight: .semibold)
             .foregroundStyle(.tint)
@@ -419,23 +422,23 @@ private struct DaySection: View {
 
     /// Open in Maps and Open in Calendar (at the event's time), each 44 pt to tap: side by side
     /// reaching above and below their line, stacked a full 44 pt each.
-    @ViewBuilder private func links(_ event: Event, stacked: Bool) -> some View {
+    @ViewBuilder private func links(_ info: Opened, stacked: Bool) -> some View {
         // An online meeting's own link, from its place or its notes: Join.
-        if let join = EventDetails.online(in: [event.location, event.notes].compactMap(\.self).joined(separator: "\n"))?.link {
+        if let join = info.join {
             Button { openURL(join) } label: {
                 Label("Join", systemImage: "video.fill").frame(minHeight: stacked ? 44 : nil)
             }
             .buttonStyle(Roomy(extra: stacked ? 0 : 14))
             .accessibilityHint(Text("Opens the meeting's link", comment: "An agenda card's event: its Join button, as VoiceOver hints it"))
         }
-        if let location = event.location, let maps = AgendaCard.mapsURL(location) {
+        if let maps = info.maps {
             Button { openURL(maps) } label: {
                 Label("Open in Maps", systemImage: "map").frame(minHeight: stacked ? 44 : nil)
             }
             .buttonStyle(Roomy(extra: stacked ? 0 : 14))
             .accessibilityHint(placeHint)
         }
-        if let calendar = AgendaCard.calendarURL(at: event.start) {
+        if let calendar = info.calendar {
             Button { openURL(calendar) } label: {
                 Label("Open in Calendar", systemImage: "calendar").frame(minHeight: stacked ? 44 : nil)
             }
@@ -464,12 +467,38 @@ private struct DaySection: View {
     }
 
     private func toggle(_ event: Event) {
+        if !open.contains(event), opened[event] == nil { opened[event] = Opened(event) }
         withAnimation(.snappy(duration: 0.25)) {
             if open.remove(event) == nil {
                 open.insert(event)
             } else {
                 grown[event] = nil
             }
+        }
+    }
+
+    /// An open event's details as drawn: its length, its links and its words with theirs.
+    struct Opened {
+        let length: String?
+        /// Maps for its place, where that is an address; else its place with its links.
+        let maps: URL?
+        let place: AttributedString?
+        let placeOnline: Bool
+        let notes: AttributedString?
+        /// An online meeting's own link, from its place or its notes.
+        let join: URL?
+        let calendar: URL?
+
+        init(_ event: Event) {
+            length = !event.allDay ? event.end.map {
+                ReplyCards.lasting($0.timeIntervalSince(event.start)).formatted(.units(allowed: [.hours, .minutes], width: .wide))
+            } : nil
+            maps = event.location.flatMap(AgendaCard.mapsURL)
+            place = maps == nil ? event.location.map(EventPlace.linked) : nil
+            placeOnline = maps == nil && event.location.map { EventDetails.online(in: $0) != nil } == true
+            notes = event.notes.map(EventPlace.linked)
+            join = EventDetails.online(in: [event.location, event.notes].compactMap(\.self).joined(separator: "\n"))?.link
+            calendar = AgendaCard.calendarURL(at: event.start)
         }
     }
 }
@@ -855,10 +884,15 @@ extension AgendaCard {
         return calendar.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))
     }
 
-    /// "9:00 AM to 8:00 PM".
-    nonisolated static func span(_ start: Date, _ end: Date) -> String {
-        String(localized: "\(start.formatted(date: .omitted, time: .shortened)) to \(end.formatted(date: .omitted, time: .shortened))",
-               comment: "An agenda card's event, as VoiceOver reads its time")
+    /// "9:00 – 10:15 AM", "9:00–20:00 Uhr": Foundation's interval, written as each language writes
+    /// one (UAT 2.3.1, 2026-10-31: the "%@ to %@" key read "9:00 nach 20:00" in German).
+    nonisolated static func span(_ start: Date, _ end: Date, locale: Locale = .current, timeZone: TimeZone = .current) -> String {
+        guard end > start else {
+            var one = Date.FormatStyle(date: .omitted, time: .shortened, locale: locale)
+            one.timeZone = timeZone
+            return start.formatted(one)
+        }
+        return (start..<end).formatted(Date.IntervalFormatStyle(date: .omitted, time: .shortened, locale: locale, timeZone: timeZone))
     }
 
     /// A free stretch's length to the half hour: "2½ hours", "3 hours".
@@ -879,7 +913,8 @@ extension AgendaCard {
         full.timeZone = calendar.timeZone
         var bare = Date.FormatStyle.dateTime.hour(.defaultDigits(amPM: .omitted)).locale(locale)
         bare.timeZone = calendar.timeZone
-        var clock = Date.FormatStyle.dateTime.hour(.twoDigits(amPM: .omitted)).minute().locale(locale)
+        // Two-digit minutes (UAT 2.3.1: `.minute()` read "09:0" in German, French, Russian and en_GB).
+        var clock = Date.FormatStyle.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits).locale(locale)
         clock.timeZone = calendar.timeZone
         return hours.enumerated().map { index, hour in
             let date = hour >= 24 ? calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
@@ -969,11 +1004,49 @@ extension AgendaCard {
 }
 
 #if os(iOS)
+/// The sheet a free spot opens: a spinner until Apple's editor is drawn over it. UAT 2.3.1
+/// (2026-10-31) found it blank for over 3 s: each tap made a new `EKEventStore` on the main actor
+/// (the dear part), and Apple's editor, drawn outside Redde without calendar access, takes a moment more.
+private struct NewEventSheet: View {
+    let slot: AgendaCard.Slot
+    let done: () -> Void
+    @State private var store: EKEventStore?
+
+    var body: some View {
+        ZStack {
+            ProgressView()
+            if let store {
+                NewEventEditor(slot: slot, store: store, done: done)
+                    .ignoresSafeArea()
+            }
+        }
+        .task { store = await EventEditorStore.store() }
+    }
+}
+
+/// The one store Apple's editor is given, made once and off the main actor.
+@MainActor
+enum EventEditorStore {
+    private static var made: EKEventStore?
+
+    /// A store handed from the task that made it; nothing else holds it then.
+    private nonisolated struct Handed: @unchecked Sendable { let store: EKEventStore }
+
+    static func store() async -> EKEventStore {
+        if let made { return made }
+        let fresh = await Task.detached(priority: .userInitiated) { Handed(store: EKEventStore()) }.value.store
+        if let made { return made }   // another tap made one meanwhile
+        made = fresh
+        return fresh
+    }
+}
+
 /// Apple's new-event editor with the times filled in, and nothing else. From iOS 17 it is drawn
 /// outside Redde when Redde has no access to the calendar, and saves without any: nothing is asked
 /// for here. With full access (Phone tools, the start screen's card), it is drawn in Redde.
 private struct NewEventEditor: UIViewControllerRepresentable {
     let slot: AgendaCard.Slot
+    let store: EKEventStore
     let done: () -> Void
 
     final class Coordinator: NSObject, EKEventEditViewDelegate {
@@ -989,7 +1062,6 @@ private struct NewEventEditor: UIViewControllerRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(done: done) }
 
     func makeUIViewController(context: Context) -> EKEventEditViewController {
-        let store = EKEventStore()
         let event = EKEvent(eventStore: store)
         event.startDate = slot.start
         event.endDate = slot.end

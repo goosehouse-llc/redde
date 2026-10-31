@@ -182,7 +182,7 @@ struct ReminderCard: View {
 
     /// "19:42", "1:05:00".
     static func clock(_ seconds: TimeInterval) -> String {
-        let s = Int(seconds.rounded(.up))
+        let s = seconds.rounded(.up).nearestInt(in: 0 ... Int(ReplyCards.longestSpan)) ?? 0
         return s >= 3600 ? String(format: "%d:%02d:%02d", s / 3600, s / 60 % 60, s % 60) : String(format: "%d:%02d", s / 60, s % 60)
     }
 

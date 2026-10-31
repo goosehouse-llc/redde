@@ -329,17 +329,19 @@ struct ChoiceCard: View {
     private var answered: String? { answers.said[whole.key] }
 
     var body: some View {
+        // What a sent answer picked, read once for the body.
+        let chosen = answered.map(Self.picked(in:))
         AnswerBox(symbol: card.multiple ? "checklist" : "hand.tap", title: card.title) {
             ForEach(Array(card.options.enumerated()), id: \.offset) { index, option in
-                Button { tap(index) } label: { row(option, index: index) }
+                Button { tap(index) } label: { row(option, index: index, chosen: chosen) }
                     .buttonStyle(.plain)
                     .disabled(answered != nil || answerer == nil || answerer?.busy == true)
-                    .accessibilityAddTraits(isPicked(index) ? .isSelected : [])
+                    .accessibilityAddTraits(isPicked(index, chosen) ? .isSelected : [])
                     .accessibilityHint(card.multiple ? Text("Picks it, or leaves it out", comment: "VoiceOver hint: an option of a card where several may be picked")
                                                      : Text("Sends it as your pick", comment: "VoiceOver hint: an option of a card where one is picked"))
             }
             if answered != nil {
-                let picked = card.options.indices.filter(isPicked).map { card.options[$0].title }
+                let picked = card.options.indices.filter { isPicked($0, chosen) }.map { card.options[$0].title }
                 AnsweredLine(text: String(localized: "Picked: \(picked.joined(separator: ", "))"))
             } else if card.multiple, let answerer {
                 HStack {
@@ -357,13 +359,27 @@ struct ChoiceCard: View {
         }
     }
 
-    private func isPicked(_ index: Int) -> Bool {
-        if let answered { return answered.contains(card.options[index].title) }
+    private func isPicked(_ index: Int, _ chosen: Set<String>?) -> Bool {
+        if let chosen { return chosen.contains(card.options[index].title) }
         return picked.contains(index)
     }
 
-    private func row(_ option: ReplyCard.Option, index: Int) -> some View {
-        HStack(spacing: 10) {
+    /// The titles a sent answer picked, each whole: the note quotes them (`send`), "…the user picked:
+    /// \"Green Tea\", \"Black\"". UAT 2.3.1 (2026-10-31): matched as a part of the note, "Tea" was
+    /// picked too after "Green Tea". A note in no such words is read as the titles it lists.
+    static func picked(in said: String) -> Set<String> {
+        guard let mark = said.range(of: "the user picked: ", options: .backwards) else {
+            return Set(said.components(separatedBy: ", "))
+        }
+        var list = said[mark.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
+        guard list.hasPrefix("\""), list.hasSuffix("\""), list.count >= 2 else { return [list] }
+        list = String(list.dropFirst().dropLast())
+        return Set(list.components(separatedBy: "\", \""))
+    }
+
+    private func row(_ option: ReplyCard.Option, index: Int, chosen: Set<String>?) -> some View {
+        let on = isPicked(index, chosen)
+        return HStack(spacing: 10) {
             if let image = option.image, let url = URL(string: image) {
                 AsyncImage(url: url) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.15) }
                     .frame(width: 52, height: 52)
@@ -374,12 +390,12 @@ struct ChoiceCard: View {
                 if let detail = option.detail { Text(detail).chatFont(.caption).foregroundStyle(.secondary).lineLimit(3) }
             }
             Spacer(minLength: 6)
-            Image(systemName: isPicked(index) ? "checkmark.circle.fill" : (card.multiple ? "circle" : "chevron.right"))
-                .foregroundStyle(isPicked(index) ? AnyShapeStyle(.tint) : AnyShapeStyle(.tertiary))
+            Image(systemName: on ? "checkmark.circle.fill" : (card.multiple ? "circle" : "chevron.right"))
+                .foregroundStyle(on ? AnyShapeStyle(.tint) : AnyShapeStyle(.tertiary))
         }
         .padding(10)
-        .background(isPicked(index) ? AnyShapeStyle(.tint.opacity(0.12)) : AnyShapeStyle(scheme.cardPanel), in: .rect(cornerRadius: 14))
-        .opacity(answered != nil && !isPicked(index) ? 0.5 : 1)
+        .background(on ? AnyShapeStyle(.tint.opacity(0.12)) : AnyShapeStyle(scheme.cardPanel), in: .rect(cornerRadius: 14))
+        .opacity(chosen != nil && !on ? 0.5 : 1)
         .contentShape(.rect)
     }
 
@@ -721,7 +737,8 @@ struct FormCard: View {
                 Spacer(minLength: 8)
                 Picker(label, selection: binding(index)) {
                     if value(index).isEmpty { Text("Choose").tag("") }
-                    ForEach(field.options, id: \.self) { Text($0).tag($0) }
+                    // By place: an agent can give an option twice (UAT 2.3.1).
+                    ForEach(Array(field.options.enumerated()), id: \.offset) { Text($0.element).tag($0.element) }
                 }
                 .labelsHidden()
             }

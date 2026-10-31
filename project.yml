@@ -450,9 +450,8 @@ targets:
         # The iPhone extension's id, as the app is the iPhone's (one App ID for both); the Debug
         # app's own id has its own (below), the prefix an extension's id must start with.
         PRODUCT_BUNDLE_IDENTIFIER: com.goosehouse.echo.push
-        # Numbered as the Mac app is: an extension's version must match its app's.
-        MARKETING_VERSION: "2.3"
-        CURRENT_PROJECT_VERSION: "279"
+        # No version of its own (UAT 2.3.1, 2026-10-31: a pinned 2.3 (279) sat inside the 2.3.1 (280)
+        # app, which App Store Connect refuses): it takes the project's, as every other target does.
         SKIP_INSTALL: true
         ENABLE_HARDENED_RUNTIME: true
         SWIFT_TREAT_WARNINGS_AS_ERRORS: false

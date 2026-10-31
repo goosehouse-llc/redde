@@ -24,7 +24,8 @@ final class MoreCardsUITests: XCTestCase {
         scrollUp(app, until: app.text(containing: "Downstairs"))
         XCTAssertTrue(app.text(containing: "Kitchen · On · 80%").exists, "A light's state and brightness from 0–255 aren't shown")
         shot(app, "home-top")
-        app.buttons["Unlock"].tap()
+        // The button says which device to VoiceOver (UAT 2.3.1); the question's own button is "Unlock".
+        app.buttons["Unlock Front door"].tap()
         XCTAssertTrue(app.buttons["Unlock"].waitForExistence(timeout: 5) && app.staticTexts["Unlock Front door?"].waitForExistence(timeout: 5),
                       "Unlocking didn't ask first")
         shot(app, "home-confirm")

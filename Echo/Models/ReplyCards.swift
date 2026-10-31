@@ -374,15 +374,16 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
         case let .form(f): said = "form|" + f.title + "|" + f.fields.map(\.label).joined(separator: "|")
         case let .purchase(p): said = "purchase|" + (p.title ?? "") + "|" + p.items.map(\.name).joined(separator: "|")
         case let .home(h): said = "home|" + (h.title ?? "") + "|" + h.devices.map { $0.entity ?? $0.name }.joined(separator: "|")
-        case let .reminder(r): said = "reminder|" + r.title + "|" + (r.id ?? "") + "|" + (r.at.map { String(Int($0.timeIntervalSince1970)) } ?? r.when ?? "")
-        case let .score(s): said = "score|" + s.games.map { "\($0.away.name)@\($0.home.name)|\($0.start.map { String(Int($0.timeIntervalSince1970)) } ?? "")" }.joined(separator: "|")
+        // The times as whole seconds by `wholeFigures`, which can't trap (UAT 2.3.1: a timer of 1e308 seconds did, here).
+        case let .reminder(r): said = "reminder|" + r.title + "|" + (r.id ?? "") + "|" + (r.at.map { $0.timeIntervalSince1970.rounded(.towardZero).wholeFigures } ?? r.when ?? "")
+        case let .score(s): said = "score|" + s.games.map { "\($0.away.name)@\($0.home.name)|\($0.start.map { $0.timeIntervalSince1970.rounded(.towardZero).wholeFigures } ?? "")" }.joined(separator: "|")
         case let .recipe(r): said = "recipe|" + r.title + "|" + (r.url ?? "") + "|" + r.ingredients.map(\.name).joined(separator: "|")
         case let .delivery(d): said = "delivery|" + (d.carrier ?? "") + "|" + (d.tracking ?? "") + "|" + (d.title ?? "")
         case let .flight(t):
-            said = "flight|" + t.legs.map { [$0.number ?? "", $0.from.code ?? $0.from.city ?? "", $0.departs.map { String(Int($0.date.timeIntervalSince1970)) } ?? ""].joined(separator: "|") }
+            said = "flight|" + t.legs.map { [$0.number ?? "", $0.from.code ?? $0.from.city ?? "", $0.departs.map { $0.date.timeIntervalSince1970.rounded(.towardZero).wholeFigures } ?? ""].joined(separator: "|") }
                 .joined(separator: "|")
         case let .show(s): said = "show|" + (s.title ?? "") + "|" + s.items.map { $0.name + ($0.year.map { " \($0)" } ?? "") }.joined(separator: "|")
-        case let .stock(q): said = "stock|" + q.items.map(\.symbol).joined(separator: "|") + "|" + (q.items.first?.asOf.map { String(Int($0.timeIntervalSince1970)) } ?? "")
+        case let .stock(q): said = "stock|" + q.items.map(\.symbol).joined(separator: "|") + "|" + (q.items.first?.asOf.map { $0.timeIntervalSince1970.rounded(.towardZero).wholeFigures } ?? "")
         default: return ""
         }
         // FNV-1a: short, and the same on every run (Hasher isn't).
@@ -607,10 +608,10 @@ nonisolated enum ReplyCards {
     static func cards(from step: ToolActivity) -> [ReplyCard]? {
         if step.name == keyTool { return keyCard(from: step) }
         guard step.name == tool, step.status != .failed else { return nil }
-        if let output = step.output, let answer = try? JSONValue.parse(Data(output.utf8)), answer["cards"]?.array != nil {
+        if let output = step.output, let answer = try? JSONValue.parse(Data(output.utf8), keepingLongWholeNumbers: true), answer["cards"]?.array != nil {
             return parse(answer)
         }
-        guard let text = step.args, let args = try? JSONValue.parse(Data(text.utf8)) else { return nil }
+        guard let text = step.args, let args = try? JSONValue.parse(Data(text.utf8), keepingLongWholeNumbers: true) else { return nil }
         return parse(args)
     }
 
@@ -779,6 +780,12 @@ nonisolated enum ReplyCards {
         let listed = value["items"]?.array ?? value["products"]?.array ?? value["options"]?.array ?? []
         var products = Array(listed.compactMap { product($0, locale: locale) }.prefix(maxProducts))
         guard !products.isEmpty else { return nil }
+        // A product that names no currency takes the card's (UAT 2.3.1, 2026-10-31: in Japan, "¥299"
+        // sat beside "$279"): the card's own 'currency', else the one its products give most (the
+        // first given, on a tie); only with none given anywhere, the person's own (`homeCurrency`).
+        if let shared = currencyCode(text(value["currency"])) ?? mostGiven(products.compactMap(\.currency)) {
+            for i in products.indices where products[i].currency == nil { products[i].currency = shared }
+        }
         if let first = products.firstIndex(where: \.pick) {
             for i in products.indices where i != first { products[i].pick = false }
         } else if let named = products.firstIndex(where: { $0.badge.map(namesPick) == true }) {
@@ -786,6 +793,13 @@ nonisolated enum ReplyCards {
         }
         return .init(title: text(value["title"]).map { String($0.prefix(120)) }, items: products,
                      note: text(value["note"] ?? value["subtitle"]).map { String($0.prefix(200)) })
+    }
+
+    /// The code given most, the first given on a tie; nil for none.
+    static func mostGiven(_ codes: [String]) -> String? {
+        var counts: [String: Int] = [:]
+        for code in codes { counts[code, default: 0] += 1 }
+        return codes.reduce(nil as String?) { best, code in best.map { counts[code]! > counts[$0]! ? code : $0 } ?? code }
     }
 
     /// A badge that makes a product the pick ("Best overall", "Top pick"); a "Budget pick" doesn't.
@@ -911,7 +925,7 @@ nonisolated enum ReplyCards {
 
     /// How many reviews: 12480, "12,480", "12.4k", "1.2M", "(3,201 reviews)".
     static func count(_ value: JSONValue?) -> Int? {
-        if let n = value?.number, n.isFinite, n >= 0 { return Int(n.rounded()) }
+        if let n = value?.number, n.isFinite, n >= 0 { return n.nearestInt }
         guard let written = text(value)?.lowercased(),
               let match = written.firstMatch(of: /(\d[\d,.]*)\s*([km])?/) else { return nil }
         let figures = String(match.1)
@@ -919,7 +933,7 @@ nonisolated enum ReplyCards {
         // "12,480" is twelve thousand; "12.4k" twelve thousand four hundred.
         guard let n = scaled ? Double(figures.replacingOccurrences(of: ",", with: ".")) : Double(figures.filter(\.isNumber)) else { return nil }
         let total = n * (match.2 == "k" ? 1_000 : match.2 == "m" ? 1_000_000 : 1)
-        return total.isFinite ? Int(total.rounded()) : nil
+        return total.nearestInt
     }
 
     /// Pros or cons: a list, or a line split at its semicolons.
@@ -986,7 +1000,7 @@ nonisolated enum ReplyCards {
     /// "$$" as given, or a level of 1 to 4 as that many dollar signs.
     static func price(_ value: JSONValue?) -> String? {
         if let level = value?.number ?? value?.string.flatMap({ Double($0.trimmingCharacters(in: .whitespaces)) }) {
-            let whole = Int(level.rounded())
+            guard let whole = level.nearestInt else { return nil }
             return (1 ... 4).contains(whole) ? String(repeating: "$", count: whole) : nil
         }
         return text(value).flatMap { $0.count <= 5 ? $0 : nil }
@@ -1025,20 +1039,20 @@ nonisolated enum ReplyCards {
         if let n = value["now"] ?? value["current"], let temperature = number(n["temperature"] ?? n["temp"]), text(n["condition"]) != nil {
             now = .init(temperature: temperature, condition: .init(lenient: text(n["condition"])),
                         feelsLike: number(n["feels_like"] ?? n["feelsLike"]), high: number(n["high"]), low: number(n["low"]),
-                        wind: text(n["wind"]), humidity: number(n["humidity"]).map { Int($0.rounded()) },
-                        precipitation: number(n["precipitation"] ?? n["chance_of_rain"]).map { Int($0.rounded()) },
+                        wind: text(n["wind"]), humidity: number(n["humidity"]).flatMap { $0.nearestInt(in: 0 ... 100) },
+                        precipitation: number(n["precipitation"] ?? n["chance_of_rain"]).flatMap { $0.nearestInt(in: 0 ... 100) },
                         summary: text(n["summary"]).map { String($0.prefix(200)) }, night: n["night"]?.bool)
         }
         let hours: [ReplyCard.Weather.Hour] = (value["hours"]?.array ?? []).compactMap { h in
             guard let time = text(h["time"]), let temperature = number(h["temperature"] ?? h["temp"]), text(h["condition"]) != nil else { return nil }
             return .init(time: time, temperature: temperature, condition: .init(lenient: text(h["condition"])),
-                         precipitation: number(h["precipitation"] ?? h["chance_of_rain"]).map { min(100, max(0, Int($0.rounded()))) },
+                         precipitation: number(h["precipitation"] ?? h["chance_of_rain"]).flatMap { $0.nearestInt(in: 0 ... 100) },
                          night: h["night"]?.bool, gusts: number(h["gusts"] ?? h["wind_gusts"]).flatMap { $0 >= 0 ? $0 : nil })
         }
         let days: [ReplyCard.Weather.Day] = (value["days"]?.array ?? []).compactMap { d in
             guard let date = text(d["date"] ?? d["day"]), let high = number(d["high"]), let low = number(d["low"]), text(d["condition"]) != nil else { return nil }
             return .init(date: date, high: high, low: low, condition: .init(lenient: text(d["condition"])),
-                         precipitation: number(d["precipitation"]).map { Int($0.rounded()) })
+                         precipitation: number(d["precipitation"]).flatMap { $0.nearestInt(in: 0 ... 100) })
         }
         // Exactly 0 and nothing else read with it, on a card with nothing more: a placeholder too (the
         // agent once sent 0 and "clear" without looking the weather up). A real 0 comes with its other numbers.
@@ -1050,18 +1064,64 @@ nonisolated enum ReplyCards {
                      source: text(value["source"]), updated: text(value["updated"]).map { String($0.prefix(40)) })
     }
 
+    /// A field as text: words as written, a number as its figures (a whole one without a decimal
+    /// point or an exponent, however long: an identifier written as a number). Not a number that isn't finite.
     static func text(_ value: JSONValue?) -> String? {
         if let s = value?.string?.trimmingCharacters(in: .whitespacesAndNewlines), !s.isEmpty { return s }
-        if let n = value?.number { return n == n.rounded() ? String(Int(n)) : String(n) }
+        if let n = value?.number, n.isFinite { return n == n.rounded() ? n.wholeFigures : String(n) }
         return nil
     }
 
+    /// A field as a number, from a number or from text ("21°", "40%"): finite only ("nan" and "inf"
+    /// are text Double reads as numbers).
     static func number(_ value: JSONValue?) -> Double? {
         if let n = value?.number, n.isFinite { return n }
         if let s = value?.string?.trimmingCharacters(in: .whitespaces) {
             return Double(s.replacingOccurrences(of: "°", with: "").replacingOccurrences(of: "%", with: "").trimmingCharacters(in: CharacterSet.letters.union(.whitespaces)))
+                .flatMap { $0.isFinite ? $0 : nil }
         }
         return nil
+    }
+}
+
+// MARK: - Whole numbers from an agent's (UAT 2.3.1, 2026-10-31)
+//
+// `Int(Double)` traps on a number that isn't finite or lies past Int's range, and agents write any
+// number at all (a 22-digit tracking number, a score of 1e20, a timer of 1e308 seconds): twelve
+// such cards crashed Redde as they were read, and so every time their chat opened. Every whole
+// number a card makes from an agent's goes through these instead.
+nonisolated extension Double {
+    /// The nearest whole number; nil when it isn't finite or lies past what an Int holds.
+    var nearestInt: Int? {
+        guard isFinite else { return nil }
+        let whole = rounded()
+        // ±9.2e18: Int.max itself rounds up to 2^63 as a Double, which doesn't fit.
+        guard whole > -9.2e18, whole < 9.2e18 else { return nil }
+        return Int(whole)
+    }
+
+    /// The nearest whole number, held to `range`; nil when it isn't finite.
+    func nearestInt(in range: ClosedRange<Int>) -> Int? {
+        guard isFinite else { return nil }
+        return Int(Swift.min(Double(range.upperBound), Swift.max(Double(range.lowerBound), rounded())))
+    }
+
+    /// A whole number's figures, without an exponent ("100000000000000000000" for 1e20).
+    var wholeFigures: String { nearestInt.map(String.init) ?? String(format: "%.0f", self) }
+}
+
+nonisolated extension ReplyCards {
+    /// The longest span a card reads (a timer, a recipe's time, a film's length): ten years. Past it
+    /// an agent's number is nonsense, and Date and Duration arithmetic on it can trap.
+    static let longestSpan: TimeInterval = 10 * 366 * 86_400
+
+    /// A span of seconds a card can use: positive, finite, and no longer than `longestSpan`.
+    static func span(_ seconds: Double) -> TimeInterval? { seconds > 0 && seconds <= longestSpan ? seconds : nil }
+
+    /// A span to draw, whole seconds within `longestSpan`: `Duration.seconds` traps past Int64's
+    /// seconds, and a card kept from before 2.3.1 may hold any number.
+    static func lasting(_ seconds: TimeInterval) -> Duration {
+        .seconds(seconds.isFinite ? Swift.min(longestSpan, Swift.max(-longestSpan, seconds)).rounded() : 0)
     }
 }
 
@@ -1210,7 +1270,7 @@ nonisolated extension ReplyCards {
             let entity = text(d["entity"] ?? d["entity_id"] ?? d["id"]).map { String($0.prefix(80)) }
             guard let name = text(d["name"] ?? d["friendly_name"]) ?? entity else { return nil }
             let kind = ReplyCard.Home.kind(text(d["kind"] ?? d["type"] ?? d["domain"]), entity: entity)
-            var brightness = number(d["brightness"]).map { $0 > 100 ? $0 / 2.55 : $0 }.map { Int(min(100, max(0, $0)).rounded()) }
+            var brightness = number(d["brightness"]).map { $0 > 100 ? $0 / 2.55 : $0 }.flatMap { $0.nearestInt(in: 0 ... 100) }
             let state = (d["state"]?.bool.map { $0 ? "on" : "off" }) ?? text(d["state"] ?? d["status"]).map { String($0.prefix(40)) }
             if (state ?? "").lowercased() == "off" { brightness = nil }
             return .init(name: String(name.prefix(60)), area: text(d["area"] ?? d["room"]).map { String($0.prefix(40)) }, kind: kind,
@@ -1240,16 +1300,17 @@ nonisolated extension ReplyCards {
 
     /// Seconds: 1200, "20 min", "1h 30m", "00:20:00".
     static func duration(_ value: JSONValue?) -> TimeInterval? {
-        if let n = value?.number { return n > 0 && n.isFinite ? n : nil }
+        // No longer than `longestSpan`: a timer of 1e308 seconds ended past any date, and its key trapped.
+        if let n = value?.number { return span(n) }
         guard let said = text(value)?.lowercased() else { return nil }
         let parts = said.split(separator: ":").compactMap { Double($0) }
-        if said.contains(":"), (2 ... 3).contains(parts.count) { return parts.reduce(0) { $0 * 60 + $1 } }
+        if said.contains(":"), (2 ... 3).contains(parts.count) { return span(parts.reduce(0) { $0 * 60 + $1 }) }
         var total = 0.0
         for match in said.matches(of: /(\d+(?:\.\d+)?)\s*(h|hr|hour|m|min|minute|s|sec|second)/) {
             guard let n = Double(match.1) else { continue }
             total += n * (match.2.hasPrefix("h") ? 3600 : match.2.hasPrefix("m") ? 60 : 1)
         }
-        return total > 0 ? total : nil
+        return span(total)
     }
 
     static let maxCompared = 4
@@ -1265,7 +1326,7 @@ nonisolated extension ReplyCards {
         }
         guard options.count >= 2 else { return nil }
         func place(_ v: JSONValue?) -> Int? {
-            if let n = v?.number, n == n.rounded(), Int(n) >= 0, Int(n) < options.count { return Int(n) }
+            if let n = v?.number, n == n.rounded(), let i = n.nearestInt, options.indices.contains(i) { return i }
             if let said = text(v)?.lowercased() { return options.firstIndex { $0.name.lowercased() == said } }
             return nil
         }
@@ -1276,9 +1337,12 @@ nonisolated extension ReplyCards {
             guard values.contains(where: { !$0.isEmpty }) else { return nil }
             return .init(criterion: String(criterion.prefix(40)), values: values, best: place(r["best"] ?? r["winner"]))
         }
-        guard !rows.isEmpty else { return nil }
+        // With no row to show, the verdict alone, where there is one (UAT 2.3.1, 2026-10-31: rows that
+        // didn't line up with the options left an empty table).
+        let verdict = text(value["verdict"] ?? value["note"]).map { String($0.prefix(200)) }
+        guard !rows.isEmpty || verdict != nil else { return nil }
         return .init(title: text(value["title"]).map { String($0.prefix(80)) }, options: options, rows: rows,
-                     verdict: text(value["verdict"] ?? value["note"]).map { String($0.prefix(200)) }, pick: place(value["pick"]))
+                     verdict: verdict, pick: place(value["pick"]))
     }
 
     static let maxGames = 6
@@ -1290,7 +1354,7 @@ nonisolated extension ReplyCards {
             guard let v, let name = text(v["name"] ?? v["team"]) else { return nil }
             let color = text(v["color"] ?? v["colour"]).flatMap { $0.wholeMatch(of: /#?[0-9A-Fa-f]{6}/) != nil ? ($0.hasPrefix("#") ? $0 : "#" + $0) : nil }
             return .init(name: String(name.prefix(40)), short: text(v["short"] ?? v["abbreviation"] ?? v["abbr"]).map { String($0.prefix(4)) },
-                         color: color, score: number(v["score"]).map { Int($0.rounded()) }, record: text(v["record"]).map { String($0.prefix(16)) })
+                         color: color, score: number(v["score"]).flatMap(\.nearestInt), record: text(v["record"]).map { String($0.prefix(16)) })
         }
         let listed = value["games"]?.array ?? (value["home"] != nil ? [value] : [])
         let games: [ReplyCard.Scores.Game] = listed.prefix(maxGames).compactMap { g in
@@ -1304,7 +1368,8 @@ nonisolated extension ReplyCards {
             default: home.score != nil && away.score != nil ? .final : .upcoming
             }
             return .init(league: text(g["league"]).map { String($0.prefix(30)) }, home: home, away: away, status: status,
-                         period: text(g["period"]).map { String($0.prefix(20)) } ?? (said.contains("half") ? "Halftime" : nil),
+                         period: text(g["period"]).map { String($0.prefix(20)) }
+                             ?? (said.contains("half") ? String(localized: "Halftime", comment: "A score card: a game at the break between its halves") : nil),
                          clock: text(g["clock"]).map { String($0.prefix(10)) }, start: start,
                          venue: text(g["venue"]).map { String($0.prefix(60)) }, broadcast: text(g["broadcast"] ?? g["tv"]).map { String($0.prefix(30)) })
         }

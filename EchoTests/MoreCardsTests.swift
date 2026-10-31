@@ -155,4 +155,33 @@ struct MoreCardsTests {
         #expect(all[0].answerable && all[1].answerable && !all[2].answerable && all[3].answerable)
         #expect(Set(all.filter(\.answerable).map(\.key)).count == 3 && !all[0].key.isEmpty)
     }
+
+    /// UAT 2.3.1 (2026-10-31): a thermostat read "Heat" in Russian; every state Home Assistant names
+    /// has words of its own now, and one it doesn't know shows as given.
+    @Test func homeStatesAreWords() {
+        #expect(HomeCard.stateWord("heat_cool") == "Heat/Cool" && HomeCard.stateWord("fan_only") == "Fan only" && HomeCard.stateWord("OFF") == "Off")
+        #expect(HomeCard.stateWord("unavailable") == "Unavailable" && HomeCard.stateWord("jammed") == "Jammed")
+        #expect(HomeCard.stateWord("eco_boost") == "Eco Boost", "unknown: as given")
+        var lock = ReplyCard.Home.Device(name: "Front door", kind: .lock, state: "jammed")
+        #expect(HomeCard.status(lock) == "Jammed")
+        lock.state = "locked"
+        #expect(HomeCard.status(lock) == "Locked")
+        let garage = ReplyCard.Home.Device(name: "Garage", kind: .cover, state: "opening")
+        #expect(HomeCard.status(garage) == "Opening")
+        // A device's button says which, to VoiceOver.
+        #expect(HomeCard.message(.lock(false), lock).shown == "Unlock Front door")
+    }
+
+    /// UAT 2.3.1 (2026-10-31): rows that don't line up with the options; with none left, the verdict alone.
+    @Test func aComparisonWithNoRowsKeepsItsVerdict() throws {
+        guard case let .compare(c) = try card(#"{"type": "compare", "options": ["A", "B"], "rows": [{"criterion": "x", "values": []}, {"criterion": "y", "values": ["", null]}], "verdict": "A, for now"}"#)
+        else { Issue.record("no comparison"); return }
+        #expect(c.rows.isEmpty && c.verdict == "A, for now")
+        #expect(ReplyCards.parse(try JSONValue.parse(Data(#"{"type": "compare", "options": ["A", "B"], "rows": []}"#.utf8))).isEmpty, "nothing at all: no card")
+        guard case let .compare(long) = try card(#"{"type": "compare", "options": ["A", "B"], "rows": [{"criterion": "x", "values": ["1", "2", "3", "4"], "best": 3}]}"#)
+        else { Issue.record("no comparison"); return }
+        #expect(long.rows.first?.values == ["1", "2"] && long.rows.first?.best == nil, "cells past the options dropped, and a best among them")
+        let row = ReplyCard.Comparison.Row(criterion: "x", values: ["1"], best: 5)
+        #expect(CompareCard.spoken(row, options: [.init(name: "A"), .init(name: "B")]) == "x: A 1, B –", "a short row read safely")
+    }
 }

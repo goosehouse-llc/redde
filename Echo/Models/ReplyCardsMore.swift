@@ -523,7 +523,7 @@ nonisolated extension ReplyCards {
             .filter { !$0.isEmpty }.prefix(maxSteps).map { String($0.prefix(600)) }
         guard !ingredients.isEmpty || !steps.isEmpty else { return nil }
         let serves = value["servings"] ?? value["serves"] ?? value["yield"]
-        let servings = (serves?.number.map { Int($0.rounded()) } ?? text(serves).flatMap { $0.firstMatch(of: /\d+/).flatMap { Int($0.0) } })
+        let servings = (serves?.number.flatMap(\.nearestInt) ?? text(serves).flatMap { $0.firstMatch(of: /\d+/).flatMap { Int($0.0) } })
             .flatMap { (1 ... 100).contains($0) ? $0 : nil }
         return .init(title: String(title.prefix(120)), summary: text(value["summary"] ?? value["description"]).map { String($0.prefix(200)) },
                      image: https(value["image"] ?? value["picture"] ?? value["photo"]),
@@ -537,9 +537,10 @@ nonisolated extension ReplyCards {
 
     /// A length of time where a bare number is minutes: 25, "25", "25 min", "1h 30m", "PT1H30M".
     static func minutes(_ value: JSONValue?) -> TimeInterval? {
-        if let n = value?.number { return n > 0 && n.isFinite ? n * 60 : nil }
+        // No longer than `longestSpan` (UAT 2.3.1: a prep of 1e20 minutes overflowed `Duration` as it was drawn).
+        if let n = value?.number { return n.isFinite ? span(n * 60) : nil }
         guard let said = text(value) else { return nil }
-        if let n = Double(said) { return n > 0 && n.isFinite ? n * 60 : nil }
+        if let n = Double(said) { return n.isFinite ? span(n * 60) : nil }
         return duration(.string(said.uppercased().hasPrefix("PT") ? String(said.dropFirst(2)) : said))
     }
 
@@ -716,7 +717,7 @@ nonisolated extension ReplyCards {
             title.endYear = m.2.flatMap { Int($0) }.flatMap { $0 > (first ?? 0) ? $0 : nil }
         }
         let format = (text(value["format"] ?? value["kind"] ?? value["media_type"] ?? value["media"]) ?? "").lowercased()
-        title.seasons = (value["seasons"]?.number.map { Int($0.rounded()) } ?? text(value["seasons"]).flatMap { $0.firstMatch(of: /\d+/).flatMap { Int($0.0) } })
+        title.seasons = (value["seasons"]?.number.flatMap(\.nearestInt) ?? text(value["seasons"]).flatMap { $0.firstMatch(of: /\d+/).flatMap { Int($0.0) } })
             .flatMap { $0 > 0 ? $0 : nil }
         title.runtime = minutes(value["runtime"] ?? value["length"] ?? value["duration"])
         title.format = ["movie", "film"].contains(where: format.contains) ? .movie
@@ -864,7 +865,7 @@ nonisolated extension ReplyCards {
         guard var said = text(value) else { return nil }
         said = said.replacingOccurrences(of: "−", with: "-").replacingOccurrences(of: "–", with: "-")
         let negative = said.contains("-") || (said.hasPrefix("(") && said.hasSuffix(")"))
-        guard let m = said.firstMatch(of: /\d[\d,]*(?:\.\d+)?/), let n = Double(m.0.replacingOccurrences(of: ",", with: "")) else { return nil }
+        guard let m = said.firstMatch(of: /\d[\d,]*(?:\.\d+)?/), let n = Double(m.0.replacingOccurrences(of: ",", with: "")), n.isFinite else { return nil }
         return negative ? -n : n
     }
 
@@ -872,7 +873,7 @@ nonisolated extension ReplyCards {
     private static func pair(_ value: JSONValue?) -> (Double, Double)? {
         if let list = value?.array, list.count == 2, let a = number(list[0]), let b = number(list[1]) { return (a, b) }
         guard let said = text(value) else { return nil }
-        let found = said.matches(of: /\d[\d,]*(?:\.\d+)?/).compactMap { Double($0.0.replacingOccurrences(of: ",", with: "")) }
+        let found = said.matches(of: /\d[\d,]*(?:\.\d+)?/).compactMap { Double($0.0.replacingOccurrences(of: ",", with: "")) }.filter(\.isFinite)
         return found.count == 2 ? (found[0], found[1]) : nil
     }
 
@@ -889,6 +890,6 @@ nonisolated extension ReplyCards {
         case "k", "thousand": 1e3
         default: 1
         }
-        return n * scale
+        return (n * scale).isFinite ? n * scale : nil
     }
 }

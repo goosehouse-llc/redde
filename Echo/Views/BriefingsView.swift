@@ -287,7 +287,7 @@ struct BriefingCard: View {
                 if let found = briefing.mapPlace {
                     Label(found.address, systemImage: "mappin.and.ellipse").chatFont(.footnote, weight: .medium).lineLimit(1)
                 }
-                Text(PlainText.display(briefing.shownText)).chatFont(.subheadline).opacity(0.75)
+                Text(briefing.plainText).chatFont(.subheadline).opacity(0.75)
                     .lineLimit(briefing.startsAt == nil && briefing.mapPlace == nil ? 4 : 2)
                 Spacer(minLength: 0)
             }
@@ -340,7 +340,8 @@ struct WeekCalendarView: View {
                 Text(plan.intro).chatFont(.headline)
             }
             VStack(spacing: 0) {
-                ForEach(Array(plan.days.enumerated()), id: \.element.id) { i, day in
+                // By place, as the lists below (UAT 2.3.1, 2026-10-31): an agent can write a day, a note or a line twice.
+                ForEach(Array(plan.days.enumerated()), id: \.offset) { i, day in
                     if i > 0 { Divider().padding(.leading, 64) }
                     row(day)
                 }
@@ -348,7 +349,7 @@ struct WeekCalendarView: View {
             .background(.background.secondary, in: .rect(cornerRadius: 16))
             if !plan.after.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
-                    ForEach(plan.after, id: \.self) { line in
+                    ForEach(Array(plan.after.enumerated()), id: \.offset) { _, line in
                         Label(line, systemImage: "checklist").chatFont(.subheadline)
                     }
                 }
@@ -367,7 +368,7 @@ struct WeekCalendarView: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(day.title)
             VStack(alignment: .leading, spacing: 6) {
-                ForEach(day.notes, id: \.self) { note in
+                ForEach(Array(day.notes.enumerated()), id: \.offset) { _, note in
                     Text(note).chatFont(.footnote, weight: .medium).foregroundStyle(.secondary)
                 }
                 ForEach(Array(day.items.enumerated()), id: \.offset) { _, item in
@@ -436,7 +437,7 @@ struct BriefingRow: View {
                     Spacer(minLength: 6)
                     Text(briefing.at, format: .dateTime.hour().minute()).chatFont(.caption).foregroundStyle(.secondary).monospacedDigit()
                 }
-                Text(PlainText.display(briefing.shownText)).chatFont(.subheadline).foregroundStyle(.secondary).lineLimit(lines)
+                Text(briefing.plainText).chatFont(.subheadline).foregroundStyle(.secondary).lineLimit(lines)
             }
         }
         .padding(.vertical, 2)

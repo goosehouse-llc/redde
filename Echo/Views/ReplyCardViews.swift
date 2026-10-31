@@ -692,7 +692,7 @@ private struct WeatherCard: View {
                 .chatFont(.footnote, weight: .semibold).foregroundStyle(.secondary)
                 if let now = card.now {
                     HStack(alignment: .top, spacing: 2) {
-                        Text(verbatim: "\(Int(now.temperature.rounded()))").chatFont(size: 56, weight: .light).monospacedDigit().tracking(-1.5)
+                        Text(verbatim: now.temperature.nearestInt.map(String.init) ?? "–").chatFont(size: 56, weight: .light).monospacedDigit().tracking(-1.5)
                         Text(verbatim: "°").chatFont(size: 26, weight: .light).padding(.top, 8)
                     }
                     if !shown.sky.isEmpty { Text(shown.sky).chatFont(.subheadline).foregroundStyle(.secondary) }
@@ -791,7 +791,8 @@ private struct WeatherCard: View {
         }
     }
 
-    private func degrees(_ value: Double) -> String { "\(Int(value.rounded()))°" }
+    // Through `nearestInt` (UAT 2.3.1): a reading past Int's range trapped here.
+    private func degrees(_ value: Double) -> String { (value.nearestInt.map(String.init) ?? "–") + "°" }
 
     /// What the card shows, worked out from its forecast once.
     struct Shown {
@@ -836,7 +837,7 @@ private struct WeatherCard: View {
         static let stripHours = 8
 
         init(_ card: ReplyCard.Weather, now: Date = .now) {
-            func degrees(_ value: Double) -> String { "\(Int(value.rounded()))°" }
+            func degrees(_ value: Double) -> String { (value.nearestInt.map(String.init) ?? "–") + "°" }
             let fresh = card.updatedAt.map { abs($0.timeIntervalSince(now)) < Self.freshFor } ?? false
             let nowWord = String(localized: "Now", comment: "A weather card's reading, and its first hour: now")
             heading = fresh ? card.place + " · " + nowWord : card.place

@@ -31,12 +31,15 @@ struct CompareCard: View {
                 .background(theme.accent.opacity(0.1), in: .rect(cornerRadius: 14))
                 .accessibilityElement(children: .combine)
             }
-            if wide {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    table.frame(width: Self.column * CGFloat(card.options.count) + 8 * CGFloat(card.options.count - 1))
+            // No table without a row (UAT 2.3.1): the verdict alone, and the options only where they open pros and cons.
+            if !card.rows.isEmpty || card.options.contains(where: { !$0.pros.isEmpty || !$0.cons.isEmpty }) {
+                if wide {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        table.frame(width: Self.column * CGFloat(card.options.count) + 8 * CGFloat(card.options.count - 1))
+                    }
+                } else {
+                    table
                 }
-            } else {
-                table
             }
             if let open, card.options.indices.contains(open) {
                 let option = card.options[open]
@@ -133,8 +136,11 @@ struct CompareCard: View {
 
     /// "Battery: Aurora 30 h, Tidal 40 h, better: Tidal".
     static func spoken(_ row: ReplyCard.Comparison.Row, options: [ReplyCard.Comparison.Option]) -> String {
-        let values = options.indices.map { "\(options[$0].name) \(row.values[$0].isEmpty ? "–" : row.values[$0])" }.joined(separator: ", ")
-        let best = row.best.map { String(localized: "better: \(options[$0].name)", comment: "VoiceOver: which option of a comparison card is better on a row") }
+        let values = options.indices.map { i in
+            let value = row.values.indices.contains(i) ? row.values[i] : ""
+            return "\(options[i].name) \(value.isEmpty ? "–" : value)"
+        }.joined(separator: ", ")
+        let best = row.best.flatMap { options.indices.contains($0) ? $0 : nil }.map { String(localized: "better: \(options[$0].name)", comment: "VoiceOver: which option of a comparison card is better on a row") }
         return [row.criterion + ": " + values, best].compactMap(\.self).joined(separator: ", ")
     }
 }

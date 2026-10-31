@@ -109,7 +109,7 @@ private struct GameView: View {
             let place = [game.venue, game.broadcast].compactMap(\.self)
             if !place.isEmpty {
                 HStack(spacing: 5) {
-                    Image(systemName: game.broadcast != nil && game.status != .final ? "tv" : "mappin.and.ellipse").imageScale(.small)
+                    Image(systemName: game.broadcast != nil && game.status != .final ? "tv" : "mappin.and.ellipse").imageScale(.small).accessibilityHidden(true)
                     Text(verbatim: place.joined(separator: " · ")).lineLimit(1)
                 }
                 .chatFont(.caption).foregroundStyle(.secondary)

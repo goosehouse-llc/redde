@@ -39,7 +39,7 @@ struct PurchaseCardTests {
         #expect(a.retailer == "Best Buy" && a.url == "https://example.com/a" && a.image == "https://img.example.com/a.jpg")
         #expect(a.pros == ["Quiet", "Light"] && a.cons == ["Bulky case", "No aptX"], "cons in a line split at its semicolons")
         #expect(a.specs.map(\.name) == ["Battery", "Multipoint", "Weight"] && a.specs[1].value == "Yes", "a dictionary's specs by name")
-        #expect(b.price == 199.99 && b.currency == nil && b.rating == 4.6 && b.reviews == 2100)
+        #expect(b.price == 199.99 && b.currency == "USD" && b.rating == 4.6 && b.reviews == 2100, "no currency of its own: the card's others'")
         #expect(b.url == nil && b.image == nil, "only http(s) pages, and https pictures")
         #expect(!b.pick && a.pick, "one pick: the first flagged")
         #expect(c.price == nil && c.priceWords == "From $99" && c.rating == 4.3 && c.reviews == 3201)
@@ -106,7 +106,7 @@ struct PurchaseCardTests {
 
         let card = try purchase(#"""
         {"type": "purchase", "items": [{"name": "Tidal Air", "price": 199, "rating": 4.5, "reviews": 812, "retailer": "Amazon", "badge": "Best value"},
-          {"name": "Aurora Q5", "price": 279, "was_price": 349, "rating": 4.7, "reviews": 12480, "retailer": "Best Buy", "pick": true, "url": "https://example.com/a"},
+          {"name": "Aurora Q5", "price": 279, "currency": "USD", "was_price": 349, "rating": 4.7, "reviews": 12480, "retailer": "Best Buy", "pick": true, "url": "https://example.com/a"},
           {"name": "Kestrel", "price": "€99"}]}
         """#)
         let shown = PurchaseCard.Shown(card, locale: us)
@@ -132,6 +132,22 @@ struct PurchaseCardTests {
         for (_, symbol) in PurchaseCard.symbols {
             #expect(UIImage(systemName: symbol) != nil, "\(symbol) is a symbol")
         }
+    }
+
+    /// UAT 2.3.1 (2026-10-31): in Japan, products with no currency showed "¥299" beside "$279".
+    @Test func aProductWithNoCurrencyTakesTheCards() throws {
+        let japan = Locale(identifier: "ja_JP")
+        let mixed = try purchase(#"{"type": "purchase", "items": [{"name": "A", "price": "$279"}, {"name": "B", "price": 299}, {"name": "C", "price": "$199.99"}, {"name": "D", "price": 129, "currency": "eur"}, {"name": "E", "price": 99}]}"#, locale: japan)
+        #expect(mixed.items.map(\.currency) == ["USD", "USD", "USD", "EUR", "USD"], "the one given most")
+        let tie = try purchase(#"{"type": "purchase", "items": [{"name": "A", "price": 1, "currency": "GBP"}, {"name": "B", "price": 2, "currency": "EUR"}, {"name": "C", "price": 3}]}"#, locale: japan)
+        #expect(tie.items[2].currency == "GBP", "on a tie, the first given")
+        let named = try purchase(#"{"type": "purchase", "currency": "CAD", "items": [{"name": "A", "price": 1}, {"name": "B", "price": 2, "currency": "USD"}]}"#, locale: japan)
+        #expect(named.items.map(\.currency) == ["CAD", "USD"], "the card's own currency first")
+        let none = try purchase(#"{"type": "purchase", "items": [{"name": "A", "price": 1}, {"name": "B", "price": 2}]}"#, locale: japan)
+        #expect(none.items.allSatisfy { $0.currency == nil }, "none given: the person's own, when drawn")
+        let shown = PurchaseCard.Shown(mixed, locale: japan)
+        #expect(shown.items[1].price?.contains("$") == true && shown.items[1].price?.contains("¥") == false, "\(shown.items[1].price ?? "")")
+        #expect(PurchaseCard.Shown(none, locale: japan).items[0].price?.contains("¥") == true)
     }
 
     @Test func theChipsAskTheAgentAndTellTheirAnswerAgain() throws {

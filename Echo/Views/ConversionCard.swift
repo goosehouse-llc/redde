@@ -115,16 +115,21 @@ struct ConversionCard: View {
 
     // MARK: Figures
 
-    /// "8.05", "26,400", "0.0311": as many figures as are worth reading.
+    /// "8.05", "26,400", "0.0311": as many figures as are worth reading; past a quadrillion,
+    /// "9.214E27" (UAT 2.3.1: a 25-digit amount showed a Double's noise, "…001,000,000,000").
     static func figure(_ x: Double, plain: Bool = false, locale: Locale = .current) -> String {
         guard x.isFinite else { return "–" }
         let size = abs(x)
-        let style: FloatingPointFormatStyle<Double> = size >= 1_000 ? .number.precision(.fractionLength(0))
+        let style: FloatingPointFormatStyle<Double> = size >= huge ? .number.notation(.scientific).precision(.significantDigits(1 ... 4))
+            : size >= 1_000 ? .number.precision(.fractionLength(0))
             : size >= 100 ? .number.precision(.fractionLength(0 ... 1))
             : size >= 1 || size == 0 ? .number.precision(.fractionLength(0 ... 2))
             : .number.precision(.significantDigits(1 ... 3))
         return x.formatted((plain ? style.grouping(.never) : style).locale(locale))
     }
+
+    /// Where whole figures stop being worth reading: a Double holds about 15 of them.
+    static let huge = 1e15
 
     /// Amounts either side of the one asked: 1, 2, 5, 10, 20, 50… (temperatures by tens), two
     /// below and two above.
@@ -178,11 +183,9 @@ extension ConversionCard {
                         card.source].compactMap(\.self).joined(separator: " · ")
             } else {
                 let units = card.units
-                fromSymbol = units?.fromSymbol ?? card.from
-                toSymbol = units?.toSymbol ?? card.to
-                let names = MeasurementFormatter()
-                names.unitStyle = .long
-                names.locale = locale
+                fromSymbol = units.map { Self.symbol($0.from, ours: $0.fromSymbol, locale: locale) } ?? card.from
+                toSymbol = units.map { Self.symbol($0.to, ours: $0.toSymbol, locale: locale) } ?? card.to
+                let names = Self.formatter(.long, locale)
                 let a = units.map { names.string(from: $0.from) } ?? card.from, b = units.map { names.string(from: $0.to) } ?? card.to
                 fromName = a
                 title = String(localized: "conversion.title", defaultValue: "\(a.prefix(1).uppercased() + a.dropFirst()) to \(b)", comment: "A conversion card's title: what from and to, e.g. US Dollar to Euro")
@@ -194,10 +197,36 @@ extension ConversionCard {
             }
         }
 
-        /// A currency amount in its own way ("€92.14"); nil for units.
+        /// A currency amount in its own way ("€92.14"), past a quadrillion in figures and a power
+        /// of ten ("€9.214E27"); nil for units.
         func money(_ x: Double, in code: String) -> String? {
             guard currency, x.isFinite else { return nil }
+            if abs(x) >= ConversionCard.huge {
+                return x.formatted(.currency(code: code).notation(.scientific).precision(.significantDigits(1 ... 4)).locale(locale))
+            }
             return x.formatted(.currency(code: code).locale(locale))
+        }
+
+        /// A unit as this language writes it short (asked by the UAT of 2.3.1, 2026-10-31: "cups" and
+        /// "sq ft" stayed English): ours in English, as the card was drawn ("cups", "sq ft"); else
+        /// Foundation's own ("Tassen", "c. à s.", "ст. л.", "マイル"), translated for free.
+        static func symbol(_ unit: Dimension, ours: String, locale: Locale) -> String {
+            guard locale.language.languageCode != .english else { return ours }
+            return formatter(.medium, locale).string(from: unit).nilIfEmpty ?? ours
+        }
+
+        /// Made once for each style and language: a card's `Shown` is worked out each time its parent draws.
+        private static var formatters: [String: MeasurementFormatter] = [:]
+
+        static func formatter(_ style: Formatter.UnitStyle, _ locale: Locale) -> MeasurementFormatter {
+            let key = "\(style.rawValue)|\(locale.identifier)"
+            if let made = formatters[key] { return made }
+            let made = MeasurementFormatter()
+            made.unitStyle = style
+            made.unitOptions = .providedUnit
+            made.locale = locale
+            formatters[key] = made
+            return made
         }
 
         /// "1 mi = 1.609 km · 1 km = 0.6214 mi", "°F = °C × 9/5 + 32", "L/100 km = 235.2 ÷ mpg".
@@ -208,7 +237,8 @@ extension ConversionCard {
                     "°C°F": "°F = °C × 9/5 + 32", "°F°C": "°C = (°F − 32) × 5/9", "°CK": "K = °C + 273.15",
                     "K°C": "°C = K − 273.15", "°FK": "K = (°F − 32) × 5/9 + 273.15", "K°F": "°F = (K − 273.15) × 9/5 + 32",
                 ]
-                return known[a + b]
+                // By Foundation's own symbols: those shown are this language's.
+                return known[from.symbol + to.symbol]
             }
             // Litres per 100 km go down as miles per gallon go up: one is a number divided by the other.
             if from is UnitFuelEfficiency, (from == UnitFuelEfficiency.litersPer100Kilometers) != (to == UnitFuelEfficiency.litersPer100Kilometers) {

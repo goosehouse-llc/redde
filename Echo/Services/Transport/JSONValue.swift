@@ -51,19 +51,36 @@ nonisolated enum JSONValue: Codable, Equatable, Sendable {
 
     /// Parses JSON text without `Decoder`: `init(from:)` throws and catches up to four times per
     /// node, which is what WebSocket frames at token rate and every REST reply used to pay.
-    static func parse(_ data: Data) throws -> JSONValue {
-        try convert(JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]))
+    ///
+    /// `keepingLongWholeNumbers`: a whole number of 16 figures or more, which a Double can't hold
+    /// exactly, is kept as its figures, as text (UAT 2.3.1, 2026-10-31: a 22-digit USPS tracking
+    /// number an agent wrote as a JSON number crashed its card, and as a Double had lost its last
+    /// six figures). Only for what is shown as written (`ReplyCards`); the transport reads numbers.
+    static func parse(_ data: Data, keepingLongWholeNumbers: Bool = false) throws -> JSONValue {
+        try convert(JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]), keepingLongWholeNumbers)
     }
 
-    private static func convert(_ any: Any) throws -> JSONValue {
+    private static func convert(_ any: Any, _ keepLong: Bool) throws -> JSONValue {
         switch any {
         case let s as String: return .string(s)
-        case let n as NSNumber: return CFGetTypeID(n) == CFBooleanGetTypeID() ? .bool(n.boolValue) : .number(n.doubleValue)
-        case let a as [Any]: return .array(try a.map(convert))
-        case let o as [String: Any]: return .object(try o.mapValues(convert))
+        case let n as NSNumber:
+            if CFGetTypeID(n) == CFBooleanGetTypeID() { return .bool(n.boolValue) }
+            // Foundation keeps such a literal's figures exactly: as an integer, or an NSDecimalNumber past UInt64.
+            if keepLong, let figures = longWhole(n) { return .string(figures) }
+            return .number(n.doubleValue)
+        case let a as [Any]: return .array(try a.map { try convert($0, keepLong) })
+        case let o as [String: Any]: return .object(try o.mapValues { try convert($0, keepLong) })
         case is NSNull: return .null
         default: throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "unsupported JSON value"))
         }
+    }
+
+    /// A whole number's figures, where there are 16 or more ("9400111899223197428490"); else nil.
+    private static func longWhole(_ n: NSNumber) -> String? {
+        let figures = n.stringValue
+        let digits = figures.hasPrefix("-") ? figures.dropFirst() : Substring(figures)
+        guard digits.count >= 16, digits.allSatisfy({ $0.isASCII && $0.isNumber }) else { return nil }
+        return figures
     }
 
     /// Best-effort text for display: strings as-is, everything else as compact JSON.

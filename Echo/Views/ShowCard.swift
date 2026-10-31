@@ -104,7 +104,8 @@ struct ShowCard: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Where to watch", comment: "A show card: over the services it is on").chatFont(.caption, weight: .semibold).foregroundStyle(.secondary)
             PillFlow(spacing: 6) {
-                ForEach(services, id: \.self) { service in
+                // By place: an agent can name a service twice (UAT 2.3.1).
+                ForEach(Array(services.enumerated()), id: \.offset) { _, service in
                     Label(service, systemImage: "play.tv")
                         .chatFont(.footnote, weight: .medium)
                         .padding(.horizontal, 10).padding(.vertical, 6)
@@ -231,7 +232,7 @@ extension ShowCard {
             }
             let length = item.seasons.map { $0 == 1 ? String(localized: "1 season", comment: "A show card: a series of one season")
                                                     : String(localized: "\($0) seasons", comment: "A show card: how many seasons a series has, e.g. 2 seasons") }
-                ?? item.runtime.map { Duration.seconds($0.rounded()).formatted(.units(allowed: [.hours, .minutes], width: .narrow)) }
+                ?? item.runtime.map { ReplyCards.lasting($0).formatted(.units(allowed: [.hours, .minutes], width: .narrow)) }
             facts = [years, kind, length].compactMap(\.self).joined(separator: " · ").nilIfEmpty
             let rating = item.ratings.first.map { [$0.source, $0.value].compactMap(\.self).joined(separator: " ") }
             line = [years, kind, rating].compactMap(\.self).joined(separator: " · ").nilIfEmpty
@@ -256,7 +257,7 @@ private struct Ratings: View {
         PillFlow(spacing: 6) {
             ForEach(Array(ratings.enumerated()), id: \.offset) { _, rating in
                 HStack(spacing: 4) {
-                    Image(systemName: "star.fill").foregroundStyle(PurchaseCard.star).imageScale(.small)
+                    Image(systemName: "star.fill").foregroundStyle(PurchaseCard.star).imageScale(.small).accessibilityHidden(true)
                     if let source = rating.source { Text(source).foregroundStyle(.secondary) }
                     Text(verbatim: rating.value).fontWeight(.semibold).monospacedDigit()
                 }

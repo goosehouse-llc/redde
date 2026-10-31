@@ -12,6 +12,9 @@ extension AgentBriefing {
     private struct Reading {
         let text: String
         let shown: String
+        /// `shown` as plain words for a card or a row (`PlainText.display`): its rules ran on every
+        /// frame of a deck's drag before (UAT 2.3.1 review, 2026-10-31).
+        let plain: String
         let day: DayBrief?
     }
 
@@ -20,13 +23,17 @@ extension AgentBriefing {
     private var reading: Reading {
         if let kept = Self.readings[id], kept.text == text { return kept }
         let shown = DayBrief.withoutNarration(text)
-        let reading = Reading(text: text, shown: shown, day: readsAsDay ? DayBrief.read(title: title, text: shown, at: at) : nil)
+        let reading = Reading(text: text, shown: shown, plain: PlainText.display(shown),
+                              day: readsAsDay ? DayBrief.read(title: title, text: shown, at: at) : nil)
         Self.readings[id] = reading
         return reading
     }
 
     /// Its words to show: without the model's narration ahead of the brief (`DayBrief.withoutNarration`).
     var shownText: String { reading.shown }
+
+    /// The same as plain words, as a deck card and a row show them.
+    var plainText: String { reading.plain }
 
     /// One day's calendar, when it reads as one.
     var dayBrief: DayBrief? { reading.day }

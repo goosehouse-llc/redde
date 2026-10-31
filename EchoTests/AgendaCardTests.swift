@@ -188,6 +188,24 @@ struct AgendaCardTests {
         #expect(AgendaCard.span(minutes: 140, locale: english) == "2½ hours", "to the half hour")
     }
 
+    /// UAT 2.3.1 (2026-10-31): the rail read "09:0" in German, French, Russian and British English,
+    /// and a time span "9:00 nach 20:00" in German.
+    @Test func aTwentyFourHourClockReadsRight() throws {
+        let day = try timeline([event("Soccer", at(9), at(10)), event("Dinner", at(17), at(18))])
+        for id in ["de_DE", "en_GB", "fr_FR", "ru_RU"] {
+            var local = calendar
+            local.locale = Locale(identifier: id)
+            let labels = AgendaCard.hourLabels(day.hours, on: day.dayStart, calendar: local)
+            #expect(labels.first == "09:00" && labels.contains("13:00"), "\(id): \(labels)")
+        }
+        let german = AgendaCard.span(at(9), at(20), locale: Locale(identifier: "de_DE"), timeZone: newYork)
+        #expect(german.contains("09:00") && german.contains("20:00") && !german.contains("nach"), "\(german)")
+        let english = AgendaCard.span(at(9), at(20), locale: Locale(identifier: "en_US"), timeZone: newYork)
+        #expect(english.contains("9:00") && english.contains("8:00") && english.contains("–"), "\(english)")
+        let alone = AgendaCard.span(at(9), at(9), locale: Locale(identifier: "de_DE"), timeZone: newYork)
+        #expect(alone.contains("9:00") && !alone.contains("–"), "no span: its start (\(alone))")
+    }
+
     @Test func eachEventReadsAsOne() {
         var lunch = event("Lunch with Dana", at(12, 30), at(13, 30))
         lunch.location = "Rossio Roasters"

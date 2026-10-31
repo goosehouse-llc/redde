@@ -340,7 +340,7 @@ extension RecipeCard {
 
         /// "25 min", "1 hr 30 min".
         static func time(_ seconds: TimeInterval) -> String {
-            Duration.seconds(seconds.rounded()).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
+            ReplyCards.lasting(seconds).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
         }
     }
 }
