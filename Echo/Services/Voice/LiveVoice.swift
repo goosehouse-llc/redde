@@ -8,7 +8,9 @@ import os
 /// voice (tools/voice_live.py and its desktop client), on Redde's connections and with more
 /// engines: the call goes straight from the phone to the service over a WebSocket (`LiveCall`),
 /// set up with the key kept in Redde (`LiveSetup`), each service's wire worded by its
-/// `LiveDialect`. The voice session drives this in place of its recogniser and its voice.
+/// `LiveDialect`. Hermes Live / Codex is set up by the person's Hermes instead, and goes over
+/// WebRTC (`HermesLiveCall`); its requests come here all the same, to be worked in this chat.
+/// The voice session drives this in place of its recogniser and its voice.
 final class LiveVoice {
     enum State: Equatable { case connecting, listening, thinking, speaking, ended }
 
@@ -128,7 +130,7 @@ final class LiveVoice {
     private var answerCheck: Task<Void, Never>?
 
     init(conversation: Conversation, settings: Settings = .shared, engine: LiveEngine? = nil,
-         makeCall: @escaping (LiveCallListening, any LiveDialect) throws -> LiveCalling = { LiveCall(listener: $0, dialect: $1) },
+         makeCall: @escaping (LiveCallListening, any LiveDialect) throws -> LiveCalling = { LiveVoice.call($0, $1) },
          setUp: @escaping LiveSetup.Resolver = LiveSetup.resolve,
          setUpRoom: @escaping LiveSetup.RoomResolver = { try await LiveSetup.resolveRoom($0, speaker: $1, settings: $2, engine: $3) },
          posting: Posting = Posting(),
@@ -144,6 +146,13 @@ final class LiveVoice {
         self.setUp = setUp
         self.setUpRoom = setUpRoom
         postEvery = posting
+    }
+
+    /// The call for `dialect`'s engine: WebRTC, set up by the person's Hermes, for Hermes Live /
+    /// Codex; a WebSocket of Redde's for the others.
+    static func call(_ listener: LiveCallListening, _ dialect: any LiveDialect) -> LiveCalling {
+        if dialect.engine.setUpByHermes { return HermesLiveCall(listener: listener, dialect: dialect) }
+        return LiveCall(listener: listener, dialect: dialect)
     }
 
     // MARK: - The call
@@ -203,6 +212,14 @@ final class LiveVoice {
         Task { try? await Task.sleep(for: .milliseconds(250)); call?.close() }
         self.call = nil
         end(problem: nil)
+    }
+
+    /// The voice cut off where it is, the call going on (Pause on a call): Hermes Live / Codex asks
+    /// its plugin to (`/codexlive/interrupt`). The other engines take no such request, and their
+    /// voice says what it was saying to the end; the person talking over it stops it there.
+    func interrupt() {
+        guard state != .ended else { return }
+        call?.interrupt()
     }
 
     // MARK: - A group chat's call
@@ -363,6 +380,9 @@ final class LiveVoice {
             sayNextRoomReply()
         case .lost:
             end(problem: String(localized: "The connection to \(engine.name) dropped."))
+        case .connected:
+            // A call whose connection is the session (Hermes Live / Codex's WebRTC): on now.
+            began()
         }
     }
 
@@ -463,6 +483,10 @@ final class LiveVoice {
         turn = Task { [weak self] in
             if settle > .zero { try? await Task.sleep(for: settle) }
             guard let self, delegation == id, !Task.isCancelled else { return }
+            // Hermes Live / Codex: the person's words can be written down only once they've
+            // finished, after the hand-over; waited for, two seconds at most.
+            if dialect.waitsForWords { await wordsSinceLastRequest(within: .seconds(2)) }
+            guard delegation == id, !Task.isCancelled else { return }
             let (asked, context) = asked(wording: request)
             // Read here as it is written: in an ElevenLabs call, every answer, in the call's own voice
             // (`LiveEngine.answersReadAloud`); with the other voices that take an answer only whole,
@@ -495,7 +519,10 @@ final class LiveVoice {
     private func asked(wording request: String?) -> (prompt: String, context: String) {
         var (prompt, context) = LiveFragment.delegation(from: recentFragments())
         let worded = request?.split(whereSeparator: \.isWhitespace).joined(separator: " ") ?? ""
-        if prompt.isEmpty || fragments.allSatisfy({ $0.speaker == .voice }) { prompt = worded.isEmpty ? prompt : worded }
+        // Where the person's words can come late (`LiveDialect.waitsForWords`), none since the last
+        // request means the last words are that request's: the voice's wording stands in.
+        let stale = dialect.waitsForWords && !saidSinceLastRequest
+        if prompt.isEmpty || stale || fragments.allSatisfy({ $0.speaker == .voice }) { prompt = worded.isEmpty ? prompt : worded }
         if !worded.isEmpty, worded != prompt { context += (context.isEmpty ? "" : "\n") + "Voice assistant's request to you: \(worded)" }
         prompt = Self.addressed(prompt, asked: LiveFragment.personTurns(Array(fragments[min(handedOverAt, fragments.count)...])),
                                 rules: settings.spokenPrefixes)
@@ -504,6 +531,19 @@ final class LiveVoice {
         }
         handedOverAt = fragments.count
         return (prompt, context)
+    }
+
+    /// The person has said something since the last request was handed over.
+    private var saidSinceLastRequest: Bool {
+        fragments[min(handedOverAt, fragments.count)...].contains { $0.speaker == .person }
+    }
+
+    /// Waits, `limit` at most, until the person has said something since the last request.
+    private func wordsSinceLastRequest(within limit: Duration) async {
+        let until = ContinuousClock.now + limit
+        while !saidSinceLastRequest, ContinuousClock.now < until, !Task.isCancelled {
+            try? await Task.sleep(for: .milliseconds(100))
+        }
     }
 
     /// A spoken prefix ("Home, …") said anywhere in what the person asked since the last request,
@@ -527,7 +567,9 @@ final class LiveVoice {
     /// bot. Asked 2026-10-25: "the prefix to Home worked, but it continued in Sol's voice". False
     /// when it couldn't: the voice as it was says the answer.
     private func handOff(asking request: String, saying answer: String) async -> Bool {
-        guard let call else { return false }
+        // A session that opens saying the answer needs an engine that takes a line of Redde's:
+        // Hermes Live / Codex's voice says it as it was, in the voice the call has.
+        guard engine.greets, let call else { return false }
         let profile = conversation.bot?.profile ?? "default"
         do {
             let setup = try await setUp(conversation, settings, engine)

@@ -8,7 +8,8 @@ options:
   createIntermediateGroups: true
   developmentLanguage: en
   generateEmptyDirectories: true
-# Code from outside Apple and this repository: the terminal's (Echo/Services/Terminal). Pinned:
+# Code from outside Apple and this repository: the terminal's (Echo/Services/Terminal), and WebRTC
+# for Hermes Live / Codex (last below). Pinned:
 # SwiftTerm 1.12 onwards compiles a Metal shader (Xcode's separately downloaded Metal toolchain) and
 # 1.20 onwards runs a build-tool plugin Xcode wants trusted before every build and archive; 1.11.2
 # needs neither. swift-nio-ssh is Apple's, on Apple's CryptoKit. The packages after swift-nio are
@@ -42,6 +43,14 @@ packages:
   swift-argument-parser:
     url: https://github.com/apple/swift-argument-parser
     exactVersion: 1.8.2
+  # Hermes Live / Codex's calls (HermesLiveCall in Echo/Services/Voice/LiveCall.swift): Google's
+  # WebRTC, prebuilt as an XCFramework by stasel/WebRTC (one release per Chromium milestone), in
+  # the iPhone and iPad app only. It carries its own BoringSSL for DTLS and SRTP, cryptography that
+  # isn't the operating system's: docs/app-store-listing.md, "Export compliance". Keep this exact
+  # so a new checkout cannot silently take a different binary or notice set.
+  WebRTC:
+    url: https://github.com/stasel/WebRTC
+    exactVersion: 156.0.0
 settings:
   base:
     DEVELOPMENT_TEAM: 579BSQT6J4
@@ -81,6 +90,7 @@ targets:
         product: NIOCore
       - package: swift-nio
         product: NIOPosix
+      - package: WebRTC
     entitlements:
       path: Echo/Echo.entitlements
       properties:
@@ -145,7 +155,11 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        ITSAppUsesNonExemptEncryption: false
+        # No ITSAppUsesNonExemptEncryption here since 2026-10-30. It said `false` while all of the
+        # app's cryptography was Apple's; WebRTC, for Hermes Live / Codex, brings Google's BoringSSL
+        # (standard algorithms, not the operating system's), and the build no longer claims that on
+        # its own. App Store Connect asks the export questions at each upload until a person answers
+        # them there: docs/app-store-listing.md, "Export compliance". Nothing has been filed.
         # A reply the person started keeps streaming after the phone locks (BackgroundTurn): an
         # iOS 26 continued-processing task, one identifier per turn under this wildcard. Leave-By
         # Alerts (LeaveByAlerts): a background refresh shortly before the next alert, to move it with the traffic.
@@ -246,7 +260,7 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         WKApplication: true
-        WKCompanionAppBundleIdentifier: com.goosehouse.echo
+        WKCompanionAppBundleIdentifier: $(WK_COMPANION_APP_BUNDLE_IDENTIFIER)
         # Setup comes from the phone once; after that the watch asks Hermes on its own.
         WKRunsIndependentlyOfCompanionApp: true
         # A spoken reply keeps playing after the wrist goes down (Speaker). UIBackgroundModes, as
@@ -261,6 +275,9 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.goosehouse.echo.watchkitapp
+        # Kept separate so a personal development build can point its watch companion at its
+        # local app identity without ever changing the production bundle identifier.
+        WK_COMPANION_APP_BUNDLE_IDENTIFIER: com.goosehouse.echo
         SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
         SWIFT_APPROACHABLE_CONCURRENCY: true
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -519,7 +536,8 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSApplicationCategoryType: public.app-category.productivity
-        # As the iPhone's: only Apple's encryption (HTTPS, CryptoKit), no export documents.
+        # Only Apple's encryption (HTTPS, CryptoKit), no export documents: the Mac has no WebRTC (no
+        # Hermes Live / Codex), so it keeps the answer the iPhone's had until 2026-10-30.
         ITSAppUsesNonExemptEncryption: false
         # The bundled fonts (the Terminal theme's), from the app's resources.
         ATSApplicationFontsPath: .

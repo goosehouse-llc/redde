@@ -980,5 +980,54 @@ struct VoiceSessionTests {
         try await waitUntil("idle again") { h.session.phase == .idle }
         #expect(h.conversation.messages.count == sentTurns, "replay is not a turn")
     }
+
+    // MARK: A call that can't open saying a line
+
+    /// A voice session whose chat has a live call that can't open saying a line of Redde's
+    /// (Hermes Live / Codex: the plugin on the person's Hermes words its sessions), and how many
+    /// calls it made.
+    private func lineless(_ transport: any HermesTransport, speaker: FakeSpeaker) -> (VoiceSession, LiveVoiceTests.Box<Int>) {
+        let settings = Settings(defaults: UserDefaults(suiteName: "voice-\(UUID().uuidString)")!)
+        settings.transport = .chatCompletions
+        settings.fastLaneURL = "http://example.invalid:11500"
+        settings.fastLaneModel = "test"
+        let store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "voice-\(UUID().uuidString)"))
+        let conversation = Conversation(settings: settings, store: store, transportOverride: transport)
+        let calls = LiveVoiceTests.Box<Int>(0)
+        let session = VoiceSession(conversation: conversation, recognizer: FakeRecognizer(), output: speaker, audio: FakeAudio(),
+                                   requestPermissions: { true }, earcon: { _ in }, cueSettle: .zero, keepAwake: { _ in }, talkOver: { .off },
+                                   liveWanted: { _ in true }, liveGreets: { _ in false },
+                                   makeLive: { conversation in
+                                       calls.value += 1
+                                       return LiveVoice(conversation: conversation, settings: settings, engine: .hermesLive,
+                                                        makeCall: { _, _ in throw LiveFailure("no call in this test") })
+                                   },
+                                   micAllowed: { true })
+        return (session, calls)
+    }
+
+    /// "Hey Home, turn the lights off" where Home's chat is a Hermes Live call: the request is asked
+    /// and its answer read here, in Redde's own voice, not dropped by a call that can't say it.
+    @Test func aWakeRequestACallCantOpenSayingIsAnsweredHere() async throws {
+        let speaker = FakeSpeaker()
+        let (session, calls) = lineless(ConversationLifecycleTests.ScriptedTransport(reply(["The lights are off."])), speaker: speaker)
+        session.ask("Turn the lights off")
+        try await waitUntil("answered") { speaker.spoken.joined() == "The lights are off." }
+        #expect(!session.isLive && calls.value == 0, "asked here, in Redde's own voice")
+        session.cancel()
+    }
+
+    /// An agent's call answered where its chat is a Hermes Live call: its line is said here first,
+    /// and the call opens after it.
+    @Test func anAgentsLineACallCantOpenSayingIsSaidHere() async throws {
+        let speaker = FakeSpeaker()
+        let (session, calls) = lineless(ConversationLifecycleTests.ScriptedTransport([]), speaker: speaker)
+        var ended = false
+        session.answerCall(saying: "Your build failed.", listen: true, ended: { ended = true })
+        #expect(speaker.spoken == ["Your build failed."] && session.phase == .speaking, "the line said here first")
+        #expect(!session.isLive && calls.value == 0)
+        session.cancel()
+        #expect(ended)
+    }
 }
 

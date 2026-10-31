@@ -2,11 +2,13 @@ import SwiftUI
 
 /// A live engine's voices by language (`LiveEngine.voiceGroups`), each with Hear it
 /// (`LiveVoicePreview`): Settings → Voice → Voice mode's voice, and a bot's own
-/// (`BotVoicePicker`), whose list starts with the one it has without (`inherit`).
+/// (`BotVoicePicker`), whose list starts with the one it has without (`inherit`). Hermes Live /
+/// Codex's have no Hear it: a preview is a call that opens saying a line, and its sessions are
+/// the person's Hermes's, which say no line of Redde's (`LiveEngine.greets`).
 struct LiveVoiceList: View {
     let engine: LiveEngine
     @Binding var selection: String?
-    /// The row for no voice of its own ("As in Settings (Marin)"); nil, no such row.
+    /// The row for no voice of its own ("As in Settings"); nil, no such row.
     var inherit: String?
     /// Who the sample line says it is.
     let name: String
@@ -42,9 +44,13 @@ struct LiveVoiceList: View {
                     Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
                 }
             } footer: {
-                engine.voicesFromAccount
-                    ? Text("Your ElevenLabs account's voices, each with its own sample to hear.")
-                    : Text("Hear it opens a call of a few seconds with your \(engine.company) key, in which the voice says one line: a fraction of a cent each time. \(engine.company) has no recordings of these voices to play instead.")
+                if engine.voicesFromAccount {
+                    Text("Your ElevenLabs account's voices, each with its own sample to hear.")
+                } else if engine.greets {
+                    Text("Hear it opens a call of a few seconds with your \(engine.company) key, in which the voice says one line: a fraction of a cent each time. \(engine.company) has no recordings of these voices to play instead.")
+                } else {
+                    Text("\(engine.name)'s voices can't be heard here first: your Hermes sets its calls up, and a call says no line of Redde's. Your Hermes asks OpenAI for the voice picked here.")
+                }
             }
         }
         .navigationTitle("\(engine.name) Voice")
@@ -82,7 +88,7 @@ struct LiveVoiceList: View {
             }
             .buttonStyle(.plain)
             .accessibilityAddTraits(chosen ? .isSelected : [])
-            if let voice, language != nil || sample != nil {
+            if let voice, (language != nil && engine.greets) || sample != nil {
                 if preview.playing == voice {
                     Button("Stop", systemImage: "stop.circle") { preview.stop() }
                         .labelStyle(.iconOnly)

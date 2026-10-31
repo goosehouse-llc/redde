@@ -1,13 +1,19 @@
 import AVFoundation
 import Foundation
 import os
+#if canImport(WebRTC)
+import WebRTC
+#endif
 
 /// Where a live call connects (`LiveSetup`): the WebSocket's address and headers, and what the
-/// session opens with (worded by the call's `LiveDialect`).
+/// session opens with (worded by the call's `LiveDialect`). A Hermes Live / Codex call has no
+/// WebSocket: `url` is the Dashboard's session route, and `hermesLive` sets the session up there.
 struct LiveConnection: Sendable {
     var url: URL
     var headers: [String: String] = [:]
     var plan: LivePlan
+    /// The session the talk-desktop plugin on the person's Hermes sets up (`HermesLiveCall`).
+    var hermesLive: HermesLiveSignal?
 }
 
 /// One live call: the microphone, the voice, and the connection to the service (`LiveCall`; a
@@ -40,6 +46,9 @@ protocol LiveCalling: AnyObject {
     /// The answer to a request the voice handed over went to it: what it plays now is its voice
     /// again, not a sound while it waits (`LiveDialect.soundsWhileWaiting`).
     func answered()
+    /// The voice cut off where it is, the call going on, where the service takes such a request
+    /// (Hermes Live / Codex's `/codexlive/interrupt`); nothing elsewhere.
+    func interrupt()
 }
 
 extension LiveCalling {
@@ -47,6 +56,7 @@ extension LiveCalling {
     func setVoiceHeld(_ held: Bool) {}
     func playAnswer(_ pcm: Data) {}
     var queuedSeconds: Double { 0 }
+    func interrupt() {}
 }
 
 /// What a call tells `LiveVoice`, on the main actor.
@@ -57,9 +67,11 @@ protocol LiveCallListening: AnyObject {
     func liveCallChanged(_ state: LiveCallState)
 }
 
-/// What a call can tell of itself: the voice audible or quiet, the connection lost.
+/// What a call can tell of itself: the voice audible or quiet, the connection lost; and connected,
+/// for a call whose connection is the session, with no event of the service's to say so
+/// (`HermesLiveCall`: its audio and its data channel open).
 nonisolated enum LiveCallState: String, Sendable {
-    case speaking, quiet, lost
+    case speaking, quiet, lost, connected
 }
 
 /// A live call over a WebSocket, to whichever engine its `LiveDialect` speaks for (GPT-Live,
@@ -69,6 +81,7 @@ nonisolated enum LiveCallState: String, Sendable {
 /// cancels the voice's own sound out of the microphone. Chosen over WebRTC on 2026-10-24, measured
 /// on Marta: lighter on the phone (24 to 31% of a core against 32 to 34) and quicker to connect,
 /// at more data (raw audio, 16 kHz to keep it down) and with no French encryption declaration.
+/// Hermes Live / Codex alone is WebRTC (`HermesLiveCall`), as the plugin that sets it up has it.
 /// docs/ARCHITECTURE.md (GPT-Live) has the rest.
 @MainActor
 final class LiveCall: LiveCalling {
@@ -592,7 +605,10 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
     }
 
     private static func restarter(_ audio: LiveCallAudio) -> @Sendable (Notification) -> Void {
-        { [weak audio] _ in audio?.sending.async { audio?.restart() } }
+        { [weak audio] _ in
+            guard let audio else { return }
+            audio.sending.async { [audio] in audio.restart() }
+        }
     }
 
     private func restart() {
@@ -640,10 +656,9 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
             let buffers = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: list))
             guard let first = buffers.first, let raw = first.mData else { return noErr }
             let samples = raw.assumingMemoryBound(to: Float.self)
-            var copy = [Float](repeating: 0, count: Int(frames))
             let stride = interleaved ? max(1, channels) : 1
-            for index in 0..<Int(frames) { copy[index] = samples[index * stride] }
-            audio.sending.async { audio.heard(copy) }
+            let copy = (0..<Int(frames)).map { samples[$0 * stride] }
+            audio.sending.async { [audio, copy] in audio.heard(copy) }
             return noErr
         }
     }
@@ -904,7 +919,10 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
     }
 
     private static func dryNotice(_ audio: LiveCallAudio) -> @Sendable () -> Void {
-        { [weak audio] in audio?.sending.async { audio?.ranDry() } }
+        { [weak audio] in
+            guard let audio else { return }
+            audio.sending.async { [audio] in audio.ranDry() }
+        }
     }
 
     /// The voice ran out: quiet once nothing more has come for a moment.
@@ -1128,3 +1146,498 @@ nonisolated final class VoiceQueue: @unchecked Sendable {
         }
     }
 }
+
+// MARK: - Hermes Live / Codex
+
+/// A Hermes Live / Codex call (`LiveEngine.hermesLive`, asked 2026-10-30): WebRTC, the microphone
+/// its audio track and the voice played as WebRTC plays a call (its voice processing, echo
+/// cancelling included), the events on its `oai-events` data channel (`HermesLiveDialect`). The
+/// person's Hermes sets the session up through its talk-desktop plugin (`HermesLiveSignal`): the
+/// call's offer goes to the Dashboard, the plugin answers it with the Codex sign-in on that machine,
+/// and the sound then goes between the phone and OpenAI; cutting the voice off and stopping the
+/// session are the plugin's routes too. A session that would work requests anywhere but this chat
+/// (no client-managed handoffs) goes no further. WebRTC is Google's, built by stasel/WebRTC, and
+/// carries its own BoringSSL for DTLS and SRTP, cryptography that isn't the operating system's:
+/// why the other engines stay on WebSockets (`LiveCall`), and docs/app-store-listing.md (Export
+/// compliance) says what it changes. In the iPhone and iPad app only; the Mac's has no WebRTC.
+@MainActor
+final class HermesLiveCall: LiveCalling {
+    /// This build can make one.
+    nonisolated static var available: Bool {
+        #if canImport(WebRTC)
+        return true
+        #else
+        return false
+        #endif
+    }
+
+    private weak var listener: LiveCallListening?
+    private let dialect: any LiveDialect
+    /// The session on the Hermes: what asked for it, and what the plugin answered.
+    private var signal: HermesLiveSignal?
+    private var session: HermesLiveSession?
+    private var stopped = false
+    private var closed = false
+    /// Its audio and its channel are open; and `connect` waiting for them, or why they never will.
+    private var opened = false
+    private var connecting: CheckedContinuation<Void, Error>?
+    private var broken: String?
+    private var muted = false
+    private var speaking = false
+    private var lastAudible = ContinuousClock.now
+    private(set) var inputLevel: Float = 0
+    private(set) var outputLevel: Float = 0
+    private var following: Task<Void, Never>?
+    private var metering: Task<Void, Never>?
+    private var dropping: Task<Void, Never>?
+    private let log = Logger(subsystem: "com.goosehouse.echo", category: "live")
+    #if canImport(WebRTC)
+    private var link: HermesLiveLink?
+    #endif
+    #if canImport(WebRTC) && os(iOS)
+    private var tookAudio = false
+    #endif
+
+    /// The voice is speaking above this level (WebRTC's, 0…1, as `LiveCallAudio` hears its own),
+    /// and has stopped after this long below it.
+    private static let audible: Float = 0.03
+    private static let quietAfter: Duration = .milliseconds(500)
+    /// How long the audio may take to come through once the plugin has answered.
+    private static let openWithin: Duration = .seconds(20)
+    /// A connection that drops can come back by itself (a change of network): lost after this long.
+    private static let dropGrace: Duration = .seconds(6)
+
+    init(listener: LiveCallListening, dialect: any LiveDialect = HermesLiveDialect()) {
+        self.listener = listener
+        self.dialect = dialect
+    }
+
+    func open() throws {
+        #if canImport(WebRTC)
+        guard link == nil, !closed else { return }
+        #if os(iOS)
+        takeAudio()
+        #endif
+        do {
+            link = try HermesLiveLink(channel: HermesLiveLink.channelLabel)
+        } catch {
+            #if os(iOS)
+            giveAudioBack()
+            #endif
+            throw error
+        }
+        #else
+        throw LiveFailure(HermesLiveSignal.needsDevice)
+        #endif
+    }
+
+    /// The offer to the plugin, its answer taken, the audio let through, and back once the audio
+    /// and the data channel are open: the call is on. A session the plugin answers with
+    /// requests going anywhere but this chat is stopped, and says why.
+    func connect(_ connection: LiveConnection) async throws {
+        #if canImport(WebRTC)
+        guard let signal = connection.hermesLive else {
+            throw LiveFailure(String(localized: "\(dialect.engine.name) has no session on your Hermes to connect to."))
+        }
+        guard let link, !closed else { throw LiveFailure(String(localized: "The call was closed.")) }
+        self.signal = signal
+        follow(link)
+        let offer: String = try await withCheckedThrowingContinuation { made in
+            link.offer { made.resume(with: $0) }
+        }
+        guard !closed else { throw LiveFailure(String(localized: "The call was closed.")) }
+        let reply: JSONValue
+        do {
+            reply = try await signal.post(HermesLiveSignal.sessionPath, signal.sessionRequest(offer: offer))
+        } catch {
+            throw HermesLiveSignal.failure(error)
+        }
+        let session = try HermesLiveSession(reply: reply)
+        // From here the session is the plugin's to stop, however the call ends.
+        self.session = session
+        guard !closed else {
+            stopSession()
+            throw LiveFailure(String(localized: "The call was closed."))
+        }
+        // Plugin warnings can include server-side account or session detail. Keep them out of
+        // ordinary device logs; the user-facing failure below remains the explicit disclosure.
+        for warning in session.warnings { log.notice("talk-desktop: \(warning, privacy: .private)") }
+        if let problem = session.handoffProblem { throw LiveFailure(problem) }
+        try await withCheckedThrowingContinuation { (answered: CheckedContinuation<Void, Error>) in
+            link.takeAnswer(session.answer) { problem in
+                if let problem { answered.resume(throwing: problem) } else { answered.resume() }
+            }
+        }
+        guard !closed else { throw LiveFailure(String(localized: "The call was closed.")) }
+        #if os(iOS)
+        RTCAudioSession.sharedInstance().isAudioEnabled = true
+        Self.keepOnSpeaker()
+        #endif
+        let deadline = Task { [weak self] in
+            try? await Task.sleep(for: Self.openWithin)
+            guard !Task.isCancelled else { return }
+            self?.finishConnecting(LiveFailure(String(localized: "Hermes Live / Codex didn't connect: the call's audio never came through.")))
+        }
+        defer { deadline.cancel() }
+        try await withCheckedThrowingContinuation { (open: CheckedContinuation<Void, Error>) in
+            if opened {
+                open.resume()
+            } else if let broken {
+                open.resume(throwing: LiveFailure(String(localized: "Hermes Live / Codex couldn't connect: \(broken).")))
+            } else {
+                connecting = open
+            }
+        }
+        #else
+        throw LiveFailure(HermesLiveSignal.needsDevice)
+        #endif
+    }
+
+    /// Another voice would be another session of the plugin's, which says no line of Redde's
+    /// (`LiveEngine.greets`): not offered, and refused.
+    func reconnect(_ connection: LiveConnection) async throws {
+        throw LiveFailure(String(localized: "\(dialect.engine.name) can't go on in another voice: your Hermes words its session."))
+    }
+
+    func send(_ event: String) -> Bool {
+        #if canImport(WebRTC)
+        guard !closed, opened, let link else { return false }
+        return link.send(event)
+        #else
+        return false
+        #endif
+    }
+
+    func setMuted(_ muted: Bool) {
+        self.muted = muted
+        #if canImport(WebRTC)
+        link?.setMicrophone(on: !muted)
+        #endif
+    }
+
+    func interrupt() {
+        guard !closed, let signal, let session else { return }
+        Self.post(HermesLiveSignal.interruptPath, session.request(profile: signal.profile), with: signal, log: log)
+    }
+
+    func close() {
+        guard !closed else { return }
+        closed = true
+        following?.cancel()
+        metering?.cancel()
+        dropping?.cancel()
+        #if canImport(WebRTC)
+        link?.close()
+        link = nil
+        #if os(iOS)
+        giveAudioBack()
+        #endif
+        #endif
+        stopSession()
+        finishConnecting(LiveFailure(String(localized: "The call was closed.")))
+    }
+
+    /// The session ended on the Hermes, so it stops at once: asked once, not waited for.
+    private func stopSession() {
+        guard !stopped, let signal, let session else { return }
+        stopped = true
+        Self.post(HermesLiveSignal.stopPath, session.request(profile: signal.profile), with: signal, log: log)
+    }
+
+    private static func post(_ path: String, _ body: JSONValue, with signal: HermesLiveSignal, log: Logger) {
+        Task {
+            do {
+                _ = try await signal.post(path, body)
+            } catch {
+                log.error("Hermes Live \(path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+
+    private func finishConnecting(_ problem: Error?) {
+        guard let connecting else { return }
+        self.connecting = nil
+        if let problem { connecting.resume(throwing: problem) } else { connecting.resume() }
+    }
+
+    /// The connection gone: while connecting, why it couldn't; once on, the call is lost.
+    private func lost(_ why: String) {
+        guard !closed else { return }
+        log.error("Hermes Live call: \(why, privacy: .public)")
+        if connecting != nil {
+            finishConnecting(LiveFailure(String(localized: "Hermes Live / Codex couldn't connect: \(why).")))
+        } else if opened {
+            listener?.liveCallChanged(.lost)
+        } else {
+            broken = why
+        }
+    }
+
+    /// The voice's level and the person's, every tenth of a second while the call is on: the
+    /// screen's, and whether the voice is speaking (WebRTC plays it; nothing else tells).
+    private func heard(input: Float, output: Float) {
+        guard !closed else { return }
+        inputLevel = muted ? 0 : input
+        outputLevel = output
+        let now = ContinuousClock.now
+        if output > Self.audible {
+            lastAudible = now
+            if !speaking {
+                speaking = true
+                listener?.liveCallChanged(.speaking)
+            }
+        } else if speaking, now - lastAudible > Self.quietAfter {
+            speaking = false
+            listener?.liveCallChanged(.quiet)
+        }
+    }
+
+    #if canImport(WebRTC)
+    /// What the link says, in the order it said it.
+    private func follow(_ link: HermesLiveLink) {
+        following?.cancel()
+        following = Task { [weak self] in
+            for await event in link.events {
+                self?.handle(event)
+            }
+        }
+    }
+
+    private func handle(_ event: HermesLiveLink.Event) {
+        guard !closed else { return }
+        switch event {
+        case let .message(text):
+            listener?.liveCallReceived(text)
+        case .open:
+            guard !opened else { return }
+            opened = true
+            finishConnecting(nil)
+            listener?.liveCallChanged(.connected)
+            meter()
+        case .closed:
+            lost(String(localized: "its event channel closed"))
+        case .connected:
+            dropping?.cancel()
+            dropping = nil
+        case .disconnected:
+            guard dropping == nil else { return }
+            dropping = Task { [weak self] in
+                try? await Task.sleep(for: Self.dropGrace)
+                guard !Task.isCancelled else { return }
+                self?.lost(String(localized: "the connection dropped"))
+            }
+        case .failed:
+            lost(String(localized: "the connection failed"))
+        }
+    }
+
+    private func meter() {
+        metering?.cancel()
+        metering = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(100))
+                guard let link = self?.link else { return }
+                let levels = await withCheckedContinuation { (read: CheckedContinuation<HermesLiveLink.Levels, Never>) in
+                    link.levels { read.resume(returning: $0) }
+                }
+                self?.heard(input: levels.input, output: levels.output)
+            }
+        }
+    }
+    #endif
+
+    #if canImport(WebRTC) && os(iOS)
+    /// WebRTC plays and records on the session voice mode set up (`AudioSessionController`), not
+    /// on one of its own: given its category, mode and options so it changes none of them, told it
+    /// is active already, and kept from starting its audio until the plugin has answered.
+    private func takeAudio() {
+        guard !tookAudio else { return }
+        tookAudio = true
+        let session = AVAudioSession.sharedInstance()
+        let configuration = RTCAudioSessionConfiguration.webRTC()
+        configuration.category = session.category.rawValue
+        configuration.categoryOptions = session.categoryOptions
+        configuration.mode = session.mode.rawValue
+        RTCAudioSessionConfiguration.setWebRTC(configuration)
+        let rtc = RTCAudioSession.sharedInstance()
+        rtc.useManualAudio = true
+        rtc.isAudioEnabled = false
+        rtc.audioSessionDidActivate(session)
+    }
+
+    /// WebRTC's audio stopped and the session no longer counted as its, without ending it: voice
+    /// mode does that, after its closing cue.
+    private func giveAudioBack() {
+        guard tookAudio else { return }
+        tookAudio = false
+        let rtc = RTCAudioSession.sharedInstance()
+        rtc.isAudioEnabled = false
+        rtc.audioSessionDidDeactivate(AVAudioSession.sharedInstance())
+    }
+
+    /// Voice processing puts the iPhone's own output on the earpiece: back on the loudspeaker,
+    /// unless a headset or the car has it (as `LiveCallAudio` does).
+    private static func keepOnSpeaker() {
+        let session = AVAudioSession.sharedInstance()
+        guard session.currentRoute.outputs.contains(where: { $0.portType == .builtInReceiver }) else { return }
+        try? session.overrideOutputAudioPort(.speaker)
+    }
+    #endif
+}
+
+#if canImport(WebRTC)
+/// The WebRTC side of a Hermes Live call, off the main actor: WebRTC tells its delegates things
+/// on threads of its own, and what they say goes to the call as `events`, in order. Audio only,
+/// with no STUN or TURN server: the plugin's answer names where the media goes, and the phone
+/// reaches no one else.
+nonisolated final class HermesLiveLink: NSObject, RTCPeerConnectionDelegate, RTCDataChannelDelegate, @unchecked Sendable {
+    enum Event: Sendable {
+        case message(String)
+        /// The data channel is open (and with it the connection), or closed.
+        case open, closed
+        /// The connection as ICE has it.
+        case connected, disconnected, failed
+    }
+
+    struct Levels: Sendable {
+        var input: Float = 0
+        var output: Float = 0
+    }
+
+    /// The data channel OpenAI's realtime calls carry their events on.
+    static let channelLabel = "oai-events"
+    /// One for the app, as WebRTC advises: its threads and its audio are every call's.
+    nonisolated(unsafe) private static let factory: RTCPeerConnectionFactory = {
+        _ = RTCInitializeSSL()
+        return RTCPeerConnectionFactory()
+    }()
+
+    let events: AsyncStream<Event>
+    private let feed: AsyncStream<Event>.Continuation
+    private let peer: RTCPeerConnection
+    private let channel: RTCDataChannel
+    private let microphone: RTCAudioTrack
+    private let shut = OSAllocatedUnfairLock(initialState: false)
+
+    /// A peer connection with the microphone's track and a data channel named `label`. (Not a
+    /// bare `init()`: NSObject's can't be overridden by one that throws.)
+    init(channel label: String) throws {
+        let factory = HermesLiveLink.factory
+        let none = RTCMediaConstraints(mandatoryConstraints: nil, optionalConstraints: nil)
+        guard let peer = factory.peerConnection(with: RTCConfiguration(), constraints: none, delegate: nil) else {
+            throw LiveFailure(String(localized: "The call's connection couldn't be made."))
+        }
+        let microphone = factory.audioTrack(with: factory.audioSource(with: none), trackId: "redde-microphone")
+        _ = peer.add(microphone, streamIds: ["redde"])
+        guard let channel = peer.dataChannel(forLabel: label, configuration: RTCDataChannelConfiguration()) else {
+            peer.close()
+            throw LiveFailure(String(localized: "The call's event channel couldn't be made."))
+        }
+        let stream = AsyncStream.makeStream(of: Event.self)
+        events = stream.stream
+        feed = stream.continuation
+        self.peer = peer
+        self.channel = channel
+        self.microphone = microphone
+        super.init()
+        peer.delegate = self
+        channel.delegate = self
+    }
+
+    private var isShut: Bool { shut.withLock { $0 } }
+
+    /// The call's offer, made and set as its own: the SDP the plugin answers.
+    func offer(_ done: @escaping @Sendable (Result<String, any Error>) -> Void) {
+        let none = RTCMediaConstraints(mandatoryConstraints: nil, optionalConstraints: nil)
+        peer.offer(for: none) { [weak self] description, error in
+            guard let self, let description else {
+                done(.failure(error ?? LiveFailure(String(localized: "The call's offer couldn't be made."))))
+                return
+            }
+            let sdp = description.sdp
+            self.peer.setLocalDescription(description) { error in
+                if let error { done(.failure(error)) } else { done(.success(sdp)) }
+            }
+        }
+    }
+
+    /// The plugin's answer, set as the other side's.
+    func takeAnswer(_ sdp: String, _ done: @escaping @Sendable ((any Error)?) -> Void) {
+        peer.setRemoteDescription(RTCSessionDescription(type: .answer, sdp: sdp)) { error in done(error) }
+    }
+
+    /// One event on the data channel; false while it isn't open.
+    func send(_ text: String) -> Bool {
+        guard !isShut, channel.readyState == .open else { return false }
+        return channel.sendData(RTCDataBuffer(data: Data(text.utf8), isBinary: false))
+    }
+
+    /// The microphone's track off (silence goes) or on again.
+    func setMicrophone(on: Bool) { microphone.isEnabled = on }
+
+    /// How loud the person and the voice are now, from WebRTC's own reckoning (`audioLevel`,
+    /// 0…1): the microphone's source, and what comes in.
+    func levels(_ done: @escaping @Sendable (Levels) -> Void) {
+        guard !isShut else { done(Levels()); return }
+        peer.statistics { report in
+            var levels = Levels()
+            for entry in report.statistics.values {
+                guard let level = (entry.values["audioLevel"] as? NSNumber)?.floatValue else { continue }
+                switch entry.type {
+                case "inbound-rtp": levels.output = max(levels.output, level)
+                case "media-source": levels.input = max(levels.input, level)
+                default: break
+                }
+            }
+            done(levels)
+        }
+    }
+
+    func close() {
+        let closing = shut.withLock { shut -> Bool in
+            guard !shut else { return false }
+            shut = true
+            return true
+        }
+        guard closing else { return }
+        channel.delegate = nil
+        peer.delegate = nil
+        channel.close()
+        peer.close()
+        feed.finish()
+    }
+
+    // MARK: WebRTC's delegates
+
+    func peerConnection(_ peerConnection: RTCPeerConnection, didChange stateChanged: RTCSignalingState) {}
+    func peerConnection(_ peerConnection: RTCPeerConnection, didAdd stream: RTCMediaStream) {}
+    func peerConnection(_ peerConnection: RTCPeerConnection, didRemove stream: RTCMediaStream) {}
+    func peerConnectionShouldNegotiate(_ peerConnection: RTCPeerConnection) {}
+
+    func peerConnection(_ peerConnection: RTCPeerConnection, didChange newState: RTCIceConnectionState) {
+        switch newState {
+        case .connected, .completed: feed.yield(.connected)
+        case .disconnected: feed.yield(.disconnected)
+        case .failed: feed.yield(.failed)
+        default: break
+        }
+    }
+
+    func peerConnection(_ peerConnection: RTCPeerConnection, didChange newState: RTCIceGatheringState) {}
+    func peerConnection(_ peerConnection: RTCPeerConnection, didGenerate candidate: RTCIceCandidate) {}
+    func peerConnection(_ peerConnection: RTCPeerConnection, didRemove candidates: [RTCIceCandidate]) {}
+    func peerConnection(_ peerConnection: RTCPeerConnection, didOpen dataChannel: RTCDataChannel) {}
+
+    func dataChannelDidChangeState(_ dataChannel: RTCDataChannel) {
+        switch dataChannel.readyState {
+        case .open: feed.yield(.open)
+        case .closed: feed.yield(.closed)
+        default: break
+        }
+    }
+
+    func dataChannel(_ dataChannel: RTCDataChannel, didReceiveMessageWith buffer: RTCDataBuffer) {
+        feed.yield(.message(String(decoding: buffer.data, as: UTF8.self)))
+    }
+}
+#endif
