@@ -96,7 +96,7 @@ struct ContentView: View {
     /// `-echo.screen botGallery`: every bot creature, large, to look them over.
     @State private var showBotGallery = false
     @State private var showDemoPatch = false
-    /// `-echo.screen activity|pluginUpdates|triggers`: that page, in a sheet (the day's video, `DemoDay`).
+    /// `-echo.screen activity|pluginUpdates|triggers|watches`: that page, in a sheet (the day's video, `DemoDay`).
     @State private var demoDayPage: String?
     /// `-echo.screen aheadOfYourDay`: Ahead of Your Day's sheet (screenshots; `-echo.demoAhead` for a made-up server).
     @State private var showAheadOfYourDay = false
@@ -180,6 +180,7 @@ struct ContentView: View {
                 case "pluginUpdates": PluginUpdatesView(agents: DemoDay.on ? DemoDay.pluginAgents : PluginUpdatesView.everyAgent())
                 case "calendars": CalendarsSettingsView()
                 case "headsUps": DailyJobView(daily: HeadsUps.job)
+                case "watches": WatchesView()
                 default: TriggersView()
                 }
             }
@@ -1245,7 +1246,7 @@ struct ContentView: View {
         #if DEBUG
         case "botGallery": showBotGallery = true
         case "patch": showDemoPatch = true
-        case "activity", "pluginUpdates", "triggers", "calendars", "headsUps": demoDayPage = DevHooks.value("-echo.screen")
+        case "activity", "pluginUpdates", "triggers", "calendars", "headsUps", "watches": demoDayPage = DevHooks.value("-echo.screen")
         case "aheadOfYourDay": showAheadOfYourDay = true
         #endif
         default: break

@@ -24,6 +24,10 @@ LINES = [
     ('leave', REDDE, 'Time to go! Twenty-five minutes by car.'),
     ('coffee', REDDE, 'Ooh, coffee!'),
     ('sent', REDDE, 'Sent!'),
+    # Its second round (10-30 evening): the traffic re-check, the watch's news.
+    ('traffic', REDDE, "Traffic's heavier! Leave at one fifty-five."),
+    ('leave2', REDDE, 'Time to go! Thirty-five minutes by car.'),
+    ('shipped', REDDE, 'Your bike part shipped!'),
 ]
 
 

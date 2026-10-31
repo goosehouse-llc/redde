@@ -396,72 +396,81 @@ day's story).
 ## A day with Redde, for 2.3
 
 `../redde-day23-app-preview-iphone.mp4` (886×1920, 29.4 s, full frame), `../redde-day23-app-preview-ipad.mp4`
-(1200×1600, 29.4 s, full frame) and `../redde-day23-reddit.mp4` (886×1920, about 60 s, framed; a copy for
-posting under 5 MB, `../redde-day23-reddit-small.mp4`, 664×1440), not in git: made 2026-10-30 for 2.3, by
-`make_day23.py` (`ipad`, `long`; `pages` for stills of the long cut's title and closing). The same day
-retold with the answer cards redesigned that day and the proactive features that shipped with them,
-cut as the day video before it (a shot a 2.5 s bar of the deep song, landing on the downbeat, the time
-of day by each caption, the person's words in “quotes” and italics). make_day.py's pages, shots and
-soundtrack are used as they are (its module's globals set to this cut's), so the long cut looks like
-the 10-29 one; the App Store cuts follow the standing rule above (`store_cut.py`).
+(1200×1600, 29.4 s, full frame) and `../redde-day23-reddit.mp4` (886×1920, 71.9 s, framed; a copy for
+posting under 5 MB, `../redde-day23-reddit-small.mp4`, 664×1440, two passes at 430k), not in git: made
+2026-10-30 for 2.3 by `make_day23.py` (`ipad`, `long`; `pages` for stills of the long cut's title and
+closing), and redone that evening at his word ("add in traffic recheck, watches and followups, and if
+possible free spot but don't cram it in"). The same day retold with the answer cards redesigned that
+day and the proactive features, cut as the day video before it (a shot a 2.5 s bar of the deep song,
+landing on the downbeat, the time of day by each caption, the person's words in “quotes” and italics).
+make_day.py's pages, shots and soundtrack are used as they are (its module's globals set to this cut's),
+so the long cut looks like the 10-29 one; the App Store cuts follow the standing rule above (`store_cut.py`).
 
-The day (the long cut's shots; the App Store cuts' marked *):
+The day (the long cut's shots; the App Store cuts' marked *). To give the traffic re-check and the watch
+a beat each, the App Store cuts left out the coffee and the Leave-By Alert (the re-check's notification
+says when to leave); the free spot is in the long cut only.
 - 7:00 AM Morning ideas*: the bagpipes swiped away (Not Now), the vet card; (long) the vet swiped
   right, and Sol booking it ("Swipe right, and Sol does it.").
-- 7:50 AM Your day*: “What's my day look like?”, today as a timeline (the walk over and dimmed, the now
-  line, "Free for 2½ hours"), then the dentist tapped open in place ("Tap an event to open it.").
-- 10:15 AM Near you*: “Good coffee near me?”, the places card with walks measured from where the
-  phone is (by City Hall Park; Redde: "Ooh, coffee!" in the long cut).
-- 11:30 AM Plain-English approvals (long): Coder's `rm -rf` as "Deletes ~/builds/2025-* and everything
-  in them" in red, Allow Once, and Coder carrying on.
-- 12:10 PM The forecast*: “Will it rain this afternoon?”, "Storms likely 2 – 5 PM · 80% at 3 PM ·
-  gusts to 30 mph" and the hourly rain bars.
-- 1:30 PM Heads-ups*: the dentist's heads-up on the Briefings deck and as a banner (Redde: "Dentist at
-  two thirty! Bring your insurance card!"); 1:31 Where and when (long): its event card and map.
-- 2:00 PM Time to leave*: the Leave-By Alert as a banner, "Time to leave for Dentist · Leave by 2:05 PM
-  · 25 min by car" (Redde: "Time to go!…"); (long) held, with Open in Maps.
-- 3:35 PM Review, then send*: “Tell Ana I'm running 15 minutes late for pickup”, the email drawn as
-  itself; (long) Send, and "Sent".
-- 8:00 PM Checklists (long): the cabin's list, its ring going from 5 to 8 of 8 as the groups fold.
-- 9:00 PM Evening wrap-up*: on the deck, then opened; the closing ("Redde / Ideas, heads-ups and time to
-  leave. / Your day, the weather, places near you. / Cards you can tap.") over it, held, as Sol (in
-  Redde's voice) says "See you tomorrow!". The App Store cuts open on the chat list at 7:00 with "A day /
-  with / Redde." over it as "Rise and shine! It's Redde!" is heard; the long cut has the drawn title and
-  closing pages of the 10-29 cut. The music goes quiet under the evening.
+- 7:50 AM Your day* (two bars): “What's my day look like?”, today as a timeline (the walk over and
+  dimmed, the now line, "Free for 2½ hours"), then the dentist tapped open in place.
+- 7:51 AM Free time (long, two bars): the free stretch tapped, Apple's new-event editor at 10–11 AM,
+  "Walk by the lake" typed (the editor's slow first showing, a dark screen, left out with `fix`).
+- 10:15 AM Near you (long): “Good coffee near me?”, places with walks from where the phone is.
+- 10:40 AM Watches & follow-ups (long, two bars): “Let me know when the bike part ships. I'll call the
+  plumber tomorrow.”, Sol: watching the order every hour, and back about the plumber tomorrow at 9.
+- 11:30 AM Plain-English approvals (long): Coder's `rm -rf` as "Deletes ~/builds/2025-* …" in red.
+- 12:10 PM The forecast*: “Will it rain this afternoon?”, "Storms likely 2 – 5 PM · 80% at 3 PM".
+- 1:30 PM Heads-ups*: the dentist's heads-up (Leave by 2:05) on the deck and as a banner (Redde:
+  "Dentist at two thirty! …"); 1:31 Where and when (long): its event card and map.
+- 1:45 PM Traffic, checked again*: "Dentist: traffic is heavier · Leave by 1:55 PM · 35 min by car",
+  time-sensitive, as the notification extension shows it (`LeaveCheck.content(.heavier, …)`); Redde:
+  "Traffic's heavier! Leave at one fifty-five."
+- 1:50 PM Time to leave (long): the Leave-By Alert at the moved time, held, with Open in Maps.
+- 3:35 PM Review, then send*: the email to Ana; (long) Send, and "Sent".
+- 4:20 PM Watches & follow-ups*: over Watches & Follow-ups, the watch's note arrives ("The bike part
+  order · It shipped! 📦 Arriving Thursday by 8 PM.") and its row says so; the plumber's follow-up
+  below it (Redde: "Your bike part shipped!").
+- 8:00 PM Checklists (long): the cabin's list ticked to 8 of 8.
+- 9:00 PM Evening wrap-up*: on the deck, then opened; the closing ("Redde / Ideas, heads-ups, traffic
+  re-checked. / Your day and the weather, as cards. / Watches that come back with news.") over it, as
+  "See you tomorrow!" is heard. The App Store cuts open on the chat list at 7:00 with "A day / with /
+  Redde." over it ("Rise and shine! It's Redde!" heard); the long cut has the drawn title and closing.
 
 The lines: `KOKORO_URL=http://<host>:8880 /usr/bin/python3 day_voices.py` makes the ones not made yet
-(`headsup2`, `leave`, `coffee`, `sent` were added for this cut; `all` makes every line again).
+(`headsup2`, `leave`, `coffee`, `sent`, then `traffic`, `leave2`, `shipped`; `all` makes every line again).
 
-The footage is `-echo.demoDay <scene>` as before, with new scenes (`DemoDay.swift`): `today` (an
-agenda card of today), `coffee` (places, the phone said to be by City Hall Park, `PlaceLookup.pretend`),
-`rain` (a forecast with storms from 2 to 5), `approval` (Coder's chat with an approval waiting; answered,
-Coder carries on, `DemoDay.approved`), `afternoon` (the heads-up of the morning scene, for a 2:30 dentist),
-`leave` (the Leave-By Alert, made by `LeaveTime.content` as `LeaveByAlerts` makes it) and `email` (a
-review card; Send gets "Sent"), and a checklist card in the new layout. `DemoDay.storyNow` gives each scene
-its time, which the calendar card's now line and dimming, the weather card's "Now", the start screen's
-greeting and the event card's countdown read (`AgendaCard.now()`; `-echo.demoDayClock HH:MM` for any
-scene); the phone's own weather lookup is skipped in the day's demo, so the forecast stays as written.
+The footage is `-echo.demoDay <scene>` (`DemoDay.swift`): `today` (an agenda card of today), `coffee`
+(places, the phone said to be by City Hall Park), `watchask` (the watch and follow-up asked for, answered),
+`approval` (Coder's chat with an approval waiting; answered, Coder carries on), `rain`, `afternoon` (the
+heads-up, for a 2:30 dentist), `traffic` (the re-check's notification), `leave` (the Leave-By Alert, by
+`LeaveTime.content`, at 1:55 after the re-check), `email` (a review card; Send gets "Sent"), `shipped`
+(the watch's note, as the plugin sends one, over `-echo.screen watches`: Watches & Follow-ups lists the
+demo's jobs, `DemoDay.watchJobs`, and the note's row is kept a moment after the banner shows), `packing`
+and `evening`. `DemoDay.storyNow` gives each scene its time (the calendar card's now line and dimming,
+the weather card's "Now", the greeting, the event card's countdown; `-echo.demoDayClock HH:MM` for any
+scene); the phone's own weather lookup is skipped in the demo, so the forecast stays as written.
 
-The takes are UI tests (`PromoVideoUITests`: `testDayIdeas`, `testDayToday`, `testDayCoffee`,
-`testDayApproval`, `testDayRain`, `testDayAfternoon`, `testDayLeave`, `testDayEmail`, `testDayPacking`,
-`testDayEvening`), each by `take23.sh <HH:MM> <name> <test>`, which reinstalls Redde, sets the status
-bar to the scene's time on 2026-10-30 (`day_status.sh HH:MM 2026-10-30`, given as UTC: with an offset the
-iPad's status bar names the wrong weekday) and records. Built into `DerivedData-video`:
+The takes are UI tests (`PromoVideoUITests`), each by `take23.sh <HH:MM> <name> <test>`, which reinstalls
+Redde, sets the status bar to the scene's time on 2026-10-30 (`day_status.sh HH:MM 2026-10-30`: as UTC and
+set again on its own, or the iPad's status bar names the wrong weekday) and records. Built into
+`DerivedData-video`:
 
     xcodebuild -project Echo.xcodeproj -scheme EchoUITests -destination "id=$SIM" -derivedDataPath DerivedData-video build-for-testing
     ./take23.sh 07:00 e1-ideas testDayIdeas;       ./take23.sh 07:50 e2-today testDayToday
-    ./take23.sh 10:15 e3-coffee testDayCoffee;     ./take23.sh 11:30 e5-approval testDayApproval
+    ./take23.sh 07:50 e2b-add testDayAddEvent;     ./take23.sh 10:15 e3-coffee testDayCoffee
+    ./take23.sh 10:40 e3b-watchask testDayWatchAsk; ./take23.sh 11:30 e5-approval testDayApproval
     ./take23.sh 12:10 e4-rain testDayRain;         ./take23.sh 13:30 e6-afternoon testDayAfternoon
-    TEST_RUNNER_PROMO_EXPAND=1 ./take23.sh 14:00 e7-leave testDayLeave       # (holds the banner open)
-    ./take23.sh 15:35 e8-email testDayEmail;       ./take23.sh 20:00 e9-packing testDayPacking
-    ./take23.sh 21:00 e10-evening testDayEvening
+    ./take23.sh 13:45 e7a-traffic testDayTraffic
+    TEST_RUNNER_PROMO_EXPAND=1 ./take23.sh 13:50 e7-leave testDayLeave       # (holds the banner open)
+    ./take23.sh 15:35 e8-email testDayEmail;       ./take23.sh 16:20 e11-shipped testDayShipped
+    ./take23.sh 20:00 e9-packing testDayPacking;   ./take23.sh 21:00 e10-evening testDayEvening
 
 on the iPhone simulator "Redde day video 10-29" (395C295F-FB35-4596-9100-4CE66EE9E725, the default), and
-the App Store cut's eight again on the 13" iPad (`SIM=21E37828-1093-41DC-8DCB-D375ADABFECB`, iOS 27.0)
-as `ipad-e…` (its first launch after an install takes a minute or more; the takes are longer for it).
+the App Store cut's takes again on the 13" iPad (`SIM=21E37828-1093-41DC-8DCB-D375ADABFECB`, iOS 27.0) as
+`ipad-e…` (e1, e2, e4, e6, e7a, e8, e10, e11; its first launch after an install takes a minute or more).
+`testDayAddEvent` taps Apple's editor's Add by place (it isn't found by name); the take is cut before it.
 Then `ffmpeg -i <take>.mov -vf fps=30 -c:v libx264 -crf 12 -preset fast -pix_fmt yuv420p cfr-<take>.mov`
-for each, and `/usr/bin/python3 make_day23.py` (and `ipad`, `long`). The cut points are in `SHOTS`
-(the iPad's in `day23_ipad_cuts.py`), set from frames, not marks: a still screen writes no frames, so a
-UI test's marks run ahead of the footage, and a take's last still screen is gone (the wrap-up's opened
-sheet is held from its last frame). A black frame as the idea's chat opens is dropped (`fix`). The small
-Reddit copy is made as before (two passes at a set rate).
+for each, and `/usr/bin/python3 make_day23.py` (and `ipad`, `long`). The cut points are in `SHOTS` (the
+iPad's in `day23_ipad_cuts.py`), set from frames, not marks: a still screen writes no frames, so a UI
+test's marks run ahead of the footage, and a take's last still screen is gone. A black frame as the
+idea's chat opens is dropped (`fix`). The small Reddit copy is made as before (two passes at a set rate).

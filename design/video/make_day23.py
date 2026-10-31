@@ -50,6 +50,10 @@ RAIN = ('The forecast', 'Storms called out, hour by hour.', 'Will it rain this a
 HEADS = ('Heads-ups', 'Before each event: what to bring.')
 WHEN = ('Where and when', 'A countdown, when to leave, a map.')
 LEAVE = ('Time to leave', 'Worked out on your iPhone, with Apple Maps.')
+TRAFFIC = ('Traffic, checked again', 'Heavier now, so leave ten minutes sooner.')
+ADD = ('Free time', 'Tap a free stretch to add to it.')
+WATCH_ASK = ('Watches & follow-ups', 'Ask in words.', 'Let me know when the bike part ships. I’ll call the plumber tomorrow.')
+SHIPPED = ('Watches & follow-ups', 'It looks for you, and comes back with news.')
 EMAIL = ('Review, then send', 'Nothing goes until you tap Send.', 'Tell Ana I’m running 15 minutes late for pickup')
 EMAIL_SENT = ('Review, then send', 'Nothing goes until you tap Send.')
 PACK = ('Checklists', 'Tick it off, right in the chat.', 'Make me a packing list for the cabin')
@@ -61,46 +65,54 @@ if IPAD:
 # the start and end are seconds in cfr-<take>.mov, set from the takes' frames (a still screen isn't
 # written to a recording, so the UI tests' marks run ahead of the footage). extra: 'clock' the time
 # of day by the caption; 'peek' Redde's line (line, when in the take): drawn peeking in from the
-# corner in the long cut, heard only in the App Store cuts.
+# corner in the long cut, heard only in the App Store cuts; 'fix' a filter on the take (frames left out).
 IDEAS_DO = ('Morning ideas', 'Swipe right, and Sol does it.')
 if LONG:
     SHOTS = [
         ('take', 'e1-ideas', 22.2, 26.4, IDEAS, GREEN, 'slideleft', [], 1, {'clock': '7:00 AM'}),
         ('take', 'e1-ideas', 28.4, 35.4, IDEAS_DO, GREEN, 'fade', [], 2,
          {'clock': '7:00 AM', 'fix': "select='not(between(t,2.22,2.55))',setpts=N/30/TB"}),   # (a black frame as the chat opens)
-        ('take', 'e2-today', 23.6, 28.4, DAY, PURPLE, 'slideleft', [], 1, {'clock': '7:50 AM'}),
-        ('take', 'e2-today', 29.2, 33.6, DAY_OPEN, PURPLE, 'fade', [], 1, {'clock': '7:50 AM'}),
-        ('take', 'e3-coffee', 24.6, 27.6, NEAR, TEAL, 'slideleft', [], 1, {'clock': '10:15 AM', 'peek': ('coffee', 25.6)}),
-        ('take', 'e3-coffee', 27.6, 31.5, NEAR_LINE, TEAL, 'fade', [], 1, {'clock': '10:15 AM'}),
+        ('take', 'e2-today', 28.6, 33.0, DAY, PURPLE, 'slideleft', [], 1, {'clock': '7:50 AM'}),
+        ('take', 'e2-today', 34.4, 37.8, DAY_OPEN, PURPLE, 'fade', [], 1, {'clock': '7:50 AM'}),
+        # The free stretch tapped, Apple's editor at 10:00, a title typed (the editor's slow first
+        # showing, a dark screen, left out); held on the title.
+        ('take', 'e2b-add', 29.6, 39.9, ADD, PURPLE, 'slideup', [], 2,
+         {'clock': '7:51 AM', 'fix': "select='not(between(t,1.5,6.1))',setpts=N/30/TB"}),
+        ('take', 'e3-coffee', 24.6, 28.6, NEAR, TEAL, 'slideleft', [], 1, {'clock': '10:15 AM', 'peek': ('coffee', 25.6)}),
+        ('take', 'e3b-watchask', 23.6, 29.5, WATCH_ASK, TEAL, 'slideleft', [], 2, {'clock': '10:40 AM'}),
         ('take', 'e5-approval', 19.0, 27.6, OK, CORAL, 'slideleft', [], 2, {'clock': '11:30 AM'}),
         ('take', 'e4-rain', 26.6, 31.0, RAIN, BLUE, 'slideleft', [], 1, {'clock': '12:10 PM'}),
         ('take', 'e6-afternoon', 21.9, 26.8, HEADS, ORANGE, 'slideleft', [], 1, {'clock': '1:30 PM', 'peek': ('headsup2', 22.7)}),
         ('take', 'e6-afternoon', 29.0, 34.8, WHEN, YELLOW, 'slideup', [], 1, {'clock': '1:31 PM'}),
-        ('take', 'e7-leave', 22.8, 29.9, LEAVE, YELLOW, 'slideleft', [], 2, {'clock': '2:00 PM', 'peek': ('leave', 23.6)}),
+        ('take', 'e7a-traffic', 28.6, 34.8, TRAFFIC, CORAL, 'slideleft', [], 1, {'clock': '1:45 PM', 'peek': ('traffic', 29.4)}),
+        ('take', 'e7-leave', 31.8, 38.0, LEAVE, YELLOW, 'slideleft', [], 1, {'clock': '1:50 PM', 'peek': ('leave2', 34.0)}),
         ('take', 'e8-email', 26.3, 30.6, EMAIL, PERIWINKLE, 'slideleft', [], 1, {'clock': '3:35 PM'}),
         ('take', 'e8-email', 30.6, 35.6, EMAIL_SENT, PERIWINKLE, 'fade', [], 1, {'clock': '3:35 PM', 'peek': ('sent', 33.4)}),
+        ('take', 'e11-shipped', 21.5, 29.2, SHIPPED, TEAL, 'slideleft', [], 2, {'clock': '4:20 PM', 'peek': ('shipped', 24.0)}),
         ('take', 'e9-packing', 26.5, 35.0, PACK, GREEN, 'slideleft', [], 2, {'clock': '8:00 PM'}),
-        ('take', 'e10-evening', 19.6, 22.35, WRAP, PURPLE, 'slideleft', [], 2, {'clock': '9:00 PM'}),
+        ('take', 'e10-evening', 19.6, 26.5, WRAP, PURPLE, 'slideleft', [], 2, {'clock': '9:00 PM'}),
     ]
     TITLE_BARS, OUT, P = 2, 'redde-day23-reddit.mp4', 'day23-long'
 else:
+    # (the coffee and the Leave-By Alert of the first round left out for the traffic re-check and
+    # the watch; the traffic notification says when to leave)
     SHOTS = [
         ('take', 'e1-ideas', 22.4, 26.2, IDEAS, GREEN, 'fade', [], 1, {'clock': '7:00 AM'}),
-        ('take', 'e2-today', 23.6, 28.4, DAY, PURPLE, 'slideleft', [], 1, {'clock': '7:50 AM'}),
-        ('take', 'e2-today', 29.2, 33.6, DAY_OPEN, PURPLE, 'fade', [], 1, {'clock': '7:50 AM'}),
-        ('take', 'e3-coffee', 25.2, 28.6, NEAR, TEAL, 'slideleft', [], 1, {'clock': '10:15 AM'}),
+        ('take', 'e2-today', 28.6, 33.0, DAY, PURPLE, 'slideleft', [], 1, {'clock': '7:50 AM'}),
+        ('take', 'e2-today', 34.4, 37.8, DAY_OPEN, PURPLE, 'fade', [], 1, {'clock': '7:50 AM'}),
         ('take', 'e4-rain', 26.9, 30.4, RAIN, BLUE, 'slideleft', [], 1, {'clock': '12:10 PM'}),
         # (the two lines laid back to back, neither over the other)
         ('take', 'e6-afternoon', 21.9, 26.8, HEADS, ORANGE, 'slideleft', [], 1, {'clock': '1:30 PM', 'peek': ('headsup2', 21.9)}),
-        ('take', 'e7-leave', 22.8, 27.4, LEAVE, YELLOW, 'slideleft', [], 1, {'clock': '2:00 PM', 'peek': ('leave', 23.9)}),
+        ('take', 'e7a-traffic', 28.6, 34.8, TRAFFIC, CORAL, 'slideleft', [], 1, {'clock': '1:45 PM', 'peek': ('traffic', 29.9)}),
         ('take', 'e8-email', 27.4, 32.6, EMAIL, PERIWINKLE, 'slideleft', [], 1, {'clock': '3:35 PM'}),
-        ('take', 'e10-evening', 19.8, 22.35, WRAP, PURPLE, 'slideleft', [], 1, {'clock': '9:00 PM'}),
+        ('take', 'e11-shipped', 23.1, 28.8, SHIPPED, TEAL, 'slideleft', [], 1, {'clock': '4:20 PM', 'peek': ('shipped', 24.0)}),
+        ('take', 'e10-evening', 19.8, 23.6, WRAP, PURPLE, 'slideleft', [], 1, {'clock': '9:00 PM'}),
     ]
     TITLE_BARS = 1
     OUT = f'redde-day23-app-preview-{"ipad" if IPAD else "iphone"}.mp4'
     P = 'day23-ipad' if IPAD else 'day23'
 TITLE_TAKE = ('e1-ideas', 20.0, 22.4)     # the App Store cuts: the chat list at 7:00, before the swipe
-END_TAKE = ('e10-evening', 22.3)          # and the wrap-up, held
+END_TAKE = ('e10-evening', 27.5)          # and the wrap-up, held
 
 if IPAD:
     # The iPad's takes (ipad-e…), the same shots: their own cut points (start, end, peek).
@@ -113,8 +125,8 @@ if IPAD:
         SHOTS[n] = (s[0], 'ipad-' + s[1], a, b, *s[4:9], extra)
     TITLE_TAKE, END_TAKE = ('ipad-' + IPAD_TITLE[0], *IPAD_TITLE[1:]), ('ipad-' + IPAD_END[0], IPAD_END[1])
 
-END_LINES = ['Ideas, heads-ups and time to leave.', 'Your day, the weather, places near you.',
-             'Cards you can tap.']
+END_LINES = ['Ideas, heads-ups, traffic re-checked.', 'Your day and the weather, as cards.',
+             'Watches that come back with news.']
 LANDS_AT = [BAR * (TITLE_BARS + sum(s[8] for s in SHOTS[:i])) for i in range(len(SHOTS))]
 END_BARS = 2
 END_AT = BAR * (TITLE_BARS + sum(s[8] for s in SHOTS)) - SLIDE

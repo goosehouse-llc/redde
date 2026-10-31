@@ -45,8 +45,11 @@ enum DemoDay {
         case "rain": today(12, 10)
         case "approval": today(11, 30)
         case "afternoon": today(13, 30)
-        case "leave": today(14, 0)
+        case "watchask": today(10, 40)
+        case "traffic": today(13, 45)
+        case "leave": today(13, 50)
         case "email": today(15, 35)
+        case "shipped": today(16, 20)
         case "packing": today(20, 0)
         case "evening": today(21, 0)
         default: nil
@@ -151,17 +154,17 @@ enum DemoDay {
     static var wrapUp: AgentBriefing {
         AgentBriefing(id: "day/wrap-up", title: EveningWrapUp.title, agent: "Sol", text: """
             ### Done
-            - The dentist, on time: you left at 2:05 🦷
+            - The dentist, on time: you left at 1:55, ahead of the traffic 🦷
             - Pickles booked at the vet, tomorrow at 3:30
-            - Coder cleared out the old build folders
+            - The bike part shipped: here Thursday 📦
             - Ana knew you'd be late for pickup
 
             ### Waiting on you
             - Two things to pack for the cabin
 
             ### Tomorrow
+            - The plumber: I'll check back with you at 9
             - Pickles at the vet at 3:30. Leave by 3:10
-            - Sunny, 64°: a good day for the lake
             """, at: today(21, 0), failed: false)
     }
 
@@ -192,6 +195,18 @@ enum DemoDay {
                 _ = await allowNotifications()
                 try? await Task.sleep(for: .seconds(arrivesAfter))
                 postLeaveBy()
+            }
+        case "traffic":
+            Task {
+                _ = await allowNotifications()
+                try? await Task.sleep(for: .seconds(arrivesAfter))
+                postTrafficCheck()
+            }
+        case "shipped":
+            Task {
+                _ = await allowNotifications()
+                try? await Task.sleep(for: .seconds(arrivesAfter))
+                postShipped()
             }
         case "coffee":
             PlaceLookup.shared.pretend(latitude: here.latitude, longitude: here.longitude)
@@ -261,10 +276,11 @@ enum DemoDay {
 
     /// The dentist's Leave-By Alert, as `LeaveByAlerts` sets one (its words, its Maps button, its
     /// id, which Redde in front shows as a banner): 25 minutes by car, leave by 2:05.
+    /// The 2.3 cut's: the alert as the 1:45 re-check moved it, leave by 1:55, 35 minutes by car.
     private static func postLeaveBy() {
-        let start = today(14, 30), leave = today(14, 5)
-        let content = LeaveTime.content(event: "Dentist", startsAt: start, leave: leave, travel: 25 * 60, mode: .driving,
-                                        worked: today(13, 55), saying: .distantPast)
+        let start = today(14, 30), leave = today(13, 55)
+        let content = LeaveTime.content(event: "Dentist", startsAt: start, leave: leave, travel: 35 * 60, mode: .driving,
+                                        worked: today(13, 45), saying: .distantPast)
         content.categoryIdentifier = LeaveBy.mapsCategory
         content.userInfo[LeaveBy.latitudeKey] = 44.46970
         content.userInfo[LeaveBy.longitudeKey] = -73.21470
@@ -272,6 +288,48 @@ enum DemoDay {
         content.sound = .default
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: LeaveBy.alertID(event: "Dentist", start: start),
                                                                      content: content, trigger: nil))
+    }
+
+    /// The traffic re-check twenty minutes before the leaving time (`LeaveCheck`, as the
+    /// notification extension shows it): heavier, so leave by 1:55 instead of 2:05, 35 minutes by
+    /// car. Its id is the alert's, which Redde in front shows as a banner.
+    private static func postTrafficCheck() {
+        let start = today(14, 30)
+        let content = LeaveCheck.content(.heavier, title: "Dentist", leave: today(13, 55), travel: 35 * 60, mode: .driving, sound: true)
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: LeaveBy.alertID(event: "Dentist", start: start),
+                                                                     content: content, trigger: nil))
+    }
+
+    /// The bike part's watch saw it ship: the note as Redde's plugin sends a watch's (`watches.py`),
+    /// kept for the Watches list as the notification extension keeps it.
+    private static func postShipped() {
+        let json = #"{"v":1,"k":"watch","t":"The bike part order","d":"Sol","p":"default","i":"\#(bikeWatch)","b":"It shipped! 📦 Arriving Thursday by 8 PM."}"#
+        guard let note = try? JSONDecoder().decode(PushNote.self, from: Data(json.utf8)) else { return }
+        post(note)
+        // Kept once it shows (the simulator takes a few seconds to), so the row changes with the banner.
+        Task {
+            for _ in 0 ..< 40 {
+                try? await Task.sleep(for: .seconds(0.25))
+                if await !UNUserNotificationCenter.current().deliveredNotifications().isEmpty { break }
+            }
+            WatchReport.take(note)
+        }
+    }
+
+    /// The watch and the follow-up the person asked for in words (`watchask`), as Hermes lists
+    /// their jobs, for Watches & Follow-ups (`-echo.screen watches`).
+    static let bikeWatch = "b1ke0rdr"
+    static var watchJobs: [CronJob] {
+        let iso = ISO8601DateFormatter()
+        let rows: [JSONValue] = [
+            .object(["id": .string("w1"), "name": .string("[redde-watch:\(bikeWatch)] The bike part order"), "schedule": .string("0 * * * *"),
+                     "last_run_at": .string(iso.string(from: today(16, 0)))]),
+            .object(["id": .string("w2"), "name": .string("[redde-watch:p4ck4ge1] The price of the trail shoes"), "schedule": .string("0 8 * * *"),
+                     "last_run_at": .string(iso.string(from: today(8, 0)))]),
+            .object(["id": .string("f1"), "name": .string("[redde-followup:pl8mber1] Call the plumber"), "schedule": .string("once"),
+                     "next_run_at": .string(iso.string(from: today(9, 0, daysAgo: -1)))]),
+        ]
+        return rows.compactMap(CronJob.init)
     }
 
     private static func post(_ note: PushNote) {
@@ -408,6 +466,9 @@ nonisolated struct DemoDayTransport: HermesTransport {
     /// The card to show, if any, and the words.
     static func reply(to asked: String) -> (card: String?, answer: String) {
         // The 2.3 cut's.
+        if asked.contains("bike part") {
+            return (nil, "Watching the order 👀 I'll look every hour and tell you when it ships. And I'll check back about the plumber tomorrow at 9.")
+        }
         if asked.contains("tapped \"send\"") { return (nil, "Sent ✉️ I'll tell you when Ana writes back.") }
         if asked.contains("my day") { return (todayCard, "A full morning, a free stretch before lunch, and the dentist at 2:30. I'll tell you when to leave.") }
         if asked.contains("coffee") {

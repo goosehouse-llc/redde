@@ -171,6 +171,17 @@ struct WatchesView: View {
         .overlay { if loading, jobs.isEmpty { ProgressView() } }
         .refreshable { await load() }
         .task { await load() }
+        #if DEBUG
+        // The day's video: a watch's note that arrives with this open shows in its row, as Redde
+        // coming forward would show it (`DemoDay`).
+        .task {
+            while DemoDay.on, !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(0.5))
+                let now = WatchReport.all()
+                if now != reports { withAnimation(.snappy) { reports = now } }
+            }
+        }
+        #endif
         .sheet(isPresented: $adding, onDismiss: { Task { await load() } }) { NewWatchView(text: "") }
     }
 
@@ -227,6 +238,9 @@ struct WatchesView: View {
         loading = true
         defer { loading = false }
         reports = WatchReport.all()
+        #if DEBUG
+        if DemoDay.on { jobs = DemoDay.watchJobs; return }   // the day's video's
+        #endif
         do {
             jobs = try await CronBackend.current()?.list() ?? []
             problem = nil

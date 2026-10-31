@@ -758,6 +758,72 @@ final class PromoVideoUITests: XCTestCase {
         mark("end")
     }
 
+    /// 7:50, again: the timeline's free stretch tapped, Apple's new-event editor at its start, a
+    /// title typed, Add.
+    func testDayAddEvent() throws {
+        let app = try day("today", ["-echo.fresh"])
+        ask(app, "What's my day look like?")
+        let free = app.buttons.containing(NSPredicate(format: "label CONTAINS 'Free for'")).firstMatch
+        XCTAssertTrue(free.waitForExistence(timeout: 30), "no free stretch")
+        XCTAssertTrue(says(app, "when to leave"))
+        mark("card")
+        hold(2.0)
+        free.tap()
+        mark("tapped")
+        let title = app.textFields["Title"].firstMatch
+        XCTAssertTrue(title.waitForExistence(timeout: 10), "no event editor")
+        mark("editor")
+        hold(1.2)
+        title.tap()
+        title.typeText("Walk by the lake")
+        mark("typed")
+        hold(1.0)
+        // Add: the editor's tick, top right (Apple's editor; its button isn't found by name here).
+        app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.89, dy: 0.105)).tap()
+        mark("added")
+        hold(2.5)
+        mark("end")
+    }
+
+    /// 10:40: a watch and a follow-up asked for in words.
+    func testDayWatchAsk() throws {
+        let app = try day("watchask", ["-echo.fresh"])
+        ask(app, "Let me know when the bike part ships. I'll call the plumber tomorrow.")
+        XCTAssertTrue(says(app, "plumber tomorrow at 9"), "no answer")
+        mark("answered")
+        hold(3.5)
+        mark("end")
+    }
+
+    /// 1:45 PM: the traffic re-check, heavier: leave by 1:55 now.
+    func testDayTraffic() throws {
+        _ = try day("traffic", ["-echo.screen", "sessions", "-echo.demoDayAt", "3"])
+        allowNotifications()
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let banner = springboard.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'traffic is heavier'")).firstMatch
+        XCTAssertTrue(banner.waitForExistence(timeout: 20), "no re-check")
+        mark("banner")
+        hold(4.5)
+        mark("end")
+    }
+
+    /// 4:20 PM: the bike part's watch says it shipped, as a banner over Watches & Follow-ups, and
+    /// its row says so too, with the plumber's follow-up below.
+    func testDayShipped() throws {
+        let app = try day("shipped", ["-echo.screen", "watches", "-echo.demoDayAt", "4"])
+        allowNotifications()
+        XCTAssertTrue(app.navigationBars["Watches & Follow-ups"].waitForExistence(timeout: 20), "no Watches")
+        mark("start")
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let banner = springboard.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'bike part'")).firstMatch
+        XCTAssertTrue(banner.waitForExistence(timeout: 20), "no watch note")
+        mark("banner")
+        XCTAssertTrue(says(app, "Arriving Thursday"), "the row didn't change")
+        mark("row")
+        hold(3.5)
+        mark("end")
+    }
+
     /// 11:30: Coder's approval card in plain words (the delete in red); Allow Once.
     func testDayApproval() throws {
         let app = try day("approval")
