@@ -3,6 +3,19 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.11.0 (2026-10-30)
+
+Leave-By Alerts' traffic re-check
+- Redde asks this Hermes, over the Dashboard (`/redde-push leave set <device> <wakes>`, `leave
+  cancel <device>`), to wake the device about twenty minutes before each Leave-By Alert's leaving
+  time. At that time the plugin sends that one device a sealed note of a new kind, `leave`; the
+  device asks Apple Maps again, moves its alert if the traffic changed and says so in one quiet
+  notification. Hermes is told an opaque id for each alert, the event's title and the time to wake,
+  nothing else. Each device's list replaces what it said before (a moved alert, a deleted event),
+  at most 30 a device; each wake is sent once, from the thread that reads the schedules, and one
+  more than fifteen minutes late is let go. A device unpaired is forgotten with its wakes. Kept:
+  `leave.json` in `$HERMES_HOME/redde-push/`.
+
 ## 1.10.0 (2026-10-30)
 
 Goes with Redde 2.3.1. Everything here was on the main branch after 1.9.0 was declared, without a

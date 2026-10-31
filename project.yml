@@ -368,6 +368,8 @@ targets:
       - path: Shared/AgentActivityLog.swift
       - path: Shared/QuietHours.swift
       - path: Shared/LeaveTime.swift
+      # Leave-By Alerts' traffic re-check, woken by the paired Hermes.
+      - path: Shared/LeaveCheck.swift
     entitlements:
       path: EchoPush/EchoPush.entitlements
       properties:
@@ -415,6 +417,7 @@ targets:
       - path: Shared/AgentActivityLog.swift
       - path: Shared/QuietHours.swift
       - path: Shared/LeaveTime.swift
+      - path: Shared/LeaveCheck.swift
     entitlements:
       path: EchoPushMac/EchoPushMac.entitlements
       properties:

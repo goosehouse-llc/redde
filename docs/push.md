@@ -58,6 +58,42 @@ On the Mac:
 - **A heads-up's leaving time**: the extension has no location of its own, so it works from where
   the app last saw the Mac (`LeaveTime.lastKnown`, twelve hours at most), or adds none.
 
+## Leave-By Alerts' traffic re-check
+
+Leave-By Alerts (`LeaveBy`, `LeaveByAlerts`) are worked out on the device and set as local
+notifications; iOS's background refresh comes when it likes, so the traffic can change after the
+last look. From plugin 1.11.0 (asked 2026-10-30) the paired Hermes wakes the device for one more
+look, about twenty minutes before each leaving time:
+
+1. Each run that sets, moves or takes away alerts says all of this device's wakes to the plugin,
+   over the Dashboard: `command.dispatch redde-push "leave set <device ids> <wakes>"`, the wakes
+   base64url JSON `[{"i": <alert's opaque id>, "t": <event title>, "w": <seconds since 1970>}]`,
+   or `"leave cancel <device ids>"` when there are none (Leave-By Alerts off). The id is 16 hex
+   digits of SHA-256 over the alert's identifier (`LeaveCheck.id(of:)`); no address, place or
+   other calendar data goes. A wake's time is the leaving time less twenty minutes, or now when
+   that has gone by, the leaving time is more than three minutes off and the estimate in hand is
+   over five minutes old (`LeaveBy.wakes`). Said once per change (`leaveByWakesSaid`); the plugin
+   answers `redde-push leave <devices paired here> <wakes kept>`, and one from before answers
+   with its usage line, which leaves it alone for six hours. Over the Hermes API there is no
+   plugin command route, and nothing is said.
+2. The plugin keeps each device's list (`leave.json`, 30 a device, the soonest), replacing what it
+   said before, so a moved alert's wake moves and a removed one's goes; a device unpaired is
+   forgotten with its wakes. The schedules' thread (`routines.py`, every half minute) sends each
+   wake at its time to that one device, as a note of kind `leave` (`i`, `t`; ttl 15 minutes),
+   and forgets it; one more than fifteen minutes late is let go unsent.
+3. The extension (`LeaveCheck.run`) finds the pending alert whose identifier hashes to `i`, asks
+   Apple Maps for one estimate (from `LeaveTime.here()`, the last kept fix on the Mac), moves the
+   alert (removed and added under its identifier) and shows one notification: "Dentist: traffic
+   checked" over "Leave by 2:05 PM · 25 min by car", passive and silent; "Dentist: traffic is
+   heavier" (time-sensitive) or "… is lighter" when the leaving time moved five minutes or more;
+   "Time to leave for Dentist" / "Leave now · …" when it is now, in place of the alert; "Dentist:
+   traffic couldn't be checked" over the alert's words when Maps or the place failed. What it found
+   is kept in the app group (`leaveChecked`) and merged into the app's estimates at its next run
+   (`LeaveBy.merge`), so the app neither asks Maps again nor sets the alert back. An extension
+   has to show something: if the alert is gone (a note crossed the app's cancel), it shows only
+   "Leave-By Alerts checked your calendar.", passive and silent; the same is what shows if the
+   check runs out of time.
+
 ## Pairing
 
 The key is agreed between the plugin and the phone; the relay only carries the two halves.

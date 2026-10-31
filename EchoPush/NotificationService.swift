@@ -15,6 +15,7 @@ final class NotificationService: UNNotificationServiceExtension {
         deliver = contentHandler
         var choices: UNNotificationCategory?
         var headsUp: AgentBriefing?
+        var leaveCheck: String?
         if let payload = request.content.userInfo[PushNote.sealedKey] as? String,
            let (note, pairing) = PushSeal.note(from: payload, pairings: PushVault.load()),
            note.fill(content) {
@@ -35,6 +36,8 @@ final class NotificationService: UNNotificationServiceExtension {
             }
             AgentActivityNote.take(note)   // and, for Agent Activity, that it happened
             choices = note.choiceCategory
+            // Time to check the traffic for a Leave-By Alert (`LeaveCheck`).
+            if note.kind == .leave, let wake = note.i, !wake.isEmpty { leaveCheck = wake }
             // A chat the person muted (Mute… in Redde): in the list, without a sound or a banner.
             if MutedChats.isMuted(session: note.s, room: note.g, bot: note.p) { MutedChats.quiet(content) }
             // Quiet hours: what an agent sent on its own goes to the list only, and is told of
@@ -53,6 +56,15 @@ final class NotificationService: UNNotificationServiceExtension {
             }
         }
         if !NotificationSound.isOn { content.sound = nil }
+        // A Leave-By Alert's traffic re-check: Apple Maps asked again, the alert moved, and what
+        // came of it shown in place of the note (which, should time run out, says it looked).
+        if let leaveCheck {
+            nonisolated(unsafe) let contentHandler = contentHandler
+            Task {
+                contentHandler(await LeaveCheck.run(wake: leaveCheck))
+            }
+            return
+        }
         // A heads-up with an address: when to leave, worked out here from where the phone is, first.
         if let headsUp {
             nonisolated(unsafe) let content = content

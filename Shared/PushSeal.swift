@@ -71,6 +71,9 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
         /// `g` the profile whose .env it goes in, `p` and `d` the asking agent, `r` "1" when it
         /// replaces one. Never a value: the person pastes it into Redde's card (`KeyRequests`).
         case key
+        /// Time to check the traffic for a Leave-By Alert (`i` the alert's opaque id, `t` the
+        /// event's title): the extension asks Apple Maps again and moves it (`LeaveCheck`).
+        case leave
     }
 
     var v = 1
@@ -492,6 +495,14 @@ nonisolated extension PushNote {
                 .filter { !$0.isEmpty }.joined(separator: "\n")
             content.threadIdentifier = "redde.key"
             content.interruptionLevel = .timeSensitive
+        case .leave:
+            // What shows if the check can't finish in the extension's time: that it looked. The
+            // check itself puts its result here (`LeaveCheck.run`).
+            content.title = ""
+            content.body = String(localized: "Leave-By Alerts checked your calendar.", comment: "Notification: a traffic re-check found no alert waiting any more (the event was deleted or moved)")
+            content.threadIdentifier = "redde.leave"
+            content.sound = nil
+            content.interruptionLevel = .passive
         case .groupWait:
             let who = d.flatMap { $0.isEmpty ? nil : $0 }
             if let t, !t.isEmpty { content.subtitle = t }

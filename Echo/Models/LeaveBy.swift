@@ -6,9 +6,16 @@ import Foundation
 /// ones chosen in Settings → Agent → Calendars), and for each event at a street address asks Apple
 /// Maps how long the way there takes from where the device is, by the person's way of getting
 /// about, with the traffic expected for arriving on time; a time-sensitive notification goes off
-/// at the leaving time, five minutes in hand (`LeaveTime.leave`). Nothing of it leaves the device
-/// but the two ends of the way, to Apple Maps. Off until turned on; this device's own (not synced:
-/// the permissions are the device's). `LeaveByAlerts` runs it; what is decided is here, testable.
+/// at the leaving time, a few minutes in hand, more for a longer way (`LeaveTime.spare`). Nothing
+/// of it leaves the device but the two ends of the way, to Apple Maps. Off until turned on; this
+/// device's own (not synced: the permissions are the device's). `LeaveByAlerts` runs it; what is
+/// decided is here, testable.
+///
+/// The traffic re-check (asked 2026-10-30, "so the last minutes don't depend on iOS's background
+/// schedule"): with the paired Hermes's Redde plugin 1.11 and its Dashboard login, the device asks
+/// that Hermes to wake it twenty minutes before each leaving time (`wakes`, `wakeCommand`); the
+/// notification extension then asks Apple Maps again and moves the alert (`LeaveCheck`). Hermes
+/// learns an opaque id per alert, the event's title and the time; nothing else.
 nonisolated enum LeaveBy {
     /// Settings' key; read straight from the defaults, so a background run has it too.
     static let key = "leaveByAlerts"
@@ -45,11 +52,11 @@ nonisolated enum LeaveBy {
     static let mostAsked = 12
 
     /// What its identifiers start with: a heads-up's reminders have `LeaveTime.reminderPrefix` alone.
-    static let idPrefix = LeaveTime.reminderPrefix + "event."
+    static let idPrefix = LeaveTime.alertPrefix
     /// The notification's button, and its category.
     static let mapsCategory = "redde.leave.maps"
     static let mapsAction = "redde.leave.openMaps"
-    static let latitudeKey = "leaveLatitude", longitudeKey = "leaveLongitude", modeKey = "leaveMode"
+    static let latitudeKey = LeaveTime.alertLatitudeKey, longitudeKey = LeaveTime.alertLongitudeKey, modeKey = LeaveTime.alertModeKey
 
     // MARK: Events
 
@@ -118,7 +125,7 @@ nonisolated enum LeaveBy {
         /// while none is set.
         var alertAt: Date?
 
-        var leave: Date { LeaveTime.leave(for: start, travel: travel) }
+        var leave: Date { LeaveTime.leave(for: start, travel: travel, mode: mode) }
         var from: CLLocation { CLLocation(latitude: fromLatitude, longitude: fromLongitude) }
         var to: CLLocationCoordinate2D { CLLocationCoordinate2D(latitude: toLatitude, longitude: toLongitude) }
 
@@ -258,5 +265,82 @@ nonisolated enum LeaveBy {
         worked.values.filter { ($0.alertAt ?? .distantPast) > now && $0.start > now }
             .min { $0.alertAt! < $1.alertAt! }
             .map { Next(title: $0.title, leave: $0.alertAt!) }
+    }
+
+    // MARK: The traffic re-check
+
+    /// A wake asked of the paired Hermes: at `at`, it sends this device a note to check the way to
+    /// the event again (`LeaveCheck`). `id` is the alert's opaque id (`LeaveCheck.id(of:)`).
+    struct Wake: Equatable, Sendable {
+        var id: String
+        var title: String
+        var at: Date
+    }
+
+    /// The most wakes asked for (the plugin keeps as many a device).
+    static let mostWakes = 30
+    /// A leaving time this close gets no wake: there's no time left for one to help.
+    static let wakeLeast: TimeInterval = 3 * 60
+
+    /// The wakes for the alerts set, soonest first: each `LeaveCheck.ahead` before its leaving
+    /// time. One whose time has gone by is asked for at once if its leaving time is still
+    /// `wakeLeast` off and the estimate in hand is older than `soonAgain` (Apple Maps couldn't be
+    /// asked just now); otherwise the estimate is as fresh as a check would make it, and none is.
+    static func wakes(for alerts: [Alert], now: Date) -> [Wake] {
+        let wakes = alerts.compactMap { alert -> Wake? in
+            guard !alert.now else { return nil }
+            var at = alert.leave.addingTimeInterval(-LeaveCheck.ahead)
+            if at <= now {
+                guard alert.leave > now.addingTimeInterval(wakeLeast), now.timeIntervalSince(alert.worked) >= soonAgain else { return nil }
+                at = now
+            }
+            // To the minute, as the alert is: an estimate a few seconds off says nothing new.
+            return Wake(id: LeaveCheck.id(of: alert.id), title: alert.title,
+                        at: Date(timeIntervalSince1970: (at.timeIntervalSince1970 / 60).rounded(.down) * 60))
+        }
+        return Array(wakes.sorted { ($0.at, $0.id) < ($1.at, $1.id) }.prefix(mostWakes))
+    }
+
+    /// The plugin command that says all of this device's wakes (`/redde-push leave set <device ids>
+    /// <wakes>`, base64url JSON of `i`, `t`, `w`), or cancels them when there are none. The device
+    /// is named by its pairing ids; the plugin keeps the ones paired with it.
+    static func wakeCommand(_ wakes: [Wake], devices: [String]) -> String {
+        let ids = devices.joined(separator: ",")
+        guard !wakes.isEmpty else { return "leave cancel \(ids)" }
+        let listed: [[String: Any]] = wakes.map { ["i": $0.id, "t": $0.title, "w": Int($0.at.timeIntervalSince1970)] }
+        let json = (try? JSONSerialization.data(withJSONObject: listed, options: [.sortedKeys])) ?? Data("[]".utf8)
+        return "leave set \(ids) \(PushSeal.base64URL(json))"
+    }
+
+    /// What the notification extension found at its checks (`LeaveCheck.take`), into what is
+    /// worked out: a newer estimate takes the place of the one kept (so the next run neither asks
+    /// Apple Maps again nor sets the alert back), and an alert it set off at once has gone off.
+    static func merge(_ checked: [String: LeaveCheck.Checked], into worked: [String: Worked]) -> [String: Worked] {
+        var worked = worked
+        for (id, check) in checked {
+            guard var kept = worked[id] else { continue }
+            if check.at > kept.at {
+                kept.travel = check.travel
+                kept.at = check.at
+            }
+            if let fired = check.fired { kept.alertAt = fired }
+            worked[id] = kept
+        }
+        return worked
+    }
+
+    /// What was last said to each server's plugin about the wakes (`LeaveByAlerts`), so the same
+    /// isn't said again; "unheard <seconds>" for a server whose plugin didn't take it then.
+    static let wakesSaidKey = "leaveByWakesSaid"
+    /// A plugin that didn't take the wakes (one from before 1.11) is asked again after this long.
+    static let unheardFor: TimeInterval = 6 * 3600
+
+    /// Whether to say `command` to a server's plugin, from what was said last.
+    static func shouldSay(_ command: String, after said: String?, now: Date) -> Bool {
+        guard let said else { return !command.hasPrefix("leave cancel ") }   // never asked: nothing to take back
+        if said.hasPrefix("unheard "), let at = Double(said.dropFirst("unheard ".count)) {
+            return now.timeIntervalSince1970 - at >= unheardFor
+        }
+        return said != command
     }
 }

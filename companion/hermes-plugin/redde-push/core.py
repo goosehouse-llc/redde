@@ -246,6 +246,9 @@ class Store:
             if device_id in (calls.get("devices") or {}):
                 calls["devices"] = {d: p for d, p in calls["devices"].items() if d != device_id}
                 self._write("calls.json", calls)
+            wakes = self.leave_wakes()
+            if device_id in wakes:   # (leave.py) a device unpaired is woken for nothing more
+                self.set_leave_wakes({d: w for d, w in wakes.items() if d != device_id})
             return True
 
     def _sessions(self) -> dict[str, list[str]]:
@@ -326,6 +329,16 @@ class Store:
     def set_routine_runs(self, runs: dict[str, str]) -> None:
         with self._lock:
             self._write("routine-runs.json", {"runs": runs})
+
+    def leave_wakes(self) -> dict[str, list[dict]]:
+        """Leave-By Alerts' traffic re-checks (`leave.py`): device id -> its wakes, each `i` the
+        alert's opaque id, `t` the event's title, `w` when (seconds since 1970)."""
+        with self._lock:
+            return {d: list(w) for d, w in (self._read("leave.json").get("devices") or {}).items() if isinstance(w, list)}
+
+    def set_leave_wakes(self, wakes: dict[str, list[dict]]) -> None:
+        with self._lock:
+            self._write("leave.json", {"devices": {d: w for d, w in wakes.items() if w}})
 
     @contextlib.contextmanager
     def rooms_lock(self, name: str = "rooms"):
@@ -487,7 +500,7 @@ PASSWORD = "su" + "do"
 #: How long Apple keeps trying a phone that is off. What is on the widget is good for longer than
 #: a notification about a turn: half a day.
 TTL = {"approval": 600, "question": 600, "secret": 300, PASSWORD: 180, "widget": 43200, "group_wait": 600, "routine": 21600,
-       "ideas": 43200}
+       "ideas": 43200, "leave": 900}
 
 
 def note(kind: str, session: str = "", body: str = "", title: str = "", detail: str = "", answerable: bool = False,
@@ -620,6 +633,16 @@ def ideas_note(profile: str, name: str, ideas: list[dict], offer: str = "") -> d
     return made
 
 
+def leave_note(wake: str, title: str) -> dict:
+    """Time to check the traffic for a Leave-By Alert (`leave.py`), to the one device that set it:
+    `i` the alert's opaque id, `t` the event's title. The device does the rest (where it is, the
+    address, Apple Maps); nothing of that is here."""
+    made = {"v": 1, "k": "leave", "at": int(time.time()), "n": host_name(), "i": clipped(wake, 64)}
+    if title:
+        made["t"] = clipped(title, 80)
+    return made
+
+
 def widget_note(title: str = "", text: str = "", start: str = "", end: str = "") -> dict:
     """What the agent wrote for its widget on the phone, for a phone that isn't following the
     turn: `t` the heading, `b` the lines, `f` and `u` from and until when, as the agent wrote
@@ -656,6 +679,8 @@ def collapse_id(device: dict, made: dict) -> str:
         about = f"{made.get('i', '')}|{made.get('at', '')}"
     elif made.get("k") == "ideas":   # each offer its own notification
         about = f"{made.get('p', '')}|{made.get('i', '')}"
+    elif made.get("k") == "leave":   # a later check for the same alert takes the earlier's place
+        about = made.get("i", "")
     # How a turn ended is one thing, whichever way it ended: a reply that arrives after all
     # takes the place of "couldn't reply".
     kind = "reply" if made.get("k") in ("failed", "task") else made.get("k")

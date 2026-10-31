@@ -235,10 +235,17 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let bot = info[PushNote.botKey] as? String
         let sealed = info[PushNote.sealedKey] as? String
         let leaving = notification.request.identifier.hasPrefix(LeaveTime.reminderPrefix)
+        let urgent = notification.request.content.interruptionLevel == .timeSensitive
         nonisolated(unsafe) let show = completionHandler
         Task { @MainActor in
             // Time to leave: said over Redde too (the app's own, set for then, `LeaveTime`).
             if leaving { return show(self.shown) }
+            // A Leave-By Alert's traffic re-check (`LeaveCheck`): taken in now; over Redde only
+            // when the traffic moved the leaving time earlier.
+            if kind == PushNote.Kind.leave.rawValue {
+                LeaveByAlerts.shared.trafficCheckArrived()
+                return show(urgent ? self.shown : [.list])
+            }
             // A heads-up came: its leaving reminder and a Leave-By Alert for the same event become one.
             if kind == PushNote.Kind.routine.rawValue { LeaveByAlerts.shared.headsUpArrived() }
             if kind == nil, let sealed {
@@ -257,6 +264,11 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
                          confirm: (PushPairing, String?) -> Void = { PushVault.confirm($0, host: $1) }) -> UNNotificationPresentationOptions {
         guard let (note, pairing) = PushSeal.note(from: sealed, pairings: vault()) else { return shown }
         confirm(pairing, note.n)
+        // A traffic re-check the extension didn't make: the app, in front, checks itself.
+        if note.kind == .leave {
+            LeaveByAlerts.shared.trafficCheckArrived()
+            return []
+        }
         StatusWidgets.heard(note)   // as the extension does, for the "Needs you" widget
         AgentIdea.take(note)
         WatchReport.take(note)

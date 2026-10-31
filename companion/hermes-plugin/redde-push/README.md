@@ -120,7 +120,9 @@ chats), `mutes.json` (what each phone has muted, until when), `room-cursors.json
 `routine-runs.json` (the last run of each bot's schedule it has told of), and `calls.json` (which
 agents each phone takes calls from, and the calls of the last day), and `keys.json` with `keys/`
 (the keys agents have asked for: each request's name, profile and why, never a value, and a key
-pair made for that request alone, deleted once it is answered). Delete the folder and nothing is paired.
+pair made for that request alone, deleted once it is answered), and `leave.json` (when to wake
+each device for Leave-By Alerts' traffic re-check: an opaque id, the event's title and a time,
+each forgotten once sent). Delete the folder and nothing is paired.
 
 ## Phone tools
 
@@ -223,6 +225,26 @@ Also from 1.9.0, things the agent does for you on its own time, each a Hermes cr
   Evening Wrap-up is one: what got done today, what waits on you, what carries over.
 
 The tools are offered once a phone is paired.
+
+## Leave-By Alerts' traffic re-check
+
+From 1.11.0. Redde's Leave-By Alerts (Settings, Agent) work out on the device, with Apple Maps,
+when to leave for each event on its calendar that has a street address, and set a notification
+for then. iOS runs the app in the background when it likes, so the traffic can change after Redde
+last looked. With this plugin and the Dashboard login, Redde asks this Hermes to wake the device
+about twenty minutes before each leaving time (`/redde-push leave set <device> <wakes>`, over the
+Dashboard). At that time the plugin sends that one device a sealed note of its own kind
+(`leave`); the device asks Apple Maps again, moves its alert if the traffic changed, and shows one
+quiet notification with the result ("Dentist: traffic checked", "Dentist: traffic is heavier").
+
+What Hermes is told, per alert: an opaque id (a hash of the device's own name for the alert), the
+event's title for the note, and when to wake. No address, no place, nothing else from the
+calendar. Redde sends the whole list each time it changes, so a moved alert replaces its old
+time and one deleted or moved off the calendar is taken back; turning Leave-By Alerts off takes
+them all (`leave cancel <device>`). Each wake is sent once, from the thread that reads the
+schedules (every half minute), then forgotten; one more than fifteen minutes late (Hermes was
+down) is let go unsent. At most 30 a device, the soonest. Over the Hermes API alone there is no
+way for the app to say any of this, and Leave-By Alerts work as before.
 
 ## Requirements
 

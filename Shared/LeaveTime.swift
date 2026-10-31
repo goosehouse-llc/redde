@@ -23,11 +23,35 @@ nonisolated enum LeaveTime {
     }
 
     private static let modeKey = "leaveMode", placeKey = "lastPlace"
-    /// Time kept in hand: there a few minutes early.
-    static let spare: TimeInterval = 5 * 60
     /// How old a remembered place may be.
     static let placeKeptFor: TimeInterval = 12 * 3600
     static let reminderPrefix = "redde.leave."
+    /// What a Leave-By Alert's identifier starts with (`LeaveBy`): a heads-up's reminders have
+    /// `reminderPrefix` alone.
+    static let alertPrefix = reminderPrefix + "event."
+    /// On a Leave-By Alert: where the event is, and the way it was worked out by, for its Open in
+    /// Maps and for the traffic re-check (`LeaveCheck`).
+    static let alertLatitudeKey = "leaveLatitude", alertLongitudeKey = "leaveLongitude", alertModeKey = "leaveMode"
+
+    // MARK: Time in hand
+
+    /// Time kept in hand (asked 2026-10-30, "spare time that scales with the trip"): a tenth of the
+    /// way there, to the whole minute up, at least five minutes and at most twenty; driving to
+    /// arrive at a weekday rush hour, three twentieths. Never shown: the alert says when to leave.
+    static func spare(travel: TimeInterval, mode: Mode, arriving: Date, calendar: Calendar = .current) -> TimeInterval {
+        let share = mode == .driving && rushHour(arriving, calendar: calendar) ? 0.15 : 0.10
+        let seconds = Int((max(0, travel) * share).rounded())   // (whole seconds first: 10% of 50 min is 300, not 300.0000001)
+        return TimeInterval(min(20, max(5, (seconds + 59) / 60)) * 60)
+    }
+
+    /// Arriving between 7 and 9:30 in the morning or 4 and 7 in the evening, Monday to Friday
+    /// (the calendar's weekend), local time.
+    static func rushHour(_ date: Date, calendar: Calendar = .current) -> Bool {
+        guard !calendar.isDateInWeekend(date) else { return false }
+        let parts = calendar.dateComponents([.hour, .minute], from: date)
+        let minute = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
+        return (7 * 60 ..< 9 * 60 + 30).contains(minute) || (16 * 60 ..< 19 * 60).contains(minute)
+    }
 
     static func mode(in defaults: UserDefaults? = NeedsYou.shared) -> Mode {
         defaults?.string(forKey: modeKey).flatMap(Mode.init) ?? .driving
@@ -97,7 +121,10 @@ nonisolated enum LeaveTime {
         return try? await MKDirections(request: request).calculateETA().expectedTravelTime
     }
 
-    static func leave(for event: Date, travel: TimeInterval) -> Date { event.addingTimeInterval(-travel - spare) }
+    /// When to leave: the way there and the time in hand (`spare`) before the event.
+    static func leave(for event: Date, travel: TimeInterval, mode: Mode, calendar: Calendar = .current) -> Date {
+        event.addingTimeInterval(-travel - spare(travel: travel, mode: mode, arriving: event, calendar: calendar))
+    }
 
     /// The line put first on the heads-up: "Leave by 2:05 PM · 25 min by car".
     static func line(leave: Date, travel: TimeInterval, mode: Mode, now: Date = .now) -> String {
@@ -204,7 +231,7 @@ nonisolated enum LeaveTime {
         guard mode != .off, let event = briefing.eventAt, event > .now, let address = briefing.place,
               EventPlace.isAddress(address), let origin = here(in: defaults),
               let travel = await travel(from: origin, to: address, mode: mode, arriveBy: event) else { return nil }
-        let leave = leave(for: event, travel: travel)
+        let leave = leave(for: event, travel: travel, mode: mode)
         AgentBriefing.setLeave(briefing.id, at: leave, in: defaults)
         await remind(event: briefing.heading, id: briefing.id, startsAt: event, at: leave, travel: travel, mode: mode)
         return line(leave: leave, travel: travel, mode: mode)

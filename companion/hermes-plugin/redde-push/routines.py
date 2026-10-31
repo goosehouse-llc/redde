@@ -11,6 +11,8 @@ two processes reading send each run once. A phone that muted the bot (`b:<profil
 nothing of it.
 
 `Stores` is all that touches Hermes's files, so `Routines` can be tested alone.
+
+The same thread sends Leave-By Alerts' traffic re-checks at their time (`leave.py`).
 """
 
 from __future__ import annotations
@@ -24,7 +26,7 @@ import time
 import uuid
 from pathlib import Path
 
-from . import core, watches
+from . import core, leave, watches
 
 log = logging.getLogger("redde_push")
 
@@ -144,6 +146,11 @@ class Routines:
                     self.look()
             except Exception:
                 log.debug("redde-push: reading the schedules failed", exc_info=True)
+            try:
+                # Leave-By Alerts' traffic re-checks whose time has come (leave.py).
+                leave.send_due(self.store, self.send)
+            except Exception:
+                log.debug("redde-push: sending the traffic re-checks failed", exc_info=True)
             time.sleep(self.every)
 
     def look(self) -> int:

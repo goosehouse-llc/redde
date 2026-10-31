@@ -421,7 +421,14 @@ struct LeaveByAlertsSection: View {
                 status
             }
         } footer: {
-            Text("Redde looks at your calendar and Apple Maps on this device and tells you when to leave, a few minutes early. Only events with a street address.")
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Redde looks at your calendar and Apple Maps on this device and tells you when to leave, a few minutes early. Only events with a street address.")
+                // The traffic re-check (`LeaveCheck`, asked 2026-10-30): woken by the paired Hermes.
+                if Settings.shared.leaveByAlerts {
+                    Text("With your Hermes's Redde plugin 1.11 and the Dashboard login, traffic is checked again 20 minutes before you leave.",
+                         comment: "Settings → Leave-By Alerts footer: the paired Hermes wakes this device to check the traffic again")
+                }
+            }
         }
         .id("leaveByAlerts")
         .onAppear { mode = LeaveTime.mode() }   // (the Heads-Ups page's picker may have changed it)

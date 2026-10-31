@@ -14,6 +14,7 @@
 #   scripts/hermes-lab/lab.sh plugin [tag ...]     the notification plugin installed through the Dashboard (fetches it from GitHub)
 #   scripts/hermes-lab/lab.sh push [tag ...]       the push plugin: pairing, and a note for everything it announces
 #   scripts/hermes-lab/lab.sh grouppush [tag ...]  the push plugin's group chat notes: bots' messages and waits
+#   scripts/hermes-lab/lab.sh leave [tag ...]      Leave-By Alerts' traffic re-check: wakes said over the Dashboard, sent to one device
 #   scripts/hermes-lab/lab.sh push --app [tag ...] the same, then the app pairs both ways and reads a notification
 #   scripts/hermes-lab/lab.sh device [tag ...]     phone tools: the agent calls one, a stand-in phone answers, on both connections
 #   scripts/hermes-lab/lab.sh device --app [tag ...] the same, then the app's own service carries one out
@@ -674,6 +675,22 @@ routines() {
   echo "\nAll checks passed."
 }
 
+# Leave-By Alerts' traffic re-check (leave_check.py, asked 2026-10-30): two stand-in devices pair
+# over the Dashboard, one says when to wake it, and at that time only it is sent a "leave" note; a
+# wake moved is sent once at its new time, one cancelled never. The push scenario, in a home of the
+# lab's own. About two minutes a release: the plugin's thread looks every half minute.
+leave() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  for tag in $tags; do
+    echo "===== Hermes $tag / leave-by wakes"
+    if ! LAB_OWN_HOME=1 up "$tag" push; then failed+=("$tag (lab)"); continue; fi
+    (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" leave_check.py "$LAB_HOME/hermes-$tag/.venv/bin/hermes") || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
 # Calls from the agent (calls_check.py): a stand-in phone with an address for calls lets a bot
 # call it; the bot's call_user reaches "Apple" as a VoIP push through the relay, a second within
 # five minutes is refused, the main agent, not let, rings nothing. The push scenario.
@@ -842,6 +859,7 @@ case "${1:-}" in
   templates) shift; templates "$@" ;;
   plugins) shift; plugins "$@" ;;
   routines) shift; routines "$@" ;;
+  leave) shift; leave "$@" ;;
   calls) shift; calls "$@" ;;
   apibots) shift; apibots "$@" ;;
   search) shift; search "$@" ;;

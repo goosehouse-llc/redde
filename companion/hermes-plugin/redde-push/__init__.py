@@ -12,7 +12,8 @@ The app itself uses the slash command `/redde-push`, over the Dashboard: `watch 
 <device,...>` says which conversations it has taken part in (only those notify, and every turn
 over the Hermes API), `rooms <device,...> <room,...>` which group chats it follows (`rooms.py`),
 `mutes <device,...> <key=until,...>` which chats it has muted, `calls <device,...> <profile,...>`
-which agents may ring it (`calls.py`), and `offer` then `accept <offer> <key> <box>` pair it
+which agents may ring it (`calls.py`), `leave set <device> <wakes>` when to wake it for Leave-By
+Alerts' traffic re-check (`leave.py`), and `offer` then `accept <offer> <key> <box>` pair it
 without a code.
 
 And cards (`cards.py`): `redde_show`, a map, places, the weather or the time the app draws under a reply;
@@ -33,7 +34,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import calls, cards, core, followups, headsup, ideas, keys, qr, rooms, routines, watches
+from . import calls, cards, core, followups, headsup, ideas, keys, leave, qr, rooms, routines, watches
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
 
 log = logging.getLogger("redde_push")
@@ -432,6 +433,12 @@ def _slash(raw_args: str = "") -> str:
     if words[:1] == ["calls"]:
         # Which agents may ring the phone (calls.py): kept in the main home, with the phones.
         return calls.slash(_store_in(calls.caller(_home())[1]), words[1:])
+    if words[:1] == ["leave"]:
+        # When to wake a device for Leave-By Alerts' traffic re-check (leave.py): kept in the main
+        # home, with the phones; the schedules' thread sends each at its time.
+        said = leave.slash(_store_in(calls.caller(_home())[1]), words[1:])
+        _watch_schedules()
+        return said
     store, pusher = _state()
     if len(words) == 3 and words[0] == "watch":
         following = store.watch(words[1], [w for w in words[2].split(",") if w])

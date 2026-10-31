@@ -17,6 +17,12 @@ import UIKit
 /// off the main actor, each address looked up once, and a way asked of Apple Maps again only
 /// when its inputs changed or its estimate is old for how soon the event is (`LeaveBy.needsTravel`).
 /// Moving an alert replaces its pending request; an event gone or moved takes its alert with it.
+///
+/// And, where the paired Hermes has the Redde plugin 1.11 and Redde its Dashboard login, the
+/// traffic re-check (asked 2026-10-30): each run that sets, moves or takes away alerts tells that
+/// Hermes when to wake this device for each (`askForWakes`); the notification extension does the
+/// check (`LeaveCheck`), and what it found is taken in at the next run. Over the Hermes API alone,
+/// or with an older plugin, nothing is said and the alerts work as before.
 @MainActor
 @Observable
 final class LeaveByAlerts {
@@ -40,6 +46,8 @@ final class LeaveByAlerts {
     @ObservationIgnored private let reader = LeaveByCalendar()
     @ObservationIgnored private var places: [String: [Double]]
     @ObservationIgnored private let log = Logger(subsystem: "com.goosehouse.echo", category: "leaveby")
+    /// The plugin's command on the Hermes in use, over its Dashboard (`askForWakes`).
+    @ObservationIgnored var plugin: PushService.PluginCommand = PushService.command(over: .shared)
 
     /// The background refresh's identifier, in `BGTaskSchedulerPermittedIdentifiers`.
     nonisolated static let refreshID = "com.goosehouse.echo.leaveby"
@@ -72,6 +80,7 @@ final class LeaveByAlerts {
             #if os(iOS)
             BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: Self.refreshID)
             #endif
+            await askForWakes([], now: .now)   // and the Hermes wakes this device for none
             return
         }
         working = true
@@ -180,6 +189,7 @@ final class LeaveByAlerts {
             await Self.removeAllPending()
             LeaveBy.keep([:])
             next = nil
+            await askForWakes([], now: now)
             return
         }
         guard LeaveBy.shouldRun(last: lastRun, now: now, forced: force) else { return }
@@ -193,7 +203,9 @@ final class LeaveByAlerts {
 
         let events = LeaveBy.qualifying(await reader.events(from: now, to: now.addingTimeInterval(LeaveBy.horizon)),
                                         chosen: CalendarChoice.chosen, now: now)
-        var worked = LeaveBy.worked()
+        // What the traffic re-checks found since (`LeaveCheck`): fresher estimates, and alerts
+        // they set off themselves.
+        var worked = LeaveBy.merge(LeaveCheck.take(), into: LeaveBy.worked())
         if let origin = LeaveBy.origin(kept: CurrentLocation.isOn ? CurrentLocation.kept() : nil, here: LeaveTime.here()) {
             var asked = 0
             for event in events where asked < LeaveBy.mostAsked
@@ -227,6 +239,7 @@ final class LeaveByAlerts {
         #if os(iOS)
         scheduleRefresh(alerts: plan.alerts.filter { !$0.now }.map(\.leave), now: .now)
         #endif
+        await askForWakes(plan.alerts, now: .now)
         if runAgain {
             runAgain = false
             Task { await run(force: true) }
@@ -244,6 +257,41 @@ final class LeaveByAlerts {
         places[address] = [found.latitude, found.longitude]
         UserDefaults.standard.set(places, forKey: LeaveBy.placesKey)
         return found
+    }
+
+    // MARK: The traffic re-check
+
+    /// Tells the Hermes in use when to wake this device for each alert (`LeaveBy.wakes`), all of
+    /// them each time they change, or none (turned off): a moved alert's wake replaces its old one,
+    /// one taken away goes. Only over the Dashboard, with this device paired for notifications;
+    /// once per change (`LeaveBy.shouldSay`). An older plugin answers with its usage line: it is
+    /// left alone for a few hours, and the alerts go on as they always have. Nothing is shown.
+    private func askForWakes(_ alerts: [LeaveBy.Alert], now: Date) async {
+        let settings = Settings.shared
+        let devices = PushService.shared.pairings.filter(\.isPaired).map(\.id)
+        guard settings.serveBaseURL != nil, !devices.isEmpty else { return }
+        let server = settings.activeServerID.uuidString   // (the plugin keeps them in the main home, whichever profile)
+        let command = LeaveBy.wakeCommand(LeaveBy.wakes(for: alerts, now: now), devices: devices)
+        var said = UserDefaults.standard.dictionary(forKey: LeaveBy.wakesSaidKey) as? [String: String] ?? [:]
+        guard LeaveBy.shouldSay(command, after: said[server], now: now), await HermesServeClient.shared.canUse() else { return }
+        do {
+            let reply = try await plugin(command)
+            said[server] = reply.hasPrefix("redde-push leave ") ? command : "unheard \(Int(now.timeIntervalSince1970))"
+            log.notice("wakes: \(reply, privacy: .public)")
+        } catch PushError.noPlugin {
+            said[server] = "unheard \(Int(now.timeIntervalSince1970))"
+        } catch {
+            log.info("wakes not said: \(error.localizedDescription, privacy: .public)")   // unreachable: said at the next run
+            return
+        }
+        UserDefaults.standard.set(said, forKey: LeaveBy.wakesSaidKey)
+    }
+
+    /// A traffic re-check's notification arrived with Redde in front (or reached it unopened): what
+    /// it found is taken in, or the app checks itself.
+    func trafficCheckArrived() {
+        guard LeaveBy.isOn else { return }
+        soon(after: .seconds(1), force: true)
     }
 
     // MARK: Notifications

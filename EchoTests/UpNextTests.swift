@@ -46,7 +46,7 @@ struct UpNextTests {
 
     @Test func theLeavingTimeAndItsLine() {
         let event = Date(timeIntervalSince1970: 1_800_000_000)
-        let leave = LeaveTime.leave(for: event, travel: 25 * 60)
+        let leave = LeaveTime.leave(for: event, travel: 25 * 60, mode: .driving)
         #expect(leave == event.addingTimeInterval(-30 * 60), "the way there and five minutes in hand")
         let early = leave.addingTimeInterval(-3600)
         #expect(LeaveTime.line(leave: leave, travel: 25 * 60, mode: .driving, now: early).hasPrefix("Leave by "))
