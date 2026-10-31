@@ -43,8 +43,9 @@ final class LinkPreviews {
 
     init(folder: URL? = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?.appending(path: "link-previews")) {
         #if DEBUG
-        // Made-up pages are kept nowhere, so they never stand in for real ones later.
-        let demo = DevHooks.has("-echo.demoLinkPreview")
+        // Made-up pages are kept nowhere, so they never stand in for real ones later. The cards'
+        // demos (a purchase card's listings) never reach the stores' made-up addresses either.
+        let demo = DevHooks.has("-echo.demoLinkPreview") || DevHooks.has("-echo.demoCards")
         self.folder = demo ? nil : folder
         #if canImport(UIKit)
         if demo { fetch = { await LinkPreviews.demo($0) } }
@@ -142,6 +143,16 @@ final class LinkPreviews {
     /// `-echo.demoLinkPreview`: made-up pages, at once, with no network (screenshots, UI tests).
     nonisolated static func demo(_ url: URL) async -> LinkPreview? {
         try? await Task.sleep(for: .milliseconds(300))
+        // `-echo.demoCards purchase`: each product's listing, with the product's demo picture.
+        let listings = ["aurora-q5": "Northwind Audio Aurora Q5 Wireless Noise Cancelling Over-Ear Headphones, Black",
+                        "tidal-air-3": "Harbor Sound Tidal Air 3 Foldable ANC Headphones, 40 h Battery",
+                        "studio-pro-anc": "Meridian Studio Pro ANC Over-Ear Headphones with LDAC",
+                        "drift-anc-earbuds": "Kestrel Drift ANC True Wireless Earbuds, IPX4"]
+        if let title = listings[url.lastPathComponent] {
+            let picture = await ProductImages.demo(URL(string: "https://images.example.com/\(url.lastPathComponent).jpg")!)
+            return LinkPreview(url: url, title: title, site: site(url.host() ?? "example.com"),
+                               image: picture.flatMap(UIImage.init(data:))?.jpegData(compressionQuality: 0.8))
+        }
         let picture = UIGraphicsImageRenderer(size: CGSize(width: 120, height: 120)).image { ctx in
             UIColor(red: 0.30, green: 0.55, blue: 0.95, alpha: 1).setFill()
             ctx.fill(CGRect(x: 0, y: 0, width: 120, height: 120))

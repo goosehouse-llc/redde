@@ -61,6 +61,14 @@ struct PurchaseCardTests {
         #expect(many.items.count == ReplyCards.maxProducts)
     }
 
+    /// The listing names its real site and page, so a link that isn't at the store the agent named
+    /// shows as what it is (2026-10-31).
+    @Test func aListingReadsAsItsSiteAndPage() {
+        #expect(ListingLink.address(URL(string: "https://www.bestbuy.com/site/aurora-q5/6501234.p?skuId=6501234#reviews")!) == "bestbuy.com/site/aurora-q5/6501234.p")
+        #expect(ListingLink.address(URL(string: "https://www.amazon.com/")!) == "amazon.com")
+        #expect(ListingLink.address(URL(string: "https://shop.example.com/tidal-air-3/")!) == "shop.example.com/tidal-air-3")
+    }
+
     @Test func pricesAsAgentsWriteThem() {
         func read(_ text: String) -> (Double?, String?, String?) {
             let found = ReplyCards.money(.string(text), locale: Locale(identifier: "en_US"))

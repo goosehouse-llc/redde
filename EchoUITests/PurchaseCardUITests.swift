@@ -1,6 +1,6 @@
 import XCTest
 
-/// The purchase card (asked 2026-10-30): the pick with View at its store, the others as rows that
+/// The purchase card (asked 2026-10-30): the pick with its store listing (2026-10-31), the others as rows that
 /// open in place to their pros, cons and specs, and the chips that ask the agent for more.
 /// `-echo.demoCards purchase` supplies the reply. With `TEST_RUNNER_SHOT_DIR` set, the screens are
 /// written there too (`SHOT_NAME` before each name), for looking at; `TEST_RUNNER_LINK_PREVIEWS=YES`
@@ -20,7 +20,7 @@ final class PurchaseCardUITests: XCTestCase {
 
         let window = app.windows.firstMatch
         for _ in 0 ..< 4 where !app.text(containing: "Noise-cancelling headphones under").isHittable { window.swipeDown() }
-        XCTAssertTrue(app.buttons["View at Best Buy"].exists, "The pick can't be opened at its store")
+        XCTAssertTrue(listing(app, "View at Best Buy").exists, "The pick can't be opened at its store")
         sleep(1)
         shot(app, "top")
 
@@ -28,9 +28,9 @@ final class PurchaseCardUITests: XCTestCase {
         let row = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "Tidal Air 3")).firstMatch
         XCTAssertTrue(row.exists, "The other products aren't rows")
         row.tap()
-        XCTAssertTrue(app.buttons["View at Amazon"].waitForExistence(timeout: 5), "The row didn't open")
+        XCTAssertTrue(listing(app, "View at Amazon").waitForExistence(timeout: 5), "The row didn't open")
         XCTAssertTrue(app.text(containing: "Folds flat").exists, "Its pros aren't shown")
-        for _ in 0 ..< 2 where !app.buttons["View at Amazon"].isHittable { window.swipeUp() }
+        for _ in 0 ..< 2 where !listing(app, "View at Amazon").isHittable { window.swipeUp() }
         sleep(1)
         shot(app, "open")
 
@@ -40,6 +40,11 @@ final class PurchaseCardUITests: XCTestCase {
         XCTAssertTrue(app.text(containing: "Why the Aurora Q5?").waitForExistence(timeout: 5), "The chip didn't send its message")
         XCTAssertTrue(app.text(containing: "Asked: Why this one?").waitForExistence(timeout: 5), "The card doesn't say what was asked")
         XCTAssertFalse(app.buttons["Cheaper options"].exists, "The chips stay after one was tapped")
+    }
+
+    /// A product's store listing, by its name ("View at Best Buy").
+    private func listing(_ app: XCUIApplication, _ name: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", name)).firstMatch
     }
 
     private func shot(_ app: XCUIApplication, _ name: String) {

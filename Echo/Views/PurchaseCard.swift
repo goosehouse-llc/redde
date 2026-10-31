@@ -96,40 +96,26 @@ struct PurchaseCard: View {
                 }
                 if let why = item.product.why { Text(why).chatFont(.subheadline).fixedSize(horizontal: false, vertical: true) }
             }
+            .contentShape(.rect)
+            .onTapGesture { if let url = item.url { openURL(url) } }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(item.spoken)
             .accessibilityActions { spokenActions(item) }
             if isOpen { details(item, inRow: false).transition(.opacity) }
-            HStack(spacing: 10) {
-                if let url = item.url {
-                    Button { openURL(url) } label: {
-                        HStack(spacing: 6) {
-                            Text(item.view).lineLimit(1)
-                            Image(systemName: "arrow.up.right").imageScale(.small).accessibilityHidden(true)
-                        }
+            if let url = item.url { ListingLink(url: url, named: item.view, prominent: true) }
+            if item.hasDetails {
+                Button { toggle(item.id) } label: {
+                    Text(isOpen ? String(localized: "Less", comment: "Hides a purchase card's pros, cons and specs") : String(localized: "Details", comment: "Shows a purchase card's pros, cons and specs"))
                         .chatFont(.subheadline, weight: .semibold)
-                        .foregroundStyle(theme.userText)
-                        .padding(.horizontal, 14)
+                        .foregroundStyle(theme.accent)
+                        .padding(.horizontal, 18)
                         .frame(maxWidth: .infinity, minHeight: 44)
-                        .background(theme.accent, in: .capsule)
+                        .background(theme.accent.opacity(0.12), in: .capsule)
                         .contentShape(.capsule)
-                    }
-                    .accessibilityHint(Text("Opens the store's page in your browser", comment: "VoiceOver hint: a purchase card's View at <store>"))
                 }
-                if item.hasDetails {
-                    Button { toggle(item.id) } label: {
-                        Text(isOpen ? String(localized: "Less", comment: "Hides a purchase card's pros, cons and specs") : String(localized: "Details", comment: "Shows a purchase card's pros, cons and specs"))
-                            .chatFont(.subheadline, weight: .semibold)
-                            .foregroundStyle(theme.accent)
-                            .padding(.horizontal, 18)
-                            .frame(maxWidth: item.url == nil ? .infinity : nil, minHeight: 44)
-                            .background(theme.accent.opacity(0.12), in: .capsule)
-                            .contentShape(.capsule)
-                    }
-                    .accessibilityHint(isOpen ? Self.hideHint : Self.showHint)
-                }
+                .buttonStyle(.plain)
+                .accessibilityHint(isOpen ? Self.hideHint : Self.showHint)
             }
-            .buttonStyle(.plain)
         }
         .padding(14)
         .background(scheme.cardPanel, in: .rect(cornerRadius: 16))
@@ -207,22 +193,7 @@ struct PurchaseCard: View {
                 }
             }
             if !item.product.specs.isEmpty { specs(item.product.specs) }
-            if inRow, let url = item.url {
-                Button { openURL(url) } label: {
-                    HStack(spacing: 6) {
-                        Text(item.view).lineLimit(1)
-                        Image(systemName: "arrow.up.right").imageScale(.small).accessibilityHidden(true)
-                    }
-                    .chatFont(.subheadline, weight: .semibold)
-                    .foregroundStyle(theme.accent)
-                    .padding(.horizontal, 14)
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .background(theme.accent.opacity(0.12), in: .capsule)
-                    .contentShape(.capsule)
-                }
-                .buttonStyle(.plain)
-                .accessibilityHint(Text("Opens the store's page in your browser", comment: "VoiceOver hint: a purchase card's View at <store>"))
-            }
+            if inRow, let url = item.url { ListingLink(url: url, named: item.view, prominent: false) }
         }
         .padding(.leading, inRow ? 60 : 0)
     }
@@ -526,6 +497,93 @@ extension PurchaseCard {
 }
 
 // MARK: - Pieces
+
+/// A product's page at its store, as the card shows it (asked 2026-10-31: "show the actual site
+/// listing … clickable to go to the site listing"): the page's own title and picture once read,
+/// only with Settings → Appearance → Link previews on (`LinkPreviews`; the store sees the visit),
+/// else what the card calls it ("View at Best Buy"). Always the link's real address under it, so a
+/// link that isn't at the store the agent named shows as what it is. Tapped, the page opens in the
+/// browser; held, it is opened, copied or shared.
+struct ListingLink: View {
+    let url: URL
+    /// "View at Best Buy": the button's name, and its title until the page has been read.
+    let named: String
+    /// The pick's, filled with the accent; an opened row's, quieter.
+    let prominent: Bool
+    @State private var previews = LinkPreviews.shared
+    @State private var settings = Settings.shared
+    @Environment(\.theme) private var theme
+    @Environment(\.openURL) private var openURL
+    @ScaledMetric(relativeTo: .subheadline) private var side: CGFloat = 44
+
+    var body: some View {
+        let preview = settings.linkPreviews ? previews.preview(for: url) : nil
+        let address = Self.address(url)
+        Button { openURL(url) } label: {
+            HStack(spacing: 12) {
+                picture(preview)
+                    .frame(width: side, height: side)
+                    .clipShape(.rect(cornerRadius: 8))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(preview?.title ?? named)
+                        .chatFont(.subheadline, weight: .semibold)
+                        .foregroundStyle(theme.textColor)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                    Text(verbatim: address)
+                        .chatFont(.caption)
+                        .foregroundStyle(theme.accent)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                Spacer(minLength: 4)
+                Image(systemName: "arrow.up.right")
+                    .chatFont(.subheadline, weight: .bold)
+                    .foregroundStyle(prominent ? theme.userText : theme.accent)
+                    .frame(width: 30, height: 30)
+                    .background(prominent ? AnyShapeStyle(theme.accent) : AnyShapeStyle(theme.accent.opacity(0.14)), in: .circle)
+                    .accessibilityHidden(true)
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .background(theme.accent.opacity(prominent ? 0.09 : 0.06), in: .rect(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(theme.accent.opacity(prominent ? 0.35 : 0.2), lineWidth: 0.75))
+            .contentShape(.rect(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button(named, systemImage: "safari") { openURL(url) }
+            Button("Copy Link", systemImage: "doc.on.doc") { UIPasteboard.general.url = url }
+            ShareLink(item: url) { Label("Share…", systemImage: "square.and.arrow.up") }
+        }
+        .task(id: settings.linkPreviews) { if settings.linkPreviews { await previews.request(url) } }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(named)
+        .accessibilityValue([preview?.title, address].compactMap(\.self).joined(separator: ", "))
+        .accessibilityHint(Text("Opens the store's page in your browser", comment: "VoiceOver hint: a purchase card's View at <store>"))
+    }
+
+    @ViewBuilder private func picture(_ preview: LinkPreview?) -> some View {
+        if let data = preview?.image, let image = UIImage(data: data) {
+            Image(uiImage: image).resizable().scaledToFill()
+        } else {
+            Image(systemName: "bag")
+                .chatFont(.body, weight: .semibold)
+                .foregroundStyle(theme.accent)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(theme.accent.opacity(0.12))
+        }
+    }
+
+    /// The link as it reads: its site and path, no "www.", query or fragment ("bestbuy.com/site/
+    /// aurora-q5/6501234.p").
+    static func address(_ url: URL) -> String {
+        let site = LinkPreviews.site(url.host(percentEncoded: false) ?? "")
+        let path = url.path(percentEncoded: false)
+        guard !site.isEmpty else { return url.absoluteString }
+        return path.isEmpty || path == "/" ? site : site + (path.hasSuffix("/") ? String(path.dropLast()) : path)
+    }
+}
 
 /// A product's badge ("Best overall"), in its colour.
 private struct BadgeTag: View {
