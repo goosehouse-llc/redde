@@ -89,6 +89,7 @@ private struct DaySection: View {
     @State private var adding: AgendaCard.Slot?
     #endif
     @Environment(\.openURL) private var openURL
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -319,11 +320,17 @@ private struct DaySection: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: max(height, 0), alignment: .top)
         .background {
-            ZStack {
+            // The calendar's colour, fuller (asked 2026-10-30: "a bit too muted"): a deeper tint, a
+            // bar down the leading edge as Calendar draws one, and a hairline in the colour; past
+            // events paler, still telling their calendar.
+            let tint = scheme == .dark ? 0.36 : 0.28
+            ZStack(alignment: .leading) {
                 shape.fill(.background.secondary)
-                shape.fill(color.opacity(over && !isOpen ? 0.09 : 0.18))
-                if isOpen { shape.strokeBorder(color.opacity(0.55), lineWidth: 1) }
+                shape.fill(color.opacity(over && !isOpen ? tint * 0.45 : tint))
+                Rectangle().fill(color.opacity(over && !isOpen ? 0.5 : 1)).frame(width: 4)
+                shape.strokeBorder(color.opacity(isOpen ? 0.7 : 0.3), lineWidth: isOpen ? 1 : 0.5)
             }
+            .clipShape(shape)
         }
     }
 
