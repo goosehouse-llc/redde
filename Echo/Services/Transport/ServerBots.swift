@@ -433,8 +433,9 @@ nonisolated enum BotMentions {
         return found
     }
 
-    /// The note that goes after a message tagging `bots`, worded as Hermes Desktop words it (its
-    /// mention middleware), less what it says about other machines. Nil when nobody is tagged.
+    /// The note that goes after a message tagging `bots`, after Hermes Desktop's (its mention
+    /// middleware), less what it says about other machines, and firmer: a tag is a request to ask
+    /// that agent. Nil when nobody is tagged.
     static func note(for bots: [HermesBot]) -> String? {
         guard !bots.isEmpty else { return nil }
         let lines = bots.map { bot in
@@ -442,8 +443,12 @@ nonisolated enum BotMentions {
             return "@\(bot.handle) = agent profile \"\(bot.name)\"\(named)"
         }
         return MentionNote.opening + "the user is referring to: " + lines.joined(separator: "; ")
-            + ". If they want one of these agents contacted, compose your own message and send it with your message_agent tool; "
-            + "never forward the user\u{2019}s text verbatim. If this session has no message_agent tool, agent messaging is unavailable here — say so.]"
+            // A tag is the person addressing that agent (2026-10-30: Sol, tagged "@home what do you
+            // think", tried a card three times and never asked Home while the note said "if they
+            // want": the conditional let the model decide the person didn't mean it).
+            + ". Tagging them means: ask them. Before anything else, compose your own message to them about what the user wants "
+            + "and send it with your message_agent tool (never forward the user\u{2019}s text verbatim), then tell the user you\u{2019}ve asked "
+            + "and pass on the answer when it comes. If this session has no message_agent tool, agent messaging is unavailable here — say so.]"
     }
 
     /// The tag being typed at the end of `text` ("@sc" → "sc", "@" → ""), or nil when there isn't one.

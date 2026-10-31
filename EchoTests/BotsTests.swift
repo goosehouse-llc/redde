@@ -87,6 +87,8 @@ struct BotsTests {
         #expect(note.hasPrefix(MentionNote.opening))
         #expect(note.contains(#"@scout = agent profile "scout" ("Research Buddy"); @hermes = agent profile "default""#))
         #expect(note.contains("message_agent"))
+        #expect(note.contains("Tagging them means: ask them. Before anything else"), "a tag is a request, not a maybe")
+        #expect(!note.contains("If they want"))
         #expect(BotMentions.note(for: []) == nil)
         // What goes to the Dashboard: the message, the note, then the reply-language and car notes.
         let sent = "@scout and @hermes" + note + ReplyLanguage.note("nl") + CarBrevity.note
