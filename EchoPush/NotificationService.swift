@@ -31,6 +31,8 @@ final class NotificationService: UNNotificationServiceExtension {
             WatchReport.take(note)   // and what a watch saw, for the Watches list
             // And a briefing's whole text; a heads-up's with when to leave for its event.
             if AgentBriefing.take(note) { WidgetCenter.shared.reloadTimelines(ofKind: UpNext.widgetKind) }
+            // Its banner without the model's narration ahead of the brief, as Redde shows it.
+            if note.x == "brief" { content.body = DayBrief.withoutNarration(content.body) }
             if note.u != nil, note.r != nil, AgentBriefing.all().contains(where: { $0.title == note.t }) {
                 headsUp = AgentBriefing.all().first { $0.title == note.t && $0.eventAt != nil }
             }

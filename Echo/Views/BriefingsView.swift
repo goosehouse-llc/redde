@@ -30,6 +30,16 @@ final class BriefingsInbox {
                 AgentBriefing(id: "demo/0", title: "Evening wrap-up", agent: "Sol",
                               text: "**Done:** the vet booked for Thursday, the PR merged.\n\n**Waiting on you:** one approval from Coder.\n\n**Tomorrow:** call the plumber; it comes back as an idea at 9.",
                               at: .now.addingTimeInterval(-3600 * 14), failed: false)]
+            // `-echo.demoBriefings day`: a daily brief first, as an agent's own job writes one,
+            // narration and all (`DayBrief`); its calendar from its own rows, never the phone's.
+            if DevHooks.value("-echo.demoBriefings") == "day" { briefings.insert(Self.demoDayBrief, at: 0) }
+            // `-echo.openBriefing`: the first one open, a moment after launch.
+            if DevHooks.has("-echo.openBriefing") {
+                Task { [weak self] in
+                    try? await Task.sleep(for: .seconds(1.5))
+                    self?.open = self?.briefings.first
+                }
+            }
             return
         }
         #endif
@@ -58,6 +68,43 @@ final class BriefingsInbox {
     var unread: [AgentBriefing] { briefings.filter { !$0.read } }
 
     #if DEBUG
+    /// A made-up daily brief for today, in the shape the first real one came in: the model's
+    /// working line, a rule, then tables, one event in two of them.
+    static var demoDayBrief: AgentBriefing {
+        let today = Date.now.formatted(Date.FormatStyle(locale: Locale(identifier: "en_US")).weekday(.wide).month(.wide).day().year())
+        let text = """
+            No place or video link on the Climbing event. Now let me put together the morning meeting brief.
+
+            ---
+
+            ## Morning Meeting Brief — \(today)
+
+            ### Meetings from 9:00 AM onwards:
+
+            | Time | Title | Attendees | Zoom Link |
+            |---|---|---|---|
+            | All day | Priya out of office (through Nov 3) | 3 | — |
+            | All day | Halloween | — | — |
+            | 9:30 – 10:00 | Design sync | 4 | [Join](https://zoom.us/j/5550100200) |
+            | 10:00 – 11:00 | Climbing gym | — | — |
+            | 1:00 – 1:45 PM | Lunch with Dana | 2 | — |
+
+            **Scheduling conflicts:** None. The design sync ends as climbing starts.
+
+            ### Zoom Links
+
+            | Time | Title | Zoom Link |
+            |---|---|---|
+            | 9:30 – 10:00 | Design sync | [Join](https://zoom.us/j/5550100200) |
+
+            Have a good weekend.
+            """
+        var briefing = AgentBriefing(id: "demo/day", title: "Daily meeting brief", agent: "Sol", text: text,
+                                     at: Calendar.current.date(bySettingHour: 7, minute: 0, second: 0, of: .now) ?? .now, failed: false)
+        briefing.profile = "default"
+        return briefing
+    }
+
     /// `-echo.demoDay morning`: a heads-up arriving, as one does with Redde open.
     func arriveForDemo(_ briefing: AgentBriefing) {
         withAnimation(.snappy) { briefings.insert(briefing, at: 0) }
@@ -112,6 +159,7 @@ extension AgentBriefing {
     var symbol: String {
         if isHeadsUp { return "bell.badge" }
         if title == EveningWrapUp.title { return "moon.stars" }
+        if dayBrief != nil { return "calendar" }
         return "doc.text"
     }
 
@@ -225,6 +273,9 @@ struct BriefingCard: View {
                 if !week.intro.isEmpty { Text(week.intro).chatFont(.subheadline).opacity(0.75).lineLimit(2) }
                 Spacer(minLength: 0)
                 WeekStrip(plan: week)
+            } else if let day = briefing.dayBrief {
+                Spacer(minLength: 0)
+                DayStrip(brief: day)
             } else {
                 if let starts = briefing.startsAt {
                     Label {
@@ -236,7 +287,7 @@ struct BriefingCard: View {
                 if let found = briefing.mapPlace {
                     Label(found.address, systemImage: "mappin.and.ellipse").chatFont(.footnote, weight: .medium).lineLimit(1)
                 }
-                Text(PlainText.display(briefing.text)).chatFont(.subheadline).opacity(0.75)
+                Text(PlainText.display(briefing.shownText)).chatFont(.subheadline).opacity(0.75)
                     .lineLimit(briefing.startsAt == nil && briefing.mapPlace == nil ? 4 : 2)
                 Spacer(minLength: 0)
             }
@@ -248,6 +299,7 @@ struct BriefingCard: View {
         if briefing.isHeadsUp { return Text("heads-up · \(when)", comment: "Under an agent's name on a heads-up's card") }
         if briefing.week != nil || briefing.title == WeekAhead.title { return Text("your week ahead · \(when)", comment: "Under an agent's name on the Week Ahead's card") }
         if briefing.title == EveningWrapUp.title { return Text("your wrap-up · \(when)", comment: "Under an agent's name on the Evening Wrap-up's card") }
+        if briefing.dayBrief != nil { return Text("your day · \(when)", comment: "Under an agent's name on a daily brief's card, one about a day's calendar (\"your day · 7:00 AM\")") }
         return Text("briefing · \(when)", comment: "Under an agent's name on a briefing's card")
     }
 }
@@ -363,7 +415,7 @@ extension AgentBriefing {
     var cardSymbol: String {
         if isHeadsUp { return "bell.badge.fill" }
         if title == EveningWrapUp.title { return "moon.stars.fill" }
-        if title == WeekAhead.title { return "calendar" }
+        if title == WeekAhead.title || dayBrief != nil { return "calendar" }
         return "doc.text.fill"
     }
 }
@@ -384,7 +436,7 @@ struct BriefingRow: View {
                     Spacer(minLength: 6)
                     Text(briefing.at, format: .dateTime.hour().minute()).chatFont(.caption).foregroundStyle(.secondary).monospacedDigit()
                 }
-                Text(PlainText.display(briefing.text)).chatFont(.subheadline).foregroundStyle(.secondary).lineLimit(lines)
+                Text(PlainText.display(briefing.shownText)).chatFont(.subheadline).foregroundStyle(.secondary).lineLimit(lines)
             }
         }
         .padding(.vertical, 2)
@@ -412,8 +464,9 @@ struct BriefingSheet: View {
                     if let week = briefing.week {
                         WeekCalendarView(plan: week)
                     } else {
+                        if let day = briefing.dayBrief { DayBriefAgenda(brief: day) }
                         if let starts = briefing.startsAt { EventCard(briefing: briefing, starts: starts) }
-                        MarkdownView(text: briefing.text, selectable: true)
+                        MarkdownView(text: briefing.shownText, selectable: true)
                         if let found = briefing.mapPlace { AddressMapCard(found: found) }
                     }
                 }

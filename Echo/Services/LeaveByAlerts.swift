@@ -43,7 +43,7 @@ final class LeaveByAlerts {
     @ObservationIgnored private var calendarObserver: NSObjectProtocol?
     @ObservationIgnored private var settle: Task<Void, Never>?
     @ObservationIgnored private var ticker: Task<Void, Never>?
-    @ObservationIgnored private let reader = LeaveByCalendar()
+    @ObservationIgnored private let reader = LeaveByCalendar.shared
     @ObservationIgnored private var places: [String: [Double]]
     @ObservationIgnored private let log = Logger(subsystem: "com.goosehouse.echo", category: "leaveby")
     /// The plugin's command on the Hermes in use, over its Dashboard (`askForWakes`).
@@ -411,6 +411,8 @@ final class LeaveByAlerts {
 /// This device's calendars, read off the main actor with one store kept for the life of the app
 /// (making one is the dear part).
 actor LeaveByCalendar {
+    /// The one reader, so Leave-By Alerts and a daily brief's calendar (`DayBriefAgenda`) share a store.
+    static let shared = LeaveByCalendar()
     private var store: EKEventStore?
 
     /// The events from `start` to `end` in every calendar, in plain values; none without full access.
@@ -426,5 +428,25 @@ actor LeaveByCalendar {
                 allDay: event.isAllDay, cancelled: event.status == .canceled,
                 declined: event.attendees?.contains { $0.isCurrentUser && $0.participantStatus == .declined } ?? false)
         }
+    }
+
+    /// One day's events, from `start` to `end`, as an agenda card draws them (each on `day`, one
+    /// that began the day before too), cancelled ones left out; nil without full access, which is
+    /// never asked for here.
+    func agenda(from start: Date, to end: Date, day: String) -> [ReplyCard.Agenda.Event]? {
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else { return nil }
+        let store = store ?? EKEventStore()
+        self.store = store
+        return store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: nil))
+            .filter { $0.status != .canceled }
+            .prefix(50)
+            .map { event in
+                let notes = event.notes?.trimmingCharacters(in: .whitespacesAndNewlines)
+                return ReplyCard.Agenda.Event(
+                    title: String((event.title ?? "").prefix(160)), start: event.startDate,
+                    end: event.endDate > event.startDate ? event.endDate : nil, allDay: event.isAllDay, day: day,
+                    location: event.location?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty.map { String($0.prefix(200)) },
+                    calendar: event.calendar?.title, notes: notes?.nilIfEmpty.map { String($0.prefix(600)) })
+            }
     }
 }

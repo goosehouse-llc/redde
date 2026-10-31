@@ -71,7 +71,7 @@ enum LaterReminder {
     static func briefing(_ briefing: AgentBriefing, at when: Date) {
         let content = UNMutableNotificationContent()
         content.title = briefing.heading
-        content.body = String(PlainText.display(briefing.text).prefix(180))
+        content.body = String(PlainText.display(briefing.shownText).prefix(180))
         content.userInfo = [PushNote.taskKey: "brief"]
         add(content, id: briefing.id, at: when)
     }

@@ -366,6 +366,8 @@ targets:
       - path: Shared/AgentIdeas.swift
       - path: Shared/AgentWatches.swift
       - path: Shared/AgentBriefings.swift
+      - path: Shared/DayBrief.swift
+      - path: Shared/WeekPlan.swift
       - path: Shared/AgentActivityLog.swift
       - path: Shared/QuietHours.swift
       - path: Shared/LeaveTime.swift
@@ -415,6 +417,8 @@ targets:
       - path: Shared/AgentIdeas.swift
       - path: Shared/AgentWatches.swift
       - path: Shared/AgentBriefings.swift
+      - path: Shared/DayBrief.swift
+      - path: Shared/WeekPlan.swift
       - path: Shared/AgentActivityLog.swift
       - path: Shared/QuietHours.swift
       - path: Shared/LeaveTime.swift

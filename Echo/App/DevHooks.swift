@@ -77,6 +77,9 @@ import WidgetKit
 ///   `-echo.demoAddEvent`: the first day with a timeline adds an event at its first free stretch, as a tap
 ///   there does (Apple's editor on the iPhone, the message field's line on the Mac). `-agendaCalendars "(Family, Home)"`
 ///   shows those calendars only; `-echo.screen calendars` opens Settings → Agent → Calendars.
+/// - `-echo.demoBriefings`: the Week Ahead, a heads-up and a wrap-up in Briefings; `-echo.demoBriefings day`
+///   a made-up daily meeting brief ahead of them (`DayBrief`: its calendar card from its own rows,
+///   never the phone's calendar). `-echo.openBriefing` opens the first one a moment after launch.
 /// - `-echo.demoApprovalCard <coder|command|push|script|skill>`: an approval waiting, in words (`ApprovalSummary`);
 ///   `skill` is Coder's change put in place by the main agent, under the chat that asked for it (the store screenshot).
 /// - `-echo.demoQuestion <one|few|open>`: the agent's question card (Hermes's clarify), with
