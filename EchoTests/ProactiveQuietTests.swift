@@ -67,4 +67,16 @@ struct ProactiveQuietTests {
         #expect(!RoutineSuggestions.name.hasPrefix("[redde-notify]"), "suggestions come as idea cards, not as its answer")
         #expect(RoutineSuggestions.prompt.contains("suggest_to_user"))
     }
+
+    /// How Near goes up to a mile (asked 2026-10-31), in whole units either way, and a place saved
+    /// at the old 150 m default lands on a choice.
+    @Test func placesReachAMile() {
+        #expect(WatchedPlace.radii(us: true).last == 1609.344)
+        #expect(WatchedPlace.radii(us: false).last == 1600)
+        #expect(MeasureUnits.distance(WatchedPlace.radii(us: true)[3], us: true).hasPrefix("0.5"))
+        #expect(MeasureUnits.distance(WatchedPlace.radii(us: true)[4], us: true).hasPrefix("1"))
+        #expect(WatchedPlace.nearestRadius(150, us: true) == 100 || WatchedPlace.nearestRadius(150, us: true) == 200)
+        #expect(WatchedPlace.nearestRadius(800, us: true) == 804.672, "a metric half mile, in US units")
+        #expect(WatchedPlace(name: "Gym", latitude: 0, longitude: 0).radius == 200)
+    }
 }

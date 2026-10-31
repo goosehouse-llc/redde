@@ -108,11 +108,15 @@ struct PlaceEditor: View {
                         if finding { ProgressView() }
                     }
                     Picker("How Near", selection: $place.radius) {
-                        // In the person's units (`MeasureUnits`): 330 ft, 660 ft, 0.3 mi in the US.
-                        Text("Close (\(MeasureUnits.distance(100)))").tag(100.0)
-                        Text("Nearby (\(MeasureUnits.distance(200)))").tag(200.0)
-                        Text("Around (\(MeasureUnits.distance(500)))").tag(500.0)
+                        // In the person's units (`MeasureUnits`): 330 ft, 660 ft, 0.3 mi, 0.5 mi, 1 mi in the US.
+                        let radii = WatchedPlace.radii()
+                        Text("Close (\(MeasureUnits.distance(radii[0])))").tag(radii[0])
+                        Text("Nearby (\(MeasureUnits.distance(radii[1])))").tag(radii[1])
+                        Text("Around (\(MeasureUnits.distance(radii[2])))").tag(radii[2])
+                        Text("Wide (\(MeasureUnits.distance(radii[3])))", comment: "Places, How Near: a wide circle around the place, e.g. Wide (0.5 mi)").tag(radii[3])
+                        Text("Far (\(MeasureUnits.distance(radii[4])))", comment: "Places, How Near: the widest circle, e.g. Far (1 mi)").tag(radii[4])
                     }
+                    .onAppear { place.radius = WatchedPlace.nearestRadius(place.radius) }
                 } header: {
                     Text("Where")
                 }

@@ -34,8 +34,20 @@ nonisolated struct WatchedPlace: Codable, Identifiable, Equatable, Sendable {
     var name: String
     var latitude: Double
     var longitude: Double
-    /// Metres.
-    var radius: Double = 150
+    /// Metres: one of `radii`.
+    var radius: Double = 200
+
+    /// How near can be picked (Settings → Agent → Places → How Near), in metres: up to a mile
+    /// (asked 2026-10-31, "larger radiuses … up to 1 mile"), half and whole miles in US units,
+    /// 800 m and 1.6 km in metric.
+    static func radii(us: Bool = MeasureUnits.usesUS()) -> [Double] {
+        [100, 200, 500] + (us ? [804.672, 1609.344] : [800, 1600])
+    }
+
+    /// The choice nearest `metres`: an older place's 150 m, or a half mile after the units change.
+    static func nearestRadius(_ metres: Double, us: Bool = MeasureUnits.usesUS()) -> Double {
+        radii(us: us).min { abs($0 - metres) < abs($1 - metres) } ?? 200
+    }
     var arrive: PlaceAction?
     var leave: PlaceAction?
 
