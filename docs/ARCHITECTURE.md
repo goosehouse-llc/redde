@@ -11,7 +11,10 @@ How Redde works, for contributors. For what it is and how to build it, see the [
   server the user runs, the user's own Hermes, which speaks with the voice it is set up with
   (so the reply's text may go on from it to the provider chosen there; Settings says which), and
   GPT-Live, OpenAI's voice model, which hears the microphone while a call is open (opt-in, with
-  the person's or their Hermes's OpenAI key; see [GPT-Live](#gpt-live)).
+  the person's or their Hermes's OpenAI key; see [GPT-Live](#gpt-live)), as do the other live
+  engines, Hermes Live / Codex among them: OpenAI's voice on the ChatGPT subscription Codex is
+  signed in with on the person's Hermes, set up by that Hermes, with no key in Redde (see
+  [Hermes Live / Codex](#hermes-live--codex)).
 - **Secrets in the Keychain.** Keys and passwords are stored `AfterFirstUnlockThisDeviceOnly`, never
   in UserDefaults, source or config files; with Sync with iCloud turned on, a server's keys and
   passwords go in iCloud Keychain instead (end-to-end encrypted; see [Sync with iCloud](#sync-with-icloud)).
@@ -2011,7 +2014,9 @@ back for it to say in its own words. Hermes keeps the model, tools, memory and a
   2.7 s against 2.4, most of it OpenAI starting the session) and lighter (24 to 31% of a core
   against 32 to 34, the voice screen included); more data (raw audio: about 0.35 Mbit/s each way
   at 16 kHz, against WebRTC's Opus at about 0.04), and on a weak signal a lost packet holds up
-  what follows, where WebRTC skips it. OpenAI recommends WebRTC for phones.
+  what follows, where WebRTC skips it. OpenAI recommends WebRTC for phones. WebRTC came back on
+  2026-10-30 for Hermes Live / Codex alone (below), whose plugin sets calls up that way; these
+  engines stay on the WebSocket.
 - **The audio** (`LiveCallAudio`) is one AVAudioEngine with Apple's voice processing on the input
   (echo cancellation works only for sound played through the same I/O unit that records; off in
   the simulator, where it stops the audio): the microphone through an `AVAudioSinkNode` (each I/O
@@ -2171,6 +2176,78 @@ back for it to say in its own words. Hermes keeps the model, tools, memory and a
 - **Opening with a request** (`LiveVoice.opening`): a wake phrase said with one ("Hey Home, turn
   the lights off") asks the agent before the call connects, and the call opens saying the answer
   (`LiveGreeting`), as a handed-over call does.
+
+### Hermes Live / Codex
+
+Settings → Voice → Voice mode → Hermes Live / Codex call (asked 2026-10-30): a live call that the
+person's own Hermes sets up, through its talk-desktop plugin, on the ChatGPT subscription Codex is
+signed in with on that machine. Redde asks for, keeps and syncs no OpenAI key for it
+(`LiveEngine.key` is nil, and nothing reads one for it). The voice is OpenAI's; every real request
+still comes to Redde and is worked in the chat on screen, as with GPT-Live.
+
+- **Setting it up** (`LiveSetup.resolve`, `HermesLiveSignal`): it takes the Dashboard
+  (`BotDirectory.reachable`: the Dashboard connection, or the Hermes API one with the Dashboard's
+  address and login saved). The phone makes its WebRTC offer and posts
+  `{profile?, voice, language, offer, context?}` to `POST /api/plugins/talk-desktop/codexlive/session`:
+  a real named profile of the chat (a bot's, another profile's), while the Hermes host/default
+  identity omits `profile`; one of Codex Live v3's supported voices (Juniper, Maple, Spruce,
+  Ember, Vale, Breeze, Arbor, Sol or Cove); the listening language as a code (Settings → Voice's,
+  else the iPhone's); and a bounded, labelled reference transcript of the active Redde chat. The
+  answer is read leniently (`HermesLiveSession`): the SDP answer
+  (`sdp`, or `answer` as a string or `{type, sdp}`, at the top or under `session`), what names the
+  session (`sessionId` and `threadId`, or snake_case; sent back as they came, with the profile),
+  `clientManagedHandoffs` (at the top or in `capabilities`), and `warnings`.
+- **Client-managed handoffs, or no call**: unless the answer says the plugin leaves each request
+  to Redde (`clientManagedHandoffs: true`), the session is stopped and the call ends saying why,
+  with the plugin's own warnings (`HermesLiveSession.handoffProblem`). Requests are never worked
+  in another task lane (Codex's own) unasked; not said counts as not supported.
+- **The call** (`HermesLiveCall`, `HermesLiveLink`): Google's WebRTC as stasel/WebRTC builds it,
+  in the iPhone and iPad app only. One peer connection: the microphone as an audio track, and the
+  `oai-events` data channel; no STUN or TURN server, so the phone reaches only where the answer
+  says. WebRTC plays the voice through its own audio unit, with its voice processing (echo
+  cancelling). It is kept to the session voice mode set up (`AudioSessionController`): given that
+  session's category, mode and options so it changes none, its audio held (manual audio) until
+  the answer is set, and told of the activation (`audioSessionDidActivate`, and `…Deactivate` as
+  the call closes) so that WebRTC never ends the session itself: voice mode does, after its
+  closing cue. The call is on when the data channel opens (`LiveCallState.connected`: no event of
+  the service's says so), and lost when ICE fails, stays disconnected six seconds, or the channel
+  closes. The levels (the face, and whether the voice is speaking) are WebRTC's own `audioLevel`,
+  read from its statistics every 100 ms (`inbound-rtp` for the voice, `media-source` for the
+  microphone), at the thresholds the WebSocket call uses.
+- **Requests** (`HermesLiveDialect`, `LiveVoice.delegated`): `delegation.created` (or
+  `session.delegation.created`; the id as `delegation.id`, `delegation_id` or `delegationId`; the
+  voice's wording where it carries one) becomes a turn in the chat, as GPT-Live's do. The answer
+  goes back a sentence at a time as `delegation.context.append`
+  `{delegation_id, content, event_id}`, and so do the progress notes, the long-wait updates and
+  whether the agent used its tools. Where the person's words are written down only once they've
+  finished (`conversation.item.input_audio_transcription.completed`, after the hand-over), a
+  request waits for them two seconds at most (`LiveDialect.waitsForWords`), then takes the
+  voice's wording rather than the last request's words. Transcripts are read in GPT-Live's words
+  and in OpenAI realtime's.
+- **Interrupting and stopping**: Pause (the voice screen's while the voice speaks, and the car's)
+  posts `…/codexlive/interrupt` with the session's names, and shuts the microphone (its track
+  off); on the other engines Pause only shuts the microphone, as before. Hanging up, a stop phrase,
+  the quiet hang-up and any failure close the peer connection and post `…/codexlive/stop` once,
+  not waited for.
+- **What it can't do**: open a session saying a line of Redde's (`LiveEngine.greets`), since the
+  plugin words its sessions. So no previews; no group chats as calls (each member's reply would
+  be a session opening in its voice: the switch can only be turned off, and a group chat's call
+  says why it can't); a spoken prefix's answer is said in the call's own voice; a wake request,
+  or an agent's line on a call from it, is said in Redde's own voice before the call opens
+  (`VoiceSession.liveGreets`). Not on the Mac (no WebRTC there), and not a bot's own choice in
+  Edit Bot → Voice (`BotConversation` has no such case; `LiveEngine.allCases` leaves it out and
+  `voiceModes` has it): a bot without a choice of its own follows the app's.
+- **When it can't be had**: no Dashboard says so before anything is asked; a 404 or 405 from the
+  route means talk-desktop isn't installed, switched on, or new enough; 401 or 403, the
+  Dashboard's login; anything else, the plugin's own words (Codex not signed in, say). Settings →
+  Voice → Voice mode shows how talk-desktop stands (`plugins.manage list`, `HermesLivePlugin`).
+- **Export compliance**: WebRTC carries its own BoringSSL for DTLS and SRTP, so the iPhone app no
+  longer claims `ITSAppUsesNonExemptEncryption: false`; docs/app-store-listing.md, "Export
+  compliance", has the rest. The Mac app has no WebRTC and keeps it.
+- **Verification boundary**: generic device-SDK compilation and focused simulator settings coverage
+  exercise the app path. A real iPhone call has also established a session, preserved active-chat
+  context and completed a client-managed handoff. AirPods, CarPlay, lock-screen behaviour and
+  broader provider compatibility still need their own physical-device coverage before release.
 
 ### Wake phrases
 

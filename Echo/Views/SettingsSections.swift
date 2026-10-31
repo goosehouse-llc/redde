@@ -713,31 +713,25 @@ struct AgentSettings<Details: View>: View {
     }
 }
 
+enum VoiceSettingsPresentation {
+    static func shouldCollapseReadingVoice(for engine: LiveEngine?) -> Bool {
+        engine == .hermesLive
+    }
+
+    static func showsHermesCallControls(for engine: LiveEngine?) -> Bool {
+        engine == .hermesLive
+    }
+
+    static func readingVoiceTitle(for engine: LiveEngine?) -> String {
+        engine == .hermesLive ? String(localized: "Read aloud outside calls") : String(localized: "Reading voice")
+    }
+}
+
 struct VoiceSettings: View {
     @State private var settings = Settings.shared
     /// Motion & Fitness has been refused for Redde: the nod switch went back off, and says why.
     @State private var motionRefused = false
     @Environment(\.openURL) private var openURL
-
-    private var listeningLanguageName: String {
-        SpeechLanguageView.name(settings.speechLanguage.isEmpty ? Locale.current.identifier(.bcp47) : settings.speechLanguage)
-    }
-
-    /// The footer's opening: what the chosen voice is, and where the reply's text goes for it.
-    private var voiceFooter: String {
-        switch settings.replyVoice {
-        case .onDevice:
-            String(localized: "Apple's on-device synthesizer. Zero network, fastest start.") + " "
-                + String(localized: "“Voice for replies”: Match each reply picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice. Download more voices in the iPhone's Settings → Accessibility → Read & Speak → Voices.") + " "
-        case .kokoro:
-            String(localized: "Streams audio from a Kokoro-compatible TTS server and starts playing before the sentence finishes. Falls back to the on-device voice if the server is unreachable.") + " "
-                + String(localized: "“Voice for replies”: Match each reply picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice (the built-in one when Kokoro has none for it).") + " "
-        case .elevenLabs:
-            String(localized: "ElevenLabs reads replies out on your own key, the one live calls with ElevenLabs use, starting before the sentence is finished, in any language. Each bot reads in an ElevenLabs voice of its own (Edit Bot → Voice), in group chats too. The reply's text goes from your iPhone to ElevenLabs, which bills your account by the character. ElevenLabs takes speeds from 0.7× to 1.2×. Falls back to the on-device voice without a key or a connection; the watch reads with its own.") + " "
-        case .hermes:
-            String(localized: "Your Hermes reads replies out with the voice set under tts in its config.yaml (ElevenLabs, OpenAI, Gemini, a voice running on the server, and others), through the Dashboard connection. The phone needs no voice key and no second server. The reply's text goes from your Hermes to that provider; Hermes's default, Edge, is Microsoft's online voice. “Say a test sentence” shows which one speaks. Speed and language are Hermes's settings too. Falls back to the on-device voice when the Dashboard can't speak.") + " "
-        }
-    }
 
     /// Wake Phrase's row: off, the one phrase, or how many.
     private var wakeSummary: String {
@@ -748,72 +742,102 @@ struct VoiceSettings: View {
     /// Voice mode as it is set: Redde's own, or a call.
     static func modeName(_ engine: LiveEngine?) -> String { engine.map { String(localized: "\($0.name) call") } ?? String(localized: "Listen and read aloud") }
 
-    /// Two choices, kept apart (2026-10-26: "Conversation can be set to Redde, but the next down is
-    /// kokoro, hermes, elevenlabs"): who holds voice mode, and which voice reads replies aloud.
+    private var hermesCallOptionsSummary: String {
+        let quiet = settings.liveHangUp == 0
+            ? String(localized: "Never")
+            : String(localized: "\(settings.liveHangUp) min")
+        return settings.liveWhenLocked
+            ? String(localized: "On lock · \(quiet)")
+            : quiet
+    }
+
+    /// Voice mode is chosen directly on Voice. Hermes-only controls appear here when that mode is
+    /// selected; other live engines retain their existing detailed settings destination.
     var body: some View {
         Section {
-            NavigationLink {
-                LiveVoiceSettings()
-            } label: {
-                LabeledContent("Voice mode") {
-                    Text(Self.modeName(settings.voiceEngine.live)).lineLimit(1)
+            Picker("Voice mode", selection: $settings.voiceEngine) {
+                Text(Self.modeName(nil)).tag(Settings.VoiceEngine.redde)
+                ForEach(LiveEngine.voiceModes, id: \.self) { mode in
+                    Text(Self.modeName(mode)).tag(Settings.VoiceEngine(rawValue: mode.rawValue) ?? .redde)
                 }
             }
-        } header: {
-            Text("Voice mode")
-        } footer: {
-            Text(settings.voiceEngine.live.map { String(localized: "Voice mode is a \($0.name) call: \($0.company)'s voice talks and listens at once, and hands anything real to your agent. Bots can have their own (Edit Bot → Voice).") }
-                 ?? String(localized: "Your iPhone listens, your agent answers, and the reading voice below reads the answer out. Or make voice mode a live call with GPT-Live, Gemini Live, Grok Voice or ElevenLabs. Bots can have their own (Edit Bot → Voice)."))
-        }
-        Section {
-            Picker("Reading voice", selection: $settings.replyVoice) {
-                Text("On-device").tag(Settings.ReplyVoice.onDevice)
-                Text("Kokoro").tag(Settings.ReplyVoice.kokoro)
-                Text("Hermes").tag(Settings.ReplyVoice.hermes)
-                Text("ElevenLabs").tag(Settings.ReplyVoice.elevenLabs)
-            }
-            .adaptiveSegmented()
-            if settings.replyVoice == .hermes {
-                HermesVoiceRows()
-            }
-            if settings.replyVoice == .elevenLabs {
-                ElevenLabsVoiceRows()
-            }
-            if settings.useKokoro {
-                TextField("http://your-tts-server:8880", text: $settings.kokoroURL)
-                    .urlFieldStyle()
+            .pickerStyle(.menu)
+
+            if VoiceSettingsPresentation.showsHermesCallControls(for: settings.voiceEngine.live) {
                 NavigationLink {
-                    KokoroVoicesView()
+                    LiveVoiceList(engine: .hermesLive,
+                                  selection: Binding(get: { settings.appLiveVoice(.hermesLive) },
+                                                     set: { settings.setAppLiveVoice($0 ?? LiveEngine.hermesLive.defaultVoice, for: .hermesLive) }),
+                                  name: settings.headerTitle)
                 } label: {
-                    LabeledContent("Voice") {
-                        Text(settings.kokoroVoice).font(.callout.monospaced()).lineLimit(1)
-                    }
+                    LabeledContent("Call voice", value: LiveEngine.hermesLive.voiceName(settings.appLiveVoice(.hermesLive)))
+                }
+                NavigationLink {
+                    HermesLiveCallOptionsSettings()
+                } label: {
+                    LabeledContent("Call options", value: hermesCallOptionsSummary)
+                }
+            } else if settings.voiceEngine.live != nil {
+                NavigationLink {
+                    LiveVoiceSettings()
+                } label: {
+                    LabeledContent("Live call settings", value: Self.modeName(settings.voiceEngine.live))
                 }
             }
-            // Hermes's voice is the one it is set up with: no language to match, no speed to send.
-            // ElevenLabs' voices speak whatever language the reply is in.
-            if settings.replyVoice != .hermes {
-                if settings.replyVoice != .elevenLabs {
-                    Picker("Voice for replies", selection: $settings.matchReplyLanguage) {
-                        Text("Match each reply").tag(true)
-                        (settings.useKokoro ? Text("Always your Kokoro voice") : Text("Always \(listeningLanguageName)")).tag(false)
-                    }
-                    .pickerStyle(.menu)
-                }
-                // Applies to Kokoro and the built-in fallback voice alike.
-                VStack(alignment: .leading, spacing: 2) {
-                    LabeledContent("Voice speed") {
-                        Text(settings.voiceSpeed.formatted(.number.precision(.fractionLength(2))) + "×").monospacedDigit()
-                    }
-                    Slider(value: $settings.voiceSpeed, in: 0.5...2.0, step: 0.05)
-                        .accessibilityLabel("Voice speed")
-                }
-            }
-            Toggle("Earpiece when raised to your ear", isOn: $settings.earpieceAtEar)
         } header: {
-            Text("Reading voice")
+            Text("Conversation")
         } footer: {
-            Text(voiceFooter + String(localized: "It reads replies aloud in voice mode (when that isn't a call), in group chats, in the car and with Read aloud, each bot in a voice of its own unless it has its own reading voice (Edit Bot → Voice). “Earpiece” plays replies through the earpiece when the phone is at your ear, like a call; turn it off for hands-free use with the phone face down."))
+            if VoiceSettingsPresentation.showsHermesCallControls(for: settings.voiceEngine.live) {
+                Text("Hermes Live / Codex uses its own Call voice. Read aloud elsewhere is for everything outside a call.")
+            } else if settings.voiceEngine.live != nil {
+                Text("This live call uses its own Call voice. Reading voice below is for everything outside a call.")
+            } else {
+                Text("Your iPhone listens, your agent answers, and Reading voice speaks the reply. Choose a live call here when you want a Call voice instead.")
+            }
+        }
+
+        if VoiceSettingsPresentation.showsHermesCallControls(for: settings.voiceEngine.live) {
+            Section {
+                NavigationLink {
+                    VoiceDefaultsSettings()
+                } label: {
+                    LabeledContent("Voice defaults", value: String(localized: "Main agent + bots"))
+                }
+            } header: {
+                Text("Applies to")
+            } footer: {
+                Text("Bots with their own choice in Edit Bot → Voice use that setting instead.")
+            }
+
+            Section {
+                NavigationLink {
+                    HermesLiveCallSetupSettings()
+                } label: {
+                    LabeledContent("Your Hermes", value: String(localized: "Connection & account"))
+                }
+            } header: {
+                Text("Call setup")
+            } footer: {
+                Text("Connection, account and active-chat details live here—not in the everyday Voice screen.")
+            }
+        }
+
+        if VoiceSettingsPresentation.shouldCollapseReadingVoice(for: settings.voiceEngine.live) {
+            Section {
+                NavigationLink {
+                    ReadingVoiceSettings()
+                } label: {
+                    LabeledContent("Read aloud elsewhere") {
+                        Text(settings.replyVoice.name).lineLimit(1)
+                    }
+                }
+            } header: {
+                Text(VoiceSettingsPresentation.readingVoiceTitle(for: settings.voiceEngine.live))
+            } footer: {
+                Text("Used for typed replies, Read aloud, CarPlay, group chats and voice experiences that are not live calls.")
+            }
+        } else {
+            ReadingVoiceSettingsSection()
         }
         Section {
             NavigationLink {
@@ -955,6 +979,94 @@ struct VoiceSettings: View {
             Text("When Redde opens")
         } footer: {
             Text("Where Redde starts: your last conversation, the conversation list, or voice mode. “Listen whenever Redde opens” starts the mic as well, so “Hey Siri, open Redde” goes straight to listening.")
+        }
+    }
+}
+
+/// Full read-aloud configuration. In a live call it is reached from the compact
+/// "Read aloud elsewhere" row; in Listen and read aloud mode it stays expanded on Voice.
+struct ReadingVoiceSettings: View {
+    var body: some View {
+        Form {
+            ReadingVoiceSettingsSection()
+        }
+        .navigationTitle("Read aloud")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct ReadingVoiceSettingsSection: View {
+    @State private var settings = Settings.shared
+
+    private var listeningLanguageName: String {
+        SpeechLanguageView.name(settings.speechLanguage.isEmpty ? Locale.current.identifier(.bcp47) : settings.speechLanguage)
+    }
+
+    private var voiceFooter: String {
+        switch settings.replyVoice {
+        case .onDevice:
+            String(localized: "Apple's on-device synthesizer. Zero network, fastest start.") + " "
+                + String(localized: "“Voice for replies”: Match each reply picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice. Download more voices in the iPhone's Settings → Accessibility → Read & Speak → Voices.") + " "
+        case .kokoro:
+            String(localized: "Streams audio from a Kokoro-compatible TTS server and starts playing before the sentence finishes. Falls back to the on-device voice if the server is unreachable.") + " "
+                + String(localized: "“Voice for replies”: Match each reply picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice (the built-in one when Kokoro has none for it).") + " "
+        case .elevenLabs:
+            String(localized: "ElevenLabs reads replies out on your own key, the one live calls with ElevenLabs use, starting before the sentence is finished, in any language. Each bot reads in an ElevenLabs voice of its own (Edit Bot → Voice), in group chats too. The reply's text goes from your iPhone to ElevenLabs, which bills your account by the character. ElevenLabs takes speeds from 0.7× to 1.2×. Falls back to the on-device voice without a key or a connection; the watch reads with its own.") + " "
+        case .hermes:
+            String(localized: "Your Hermes reads replies out with the voice set under tts in its config.yaml (ElevenLabs, OpenAI, Gemini, a voice running on the server, and others), through the Dashboard connection. The phone needs no voice key and no second server. The reply's text goes from your Hermes to that provider; Hermes's default, Edge, is Microsoft's online voice. “Say a test sentence” shows which one speaks. Speed and language are Hermes's settings too. Falls back to the on-device voice when the Dashboard can't speak.") + " "
+        }
+    }
+
+    var body: some View {
+        Section {
+            Picker("Reading voice", selection: $settings.replyVoice) {
+                Text("On-device").tag(Settings.ReplyVoice.onDevice)
+                Text("Kokoro").tag(Settings.ReplyVoice.kokoro)
+                Text("Hermes").tag(Settings.ReplyVoice.hermes)
+                Text("ElevenLabs").tag(Settings.ReplyVoice.elevenLabs)
+            }
+            .adaptiveSegmented()
+            if settings.replyVoice == .hermes {
+                HermesVoiceRows()
+            }
+            if settings.replyVoice == .elevenLabs {
+                ElevenLabsVoiceRows()
+            }
+            if settings.useKokoro {
+                TextField("http://your-tts-server:8880", text: $settings.kokoroURL)
+                    .urlFieldStyle()
+                NavigationLink {
+                    KokoroVoicesView()
+                } label: {
+                    LabeledContent("Voice") {
+                        Text(settings.kokoroVoice).font(.callout.monospaced()).lineLimit(1)
+                    }
+                }
+            }
+            // Hermes's voice is the one it is set up with: no language to match, no speed to send.
+            // ElevenLabs' voices speak whatever language the reply is in.
+            if settings.replyVoice != .hermes {
+                if settings.replyVoice != .elevenLabs {
+                    Picker("Voice for replies", selection: $settings.matchReplyLanguage) {
+                        Text("Match each reply").tag(true)
+                        (settings.useKokoro ? Text("Always your Kokoro voice") : Text("Always \(listeningLanguageName)")).tag(false)
+                    }
+                    .pickerStyle(.menu)
+                }
+                // Applies to Kokoro and the built-in fallback voice alike.
+                VStack(alignment: .leading, spacing: 2) {
+                    LabeledContent("Voice speed") {
+                        Text(settings.voiceSpeed.formatted(.number.precision(.fractionLength(2))) + "×").monospacedDigit()
+                    }
+                    Slider(value: $settings.voiceSpeed, in: 0.5...2.0, step: 0.05)
+                        .accessibilityLabel("Voice speed")
+                }
+            }
+            Toggle("Earpiece when raised to your ear", isOn: $settings.earpieceAtEar)
+        } header: {
+            Text("Reading voice")
+        } footer: {
+            Text(voiceFooter + String(localized: "It reads replies aloud in voice mode (when that isn't a call), in group chats, in the car and with Read aloud, each bot in a voice of its own unless it has its own reading voice (Edit Bot → Voice). “Earpiece” plays replies through the earpiece when the phone is at your ear, like a call; turn it off for hands-free use with the phone face down."))
         }
     }
 }

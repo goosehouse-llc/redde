@@ -172,11 +172,12 @@ final class Settings: ServeEndpoint {
         didSet { store(thinkingSound.rawValue, forKey: Keys.thinkingSound) }
     }
     /// Who holds a voice conversation: Redde (the phone hears, the agent answers, a voice reads
-    /// it), or a live voice model (GPT-Live, Gemini Live, Grok Voice: `LiveEngine`), which talks
-    /// and listens at once and hands the real work to the agent (`LiveVoice`). Redde until chosen:
-    /// a live call sends the microphone to its company and costs money by the minute.
+    /// it), or a live voice model (GPT-Live, Gemini Live, Grok Voice, ElevenLabs, Hermes Live /
+    /// Codex: `LiveEngine`), which talks and listens at once and hands the real work to the agent
+    /// (`LiveVoice`). Redde until chosen: a live call sends the microphone to its company, and
+    /// costs money by the minute or, with Hermes Live / Codex, the ChatGPT plan's allowance.
     enum VoiceEngine: String, CaseIterable, Sendable {
-        case redde, gptLive, gemini, grok, elevenLabs
+        case redde, gptLive, gemini, grok, elevenLabs, hermesLive
         var live: LiveEngine? { LiveEngine(rawValue: rawValue) }
     }
     var voiceEngine: VoiceEngine {
@@ -186,7 +187,9 @@ final class Settings: ServeEndpoint {
     /// agent): the bot's own choice (Edit Bot → Voice), else the one above; nil for Redde's. In
     /// release builds since 2.2: until then development builds only, while its calls went over
     /// WebRTC, whose own cryptography would have needed declaring; they go over a WebSocket on
-    /// Apple's TLS since 2026-10-24.
+    /// Apple's TLS since 2026-10-24. Hermes Live / Codex alone is WebRTC again (2026-10-30), which
+    /// puts Google's BoringSSL back in the app (docs/app-store-listing.md, Export compliance). A bot
+    /// can't be given it as its own; a bot with no choice of its own follows the app's.
     func liveEngine(for profile: String?) -> LiveEngine? {
         if let profile, profile != "default", let own = botVoicesHere[profile]?.conversation { return own.live }
         return voiceEngine.live
