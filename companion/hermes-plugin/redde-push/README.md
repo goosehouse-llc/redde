@@ -308,6 +308,20 @@ from 1.10.0, `/redde-push gated <profile> on` leaves the review card out for tha
 is the one ask (`/redde-push gated <profile> off` undoes it; the list is kept on the server, in
 the main home's `redde-push/gated.json`).
 
+From 1.12.0, five more cards (asked 2026-10-30). A `purchase` card shows products to buy, the
+agent's pick first, each with its price, rating, store and page (Redde opens the page in the
+browser; nothing is bought). A `home` card shows the smart-home devices the agent touched or was
+asked about, as Home Assistant reports them, each with its entity id; its switches and steppers
+send the agent a message naming the entity, and the agent acts with its own Home Assistant tools
+(Redde never talks to Home Assistant itself; unlocking a door or opening a garage asks on the phone
+first). A `reminder` card shows a reminder, timer, alarm or scheduled message the agent set, with
+Change and Cancel. A `compare` card puts two to four things side by side. A `score` card shows
+games, final, live or upcoming. So the tool's description stays short on every prompt, their
+fields are not in the schema: when a message asks what to buy, for the home, for a reminder or a
+timer, which is better, or about a game (in English), the plugin adds that card's exact shape to
+that turn only, with the person's time for a reminder or a game; and the tool's error gives the
+shape when a card comes without it. None of these lines is added with cards off or for a gated agent.
+
 From 1.10.0 a review may say its `kind` (`email`, `message`, `event`, `purchase`, `other`) and a `subtitle`
 ("From your Gmail · as you"): the app draws an email or a message as itself, who it's to, its
 subject and its words, and anything else as rows. Without a kind it goes by the fields' labels

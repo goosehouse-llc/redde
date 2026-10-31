@@ -16,6 +16,14 @@ calendar in general, make it appear in a calendar card"): the events the agent r
 calendar tool, drawn by day, or a day with nothing on it. The agent looks them up; this tool only
 checks and passes them on, as for a map.
 
+From 1.12.0 (asked 2026-10-30), five more: a `purchase` card (products to buy, the pick first), a
+`home` card (the smart-home devices the agent touched or was asked about, with controls that ask
+it back), a `reminder` card (a reminder, timer, alarm or scheduled message it set), a `compare`
+card (two to four things side by side) and a `score` card (games). Their fields are not in the
+schema, whose description is in every prompt: each card's shape is in a turn note added only when
+the person's message asks for that kind of thing (`turn_note`), and in this tool's error when a
+card comes without it (`_more`), so a wrong card is right on the first retry.
+
 A weather or a time card names only its place: the forecast and the time zone are looked up here
 (forecast.py, Open-Meteo), handed back to the agent to answer from, and returned as filled cards
 (`cards` in the answer), which the app draws when it can read them (else it looks them up itself).
@@ -40,7 +48,16 @@ TOOL = "redde_show"
 TOOLSET = "redde_cards"
 MAX_CARDS = 4
 MAX_PLACES = 12
-TYPES = ("map", "places", "weather", "time", "agenda", "review", "choice", "checklist", "form")
+TYPES = ("map", "places", "weather", "time", "agenda", "review", "choice", "checklist", "form", "purchase", "home", "reminder", "compare", "score")
+#: The cards from 1.12.0 whose shape is in their turn note and their error, not in the schema.
+MORE = ("purchase", "home", "reminder", "compare", "score")
+MAX_PRODUCTS = 6
+MAX_DEVICES = 12
+MAX_COMPARED = 4
+MAX_GAMES = 6
+DEVICE_KINDS = ("light", "switch", "climate", "cover", "lock", "sensor", "fan", "media")
+REMINDER_KINDS = ("reminder", "timer", "alarm", "schedule")
+GAME_STATUSES = ("final", "live", "upcoming")
 MAX_EVENTS = 50
 #: The cards the person answers.
 ASKS = ("review", "choice", "checklist", "form")
@@ -49,6 +66,13 @@ FIELD_KINDS = ("text", "long", "number", "date", "time", "toggle", "choice")
 #: its subject and its words). Optional: the app tells an email by its fields too.
 REVIEW_KINDS = ("email", "message", "event", "purchase", "other")
 MODES = ("driving", "walking", "transit", "cycling")
+
+# A route's ends show a name: what finds them is all they need (2026-10-30, room for five more cards).
+_END = {
+    "type": "object",
+    "properties": {"name": {"type": "string"}, "address": {"type": "string"}, "latitude": {"type": "number"}, "longitude": {"type": "number"}},
+    "required": ["name"],
+}
 
 _PLACE = {
     "type": "object",
@@ -78,23 +102,21 @@ _LISTED = {**_PLACE, "properties": {
 SCHEMA = {
     "name": TOOL,
     "description": (
-        "Shows cards under your reply in the Redde app: a map (places as pins, or a route), a list of places, the "
-        "weather, or the time. Use it when the person asks where something is, for directions, for places nearby, "
-        "for the weather or what time it is. Weather and time look themselves up: give just the 'place' (a city, "
-        "e.g. 'Orlando, FL'; for the time, leave it out to mean the person's own), call this before you answer, and "
-        "answer from what it returns ('said'), never from memory or a guess: your own clock may be in another time "
-        "zone. For a map or places, give what you found (from search or your other tools): coordinates when you "
-        "have them, a name and street address otherwise, the phone looks them up. Up to 4 cards. Then answer in a "
-        "sentence or two: the cards are on the person's screen, so don't read out everything in them. "
-        "Cards they answer with a tap: before you send, buy, book or change anything for them, a 'review' (what "
-        "you'll do as 'fields' they can edit, 'action' the button, e.g. Send), then stop and act only on their "
-        "answer; 'choice' ('options' to pick from), 'checklist' (a list to tick off: 'items', each with a 'section' "
-        "to group them and a short 'note', and an 'emoji'), 'form' ('fields' to fill in, each with a 'kind'). Their "
-        "answer is their next message. "
-        "An 'agenda' shows calendar events by day: 'events' as your calendar tool gave them, each with a 'title' and "
-        "'start' (ISO date-time with the offset the calendar gave, or just the date for an all-day event), and 'end', "
-        "'location', 'calendar' if known; 'date' (or 'dates') names the day or days asked about, so a day with nothing "
-        "on it shows too. Look the events up first; never make them up."),
+        "Shows cards under your reply in the Redde app: a map (pins or a route), places, the weather, the time. Use it "
+        "for where something is, directions, places nearby, the weather or the time. Weather and time look themselves "
+        "up: give just the 'place' (a city, e.g. 'Orlando, FL'; none for the time means the person's own), call this "
+        "before you answer, and answer from what it returns ('said'), never from memory or a guess: your clock may be "
+        "in another time zone. For a map or places, give what you found: coordinates, else a name and street address. "
+        "Up to 4 cards. Then answer in a sentence or two; don't read the cards out. "
+        "Cards they answer with a tap: before you send, buy, book or change anything for them, a 'review' ('fields' "
+        "they can edit, 'action' the button, e.g. Send), then stop and act only on their answer; 'choice' ('options'), "
+        "'checklist' ('items', each with a 'section' and a short 'note'; an 'emoji'), 'form' ('fields', each with a "
+        "'kind'). Their answer is their next message. "
+        "'agenda': calendar events by day ('events' as your calendar tool gave them: 'title', 'start' as ISO with its "
+        "offset or a date for all day, 'end', 'location', 'calendar'; 'date' or 'dates' asked about, so a free day "
+        "shows). Also 'purchase' (products to buy), 'home' (smart-home devices), 'reminder' (a reminder, timer, alarm "
+        "or scheduled message you set), 'compare' (2-4 things side by side), 'score' (games): their fields are in the "
+        "turn's note, or this tool's error. Look everything up first; never make anything up."),
     "parameters": {
         "type": "object",
         "properties": {
@@ -110,14 +132,14 @@ SCHEMA = {
                         "route": {
                             "type": "object",
                             "description": "map only: from a place (or omit 'from' for where the person is) to a place",
-                            "properties": {"from": _PLACE, "to": _PLACE, "mode": {"type": "string", "enum": list(MODES)}},
+                            "properties": {"from": _END, "to": _END, "mode": {"type": "string", "enum": list(MODES)}},
                             "required": ["to"],
                         },
                         "place": {"type": "string", "description": "weather and time: where, e.g. Lisbon, or Orlando, FL"},
                         "timezone": {"type": "string", "description": "time: an IANA zone, e.g. Europe/Lisbon, if you know it"},
                         "units": {"type": "string", "enum": ["C", "F"], "description": "weather: if the person said"},
                         "action": {"type": "string"},
-                        "kind": {"type": "string", "enum": list(REVIEW_KINDS), "description": "review: what it is"},
+                        "kind": {"type": "string", "enum": list(REVIEW_KINDS + REMINDER_KINDS)},
                         "subtitle": {"type": "string", "description": "review, checklist: a line under the title"},
                         "verb": {"type": "string", "description": "checklist: an item done is, e.g. packed"},
                         "fields": {"type": "array", "items": {"type": "object", "properties": {
@@ -141,6 +163,15 @@ SCHEMA = {
                         "date": {"type": "string", "description": "agenda: the day asked about, e.g. 2026-10-30"},
                         "dates": {"type": "array", "items": {"type": "string"}, "description": "agenda: the days asked about"},
                         "note": {"type": "string"},
+                        "devices": {"type": "array", "items": {"type": "object"}},
+                        "games": {"type": "array", "items": {"type": "object"}},
+                        "rows": {"type": "array", "items": {"type": "object"}},
+                        "at": {"type": "string"},
+                        "repeat": {"type": "string"},
+                        "where": {"type": "string"},
+                        "id": {"type": "string"},
+                        "verdict": {"type": "string"},
+                        "pick": {"type": "integer"},
                     },
                     "required": ["type"],
                 },
@@ -190,6 +221,13 @@ def check(args) -> tuple[list[str], list[str]]:
             continue
         if kind in ASKS:
             said, problem = _ask(card, kind)
+            if problem:
+                problems.append(f"card {n}: {problem}")
+            else:
+                shown.append(said)
+            continue
+        if kind in MORE:
+            said, problem = _more(card, kind)
             if problem:
                 problems.append(f"card {n}: {problem}")
             else:
@@ -291,6 +329,116 @@ def _agenda(card: dict) -> tuple[str, str | None]:
     if dropped:
         said += f"; {dropped} left out (each needs a 'title' and a 'start' with its date)"
     return said, None
+
+
+# What each of the newer cards needs, said again in the tool's error so a wrong card is right on
+# the first retry: the same words as its turn note's.
+SHAPES = {
+    "purchase": ("'title'; 'items' (up to 6, your pick first), each {name, brand, price (a number), currency (ISO), was_price, "
+                 "rating (out of 5), reviews (a count), retailer, url (the product's page), image (https), pick (true for one) "
+                 "or badge (e.g. Best value), why (one line), pros, cons (a few words each), specs ({name: value}, a few)}; "
+                 "'note' (e.g. when the prices were checked)"),
+    "home": ("'title'; 'devices', each {name, area, kind (light, switch, climate, cover, lock, sensor, fan or media), "
+             "state (as Home Assistant says it: on, off, open, closed, locked, heat...), brightness (0-100), temperature "
+             "(now), target (a thermostat's setting), unit, entity (its entity id)}, as they are after what you did"),
+    "reminder": ("'title' (what), 'kind' (reminder, timer, alarm or schedule), 'at' (when it goes off, ISO with its "
+                 "offset, e.g. 2026-10-30T15:45:00-04:00), 'repeat' (in words, if it repeats), 'where' (where it lives: "
+                 "Hermes, Reminders, an alarm on this iPhone), 'id' (what your tool returned for it), and for a timer "
+                 "'duration' (e.g. 20 min)"),
+    "compare": ("'title'; 'options' (2 to 4, each {title, pros, cons}); 'rows' (the criteria that matter, each "
+                "{criterion, values: one short value per option in order, best: the better one's place from 0, where "
+                "one is}); 'verdict' (one line, e.g. For you: B, mostly for battery); 'pick' (your pick's place)"),
+    "score": ("'games' (one or a few), each {league, home, away (each {name, short (e.g. ORL), color (#hex), score, "
+              "record}), status (final, live or upcoming), period and clock (live), start (ISO with its offset), venue, "
+              "broadcast}; 'note'"),
+}
+
+
+def _name(row, *keys) -> str:
+    if isinstance(row, str):
+        return row.strip()
+    if isinstance(row, dict):
+        return next((row[k].strip() for k in keys if isinstance(row.get(k), str) and row[k].strip()), "")
+    return ""
+
+
+def _more(card: dict, kind: str) -> tuple[str, str | None]:
+    """What a purchase, home, reminder, compare or score card will show, or why it can't be
+    drawn, with the whole shape it takes. Lenient as the app is (Echo/Models/ReplyCards.swift)."""
+    needs = f"a {kind} card needs " + SHAPES[kind]
+    if kind == "purchase":
+        listed = card.get("items") or card.get("products") or []
+        listed = listed if isinstance(listed, list) else []
+        names = [(n, isinstance(i, dict) and (i.get("pick") not in (None, False, "", "false", "no") or "pick" in str(i.get("badge") or "").lower()
+                                             and "budget" not in str(i.get("badge") or "").lower()))
+                 for n, i in ((_name(i, "name", "title"), i) for i in listed[:MAX_PRODUCTS])]
+        kept = [(n, p) for n, p in names if n]
+        if not kept:
+            return "", needs
+        pick = next((n for n, p in kept if p), None)
+        said = f"purchase: {len(kept)} ({', '.join(n + (' (pick)' if n == pick else '') for n, _ in kept[:4])}{'…' if len(kept) > 4 else ''})"
+        if len(kept) < len(names):
+            said += f"; {len(names) - len(kept)} left out (each needs a 'name')"
+        if len(listed) > MAX_PRODUCTS:
+            said += f"; only the first {MAX_PRODUCTS} are shown"
+        if pick is None:
+            said += "; no pick: give one 'pick': true"
+        return said, None
+    if kind == "home":
+        listed = card.get("devices") or card.get("items") or []
+        devices = [d for d in (listed if isinstance(listed, list) else [])[:MAX_DEVICES] if _name(d, "name", "entity", "entity_id")]
+        if not devices:
+            return "", needs
+        def one(d):
+            state = d.get("state") if isinstance(d, dict) else None
+            return _name(d, "name", "entity", "entity_id") + (f" {state}" if isinstance(state, (str, int, float)) and str(state).strip() else "")
+        no_entity = sum(1 for d in devices if not (isinstance(d, dict) and (d.get("entity") or d.get("entity_id"))))
+        said = f"home: {len(devices)} device{'s' if len(devices) != 1 else ''} ({', '.join(one(d) for d in devices[:4])}{'…' if len(devices) > 4 else ''})"
+        if no_entity:
+            said += f"; {no_entity} without an 'entity': give each its entity id, so the person's taps name the right one"
+        return said, None
+    if kind == "reminder":
+        title = _name(card, "title", "what", "text", "name")
+        if not title:
+            return "", needs
+        what = str(card.get("kind") or "reminder").lower()
+        what = what if what in REMINDER_KINDS else "reminder"
+        at = card.get("at") or card.get("when") or card.get("time")
+        said = f"reminder: {what} '{title}'" + (f" at {at}" if isinstance(at, str) and at.strip() else "")
+        if isinstance(card.get("repeat"), str) and card["repeat"].strip():
+            said += f", {card['repeat'].strip()}"
+        if not (isinstance(at, str) and _DAY.match(at.strip())) and not (what == "timer" and card.get("duration")):
+            said += "; 'at' isn't an ISO time, so the card says when in words: give it as 2026-10-30T15:45:00-04:00"
+        return said, None
+    if kind == "compare":
+        listed = card.get("options") or card.get("items") or []
+        options = [n for n in (_name(o, "title", "name") for o in (listed if isinstance(listed, list) else [])[:MAX_COMPARED]) if n]
+        rows = [r for r in card.get("rows") or card.get("criteria") or [] if isinstance(r, dict) and _name(r, "criterion", "name", "label")
+                and isinstance(r.get("values"), list) and any(str(v).strip() for v in r["values"])]
+        if len(options) < 2 or not rows:
+            return "", needs
+        pick = card.get("pick")
+        said = f"compare: {' vs '.join(options)} ({len(rows)} criteria"
+        said += f"; pick {options[pick]})" if isinstance(pick, int) and not isinstance(pick, bool) and 0 <= pick < len(options) else ")"
+        if len(listed) > MAX_COMPARED:
+            said += f"; only the first {MAX_COMPARED} options are shown"
+        return said, None
+    listed = card.get("games")
+    listed = listed if isinstance(listed, list) else ([card] if card.get("home") else [])
+    games = []
+    for game in listed[:MAX_GAMES]:
+        if not isinstance(game, dict):
+            continue
+        home, away = _name(game.get("home"), "name", "team"), _name(game.get("away"), "name", "team")
+        if home and away:
+            def score(side):
+                v = game[side].get("score") if isinstance(game[side], dict) else None
+                return f" {v}" if isinstance(v, (int, float)) and not isinstance(v, bool) else ""
+            status = str(game.get("status") or "").lower()
+            games.append(f"{away}{score('away')} at {home}{score('home')}" + (f" ({status})" if status in GAME_STATUSES else ""))
+    if not games:
+        return "", needs
+    return f"score: {'; '.join(games[:3])}{'…' if len(games) > 3 else ''}", None
 
 
 def _labels(rows, *keys) -> list[str]:
@@ -477,6 +625,61 @@ LEVEL_NOTES = {
 REVIEW_NOTE = ("[Redde: before you send, book, buy or change anything for them, show what you'll do as a 'review' "
                f"card with {TOOL} (its 'kind': email, message, event or purchase) and stop; do it only when their "
                "answer comes back.]")
+#: Asked what to buy, in English (2026-10-30): a 'purchase' card. Not an errand ("buy it", "order
+#: it", "add to cart": the review note's), not a place to eat (a 'places' card).
+_ASKS_PURCHASE = re.compile(
+    r"\bwhich\b[^.?!]*\bshould (?:i|we) (?:buy|get|order|pick up|go for)\b|\bwhat\b[^.?!]*\bshould (?:i|we) (?:buy|get)\b"
+    r"|\bbest\b[^.?!]*\b(?:under|below|less than|for)\s*(?:[$£€]\s*\d|\d)|\bbest\b[^.?!]*\bto buy\b|\bworth (?:buying|the money)\b"
+    r"|\brecommend (?:me )?(?:a|an|some)\b|\blooking for (?:a |an |some )?new\b|\bgift ideas?\b|\b(?:gift|present) for\b"
+    r"|\bwhere (?:can|should|do) (?:i|we) buy\b|\bshould (?:i|we) (?:buy|get) (?:the|a|an)\b", re.IGNORECASE)
+_NOT_SHOPPING = re.compile(
+    r"\b(?:restaurants?|caf[eé]s?|coffee shops?|bars?|places? to (?:eat|go|stay)|hotels?|movies?|films?|shows?|series|podcasts?|"
+    r"recipes?|dinner|lunch|breakfast|brunch|to eat|to drink|books?|novels?|apps?|routes?|ways?)\b", re.IGNORECASE)
+#: Where to buy something: a purchase card, a book too.
+_WHERE_TO_BUY = re.compile(r"\bwhere (?:can|should|do) (?:i|we) buy\b", re.IGNORECASE)
+#: Things to buy, where a 'which is better' is shopping and so a 'purchase' card.
+_SHOPPING = re.compile(r"[$£€]\s*\d|\b(?:buy|buying|purchase|price|prices|cheaper|deal|budget|worth (?:it|the money))\b", re.IGNORECASE)
+#: Asked which of two to four things is better, in English: a 'compare' card.
+_ASKS_COMPARE = re.compile(
+    r"\bwhich (?:is|one is|would be|one would be|'s|’s) (?:better|best)\b|\bwhich (?:one )?should (?:i|we) (?:choose|pick|go with|learn|use|take)\b"
+    r"|\b(?:is|are) [^.?!]+ better than\b|\b(?:is|are) [^.?!]+ or [^.?!]+ (?:better|best)\b|\b\w+ (?:vs\.?|versus) \w+|\bcompare\b|\bdifference between\b[^.?!]*\band\b"
+    r"|\bshould (?:i|we) (?:choose|pick|go with|learn|use|take)\b[^.?!]*\bor\b|\bpros and cons of\b[^.?!]*\b(?:and|or|vs)\b",
+    re.IGNORECASE)
+#: Code and data compared are no 'compare' card (a coding bot's "compare these two functions").
+_NOT_COMPARE = re.compile(r"\b(?:functions?|files?|branch(?:es)?|commits?|diffs?|PRs?|pull requests?|quer(?:y|ies)|tables?|logs?|"
+                          r"outputs?|errors?|scripts?|configs?|versions? of)\b", re.IGNORECASE)
+#: Asked about the home's devices, in English: a 'home' card. A thing of the house and a word
+#: that does or reads it, both ("set the house to 70", "is the garage closed?", "turn off the lights").
+_HOME_THINGS = re.compile(
+    r"\b(?:lights?|lamps?|fans?|heater|heating|heat|thermostat|a/?c|air ?con(?:ditioning)?|tv|plugs?|outlets?|garage(?: door)?|"
+    r"(?:front|back|side|patio) door|door ?locks?|smart locks?|blinds|shades|curtains|sprinklers?|house)\b", re.IGNORECASE)
+_HOME_ACTS = re.compile(
+    r"\b(?:turn|switch|flip)\b[^.?!]*\b(?:on|off|up|down)\b|\b(?:dim|brighten|lock|unlock|open|close|shut)\b|\bset\b[^.?!]*\bto \d"
+    r"|\b(?:is|are|did i leave)\b[^.?!]*\b(?:on|off|open|closed|shut|locked|unlocked)\b|\bleft (?:on|open|unlocked)\b"
+    r"|\bhow (?:warm|cold|hot) is (?:it )?(?:in )?the house\b", re.IGNORECASE)
+#: Asked to be reminded, or for a timer, an alarm or a message at a time, in English: a 'reminder' card.
+_ASKS_REMINDER = re.compile(
+    r"\bremind (?:me|us)\b|\bset (?:a |an |me a )?(?:timer|alarm|reminder)\b|\b(?:timer|alarm|reminder) for\b|\bwake me(?: up)? at\b"
+    r"|\bevery (?:day|morning|evening|night|week|weekday|monday|tuesday|wednesday|thursday|friday|saturday|sunday)s?\b[^.?!]*"
+    r"\b(?:tell|send|remind|message|text|give|ping)\b|\bschedule (?:a )?message\b|\bin \d+ (?:min(?:ute)?s?|hours?)\b[^.?!]*\b(?:tell|remind|ping)\b",
+    re.IGNORECASE)
+#: Asked about a game, in English: a 'score' card. Not a credit score, not a song played.
+_ASKS_SCORE = re.compile(
+    r"\b(?:did|do|does) (?:the )?(?!you\b|i\b|we\b)[\w.'’ -]{2,30} (?:win|lose|beat)\b|\bwho (?:won|is winning|’s winning|'s winning)\b[^.?!]*\b(?:game|match|series|final|bowl|cup)\b"
+    r"|\b(?:final |the )?scores?\b(?! (?:card|sheet))|\bnext\b[\w.'’ -]{0,30}\b(?:game|match)\b|\bwhen (?:do|does|is|are) (?:the )?[\w.'’ -]{2,30} (?:play|game|match)\b"
+    r"|\b(?:game|match)\b[^.?!]{0,12}\b(?:tonight|today|tomorrow|last night)\b|\bhow(?:'s| is|’s| are)\b[^.?!]*\b(?:game|match) going\b", re.IGNORECASE)
+_NOT_SCORE = re.compile(r"\b(?:credit|test|exam|sat|act|gre|risk|credit) scores?\b|\bscore (?:me|a deal)\b", re.IGNORECASE)
+PURCHASE_NOTE = (f"[Redde: asked what to buy. Look it up with your tools first (web search, the stores' own pages): never make up a "
+                 f"price, a rating or a link. Then show them with {TOOL} as a 'purchase' card: " + SHAPES["purchase"]
+                 + ". Then answer in a line: don't list them again.]")
+HOME_NOTE = (f"[Redde: asked about the home. Do or read it with your Home Assistant tools first, then show the devices you touched or "
+             f"were asked about with {TOOL} as a 'home' card: " + SHAPES["home"] + ". Then answer in a line.]")
+REMINDER_NOTE = (f"[Redde: asked to set a reminder, a timer, an alarm or a message at a time. Set it with your tools first, then show it "
+                 f"with {TOOL} as a 'reminder' card: " + SHAPES["reminder"] + ". Then answer in a line.")
+COMPARE_NOTE = (f"[Redde: asked which is better. Look up what you need first, then show it with {TOOL} as a 'compare' card: "
+                + SHAPES["compare"] + ". Then answer in a line. Things to buy are a 'purchase' card instead.]")
+SCORE_NOTE = (f"[Redde: asked about a game. Look it up with your tools first (never guess a score or a time), then show it with "
+              f"{TOOL} as a 'score' card: " + SHAPES["score"] + ". Then answer in a line.")
 REDDES = ("desktop", "tui", "api_server", "")    # Redde's connections: the Dashboard, the Hermes API
 
 
@@ -525,6 +728,15 @@ def turn_note(home: Path, message, platform: str = "", at: datetime | None = Non
         else:
             note += "]"
         return note
+    if "[Redde card " not in text and not gated(home):
+        more = more_note(text)
+        if more is not None:
+            if more in (REMINDER_NOTE, SCORE_NOTE):
+                # "In 20 minutes" and "tonight" are the person's: the server's clock may be in another zone.
+                tz = forecast.zone(preferences(home).get("tz"))
+                more += (f" Where the person is, it is now {forecast.time_said(None, tz, at).split(': ', 1)[1]} ({tz.key}).]"
+                         if tz is not None else "]")
+            return more
     time_asked, weather_asked = bool(_ASKS_TIME.search(text)), bool(_ASKS_WEATHER.search(text))
     if not time_asked and not weather_asked:
         # A card's answer is the go-ahead itself, not a new ask.
@@ -546,6 +758,26 @@ def turn_note(home: Path, message, platform: str = "", at: datetime | None = Non
     else:
         note += " Don't guess the time: what the card returns has it.]"
     return note
+
+
+def more_note(text: str) -> str | None:
+    """The note for the newer cards a message asks for (2026-10-30), the first that fits: a reminder
+    ("remind me at 5"), a game ("did the Heat win?" is no thermostat), the home ("set the house to
+    70"), what to buy, which is better; a
+    'which is better' about things to buy is a purchase. The reminder and score notes are completed
+    with the person's time by `turn_note`."""
+    if _ASKS_REMINDER.search(text):
+        return REMINDER_NOTE
+    if _ASKS_SCORE.search(text) and not _NOT_SCORE.search(text):
+        return SCORE_NOTE
+    if _HOME_THINGS.search(text) and _HOME_ACTS.search(text):
+        return HOME_NOTE
+    compare = bool(_ASKS_COMPARE.search(text)) and not _NOT_COMPARE.search(text)
+    if _WHERE_TO_BUY.search(text) or ((_ASKS_PURCHASE.search(text) or (compare and _SHOPPING.search(text))) and not _NOT_SHOPPING.search(text)):
+        return PURCHASE_NOTE
+    if compare:
+        return COMPARE_NOTE
+    return None
 
 
 # ---- how much each agent may do unasked, the phone's to say

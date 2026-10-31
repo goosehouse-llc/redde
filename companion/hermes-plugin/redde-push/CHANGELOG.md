@@ -3,6 +3,34 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.12.0 (2026-10-30)
+
+Five more cards for `redde_show`, drawn by Redde 2.3.1
+- `purchase`: products to buy, the agent's pick first (each with its price, currency, old price,
+  rating, reviews, store, page, picture, badge, why, pros, cons and a few specs) and a note such as
+  when the prices were checked. Asked what to buy ("which headphones should I buy", "best laptop
+  under $1000", "recommend a stand mixer", "gift ideas for Dad", "where can I buy…"), the agent is
+  told to look it up first and never make up a price, a rating or a link. Not for an errand ("buy
+  it", "add to cart": the review note's) or a place to eat (a places card).
+- `home`: the smart-home devices the agent touched or was asked about, as Home Assistant reports
+  them (lights with brightness, switches, thermostats, covers and garage doors, locks, sensors,
+  fans, media), each with its entity id. Their controls in Redde send the agent a message ("Turn
+  off Kitchen lights (light.kitchen)"), which it does with its own Home Assistant tools; Redde
+  never talks to Home Assistant itself.
+- `reminder`: a reminder, timer, alarm or scheduled message the agent set: what, when (ISO with its
+  offset), how it repeats, where it lives and its id, so Change and Cancel in Redde name it back.
+- `compare`: two to four things side by side, criterion by criterion, with the better one per row,
+  a verdict and a pick ("which is better, A or B?"; things to buy are a purchase card).
+- `score`: games, with both teams (name, short name, colour, score, record), final, live (period
+  and clock) or upcoming (start, broadcast), league and venue. Redde's Refresh asks the agent again.
+
+Their fields are not in the tool's schema, which rides on every prompt: each card's shape is in a
+line added to the turn only when the person's message asks for that kind of thing (in English,
+like the calendar's), and in the tool's error when a card comes without it. The schema is smaller
+than before (5,735 characters, from 5,989; its description 1,506, from 1,666): a route's ends take a
+name, an address and coordinates only. Cards off, or an agent whose actions Hermes already asks
+about (`gated`), get none of these lines.
+
 ## 1.11.0 (2026-10-30)
 
 Leave-By Alerts' traffic re-check

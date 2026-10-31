@@ -71,7 +71,7 @@ private struct AnswerHeader: View {
     }
 }
 
-private extension ColorScheme {
+extension ColorScheme {
     /// The plain sheet a card's content is on (white; near black in the dark), and its panels and
     /// grey buttons (white; a dark grey): as the designs have them, whatever the chat behind is.
     var cardPaper: Color { self == .dark ? Color(white: 0.07) : .white }
@@ -98,7 +98,7 @@ private struct GreyCapsule<Style: ShapeStyle>: View {
 }
 
 /// How a card was answered, under it.
-private struct AnsweredLine: View {
+struct AnsweredLine: View {
     var text: String
     var body: some View {
         Label(text, systemImage: "checkmark.circle.fill")

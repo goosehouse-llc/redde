@@ -749,7 +749,7 @@ extension Conversation {
     /// `-echo.demoCards`: a reply that shows a walk on a map, three places and the weather, asked
     /// for with `redde_show` as an agent would (made-up cafés, real streets of Lisbon), the person
     /// said to be at the office. The forecast is from this hour on, with storms coming in two hours'
-    /// time. `only` "weather" or "places": that card alone, first on the screen.
+    /// time. `only` "weather" or "places": that card alone, first on the screen; "purchase": a purchase card instead.
     func seedCardsDemo(only: String? = nil) {
         reset()
         let calendar = Calendar.current
@@ -796,7 +796,9 @@ extension Conversation {
                     {"date": "\(day(5))", "high": 23, "low": 15, "condition": "clear"},
                     {"date": "\(day(6))", "high": 24, "low": 16, "condition": "clear"}]}
         """
-        let only = only.flatMap { ["weather", "places"].contains($0) ? $0 : nil }   // else the next launch flag
+        let only = only.flatMap { ["weather", "places", "purchase", "home", "reminder", "compare", "score"].contains($0) ? $0 : nil }   // else the next launch flag
+        if only == "purchase" { seedPurchaseDemo(); return }
+        if let only, ["home", "reminder", "compare", "score"].contains(only) { seedMoreCardsDemo(only); return }
         let shown = switch only ?? "" {
         case "weather": [weather]
         case "places": [places]
@@ -822,6 +824,135 @@ extension Conversation {
         replaceForDemo(messages: [Message(role: .user, text: "Where should we get coffee near the office, and is it going to rain?"), reply,
                                   Message(role: .user, text: "What time is it in Tokyo?"), clock,
                                   Message(role: .user, text: "Where's my dentist appointment?"), address])
+    }
+
+    /// `-echo.demoCards purchase`: asked which headphones to get, the agent's 'purchase' card
+    /// (asked 2026-10-30): its pick and three others, made-up products with made-up prices, their
+    /// pictures drawn on the phone (`ProductImages.demo`), never fetched.
+    private func seedPurchaseDemo() {
+        let json = #"""
+        {"cards": [{"type": "purchase", "title": "Noise-cancelling headphones under $300",
+          "note": "Prices checked today at each store; they change.",
+          "items": [
+            {"name": "Aurora Q5", "brand": "Northwind Audio", "price": 279, "was_price": 349, "currency": "USD", "rating": 4.7, "reviews": 12480,
+             "retailer": "Best Buy", "url": "https://www.example.com/aurora-q5", "image": "https://images.example.com/aurora-q5.jpg",
+             "pick": "Best overall", "why": "The quietest of the four on planes and trains, with a 30-hour battery and a fit that stays comfortable all day.",
+             "pros": ["Class-leading noise cancelling", "30-hour battery; 5 minutes gives 3 hours", "Light, soft ear cushions"],
+             "cons": ["The case is bulky", "No wired USB-C audio"],
+             "specs": {"Battery": "30 h", "Weight": "254 g", "Bluetooth": "5.3, multipoint", "Charging": "USB-C"}},
+            {"name": "Tidal Air 3", "brand": "Harbor Sound", "price": "$199.99", "rating": "4.5/5", "reviews": "8,312", "retailer": "Amazon",
+             "url": "https://www.example.com/tidal-air-3", "image": "https://images.example.com/tidal-air-3.jpg", "badge": "Best value",
+             "why": "Most of the Aurora's quiet for $80 less, and it folds flat.",
+             "pros": ["Strong noise cancelling for the price", "Folds flat into a slim case"], "cons": ["Tinny calls outdoors", "Plastic hinges"],
+             "specs": {"Battery": "40 h", "Weight": "238 g"}},
+            {"name": "Studio Pro ANC", "brand": "Meridian", "price": 299, "rating": 4.4, "reviews": "2.1k", "retailer": "Target",
+             "url": "https://www.example.com/studio-pro-anc", "image": "https://images.example.com/studio-pro-anc.jpg", "badge": "Best sound",
+             "why": "The richest sound here, with a little less hush on a plane.",
+             "pros": ["Detailed, warm sound", "Replaceable ear pads"], "cons": ["Heaviest of the four", "22-hour battery"],
+             "specs": {"Battery": "22 h", "Weight": "312 g", "Codecs": "AAC, LDAC"}},
+            {"name": "Drift ANC Earbuds", "brand": "Kestrel", "price": 129, "was_price": 159, "rating": 4.3, "reviews": 5402, "retailer": "Walmart",
+             "url": "https://www.example.com/drift-anc-earbuds", "image": "https://images.example.com/drift-buds.jpg", "badge": "Budget pick",
+             "why": "Earbuds, if over-ears are too warm: good cancelling for the size.",
+             "pros": ["Small, light case", "Good fit with three tip sizes"], "cons": ["8-hour battery per charge"],
+             "specs": {"Battery": "8 h (32 h with case)", "Water": "IPX4"}}]}]}
+        """#
+        let args = try? JSONValue.parse(Data(json.utf8))
+        var reply = Message(role: .assistant, text: "The Aurora Q5 is the one to get: the best noise cancelling under $300, and it's $70 off at Best Buy right now.")
+        reply.tools = [ToolActivity(name: ReplyCards.tool, preview: "purchase", status: .completed, args: ToolActivity.args(ReplyCards.tool, args))]
+        reply.cards = ReplyCards.parse(args)
+        for card in reply.cards ?? [] { CardAnswers.shared.forget(card.key) }   // its chips again, each time
+        replaceForDemo(messages: [Message(role: .user, text: "Which noise-cancelling headphones should I buy? Under $300."), reply])
+    }
+
+    /// `-echo.demoCards home|reminder|compare|score` (asked 2026-10-30): the house downstairs, with
+    /// lights on, the thermostat, the garage and the front door; a timer, a reminder and a weekly
+    /// message; two comparisons, of two things and of three; a game over, the next one, and one
+    /// being played. Made-up devices and ids; real teams' names and colours, made-up scores.
+    private func seedMoreCardsDemo(_ kind: String) {
+        let iso = ISO8601DateFormatter()
+        iso.timeZone = .current
+        let calendar = Calendar.current
+        func at(_ date: Date?) -> String { iso.string(from: date ?? .now) }
+        func card(_ json: String, _ preview: String) -> (args: JSONValue?, preview: String) { (try? JSONValue.parse(Data(json.utf8)), preview) }
+        func reply(_ text: String, _ made: (args: JSONValue?, preview: String)) -> Message {
+            var reply = Message(role: .assistant, text: text)
+            reply.tools = [ToolActivity(name: ReplyCards.tool, preview: made.preview, status: .completed, args: ToolActivity.args(ReplyCards.tool, made.args))]
+            reply.cards = ReplyCards.parse(made.args)
+            for card in reply.cards ?? [] { CardAnswers.shared.forget(card.key) }   // its buttons again, each time
+            return reply
+        }
+        var messages: [Message] = []
+        switch kind {
+        case "home":
+            let home = card(#"""
+            {"cards": [{"type": "home", "title": "Downstairs", "devices": [
+              {"name": "Kitchen lights", "area": "Kitchen", "kind": "light", "state": "on", "brightness": 204, "entity": "light.kitchen"},
+              {"name": "Porch light", "area": "Outside", "kind": "light", "state": "on", "brightness": 100, "entity": "light.porch"},
+              {"name": "Reading lamp", "area": "Living room", "state": "off", "entity": "light.reading_lamp"},
+              {"name": "Thermostat", "area": "Hall", "kind": "climate", "state": "heat", "temperature": 67, "target": 70, "unit": "°F", "entity": "climate.downstairs"},
+              {"name": "Garage door", "kind": "cover", "state": "closed", "entity": "cover.garage_door"},
+              {"name": "Front door", "kind": "lock", "state": "locked", "entity": "lock.front_door"},
+              {"name": "Basement humidity", "kind": "sensor", "state": "48", "unit": "%", "entity": "sensor.basement_humidity"}]}]}
+            """#, "home")
+            messages = [Message(role: .user, text: "Is everything shut downstairs? And set the house to 70."),
+                        reply("The garage is closed and the front door is locked. The kitchen and porch lights are still on, and the thermostat is at 70°.", home)]
+        case "reminder":
+            let monday = calendar.nextDate(after: .now, matching: DateComponents(hour: 9, minute: 0, weekday: 2), matchingPolicy: .nextTime)
+            let vet = calendar.date(bySettingHour: 10, minute: 0, second: 0, of: calendar.date(byAdding: .day, value: 1, to: .now) ?? .now)
+            let made = card("""
+            {"cards": [
+              {"type": "reminder", "kind": "timer", "title": "Pasta", "at": "\(at(Date.now.addingTimeInterval(19 * 60 + 42)))", "duration": "20 min", "where": "A timer on this iPhone"},
+              {"type": "reminder", "title": "Call the vet about Pepper's shots", "at": "\(at(vet))", "where": "Reminders", "id": "x-apple-reminder://4F2A"},
+              {"type": "reminder", "kind": "schedule", "title": "Send the weekly report", "at": "\(at(monday))", "repeat": "Every Monday at 9 AM", "where": "Hermes", "id": "cron_7f3a"}]}
+            """, "reminder")
+            messages = [Message(role: .user, text: "Set a timer for 20 minutes for the pasta, remind me to call the vet tomorrow at 10, and every Monday at 9 remind me to send the weekly report."),
+                        reply("Done: the pasta timer is running, the vet is on your Reminders for tomorrow, and I'll message you every Monday at 9.", made)]
+        case "compare":
+            let two = card(#"""
+            {"cards": [{"type": "compare", "title": "A first language to learn", "options": [
+                {"name": "Python", "pros": ["Reads almost like English", "Data, scripts and AI all use it"], "cons": ["Slower for games and apps"]},
+                {"name": "JavaScript", "pros": ["Runs in every browser", "See results on a page at once"], "cons": ["Quirks that trip beginners"]}],
+              "rows": [{"criterion": "Learning curve", "values": ["Gentle", "Moderate"], "best": 0},
+                       {"criterion": "First project", "values": ["A script that renames files", "A web page with a button"]},
+                       {"criterion": "Jobs", "values": ["Data, back end, AI", "Web, front and back end"]},
+                       {"criterion": "Setup", "values": ["One install", "Nothing: a browser"], "best": 1}],
+              "verdict": "For you: Python, mostly for the gentler start", "pick": 0}]}
+            """#, "compare")
+            let three = card(#"""
+            {"cards": [{"type": "compare", "title": "A week in March", "options": ["Lisbon", "Porto", "Madeira"],
+              "rows": [{"criterion": "Weather", "values": ["17°, some rain", "15°, wetter", "19°, mild"], "best": 2},
+                       {"criterion": "Getting there", "values": ["Direct flights", "One stop", "One stop"], "best": 0},
+                       {"criterion": "Walking", "values": ["Hilly, trams", "Hilly, compact", "Levadas, hikes"]},
+                       {"criterion": "Food", "values": ["Pastéis, seafood", "Francesinha, port", "Espetada, fish"]}],
+              "verdict": "For a slow week of walks: Madeira; for a city: Lisbon", "pick": 2}]}
+            """#, "compare")
+            messages = [Message(role: .user, text: "Which is better for a beginner, Python or JavaScript?"),
+                        reply("Python: you'll get something working sooner, and it goes further if you like data.", two),
+                        Message(role: .user, text: "And for a week in March: Lisbon, Porto or Madeira?"),
+                        reply("Madeira, if you want walks in mild weather; Lisbon if you'd rather have a city.", three)]
+        default:
+            let tomorrow = calendar.date(bySettingHour: 19, minute: 30, second: 0, of: calendar.date(byAdding: .day, value: 1, to: .now) ?? .now)
+            let games = card("""
+            {"cards": [{"type": "score", "games": [
+              {"league": "NBA", "status": "final", "start": "\(at(Date.now.addingTimeInterval(-86_400)))", "venue": "Kia Center, Orlando",
+               "home": {"name": "Orlando Magic", "short": "ORL", "color": "#0077C0", "score": 112, "record": "5-2"},
+               "away": {"name": "Boston Celtics", "short": "BOS", "color": "#007A33", "score": 104, "record": "4-3"}},
+              {"league": "NBA", "status": "upcoming", "start": "\(at(tomorrow))", "venue": "Kaseya Center, Miami", "broadcast": "FanDuel SN",
+               "home": {"name": "Miami Heat", "short": "MIA", "color": "#98002E", "record": "3-4"},
+               "away": {"name": "Orlando Magic", "short": "ORL", "color": "#0077C0", "record": "5-2"}}]}]}
+            """, "score")
+            let live = card(#"""
+            {"cards": [{"type": "score", "games": [
+              {"league": "NHL", "status": "live", "period": "2nd", "clock": "8:41", "venue": "Amalie Arena, Tampa", "broadcast": "ESPN+",
+               "home": {"name": "Tampa Bay Lightning", "short": "TBL", "color": "#002868", "score": 2},
+               "away": {"name": "Florida Panthers", "short": "FLA", "color": "#C8102E", "score": 1}}]}]}
+            """#, "score")
+            messages = [Message(role: .user, text: "Did the Magic win? And when's the next game?"),
+                        reply("They did, 112–104 over Boston. Next is tomorrow night at Miami.", games),
+                        Message(role: .user, text: "How's the Lightning game going?"),
+                        reply("Tampa leads Florida 2–1, halfway through the second.", live)]
+        }
+        replaceForDemo(messages: messages)
     }
 
     /// `-echo.demoQuestion`: the agent stopped to ask (Hermes's clarify tool), with choices,

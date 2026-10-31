@@ -65,7 +65,10 @@ import WidgetKit
 ///   then one that names its files by path (links that open them).
 /// - `-echo.demoPage`: a reply with a page the agent made, live in the chat, with buttons that talk back.
 /// - `-echo.demoCards`: a reply with a map (a walk), three places and the weather, then the time in Tokyo (`ReplyCards`).
-///   `-echo.demoCards weather` (or `places`): that card alone.
+///   `-echo.demoCards weather` (or `places`): that card alone. `-echo.demoCards purchase`: headphones to buy, as a purchase
+///   card (`PurchaseCard`); its pictures are drawn on the phone, and show with `-linkPreviews YES`. `home`, `reminder`,
+///   `compare`, `score`: the house downstairs (`HomeCard`), a timer, a reminder and a weekly message (`ReminderCard`), two
+///   comparisons (`CompareCard`), games over, to come and being played (`ScoreCard`).
 /// - `-echo.demoAgenda`: what's on the calendar tomorrow, then the rest of the week with a free day, as agenda cards (`AgendaCard`); `-echo.demoAgenda tomorrow` the first alone.
 ///   `-echo.demoAddEvent`: the first day with a timeline adds an event at its first free stretch, as a tap
 ///   there does (Apple's editor on the iPhone, the message field's line on the Mac). `-agendaCalendars "(Family, Home)"`

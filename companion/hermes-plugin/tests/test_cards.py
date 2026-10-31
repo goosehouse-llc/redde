@@ -167,8 +167,9 @@ class CardTests(unittest.TestCase):
                           "Sol guessed: 12:05 AM Thursday, at 9:09 PM on Friday")
             self.assertIn("'weather' card", cards.turn_note(home, "Will it rain tomorrow?", "api_server", at))
             self.assertIn("a 'time' and a 'weather' card", cards.turn_note(home, [{"type": "text", "text": "time in Tokyo and the weather there"}], "tui", at))
-            for other in ("Turn off the lights in the office.", "Tell me a 30 word short story.", "Set the alarm to away."):
+            for other in ("Tell me a 30 word short story.", "Set the alarm to away."):
                 self.assertIsNone(cards.turn_note(home, other, "desktop", at), other)
+            self.assertIn("'home' card", cards.turn_note(home, "Turn off the lights in the office.", "desktop", at), "from 1.12.0 a home card, no time")
             self.assertIsNone(cards.turn_note(home, "What time is it", "telegram", at), "cards are drawn only in Redde")
             cards.slash(home, ["off"])
             self.assertIsNone(cards.turn_note(home, "What time is it", "desktop", at), "cards off: nothing to show")
@@ -366,7 +367,7 @@ class AnswerCardTests(unittest.TestCase):
         self.assertIn("3 items in 2 groups", said["shown"][2], "groups each with their items count")
         self.assertIn("(2 items)", said["shown"][3], "one group is just the list")
         props = cards.SCHEMA["parameters"]["properties"]["cards"]["items"]["properties"]
-        self.assertEqual(props["kind"]["enum"], list(cards.REVIEW_KINDS))
+        self.assertEqual(props["kind"]["enum"], list(cards.REVIEW_KINDS + cards.REMINDER_KINDS), "a review's kinds, and from 1.12.0 a reminder's")
         self.assertIn("subtitle", props)
         self.assertIn("verb", props)
         self.assertIn("note", props["items"]["items"]["properties"])
@@ -482,3 +483,113 @@ class AgendaTests(unittest.TestCase):
         (root / "profiles" / "claude").mkdir(parents=True)
         cards.gated_slash(root, ["claude", "on"])
         self.assertIsNone(cards.turn_note(root / "profiles" / "claude", "What's on my calendar tomorrow?", platform="desktop"))
+
+
+class MoreCardsTests(unittest.TestCase):
+    """From 1.12.0 (asked 2026-10-30): purchase, home, reminder, compare and score cards, checked
+    leniently, each one's shape in a turn note only when asked for that kind of thing, and in the
+    tool's error; the schema stays small."""
+    def setUp(self):
+        self.home = Path(tempfile.mkdtemp())
+
+    def note(self, text):
+        return cards.turn_note(self.home, text, platform="desktop") or ""
+
+    def test_the_schema_stays_small_with_five_more_cards(self):
+        self.assertLess(len(json.dumps(cards.SCHEMA)), 6000)
+        self.assertLess(len(cards.SCHEMA["description"]), 1700)
+        props = cards.SCHEMA["parameters"]["properties"]["cards"]["items"]["properties"]
+        self.assertTrue(set(cards.MORE) <= set(props["type"]["enum"]))
+        self.assertNotIn("description", props["devices"], "a card's fields are in its note, not in every prompt")
+
+    def test_a_purchase_is_checked_and_its_pick_named(self):
+        shown, problems = cards.check({"cards": [{"type": "purchase", "title": "Headphones", "items": [
+            {"name": "Aurora Q5", "price": 279, "pick": True}, {"name": "Tidal Air", "badge": "Best value"}, {"price": 9}, "Plain"]}]})
+        self.assertEqual(problems, [])
+        self.assertIn("purchase: 3 (Aurora Q5 (pick), Tidal Air, Plain)", shown[0])
+        self.assertIn("1 left out", shown[0])
+        shown, _ = cards.check({"cards": [{"type": "purchase", "items": [{"name": "A"}, {"name": "B", "badge": "Top pick"}]}]})
+        self.assertIn("B (pick)", shown[0], "a badge can name the pick")
+        self.assertIn("no pick", cards.check({"cards": [{"type": "purchase", "items": ["A", "B"]}]})[0][0])
+        self.assertIn("first 6", cards.check({"cards": [{"type": "purchase", "items": [f"P{i}" for i in range(8)]}]})[0][0])
+        shown, problems = cards.check({"cards": [{"type": "purchase", "items": [{"price": 3}]}]})
+        self.assertEqual(shown, [])
+        self.assertIn("'items' (up to 6, your pick first), each {name, brand, price", problems[0], "the error gives the whole shape")
+
+    def test_home_reminder_compare_and_score_are_checked(self):
+        shown, problems = cards.check({"cards": [
+            {"type": "home", "devices": [{"name": "Kitchen lights", "kind": "light", "state": "on", "entity": "light.kitchen"}, {"name": "Porch"}, {"area": "x"}]},
+            {"type": "reminder", "kind": "timer", "title": "Pasta", "duration": "20 min"},
+            {"type": "compare", "options": ["Python", {"title": "JavaScript"}], "rows": [{"criterion": "Setup", "values": ["One install", "None"], "best": 1}], "pick": 0},
+            {"type": "score", "games": [{"status": "final", "home": {"name": "Orlando Magic", "score": 112}, "away": {"name": "Boston Celtics", "score": 104}}]}]})
+        self.assertEqual(problems, [])
+        self.assertIn("home: 2 devices (Kitchen lights on, Porch)", shown[0])
+        self.assertIn("1 without an 'entity'", shown[0])
+        self.assertEqual(shown[1], "reminder: timer 'Pasta'")
+        self.assertEqual(shown[2], "compare: Python vs JavaScript (1 criteria; pick Python)")
+        self.assertEqual(shown[3], "score: Boston Celtics 104 at Orlando Magic 112 (final)")
+        shown, _ = cards.check({"cards": [{"type": "reminder", "title": "Call the vet", "at": "tomorrow at 10"}]})
+        self.assertIn("isn't an ISO time", shown[0])
+        for card, words in (({"type": "home", "devices": []}, "'devices', each {name, area, kind"),
+                            ({"type": "reminder", "at": "2026-10-30T15:45:00-04:00"}, "'title' (what), 'kind'"),
+                            ({"type": "compare", "options": ["Only one"], "rows": [{"criterion": "x", "values": ["a"]}]}, "'options' (2 to 4"),
+                            ({"type": "compare", "options": ["A", "B"], "rows": ["not a row"]}, "'rows' (the criteria"),
+                            ({"type": "score", "games": [{"home": "Magic"}]}, "'games' (one or a few), each {league, home, away")):
+            shown, problems = cards.check({"cards": [card]})
+            self.assertEqual(shown, [], card)
+            self.assertIn(words, problems[0], card)
+
+    def test_each_card_is_asked_for_by_what_the_person_says(self):
+        asks = {
+            "'purchase' card": ("Which noise-cancelling headphones should I buy?", "What's the best laptop under $1000?",
+                                "Can you recommend a good stand mixer?", "I'm looking for a new running watch", "Gift ideas for my dad?",
+                                "Is the Kindle or the Kobo better for the price?", "Where can I buy the new Murakami book?",
+                                "What vacuum should I get?", "best robot vacuum for $300"),
+            "'home' card": ("Turn off the kitchen lights", "Is the garage closed?", "Set the house to 70", "Lock the front door",
+                            "Did I leave the porch light on?", "dim the living room lamps", "set the living room lights to 40%"),
+            "'reminder' card": ("Remind me to call the vet tomorrow at 10", "Set a timer for 20 minutes", "Wake me up at 6:30",
+                                "Every Monday, send me the weekly numbers", "set an alarm for 7 o'clock"),
+            "'compare' card": ("Which is better for a beginner, Python or JavaScript?", "Lisbon vs Porto for a week in March",
+                               "Should I learn Spanish or French?", "Is Notion better than Obsidian for notes?"),
+            "'score' card": ("Did the Magic win?", "When's the next Lightning game?", "What was the score last night?",
+                             "How's the Heat game going?", "Is the Heat game on tonight?"),
+        }
+        for card, messages in asks.items():
+            for asked in messages:
+                self.assertIn(card, self.note(asked), asked)
+        nots = {
+            "'purchase' card": ("Buy it", "Order it from Amazon", "Add the blue one to my cart", "Recommend a restaurant near the office",
+                                "Can you recommend a good book?", "What should I get for dinner?", "What's the best way to learn Go?"),
+            "'home' card": ("Turn on notifications", "Is the store open?", "Close the deal with Ana", "Did the Heat win?",
+                            "Lock the row before you update it"),
+            "'reminder' card": ("What time is it?", "Set the alarm to away.", "What reminders do I have?"),
+            "'compare' card": ("What's the weather?", "Which headphones should I buy, the Sony or the Bose?",
+                               "Compare these two functions and tell me which is faster"),
+            "'score' card": ("What's my credit score?", "Did you play the song?", "Who won the election?"),
+        }
+        for card, messages in nots.items():
+            for asked in messages:
+                self.assertNotIn(card, self.note(asked), asked)
+        self.assertIn("never make up a price, a rating or a link", self.note("Which TV should I buy?"))
+        self.assertIn("'review'", self.note("Buy it"), "an errand is the review note's")
+
+    def test_the_person_s_time_comes_with_a_reminder_and_a_game_and_off_or_gated_none(self):
+        cards.slash(self.home, ["on", "tz=America/New_York"])
+        self.assertIn("(America/New_York).]", self.note("Remind me in 20 minutes to check the oven"))
+        self.assertIn("(America/New_York).]", self.note("When do the Magic play next?"))
+        self.assertTrue(self.note("Which TV should I buy?").endswith("]"))
+        self.assertIsNone(cards.turn_note(self.home, "Did the Magic win?\n\n[Redde card k: the user tapped Refresh]", platform="desktop"),
+                          "a card's answer is not a new ask")
+        cards.slash(self.home, ["off"])
+        self.assertIsNone(cards.turn_note(self.home, "Which TV should I buy?", platform="desktop"))
+        root = Path(tempfile.mkdtemp())
+        (root / "profiles" / "claude").mkdir(parents=True)
+        cards.gated_slash(root, ["claude", "on"])
+        self.assertIsNone(cards.turn_note(root / "profiles" / "claude", "Set a timer for 5 minutes", platform="desktop"))
+        self.assertIsNone(cards.turn_note(self.home, "Which TV should I buy?", platform="telegram"))
+
+    def test_they_are_passed_on_as_given(self):
+        card = {"type": "home", "devices": [{"name": "Kitchen lights", "state": "on", "brightness": 80, "entity": "light.kitchen"}]}
+        said = json.loads(cards.handle({"cards": [card]}))
+        self.assertEqual(said["cards"], [card])
+        self.assertNotIn("Stop here", said["note"], "not a card that waits for a tap")

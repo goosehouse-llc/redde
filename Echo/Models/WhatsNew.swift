@@ -39,7 +39,7 @@ nonisolated enum WhatsNew {
             Item(symbol: "calendar.day.timeline.left", title: String(localized: "Your day as a timeline"),
                  detail: String(localized: "Ask what's on your calendar: your events to scale, free time marked, a line for now. Tap an empty spot to add one. Pick the calendars your agent looks at in Settings → Agent → Calendars.")),
             Item(symbol: "rectangle.on.rectangle", title: String(localized: "New answer cards"),
-                 detail: String(localized: "The weather by the hour with rain called out, places on a map with hours and walks, an email to check before it goes, and a checklist to tick.")),
+                 detail: String(localized: "The weather by the hour with rain called out, places on a map with hours and walks, an email to check before it goes, a checklist to tick, and new cards for things to buy, your home's devices, reminders and timers, comparisons and game scores.")),
             Item(symbol: "hand.raised", title: String(localized: "Approvals in plain words"),
                  detail: String(localized: "Before your agent runs something, the card says what will happen: what it deletes, in red, and what it changes.")),
             Item(symbol: "location", title: String(localized: "Current Location"),

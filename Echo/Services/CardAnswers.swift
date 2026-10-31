@@ -27,6 +27,12 @@ final class CardAnswers {
         defaults.set(said, forKey: Self.saidKey)
     }
 
+    /// A card as if never answered: a demo seeded again (`-echo.demoCards purchase`) shows its chips.
+    func forget(_ key: String) {
+        guard said.removeValue(forKey: key) != nil else { return }
+        defaults.set(said, forKey: Self.saidKey)
+    }
+
     /// From a transcript read off the main actor.
     nonisolated static func record(_ key: String, said text: String) {
         Task { @MainActor in shared.record(key, said: text) }

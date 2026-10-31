@@ -22,6 +22,11 @@ struct ReplyCardsView: View {
                 case let .checklist(list): ChecklistCard(card: list, whole: card)
                 case let .form(form): FormCard(card: form, whole: card)
                 case let .key(ask): KeyAskCard(card: ask)
+                case let .purchase(purchase): PurchaseCard(card: purchase, whole: card)
+                case let .home(home): HomeCard(card: home, whole: card)
+                case let .reminder(reminder): ReminderCard(card: reminder, whole: card)
+                case let .compare(comparison): CompareCard(card: comparison)
+                case let .score(scores): ScoreCard(card: scores, whole: card)
                 }
             }
         }
@@ -502,7 +507,7 @@ private struct PlaceRow: View {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text(place.name).chatFont(.callout, weight: .semibold).lineLimit(2)
                         if place.pick == true {
-                            Text("Pick", comment: "A tag on the agent's pick of a list of places")
+                            Text(String(localized: "card.pick", defaultValue: "Pick", comment: "A tag on the agent's pick: the place, product or option it recommends"))
                                 .textCase(.uppercase)
                                 .chatFont(.caption2, weight: .bold).tracking(0.4)
                                 .foregroundStyle(theme.accent)
@@ -571,7 +576,7 @@ private struct PlaceRow: View {
     /// "1, Rossio Roasters, Pick, Coffee, $$, rated 4.7, Open until 9 PM, 6 min walk".
     private func spoken(hours: String?) -> String {
         let rating = place.rating.map { String(localized: "rated \($0.formatted(.number.precision(.fractionLength(1))))", comment: "A place's rating out of five, read by VoiceOver") }
-        let pick = place.pick == true ? String(localized: "Pick", comment: "A tag on the agent's pick of a list of places") : nil
+        let pick = place.pick == true ? String(localized: "card.pick", defaultValue: "Pick", comment: "A tag on the agent's pick: the place, product or option it recommends") : nil
         let parts: [String?] = ["\(number)", place.name, pick, place.category, place.price, rating, hours, place.note,
                                 away.map { "\($0.amount) \($0.kind)" }]
         return parts.compactMap(\.self).joined(separator: ", ")
@@ -596,7 +601,7 @@ extension PlaceLookup.Away {
 }
 
 /// A colour with one value in light mode and another in dark.
-private func shade(light: (Double, Double, Double), dark: (Double, Double, Double)) -> Color {
+func shade(light: (Double, Double, Double), dark: (Double, Double, Double)) -> Color {
     #if canImport(UIKit)
     Color(uiColor: UIColor { traits in
         let c = traits.userInterfaceStyle == .dark ? dark : light
