@@ -45,6 +45,56 @@ NOTE = ("[Redde: if you make a scheduled job for this, make it yourself with cro
         "platform is needed. Write the job's prompt so its answer is what they want to read.]")
 
 
+#: A scheduled run's answer goes to the phone as it is written (asked 2026-10-31, after the morning's
+#: briefings began "Now let me compile the morning meeting brief." and quiet evenings came as
+#: "Nothing to report. [SILENT]"): said to every cron turn where a phone is paired.
+CRON_NOTE = ("[Redde: your final answer reaches the user's phone exactly as you write it. Start with the answer "
+             "itself: no notes on what you are doing (\"Now let me…\", \"Here's the notification:\") and no \"---\" "
+             "before it. If there is nothing worth telling them, answer exactly [SILENT] and nothing else. Call "
+             "deferred tools one at a time, each by its exact name.]")
+#: Ways a model opens with what it is doing rather than what it found.
+_NARRATION = re.compile(
+    r"^(now\b|ok(ay)?\b|good\b|great\b|alright\b|all right\b|perfect\b|let me\b|let's\b|i'll\b|i will\b|"
+    r"i have\b|i've\b|i now have\b|i've got\b|i need to\b|first,|next,|here's\b|here is\b|time to\b)", re.IGNORECASE)
+_RULE = re.compile(r"^\s*([-*_])(\s*\1){2,}\s*$")
+
+
+def settle(words: str) -> tuple[str, bool, bool]:
+    """A run's answer as the person should read it: (words, silent, failed). `[SILENT]` anywhere in
+    it is silence (Hermes keeps quiet only for exactly that, and models write it after a line of
+    their own); `[CRON_FAILURE]` is a failure, said in what follows it; and the model's account of
+    what it was doing ahead of the answer ("Now I have everything. Let me compose the
+    notification." and a "---") is left out."""
+    text = (words or "").strip()
+    if "[SILENT]" in text.upper():
+        return "", True, False
+    if text.upper().startswith("[CRON_FAILURE]"):
+        return text[len("[CRON_FAILURE]"):].strip(), False, True
+    paragraphs = [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]
+    # Up to a rule within the first short paragraphs: what is before it is the model talking to itself.
+    for i, p in enumerate(paragraphs[:4]):
+        if _RULE.match(p) and 0 < i < len(paragraphs) - 1 and sum(len(x) for x in paragraphs[:i]) <= 600:
+            paragraphs = paragraphs[i + 1:]
+            break
+    # Leading paragraphs whose every sentence is such talk ("I have all the information needed.
+    # Here's the notification:").
+    while len(paragraphs) > 1 and len(paragraphs[0]) <= 300 and all(
+            _NARRATION.match(s) for s in re.split(r"(?<=[.:!])\s+", paragraphs[0]) if s.strip()):
+        paragraphs = paragraphs[1:]
+    return "\n\n".join(paragraphs), False, False
+
+
+def cron_note(home, store_in, platform: str = "") -> str | None:
+    """For `pre_llm_call`: a scheduled run, where a phone is paired (`CRON_NOTE`)."""
+    if platform != "cron":
+        return None
+    try:
+        from .calls import caller
+        return CRON_NOTE if store_in(caller(Path(home))[1]).devices else None
+    except Exception:
+        return None
+
+
 def turn_note(home, store_in, message, platform: str = "") -> str | None:
     """For `pre_llm_call`: the person asks for something on a schedule, where a phone is paired."""
     if platform in ("cron", "subagent", "bot_room"):
@@ -176,6 +226,10 @@ class Routines:
                     failed = job.get("last_status") == "error"
                     words = (f"It didn't finish: {job.get('last_error') or 'an error'}" if failed
                              else self.stores.output(home, str(job["id"])))
+                    if not failed and not watching:
+                        words, silent, failed = settle(words)
+                        if silent:
+                            continue
                     if watching:
                         # A watch says something only when there is something to say.
                         if not failed and (not words or watches.quiet(words)):

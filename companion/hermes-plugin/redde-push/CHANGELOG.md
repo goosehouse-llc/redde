@@ -3,6 +3,22 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.13.1 (2026-10-31)
+
+Scheduled answers as the person should read them (from a look at three days of them)
+- An answer with `[SILENT]` anywhere in it says nothing: Hermes keeps quiet only for exactly
+  `[SILENT]`, and models wrote a line of their own before it, so quiet evenings still came as
+  "Nothing to report".
+- `[CRON_FAILURE]` at the start of an answer is a failed run, with what follows as the reason.
+- The model's account of what it was doing ahead of the answer ("Now let me compile the morning
+  meeting brief." and a `---`, or "I have all the information needed. Here's the notification:") is
+  left out; a paragraph with anything found in it stays.
+- Every scheduled run, where a phone is paired, is told in one line that its answer reaches the
+  phone as written, to answer exactly `[SILENT]` when there is nothing to tell, and to call deferred
+  tools one at a time by name.
+- A heads-up that can't find its event now says it couldn't confirm it, never that it isn't on the
+  calendar (one said so of a meeting the morning's look had found).
+
 ## 1.13.0 (2026-10-31)
 
 Six more cards for `redde_show`, drawn by Redde 2.3.1

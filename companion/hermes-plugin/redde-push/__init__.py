@@ -243,6 +243,8 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_m
     try:
         # Asked for something on a schedule: how its answers reach the phone (routines.py).
         notes.append(routines.turn_note(_home(), _store_in, user_message, platform))
+        # A scheduled run: its answer goes to the phone as written (routines.py).
+        notes.append(routines.cron_note(_home(), _store_in, platform))
     except Exception:
         log.debug("redde-push: schedule note failed", exc_info=True)
     try:

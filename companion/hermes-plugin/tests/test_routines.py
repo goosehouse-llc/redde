@@ -138,6 +138,42 @@ class RoutinesTests(unittest.TestCase):
         self.assertEqual(made["b"], week, "a briefing isn't cut at 500 like a schedule's line")
         self.assertLessEqual(len(core.json.dumps(made, ensure_ascii=False).encode()), core.NOTE_LIMIT)
 
+    # 2026-10-31: quiet evenings came as "Nothing to report. [SILENT]", and briefings began with the
+    # model's own "Now let me compile the morning meeting brief." and a rule.
+    def notify_run(self, answer):
+        home = self.job("default", last="2026-10-30T21:00:00", deliver="local", name="[redde-notify] Evening wrap-up")
+        self.watch.look()
+        self.output(home, "# Cron Job\n\n## Response\n\n" + answer)
+        self.job("default", last="2026-10-31T21:00:00", deliver="local", name="[redde-notify] Evening wrap-up")
+        self.watch.look()
+        return self.sent
+
+    def test_silent_after_words_of_its_own_says_nothing(self):
+        self.assertEqual(self.notify_run("A quiet day, nothing to report.\n\n[SILENT]"), [])
+
+    def test_a_cron_failure_is_a_failure(self):
+        made = self.notify_run("[CRON_FAILURE]\nCalendar unavailable: list_events: 401")[0][1]
+        self.assertEqual(made["w"], "failed")
+        self.assertIn("Calendar unavailable", made["b"])
+
+    def test_the_models_narration_ahead_of_a_briefing_is_left_out(self):
+        made = self.notify_run("No Zoom link on the Bowling event. Now let me compile the brief.\n\n---\n\n## Today\n\n| Time | Title |")[0][1]
+        self.assertTrue(made["b"].startswith("## Today"), made["b"])
+
+    def test_leading_talk_without_a_rule_is_left_out_but_findings_stay(self):
+        said, silent, failed = routines.settle("I have all the information needed. Here's the notification:\n\n**Standup** at 4 PM, Zoom.")
+        self.assertEqual((said, silent, failed), ("**Standup** at 4 PM, Zoom.", False, False))
+        kept = "The appointment is live, 5 to 7 PM. Here's the heads-up:\n\nBring your ID."
+        self.assertEqual(routines.settle(kept)[0], kept, "a paragraph with a finding in it stays")
+        whole = "Today was a quiet one.\n\nNothing else."
+        self.assertEqual(routines.settle(whole)[0], whole)
+
+    def test_a_scheduled_run_is_told_its_answer_goes_to_the_phone(self):
+        store_in = lambda _: self.store
+        note = routines.cron_note(self.root, store_in, "cron")
+        self.assertIn("exactly [SILENT]", note or "")
+        self.assertIsNone(routines.cron_note(self.root, store_in, "api_server"))
+
 
 if __name__ == "__main__":
     unittest.main()

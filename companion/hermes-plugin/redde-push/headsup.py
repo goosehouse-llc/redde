@@ -81,7 +81,9 @@ def prompt(event: str, starts: datetime, check: str) -> str:
     return (f"Heads-up for the user: \"{event}\" starts at {at} today. In two or three short lines, tell them what "
             f"they need for it now: where it is, who is coming, what to bring or prepare, the weather if it is "
             f"outdoors. {('Notes from this morning: ' + check + '. ') if check else ''}Check the calendar first: if "
-            "it was cancelled or moved, say so in one line. Your answer is what they read, as a notification.")
+            "it was cancelled or moved, say so in one line. It was on the calendar when this heads-up was set: if you "
+            "can't find it now, say you couldn't confirm it, never that it isn't on the calendar. Your answer is what "
+            "they read, as a notification.")
 
 
 def waiting(home: Path) -> list[dict]:
