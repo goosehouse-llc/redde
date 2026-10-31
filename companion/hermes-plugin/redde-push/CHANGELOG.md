@@ -3,6 +3,14 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.13.2 (2026-10-31)
+
+- Asked what to buy, a 'review' card (the card for an order about to be placed) without a 'purchase'
+  card is sent back with the purchase card's shape, so the retry is the right card. Asked "I'm
+  looking to buy a smart plug … recommend a couple", Home drew a review twice, the purchase note
+  notwithstanding. The turn is remembered by its session for 15 minutes; asked to place an order,
+  a review is a review again.
+
 ## 1.13.1 (2026-10-31)
 
 Scheduled answers as the person should read them (from a look at three days of them)

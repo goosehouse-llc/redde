@@ -495,6 +495,22 @@ class MoreCardsTests(unittest.TestCase):
     def note(self, text):
         return cards.turn_note(self.home, text, platform="desktop") or ""
 
+    def test_asked_what_to_buy_a_review_card_is_sent_back(self):
+        # 2026-10-31: "I'm looking to buy a smart plug … recommend a couple", and Home drew a
+        # review card twice. The turn is remembered by its session; the card tool holds it to it.
+        asked = "I’m looking to buy a smart plug for some Christmas lights. Look at my setup and recommend a couple"
+        self.assertIn("asked what to buy", cards.turn_note(self.home, asked, platform="desktop", session="s1"))
+        review = {"type": "review", "kind": "purchase", "title": "Wyze Plug Outdoor",
+                  "fields": [{"label": "Product", "value": "Wyze Outdoor Smart Plug"}]}
+        refused = json.loads(cards.handle({"cards": [review]}, session_id="s1"))
+        self.assertIn("'purchase' card, not a 'review'", refused.get("error", ""))
+        self.assertIn("items", refused["error"], "the error carries the shape")
+        product = {"type": "purchase", "title": "Smart plugs", "items": [{"name": "Plug A", "price": 15}, {"name": "Plug B", "price": 12}]}
+        self.assertIn("shown", json.loads(cards.handle({"cards": [product]}, session_id="s1")))
+        self.assertIn("shown", json.loads(cards.handle({"cards": [review]}, session_id="s2")), "another chat is its own")
+        cards.turn_note(self.home, "Order the Wyze plug for me", platform="desktop", session="s1")
+        self.assertIn("shown", json.loads(cards.handle({"cards": [review]}, session_id="s1")), "an order to place is a review again")
+
     def test_the_schema_stays_small_with_five_more_cards(self):
         self.assertLess(len(json.dumps(cards.SCHEMA)), 6000)
         self.assertLess(len(cards.SCHEMA["description"]), 1700)

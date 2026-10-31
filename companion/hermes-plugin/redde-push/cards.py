@@ -704,12 +704,15 @@ def preferences(home) -> dict:
         return {}
 
 
-def handle(args, home=None, **_) -> str:
+def handle(args, home=None, session_id: str = "", **_) -> str:
     # Reached through `tool_call` even when not offered (Hermes 0.21.5): refused while off.
     if home is not None and not offered(home()):
         return json.dumps({"error": "Cards are turned off in Redde on the phone (Settings, Agent, Cards in replies). Answer in words."})
     args = args if isinstance(args, dict) else {}
     listed = _listed(args)
+    wrong = held_to(session_id, listed)
+    if wrong:
+        return json.dumps({"error": wrong})
     said, missed = [], []
     if isinstance(listed, list):
         prefs = preferences(home()) if home is not None else {}
@@ -938,7 +941,40 @@ def announce() -> bool:
     return True
 
 
-def turn_note(home: Path, message, platform: str = "", at: datetime | None = None) -> str | None:
+#: What a conversation's latest turn asked for, where the card tool holds the agent to it (asked
+#: 2026-10-31: asked what smart plugs to buy, Home drew a 'review' card twice, the purchase note
+#: notwithstanding). By session, for a while; a new turn says again.
+_ASKED: dict[str, tuple[str, float]] = {}
+ASKED_FOR = 15 * 60
+
+
+def remember_ask(session: str, note: str | None) -> None:
+    """A turn began: what it asked for, if it is one the card tool holds the agent to."""
+    if not session:
+        return
+    _ASKED.pop(session, None)
+    if note == PURCHASE_NOTE:
+        _ASKED[session] = ("purchase", time.time())
+        if len(_ASKED) > 500:
+            for old in sorted(_ASKED, key=lambda s: _ASKED[s][1])[:100]:
+                _ASKED.pop(old, None)
+
+
+def held_to(session: str, cards) -> str | None:
+    """Why these cards aren't what this turn asked for, or None. Asked what to buy, a 'review' (the
+    card for an order about to be placed) without a 'purchase' card is sent back with its shape."""
+    asked = _ASKED.get(session or "")
+    if not asked or time.time() - asked[1] > ASKED_FOR or not isinstance(cards, list):
+        return None
+    types = {str(c.get("type") or "").lower() for c in cards if isinstance(c, dict)}
+    if asked[0] == "purchase" and "review" in types and "purchase" not in types:
+        return ("Asked what to buy: show the products as a 'purchase' card, not a 'review' (a review is for an order "
+                "you are about to place for them). Look them up first and never make up a price, a rating or a link. "
+                "The shape: " + SHAPES["purchase"])
+    return None
+
+
+def turn_note(home: Path, message, platform: str = "", at: datetime | None = None, session: str = "") -> str | None:
     """For `pre_llm_call`: when the person asks the time or the weather, and cards are on, what
     their time is (in the zone their phone said) and to show the card before answering. Added to
     that turn's message only, so it costs nothing on any other."""
@@ -961,6 +997,7 @@ def turn_note(home: Path, message, platform: str = "", at: datetime | None = Non
         return note
     if "[Redde card " not in text and not gated(home):
         more = more_note(text)
+        remember_ask(session, more)
         if more is not None:
             if more in (REMINDER_NOTE, SCORE_NOTE, DELIVERY_NOTE, FLIGHT_NOTE):
                 # "In 20 minutes", "tonight", "tomorrow's flight" are the person's: the server's clock may be in another zone.

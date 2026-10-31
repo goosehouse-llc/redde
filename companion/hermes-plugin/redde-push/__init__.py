@@ -227,7 +227,7 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_m
     except Exception:
         log.debug("redde-push: couldn't have redde_show announced", exc_info=True)
     try:
-        notes.append(cards.turn_note(_home(), user_message, platform))
+        notes.append(cards.turn_note(_home(), user_message, platform, session=session_id))
     except Exception:
         log.debug("redde-push: card note failed", exc_info=True)
     try:
