@@ -5105,7 +5105,111 @@
       }
     },
     "%@ asks for a key" : {
-      "comment" : "Key request card: heading, by the agent that asks"
+      "comment" : "Key request card: heading, by the agent that asks",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ beder om en nøgle"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ bittet um einen Schlüssel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ pide una clave"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ demande une clé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ chiede una chiave"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@がキーを求めています"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@이(가) 키를 요청합니다"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ber om en nøkkel"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ vraagt om een sleutel"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ prosi o klucz"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ pede uma chave"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ просит ключ"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ber om en nyckel"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ bir anahtar istiyor"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ просить ключ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@请求一个密钥"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@要求一組金鑰"
+          }
+        }
+      }
     },
     "%@ at %@" : {
       "comment" : "When a bot's routine runs: some days of the week, then a time",
@@ -8885,7 +8989,111 @@
       }
     },
     "%@ is saved. Hermes reads it on its next restart." : {
-      "comment" : "Key request card: saved, by the key's name"
+      "comment" : "Key request card: saved, by the key's name",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ er gemt. Hermes læser den ved næste genstart."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ist gespeichert. Hermes liest ihn beim nächsten Neustart."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ se ha guardado. Hermes la leerá en su próximo reinicio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ est enregistrée. Hermes la lira à son prochain redémarrage."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ è salvata. Hermes la leggerà al prossimo riavvio."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@を保存しました。Hermesは次回の再起動時に読み込みます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@이(가) 저장되었습니다. Hermes는 다음에 재시작할 때 읽어 들입니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ er lagret. Hermes leser den ved neste omstart."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is bewaard. Hermes leest hem bij de volgende herstart."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapisano %@. Hermes wczyta go przy następnym uruchomieniu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ foi salva. O Hermes vai lê-la na próxima reinicialização."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ сохранен. Hermes прочитает его при следующем перезапуске."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ har sparats. Hermes läser den vid nästa omstart."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ kaydedildi. Hermes bunu bir sonraki yeniden başlatmada okur."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ збережено. Hermes прочитає його під час наступного перезапуску."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@已存储。Hermes会在下次重启时读取。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@已儲存。Hermes 會在下次重新啟動時讀取。"
+          }
+        }
+      }
     },
     "%@ is set by the connection itself and can't be replaced." : {
       "localizations" : {
@@ -14686,7 +14894,111 @@
       }
     },
     "%@'s .env" : {
-      "comment" : "Key request card: the key goes into a bot's settings file, by its profile name"
+      "comment" : "Key request card: the key goes into a bot's settings file, by its profile name",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".env for %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".env von %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".env de %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".env de %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".env di %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@の.env"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@의 .env"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".env for %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".env van %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".env profilu %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".env de %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".env профиля %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".env för %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ .env dosyası"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".env профілю %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@的 .env"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@的 .env"
+          }
+        }
+      }
     },
     "%@'s blend" : {
       "localizations" : {
@@ -32519,7 +32831,111 @@
       }
     },
     "A key is one line: this has more than one." : {
-
+      "comment" : "Key request: what was pasted has several lines",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En nøgle er én linje: denne har flere."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Schlüssel ist eine Zeile: Das hier hat mehrere."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una clave ocupa una línea: esto tiene más de una."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une clé tient sur une ligne : celle-ci en a plusieurs."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una chiave è una sola riga: questa ne ha più di una."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キーは1行です。複数行が含まれています。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "키는 한 줄이어야 합니다. 여러 줄이 들어 있습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En nøkkel er én linje: denne har flere."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een sleutel is één regel: deze heeft er meer."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klucz to jeden wiersz: ten ma ich więcej."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uma chave é uma linha só: esta tem mais de uma."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ключ — это одна строка, а здесь их несколько."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En nyckel är en rad: den här har fler."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anahtar tek satırdır: bunda birden fazla satır var."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ключ — це один рядок, а тут їх кілька."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "密钥只有一行：这里有多行。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "金鑰只有一行：這裡有多行。"
+          }
+        }
+      }
     },
     "A key is stored in the Keychain. It is never shown again. Redde on Apple Watch asks through this connection and keeps its own copy of the key." : {
       "localizations" : {
@@ -39112,7 +39528,111 @@
       }
     },
     "Add Key…" : {
-
+      "comment" : "Button on a key request card in a chat: opens the sheet to paste the key",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tilføj nøgle …"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schlüssel hinzufügen …"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir clave…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter la clé…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi chiave…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キーを追加…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "키 추가…"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Legg til nøkkel …"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg sleutel toe…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj klucz…"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar Chave…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить ключ…"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till nyckel …"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anahtar Ekle…"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Додати ключ…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加密钥…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入金鑰…"
+          }
+        }
+      }
     },
     "Add login" : {
       "localizations" : {
@@ -47885,7 +48405,111 @@
       }
     },
     "An agent that needs a key asks for it here instead of in a chat. What you paste goes sealed into that profile's .env on your Hermes: never into a chat, a model or this device." : {
-
+      "comment" : "Settings › Agent › Keys Asked For: footer",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En agent, der har brug for en nøgle, beder om den her i stedet for i en chat. Det, du indsætter, går krypteret ind i profilens .env på din Hermes: aldrig ind i en chat, en model eller denne enhed."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Agent, der einen Schlüssel braucht, fragt hier danach statt in einem Chat. Was du einfügst, geht verschlüsselt in die .env dieses Profils auf deinem Hermes: nie in einen Chat, an ein Modell oder auf dieses Gerät."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un agente que necesita una clave la pide aquí y no en un chat. Lo que pegues va cifrado al .env de ese perfil en tu Hermes: nunca a un chat, a un modelo ni a este dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un agent qui a besoin d’une clé la demande ici plutôt que dans un chat. Ce que vous collez part chiffré dans le .env de ce profil sur votre Hermes : jamais dans un chat, vers un modèle ou sur cet appareil."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un agente che ha bisogno di una chiave la chiede qui invece che in una chat. Ciò che incolli va cifrato nel .env di quel profilo sul tuo Hermes: mai in una chat, a un modello o su questo dispositivo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キーが必要なエージェントは、チャットではなくここで求めます。ペーストした内容は暗号化されてHermes上のそのプロファイルの.envに直接入り、チャット、モデル、このデバイスに渡ることはありません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "키가 필요한 에이전트는 채팅이 아닌 여기에서 요청합니다. 붙여넣은 내용은 암호화되어 Hermes의 해당 프로필 .env로 바로 들어가며, 채팅이나 모델, 이 기기에는 절대 들어가지 않습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En agent som trenger en nøkkel, ber om den her i stedet for i en chat. Det du limer inn, går kryptert inn i profilens .env på Hermes: aldri inn i en chat, en modell eller denne enheten."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een agent die een sleutel nodig heeft, vraagt er hier om in plaats van in een chat. Wat je plakt, gaat versleuteld naar de .env van dat profiel op je Hermes: nooit naar een chat, een model of dit apparaat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent, który potrzebuje klucza, prosi o niego tutaj, a nie w czacie. To, co wkleisz, trafia zaszyfrowane do pliku .env tego profilu na Twoim Hermesie: nigdy do czatu, modelu ani na to urządzenie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um agente que precisa de uma chave pede aqui, e não em um chat. O que você colar vai criptografado para o .env desse perfil no seu Hermes: nunca para um chat, um modelo ou este dispositivo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент, которому нужен ключ, просит его здесь, а не в чате. То, что вы вставите, попадает в зашифрованном виде в .env этого профиля на вашем Hermes — никогда в чат, в модель или на это устройство."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En agent som behöver en nyckel ber om den här i stället för i en chatt. Det du klistrar in går krypterat till profilens .env på din Hermes: aldrig till en chatt, en modell eller den här enheten."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anahtara ihtiyacı olan bir ajan bunu sohbette değil burada ister. Yapıştırdığınız şey şifreli olarak Hermes'inizdeki o profilin .env dosyasına gider: asla bir sohbete, bir modele veya bu aygıta gitmez."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент, якому потрібен ключ, просить його тут, а не в чаті. Те, що ви вставите, потрапляє у зашифрованому вигляді в .env цього профілю на вашому Hermes — ніколи в чат, у модель чи на цей пристрій."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要密钥的智能体会在这里请求，而不是在聊天中。你粘贴的内容会加密后直接写入你的 Hermes 上该配置文件的 .env：绝不会进入聊天、模型或此设备。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要金鑰的代理會在這裡要求，而不是在聊天中。你貼上的內容會加密後直接寫入你的 Hermes 上該設定檔的 .env：絕不會進入聊天、模型或此裝置。"
+          }
+        }
+      }
     },
     "An agent you allow rings this device like a phone call when something shouldn't wait." : {
       "comment" : "Footer under Calls from Agents, in Settings › Notifications (an iPhone or an iPad)",
@@ -95232,7 +95856,111 @@
       }
     },
     "Couldn't restart Hermes: %@" : {
-
+      "comment" : "Key request card: restarting Hermes after saving a key failed; the error",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunne ikke genstarte Hermes: %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes konnte nicht neu gestartet werden: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo reiniciar Hermes: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de redémarrer Hermes : %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile riavviare Hermes: %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermesを再起動できませんでした：%@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes를 재시작할 수 없음: %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunne ikke starte Hermes på nytt: %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kan Hermes niet herstarten: %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się ponownie uruchomić Hermesa: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível reiniciar o Hermes: %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось перезапустить Hermes: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunde inte starta om Hermes: %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes yeniden başlatılamadı: %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося перезапустити Hermes: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法重启 Hermes：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法重新啟動 Hermes：%@"
+          }
+        }
+      }
     },
     "Couldn't rewind the gateway session: %@" : {
       "localizations" : {
@@ -98848,10 +99576,218 @@
       }
     },
     "Decline" : {
-
+      "comment" : "Key request sheet's toolbar button: turn the request down (destructive)",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afvis"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ablehnen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechazar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refuser"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rifiuta"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "断る"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "거절"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avslå"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wijs af"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odrzuć"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recusar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отклонить"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avböj"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddet"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Відхилити"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拒绝"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拒絕"
+          }
+        }
+      }
     },
     "Declined. The agent is told, and nothing was saved." : {
-
+      "comment" : "Key request sheet after Decline",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afvist. Agenten får besked, og intet blev gemt."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abgelehnt. Der Agent erfährt es, und nichts wurde gespeichert."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechazado. Se avisa al agente y no se guardó nada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refusé. L’agent est prévenu, et rien n’a été enregistré."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rifiutato. L'agente viene avvisato e non è stato salvato nulla."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "断りました。エージェントに伝えられ、何も保存されていません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "거절했습니다. 에이전트에게 알리며, 아무것도 저장되지 않았습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avslått. Agenten får beskjed, og ingenting ble lagret."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afgewezen. De agent hoort het, en er is niets bewaard."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odrzucono. Agent zostanie o tym poinformowany, a nic nie zapisano."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recusado. O agente é avisado, e nada foi salvo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отклонено. Агент получит об этом сообщение, ничего не сохранено."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avböjt. Agenten får veta det, och inget sparades."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddedildi. Ajana bildirilir ve hiçbir şey kaydedilmedi."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Відхилено. Агент отримає повідомлення, нічого не збережено."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已拒绝。会告知智能体，未存储任何内容。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已拒絕。會告知代理，未儲存任何內容。"
+          }
+        }
+      }
     },
     "Default" : {
       "comment" : "An on-device voice's quality: the ordinary one",
@@ -132510,13 +133446,325 @@
       }
     },
     "Goes into" : {
-
+      "comment" : "Key request sheet: a row label; its value is the file the key goes into, e.g. Your main agent's .env",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gemmes i"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ziel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destino"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destination"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destinazione"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存先"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "저장 위치"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lagres i"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gaat naar"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trafia do"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destino"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Куда"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hamnar i"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gideceği yer"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Куди"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写入位置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "寫入位置"
+          }
+        }
+      }
     },
     "Goes into %@'s .env, never into this chat." : {
-      "comment" : "Key request card in a chat: the key goes into a bot's settings file, by its profile name"
+      "comment" : "Key request card in a chat: the key goes into a bot's settings file, by its profile name",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Går ind i .env for %@, aldrig ind i denne chat."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kommt in die .env von %@, nie in diesen Chat."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Va al .env de %@, nunca a este chat."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Va dans le .env de %@, jamais dans ce chat."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Va nel .env di %@, mai in questa chat."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@の.envに入り、このチャットには入りません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@의 .env로 들어가며, 이 채팅에는 절대 들어가지 않습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Går inn i .env for %@, aldri inn i denne chatten."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gaat naar de .env van %@, nooit naar deze chat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trafia do pliku .env profilu %@, nigdy do tego czatu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vai para o .env de %@, nunca para este chat."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попадает в .env профиля %@, а не в этот чат."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hamnar i .env för %@, aldrig i den här chatten."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ .env dosyasına gider, asla bu sohbete gitmez."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Потрапляє в .env профілю %@, а не в цей чат."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写入%@的 .env，绝不会进入此聊天。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "寫入%@的 .env，絕不會進入此聊天。"
+          }
+        }
+      }
     },
     "Goes into your main agent's .env, never into this chat." : {
-
+      "comment" : "Key request card in a chat: the key goes into the main agent's settings file",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Går ind i din hovedagents .env, aldrig ind i denne chat."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kommt in die .env deines Hauptagenten, nie in diesen Chat."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Va al .env de tu agente principal, nunca a este chat."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Va dans le .env de votre agent principal, jamais dans ce chat."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Va nel .env del tuo agente principale, mai in questa chat."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メインエージェントの.envに入り、このチャットには入りません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "주 에이전트의 .env로 들어가며, 이 채팅에는 절대 들어가지 않습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Går inn i hovedagentens .env, aldri inn i denne chatten."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gaat naar de .env van je hoofdagent, nooit naar deze chat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trafia do pliku .env Twojego głównego agenta, nigdy do tego czatu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vai para o .env do seu agente principal, nunca para este chat."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попадает в .env вашего основного агента, а не в этот чат."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hamnar i huvudagentens .env, aldrig i den här chatten."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ana ajanınızın .env dosyasına gider, asla bu sohbete gitmez."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Потрапляє в .env вашого основного агента, а не в цей чат."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写入主智能体的 .env，绝不会进入此聊天。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "寫入主要代理的 .env，絕不會進入此聊天。"
+          }
+        }
+      }
     },
     "Goes to this bot's chat before sending, and voice stays with it until another rule moves it. On the Dashboard connection, or the Hermes API with the Dashboard's login saved." : {
       "localizations" : {
@@ -142849,7 +144097,111 @@
       }
     },
     "Hermes is restarting. It takes about a minute." : {
-
+      "comment" : "Key request sheet after Restart Hermes Now",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes genstarter. Det tager omkring et minut."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes startet neu. Das dauert etwa eine Minute."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes se está reiniciando. Tarda alrededor de un minuto."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes redémarre. Cela prend environ une minute."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes si sta riavviando. Ci vuole circa un minuto."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermesを再起動しています。1分ほどかかります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes를 재시작하는 중입니다. 1분 정도 걸립니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes starter på nytt. Det tar omtrent ett minutt."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes herstart. Dat duurt ongeveer een minuut."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes uruchamia się ponownie. Potrwa to około minuty."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Hermes está reiniciando. Leva cerca de um minuto."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes перезапускается. Это займет около минуты."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes startar om. Det tar ungefär en minut."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes yeniden başlatılıyor. Yaklaşık bir dakika sürer."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes перезапускається. Це триває близько хвилини."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 正在重启，大约需要一分钟。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 正在重新啟動，大約需要一分鐘。"
+          }
+        }
+      }
     },
     "Hermes isn't allowed to do that there. (%@)" : {
       "localizations" : {
@@ -157323,7 +158675,111 @@
       }
     },
     "It goes sealed to your Hermes and straight into that file. It's never shown in a chat, sent to a model, or kept on this device." : {
-
+      "comment" : "Key request sheet: footer under the field where the key is pasted",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den sendes krypteret til din Hermes og direkte ind i den fil. Den vises aldrig i en chat, sendes aldrig til en model og gemmes aldrig på denne enhed."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Er geht verschlüsselt an deinen Hermes und direkt in diese Datei. Er wird nie in einem Chat gezeigt, an ein Modell gesendet oder auf diesem Gerät gespeichert."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Va cifrada a tu Hermes y directamente a ese archivo. Nunca se muestra en un chat, se envía a un modelo ni se guarda en este dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elle part chiffrée vers votre Hermes et directement dans ce fichier. Elle n’est jamais affichée dans un chat, envoyée à un modèle ni conservée sur cet appareil."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Va cifrata al tuo Hermes e direttamente in quel file. Non viene mai mostrata in una chat, inviata a un modello o conservata su questo dispositivo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暗号化されてHermesに送られ、そのファイルに直接入ります。チャットに表示されたり、モデルに送られたり、このデバイスに保存されたりすることはありません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "암호화되어 Hermes로 전송되고 해당 파일에 바로 들어갑니다. 채팅에 표시되거나 모델로 전송되거나 이 기기에 보관되지 않습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den går kryptert til Hermes og rett inn i den filen. Den vises aldri i en chat, sendes aldri til en modell og lagres aldri på denne enheten."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hij gaat versleuteld naar je Hermes en meteen in dat bestand. Hij wordt nooit in een chat getoond, naar een model gestuurd of op dit apparaat bewaard."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trafia zaszyfrowany do Twojego Hermesa i prosto do tego pliku. Nigdy nie jest pokazywany w czacie, wysyłany do modelu ani przechowywany na tym urządzeniu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ela vai criptografada para o seu Hermes e direto para esse arquivo. Nunca aparece em um chat, é enviada a um modelo ou fica guardada neste dispositivo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ключ уходит в зашифрованном виде на ваш Hermes и сразу в этот файл. Он никогда не показывается в чате, не отправляется модели и не хранится на этом устройстве."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den går krypterad till din Hermes och direkt in i den filen. Den visas aldrig i en chatt, skickas aldrig till en modell och sparas aldrig på den här enheten."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şifreli olarak Hermes'inize ve doğrudan o dosyaya gider. Asla bir sohbette gösterilmez, bir modele gönderilmez veya bu aygıtta saklanmaz."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ключ надходить у зашифрованому вигляді на ваш Hermes і одразу в цей файл. Його ніколи не показують у чаті, не надсилають моделі й не зберігають на цьому пристрої."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "它会加密后发送到你的 Hermes，并直接写入该文件。它绝不会显示在聊天中、发送给模型或保留在此设备上。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "它會加密後傳送到你的 Hermes，並直接寫入該檔案。它絕不會顯示在聊天中、傳送給模型或保留在此裝置上。"
+          }
+        }
+      }
     },
     "It has no source to install from." : {
       "localizations" : {
@@ -163311,7 +164767,111 @@
       }
     },
     "Key Asked For" : {
-
+      "comment" : "Key request sheet's title, and the title of its alerts",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Efterspurgt nøgle"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Angefragter Schlüssel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clave solicitada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clé demandée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiave richiesta"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "求められたキー"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "요청된 키"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Etterspurt nøkkel"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gevraagde sleutel"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prośba o klucz"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chave Solicitada"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запрошенный ключ"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Begärd nyckel"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İstenen Anahtar"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запитаний ключ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请求的密钥"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要求的金鑰"
+          }
+        }
+      }
     },
     "key included" : {
       "localizations" : {
@@ -163420,7 +164980,111 @@
       }
     },
     "Keys Asked For" : {
-
+      "comment" : "Settings › Agent: the row that lists agents' key requests",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Efterspurgte nøgler"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Angefragte Schlüssel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claves solicitadas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clés demandées"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiavi richieste"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "求められたキー"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "요청된 키"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Etterspurte nøkler"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gevraagde sleutels"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prośby o klucze"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaves Solicitadas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запрошенные ключи"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Begärda nycklar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İstenen Anahtarlar"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запитані ключі"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请求的密钥"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要求的金鑰"
+          }
+        }
+      }
     },
     "Keys it needs" : {
       "localizations" : {
@@ -174319,7 +175983,111 @@
       }
     },
     "Looking…" : {
-
+      "comment" : "Keys Asked For: while the list is fetched",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Søger …"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suchen …"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscando…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recherche…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricerca…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確認中…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "확인 중…"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ser etter …"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoeken…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sprawdzanie…"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Procurando…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поиск…"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Söker …"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bakılıyor…"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пошук…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在查找…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在尋找…"
+          }
+        }
+      }
     },
     "Looks after the house: lights, heating, sensors and routines." : {
       "localizations" : {
@@ -192665,7 +194433,111 @@
       }
     },
     "No agent is waiting for a key." : {
-
+      "comment" : "Keys Asked For: the list is empty",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen agent venter på en nøgle."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Agent wartet auf einen Schlüssel."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ningún agente espera una clave."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun agent n’attend de clé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun agente sta aspettando una chiave."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キーを待っているエージェントはありません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "키를 기다리는 에이전트가 없습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen agent venter på en nøkkel."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Er wacht geen agent op een sleutel."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Żaden agent nie czeka na klucz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhum agente está esperando uma chave."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ни один агент не ждет ключ."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen agent väntar på en nyckel."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anahtar bekleyen ajan yok."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Жоден агент не чекає на ключ."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有智能体在等待密钥。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有代理在等待金鑰。"
+          }
+        }
+      }
     },
     "No API key is stored. Add one in Settings." : {
       "localizations" : {
@@ -223096,10 +224968,218 @@
       }
     },
     "Paste the key" : {
-
+      "comment" : "Key request sheet: placeholder of the secure field",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indsæt nøglen"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schlüssel einfügen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pega la clave"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collez la clé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Incolla la chiave"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キーをペースト"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "키 붙여넣기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lim inn nøkkelen"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plak de sleutel"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wklej klucz"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cole a chave"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вставьте ключ"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klistra in nyckeln"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anahtarı yapıştırın"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вставте ключ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "粘贴密钥"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "貼上金鑰"
+          }
+        }
+      }
     },
     "Paste the key first." : {
-
+      "comment" : "Key request: Save tapped with nothing pasted",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indsæt nøglen først."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge zuerst den Schlüssel ein."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pega primero la clave."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collez d’abord la clé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Incolla prima la chiave."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "先にキーをペーストしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "먼저 키를 붙여넣으십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lim inn nøkkelen først."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plak eerst de sleutel."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Najpierw wklej klucz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cole a chave primeiro."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сначала вставьте ключ."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klistra in nyckeln först."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Önce anahtarı yapıştırın."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Спершу вставте ключ."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请先粘贴密钥。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請先貼上金鑰。"
+          }
+        }
+      }
     },
     "Paste the pairing link" : {
       "localizations" : {
@@ -249899,7 +251979,111 @@
       }
     },
     "Restart Hermes Now" : {
-
+      "comment" : "Key request sheet: button after a key is saved",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Genstart Hermes nu"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes jetzt neu starten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reiniciar Hermes ahora"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redémarrer Hermes maintenant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riavvia Hermes ora"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今すぐHermesを再起動"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "지금 Hermes 재시작"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start Hermes på nytt nå"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Herstart Hermes nu"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uruchom ponownie Hermesa"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reiniciar o Hermes Agora"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перезапустить Hermes сейчас"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starta om Hermes nu"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes'i Şimdi Yeniden Başlat"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перезапустити Hermes зараз"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "立即重启 Hermes"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "立即重新啟動 Hermes"
+          }
+        }
+      }
     },
     "Restart the gateway?" : {
       "localizations" : {
@@ -257992,7 +260176,111 @@
       }
     },
     "Saving a key needs this server's Hermes Dashboard login (Settings › Connection). Over the Hermes API alone there's no safe way to hand it over, so nothing was sent." : {
-
+      "comment" : "Key request: the server is used over the Hermes API only",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det kræver denne servers Hermes Dashboard-login at gemme en nøgle (Indstillinger › Forbindelse). Via Hermes API alene er der ingen sikker måde at overdrage den på, så intet blev sendt."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Speichern eines Schlüssels braucht es die Hermes-Dashboard-Anmeldung dieses Servers (Einstellungen › Verbindung). Nur über die Hermes API gibt es keinen sicheren Weg, ihn zu übergeben, daher wurde nichts gesendet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para guardar una clave hace falta el inicio de sesión del Hermes Dashboard de este servidor (Ajustes › Conexión). Solo con la Hermes API no hay forma segura de entregarla, así que no se envió nada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’enregistrement d’une clé nécessite l’identifiant du Hermes Dashboard de ce serveur (Réglages › Connexion). Avec Hermes API seule, il n’existe aucun moyen sûr de la transmettre, donc rien n’a été envoyé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per salvare una chiave serve l'accesso alla Hermes Dashboard di questo server (Impostazioni › Connessione). Con la sola Hermes API non c'è un modo sicuro per consegnarla, quindi non è stato inviato nulla."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キーを保存するには、このサーバのHermes Dashboardのログインが必要です（設定 › 接続）。Hermes APIだけでは安全に渡す方法がないため、何も送信していません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "키를 저장하려면 이 서버의 Hermes Dashboard 로그인이 필요합니다(설정 › 연결). Hermes API만으로는 안전하게 전달할 방법이 없으므로 아무것도 보내지 않았습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For å lagre en nøkkel trengs Hermes Dashboard-påloggingen for denne tjeneren (Innstillinger › Tilkobling). Med bare Hermes API finnes det ingen trygg måte å overlevere den på, så ingenting ble sendt."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voor het bewaren van een sleutel is de Hermes Dashboard-login van deze server nodig (Instellingen › Verbinding). Met alleen de Hermes API is er geen veilige manier om hem over te dragen, dus er is niets verstuurd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapisanie klucza wymaga logowania do Hermes Dashboard tego serwera (Ustawienia › Połączenie). Przez samo Hermes API nie da się go bezpiecznie przekazać, więc nic nie wysłano."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salvar uma chave exige o login do Hermes Dashboard deste servidor (Ajustes › Conexão). Só pela Hermes API não há como entregá-la com segurança, então nada foi enviado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы сохранить ключ, нужен вход в Hermes Dashboard этого сервера («Настройки» › «Подключение»). Через один только Hermes API безопасно передать его нельзя, поэтому ничего не отправлено."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "För att spara en nyckel krävs den här serverns Hermes Dashboard-inloggning (Inställningar › Anslutning). Med bara Hermes API finns det inget säkert sätt att lämna över den, så inget skickades."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir anahtarı kaydetmek için bu sunucunun Hermes Dashboard girişi gerekir (Ayarlar › Bağlantı). Yalnızca Hermes API üzerinden onu güvenle iletmenin yolu yok, bu yüzden hiçbir şey gönderilmedi."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Щоб зберегти ключ, потрібен вхід у Hermes Dashboard цього сервера (Параметри › З’єднання). Лише через Hermes API передати його безпечно не можна, тому нічого не надіслано."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "存储密钥需要此服务器的 Hermes Dashboard 登录信息（设置 › 连接）。仅通过 Hermes API 无法安全地传递它，因此未发送任何内容。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存金鑰需要此伺服器的 Hermes Dashboard 登入資訊（「設定」›「連線」）。僅透過 Hermes API 無法安全地傳遞它，因此未傳送任何內容。"
+          }
+        }
+      }
     },
     "Saving…" : {
       "localizations" : {
@@ -296971,7 +299259,111 @@
       }
     },
     "Tap to paste it into Redde. It never goes through a chat." : {
-
+      "comment" : "Notification body: an agent asks for a key",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryk for at indsætte den i Redde. Den går aldrig gennem en chat."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippe, um ihn in Redde einzufügen. Er geht nie durch einen Chat."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca para pegarla en Redde. Nunca pasa por un chat."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez pour la coller dans Redde. Elle ne passe jamais par un chat."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca per incollarla in Redde. Non passa mai da una chat."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タップしてReddeにペーストします。チャットを経由することはありません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "탭하여 Redde에 붙여넣으십시오. 채팅을 거치지 않습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trykk for å lime den inn i Redde. Den går aldri gjennom en chat."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tik om hem in Redde te plakken. Hij gaat nooit via een chat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stuknij, aby wkleić go w Redde. Nigdy nie przechodzi przez czat."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque para colá-la no Redde. Ela nunca passa por um chat."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коснитесь, чтобы вставить его в Redde. Он никогда не проходит через чат."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryck för att klistra in den i Redde. Den går aldrig via en chatt."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde'ye yapıştırmak için dokunun. Asla bir sohbetten geçmez."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Торкніться, щоб вставити його в Redde. Він ніколи не проходить через чат."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻点即可将其粘贴到 Redde。它绝不会经过聊天。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點一下即可將其貼到 Redde。它絕不會經過聊天。"
+          }
+        }
+      }
     },
     "Tap to read, hold for more" : {
       "localizations" : {
@@ -301022,7 +303414,111 @@
       }
     },
     "That request was answered already, or it expired." : {
-
+      "comment" : "Key request: it can't be answered any more",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den anmodning er allerede besvaret, eller den er udløbet."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Anfrage wurde schon beantwortet oder ist abgelaufen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esa solicitud ya se respondió o ha caducado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette demande a déjà reçu une réponse, ou elle a expiré."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questa richiesta ha già avuto risposta o è scaduta."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このリクエストはすでに回答済みか、期限切れです。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 요청은 이미 응답되었거나 만료되었습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den forespørselen er allerede besvart, eller den har utløpt."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dat verzoek is al beantwoord of verlopen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na tę prośbę już odpowiedziano lub wygasła."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esse pedido já foi respondido ou expirou."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На этот запрос уже ответили, или срок его действия истек."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den begäran är redan besvarad, eller så har den gått ut."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu istek zaten yanıtlandı ya da süresi doldu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На цей запит уже відповіли, або його термін минув."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "该请求已被回应或已过期。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "該要求已被回應或已過期。"
+          }
+        }
+      }
     },
     "that user" : {
       "localizations" : {
@@ -316667,7 +319163,111 @@
       }
     },
     "There's a key by this name already. Saving replaces it." : {
-
+      "comment" : "Key request sheet: the key exists already",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der findes allerede en nøgle med dette navn. Hvis du gemmer, erstattes den."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es gibt schon einen Schlüssel mit diesem Namen. Beim Speichern wird er ersetzt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya hay una clave con este nombre. Al guardar se reemplaza."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une clé porte déjà ce nom. L’enregistrement la remplace."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esiste già una chiave con questo nome. Salvando verrà sostituita."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この名前のキーはすでにあります。保存すると置き換えられます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 이름의 키가 이미 있습니다. 저장하면 대체됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det finnes allerede en nøkkel med dette navnet. Lagring erstatter den."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Er is al een sleutel met deze naam. Bewaren vervangt hem."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klucz o tej nazwie już istnieje. Zapisanie go zastąpi."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Já existe uma chave com este nome. Salvar a substitui."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ключ с таким именем уже есть. При сохранении он будет заменен."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det finns redan en nyckel med det här namnet. Om du sparar ersätts den."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu adla bir anahtar zaten var. Kaydetmek onu değiştirir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ключ із такою назвою вже є. Збереження замінить його."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已有同名密钥。存储会将其替换。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已有同名金鑰。儲存會將其取代。"
+          }
+        }
+      }
     },
     "There's no API key for %@ on this iPhone. Add the bot again with its profile's key." : {
       "localizations" : {
@@ -320285,7 +322885,111 @@
       }
     },
     "This Hermes's Redde plugin can't take keys yet. Update the plugin there, restart Hermes, and try again." : {
-
+      "comment" : "Key request: the server's plugin is too old",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde-pluginnet på denne Hermes kan ikke modtage nøgler endnu. Opdater pluginnet der, genstart Hermes, og prøv igen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Redde-Plug-in auf diesem Hermes kann noch keine Schlüssel annehmen. Aktualisiere das Plug-in dort, starte Hermes neu und versuch es erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El plugin de Redde de este Hermes aún no admite claves. Actualiza el plugin allí, reinicia Hermes y vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le plug-in Redde de cet Hermes ne peut pas encore recevoir de clés. Mettez à jour le plug-in sur ce serveur, redémarrez Hermes et réessayez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il plugin Redde di questo Hermes non può ancora ricevere chiavi. Aggiorna lì il plugin, riavvia Hermes e riprova."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このHermesのReddeプラグインはまだキーを受け取れません。そこでプラグインをアップデートし、Hermesを再起動してから、もう一度お試しください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 Hermes의 Redde 플러그인은 아직 키를 받을 수 없습니다. 그곳에서 플러그인을 업데이트하고 Hermes를 재시작한 다음 다시 시도하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde-tillegget på denne Hermes kan ikke ta imot nøkler ennå. Oppdater tillegget der, start Hermes på nytt og prøv igjen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De Redde-plug-in van deze Hermes kan nog geen sleutels aannemen. Werk de plug-in daar bij, herstart Hermes en probeer het opnieuw."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wtyczka Redde na tym Hermesie nie przyjmuje jeszcze kluczy. Zaktualizuj tam wtyczkę, uruchom ponownie Hermesa i spróbuj jeszcze raz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O plugin do Redde neste Hermes ainda não aceita chaves. Atualize o plugin lá, reinicie o Hermes e tente de novo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Плагин Redde на этом Hermes пока не принимает ключи. Обновите там плагин, перезапустите Hermes и повторите попытку."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde-tillägget på den här Hermes kan inte ta emot nycklar än. Uppdatera tillägget där, starta om Hermes och försök igen."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu Hermes'teki Redde eklentisi henüz anahtar alamıyor. Eklentiyi orada güncelleyin, Hermes'i yeniden başlatın ve yeniden deneyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Плагін Redde на цьому Hermes поки не приймає ключі. Оновіть там плагін, перезапустіть Hermes і повторіть спробу."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此 Hermes 上的 Redde 插件还不能接收密钥。请在那里更新插件，重启 Hermes 后再试一次。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此 Hermes 上的 Redde 外掛還不能接收金鑰。請在那裡更新外掛，重新啟動 Hermes 後再試一次。"
+          }
+        }
+      }
     },
     "This iPhone answered the code, but that Hermes hasn't sent anything back. The pairing command may have ended: run it again and scan the new code." : {
       "localizations" : {
@@ -351172,7 +353876,111 @@
       }
     },
     "When an agent needs a key, it asks here, not in a chat. What you paste goes sealed straight into that profile's .env on your Hermes." : {
-
+      "comment" : "Settings › Agent: footer under Keys Asked For",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når en agent har brug for en nøgle, beder den om den her og ikke i en chat. Det, du indsætter, går krypteret direkte ind i profilens .env på din Hermes."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn ein Agent einen Schlüssel braucht, fragt er hier danach, nicht in einem Chat. Was du einfügst, geht verschlüsselt direkt in die .env dieses Profils auf deinem Hermes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando un agente necesita una clave, la pide aquí, no en un chat. Lo que pegues va cifrado directamente al .env de ese perfil en tu Hermes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand un agent a besoin d’une clé, il la demande ici, pas dans un chat. Ce que vous collez part chiffré directement dans le .env de ce profil sur votre Hermes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando un agente ha bisogno di una chiave, la chiede qui, non in una chat. Ciò che incolli va cifrato direttamente nel .env di quel profilo sul tuo Hermes."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キーが必要なとき、エージェントはチャットではなくここで求めます。ペーストした内容は暗号化されてHermes上のそのプロファイルの.envに直接入ります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트에게 키가 필요하면 채팅이 아닌 여기에서 요청합니다. 붙여넣은 내용은 암호화되어 Hermes의 해당 프로필 .env로 바로 들어갑니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når en agent trenger en nøkkel, ber den om den her, ikke i en chat. Det du limer inn, går kryptert rett inn i profilens .env på Hermes."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als een agent een sleutel nodig heeft, vraagt hij er hier om, niet in een chat. Wat je plakt, gaat versleuteld rechtstreeks naar de .env van dat profiel op je Hermes."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy agent potrzebuje klucza, prosi o niego tutaj, a nie w czacie. To, co wkleisz, trafia zaszyfrowane prosto do pliku .env tego profilu na Twoim Hermesie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando um agente precisa de uma chave, ele pede aqui, não em um chat. O que você colar vai criptografado direto para o .env desse perfil no seu Hermes."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда агенту нужен ключ, он просит его здесь, а не в чате. То, что вы вставите, попадает в зашифрованном виде прямо в .env этого профиля на вашем Hermes."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "När en agent behöver en nyckel ber den om den här, inte i en chatt. Det du klistrar in går krypterat direkt till profilens .env på din Hermes."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir ajanın anahtara ihtiyacı olduğunda bunu sohbette değil burada ister. Yapıştırdığınız şey şifreli olarak doğrudan Hermes'inizdeki o profilin .env dosyasına gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли агенту потрібен ключ, він просить його тут, а не в чаті. Те, що ви вставите, потрапляє у зашифрованому вигляді прямо в .env цього профілю на вашому Hermes."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能体需要密钥时，会在这里请求，而不是在聊天中。你粘贴的内容会加密后直接写入你的 Hermes 上该配置文件的 .env。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理需要金鑰時，會在這裡要求，而不是在聊天中。你貼上的內容會加密後直接寫入你的 Hermes 上該設定檔的 .env。"
+          }
+        }
+      }
     },
     "When an event has an address, your iPhone works out when to leave from where you are, with traffic, adds it to the heads-up and reminds you when it's time. Where you are stays on your iPhone. Needs Location for Redde." : {
       "localizations" : {
@@ -361067,7 +363875,111 @@
       }
     },
     "Your agent asks for a key" : {
-
+      "comment" : "Notification title: an agent asks for a key to be pasted into Redde (its name not known)",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent beder om en nøgle"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Agent bittet um einen Schlüssel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu agente pide una clave"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre agent demande une clé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo agente chiede una chiave"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントがキーを求めています"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트가 키를 요청합니다"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten din ber om en nøkkel"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agent vraagt om een sleutel"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój agent prosi o klucz"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu agente pede uma chave"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш агент просит ключ"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent ber om en nyckel"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınız bir anahtar istiyor"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш агент просить ключ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的智能体请求一个密钥"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的代理要求一組金鑰"
+          }
+        }
+      }
     },
     "Your agent can show a map with pins or a route, a list of places and the weather under its reply. Tap a map for directions. It takes the Redde plugin on your Hermes." : {
       "localizations" : {
@@ -364941,7 +367853,111 @@
       }
     },
     "Your Hermes didn't take it (%@). Nothing was saved." : {
-
+      "comment" : "Key request: the server refused the key; the reason",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din Hermes tog ikke imod den (%@). Intet blev gemt."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Hermes hat ihn nicht angenommen (%@). Nichts wurde gespeichert."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu Hermes no la aceptó (%@). No se guardó nada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre Hermes ne l’a pas acceptée (%@). Rien n’a été enregistré."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo Hermes non l'ha accettata (%@). Non è stato salvato nulla."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermesが受け付けませんでした（%@）。何も保存されていません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes가 받지 않았습니다(%@). 아무것도 저장되지 않았습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes tok ikke imot den (%@). Ingenting ble lagret."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je Hermes nam hem niet aan (%@). Er is niets bewaard."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój Hermes go nie przyjął (%@). Nic nie zapisano."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu Hermes não a aceitou (%@). Nada foi salvo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш Hermes не принял его (%@). Ничего не сохранено."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din Hermes tog inte emot den (%@). Inget sparades."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes'iniz bunu kabul etmedi (%@). Hiçbir şey kaydedilmedi."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш Hermes не прийняв його (%@). Нічого не збережено."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的 Hermes 未接受（%@）。未存储任何内容。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的 Hermes 未接受（%@）。未儲存任何內容。"
+          }
+        }
+      }
     },
     "Your Hermes didn't take the pairing: %@. Try again." : {
       "localizations" : {
@@ -366644,7 +369660,111 @@
       }
     },
     "Your main agent's .env" : {
-      "comment" : "Key request card: the key goes into the main agent's settings file"
+      "comment" : "Key request card: the key goes into the main agent's settings file",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hovedagentens .env"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".env deines Hauptagenten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".env de tu agente principal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".env de votre agent principal"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".env del tuo agente principale"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メインエージェントの.env"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "주 에이전트의 .env"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hovedagentens .env"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".env van je hoofdagent"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".env Twojego głównego agenta"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".env do seu agente principal"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".env вашего основного агента"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Huvudagentens .env"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ana ajanınızın .env dosyası"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".env вашого основного агента"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主智能体的 .env"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主要代理的 .env"
+          }
+        }
+      }
     },
     "Your message wasn't sent" : {
       "localizations" : {
