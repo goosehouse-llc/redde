@@ -87,6 +87,26 @@ struct ThinkingSoundTests {
         h.session.cancel()
     }
 
+    /// The same quiet turns the car's face back to Thinking (`quietInReply`), the thinking sound
+    /// on or off, and its first sound to Speaking (asked 2026-10-31).
+    @Test func aReplyGoneQuietIsMarkedForTheCar() async throws {
+        let transport = Held([.textDelta("Let me check. ")], then: [.textDelta("It finished at nine."), .done])
+        let h = Harness(transport, .off)
+        h.session.quietInReplyAfter = .milliseconds(150)
+        h.speaker.meterLevel = 0.5
+        try await h.ask()
+        try await SpokenRequestTests.waitUntil("the first words") { h.session.phase == .speaking }
+        try await h.wait()
+        #expect(!h.session.quietInReply, "not over the words")
+        h.speaker.meterLevel = 0
+        try await SpokenRequestTests.waitUntil("the quiet marked") { h.session.quietInReply }
+        h.speaker.meterLevel = 0.5
+        try await SpokenRequestTests.waitUntil("speaking again") { !h.session.quietInReply }
+        transport.letGo()
+        h.session.cancel()
+        #expect(!h.session.quietInReply)
+    }
+
     @Test func anAnswerThatComesAtOnceHasNoSound() async throws {
         let h = Harness(Held([.textDelta("Yes."), .done], then: []))
         try await h.ask()

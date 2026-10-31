@@ -88,6 +88,19 @@ struct CarPlayTests {
     /// The car's card is Thinking until the reply is heard in the car, a little after the phone
     /// starts playing it: its mouth moved a second or more before the voice came (asked
     /// 2026-10-23, "wait a few seconds before the mouth starts moving").
+    /// A reply gone quiet while the agent works on ("Let me check", then its tools) is Thinking on
+    /// the card again, not a mouth moving over nothing (asked 2026-10-31).
+    @Test func aQuietReplyThinksAgain() {
+        let card = { (quiet: Bool, paused: Bool) in
+            CarPlaySceneDelegate.card(phase: .speaking, waitingOnPhone: false, muted: false, paused: paused, heard: true, quiet: quiet)
+        }
+        #expect(card(false, false) == .showing(.speaking))
+        #expect(card(true, false) == .showing(.thinking))
+        #expect(card(true, true) == .showing(.paused), "held is held")
+        #expect(CarPlaySceneDelegate.card(phase: .speaking, waitingOnPhone: true, muted: false, paused: false, heard: true, quiet: true)
+                == .showing(.phone), "a quiet that waits on the phone says so")
+    }
+
     @Test func theMouthWaitsForTheSound() {
         let speaking = { (heard: Bool) in
             CarPlaySceneDelegate.card(phase: .speaking, waitingOnPhone: false, muted: false, paused: false, heard: heard)

@@ -975,15 +975,17 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     /// `heard`: the reply's sound has reached the car (`heardInCar`). Until then a reply that has
     /// begun is still Thinking on the card: its mouth moved a second or more before its voice
-    /// came (asked 2026-10-23, "wait a few seconds before the mouth starts moving"). `opening`: a
-    /// picked bot's chat is being opened, and Redde listens once it is (`listensOnceOpen`).
+    /// came (asked 2026-10-23, "wait a few seconds before the mouth starts moving"). `quiet`: a
+    /// reply has gone quiet while the agent works on (`VoiceSession.quietInReply`), Thinking
+    /// again till it speaks (2026-10-31). `opening`: a picked bot's chat is being opened, and
+    /// Redde listens once it is (`listensOnceOpen`).
     static func card(phase: VoiceSession.Phase, waitingOnPhone: Bool, muted: Bool, paused: Bool, stopped: Bool = false,
-                     heard: Bool = true, opening: Bool = false) -> Card {
+                     heard: Bool = true, quiet: Bool = false, opening: Bool = false) -> Card {
         switch phase {
         case .listening: .showing(.listening)
         // An approval request parks the turn on the phone, paused or not.
         case .thinking: .showing(waitingOnPhone ? .phone : paused ? .paused : .thinking)
-        case .speaking: .showing(paused ? .paused : heard ? .speaking : .thinking)
+        case .speaking: .showing(paused ? .paused : heard && !quiet ? .speaking : waitingOnPhone ? .phone : .thinking)
         // Reply finished, or the question was dropped: back to the tabs, unless the mic is only
         // shut for a while (Pause while listening), or Stop was pressed (the card waits).
         case .idle: muted || stopped ? .showing(.paused) : opening ? .showing(.thinking) : .closed
@@ -1013,6 +1015,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             _ = session.isMuted
             _ = session.isPaused
             _ = session.soundStartedAt
+            _ = session.quietInReply
         } onChange: { [weak self] in
             Task { @MainActor in
                 self?.phaseChanged()
@@ -1118,7 +1121,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             }
         }
         switch Self.card(phase: session.phase, waitingOnPhone: session.activeTool == "waiting for you", muted: session.isMuted,
-                         paused: session.isPaused, stopped: stopped, heard: heard, opening: listensOnceOpen) {
+                         paused: session.isPaused, stopped: stopped, heard: heard, quiet: session.quietInReply,
+                         opening: listensOnceOpen) {
         case .showing(let state):
             voiceCard.activateVoiceControlState(withIdentifier: state.rawValue)
             // The bar only when its buttons change: Listening, Thinking and Speaking share one.

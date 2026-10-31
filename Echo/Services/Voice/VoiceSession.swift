@@ -90,7 +90,7 @@ final class VoiceSession {
             guard phase != oldValue else { return }
             // A reply held while it was being thought about is still held at its first word.
             if !(oldValue == .thinking && phase == .speaking) { isPaused = false }
-            if phase != .speaking { soundStartedAt = nil }
+            if phase != .speaking { soundStartedAt = nil; replyQuietSince = nil; quietInReply = false }
             // A GPT-Live call has its own audio, open both ways all the while: no cues between its
             // phases, no change of mode or route, no thinking sound, no microphone behind a reply.
             if live != nil {
@@ -1143,6 +1143,13 @@ final class VoiceSession {
     /// an answer that comes at once has no need of it. And how often that is looked at.
     var thinkingSoundAfter: Duration = .seconds(2.5)
     var quietCheck: Duration = .milliseconds(200)
+    /// In the middle of a reply, nothing to hear for `quietInReplyAfter` while the agent works on
+    /// ("Let me check", then its tools): the car's face thinks again instead of moving its mouth
+    /// over the quiet (asked 2026-10-31, "the onscreen bot looks like he's talking… change it to
+    /// thinking when he's thinking"). Whatever the thinking sound's setting.
+    private(set) var quietInReply = false
+    private var replyQuietSince: ContinuousClock.Instant?
+    var quietInReplyAfter: Duration = .seconds(1.5)
     /// The reply's stream is still open: more may come, however long nothing has.
     private var turnOpen = false
     private var quietTask: Task<Void, Never>?
@@ -1187,11 +1194,24 @@ final class VoiceSession {
             while !Task.isCancelled {
                 do {
                     guard let self else { return }
+                    noteQuietInReply()
                     since = heardNothing(since: since)
                 }
                 try? await Task.sleep(for: quietCheck)
             }
         }
+    }
+
+    /// One look at a reply's quiet (`quietInReply`): set once it has lasted, cleared at its first sound.
+    private func noteQuietInReply() {
+        guard phase == .speaking, turnOpen, !isPaused, !acknowledging, !replaying, replyLevel < 0.02 else {
+            replyQuietSince = nil
+            if quietInReply { quietInReply = false }
+            return
+        }
+        let start = replyQuietSince ?? .now
+        replyQuietSince = start
+        if !quietInReply, ContinuousClock.now - start >= quietInReplyAfter { quietInReply = true }
     }
 
     /// One look at the quiet: since when there has been nothing to hear, the sound started once
