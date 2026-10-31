@@ -796,9 +796,11 @@ extension Conversation {
                     {"date": "\(day(5))", "high": 23, "low": 15, "condition": "clear"},
                     {"date": "\(day(6))", "high": 24, "low": 16, "condition": "clear"}]}
         """
-        let only = only.flatMap { ["weather", "places", "purchase", "home", "reminder", "compare", "score"].contains($0) ? $0 : nil }   // else the next launch flag
+        let newest = ["recipe", "delivery", "flight", "show", "conversion", "stock"]
+        let only = only.flatMap { (["weather", "places", "purchase", "home", "reminder", "compare", "score"] + newest).contains($0) ? $0 : nil }   // else the next launch flag
         if only == "purchase" { seedPurchaseDemo(); return }
         if let only, ["home", "reminder", "compare", "score"].contains(only) { seedMoreCardsDemo(only); return }
+        if let only, newest.contains(only) { seedNewestCardsDemo(only); return }
         let shown = switch only ?? "" {
         case "weather": [weather]
         case "places": [places]
@@ -951,6 +953,159 @@ extension Conversation {
                         reply("They did, 112–104 over Boston. Next is tomorrow night at Miami.", games),
                         Message(role: .user, text: "How's the Lightning game going?"),
                         reply("Tampa leads Florida 2–1, halfway through the second.", live)]
+        }
+        replaceForDemo(messages: messages)
+    }
+
+    /// `-echo.demoCards recipe|delivery|flight|show|conversion|stock` (asked 2026-10-31): a pasta
+    /// for four; a package on its way and one delivered; a delayed flight, then a trip of two; three
+    /// titles to watch; miles, dollars and an oven's heat; a share and a few more. All made up:
+    /// made-up dishes, tracking numbers, airlines, titles and companies (real airports), pictures
+    /// drawn on the phone (`ProductImages.demo`), never fetched.
+    private func seedNewestCardsDemo(_ kind: String) {
+        let calendar = Calendar.current
+        func at(_ date: Date?, _ zone: String? = nil) -> String {
+            let iso = ISO8601DateFormatter()
+            iso.timeZone = zone.flatMap(TimeZone.init(identifier:)) ?? .current
+            return iso.string(from: date ?? .now)
+        }
+        func day(_ offset: Int, hour: Int, minute: Int = 0, in zone: String? = nil) -> Date {
+            var cal = calendar
+            cal.timeZone = zone.flatMap(TimeZone.init(identifier:)) ?? .current
+            let start = cal.date(byAdding: .day, value: offset, to: cal.startOfDay(for: .now)) ?? .now
+            return cal.date(bySettingHour: hour, minute: minute, second: 0, of: start) ?? start
+        }
+        func reply(_ text: String, _ json: String, _ preview: String) -> Message {
+            let args = try? JSONValue.parse(Data(json.utf8))
+            var reply = Message(role: .assistant, text: text)
+            reply.tools = [ToolActivity(name: ReplyCards.tool, preview: preview, status: .completed, args: ToolActivity.args(ReplyCards.tool, args))]
+            reply.cards = ReplyCards.parse(args)
+            for card in reply.cards ?? [] {
+                CardAnswers.shared.forget(card.key)   // its chips again, each time
+                CardAnswers.shared.setTicks(card.key, [])
+            }
+            return reply
+        }
+        var messages: [Message] = []
+        switch kind {
+        case "recipe":
+            let pasta = #"""
+            {"cards": [{"type": "recipe", "title": "Tomato and Basil Spaghetti", "source": "Redde Kitchen",
+              "summary": "A weeknight pasta with a quick garlicky tomato sauce.",
+              "url": "https://www.example.com/recipes/tomato-basil-spaghetti",
+              "image": "https://images.example.com/recipes/tomato-basil-spaghetti.jpg",
+              "prep": 10, "cook": "20 min", "servings": 4,
+              "ingredients": ["12 oz spaghetti", "2 tbsp olive oil", "4 cloves garlic, thinly sliced", "28 oz canned whole tomatoes",
+                              "½ tsp red pepper flakes", "1 tsp salt", "1 cup fresh basil leaves", "¼ cup grated Parmesan", "Black pepper, to taste"],
+              "steps": ["Bring a large pot of salted water to a boil and cook the spaghetti until just shy of al dente.",
+                        "Meanwhile, warm the oil in a wide pan and cook the garlic and pepper flakes until fragrant, about 1 minute.",
+                        "Crush the tomatoes into the pan by hand, add the salt and simmer for 12 minutes.",
+                        "Toss the drained pasta in the sauce with a splash of its water until glossy.",
+                        "Tear in the basil, finish with the Parmesan and black pepper, and serve."]}]}
+            """#
+            messages = [Message(role: .user, text: "Give me an easy pasta for four tonight."),
+                        reply("Here's a quick tomato and basil spaghetti: about 30 minutes, start to finish.", pasta, "recipe")]
+        case "delivery":
+            let coming = """
+            {"cards": [{"type": "delivery", "title": "Aurora Q5 headphones", "from": "Northwind Audio", "carrier": "UPS",
+              "tracking": "1ZDEMO0000000001", "status": "In transit", "expected": "\(at(day(2, hour: 0)).prefix(10))", "window": "By 8 PM",
+              "events": [{"text": "Arrived at facility", "place": "Orlando, FL", "at": "\(at(day(0, hour: 6, minute: 12)))"},
+                         {"text": "Departed facility", "place": "Atlanta, GA", "at": "\(at(day(-1, hour: 21, minute: 40)))"},
+                         {"text": "Shipped", "place": "Memphis, TN", "at": "\(at(day(-2, hour: 15, minute: 5)))"},
+                         {"text": "Label created", "at": "\(at(day(-3, hour: 10, minute: 30)))"}]}]}
+            """
+            let came = """
+            {"cards": [{"type": "delivery", "title": "A Field Guide to Clouds", "from": "Harbor Books", "carrier": "USPS",
+              "tracking": "DEMO00000000000002", "status": "Delivered", "delivered": "\(at(day(-1, hour: 14, minute: 14)))",
+              "last": {"text": "Delivered, front door", "place": "Orlando, FL", "at": "\(at(day(-1, hour: 14, minute: 14)))"}}]}
+            """
+            messages = [Message(role: .user, text: "Where are my headphones?"),
+                        reply("They're on the way: in Orlando this morning, and due \(day(2, hour: 12).formatted(.dateTime.weekday(.wide))) by 8 PM.", coming, "delivery"),
+                        Message(role: .user, text: "And the book?"),
+                        reply("It came yesterday afternoon: left at the front door.", came, "delivery")]
+        case "flight":
+            let leave = day(1, hour: 10, minute: 35, in: "Europe/Lisbon"), late = leave.addingTimeInterval(45 * 60)
+            let land = leave.addingTimeInterval(7 * 3600 + 45 * 60), landLate = land.addingTimeInterval(45 * 60)
+            let delayed = """
+            {"cards": [{"type": "flight", "airline": "Northwind Air", "number": "NW238", "status": "Delayed", "seat": "23A", "aircraft": "Airbus A330neo",
+              "from": {"code": "LIS", "city": "Lisbon", "name": "Humberto Delgado Airport", "terminal": "1", "gate": "14",
+                       "time": "\(at(leave, "Europe/Lisbon"))", "new_time": "\(at(late, "Europe/Lisbon"))"},
+              "to": {"code": "JFK", "city": "New York", "name": "John F. Kennedy International Airport", "terminal": "4",
+                     "time": "\(at(land, "America/New_York"))", "new_time": "\(at(landLate, "America/New_York"))"}}]}
+            """
+            let first = day(5, hour: 8, minute: 5, in: "Europe/Lisbon"), firstLands = first.addingTimeInterval(8 * 3600)
+            let second = firstLands.addingTimeInterval(2 * 3600 + 10 * 60), secondLands = second.addingTimeInterval(4 * 3600 + 30 * 60)
+            let trip = """
+            {"cards": [{"type": "flight", "title": "Lisbon to Denver", "confirmation": "DEMO42", "legs": [
+              {"airline": "Northwind Air", "number": "NW 102", "status": "On time", "seat": "14C",
+               "from": {"code": "LIS", "city": "Lisbon", "name": "Humberto Delgado Airport", "terminal": "1", "time": "\(at(first, "Europe/Lisbon"))"},
+               "to": {"code": "EWR", "city": "Newark", "name": "Newark Liberty International Airport", "terminal": "B", "time": "\(at(firstLands, "America/New_York"))"}},
+              {"airline": "Northwind Air", "number": "NW 1517", "status": "Scheduled", "seat": "8F",
+               "from": {"code": "EWR", "city": "Newark", "name": "Newark Liberty International Airport", "terminal": "C", "time": "\(at(second, "America/New_York"))"},
+               "to": {"code": "DEN", "city": "Denver", "name": "Denver International Airport", "time": "\(at(secondLands, "America/Denver"))"}}]}]}
+            """
+            messages = [Message(role: .user, text: "Is my flight tomorrow on time?"),
+                        reply("It's 45 minutes late: now leaving at 11:20 from gate 14, landing in New York at 2:05 PM.", delayed, "flight"),
+                        Message(role: .user, text: "And the trip to Denver next week?"),
+                        reply("Both flights are on schedule, with a little over two hours in Newark.", trip, "flight")]
+        case "show":
+            let picks = #"""
+            {"cards": [{"type": "show", "title": "Something like what you liked", "items": [
+              {"title": "The Quiet Floor", "year": "2022", "format": "series", "seasons": 2, "pick": true,
+               "poster": "https://images.example.com/posters/the-quiet-floor.jpg", "genres": ["Drama", "Mystery", "Sci-Fi"],
+               "ratings": [{"source": "Critics", "value": "96%"}, {"source": "Audience", "value": "8.6/10"}],
+               "overview": "Office workers whose memories are split between work and home start to wonder what the other half of them is doing.",
+               "creator": "Jo Marlow", "cast": ["Ana Reyes", "Tom Okafor"], "watch": ["StreamBox", "Northwind+"],
+               "trailer": "https://www.example.com/the-quiet-floor/trailer", "url": "https://www.example.com/the-quiet-floor"},
+              {"title": "Paper Moons", "year": 2019, "format": "film", "runtime": 118, "poster": "https://images.example.com/posters/paper-moons.jpg",
+               "genres": ["Drama"], "ratings": {"Critics": "91%"}, "overview": "A night-shift radio host takes one call that changes three lives.",
+               "director": "Lea Brandt", "watch": ["Harbor TV"], "url": "https://www.example.com/paper-moons"},
+              {"title": "Northbound", "year": "2021–2023", "format": "series", "seasons": 3, "poster": "https://images.example.com/posters/northbound.jpg",
+               "genres": "Thriller, Drama", "rating": "8.1/10", "overview": "A ferry crew is stranded between two islands that don't appear on any map.",
+               "watch": "StreamBox"}]}]}
+            """#
+            messages = [Message(role: .user, text: "I loved that show about the split office. What should I watch next?"),
+                        reply("The Quiet Floor is the closest match; Paper Moons if you'd like a film tonight.", picks, "show")]
+        case "conversion":
+            let miles = #"{"cards": [{"type": "conversion", "amount": 5, "from": "mi", "to": "km"}]}"#
+            let money = """
+            {"cards": [{"type": "conversion", "amount": 100, "from": "USD", "to": "EUR", "rate": 0.9214, "as_of": "\(at(day(0, hour: 9)))", "source": "Demo rates"}]}
+            """
+            let oven = #"{"cards": [{"type": "conversion", "title": "Oven temperature", "amount": 350, "from": "°F", "to": "°C"}]}"#
+            messages = [Message(role: .user, text: "How far is 5 miles in km?"),
+                        reply("5 miles is about 8 kilometres.", miles, "conversion"),
+                        Message(role: .user, text: "And what's $100 in euros?"),
+                        reply("About €92, at this morning's rate.", money, "conversion"),
+                        Message(role: .user, text: "My recipe says 350°F. What's that in Celsius?"),
+                        reply("About 177°C; 180°C on most ovens.", oven, "conversion")]
+        default:
+            // A day of made-up prices: a gentle walk up, worked out the same each time.
+            var price = 182.40, seed: UInt64 = 7
+            var points: [Double] = []
+            for _ in 0 ..< 78 {
+                seed = seed &* 6364136223846793005 &+ 1442695040888963407
+                price += (Double(seed >> 40) / Double(1 << 24) - 0.44) * 0.9
+                points.append((price * 100).rounded() / 100)
+            }
+            let last = points.last ?? price
+            let line = points.map { String($0) }.joined(separator: ", ")
+            let one = """
+            {"cards": [{"type": "stock", "symbol": "NWND", "name": "Northwind Systems", "exchange": "NASDAQ", "price": \(last), "currency": "USD",
+              "change": \(((last - 182.40) * 100).rounded() / 100), "open": 182.90, "low": \(points.min() ?? last), "high": \(points.max() ?? last),
+              "year_range": "141.22 - 205.10", "market_cap": "2.71T", "volume": "48.2M", "as_of": "\(at(day(0, hour: 16)))", "delayed": true,
+              "market": "Closed", "points": [\(line)]}]}
+            """
+            let few = """
+            {"cards": [{"type": "stock", "items": [
+              {"symbol": "KSTR", "name": "Kestrel Labs", "price": "$64.18", "change": "-1.42", "percent": "-2.16%", "points": [65.6, 65.1, 64.9, 65.3, 64.6, 64.2, 64.18]},
+              {"symbol": "HRBR", "name": "Harbor Energy", "price": 23.75, "change": 0.31, "points": [23.4, 23.5, 23.45, 23.6, 23.7, 23.75]},
+              {"symbol": "MRDN", "name": "Meridian Foods", "price": 112.06, "percent": 0.0}],
+              "note": "Prices as of the close."}]}
+            """
+            messages = [Message(role: .user, text: "How did Northwind do today?"),
+                        reply("Up a little: Northwind closed higher on the day.", one, "stock"),
+                        Message(role: .user, text: "And the other three I follow?"),
+                        reply("Kestrel slipped about 2%; Harbor edged up and Meridian was flat.", few, "stock")]
         }
         replaceForDemo(messages: messages)
     }

@@ -71,7 +71,7 @@ struct PurchaseCard: View {
         return VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .top, spacing: 14) {
-                    ProductPicture(url: item.image, symbol: item.symbol, side: 96)
+                    CardPicture(url: item.image, symbol: item.symbol, side: 96)
                     VStack(alignment: .leading, spacing: 4) {
                         if let badge = item.badge { BadgeTag(text: badge, tone: item.tone) }
                         Text(item.product.name).chatFont(.headline).lineLimit(3).fixedSize(horizontal: false, vertical: true)
@@ -147,7 +147,7 @@ struct PurchaseCard: View {
         return VStack(alignment: .leading, spacing: 0) {
             Button { toggle(item.id) } label: {
                 HStack(spacing: 12) {
-                    ProductPicture(url: item.image, symbol: item.symbol, side: 48)
+                    CardPicture(url: item.image, symbol: item.symbol, side: 48)
                     VStack(alignment: .leading, spacing: 3) {
                         if let badge = item.badge { BadgeTag(text: badge, tone: item.tone, small: true) }
                         Text(item.product.name).chatFont(.subheadline, weight: .semibold).lineLimit(2)
@@ -526,50 +526,6 @@ extension PurchaseCard {
 }
 
 // MARK: - Pieces
-
-/// A product's picture: the store's, with Link previews on and once it has come; else a drawing
-/// of what it is, on a wash of the theme's colour.
-private struct ProductPicture: View {
-    let url: URL?
-    let symbol: String
-    let side: CGFloat
-    @State private var settings = Settings.shared
-    @State private var image: UIImage?
-    @Environment(\.theme) private var theme
-    @Environment(\.colorScheme) private var scheme
-
-    init(url: URL?, symbol: String, side: CGFloat) {
-        self.url = url
-        self.symbol = symbol
-        self.side = side
-        _image = State(initialValue: ProductImages.shared.cached(url))
-    }
-
-    var body: some View {
-        let allowed = ProductImages.allowed(url, settings: settings)
-        ZStack {
-            if allowed != nil, let image {
-                Color.white
-                Image(uiImage: image).resizable().scaledToFit().padding(side * 0.07)
-            } else {
-                LinearGradient(colors: [theme.accent.opacity(scheme == .dark ? 0.30 : 0.20), theme.accent.opacity(scheme == .dark ? 0.12 : 0.06)],
-                               startPoint: .topLeading, endPoint: .bottomTrailing)
-                Image(systemName: symbol)
-                    .font(.system(size: side * 0.42, weight: .light))
-                    .foregroundStyle(theme.accent)
-            }
-        }
-        .frame(width: side, height: side)
-        .clipShape(.rect(cornerRadius: side * 0.2))
-        .overlay { RoundedRectangle(cornerRadius: side * 0.2).strokeBorder(.separator.opacity(0.4), lineWidth: 0.5) }
-        .accessibilityHidden(true)
-        .task(id: allowed) {
-            guard let url = allowed, image == nil else { return }
-            let found = await ProductImages.shared.image(url)
-            withAnimation(.easeOut(duration: 0.2)) { image = found }
-        }
-    }
-}
 
 /// A product's badge ("Best overall"), in its colour.
 private struct BadgeTag: View {

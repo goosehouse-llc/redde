@@ -3,6 +3,31 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.13.0 (2026-10-31)
+
+Six more cards for `redde_show`, drawn by Redde 2.3.1
+- `recipe`: a recipe the agent looked up, with its source and page, picture, prep, cook and total
+  times, the servings its amounts are for (Redde scales them on the phone), ingredients to tick
+  off and numbered steps ("a recipe for banana bread", "what can I make for dinner with chicken").
+- `delivery`: a package's tracking: what's in it, the carrier, the number, the carrier's words for
+  where it stands, the day it should come, and the scans ("where's my package?").
+- `flight`: a flight, or a trip's legs, each end with its airport code, city, terminal, gate and
+  its time in that airport's own zone, the new time when it is late, the status and the seat ("is
+  my flight on time?"). Not booking one, or fares.
+- `show`: films and series, with year, format, seasons or runtime, genres, ratings as found, an
+  overview, who made it, where it streams (the services' names), poster, trailer and page.
+- `conversion`: an amount from one unit to another, which Redde works out again on the phone as
+  the person changes it, or one currency to another at the rate the agent found, with when.
+- `stock`: share prices with the change since the last close, the day's prices for a line, the
+  day's range, market cap and when the price is from. Redde never buys or sells anything.
+
+Each card's shape is in a line added to the turn only when the person's message asks for that kind
+of thing (in English), ordered so the 1.12.0 cards keep their asks ("remind me when my package
+arrives" stays a reminder), and in the tool's error when a card comes without it. Every new line
+says to look the thing up first and never to make up a price, a time, a status, a rating or a link;
+the delivery and flight lines carry the person's time. The schema gains only the six names: 5,907
+characters (from 5,735), its description 1,615 (from 1,506).
+
 ## 1.12.0 (2026-10-30)
 
 Five more cards for `redde_show`, drawn by Redde 2.3.1

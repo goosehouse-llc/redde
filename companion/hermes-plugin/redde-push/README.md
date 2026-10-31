@@ -322,6 +322,17 @@ timer, which is better, or about a game (in English), the plugin adds that card'
 that turn only, with the person's time for a reminder or a game; and the tool's error gives the
 shape when a card comes without it. None of these lines is added with cards off or for a gated agent.
 
+From 1.13.0, six more the same way (asked 2026-10-31). A `recipe` card shows a recipe with its
+times, the servings its amounts are for (Redde scales them on the phone), ingredients to tick and
+steps. A `delivery` card shows a package's tracking, a `flight` card a flight or a trip's legs with
+each time in its airport's own zone, a `show` card films and series with ratings and where they
+stream, a `conversion` card units (worked out on the phone) or money (at the rate the agent found),
+and a `stock` card share prices with the day's line. Asked for a recipe, a package, a flight,
+something to watch, a conversion or a share's price (in English), the agent hears that card's shape
+and to look the thing up first, never making up a price, a time, a status, a rating or a link.
+Pictures (a recipe's, a poster) show only with Link previews on in Redde; the cards never fetch
+anything themselves, and nothing on them books, buys or trades.
+
 From 1.10.0 a review may say its `kind` (`email`, `message`, `event`, `purchase`, `other`) and a `subtitle`
 ("From your Gmail · as you"): the app draws an email or a message as itself, who it's to, its
 subject and its words, and anything else as rows. Without a kind it goes by the fields' labels

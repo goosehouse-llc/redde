@@ -150,7 +150,7 @@ struct AppearanceSettings: View {
             Toggle(isOn: $settings.linkPreviews) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Link previews")
-                    Text("A card with the page's title and picture under a message with a link, and products' pictures on purchase cards. To get them, Redde opens the page or the picture itself, so the site sees the visit. Off, Redde only talks to your own servers.")
+                    Text("A card with the page's title and picture under a message with a link, and pictures on purchase, recipe and show cards. To get them, Redde opens the page or the picture itself, so the site sees the visit. Off, Redde only talks to your own servers.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }

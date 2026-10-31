@@ -593,3 +593,118 @@ class MoreCardsTests(unittest.TestCase):
         said = json.loads(cards.handle({"cards": [card]}))
         self.assertEqual(said["cards"], [card])
         self.assertNotIn("Stop here", said["note"], "not a card that waits for a tap")
+
+
+class NewestCardsTests(unittest.TestCase):
+    """From 1.13.0 (asked 2026-10-31): recipe, delivery, flight, show, conversion and stock cards,
+    checked leniently, each one's shape in a turn note only when asked for that kind of thing (and
+    never stealing the 1.12.0 cards' asks), and in the tool's error; the schema stays small."""
+    def setUp(self):
+        self.home = Path(tempfile.mkdtemp())
+
+    def note(self, text):
+        return cards.turn_note(self.home, text, platform="desktop") or ""
+
+    def test_the_schema_stays_small_with_six_more(self):
+        self.assertLess(len(json.dumps(cards.SCHEMA)), 6000)
+        self.assertLess(len(cards.SCHEMA["description"]), 1700)
+        props = cards.SCHEMA["parameters"]["properties"]["cards"]["items"]["properties"]
+        for kind in ("recipe", "delivery", "flight", "show", "conversion", "stock"):
+            self.assertIn(kind, props["type"]["enum"])
+            self.assertIn(kind, cards.MORE)
+            self.assertIn(f"'{kind}'", cards.SCHEMA["description"])
+        for field in ("ingredients", "legs", "symbol", "rate"):
+            self.assertNotIn(field, props, "a card's fields are in its note, not in every prompt")
+
+    def test_they_are_checked_and_said_back(self):
+        shown, problems = cards.check({"cards": [
+            {"type": "recipe", "title": "Tomato Spaghetti", "servings": 4, "ingredients": ["12 oz spaghetti", {"name": "basil", "amount": 1, "unit": "cup"}],
+             "steps": ["Boil.", "Toss."]},
+            {"type": "delivery", "title": "Headphones", "carrier": "UPS", "tracking": "1ZDEMO0000000001", "status": "In transit", "expected": "2026-11-05"},
+            {"type": "flight", "legs": [{"airline": "Northwind Air", "number": "NW 238", "status": "Delayed",
+                                         "from": {"code": "LIS", "time": "2026-11-05T10:35:00+00:00"}, "to": {"code": "JFK"}}]},
+            {"type": "show", "items": [{"title": "The Quiet Floor", "pick": True}, "Paper Moons"]}]})
+        self.assertEqual(problems, [])
+        self.assertEqual(shown[0], "recipe: Tomato Spaghetti (2 ingredients, 2 steps, serves 4)")
+        self.assertEqual(shown[1], "delivery: Headphones (In transit, expected 2026-11-05)")
+        self.assertEqual(shown[2], "flight: Northwind Air NW 238 LIS→JFK (Delayed)")
+        self.assertEqual(shown[3], "show: 2 (The Quiet Floor (pick), Paper Moons)")
+        shown, problems = cards.check({"cards": [
+            {"type": "conversion", "amount": 5, "from": "mi", "to": "km"},
+            {"type": "conversion", "from": "100 USD", "to": "EUR", "rate": 0.9214, "as_of": "2026-10-31T09:00:00-04:00"},
+            {"type": "stock", "symbol": "nwnd", "price": 191.2, "percent": "+1.2%", "as_of": "2026-10-31T16:00:00-04:00"},
+            {"type": "stock", "items": [{"symbol": "KSTR", "price": "$64.18"}, {"name": "no symbol", "price": 3}]}]})
+        self.assertEqual(problems, [])
+        self.assertEqual(shown[0], "conversion: 5 mi to km")
+        self.assertEqual(shown[1], "conversion: 100 USD to EUR at 0.9214")
+        self.assertEqual(shown[2], "stock: NWND 191.2 (+1.2%)")
+        self.assertIn("give each its 'as_of'", shown[3], "a price says when it is from")
+        hints = cards.check({"cards": [{"type": "recipe", "title": "Bread", "ingredients": ["500 g flour"]},
+                                       {"type": "flight", "from": "LIS", "to": "JFK"},
+                                       {"type": "conversion", "amount": 100, "from": "USD", "to": "EUR", "rate": 0.92}]})[0]
+        self.assertIn("no 'servings'", hints[0])
+        self.assertIn("each end's 'time' as ISO", hints[1], "a flight given flat is read as one leg")
+        self.assertIn("give 'as_of'", hints[2])
+
+    def test_a_card_without_its_fields_gets_its_shape(self):
+        for card, words in (({"type": "recipe", "title": "Bread"}, "'ingredients' (lines with the amount first"),
+                            ({"type": "delivery", "title": "A box"}, "'status' (the carrier's words"),
+                            ({"type": "flight", "legs": [{"from": "LIS"}]}, "'legs' (one per flight, in order)"),
+                            ({"type": "show", "items": [{"year": 2022}]}, "'items' (1 to 6, your pick first)"),
+                            ({"type": "conversion", "amount": 100, "from": "USD", "to": "EUR"}, "a currency needs the 'rate' you found"),
+                            ({"type": "conversion", "amount": 5}, "'amount'; 'from' and 'to'"),
+                            ({"type": "stock", "items": [{"symbol": "X"}]}, "'items' (1 to 4), each {symbol, name")):
+            shown, problems = cards.check({"cards": [card]})
+            self.assertEqual(shown, [], card)
+            self.assertIn(words, problems[0], card)
+
+    def test_each_card_is_asked_for_by_what_the_person_says(self):
+        asks = {
+            "'recipe' card": ("Can you find me a recipe for banana bread?", "How do I make chicken stock?", "How do you roast a whole chicken?",
+                              "What can I make for dinner with chicken and rice?", "What should I cook tonight?", "how to bake sourdough"),
+            "'delivery' card": ("Where's my package?", "Track my order from Northwind", "When will my package arrive?",
+                                "Has my order shipped yet?", "Is my parcel out for delivery?", "What's the status of 1Z999AA10123456784?"),
+            "'flight' card": ("Is my flight tomorrow on time?", "What gate is NW 238 leaving from?", "When does my flight land?",
+                              "Is TP 238 delayed?", "Did our connection in Newark get cancelled?"),
+            "'show' card": ("What should I watch tonight?", "Recommend a good movie for a rainy day", "Shows like Severance?",
+                            "Where can I stream The Bear?", "Is Dune a good movie?", "any good documentaries about space?"),
+            "'conversion' card": ("How far is 5 miles in km?", "What's $100 in euros?", "Convert 350°F to Celsius", "2 cups to grams",
+                                  "how many ounces in a pound", "What's the exchange rate for yen?", "100 usd to eur"),
+            "'stock' card": ("How's Apple stock doing?", "What's the share price of Nvidia?", "How did the market do today?",
+                             "Is the S&P 500 up?", "Did Nvidia beat earnings?", "What's $TSLA at?"),
+        }
+        for card, messages in asks.items():
+            for asked in messages:
+                self.assertIn(card, self.note(asked), asked)
+        nots = {
+            "'recipe' card": ("Update the Nix recipe for the build", "That's a recipe for disaster", "How do I make a pull request?",
+                              "What can I make with this API?"),
+            "'delivery' card": ("Sort the orders by date", "Put these in order of size", "Order it from Amazon"),
+            "'flight' card": ("Book a flight to Lisbon", "Find me the cheapest flights to Denver in March", "Turn on flight mode"),
+            "'show' card": ("Show me the logs", "Plot this time series", "Watch out for the step", "Which Apple Watch should I buy?",
+                            "The log shows a new error"),
+            "'conversion' card": ("Convert this file to PDF", "Convert the JSON to a list", "Bake it for 30 minutes in the oven",
+                                  "I have 3 kids in school"),
+            "'stock' card": ("Is the blue one in stock?", "Make a chicken stock", "Stock up on rice", "Find a stock photo of a beach"),
+        }
+        for card, messages in nots.items():
+            for asked in messages:
+                self.assertNotIn(card, self.note(asked), asked)
+        # The 1.12.0 cards keep their asks.
+        for asked, card in (("Did the Magic win?", "'score' card"), ("Which noise-cancelling headphones should I buy?", "'purchase' card"),
+                            ("Set a timer for 20 minutes", "'reminder' card"), ("Turn off the kitchen lights", "'home' card"),
+                            ("Which is better for a beginner, Python or JavaScript?", "'compare' card"),
+                            ("Remind me when my package arrives", "'reminder' card")):
+            self.assertIn(card, self.note(asked), asked)
+
+    def test_the_notes_say_to_look_things_up_and_never_make_them_up(self):
+        for note in (cards.RECIPE_NOTE, cards.DELIVERY_NOTE, cards.FLIGHT_NOTE, cards.SHOW_NOTE, cards.STOCK_NOTE, cards.CONVERSION_NOTE):
+            self.assertIn("look", note.lower())
+            self.assertIn("never make up a price, a time, a status, a rating or a link", note)
+        self.assertIn("Never buy or sell", cards.STOCK_NOTE)
+        cards.slash(self.home, ["on", "tz=America/New_York"])
+        self.assertIn("(America/New_York).]", self.note("Is my flight tomorrow on time?"))
+        self.assertIn("(America/New_York).]", self.note("Where's my package?"))
+        self.assertTrue(self.note("How's Apple stock doing?").endswith("]"))
+        cards.slash(self.home, ["off"])
+        self.assertIsNone(cards.turn_note(self.home, "What should I watch tonight?", platform="desktop"))

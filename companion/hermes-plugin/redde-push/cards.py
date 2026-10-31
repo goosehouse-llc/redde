@@ -24,6 +24,13 @@ schema, whose description is in every prompt: each card's shape is in a turn not
 the person's message asks for that kind of thing (`turn_note`), and in this tool's error when a
 card comes without it (`_more`), so a wrong card is right on the first retry.
 
+From 1.13.0 (asked 2026-10-31), six more the same way: a `recipe` (servings Redde scales on the
+phone, ingredients to tick, steps), a `delivery` (a package's tracking), a `flight` (a flight or a
+trip's legs, each time in its airport's own zone), a `show` (films and series: ratings, where to
+watch), a `conversion` (units Redde works out itself; a currency only at the rate the agent found)
+and a `stock` (quotes, with the day's line). Each note says to look the thing up first and never
+to make up a price, a time, a status, a rating or a link; Redde never fetches, books or trades.
+
 A weather or a time card names only its place: the forecast and the time zone are looked up here
 (forecast.py, Open-Meteo), handed back to the agent to answer from, and returned as filled cards
 (`cards` in the answer), which the app draws when it can read them (else it looks them up itself).
@@ -48,9 +55,14 @@ TOOL = "redde_show"
 TOOLSET = "redde_cards"
 MAX_CARDS = 4
 MAX_PLACES = 12
-TYPES = ("map", "places", "weather", "time", "agenda", "review", "choice", "checklist", "form", "purchase", "home", "reminder", "compare", "score")
-#: The cards from 1.12.0 whose shape is in their turn note and their error, not in the schema.
-MORE = ("purchase", "home", "reminder", "compare", "score")
+TYPES = ("map", "places", "weather", "time", "agenda", "review", "choice", "checklist", "form", "purchase", "home", "reminder", "compare", "score",
+         "recipe", "delivery", "flight", "show", "conversion", "stock")
+#: The cards from 1.12.0 (and 1.13.0, the last six) whose shape is in their turn note and their
+#: error, not in the schema.
+MORE = ("purchase", "home", "reminder", "compare", "score", "recipe", "delivery", "flight", "show", "conversion", "stock")
+MAX_LEGS = 6
+MAX_TITLES = 6
+MAX_QUOTES = 4
 MAX_PRODUCTS = 6
 MAX_DEVICES = 12
 MAX_COMPARED = 4
@@ -115,7 +127,8 @@ SCHEMA = {
         "'agenda': calendar events by day ('events' as your calendar tool gave them: 'title', 'start' as ISO with its "
         "offset or a date for all day, 'end', 'location', 'calendar'; 'date' or 'dates' asked about, so a free day "
         "shows). Also 'purchase' (products to buy), 'home' (smart-home devices), 'reminder' (a reminder, timer, alarm "
-        "or scheduled message you set), 'compare' (2-4 things side by side), 'score' (games): their fields are in the "
+        "or scheduled message you set), 'compare' (2-4 things side by side), 'score' (games), 'recipe', 'delivery' (a "
+        "package), 'flight', 'show' (films, series), 'conversion' (units, currency), 'stock': their fields are in the "
         "turn's note, or this tool's error. Look everything up first; never make anything up."),
     "parameters": {
         "type": "object",
@@ -351,6 +364,29 @@ SHAPES = {
     "score": ("'games' (one or a few), each {league, home, away (each {name, short (e.g. ORL), color (#hex), score, "
               "record}), status (final, live or upcoming), period and clock (live), start (ISO with its offset), venue, "
               "broadcast}; 'note'"),
+    "recipe": ("'title'; 'source' (the site) and 'url' (its page, as found); 'image' (https, the page's own picture); 'summary' "
+               "(a line); 'prep', 'cook', 'total' (e.g. 25 min); 'servings' (a number: the amounts are for this many); "
+               "'ingredients' (lines with the amount first, e.g. 1 1/2 cups flour, or {amount, unit, name, section}); 'steps' "
+               "(lines, in order); 'note'"),
+    "delivery": ("'title' (what's in it); 'from' (the store); 'carrier'; 'tracking' (the number); 'url' (the carrier's tracking "
+                 "page, as found); 'status' (the carrier's words: In transit, Out for delivery, Delivered, Delivery attempted...); "
+                 "'expected' (the day, e.g. 2026-11-05, or ISO with its offset); 'window' (e.g. By 8 PM); 'delivered' (ISO, when it "
+                 "came); 'history' (the scans, newest first, each {text, place, at: ISO with its offset})"),
+    "flight": ("'legs' (one per flight, in order), each {airline, number (e.g. TP 238), from and to (each {code (IATA), city, "
+               "name, terminal, gate, time: as scheduled, ISO with that airport's own offset, new_time: estimated or actual, where "
+               "it differs}), status (scheduled, on time, delayed, boarding, departed, landed, cancelled or diverted), seat, "
+               "duration (e.g. 7h 45m)}; 'title'; 'confirmation'; 'note'"),
+    "show": ("'title' (of a list); 'items' (1 to 6, your pick first), each {title, year (e.g. 2022, or 2019-2023), format "
+             "(movie or series), seasons or runtime (minutes), genres, ratings ([{source, value}], e.g. IMDb 8.7/10, as found), "
+             "overview (two lines), director or creator, cast (a few), watch (the services it is on where the person is), "
+             "poster (https), trailer and url (pages, as found), pick (true for one)}; 'note'"),
+    "conversion": ("'amount'; 'from' and 'to' (units as written, e.g. mi, km, °F, cups, or ISO currency codes); for a currency "
+                   "'rate' (one 'from' in 'to', as found) with 'as_of' (ISO, when) and 'source'; 'result' only for units the app "
+                   "may not know; 'title'; 'note'. The app works units out itself"),
+    "stock": ("'items' (1 to 4), each {symbol, name, exchange, price, currency (ISO), change and percent (since the last close, "
+              "with their sign), open, day_range (e.g. 187.20 - 191.05), year_range, market_cap (e.g. 2.71T), volume, as_of (ISO "
+              "with its offset: when the price is from), delayed (true or false), market (e.g. Closed), points (the day's prices "
+              "in order, for its line)}; 'note'"),
 }
 
 
@@ -363,9 +399,13 @@ def _name(row, *keys) -> str:
 
 
 def _more(card: dict, kind: str) -> tuple[str, str | None]:
-    """What a purchase, home, reminder, compare or score card will show, or why it can't be
-    drawn, with the whole shape it takes. Lenient as the app is (Echo/Models/ReplyCards.swift)."""
+    """What a purchase, home, reminder, compare or score card (or, from 1.13.0, a recipe,
+    delivery, flight, show, conversion or stock card) will show, or why it can't be drawn, with
+    the whole shape it takes. Lenient as the app is (Echo/Models/ReplyCards.swift and
+    ReplyCardsMore.swift)."""
     needs = f"a {kind} card needs " + SHAPES[kind]
+    if kind in NEWEST:
+        return NEWEST[kind](card, needs)
     if kind == "purchase":
         listed = card.get("items") or card.get("products") or []
         listed = listed if isinstance(listed, list) else []
@@ -439,6 +479,133 @@ def _more(card: dict, kind: str) -> tuple[str, str | None]:
     if not games:
         return "", needs
     return f"score: {'; '.join(games[:3])}{'…' if len(games) > 3 else ''}", None
+
+
+def _words(value) -> str:
+    """A field as words: a string, or a number."""
+    if isinstance(value, bool):
+        return ""
+    if isinstance(value, (int, float)):
+        return f"{value:g}"
+    return value.strip() if isinstance(value, str) else ""
+
+
+def _list(card: dict, *keys) -> list:
+    for key in keys:
+        if isinstance(card.get(key), list):
+            return card[key]
+    return []
+
+
+def _recipe(card: dict, needs: str) -> tuple[str, str | None]:
+    title = _name(card, "title", "name")
+    ingredients = [i for i in _list(card, "ingredients", "items")[:40] if _name(i, "name", "item", "ingredient", "text")]
+    steps = [s for s in _list(card, "steps", "instructions", "method") if _name(s, "text", "step")]
+    if not steps and isinstance(card.get("steps"), str) and card["steps"].strip():
+        steps = card["steps"].strip().splitlines()
+    if not title or not (ingredients or steps):
+        return "", needs
+    serves = _words(card.get("servings") or card.get("serves"))
+    said = f"recipe: {title} ({len(ingredients)} ingredients, {len(steps)} steps{', serves ' + serves if serves else ''})"
+    if ingredients and not serves:
+        said += "; no 'servings': give how many the amounts are for, so the person can scale them"
+    return said, None
+
+
+def _delivery(card: dict, needs: str) -> tuple[str, str | None]:
+    title, carrier, tracking = _words(card.get("title")), _words(card.get("carrier")), _words(card.get("tracking"))
+    status, expected = _words(card.get("status")), _words(card.get("expected") or card.get("eta"))
+    if not (title or carrier or tracking) or not (status or expected or card.get("stage")):
+        return "", needs
+    named = title or (f"{carrier} package" if carrier else f"package {tracking}")
+    said = f"delivery: {named} ({', '.join(p for p in (status, 'expected ' + expected if expected else '') if p) or card.get('stage')})"
+    if tracking and not carrier:
+        said += "; no 'carrier': give it, so the person can track the number"
+    return said, None
+
+
+def _flight(card: dict, needs: str) -> tuple[str, str | None]:
+    legs = _list(card, "legs", "flights") or ([card] if card.get("from") or card.get("origin") else [])
+    def end(value) -> str:
+        return _name(value, "code", "iata", "city", "name") if isinstance(value, (dict, str)) else ""
+    shown, untimed = [], 0
+    for leg in legs[:MAX_LEGS]:
+        if not isinstance(leg, dict):
+            continue
+        a, b = end(leg.get("from") or leg.get("origin")), end(leg.get("to") or leg.get("destination"))
+        if not (a and b):
+            continue
+        number = " ".join(p for p in (_words(leg.get("airline")), _words(leg.get("number") or leg.get("flight"))) if p)
+        status = _words(leg.get("status"))
+        shown.append(f"{number + ' ' if number else ''}{a}→{b}{' (' + status + ')' if status else ''}")
+        start = leg.get("from") if isinstance(leg.get("from"), dict) else {}
+        if not _DAY.match(_words(start.get("time") or leg.get("departs"))):
+            untimed += 1
+    if not shown:
+        return "", needs
+    said = f"flight: {'; '.join(shown)}"
+    if untimed:
+        said += "; give each end's 'time' as ISO with that airport's own offset, e.g. 2026-11-05T10:35:00+00:00"
+    return said, None
+
+
+def _show(card: dict, needs: str) -> tuple[str, str | None]:
+    listed = _list(card, "items", "titles", "shows", "movies") or [card]
+    titles = [(_name(t, "title", "name"), isinstance(t, dict) and t.get("pick") is True) for t in listed[:MAX_TITLES]]
+    kept = [(n, p) for n, p in titles if n]
+    if not kept:
+        return "", needs
+    said = f"show: {len(kept)} ({', '.join(n + (' (pick)' if p else '') for n, p in kept[:4])}{'…' if len(kept) > 4 else ''})"
+    if len(listed) > MAX_TITLES:
+        said += f"; only the first {MAX_TITLES} are shown"
+    return said, None
+
+
+_CURRENCY = re.compile(r"^[A-Za-z]{3}$")
+
+
+def _conversion(card: dict, needs: str) -> tuple[str, str | None]:
+    source, target = _words(card.get("from")), _words(card.get("to"))
+    amount = _number(card.get("amount"))
+    if amount is None and source:
+        found = re.match(r"\s*(\d[\d,.]*)\s*(.+)", source)
+        if found:
+            amount, source = _number(found.group(1).replace(",", "")), found.group(2)
+    if not source or not target:
+        return "", needs
+    amount = 1 if amount is None else amount
+    money = bool(_CURRENCY.match(source) and _CURRENCY.match(target)) and source.lower() not in ("cup", "gal", "kcal")
+    if money:
+        rate = _number(card.get("rate"))
+        result = _number(card.get("result"))
+        if rate is None and result is None:
+            return "", needs + "; a currency needs the 'rate' you found"
+        said = f"conversion: {amount:g} {source.upper()} to {target.upper()} at {rate if rate is not None else result / amount if amount else result:g}"
+        return said + ("" if card.get("as_of") else "; give 'as_of', when the rate is from"), None
+    return f"conversion: {amount:g} {source} to {target}", None
+
+
+def _stock(card: dict, needs: str) -> tuple[str, str | None]:
+    listed = _list(card, "items", "quotes", "stocks") or ([card] if card.get("symbol") or card.get("ticker") else [])
+    quotes, timed = [], 0
+    for q in listed[:MAX_QUOTES]:
+        if not isinstance(q, dict):
+            continue
+        symbol, price = _words(q.get("symbol") or q.get("ticker")), _words(q.get("price"))
+        if symbol and price:
+            change = _words(q.get("percent") or q.get("change"))
+            quotes.append(f"{symbol.upper()} {price}{' (' + change + ')' if change else ''}")
+            timed += bool(q.get("as_of"))
+    if not quotes:
+        return "", needs
+    said = f"stock: {', '.join(quotes)}"
+    if timed < len(quotes):
+        said += "; give each its 'as_of', when the price is from"
+    return said, None
+
+
+#: The checks of the cards from 1.13.0.
+NEWEST = {"recipe": _recipe, "delivery": _delivery, "flight": _flight, "show": _show, "conversion": _conversion, "stock": _stock}
 
 
 def _labels(rows, *keys) -> list[str]:
@@ -680,6 +847,70 @@ COMPARE_NOTE = (f"[Redde: asked which is better. Look up what you need first, th
                 + SHAPES["compare"] + ". Then answer in a line. Things to buy are a 'purchase' card instead.]")
 SCORE_NOTE = (f"[Redde: asked about a game. Look it up with your tools first (never guess a score or a time), then show it with "
               f"{TOOL} as a 'score' card: " + SHAPES["score"] + ". Then answer in a line.")
+#: Asked for a recipe, or how to cook something, in English (2026-10-31): a 'recipe' card. Not a
+#: build's recipe (Nix, BitBake, a Makefile's) or a recipe for disaster.
+_FOODS = (r"(?:soup|stew|stock|broth|bread|cake|cookies|pasta|sauce|pie|curry|pancakes|waffles|chili|risotto|lasagna|pizza(?: dough)?|"
+          r"dumplings|salad|muffins|brownies|granola|hummus|guacamole|omelet(?:te)?|chicken|steak|salmon|tofu|rice|noodles|ramen|tacos|"
+          r"burgers?|meatballs|bolognese|carbonara|dessert|dinner|lunch|breakfast|brunch)")
+_ASKS_RECIPE = re.compile(
+    r"\brecipes?\b(?! for disaster)|\bhow (?:do|can|should|would) (?:i|we|you) (?:cook|bake|roast|grill|braise|poach|fry)\b"
+    r"|\bhow to (?:cook|bake|roast|grill|braise|poach)\b|\bhow (?:do|can|should|would) (?:i|we|you) make\b[^.?!]{0,30}\b" + _FOODS + r"\b"
+    r"|\bwhat (?:can|should) (?:i|we) (?:cook|bake)\b|\bwhat (?:can|should) (?:i|we) make (?:for|with|tonight)\b[^.?!]{0,40}\b(?:"
+    + _FOODS[3:-1] + r"|tonight|leftovers|eggs|potatoes|vegetables|fridge)\b", re.IGNORECASE)
+_NOT_RECIPE = re.compile(r"\b(?:nix|bitbake|yocto|conan|homebrew|ansible|docker|makefile|cmake|helm|terraform|ci|pipeline|build)\b", re.IGNORECASE)
+#: Asked where a package is, in English: a 'delivery' card.
+_ASKS_DELIVERY = re.compile(
+    r"\bwhere(?:'s|’s| is| are) (?:my|the|our) (?:package|parcel|order|delivery|shipment)s?\b|\btrack(?:ing)? (?:my |the |a |our )?(?:package|parcel|order|shipment|delivery)\b"
+    r"|\btracking number\b|\bwhen (?:will|does|is|should) (?:my|the|our) (?:package|parcel|order|delivery|shipment)\b"
+    r"|\b(?:has|did|have) (?:my|the|our) (?:package|parcel|order|delivery|shipment)s?\b[^.?!]{0,30}\b(?:arrive|come|ship|been delivered|shipped)"
+    r"|\b(?:package|parcel|shipment)s? (?:arrive|arriving|come|coming|status)\b|\bout for delivery\b|\b1Z[0-9A-Z]{16}\b", re.IGNORECASE)
+_NOT_DELIVERY = re.compile(r"\b(?:sort|order by|in order to|order of|work order|pull request)\b", re.IGNORECASE)
+#: Asked about a flight, in English: a 'flight' card. Not booking one, or looking for fares.
+_ASKS_FLIGHT = re.compile(
+    r"\bflights?\b[^.?!]*\b(?:on time|delayed|status|lands?|landed|landing|depart(?:s|ed|ing|ure)?|leaves?|leaving|gate|terminal|"
+    r"boarding|cancel(?:l?ed)?|arrives?|arriving|tomorrow|today|tonight)\b|\b(?:my|our) (?:flight|connection|layover)s?\b"
+    r"|\bwhat gate\b|\bwhich terminal\b|\b[A-Z][A-Z0-9] ?\d{2,4} (?:on time|delayed|landed|departed|boarding)\b|\bmy itinerary\b", re.IGNORECASE)
+_NOT_FLIGHT = re.compile(r"\b(?:book|reserve|buy|cheap(?:est)?|fares?|prices?|deals?|flight (?:simulator|mode)|in-flight|points|miles program)\b", re.IGNORECASE)
+#: Asked what to watch, or about a film or a series, in English: a 'show' card.
+_ASKS_SHOW = re.compile(
+    r"\bwhat (?:should|can|could) (?:i|we) watch\b(?! out| for)|\bwhere (?:can|do|should) (?:i|we) (?:watch|stream)\b|\bworth watching\b"
+    r"|\bsomething (?:good )?to watch\b|\b(?:movies?|films?|tv shows?|tv series|series|documentar(?:y|ies)|anime|sitcoms?)\b[^.?!]*\b(?:recommend|"
+    r"suggest|good|best|watch|stream(?:ing)?|like|similar|rated|ratings?|reviews?|about|seen|tonight|new)\b"
+    r"|\b(?:recommend|suggest)\b[^.?!]*\b(?:movies?|films?|tv shows?|shows|series|documentar(?:y|ies)|anime)\b"
+    r"|\b(?:a|any|good|new) shows? (?:like|about|to watch)\b|\b(?:shows|movies|films) (?:like|similar to)\b|\bis [^.?!]+ a good (?:movie|film|show|series)\b", re.IGNORECASE)
+_NOT_SHOW = re.compile(r"\btime series\b|\bseries of\b|\bin series\b|\bpandas\b|\bdataframe\b|\bwatch (?:out|for)\b|\bapple watch\b|\bsmart ?watch\b", re.IGNORECASE)
+#: Asked to convert units or money, in English: a 'conversion' card. Not a file or a type converted.
+_UNIT = (r"(?:mi|miles?|km|kms|kilomet(?:er|re)s?|m|met(?:er|re)s?|cm|mm|ft|feet|foot|in|inch(?:es)?|yds?|yards?|kgs?|kilos?|g|grams?|lbs?|"
+         r"pounds?|oz|ounces?|stones?|l|lit(?:er|re)s?|ml|cups?|tbsp|tsp|tablespoons?|teaspoons?|gal(?:lons?)?|quarts?|pints?|°\s?[cf]|[cf]"
+         r"|degrees(?: [cf]| celsius| fahrenheit)?|celsius|fahrenheit|kelvin|mph|km/h|kph|knots?|acres?|hectares?|sq ?ft|square (?:feet|"
+         r"met(?:er|re)s)|kcal|calories|kj|psi|bar|mpg|usd|eur|gbp|jpy|cad|aud|chf|mxn|brl|inr|cny|dollars?|euros?|yen|pesos?|rupees?|francs?)")
+_ASKS_CONVERSION = re.compile(
+    r"\bconvert\b[^.?!]*\b(?:to|into|in)\b|\b\d[\d.,]*\s*" + _UNIT + r"\s+(?:in|to|into)\s+" + _UNIT + r"\b"
+    r"|[$€£¥]\s?\d[\d.,]*\s+(?:in|to|into)\s+" + _UNIT + r"\b|\bhow many " + _UNIT + r" (?:are |is )?(?:in|per) (?:a|an|one|\d)"
+    r"|\bexchange rate\b", re.IGNORECASE)
+_NOT_CONVERSION = re.compile(r"\b(?:files?|pdfs?|json|csv|markdown|html|strings?|int(?:eger)?s?|types?|images?|png|jpe?g|videos?|mp4|"
+                             r"code|arrays?|lists?|dates?|timestamps?|formats?|python|swift|svg|docx?|epub|heic|audio|mp3)\b", re.IGNORECASE)
+#: Asked about a share's price, in English: a 'stock' card. Never anything bought or sold.
+_ASKS_STOCK = re.compile(
+    r"\bstocks?\b|\bshare price\b|\bshares? (?:of|in)\b|\b(?:nasdaq|nyse|dow jones|s&p ?500|ftse|nikkei|dax)\b|\bticker\b|\bmarket cap\b"
+    r"|\btrading at\b|\bhow(?:'s|’s| is| did| are)\b[^.?!]*\b(?:the market|the markets|my portfolio)\b|\b(?:beat|missed?) earnings\b"
+    r"|\bearnings (?:report|call|date)\b|\$[A-Z]{1,5}\b", re.IGNORECASE)
+_NOT_STOCK = re.compile(r"\b(?:in|out of|back in|low on) stock\b|\bstock (?:up|photos?|images?|footage|android|firmware|rom|settings|ios|pot)\b"
+                        r"|\b(?:chicken|beef|vegetable|veggie|fish|soup|bone|turkey) stock\b|\btake stock\b|\brolling stock\b", re.IGNORECASE)
+_NEVER_MADE_UP = "never make up a price, a time, a status, a rating or a link"
+RECIPE_NOTE = (f"[Redde: asked for a recipe. Look a real one up first with your tools (web search, the site's own page) and give its source and "
+               f"page; {_NEVER_MADE_UP}. Then show it with {TOOL} as a 'recipe' card: " + SHAPES["recipe"] + ". Then answer in a line: "
+               "don't write the ingredients or the steps out again.]")
+DELIVERY_NOTE = (f"[Redde: asked where a package is. Look it up first with your tools (the carrier's tracking, the order's email); {_NEVER_MADE_UP}. "
+                 f"Then show it with {TOOL} as a 'delivery' card: " + SHAPES["delivery"] + ". Then answer in a line.")
+FLIGHT_NOTE = (f"[Redde: asked about a flight. Look it up first with your tools (the airline, a flight tracker, the booking's email); "
+               f"{_NEVER_MADE_UP}, a gate or a terminal. Then show it with {TOOL} as a 'flight' card: " + SHAPES["flight"] + ". Then answer in a line.")
+SHOW_NOTE = (f"[Redde: asked about something to watch. Look it up first with your tools; {_NEVER_MADE_UP}, a year or where it streams. "
+             f"Then show it with {TOOL} as a 'show' card: " + SHAPES["show"] + ". Then answer in a line: don't list them again.]")
+CONVERSION_NOTE = (f"[Redde: asked to convert. Show it with {TOOL} as a 'conversion' card: " + SHAPES["conversion"] + ". For money, look the "
+                   f"rate up first with your tools and give when it is from; {_NEVER_MADE_UP}. Then answer in a line.]")
+STOCK_NOTE = (f"[Redde: asked about a share's price. Look it up first with your tools; {_NEVER_MADE_UP}. Then show it with {TOOL} as a "
+              f"'stock' card: " + SHAPES["stock"] + ". Then answer in a line. Never buy or sell anything.]")
 REDDES = ("desktop", "tui", "api_server", "")    # Redde's connections: the Dashboard, the Hermes API
 
 
@@ -731,8 +962,8 @@ def turn_note(home: Path, message, platform: str = "", at: datetime | None = Non
     if "[Redde card " not in text and not gated(home):
         more = more_note(text)
         if more is not None:
-            if more in (REMINDER_NOTE, SCORE_NOTE):
-                # "In 20 minutes" and "tonight" are the person's: the server's clock may be in another zone.
+            if more in (REMINDER_NOTE, SCORE_NOTE, DELIVERY_NOTE, FLIGHT_NOTE):
+                # "In 20 minutes", "tonight", "tomorrow's flight" are the person's: the server's clock may be in another zone.
                 tz = forecast.zone(preferences(home).get("tz"))
                 more += (f" Where the person is, it is now {forecast.time_said(None, tz, at).split(': ', 1)[1]} ({tz.key}).]"
                          if tz is not None else "]")
@@ -764,14 +995,29 @@ def more_note(text: str) -> str | None:
     """The note for the newer cards a message asks for (2026-10-30), the first that fits: a reminder
     ("remind me at 5"), a game ("did the Heat win?" is no thermostat), the home ("set the house to
     70"), what to buy, which is better; a
-    'which is better' about things to buy is a purchase. The reminder and score notes are completed
-    with the person's time by `turn_note`."""
+    'which is better' about things to buy is a purchase. From 1.13.0, a package, a flight and a
+    share before a game; converting, cooking and watching before buying. The reminder, score,
+    delivery and flight notes are completed with the person's time by `turn_note`."""
     if _ASKS_REMINDER.search(text):
         return REMINDER_NOTE
+    # From 1.13.0: a package, a flight and a share before a game ("did Nvidia beat earnings?").
+    if _ASKS_DELIVERY.search(text) and not _NOT_DELIVERY.search(text):
+        return DELIVERY_NOTE
+    if _ASKS_FLIGHT.search(text) and not _NOT_FLIGHT.search(text):
+        return FLIGHT_NOTE
+    if _ASKS_STOCK.search(text) and not _NOT_STOCK.search(text) and not _ASKS_RECIPE.search(text):
+        return STOCK_NOTE
     if _ASKS_SCORE.search(text) and not _NOT_SCORE.search(text):
         return SCORE_NOTE
     if _HOME_THINGS.search(text) and _HOME_ACTS.search(text):
         return HOME_NOTE
+    # Then converting, cooking and watching, before buying ("what's $100 in euros" is no shopping).
+    if _ASKS_CONVERSION.search(text) and not _NOT_CONVERSION.search(text):
+        return CONVERSION_NOTE
+    if _ASKS_RECIPE.search(text) and not _NOT_RECIPE.search(text):
+        return RECIPE_NOTE
+    if _ASKS_SHOW.search(text) and not _NOT_SHOW.search(text):
+        return SHOW_NOTE
     compare = bool(_ASKS_COMPARE.search(text)) and not _NOT_COMPARE.search(text)
     if _WHERE_TO_BUY.search(text) or ((_ASKS_PURCHASE.search(text) or (compare and _SHOPPING.search(text))) and not _NOT_SHOPPING.search(text)):
         return PURCHASE_NOTE

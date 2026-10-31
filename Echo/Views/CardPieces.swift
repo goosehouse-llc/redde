@@ -102,3 +102,147 @@ struct TintedCapsule: View {
         .contentShape(.capsule)
     }
 }
+
+/// A card's picture (a product's, from 2026-10-31 a recipe's and a poster): the site's, with
+/// Link previews on and once it has come through `ProductImages`; else a drawing of what it is
+/// (an SF Symbol) on a wash of the theme's colour. Always the same size, so nothing in the chat
+/// moves when it comes.
+struct CardPicture: View {
+    let url: URL?
+    let symbol: String
+    /// Nil: as wide as there is room.
+    var width: CGFloat?
+    var height: CGFloat
+    /// A photo or a poster fills its frame; a product sits whole on white.
+    var fill = false
+    var corner: CGFloat
+    /// The picture's pixels across at most.
+    var pixels: CGFloat
+    @State private var settings = Settings.shared
+    @State private var image: UIImage?
+    @Environment(\.theme) private var theme
+    @Environment(\.colorScheme) private var scheme
+
+    init(url: URL?, symbol: String, width: CGFloat?, height: CGFloat, fill: Bool = false, corner: CGFloat? = nil, pixels: CGFloat = ProductImages.side) {
+        self.url = url
+        self.symbol = symbol
+        self.width = width
+        self.height = height
+        self.fill = fill
+        self.corner = corner ?? min(width ?? height, height) * 0.2
+        self.pixels = pixels
+        _image = State(initialValue: ProductImages.shared.cached(url, side: pixels))
+    }
+
+    /// A product's square.
+    init(url: URL?, symbol: String, side: CGFloat) {
+        self.init(url: url, symbol: symbol, width: side, height: side)
+    }
+
+    var body: some View {
+        let allowed = ProductImages.allowed(url, settings: settings)
+        ZStack {
+            if allowed != nil, let image {
+                if fill {
+                    Color.clear.overlay { Image(uiImage: image).resizable().scaledToFill() }
+                } else {
+                    Color.white
+                    Image(uiImage: image).resizable().scaledToFit().padding(min(width ?? height, height) * 0.07)
+                }
+            } else {
+                LinearGradient(colors: [theme.accent.opacity(scheme == .dark ? 0.30 : 0.20), theme.accent.opacity(scheme == .dark ? 0.12 : 0.06)],
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                Image(systemName: symbol)
+                    .font(.system(size: min(width ?? height, height) * 0.42, weight: .light))
+                    .foregroundStyle(theme.accent)
+            }
+        }
+        .frame(width: width, height: height)
+        .frame(maxWidth: width == nil ? .infinity : nil)
+        .clipShape(.rect(cornerRadius: corner))
+        .overlay { RoundedRectangle(cornerRadius: corner).strokeBorder(.separator.opacity(0.4), lineWidth: 0.5) }
+        .accessibilityHidden(true)
+        .task(id: allowed) {
+            guard let url = allowed, image == nil else { return }
+            let found = await ProductImages.shared.image(url, side: pixels)
+            withAnimation(.easeOut(duration: 0.2)) { image = found }
+        }
+    }
+}
+
+/// A small fact on a card, its name over its value ("Prep" / "15 min", "Open" / "$188.10").
+struct CardFact: View {
+    let name: String
+    let value: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(name).chatFont(.caption2).foregroundStyle(.secondary).lineLimit(1)
+            Text(verbatim: value).chatFont(.footnote, weight: .semibold).monospacedDigit().lineLimit(2)
+        }
+        .padding(.horizontal, 10).padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.fill.quaternary, in: .rect(cornerRadius: 10))
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// A wide button that opens a page in the browser ("Track at UPS ↗"): the theme's colour, or a
+/// wash of it.
+struct LinkCapsule: View {
+    let title: String
+    var filled = true
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(title).lineLimit(1)
+            Image(systemName: "arrow.up.right").imageScale(.small).accessibilityHidden(true)
+        }
+        .chatFont(.subheadline, weight: .semibold)
+        .foregroundStyle(filled ? theme.userText : theme.accent)
+        .padding(.horizontal, 14)
+        .frame(maxWidth: .infinity, minHeight: 44)
+        .background(filled ? theme.accent : theme.accent.opacity(0.12), in: .capsule)
+        .contentShape(.capsule)
+    }
+}
+
+/// The chips under a card that ask the agent for more, or what was asked once one was tapped:
+/// the purchase card's way, for the cards after it.
+struct CardChips<Chip: Hashable>: View {
+    let chips: [Chip]
+    let whole: ReplyCard
+    let title: (Chip) -> String
+    let symbol: (Chip) -> String
+    let hint: (Chip) -> Text
+    /// The chip a note tells, in a transcript read back.
+    let asked: (String) -> Chip?
+    let send: (Chip) -> (shown: String, said: String)
+    @State private var answers = CardAnswers.shared
+    @Environment(\.answerCard) private var answerer
+    @Environment(\.pinnedCard) private var pinned
+
+    var body: some View {
+        if let said = answers.said[whole.key] {
+            AnsweredLine(text: asked(said).map { String(localized: "Asked: \(title($0))", comment: "Under a purchase card once a chip was tapped, e.g. Asked: Cheaper options") }
+                ?? String(localized: "Asked", comment: "Under a purchase card once a chip was tapped"))
+                .padding(.leading, 6)
+        } else if let answerer, !pinned, !chips.isEmpty {
+            PillFlow(spacing: 6) {
+                ForEach(chips, id: \.self) { chip in
+                    Button {
+                        let message = send(chip)
+                        answerer.answer(whole, message.shown, message.said)
+                    } label: {
+                        CardChip(title: title(chip), symbol: symbol(chip), busy: answerer.busy)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(answerer.busy)
+                    .accessibilityHint(hint(chip))
+                }
+            }
+            .padding(.horizontal, 2)
+        }
+    }
+}

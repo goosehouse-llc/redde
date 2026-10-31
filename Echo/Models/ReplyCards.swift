@@ -46,6 +46,20 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
     case compare(Comparison)
     /// A game, or a few: the teams, the score, how it stands (asked 2026-10-30).
     case score(Scores)
+    /// A recipe the agent found: its picture, its times, the ingredients for as many as the
+    /// person says, and its steps (asked 2026-10-31, with the five below).
+    case recipe(Recipe)
+    /// A package on its way, as the carrier's tracking said when the agent looked.
+    case delivery(Delivery)
+    /// A flight, or a trip's flights, as the airline said when the agent looked.
+    case flight(Trip)
+    /// A film or a series, or a few: what it is, how it's rated, where to watch it.
+    case show(Shows)
+    /// An amount in other units (worked out again on the phone), or in another currency (at the
+    /// rate the agent found, never a live one).
+    case conversion(Conversion)
+    /// A share's price, or a few, as the agent looked them up: Redde never buys or sells.
+    case stock(Quotes)
 
     /// Products the agent recommends: each with its price, rating, store and page, as it looked
     /// them up. The card opens a product's page in the browser; it never buys anything.
@@ -343,8 +357,9 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
         switch self {
         // A purchase card's chips (Cheaper options, Compare) answer it.
         // A purchase card's chips, a home's controls, a reminder's Change and Cancel, a score's Refresh.
-        case .review, .choice, .checklist, .form, .purchase, .home, .reminder, .score: true
-        case .map, .places, .weather, .time, .agenda, .key, .compare: false
+        // From 2026-10-31: a recipe's, a delivery's, a flight's, a show's and a stock's chips.
+        case .review, .choice, .checklist, .form, .purchase, .home, .reminder, .score, .recipe, .delivery, .flight, .show, .stock: true
+        case .map, .places, .weather, .time, .agenda, .key, .compare, .conversion: false
         }
     }
 
@@ -361,6 +376,13 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
         case let .home(h): said = "home|" + (h.title ?? "") + "|" + h.devices.map { $0.entity ?? $0.name }.joined(separator: "|")
         case let .reminder(r): said = "reminder|" + r.title + "|" + (r.id ?? "") + "|" + (r.at.map { String(Int($0.timeIntervalSince1970)) } ?? r.when ?? "")
         case let .score(s): said = "score|" + s.games.map { "\($0.away.name)@\($0.home.name)|\($0.start.map { String(Int($0.timeIntervalSince1970)) } ?? "")" }.joined(separator: "|")
+        case let .recipe(r): said = "recipe|" + r.title + "|" + (r.url ?? "") + "|" + r.ingredients.map(\.name).joined(separator: "|")
+        case let .delivery(d): said = "delivery|" + (d.carrier ?? "") + "|" + (d.tracking ?? "") + "|" + (d.title ?? "")
+        case let .flight(t):
+            said = "flight|" + t.legs.map { [$0.number ?? "", $0.from.code ?? $0.from.city ?? "", $0.departs.map { String(Int($0.date.timeIntervalSince1970)) } ?? ""].joined(separator: "|") }
+                .joined(separator: "|")
+        case let .show(s): said = "show|" + (s.title ?? "") + "|" + s.items.map { $0.name + ($0.year.map { " \($0)" } ?? "") }.joined(separator: "|")
+        case let .stock(q): said = "stock|" + q.items.map(\.symbol).joined(separator: "|") + "|" + (q.items.first?.asOf.map { String(Int($0.timeIntervalSince1970)) } ?? "")
         default: return ""
         }
         // FNV-1a: short, and the same on every run (Hasher isn't).
@@ -651,6 +673,18 @@ nonisolated enum ReplyCards {
             return comparison(value).map(ReplyCard.compare)
         case "score", "scores", "game", "games":
             return scores(value).map(ReplyCard.score)
+        case "recipe", "recipes", "cooking":
+            return recipe(value).map(ReplyCard.recipe)
+        case "delivery", "package", "parcel", "tracking", "shipment":
+            return delivery(value).map(ReplyCard.delivery)
+        case "flight", "flights", "trip", "itinerary":
+            return trip(value).map(ReplyCard.flight)
+        case "show", "shows", "movie", "movies", "film", "films", "series", "tv":
+            return shows(value).map(ReplyCard.show)
+        case "conversion", "convert", "units", "currency", "exchange":
+            return conversion(value).map(ReplyCard.conversion)
+        case "stock", "stocks", "quote", "quotes", "ticker":
+            return quotes(value).map(ReplyCard.stock)
         case "review", "confirm":
             let fields: [ReplyCard.Field] = (value["fields"]?.array ?? []).prefix(maxFields).compactMap { f in
                 guard let label = text(f["label"] ?? f["name"]) else { return nil }
@@ -1016,13 +1050,13 @@ nonisolated enum ReplyCards {
                      source: text(value["source"]), updated: text(value["updated"]).map { String($0.prefix(40)) })
     }
 
-    private static func text(_ value: JSONValue?) -> String? {
+    static func text(_ value: JSONValue?) -> String? {
         if let s = value?.string?.trimmingCharacters(in: .whitespacesAndNewlines), !s.isEmpty { return s }
         if let n = value?.number { return n == n.rounded() ? String(Int(n)) : String(n) }
         return nil
     }
 
-    private static func number(_ value: JSONValue?) -> Double? {
+    static func number(_ value: JSONValue?) -> Double? {
         if let n = value?.number, n.isFinite { return n }
         if let s = value?.string?.trimmingCharacters(in: .whitespaces) {
             return Double(s.replacingOccurrences(of: "°", with: "").replacingOccurrences(of: "%", with: "").trimmingCharacters(in: CharacterSet.letters.union(.whitespaces)))

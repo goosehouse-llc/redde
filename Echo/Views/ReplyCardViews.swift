@@ -27,6 +27,12 @@ struct ReplyCardsView: View {
                 case let .reminder(reminder): ReminderCard(card: reminder, whole: card)
                 case let .compare(comparison): CompareCard(card: comparison)
                 case let .score(scores): ScoreCard(card: scores, whole: card)
+                case let .recipe(recipe): RecipeCard(card: recipe, whole: card)
+                case let .delivery(delivery): DeliveryCard(card: delivery, whole: card)
+                case let .flight(trip): FlightCard(card: trip, whole: card)
+                case let .show(shows): ShowCard(card: shows, whole: card)
+                case let .conversion(conversion): ConversionCard(card: conversion)
+                case let .stock(quotes): StockCard(card: quotes, whole: card)
                 }
             }
         }
