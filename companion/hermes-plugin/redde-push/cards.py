@@ -801,7 +801,11 @@ _ASKS_PURCHASE = re.compile(
     r"\bwhich\b[^.?!]*\bshould (?:i|we) (?:buy|get|order|pick up|go for)\b|\bwhat\b[^.?!]*\bshould (?:i|we) (?:buy|get)\b"
     r"|\bbest\b[^.?!]*\b(?:under|below|less than|for)\s*(?:[$£€]\s*\d|\d)|\bbest\b[^.?!]*\bto buy\b|\bworth (?:buying|the money)\b"
     r"|\brecommend (?:me )?(?:a|an|some)\b|\blooking for (?:a |an |some )?new\b|\bgift ideas?\b|\b(?:gift|present) for\b"
-    r"|\bwhere (?:can|should|do) (?:i|we) buy\b|\bshould (?:i|we) (?:buy|get) (?:the|a|an)\b", re.IGNORECASE)
+    r"|\bwhere (?:can|should|do) (?:i|we) buy\b|\bshould (?:i|we) (?:buy|get) (?:the|a|an)\b"
+    # 2026-10-31, asked of Home: "I'm looking to buy a smart plug …", "Give me recommendations to buy".
+    r"|\b(?:looking|want|wanting|planning|hoping|need|going) to (?:buy|get|order|pick up)\b|\bthinking (?:of|about) (?:buying|getting)\b"
+    r"|\b(?:shopping|in the market) for\b|\brecommendations?\b[^.?!]*\b(?:buy|get|purchase)\b"
+    r"|\b(?:buy|get|purchase)\b[^.?!]*\brecommend(?:ations?)?\b|\bwhat (?:\w+ ){0,3}(?:to|should i) buy\b", re.IGNORECASE)
 _NOT_SHOPPING = re.compile(
     r"\b(?:restaurants?|caf[eé]s?|coffee shops?|bars?|places? to (?:eat|go|stay)|hotels?|movies?|films?|shows?|series|podcasts?|"
     r"recipes?|dinner|lunch|breakfast|brunch|to eat|to drink|books?|novels?|apps?|routes?|ways?)\b", re.IGNORECASE)

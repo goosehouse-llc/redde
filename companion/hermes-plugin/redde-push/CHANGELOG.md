@@ -3,6 +3,11 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.13.3 (2026-10-31)
+
+- More ways of asking what to buy give the purchase note: "looking to buy", "want to get",
+  "shopping for", "recommendations … to buy", "what … to buy".
+
 ## 1.13.2 (2026-10-31)
 
 - Asked what to buy, a 'review' card (the card for an order about to be placed) without a 'purchase'

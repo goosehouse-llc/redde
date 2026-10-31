@@ -495,6 +495,13 @@ class MoreCardsTests(unittest.TestCase):
     def note(self, text):
         return cards.turn_note(self.home, text, platform="desktop") or ""
 
+    def test_more_ways_of_asking_what_to_buy(self):
+        for asked in ("Give me recommendations to buy", "I'm looking to buy a smart plug", "I want to get a new kettle",
+                      "I'm shopping for a stroller", "What headphones to buy?", "Any recommendations for a TV to buy?"):
+            self.assertIn("asked what to buy", self.note(asked), asked)
+        for errand in ("Buy it", "Order the Wyze plug for me", "Add it to my cart"):
+            self.assertNotIn("asked what to buy", self.note(errand), errand)
+
     def test_asked_what_to_buy_a_review_card_is_sent_back(self):
         # 2026-10-31: "I'm looking to buy a smart plug … recommend a couple", and Home drew a
         # review card twice. The turn is remembered by its session; the card tool holds it to it.
