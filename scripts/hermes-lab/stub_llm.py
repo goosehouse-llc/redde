@@ -45,6 +45,9 @@ a command Hermes asks the person about (ask_before_writes.py), and says "[applie
 And one for bots messaging bots (lab.sh bots): "lab:dm:<bot>" makes the model message that bot
 with Bot Mode's own tool (`message_agent`): "Which trailhead for Lost Lake?".
 
+And shapes (LAB_SHAPE): how the model words a `tool_call` (see `bridged` below), for the check
+that a patched Hermes repairs the ones the local Qwen gets wrong (sam-patch tool-call-shape).
+
 And one for attachments: a message with "lab:file" in it is answered "[file seen]" when what
 reached the model also holds "lab-file-token" (a text file's contents, as Hermes inlines them)
 or "lab-clip.mp4" (how it names a file it can't inline), and "[file missing]" when it doesn't.
@@ -123,6 +126,33 @@ def text_of(message):
     return content if isinstance(content, str) else " ".join(p.get("text", "") for p in content or [] if isinstance(p, dict))
 
 
+def bridged(name, arguments):
+    """The `tool_call` arguments for one call. LAB_SHAPE makes them a shape the local Qwen sent
+    dchermes (2026-10), for the check that a patched Hermes repairs it (sam-patch tool-call-shape):
+        hoist    the tool's name inside its arguments
+        batch    that, then an entry that names no tool (it gets its own error, the call still runs)
+        text     'calls' as JSON text missing a closing brace, the name inside the arguments
+        wrapped  'calls' inside an extra 'arguments'
+        single   one call at the top, no 'calls'; object: 'calls' as one object (Hermes takes both)
+        direct   a tool offered outright asked for through tool_call all the same (where it is called)"""
+    shape = os.environ.get("LAB_SHAPE", "")
+    call = {"name": name, "arguments": arguments}
+    hidden = {"arguments": {**arguments, "name": name}}
+    if shape == "hoist":
+        return {"calls": [hidden]}
+    if shape == "batch":
+        return {"calls": [hidden, {"arguments": {"query": "lab", "timeframe": "7d"}}]}
+    if shape == "text":
+        return {"calls": json.dumps([hidden])[:-2] + "]"}
+    if shape == "wrapped":
+        return {"arguments": {"calls": [call]}}
+    if shape == "single":
+        return call
+    if shape == "object":
+        return {"calls": call}
+    return {"calls": [call]}
+
+
 def tool_call(body, name, arguments):
     """How the model calls a tool it may be offered only through tool search. With LAB_DIRECT=1
     it calls it by its own name anyway, as the local Qwen does (2026-10-29), for the check that a
@@ -132,7 +162,7 @@ def tool_call(body, name, arguments):
         return "", (name, arguments)
     bridge = next(t.get("function", {}) for t in body.get("tools") or [] if t.get("function", {}).get("name") == "tool_call")
     batched = "calls" in (bridge.get("parameters") or {}).get("properties", {})
-    return "", ("tool_call", {"calls": [{"name": name, "arguments": arguments}]} if batched else {"name": name, "arguments": arguments})
+    return "", ("tool_call", bridged(name, arguments) if batched else {"name": name, "arguments": arguments})
 
 
 def butler(messages, body):
@@ -314,7 +344,9 @@ class Handler(BaseHTTPRequestHandler):
                     continue
                 names = (names,) if isinstance(names, str) else names
                 name = next((n for n in names if n in offered), None)
-                if name:
+                if name and os.environ.get("LAB_SHAPE") == "direct" and "tool_call" in offered:
+                    planned = ("tool_call", {"calls": [{"name": name, "arguments": arguments}]})
+                elif name:
                     planned = (name, arguments)
                 elif os.environ.get("LAB_DIRECT") == "1" and "tool_call" in offered:
                     # By its own name though only the bridge offers it, as the local Qwen does.
@@ -325,7 +357,7 @@ class Handler(BaseHTTPRequestHandler):
                     # enough tools are on, and its `tool_call` takes one call, not a list of them.)
                     bridge = next(tool.get("function", {}) for tool in body.get("tools") or [] if tool.get("function", {}).get("name") == "tool_call")
                     batched = "calls" in (bridge.get("parameters") or {}).get("properties", {})
-                    planned = ("tool_call", {"calls": [{"name": names[0], "arguments": arguments}]} if batched else {"name": names[0], "arguments": arguments})
+                    planned = ("tool_call", bridged(names[0], arguments) if batched else {"name": names[0], "arguments": arguments})
                 break
             dm = re.search(r"lab:dm:([a-z0-9][a-z0-9_-]*)", just_said)
             if dm and planned is None and "message_agent" in offered:
@@ -341,7 +373,13 @@ class Handler(BaseHTTPRequestHandler):
                         text = f"[answered: {answers[0].get('user_response', '')}]"
                 except (ValueError, AttributeError):
                     pass
-                text = next((words for mark, words in PHONE_SAID if mark in said(messages[-1])), text)
+                # (Of every result this round: a batch's first answer needn't be its last, LAB_SHAPE=batch.)
+                results = []
+                for message in reversed(messages):
+                    if message.get("role") != "tool":
+                        break
+                    results.append(said(message))
+                text = next((words for result in reversed(results) for mark, words in PHONE_SAID if mark in result), text)
             elif "danger" in asked and "terminal" in offered:
                 os.makedirs(TARGET, exist_ok=True)
                 planned = ("terminal", {"command": f"rm -rf {TARGET}"})
