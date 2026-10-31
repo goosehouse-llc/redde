@@ -162,6 +162,22 @@ struct AheadOfYourDayTests {
         #expect(!host.made.contains(MorningIdeas.name))
         #expect(setup.status[.part(.morningIdeas)] == .skipped(AheadOfYourDay.when(MorningIdeas.job, hour: 8, minute: 0)))
     }
+
+    @Test func allOnOffersTurnOffWhichTakesTheJobsOffAndLeaveByOff() async throws {
+        let host = FakeHost()
+        host.existing = [try #require(CronJob(.object(["id": .string("j1"), "name": .string(MorningIdeas.name), "schedule": .string("0 8 * * *")])))]
+        host.leaveByWay = .driving
+        let setup = AheadOfYourDaySetup(host: host, defaults: defaults())
+        setup.picked = [.morningIdeas, .leaveBy]
+        await setup.load()
+        #expect(setup.everythingOn)
+        await setup.turnOff()
+        #expect(host.removed == [MorningIdeas.name])
+        #expect(!host.leaveByOn)
+        #expect(setup.status[.part(.morningIdeas)] == .done(String(localized: "Turned off.")))
+        #expect(!setup.everythingOn)
+        #expect(setup.phase == .ready)
+    }
 }
 
 /// A server whose plugin is 1.9.0 (`DemoPushPlugin`), with the jobs it is told of, over the
@@ -193,4 +209,13 @@ private final class FakeHost: AheadOfYourDayHost {
     var leaveByOn: Bool { leaveByWay != nil }
 
     func paired() -> Bool { false }
+
+    var removed: [String] = []
+
+    func removeJob(_ job: CronJob) async throws {
+        removed.append(job.name)
+        existing.removeAll { $0.id == job.id }
+    }
+
+    func turnOffLeaveBy() async { leaveByWay = nil }
 }

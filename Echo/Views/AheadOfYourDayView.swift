@@ -12,6 +12,7 @@ struct AheadOfYourDayView: View {
     @State private var setup = AheadOfYourDaySetup()
     @State private var pairing = false
     @State private var pairingByCode = false
+    @State private var confirmingOff = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.theme) private var theme
 
@@ -51,7 +52,9 @@ struct AheadOfYourDayView: View {
             .toolbar {
                 if setup.phase != .finished {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button(String(localized: "Not Now")) { dismiss() }.disabled(setup.phase == .running)
+                        // On already, there's nothing to put off: Done.
+                        Button(setup.everythingOn && setup.phase == .ready ? String(localized: "Done") : String(localized: "Not Now")) { dismiss() }
+                            .disabled(setup.phase == .running)
                     }
                 }
             }
@@ -214,6 +217,23 @@ struct AheadOfYourDayView: View {
     private var bottomBar: some View {
         VStack(spacing: 10) {
             switch setup.phase {
+            case .ready where setup.everythingOn:
+                // On already (asked 2026-10-30): no Turn On, and a way to turn it all off.
+                Button(role: .destructive) { confirmingOff = true } label: {
+                    Text("Turn Off…", comment: "Ahead of Your Day: the button when everything picked is on already")
+                        .font(.headline).frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(.red)
+                .confirmationDialog(String(localized: "Turn off Ahead of Your Day?", comment: "Ahead of Your Day: confirming Turn Off"),
+                                    isPresented: $confirmingOff, titleVisibility: .visible) {
+                    Button(String(localized: "Turn Off", comment: "Ahead of Your Day: confirming Turn Off, the button"), role: .destructive) {
+                        Task { await setup.turnOff() }
+                    }
+                } message: {
+                    Text("\(offNames) stop. The Redde plugin and your notification pairing stay.",
+                         comment: "Ahead of Your Day: what Turn Off does; the names of the features, e.g. Morning Ideas and Leave-By Alerts")
+                }
             case .loading, .ready:
                 Button { Task { await setup.turnOn() } } label: {
                     Group {
@@ -226,7 +246,8 @@ struct AheadOfYourDayView: View {
             case .running:
                 HStack(spacing: 10) {
                     ProgressView()
-                    Text("Setting up…", comment: "Ahead of Your Day: while Turn On works").foregroundStyle(.secondary)
+                    Text(setup.turningOff ? String(localized: "Turning off…", comment: "Ahead of Your Day: while Turn Off works")
+                         : String(localized: "Setting up…", comment: "Ahead of Your Day: while Turn On works")).foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, minHeight: 50)
             case .finished:
@@ -295,6 +316,11 @@ struct AheadOfYourDayView: View {
             case .skip: return nil
             }
         }
+    }
+
+    /// What Turn Off stops, by name: "Morning Ideas, Heads-Ups Before Events and Leave-By Alerts".
+    private var offNames: String {
+        ListFormatter.localizedString(byJoining: Part.allCases.filter { setup.situation.on.contains($0) }.map(title))
     }
 
     private var serverName: String? {

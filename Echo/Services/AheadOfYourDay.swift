@@ -166,6 +166,10 @@ protocol AheadOfYourDayHost: AnyObject {
     var leaveByOn: Bool { get }
     /// The pairings changed (the pairing sheet closed): paired now?
     func paired() -> Bool
+    /// Turn Off (asked 2026-10-30: "when it's already on, don't have the Turn On option anymore.
+    /// Allow for turn off if wanted"): a daily job taken off the server, Leave-By Alerts off.
+    func removeJob(_ job: CronJob) async throws
+    func turnOffLeaveBy() async
 }
 
 /// The real one: the active server's cron, the Redde plugin over the Dashboard, this device's
@@ -204,6 +208,15 @@ final class LiveAheadHost: AheadOfYourDayHost {
         PushService.shared.reload()
         return PushService.shared.pairings.contains(where: \.isPaired)
     }
+
+    func removeJob(_ job: CronJob) async throws {
+        try await CronBackend.current()?.delete(job.id)
+    }
+
+    func turnOffLeaveBy() async {
+        Settings.shared.leaveByAlerts = false
+        await LeaveByAlerts.shared.turned(on: false)
+    }
 }
 
 /// The sheet's state while it is open: what is picked, what is on, and each row's progress.
@@ -236,6 +249,8 @@ final class AheadOfYourDaySetup {
     var morningTime: Date
     var way: LeaveTime.Mode
     private(set) var phase = Phase.loading
+    /// The running phase is Turn Off's, not Turn On's.
+    private(set) var turningOff = false
     private(set) var situation = AheadOfYourDay.Situation()
     private(set) var status: [Row: Status] = [:]
     /// The jobs on already, by part, for their times.
@@ -267,6 +282,9 @@ final class AheadOfYourDaySetup {
     }
 
     var plan: AheadOfYourDay.Plan { AheadOfYourDay.plan(picked: picked, situation: situation) }
+
+    /// Everything picked is on already: the sheet offers Turn Off instead of Turn On.
+    var everythingOn: Bool { AheadOfYourDay.isOn(picked: picked, on: situation.on) }
 
     /// The bottom button's pairing, once the rest is done: a tap over the Dashboard.
     var offersPairing: Bool { phase == .finished && plan.pairing == .direct && !situation.paired }
@@ -369,6 +387,36 @@ final class AheadOfYourDaySetup {
         // 5. Notifications with Redde closed, as the plugin now stands: offered at the bottom, or said how.
         status[.pairing] = pairingStatus(self.plan.pairing)
         phase = .finished
+    }
+
+    // MARK: Turning off
+
+    /// What this sheet turned on, off again: each daily job it finds taken off the server, and
+    /// Leave-By Alerts off on this device. The plugin and the pairing stay (other things use them).
+    /// One that fails leaves the others off, and says why; then the sheet offers Turn On again.
+    func turnOff() async {
+        guard phase == .ready else { return }
+        phase = .running
+        turningOff = true
+        defer { turningOff = false }
+        status = [:]
+        for part in Part.allCases where situation.on.contains(part) {
+            status[.part(part)] = .working(nil)
+            if part.job != nil {
+                guard let job = found[part] else { continue }
+                do {
+                    try await host.removeJob(job)
+                    status[.part(part)] = .done(String(localized: "Turned off.", comment: "Ahead of Your Day: a feature Turn Off turned off"))
+                } catch {
+                    status[.part(part)] = .failed(error.localizedDescription)
+                }
+            } else {
+                await host.turnOffLeaveBy()
+                status[.part(part)] = .done(String(localized: "Turned off."))
+            }
+        }
+        await load()
+        phase = .ready
     }
 
     /// The pairing sheet closed: paired now, or still to do.
@@ -477,5 +525,9 @@ final class DemoAheadHost: AheadOfYourDayHost {
     var leaveByOn: Bool { leaveBy }
 
     func paired() -> Bool { false }
+
+    func removeJob(_ job: CronJob) async throws { try await Task.sleep(for: .milliseconds(300)) }
+
+    func turnOffLeaveBy() async { leaveBy = false }
 }
 #endif
