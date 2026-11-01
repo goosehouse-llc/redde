@@ -3,6 +3,12 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.14.3 (2026-11-01)
+
+- "Find me a battery for my Boosted Rev" is asking what to buy: "find me a …", "get me a …",
+  "where can I get a …" and "a replacement … for my …" get the purchase note (not a time, a photo,
+  a file, a restaurant or a recipe). Sol had searched the web for four minutes and answered with a table.
+
 ## 1.14.2 (2026-11-01)
 
 - More ways of asking what to buy get a purchase card: "buying options", "where to buy", "the

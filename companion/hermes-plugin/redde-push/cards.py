@@ -816,7 +816,13 @@ _ASKS_PURCHASE = re.compile(
     # 2026-11-01, asked of Sol: "Give me a few buying options for 5090 graphics cards. Look for low price options".
     r"|\bbuying (?:options?|guide|advice)\b|\b(?:options|places) to buy\b|\bwhere to buy\b"
     r"|\b(?:best|lowest|cheapest|low|good) (?:prices?|deals?)(?: (?:on|for)\b)?|\bdeals? on\b|\blow[- ]price(?:d)? (?:options?|ones?)\b"
-    r"|\bcheapest (?:place|way|option|one)s? to (?:buy|get)\b|\bprice (?:check|comparison)\b", re.IGNORECASE)
+    r"|\bcheapest (?:place|way|option|one)s? to (?:buy|get)\b|\bprice (?:check|comparison)\b"
+    # 2026-11-01, asked of Sol: "Find me a battery for my boosted rev" (a thing, not a time, a file or a photo).
+    r"|\b(?:find|get) me (?:a|an|some|the|new)\b(?! (?:new )?(?:time|slot|meeting|appointment|photos?|pictures?|files?|notes?|"
+    r"emails?|documents?|messages?|contacts?|address|number|song|playlist|podcast|video|article|link|way|route|job|answer|reason|"
+    r"summary|word|name|quote|recipe|hotel|flight|table|ride|spot|parking)\b)"
+    r"|\bwhere (?:can|do|should) (?:i|we) (?:get|find|order) (?:a|an|some|the|new|replacement)\b"
+    r"|\b(?:replacement|spare) (?!time\b)[a-z]+(?: [a-z]+)? for (?:my|the|our)\b", re.IGNORECASE)
 _NOT_SHOPPING = re.compile(
     r"\b(?:restaurants?|caf[eé]s?|coffee shops?|bars?|places? to (?:eat|go|stay)|hotels?|movies?|films?|shows?|series|podcasts?|"
     r"recipes?|dinner|lunch|breakfast|brunch|to eat|to drink|books?|novels?|apps?|routes?|ways?)\b", re.IGNORECASE)
