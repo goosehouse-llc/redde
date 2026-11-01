@@ -36,6 +36,14 @@ struct DailyJob {
         return ([prompt(option)] + more).joined(separator: "\n\n")
     }
 
+    /// How to read the calendar, for a job that does (2026-10-31: Morning Ideas and Heads-ups guessed
+    /// at the tool's arguments, `end_date`, and batched calls without names until Hermes stopped them).
+    static func calendarCall(_ what: String, _ arguments: String) -> String {
+        "Read the calendar with one call to your calendar tool for \(what) (a list_events tool takes \(arguments)), giving " +
+        "only the arguments its description lists. Call each tool on its own, never several batched in one tool_call, " +
+        "and don't use manage_connections: if the calendar can't be read, go on without it."
+    }
+
     static func time(of job: CronJob) -> (hour: Int, minute: Int)? {
         let parts = job.schedule.split(separator: " ")
         guard parts.count == 5, let minute = Int(parts[0]), let hour = Int(parts[1]) else { return nil }
@@ -72,10 +80,7 @@ enum MorningIdeas {
     static let name = "[redde] Morning ideas"
     static let prompt = """
         Morning ideas. Look at the user's day: today's calendar and reminders, anything waiting on the kanban \
-        board, and what they have asked you about lately. Read the calendar with one call to your calendar tool for \
-        today's events (a list_events tool takes {"date": "today", "days": 1}), giving only the arguments its \
-        description lists. Call each tool on its own, never several batched in one tool_call, and don't use \
-        manage_connections: if the calendar can't be read, go on without it. \
+        board, and what they have asked you about lately. \(DailyJob.calendarCall("today's events", #"{"date": "today", "days": 1}"#)) \
         Think of up to five things you could do for them today \
         that would save them time or that they would likely want done, and offer them with suggest_to_user, the \
         most useful first, each with a short reason why now. Don't do any of them yet, and don't offer what they \
@@ -123,7 +128,8 @@ enum HeadsUps {
     static let name = "[redde] Heads-ups"
     static func prompt(minutes: Int) -> String {
         """
-        Heads-ups, \(minutes) minutes before. Look at the user's calendar for the rest of today. For each event worth a heads-up (one with a \
+        Heads-ups, \(minutes) minutes before. Look at the user's calendar for the rest of today. \
+        \(DailyJob.calendarCall("today's events", #"{"date": "today", "days": 1}"#)) For each event worth a heads-up (one with a \
         place, other people, or something to bring or prepare; not all-day, not already started), call \
         heads_up_before with the event's title, when it starts (ISO 8601 with its UTC offset), minutes \(minutes), \
         where (its address, when it has one), and a few words on what to check then. Don't tell the user anything now: your answer here is not sent. If \
@@ -171,6 +177,7 @@ enum WeekAhead {
     static let prompt = """
         Week ahead for the user. Look at the coming week with the tools you have: their calendar for the seven days from \
         tomorrow, reminders and tasks coming due, kanban cards waiting on them, and anything they said they would do. \
+        \(DailyJob.calendarCall("the seven days from tomorrow", #"{"date": "tomorrow", "days": 7}"#)) \
         Your answer is what they read, drawn by Redde as a calendar, so write it in exactly this shape. First one line \
         on the week as a whole. Then, for each day with something on it, a line "## <weekday>, <month> <day>" \
         ("## Friday, Oct 30") and under it one line per thing, "- <start time> <what>" ("- 11:30 AM Planning \

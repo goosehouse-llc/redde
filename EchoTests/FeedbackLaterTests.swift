@@ -46,7 +46,13 @@ struct FeedbackLaterTests {
         #expect(MorningIdeas.prompt.contains(#"{"date": "today", "days": 1}"#))
         #expect(MorningIdeas.prompt.contains("never several batched in one tool_call"))
         #expect(MorningIdeas.prompt.contains("don't use manage_connections"))
-        #expect(FeedbackFold.wording >= 3, "jobs already on Hermes get the new wording")
+        #expect(HeadsUps.prompt(minutes: 30).contains(#"{"date": "today", "days": 1}"#) && HeadsUps.prompt(minutes: 30).hasPrefix("Heads-ups, 30 minutes before."))
+        let set = CronJob(.object(["id": .string("h"), "name": .string(HeadsUps.name), "schedule": .string("30 6 * * *"),
+                                   "prompt": .string(HeadsUps.prompt(minutes: 30))]))
+        #expect(set.map { HeadsUps.job.option(in: $0) } == 30, "the lead is still read back")
+        #expect(WeekAhead.prompt.contains(#"{"date": "tomorrow", "days": 7}"#))
+        #expect(!MorningIdeas.prompt.contains("\\("), "the wording is filled in, not left as code")
+        #expect(FeedbackFold.wording >= 4, "jobs already on Hermes get the new wording")
     }
 
     @Test func laterTimesMakeSense() throws {
