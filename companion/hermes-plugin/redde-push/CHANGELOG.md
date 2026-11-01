@@ -3,6 +3,18 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.14.2 (2026-11-01)
+
+- More ways of asking what to buy get a purchase card: "buying options", "where to buy", "the
+  best deals on", "lowest price for", "low price options". Asked of Sol for "a few buying options
+  for 5090 graphics cards", the turn got no purchase note, and the answer was a table.
+
+## 1.14.1 (2026-11-01)
+
+- A card asked for by name alone ("Home card", "show me the score card") is the whole answer: the
+  agent is told to show it and write nothing else, before, between or after its tool calls. Asked
+  for the home card, Home had listed every light and switch, then shown the card.
+
 ## 1.14.0 (2026-10-31)
 
 Purchase cards made real and current, whatever the model wrote. Asked for smart plugs, Home (a

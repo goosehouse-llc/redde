@@ -812,7 +812,11 @@ _ASKS_PURCHASE = re.compile(
     # 2026-10-31, asked of Home: "I'm looking to buy a smart plug …", "Give me recommendations to buy".
     r"|\b(?:looking|want|wanting|planning|hoping|need|going) to (?:buy|get|order|pick up)\b|\bthinking (?:of|about) (?:buying|getting)\b"
     r"|\b(?:shopping|in the market) for\b|\brecommendations?\b[^.?!]*\b(?:buy|get|purchase)\b"
-    r"|\b(?:buy|get|purchase)\b[^.?!]*\brecommend(?:ations?)?\b|\bwhat (?:\w+ ){0,3}(?:to|should i) buy\b", re.IGNORECASE)
+    r"|\b(?:buy|get|purchase)\b[^.?!]*\brecommend(?:ations?)?\b|\bwhat (?:\w+ ){0,3}(?:to|should i) buy\b"
+    # 2026-11-01, asked of Sol: "Give me a few buying options for 5090 graphics cards. Look for low price options".
+    r"|\bbuying (?:options?|guide|advice)\b|\b(?:options|places) to buy\b|\bwhere to buy\b"
+    r"|\b(?:best|lowest|cheapest|low|good) (?:prices?|deals?)(?: (?:on|for)\b)?|\bdeals? on\b|\blow[- ]price(?:d)? (?:options?|ones?)\b"
+    r"|\bcheapest (?:place|way|option|one)s? to (?:buy|get)\b|\bprice (?:check|comparison)\b", re.IGNORECASE)
 _NOT_SHOPPING = re.compile(
     r"\b(?:restaurants?|caf[eé]s?|coffee shops?|bars?|places? to (?:eat|go|stay)|hotels?|movies?|films?|shows?|series|podcasts?|"
     r"recipes?|dinner|lunch|breakfast|brunch|to eat|to drink|books?|novels?|apps?|routes?|ways?)\b", re.IGNORECASE)
@@ -985,6 +989,29 @@ def held_to(session: str, cards) -> str | None:
     return None
 
 
+#: The card alone, asked by name ("Home card", "show me the weather card", 2026-11-01): the card is
+#: the answer, with no write-up before or after it.
+_CARD_ALONE = re.compile(r"^\W*(?:(?:show|give|send)(?: me)?|can i (?:see|get|have))?\s*(?:the |my |a |our )?"
+                         r"(home|house|purchase|reminder|compare|score|recipe|delivery|flight|show|conversion|stock)(?: status)?"
+                         r"\s+cards?\W*$", re.IGNORECASE)
+ALONE = (" Asked for the card alone: the card is the whole answer. Write nothing else, before, between or after your tool "
+         "calls: no summary, no list, no 'let me…'.")
+
+
+def card_alone_note(text: str) -> str | None:
+    """The note for a card asked for by name alone, or None."""
+    # Notes the app or Hermes put on the message ("[…]") aren't what the person said.
+    m = _CARD_ALONE.match(re.sub(r"\[[^\]]*\]", " ", text).strip())
+    if not m:
+        return None
+    kind = "home" if m.group(1).lower() in ("home", "house") else m.group(1).lower()
+    if kind == "home":
+        return (f"[Redde: asked for the home card. Read the home with your Home Assistant tools (what is on, then the rest that "
+                f"matters, by area), then show it with {TOOL} as a 'home' card: " + SHAPES["home"] + "." + ALONE + "]")
+    return (f"[Redde: asked for a '{kind}' card. Look up what it needs with your tools first, then show it with {TOOL} as a "
+            f"'{kind}' card: " + SHAPES[kind] + "." + ALONE + "]")
+
+
 def turn_note(home: Path, message, platform: str = "", at: datetime | None = None, session: str = "") -> str | None:
     """For `pre_llm_call`: when the person asks the time or the weather, and cards are on, what
     their time is (in the zone their phone said) and to show the card before answering. Added to
@@ -992,6 +1019,9 @@ def turn_note(home: Path, message, platform: str = "", at: datetime | None = Non
     if platform not in REDDES or not offered(home):
         return None
     text = _text(message)
+    if "[Redde card " not in text and not gated(home) and (alone := card_alone_note(text)) is not None:
+        remember_ask(session, PURCHASE_NOTE if "'purchase' card" in alone else None)
+        return alone
     # A card's answer is the go-ahead itself, not a new ask.
     calendar_asked = bool(_ASKS_CALENDAR.search(text)) and not _PUTS_ON_CALENDAR.search(text)
     # "What's the weather tomorrow" is the weather's, unless the calendar is named too.

@@ -388,6 +388,26 @@ class ReviewNoteTests(unittest.TestCase):
                           "the answer to a review is the go-ahead")
 
 
+class CardAloneTests(unittest.TestCase):
+    """2026-11-01: "Home card" got a long write-up of every light, then the card. Asked for by name,
+    the card is the whole answer."""
+    def setUp(self):
+        self.home = Path(tempfile.mkdtemp())
+
+    def test_a_card_asked_for_by_name_is_the_whole_answer(self):
+        for asked in ("Home card", "home card.", "Show me the home card", "house status card", "Can I see the score card?",
+                      "Home card [Redde: the person is on CarPlay]"):
+            note = cards.turn_note(self.home, asked, platform="desktop") or ""
+            self.assertIn("card is the whole answer", note, asked)
+            self.assertIn("Write nothing else", note, asked)
+        self.assertIn("'home' card", cards.turn_note(self.home, "Home card", platform="desktop"))
+        self.assertIn("'score' card", cards.turn_note(self.home, "score card", platform="desktop"))
+        for other in ("Turn off the lights in the office.", "What's on my home screen card game list", "Make me a birthday card",
+                      "Home card [Redde card review] yes"):
+            self.assertNotIn("card is the whole answer", cards.turn_note(self.home, other, platform="desktop") or "", other)
+        self.assertIsNone(cards.turn_note(self.home, "Home card", platform="telegram"), "cards are drawn only in Redde")
+
+
 class ListNoteTests(unittest.TestCase):
     def setUp(self):
         self.home = Path(tempfile.mkdtemp())
@@ -500,9 +520,13 @@ class MoreCardsTests(unittest.TestCase):
 
     def test_more_ways_of_asking_what_to_buy(self):
         for asked in ("Give me recommendations to buy", "I'm looking to buy a smart plug", "I want to get a new kettle",
-                      "I'm shopping for a stroller", "What headphones to buy?", "Any recommendations for a TV to buy?"):
+                      "I'm shopping for a stroller", "What headphones to buy?", "Any recommendations for a TV to buy?",
+                      # 2026-11-01, asked of Sol, and no purchase card came:
+                      "Give me a few buying options for 5090 graphics cards. Look for low price iptions",
+                      "Where to buy a 5090?", "Find the best deals on a robot vacuum", "Lowest price for AirPods Pro?"):
             self.assertIn("asked what to buy", self.note(asked), asked)
-        for errand in ("Buy it", "Order the Wyze plug for me", "Add it to my cart"):
+        for errand in ("Buy it", "Order the Wyze plug for me", "Add it to my cart", "What are the price options for the hotel?",
+                       "Find the cheapest flight to Lisbon"):
             self.assertNotIn("asked what to buy", self.note(errand), errand)
 
     def test_asked_what_to_buy_a_review_card_is_sent_back(self):
