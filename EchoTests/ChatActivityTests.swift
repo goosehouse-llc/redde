@@ -148,4 +148,35 @@ struct ChatActivityTests {
         #expect(ChatMarks(kind: .working, unread: true).spoken == "Unread, Agent working")
         #expect(ChatMarks(kind: .needsYou, unread: false).spoken == "Needs you")
     }
+
+    /// 2026-11-01: Home ran a diagnostic Coder asked for (message_agent) and her tile stayed still:
+    /// that turn runs in a process of its own, in no list of turns. Her chat taking messages
+    /// between two readings of the roster is the sign; the end of a turn the lists knew of isn't.
+    @Test func aBotWhoseChatMovesWithNoKnownTurnIsWorking() {
+        let s = setup(.hermesServe)
+        let start = Date.now.addingTimeInterval(-20)
+        func home(_ at: Date) -> HermesBot { HermesBot(name: "ops", title: "Home", chatID: "home-chat", lastActive: at) }
+        s.activity.listed([home(start)], settings: s.settings)
+        #expect(s.activity.kind(of: home(start), open: s.conversation, settings: s.settings) == nil, "one reading says nothing")
+        let later = start.addingTimeInterval(15)
+        s.activity.listed([home(later)], settings: s.settings)
+        #expect(s.activity.kind(of: home(later), open: s.conversation, settings: s.settings) == .working)
+        s.activity.listed([home(later)], settings: s.settings)
+        #expect(s.activity.kind(of: home(later), open: s.conversation, settings: s.settings) == .working, "still, until a minute after")
+        let old = Date.now.addingTimeInterval(-ChatActivity.movingLive - 5)
+        s.activity.listed([home(old.addingTimeInterval(-15))], settings: s.settings)
+        s.activity.listed([home(old)], settings: s.settings)
+        #expect(s.activity.kind(of: home(old), open: s.conversation, settings: s.settings) == nil, "quiet for a minute: done")
+    }
+
+    @Test func theEndOfATurnTheListKnewIsNotABotAtWork() {
+        let s = setup(.hermesServe)
+        s.activity.showDemo(["home-chat": .working], settings: s.settings)
+        s.activity.showDemo([:], settings: s.settings)
+        func home(_ at: Date) -> HermesBot { HermesBot(name: "ops", title: "Home", chatID: "home-chat", lastActive: at) }
+        let now = Date.now
+        s.activity.listed([home(now.addingTimeInterval(-10))], settings: s.settings)
+        s.activity.listed([home(now)], settings: s.settings)
+        #expect(s.activity.kind(of: home(now), open: s.conversation, settings: s.settings) == nil)
+    }
 }

@@ -121,7 +121,7 @@ final class ChatActivity {
             listenForChanges(dashboard)
             guard let found = try? await dashboard.liveActivity() else { return false }
             guard key == settings.connectionKey else { return true }
-            live = found.sessions
+            setLive(found.sessions)
             if liveRooms != found.rooms { liveRooms = found.rooms }
             liveKey = key
             return true
@@ -162,7 +162,7 @@ final class ChatActivity {
                 }
             }
             guard key == settings.connectionKey else { return true }
-            live = found
+            setLive(found)
             if liveRooms != rooms { liveRooms = rooms }
             liveKey = key
             return reached
@@ -256,6 +256,37 @@ final class ChatActivity {
     /// least once a minute).
     nonisolated static let workerLive: TimeInterval = 150
 
+    /// A bot's chat that took new messages this lately, with no turn in it that the lists know of,
+    /// is the bot at work for another bot (`botMoved`).
+    nonisolated static let movingLive: TimeInterval = 60
+
+    /// Bots' chats' last activity as last read (`listed`), by "bots|connection|bot".
+    private var botStamps: [String: Date] = [:]
+    /// The last activity at which a bot's chat was seen to move between two readings. A bot asked
+    /// by another (message_agent) answers in a process of its own, which neither the Dashboard's
+    /// list of turns nor this phone knows of; its chat taking messages is the only sign
+    /// (2026-11-01: Home ran a diagnostic for Coder and her tile stayed still).
+    private var botMoved: [String: Date] = [:]
+    /// When a turn the lists knew of left them, by chat: the messages it wrote last are its end,
+    /// not a bot at work.
+    private var settled: [String: Date] = [:]
+
+    private func setLive(_ found: [String: Kind]) {
+        for chat in live.keys where found[chat] == nil { settled[chat] = .now }
+        live = found
+    }
+
+    /// A step of the open chat's reply under way that is messaging this bot right now.
+    private func messaging(_ bot: HermesBot, in conversation: Conversation) -> Bool {
+        guard conversation.isStreaming, let tools = conversation.messages.last?.tools else { return false }
+        let names = Set([bot.name, bot.handle, bot.title ?? ""].map { $0.lowercased() }).subtracting([""])
+        return tools.contains { tool in
+            guard tool.name == "message_agent", tool.status == .running,
+                  let target = tool.args?.firstMatch(of: /(?m)^target: @?([^\s]+)/)?.output.1 else { return false }
+            return names.contains(String(target).lowercased())
+        }
+    }
+
     /// What a bot's row shows of it: Hermes running a turn in its chat (the gateway's own list,
     /// which also says when one waits on the person), the bot's chat open here and at work, or
     /// one of its workers (a kanban card) heard from lately.
@@ -269,6 +300,12 @@ final class ChatActivity {
         if let kind = demoBots[bot.name] { return kind }
         #endif
         if let worker = bot.workerActive, Date.now.timeIntervalSince(worker) < Self.workerLive { return .working }
+        if messaging(bot, in: conversation) { return .working }
+        if conversation.bot?.profile != bot.name, let at = bot.lastActive, botMoved[Self.botsKey(settings) + "|" + bot.name] == at,
+           Date.now.timeIntervalSince(at) < Self.movingLive,
+           !(bot.chatID.flatMap { settled[$0] }.map { at.timeIntervalSince($0) < 5 } ?? false) {
+            return .working
+        }
         return nil
     }
 
@@ -287,6 +324,12 @@ final class ChatActivity {
     /// The bots as read: one seen for the first time counts as read up to its chat's last activity.
     func listed(_ bots: [HermesBot], settings: Settings = .shared) {
         let key = Self.botsKey(settings)
+        for bot in bots {
+            guard let at = bot.lastActive else { continue }
+            let stamp = key + "|" + bot.name
+            if let before = botStamps[stamp], at > before { botMoved[stamp] = at }
+            botStamps[stamp] = at
+        }
         let fresh = bots.filter { seen[key]?[$0.name] == nil }
         guard !fresh.isEmpty else { return }
         for bot in fresh { seen[key, default: [:]][bot.name] = bot.lastActive?.timeIntervalSince1970 ?? Date.now.timeIntervalSince1970 }
@@ -430,7 +473,7 @@ final class ChatActivity {
                   unreadRooms: Set<String> = [], settings: Settings = .shared) {
         demoRooms = rooms
         demoUnreadRooms = unreadRooms
-        live = marks
+        setLive(marks)
         liveKey = settings.connectionKey
         demoBots = bots
         demoUnreadBots = unreadBots
