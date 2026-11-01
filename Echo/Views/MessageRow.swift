@@ -139,12 +139,19 @@ struct MessageRow: View, Equatable {
                     InventedTurnNote(name: replySpeaker ?? settings.headerTitle, invented: invented.invented)
                 }
             } else if message.isSteer {
+                // Added to a reply under way: the person's words, a quieter bubble of theirs in the
+                // theme's colour. A rounded rectangle, never a capsule: 2026-11-01 a pasted
+                // paragraph came out a brown oval (orange at 12% on the dark page).
                 Label(message.text, systemImage: "arrow.turn.down.right")
                     .chatFont(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textColor.opacity(0.85))
                     .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.orange.opacity(0.12), in: .capsule)
+                    .padding(.vertical, 8)
+                    .background(theme.accent.opacity(0.12), in: .rect(cornerRadius: min(theme.bubbleRadius, 16)))
+                    .overlay(RoundedRectangle(cornerRadius: min(theme.bubbleRadius, 16)).strokeBorder(theme.accent.opacity(0.3), lineWidth: 1))
+                    .padding(.leading, 48)
+                    .contextMenu { userMenu }
+                    .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
             } else if hasTextBubble, promptStyled, let prompt = theme.promptPrefix {
                 Text("\(Text(prompt).bold())\(shownText)")
                     .font(theme.messageFont)
