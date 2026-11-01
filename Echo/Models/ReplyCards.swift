@@ -102,7 +102,31 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
             var pros: [String] = []
             var cons: [String] = []
             var specs: [Spec] = []
+            /// Whether its store has it now, as the store's page said (plugin 1.14.0 reads each
+            /// product's page before the card shows); nil, not known.
+            var availability: Availability?
+            /// When the plugin read its store's page (1.14.0): its price and stock are the page's.
+            var checked: Date?
         }
+
+        /// In stock or not, as a store's page says it: "in_stock" from the plugin, or schema.org's
+        /// words ("https://schema.org/OutOfStock"), or an agent's ("In stock", "Sold out").
+        nonisolated enum Availability: String, Codable, Equatable, Sendable, Hashable {
+            case inStock, outOfStock
+
+            init?(said: String) {
+                let plain = said.lowercased().split(separator: "/").last.map(String.init)?.filter(\.isLetter) ?? ""
+                switch plain {
+                case "instock", "available", "limitedavailability", "instoreonly", "onlineonly", "yes", "true": self = .inStock
+                case "outofstock", "soldout", "unavailable", "discontinued", "currentlyunavailable", "no", "false": self = .outOfStock
+                default:
+                    if plain.hasPrefix("only"), plain.hasSuffix("leftinstock") { self = .inStock } else { return nil }
+                }
+            }
+        }
+
+        /// When the newest of its products' pages was read: for the card's note when the plugin gave none.
+        var checked: Date? { items.compactMap(\.checked).max() }
 
         nonisolated struct Spec: Codable, Equatable, Sendable, Hashable {
             var name: String
@@ -841,6 +865,9 @@ nonisolated enum ReplyCards {
         product.pros = lines(value["pros"])
         product.cons = lines(value["cons"])
         product.specs = specs(value["specs"] ?? value["features"])
+        let stock = value["availability"] ?? value["in_stock"] ?? value["stock"]
+        product.availability = stock?.bool.map { $0 ? .inStock : .outOfStock } ?? text(stock).flatMap(ReplyCard.Purchase.Availability.init(said:))
+        product.checked = text(value["checked"]).flatMap { ReplyCard.Agenda.when($0)?.date }
         return product
     }
 

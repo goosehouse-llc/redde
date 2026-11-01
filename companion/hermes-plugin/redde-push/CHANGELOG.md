@@ -3,6 +3,33 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.14.0 (2026-10-31)
+
+Purchase cards made real and current, whatever the model wrote. Asked for smart plugs, Home (a
+local model with no web search) drew a purchase card of made-up products: dead Amazon links, no
+pictures, guessed prices. Now `redde_show` reads each product's page itself before the card shows
+(`products.py`), a few at once, about 4 seconds a page and 5 for the card at most:
+- A dead link (the site isn't found or refuses connections, a 400, 404 or 410, a page that says it
+  isn't there, or a redirect to the store's home or search page) is taken off its product, which
+  stays; the agent hears "links removed (dead): …".
+- A page that loads gives what is true now, from its schema.org Product data (also in `@graph` or
+  a list), its microdata, its Open Graph and product metas, and Amazon's own buy box: the price and
+  currency (the page's win over the agent's; a "was" price at or below it is dropped), whether it
+  is in stock (`availability`: `in_stock` or `out_of_stock`, new), the picture where the product
+  had none, the rating, reviews and brand where the agent gave none. Such a product is marked
+  `checked` (ISO time, new) and the card's note says "Prices checked Oct 31, 3:42 PM" (in the
+  phone's time zone, else UTC).
+- A store that won't show a program its page (401, 403, 429, 503, Amazon's Robot Check, a captcha)
+  leaves the product as the agent wrote it; the agent hears it is not checked. So does a page too
+  slow, broken or not a web page. With every link unreachable at once, this server is taken to be
+  offline and nothing is removed.
+- Only public web pages are read: http and https on ports 80 and 443, the name looked up and every
+  address it gives checked (no loopback, private, link-local, CGNAT 100.64/10 such as a tailnet,
+  multicast or reserved address, IPv4-mapped included), redirects followed by hand (three at most)
+  and checked again, the visit made to the address that was checked. No cookies, no keys, nothing
+  new to install. Findings are kept ten minutes by address. Other cards are untouched; the schema
+  is unchanged.
+
 ## 1.13.3 (2026-10-31)
 
 - More ways of asking what to buy give the purchase note: "looking to buy", "want to get",

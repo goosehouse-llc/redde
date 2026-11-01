@@ -43,7 +43,7 @@ struct PurchaseCard: View {
                     }
                     .padding(.top, -6)
                 }
-                if let note = card.note {
+                if let note = shown.note {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Image(systemName: "info.circle").accessibilityHidden(true)
                         Text(note)
@@ -71,7 +71,7 @@ struct PurchaseCard: View {
         return VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .top, spacing: 14) {
-                    CardPicture(url: item.image, symbol: item.symbol, side: 96)
+                    ProductPicture(image: item.image, page: item.url, symbol: item.symbol, side: 96)
                     VStack(alignment: .leading, spacing: 4) {
                         if let badge = item.badge { BadgeTag(text: badge, tone: item.tone) }
                         Text(item.product.name).chatFont(.headline).lineLimit(3).fixedSize(horizontal: false, vertical: true)
@@ -92,7 +92,11 @@ struct PurchaseCard: View {
                                 .padding(.horizontal, 7).padding(.vertical, 3)
                                 .background(Self.good.opacity(0.14), in: .capsule)
                         }
+                        Spacer(minLength: 0)
+                        if let stock = item.stock { StockTag(text: stock, inStock: item.inStock) }
                     }
+                } else if let stock = item.stock {
+                    StockTag(text: stock, inStock: item.inStock)
                 }
                 if let why = item.product.why { Text(why).chatFont(.subheadline).fixedSize(horizontal: false, vertical: true) }
             }
@@ -133,7 +137,7 @@ struct PurchaseCard: View {
         return VStack(alignment: .leading, spacing: 0) {
             Button { toggle(item.id) } label: {
                 HStack(spacing: 12) {
-                    CardPicture(url: item.image, symbol: item.symbol, side: 48)
+                    ProductPicture(image: item.image, page: item.url, symbol: item.symbol, side: 48)
                     VStack(alignment: .leading, spacing: 3) {
                         if let badge = item.badge { BadgeTag(text: badge, tone: item.tone, small: true) }
                         Text(item.product.name).chatFont(.subheadline, weight: .semibold).lineLimit(2)
@@ -149,6 +153,9 @@ struct PurchaseCard: View {
                     VStack(alignment: .trailing, spacing: 1) {
                         if let price = item.price { Text(verbatim: price).chatFont(.subheadline, weight: .semibold).monospacedDigit().lineLimit(1) }
                         if let was = item.was { Text(verbatim: was).chatFont(.caption).strikethrough().foregroundStyle(.secondary).monospacedDigit() }
+                        if let stock = item.stock {
+                            Text(stock).chatFont(.caption2, weight: .semibold).foregroundStyle(item.inStock ? Self.good : Self.bad).lineLimit(1)
+                        }
                     }
                     Image(systemName: "chevron.down")
                         .chatFont(.caption, weight: .semibold)
@@ -409,6 +416,9 @@ extension PurchaseCard {
             /// "rated 4.5 out of 5, 12,480 reviews": the stars, to VoiceOver.
             var spokenStars: String?
             var hasDetails: Bool
+            /// "In stock" or "Out of stock", as its store's page said (plugin 1.14.0).
+            var stock: String?
+            var inStock = false
         }
 
         var items: [Item]
@@ -419,6 +429,8 @@ extension PurchaseCard {
         var range: String?
         /// What the card is of ("headphones"), else a bag.
         var symbol: String
+        /// The line under it: the agent's (or the plugin's) note, else when its prices were checked.
+        var note: String?
 
         /// The pick first, then the rest as the agent gave them.
         static func order(_ card: ReplyCard.Purchase) -> [Int] {
@@ -448,14 +460,17 @@ extension PurchaseCard {
                 let spokenReviews = p.reviews.map { String(localized: "\($0.formatted(.number.locale(locale))) reviews", comment: "How many reviews a product has, read by VoiceOver") }
                 let spokenWas = was.map { String(localized: "was \($0)", comment: "A product's price before a sale, read by VoiceOver") }
                 let spokenStore = p.retailer.map { String(localized: "at \($0)", comment: "Where a product is sold, read by VoiceOver: at Best Buy") }
-                let spoken = [badge, p.name, p.brand, price, spokenWas, spokenRating, spokenReviews, spokenStore].compactMap(\.self).joined(separator: ", ")
+                let stock = p.availability.map(PurchaseCard.stock)
+                let spoken = [badge, p.name, p.brand, price, spokenWas, stock, spokenRating, spokenReviews, spokenStore].compactMap(\.self).joined(separator: ", ")
                 return Item(id: i, product: p, price: price, was: was, saving: saving, rating: p.rating, ratingText: ratingText,
                             facts: facts.isEmpty ? nil : facts.joined(separator: " · "), badge: badge, tone: Tone(badge ?? "", pick: p.pick),
                             symbol: PurchaseCard.symbol(for: [p.name, p.brand ?? ""].joined(separator: " "), else: title),
                             url: p.url.flatMap(URL.init(string:)), image: p.image.flatMap(URL.init(string:)), view: view, spoken: spoken,
                             spokenStars: [spokenRating, spokenReviews].compactMap(\.self).joined(separator: ", ").nilIfEmpty,
-                            hasDetails: !p.pros.isEmpty || !p.cons.isEmpty || !p.specs.isEmpty)
+                            hasDetails: !p.pros.isEmpty || !p.cons.isEmpty || !p.specs.isEmpty,
+                            stock: stock, inStock: p.availability == .inStock)
             }
+            note = card.note ?? card.checked.map { PurchaseCard.checkedNote($0, locale: locale) }
             lead = card.lead
             others = Self.order(card).dropFirst().map { $0 }
             let priced = card.items.compactMap { p in p.price.map { ($0, p.currency ?? home) } }
@@ -477,6 +492,38 @@ extension PurchaseCard {
             }
         }
         return "bag"
+    }
+
+    /// "In stock", "Out of stock".
+    static func stock(_ availability: ReplyCard.Purchase.Availability) -> String {
+        switch availability {
+        case .inStock: String(localized: "In stock", comment: "A product on a purchase card: its store has it now, as the store's page said")
+        case .outOfStock: String(localized: "Out of stock", comment: "A product on a purchase card: its store doesn't have it now, as the store's page said")
+        }
+    }
+
+    /// "Prices checked 3:42 PM" (today), "Prices checked Oct 30, 2026 at 3:42 PM": when the store
+    /// pages were read, for a card whose note doesn't say.
+    static func checkedNote(_ date: Date, now: Date = .now, locale: Locale = .current) -> String {
+        var calendar = Calendar.current
+        calendar.locale = locale
+        let when = calendar.isDate(date, inSameDayAs: now)
+            ? date.formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(locale))
+            : date.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened).locale(locale))
+        return String(localized: "Prices checked \(when)", comment: "A purchase card's note: when its products' store pages were read, e.g. Prices checked 3:42 PM")
+    }
+
+    /// A product's picture: its own; else, with Link previews on and its store page read
+    /// (`LinkPreviews`, the same read as its listing's), that page's own picture, never the
+    /// site's icon (a logo is no photo of the product); else none, and the card draws what it is.
+    enum Picture: Equatable {
+        case own(URL), listing(Data), drawn
+    }
+
+    static func picture(image: URL?, page: URL?, preview: LinkPreview?, linkPreviews: Bool) -> Picture {
+        if let image { return .own(image) }
+        guard linkPreviews, let page, let preview, preview.url == page, let photo = preview.pagePicture else { return .drawn }
+        return .listing(photo)
     }
 
     /// Words, and what they're drawn as: the first that a name has wins, so "headphone" comes
@@ -585,6 +632,45 @@ struct ListingLink: View {
         let path = url.path(percentEncoded: false)
         guard !site.isEmpty else { return url.absoluteString }
         return path.isEmpty || path == "/" ? site : site + (path.hasSuffix("/") ? String(path.dropLast()) : path)
+    }
+}
+
+/// A product's picture (`PurchaseCard.picture`): its own; else its store page's, read for its
+/// listing with Link previews on. Nothing is read with them off.
+private struct ProductPicture: View {
+    let image: URL?
+    let page: URL?
+    let symbol: String
+    let side: CGFloat
+    @State private var previews = LinkPreviews.shared
+    @State private var settings = Settings.shared
+
+    var body: some View {
+        let preview = page.flatMap { previews.preview(for: $0) }
+        let still: UIImage? = if case let .listing(data) = PurchaseCard.picture(image: image, page: page, preview: preview, linkPreviews: settings.linkPreviews) {
+            UIImage(data: data)
+        } else {
+            nil
+        }
+        CardPicture(url: image, symbol: symbol, side: side, still: still)
+            .task(id: settings.linkPreviews) {
+                if settings.linkPreviews, image == nil, let page { await previews.request(page) }
+            }
+    }
+}
+
+/// "In stock" in green, "Out of stock" in orange: small, by the price.
+private struct StockTag: View {
+    let text: String
+    let inStock: Bool
+
+    var body: some View {
+        let colour = inStock ? PurchaseCard.good : PurchaseCard.bad
+        HStack(spacing: 4) {
+            Circle().fill(colour).frame(width: 6, height: 6).accessibilityHidden(true)
+            Text(text).chatFont(.caption, weight: .semibold).foregroundStyle(colour).lineLimit(1)
+        }
+        .fixedSize()
     }
 }
 

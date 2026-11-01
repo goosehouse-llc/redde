@@ -322,6 +322,20 @@ timer, which is better, or about a game (in English), the plugin adds that card'
 that turn only, with the person's time for a reminder or a game; and the tool's error gives the
 shape when a card comes without it. None of these lines is added with cards off or for a gated agent.
 
+From 1.14.0 a purchase card is checked before it shows: `redde_show` reads each product's own page
+from the Hermes server (a few at once, about five seconds at most) and makes the card what the
+store says now. A dead link (the site isn't found, the page is gone, or it sends you to the store's
+home or search page) is taken off its product and the agent is told; a page that loads gives the
+product its current price and currency, whether it is in stock, its picture if it had none, and its
+rating and reviews if the agent gave none (from the page's schema.org Product data, its microdata,
+its Open Graph metas, or Amazon's own page), and the card's note says when the prices were
+checked. A store that won't show its page to a program (Amazon's Robot Check, a 403 or a 503) or a
+page too slow to answer leaves the product as the agent wrote it, and the agent hears it wasn't
+checked. Only public web pages are read: http or https on the usual ports, never an address on the
+Hermes machine, the home network or the tailnet, checked again at every redirect. Nothing is
+bought, and no cookies or keys are sent. In Redde, a product with no picture of its own shows its
+store page's picture, with Link previews on.
+
 From 1.13.0, six more the same way (asked 2026-10-31). A `recipe` card shows a recipe with its
 times, the servings its amounts are for (Redde scales them on the phone), ingredients to tick and
 steps. A `delivery` card shows a package's tracking, a `flight` card a flight or a trip's legs with

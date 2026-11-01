@@ -118,13 +118,18 @@ struct CardPicture: View {
     var corner: CGFloat
     /// The picture's pixels across at most.
     var pixels: CGFloat
+    /// A picture already at hand, shown while there is none from `url` (a purchase card's product
+    /// with no picture of its own: its store page's, from `LinkPreviews`). Only with Link previews on.
+    var still: UIImage?
     @State private var settings = Settings.shared
     @State private var image: UIImage?
     @Environment(\.theme) private var theme
     @Environment(\.colorScheme) private var scheme
 
-    init(url: URL?, symbol: String, width: CGFloat?, height: CGFloat, fill: Bool = false, corner: CGFloat? = nil, pixels: CGFloat = ProductImages.side) {
+    init(url: URL?, symbol: String, width: CGFloat?, height: CGFloat, fill: Bool = false, corner: CGFloat? = nil, pixels: CGFloat = ProductImages.side,
+         still: UIImage? = nil) {
         self.url = url
+        self.still = still
         self.symbol = symbol
         self.width = width
         self.height = height
@@ -135,14 +140,15 @@ struct CardPicture: View {
     }
 
     /// A product's square.
-    init(url: URL?, symbol: String, side: CGFloat) {
-        self.init(url: url, symbol: symbol, width: side, height: side)
+    init(url: URL?, symbol: String, side: CGFloat, still: UIImage? = nil) {
+        self.init(url: url, symbol: symbol, width: side, height: side, still: still)
     }
 
     var body: some View {
         let allowed = ProductImages.allowed(url, settings: settings)
+        let shown = (allowed != nil ? image : nil) ?? (settings.linkPreviews ? still : nil)
         ZStack {
-            if allowed != nil, let image {
+            if let image = shown {
                 if fill {
                     Color.clear.overlay { Image(uiImage: image).resizable().scaledToFill() }
                 } else {

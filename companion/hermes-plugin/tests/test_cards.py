@@ -5,10 +5,13 @@ what each will show or why it can't; weather and time cards are looked up (forec
 faked here: no test reaches the network); the phone turns them off and on."""
 import importlib.util
 import json
+import socket
 import sys
 import tempfile
+import time
 import unittest
 import urllib.parse
+from datetime import datetime, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent.parent / "redde-push"
@@ -731,3 +734,294 @@ class NewestCardsTests(unittest.TestCase):
         self.assertTrue(self.note("How's Apple stock doing?").endswith("]"))
         cards.slash(self.home, ["off"])
         self.assertIsNone(cards.turn_note(self.home, "What should I watch tonight?", platform="desktop"))
+
+
+# ---- 1.14.0: a purchase card's products checked against their own pages (products.py)
+
+products = plugin.products
+
+PRODUCT_PAGE = """<!doctype html><html><head><title>Kasa Smart Plug Mini EP10 | Example Store</title>
+<meta property="og:image" content="https://cdn.example.com/og/ep10.jpg">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Product", "name": "Kasa Smart Plug Mini 15A",
+ "brand": {"@type": "Brand", "name": "Kasa Smart"}, "image": ["https://cdn.example.com/ep10-front.jpg"],
+ "aggregateRating": {"@type": "AggregateRating", "ratingValue": "4.6", "reviewCount": "51234"},
+ "offers": {"@type": "Offer", "price": "24.99", "priceCurrency": "USD", "availability": "https://schema.org/InStock"}}</script>
+</head><body>Kasa</body></html>"""
+
+GRAPH_PAGE = """<html><head><title>Wyze Plug Outdoor</title><script type="application/ld+json">
+{"@context": "https://schema.org", "@graph": [{"@type": "WebSite", "name": "Example"}, {"@type": "BreadcrumbList"},
+ {"@type": ["Product"], "name": "Wyze Plug Outdoor", "image": {"@type": "ImageObject", "url": "/img/wyze-outdoor.png"},
+  "offers": [{"@type": "AggregateOffer", "lowPrice": 32.98, "highPrice": 40, "priceCurrency": "usd",
+              "availability": "http://schema.org/OutOfStock"}]}]}</script></head><body></body></html>"""
+
+META_PAGE = """<html><head><title>Govee Smart Plug 4-pack</title>
+<meta name="twitter:image" content="https://cdn.example.com/tw/govee.jpg">
+<meta property="og:image" content="https://cdn.example.com/og/govee.jpg">
+<meta property="product:price:amount" content="1.299,00"><meta property="product:price:currency" content="EUR">
+<meta property="product:availability" content="instock"></head><body></body></html>"""
+
+ROBOT_CHECK = """<html><head><title>Amazon.com</title></head><body><h4>Enter the characters you see below</h4>
+<p>Sorry, we just need to make sure you're not a robot.</p><form action="/errors/validateCaptcha"></form></body></html>"""
+
+HTML = {"content-type": "text/html; charset=utf-8"}
+
+
+class FakeWeb:
+    """The web for products.py, as pages by address ((status, headers, body), or an exception to
+    raise) and hosts by name (their addresses, or an exception). No network."""
+    def __init__(self):
+        self.pages, self.hosts, self.delay = {}, {}, 0.0
+        self.fetched = []
+
+    def resolve(self, host):
+        found = self.hosts.get(host, ["93.184.216.34"])
+        if isinstance(found, Exception):
+            raise found
+        return found
+
+    def fetch(self, url, addresses, deadline):
+        self.fetched.append((url, tuple(addresses)))
+        if self.delay:
+            time.sleep(self.delay)
+        page = self.pages.get(url, (404, HTML, b""))
+        if isinstance(page, Exception):
+            raise page
+        status, headers, body = page
+        return status, headers, body.encode() if isinstance(body, str) else body
+
+
+def page(body, status=200, headers=HTML):
+    return (status, headers, body)
+
+
+class ProductCheckTests(unittest.TestCase):
+    """From 1.14.0 (asked 2026-10-31: "this does not show pictures, and all of the links were dead.
+    I want it to be current"): each product's page is read before the card shows; a dead link is
+    taken off, a store that blocks programs is left alone, a page gives its price, stock, picture
+    and rating; only public web addresses are ever read."""
+    def setUp(self):
+        products._kept.clear()
+        self.web = FakeWeb()
+        self.real = (products.resolve, products.fetch_once, products.STEP_TIMEOUT)
+        products.resolve, products.fetch_once = self.web.resolve, self.web.fetch
+        self.at = datetime(2026, 10, 31, 19, 42, tzinfo=timezone.utc)
+
+    def tearDown(self):
+        products.resolve, products.fetch_once, products.STEP_TIMEOUT = self.real
+        products._kept.clear()
+
+    def check(self, items, tz=None, **card):
+        return products.check_card({"type": "purchase", "title": "Smart plugs", "items": items, **card},
+                                   cards.forecast.zone(tz), now=self.at)
+
+    def test_a_dead_link_is_taken_off_and_the_product_kept(self):
+        self.web.pages = {"https://www.amazon.com/dp/B0FAKE1234": page("<title>Page Not Found</title>", 404),
+                          "https://shop.example.com/gone": page("", 410),
+                          "https://shop.example.com/soft": page("<html><head><title>Sorry, this page is no longer available</title></head></html>"),
+                          "https://ok.example.com/ep10": page(PRODUCT_PAGE)}
+        self.web.hosts = {"made-up-store.example": socket.gaierror(socket.EAI_NONAME, "nodename nor servname provided")}
+        card, said = self.check([{"name": "Plug A", "url": "https://www.amazon.com/dp/B0FAKE1234", "price": 15},
+                                 {"name": "Plug B", "link": "https://shop.example.com/gone"},
+                                 {"name": "Plug C", "url": "https://made-up-store.example/plug"},
+                                 {"name": "Plug D", "url": "https://shop.example.com/soft"},
+                                 {"name": "Plug E", "url": "https://ok.example.com/ep10"}])
+        self.assertEqual([i["name"] for i in card["items"]], ["Plug A", "Plug B", "Plug C", "Plug D", "Plug E"], "every product stays")
+        for item in card["items"][:4]:
+            self.assertNotIn("url", item)
+            self.assertNotIn("link", item)
+        self.assertEqual(card["items"][4]["url"], "https://ok.example.com/ep10")
+        self.assertEqual(card["items"][0]["price"], 15, "a dead page changes nothing else")
+        self.assertIn("links removed (dead): Plug A (the page isn't there (404))", said)
+        self.assertIn("Plug C (the site isn't found)", said)
+        self.assertIn("Plug D (the page says it isn't there)", said)
+
+    def test_a_store_that_blocks_programs_is_left_unchecked_not_dead(self):
+        self.web.pages = {"https://www.amazon.com/dp/B0A": page(ROBOT_CHECK),
+                          "https://www.amazon.com/dp/B0B": page("To discuss automated access to Amazon data please contact us", 503),
+                          "https://www.bestbuy.com/p/1": page("", 403), "https://www.walmart.com/ip/2": page("", 429),
+                          "https://www.target.com/p/3": page("", 401)}
+        items = [{"name": n, "url": u, "price": 20} for n, u in zip("ABCDE", self.web.pages)]
+        card, said = self.check(items, note="Prices as I found them")
+        self.assertEqual(card["items"], items, "kept as the agent wrote them")
+        self.assertEqual(card["note"], "Prices as I found them", "nothing was checked: the note isn't touched")
+        self.assertIn("not checked: A (the store asks if it's a robot); B (the store doesn't show its page to a program (503))", said)
+        self.assertNotIn("removed", said)
+        self.assertIn("Don't present those prices as checked", said)
+
+    def test_a_page_gives_its_price_stock_picture_and_rating(self):
+        self.web.pages = {"https://ok.example.com/ep10": page(PRODUCT_PAGE)}
+        card, said = self.check([{"name": "Kasa EP10", "url": "https://ok.example.com/ep10", "price": 12.99, "was_price": 19.99,
+                                  "currency": "GBP"}], tz="America/New_York", note="Prices checked today")
+        item = card["items"][0]
+        self.assertEqual((item["price"], item["currency"]), (24.99, "USD"), "the page's price wins")
+        self.assertNotIn("was_price", item, "a 'was' below the real price is no sale")
+        self.assertEqual(item["availability"], "in_stock")
+        self.assertEqual(item["image"], "https://cdn.example.com/ep10-front.jpg", "the product's own picture before og:image")
+        self.assertEqual((item["rating"], item["reviews"], item["brand"]), (4.6, 51234, "Kasa Smart"))
+        self.assertEqual(item["checked"], "2026-10-31T19:42:00+00:00")
+        self.assertEqual(item["name"], "Kasa EP10", "the agent's name stays")
+        self.assertEqual(card["note"], "Prices checked Oct 31, 3:42 PM", "the person's time; the agent's own claim replaced")
+        self.assertIn("from their pages now: Kasa EP10 24.99 USD, in stock", said)
+        # What the agent gave stays where the page only fills gaps.
+        products._kept.clear()
+        card, _ = self.check([{"name": "Kasa", "url": "https://ok.example.com/ep10", "rating": 4.2, "reviews": 900,
+                               "image": "https://agent.example.com/k.jpg"}], note="Great for lights")
+        item = card["items"][0]
+        self.assertEqual((item["rating"], item["reviews"], item["image"]), (4.2, 900, "https://agent.example.com/k.jpg"))
+        self.assertEqual(card["note"], "Prices checked Oct 31, 7:42 PM UTC. Great for lights", "no zone known: UTC, and the agent's note kept")
+
+    def test_og_image_and_price_metas_when_there_is_no_product_data(self):
+        self.web.pages = {"https://shop.example.de/govee": page(META_PAGE)}
+        card, _ = self.check([{"name": "Govee", "url": "https://shop.example.de/govee", "image": "http://insecure.example.com/x.jpg"}])
+        item = card["items"][0]
+        self.assertEqual(item["image"], "https://cdn.example.com/og/govee.jpg", "og:image first; an http picture counts as none")
+        self.assertEqual((item["price"], item["currency"], item["availability"]), (1299.0, "EUR", "in_stock"))
+
+    def test_json_ld_inside_a_graph_and_lists(self):
+        self.web.pages = {"https://shop.example.com/wyze": page(GRAPH_PAGE)}
+        card, said = self.check([{"name": "Wyze Plug Outdoor", "url": "https://shop.example.com/wyze"}])
+        item = card["items"][0]
+        self.assertEqual((item["price"], item["currency"], item["availability"]), (32.98, "USD", "out_of_stock"))
+        self.assertEqual(item["image"], "https://shop.example.com/img/wyze-outdoor.png", "a relative picture made whole")
+        self.assertIn("out of stock", said)
+        found = products.read_page('<script type="application/ld+json">[{"@type": "Organization"}, {"@type": "Product", "name": "X", '
+                                   '"offers": {"@type": "Offer", "priceSpecification": {"price": "9.50", "priceCurrency": "CAD"}}}]</script>',
+                                   "https://a.example.com/x")
+        self.assertEqual((found["price"], found["currency"]), (9.5, "CAD"))
+
+    def test_microdata_and_amazons_own_page(self):
+        found = products.read_page('<div itemscope itemtype="https://schema.org/Product"><img itemprop="image" src="/p/x.jpg">'
+                                   '<span itemprop="price" content="49.00">$49</span><meta itemprop="priceCurrency" content="USD">'
+                                   '<link itemprop="availability" href="https://schema.org/OutOfStock"><span itemprop="ratingValue" '
+                                   'content="4.4"></span><span itemprop="reviewCount" content="120"></span></div>', "https://shop.example.com/x")
+        self.assertEqual(found, {"image": "https://shop.example.com/p/x.jpg", "price": 49.0, "currency": "USD", "availability": "out_of_stock",
+                                 "rating": 4.4, "reviews": 120})
+        # As Amazon's desktop page wrote it on 2026-10-31 (no schema.org data, no og:image).
+        amazon = ('<title>Amazon.com : Kasa Smart Plug HS103P4</title><span id="acrPopover" class="x" title="4.6 out of 5 stars"></span>'
+                  '<span id="acrCustomerReviewText" aria-label="150,794 Reviews" class="a-size-small">(150,794)</span>'
+                  '<div id="availability" class="a-section">   <span class="a-size-medium a-color-success"> In Stock </span></div>'
+                  '<img alt="Kasa" src="https://m.media-amazon.com/images/I/41JnNfpIRXL._SX342_.jpg" data-old-hires='
+                  '"https://m.media-amazon.com/images/I/51zoLDBO0wL._SL1105_.jpg" id="landingImage" data-a-dynamic-image="{}">'
+                  '<div class="aok-hidden twister-plus-buying-options-price-data">{"desktop_buybox_group_1":[{"displayPrice":"$29.99",'
+                  '"priceAmount":29.99,"currencySymbol":"$"}]}</div>')
+        self.assertEqual(products.read_page(amazon, "https://www.amazon.com/dp/B07RCNB2L3"),
+                         {"price": 29.99, "currency": "USD", "availability": "in_stock", "rating": 4.6, "reviews": 150794,
+                          "image": "https://m.media-amazon.com/images/I/51zoLDBO0wL._SL1105_.jpg"})
+        self.assertNotIn("price", products.read_page(amazon, "https://shop.example.com/x"), "Amazon's markup is read only on Amazon")
+        self.assertEqual(products.read_page('<meta property="og:image" content="https://cdn.shop.com/files/a.png?v=1&width=100">',
+                                            "https://shop.example.com/x")["image"], "https://cdn.shop.com/files/a.png?v=1&width=600",
+                         "a thumbnail asked for small is asked for large enough")
+
+    def test_only_public_web_addresses_are_read(self):
+        self.web.hosts = {"intranet.example.com": ["10.0.0.7"], "tail.example.com": ["100.101.102.103"],
+                          "sneaky.example.com": ["93.184.216.34", "192.168.1.2"], "v6.example.com": ["::1"]}
+        for url in ("http://127.0.0.1/admin", "http://10.1.2.3/", "https://192.168.1.10/", "http://100.64.0.1/", "http://100.127.255.254/",
+                    "http://[::1]/", "http://[::ffff:10.0.0.1]/", "http://[fe80::1]/", "http://169.254.169.254/latest/meta-data/",
+                    "http://224.0.0.1/", "http://0.0.0.0/", "http://240.0.0.1/", "https://intranet.example.com/p", "https://tail.example.com/p",
+                    "https://sneaky.example.com/p", "https://v6.example.com/p", "http://localhost/", "http://printer.local/",
+                    "file:///etc/passwd", "ftp://example.com/x", "https://example.com:8443/p", "http://example.com:22/",
+                    "https://user:pass@example.com/p", "gopher://example.com/"):
+            with self.assertRaises(products.Refused, msg=url):
+                products.target(url)
+            products._kept.clear()
+            self.assertEqual(products.look(url)["state"], "refused", url)
+        self.assertEqual(self.web.fetched, [], "nothing private was ever asked")
+        self.assertEqual(products.target("https://example.com/p"), ["93.184.216.34"])
+        self.assertEqual(products.target("http://example.com:80/p"), ["93.184.216.34"])
+        self.assertTrue(products.public("8.8.8.8") and products.public("2606:4700:4700::1111"))
+        self.assertFalse(products.public("::ffff:127.0.0.1") or products.public("64:ff9b::a00:1") or products.public("fc00::1"))
+        # A refused link isn't dead: it stays, unread.
+        card, said = self.check([{"name": "Router", "url": "http://192.168.1.1/"}])
+        self.assertEqual(card["items"][0]["url"], "http://192.168.1.1/")
+        self.assertIn("not checked: Router", said)
+        self.web.hosts["gone.example.com"] = socket.gaierror(socket.EAI_NONAME, "no such name")
+        with self.assertRaises(products.NotFound):
+            products.target("https://gone.example.com/p")
+
+    def test_redirects_are_followed_by_hand_and_checked_each_time(self):
+        self.web.hosts = {"evil.example.com": ["10.0.0.5"]}
+        self.web.pages = {"https://shop.example.com/a": page("", 302, {"location": "http://10.0.0.5/admin"}),
+                          "https://shop.example.com/b": page("", 301, {"location": "https://evil.example.com/x"}),
+                          "https://shop.example.com/c": page("", 301, {"location": "/products/c-2"}),
+                          "https://shop.example.com/products/c-2": page(PRODUCT_PAGE),
+                          "https://www.amazon.com/dp/B0OLD": page("", 301, {"location": "https://www.amazon.com/"}),
+                          "https://www.amazon.com/dp/B0SRCH": page("", 302, {"location": "/s?k=smart+plug"}),
+                          "https://loop.example.com/1": page("", 302, {"location": "/2"}), "https://loop.example.com/2": page("", 302, {"location": "/3"}),
+                          "https://loop.example.com/3": page("", 302, {"location": "/4"}), "https://loop.example.com/4": page("", 302, {"location": "/5"}),
+                          "https://loop.example.com/5": page(PRODUCT_PAGE)}
+        self.assertEqual(products.look("https://shop.example.com/a")["state"], "refused")
+        self.assertEqual(products.look("https://shop.example.com/b")["state"], "refused")
+        fetched = [u for u, _ in self.web.fetched]
+        self.assertNotIn("http://10.0.0.5/admin", fetched)
+        self.assertNotIn("https://evil.example.com/x", fetched)
+        followed = products.look("https://shop.example.com/c")
+        self.assertEqual((followed["state"], followed["found"]["price"]), ("page", 24.99))
+        self.assertEqual(self.web.fetched[-1][1], ("93.184.216.34",), "the visit goes to the address that was checked")
+        self.assertEqual(products.look("https://www.amazon.com/dp/B0OLD")["state"], "dead", "sent to the home page")
+        self.assertEqual(products.look("https://www.amazon.com/dp/B0SRCH")["state"], "dead", "sent to a search")
+        self.assertEqual(products.look("https://loop.example.com/1"), {"state": "unchecked", "why": "too many redirects"})
+        self.assertNotIn("https://loop.example.com/5", [u for u, _ in self.web.fetched], "three redirects at most")
+
+    def test_a_page_too_slow_or_broken_leaves_the_product_as_it_was(self):
+        self.web.pages = {"https://slow.example.com/p": TimeoutError("timed out"), "https://reset.example.com/p": ConnectionResetError(),
+                          "https://pdf.example.com/p": page("%PDF", 200, {"content-type": "application/pdf"}),
+                          "https://err.example.com/p": page("", 500), "https://ok.example.com/p": page(PRODUCT_PAGE)}
+        items = [{"name": "Slow", "url": "https://slow.example.com/p", "price": 10}, {"name": "Reset", "url": "https://reset.example.com/p"},
+                 {"name": "PDF", "url": "https://pdf.example.com/p"}, {"name": "Err", "url": "https://err.example.com/p"}]
+        card, said = self.check(items + [{"name": "Fine", "url": "https://ok.example.com/p"}])
+        self.assertEqual(card["items"][:4], items)
+        self.assertIn("Slow (too slow)", said)
+        self.assertNotIn("removed", said)
+        self.assertNotIn("checked", card["items"][0])
+
+    def test_the_whole_step_is_bounded(self):
+        products.STEP_TIMEOUT = 0.3
+        self.web.delay = 1.0
+        self.web.pages = {f"https://s{n}.example.com/p": page(PRODUCT_PAGE) for n in range(5)}
+        items = [{"name": f"P{n}", "url": f"https://s{n}.example.com/p", "price": 5} for n in range(5)]
+        started = time.monotonic()
+        card, said = self.check(items)
+        self.assertLess(time.monotonic() - started, 0.8, "the card doesn't wait for slow stores")
+        self.assertEqual(card["items"], items)
+        self.assertIn("P0 (too slow)", said)
+
+    def test_pages_are_read_in_parallel_once_and_kept_ten_minutes(self):
+        self.web.delay = 0.3
+        self.web.pages = {f"https://s{n}.example.com/p": page(PRODUCT_PAGE) for n in range(4)}
+        items = [{"name": f"P{n}", "url": f"https://s{n}.example.com/p"} for n in range(4)] + [{"name": "Again", "url": "https://s0.example.com/p"}]
+        started = time.monotonic()
+        card, _ = self.check(items)
+        self.assertLess(time.monotonic() - started, 0.9, "in parallel")
+        self.assertEqual(len(self.web.fetched), 4, "one read for a page named twice")
+        self.assertTrue(all(i["price"] == 24.99 for i in card["items"]))
+        self.check(items)
+        self.assertEqual(len(self.web.fetched), 4, "kept")
+        products._kept["https://s0.example.com/p"] = (time.time() - products.KEEP - 1, products._kept["https://s0.example.com/p"][1])
+        self.check(items[:1])
+        self.assertEqual(len(self.web.fetched), 5, "read again after ten minutes")
+
+    def test_with_every_store_unreachable_this_server_is_offline_and_nothing_is_dropped(self):
+        self.web.hosts = {"a.example.com": socket.gaierror(socket.EAI_NONAME, "x"), "b.example.com": socket.gaierror(socket.EAI_NONAME, "x")}
+        items = [{"name": "A", "url": "https://a.example.com/p"}, {"name": "B", "url": "https://b.example.com/p"}]
+        card, said = self.check(items)
+        self.assertEqual(card["items"], items)
+        self.assertIn("couldn't be reached from here", said)
+
+    def test_through_redde_show_only_purchase_cards_are_read(self):
+        self.web.pages = {"https://ok.example.com/ep10": page(PRODUCT_PAGE), "https://www.amazon.com/dp/B0FAKE": page("", 404)}
+        purchase = {"type": "purchase", "title": "Smart plugs", "items": [
+            {"name": "Kasa EP10", "url": "https://ok.example.com/ep10", "price": 9, "pick": True},
+            {"name": "Made up", "url": "https://www.amazon.com/dp/B0FAKE", "price": 11}]}
+        answer = json.loads(cards.handle({"cards": [purchase, PLACES]}))
+        drawn = answer["cards"][0]["items"]
+        self.assertEqual((drawn[0]["price"], drawn[0]["availability"]), (24.99, "in_stock"))
+        self.assertNotIn("url", drawn[1])
+        self.assertTrue(any("links removed (dead): Made up" in line for line in answer["said"]))
+        self.assertIn("Prices checked", answer["cards"][0]["note"])
+        self.assertEqual(answer["cards"][1], PLACES)
+        self.assertEqual(len(self.web.fetched), 2, "the places card's pages aren't read")
+        self.assertEqual(purchase["items"][1]["url"], "https://www.amazon.com/dp/B0FAKE", "the agent's own card isn't changed")
+        self.web.fetched.clear()
+        json.loads(cards.handle({"cards": [{"type": "purchase", "items": [{"name": "No link", "pick": True}]}]}))
+        self.assertEqual(self.web.fetched, [], "no links, nothing read")
+        self.assertLess(len(json.dumps(cards.SCHEMA)), 6000)

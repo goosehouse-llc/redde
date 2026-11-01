@@ -49,7 +49,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from . import forecast
+from . import forecast, products
 
 TOOL = "redde_show"
 TOOLSET = "redde_cards"
@@ -657,11 +657,18 @@ def _listed(args):
 
 
 def look_up(card, prefs: dict) -> tuple[dict, str | None, str | None]:
-    """A weather or a time card filled in from its place: the card, the line the agent answers
+    """A weather or a time card filled in from its place, and from 1.14.0 a purchase card's
+    products checked against their own pages (products.py): the card, the line the agent answers
     from, and what went wrong. Any other card comes back as it was."""
     if not isinstance(card, dict):
         return card, None, None
     kind = str(card.get("type") or "").lower()
+    if kind == "purchase":
+        try:
+            filled, line = products.check_card(card, forecast.zone(prefs.get("tz")), limit=MAX_PRODUCTS)
+            return filled, line, None
+        except Exception:    # never the card's undoing: as the agent wrote it
+            return card, None, None
     place = card.get("place") or card.get("location")
     place = " ".join(place.split()) if isinstance(place, str) else ""
     if kind == "weather" and place:

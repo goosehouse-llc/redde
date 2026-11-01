@@ -204,6 +204,67 @@ struct PurchaseCardTests {
         #expect(ProductImages.allowed(nil, settings: settings) == nil)
     }
 
+    /// Plugin 1.14.0 reads each product's store page before the card shows (2026-10-31): whether
+    /// it is in stock, and when the page was read, for the note when the plugin gave none.
+    @Test func inStockOrNotAndWhenThePagesWereRead() throws {
+        let card = try purchase(#"""
+        {"type": "purchase", "items": [
+          {"name": "A", "price": 24.99, "availability": "in_stock", "checked": "2026-10-31T19:42:00+00:00"},
+          {"name": "B", "availability": "out_of_stock", "checked": "2026-10-31T19:40:00+00:00"},
+          {"name": "C", "availability": "https://schema.org/OutOfStock"}, {"name": "D", "availability": "In Stock"},
+          {"name": "E", "stock": "Only 3 left in stock"}, {"name": "G", "availability": "Ships in 2 weeks"}]}
+        """#)
+        #expect(card.items.map(\.availability) == [.inStock, .outOfStock, .outOfStock, .inStock, .inStock, nil])
+        let more = try purchase(#"{"type": "purchase", "items": [{"name": "F", "in_stock": false}, {"name": "H", "availability": "Sold out", "checked": "yesterday"}]}"#)
+        #expect(more.items.map(\.availability) == [.outOfStock, .outOfStock])
+        let newest = try #require(ReplyCard.Agenda.when("2026-10-31T19:42:00+00:00")?.date)
+        #expect(card.items[0].checked == newest && more.items[1].checked == nil, "only an ISO time")
+        #expect(card.checked == newest, "the newest page read")
+        let shown = PurchaseCard.Shown(card, locale: us)
+        #expect(shown.items[0].stock == "In stock" && shown.items[0].inStock)
+        #expect(shown.items[1].stock == "Out of stock" && !shown.items[1].inStock)
+        #expect(shown.items[5].stock == nil)
+        #expect(shown.items[0].spoken == "A, $24.99, In stock", "VoiceOver hears it too")
+        #expect(shown.note?.hasPrefix("Prices checked ") == true, "no note: when the pages were read")
+        #expect(PurchaseCard.checkedNote(newest, now: newest.addingTimeInterval(60), locale: us).hasPrefix("Prices checked "))
+        #expect(!PurchaseCard.checkedNote(newest, now: newest.addingTimeInterval(60), locale: us).contains("2026"), "today: the time alone")
+        #expect(PurchaseCard.checkedNote(newest, now: newest.addingTimeInterval(3 * 86_400), locale: us).contains("Oct 31"))
+        let noted = PurchaseCard.Shown(try purchase(#"{"type": "purchase", "note": "Prices checked Oct 31, 3:42 PM", "items": [{"name": "A", "checked": "2026-10-31T19:42:00+00:00"}]}"#), locale: us)
+        #expect(noted.note == "Prices checked Oct 31, 3:42 PM", "the plugin's own note stands")
+        #expect(PurchaseCard.Shown(try purchase(#"{"type": "purchase", "items": [{"name": "A"}]}"#), locale: us).note == nil)
+    }
+
+    /// A product with no picture of its own shows its store page's, as its listing read it, with
+    /// Link previews on, never the site's icon, and never from a preview kept before it said which.
+    @Test func aProductWithNoPictureShowsItsStorePagesPicture() throws {
+        let page = try #require(URL(string: "https://shop.example.com/plug"))
+        let own = try #require(URL(string: "https://img.example.com/plug.jpg"))
+        let photo = Data([1, 2, 3])
+        let read = LinkPreview(url: page, title: "Plug", site: "shop.example.com", image: photo, imageSource: .page)
+        #expect(PurchaseCard.picture(image: nil, page: page, preview: read, linkPreviews: true) == .listing(photo))
+        #expect(PurchaseCard.picture(image: own, page: page, preview: read, linkPreviews: true) == .own(own), "its own picture first")
+        #expect(PurchaseCard.picture(image: nil, page: page, preview: read, linkPreviews: false) == .drawn, "nothing with Link previews off")
+        var icon = read
+        icon.imageSource = .icon
+        #expect(PurchaseCard.picture(image: nil, page: page, preview: icon, linkPreviews: true) == .drawn, "a logo is no photo of the product")
+        var unknown = read
+        unknown.imageSource = nil
+        #expect(PurchaseCard.picture(image: nil, page: page, preview: unknown, linkPreviews: true) == .drawn, "kept before it said: not known")
+        #expect(PurchaseCard.picture(image: nil, page: page, preview: nil, linkPreviews: true) == .drawn, "not read yet")
+        #expect(PurchaseCard.picture(image: nil, page: nil, preview: read, linkPreviews: true) == .drawn)
+        let elsewhere = LinkPreview(url: try #require(URL(string: "https://shop.example.com/other")), title: nil, site: "x", image: photo, imageSource: .page)
+        #expect(PurchaseCard.picture(image: nil, page: page, preview: elsewhere, linkPreviews: true) == .drawn, "another page's picture")
+
+        // A preview kept on disk before 2026-10-31 has no source: it reads, as not known.
+        let kept = try JSONEncoder().encode(LinkPreview(url: page, title: "Plug", site: "shop.example.com", image: photo))
+        var old = try #require(try JSONSerialization.jsonObject(with: kept) as? [String: Any])
+        old.removeValue(forKey: "imageSource")
+        let back = try JSONDecoder().decode(LinkPreview.self, from: JSONSerialization.data(withJSONObject: old))
+        #expect(back.image == photo && back.imageSource == nil && back.pagePicture == nil)
+        let again = try JSONDecoder().decode(LinkPreview.self, from: JSONEncoder().encode(read))
+        #expect(again == read && again.pagePicture == photo)
+    }
+
     @Test func cardsKeptBeforeStillReadAndThisOneRoundTrips() throws {
         let card = try purchase(#"{"type": "purchase", "items": [{"name": "A", "price": 5, "pros": ["x"], "specs": {"k": "v"}}]}"#)
         let again = try JSONDecoder().decode([ReplyCard].self, from: JSONEncoder().encode([ReplyCard.purchase(card)]))

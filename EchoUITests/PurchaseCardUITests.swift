@@ -21,6 +21,9 @@ final class PurchaseCardUITests: XCTestCase {
         let window = app.windows.firstMatch
         for _ in 0 ..< 4 where !app.text(containing: "Noise-cancelling headphones under").isHittable { window.swipeDown() }
         XCTAssertTrue(listing(app, "View at Best Buy").exists, "The pick can't be opened at its store")
+        // As plugin 1.14.0 read it from the store's page (2026-10-31).
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "In stock")).firstMatch.exists,
+                      "The pick doesn't say it's in stock")
         sleep(1)
         shot(app, "top")
 

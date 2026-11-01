@@ -830,7 +830,9 @@ extension Conversation {
 
     /// `-echo.demoCards purchase`: asked which headphones to get, the agent's 'purchase' card
     /// (asked 2026-10-30): its pick and three others, made-up products with made-up prices, their
-    /// pictures drawn on the phone (`ProductImages.demo`), never fetched.
+    /// pictures drawn on the phone (`ProductImages.demo`), never fetched. As plugin 1.14.0 sends it
+    /// (2026-10-31): the pick in stock and the earbuds out of stock, as their pages said, and the
+    /// Studio Pro with no picture of its own, so its listing's (`LinkPreviews.demo`) stands in.
     private func seedPurchaseDemo() {
         let json = #"""
         {"cards": [{"type": "purchase", "title": "Noise-cancelling headphones under $300",
@@ -838,6 +840,7 @@ extension Conversation {
           "items": [
             {"name": "Aurora Q5", "brand": "Northwind Audio", "price": 279, "was_price": 349, "currency": "USD", "rating": 4.7, "reviews": 12480,
              "retailer": "Best Buy", "url": "https://www.example.com/aurora-q5", "image": "https://images.example.com/aurora-q5.jpg",
+             "availability": "in_stock", "checked": "2026-10-31T15:42:00-04:00",
              "pick": "Best overall", "why": "The quietest of the four on planes and trains, with a 30-hour battery and a fit that stays comfortable all day.",
              "pros": ["Class-leading noise cancelling", "30-hour battery; 5 minutes gives 3 hours", "Light, soft ear cushions"],
              "cons": ["The case is bulky", "No wired USB-C audio"],
@@ -848,12 +851,13 @@ extension Conversation {
              "pros": ["Strong noise cancelling for the price", "Folds flat into a slim case"], "cons": ["Tinny calls outdoors", "Plastic hinges"],
              "specs": {"Battery": "40 h", "Weight": "238 g"}},
             {"name": "Studio Pro ANC", "brand": "Meridian", "price": 299, "rating": 4.4, "reviews": "2.1k", "retailer": "Target",
-             "url": "https://www.example.com/studio-pro-anc", "image": "https://images.example.com/studio-pro-anc.jpg", "badge": "Best sound",
+             "url": "https://www.example.com/studio-pro-anc", "badge": "Best sound",
              "why": "The richest sound here, with a little less hush on a plane.",
              "pros": ["Detailed, warm sound", "Replaceable ear pads"], "cons": ["Heaviest of the four", "22-hour battery"],
              "specs": {"Battery": "22 h", "Weight": "312 g", "Codecs": "AAC, LDAC"}},
             {"name": "Drift ANC Earbuds", "brand": "Kestrel", "price": 129, "was_price": 159, "rating": 4.3, "reviews": 5402, "retailer": "Walmart",
              "url": "https://www.example.com/drift-anc-earbuds", "image": "https://images.example.com/drift-buds.jpg", "badge": "Budget pick",
+             "availability": "out_of_stock",
              "why": "Earbuds, if over-ears are too warm: good cancelling for the size.",
              "pros": ["Small, light case", "Good fit with three tip sizes"], "cons": ["8-hour battery per charge"],
              "specs": {"Battery": "8 h (32 h with case)", "Water": "IPX4"}}]}]}

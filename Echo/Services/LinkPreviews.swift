@@ -21,6 +21,18 @@ nonisolated struct LinkPreview: Codable, Equatable, Sendable {
     var site: String
     /// A JPEG of the page's picture, or its icon, no more than 240 pixels across.
     var image: Data?
+    /// Where `image` came from: the page's own picture or its icon (2026-10-31, so a store page's
+    /// photo can stand in for a product's, never its logo). Nil in a preview kept before it was
+    /// told, which counts as not known.
+    var imageSource: ImageSource?
+
+    nonisolated enum ImageSource: String, Codable, Sendable {
+        case page, icon
+    }
+
+    /// The page's own picture, never its icon: what a purchase card shows for a product with no
+    /// picture of its own.
+    var pagePicture: Data? { imageSource == .page ? image : nil }
 }
 
 /// The cards' pages, fetched by the phone itself (LinkPresentation), once each: kept in memory
@@ -110,12 +122,15 @@ final class LinkPreviews {
             return nil
         }
         var image: Data?
-        for item in [metadata.imageProvider, metadata.iconProvider].compactMap({ $0 }) where image == nil {
+        var source: LinkPreview.ImageSource?
+        for (item, from) in [(metadata.imageProvider, LinkPreview.ImageSource.page), (metadata.iconProvider, .icon)] where image == nil {
+            guard let item else { continue }
             image = await thumbnail(from: item)
+            if image != nil { source = from }
         }
         let site = (metadata.url ?? url).host(percentEncoded: false) ?? url.absoluteString
         let title = metadata.title?.trimmingCharacters(in: .whitespacesAndNewlines)
-        return LinkPreview(url: url, title: title?.isEmpty == false ? title : nil, site: Self.site(site), image: image)
+        return LinkPreview(url: url, title: title?.isEmpty == false ? title : nil, site: Self.site(site), image: image, imageSource: source)
     }
 
     /// "www.example.com" reads as "example.com".
@@ -151,14 +166,14 @@ final class LinkPreviews {
         if let title = listings[url.lastPathComponent] {
             let picture = await ProductImages.demo(URL(string: "https://images.example.com/\(url.lastPathComponent).jpg")!)
             return LinkPreview(url: url, title: title, site: site(url.host() ?? "example.com"),
-                               image: picture.flatMap(UIImage.init(data:))?.jpegData(compressionQuality: 0.8))
+                               image: picture.flatMap(UIImage.init(data:))?.jpegData(compressionQuality: 0.8), imageSource: .page)
         }
         let picture = UIGraphicsImageRenderer(size: CGSize(width: 120, height: 120)).image { ctx in
             UIColor(red: 0.30, green: 0.55, blue: 0.95, alpha: 1).setFill()
             ctx.fill(CGRect(x: 0, y: 0, width: 120, height: 120))
         }
         return LinkPreview(url: url, title: "Falls Loop trail: conditions and parking", site: site(url.host() ?? "example.com"),
-                           image: picture.jpegData(compressionQuality: 0.8))
+                           image: picture.jpegData(compressionQuality: 0.8), imageSource: .page)
     }
     #endif
 }
