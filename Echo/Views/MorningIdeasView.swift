@@ -72,7 +72,11 @@ enum MorningIdeas {
     static let name = "[redde] Morning ideas"
     static let prompt = """
         Morning ideas. Look at the user's day: today's calendar and reminders, anything waiting on the kanban \
-        board, and what they have asked you about lately. Think of up to five things you could do for them today \
+        board, and what they have asked you about lately. Read the calendar with one call to your calendar tool for \
+        today's events (a list_events tool takes {"date": "today", "days": 1}), giving only the arguments its \
+        description lists. Call each tool on its own, never several batched in one tool_call, and don't use \
+        manage_connections: if the calendar can't be read, go on without it. \
+        Think of up to five things you could do for them today \
         that would save them time or that they would likely want done, and offer them with suggest_to_user, the \
         most useful first, each with a short reason why now. Don't do any of them yet, and don't offer what they \
         have already asked you to do. If nothing is worth offering, answer NOTHING NEW and stop. If suggest_to_user \

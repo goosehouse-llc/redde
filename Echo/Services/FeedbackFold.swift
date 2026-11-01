@@ -12,8 +12,9 @@ enum FeedbackFold {
     private static let owedKey = "feedbackOwed"
     /// Bumped when Redde words those jobs anew (2026-10-29: ideas written out when the tool can't be
     /// called, the week ahead in a shape drawn as a calendar), so the jobs already on Hermes are said
-    /// again once, the next time Redde comes forward.
-    static let wording = 2
+    /// again once, the next time Redde comes forward. 3 (2026-10-31): Morning Ideas reads the calendar
+    /// with one plain call (its 10-31 run guessed at arguments and batched calls, and stopped).
+    static let wording = 3
     private static let wordingKey = "dailyJobsWording"
     private static var pending: Task<Void, Never>?
 

@@ -39,6 +39,16 @@ struct FeedbackLaterTests {
         #expect(FeedbackFold.jobs.allSatisfy { !$0.heard.isEmpty })
     }
 
+    /// 2026-10-31: Morning Ideas guessed the calendar tool's arguments ("end_date") and batched calls
+    /// without names until Hermes stopped it; its prompt now says how, and the jobs on Hermes are said
+    /// again with it.
+    @Test func morningIdeasSaysHowToReadTheCalendar() {
+        #expect(MorningIdeas.prompt.contains(#"{"date": "today", "days": 1}"#))
+        #expect(MorningIdeas.prompt.contains("never several batched in one tool_call"))
+        #expect(MorningIdeas.prompt.contains("don't use manage_connections"))
+        #expect(FeedbackFold.wording >= 3, "jobs already on Hermes get the new wording")
+    }
+
     @Test func laterTimesMakeSense() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "America/New_York")!
