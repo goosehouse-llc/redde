@@ -79,4 +79,24 @@ struct ProactiveQuietTests {
         #expect(WatchedPlace.nearestRadius(800, us: true) == 804.672, "a metric half mile, in US units")
         #expect(WatchedPlace(name: "Gym", latitude: 0, longitude: 0).radius == 200)
     }
+
+    /// Each crossing is a line in Agent Activity (asked 2026-10-31): when iOS saw it, how long
+    /// before Redde was woken, the circle, and what came of it.
+    @Test func aCrossingIsALineInAgentActivity() {
+        let home = WatchedPlace(name: "Home", latitude: 40.7, longitude: -74, radius: 804.672,
+                                arrive: PlaceAction(profile: "ops", message: "Turn on the hall light."))
+        let saw = Date(timeIntervalSince1970: 1_793_480_000)
+        let line = Places.crossing(home, arrived: true, reported: saw, woken: saw.addingTimeInterval(42), profile: "ops",
+                                   outcome: "Your agent was told and answered.", failed: false)
+        #expect(line.kind == .place && line.profile == "ops" && line.at == saw)
+        #expect(line.title.contains("Home"))
+        #expect(line.detail.contains("42"), "the gap is iOS's, and shown")
+        #expect(line.detail.contains("Your agent was told and answered."))
+        let quick = Places.crossing(home, arrived: false, reported: saw, woken: saw.addingTimeInterval(1), profile: "ops",
+                                    outcome: "x", failed: false)
+        #expect(!quick.detail.contains(" s later"), "a woken-at-once crossing has no gap to show")
+        #expect(quick.id != line.id || quick.title != line.title)
+        let entries = AgentActivity.merge(jobs: [], runs: [:], tasks: [], notes: [line], now: saw.addingTimeInterval(60))
+        #expect(entries.first?.source == .place)
+    }
 }

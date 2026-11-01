@@ -6,7 +6,8 @@ import Foundation
 /// too, for Agent Activity, which sets it beside what Hermes says its jobs and the board did. Two
 /// weeks, at most `most`.
 nonisolated struct AgentActivityNote: Codable, Identifiable, Equatable, Sendable {
-    enum Kind: String, Codable, Sendable { case ideas, watch, routine, brief, call }
+    /// `place`: a Place's circle crossed, as iOS reported it, and what came of it (2026-10-31).
+    enum Kind: String, Codable, Sendable { case ideas, watch, routine, brief, call, place }
     var id: String
     var kind: Kind
     /// The agent's profile ("default", the main one) and what it is called.
@@ -61,8 +62,13 @@ nonisolated struct AgentActivityNote: Codable, Identifiable, Equatable, Sendable
     @discardableResult
     static func take(_ note: PushNote, now: Date = .now, in defaults: UserDefaults? = NeedsYou.shared) -> Bool {
         guard let made = made(from: note, now: now) else { return false }
+        add(made, now: now, in: defaults)
+        return true
+    }
+
+    /// Kept, newest first; one with the same id is replaced (a crossing, then what came of it).
+    static func add(_ made: AgentActivityNote, now: Date = .now, in defaults: UserDefaults? = NeedsYou.shared) {
         let before = all(in: defaults, now: now).filter { $0.id != made.id }
         defaults?.set(try? JSONEncoder().encode(Array(([made] + before).prefix(most))), forKey: key)
-        return true
     }
 }

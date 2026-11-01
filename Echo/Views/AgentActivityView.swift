@@ -7,7 +7,7 @@ import SwiftUI
 /// offered, a watch's change, a briefing, a call: `AgentActivityNote`), and a run's answer where it
 /// has one. A watch that looked and found nothing is one line a day, not one a look.
 nonisolated struct ActivityEntry: Identifiable, Equatable, Sendable {
-    enum Source: String, Equatable, Sendable { case job, watch, brief, ideas, call, finished, blocked }
+    enum Source: String, Equatable, Sendable { case job, watch, brief, ideas, call, place, finished, blocked }
     var id: String
     var source: Source
     /// The agent's profile ("default", the main one).
@@ -24,6 +24,7 @@ nonisolated struct ActivityEntry: Identifiable, Equatable, Sendable {
         case .brief: "doc.text"
         case .ideas: "lightbulb"
         case .call: "phone"
+        case .place: "mappin.and.ellipse"
         case .finished: "checkmark.rectangle"
         case .blocked: "exclamationmark.octagon"
         }
@@ -83,11 +84,12 @@ nonisolated enum AgentActivity {
                                              detail: String(localized: "Looked \(looks.count) times: nothing new"), at: looks.at))
             }
         }
-        // What only the phone knows: ideas, calls, and notes no listed job accounts for.
-        for left in told + notes.filter({ [.ideas, .call].contains($0.kind) }) where left.at >= since {
+        // What only the phone knows: ideas, calls, places crossed, and notes no listed job accounts for.
+        for left in told + notes.filter({ [.ideas, .call, .place].contains($0.kind) }) where left.at >= since {
             let source: ActivityEntry.Source = switch left.kind {
             case .ideas: .ideas
             case .call: .call
+            case .place: .place
             case .watch: .watch
             case .brief: .brief
             case .routine: .job

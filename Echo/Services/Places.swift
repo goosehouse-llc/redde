@@ -206,8 +206,8 @@ final class Places: NSObject, CLLocationManagerDelegate {
                 for try await event in await monitor.events {
                     guard let self, let id = UUID(uuidString: event.identifier) else { continue }
                     switch event.state {
-                    case .satisfied: await crossed(id, now: true)
-                    case .unsatisfied: await crossed(id, now: false)
+                    case .satisfied: await crossed(id, now: true, reported: event.date)
+                    case .unsatisfied: await crossed(id, now: false, reported: event.date)
                     default: continue
                     }
                 }
@@ -217,19 +217,53 @@ final class Places: NSObject, CLLocationManagerDelegate {
 
     /// A place's circle crossed, or its side learned. Only a change from a known side is an
     /// arrival or a leaving.
-    private func crossed(_ id: UUID, now isInside: Bool) async {
+    private func crossed(_ id: UUID, now isInside: Bool, reported: Date = .now) async {
         let before = inside[id]
         inside[id] = isInside
         store()
-        guard let before, before != isInside, let place = places.first(where: { $0.id == id }),
-              let (text, note) = place.message(arrived: isInside) else { return }
-        await fire(place, arrived: isInside, text: text, note: note)
+        guard let before, before != isInside, let place = places.first(where: { $0.id == id }) else { return }
+        // In Agent Activity (asked 2026-10-31, an arrival half a mile out that came only at the
+        // door): when iOS saw the crossing, when Redde was woken for it, and what came of it.
+        let woken = Date.now
+        let action = isInside ? place.arrive : place.leave
+        let record = { (outcome: String, failed: Bool) in
+            AgentActivityNote.add(Self.crossing(place, arrived: isInside, reported: reported, woken: woken,
+                                                profile: action?.profile ?? "default", outcome: outcome, failed: failed))
+        }
+        guard let (text, note) = place.message(arrived: isInside) else {
+            record(String(localized: "No message is set for this, so nobody was told.",
+                          comment: "Agent Activity: a Place crossed with no When I Arrive / When I Leave message"), false)
+            return
+        }
+        record(String(localized: "Telling your agent…", comment: "Agent Activity: a Place crossed, its message on its way"), false)
+        let answered = await fire(place, arrived: isInside, text: text, note: note)
+        record(answered ? String(localized: "Your agent was told and answered.", comment: "Agent Activity: a Place crossed, its message answered")
+                        : String(localized: "Your agent was told; its answer goes on in its chat.",
+                                 comment: "Agent Activity: a Place crossed, the woken app's time ran out before the answer"), false)
+    }
+
+    /// A crossing as Agent Activity lists it: "Arrived at Home", and when iOS saw it, when Redde
+    /// was woken (a gap is iOS's), the circle's size, and what came of it.
+    static func crossing(_ place: WatchedPlace, arrived: Bool, reported: Date, woken: Date, profile: String,
+                                     outcome: String, failed: Bool) -> AgentActivityNote {
+        let title = arrived ? String(localized: "Arrived at \(place.name)", comment: "Agent Activity: a Place's circle entered")
+                            : String(localized: "Left \(place.name)", comment: "Agent Activity: a Place's circle left")
+        let saw = reported.formatted(date: .omitted, time: .standard)
+        let lag = max(0, Int(woken.timeIntervalSince(reported).rounded()))
+        let size = MeasureUnits.distance(place.radius)
+        let when = lag >= 5
+            ? String(localized: "iOS saw it at \(saw); Redde was woken \(lag) s later.", comment: "Agent Activity: when iOS reported a Place crossing, and how long before Redde ran")
+            : String(localized: "iOS saw it at \(saw).", comment: "Agent Activity: when iOS reported a Place crossing")
+        let circle = String(localized: "Circle: \(size).", comment: "Agent Activity: a Place's How Near, e.g. Circle: 0.5 mi.")
+        return AgentActivityNote(id: "place/\(place.id.uuidString)/\(Int(reported.timeIntervalSince1970))", kind: .place, profile: profile,
+                                 agent: "", title: title, detail: [when, circle, outcome].joined(separator: " "), at: reported, failed: failed)
     }
 
     /// Tells the bot, waiting as long as iOS lets a woken app (about half a minute): its answer
     /// as a notification, or, cut short, left to go on in its chat.
-    private func fire(_ place: WatchedPlace, arrived: Bool, text: String, note: String) async {
-        guard let action = arrived ? place.arrive : place.leave else { return }
+    @discardableResult
+    private func fire(_ place: WatchedPlace, arrived: Bool, text: String, note: String) async -> Bool {
+        guard let action = arrived ? place.arrive : place.leave else { return false }
         let background = BackgroundTime()
         background.id = UIApplication.shared.beginBackgroundTask(withName: "redde.place") { background.end() }
         defer { background.end() }
@@ -246,7 +280,9 @@ final class Places: NSObject, CLLocationManagerDelegate {
         timer.cancel()
         if let (name, said) = answer, !said.isEmpty {
             await BotTrigger.post(said, from: name, profile: action.profile)
+            return true
         }
+        return false
     }
 }
 #endif
