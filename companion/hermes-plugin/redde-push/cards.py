@@ -116,7 +116,7 @@ SCHEMA = {
     "description": (
         "Shows cards under your reply in the Redde app: a map (pins or a route), places, the weather, the time. Use it "
         "for where something is, directions, places nearby, the weather or the time. Weather and time look themselves "
-        "up: give just the 'place' (a city, e.g. 'Orlando, FL'; none for the time means the person's own), call this "
+        "up: give just the 'place' (a city, e.g. 'Orlando, FL'; none means theirs), call this "
         "before you answer, and answer from what it returns ('said'), never from memory or a guess: your clock may be "
         "in another time zone. For a map or places, give what you found: coordinates, else a name and street address. "
         "Up to 4 cards. Then answer in a sentence or two; don't read the cards out. "
@@ -126,7 +126,7 @@ SCHEMA = {
         "'kind'). Their answer is their next message. "
         "'agenda': calendar events by day ('events' as your calendar tool gave them: 'title', 'start' as ISO with its "
         "offset or a date for all day, 'end', 'location', 'calendar'; 'date' or 'dates' asked about, so a free day "
-        "shows). Also 'purchase' (products to buy), 'home' (smart-home devices), 'reminder' (a reminder, timer, alarm "
+        "shows). Also 'purchase' (whenever you suggest things to buy: a card, never a table), 'home' (smart-home devices), 'reminder' (a reminder, timer, alarm "
         "or scheduled message you set), 'compare' (2-4 things side by side), 'score' (games), 'recipe', 'delivery' (a "
         "package), 'flight', 'show' (films, series), 'conversion' (units, currency), 'stock': their fields are in the "
         "turn's note, or this tool's error. Look everything up first; never make anything up."),
@@ -822,7 +822,11 @@ _ASKS_PURCHASE = re.compile(
     r"emails?|documents?|messages?|contacts?|address|number|song|playlist|podcast|video|article|link|way|route|job|answer|reason|"
     r"summary|word|name|quote|recipe|hotel|flight|table|ride|spot|parking)\b)"
     r"|\bwhere (?:can|do|should) (?:i|we) (?:get|find|order) (?:a|an|some|the|new|replacement)\b"
-    r"|\b(?:replacement|spare) (?!time\b)[a-z]+(?: [a-z]+)? for (?:my|the|our)\b", re.IGNORECASE)
+    r"|\b(?:replacement|spare) (?!time\b)[a-z]+(?: [a-z]+)? for (?:my|the|our)\b"
+    # 2026-11-01, asked of Sol: "Give me cheap options for a 5090 graphics cards". A price word is
+    # shopping by itself (not "cheaper to drive", the cheapest gas, flight or bills).
+    r"|\b(?:cheap|cheaper|cheapest|affordable|inexpensive|budget|bargain|discounted|refurbished)\b(?! (?:to|than (?:driving|flying)|way|ways|"
+    r"time|times|gas|fuel|petrol|electricity|power|rent|insurance|tickets?|flights?|fares?|eats|food|drinks)\b)", re.IGNORECASE)
 _NOT_SHOPPING = re.compile(
     r"\b(?:restaurants?|caf[eé]s?|coffee shops?|bars?|places? to (?:eat|go|stay)|hotels?|movies?|films?|shows?|series|podcasts?|"
     r"recipes?|dinner|lunch|breakfast|brunch|to eat|to drink|books?|novels?|apps?|routes?|ways?)\b", re.IGNORECASE)

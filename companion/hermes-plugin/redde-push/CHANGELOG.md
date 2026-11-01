@@ -3,6 +3,15 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.14.4 (2026-11-01)
+
+- A price word is asking what to buy: "cheap options for a 5090", "affordable standing desks", "a
+  budget keyboard", "refurbished iPads" get the purchase note. Not "cheaper to drive", the cheapest
+  gas, flight, fares or time, and not cheap eats or restaurants. Asked of Sol a third time, it
+  answered with a table.
+- The card tool now tells the agent in every turn: when you suggest things to buy, a 'purchase'
+  card, never a table. The agent goes by what was meant, not only the words the note listens for.
+
 ## 1.14.3 (2026-11-01)
 
 - "Find me a battery for my Boosted Rev" is asking what to buy: "find me a …", "get me a …",

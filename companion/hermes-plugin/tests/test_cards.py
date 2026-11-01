@@ -526,11 +526,17 @@ class MoreCardsTests(unittest.TestCase):
                       "Where to buy a 5090?", "Find the best deals on a robot vacuum", "Lowest price for AirPods Pro?",
                       # 2026-11-01, asked of Sol, and no purchase card came:
                       "Find me a battery for my boosted rev", "Get me a new charger for the MacBook",
-                      "Where can I get a replacement filter?", "I need a replacement battery for my drill"):
+                      "Where can I get a replacement filter?", "I need a replacement battery for my drill",
+                      # 2026-11-01, asked of Sol a third time: a price word is shopping by itself.
+                      "Give me cheap options for a 5090 graphics cards", "Affordable standing desks?",
+                      "What's a good budget mechanical keyboard?", "Are refurbished iPads any good?",
+                      "cheapest 5090 right now"):
             self.assertIn("asked what to buy", self.note(asked), asked)
         for errand in ("Buy it", "Order the Wyze plug for me", "Add it to my cart", "What are the price options for the hotel?",
                        "Find the cheapest flight to Lisbon", "Find me a time to meet Jackie", "Find me the photos from Paris",
-                       "Find me a restaurant near the office", "Get me the summary of that email", "Find me a recipe for chili"):
+                       "Find me a restaurant near the office", "Get me the summary of that email", "Find me a recipe for chili",
+                       "Is it cheaper to drive or fly to Boston?", "Where's the cheapest gas near me?",
+                       "Find cheap restaurants downtown", "Any cheap eats around here?", "What's the cheapest time to call Spain?"):
             self.assertNotIn("asked what to buy", self.note(errand), errand)
 
     def test_asked_what_to_buy_a_review_card_is_sent_back(self):
@@ -552,6 +558,8 @@ class MoreCardsTests(unittest.TestCase):
     def test_the_schema_stays_small_with_five_more_cards(self):
         self.assertLess(len(json.dumps(cards.SCHEMA)), 6000)
         self.assertLess(len(cards.SCHEMA["description"]), 1700)
+        # 1.14.4: things to buy are a card in every turn, however they were asked for.
+        self.assertIn("suggest things to buy: a card, never a table", cards.SCHEMA["description"])
         props = cards.SCHEMA["parameters"]["properties"]["cards"]["items"]["properties"]
         self.assertTrue(set(cards.MORE) <= set(props["type"]["enum"]))
         self.assertNotIn("description", props["devices"], "a card's fields are in its note, not in every prompt")
