@@ -369,6 +369,7 @@ struct TranscriptView: View {
             .animation(.easeOut(duration: 0.2), value: conversation.outbox)
             // (Bytes, not characters: counting characters walks the whole of the thinking.)
             .onChange(of: conversation.messages.last?.reasoning.utf8.count) { scrollToBottom(proxy) }
+            .modifier(FollowsRowsBelowTheReply(conversation: conversation) { scrollToBottom(proxy) })
             #if os(iOS)
             // Keyboard rising: keep the newest message in view above the composer, unless the
             // reader has scrolled up on purpose. Re-check once the system's own animation ends.
@@ -556,6 +557,23 @@ struct TranscriptView: View {
 /// be worked out as if the room still had the insets in it, which came out short by both of
 /// them, more than the reach below: the end never counted as reached by hand, so "Jump to
 /// latest" stayed and new text was not followed until it was tapped.
+/// Rows under the reply that come and go while its text stands still: the status line ("Background
+/// process finished", a steer queued), a step starting, a card drawn, a question waiting. The
+/// transcript follows them as it follows the text (2026-11-01: the status line sat half under the
+/// composer until the next word came).
+private struct FollowsRowsBelowTheReply: ViewModifier {
+    let conversation: Conversation
+    let follow: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: conversation.statusLine) { follow() }
+            .onChange(of: conversation.messages.last?.tools.count) { follow() }
+            .onChange(of: conversation.messages.last?.cards?.count) { follow() }
+            .onChange(of: conversation.pendingInterrupt != nil) { follow() }
+    }
+}
+
 nonisolated enum TranscriptEnd {
     /// How near the end counts as at it, in points.
     static let reach: CGFloat = 120
