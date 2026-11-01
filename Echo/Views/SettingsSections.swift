@@ -1000,6 +1000,13 @@ struct NotificationSettings: View {
         } footer: {
             Text("A reply being worked on shows on the Lock Screen and in the Dynamic Island.")
         }
+        #if os(iOS)
+        Section {
+            Toggle("Keep Replies Going in the Background", isOn: $settings.keepRepliesInBackground)
+        } footer: {
+            Text("While a reply comes in and Redde is in the background, iOS shows a card saying your agent is working, so the reply keeps streaming. Off: no card; the reply finishes on your server and comes as a notification.")
+        }
+        #endif
     }
 }
 

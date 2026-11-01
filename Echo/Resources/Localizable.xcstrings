@@ -167916,6 +167916,113 @@
         }
       }
     },
+    "Keep Replies Going in the Background" : {
+      "comment" : "Settings › Notifications toggle: whether iOS's progress card keeps a reply streaming while Redde is in the background",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lad svar fortsætte i baggrunden"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antworten im Hintergrund weiterlaufen lassen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seguir recibiendo respuestas en segundo plano"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poursuivre les réponses en arrière-plan"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continua le risposte in background"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "バックグラウンドでも返信を続ける"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "백그라운드에서도 답변 계속 받기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La svar fortsette i bakgrunnen"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antwoorden op de achtergrond laten doorgaan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kontynuuj odpowiedzi w tle"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continuar respostas em segundo plano"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Продолжать ответы в фоне"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Låt svar fortsätta i bakgrunden"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yanıtları arka planda sürdür"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Продовжувати відповіді у фоні"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在后台继续接收回复"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在背景繼續接收回覆"
+          }
+        }
+      }
+    },
     "Keeps your plans, lists and reminders, and nudges you on time." : {
       "localizations" : {
         "da" : {
@@ -361175,6 +361282,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "通話期間，麥克風聽到的內容會傳送到 %@，你的代理的回答也會送到那裡說出來。"
+          }
+        }
+      }
+    },
+    "While a reply comes in and Redde is in the background, iOS shows a card saying your agent is working, so the reply keeps streaming. Off: no card; the reply finishes on your server and comes as a notification." : {
+      "comment" : "Footer under Keep Replies Going in the Background, in Settings › Notifications",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mens et svar kommer ind, og Redde er i baggrunden, viser iOS et kort om, at din agent arbejder, så svaret bliver ved med at strømme ind. Fra: intet kort; svaret bliver færdigt på din server og kommer som en notifikation."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Während eine Antwort eintrifft und Redde im Hintergrund ist, zeigt iOS eine Karte, dass dein Agent arbeitet, damit die Antwort weiter ankommt. Aus: keine Karte; die Antwort wird auf deinem Server fertig und kommt als Mitteilung."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mientras llega una respuesta y Redde está en segundo plano, iOS muestra una tarjeta que dice que tu agente está trabajando, para que la respuesta siga llegando. Desactivado: sin tarjeta; la respuesta termina en tu servidor y llega como notificación."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pendant qu'une réponse arrive et que Redde est en arrière-plan, iOS affiche une carte indiquant que ton agent travaille, pour que la réponse continue d'arriver. Désactivé : pas de carte ; la réponse se termine sur ton serveur et arrive en notification."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mentre arriva una risposta e Redde è in background, iOS mostra una scheda che dice che il tuo agente sta lavorando, così la risposta continua ad arrivare. Disattivato: nessuna scheda; la risposta si completa sul tuo server e arriva come notifica."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返信の受信中に Redde がバックグラウンドにあると、iOS はエージェントが作業中であることを示すカードを表示し、返信を受け取り続けます。オフにするとカードは出ず、返信はサーバー上で完了して通知で届きます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "답변을 받는 동안 Redde가 백그라운드에 있으면 iOS가 에이전트가 작업 중이라는 카드를 보여 주어 답변이 계속 들어옵니다. 끄면 카드가 없고, 답변은 서버에서 완료되어 알림으로 옵니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mens et svar kommer inn og Redde er i bakgrunnen, viser iOS et kort om at agenten din jobber, så svaret fortsetter å strømme inn. Av: ikke noe kort; svaret blir ferdig på serveren din og kommer som et varsel."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terwijl er een antwoord binnenkomt en Redde op de achtergrond staat, toont iOS een kaart dat je agent bezig is, zodat het antwoord blijft binnenkomen. Uit: geen kaart; het antwoord wordt op je server afgemaakt en komt als melding."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy przychodzi odpowiedź, a Redde jest w tle, iOS pokazuje kartę, że twój agent pracuje, więc odpowiedź dalej spływa. Wyłączone: bez karty; odpowiedź kończy się na twoim serwerze i przychodzi jako powiadomienie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enquanto uma resposta chega e o Redde está em segundo plano, o iOS mostra um cartão dizendo que seu agente está trabalhando, para a resposta continuar chegando. Desativado: sem cartão; a resposta termina no seu servidor e chega como notificação."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пока приходит ответ, а Redde в фоне, iOS показывает карточку о том, что ваш агент работает, чтобы ответ продолжал поступать. Выкл.: без карточки; ответ завершается на вашем сервере и приходит уведомлением."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medan ett svar kommer in och Redde är i bakgrunden visar iOS ett kort om att din agent arbetar, så att svaret fortsätter att strömma in. Av: inget kort; svaret blir klart på din server och kommer som en notis."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir yanıt gelirken Redde arka plandaysa iOS, temsilcinizin çalıştığını söyleyen bir kart gösterir; böylece yanıt gelmeye devam eder. Kapalı: kart yok; yanıt sunucunuzda tamamlanır ve bildirim olarak gelir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поки надходить відповідь, а Redde у фоні, iOS показує картку про те, що ваш агент працює, щоб відповідь і далі надходила. Вимкнено: без картки; відповідь завершується на вашому сервері й надходить сповіщенням."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "回复传入期间如果 Redde 在后台，iOS 会显示一张卡片说明你的智能体正在工作，让回复继续传入。关闭：不显示卡片；回复在你的服务器上完成，并以通知送达。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "回覆傳入期間如果 Redde 在背景，iOS 會顯示一張卡片說明你的代理正在工作，讓回覆繼續傳入。關閉：不顯示卡片；回覆在你的伺服器上完成，並以通知送達。"
           }
         }
       }

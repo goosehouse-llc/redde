@@ -71,7 +71,8 @@ final class BackgroundTurn {
         // Only for a turn started in front of the person: iOS ties the request to the foreground
         // app. (Inactive is still in front: a Face ID sheet or a system alert is up.) An iOS app
         // on a Mac has no such scheduler.
-        guard continuedID == nil, !ProcessInfo.processInfo.isiOSAppOnMac,
+        // Off in Settings: no card from iOS; the reply finishes on the server and comes as a notification.
+        guard Settings.shared.keepRepliesInBackground, continuedID == nil, !ProcessInfo.processInfo.isiOSAppOnMac,
               UIApplication.shared.applicationState != .background else { return }
         let id = Self.identifierPrefix + UUID().uuidString
         guard Self.register(id) else {

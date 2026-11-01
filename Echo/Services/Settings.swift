@@ -533,6 +533,12 @@ final class Settings: ServeEndpoint {
     var showLiveActivity: Bool {
         didSet { store(showLiveActivity, forKey: Keys.showLiveActivity) }
     }
+    /// iOS's own "<agent> is working" card (`BGContinuedProcessingTask`), which keeps a reply
+    /// streaming while Redde is in the background. Off (2026-11-01, "I can't get rid of that"): the
+    /// reply still finishes on the server and comes as a notification; it isn't streamed meanwhile.
+    var keepRepliesInBackground: Bool {
+        didSet { store(keepRepliesInBackground, forKey: Keys.keepRepliesInBackground) }
+    }
     /// Three follow-up questions under each reply, written by the OpenAI-compatible model.
     var suggestFollowUps: Bool {
         didSet { store(suggestFollowUps, forKey: Keys.suggestFollowUps) }
@@ -848,6 +854,7 @@ final class Settings: ServeEndpoint {
         static let phoneTools = "phoneTools"
         static let notifyInBackground = "notifyInBackground"
         static let showLiveActivity = "showLiveActivity"
+        static let keepRepliesInBackground = "keepRepliesInBackground"
         static let suggestFollowUps = "suggestFollowUps"
         static let earpieceAtEar = "earpieceAtEar"
         static let announceOnAirPods = "announceOnAirPods"
@@ -956,6 +963,7 @@ final class Settings: ServeEndpoint {
         phoneTools = defaults.data(forKey: Keys.phoneTools).flatMap { try? JSONDecoder().decode(PhoneToolsSettings.self, from: $0) } ?? .init()
         notifyInBackground = defaults.bool(forKey: Keys.notifyInBackground)
         showLiveActivity = defaults.object(forKey: Keys.showLiveActivity) as? Bool ?? true
+        keepRepliesInBackground = defaults.object(forKey: Keys.keepRepliesInBackground) as? Bool ?? true
         suggestFollowUps = defaults.bool(forKey: Keys.suggestFollowUps)
         speechLanguage = defaults.string(forKey: Keys.speechLanguage) ?? ""
         matchReplyLanguage = defaults.object(forKey: Keys.matchReplyLanguage) as? Bool ?? true
@@ -1044,7 +1052,7 @@ final class Settings: ServeEndpoint {
         Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.botColors, Keys.eventColor, Keys.agendaCalendars, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
         Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots, Keys.projectsInChatList,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.measureUnits, Keys.contextWindow,
-        Keys.suggestFollowUps, Keys.showLiveActivity, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
+        Keys.suggestFollowUps, Keys.showLiveActivity, Keys.keepRepliesInBackground, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
         Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopAndSkipInCar, Keys.stopPhrases,
         Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.voiceEngine, Keys.liveVoice, Keys.liveVoices, Keys.liveHangUp, Keys.liveWhenLocked, Keys.liveGroupCalls,
         Keys.replyVoice, Keys.kokoroURL,
@@ -1092,6 +1100,7 @@ final class Settings: ServeEndpoint {
         case Keys.contextWindow: contextWindow = (value as? Int).flatMap { $0 > 0 ? $0 : nil } ?? Self.defaultContextWindow
         case Keys.suggestFollowUps: suggestFollowUps = flag()
         case Keys.showLiveActivity: showLiveActivity = flag(true)
+        case Keys.keepRepliesInBackground: keepRepliesInBackground = flag(true)
         case Keys.notificationSound: notificationSound = flag(true)
         case Keys.announceOnAirPods: announceOnAirPods = flag()
         case Keys.earpieceAtEar: earpieceAtEar = flag(true)
@@ -1363,6 +1372,7 @@ final class Settings: ServeEndpoint {
         phoneTools = .init()
         notifyInBackground = false
         showLiveActivity = true
+        keepRepliesInBackground = true
         earpieceAtEar = true
         announceOnAirPods = false
         notificationSound = true
