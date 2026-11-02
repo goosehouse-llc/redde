@@ -685,6 +685,120 @@
         }
       }
     },
+    "NSHealthUpdateUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde gemmer intet i Sundhed. Når Dage med blik for helbredet er slået til, læser den kun din søvn, dine skridt og dine træninger."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde speichert nichts in Health. Wenn Gesundheitsbewusste Tage aktiviert ist, liest es nur deinen Schlaf, deine Schritte und deine Trainings."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Redde doesn't save anything to Health. With Health-Aware Days turned on, it only reads your sleep, steps and workouts."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde no guarda nada en Salud. Con Días según tu salud activado, solo lee tu sueño, tus pasos y tus entrenamientos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde n’enregistre rien dans Santé. Avec Journées attentives à la santé activé, il lit seulement votre sommeil, vos pas et vos entraînements."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde non salva nulla in Salute. Con Giornate attente alla salute attivo, legge solo il sonno, i passi e gli allenamenti."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeはヘルスケアに何も保存しません。「健康を考慮した1日」をオンにすると、睡眠、歩数、ワークアウトを読み取るだけです。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde는 건강 앱에 아무것도 저장하지 않습니다. 건강을 고려한 하루를 켜면 수면, 걸음 수, 운동만 읽습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde lagrer ingenting i Helse. Når Dager med helse i tankene er slått på, leser den bare søvnen, skrittene og treningsøktene dine."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde bewaart niets in Gezondheid. Met Dagen met gezondheid in gedachten aan leest het alleen je slaap, stappen en trainingen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde niczego nie zapisuje w Zdrowiu. Gdy Dni z myślą o zdrowiu są włączone, odczytuje tylko sen, kroki i treningi."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde não salva nada no Saúde. Com Dias Conforme a Saúde ativado, ele apenas lê seu sono, seus passos e seus treinos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde ничего не сохраняет в «Здоровье». Когда «Дни с учетом здоровья» включены, приложение только читает ваш сон, шаги и тренировки."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde sparar ingenting i Hälsa. Med Hälsomedvetna dagar på läser den bara din sömn, dina steg och dina träningspass."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde, Sağlık'a hiçbir şey kaydetmez. Sağlığa Duyarlı Günler açıkken yalnızca uykunu, adımlarını ve antrenmanlarını okur."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde нічого не зберігає в «Здоров’ї». Коли ввімкнено «Дні з урахуванням здоров’я», програма лише читає ваш сон, кроки й тренування."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 不会向“健康”保存任何内容。打开“关注健康的日子”后，它只读取你的睡眠、步数和体能训练。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 不會向「健康」儲存任何內容。開啟「關注健康的日子」後，它只會讀取你的睡眠、步數和體能訓練。"
+          }
+        }
+      }
+    },
     "NSLocalNetworkUsageDescription" : {
       "comment" : "Why Redde asks for this permission",
       "extractionState" : "extracted_with_value",

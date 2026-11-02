@@ -181,6 +181,7 @@ targets:
         NSLocalNetworkUsageDescription: Redde connects to the Hermes gateway or model server you configure, which is often on your local network.
         # Health-Aware Days (Settings → Agent → Health), off until turned on.
         NSHealthShareUsageDescription: With Health-Aware Days turned on, Redde reads last night's sleep, your steps and your workouts so your agent's morning ideas and evening wrap-up take your day into account. Only a one-line summary goes to your own server.
+        NSHealthUpdateUsageDescription: Redde doesn't save anything to Health. With Health-Aware Days turned on, it only reads your sleep, steps and workouts.
         # Lets Siri accept "Hey Siri, ask Hermes" in addition to "ask Echo".
         INAlternativeAppNames:
           - INAlternativeAppName: Hermes
