@@ -96,7 +96,7 @@ struct DayBriefAgenda: View {
                 AgendaCard(card: agenda)
             } else {
                 // The card's place while the calendar is read, a moment, so the words don't jump far.
-                RoundedRectangle(cornerRadius: 20).fill(.background.secondary).frame(height: 180).accessibilityHidden(true)
+                CardFill(cornerRadius: 20).frame(height: 180).accessibilityHidden(true)
             }
         }
         .task(id: brief.day) {

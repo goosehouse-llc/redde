@@ -325,6 +325,645 @@
         }
       }
     },
+    "Alert Sound" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meddelelseslyd"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mitteilungston"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sonido de los avisos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Son des alertes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suono degli avvisi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通知サウンド"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "알림 사운드"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Varsellyd"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meldingsgeluid"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dźwięk powiadomień"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Som dos Alertas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Звук уведомлений"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notisljud"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bildirim Sesi"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Звук сповіщень"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提醒声音"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提醒聲音"
+          }
+        }
+      }
+    },
+    "Alerts" : {
+      "comment" : "Section header in Settings › Notifications: notifications Redde and your Hermes send",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meddelelser"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mitteilungen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alertes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avvisi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通知"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "알림"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Varslinger"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meldingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Powiadomienia"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alertas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уведомления"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notiser"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bildirimler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сповіщення"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提醒"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提醒"
+          }
+        }
+      }
+    },
+    "Alerts When Redde Is Closed" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meddelelser, når Redde er lukket"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mitteilungen, wenn Redde geschlossen ist"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisos con Redde cerrado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alertes quand Redde est fermé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avvisi con Redde chiusa"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeが閉じているときの通知"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde가 닫혀 있을 때 알림"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Varslinger når Redde er lukket"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meldingen als Redde gesloten is"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Powiadomienia przy zamkniętym Redde"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alertas com o Redde Fechado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уведомления при закрытом Redde"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notiser när Redde är stängd"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde Kapalıyken Bildirimler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сповіщення, коли Redde закрито"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde关闭时的提醒"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 關閉時的提醒"
+          }
+        }
+      }
+    },
+    "Alerts While Redde Is Open" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meddelelser, mens Redde er åben"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mitteilungen, während Redde offen ist"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisos con Redde abierto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alertes quand Redde est ouvert"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avvisi con Redde aperta"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeが開いているときの通知"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde가 열려 있을 때 알림"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Varslinger mens Redde er åpen"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meldingen als Redde open is"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Powiadomienia przy otwartym Redde"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alertas com o Redde Aberto"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уведомления, пока Redde открыт"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notiser när Redde är öppen"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde Açıkken Bildirimler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сповіщення, поки Redde відкрито"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde打开时的提醒"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 開啟時的提醒"
+          }
+        }
+      }
+    },
+    "Answer cards, approvals and questions: plain, or washed in a color." : {
+      "comment" : "Footer of Cards, in Settings › Appearance",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Svarkort, godkendelser og spørgsmål: neutrale eller med et skær af en farve."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antwortkarten, Freigaben und Fragen: schlicht oder in einem Farbschimmer."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarjetas de respuesta, aprobaciones y preguntas: sin color o con un toque de color."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cartes de réponse, approbations et questions : sobres ou teintées d’une couleur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schede di risposta, approvazioni e domande: semplici o velate di un colore."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "回答カード、承認、質問を、標準のままか、色をうっすら付けて表示します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "답변 카드, 승인, 질문을 기본으로 두거나 색을 은은하게 입힙니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Svarkort, godkjenninger og spørsmål: nøytrale eller med et skjær av en farge."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antwoordkaarten, goedkeuringen en vragen: neutraal of met een zweem van een kleur."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karty odpowiedzi, zatwierdzenia i pytania: zwykłe lub z lekkim odcieniem koloru."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cartões de resposta, aprovações e perguntas: simples ou com um leve tom de cor."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Карточки ответов, подтверждения и вопросы: обычные или с лёгким оттенком цвета."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Svarkort, godkännanden och frågor: neutrala eller med en skiftning av en färg."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yanıt kartları, onaylar ve sorular: sade ya da hafif bir renk tonuyla."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Картки відповідей, підтвердження та запитання: звичайні або з легким відтінком кольору."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "回答卡片、批准和问题：素色，或带一层淡淡的颜色。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "回答卡片、批准和問題：素色，或帶一層淡淡的顏色。"
+          }
+        }
+      }
+    },
+    "Cards" : {
+      "comment" : "Settings › Appearance: the colour of answer cards",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kort"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarjetas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cartes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schede"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カード"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "카드"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kort"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kaarten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karty"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cartões"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Карточки"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kort"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kartlar"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Картки"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卡片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卡片"
+          }
+        }
+      }
+    },
     "Leave-By Alerts" : {
       "localizations" : {
         "da" : {
@@ -534,6 +1173,326 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "出發提醒在此裝置上計算。"
+          }
+        }
+      }
+    },
+    "Like Your Bubbles" : {
+      "comment" : "Cards setting: answer cards in the colour of the person's message bubbles",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Som dine bobler"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie deine Blasen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Como tus burbujas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comme vos bulles"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Come le tue bolle"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自分の吹き出しと同じ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "내 말풍선과 같게"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Som boblene dine"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoals je ballonnen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jak twoje dymki"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Como seus balões"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Как ваши пузыри"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Som dina bubblor"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Baloncuklarınla aynı"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Як ваші бульбашки"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "与你的气泡相同"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "與你的泡泡相同"
+          }
+        }
+      }
+    },
+    "Live Activities" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live-aktiviteter"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live-Aktivitäten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actividades en vivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activités en direct"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attività in tempo reale"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ライブアクティビティ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "실시간 현황"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live-aktiviteter"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live Activities"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktywności na żywo"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atividades ao Vivo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live Activity"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liveaktiviteter"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Canlı Etkinlikler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дії наживо"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "实时活动"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即時動態"
+          }
+        }
+      }
+    },
+    "Live Activities show a reply being worked on on the Lock Screen and in the Dynamic Island. “%@ is working” is iOS's card that keeps a reply streaming while you're in another app; with it off, the reply finishes on your server and comes as an alert." : {
+      "comment" : "Footer under While an Agent Works, in Settings › Notifications (an iPhone or an iPad)",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live-aktiviteter viser et svar, der arbejdes på, på låseskærmen og i Dynamic Island. “%@ arbejder” er iOS' kort, der holder et svar i gang, mens du er i en anden app; slået fra bliver svaret færdigt på din server og kommer som en meddelelse."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live-Aktivitäten zeigen eine Antwort in Arbeit auf dem Sperrbildschirm und in der Dynamic Island. „%@ arbeitet“ ist die Karte von iOS, die eine Antwort weiterlaufen lässt, während du in einer anderen App bist; ist sie aus, wird die Antwort auf deinem Server fertig und kommt als Mitteilung."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las actividades en vivo muestran una respuesta en curso en la pantalla bloqueada y en la Dynamic Island. “%@ está trabajando” es la tarjeta de iOS que mantiene la respuesta en marcha mientras estás en otra app; desactivada, la respuesta termina en tu servidor y llega como aviso."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les activités en direct affichent une réponse en cours sur l’écran verrouillé et dans la Dynamic Island. « %@ travaille » est la carte d’iOS qui garde une réponse en cours pendant que vous êtes dans une autre app ; désactivée, la réponse se termine sur votre serveur et arrive comme une alerte."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le attività in tempo reale mostrano una risposta in corso nella schermata di blocco e nella Dynamic Island. “%@ è al lavoro” è la scheda di iOS che fa proseguire una risposta mentre sei in un’altra app; se è disattivata, la risposta si completa sul tuo server e arriva come avviso."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ライブアクティビティでは、作業中の返信がロック画面とDynamic Islandに表示されます。「%@が作業中」は、ほかのAppを使っている間も返信を続けるためのiOSのカードです。オフにすると、返信はサーバ上で完了し、通知として届きます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "실시간 현황은 작업 중인 답변을 잠금 화면과 Dynamic Island에 표시합니다. “%@ 작업 중”는 다른 앱을 사용하는 동안 답변이 계속 이어지게 하는 iOS의 카드입니다. 끄면 답변은 서버에서 완료되고 알림으로 옵니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live-aktiviteter viser et svar under arbeid på låseskjermen og i Dynamic Island. «%@ jobber» er iOS-kortet som holder et svar i gang mens du er i en annen app; slått av blir svaret ferdig på serveren din og kommer som en varsling."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live Activities tonen een antwoord waaraan gewerkt wordt op het toegangsscherm en in het Dynamic Island. ‘%@ is bezig’ is de kaart van iOS die een antwoord laat doorlopen terwijl je in een andere app bent; als hij uit staat, wordt het antwoord op je server afgemaakt en komt het als melding."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktywności na żywo pokazują odpowiedź w toku na ekranie blokady i w Dynamic Island. „%@ pracuje” to karta iOS, która podtrzymuje odpowiedź, gdy jesteś w innej aplikacji; po jej wyłączeniu odpowiedź kończy się na twoim serwerze i przychodzi jako powiadomienie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As Atividades ao Vivo mostram uma resposta em andamento na Tela Bloqueada e na Dynamic Island. “%@ está trabalhando” é o cartão do iOS que mantém a resposta chegando enquanto você está em outro app; desativado, a resposta termina no seu servidor e chega como alerta."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live Activity показывают ответ в работе на экране блокировки и в Dynamic Island. «%@ работает» — карточка iOS, которая продолжает ответ, пока вы в другом приложении; если она выключена, ответ завершается на вашем сервере и приходит уведомлением."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liveaktiviteter visar ett svar som arbetas på på låsskärmen och i Dynamic Island. ”%@ arbetar” är iOS-kortet som håller ett svar igång medan du är i en annan app; när det är av blir svaret klart på din server och kommer som en notis."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Canlı Etkinlikler, üzerinde çalışılan bir yanıtı Kilitli Ekran'da ve Dynamic Island'da gösterir. “%@ çalışıyor”, sen başka bir uygulamadayken yanıtın sürmesini sağlayan iOS kartıdır; kapalıyken yanıt sunucunda tamamlanır ve bildirim olarak gelir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дії наживо показують відповідь у роботі на замкненому екрані та в Dynamic Island. «%@ працює» — картка iOS, яка продовжує відповідь, поки ви в іншій програмі; якщо її вимкнено, відповідь завершується на вашому сервері й надходить сповіщенням."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "实时活动会在锁定屏幕和灵动岛中显示正在处理的回复。“%@正在工作”是iOS的卡片，在你使用其他App时让回复继续进行；关闭后，回复会在你的服务器上完成，并以提醒的形式送达。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即時動態會在鎖定畫面和動態島中顯示正在處理的回覆。「%@ 正在處理」是 iOS 的卡片，在你使用其他 App 時讓回覆繼續進行；關閉後，回覆會在你的伺服器上完成，並以提醒的形式送達。"
           }
         }
       }
@@ -966,6 +1925,219 @@
         }
       }
     },
+    "On-device speech recognition and synthesis. No analytics. Every request goes only to the servers you configured. The exceptions are opt-in: with “Let Siri use Redde” on, Apple Intelligence handles what you say to Siri; with a Hermes paired under “Alerts When Redde Is Closed”, its notifications pass through Goosehouse's relay, encrypted; and with “Sync with iCloud” on, your settings and servers are kept in your own iCloud, their keys and passwords in iCloud Keychain, end-to-end encrypted." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Talegenkendelse og talesyntese på enheden. Ingen analyse. Hver anmodning går kun til de servere, du har konfigureret. Undtagelserne kræver, at du selv slår dem til: med “Lad Siri bruge Redde” slået til håndterer Apple Intelligence det, du siger til Siri; med en Hermes parret under “Meddelelser, når Redde er lukket” passerer dens meddelelser krypteret gennem Goosehouses relæ; og med “Synkroniser med iCloud” slået til opbevares dine indstillinger og servere i din egen iCloud, deres nøgler og adgangskoder i iCloud-nøglering, krypteret fra ende til ende."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spracherkennung und -synthese auf dem Gerät. Keine Analysedaten. Jede Anfrage geht nur an die von dir konfigurierten Server. Die Ausnahmen sind freiwillig: Ist „Siri darf Redde nutzen“ an, verarbeitet Apple Intelligence, was du zu Siri sagst; mit einem unter „Mitteilungen, wenn Redde geschlossen ist“ gekoppelten Hermes laufen dessen Mitteilungen verschlüsselt über das Relay von Goosehouse; und ist „Mit iCloud synchronisieren“ an, werden deine Einstellungen und Server in deiner eigenen iCloud gesichert, ihre Schlüssel und Passwörter im iCloud-Schlüsselbund, Ende-zu-Ende-verschlüsselt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconocimiento y síntesis de voz en el dispositivo. Sin analíticas. Cada solicitud va solo a los servidores que configuraste. Las excepciones son opcionales: con “Permitir que Siri use Redde” activado, Apple Intelligence gestiona lo que dices a Siri; con un Hermes vinculado en “Avisos con Redde cerrado”, sus notificaciones pasan cifradas por el relé de Goosehouse; y con “Sincronizar con iCloud” activado, tus ajustes y servidores se guardan en tu propio iCloud, y sus claves y contraseñas en el Llavero de iCloud, con cifrado de extremo a extremo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconnaissance et synthèse vocales sur l’appareil. Aucune analyse statistique. Chaque requête va uniquement aux serveurs que vous avez configurés. Les exceptions sont facultatives : avec « Autoriser Siri à utiliser Redde » activé, Apple Intelligence traite ce que vous dites à Siri ; avec un Hermes jumelé sous « Alertes quand Redde est fermé », ses notifications passent par le relais de Goosehouse, chiffrées ; et avec « Synchroniser avec iCloud » activé, vos réglages et serveurs sont conservés dans votre propre iCloud, leurs clés et mots de passe dans le trousseau iCloud, chiffrés de bout en bout."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riconoscimento e sintesi vocale sul dispositivo. Nessuna analisi. Ogni richiesta va solo ai server che hai configurato. Le eccezioni sono facoltative: con “Consenti a Siri di usare Redde” attivo, Apple Intelligence gestisce ciò che dici a Siri; con un Hermes abbinato in “Avvisi con Redde chiusa”, le sue notifiche passano, crittografate, per il relay di Goosehouse; e con “Sincronizza con iCloud” attivo, le tue impostazioni e i tuoi server vengono salvati nel tuo iCloud, con chiavi e password nel Portachiavi iCloud, con crittografia end-to-end."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音声認識と音声合成はデバイス上で行われます。分析データの収集はありません。すべてのリクエストは設定したサーバにのみ送信されます。例外はオプトインのものだけです：「SiriにReddeの使用を許可」がオンの場合、Siriに話した内容はApple Intelligenceが処理します。「Reddeが閉じているときの通知」でHermesをペアリングした場合、その通知は暗号化されてGoosehouseのリレーを経由します。「iCloudと同期」がオンの場合、設定とサーバは自分のiCloudに、キーとパスワードはiCloudキーチェーンにエンドツーエンドで暗号化されて保存されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기기 내 음성 인식 및 합성. 분석 없음. 모든 요청은 구성한 서버로만 전송됩니다. 예외는 선택 사항입니다: “Siri가 Redde를 사용하도록 허용”을 켜면 Siri에게 말한 내용을 Apple Intelligence가 처리하고, “Redde가 닫혀 있을 때 알림”에서 Hermes를 페어링하면 알림이 암호화된 상태로 Goosehouse의 릴레이를 거치며, “iCloud와 동기화”를 켜면 설정과 서버가 사용자의 iCloud에, 키와 암호는 종단 간 암호화된 iCloud 키체인에 보관됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Talegjenkjenning og talesyntese på enheten. Ingen analyse. Hver forespørsel går bare til tjenerne du har konfigurert. Unntakene må du velge selv: med «La Siri bruke Redde» på håndterer Apple Intelligence det du sier til Siri; med en Hermes sammenkoblet under «Varslinger når Redde er lukket» går varslingene fra den gjennom reléet til Goosehouse, kryptert; og med «Synkroniser med iCloud» på lagres innstillingene og tjenerne dine i din egen iCloud, og nøklene og passordene deres i iCloud-nøkkelring, ende-til-ende-kryptert."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spraakherkenning en -synthese op het apparaat. Geen analyse. Elk verzoek gaat alleen naar de servers die je hebt ingesteld. De uitzonderingen kies je zelf: met ‘Laat Siri Redde gebruiken’ aan verwerkt Apple Intelligence wat je tegen Siri zegt; met een Hermes gekoppeld onder ‘Meldingen als Redde gesloten is’ gaan de meldingen ervan versleuteld via de relay van Goosehouse; en met ‘Synchroniseer met iCloud’ aan worden je instellingen en servers in je eigen iCloud bewaard, hun sleutels en wachtwoorden in de iCloud-sleutelhanger, end-to-end versleuteld."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rozpoznawanie i synteza mowy na urządzeniu. Bez analityki. Każde żądanie trafia tylko na skonfigurowane przez Ciebie serwery. Wyjątki wymagają Twojej zgody: z włączonym „Pozwól Siri używać Redde” to, co mówisz do Siri, przetwarza Apple Intelligence; z Hermesem sparowanym w „Powiadomienia przy zamkniętym Redde” jego powiadomienia przechodzą zaszyfrowane przez przekaźnik Goosehouse; a z włączonym „Synchronizuj z iCloud” Twoje ustawienia i serwery są przechowywane w Twoim własnym iCloud, a ich klucze i hasła w pęku kluczy iCloud, szyfrowane end-to-end."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconhecimento e síntese de fala no dispositivo. Sem análises. Cada pedido vai só para os servidores que você configurou. As exceções são opcionais: com “Permitir que a Siri use o Redde” ativado, a Apple Intelligence processa o que você diz à Siri; com um Hermes emparelhado em “Alertas com o Redde Fechado”, as notificações dele passam pelo retransmissor da Goosehouse, criptografadas; e com “Sincronizar com o iCloud” ativado, seus ajustes e servidores ficam no seu próprio iCloud, e as chaves e senhas deles nas Chaves do iCloud, com criptografia de ponta a ponta."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Распознавание и синтез речи на устройстве. Никакой аналитики. Все запросы отправляются только на настроенные вами серверы. Исключения включаются только по вашему желанию: если включено «Разрешить Siri использовать Redde», сказанное Siri обрабатывает Apple Intelligence; если Hermes связан в пару в разделе «Уведомления при закрытом Redde», его уведомления проходят через ретранслятор Goosehouse в зашифрованном виде; а если включена «Синхронизация с iCloud», ваши настройки и серверы хранятся в вашем собственном iCloud, а их ключи и пароли — в Связке ключей iCloud со сквозным шифрованием."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Taligenkänning och talsyntes på enheten. Ingen analys. Varje förfrågan går bara till de servrar du har konfigurerat. Undantagen är frivilliga: med ”Låt Siri använda Redde” på hanterar Apple Intelligence det du säger till Siri; med en Hermes parkopplad under ”Notiser när Redde är stängd” passerar dess notiser genom Goosehouses relä, krypterade; och med ”Synka med iCloud” på sparas dina inställningar och servrar i din egen iCloud, deras nycklar och lösenord i iCloud-nyckelring, totalsträckskrypterade."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aygıtta konuşma tanıma ve sentezleme. Analiz yok. Her istek yalnızca yapılandırdığınız sunuculara gider. İstisnalar isteğe bağlıdır: “Siri Redde'yi kullanabilsin” açıksa Siri'ye söylediklerinizi Apple Intelligence işler; “Redde Kapalıyken Bildirimler” altında eşlenmiş bir Hermes varsa bildirimleri şifreli olarak Goosehouse'un aktarıcısından geçer; “iCloud ile Eşzamanla” açıksa ayarlarınız ve sunucularınız kendi iCloud'unuzda, anahtarları ve parolaları uçtan uca şifreli olarak iCloud Anahtar Zinciri'nde saklanır."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Розпізнавання й синтез мовлення на пристрої. Без аналітики. Кожен запит надходить лише на налаштовані вами сервери. Винятки вмикаються лише за вашим бажанням: якщо ввімкнено «Дозволити Siri використовувати Redde», сказане Siri обробляє Apple Intelligence; якщо створено пару з Hermes у «Сповіщення, коли Redde закрито», його сповіщення в зашифрованому вигляді проходять через ретранслятор Goosehouse; а якщо ввімкнено «Синхронізація з iCloud», ваші параметри й сервери зберігаються у вашому власному iCloud, а їхні ключі й паролі — у Зв’язці ключів iCloud із наскрізним шифруванням."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设备端语音识别与合成。无分析。每个请求只发送到你配置的服务器。例外情况均需你主动选择：打开“允许Siri使用Redde”时，由Apple智能处理你对Siri说的话；在“Redde关闭时的提醒”中配对了Hermes时，它的通知会加密经过Goosehouse的中继；打开“与iCloud同步”时，你的设置和服务器保存在你自己的iCloud中，其密钥和密码保存在iCloud钥匙串中，端到端加密。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "裝置上的語音辨識和語音合成。沒有分析功能。每個請求只會傳送到你設定的伺服器。例外情況都需要你自行選擇開啟：開啟「允許 Siri 使用 Redde」時，Apple Intelligence 會處理你對 Siri 說的話；在「Redde 關閉時的提醒」中配對了 Hermes 時，其通知會以加密形式經過 Goosehouse 的中繼；開啟「與 iCloud 同步」時，你的設定和伺服器會保存在你自己的 iCloud 中，其金鑰和密碼則保存在 iCloud 鑰匙圈中，採用端對端加密。"
+          }
+        }
+      }
+    },
+    "Plain" : {
+      "comment" : "Cards setting: answer cards without a colour",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neutral"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schlicht"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin color"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sobre"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Semplici"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標準"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기본"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nøytral"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neutraal"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zwykłe"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simples"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обычные"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neutral"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sade"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Звичайні"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "素色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "素色"
+          }
+        }
+      }
+    },
     "Redde looks at your calendar and Apple Maps on this device and tells you when to leave, a few minutes early. Only events with a street address." : {
       "localizations" : {
         "da" : {
@@ -1179,6 +2351,219 @@
         }
       }
     },
+    "When an agent needs you or a reply finishes while you're in another app. Redde sends these itself, so they stop once it's closed. “Announce on AirPods” marks them time-sensitive, so Siri can read them aloud through AirPods (turn on Announce Notifications for Redde in the iPhone's Settings) and they reach you in a Focus. “Alert Sound” off makes every alert silent, your Hermes's too; they still appear." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når en agent har brug for dig, eller et svar er færdigt, mens du er i en anden app. Redde sender dem selv, så de stopper, når den er lukket. “Annoncer på AirPods” markerer dem som tidsfølsomme, så Siri kan læse dem højt i AirPods (slå Annoncer meddelelser til for Redde i iPhones Indstillinger), og de når dig i et fokus. Med “Meddelelseslyd” slået fra er alle meddelelser lydløse, også dem fra din Hermes; de vises stadig."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn ein Agent dich braucht oder eine Antwort fertig ist, während du in einer anderen App bist. Redde sendet sie selbst, deshalb hören sie auf, sobald Redde geschlossen ist. „Auf AirPods ansagen“ markiert sie als zeitkritisch, damit Siri sie über AirPods vorlesen kann (aktiviere „Mitteilungen ankündigen“ für Redde in den Einstellungen des iPhone) und sie dich auch in einem Fokus erreichen. Ist „Mitteilungston“ aus, sind alle Mitteilungen stumm, auch die deines Hermes; sie erscheinen weiterhin."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando un agente te necesita o termina una respuesta mientras estás en otra app. Los envía el propio Redde, así que se detienen cuando se cierra. “Anunciar en los AirPods” los marca como urgentes para que Siri pueda leerlos en voz alta en los AirPods (activa Anunciar notificaciones para Redde en Ajustes del iPhone) y te lleguen en un modo de concentración. Con “Sonido de los avisos” desactivado, todos los avisos son silenciosos, también los de tu Hermes; siguen apareciendo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand un agent a besoin de vous ou qu’une réponse est prête pendant que vous êtes dans une autre app. Redde les envoie lui-même : elles s’arrêtent une fois l’app fermée. « Annoncer sur les AirPods » les rend urgentes pour que Siri les lise dans les AirPods (activez Annoncer les notifications pour Redde dans les Réglages de l’iPhone) et qu’elles vous parviennent en mode Concentration. Avec « Son des alertes » désactivé, toutes les alertes sont silencieuses, celles de votre Hermes aussi ; elles s’affichent toujours."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando un agente ha bisogno di te o una risposta è pronta mentre sei in un’altra app. Li invia Redde stessa, quindi si fermano quando viene chiusa. “Annuncia su AirPods” li rende urgenti, così Siri può leggerli ad alta voce negli AirPods (attiva Annuncia notifiche per Redde nelle Impostazioni dell’iPhone) e ti raggiungono anche con una modalità Full immersion. Con “Suono degli avvisi” disattivato tutti gli avvisi sono silenziosi, anche quelli del tuo Hermes; compaiono comunque."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ほかのAppを使っている間に、エージェントがあなたを必要としたときや返信が終わったときに通知します。Redde自身が送るため、Reddeを閉じると止まります。「AirPodsで読み上げ」をオンにすると通知が時間厳守になり、SiriがAirPodsで読み上げられるようになり（iPhoneの設定でRedde の通知の読み上げをオンにしてください）、集中モード中にも届きます。「通知サウンド」をオフにすると、Hermesからのものも含めすべての通知が無音になります。通知は表示されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "다른 앱을 사용하는 동안 에이전트가 도움이 필요하거나 답변이 끝나면 알려 줍니다. Redde가 직접 보내므로 Redde를 닫으면 멈춥니다. “AirPods에서 알림 읽어주기”는 알림을 시간 민감으로 표시하여 Siri가 AirPods로 읽어 줄 수 있게 하고(iPhone 설정에서 Redde의 알림 읽어주기를 켜세요) 집중 모드에서도 받을 수 있게 합니다. “알림 사운드”를 끄면 Hermes에서 오는 알림을 포함해 모든 알림이 무음이 되며, 알림은 계속 표시됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når en agent trenger deg eller et svar er ferdig mens du er i en annen app. Redde sender dem selv, så de stopper når den lukkes. «Kunngjør på AirPods» merker dem som tidssensitive, slik at Siri kan lese dem høyt i AirPods (slå på Kunngjør varslinger for Redde i iPhones Innstillinger), og de når deg i en fokusmodus. Med «Varsellyd» av er alle varslinger lydløse, også de fra din Hermes; de vises fortsatt."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als een agent je nodig heeft of een antwoord klaar is terwijl je in een andere app bent. Redde stuurt ze zelf, dus ze stoppen zodra de app gesloten is. ‘Kondig aan op AirPods’ markeert ze als tijdgevoelig, zodat Siri ze via AirPods kan voorlezen (zet Kondig meldingen aan aan voor Redde in de Instellingen van de iPhone) en ze je ook in een focus bereiken. Met ‘Meldingsgeluid’ uit zijn alle meldingen stil, ook die van je Hermes; ze verschijnen nog wel."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy agent cię potrzebuje lub odpowiedź jest gotowa, a ty jesteś w innej aplikacji. Wysyła je samo Redde, więc ustają po jego zamknięciu. „Ogłaszaj na AirPods” oznacza je jako pilne, by Siri mogła je odczytać w AirPods (włącz Ogłaszaj powiadomienia dla Redde w Ustawieniach iPhone’a), i by docierały do ciebie w trybie skupienia. Przy wyłączonym „Dźwięk powiadomień” wszystkie powiadomienia są ciche, także te z twojego Hermesa; nadal się pojawiają."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando um agente precisa de você ou uma resposta termina enquanto você está em outro app. O próprio Redde os envia, então eles param quando ele é fechado. “Anunciar nos AirPods” os marca como urgentes para que a Siri possa lê-los em voz alta nos AirPods (ative Anunciar Notificações para o Redde nos Ajustes do iPhone) e para que cheguem a você em um Foco. Com “Som dos Alertas” desativado, todos os alertas ficam silenciosos, inclusive os do seu Hermes; eles continuam aparecendo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда агенту нужны вы или ответ готов, а вы в другом приложении. Их отправляет сам Redde, поэтому они прекращаются, когда он закрыт. «Объявлять в AirPods» помечает их как срочные, чтобы Siri могла зачитать их в AirPods (включите «Объявлять уведомления» для Redde в Настройках iPhone) и они доходили до вас в режиме фокусирования. Если «Звук уведомлений» выключен, все уведомления беззвучны, в том числе от вашего Hermes; они по-прежнему появляются."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "När en agent behöver dig eller ett svar är klart medan du är i en annan app. Redde skickar dem själv, så de upphör när den stängs. ”Läs upp på AirPods” märker dem som tidskänsliga så att Siri kan läsa upp dem i AirPods (slå på Läs upp notiser för Redde i iPhones Inställningar) och de når dig i ett fokusläge. Med ”Notisljud” av är alla notiser tysta, även de från din Hermes; de visas ändå."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Başka bir uygulamadayken bir ajan sana ihtiyaç duyduğunda ya da bir yanıt bittiğinde. Bunları Redde kendisi gönderir, bu yüzden kapatıldığında dururlar. “AirPods'ta seslendir” onları zamana duyarlı olarak işaretler; böylece Siri onları AirPods'ta sesli okuyabilir (iPhone Ayarlar'ında Redde için Bildirimleri Seslendir'yi aç) ve bir Odak modunda da sana ulaşırlar. “Bildirim Sesi” kapalıyken Hermes'inkiler dahil tüm bildirimler sessizdir; yine de görünürler."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли агент потребує вас або відповідь готова, а ви в іншій програмі. Їх надсилає сам Redde, тож вони припиняються, щойно його закрито. «Оголошувати на AirPods» позначає їх як термінові, щоб Siri могла зачитати їх в AirPods (увімкніть «Оголошувати сповіщення» для Redde в Параметрах iPhone) і вони надходили у режимі зосередження. Якщо «Звук сповіщень» вимкнено, усі сповіщення беззвучні, зокрема від вашого Hermes; вони однаково з’являються."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当你在其他App中时，代理需要你或回复完成时会提醒你。这些提醒由Redde自己发送，因此Redde关闭后就会停止。“在AirPods上播报”会将其标为时效性通知，以便Siri通过AirPods朗读（请在iPhone的设置中为Redde打开“播报通知”），并在专注模式下也能送达。关闭“提醒声音”后，所有提醒都将静音，包括来自Hermes的提醒；它们仍会显示。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當你在其他 App 中時，代理需要你或回覆完成時會提醒你。這些提醒由 Redde 自己傳送，因此 Redde 關閉後就會停止。「在 AirPods 上播報」會將其標示為時效性通知，讓 Siri 能透過 AirPods 朗讀（請在 iPhone 的設定中為 Redde 開啟「宣告通知」），並在專注模式下也能送達。關閉「提醒聲音」後，所有提醒都會靜音，包括來自 Hermes 的提醒；它們仍會顯示。"
+          }
+        }
+      }
+    },
+    "While an Agent Works" : {
+      "comment" : "Section header in Settings › Notifications: what shows on screen while a reply is worked on",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mens en agent arbejder"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Während ein Agent arbeitet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mientras un agente trabaja"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pendant qu’un agent travaille"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mentre un agente lavora"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントの作業中"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트가 작업하는 동안"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mens en agent jobber"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terwijl een agent werkt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy agent pracuje"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enquanto um Agente Trabalha"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пока агент работает"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medan en agent arbetar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir Ajan Çalışırken"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поки агент працює"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理工作时"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理工作時"
+          }
+        }
+      }
+    },
     "Working out when to leave…" : {
       "comment" : "Settings → Leave-By Alerts, while the calendar and Apple Maps are looked at",
       "localizations" : {
@@ -1282,6 +2667,220 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在計算出發時間…"
+          }
+        }
+      }
+    },
+    "Your Hermes sends them instead once Redde is closed, to each iPhone, iPad and Mac you pair." : {
+      "comment" : "Footer under Alerts When Redde Is Closed, in Settings › Notifications",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din Hermes sender dem i stedet, når Redde er lukket, til hver iPhone, iPad og Mac, du parrer."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dann sendet dein Hermes sie, an jedes iPhone, iPad und jeden Mac, die du koppelst."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu Hermes los envía en su lugar cuando Redde está cerrado, a cada iPhone, iPad y Mac que vincules."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre Hermes les envoie à la place une fois Redde fermé, à chaque iPhone, iPad et Mac que vous jumelez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Li invia invece il tuo Hermes quando Redde è chiusa, a ogni iPhone, iPad e Mac che abbini."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeを閉じた後は、代わりにHermesがペアリングした各iPhone、iPad、Macに送ります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde를 닫으면 Hermes가 대신 페어링한 각 iPhone, iPad, Mac으로 보냅니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Da sender Hermes dem i stedet, til hver iPhone, iPad og Mac du sammenkobler."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dan stuurt je Hermes ze, naar elke iPhone, iPad en Mac die je koppelt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Po zamknięciu Redde wysyła je twój Hermes, na każdy sparowany iPhone, iPad i Maca."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com o Redde fechado, o seu Hermes os envia, para cada iPhone, iPad e Mac que você emparelhar."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда Redde закрыт, их вместо него отправляет ваш Hermes — на каждый iPhone, iPad и Mac, который вы свяжете в пару."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Då skickar din Hermes dem i stället, till varje iPhone, iPad och Mac du parkopplar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kapalıyken bunları onun yerine Hermes'in, eşlediğin her iPhone, iPad ve Mac'e gönderir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли Redde закрито, їх натомість надсилає ваш Hermes — на кожен iPhone, iPad і Mac, які ви з’єднаєте."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde关闭后，改由你的Hermes发送到你配对的每台iPhone、iPad和Mac。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 關閉後，改由你的 Hermes 傳送到你配對的每部 iPhone、iPad 和 Mac。"
+          }
+        }
+      }
+    },
+    "“%@ Is Working” Card" : {
+      "comment" : "Settings › Notifications: iOS's card while a reply streams in the background, with the agent's name",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kortet “%@ arbejder”"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karte „%@ arbeitet“"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarjeta “%@ está trabajando”"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carte « %@ travaille »"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scheda “%@ è al lavoro”"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「%@が作業中」カード"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@ 작업 중” 카드"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kortet «%@ jobber»"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kaart ‘%@ is bezig’"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karta „%@ pracuje”"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cartão “%@ está trabalhando”"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Карточка «%@ работает»"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kortet ”%@ arbetar”"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@ çalışıyor” Kartı"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Картка «%@ працює»"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@正在工作”卡片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「%@ 正在處理」卡片"
           }
         }
       }
@@ -62899,219 +64498,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "iOS 關閉 Redde 時，背景通知就會停止；開啟此功能後，之後改由你的 Hermes 傳送。"
-          }
-        }
-      }
-    },
-    "Background notifications stop when Redde is closed; with this, your Hermes sends them from then on, to each iPhone, iPad and Mac you pair." : {
-      "comment" : "Footer under Notify when Redde is closed, in Settings › Notifications",
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Meddelelser i baggrunden stopper, når Redde er lukket; med dette sender din Hermes dem fra da af til hver iPhone, iPad og Mac, du parrer."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hintergrundmitteilungen enden, wenn Redde geschlossen ist; damit sendet dein Hermes sie ab dann an jedes iPhone, iPad und jeden Mac, die du koppelst."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Las notificaciones en segundo plano se detienen cuando Redde está cerrado; con esto, tu Hermes las envía a partir de entonces a cada iPhone, iPad y Mac que vincules."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les notifications en arrière-plan s’arrêtent quand Redde est fermé ; avec ceci, votre Hermes prend le relais pour les envoyer à chaque iPhone, iPad et Mac que vous jumelez."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le notifiche in background si interrompono quando Redde è chiusa; con questa opzione, da quel momento le invia il tuo Hermes, a ogni iPhone, iPad e Mac che abbini."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reddeが閉じているとバックグラウンド通知は止まります。これをオンにすると、それ以降はHermesが、ペアリングした各iPhone、iPad、Macに通知を送信します。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redde가 닫혀 있으면 백그라운드 알림이 중지됩니다. 이 기능을 사용하면 그 이후에는 Hermes가 페어링한 각 iPhone, iPad, Mac으로 알림을 보냅니다."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bakgrunnsvarslinger stopper når Redde er lukket; med dette sender din Hermes dem fra da av til hver iPhone, iPad og Mac du sammenkobler."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Meldingen op de achtergrond stoppen als Redde gesloten is; hiermee stuurt je Hermes ze vanaf dat moment naar elke iPhone, iPad en Mac die je koppelt."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Powiadomienia w tle ustają, gdy Redde jest zamknięte; dzięki temu od tej chwili wysyła je Twój Hermes na każdy sparowany iPhone, iPad i Maca."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "As notificações em segundo plano param quando o Redde está fechado; com isto, seu Hermes passa a enviá-las a partir daí para cada iPhone, iPad e Mac que você emparelhar."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Фоновые уведомления прекращаются, когда Redde закрыт; с этой функцией их дальше отправляет ваш Hermes — на каждый iPhone, iPad и Mac, для которых создана пара."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bakgrundsnotiser upphör när Redde är stängd; med det här skickar din Hermes dem från och med då till varje iPhone, iPad och Mac du parkopplar."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redde kapalıyken arka plan bildirimleri durur; bu açıkken o andan itibaren bildirimleri Hermes'iniz, eşlediğiniz her iPhone, iPad ve Mac'e gönderir."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Фонові сповіщення припиняються, коли Redde закрито; з цим параметром далі їх надсилає ваш Hermes — на кожен iPhone, iPad і Mac, з якими створено пару."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redde关闭后，后台通知会停止；打开此项后，之后将由你的Hermes向每台已配对的iPhone、iPad和Mac发送通知。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redde 關閉時，背景通知就會停止；開啟此功能後，之後改由你的 Hermes 傳送到每部已配對的 iPhone、iPad 和 Mac。"
-          }
-        }
-      }
-    },
-    "Background notifications tell you when Redde needs an approval or an answer, or when a reply finishes, while you're in another app. “Announce on AirPods” marks them time-sensitive so Siri can read them aloud through AirPods (turn on Announce Notifications for Redde in the iPhone's Settings) and so they reach you in a Focus. “Notification sound” off makes all of them silent, those from your Hermes too; they still appear." : {
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Meddelelser i baggrunden fortæller dig, når Redde har brug for en godkendelse eller et svar, eller når et svar er færdigt, mens du er i en anden app. “Annoncer på AirPods” markerer dem som tidsfølsomme, så Siri kan læse dem op via AirPods (slå Oplæs meddelelser til for Redde i iPhonens Indstillinger), og så de når frem til dig, når et fokus er slået til. Med “Meddelelseslyd” slået fra er de alle lydløse, også dem fra din Hermes; de vises stadig."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hintergrundmitteilungen sagen dir, wenn Redde eine Genehmigung oder Antwort braucht oder eine Antwort fertig ist, während du in einer anderen App bist. „Auf AirPods ansagen“ markiert sie als dringlich, damit Siri sie über AirPods vorlesen kann (aktiviere „Mitteilungen ankündigen“ für Redde in den iPhone-Einstellungen) und damit sie dich auch in einem Fokus erreichen. Ist „Mitteilungston“ aus, sind alle stumm, auch die von deinem Hermes; sie erscheinen trotzdem."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Las notificaciones en segundo plano te avisan cuando Redde necesita una aprobación o una respuesta, o cuando termina una respuesta, mientras estás en otra app. “Anunciar en los AirPods” las marca como urgentes para que Siri pueda leerlas en voz alta en los AirPods (activa Anunciar notificaciones para Redde en Ajustes del iPhone) y para que te lleguen en un modo de concentración. Con “Sonido de notificación” desactivado, todas son silenciosas, también las de tu Hermes; aun así, aparecen."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les notifications en arrière-plan vous préviennent quand Redde a besoin d’une approbation ou d’une réponse, ou quand une réponse est terminée, pendant que vous êtes dans une autre app. « Annoncer sur les AirPods » les marque comme urgentes pour que Siri puisse les lire dans vos AirPods (activez Annoncer les notifications pour Redde dans Réglages de l’iPhone) et qu’elles vous parviennent en mode de concentration. « Son de notification » désactivé les rend toutes silencieuses, celles de votre Hermes aussi ; elles s’affichent toujours."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le notifiche in background ti avvisano quando Redde ha bisogno di un'approvazione o di una risposta, o quando una risposta è terminata, mentre sei in un'altra app. “Annuncia su AirPods” le contrassegna come urgenti così Siri può leggerle tramite gli AirPods (attiva Annuncia notifiche per Redde in Impostazioni di iPhone) e ti raggiungono anche in una modalità Full immersion. Con “Suono notifica” disattivato sono tutte silenziose, anche quelle del tuo Hermes; compaiono comunque."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "バックグラウンド通知は、ほかのアプリを使っている間に、Reddeが承認や回答を必要としているときや返答が完了したときに知らせます。「AirPodsで読み上げ」では通知を即時通知にして、SiriがAirPodsで読み上げられるようにし（iPhoneの設定でReddeの「通知の読み上げ」をオンにしてください）、集中モード中にも届くようにします。「通知サウンド」をオフにすると、Hermesからの通知も含めすべて無音になりますが、表示はされます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "백그라운드 알림은 다른 앱을 사용하는 동안 Redde에 승인이나 답변이 필요하거나 응답이 완료되면 알려 줍니다. “AirPods에서 알림 읽어주기”는 알림을 시간 민감 알림으로 표시하여 Siri가 AirPods로 소리 내어 읽을 수 있게 하고(iPhone 설정에서 Redde의 알림 읽어주기를 켜십시오) 집중 모드 중에도 알림을 받을 수 있게 합니다. “알림 사운드”를 끄면 Hermes에서 오는 알림을 포함한 모든 알림이 무음이 되며, 알림은 계속 표시됩니다."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bakgrunnsvarslinger gir deg beskjed når Redde trenger en godkjenning eller et svar, eller når et svar er ferdig, mens du er i en annen app. «Kunngjør på AirPods» merker dem som tidssensitive, slik at Siri kan lese dem opp gjennom AirPods (slå på Kunngjør varslinger for Redde i Innstillinger på iPhonen), og slik at de når deg selv når en fokus er på. Med «Varsellyd» av blir alle lydløse, også de fra din Hermes; de vises fortsatt."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Meldingen op de achtergrond laten je weten wanneer Redde een goedkeuring of antwoord nodig heeft, of wanneer een antwoord klaar is, terwijl je in een andere app bent. ‘Kondig aan op AirPods’ markeert ze als tijdgevoelig, zodat Siri ze via AirPods kan voorlezen (zet ‘Kondig meldingen aan’ aan voor Redde in Instellingen op de iPhone) en zodat ze je bereiken tijdens een focus. Met ‘Meldingsgeluid’ uit zijn ze allemaal stil, ook die van je Hermes; ze verschijnen nog wel."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Powiadomienia w tle informują, gdy Redde potrzebuje zatwierdzenia lub odpowiedzi albo gdy odpowiedź jest gotowa, kiedy korzystasz z innej aplikacji. „Ogłaszaj na AirPods” oznacza je jako pilne, aby Siri mogła je odczytywać przez AirPods (włącz Ogłaszaj powiadomienia dla Redde w Ustawieniach iPhone'a) i aby docierały do Ciebie mimo włączonego Skupienia. Wyłączenie „Dźwięk powiadomienia” wycisza wszystkie, także te od Twojego Hermesa; nadal się pojawiają."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "As notificações em segundo plano avisam quando o Redde precisa de uma aprovação ou resposta, ou quando uma resposta termina, enquanto você está em outro app. “Anunciar nos AirPods” as marca como sensíveis ao tempo para que a Siri possa lê-las em voz alta pelos AirPods (ative Anunciar Notificações para o Redde nos Ajustes do iPhone) e para que cheguem a você durante um Foco. Com “Som de notificação” desativado, todas ficam silenciosas, inclusive as do seu Hermes; elas continuam aparecendo."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Фоновые уведомления сообщают, когда Redde нужно одобрение или ответ или когда ответ готов, пока вы в другом приложении. «Объявлять в AirPods» помечает их как срочные, чтобы Siri могла зачитывать их в AirPods (включите «Объявлять уведомления» для Redde в Настройках iPhone) и чтобы они доходили до вас в режиме фокусирования. Если выключить «Звук уведомлений», все они станут беззвучными, в том числе от вашего Hermes; при этом они все равно будут появляться."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bakgrundsnotiser talar om när Redde behöver ett godkännande eller ett svar, eller när ett svar är klart, medan du är i en annan app. ”Läs upp på AirPods” markerar dem som tidskänsliga så att Siri kan läsa upp dem i AirPods (slå på Läs upp notiser för Redde i iPhonens Inställningar) och så att de når dig även med Fokus på. Med ”Notisljud” av blir alla tysta, även de från din Hermes; de visas fortfarande."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Arka plan bildirimleri, siz başka bir uygulamadayken Redde'nin bir onaya ya da yanıta ihtiyacı olduğunda veya bir yanıt bittiğinde size haber verir. “AirPods'ta seslendir”, Siri'nin bunları AirPods üzerinden sesli okuyabilmesi (iPhone'un Ayarlar'ında Redde için Bildirimleri Seslendir'i açın) ve bir Odak açıkken size ulaşabilmeleri için onları Zamana Duyarlı olarak işaretler. “Bildirim sesi” kapalıyken Hermes'inizden gelenler dahil hepsi sessiz olur; yine de görünürler."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Фонові сповіщення повідомляють, коли Redde потрібне схвалення чи відповідь або коли відповідь завершено, поки ви в іншій програмі. «Оголошувати на AirPods» позначає їх як термінові, щоб Siri могла зачитувати їх через AirPods (увімкніть «Оголошувати сповіщення» для Redde в Параметрах iPhone) і щоб вони доходили до вас у режимі зосередження. Якщо вимкнути «Звук сповіщення», усі вони, зокрема від вашого Hermes, стануть беззвучними, але й далі з’являтимуться."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当你在其他App中时，后台通知会告诉你Redde何时需要批准或回答，或回复何时完成。“在AirPods上播报”会将它们标记为即时通知，以便Siri通过AirPods朗读（请在iPhone的“设置”中为Redde打开“播报通知”），并让它们在专注模式下也能送达。关闭“通知声音”会让所有通知静音，包括来自你的Hermes的通知；它们仍会显示。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "當你在其他 App 中時，背景通知會在 Redde 需要核准或回答，或回覆完成時通知你。「在 AirPods 上播報」會將通知標示為時效性，讓 Siri 透過 AirPods 朗讀（請在 iPhone 的「設定」中為 Redde 開啟「宣告通知」），並讓通知在專注模式中也能送達。關閉「通知聲音」會讓所有通知都變成靜音（包括來自你 Hermes 的通知）；通知仍會顯示。"
           }
         }
       }
@@ -167916,113 +169302,6 @@
         }
       }
     },
-    "Keep Replies Going in the Background" : {
-      "comment" : "Settings › Notifications toggle: whether iOS's progress card keeps a reply streaming while Redde is in the background",
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lad svar fortsætte i baggrunden"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Antworten im Hintergrund weiterlaufen lassen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seguir recibiendo respuestas en segundo plano"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Poursuivre les réponses en arrière-plan"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Continua le risposte in background"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "バックグラウンドでも返信を続ける"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "백그라운드에서도 답변 계속 받기"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La svar fortsette i bakgrunnen"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Antwoorden op de achtergrond laten doorgaan"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kontynuuj odpowiedzi w tle"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Continuar respostas em segundo plano"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Продолжать ответы в фоне"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Låt svar fortsätta i bakgrunden"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yanıtları arka planda sürdür"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Продовжувати відповіді у фоні"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在后台继续接收回复"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在背景繼續接收回覆"
-          }
-        }
-      }
-    },
     "Keeps your plans, lists and reminders, and nudges you on time." : {
       "localizations" : {
         "da" : {
@@ -174609,112 +175888,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Redde 的即時動態已關閉，沒有即時動態，iOS 不會顯示鬧鐘也不會響鈴。打開「設定」…"
-          }
-        }
-      }
-    },
-    "Live Activity while Redde works" : {
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Live-aktivitet, mens Redde arbejder"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Live-Aktivität, während Redde arbeitet"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Actividad en vivo mientras Redde trabaja"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Activité en direct pendant que Redde travaille"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Attività in tempo reale mentre Redde lavora"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reddeの作業中にライブアクティビティを表示"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redde가 작업하는 동안 실시간 현황"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Live-aktivitet mens Redde jobber"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Live-activiteit terwijl Redde werkt"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aktywność na żywo, gdy Redde pracuje"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atividade ao Vivo enquanto o Redde trabalha"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Живая активность во время работы Redde"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Liveaktivitet medan Redde arbetar"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redde çalışırken Canlı Etkinlik"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Дія наживо, поки Redde працює"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redde工作时显示实时活动"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redde 工作時顯示即時動態"
           }
         }
       }
@@ -207383,112 +208556,6 @@
         }
       }
     },
-    "Notification sound" : {
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Meddelelseslyd"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mitteilungston"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sonido de notificación"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Son de notification"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Suono notifica"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通知サウンド"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "알림 사운드"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Varsellyd"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Meldingsgeluid"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dźwięk powiadomienia"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Som de notificação"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Звук уведомлений"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Notisljud"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bildirim sesi"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Звук сповіщення"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通知声音"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通知聲音"
-          }
-        }
-      }
-    },
     "Notifications" : {
       "localizations" : {
         "da" : {
@@ -208442,218 +209509,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "通知我"
-          }
-        }
-      }
-    },
-    "Notify me in the background" : {
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Giv mig besked i baggrunden"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Im Hintergrund benachrichtigen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avisarme en segundo plano"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "M’avertir en arrière-plan"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avvisami in background"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "バックグラウンドで通知"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "백그라운드에서 알림"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Varsle meg i bakgrunnen"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Meldingen op de achtergrond"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Powiadamiaj mnie w tle"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Notificar em segundo plano"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Уведомлять в фоне"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Meddela mig i bakgrunden"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Arka planda bildir"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сповіщати мене у фоні"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在后台通知我"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在背景時通知我"
-          }
-        }
-      }
-    },
-    "Notify when Redde is closed" : {
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Giv besked, når Redde er lukket"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Benachrichtigen, wenn Redde geschlossen ist"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avisar cuando Redde esté cerrado"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avertir quand Redde est fermé"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Notifica quando Redde è chiusa"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reddeが閉じているときに通知"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redde가 닫혀 있을 때 알림"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Varsle når Redde er lukket"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Meld als Redde gesloten is"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Powiadamiaj, gdy Redde jest zamknięte"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Notificar com o Redde fechado"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Уведомлять при закрытом Redde"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Meddela när Redde är stängd"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redde kapalıyken bildir"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сповіщати, коли Redde закрито"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redde关闭时通知"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redde 關閉時通知"
           }
         }
       }
@@ -213057,112 +213912,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "裝置上"
-          }
-        }
-      }
-    },
-    "On-device speech recognition and synthesis. No analytics. Every request goes only to the servers you configured. The exceptions are opt-in: with “Let Siri use Redde” on, Apple Intelligence handles what you say to Siri; with a Hermes paired under “Notify when Redde is closed”, its notifications pass through Goosehouse's relay, encrypted; and with “Sync with iCloud” on, your settings and servers are kept in your own iCloud, their keys and passwords in iCloud Keychain, end-to-end encrypted." : {
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Talegenkendelse og talesyntese på enheden. Ingen analyse. Hver anmodning går kun til de servere, du har konfigureret. Undtagelserne kræver, at du selv slår dem til: med “Lad Siri bruge Redde” slået til håndterer Apple Intelligence det, du siger til Siri; med en Hermes parret under “Giv besked, når Redde er lukket” passerer dens meddelelser krypteret gennem Goosehouses relæ; og med “Synkroniser med iCloud” slået til opbevares dine indstillinger og servere i din egen iCloud, deres nøgler og adgangskoder i iCloud-nøglering, krypteret fra ende til ende."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Spracherkennung und -synthese auf dem Gerät. Keine Analysedaten. Jede Anfrage geht nur an die von dir konfigurierten Server. Die Ausnahmen sind freiwillig: Ist „Siri darf Redde nutzen“ an, verarbeitet Apple Intelligence, was du zu Siri sagst; mit einem unter „Benachrichtigen, wenn Redde geschlossen ist“ gekoppelten Hermes laufen dessen Mitteilungen verschlüsselt über das Relay von Goosehouse; und ist „Mit iCloud synchronisieren“ an, werden deine Einstellungen und Server in deiner eigenen iCloud gesichert, ihre Schlüssel und Passwörter im iCloud-Schlüsselbund, Ende-zu-Ende-verschlüsselt."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reconocimiento y síntesis de voz en el dispositivo. Sin analíticas. Cada solicitud va solo a los servidores que configuraste. Las excepciones son opcionales: con “Permitir que Siri use Redde” activado, Apple Intelligence gestiona lo que dices a Siri; con un Hermes vinculado en “Avisar cuando Redde esté cerrado”, sus notificaciones pasan cifradas por el relé de Goosehouse; y con “Sincronizar con iCloud” activado, tus ajustes y servidores se guardan en tu propio iCloud, y sus claves y contraseñas en el Llavero de iCloud, con cifrado de extremo a extremo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reconnaissance et synthèse vocales sur l’appareil. Aucune analyse statistique. Chaque requête va uniquement aux serveurs que vous avez configurés. Les exceptions sont facultatives : avec « Autoriser Siri à utiliser Redde » activé, Apple Intelligence traite ce que vous dites à Siri ; avec un Hermes jumelé sous « Avertir quand Redde est fermé », ses notifications passent par le relais de Goosehouse, chiffrées ; et avec « Synchroniser avec iCloud » activé, vos réglages et serveurs sont conservés dans votre propre iCloud, leurs clés et mots de passe dans le trousseau iCloud, chiffrés de bout en bout."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Riconoscimento e sintesi vocale sul dispositivo. Nessuna analisi. Ogni richiesta va solo ai server che hai configurato. Le eccezioni sono facoltative: con “Consenti a Siri di usare Redde” attivo, Apple Intelligence gestisce ciò che dici a Siri; con un Hermes abbinato in “Notifica quando Redde è chiusa”, le sue notifiche passano, crittografate, per il relay di Goosehouse; e con “Sincronizza con iCloud” attivo, le tue impostazioni e i tuoi server vengono salvati nel tuo iCloud, con chiavi e password nel Portachiavi iCloud, con crittografia end-to-end."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "音声認識と音声合成はデバイス上で行われます。分析データの収集はありません。すべてのリクエストは設定したサーバにのみ送信されます。例外はオプトインのものだけです：「SiriにReddeの使用を許可」がオンの場合、Siriに話した内容はApple Intelligenceが処理します。「Reddeが閉じているときに通知」でHermesをペアリングした場合、その通知は暗号化されてGoosehouseのリレーを経由します。「iCloudと同期」がオンの場合、設定とサーバは自分のiCloudに、キーとパスワードはiCloudキーチェーンにエンドツーエンドで暗号化されて保存されます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "기기 내 음성 인식 및 합성. 분석 없음. 모든 요청은 구성한 서버로만 전송됩니다. 예외는 선택 사항입니다: “Siri가 Redde를 사용하도록 허용”을 켜면 Siri에게 말한 내용을 Apple Intelligence가 처리하고, “Redde가 닫혀 있을 때 알림”에서 Hermes를 페어링하면 알림이 암호화된 상태로 Goosehouse의 릴레이를 거치며, “iCloud와 동기화”를 켜면 설정과 서버가 사용자의 iCloud에, 키와 암호는 종단 간 암호화된 iCloud 키체인에 보관됩니다."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Talegjenkjenning og talesyntese på enheten. Ingen analyse. Hver forespørsel går bare til tjenerne du har konfigurert. Unntakene må du velge selv: med «La Siri bruke Redde» på håndterer Apple Intelligence det du sier til Siri; med en Hermes sammenkoblet under «Varsle når Redde er lukket» går varslingene fra den gjennom reléet til Goosehouse, kryptert; og med «Synkroniser med iCloud» på lagres innstillingene og tjenerne dine i din egen iCloud, og nøklene og passordene deres i iCloud-nøkkelring, ende-til-ende-kryptert."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Spraakherkenning en -synthese op het apparaat. Geen analyse. Elk verzoek gaat alleen naar de servers die je hebt ingesteld. De uitzonderingen kies je zelf: met ‘Laat Siri Redde gebruiken’ aan verwerkt Apple Intelligence wat je tegen Siri zegt; met een Hermes gekoppeld onder ‘Meld als Redde gesloten is’ gaan de meldingen ervan versleuteld via de relay van Goosehouse; en met ‘Synchroniseer met iCloud’ aan worden je instellingen en servers in je eigen iCloud bewaard, hun sleutels en wachtwoorden in de iCloud-sleutelhanger, end-to-end versleuteld."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rozpoznawanie i synteza mowy na urządzeniu. Bez analityki. Każde żądanie trafia tylko na skonfigurowane przez Ciebie serwery. Wyjątki wymagają Twojej zgody: z włączonym „Pozwól Siri używać Redde” to, co mówisz do Siri, przetwarza Apple Intelligence; z Hermesem sparowanym w „Powiadamiaj, gdy Redde jest zamknięte” jego powiadomienia przechodzą zaszyfrowane przez przekaźnik Goosehouse; a z włączonym „Synchronizuj z iCloud” Twoje ustawienia i serwery są przechowywane w Twoim własnym iCloud, a ich klucze i hasła w pęku kluczy iCloud, szyfrowane end-to-end."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reconhecimento e síntese de fala no dispositivo. Sem análises. Cada pedido vai só para os servidores que você configurou. As exceções são opcionais: com “Permitir que a Siri use o Redde” ativado, a Apple Intelligence processa o que você diz à Siri; com um Hermes emparelhado em “Notificar com o Redde fechado”, as notificações dele passam pelo retransmissor da Goosehouse, criptografadas; e com “Sincronizar com o iCloud” ativado, seus ajustes e servidores ficam no seu próprio iCloud, e as chaves e senhas deles nas Chaves do iCloud, com criptografia de ponta a ponta."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Распознавание и синтез речи на устройстве. Никакой аналитики. Все запросы отправляются только на настроенные вами серверы. Исключения включаются только по вашему желанию: если включено «Разрешить Siri использовать Redde», сказанное Siri обрабатывает Apple Intelligence; если Hermes связан в пару в разделе «Уведомлять при закрытом Redde», его уведомления проходят через ретранслятор Goosehouse в зашифрованном виде; а если включена «Синхронизация с iCloud», ваши настройки и серверы хранятся в вашем собственном iCloud, а их ключи и пароли — в Связке ключей iCloud со сквозным шифрованием."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Taligenkänning och talsyntes på enheten. Ingen analys. Varje förfrågan går bara till de servrar du har konfigurerat. Undantagen är frivilliga: med ”Låt Siri använda Redde” på hanterar Apple Intelligence det du säger till Siri; med en Hermes parkopplad under ”Meddela när Redde är stängd” passerar dess notiser genom Goosehouses relä, krypterade; och med ”Synka med iCloud” på sparas dina inställningar och servrar i din egen iCloud, deras nycklar och lösenord i iCloud-nyckelring, totalsträckskrypterade."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aygıtta konuşma tanıma ve sentezleme. Analiz yok. Her istek yalnızca yapılandırdığınız sunuculara gider. İstisnalar isteğe bağlıdır: “Siri Redde'yi kullanabilsin” açıksa Siri'ye söylediklerinizi Apple Intelligence işler; “Redde kapalıyken bildir” altında eşlenmiş bir Hermes varsa bildirimleri şifreli olarak Goosehouse'un aktarıcısından geçer; “iCloud ile Eşzamanla” açıksa ayarlarınız ve sunucularınız kendi iCloud'unuzda, anahtarları ve parolaları uçtan uca şifreli olarak iCloud Anahtar Zinciri'nde saklanır."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Розпізнавання й синтез мовлення на пристрої. Без аналітики. Кожен запит надходить лише на налаштовані вами сервери. Винятки вмикаються лише за вашим бажанням: якщо ввімкнено «Дозволити Siri використовувати Redde», сказане Siri обробляє Apple Intelligence; якщо створено пару з Hermes у «Сповіщати, коли Redde закрито», його сповіщення в зашифрованому вигляді проходять через ретранслятор Goosehouse; а якщо ввімкнено «Синхронізація з iCloud», ваші параметри й сервери зберігаються у вашому власному iCloud, а їхні ключі й паролі — у Зв’язці ключів iCloud із наскрізним шифруванням."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设备端语音识别与合成。无分析。每个请求只发送到你配置的服务器。例外情况均需你主动选择：打开“允许Siri使用Redde”时，由Apple智能处理你对Siri说的话；在“Redde关闭时通知”中配对了Hermes时，它的通知会加密经过Goosehouse的中继；打开“与iCloud同步”时，你的设置和服务器保存在你自己的iCloud中，其密钥和密码保存在iCloud钥匙串中，端到端加密。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "裝置上的語音辨識和語音合成。沒有分析功能。每個請求只會傳送到你設定的伺服器。例外情況都需要你自行選擇開啟：開啟「允許 Siri 使用 Redde」時，Apple Intelligence 會處理你對 Siri 說的話；在「Redde 關閉時通知」中配對了 Hermes 時，其通知會以加密形式經過 Goosehouse 的中繼；開啟「與 iCloud 同步」時，你的設定和伺服器會保存在你自己的 iCloud 中，其金鑰和密碼則保存在 iCloud 鑰匙圈中，採用端對端加密。"
           }
         }
       }
@@ -359159,112 +359908,6 @@
         }
       }
     },
-    "When Redde is closed" : {
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Når Redde er lukket"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wenn Redde geschlossen ist"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cuando Redde está cerrado"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quand Redde est fermé"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quando Redde è chiusa"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reddeが閉じているとき"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redde가 닫혀 있을 때"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Når Redde er lukket"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Als Redde gesloten is"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gdy Redde jest zamknięte"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Com o Redde fechado"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "При закрытом Redde"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "När Redde är stängd"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redde kapalıyken"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Коли Redde закрито"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redde关闭时"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redde 關閉時"
-          }
-        }
-      }
-    },
     "When Redde opens" : {
       "localizations" : {
         "da" : {
@@ -361282,113 +361925,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "通話期間，麥克風聽到的內容會傳送到 %@，你的代理的回答也會送到那裡說出來。"
-          }
-        }
-      }
-    },
-    "While a reply comes in and Redde is in the background, iOS shows a card saying your agent is working, so the reply keeps streaming. Off: no card; the reply finishes on your server and comes as a notification." : {
-      "comment" : "Footer under Keep Replies Going in the Background, in Settings › Notifications",
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mens et svar kommer ind, og Redde er i baggrunden, viser iOS et kort om, at din agent arbejder, så svaret bliver ved med at strømme ind. Fra: intet kort; svaret bliver færdigt på din server og kommer som en notifikation."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Während eine Antwort eintrifft und Redde im Hintergrund ist, zeigt iOS eine Karte, dass dein Agent arbeitet, damit die Antwort weiter ankommt. Aus: keine Karte; die Antwort wird auf deinem Server fertig und kommt als Mitteilung."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mientras llega una respuesta y Redde está en segundo plano, iOS muestra una tarjeta que dice que tu agente está trabajando, para que la respuesta siga llegando. Desactivado: sin tarjeta; la respuesta termina en tu servidor y llega como notificación."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pendant qu'une réponse arrive et que Redde est en arrière-plan, iOS affiche une carte indiquant que ton agent travaille, pour que la réponse continue d'arriver. Désactivé : pas de carte ; la réponse se termine sur ton serveur et arrive en notification."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mentre arriva una risposta e Redde è in background, iOS mostra una scheda che dice che il tuo agente sta lavorando, così la risposta continua ad arrivare. Disattivato: nessuna scheda; la risposta si completa sul tuo server e arriva come notifica."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "返信の受信中に Redde がバックグラウンドにあると、iOS はエージェントが作業中であることを示すカードを表示し、返信を受け取り続けます。オフにするとカードは出ず、返信はサーバー上で完了して通知で届きます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "답변을 받는 동안 Redde가 백그라운드에 있으면 iOS가 에이전트가 작업 중이라는 카드를 보여 주어 답변이 계속 들어옵니다. 끄면 카드가 없고, 답변은 서버에서 완료되어 알림으로 옵니다."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mens et svar kommer inn og Redde er i bakgrunnen, viser iOS et kort om at agenten din jobber, så svaret fortsetter å strømme inn. Av: ikke noe kort; svaret blir ferdig på serveren din og kommer som et varsel."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Terwijl er een antwoord binnenkomt en Redde op de achtergrond staat, toont iOS een kaart dat je agent bezig is, zodat het antwoord blijft binnenkomen. Uit: geen kaart; het antwoord wordt op je server afgemaakt en komt als melding."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gdy przychodzi odpowiedź, a Redde jest w tle, iOS pokazuje kartę, że twój agent pracuje, więc odpowiedź dalej spływa. Wyłączone: bez karty; odpowiedź kończy się na twoim serwerze i przychodzi jako powiadomienie."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enquanto uma resposta chega e o Redde está em segundo plano, o iOS mostra um cartão dizendo que seu agente está trabalhando, para a resposta continuar chegando. Desativado: sem cartão; a resposta termina no seu servidor e chega como notificação."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Пока приходит ответ, а Redde в фоне, iOS показывает карточку о том, что ваш агент работает, чтобы ответ продолжал поступать. Выкл.: без карточки; ответ завершается на вашем сервере и приходит уведомлением."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Medan ett svar kommer in och Redde är i bakgrunden visar iOS ett kort om att din agent arbetar, så att svaret fortsätter att strömma in. Av: inget kort; svaret blir klart på din server och kommer som en notis."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bir yanıt gelirken Redde arka plandaysa iOS, temsilcinizin çalıştığını söyleyen bir kart gösterir; böylece yanıt gelmeye devam eder. Kapalı: kart yok; yanıt sunucunuzda tamamlanır ve bildirim olarak gelir."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Поки надходить відповідь, а Redde у фоні, iOS показує картку про те, що ваш агент працює, щоб відповідь і далі надходила. Вимкнено: без картки; відповідь завершується на вашому сервері й надходить сповіщенням."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "回复传入期间如果 Redde 在后台，iOS 会显示一张卡片说明你的智能体正在工作，让回复继续传入。关闭：不显示卡片；回复在你的服务器上完成，并以通知送达。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "回覆傳入期間如果 Redde 在背景，iOS 會顯示一張卡片說明你的代理正在工作，讓回覆繼續傳入。關閉：不顯示卡片；回覆在你的伺服器上完成，並以通知送達。"
           }
         }
       }

@@ -64,7 +64,7 @@ struct AgendaCard: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background.secondary, in: .rect(cornerRadius: 20))
+        .cardFill()
         .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(.separator.opacity(0.5), lineWidth: 0.5) }
         .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
         // The calendars it names, for Settings → Agent → Calendars to offer.

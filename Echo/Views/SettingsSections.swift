@@ -117,6 +117,21 @@ struct AppearanceSettings: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
+            Picker(selection: $settings.cardColor) {
+                ForEach(Settings.CardColor.allCases) { choice in
+                    if let color = choice.color(in: active) {
+                        Label { Text(choice.label) } icon: { Image(systemName: "circle.fill").foregroundStyle(color) }.tag(choice)
+                    } else {
+                        Text(choice.label).tag(choice)
+                    }
+                }
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Cards")
+                    Text("Answer cards, approvals and questions: plain, or washed in a color.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
             Toggle(isOn: $settings.botColors) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Bot colors in their chats")
@@ -966,7 +981,7 @@ struct NotificationSettings: View {
 
     var body: some View {
         Section {
-            Toggle("Notify me in the background", isOn: Binding(
+            Toggle("Alerts While Redde Is Open", isOn: Binding(
                 get: { settings.notifyInBackground },
                 set: { on in
                     if on { Task { settings.notifyInBackground = await Notifier.shared.requestAuthorization() } }
@@ -974,17 +989,19 @@ struct NotificationSettings: View {
                 }))
             Toggle("Announce on AirPods", isOn: $settings.announceOnAirPods)
                 .disabled(!settings.notifyInBackground)
-            Toggle("Notification sound", isOn: $settings.notificationSound)
+            Toggle("Alert Sound", isOn: $settings.notificationSound)
+        } header: {
+            Text(String(localized: "Alerts", comment: "Section header in Settings › Notifications: notifications Redde and your Hermes send"))
         } footer: {
-            Text("Background notifications tell you when Redde needs an approval or an answer, or when a reply finishes, while you're in another app. “Announce on AirPods” marks them time-sensitive so Siri can read them aloud through AirPods (turn on Announce Notifications for Redde in the iPhone's Settings) and so they reach you in a Focus. “Notification sound” off makes all of them silent, those from your Hermes too; they still appear.")
+            Text("When an agent needs you or a reply finishes while you're in another app. Redde sends these itself, so they stop once it's closed. “Announce on AirPods” marks them time-sensitive, so Siri can read them aloud through AirPods (turn on Announce Notifications for Redde in the iPhone's Settings) and they reach you in a Focus. “Alert Sound” off makes every alert silent, your Hermes's too; they still appear.")
         }
         QuietHoursSection()
         Section {
             NavigationLink { PushSettingsView() } label: {
-                LabeledContent("Notify when Redde is closed", value: PushService.shared.pairings.contains(where: \.isPaired) ? String(localized: "On") : String(localized: "Off"))
+                LabeledContent("Alerts When Redde Is Closed", value: PushService.shared.pairings.contains(where: \.isPaired) ? String(localized: "On") : String(localized: "Off"))
             }
         } footer: {
-            Text(String(localized: "Background notifications stop when Redde is closed; with this, your Hermes sends them from then on, to each iPhone, iPad and Mac you pair.", comment: "Footer under Notify when Redde is closed, in Settings › Notifications"))
+            Text(String(localized: "Your Hermes sends them instead once Redde is closed, to each iPhone, iPad and Mac you pair.", comment: "Footer under Alerts When Redde Is Closed, in Settings › Notifications"))
         }
         #if os(iOS)
         Section {
@@ -995,18 +1012,23 @@ struct NotificationSettings: View {
             Text(String(localized: "An agent you allow rings this device like a phone call when something shouldn't wait.", comment: "Footer under Calls from Agents, in Settings › Notifications (an iPhone or an iPad)"))
         }
         #endif
+        // Two things on screen while a reply is worked on (2026-11-01: "a couple are very similar
+        // wording"): Redde's Live Activity, and iOS's own "<agent> is working" card.
         Section {
-            Toggle("Live Activity while Redde works", isOn: $settings.showLiveActivity)
+            Toggle("Live Activities", isOn: $settings.showLiveActivity)
+            #if os(iOS)
+            Toggle(String(localized: "“\(settings.headerTitle) Is Working” Card", comment: "Settings › Notifications: iOS's card while a reply streams in the background, with the agent's name"),
+                   isOn: $settings.keepRepliesInBackground)
+            #endif
+        } header: {
+            Text(String(localized: "While an Agent Works", comment: "Section header in Settings › Notifications: what shows on screen while a reply is worked on"))
         } footer: {
+            #if os(iOS)
+            Text(String(localized: "Live Activities show a reply being worked on on the Lock Screen and in the Dynamic Island. “\(settings.headerTitle) is working” is iOS's card that keeps a reply streaming while you're in another app; with it off, the reply finishes on your server and comes as an alert.", comment: "Footer under While an Agent Works, in Settings › Notifications (an iPhone or an iPad)"))
+            #else
             Text("A reply being worked on shows on the Lock Screen and in the Dynamic Island.")
+            #endif
         }
-        #if os(iOS)
-        Section {
-            Toggle("Keep Replies Going in the Background", isOn: $settings.keepRepliesInBackground)
-        } footer: {
-            Text("While a reply comes in and Redde is in the background, iOS shows a card saying your agent is working, so the reply keeps streaming. Off: no card; the reply finishes on your server and comes as a notification.")
-        }
-        #endif
     }
 }
 
@@ -1122,7 +1144,7 @@ struct AboutSettings: View {
 
     var body: some View {
         Section("Privacy invariant") {
-            Text("On-device speech recognition and synthesis. No analytics. Every request goes only to the servers you configured. The exceptions are opt-in: with “Let Siri use Redde” on, Apple Intelligence handles what you say to Siri; with a Hermes paired under “Notify when Redde is closed”, its notifications pass through Goosehouse's relay, encrypted; and with “Sync with iCloud” on, your settings and servers are kept in your own iCloud, their keys and passwords in iCloud Keychain, end-to-end encrypted.")
+            Text("On-device speech recognition and synthesis. No analytics. Every request goes only to the servers you configured. The exceptions are opt-in: with “Let Siri use Redde” on, Apple Intelligence handles what you say to Siri; with a Hermes paired under “Alerts When Redde Is Closed”, its notifications pass through Goosehouse's relay, encrypted; and with “Sync with iCloud” on, your settings and servers are kept in your own iCloud, their keys and passwords in iCloud Keychain, end-to-end encrypted.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }

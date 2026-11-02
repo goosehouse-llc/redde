@@ -468,6 +468,43 @@ final class Settings: ServeEndpoint {
     var eventColor: EventColor {
         didSet { store(eventColor.rawValue, forKey: Keys.eventColor) }
     }
+    /// Settings → Appearance → Cards (asked 2026-11-02): a wash of one colour over every answer
+    /// card's ground, or none. A wash, never a fill, so a card's text reads in either appearance.
+    enum CardColor: String, CaseIterable, Identifiable {
+        case plain, accent, bubbles, yellow, orange, pink, purple, blue, teal, green
+        var id: String { rawValue }
+        func color(in theme: ResolvedTheme) -> Color? {
+            switch self {
+            case .plain: nil
+            case .accent: theme.accent
+            case .bubbles: theme.userBubble
+            case .yellow: .yellow
+            case .orange: .orange
+            case .pink: .pink
+            case .purple: .purple
+            case .blue: .blue
+            case .teal: .teal
+            case .green: .green
+            }
+        }
+        var label: String {
+            switch self {
+            case .plain: String(localized: "Plain", comment: "Cards setting: answer cards without a colour")
+            case .accent: String(localized: "Accent", comment: "Cards setting: answer cards in the theme's accent colour")
+            case .bubbles: String(localized: "Like Your Bubbles", comment: "Cards setting: answer cards in the colour of the person's message bubbles")
+            case .yellow: String(localized: "Yellow")
+            case .orange: String(localized: "Orange")
+            case .pink: String(localized: "Pink")
+            case .purple: String(localized: "Purple")
+            case .blue: String(localized: "Blue")
+            case .teal: String(localized: "Teal")
+            case .green: String(localized: "Green")
+            }
+        }
+    }
+    var cardColor: CardColor {
+        didSet { store(cardColor.rawValue, forKey: Keys.cardColor) }
+    }
     /// Settings → Agent → Calendars (`CalendarChoice`, asked 2026-10-30): the calendars the agent
     /// looks at and agenda cards show, by title; empty for all of them.
     var agendaCalendars: [String] {
@@ -863,6 +900,7 @@ final class Settings: ServeEndpoint {
         static let chatTextSize = "chatTextSize"
         static let botColors = "botColors"
         static let eventColor = "eventColor"
+        static let cardColor = "cardColor"
         static let agendaCalendars = CalendarChoice.key
         static let currentLocation = CurrentLocation.key
         static let leaveByAlerts = LeaveBy.key
@@ -974,6 +1012,7 @@ final class Settings: ServeEndpoint {
         chatTextSize = min(max(defaults.integer(forKey: Keys.chatTextSize), Self.chatTextSizes.lowerBound), Self.chatTextSizes.upperBound)
         botColors = defaults.object(forKey: Keys.botColors) as? Bool ?? true
         eventColor = EventColor(rawValue: defaults.string(forKey: Keys.eventColor) ?? "") ?? .byCalendar
+        cardColor = CardColor(rawValue: defaults.string(forKey: Keys.cardColor) ?? "") ?? .plain
         agendaCalendars = defaults.stringArray(forKey: Keys.agendaCalendars) ?? []
         currentLocation = defaults.bool(forKey: Keys.currentLocation)
         leaveByAlerts = defaults.bool(forKey: Keys.leaveByAlerts)
@@ -1049,7 +1088,7 @@ final class Settings: ServeEndpoint {
     /// Siri, Phone tools, what needs a permission of the device (notifications, motion), and the
     /// push relay.
     static let syncedKeys: [String] = [
-        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.botColors, Keys.eventColor, Keys.agendaCalendars, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
+        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.botColors, Keys.eventColor, Keys.cardColor, Keys.agendaCalendars, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
         Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots, Keys.projectsInChatList,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.measureUnits, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.keepRepliesInBackground, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
@@ -1078,6 +1117,7 @@ final class Settings: ServeEndpoint {
         case Keys.chatTextSize: chatTextSize = min(max(value as? Int ?? 0, Self.chatTextSizes.lowerBound), Self.chatTextSizes.upperBound)
         case Keys.botColors: botColors = flag(true)
         case Keys.eventColor: eventColor = pick(EventColor.byCalendar)
+        case Keys.cardColor: cardColor = pick(CardColor.plain)
         case Keys.agendaCalendars: agendaCalendars = value as? [String] ?? []
         case Keys.linkPreviews: linkPreviews = flag()
         case Keys.addressMaps: addressMaps = flag(true)
@@ -1380,6 +1420,7 @@ final class Settings: ServeEndpoint {
         chatTextSize = 0
         botColors = true
         eventColor = .byCalendar
+        cardColor = .plain
         agendaCalendars = []
         currentLocation = false
         leaveByAlerts = false

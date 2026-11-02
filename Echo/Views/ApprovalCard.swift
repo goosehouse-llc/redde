@@ -126,7 +126,7 @@ struct ApprovalCard: View {
         }
         .padding(16)
         .frame(maxWidth: 560, alignment: .leading)
-        .background(.background.secondary, in: .rect(cornerRadius: 20))
+        .cardFill()
         .overlay {
             RoundedRectangle(cornerRadius: 20).strokeBorder(warn.opacity(summary.risky ? 0.55 : 0.35), lineWidth: summary.risky ? 1 : 0.75)
         }

@@ -78,7 +78,7 @@ struct PushSettingsView: View {
                 Text(String(localized: "What a notification says is encrypted on your Hermes and opened on this device, with a key the two agree on when you pair. On the way it passes through a relay run by Goosehouse and through Apple; neither can read it. The relay keeps this device's notification address so it can deliver, and never has the key. Removing a pairing deletes the address there.", comment: "Footer under Pair a Hermes, in Settings › Notifications › Notify when Redde is closed"))
             }
         }
-        .navigationTitle("When Redde is closed")
+        .navigationTitle("Alerts When Redde Is Closed")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $scanning) {
             CodeScanner(title: "Scan a pairing code", prompt: "Point the camera at the code in your terminal.",
