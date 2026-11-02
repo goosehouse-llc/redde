@@ -36,6 +36,8 @@ Most of it takes the Redde plugin on your Hermes. Settings → Agent → **Ahead
 
 ### **Your Hermes agent now gets ahead of your day, plus 2.2's live voice (too much for one video, so here's a list to try) **
 
+(**As always, privacy is paramount. Everything you see here is opt-in within settings. Nothing comes back to me or leaves your phone/server unless you tell it to)**
+
 **Ahead of your day**
 
 - **Morning Ideas.** A few things worth doing today, as cards to swipe: right to have your agent do it, left for not now. Hold one for More Like This, Fewer Like This or Later. It learns from your swipes.
