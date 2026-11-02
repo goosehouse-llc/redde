@@ -44,7 +44,7 @@ When you open Find Plugins (Settings → Plugins), your device downloads Nous Re
 
 ## Notifications when Redde is closed (optional, off by default)
 
-iOS closes an app in the background after a few minutes, and from then on Redde cannot tell you that a reply is ready or that your assistant is waiting for you. If you want to be told anyway, you can pair your own Hermes server with your iPhone, iPad or Mac in Settings → Notifications → Notify when Redde is closed, each device on its own. Nothing in this section happens unless you do.
+iOS closes an app in the background after a few minutes, and from then on Redde cannot tell you that a reply is ready or that your assistant is waiting for you. If you want to be told anyway, you can pair your own Hermes server with your iPhone, iPad or Mac in Settings → Notifications → Alerts When Redde Is Closed, each device on its own. Nothing in this section happens unless you do.
 
 Once paired, your Hermes server sends a notification when a reply finishes, when the assistant waits for you (to approve a command, answer a question, or enter a password or a secret), when a turn fails, and when a task it handed off comes back. Your server encrypts each one with a key that only it and that device hold, and sends it to a relay operated by Goosehouse LLC (redde-push.goosehouse.org, hosted on Cloudflare). The relay hands it to Apple's push notification service, which delivers it, and your device decrypts it.
 
@@ -59,7 +59,7 @@ What passes through and is not kept: the encrypted notifications. Inside the enc
 
 The relay has no accounts and nothing that says who you are: no name, no email address, no contact details. Like any internet service, it and its host see the network address a request comes from, and the host keeps routine request logs (the time, the path and the result, never a notification's content) for a few days. We use what the relay holds only to deliver your notifications. We do not combine it with anything else, share it, or sell it.
 
-A pairing is deleted from the relay when you remove it in Redde (swipe it away under Notify when Redde is closed), when Apple reports that the token is no longer valid, for example after the app is deleted, or after 120 days in which the device has not checked in. Your Hermes server keeps its own record of the pairing until it next tries to send; `hermes redde-push remove` deletes it there.
+A pairing is deleted from the relay when you remove it in Redde (swipe it away under Alerts When Redde Is Closed), when Apple reports that the token is no longer valid, for example after the app is deleted, or after 120 days in which the device has not checked in. Your Hermes server keeps its own record of the pairing until it next tries to send; `hermes redde-push remove` deletes it there.
 
 The Hermes server needs a small plugin for this. You can install it there yourself, or, when Redde is signed in to that server's Dashboard, have Redde ask the server to install it: the server then downloads the plugin from our public repository on GitHub. Redde passes the request to your own server and downloads nothing itself.
 
