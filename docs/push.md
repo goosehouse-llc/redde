@@ -102,7 +102,7 @@ The key is agreed between the plugin and the phone; the relay only carries the t
    its public key as a link, `https://redde.goosehouse.org/connect#push=<key>`, and as a QR code
    of that link. The key sits after the `#`, which a browser never sends; with Redde installed,
    iOS opens the link in the app without loading the page.
-2. In Redde: Settings › Voice › Notify when Redde is closed › Pair with a code › scan it (or
+2. In Redde: Settings › Notifications › Alerts When Redde Is Closed › Pair with a code › scan it (or
    paste the link, or open it). The app asks before doing anything. Then it asks iOS for a push token, makes its
    own key pair, registers the token at the relay under a fresh random secret (the relay is sent
    the secret's hash), and leaves its answer at the relay: its public key, and its relay id and

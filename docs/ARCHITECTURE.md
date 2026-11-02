@@ -1784,7 +1784,7 @@ sends it into the conversation the banner came from (behind an unlock when the a
 is on).
 
 **When Redde is closed.** Those stop when iOS closes the app. From then on a paired Hermes sends
-them itself (Settings → Voice → "Notify when Redde is closed"): a plugin there seals a short note
+them itself (Settings → Notifications → "Alerts When Redde Is Closed"): a plugin there seals a short note
 with a key only it and the phone hold, a relay passes it to Apple unread, and the `EchoPush`
 notification extension opens it (`Shared/PushSeal.swift`, `PushService`). An app with that
 Hermes's Dashboard login can have Hermes install the plugin (`PushPlugin.swift`: the Dashboard's

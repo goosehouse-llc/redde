@@ -19,12 +19,12 @@ hermes plugins install goosehouse-llc/redde/companion/hermes-plugin/redde-push -
 Restart Hermes (`hermes gateway restart`, and `hermes serve` if you run the Dashboard).
 
 Or leave the terminal out of it: with the Hermes Dashboard login saved in Redde, Settings ›
-Voice › Notify when Redde is closed has an Install the Plugin button that has this Hermes fetch
+Notifications › Alerts When Redde Is Closed has an Install the Plugin button that has this Hermes fetch
 and enable the same plugin. Hermes 0.21.5 and later load it at once; earlier ones still need the
 restart above.
 
 **If Redde is connected through the Dashboard**, that is all there is to do here. In Redde:
-Settings › Notifications › Notify when Redde is closed › Pair with your server, on each iPhone,
+Settings › Notifications › Alerts When Redde Is Closed › Pair with your server, on each iPhone,
 iPad or Mac. A notification on the device confirms the pairing.
 
 **Otherwise** (Redde on the Hermes API, or a device that isn't signed in to this Hermes), pair
@@ -34,8 +34,8 @@ with a code:
 hermes redde-push pair
 ```
 
-It shows a QR code and a link, and waits. In Redde: Settings › Notifications › Notify when Redde
-is closed › Pair with a code (on a Mac, copy the link and paste it). A notification on the device
+It shows a QR code and a link, and waits. In Redde: Settings › Notifications › Alerts When
+Redde Is Closed › Pair with a code (on a Mac, copy the link and paste it). A notification on the device
 confirms the pairing. Run it once for each device.
 
 Run the command as the user Hermes runs as, without `-p`: the pairing is kept in that Hermes home

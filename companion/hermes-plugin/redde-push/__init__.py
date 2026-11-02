@@ -536,7 +536,7 @@ def _cli(args) -> None:
 
 def _pair(store: core.Store, pusher: core.Pusher, relay: str, wait: int) -> None:
     offer = core.Offer(relay)
-    print("In Redde on your iPhone, iPad or Mac: Settings › Notifications › Notify when Redde is closed, then scan the code or paste the link.")
+    print("In Redde on your iPhone, iPad or Mac: Settings › Notifications › Alerts When Redde Is Closed, then scan the code or paste the link.")
     print("Or open this link on the device:\n")
     print("  " + offer.link + "\n")
     if sys.stdout.isatty():
