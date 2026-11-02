@@ -4,7 +4,7 @@ title: Redde Privacy Policy
 
 # Redde Privacy Policy
 
-**Effective date:** October 30, 2026
+**Effective date:** November 2, 2026
 **Publisher:** Goosehouse LLC
 
 Redde is a voice and chat client for an AI assistant that you run yourself. This policy explains what the app does with your information. The short version: Redde has no account, no analytics and no tracking, and your conversations go only to the server you configure. One optional feature, notifications when Redde is closed, uses a relay that we run. It holds the push address of each device you pair and passes on notifications it cannot read.
@@ -134,7 +134,7 @@ Redde is not directed at children under 13, and has no accounts and no personal 
 
 ## Changes
 
-If this policy changes, the new version will be posted at this address with an updated effective date. The October 2026 version added the optional notification relay; before it, Goosehouse LLC ran no service for Redde at all. The October 25, 2026 version added live voice calls and wake phrases, and says what Sync with iCloud sends to your other devices. The October 26, 2026 version added the plugin catalog that Find Plugins downloads, ElevenLabs as a voice that reads replies, group chats as live calls, and calls from agents.
+If this policy changes, the new version will be posted at this address with an updated effective date. The October 2026 version added the optional notification relay; before it, Goosehouse LLC ran no service for Redde at all. The October 25, 2026 version added live voice calls and wake phrases, and says what Sync with iCloud sends to your other devices. The October 26, 2026 version added the plugin catalog that Find Plugins downloads, ElevenLabs as a voice that reads replies, group chats as live calls, and calls from agents. The October 30, 2026 version added Current Location, Places, leave times and Leave-By Alerts, the calendars you choose, Health-aware days and keys asked for. The November 2, 2026 version adds notifications on an iPad or a Mac, the traffic check before a leaving time, and the pictures on purchase, recipe and show cards.
 
 ## Contact
 
