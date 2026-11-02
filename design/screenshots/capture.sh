@@ -105,6 +105,12 @@ shot "$PHONE" ph-day       -echo.demoAgenda tomorrow "${CARDS[@]}"
 clock "$PHONE"
 shot "$PHONE" ph-weather   -echo.demoCards weather "${CARDS[@]}"
 shot "$PHONE" ph-places    -echo.demoCards places "${CARDS[@]}"
+# 2.3.1's answers slot: the flight and home cards that compose.py cuts out and sets over the purchase
+# card. The purchase card itself (ph-purchase) has to be scrolled to its header, which a UI test does:
+#   TEST_RUNNER_PROMO_VIDEO=1 TEST_RUNNER_SHOT_DIR=<raw> xcodebuild test -project Echo.xcodeproj \
+#     -scheme EchoUITests -destination "id=$PHONE" -only-testing:EchoUITests/StoreShotsUITests/testPurchaseFromItsHeader
+shot "$PHONE" ph-flight    -echo.demoCards flight "${CARDS[@]}"
+shot "$PHONE" ph-home      -echo.demoCards home "${CARDS[@]}"
 clock "$PHONE" 9:41
 shot "$PHONE" ph-review    -echo.demoAsks -echo.demoAsksReviewOnly "${CARDS[@]}"
 shot "$PHONE" ph-approve   -echo.demoApprovalCard skill "${CARDS[@]}"
@@ -137,6 +143,7 @@ PADCARDS=(-echo.demoLibrary -theme standard -appearance dark "${FAST[@]}" "${CHA
 shot "$PAD" pad-day          -echo.demoAgenda tomorrow "${PADCARDS[@]}"
 clock "$PAD"
 shot "$PAD" pad-weather      -echo.demoCards weather "${PADCARDS[@]}"
+shot "$PAD" pad-purchase     -echo.demoCards purchase "${PADCARDS[@]}"
 clock "$PAD" 9:41
 shot "$PAD" pad-approve      -echo.demoApprovalCard skill "${PADCARDS[@]}"
 shot "$PAD" pad-settings     -echo.demo -echo.screen setup "${PADCARDS[@]}"

@@ -123,12 +123,19 @@ def compose_tools(src, dst, headline, sub, bg, fg, subfg, pad):
 PLACES = ('ph-places.png', (48, 901, 1273, 2401), 56)      # the places card: map, three numbered places
 REVIEW = ('ph-review.png', (48, 849, 1273, 2066), 56)      # the email to check before it sends
 APPROVAL = ('ph-approve.png', (48, 1551, 1273, 2529), 56)  # the approval in plain words
+FLIGHT = ('ph-flight.png', (48, 732, 1273, 1500), 56)      # the flight card's first leg (2.3.1)
+HOME = ('ph-home.png', (48, 470, 1273, 1340), 56)         # the home card's lights and the reading lamp (2.3.1)
 
-def compose_cards(src, dst, headline, sub, bg, fg, subfg, pad, cards):
+def compose_cards(src, dst, headline, sub, bg, fg, subfg, pad, cards, blank_below=None):
     """A screen with cards from other screens set over its empty lower part, each turned a little
     and shadowed (the 2.3 answer and approval slots). `cards`: (card, width as a share of the
-    picture, its centre as shares of the screen's width and height, turn in degrees)."""
+    picture, its centre as shares of the screen's width and height, turn in degrees).
+    `blank_below`: a row of the screen from which down it is the page's black, for a screen whose
+    lower part the cards cover (2.3.1's purchase card, scrolled to its top, has the chat's "Jump to
+    latest" and the reply's chips under it, which would show between the cards)."""
     shot = Image.open(src).convert('RGBA')
+    if blank_below:
+        ImageDraw.Draw(shot).rectangle((0, blank_below, shot.width, shot.height), fill=(0, 0, 0, 255))
     W, H = shot.size
     canvas = Image.new('RGBA', (W, H), bg)
     d = ImageDraw.Draw(canvas)
@@ -203,8 +210,9 @@ phone = [
   # The chat list's ideas and briefings, and a Leave-By Alert come in over them (-echo.demoLeaveBy).
   ('ph-ahead',    '03-ahead',    'Ahead of your day.',           'Ideas to swipe each morning, your week ahead, and a nudge when it’s time to leave.', CORAL, WHITE, PEACH),
   ('ph-day',      '04-day',      'Your day at a glance.',        'Ask what’s on and see it to scale, free time marked. Tap a gap to add an event.', PAPER, INK, SAND),
-  ('ph-weather',  '05-answers',  'Answers you can use.',         'The weather by the hour, places on a map, lists to tick off. Cards, not walls of text.', TEAL, WHITE, MINT,
-   [(PLACES, 0.54, (0.63, 0.805), -2.0)]),
+  # 2.3.1: things to buy (the agent's pick, prices, stock), with a flight and the home's controls over it.
+  ('ph-purchase', '05-answers',  'Answers you can use.',         'Things to buy with your agent’s pick, flights, your home’s lights. Cards, not walls of text.', TEAL, WHITE, MINT,
+   [(FLIGHT, 0.45, (0.245, 0.865), -1.5), (HOME, 0.43, (0.765, 0.855), 1.5)], 2380),
   # 2.0: the bots. Raw shots from PromoVideoUITests.testBotsShots (see README).
   ('ph-bots',     '06-bots',     'Meet the crew.',               'Each Hermes profile is a bot, with a face, a voice and a chat of its own. Start one from a template.', PLUM, WHITE, LILAC),
   ('ph-crew',     '07-crew',     'Talk to the whole crew.',      'Put bots in a group chat and they answer in turn, each in a voice of its own.', (24, 32, 46), WHITE, MIST),
@@ -216,8 +224,8 @@ pad = [
   ('pad-voice',        '02-ipad-voice','Just talk.',                   'An orb that moves with your voice. On-device speech, spoken replies, hands-free if you like.', (24, 32, 46), WHITE, MIST),
   ('pad-ahead',        '03-ipad-ahead', 'Ahead of your day.',          'Ideas to swipe each morning, your week ahead, and a nudge when it’s time to leave.', CORAL, WHITE, PEACH),
   ('pad-day',          '04-ipad-day',  'Your day at a glance.',        'Ask what’s on and see it to scale, free time marked. Tap a gap to add an event.', PAPER, INK, SAND),
-  ('pad-weather',      '05-ipad-answers', 'Answers you can use.',      'The weather by the hour, places on a map, lists to tick off. Cards, not walls of text.', TEAL, WHITE, MINT,
-   [(PLACES, 0.36, (0.68, 0.76), -2.0)]),
+  ('pad-purchase',     '05-ipad-answers', 'Answers you can use.',      'Things to buy with your agent’s pick, flights, your home’s lights. Cards, not walls of text.', TEAL, WHITE, MINT,
+   [(FLIGHT, 0.28, (0.19, 0.60), -1.5), (HOME, 0.24, (0.19, 0.80), 2.0)]),
   ('pad-bots',         '06-ipad-bots', 'Meet the crew.',               'Each Hermes profile is a bot, with a face, a voice and a chat of its own. Start one from a template.', PLUM, WHITE, LILAC),
   ('pad-crew',         '07-ipad-crew', 'Talk to the whole crew.',      'Put bots in a group chat and they answer in turn, each in a voice of its own.', (24, 32, 46), WHITE, MIST),
   ('pad-approve',      '08-ipad-approve', 'Nothing happens without you.', 'Check an email before it sends. Approvals say in plain words what will change.', CHAR, BONE, ASH,
@@ -236,7 +244,7 @@ for kind, slots in (('iphone-6.9', phone), ('ipad-13', pad)):
         if name in ZOOMED:
             compose(f'{SHOTS}/{src}.png', f'{OUT}/{kind}/{name}.png', h, s, bg, fg, sfg, True, panel=ZOOMED[name])
         elif cards:
-            compose_cards(f'{SHOTS}/{src}.png', f'{OUT}/{kind}/{name}.png', h, s, bg, fg, sfg, kind == 'ipad-13', cards[0])
+            compose_cards(f'{SHOTS}/{src}.png', f'{OUT}/{kind}/{name}.png', h, s, bg, fg, sfg, kind == 'ipad-13', *cards)
         else:
             draw = compose_tools if name.endswith('-tools') else compose
             draw(f'{SHOTS}/{src}.png', f'{OUT}/{kind}/{name}.png', h, s, bg, fg, sfg, kind == 'ipad-13')
