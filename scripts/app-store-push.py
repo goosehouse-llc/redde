@@ -55,7 +55,10 @@ SETS = [
 LIMITS = {'promotionalText': 170, 'keywords': 100, 'description': 4000, 'whatsNew': 4000}
 # The App Preview videos, by the type App Store Connect files them under: each file (rendered by
 # design/video/make_preview.py, not kept in git) and the frame shown before it plays.
-PREVIEWS = [('IPHONE_67', [('design/video/redde-app-preview-bots.mp4', '00:00:02:00')])]
+# 2.3.1 (2026-11-02, his pick): the lighter "A day with Redde" cuts (make_day23.py store-light [ipad]),
+# full frame, 29.4 s; the forecast card (9 s in) is the frame shown before they play.
+PREVIEWS = [('IPHONE_67', [('design/redde-day23-app-preview-iphone-light.mp4', '00:00:09:00')]),
+            ('IPAD_PRO_3GEN_129', [('design/redde-day23-app-preview-ipad-light.mp4', '00:00:09:00')])]
 # The Mac's (`--mac`): 2880 × 1800, App Store Connect's largest 16:10 size, made by
 # design/screenshots/mac.py.
 MAC = '--mac' in sys.argv

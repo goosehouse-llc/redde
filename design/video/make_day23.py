@@ -8,6 +8,12 @@ each caption), from new takes (`e*`, README "A day with Redde, for 2.3"). The cu
                            (redde-day23-app-preview-iphone.mp4, 886×1920)
   make_day23.py ipad       the iPad's, full frame, from the ipad- takes (redde-day23-app-preview-ipad.mp4, 1200×1600)
   make_day23.py long       the Reddit cut, framed, about 59 s (redde-day23-reddit.mp4, 886×1920)
+  make_day23.py light      the Reddit cut made lighter (2026-11-02, "really busy… lighter but emphasize
+                           the best features"): eight moments, footage near its own speed, Redde's
+                           lines three times, about 42 s (redde-day23-reddit-light.mp4, 886×1920)
+  make_day23.py store-light [ipad]  the App Store cuts made lighter the same way: six moments, three
+                           of them two bars, Redde heard twice (…-app-preview-iphone-light.mp4 /
+                           …-ipad-light.mp4)
   make_day23.py pages      the long cut's title and closing pages as stills
 
 The day: 7:00 Morning Ideas (the bagpipes put away, the vet taken); 7:50 "What's my day look like?",
@@ -20,7 +26,9 @@ heads-up, its event card and map; 2:00 PM the Leave-By Alert; 3:35 PM an email t
 import os, sys
 
 ARGS = sys.argv[1:]
-LONG = 'long' in ARGS
+LIGHT = 'light' in ARGS
+STORE_LIGHT = 'store-light' in ARGS
+LONG = 'long' in ARGS or LIGHT
 IPAD = 'ipad' in ARGS and not LONG
 PAGES_ONLY = 'pages' in ARGS
 sys.argv = sys.argv[:1]          # the modules below read their modes from the arguments
@@ -67,7 +75,23 @@ if IPAD:
 # of day by the caption; 'peek' Redde's line (line, when in the take): drawn peeking in from the
 # corner in the long cut, heard only in the App Store cuts; 'fix' a filter on the take (frames left out).
 IDEAS_DO = ('Morning ideas', 'Swipe right, and Sol does it.')
-if LONG:
+if LIGHT:
+    # The best of the day, each given room: the shots at about their own speed (the traffic
+    # re-check two bars, not one), Redde heard three times, not seven.
+    SHOTS = [
+        ('take', 'e1-ideas', 28.4, 35.4, IDEAS_DO, GREEN, 'slideleft', [], 2,
+         {'clock': '7:00 AM', 'fix': "select='not(between(t,2.22,2.55))',setpts=N/30/TB"}),   # (a black frame as the chat opens)
+        ('take', 'e2-today', 28.6, 33.0, DAY, PURPLE, 'slideleft', [], 1, {'clock': '7:50 AM'}),
+        ('take', 'e2-today', 34.4, 37.8, DAY_OPEN, PURPLE, 'fade', [], 1, {'clock': '7:50 AM'}),
+        ('take', 'e4-rain', 26.6, 31.0, RAIN, BLUE, 'slideleft', [], 1, {'clock': '12:10 PM'}),
+        ('take', 'e7a-traffic', 28.6, 34.8, TRAFFIC, CORAL, 'slideleft', [], 2, {'clock': '1:45 PM', 'peek': ('traffic', 29.4)}),
+        ('take', 'e8-email', 26.3, 30.6, EMAIL, PERIWINKLE, 'slideleft', [], 1, {'clock': '3:35 PM'}),
+        ('take', 'e8-email', 30.6, 35.6, EMAIL_SENT, PERIWINKLE, 'fade', [], 1, {'clock': '3:35 PM', 'peek': ('sent', 33.4)}),
+        ('take', 'e11-shipped', 21.5, 29.2, SHIPPED, TEAL, 'slideleft', [], 2, {'clock': '4:20 PM', 'peek': ('shipped', 24.0)}),
+        ('take', 'e10-evening', 19.6, 26.5, WRAP, PURPLE, 'slideleft', [], 2, {'clock': '9:00 PM'}),
+    ]
+    TITLE_BARS, OUT, P = 2, 'redde-day23-reddit-light.mp4', 'day23-light'
+elif LONG:
     SHOTS = [
         ('take', 'e1-ideas', 22.2, 26.4, IDEAS, GREEN, 'slideleft', [], 1, {'clock': '7:00 AM'}),
         ('take', 'e1-ideas', 28.4, 35.4, IDEAS_DO, GREEN, 'fade', [], 2,
@@ -111,6 +135,15 @@ else:
     TITLE_BARS = 1
     OUT = f'redde-day23-app-preview-{"ipad" if IPAD else "iphone"}.mp4'
     P = 'day23-ipad' if IPAD else 'day23'
+    ORDER = list(range(len(SHOTS)))   # each shot's place in the cut above (the iPad's cut points follow it)
+    if STORE_LIGHT:
+        # (2026-11-02, "make a similar one for app store"): the dentist tapped open, the heads-up and
+        # the wrap-up's own shot left out (the ending holds over the wrap-up); the traffic re-check,
+        # the email and the watch two bars each, so they play at about their own speed.
+        ORDER, BARS = [0, 1, 3, 5, 6, 7], {5: 2, 6: 2, 7: 2}
+        SHOTS = [SHOTS[n][:8] + (BARS.get(n, SHOTS[n][8]), SHOTS[n][9]) for n in ORDER]
+        OUT = OUT.replace('.mp4', '-light.mp4')
+        P += '-light'
 TITLE_TAKE = ('e1-ideas', 20.0, 22.4)     # the App Store cuts: the chat list at 7:00, before the swipe
 END_TAKE = ('e10-evening', 27.5)          # and the wrap-up, held
 
@@ -119,7 +152,7 @@ if IPAD:
     IPAD_CUTS = {}
     exec(open(os.path.join(V, 'day23_ipad_cuts.py')).read())   # IPAD_CUTS, IPAD_TITLE, IPAD_END
     for n, s in enumerate(SHOTS):
-        a, b, *peek = IPAD_CUTS[n]
+        a, b, *peek = IPAD_CUTS[ORDER[n]]
         extra = dict(s[9])
         if 'peek' in extra: extra['peek'] = (extra['peek'][0], peek[0])
         SHOTS[n] = (s[0], 'ipad-' + s[1], a, b, *s[4:9], extra)
@@ -131,7 +164,7 @@ LANDS_AT = [BAR * (TITLE_BARS + sum(s[8] for s in SHOTS[:i])) for i in range(len
 END_BARS = 2
 END_AT = BAR * (TITLE_BARS + sum(s[8] for s in SHOTS)) - SLIDE
 TOTAL = END_AT + SLIDE + BAR * END_BARS - 0.6
-EVENING = next(at for s, at in zip(SHOTS, LANDS_AT) if s[4][0] == WRAP[0])
+EVENING = next((at for s, at in zip(SHOTS, LANDS_AT) if s[4][0] == WRAP[0]), END_AT)   # (none: the ending is the evening)
 
 # make_day.py's pages and shots read these from their own module: the long cut uses them as they
 # are, with this cut's shots, names and closing lines.
