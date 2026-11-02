@@ -210,6 +210,15 @@ final class AudioSessionController {
     /// ended four seconds in (Marta, 2026-10-26).
     var heldByCall = false
 
+    /// Nothing of Redde's plays or listens: the category another app's audio plays on through.
+    /// In the plain one (solo ambient), which the app starts in and voice mode's own outlast it,
+    /// anything that touches the audio hardware stops other apps' music: an engine made, a web
+    /// view's media, a player prepared (GitHub issues 30 and 43). Every sound Redde makes on
+    /// purpose sets its own category first. Not activated: nothing is meant to play.
+    func rest() {
+        try? AVAudioSession.sharedInstance().setCategory(.ambient)
+    }
+
     private func release() {
         stopProximityRouting()
         activeMode = nil
@@ -217,6 +226,7 @@ final class AudioSessionController {
         if heldByCall { return }
         do {
             try AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
+            rest()
         } catch {
             // .isBusy here means an audio engine is still running; other apps stay ducked until it stops.
             log.error("deactivate failed: \(error.localizedDescription)")
@@ -450,6 +460,7 @@ final class AudioSessionController {
     func releaseUnused() {}
     func deactivateWake() {}
     func deactivate() { active = false }
+    func rest() {}
     func setReplying(_ on: Bool) {}
     func setEarRouting(_ on: Bool) {}
     func refreshRoute() {}

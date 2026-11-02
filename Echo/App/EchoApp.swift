@@ -7,6 +7,9 @@ struct EchoApp: App {
     @State private var voiceSession: VoiceSession
 
     init() {
+        // Other apps' music plays on as Redde opens (GitHub issue 43): first, before anything
+        // below makes a player or an engine.
+        AudioSessionController.shared.rest()
         // Keys stored before 2.2 could be read only while the iPhone was unlocked, so the car found
         // none (GitHub issue 34): from now on they can be once it has been unlocked since it was
         // turned on. Done here if it is unlocked, else as it is (`PushDelegate`).

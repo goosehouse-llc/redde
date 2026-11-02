@@ -92,10 +92,13 @@ final class KokoroPlayer {
     private let meter = OutputMeter()
     var meterLevel: Float { meter.level }
 
+    /// The player and the meter are on the engine. Not until the first start: reaching for the
+    /// engine's mixer makes its output unit, and this player is made as the app launches (voice
+    /// mode's `SpeechOutput`), in the category the session has then. Another app's music stopped
+    /// as Redde opened (GitHub issue 43).
+    private var wired = false
+
     init() {
-        engine.attach(player)
-        engine.connect(player, to: engine.mainMixerNode, format: format)
-        meter.install(on: engine.mainMixerNode)
         configurationObserver = NotificationCenter.default.addObserver(
             forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main
         ) { [weak self] _ in
@@ -224,7 +227,7 @@ final class KokoroPlayer {
     }
 
     /// Holds playback; queued and still-arriving sentences wait behind it.
-    func pause() { paused = true; player.pause() }
+    func pause() { paused = true; if wired { player.pause() } }
     /// (A reply held before its first sound may have nothing scheduled yet, on an engine that
     /// has been stopped since: `schedule` starts the player then.)
     func resume() { paused = false; if engine.isRunning { player.play() } }
@@ -243,7 +246,7 @@ final class KokoroPlayer {
         unplayed = []
         letPlayedWaitersGo()
         paused = false
-        player.stop()
+        if wired { player.stop() }
     }
 
     /// `stop()` plus the engine, so the audio session can deactivate.
@@ -269,8 +272,17 @@ final class KokoroPlayer {
         waiters.forEach { $0.resume() }
     }
 
+    private func wire() {
+        guard !wired else { return }
+        wired = true
+        engine.attach(player)
+        engine.connect(player, to: engine.mainMixerNode, format: format)
+        meter.install(on: engine.mainMixerNode)
+    }
+
     private func startEngine(reason: String) {
         guard !engine.isRunning else { return }
+        wire()
         let t = Date()
         do { try engine.start() } catch { log.error("engine \(reason) failed: \(error.localizedDescription)"); return }
         log.info("engine \(reason) \(Date().timeIntervalSince(t), format: .fixed(precision: 3))s")
