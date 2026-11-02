@@ -36,7 +36,7 @@ Most of it takes the Redde plugin on your Hermes. Settings → Agent → **Ahead
 
 ### **Your Hermes agent now gets ahead of your day, plus 2.2's live voice (too much for one video, so here's a list to try) **
 
-(**As always, privacy is paramount. Everything you see here is opt-in within settings. Nothing comes back to me or leaves your phone/server unless you tell it to)**
+**As always, privacy comes first. The proactive features are all off until you turn them on, and nothing comes back to me: your data goes only to your own server, and to services you choose, on your own keys.**
 
 **Ahead of your day**
 
