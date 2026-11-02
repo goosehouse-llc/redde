@@ -470,12 +470,33 @@ final class Settings: ServeEndpoint {
     }
     /// Settings → Appearance → Cards (asked 2026-11-02): a wash of one colour over every answer
     /// card's ground, or none. A wash, never a fill, so a card's text reads in either appearance.
+    /// White and off-white are paper instead: the card solid, and drawn as in light mode, dark
+    /// text and all, in dark mode too ("add a white or off white card color option"); black and
+    /// grey the same the other way, drawn as in dark mode ("add black and grey … as well").
     enum CardColor: String, CaseIterable, Identifiable {
-        case plain, accent, bubbles, yellow, orange, pink, purple, blue, teal, green
+        case plain, white, offWhite, codeBlue, grey, black, accent, bubbles, yellow, orange, pink, purple, blue, teal, green
         var id: String { rawValue }
+        static let offWhitePaper = Color(red: 0.973, green: 0.957, blue: 0.918)
+        static let greyCard = Color(red: 0.227, green: 0.227, blue: 0.235)
+        static let blackCard = Color(red: 0.055, green: 0.055, blue: 0.06)
+        /// The Code theme's pale sky (#CBF0FF), solid, as its bubbles are (asked 2026-11-02).
+        static let codeBlueCard = Color(red: 0.796, green: 0.941, blue: 1.0)
+        /// A solid card, and the appearance its contents are drawn in; nil for a wash.
+        var solid: ColorScheme? {
+            switch self {
+            case .white, .offWhite, .codeBlue: .light
+            case .grey, .black: .dark
+            default: nil
+            }
+        }
         func color(in theme: ResolvedTheme) -> Color? {
             switch self {
             case .plain: nil
+            case .white: .white
+            case .offWhite: Self.offWhitePaper
+            case .codeBlue: Self.codeBlueCard
+            case .grey: Self.greyCard
+            case .black: Self.blackCard
             case .accent: theme.accent
             case .bubbles: theme.userBubble
             case .yellow: .yellow
@@ -490,6 +511,11 @@ final class Settings: ServeEndpoint {
         var label: String {
             switch self {
             case .plain: String(localized: "Plain", comment: "Cards setting: answer cards without a colour")
+            case .white: String(localized: "White", comment: "Cards setting: answer cards solid white, with dark text")
+            case .offWhite: String(localized: "Off-White", comment: "Cards setting: answer cards a warm off-white, like paper, with dark text")
+            case .codeBlue: String(localized: "Code Blue")
+            case .grey: String(localized: "Graphite", comment: "Cards setting: answer cards solid dark grey, with light text")
+            case .black: String(localized: "Black", comment: "Cards setting: answer cards solid black, with light text")
             case .accent: String(localized: "Accent", comment: "Cards setting: answer cards in the theme's accent colour")
             case .bubbles: String(localized: "Like Your Bubbles", comment: "Cards setting: answer cards in the colour of the person's message bubbles")
             case .yellow: String(localized: "Yellow")

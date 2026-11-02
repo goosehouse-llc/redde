@@ -59,21 +59,42 @@ extension View {
     /// The shadow is the ground's alone, not cast again by everything on it, which a scrolling
     /// chat would pay for.
     func cardGround() -> some View {
-        background {
-            CardFill(cornerRadius: 20)
-                .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
-        }
-        .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(.separator.opacity(0.5), lineWidth: 0.5) }
+        modifier(CardSurface(cornerRadius: 20, raised: true))
     }
 
     /// A card's ground alone, for the cards that draw their own edge and shadow.
     func cardFill(cornerRadius: CGFloat = 20) -> some View {
-        background { CardFill(cornerRadius: cornerRadius) }
+        modifier(CardSurface(cornerRadius: cornerRadius, raised: false))
+    }
+}
+
+/// Settings → Appearance → Cards on a card: its ground, and on a solid card (white, off-white,
+/// graphite, black) the card's own content drawn in that card's appearance, so its text reads on it
+/// whatever the phone's is.
+private struct CardSurface: ViewModifier {
+    var cornerRadius: CGFloat
+    var raised: Bool
+    @Environment(\.colorScheme) private var scheme
+
+    func body(content: Content) -> some View {
+        let solid = Settings.shared.cardColor.solid
+        let drawn = content.environment(\.colorScheme, solid ?? scheme)
+        if raised {
+            drawn
+                .background {
+                    CardFill(cornerRadius: cornerRadius)
+                        .shadow(color: .black.opacity(solid == .light && scheme == .dark ? 0.3 : 0.08), radius: 12, y: 4)
+                }
+                .overlay { RoundedRectangle(cornerRadius: cornerRadius).strokeBorder(.separator.opacity(0.5), lineWidth: 0.5) }
+        } else {
+            drawn.background { CardFill(cornerRadius: cornerRadius) }
+        }
     }
 }
 
 /// The ground under a card: the system's raised surface, with Settings → Appearance → Cards' colour
-/// washed over it (asked 2026-11-02). A wash, not a fill, so the text on it reads either way.
+/// washed over it (asked 2026-11-02). A wash, not a fill, so the text on it reads either way; white,
+/// off-white, graphite and black are solid (`CardSurface` draws the card in their appearance).
 struct CardFill: View {
     var cornerRadius: CGFloat
     @Environment(\.theme) private var theme
@@ -81,10 +102,15 @@ struct CardFill: View {
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius)
+        let choice = Settings.shared.cardColor
         ZStack {
-            shape.fill(.background.secondary)
-            if let wash = Settings.shared.cardColor.color(in: theme) {
-                shape.fill(wash.opacity(scheme == .dark ? 0.2 : 0.14))
+            if choice.solid != nil, let solid = choice.color(in: theme) {
+                shape.fill(solid)
+            } else {
+                shape.fill(.background.secondary)
+                if let wash = choice.color(in: theme) {
+                    shape.fill(wash.opacity(scheme == .dark ? 0.2 : 0.14))
+                }
             }
         }
     }
