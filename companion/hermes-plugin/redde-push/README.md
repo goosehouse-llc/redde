@@ -149,6 +149,15 @@ in the Hermes home for a day.
 A conversation already open on the Dashboard keeps the tools it started with; a new one sees
 the change within a couple of seconds.
 
+From 1.15.0 the phone can also hand the agent a read-only copy of its calendar and reminders
+(Redde's Settings → Phone tools → Keep a copy, off until you turn it on): while Redde is open
+the app sends what its `phone_calendar_events` and `phone_reminders_list` could already show,
+and from then on a read of either answers from that copy, on the person's own Hermes, even with
+Redde closed — saying `synced_minutes_ago`. A copy older than six hours answers only when the
+phone can't; past thirty days it answers no more. Writes always go to the phone, and a `live`
+read does too; turning the area or the setting off takes the copy with it, and the app can wipe
+it by hand (`/redde-push device cache wipe`).
+
 ## Calls
 
 From 1.8.0 an agent can ring the paired iPhone like a phone call, with `call_user` (toolset
