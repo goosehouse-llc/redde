@@ -39,6 +39,15 @@ enum Transcriber {
             }
         }
 
+        /// The kind that listens in `chosen`: `SpeechTranscriber` where it knows the language, else
+        /// dictation, which knows more of them. Asked 2026-11-03 (Dutch): SpeechTranscriber has no
+        /// Dutch, Swedish, Polish, Danish, Norwegian, Russian, Turkish or Ukrainian; dictation has all.
+        func serving(_ chosen: Locale) async -> Kind {
+            guard self == .speech, await SpeechTranscriber.supportedLocale(equivalentTo: chosen) == nil,
+                  await DictationTranscriber.supportedLocale(equivalentTo: chosen) != nil else { return self }
+            return .dictation
+        }
+
         func supportedLocale(equivalentTo locale: Locale) async -> Locale? {
             switch self {
             case .speech: await SpeechTranscriber.supportedLocale(equivalentTo: locale)
