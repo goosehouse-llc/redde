@@ -121,7 +121,9 @@ nonisolated enum ComposerContext {
         let calendar = Calendar.current
         let start = calendar.startOfDay(for: day)
         let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start
-        let events = store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: nil))
+        // Only the calendars chosen in Settings → Agent → Calendars (`CalendarChoice`).
+        let calendars = DeviceCalendar.shared(in: store)
+        let events = (calendars?.isEmpty == true ? [] : store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: calendars)))
             .sorted { $0.startDate < $1.startDate }
         let text = describe(events: events, day: start)
         return Attachment(kind: .text, filename: "calendar-" + start.formatted(.iso8601.year().month().day()) + ".txt",

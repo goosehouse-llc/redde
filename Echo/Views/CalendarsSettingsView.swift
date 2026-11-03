@@ -30,8 +30,8 @@ struct CalendarsSettingsView: View {
                 }))
             } footer: {
                 limiting
-                    ? Text("Only the calendars switched on here. With none on, all of them.")
-                    : Text("Your agent looks at every calendar when you ask what's on, and calendar cards show every event.")
+                    ? Text("Only the calendars switched on here. With none on, all of them. Phone tools read and add to only these on this device.")
+                    : Text("Your agent looks at every calendar when you ask what's on, calendar cards show every event, and phone tools can read and add to every calendar on this device.")
             }
             if limiting {
                 ForEach(accounts) { account in

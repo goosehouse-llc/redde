@@ -49,6 +49,15 @@ struct PhoneToolsSettingsView: View {
                                         .font(.footnote).foregroundStyle(.secondary)
                                 }
                             }
+                            // Which calendars it reads and adds to (`CalendarChoice`, asked on Reddit 2026-11-02).
+                            if area == .calendar, settings.phoneTools.access(.calendar) != .off {
+                                NavigationLink { CalendarsSettingsView() } label: {
+                                    Text(settings.agendaCalendars.isEmpty
+                                         ? String(localized: "Calendars it can see: all of them")
+                                         : String(localized: "Calendars it can see: \(settings.agendaCalendars.formatted(.list(type: .and)))"))
+                                }
+                                .font(.footnote)
+                            }
                             if area == .alarms, settings.phoneTools.access(.alarms) != .off, !alarmsShow {
                                 Button("Live Activities are off for Redde, and iOS neither shows nor sounds an alarm without them. Open Settings…") {
                                     if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }

@@ -20,6 +20,15 @@ nonisolated enum DeviceCalendar {
 
     // MARK: - Events
 
+    /// The calendars the agent may use: those chosen in Settings → Agent → Calendars
+    /// (`CalendarChoice`), or nil for all of them when none are chosen. Asked on Reddit
+    /// 2026-11-02: the choice only told the agent and filtered cards, while this tool read every
+    /// calendar on the phone.
+    static func shared(in store: EKEventStore, chosen: [String] = CalendarChoice.chosen) -> [EKCalendar]? {
+        guard !chosen.isEmpty else { return nil }
+        return store.calendars(for: .event).filter { CalendarChoice.shows($0.title, among: chosen) }
+    }
+
     /// `start`, `end` (default: now and a week on), `query` (words in the title, place or
     /// notes), `limit`.
     static func events(_ args: JSONValue, now: Date = .now) async throws -> JSONValue {
@@ -31,7 +40,10 @@ nonisolated enum DeviceCalendar {
         guard end > start else { throw DeviceToolError("\"end\" has to be after \"start\".") }
         let query = args["query"]?.string?.trimmingCharacters(in: .whitespaces).lowercased() ?? ""
         let store = EKEventStore()
-        let found = store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: nil))
+        let calendars = shared(in: store)
+        // None of the chosen calendars is on this phone: nothing to read (an empty list would be all).
+        if calendars?.isEmpty == true { return .object(["events": .array([]), "more": .number(0)]) }
+        let found = store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: calendars))
             .filter { event in
                 query.isEmpty || [event.title, event.location, event.notes].contains { $0?.lowercased().contains(query) == true }
             }
@@ -59,15 +71,21 @@ nonisolated enum DeviceCalendar {
         event.isAllDay = allDay
         event.location = args["location"]?.string
         event.notes = args["notes"]?.string
+        // Only into a calendar the agent may use; the others aren't named either.
+        let writable = (shared(in: store) ?? store.calendars(for: .event)).filter(\.allowsContentModifications)
         if let named = args["calendar"]?.string?.nilIfEmpty {
-            guard let calendar = store.calendars(for: .event).first(where: { $0.title.caseInsensitiveCompare(named) == .orderedSame && $0.allowsContentModifications }) else {
-                let names = store.calendars(for: .event).filter(\.allowsContentModifications).map(\.title).joined(separator: ", ")
-                throw DeviceToolError("There is no calendar called \"\(named)\" that can be added to. The ones that can: \(names).")
+            guard let calendar = writable.first(where: { $0.title.caseInsensitiveCompare(named) == .orderedSame }) else {
+                let names = writable.map(\.title).joined(separator: ", ")
+                throw DeviceToolError("There is no calendar called \"\(named)\" that can be added to. The ones that can: \(names.isEmpty ? "none" : names).")
             }
             event.calendar = calendar
-        } else {
-            guard let calendar = store.defaultCalendarForNewEvents else { throw DeviceToolError("The iPhone has no calendar to add events to.") }
+        } else if let calendar = store.defaultCalendarForNewEvents, writable.contains(where: { $0.calendarIdentifier == calendar.calendarIdentifier }) {
             event.calendar = calendar
+        } else if let calendar = writable.first {
+            event.calendar = calendar
+        } else {
+            throw DeviceToolError(CalendarChoice.chosen.isEmpty ? "The iPhone has no calendar to add events to."
+                                  : "None of the calendars chosen in Redde's Settings → Agent → Calendars can be added to on this iPhone.")
         }
         do { try store.save(event, span: .thisEvent) } catch { throw DeviceToolError("The event couldn't be saved: \(error.localizedDescription)") }
         return .object(["added": describe(event)])
