@@ -62,7 +62,6 @@ struct MessageRow: View, Equatable {
     /// while it is what the agent is doing, and folded after.
     @State private var showThinking: Bool?
     @State private var showSteps: Bool?
-    @State private var selecting = false
     @State private var fullMetrics = false
     /// Just copied: the button shows a check. `copyCount` drives the haptic.
     @State private var copied = false
@@ -125,14 +124,13 @@ struct MessageRow: View, Equatable {
                 let said = ServeMedia.named(in: invented?.said ?? message.text).text
                 if !said.isEmpty {
                     // A file the reply only names in passing opens from its path.
-                    MarkdownView(text: said, isLive: isLive, selectable: false, linkPaths: !isLive)
+                    MarkdownView(text: said, isLive: isLive, selectable: true, onNewChatAsPrompt: asksAbout ? { askAboutThis($0) } : nil, linkPaths: !isLive)
                         .padding(.horizontal, flatReply ? 2 : 14)
                         .padding(.vertical, flatReply ? 0 : theme.bubbleVerticalPadding)
                         .background(flatReply ? AnyShapeStyle(.clear) : bubble, in: .rect(cornerRadius: theme.bubbleRadius))
                         .foregroundStyle(theme.textColor)
-                        .contextMenu { replyMenu }
                         .overlay(highlightRing)
-                        .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
+                        .contextMenu { replyMenu }
                         .modifier(OpensServerPaths(source: fileSource))
                 }
                 if let invented {
@@ -151,7 +149,6 @@ struct MessageRow: View, Equatable {
                     .overlay(RoundedRectangle(cornerRadius: min(theme.bubbleRadius, 16)).strokeBorder(theme.accent.opacity(0.3), lineWidth: 1))
                     .padding(.leading, 48)
                     .contextMenu { userMenu }
-                    .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
             } else if hasTextBubble, promptStyled, let prompt = theme.promptPrefix {
                 Text("\(Text(prompt).bold())\(shownText)")
                     .font(theme.messageFont)
@@ -161,7 +158,6 @@ struct MessageRow: View, Equatable {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .overlay(highlightRing)
                     .contextMenu { userMenu }
-                    .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
             } else if hasTextBubble {
                 Text(shownText)
                     .font(theme.userFont)
@@ -177,7 +173,6 @@ struct MessageRow: View, Equatable {
                     .foregroundStyle(message.role == .user ? theme.userBubbleText : theme.textColor)
                     .overlay(highlightRing)
                     .contextMenu { userMenu }
-                    .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
             }
             // The page of the first web link, with Link previews on (`LinkPreviewSlot`), once a
             // reply has finished.
@@ -213,6 +208,15 @@ struct MessageRow: View, Equatable {
         Task {
             try? await Task.sleep(for: .seconds(1.6))
             withAnimation(.snappy(duration: 0.2)) { copied = false }
+        }
+    }
+
+    /// "New chat as prompt": puts the selection in the composer as a quote for the next message.
+    private func askAboutThis(_ selection: String) {
+        Task {
+            // Once the sheet is out of the way, so the composer can take the keyboard.
+            try? await Task.sleep(for: .milliseconds(350))
+            LaunchRouter.shared.requestDraft(text: Quote.markdown(selection), attachments: [])
         }
     }
 
@@ -532,7 +536,6 @@ struct MessageRow: View, Equatable {
             Button("Copy thinking", systemImage: "brain") { copy(message.reasoning) }
         }
         ShareLink(item: message.text) { Label("Share…", systemImage: "square.and.arrow.up") }
-        Button("Select text", systemImage: "text.cursor") { selecting = true }
         Button("Watch This…", systemImage: "eye") { WatchDraft.shared.start(PlainText.display(message.text)) }
         if let onRegenerate {
             Divider()
@@ -545,8 +548,6 @@ struct MessageRow: View, Equatable {
     @ViewBuilder
     private var userMenu: some View {
         Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = message.text }
-        // Selected in a copy of its own, as a reply is: the transcript's text isn't selectable.
-        Button("Select text", systemImage: "text.cursor") { selecting = true }
         if let onEdit, message.role == .user {
             Button("Edit & resend", systemImage: "pencil", action: onEdit).disabled(isLive)
         }

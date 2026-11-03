@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// Plain, fully selectable copy of a reply, for grabbing a sentence rather than the whole thing:
-/// to copy it, or to ask about it. In the transcript, the selection's menu starts with "Ask about
+/// to copy it, or to ask about it. Kept as a fallback for very long messages where the inline
+/// selectable view may not work well. In the transcript, the selection's menu starts with "Ask about
 /// this", which puts the selection in the composer as a quote for the next message.
 struct SelectableTextSheet: View {
     let text: String
@@ -55,7 +56,8 @@ nonisolated enum Quote {
 
 #if os(iOS)
 /// Text that can be selected a word, a sentence, a paragraph at a time. SwiftUI's own selectable
-/// `Text` has no say in the selection's menu, which is where "Ask about this" goes.
+/// `Text` has no say in the selection's menu, which is where "Ask about this" goes. Kept as a
+/// fallback for very long messages where the inline selectable view may not work well.
 struct SelectableTextView: UIViewRepresentable {
     let text: String
     var monospaced = false
@@ -99,7 +101,8 @@ struct SelectableTextView: UIViewRepresentable {
 }
 #else
 /// The same on the Mac: a text view that selects as any Mac text does, and "Ask about this"
-/// heads the menu a right-click on a selection brings up.
+/// heads the menu a right-click on a selection brings up. Kept as a fallback for very long
+/// messages where the inline selectable view may not work well.
 struct SelectableTextView: NSViewRepresentable {
     let text: String
     var monospaced = false
@@ -215,7 +218,8 @@ extension EnvironmentValues {
 
 extension EnvironmentValues {
     /// True in the transcript, where there is a composer for a quote to go to. Sheets it presents
-    /// inherit it; a subagent's transcript and voice mode leave it off.
+    /// inherit it; a subagent's transcript and voice mode leave it off. Also used to determine
+    /// whether to show the inline selectable view with "New chat as prompt" in the selection menu.
     @Entry var asksAboutSelection = false
     /// Who the replies are from, when not the agent by its own name: a bot, in its chat.
     @Entry var replySpeaker: String?

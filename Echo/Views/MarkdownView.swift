@@ -7,11 +7,13 @@ struct MarkdownView: View {
     /// While streaming, the trailing diagram/math block stays a plain code block until its
     /// fence closes, so a WebView isn't reloaded on every token.
     var isLive = false
-    /// Selectable where it stands. Not in the transcript: a selectable text is a UIKit text
-    /// interaction and its menus for each paragraph, and that was half of what opening a long
-    /// conversation cost (2026-10-21: 400 → 190 ms without it). A reply's "Select text" opens
-    /// a selectable copy instead, with "Ask about this".
+    /// Selectable where it stands. When onNewChatAsPrompt is provided, uses a UITextView wrapper
+    /// for inline selection with drag handles and a custom "New chat as prompt" menu item.
+    /// Otherwise uses SwiftUI's textSelection modifier for basic selection.
     var selectable = true
+    /// When selectable and non-nil, heads the selection menu with "New chat as prompt" that
+    /// puts the selection in the composer as a quote for the next message.
+    var onNewChatAsPrompt: ((String) -> Void)?
     /// File paths in the text are links that open the file (`ServeMedia.linkingPaths`; the
     /// tap is `OpensServerPaths`'s). A reply's, once it has finished.
     var linkPaths = false
@@ -26,11 +28,16 @@ struct MarkdownView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ForEach(Array(blocks.enumerated()), id: \.offset) { i, block in
-                MarkdownBlockView(block: block, trailing: isLive && i == blocks.count - 1).equatable()
+            if selectable, onNewChatAsPrompt != nil {
+                // Inline selectable text with custom selection menu.
+                SelectableMarkdownView(text: text, onNewChatAsPrompt: onNewChatAsPrompt, monospaced: false)
+            } else {
+                ForEach(Array(blocks.enumerated()), id: \.offset) { i, block in
+                    MarkdownBlockView(block: block, trailing: isLive && i == blocks.count - 1).equatable()
+                }
             }
         }
-        .modifier(SelectableText(on: selectable))
+        .modifier(SelectableText(on: selectable && onNewChatAsPrompt == nil))
         .onChange(of: Source(text: text, linkPaths: linkPaths), initial: true) { blocks = Self.blocks(text, linkPaths: linkPaths) }
     }
 
