@@ -25,7 +25,7 @@ A setup that works well with Redde, on a stock Hermes 0.22 with no patches. Take
 | Bot | Profile | Job | Tools |
 |---|---|---|---|
 | Hermes | main | Everyday questions, calendar, notes, plans, schedules | web, memory, calendar MCP, skills, Kanban, cron. **No terminal** |
-| Ops | Ops | The house and the server: Home Assistant, containers | Home Assistant plugin, terminal, web |
+| Ops | ops | The house and the server: Home Assistant, containers | Home Assistant plugin, terminal, web |
 | Research | `research` | Looking things up properly | web only |
 | Coder | `coder` | Code changes in one project folder | terminal and files, in that folder |
 
