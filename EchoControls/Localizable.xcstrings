@@ -13353,6 +13353,7 @@
       }
     },
     "Notifications from your Hermes reach this iPhone." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -14984,7 +14985,7 @@
       }
     },
     "Paired" : {
-      "comment" : "Notification: this iPhone was paired with a Hermes server",
+      "comment" : "Notification: this device was paired with a Hermes server",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -15091,7 +15092,7 @@
       }
     },
     "Paired with %@" : {
-      "comment" : "Notification: this iPhone was paired with a Hermes server, by its name",
+      "comment" : "Notification: this device was paired with a Hermes server, by its name",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -17433,7 +17434,6 @@
       }
     },
     "Tap to paste it into Redde. It never goes through a chat." : {
-      "comment" : "Notification body: an agent asks for a key",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -19347,7 +19347,6 @@
       }
     },
     "Your agent asks for a key" : {
-      "comment" : "Notification title: an agent asks for a key to be pasted into Redde (its name not known)",
       "localizations" : {
         "da" : {
           "stringUnit" : {

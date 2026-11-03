@@ -1533,7 +1533,7 @@
       }
     },
     "%@: traffic checked" : {
-      "comment" : "A Leave-By re-check: the event's name; its time held",
+      "comment" : "Notification: Leave-By Alerts checked the traffic again for an event, by its title; the leaving time stays about the same",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -1640,7 +1640,7 @@
       }
     },
     "%@: traffic couldn't be checked" : {
-      "comment" : "A Leave-By re-check: the event's name; Maps or the location failed",
+      "comment" : "Notification: Leave-By Alerts couldn't ask Apple Maps again for an event, by its title; its alert stays as it was",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -1747,7 +1747,7 @@
       }
     },
     "%@: traffic is heavier" : {
-      "comment" : "A Leave-By re-check: the event's name; leave earlier",
+      "comment" : "Notification: Leave-By Alerts checked the traffic again for an event, by its title; leave earlier",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -1854,7 +1854,7 @@
       }
     },
     "%@: traffic is lighter" : {
-      "comment" : "A Leave-By re-check: the event's name; leave later",
+      "comment" : "Notification: Leave-By Alerts checked the traffic again for an event, by its title; leave later",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -5732,7 +5732,7 @@
       }
     },
     "Leave-By Alerts checked your calendar." : {
-      "comment" : "A Leave-By re-check whose alert was gone",
+      "comment" : "Notification: a traffic re-check found no alert waiting any more (the event was deleted or moved)",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -6477,6 +6477,7 @@
       }
     },
     "Notifications from your Hermes reach this iPhone." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -7153,7 +7154,7 @@
       }
     },
     "Paired" : {
-      "comment" : "Notification: this iPhone was paired with a Hermes server",
+      "comment" : "Notification: this device was paired with a Hermes server",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -7260,7 +7261,7 @@
       }
     },
     "Paired with %@" : {
-      "comment" : "Notification: this iPhone was paired with a Hermes server, by its name",
+      "comment" : "Notification: this device was paired with a Hermes server, by its name",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -8644,7 +8645,6 @@
       }
     },
     "Tap to paste it into Redde. It never goes through a chat." : {
-      "comment" : "Notification body: an agent asks for a key",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -9069,7 +9069,6 @@
       }
     },
     "Your agent asks for a key" : {
-      "comment" : "Notification title: an agent asks for a key to be pasted into Redde (its name not known)",
       "localizations" : {
         "da" : {
           "stringUnit" : {
