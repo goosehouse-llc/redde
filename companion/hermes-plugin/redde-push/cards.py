@@ -128,7 +128,7 @@ SCHEMA = {
         "offset or a date for all day, 'end', 'location', 'calendar'; 'date' or 'dates' asked about, so a free day "
         "shows). Also 'purchase' (whenever you suggest things to buy: a card, never a table), 'home' (smart-home devices), 'reminder' (a reminder, timer, alarm "
         "or scheduled message you set), 'compare' (2-4 things side by side), 'score' (games), 'recipe', 'delivery' (a "
-        "package), 'flight', 'show' (films, series), 'conversion' (units, currency), 'stock': their fields are in the "
+        "package), 'flight', 'show' (films, series), 'conversion' (units, currency), 'stock' (a share's price: a card, never a table): their fields are in the "
         "turn's note, or this tool's error. Look everything up first; never make anything up."),
     "parameters": {
         "type": "object",
@@ -923,6 +923,19 @@ _ASKS_STOCK = re.compile(
     r"\bstocks?\b|\bshare price\b|\bshares? (?:of|in)\b|\b(?:nasdaq|nyse|dow jones|s&p ?500|ftse|nikkei|dax)\b|\bticker\b|\bmarket cap\b"
     r"|\btrading at\b|\bhow(?:'s|’s| is| did| are)\b[^.?!]*\b(?:the market|the markets|my portfolio)\b|\b(?:beat|missed?) earnings\b"
     r"|\bearnings (?:report|call|date)\b|\$[A-Z]{1,5}\b", re.IGNORECASE)
+#: From 1.14.5 (2026-11-02: "How is nvda today" got a table): a ticker or a company asked about
+#: by itself. Only tickers and names that aren't everyday words ("Apple", "Meta" and "Target" need
+#: "stock"); the second pattern takes any ticker in capitals with "how is" before it.
+_SHARES = (r"nvda|aapl|tsla|msft|amzn|googl?|nflx|avgo|orcl|intc|pltr|smci|tsm|asml|mstr|crwd|qcom|amd|spy|qqq|voo|vti|jpm|"
+           r"xom|cvx|wmt|nke|sbux|pfe|mrna|lly|unh|jnj|abnb|snow|crm|adbe|pypl|hood|rivn|lcid|baba|gme|brk\.?b|"
+           r"nvidia|tesla|microsoft|alphabet|netflix|broadcom|palantir|amd|intel|qualcomm|moderna|pfizer|exxon|walmart|"
+           r"berkshire|coinbase|robinhood|rivian|airbnb|salesforce|adobe|paypal|oracle|tsmc|asml|microstrategy|eli lilly")
+_ASKS_SHARE = re.compile(
+    rf"\bhow(?:'s|’s| is| are| did| was)\s+(?:{_SHARES})\b(?!\s+(?:doing\s+)?with\b)"
+    rf"|\b(?:{_SHARES})(?:'s|’s)?\s+(?:today|right now|now|this (?:week|morning|afternoon)|price|shares|up|down|trading|at)\b"
+    rf"|\b(?:price|quote) (?:of|for) (?:{_SHARES})\b|\bwhat(?:'s|’s| is) (?:{_SHARES}) (?:at|trading at|doing)\b", re.IGNORECASE)
+_ASKS_TICKER = re.compile(r"\b[Hh]ow(?:'s|’s| is| did)\s+(?!(?:HA|NAS|API|VPN|CPU|GPU|TV|AC|PC|MCP|LLM|DNS|SSD|UPS|WIFI|HVAC|USB|AI)\b)"
+                          r"[A-Z]{2,5}\s+(?:doing|today|trading|this week|do today|do this week)\b(?!\s+with\b)")
 _NOT_STOCK = re.compile(r"\b(?:in|out of|back in|low on) stock\b|\bstock (?:up|photos?|images?|footage|android|firmware|rom|settings|ios|pot)\b"
                         r"|\b(?:chicken|beef|vegetable|veggie|fish|soup|bone|turkey) stock\b|\btake stock\b|\brolling stock\b", re.IGNORECASE)
 _NEVER_MADE_UP = "never make up a price, a time, a status, a rating or a link"
@@ -1093,7 +1106,8 @@ def more_note(text: str) -> str | None:
         return DELIVERY_NOTE
     if _ASKS_FLIGHT.search(text) and not _NOT_FLIGHT.search(text):
         return FLIGHT_NOTE
-    if _ASKS_STOCK.search(text) and not _NOT_STOCK.search(text) and not _ASKS_RECIPE.search(text):
+    if ((_ASKS_STOCK.search(text) or _ASKS_SHARE.search(text) or _ASKS_TICKER.search(text))
+            and not _NOT_STOCK.search(text) and not _ASKS_RECIPE.search(text)):
         return STOCK_NOTE
     if _ASKS_SCORE.search(text) and not _NOT_SCORE.search(text):
         return SCORE_NOTE

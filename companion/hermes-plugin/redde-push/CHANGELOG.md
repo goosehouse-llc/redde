@@ -3,6 +3,15 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.14.5 (2026-11-02)
+
+- A share asked about by its ticker or its company gets the stock note: "How is nvda today",
+  "AAPL price", "how is Tesla doing today", "price of Nvidia", and any ticker in capitals after
+  "how is" ("How did PLTR do this week?"). Not the NAS, HA, the TV and the like, not "Apple",
+  "Meta" or "Target" without "stock", and not "how is AMD doing with the new driver". Sol had
+  answered "How is nvda today" with a table.
+- The card tool now tells the agent in every turn: a share's price is a 'stock' card, never a table.
+
 ## 1.14.4 (2026-11-01)
 
 - A price word is asking what to buy: "cheap options for a 5090", "affordable standing desks", "a

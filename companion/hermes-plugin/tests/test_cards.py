@@ -560,6 +560,7 @@ class MoreCardsTests(unittest.TestCase):
         self.assertLess(len(cards.SCHEMA["description"]), 1700)
         # 1.14.4: things to buy are a card in every turn, however they were asked for.
         self.assertIn("suggest things to buy: a card, never a table", cards.SCHEMA["description"])
+        self.assertIn("a share's price: a card, never a table", cards.SCHEMA["description"])
         props = cards.SCHEMA["parameters"]["properties"]["cards"]["items"]["properties"]
         self.assertTrue(set(cards.MORE) <= set(props["type"]["enum"]))
         self.assertNotIn("description", props["devices"], "a card's fields are in its note, not in every prompt")
@@ -733,7 +734,10 @@ class NewestCardsTests(unittest.TestCase):
             "'conversion' card": ("How far is 5 miles in km?", "What's $100 in euros?", "Convert 350°F to Celsius", "2 cups to grams",
                                   "how many ounces in a pound", "What's the exchange rate for yen?", "100 usd to eur"),
             "'stock' card": ("How's Apple stock doing?", "What's the share price of Nvidia?", "How did the market do today?",
-                             "Is the S&P 500 up?", "Did Nvidia beat earnings?", "What's $TSLA at?"),
+                             "Is the S&P 500 up?", "Did Nvidia beat earnings?", "What's $TSLA at?",
+                             # From 1.14.5: a ticker or a company by itself.
+                             "How is nvda today", "How's NVDA today?", "how is tesla doing today", "AAPL price", "what's msft at",
+                             "How did PLTR do this week?", "Price of nvidia", "Is Nvidia up today?", "nvidia's price"),
         }
         for card, messages in asks.items():
             for asked in messages:
@@ -747,7 +751,10 @@ class NewestCardsTests(unittest.TestCase):
                             "The log shows a new error"),
             "'conversion' card": ("Convert this file to PDF", "Convert the JSON to a list", "Bake it for 30 minutes in the oven",
                                   "I have 3 kids in school"),
-            "'stock' card": ("Is the blue one in stock?", "Make a chicken stock", "Stock up on rice", "Find a stock photo of a beach"),
+            "'stock' card": ("Is the blue one in stock?", "Make a chicken stock", "Stock up on rice", "Find a stock photo of a beach",
+                             "How's the NAS doing?", "How is HA today?", "How is Marta doing?", "How is Apple Music doing today?",
+                             "Update the Nvidia driver", "How is AMD doing with the new driver?", "Is the Tesla charged?",
+                             "Turn the TV up", "How's Sol doing today?"),
         }
         for card, messages in nots.items():
             for asked in messages:
