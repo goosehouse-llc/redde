@@ -836,16 +836,18 @@ struct ContentView: View {
         return !conversation.hasMessages && conversation.outbox.isEmpty ? String(localized: "New conversation") : conversation.title
     }
 
-    /// What the title chip shows: the picked model, or the backend's default.
+    /// What the title chip shows: the model this conversation's turns ask for (Redde's pick, or
+    /// with New Chats Use the Server's Model on its own), or the backend's default.
     private var modelChipLabel: String {
+        let picked = conversation.turnModel?.model
         // A bot's chat runs on the bot's own model, as its profile says (unless picked here).
-        if let bot = conversation.bot, settings.gatewayModel.isEmpty,
+        if let bot = conversation.bot, picked == nil,
            let model = BotDirectory.shared.bots(for: settings.connectionKey).first(where: { $0.name == bot.profile })?.model {
             return model
         }
         return switch settings.transport {
         case .chatCompletions: settings.fastLaneModel.nilIfEmpty ?? String(localized: "model", comment: "Under the chat's title when no model is named")
-        default: settings.gatewayModel.nilIfEmpty ?? String(localized: "default model", comment: "Under the chat's title: the server's own model")
+        default: picked ?? String(localized: "default model", comment: "Under the chat's title: the server's own model")
         }
     }
 

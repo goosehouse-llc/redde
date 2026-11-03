@@ -218,6 +218,113 @@
         }
       }
     },
+    "%@, set on your server" : {
+      "comment" : "Model picker: under Gateway default, the model the Hermes server is set to use, e.g. zai-glm-5-3-flash",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, sat på din server"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, auf deinem Server eingestellt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, configurado en tu servidor"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, défini sur votre serveur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, impostato sul tuo server"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@（サーバで設定）"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, 서버에서 설정됨"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, satt på tjeneren din"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, ingesteld op je server"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, ustawiony na Twoim serwerze"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, configurado no seu servidor"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, задана на вашем сервере"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, inställd på din server"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, sunucunuzda ayarlı"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, задана на вашому сервері"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@，在你的服务器上设定"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@，在你的伺服器上設定"
+          }
+        }
+      }
+    },
     ", and more" : {
       "comment" : "Said aloud in voice mode after a long command cut short (it follows the command's first words directly)",
       "localizations" : {
@@ -1604,6 +1711,541 @@
         }
       }
     },
+    "New Chats Use the Server's Model" : {
+      "comment" : "Settings › Model: a switch; new conversations start on the model the Hermes server is set to",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nye chats bruger serverens model"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue Chats nutzen das Modell des Servers"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats nuevos con el modelo del servidor"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvelles discussions sur le modèle du serveur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuove chat con il modello del server"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しいチャットはサーバのモデルを使用"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새 채팅에 서버 모델 사용"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nye chatter bruker tjenerens modell"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuwe chats gebruiken het servermodel"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowe czaty używają modelu serwera"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novos chats usam o modelo do servidor"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новые чаты на модели сервера"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nya chattar använder serverns modell"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni sohbetler sunucunun modelini kullanır"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нові чати на моделі сервера"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新聊天使用服务器的模型"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新聊天使用伺服器的模型"
+          }
+        }
+      }
+    },
+    "New conversations start on %@. A pick here applies to them and to this conversation." : {
+      "comment" : "Model picker footer: the model new conversations start on, e.g. zai-glm-5-3-flash",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nye samtaler starter på %@. Et valg her gælder for dem og for denne samtale."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue Konversationen beginnen mit %@. Eine Wahl hier gilt für sie und für diese Konversation."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las conversaciones nuevas empiezan con %@. Lo que elijas aquí se aplica a ellas y a esta conversación."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les nouvelles conversations commencent avec %@. Un choix ici s’applique à elles et à cette conversation."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le nuove conversazioni iniziano con %@. Una scelta qui vale per loro e per questa conversazione."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しい会話は%@で始まります。ここで選ぶと、新しい会話とこの会話に適用されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새로운 대화는 %@ 모델로 시작합니다. 여기서 고르면 새로운 대화와 이 대화에 적용됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nye samtaler starter på %@. Et valg her gjelder dem og denne samtalen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuwe gesprekken beginnen met %@. Een keuze hier geldt voor die gesprekken en voor dit gesprek."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowe rozmowy zaczynają się na modelu %@. Wybór tutaj dotyczy ich i tej rozmowy."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novas conversas começam em %@. Uma escolha aqui vale para elas e para esta conversa."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новые разговоры начинаются на модели %@. Выбор здесь применяется к ним и к этому разговору."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nya konversationer börjar på %@. Ett val här gäller dem och den här konversationen."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni konuşmalar %@ ile başlar. Burada yapılan seçim onlara ve bu konuşmaya uygulanır."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нові розмови починаються на моделі %@. Вибір тут застосовується до них і до цієї розмови."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新对话使用 %@ 开始。在这里选择会应用于新对话和此对话。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新對話使用 %@ 開始。在這裡選擇會套用到新對話和此對話。"
+          }
+        }
+      }
+    },
+    "New conversations start on your server's model, %@. A pick here changes this conversation only." : {
+      "comment" : "Model picker footer with New Chats Use the Server's Model on; the model, e.g. zai-glm-5-3-flash",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nye samtaler starter på din servers model, %@. Et valg her ændrer kun denne samtale."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue Konversationen beginnen mit dem Modell deines Servers, %@. Eine Wahl hier ändert nur diese Konversation."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las conversaciones nuevas empiezan con el modelo de tu servidor, %@. Lo que elijas aquí solo cambia esta conversación."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les nouvelles conversations commencent avec le modèle de votre serveur, %@. Un choix ici ne change que cette conversation."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le nuove conversazioni iniziano con il modello del tuo server, %@. Una scelta qui cambia solo questa conversazione."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しい会話はサーバのモデル（%@）で始まります。ここで選ぶと、この会話だけが変わります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새로운 대화는 서버의 모델(%@)로 시작합니다. 여기서 고르면 이 대화만 바뀝니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nye samtaler starter på tjenerens modell, %@. Et valg her endrer bare denne samtalen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuwe gesprekken beginnen met het model van je server, %@. Een keuze hier verandert alleen dit gesprek."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowe rozmowy zaczynają się na modelu Twojego serwera, %@. Wybór tutaj zmienia tylko tę rozmowę."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novas conversas começam no modelo do seu servidor, %@. Uma escolha aqui muda só esta conversa."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новые разговоры начинаются на модели вашего сервера, %@. Выбор здесь меняет только этот разговор."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nya konversationer börjar på din servers modell, %@. Ett val här ändrar bara den här konversationen."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni konuşmalar sunucunuzun modeliyle (%@) başlar. Burada yapılan seçim yalnızca bu konuşmayı değiştirir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нові розмови починаються на моделі вашого сервера, %@. Вибір тут змінює лише цю розмову."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新对话使用你服务器的模型 %@ 开始。在这里选择只会更改此对话。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新對話使用你伺服器的模型 %@ 開始。在這裡選擇只會變更此對話。"
+          }
+        }
+      }
+    },
+    "New conversations start on your server's model. A pick here applies to them and to this conversation." : {
+      "comment" : "Model picker footer: no model picked, before the server says which model it is set to",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nye samtaler starter på din servers model. Et valg her gælder for dem og for denne samtale."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue Konversationen beginnen mit dem Modell deines Servers. Eine Wahl hier gilt für sie und für diese Konversation."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las conversaciones nuevas empiezan con el modelo de tu servidor. Lo que elijas aquí se aplica a ellas y a esta conversación."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les nouvelles conversations commencent avec le modèle de votre serveur. Un choix ici s’applique à elles et à cette conversation."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le nuove conversazioni iniziano con il modello del tuo server. Una scelta qui vale per loro e per questa conversazione."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しい会話はサーバのモデルで始まります。ここで選ぶと、新しい会話とこの会話に適用されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새로운 대화는 서버의 모델로 시작합니다. 여기서 고르면 새로운 대화와 이 대화에 적용됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nye samtaler starter på tjenerens modell. Et valg her gjelder dem og denne samtalen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuwe gesprekken beginnen met het model van je server. Een keuze hier geldt voor die gesprekken en voor dit gesprek."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowe rozmowy zaczynają się na modelu Twojego serwera. Wybór tutaj dotyczy ich i tej rozmowy."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novas conversas começam no modelo do seu servidor. Uma escolha aqui vale para elas e para esta conversa."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новые разговоры начинаются на модели вашего сервера. Выбор здесь применяется к ним и к этому разговору."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nya konversationer börjar på din servers modell. Ett val här gäller dem och den här konversationen."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni konuşmalar sunucunuzun modeliyle başlar. Burada yapılan seçim onlara ve bu konuşmaya uygulanır."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нові розмови починаються на моделі вашого сервера. Вибір тут застосовується до них і до цієї розмови."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新对话使用你服务器的模型开始。在这里选择会应用于新对话和此对话。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新對話使用你伺服器的模型開始。在這裡選擇會套用到新對話和此對話。"
+          }
+        }
+      }
+    },
+    "New conversations start on your server's model. A pick here changes this conversation only." : {
+      "comment" : "Model picker footer with New Chats Use the Server's Model on, before the server says which model that is",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nye samtaler starter på din servers model. Et valg her ændrer kun denne samtale."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue Konversationen beginnen mit dem Modell deines Servers. Eine Wahl hier ändert nur diese Konversation."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las conversaciones nuevas empiezan con el modelo de tu servidor. Lo que elijas aquí solo cambia esta conversación."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les nouvelles conversations commencent avec le modèle de votre serveur. Un choix ici ne change que cette conversation."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le nuove conversazioni iniziano con il modello del tuo server. Una scelta qui cambia solo questa conversazione."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しい会話はサーバのモデルで始まります。ここで選ぶと、この会話だけが変わります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새로운 대화는 서버의 모델로 시작합니다. 여기서 고르면 이 대화만 바뀝니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nye samtaler starter på tjenerens modell. Et valg her endrer bare denne samtalen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuwe gesprekken beginnen met het model van je server. Een keuze hier verandert alleen dit gesprek."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowe rozmowy zaczynają się na modelu Twojego serwera. Wybór tutaj zmienia tylko tę rozmowę."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novas conversas começam no modelo do seu servidor. Uma escolha aqui muda só esta conversa."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новые разговоры начинаются на модели вашего сервера. Выбор здесь меняет только этот разговор."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nya konversationer börjar på din servers modell. Ett val här ändrar bara den här konversationen."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni konuşmalar sunucunuzun modeliyle başlar. Burada yapılan seçim yalnızca bu konuşmayı değiştirir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нові розмови починаються на моделі вашого сервера. Вибір тут змінює лише цю розмову."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新对话使用你服务器的模型开始。在这里选择只会更改此对话。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新對話使用你伺服器的模型開始。在這裡選擇只會變更此對話。"
+          }
+        }
+      }
+    },
     "Next: %@, leave by %@" : {
       "comment" : "Settings → Leave-By Alerts: the next alert, e.g. Next: Dentist, leave by 2:05 PM",
       "localizations" : {
@@ -2032,6 +2674,113 @@
         }
       }
     },
+    "On, a new conversation starts on the model your server is set to (its config.yaml), and a model you pick changes only the conversation you pick it in." : {
+      "comment" : "Settings: footer under New Chats Use the Server's Model",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når den er slået til, starter en ny samtale på den model, din server er sat til (dens config.yaml), og en model, du vælger, ændrer kun den samtale, du vælger den i."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ist das an, beginnt eine neue Konversation mit dem Modell, auf das dein Server eingestellt ist (seine config.yaml), und ein Modell, das du wählst, ändert nur die Konversation, in der du es wählst."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si está activado, una conversación nueva empieza con el modelo configurado en tu servidor (su config.yaml), y el modelo que elijas solo cambia la conversación en la que lo eliges."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activé, une nouvelle conversation commence avec le modèle défini sur votre serveur (son config.yaml), et un modèle que vous choisissez ne change que la conversation où vous le choisissez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se attivo, una nuova conversazione inizia con il modello impostato sul tuo server (il suo config.yaml) e un modello che scegli cambia solo la conversazione in cui lo scegli."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オンにすると、新しい会話はサーバで設定されているモデル（config.yaml）で始まり、選んだモデルはそれを選んだ会話だけに適用されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "켜면 새로운 대화는 서버에 설정된 모델(config.yaml)로 시작하고, 고른 모델은 그 모델을 고른 대화에만 적용됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når den er på, starter en ny samtale på modellen tjeneren din er satt opp med (config.yaml), og en modell du velger, endrer bare samtalen du velger den i."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als dit aan staat, begint een nieuw gesprek met het model waarop je server is ingesteld (zijn config.yaml), en verandert een model dat je kiest alleen het gesprek waarin je het kiest."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy to jest włączone, nowa rozmowa zaczyna się na modelu ustawionym na Twoim serwerze (w jego config.yaml), a wybrany model zmienia tylko rozmowę, w której go wybierzesz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ativado, uma nova conversa começa no modelo configurado no seu servidor (o config.yaml dele), e um modelo que você escolher muda só a conversa em que você o escolheu."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если включено, новый разговор начинается на модели, заданной на вашем сервере (в его config.yaml), а выбранная вами модель меняет только тот разговор, в котором вы её выбрали."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "När det är på börjar en ny konversation på modellen som din server är inställd på (dess config.yaml), och en modell du väljer ändrar bara konversationen du väljer den i."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Açıkken yeni bir konuşma, sunucunuzun ayarlı olduğu modelle (config.yaml dosyasındaki) başlar; seçtiğiniz bir model yalnızca onu seçtiğiniz konuşmayı değiştirir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Якщо ввімкнено, нова розмова починається на моделі, заданій на вашому сервері (у його config.yaml), а вибрана вами модель змінює лише ту розмову, в якій ви її вибрали."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开启后，新对话会使用你服务器设定的模型（其 config.yaml）开始，而你选择的模型只会更改你选择它的那个对话。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟後，新對話會使用你伺服器設定的模型（其 config.yaml）開始，而你選擇的模型只會變更你選擇它的那個對話。"
+          }
+        }
+      }
+    },
     "On-device speech recognition and synthesis. No analytics. Every request goes only to the servers you configured. The exceptions are opt-in: with “Let Siri use Redde” on, Apple Intelligence handles what you say to Siri; with a Hermes paired under “Alerts When Redde Is Closed”, its notifications pass through Goosehouse's relay, encrypted; and with “Sync with iCloud” on, your settings and servers are kept in your own iCloud, their keys and passwords in iCloud Keychain, end-to-end encrypted." : {
       "localizations" : {
         "da" : {
@@ -2454,6 +3203,220 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Redde 需要取用%@。打開「設定」…"
+          }
+        }
+      }
+    },
+    "server default" : {
+      "comment" : "Model picker: the model the Hermes server is set to use when none is picked (its config.yaml)",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "serverens standard"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server-Standard"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "predeterminado del servidor"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "par défaut du serveur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "predefinito del server"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバのデフォルト"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "서버 기본값"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tjenerens standard"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "serverstandaard"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "domyślny serwera"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "padrão do servidor"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "по умолчанию на сервере"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "serverns förval"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sunucu varsayılanı"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "стандартна на сервері"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器默认"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "伺服器預設"
+          }
+        }
+      }
+    },
+    "The model your server is set to use" : {
+      "comment" : "Model picker: under Gateway default, before the server says which model that is",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den model, din server er sat til at bruge"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Modell, auf das dein Server eingestellt ist"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El modelo que tiene configurado tu servidor"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le modèle que votre serveur est configuré pour utiliser"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il modello impostato sul tuo server"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバで設定されているモデル"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "서버에 설정된 모델"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modellen tjeneren din er satt opp til å bruke"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Het model waarop je server is ingesteld"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Model ustawiony na Twoim serwerze"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O modelo configurado no seu servidor"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Модель, заданная на вашем сервере"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modellen som din server är inställd på"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunucunuzun kullanacak şekilde ayarlandığı model"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Модель, задана на вашому сервері"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的服务器设定使用的模型"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的伺服器設定使用的模型"
           }
         }
       }
@@ -53081,112 +54044,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apple 推播服務沒有回應。請檢查連線並再試一次。"
-          }
-        }
-      }
-    },
-    "Applies to this conversation and to new ones." : {
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gælder for denne samtale og nye samtaler."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gilt für diese und für neue Konversationen."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Se aplica a esta conversación y a las nuevas."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "S’applique à cette conversation et aux nouvelles."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vale per questa conversazione e per quelle nuove."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "この会話と新しい会話に適用されます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "이 대화와 새로운 대화에 적용됩니다."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gjelder denne samtalen og nye samtaler."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Geldt voor dit gesprek en voor nieuwe."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dotyczy tej rozmowy i nowych."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vale para esta conversa e para as novas."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Применяется к этому разговору и новым."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gäller den här konversationen och nya."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bu konuşmaya ve yenilerine uygulanır."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Застосовується до цієї розмови й до нових."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "适用于此对话和新对话。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "套用到此對話和新對話。"
           }
         }
       }
@@ -358844,112 +359701,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的回答是什麼？"
-          }
-        }
-      }
-    },
-    "Whatever Redde is configured to use" : {
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Det, som Redde er konfigureret til at bruge"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Was in Redde eingestellt ist"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lo que Redde tenga configurado"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ce que Redde est configuré pour utiliser"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quello che Redde è configurata per usare"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reddeで設定されているもの"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redde에 구성된 항목 사용"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Det Redde er konfigurert til å bruke"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wat Redde is ingesteld om te gebruiken"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "To, czego Redde używa według konfiguracji"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O que o Redde estiver configurado para usar"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "То, что настроено в Redde"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Det som Redde är konfigurerad att använda"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redde neyi kullanacak şekilde ayarlıysa"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Те, що налаштовано в Redde"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "按Redde的配置使用"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redde 設定使用的任何項目"
           }
         }
       }

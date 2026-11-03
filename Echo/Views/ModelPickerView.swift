@@ -84,8 +84,7 @@ struct ModelPickerView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(isFastLane ? Settings.defaultFastLaneModel : String(localized: "Gateway default"))
-                            (isFastLane ? Text("llama-swap's configured default") : Text("Whatever Redde is configured to use"))
-                                .font(.caption).foregroundStyle(.secondary)
+                            defaultSubtitle.font(.caption).foregroundStyle(.secondary)
                         }
                         Spacer()
                         if currentIsDefault { Image(systemName: "checkmark").foregroundStyle(.tint).fontWeight(.semibold) }
@@ -96,7 +95,7 @@ struct ModelPickerView: View {
             } header: {
                 Text("Model")
             } footer: {
-                if !isFastLane { Text("Applies to this conversation and to new ones.") }
+                if !isFastLane { modelFooter }
             }
 
             if let error {
@@ -151,8 +150,15 @@ struct ModelPickerView: View {
                                     }
                                 }
                                 Spacer()
+                                // The checkmark is what the conversation runs on; a server's
+                                // `isCurrent` is only its default (config.yaml), named as that so
+                                // the two are never taken for one another (GitHub issue 44).
                                 if isSelected(choice) { Image(systemName: "checkmark").foregroundStyle(.tint).fontWeight(.semibold) }
-                                else if choice.isCurrent { Text("current", comment: "The model the server uses now").font(.caption2).foregroundStyle(.secondary) }
+                                else if choice.isCurrent {
+                                    (isFastLane ? Text("current", comment: "The model the server uses now")
+                                                : Text("server default", comment: "Model picker: the model the Hermes server is set to use when none is picked (its config.yaml)"))
+                                        .font(.caption2).foregroundStyle(.secondary)
+                                }
                             }
                             .contentShape(Rectangle())
                         }
@@ -160,13 +166,53 @@ struct ModelPickerView: View {
         }
     }
 
+    /// The model the server lists as its own default: the one it is set to in config.yaml. Both
+    /// Hermes connections mark it so, as the model list is asked for without a session.
+    private var serverDefault: ModelChoice? { choices.first(where: \.isCurrent) }
+
+    /// Under "Gateway default": the model that means, once the server has said.
+    private var defaultSubtitle: Text {
+        if isFastLane { return Text("llama-swap's configured default") }
+        guard let model = serverDefault?.model else {
+            return Text("The model your server is set to use", comment: "Model picker: under Gateway default, before the server says which model that is")
+        }
+        return Text("\(model), set on your server", comment: "Model picker: under Gateway default, the model the Hermes server is set to use, e.g. zai-glm-5-3-flash")
+    }
+
+    /// Which model a new conversation starts on, and what a pick here changes.
+    private var modelFooter: Text {
+        let model = serverDefault?.model
+        if settings.newChatsUseServerModel {
+            guard let model else {
+                return Text("New conversations start on your server's model. A pick here changes this conversation only.",
+                            comment: "Model picker footer with New Chats Use the Server's Model on, before the server says which model that is")
+            }
+            return Text("New conversations start on your server's model, \(model). A pick here changes this conversation only.",
+                        comment: "Model picker footer with New Chats Use the Server's Model on; the model, e.g. zai-glm-5-3-flash")
+        }
+        guard let starting = settings.gatewayModel.nilIfEmpty ?? model else {
+            return Text("New conversations start on your server's model. A pick here applies to them and to this conversation.",
+                        comment: "Model picker footer: no model picked, before the server says which model it is set to")
+        }
+        return Text("New conversations start on \(starting). A pick here applies to them and to this conversation.",
+                    comment: "Model picker footer: the model new conversations start on, e.g. zai-glm-5-3-flash")
+    }
+
+    /// The pick the checkmark shows: Redde's, which every new conversation starts on, or with
+    /// New Chats Use the Server's Model on, the open conversation's own.
+    private var pick: ConversationModels.Pick? {
+        if settings.newChatsUseServerModel { return conversation.ownModel }
+        return settings.gatewayModel.nilIfEmpty.map { .init(model: $0, provider: settings.gatewayProvider.nilIfEmpty) }
+    }
+
     private var currentIsDefault: Bool {
-        isFastLane ? settings.fastLaneModel == Settings.defaultFastLaneModel : settings.gatewayModel.isEmpty
+        isFastLane ? settings.fastLaneModel == Settings.defaultFastLaneModel : pick == nil
     }
 
     private func isSelected(_ choice: ModelChoice) -> Bool {
         if isFastLane { return settings.fastLaneModel == choice.model }
-        return settings.gatewayModel == choice.model && (settings.gatewayProvider.isEmpty || settings.gatewayProvider == choice.provider)
+        guard let pick else { return false }
+        return pick.model == choice.model && (pick.provider == nil || pick.provider == choice.provider)
     }
 
     private func select(_ choice: ModelChoice?) {
@@ -174,8 +220,12 @@ struct ModelPickerView: View {
             settings.fastLaneModel = choice?.model ?? Settings.defaultFastLaneModel
             return
         }
-        settings.gatewayModel = choice?.model ?? ""
-        settings.gatewayProvider = choice?.provider ?? ""
+        if settings.newChatsUseServerModel {
+            conversation.pickOwnModel(choice.map { .init(model: $0.model, provider: $0.provider.nilIfEmpty) })
+        } else {
+            settings.gatewayModel = choice?.model ?? ""
+            settings.gatewayProvider = choice?.provider ?? ""
+        }
         applyToOpenConversation(choice)
     }
 

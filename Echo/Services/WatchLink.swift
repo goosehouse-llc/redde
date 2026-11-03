@@ -41,7 +41,7 @@ final class WatchLink: NSObject, WCSessionDelegate {
         let key: String? = if let gatewayKey { gatewayKey() } else { settings.gatewayAPIKey }
         let api: WatchConnection? = {
             guard let base = settings.gatewayBaseURL, let key, !key.isEmpty else { return nil }
-            var connection = made(.hermesAPI, url: base.absoluteString, key: key, model: settings.gatewayModel, provider: settings.gatewayProvider)
+            var connection = made(.hermesAPI, url: base.absoluteString, key: key, model: settings.startingModel, provider: settings.startingProvider)
             let headers = customHeaders?() ?? settings.apiHeaders
             if !headers.isEmpty { connection.headers = headers }
             return connection
@@ -51,7 +51,7 @@ final class WatchLink: NSObject, WCSessionDelegate {
             let signedIn = dashboardSignedIn?() ?? (DashboardSignIn.tokens(for: settings.serveBaseURL, in: .keychain) != nil)
             // (A Dashboard with no sign-in needs neither: the phone reads its token itself.)
             guard settings.serveBaseURL != nil, signedIn || (!settings.serveUsername.isEmpty && !password.isEmpty) || settings.serveOpenAccess else { return nil }
-            return made(.phone, model: settings.gatewayModel, provider: settings.gatewayProvider)
+            return made(.phone, model: settings.startingModel, provider: settings.startingProvider)
         }()
         let fastLane: WatchConnection? = Settings.normalizedBase(settings.fastLaneURL).map { base in
             made(.fastLane, url: base.absoluteString, key: Keychain.read(.fastLaneAPIKey) ?? "", model: settings.fastLaneModel)

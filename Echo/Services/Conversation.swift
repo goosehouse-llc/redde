@@ -21,7 +21,20 @@ final class Conversation {
     private(set) var isWorkerTranscript = false
 
     /// Hermes ledger session id (sessions transport) or stored session id (hermes serve).
-    private(set) var serverSessionID: String? { didSet { if serverSessionID != oldValue { watchHostTurns() } } }
+    private(set) var serverSessionID: String? {
+        didSet {
+            guard serverSessionID != oldValue else { return }
+            watchHostTurns()
+            // A model picked before the first message is kept with the session it made.
+            if oldValue == nil, let serverSessionID, let unsentModel {
+                models.set(unsentModel, connection: settings.connectionKey, session: serverSessionID)
+                self.unsentModel = nil
+            }
+        }
+    }
+    /// With New Chats Use the Server's Model on, a model picked in this conversation before it
+    /// has a session on the server; kept with the session once it has one (`ConversationModels`).
+    private(set) var unsentModel: ConversationModels.Pick?
     /// The project a new conversation starts in (a project's New Conversation, on the Dashboard):
     /// its first turn opens the session in the project's folder. Gone when it becomes another.
     private(set) var startsIn: ProjectPlace?
@@ -152,13 +165,16 @@ final class Conversation {
     /// The Dashboard this conversation's Dashboard turns, bots and questions go by: the app's,
     /// unless a test gives one of its own.
     let dashboard: HermesServeClient
+    /// Each conversation's own model (`ConversationModels`): the app's, unless a test gives one.
+    let models: ConversationModels
 
     init(settings: Settings = .shared, store: ConversationStore = .shared, transportOverride: (any HermesTransport)? = nil,
-         dashboard: HermesServeClient = .shared) {
+         dashboard: HermesServeClient = .shared, models: ConversationModels = .shared) {
         self.settings = settings
         self.store = store
         self.transportOverride = transportOverride
         self.dashboard = dashboard
+        self.models = models
         // Pick up where the last session left off, like Messages does. A record already in memory
         // loads now; one on disk decodes off the main actor so the first frame isn't waiting on it.
         // Only the active server's: another server's session can't be continued from here.
@@ -324,12 +340,13 @@ final class Conversation {
         messages.append(reply)
         let replyID = reply.id
 
+        let hermesModel = settings.transport == .chatCompletions ? nil : turnModel
         var request = TurnRequest(
             userText: trimmed,
             history: history,
             sessionID: connection.hasLedger ? serverSessionID : nil,
-            model: settings.transport == .chatCompletions ? settings.fastLaneModel : settings.gatewayModel.nilIfEmpty,
-            provider: settings.transport == .chatCompletions ? nil : settings.gatewayProvider.nilIfEmpty,
+            model: settings.transport == .chatCompletions ? settings.fastLaneModel : hermesModel?.model,
+            provider: hermesModel?.provider,
             reasoningEffort: settings.reasoningEffort.nilIfEmpty,
             instructions: nil,
             attachments: attachments,
@@ -412,7 +429,11 @@ final class Conversation {
                     let provider = Self.liveProvider(for: model, saved: request.provider, in: await listedModels())
                     if provider != request.provider {
                         request.provider = provider
-                        if settings.gatewayModel == model { settings.gatewayProvider = provider ?? "" }
+                        if settings.newChatsUseServerModel {
+                            if unsentModel?.model == model { unsentModel?.provider = provider }
+                        } else if settings.gatewayModel == model {
+                            settings.gatewayProvider = provider ?? ""
+                        }
                     }
                 }
                 // Ledger transport: the session row must exist before the first turn.
@@ -1211,6 +1232,7 @@ final class Conversation {
         endIncognito()   // the one being left, if it was one, goes
         noteSeen()   // the one being left
         answeringCall = nil
+        unsentModel = nil   // the one being left's, never sent
         identity += 1
         ledgerWatch?.cancel()
         ledgerWatch = nil
@@ -1285,17 +1307,44 @@ final class Conversation {
 
     /// Switches to a model the way the picker does: the setting changes, so new conversations
     /// and every later fast-lane turn use it, and the open conversation is re-pinned. Sticky:
-    /// it stays until the picker or another switch moves it. Used by spoken prefixes.
+    /// it stays until the picker or another switch moves it. Used by spoken prefixes. With New
+    /// Chats Use the Server's Model on, only this conversation moves (`pickOwnModel`).
     func switchModel(_ model: String, provider: String?) async throws {
         if settings.transport == .chatCompletions {
             settings.fastLaneModel = model
             return
         }
         let provider = Self.liveProvider(for: model, saved: provider, in: await listedModels())
-        settings.gatewayModel = model
-        settings.gatewayProvider = provider ?? ""
+        if settings.newChatsUseServerModel {
+            pickOwnModel(ConversationModels.Pick(model: model, provider: provider))
+        } else {
+            settings.gatewayModel = model
+            settings.gatewayProvider = provider ?? ""
+        }
         try await pinOpenSessionModel(model, provider: provider)
     }
+
+    /// The model this conversation's own pick names, with New Chats Use the Server's Model on:
+    /// kept with its session, or held until the first message makes one. Nil: none picked, so it
+    /// is on the server's model.
+    var ownModel: ConversationModels.Pick? {
+        guard let serverSessionID else { return unsentModel }
+        return models.pick(connection: settings.connectionKey, session: serverSessionID)
+    }
+
+    /// Picks this conversation's own model (nil: back to the server's), leaving Redde's pick and
+    /// so every other conversation as it is. The caller re-pins an open session.
+    func pickOwnModel(_ pick: ConversationModels.Pick?) {
+        if let serverSessionID {
+            models.set(pick, connection: settings.connectionKey, session: serverSessionID)
+        } else {
+            unsentModel = pick
+        }
+    }
+
+    /// The model this conversation's next Hermes turn asks for (`ConversationModels.turnModel`):
+    /// Redde's pick, or with the setting on this conversation's own; nil for the server's.
+    var turnModel: ConversationModels.Pick? { ConversationModels.turnModel(settings: settings, own: ownModel) }
 
     /// The provider to send with `model`, checked against what the backend lists right now. A
     /// saved slug is only a memory of a past list: the host may have renamed or removed that

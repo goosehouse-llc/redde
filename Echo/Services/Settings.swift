@@ -73,6 +73,18 @@ final class Settings: ServeEndpoint {
     var gatewayProvider: String {
         didSet { store(gatewayProvider, forKey: Keys.gatewayProvider); syncActiveServer() }
     }
+    /// Settings → Model → New Chats Use the Server's Model (GitHub issue 45). Off, a model picked
+    /// is Redde's, and every new conversation starts on it (`gatewayModel`). On, a new
+    /// conversation starts on the model the server is set to (its config.yaml), and a pick
+    /// changes only the conversation it is made in (`ConversationModels`).
+    var newChatsUseServerModel: Bool {
+        didSet { store(newChatsUseServerModel, forKey: Keys.newChatsUseServerModel) }
+    }
+    /// The model a new Hermes conversation starts on: Redde's pick, or "" for the server's own,
+    /// which is all there is with New Chats Use the Server's Model on.
+    var startingModel: String { newChatsUseServerModel ? "" : gatewayModel }
+    /// The provider that goes with `startingModel`.
+    var startingProvider: String { newChatsUseServerModel ? "" : gatewayProvider }
     /// The effort levels offered, lowest first; "" leaves it to the gateway, "none" turns
     /// reasoning off. X-High and Max are for frontier models (Claude, GPT); the values are the
     /// ones their APIs use.
@@ -864,6 +876,7 @@ final class Settings: ServeEndpoint {
         static let fastLaneModel = "fastLaneModel"
         static let gatewayModel = "gatewayModel"
         static let gatewayProvider = "gatewayProvider"
+        static let newChatsUseServerModel = "newChatsUseServerModel"
         static let reasoningEffort = "reasoningEffort"
         static let replyLanguage = "replyLanguage"
         static let measureUnits = MeasureUnits.key
@@ -963,6 +976,7 @@ final class Settings: ServeEndpoint {
         gatewayModel = defaults.string(forKey: Keys.gatewayModel) ?? ""
         pushRelayURL = defaults.string(forKey: Keys.pushRelayURL) ?? ""
         gatewayProvider = defaults.string(forKey: Keys.gatewayProvider) ?? ""
+        newChatsUseServerModel = defaults.bool(forKey: Keys.newChatsUseServerModel)
         reasoningEffort = defaults.string(forKey: Keys.reasoningEffort) ?? Self.defaultReasoningEffort
         replyLanguage = defaults.string(forKey: Keys.replyLanguage) ?? ""
         measureUnits = MeasureUnits(rawValue: defaults.string(forKey: Keys.measureUnits) ?? "") ?? .automatic
@@ -1116,7 +1130,7 @@ final class Settings: ServeEndpoint {
     static let syncedKeys: [String] = [
         Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.botColors, Keys.eventColor, Keys.cardColor, Keys.agendaCalendars, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
         Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots, Keys.projectsInChatList,
-        Keys.fastLaneURL, Keys.fastLaneModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.measureUnits, Keys.contextWindow,
+        Keys.fastLaneURL, Keys.fastLaneModel, Keys.newChatsUseServerModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.measureUnits, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.keepRepliesInBackground, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
         Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopAndSkipInCar, Keys.stopPhrases,
         Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.voiceEngine, Keys.liveVoice, Keys.liveVoices, Keys.liveHangUp, Keys.liveWhenLocked, Keys.liveGroupCalls,
@@ -1160,6 +1174,7 @@ final class Settings: ServeEndpoint {
         case Keys.projectsInChatList: projectsInChatList = flag(true)
         case Keys.fastLaneURL: fastLaneURL = text(Self.defaultFastLaneURL)
         case Keys.fastLaneModel: fastLaneModel = text(Self.defaultFastLaneModel)
+        case Keys.newChatsUseServerModel: newChatsUseServerModel = flag()
         case Keys.reasoningEffort: reasoningEffort = text(Self.defaultReasoningEffort)
         case Keys.replyLanguage: replyLanguage = text()
         case Keys.measureUnits: measureUnits = MeasureUnits(rawValue: text()) ?? .automatic
@@ -1390,6 +1405,7 @@ final class Settings: ServeEndpoint {
         fastLaneModel = Self.defaultFastLaneModel
         gatewayModel = ""
         gatewayProvider = ""
+        newChatsUseServerModel = false
         reasoningEffort = Self.defaultReasoningEffort
         replyLanguage = ""
         measureUnits = .automatic

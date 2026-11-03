@@ -93,9 +93,10 @@ enum ShortcutRunner {
             transport = ChatCompletionsTransport(baseURL: url, apiKey: Keychain.read(.fastLaneAPIKey))
         }
 
+        let picked = settings.transport == .chatCompletions ? nil : ConversationModels.shared.turnModel(session: sessionID, settings: settings)
         let request = TurnRequest(userText: trimmed, history: [], sessionID: sessionID,
-                                  model: settings.transport == .chatCompletions ? settings.fastLaneModel : settings.gatewayModel.nilIfEmpty,
-                                  provider: settings.gatewayProvider.nilIfEmpty, reasoningEffort: settings.reasoningEffort.nilIfEmpty,
+                                  model: settings.transport == .chatCompletions ? settings.fastLaneModel : picked?.model,
+                                  provider: picked?.provider, reasoningEffort: settings.reasoningEffort.nilIfEmpty,
                                   instructions: nil, replyLanguage: settings.replyLanguage.nilIfEmpty)
         var text = ""
         var answered = false

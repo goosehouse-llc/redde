@@ -145,9 +145,10 @@ final class WatchRelayHost {
     private func run(_ turn: Turn, text: String) async {
         if let bot = turn.bot { return await runForBot(turn, bot: bot, text: text) }
         // The Dashboard's prompt takes no instructions: the hint rides on the message.
+        let picked = ConversationModels.shared.turnModel(session: storedSession, settings: settings)
         var request = TurnRequest(userText: text + "\n\n(" + WatchConnection.spokenHint + ")", history: [],
                                   sessionID: storedSession,
-                                  model: settings.gatewayModel.nilIfEmpty, provider: settings.gatewayProvider.nilIfEmpty,
+                                  model: picked?.model, provider: picked?.provider,
                                   reasoningEffort: settings.reasoningEffort.nilIfEmpty, instructions: nil,
                                   replyLanguage: settings.replyLanguage.nilIfEmpty)
         let isNew = request.sessionID == nil

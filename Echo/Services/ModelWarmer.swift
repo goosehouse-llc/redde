@@ -46,7 +46,7 @@ enum ModelWarmer {
 
     private static func targetModel(_ conversation: Conversation, settings: Settings) async -> String? {
         if settings.transport == .chatCompletions { return settings.fastLaneModel.nilIfEmpty }
-        if let picked = settings.gatewayModel.nilIfEmpty { return picked }
+        if let picked = conversation.turnModel?.model { return picked }
         guard let backend = SessionBackend.current(conversation),
               let options = try? await backend.modelOptions() else { return nil }
         return options.first(where: \.isCurrent)?.model
