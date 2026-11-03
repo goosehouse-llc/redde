@@ -9,6 +9,8 @@ struct PhoneToolsSettingsView: View {
     @State private var looking = PhotoLooking.shared
     @State private var plugin = PushPluginModel(manager: PhoneToolsSettingsView.server)
     @State private var refused: Set<DeviceArea> = []
+    /// What the Hermes says of the copies, when they are wanted: "calendar 12m reminders off".
+    @State private var copies: String?
     /// Whether iOS will show an alarm Redde sets: it does so as a Live Activity.
     @State private var alarmsShow = true
     @Environment(\.scenePhase) private var scenePhase
@@ -85,6 +87,29 @@ struct PhoneToolsSettingsView: View {
                 }
 
                 Section {
+                    Toggle("Keep a copy", isOn: Binding(get: { settings.phoneTools.wantsCopy }, set: { on in
+                        settings.phoneTools.copy = on
+                        if on {
+                            Task { await service.refreshCopies(); copies = await service.copyStatus() }
+                        } else {
+                            Task { await service.wipeCopies(); copies = nil }
+                        }
+                    }))
+                    if settings.phoneTools.wantsCopy {
+                        if let copies {
+                            Text("On your Hermes: \(copies).").font(.footnote).foregroundStyle(.secondary)
+                        }
+                        Button("Clear the copies") {
+                            Task { await service.wipeCopies(); copies = await service.copyStatus() }
+                        }
+                    }
+                } header: {
+                    Text("When Redde is closed")
+                } footer: {
+                    Text("So your agent can answer “what's on my calendar” with Redde closed: this iPhone hands it a read-only copy of what its calendar and reminders tools could already show, kept on your own Hermes, and Redde says how fresh the copy is. It refreshes while Redde is open; adding and changing still happen on this iPhone first, and only what these settings already let your agent see ever leaves it. Turning this off takes the copies with it.")
+                }
+
+                Section {
                     pluginRow
                     ReddePluginLink()
                 } header: {
@@ -124,7 +149,7 @@ struct PhoneToolsSettingsView: View {
         #if os(iOS)
         .onChange(of: scenePhase, initial: true) { alarmsShow = SystemAlarms().canShow }
         #endif
-        .task(id: settings.phoneTools) { await service.publish() }
+        .task(id: settings.phoneTools) { await service.publish(); await service.refreshCopies(); copies = await service.copyStatus() }
         .onChange(of: settings.phoneTools.access(.photos), initial: true) { looking.resume() }
     }
 

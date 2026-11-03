@@ -16,6 +16,12 @@ nonisolated struct PhoneToolsSettings: Codable, Equatable, Sendable {
     /// The whole thing. Off until turned on.
     var on = false
     var areas: [String: Access] = [:]
+    /// Whether Redde may keep a read-only copy of the calendar and reminders on the person's
+    /// Hermes, so those two can answer with Redde closed (issue 50). Off until asked; optional
+    /// so settings saved before it stay readable.
+    var copy: Bool?
+
+    var wantsCopy: Bool { copy == true }
 
     func access(_ area: DeviceArea) -> Access { on ? areas[area.rawValue] ?? .off : .off }
     mutating func set(_ area: DeviceArea, _ access: Access) { areas[area.rawValue] = access }
@@ -173,6 +179,11 @@ final class DeviceToolsService {
         } catch {
             logger.error("a phone tool's answer didn't reach the server: \(error.localizedDescription)")
         }
+        // A calendar or reminders call means the person was just using these: if they asked for
+        // a copy of them, that is the moment to hand one over fresh.
+        if let area = DeviceTool(rawValue: request.tool)?.area, area == .calendar || area == .reminders {
+            await refreshCopies()
+        }
     }
 
     /// Settles whether the request may be carried out, and carries it out.
@@ -260,6 +271,63 @@ final class DeviceToolsService {
         let held = named.compactMap { DeviceArea(rawValue: String($0)) }
         unoffered = open.filter { !held.contains($0) }
         return held
+    }
+
+    // MARK: - The copy of the calendar and reminders (issue 50)
+
+    /// Hands the plugin a whole read-only copy of what the calendar and reminders tools could
+    /// show now, so those two can answer with Redde closed: the plugin answers from it on the
+    /// person's own Hermes, and says when it was last synced. While Redde is open is the only
+    /// time it can be handed over, so it goes when the setting is turned on, after any
+    /// calendar or reminders call, and when the Phone tools settings are opened on.
+    func refreshCopies() async {
+        guard settings.phoneTools.on, settings.phoneTools.wantsCopy else { return }
+        do {
+            if settings.phoneTools.access(.calendar) != .off {
+                // A year back and two forward, at the tool's own widest fetch: the questions
+                // live well inside that, and a failed fetch hands over nothing rather than an
+                // empty copy.
+                let wide = JSONValue.object([
+                    "start": .string(DeviceDates.string(.now.addingTimeInterval(-365 * 86400))),
+                    "end": .string(DeviceDates.string(.now.addingTimeInterval(730 * 86400))),
+                    "limit": .number(200),
+                ])
+                if let events = (try? await DeviceCalendar.events(wide))?["events"]?.array {
+                    try await syncCopy("calendar", ["events": .array(events)])
+                }
+            }
+            if settings.phoneTools.access(.reminders) != .off {
+                // The completed ones too: the tool shows them when the agent asks, and the
+                // plugin's copy answers leave them out until it does.
+                let all = JSONValue.object(["include_completed": .bool(true), "limit": .number(200)])
+                if let reminders = (try? await DeviceCalendar.reminders(all))?["reminders"]?.array {
+                    try await syncCopy("reminders", ["reminders": .array(reminders)])
+                }
+            }
+        } catch {
+            logger.error("the copy of the calendar and reminders didn't reach the server: \(error.localizedDescription)")
+        }
+    }
+
+    /// One copy over the plugin's command, as base64 JSON — the same envelope `done` uses.
+    private func syncCopy(_ kind: String, _ payload: [String: JSONValue]) async throws {
+        let data = try JSONEncoder().encode(JSONValue.object(payload))
+        _ = try await command("device sync \(kind) \(data.base64EncodedString())")
+    }
+
+    /// Takes the copies off the Hermes: what turning the setting off means, and the person's
+    /// own clear button.
+    func wipeCopies() async {
+        try? await command("device cache wipe")
+    }
+
+    /// What the Hermes says of the copies, like "calendar 12m reminders off"; nil when the
+    /// setting is off or the server didn't answer.
+    func copyStatus() async -> String? {
+        guard settings.phoneTools.wantsCopy else { return nil }
+        let reply = try? await command("device cache status")
+        guard let reply, reply.hasPrefix("redde-push device cache ") else { return nil }
+        return String(reply.dropFirst("redde-push device cache ".count))
     }
 
     func clearLog() { log = [] }
