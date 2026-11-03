@@ -62,7 +62,8 @@ approvals:
 - **Local, on a Mac:** llama-swap in front of a mixture-of-experts model such as Qwen3.6-35B-A3B
   (builds for Apple silicon exist), 128K context, thinking off (it slows every reply).
   A mixture-of-experts model reads Hermes's ~30K-token prompt in about a minute on a Mac; a dense
-  model of similar size can take several times longer. After that, replies start in under a second because the prompt stays cached.
+  model of similar size can take several times longer. After that, replies start in under a second
+  because the prompt stays cached. (If you haven't tried Splash or Kapitsa, do!)
 - **A small model for chores:** Hermes's compression, titles and other helper jobs run on a 4B
   model so they don't evict the main one (`auxiliary` blocks in config.yaml).
 - **llama-swap tip:** add a stop string for Hermes's out-of-band message marker
