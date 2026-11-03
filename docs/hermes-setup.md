@@ -25,13 +25,13 @@ A setup that works well with Redde, on a stock Hermes 0.22 with no patches. Take
 | Bot | Profile | Job | Tools |
 |---|---|---|---|
 | Hermes | main | Everyday questions, calendar, notes, plans, schedules | web, memory, calendar MCP, skills, Kanban, cron. **No terminal** |
-| Ops | ops | The house and the server: Home Assistant, containers | Home Assistant plugin, terminal, web |
+| Ops | `ops` | The house and the server: Home Assistant, containers | Home Assistant plugin, terminal, web |
 | Research | `research` | Looking things up properly | web only |
 | Coder | `coder` | Code changes in one project folder | terminal and files, in that folder |
 
 Why split it: a local model with every tool in its prompt is slow and gets confused about which
-tool to use. Small bots with few tools answer faster, and "ask Home" keeps server work out of
-everyday chats. In Redde, `@Home turn off the porch light` from the main chat hands it over; a
+tool to use. Small bots with few tools answer faster, and "ask Ops" keeps server work out of
+everyday chats. In Redde, `@Ops turn off the porch light` from the main chat hands it over; a
 group chat with Research and Hermes plans a trip together.
 
 Give each bot only its tools (Redde: Edit Bot → Tools; Hermes: `platform_toolsets` in the
@@ -48,7 +48,7 @@ approvals:
   timeout: 300        # seconds before an unanswered approval is refused
 ```
 
-- The main agent has **no terminal**. Anything on the server goes to Home, whose approvals you
+- The main agent has **no terminal**. Anything on the server goes to Ops, whose approvals you
   see as cards in Redde.
 - Hermes's smart policy lets harmless commands (`ls`, `cat`) run and asks for the rest; add paths
   you never want touched under `approvals.deny`.
