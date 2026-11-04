@@ -25,6 +25,9 @@ nonisolated struct HermesBot: Identifiable, Equatable, Sendable {
     var chatID: String?
     var lastActive: Date?
     var preview: String?
+    /// How long the chat is, as the roster last saw it (`canonical_session.live_message_count`):
+    /// the display count, the compacted turns included. Nil when the host sent none.
+    var chatMessages: Int?
     /// Profile names it had before a rename: an old @tag still finds it.
     var previousNames: [String]
     /// The face the person picked for it in Redde, kept on the server so every Redde there shows it
@@ -53,6 +56,19 @@ nonisolated struct HermesBot: Identifiable, Equatable, Sendable {
 
     /// The @handle Hermes knows it by: the profile's name, and "hermes" for the main profile.
     var handle: String { isDefault ? "hermes" : name }
+
+    /// A chat long enough that resuming it whole would drag thousands of messages through the
+    /// phone before it could open — the main profile's Bot Chat is kept forever and gets there.
+    /// It opens the way a Kanban worker's transcript does instead: a resume that leaves the
+    /// transcript on the host, then the newest page of it (`Conversation.openBot`).
+    var chatIsLong: Bool { (chatMessages ?? 0) > Self.longChat }
+
+    /// The count a chat may hold and still open whole. One page is 500 messages
+    /// (`HermesServeClient.transcript(stored:)`), so a page-sized chat gains nothing by paging;
+    /// past it, paging is what keeps an open off the main actor. Hermes 0.22.5 and later carry
+    /// the count in `profiles.list` (`canonical_session.live_message_count`); without one, a
+    /// chat opens the way it always has.
+    static let longChat = 500
 
     init(name: String, displayName: String? = nil, title: String? = nil, description: String = "", isDefault: Bool = false,
          model: String? = nil, isHidden: Bool = false, isSetUp: Bool = false, setUpRevision: Int = 0, chatID: String? = nil,
@@ -94,6 +110,7 @@ nonisolated struct HermesBot: Identifiable, Equatable, Sendable {
                   reddeRevision: row["ui_meta_revisions"]?["redde"]?.int ?? 0,
                   workerActive: (row["worker_session"]?["last_active"]?.number).flatMap { $0 > 0 ? Date(timeIntervalSince1970: $0) : nil })
         hasPicture = row["has_avatar"]?.bool ?? false
+        chatMessages = chat?["live_message_count"]?.int
     }
 }
 
