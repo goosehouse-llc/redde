@@ -5,8 +5,8 @@ import Testing
 
 /// GPT-Live (`LiveVoice`): the call set up, what the service says turned into turns for the agent,
 /// the agent's answer sent back a sentence at a time, and the voice session showing the call.
-/// A fake call stands in for the WebSocket and OpenAI; what a real call does on a phone is
-/// measured there, not here.
+/// A fake call stands in for the WebSocket and OpenAI, and for Hermes Live / Codex's WebRTC and
+/// the talk-desktop plugin; what a real call does on a phone is measured there, not here.
 @MainActor
 struct LiveVoiceTests {
     // MARK: Fakes
@@ -23,6 +23,8 @@ struct LiveVoiceTests {
         private(set) var reconnections: [LiveConnection] = []
         /// Times it was told a request's answer went (`answered`).
         private(set) var answers = 0
+        /// Times the voice was asked to stop where it is (`interrupt`).
+        private(set) var interrupts = 0
         var inputLevel: Float = 0
         var outputLevel: Float = 0
 
@@ -30,6 +32,7 @@ struct LiveVoiceTests {
         func connect(_ connection: LiveConnection) async throws { self.connection = connection }
         func reconnect(_ connection: LiveConnection) async throws { reconnections.append(connection) }
         func answered() { answers += 1 }
+        func interrupt() { interrupts += 1 }
         func send(_ event: String) -> Bool {
             guard !closed, let parsed = try? JSONValue.parse(Data(event.utf8)) else { return false }
             sent.append(parsed)
@@ -130,6 +133,8 @@ struct LiveVoiceTests {
             case .gemini: call.receive(#"{"setupComplete":{}}"#)
             case .grok: call.receive(#"{"type":"session.updated","session":{}}"#)
             case .elevenLabs: call.receive(#"{"type":"conversation_initiation_metadata","conversation_initiation_metadata_event":{}}"#)
+            // WebRTC: on once its audio and its channel are, with no event of the service's for it.
+            case .hermesLive: call.state(.connected)
             }
         }
 
@@ -153,6 +158,38 @@ struct LiveVoiceTests {
         let deadline = Date().addingTimeInterval(seconds)
         while !done(), Date() < deadline { try await Task.sleep(for: .milliseconds(10)) }
         #expect(done())
+    }
+
+    // MARK: Voice settings presentation
+
+    @Test func hermesLiveSettingsShowAReadAloudGroupFallback() {
+        let presentation = LiveVoiceSettingsPresentation(engine: .hermesLive)
+
+        #expect(presentation.groupChats.supportsLiveCalls == false)
+        #expect(presentation.groupChats.title == "Group chats")
+        #expect(presentation.groupChats.value == "Read aloud")
+        #expect(presentation.modeSummary.contains("no OpenAI key"))
+        #expect(presentation.setupRows.contains(.init(title: "On this iPhone", value: "No API key")))
+        #expect(presentation.setupRows.contains(.init(title: "Agent work", value: "This chat")))
+    }
+
+    @Test func compatibleLiveSettingsKeepTheGroupCallToggle() {
+        let presentation = LiveVoiceSettingsPresentation(engine: .gptLive)
+
+        #expect(presentation.groupChats.supportsLiveCalls)
+        #expect(presentation.groupChats.title == "Group Chats as Calls")
+    }
+
+    @Test func readingVoiceMovesOutsideCallsOnlyForLiveModes() {
+        #expect(VoiceSettingsPresentation.readingVoiceTitle(for: .hermesLive) == "Read aloud outside calls")
+        #expect(VoiceSettingsPresentation.shouldCollapseReadingVoice(for: .hermesLive))
+        #expect(VoiceSettingsPresentation.showsHermesCallControls(for: .hermesLive))
+        #expect(VoiceSettingsPresentation.readingVoiceTitle(for: .gptLive) == "Reading voice")
+        #expect(!VoiceSettingsPresentation.shouldCollapseReadingVoice(for: .gptLive))
+        #expect(!VoiceSettingsPresentation.showsHermesCallControls(for: .gptLive))
+        #expect(VoiceSettingsPresentation.readingVoiceTitle(for: nil) == "Reading voice")
+        #expect(!VoiceSettingsPresentation.shouldCollapseReadingVoice(for: nil))
+        #expect(!VoiceSettingsPresentation.showsHermesCallControls(for: nil))
     }
 
     // MARK: Setting the call up
@@ -676,7 +713,6 @@ struct LiveVoiceTests {
 
     // MARK: The call
 
-    /// No WebRTC in the app any more; a call with no connection yet sends nothing and hears nothing.
     @Test func eachBotCanHaveItsOwnConversation() {
         let settings = Settings(defaults: UserDefaults(suiteName: "live-\(UUID().uuidString)")!)
         settings.voiceEngine = .gptLive
@@ -944,6 +980,9 @@ struct LiveVoiceTests {
         #expect(!harness.conversation.isStreaming && harness.live.state == .listening)
     }
 
+    /// A call with no connection yet sends nothing and hears nothing, over a WebSocket or WebRTC.
+    /// WebRTC is in the app again (2026-10-30), for Hermes Live / Codex alone: the other engines'
+    /// calls stay on URLSession's WebSockets, Apple's TLS.
     @Test func aCallWithNoConnectionSendsNothing() {
         final class Listener: LiveCallListening {
             func liveCallReceived(_ event: String) {}
@@ -953,6 +992,215 @@ struct LiveVoiceTests {
         let call = LiveCall(listener: listener)
         #expect(call.inputLevel == 0 && call.outputLevel == 0 && !call.send("{}"))
         call.close()
-        #expect(Bundle.main.path(forResource: "WebRTC", ofType: "framework", inDirectory: "Frameworks") == nil)
+        let rtc = HermesLiveCall(listener: listener, dialect: HermesLiveDialect())
+        #expect(rtc.inputLevel == 0 && rtc.outputLevel == 0 && !rtc.send("{}"))
+        rtc.close()
+        #expect(HermesLiveCall.available)
+        #expect(Bundle.main.path(forResource: "WebRTC", ofType: "framework", inDirectory: "Frameworks") != nil,
+                "Google's WebRTC, with its own BoringSSL: docs/app-store-listing.md, Export compliance")
+        #expect(LiveEngine.allCases.allSatisfy { !$0.setUpByHermes && $0.key != nil }, "every other engine keeps its WebSocket and its key")
+    }
+
+    // MARK: Hermes Live / Codex
+
+    /// A voice mode of its own (asked 2026-10-30): the Hermes host's Codex sign-in, through its
+    /// talk-desktop plugin, sets the call up, so Redde asks for, keeps and syncs no key for it.
+    @Test func hermesLiveIsAVoiceModeOfItsOwnWithNoKey() {
+        let engine = LiveEngine.hermesLive
+        #expect(engine.name == "Hermes Live / Codex" && engine.key == nil && engine.setUpByHermes)
+        #expect(LiveEngine.voiceModes.contains(.hermesLive) && !LiveEngine.allCases.contains(.hermesLive),
+                "offered for voice mode, not as a bot's own: a bot's choice (BotConversation) has no such case")
+        #expect(Settings.VoiceEngine.hermesLive.live == .hermesLive)
+        let settings = Settings(defaults: UserDefaults(suiteName: "live-\(UUID().uuidString)")!)
+        settings.voiceEngine = .hermesLive
+        #expect(settings.liveEngine(for: nil) == .hermesLive && settings.liveEngine(for: "scout") == .hermesLive && settings.usesLiveCall(for: nil))
+        #expect(settings.liveVoice(for: nil, engine: .hermesLive) == engine.defaultVoice)
+        settings.liveVoices[LiveEngine.hermesLive.rawValue] = "marin"
+        #expect(settings.liveVoice(for: nil, engine: .hermesLive) == "juniper",
+                "a legacy GPT-Live voice must never reach the Codex v3 broker")
+        #expect(!engine.greets, "no line of Redde's to open with: no previews, group chats as calls, or answers in another bot's voice")
+        #expect(engine.dialect is HermesLiveDialect && engine.handsOverByDelegation)
+    }
+
+    /// The channel's events: the voice hands a request over with `delegation.created`, and the
+    /// answer goes back on `delegation.context.append`; the session itself is the plugin's.
+    @Test func hermesLiveSpeaksTheTalkDesktopWire() throws {
+        let dialect = HermesLiveDialect()
+        #expect(dialect.engine == .hermesLive && dialect.streamsAnswers && dialect.waitsForWords)
+        #expect(LiveEngine.hermesLive.defaultVoice == "juniper")
+        #expect(LiveEngine.hermesLive.voices == ["juniper", "maple", "spruce", "ember", "vale", "breeze", "arbor", "sol", "cove"])
+        #expect(!LiveEngine.hermesLive.voices.contains("marin"))
+        let plan = LivePlan(voice: "juniper", instructions: "Be Sol.", history: [LiveLine(fromPerson: true, text: "Hi")])
+        #expect(dialect.opening(plan).isEmpty && dialect.afterStart(plan, eventID: "x").isEmpty, "the plugin sets the session up")
+        #expect(dialect.close().isEmpty && dialect.mute(true, eventID: "x").isEmpty, "stopping and the microphone are the call's own")
+        #expect(dialect.read(#"{"type":"delegation.created","delegation":{"id":"d1"}}"#) == [.delegated(id: "d1", request: nil)])
+        #expect(dialect.read(#"{"type":"delegation.created","item":{"id":"item_1","type":"delegation","target":"client","content":[{"type":"input_text","text":"Check the calendar"}]}}"#)
+                == [.delegated(id: "item_1", request: "Check the calendar")], "Codex Live v3 hands over item.id and input_text")
+        #expect(dialect.read(#"{"type":"delegation.created","delegation_id":"d2","request":"Lights off"}"#) == [.delegated(id: "d2", request: "Lights off")])
+        #expect(dialect.read(#"{"type":"session.delegation.created","delegation":{"id":"d3","type":"client"}}"#) == [.delegated(id: "d3", request: nil)])
+        #expect(dialect.read(#"{"type":"delegation.created"}"#).isEmpty, "no id: nothing to answer")
+        #expect(dialect.read(#"{"type":"conversation.item.input_audio_transcription.completed","transcript":"Turn the lights off."}"#)
+                == [.transcript(.person, "Turn the lights off. ", startMs: nil, endMs: nil)])
+        #expect(dialect.read(#"{"type":"input_transcript.added","item":{"text":"Check the live setup."}}"#)
+                == [.transcript(.person, "Check the live setup.", startMs: nil, endMs: nil)],
+                "Codex Live v3 sends the active user transcript in item.text")
+        #expect(dialect.read(#"{"type":"output_transcript.added","item":{"text":"I'll hand that to the assistant."}}"#)
+                == [.transcript(.voice, "I'll hand that to the assistant.", startMs: nil, endMs: nil)],
+                "Codex Live v3 sends the active assistant transcript in item.text")
+        #expect(dialect.read(#"{"type":"response.output_audio_transcript.delta","delta":"Let me check."}"#)
+                == [.transcript(.voice, "Let me check.", startMs: nil, endMs: nil)])
+        #expect(dialect.read(#"{"type":"session.input_transcript.delta","delta":"Hi","start_ms":0,"end_ms":900}"#)
+                == [.transcript(.person, "Hi", startMs: 0, endMs: 900)])
+        #expect(dialect.read(#"{"type":"error","error":{"code":"bad","message":"Nope."}}"#) == [.failed("Nope.", code: "bad")])
+        #expect(dialect.read(#"{"type":"session.closed","reason":"close_requested"}"#) == [.closed(nil)])
+        let answer = try #require(dialect.answer("Done.", to: "d1", final: false, eventID: "say_1").first)
+        #expect(answer == .object(["type": .string("delegation.context.append"), "delegation_item_id": .string("d1"),
+                                   "content": .array([.object(["type": .string("input_text"), "text": .string("Done.")])])]))
+        #expect(dialect.answer("", to: "d1", final: true, eventID: "x").isEmpty)
+        #expect(dialect.update("Still working.", to: "d1", eventID: "x").first?["type"]?.string == "delegation.context.append")
+        #expect(dialect.note("Sol is working: calendar.", to: "d1", eventID: "x").first?["delegation_item_id"]?.string == "d1")
+    }
+
+    /// The offer goes to the Dashboard with the profile, voice and language; the plugin's answer
+    /// carries the SDP answer and what names the session, which interrupt and stop send back.
+    @Test func aHermesLiveSessionIsNegotiatedThroughTheDashboard() throws {
+        let signal = HermesLiveSignal(profile: "home", voice: "ember", language: "en") { _, _ in .null }
+        #expect(signal.sessionRequest(offer: "v=0 offer")
+                == .object(["profile": .string("home"), "voice": .string("ember"), "language": .string("en"), "offer": .string("v=0 offer")]))
+        var contextual = signal
+        contextual.context = "User: Continue that plan.\nAssistant: The live voice fix is nearly done."
+        #expect(contextual.sessionRequest(offer: "v=0 offer")["context"]?.string?.contains("Continue that plan") == true)
+        #expect(HermesLiveSignal.context(from: [LiveLine(fromPerson: true, text: "  Continue it. "), LiveLine(fromPerson: false, text: " I will. ")])
+                == "User: Continue it.\nAssistant: I will.")
+        let host = HermesLiveSignal(profile: nil, voice: "ember", language: "en") { _, _ in .null }
+        #expect(host.sessionRequest(offer: "v=0 offer")
+                == .object(["voice": .string("ember"), "language": .string("en"), "offer": .string("v=0 offer")]),
+                "the host identity is omitted, never sent as Redde's internal default label")
+        let defaultMarker = HermesLiveSignal(profile: "default", voice: "ember", language: "en") { _, _ in .null }
+        #expect(defaultMarker.sessionRequest(offer: "v=0 offer")
+                == host.sessionRequest(offer: "v=0 offer"),
+                "a default marker from conversation routing is also the host identity")
+        #expect(HermesLiveSignal.sessionPath == "api/plugins/talk-desktop/codexlive/session")
+        #expect(HermesLiveSignal.interruptPath == "api/plugins/talk-desktop/codexlive/interrupt")
+        #expect(HermesLiveSignal.stopPath == "api/plugins/talk-desktop/codexlive/stop")
+        #expect(HermesServeClient.profilePlacement(method: "POST", path: HermesLiveSignal.sessionPath) == HermesServeClient.ProfilePlacement.none,
+                "the profile is in the body Redde writes")
+
+        let camel = try HermesLiveSession(reply: .object([
+            "sdp": .string("v=0 answer"), "threadId": .string("t1"), "sessionId": .string("s1"),
+            "capabilities": .object(["clientManagedHandoffs": .bool(true)]),
+        ]))
+        #expect(camel.answer == "v=0 answer" && camel.clientManagedHandoffs == true && camel.handoffProblem == nil)
+        #expect(camel.request(profile: "home") == .object(["threadId": .string("t1"), "sessionId": .string("s1"), "profile": .string("home")]))
+        #expect(camel.request(profile: nil) == .object(["threadId": .string("t1"), "sessionId": .string("s1")]))
+        #expect(camel.request(profile: "default") == camel.request(profile: nil))
+        let snake = try HermesLiveSession(reply: .object([
+            "answer": .object(["type": .string("answer"), "sdp": .string("v=0 b")]),
+            "session": .object(["thread_id": .string("t2"), "session_id": .string("s2")]),
+            "client_managed_handoffs": .bool(true),
+        ]))
+        #expect(snake.answer == "v=0 b" && snake.identity == ["thread_id": .string("t2"), "session_id": .string("s2")])
+        do {
+            _ = try HermesLiveSession(reply: .object(["threadId": .string("t3")]))
+            Issue.record("a session with no SDP answer")
+        } catch {
+            #expect(error.localizedDescription.contains("SDP answer"))
+        }
+    }
+
+    /// A Hermes that would work requests in a lane of its own (Codex's), not in this chat, is told
+    /// to stop and the call says why: requests never go elsewhere unasked.
+    @Test func withoutClientManagedHandoffsTheCallSaysWhyAndGoesNoFurther() throws {
+        let refused = try HermesLiveSession(reply: .object(["sdp": .string("v=0"), "sessionId": .string("s"), "clientManagedHandoffs": .bool(false)]))
+        let problem = try #require(refused.handoffProblem)
+        #expect(problem.contains("client-managed handoffs") && problem.contains("talk-desktop"))
+        let silent = try HermesLiveSession(reply: .object(["sdp": .string("v=0"), "sessionId": .string("s")]))
+        #expect(silent.clientManagedHandoffs == nil && silent.handoffProblem != nil, "not said is not supported")
+        let warned = try HermesLiveSession(reply: .object(["sdp": .string("v=0"), "clientManagedHandoffs": .bool(false),
+                                                           "warnings": .array([.string("Codex will run requests itself.")])]))
+        #expect(warned.handoffProblem?.contains("Codex will run requests itself.") == true, "the plugin's own warning passed on")
+    }
+
+    /// No Dashboard, no plugin, no Codex: each says what is missing, and a group chat's call says
+    /// it can't be one.
+    @Test func hermesLiveSaysWhatIsMissing() async throws {
+        let harness = Harness()   // the OpenAI-compatible connection: no Dashboard
+        do {
+            _ = try await LiveSetup.resolve(harness.conversation, harness.settings, .hermesLive)
+            Issue.record("set up with no Dashboard")
+        } catch {
+            #expect(error.localizedDescription.contains("Hermes Dashboard"))
+        }
+        #expect(HermesLiveSignal.failure(TransportError.http(status: 404, body: "Not Found")).localizedDescription.contains("talk-desktop"))
+        #expect(HermesLiveSignal.failure(TransportError.http(status: 503, body: "Codex is not signed in")).localizedDescription.contains("Codex is not signed in"))
+        #expect(HermesLiveSignal.failure(TransportError.http(status: 401, body: "")).localizedDescription.contains("login"))
+        #expect(HermesLiveSignal.failure(TransportError.badURL).localizedDescription.contains("Hermes Dashboard"))
+        let room = LiveRoom(name: "Crew", members: [("home", "Home")], history: { [] }, send: { _ in })
+        do {
+            _ = try await LiveSetup.resolveRoom(room, speaker: nil, settings: harness.settings, engine: .hermesLive)
+            Issue.record("a group chat's call")
+        } catch {
+            #expect(error.localizedDescription.contains("Group Chats as Calls"))
+        }
+        func plugin(_ status: String) -> InstalledPlugin? { InstalledPlugin(.object(["name": .string("talk-desktop"), "version": .string("2.1.0"), "status": .string(status)])) }
+        #expect(HermesLivePlugin.find(in: []) == .missing)
+        #expect(HermesLivePlugin.find(in: [plugin("disabled")].compactMap { $0 }) == .off)
+        #expect(HermesLivePlugin.find(in: [plugin("enabled")].compactMap { $0 }) == .on(version: "2.1.0"))
+    }
+
+    /// A Hermes Live call as the voice session sees it: on when its audio is, each request handed
+    /// to this chat and its answer appended to the delegation a sentence at a time; the voice can
+    /// be cut off, and hanging up is the call's own (the plugin's stop), not a message.
+    @Test func aHermesLiveCallHandsRequestsToThisChatAndAppendsTheAnswers() async throws {
+        let harness = Harness(engine: .hermesLive)
+        await harness.connect()
+        #expect(harness.live.connected && harness.live.state == .listening)
+        harness.call.receive(#"{"type":"conversation.item.input_audio_transcription.completed","transcript":"What's next on my calendar?"}"#)
+        harness.call.receive(#"{"type":"delegation.created","item":{"id":"d1","type":"delegation","target":"client","content":[{"type":"input_text","text":"What's next on my calendar?"}]}}"#)
+        #expect(harness.live.state == .thinking)
+        try await Self.until { harness.live.state == .listening }
+        #expect(harness.transport.requests.last?.userText == "What's next on my calendar?", "Redde's own lane: this chat")
+        let appended = harness.call.sent("delegation.context.append")
+        #expect(Array(appended.compactMap { $0["content"]?.array?.first?["text"]?.string }.prefix(2)) == ["Your meeting is at 4 pm.", "It's with Ana."])
+        #expect(appended.allSatisfy { $0["delegation_item_id"]?.string == "d1" })
+        harness.live.interrupt()
+        #expect(harness.call.interrupts == 1)
+        harness.live.hangUp()
+        try await Self.until { harness.call.closed }
+        #expect(harness.call.sent.allSatisfy { $0["type"]?.string == "delegation.context.append" }, "nothing else on the channel")
+    }
+
+    /// The person's words can be written down after the voice has handed the request over: the
+    /// request waits a moment for them rather than take the words of the one before.
+    @Test func aHermesLiveRequestWaitsForThePersonsWords() async throws {
+        let harness = Harness(engine: .hermesLive)
+        await harness.connect()
+        harness.call.receive(#"{"type":"conversation.item.input_audio_transcription.completed","transcript":"What's the weather?"}"#)
+        harness.call.receive(#"{"type":"delegation.created","item":{"id":"d1","type":"delegation","target":"client","content":[{"type":"input_text","text":"What's the weather?"}]}}"#)
+        try await Self.until { harness.live.state == .listening }
+        harness.call.receive(#"{"type":"response.output_audio_transcript.delta","delta":"It's sunny."}"#)
+        harness.call.receive(#"{"type":"delegation.created","item":{"id":"d2","type":"delegation","target":"client","content":[{"type":"input_text","text":"And tomorrow?"}]}}"#)
+        try await Task.sleep(for: .milliseconds(300))
+        harness.call.receive(#"{"type":"conversation.item.input_audio_transcription.completed","transcript":"And tomorrow?"}"#)
+        try await Self.until { harness.transport.requests.count == 2 && harness.live.state == .listening }
+        #expect(harness.transport.requests.map(\.userText) == ["What's the weather?", "And tomorrow?"])
+    }
+
+    /// Pause on a call: the voice cut off where the service can be asked to (Hermes Live's
+    /// interrupt; a no-op on the others) and the microphone shut, the call open.
+    @Test func pauseOnACallCutsTheVoiceOffAndShutsTheMicrophone() async throws {
+        let harness = SessionHarness()
+        let session = harness.session
+        session.beginListening()
+        try await Self.until { harness.base.call.connection != nil }
+        harness.base.call.receive(#"{"type":"session.started"}"#)
+        harness.base.call.state(.speaking)
+        #expect(session.phase == .speaking)
+        session.pauseSpeaking()
+        #expect(harness.base.call.interrupts == 1 && harness.base.call.muted && session.isMuted && session.isLive)
+        session.resumeSpeaking()
+        #expect(!harness.base.call.muted && !session.isMuted)
+        session.primaryAction()
+        #expect(!session.isLive)
     }
 }

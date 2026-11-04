@@ -5,9 +5,19 @@ import Foundation
 /// from the phone, with a key of its own kept in Redde, and speaks a wire of its own
 /// (`LiveDialect`); the rest of a call, the audio, the screen, handing requests to the agent, is
 /// the same for all (`LiveCall`, `LiveVoice`). Gemini and Grok asked 2026-10-25, for cost; then
-/// ElevenLabs, for its voices.
+/// ElevenLabs, for its voices. Then Hermes Live / Codex (2026-10-30), the one apart: set up by the
+/// person's Hermes through its talk-desktop plugin, on the ChatGPT subscription Codex is signed in
+/// with there, so with no key in Redde, and over WebRTC (`HermesLiveCall`), not a WebSocket.
 nonisolated enum LiveEngine: String, CaseIterable, Codable, Sendable {
-    case gptLive, gemini, grok, elevenLabs
+    case gptLive, gemini, grok, elevenLabs, hermesLive
+
+    /// The engines that call on a key kept in Redde, which a bot can also be given as its own
+    /// (Edit Bot → Voice, `BotConversation`, which lists these by name). Not Hermes Live / Codex:
+    /// the Hermes host sets its calls up, and a bot's choice has no such case, so Edit Bot doesn't
+    /// offer it. Settings → Voice → Voice mode offers every engine (`voiceModes`).
+    static var allCases: [LiveEngine] { [.gptLive, .gemini, .grok, .elevenLabs] }
+    /// What Settings → Voice → Voice mode offers: every engine.
+    static var voiceModes: [LiveEngine] { allCases + [.hermesLive] }
 
     var name: String {
         switch self {
@@ -15,27 +25,52 @@ nonisolated enum LiveEngine: String, CaseIterable, Codable, Sendable {
         case .gemini: "Gemini Live"
         case .grok: "Grok Voice"
         case .elevenLabs: "ElevenLabs"
+        case .hermesLive: "Hermes Live / Codex"
         }
     }
 
+    /// Whose voice it is, and where the microphone's sound goes while a call is open.
     var company: String {
         switch self {
         case .gptLive: "OpenAI"
         case .gemini: "Google"
         case .grok: "xAI"
         case .elevenLabs: "ElevenLabs"
+        case .hermesLive: "OpenAI"
         }
     }
 
-    /// Its key, kept in Redde (and synced with iCloud Keychain like the others).
-    var keyItem: Keychain.Item {
+    /// Its key, kept in Redde (and synced with iCloud Keychain like the others). None for Hermes
+    /// Live / Codex: the Hermes host's own Codex sign-in sets its calls up, and Redde never asks
+    /// for, keeps or syncs an OpenAI key for them.
+    var key: Keychain.Item? {
         switch self {
         case .gptLive: .openAILive
         case .gemini: .geminiLive
         case .grok: .grokVoice
         case .elevenLabs: .elevenLabsLive
+        case .hermesLive: nil
         }
     }
+
+    /// `key`, for the screens outside voice mode's settings that ask it of an engine they know
+    /// has one (ElevenLabs' reading voice, a voice's preview). Never read or written for Hermes
+    /// Live / Codex: nothing offers it a key field or a preview (`greets`), and its setup asks no
+    /// key (`LiveSetup.resolve`); GPT-Live's item only keeps this total.
+    var keyItem: Keychain.Item { key ?? .openAILive }
+
+    /// The Hermes host sets its calls up (the talk-desktop plugin, over the Dashboard), and they go
+    /// over WebRTC (`HermesLiveCall`) rather than a WebSocket of Redde's.
+    var setUpByHermes: Bool { self == .hermesLive }
+
+    /// It can open a session saying a line Redde gives it: a voice's preview, a group chat
+    /// member's reply in its voice, a request's answer in another bot's voice (`LiveGreeting`).
+    /// Not Hermes Live / Codex: the plugin words its sessions, and takes no line of Redde's.
+    var greets: Bool { self != .hermesLive }
+
+    /// The voice hands requests over by delegation (GPT-Live's own), not through a tool it is
+    /// given (`LiveAgentTool`).
+    var handsOverByDelegation: Bool { self == .gptLive || self == .hermesLive }
 
     var dialect: any LiveDialect {
         switch self {
@@ -43,13 +78,16 @@ nonisolated enum LiveEngine: String, CaseIterable, Codable, Sendable {
         case .gemini: GeminiLiveDialect()
         case .grok: GrokVoiceDialect()
         case .elevenLabs: ElevenLabsDialect()
+        case .hermesLive: HermesLiveDialect()
         }
     }
 
-    /// Its voices by the language each speaks, the default first.
+    /// Its voices by the language each speaks, the default first. Hermes Live / Codex uses the
+    /// v3 voice list accepted by the talk-desktop plugin, not GPT-Live's older list.
     var voiceGroups: [(language: String, voices: [String])] {
         switch self {
         case .gptLive: LiveSetup.voiceGroups
+        case .hermesLive: HermesLiveDialect.voiceGroups
         case .gemini: GeminiLiveDialect.voiceGroups
         case .grok: GrokVoiceDialect.voiceGroups
         case .elevenLabs: []
@@ -76,7 +114,7 @@ nonisolated enum LiveEngine: String, CaseIterable, Codable, Sendable {
     /// How its company describes a voice, where it does.
     func style(of voice: String) -> String? {
         switch self {
-        case .gptLive: nil
+        case .gptLive, .hermesLive: nil
         case .gemini: GeminiLiveDialect.styles[voice]
         case .grok: GrokVoiceDialect.styles[voice]
         case .elevenLabs: nil
@@ -90,6 +128,7 @@ nonisolated enum LiveEngine: String, CaseIterable, Codable, Sendable {
         case .gemini: String(localized: "Google bills the key's account about $0.005 a minute for what you say and $0.018 a minute for what the voice says (about $0.12 for ten minutes); a free tier is offered, whose conversations Google may use to improve its products.")
         case .grok: String(localized: "xAI bills the key's account $0.08 a minute.")
         case .elevenLabs: String(localized: "ElevenLabs bills the key's account by the minute past what its plan includes ($0.08 a minute), with the agent's language model on top; silence past ten seconds at a twentieth of that. The first call makes a voice agent named Redde voice in your ElevenLabs account.")
+        case .hermesLive: String(localized: "Calls run on the ChatGPT plan Codex is signed in with on your Hermes, within that plan's limits: no API key, and nothing billed through Redde.")
         }
     }
 }
@@ -190,6 +229,10 @@ nonisolated protocol LiveDialect: Sendable {
     /// The service plays a sound of its own while a request it handed over is out (ElevenLabs'
     /// typing), in the voice's stream: not the voice speaking. None by default.
     var soundsWhileWaiting: Bool { get }
+    /// The person's words can be written down after the voice has handed their request over (a
+    /// transcription done once they've finished): a request waits a moment for them, rather than
+    /// take the words of the one before (`LiveVoice.delegated`). No by default.
+    var waitsForWords: Bool { get }
     /// Where a call connects with `key` (which may first be traded for a short-lived one).
     func endpoint(key: String) async throws -> LiveEndpoint
     /// What opens the session, before it says it has started.
@@ -213,6 +256,7 @@ nonisolated protocol LiveDialect: Sendable {
 
 nonisolated extension LiveDialect {
     var soundsWhileWaiting: Bool { false }
+    var waitsForWords: Bool { false }
 }
 
 nonisolated extension LiveDialect {
@@ -316,5 +360,115 @@ nonisolated struct GPTLiveDialect: LiveDialect {
     private static func message(_ line: LiveLine) -> JSONValue {
         .object(["type": .string("message"), "role": .string(line.fromPerson ? "user" : "assistant"),
                  "content": .array([.object(["type": .string(line.fromPerson ? "input_text" : "output_text"), "text": .string(line.text)])])])
+    }
+}
+
+// MARK: - Hermes Live / Codex
+
+/// Hermes Live / Codex's events, on the WebRTC data channel (`oai-events`) of a session that the
+/// talk-desktop plugin on the person's Hermes set up (`HermesLiveCall`, `HermesLiveSignal`). The
+/// voice hands a request over with `delegation.created`; the agent's answer goes back on
+/// `delegation.context.append`, a sentence at a time as GPT-Live's commentary does, and so do the
+/// notes on its progress, each naming the delegation. The session itself (its voice and
+/// instructions, cutting the voice off, stopping it) is the plugin's, over the Dashboard, and the
+/// sound is WebRTC's: nothing here carries audio. Transcripts are read as GPT-Live words them and
+/// as OpenAI's realtime events do. Written 2026-10-30 from the plugin's routes and event names,
+/// not yet tried against a real session.
+nonisolated struct HermesLiveDialect: LiveDialect {
+    /// Codex Live v3 voices accepted by talk-desktop's local broker. Keep this list separate from
+    /// GPT-Live: selecting Marin there is valid, but the v3 broker rejects it before SDP setup.
+    static let voiceGroups: [(language: String, voices: [String])] = [
+        ("English", ["juniper", "maple", "spruce", "ember", "vale", "breeze", "arbor", "sol", "cove"]),
+    ]
+    var engine: LiveEngine { .hermesLive }
+    /// WebRTC carries the sound, at rates of its own: never used.
+    var inputRate: Double { 48_000 }
+    var outputRate: Double { 48_000 }
+    var outputGain: Float { 1 }
+    var streamsAnswers: Bool { true }
+    /// A transcription done once the person has finished can come after the hand-over.
+    var waitsForWords: Bool { true }
+
+    func endpoint(key: String) async throws -> LiveEndpoint {
+        throw LiveFailure(String(localized: "Hermes Live / Codex calls are set up by your Hermes, with no key of Redde's."))
+    }
+
+    func opening(_ plan: LivePlan) -> [JSONValue] { [] }
+    func afterStart(_ plan: LivePlan, eventID: String) -> [JSONValue] { [] }
+    /// The microphone goes as WebRTC's audio, not as messages.
+    func audio(_ base64: String) -> String { "" }
+
+    func answer(_ text: String, to id: String, final: Bool, eventID: String) -> [JSONValue] {
+        text.isEmpty ? [] : [append(text, id, eventID)]
+    }
+
+    func update(_ text: String, to id: String, eventID: String) -> [JSONValue] {
+        [append(text, id, eventID)]
+    }
+
+    func note(_ text: String, to id: String, eventID: String) -> [JSONValue] {
+        [append(String(text.prefix(LiveFragment.appendLimit)), id, eventID)]
+    }
+
+    /// The microphone is shut on the phone (its track off), not by a message.
+    func mute(_ muted: Bool, eventID: String) -> [JSONValue] { [] }
+    /// Stopping is the plugin's (`/codexlive/stop`, asked as the call closes).
+    func close() -> [JSONValue] { [] }
+
+    func read(_ text: String) -> [LiveEvent] {
+        guard let event = try? JSONValue.parse(Data(text.utf8)), let type = event["type"]?.string else { return [] }
+        switch type {
+        case "session.created", "session.started":
+            return [.started]
+        case "delegation.created", "session.delegation.created":
+            // Codex Live v3 puts a client-managed delegation in `item`, not the legacy
+            // `delegation` object. Retain the latter for compatible brokers, but prefer the
+            // v3 item and its authoritative input_text content.
+            let delegation = event["item"] ?? event["delegation"]
+            guard let id = (delegation?["id"] ?? event["delegation_id"] ?? event["delegationId"])?.string, !id.isEmpty else { return [] }
+            let content = delegation?["content"]?.array?.compactMap { $0["text"]?.string }
+                .joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
+            let request = (!((content ?? "").isEmpty) ? content : Self.requestKeys.lazy.compactMap { (delegation?[$0] ?? event[$0])?.string }
+                .first { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
+            return [.delegated(id: id, request: request)]
+        case "delegation.cancelled", "delegation.canceled":
+            let id = (event["delegation"]?["id"] ?? event["delegation_id"] ?? event["delegationId"])?.string
+            return id.map { [.withdrawn([$0])] } ?? []
+        case "input_transcript.added":
+            // Codex Live v3's frameless wire carries the growing transcript in `item.text`,
+            // rather than the older `delta` field. Keep it as a live fragment so a later
+            // client-managed delegation is grounded in what was actually said.
+            let words = event["item"]?["text"]?.string ?? event["text"]?.string ?? ""
+            return words.isEmpty ? [] : [.transcript(.person, words, startMs: nil, endMs: nil)]
+        case "output_transcript.added":
+            let words = event["item"]?["text"]?.string ?? event["text"]?.string ?? ""
+            return words.isEmpty ? [] : [.transcript(.voice, words, startMs: nil, endMs: nil)]
+        case "session.input_transcript.delta", "input_transcript.delta":
+            return [.transcript(.person, event["delta"]?.string ?? "", startMs: event["start_ms"]?.int, endMs: event["end_ms"]?.int)]
+        case "session.output_transcript.delta", "output_transcript.delta", "response.output_audio_transcript.delta", "response.audio_transcript.delta":
+            return [.transcript(.voice, event["delta"]?.string ?? "", startMs: event["start_ms"]?.int, endMs: event["end_ms"]?.int)]
+        case "conversation.item.input_audio_transcription.completed":
+            // Whole, once the person has finished: a space after it, so the next isn't run into it.
+            let words = event["transcript"]?.string ?? ""
+            return words.isEmpty ? [] : [.transcript(.person, words + " ", startMs: nil, endMs: nil)]
+        case "error":
+            return [.failed(event["error"]?["message"]?.string ?? String(localized: "Hermes Live / Codex refused something Redde sent."),
+                            code: event["error"]?["code"]?.string)]
+        case "session.closed", "session.ended":
+            let reason = event["reason"]?.string ?? ""
+            return [.closed(reason.isEmpty || reason == "close_requested" ? nil : reason)]
+        default:
+            return []
+        }
+    }
+
+    /// Where a delegation may carry the voice's own wording of the request.
+    private static let requestKeys = ["request", "prompt", "input", "instructions", "task", "text", "query"]
+
+    private func append(_ content: String, _ id: String, _ eventID: String) -> JSONValue {
+        // Codex v3 accepts the result only on its client-managed handoff item. The legacy
+        // delegation_id/string shape silently leaves the focused Hermes chat's answer unheard.
+        .object(["type": .string("delegation.context.append"), "delegation_item_id": .string(id),
+                 "content": .array([.object(["type": .string("input_text"), "text": .string(content)])])])
     }
 }
