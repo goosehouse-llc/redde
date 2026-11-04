@@ -172,7 +172,8 @@ class RoomsTests(unittest.TestCase):
         self.assertEqual([d["id"] for d in self.store.targets("chat-1", "api_server")], ["phone-1"])
 
     def test_the_app_says_what_it_muted(self):
-        plugin._store = self.store
+        # Both halves of the plugin's state, or it makes its own store from the Hermes home.
+        plugin._store, plugin._pusher = self.store, core.Pusher(self.store)
         try:
             self.assertEqual(plugin._slash("mutes phone-1 s:chat-1=0,g:redde-abc=1791330000"), "redde-push muted 1")
             self.assertTrue(self.store.muted("phone-1", "s:chat-1"))
@@ -180,7 +181,7 @@ class RoomsTests(unittest.TestCase):
             self.assertEqual(plugin._slash("mutes phone-1"), "redde-push muted 1")
             self.assertFalse(self.store.muted("phone-1", "s:chat-1"), "none muted now")
         finally:
-            plugin._store = None
+            plugin._store, plugin._pusher = None, None
 
     def test_each_message_and_each_wait_keeps_its_own_notification(self):
         device = {"id": "phone-1", "key": core.b64u(b"k" * 32)}
