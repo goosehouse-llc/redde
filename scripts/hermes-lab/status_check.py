@@ -80,7 +80,9 @@ def patch(opener, stored, body):
     from mutation-snapshot where the host has that route (Hermes from 2026-10-16 refuses a bare
     one with 409 client_upgrade_required), bare where it doesn't."""
     try:
-        snapshot = rest(opener, "GET", f"/api/sessions/{stored}/mutation-snapshot")
+        # A bot's session: its profile goes on the snapshot's query, and in the write's body.
+        where = f"?profile={body['profile']}" if body.get("profile") else ""
+        snapshot = rest(opener, "GET", f"/api/sessions/{stored}/mutation-snapshot{where}")
         body = dict(body, request_id=uuid.uuid4().hex, expected_revision=snapshot["runtime_revision"],
                     expected_generation=snapshot.get("runtime_generation"))
     except urllib.error.HTTPError as error:

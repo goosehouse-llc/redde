@@ -23,7 +23,7 @@ import time
 
 import check
 from check import HITS, Dashboard, report
-from status_check import rest, rest_opener
+from status_check import patch, rest, rest_opener
 
 BOT = "scout"
 
@@ -83,8 +83,8 @@ async def earlier_chats(dash, opener, old):
     kept = next((r for r in rows if r.get("id") == old), None)
     report(kept is not None, "the Dashboard lists the archived chat, hidden as it is",
            f"{len(rows)} archived; row {json.dumps({k: (kept or {}).get(k) for k in ('id', 'title', 'hidden', 'archived', 'source', 'message_count')})}")
-    rest(opener, "PATCH", f"/api/sessions/{new}", {"archived": True, "profile": BOT})
-    rest(opener, "PATCH", f"/api/sessions/{old}", {"title": "Bot Chat", "archived": False, "profile": BOT})
+    patch(opener, new, {"archived": True, "profile": BOT})
+    patch(opener, old, {"title": "Bot Chat", "archived": False, "profile": BOT})
     found = await lookup(dash, BOT)
     report(found is not None and found.get("id") == old, "brought back, the old chat is the bot's chat again", json.dumps(found)[:200])
     rows = rest(opener, "GET", f"/api/profiles/sessions?profile={BOT}&archived=only&order=recent&limit=100").get("sessions") or []
