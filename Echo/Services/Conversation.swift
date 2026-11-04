@@ -1683,8 +1683,8 @@ final class Conversation {
     /// a resume that leaves the transcript on the host (`omit_messages`, as the Desktop opens a
     /// session), and the transcript's newest page is read from the Dashboard's messages route.
     /// That is the shape a Kanban worker's transcript already opens in (`loadServeSession`'s
-    /// `workerRun` branch); older pages can come as they are scrolled to, an open shows the
-    /// newest one.
+    /// `workerRun` branch). Only the newest page shows: older messages stay on the host, and the
+    /// agent still has the whole chat.
     private func openLongBotChat(stored: String, bot: BotRef) async throws {
         _ = try await dashboard.resume(stored: stored, withMessages: false)
         let summary = HermesSessionsAPI.SessionSummary(id: stored)

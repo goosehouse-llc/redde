@@ -455,6 +455,22 @@ bots() {
   echo "\nAll checks passed."
 }
 
+# A long bot chat (PR 48, issue 47): the main profile's Bot Chat seeded with 1,200 messages
+# (long_bot_seed.py), then the app opens it in pages and talks in it (HermesLabLongBotTests).
+longbot() {
+  local tags=("${@:-v0.22.7}") failed=()
+  app_prepare HermesLabLongBotTests || exit 1
+  for tag in $tags; do
+    echo "===== Hermes $tag / approval, a Bot Chat of 1,200 messages"
+    if ! LAB_OWN_HOME=1 up "$tag" approval; then failed+=("$tag (lab)"); continue; fi
+    (cd "$LAB_HOME/hermes-$tag" && "$LAB_HOME/hermes-$tag/.venv/bin/python" "$HERE/long_bot_seed.py") || { failed+=("$tag (seed)"); continue; }
+    app_check || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
 # Projects as the app makes them, with the app's own client: one made (its folder in ~/Projects,
 # which here is a home of the lab's own, never yours), a conversation started in it, one moved
 # into another, renamed and removed.
@@ -852,6 +868,7 @@ case "${1:-}" in
   cards) shift; cards "$@" ;;
   projects) shift; projects "$@" ;;
   bots) shift; bots "$@" ;;
+  longbot) shift; longbot "$@" ;;
   runs) shift; runs "$@" ;;
   butler) shift; butler "$@" ;;
   groups) shift; groups "$@" ;;

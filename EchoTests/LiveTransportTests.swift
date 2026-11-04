@@ -1654,6 +1654,43 @@ struct HermesLabStatusTests {
         return kind
     }
 
+    /// Every edit from the chat list (issue 52, PR 53): pin, unpin, rename, mark unread and read,
+    /// archive, each read back from the server. Hermes from 2026-10-16 on refuses a write without
+    /// its revision; an older one takes the bare write.
+    @Test func everyChatListEditTakes() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        func report(_ ok: Bool, _ what: String, _ detail: String = "") { HermesLabApprovalTests.report(ok, "Chat list: \(what)", detail) }
+        let (settings, _) = Self.setup(.hermesServe)
+        let chat = Self.conversation(settings, HermesServeTransport(client: client))
+        _ = chat.send("lab: hello")
+        for _ in 0 ..< 100 where chat.serverSessionID == nil || chat.isStreaming { try await Task.sleep(for: .milliseconds(200)) }
+        guard let stored = chat.serverSessionID else { report(false, "a conversation to edit", "it got no session"); return }
+        func row() async throws -> HermesSessionsAPI.SessionSummary? {
+            try await client.listSessions().first { $0.id == stored }
+        }
+        func edit(_ what: String, _ change: () async throws -> Void, _ check: (HermesSessionsAPI.SessionSummary?) -> Bool) async {
+            do {
+                try await change()
+                let now = try await row()
+                report(check(now), what, "row: pinned \(String(describing: now?.pinned)), title \(now?.title ?? "-"), unread \(String(describing: now?.unread))")
+            } catch {
+                report(false, what, error.localizedDescription)
+            }
+        }
+        await edit("pin", { try await client.updateSession(stored: stored, pinned: true) }) { $0?.pinned == true }
+        await edit("unpin", { try await client.updateSession(stored: stored, pinned: false) }) { $0?.pinned != true }
+        await edit("rename", { try await client.updateSession(stored: stored, title: "Lab renamed") }) { $0?.title == "Lab renamed" }
+        await edit("mark unread", { try await client.updateSession(stored: stored, unread: true) }) { $0?.unread == true }
+        await edit("mark read", { try await client.updateSession(stored: stored, unread: false) }) { $0?.unread != true }
+        // Twice in a row: each write reads the revision afresh, so the second isn't refused as stale.
+        await edit("pin again straight after", {
+            try await client.updateSession(stored: stored, pinned: true)
+            try await client.updateSession(stored: stored, pinned: false)
+        }) { $0?.pinned != true }
+        await edit("archive", { try await client.updateSession(stored: stored, archived: true) }) { $0 == nil }
+    }
+
     @Test func theDashboardSaysWhatIsUnderWayAndUnread() async throws {
         guard let client = await HermesLabApprovalTests.client() else { return }
         defer { client.disconnect() }
@@ -3086,5 +3123,49 @@ struct HermesLabPluginsTests {
             let gone = try await client.installedPlugins(profile: nil).first { $0.key == plugin.key }
             HermesLabApprovalTests.report(gone == nil, "removed, and gone", "\(String(describing: gone))")
         }
+    }
+}
+
+/// A long bot chat against a real Hermes (PR 48, issue 47): `lab.sh longbot` seeds the main
+/// profile's Bot Chat with 1,200 messages, and the app opens it in pages, in order, and talks in it.
+@MainActor
+struct HermesLabLongBotTests {
+    @Test func aLongBotChatOpensInPagesAndTalks() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        func report(_ ok: Bool, _ what: String, _ detail: String = "") { HermesLabApprovalTests.report(ok, "Long bot chat: \(what)", detail) }
+        guard let main = try await client.bots().bots.first(where: \.isDefault) else { report(false, "the roster has the main profile"); return }
+        report(main.chatMessages == 1200 && main.chatIsLong, "the roster says how long it is", "\(String(describing: main.chatMessages))")
+
+        let settings = Settings(defaults: UserDefaults(suiteName: "lab-long-bot-\(UUID().uuidString)")!)
+        settings.transport = .hermesServe
+        let store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "lab-long-bot-\(UUID().uuidString)"))
+        let conversation = Conversation(settings: settings, store: store, transportOverride: HermesServeTransport(client: client), dashboard: client)
+        let clock = ContinuousClock()
+        let paged = try await clock.measure { try await conversation.openBot(main, mainName: "Redde") }
+        let texts = conversation.messages.map(\.text)
+        let wanted = (701 ... 1200).map { "long message \($0)" }
+        report(texts == wanted, "it opens on the newest 500, oldest first",
+               "\(texts.count) messages, first \(texts.first ?? "-"), last \(texts.last ?? "-"), in \(paged)")
+        report(conversation.bot?.profile == main.name && conversation.serverSessionID == main.chatID, "as the bot's own chat",
+               "\(conversation.bot.debugDescription), \(conversation.serverSessionID ?? "-")")
+
+        // The whole transcript, as the chat opened before: for the time it takes, against the page.
+        let whole = try await clock.measure { _ = try await client.history(stored: main.chatID ?? "") }
+        report(true, "for comparison, the whole transcript", "\(whole)")
+
+        _ = conversation.send("hello long chat")
+        for _ in 0 ..< 120 where conversation.isStreaming || conversation.messages.last?.role != .assistant || (conversation.messages.last?.text.isEmpty ?? true) {
+            try await Task.sleep(for: .milliseconds(500))
+        }
+        let reply = conversation.messages.last
+        report(reply?.role == .assistant && reply?.error == nil && !(reply?.text.isEmpty ?? true), "the bot answers there",
+               reply?.text.prefix(80).description ?? "-")
+        let after = try await client.bots().bots.first(where: \.isDefault)
+        report(after?.chatID == main.chatID && after?.chatMessages == 1202, "and its history is all still there, plus the new turn",
+               "\(after?.chatID ?? "-"), \(String(describing: after?.chatMessages))")
+        let page = try await client.transcript(stored: main.chatID ?? "")
+        report(page.count == 500 && page.last.map { Conversation.mapStored([$0]).first?.text ?? "" } == reply?.text,
+               "the host's newest page ends with that reply", "\(page.count)")
     }
 }
