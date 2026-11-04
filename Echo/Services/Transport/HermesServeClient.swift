@@ -1484,8 +1484,8 @@ final class HermesServeClient {
     }
 
     /// Dashboard REST returning JSON; `path` is relative to the serve base (query string allowed).
-    func restJSON(_ method: String, _ path: String, body: JSONValue? = nil, timeout: TimeInterval = 30) async throws -> JSONValue {
-        let data = try await rest(method, path, body: body.map { try Self.encoder.encode($0) }, timeout: timeout)
+    func restJSON(_ method: String, _ path: String, body: JSONValue? = nil, timeout: TimeInterval = 30, about stored: String? = nil) async throws -> JSONValue {
+        let data = try await rest(method, path, body: body.map { try Self.encoder.encode($0) }, timeout: timeout, about: stored)
         if data.isEmpty { return .null }
         return try JSONValue.parse(data)
     }
@@ -1502,6 +1502,7 @@ final class HermesServeClient {
         case ("POST", "api/skills"), ("PUT", "api/skills/content"): return .body
         case (_, "api/sessions"): return method == "GET" ? .query : .none
         case ("GET", _) where route.hasPrefix("api/sessions/") && route.hasSuffix("/messages"): return .query
+        case ("GET", _) where route.hasPrefix("api/sessions/") && route.hasSuffix("/mutation-snapshot"): return .query
         default:
             let queryRoutes = ["api/skills", "api/tools/toolsets", "api/cron/", "api/mcp/servers", "api/logs", "api/status", "api/gateway/restart",
                                "api/sessions/search", "api/audio/speak", "api/audio/voice-live/", "api/chat/image-upload"]
@@ -1674,9 +1675,28 @@ final class HermesServeClient {
 
     /// Rename / pin / archive / mark read or unread through the dashboard's PATCH.
     func updateSession(stored: String, title: String? = nil, pinned: Bool? = nil, archived: Bool? = nil, unread: Bool? = nil) async throws {
-        struct Body: Encodable { var title: String?; var pinned: Bool?; var archived: Bool?; var unread: Bool? }
-        _ = try await rest("PATCH", "api/sessions/\(stored)", body: try JSONEncoder().encode(Body(title: title, pinned: pinned, archived: archived, unread: unread)),
-                           about: stored)
+        struct Body: Encodable { var title: String?; var pinned: Bool?; var archived: Bool?; var unread: Bool?
+                                 var request_id: String?; var expected_revision: Int?; var expected_generation: Int? }
+        var body = Body(title: title, pinned: pinned, archived: archived, unread: unread,
+                        request_id: nil, expected_revision: nil, expected_generation: nil)
+        // A Hermes backend from 2026-10-16 on fences every dashboard session write: a PATCH that
+        // carries no request id and current revision is refused with 409 client_upgrade_required —
+        // the "out of sync (different versions), update the app" notice (issue 52). The Desktop
+        // fences the same way: read the session's revision from the snapshot route, send it with a
+        // fresh request id (hermes-agent apps/desktop/src/api/sessions.ts). A named 409 —
+        // revision_conflict or stale_generation, someone else wrote first — surfaces as the error:
+        // the next user action reads a fresh precondition, as on the Desktop; nothing resends blind.
+        do {
+            let snapshot = try await restJSON("GET", "api/sessions/\(stored)/mutation-snapshot", about: stored)
+            guard let revision = snapshot["runtime_revision"]?.int else { throw TransportError.malformed("mutation snapshot without a revision") }
+            body.request_id = UUID().uuidString
+            body.expected_revision = revision
+            body.expected_generation = snapshot["runtime_generation"]?.int
+        } catch let error as TransportError {
+            // A host predating the fence has no snapshot route; the bare write is the one it takes.
+            guard case .http(status: 404, _) = error else { throw error }
+        }
+        _ = try await rest("PATCH", "api/sessions/\(stored)", body: try JSONEncoder().encode(body), about: stored)
     }
 
     /// The conversations with a turn under way in this Dashboard, by stored id: working, or
