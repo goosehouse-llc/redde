@@ -9,6 +9,8 @@ struct PhoneToolsSettingsView: View {
     @State private var looking = PhotoLooking.shared
     @State private var plugin = PushPluginModel(manager: PhoneToolsSettingsView.server)
     @State private var refused: Set<DeviceArea> = []
+    /// What the Hermes says of the copies, when they are wanted: "calendar 12m reminders off".
+    @State private var copies: String?
     /// Whether iOS will show an alarm Redde sets: it does so as a Live Activity.
     @State private var alarmsShow = true
     @Environment(\.scenePhase) private var scenePhase
@@ -85,6 +87,46 @@ struct PhoneToolsSettingsView: View {
                 }
 
                 Section {
+                    Toggle("Keep a Copy", isOn: Binding(get: { settings.phoneTools.wantsCopy }, set: { on in
+                        settings.phoneTools.copy = on
+                        if on {
+                            Task { await service.refreshCopies(); copies = await service.copyStatus() }
+                        } else {
+                            Task { await service.wipeCopies(); copies = nil }
+                        }
+                    }))
+                    if settings.phoneTools.wantsCopy {
+                        Button {
+                            Task { await service.refreshCopies(); copies = await service.copyStatus() }
+                        } label: {
+                            HStack {
+                                Text("Send Now")
+                                if service.isSendingCopy { Spacer(); ProgressView() }
+                            }
+                        }
+                        .disabled(service.isSendingCopy)
+                        if let failure = service.copyFailure {
+                            Text("Couldn't send it: \(failure)").font(.footnote).foregroundStyle(.red)
+                        } else if let sent = service.copySentAt {
+                            TimelineView(.periodic(from: .now, by: 60)) { _ in
+                                Text("Last sent \(sent, format: .relative(presentation: .named)).")
+                                    .font(.footnote).foregroundStyle(.secondary)
+                            }
+                        }
+                        if let copies {
+                            Text("On your Hermes: \(copies).").font(.footnote).foregroundStyle(.secondary)
+                        }
+                        Button("Clear the Copy", role: .destructive) {
+                            Task { await service.wipeCopies(); copies = await service.copyStatus() }
+                        }
+                    }
+                } header: {
+                    Text("When Redde Is Closed")
+                } footer: {
+                    Text("Why: your agent reaches this \(device)'s calendar and reminders only while Redde is open. A scheduled job — Morning Ideas, a briefing, a routine — runs on your Hermes at its own time, usually with Redde closed, so it can't see your day. With this on, Redde hands your Hermes a read-only copy of what the calendar and reminders tools could already show (the past week and the next two months), and the agent says how old it is. It's sent when you open Redde, at most every ten minutes, and when you tap Send Now. Adding and changing still happen on this \(device), and turning this off takes the copy with it.")
+                }
+
+                Section {
                     pluginRow
                     ReddePluginLink()
                 } header: {
@@ -124,7 +166,7 @@ struct PhoneToolsSettingsView: View {
         #if os(iOS)
         .onChange(of: scenePhase, initial: true) { alarmsShow = SystemAlarms().canShow }
         #endif
-        .task(id: settings.phoneTools) { await service.publish() }
+        .task(id: settings.phoneTools) { await service.publish(); await service.refreshCopies(); copies = await service.copyStatus() }
         .onChange(of: settings.phoneTools.access(.photos), initial: true) { looking.resume() }
     }
 

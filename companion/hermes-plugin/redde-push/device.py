@@ -16,6 +16,15 @@ Which tools the agent is offered is the phone's to say (`/redde-push device area
 or `none`): a tool whose area is off isn't offered at all. With every area off, which is how it
 starts, the agent sees none of this.
 
+How a copy answers (issue 50). With Redde's Settings › Phone tools › Keep a copy turned on, the
+app also hands this plugin, while it is open, a whole read-only copy of the calendar and reminders
+its tools could already show (`/redde-push device sync calendar|reminders <base64>`). A read of
+either then answers from that copy on the person's own Hermes — fresh, and saying
+`synced_minutes_ago` — even while the phone is away; a copy older than CACHE_FRESH only answers
+when the phone doesn't, and says so. The phone stays the source of truth: nothing here edits a
+copy, adding and changing always go to the phone, `live` asks the phone for a read too, turning
+an area off wipes its copy, and `device cache wipe` wipes it by hand.
+
 The tools' names and arguments must match what the app knows (Echo/Services/DeviceTools in the
 Redde repository).
 """
@@ -34,12 +43,31 @@ from pathlib import Path
 TOOLSET = "redde_phone"
 #: How long a call waits for the phone, in seconds: a person may have to say yes on it.
 WAIT = 120.0
+#: A scheduled job's run: cron_<job id>_<date>_<time>. Phone tools answer at once there.
+SCHEDULED_RUN = re.compile(r"^cron_[A-Za-z0-9]+_\d{8}_\d{6}")
+NO_PHONE_IN_A_JOB = ("The iPhone can't be reached from a scheduled job: Redde answers phone tools only while it's open in a "
+                     "chat. Go on without it, and don't call phone tools again in this run.")
 #: A request nobody collected, or a saved file nobody needs any more, is cleared out after this.
 STALE = 600.0
 AREAS = ("calendar", "reminders", "contacts", "photos", "files", "alarms", "widget", "people")
 #: How long a call for the widget waits for a phone that is following the turn, before what was
 #: written is sent to the phone as a notification instead.
 WIDGET_WAIT = 10.0
+
+#: A copy at most this old answers without bothering the phone (6 hours).
+CACHE_FRESH = 6 * 3600.0
+#: Past this a copy is too old to answer at all, stale or not (30 days).
+CACHE_KEEP = 30 * 86400.0
+#: The most JSON the phone may hand over as one copy, in bytes (1.5 MB).
+CACHE_MAX = 1_500_000
+#: The most items in one copy.
+_COPY_ITEMS = 500
+#: Tool name -> kind the copy is for.
+_COPY_OF = {"phone_calendar_events": "calendar", "phone_reminders_list": "reminders"}
+#: The kinds of copies.
+_COPY_KINDS = ("calendar", "reminders")
+#: The payload key the app fills for each kind.
+_COPY_KEY = {"calendar": "events", "reminders": "reminders"}
 
 _WHERE = ("Runs on the user's iPhone, through the Redde app. It answers only while Redde is open on the phone "
           "and following this conversation. ")
@@ -61,10 +89,12 @@ TOOLS: dict[str, tuple[str | None, str, dict, list[str]]] = {
     "phone_info": (None, _WHERE + "What the phone allows right now: which phone tools are on and whether the user is asked "
                    "first, the local time and the time zone. Call it when unsure what you may do.", {}, []),
     "phone_calendar_events": ("calendar", _WHERE + "The user's calendar events between two moments (default: the coming week), "
-                              "soonest first. " + _WHEN, {
+                              "soonest first. " + _WHEN + "If the phone keeps a copy of its calendar on the server — Redde's Settings, Phone tools, Keep a copy — "
+                              "this answers from that copy with Redde closed, and says when it was last synced.", {
         "start": _text("From when. Default: now."), "end": _text("Until when. Default: a week after the start."),
         "query": _text("Only events with these words in the title, place or notes."),
         "limit": _count("At most this many (default 50)."),
+        "live": {"type": "boolean", "description": "Ask the phone now, instead of answering from Redde's copy of it, if the phone keeps one."},
     }, []),
     "phone_calendar_add_event": ("calendar", _WHERE + "Adds an event to the user's calendar. " + _ASKED + _WHEN, {
         "title": _text("What it is."), "start": _text("When it starts; a day alone makes it an all-day event."),
@@ -73,10 +103,13 @@ TOOLS: dict[str, tuple[str | None, str, dict, list[str]]] = {
         "location": _text("Where."), "notes": _text("Notes."),
         "calendar": _text("The calendar's name. Default: the user's default calendar."),
     }, ["title", "start"]),
-    "phone_reminders_list": ("reminders", _WHERE + "The user's reminders that are still to do, soonest due first.", {
+    "phone_reminders_list": ("reminders", _WHERE + "The user's reminders that are still to do, soonest due first. "
+                            "If the phone keeps a copy of its reminders on the server — Redde's Settings, Phone tools, Keep a copy — "
+                            "this answers from that copy with Redde closed, and says when it was last synced.", {
         "list": _text("Only this reminders list, by name."),
         "include_completed": {"type": "boolean", "description": "The completed ones too."},
         "limit": _count("At most this many (default 50)."),
+        "live": {"type": "boolean", "description": "Ask the phone now, instead of answering from Redde's copy of it, if the phone keeps one."},
     }, []),
     "phone_reminders_add": ("reminders", _WHERE + "Adds a reminder. " + _ASKED + _WHEN, {
         "title": _text("What to be reminded of."),
@@ -228,6 +261,13 @@ class Phone:
     def set_areas(self, areas: list[str]) -> list[str]:
         self._folder("requests")
         self._write(self.dir / "areas.json", {"areas": [a for a in AREAS if a in areas], "at": time.time()})
+        # Turning an area off takes its copy with it.
+        for kind in _COPY_KINDS:
+            if kind not in areas:
+                try:
+                    (self.dir / "cache" / f"{kind}.json").unlink()
+                except OSError:
+                    pass
         return self.areas()
 
     def offers(self, area: str | None) -> bool:
@@ -242,6 +282,11 @@ class Phone:
         area = TOOLS[tool][0]
         if not self.offers(area):
             return json.dumps({"error": "Phone tools for this are turned off in Redde on the iPhone (Settings, Phone tools)."})
+        if SCHEDULED_RUN.match(session or ""):
+            # No phone follows a scheduled job's run, so nothing would ever collect the request
+            # (2026-11-04: Morning Ideas waited two minutes a call and tried again and again). A
+            # copy kept for when Redde is closed answers at once, however old.
+            return otherwise() if otherwise is not None else json.dumps({"error": NO_PHONE_IN_A_JOB})
         request = uuid.uuid4().hex[:16]
         asked = self._folder("requests") / f"{request}.json"
         answered = self._folder("answers") / f"{request}.json"
@@ -322,6 +367,110 @@ class Phone:
         self._write(self._folder("answers") / f"{request}.json", answer)
         return True
 
+    # ---- a read-only copy of the phone's calendar and reminders
+
+    def sync(self, kind: str, payload: dict) -> tuple[int, str | None]:
+        """Accept a copy from the phone. Reject unless kind is calendar/reminders and
+        payload is a dict whose _COPY_KEY[kind] is a list of at most _COPY_ITEMS items;
+        write it (keeping only dict items with a string title, only scalar values,
+        strings capped at 1000 chars, via _plain); return (count, None); on rejection
+        return (0, "short reason")."""
+        if kind not in _COPY_KINDS:
+            return (0, f"redde-push device refused: unknown kind {kind}")
+        key = _COPY_KEY[kind]
+        if not isinstance(payload, dict) or key not in payload:
+            return (0, "redde-push device refused: that copy can't be read")
+        items = payload[key]
+        if not isinstance(items, list):
+            return (0, "redde-push device refused: that copy can't be read")
+        if len(items) > _COPY_ITEMS:
+            return (0, f"redde-push device refused: that copy is too big ({len(items)} items, {_COPY_ITEMS} at most)")
+        # Keep only dict items with a string title, only scalar values, strings capped at 1000 chars.
+        plain = [_plain(item) for item in items if isinstance(item, dict) and isinstance(item.get("title"), str)]
+        data = {"at": time.time(), key: plain}
+        self._write(self._folder("cache") / f"{kind}.json", data)
+        return (len(plain), None)
+
+    def copy(self, kind: str) -> dict | None:
+        """Read the copy file; return None if missing, malformed, or older than CACHE_KEEP;
+        else {"at": <float>, "age": <seconds old>, <key>: <items>}."""
+        path = self._folder("cache") / f"{kind}.json"
+        data = self._read(path)
+        if not isinstance(data, dict):
+            return None
+        at = data.get("at")
+        if not isinstance(at, (int, float)):
+            return None
+        if time.time() - at > CACHE_KEEP:
+            return None
+        key = _COPY_KEY[kind]
+        items = data.get(key)
+        if not isinstance(items, list):
+            return None
+        return {"at": at, "age": time.time() - at, key: items}
+
+    def wipe(self, kind: str | None = None) -> None:
+        """Unlink cache/<kind>.json (or both kinds when kind is None), ignoring OSError."""
+        if kind is None:
+            for k in _COPY_KINDS:
+                try:
+                    (self.dir / "cache" / f"{k}.json").unlink()
+                except OSError:
+                    pass
+        else:
+            try:
+                (self.dir / "cache" / f"{kind}.json").unlink()
+            except OSError:
+                pass
+
+    def _copy_answer(self, tool: str, args: dict, held: dict, stale: bool = False) -> str:
+        """Filter the held items with the module helpers into {"events": [...]} or
+        {"reminders": [...], ...} plus "more": <int left out> and "synced_minutes_ago": <int>;
+        when stale, add "note" saying the phone didn't answer, this is Redde's copy of its
+        calendar/reminders last synced N minutes ago and things may have changed.
+        Strip *_ts keys via _undecorate."""
+        kind = _COPY_OF[tool]
+        key = _COPY_KEY[kind]
+        items = held[key]
+        if kind == "calendar":
+            found, more = _window(items, args)
+        else:
+            found, more = _wanted(items, args)
+        # Strip *_ts keys.
+        found = [_undecorate(item) for item in found]
+        result = {key: found, "more": more, "synced_minutes_ago": int(held["age"] / 60)}
+        if stale:
+            result["note"] = (f"This is Redde's copy of its {kind} last synced "
+                              f"{result['synced_minutes_ago']} minutes ago and things may have changed.")
+        return json.dumps(result)
+
+    def read(self, tool: str, args: dict, session: str | None = None, wait: float = WAIT) -> str:
+        """The tool handler for the two read tools:
+        - pop a live argument (bool) from args; if live is True, return self.ask(tool, args, session=session).
+        - only consult the copy if self.offers(_COPY_OF[tool]); else fall through to ask.
+        - held = self.copy(kind); if held and held["age"] <= CACHE_FRESH: return the copy answer at once.
+        - if held (older, still within CACHE_KEEP): return self.ask(tool, args, session=session,
+          wait=wait, otherwise=lambda: self._copy_answer(tool, args, held, stale=True)).
+        - else return self.ask(tool, args, session=session)."""
+        live = args.pop("live", False)
+        if live:
+            return self.ask(tool, args, session=session, wait=wait)
+        kind = _COPY_OF.get(tool)
+        if kind is None:
+            return self.ask(tool, args, session=session, wait=wait)
+        if not self.offers(kind):
+            return self.ask(tool, args, session=session, wait=wait)
+        held = self.copy(kind)
+        if held is None:
+            return self.ask(tool, args, session=session, wait=wait)
+        if held["age"] <= CACHE_FRESH:
+            return self._copy_answer(tool, args, held)
+        # Older but still within CACHE_KEEP: ask the phone, fall back to copy.
+        return self.ask(tool, args, session=session, wait=wait,
+                        otherwise=lambda: self._copy_answer(tool, args, held, stale=True))
+
+    # ---- the same call, from the phone's side
+
 
 def slash(phone: Phone, words: list[str]) -> str:
     """`/redde-push device …`, which is the app's. Every reply starts "redde-push device"."""
@@ -340,6 +489,41 @@ def slash(phone: Phone, words: list[str]) -> str:
         if not isinstance(answer, dict):
             return "redde-push device refused: that answer can't be read"
         return "redde-push device done" if phone.answer(words[1], answer) else "redde-push device gone"
+    # sync <kind> <b64>
+    if words[:1] == ["sync"] and len(words) == 3:
+        try:
+            raw = base64.b64decode(words[2], validate=True)
+        except ValueError:
+            return "redde-push device refused: that copy can't be read"
+        if len(raw) > CACHE_MAX:
+            return f"redde-push device refused: that copy is too big ({len(raw)} bytes, {CACHE_MAX} at most)"
+        try:
+            payload = json.loads(raw)
+        except ValueError:
+            return "redde-push device refused: that copy can't be read"
+        if not isinstance(payload, dict):
+            return "redde-push device refused: that copy can't be read"
+        kind = words[1]
+        count, problem = phone.sync(kind, payload)
+        if problem:
+            return problem
+        return f"redde-push device sync {kind} {count}"
+    # cache status
+    if words[:1] == ["cache"] and words[1:2] == ["status"]:
+        parts = []
+        for kind in _COPY_KINDS:
+            held = phone.copy(kind)
+            if held is None:
+                parts.append(f"{kind} off")
+            else:
+                parts.append(f"{kind} {int(held['age'] / 60)}m")
+        return "redde-push device cache " + " ".join(parts)
+    # cache wipe [kind]
+    if words[:1] == ["cache"] and words[1:2] == ["wipe"]:
+        if len(words) == 3 and words[2] not in _COPY_KINDS:
+            return f"redde-push device refused: unknown kind {words[2]}"
+        phone.wipe(words[2] if len(words) == 3 else None)
+        return "redde-push device cache wiped"
     return "redde-push device: this command is for the Redde app."
 
 
@@ -394,6 +578,119 @@ def _readable(when: str) -> bool:
         return False
 
 
+def _epoch(text) -> float | None:
+    """Convert a date string to epoch seconds, or None if it can't be parsed."""
+    from datetime import datetime
+    try:
+        return datetime.fromisoformat(str(text).strip().replace("Z", "+00:00")).timestamp()
+    except (ValueError, TypeError):
+        return None
+
+
+def _start_of(item) -> float | None:
+    """Numeric start or due timestamp from an item, if present and a number."""
+    for key in ("start_ts", "due_ts"):
+        try:
+            if item.get(key) is not None:
+                return float(item[key])
+        except (TypeError, ValueError):
+            pass
+    return _epoch(item.get("start") or item.get("due"))
+
+
+def _limit(args) -> int:
+    """The limit from args, clamped to 1..200; bad input defaults to 50."""
+    try:
+        n = int(args.get("limit") or 50)
+        return max(1, min(200, n))
+    except (ValueError, TypeError):
+        return 50
+
+
+def _matches(item, query: str) -> bool:
+    """Whether a query (already lowercased) appears in the item's title, location or notes."""
+    if not query:
+        return True
+    for key in ("title", "location", "notes"):
+        if query in str(item.get(key) or "").lower():
+            return True
+    return False
+
+
+def _window(items, args) -> tuple[list, int]:
+    """Filter items to a time window, soonest first, and apply the limit.
+    Mirrors the calendar tool's promise: start default now, end default start+7 days;
+    a date-only end means the whole of that day (add one day).
+    Returns (found[:limit], max(0, len(found) - limit))."""
+    from datetime import datetime
+    now = time.time()
+    start = _epoch(args.get("start")) or now
+    end = _epoch(args.get("end"))
+    if end is None:
+        end = start + 7 * 86400
+    # A date-only end means the whole of that day.
+    if isinstance(args.get("end"), str) and _readable(args["end"]) and "T" not in args["end"]:
+        end = end + 86400
+    query = (args.get("query") or "").lower().strip()
+    found = []
+    for item in items:
+        s = _start_of(item)
+        if s is None:
+            continue
+        if not (start <= s < end):
+            continue
+        if query and not _matches(item, query):
+            continue
+        found.append(item)
+    found.sort(key=lambda item: _start_of(item) or 0)
+    limit = _limit(args)
+    return (found[:limit], max(0, len(found) - limit))
+
+
+def _wanted(items, args) -> tuple[list, int]:
+    """Filter items to what the reminders tool wants: drop completed unless include_completed,
+    filter to list by name when given, sort soonest-due first with no-due-date last then title.
+    Returns (found[:limit], max(0, len(found) - limit))."""
+    query = (args.get("query") or "").lower().strip()
+    include_completed = args.get("include_completed")
+    list_name = args.get("list")
+    found = []
+    for item in items:
+        if not include_completed and item.get("completed"):
+            continue
+        if list_name and item.get("list") and item["list"].lower() != list_name.lower():
+            continue
+        if query and not _matches(item, query):
+            continue
+        found.append(item)
+    # Sort: soonest due first, no-due-date last, then title.
+    def sort_key(item):
+        due = _start_of(item)
+        if due is None:
+            return (1, 0, item.get("title") or "")
+        return (0, due, item.get("title") or "")
+    found.sort(key=sort_key)
+    limit = _limit(args)
+    return (found[:limit], max(0, len(found) - limit))
+
+
+def _undecorate(item) -> dict:
+    """Drop keys ending in _ts from an item."""
+    return {k: v for k, v in item.items() if not k.endswith("_ts")}
+
+
+def _plain(item) -> dict:
+    """A copy item kept to plain scalars, strings capped at 1000 chars: the copy is read by
+    this plugin's code and handed to the agent, not run as anything."""
+    result = {}
+    for key, value in item.items():
+        if isinstance(value, bool) or isinstance(value, (int, float)):
+            result[key] = value
+        elif isinstance(value, str):
+            result[key] = value[:1000]
+    return result
+
+
 def widget_by_note(tool: str, args: dict, to_widget) -> str:
     """What a call for the widget does when no phone is following the turn: what was written
     goes to every paired phone as a notification, which puts it on the widget. `to_widget`
@@ -445,6 +742,9 @@ def register(ctx, phone, to_widget=None) -> None:
     def handler(name):
         def handle(args, **kwargs) -> str:
             args = args if isinstance(args, dict) else {}
+            # Route the two copyable tools through the copy path first.
+            if name in _COPY_OF:
+                return phone().read(name, args, session=kwargs.get("session_id"))
             if TOOLS[name][0] == "widget":
                 # A phone following the turn does it and answers; any other hears by notification.
                 return phone().ask(name, args, session=kwargs.get("session_id"), wait=WIDGET_WAIT,

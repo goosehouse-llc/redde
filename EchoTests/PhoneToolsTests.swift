@@ -484,3 +484,116 @@ struct PhoneToolsTests {
                 "phone_reminders_add", "phone_reminders_complete"])
     }
 }
+
+/// Keep a Copy (issue 50, PR 51) and its Send Now: what reaches the plugin, when, and what the
+/// person is told when it doesn't.
+@MainActor
+struct KeepACopyTests {
+    final class Plugin {
+        var commands: [String] = []
+        var reply: (String) -> String = { arguments in
+            arguments.hasPrefix("device sync ") ? "redde-push device sync \(arguments.split(separator: " ")[2]) 1" : "redde-push device done"
+        }
+        func synced(_ kind: String) -> JSONValue? {
+            guard let command = commands.last(where: { $0.hasPrefix("device sync \(kind) ") }),
+                  let data = Data(base64Encoded: String(command.split(separator: " ")[3])) else { return nil }
+            return try? JSONValue.parse(data)
+        }
+    }
+
+    private func service(_ plugin: Plugin, copy: Bool = true, calendar: JSONValue? = nil,
+                         failure: DeviceToolError? = nil) -> (DeviceToolsService, Settings, [JSONValue]) {
+        let defaults = UserDefaults(suiteName: "keep-a-copy-\(UUID().uuidString)")!
+        let settings = Settings(defaults: defaults)
+        settings.phoneTools.on = true
+        settings.phoneTools.set(.calendar, .allow)
+        settings.phoneTools.set(.reminders, .allow)
+        settings.phoneTools.copy = copy
+        let asked = Box<[JSONValue]>([])
+        let service = DeviceToolsService(settings: settings, defaults: defaults, command: { plugin.commands.append($0); return plugin.reply($0) },
+                                         run: { tool, args, _ in
+            if let failure { throw failure }
+            asked.value.append(args)
+            switch tool {
+            case .calendarEvents: return calendar ?? .object(["events": .array([.object(["title": .string("Dentist"), "start": .string("2026-11-05T09:00:00-05:00")])]), "more": .number(0)])
+            default: return .object(["reminders": .array([.object(["title": .string("Milk"), "completed": .bool(false)])])])
+            }
+        }, ask: { _ in .allow }, onScreen: { true })
+        return (service, settings, asked.value)
+    }
+
+    final class Box<T> { var value: T; init(_ value: T) { self.value = value } }
+
+    @Test func sendNowHandsOverBothAndSaysWhen() async {
+        let plugin = Plugin()
+        let (service, _, _) = service(plugin)
+        let now = Date(timeIntervalSince1970: 1_793_000_000)
+        #expect(await service.refreshCopies(now: now))
+        #expect(plugin.synced("calendar")?["events"]?.array?.first?["title"]?.string == "Dentist")
+        #expect(plugin.synced("reminders")?["reminders"]?.array?.first?["title"]?.string == "Milk")
+        #expect(service.copySentAt == now && service.copyFailure == nil)
+    }
+
+    @Test func theCalendarCopyIsTheWeekBehindAndTwoMonthsAhead() async throws {
+        let plugin = Plugin()
+        let defaults = UserDefaults(suiteName: "keep-a-copy-\(UUID().uuidString)")!
+        let settings = Settings(defaults: defaults)
+        settings.phoneTools.on = true
+        settings.phoneTools.set(.calendar, .allow)
+        settings.phoneTools.copy = true
+        var asked: JSONValue?
+        let service = DeviceToolsService(settings: settings, defaults: defaults, command: { plugin.commands.append($0); return plugin.reply($0) },
+                                         run: { _, args, _ in asked = args; return .object(["events": .array([])]) },
+                                         ask: { _ in .allow }, onScreen: { true })
+        let now = Date(timeIntervalSince1970: 1_793_000_000)
+        await service.refreshCopies(now: now)
+        let start = try #require(asked?["start"]?.string.flatMap { DeviceDates.parse($0) })
+        let end = try #require(asked?["end"]?.string.flatMap { DeviceDates.parse($0) })
+        // Not a year back: 200 events from then would be all old ones on a busy calendar.
+        #expect(abs(start.timeIntervalSince(now) + 7 * 86400) < 2 && abs(end.timeIntervalSince(now) - 60 * 86400) < 2)
+    }
+
+    @Test func comingToTheFrontSendsAtMostEveryTenMinutes() async {
+        let plugin = Plugin()
+        let (service, _, _) = service(plugin)
+        let now = Date(timeIntervalSince1970: 1_793_000_000)
+        await service.refreshCopies(staleAfter: 600, now: now)
+        let first = plugin.commands.count
+        await service.refreshCopies(staleAfter: 600, now: now.addingTimeInterval(300))
+        #expect(plugin.commands.count == first, "five minutes on: not again")
+        await service.refreshCopies(staleAfter: 600, now: now.addingTimeInterval(700))
+        #expect(plugin.commands.count == first * 2, "past ten: again")
+    }
+
+    @Test func nothingGoesWithTheSettingOff() async {
+        let plugin = Plugin()
+        let (service, _, _) = service(plugin, copy: false)
+        #expect(await service.refreshCopies() == false)
+        #expect(plugin.commands.isEmpty && service.copySentAt == nil)
+    }
+
+    @Test func anOldPluginIsSaidNotSent() async {
+        let plugin = Plugin()
+        plugin.reply = { _ in "redde-push device: this command is for the Redde app." }
+        let (service, _, _) = service(plugin)
+        #expect(await service.refreshCopies() == false)
+        #expect(service.copySentAt == nil)
+        #expect(service.copyFailure?.contains("too old") == true, "\(service.copyFailure ?? "-")")
+    }
+
+    @Test func anUnreadableCalendarIsSaidNotSent() async {
+        let plugin = Plugin()
+        let (service, _, _) = service(plugin, failure: .refused(.calendar))
+        #expect(await service.refreshCopies() == false)
+        #expect(service.copySentAt == nil && service.copyFailure == DeviceToolError.refused(.calendar).message)
+        #expect(!plugin.commands.contains { $0.hasPrefix("device sync") })
+    }
+
+    @Test func clearingTakesTheLastSentWithIt() async {
+        let plugin = Plugin()
+        let (service, _, _) = service(plugin)
+        await service.refreshCopies()
+        await service.wipeCopies()
+        #expect(service.copySentAt == nil && plugin.commands.last == "device cache wipe")
+    }
+}

@@ -3,6 +3,19 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.15.0 (2026-11-03)
+
+- The calendar and reminders can answer with Redde closed. With Phone tools › Keep a copy
+  turned on, the iPhone hands the agent a read-only copy of what its calendar and reminders
+  tools could already show, while Redde is open, and a read of either answers from that copy
+  on the person's own Hermes — saying when it was last synced. The phone stays the source of
+  truth: adding, changing and completing always go through it, and so does a `live` read;
+  turning an area or the setting off wipes the copy, and the app can wipe it by hand.
+  Issue 50.
+- A scheduled job's run no longer waits for the phone: it can't be reached there, so a phone
+  tool answers at once — from the copy when there is one, however old, and otherwise by saying
+  the phone can't be reached and to go on without it (Morning Ideas waited two minutes a call).
+
 ## 1.14.5 (2026-11-02)
 
 - A share asked about by its ticker or its company gets the stock note: "How is nvda today",
