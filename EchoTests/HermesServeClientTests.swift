@@ -145,7 +145,7 @@ struct HermesServeClientTests {
         defer { ServeStub.reset() }
         let client = makeClient()
         let error = await #expect(throws: TransportError.self) { try await client.updateSession(stored: "s-1", pinned: false) }
-        guard case let .http(status, detail) = error else { throw error }
+        guard case let .http(status, detail)? = error else { Issue.record("not an HTTP error: \(String(describing: error))"); return }
         #expect(status == 409 && detail == "revision_conflict")
         #expect(snapshots == 1 && patches == 1, "the named conflict surfaces; the next user action re-reads, nothing loops")
     }
