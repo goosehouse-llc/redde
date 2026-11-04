@@ -361,14 +361,16 @@ class CopyOfThePhone(unittest.TestCase):
         self.assertEqual(len(answer["events"]), 1)
         self.assertEqual(answer["more"], 2)  # the window holds three; one is kept
         # Explicit start/end narrows the window
+        from datetime import datetime
+        birthday = datetime.fromtimestamp(time.time() + 2 * 86400).strftime("%Y-%m-%d")
         answer = json.loads(self.phone.read("phone_calendar_events", {
-            "start": "2026-11-05T00:00", "end": "2026-11-05T23:59"
+            "start": f"{birthday}T00:00", "end": f"{birthday}T23:59"
         }))
         self.assertEqual(len(answer["events"]), 1)
         self.assertEqual(answer["events"][0]["title"], "Robert's birthday")
         # Date-only end means the whole of that day
         answer = json.loads(self.phone.read("phone_calendar_events", {
-            "start": "2026-11-05", "end": "2026-11-05"
+            "start": birthday, "end": birthday
         }))
         self.assertEqual(len(answer["events"]), 1)
         self.assertEqual(answer["events"][0]["title"], "Robert's birthday")
@@ -446,6 +448,29 @@ class CopyOfThePhone(unittest.TestCase):
         self.assertIn("events", answer)
         self.assertIn("note", answer)
         self.assertIn("copy", answer["note"].lower())
+
+    def test_a_scheduled_run_answers_from_any_copy_at_once(self):
+        """A scheduled job's run has no phone following it: an old copy answers at once, with
+        its note, and nothing is left for a phone to collect."""
+        self.phone.set_areas(["calendar"])
+        self._sync("calendar", self._fresh_calendar())
+        before = device.CACHE_FRESH
+        device.CACHE_FRESH = 0
+        self.addCleanup(setattr, device, "CACHE_FRESH", before)
+        started = time.monotonic()
+        answer = json.loads(self.phone.read("phone_calendar_events", {}, session="cron_ab12cd34_20261104_070000", wait=30))
+        self.assertLess(time.monotonic() - started, 2)
+        self.assertIn("note", answer)
+        self.assertEqual([e["title"] for e in answer["events"]], ["Meeting", "Robert's birthday", "Lunch"])
+        self.assertEqual(self.phone.waiting(), [])
+
+    def test_a_scheduled_run_with_no_copy_hears_at_once(self):
+        """With no copy, a scheduled run hears at once that the phone can't be reached."""
+        self.phone.set_areas(["calendar"])
+        started = time.monotonic()
+        answer = json.loads(self.phone.read("phone_calendar_events", {}, session="cron_ab12cd34_20261104_070000", wait=30))
+        self.assertLess(time.monotonic() - started, 2)
+        self.assertEqual(answer["error"], device.NO_PHONE_IN_A_JOB)
 
     def test_the_shape_the_phone_hands_over(self):
         """The app sends what its tools describe: ISO date strings with the phone's own

@@ -87,7 +87,7 @@ struct PhoneToolsSettingsView: View {
                 }
 
                 Section {
-                    Toggle("Keep a copy", isOn: Binding(get: { settings.phoneTools.wantsCopy }, set: { on in
+                    Toggle("Keep a Copy", isOn: Binding(get: { settings.phoneTools.wantsCopy }, set: { on in
                         settings.phoneTools.copy = on
                         if on {
                             Task { await service.refreshCopies(); copies = await service.copyStatus() }
@@ -96,17 +96,34 @@ struct PhoneToolsSettingsView: View {
                         }
                     }))
                     if settings.phoneTools.wantsCopy {
+                        Button {
+                            Task { await service.refreshCopies(); copies = await service.copyStatus() }
+                        } label: {
+                            HStack {
+                                Text("Send Now")
+                                if service.isSendingCopy { Spacer(); ProgressView() }
+                            }
+                        }
+                        .disabled(service.isSendingCopy)
+                        if let failure = service.copyFailure {
+                            Text("Couldn't send it: \(failure)").font(.footnote).foregroundStyle(.red)
+                        } else if let sent = service.copySentAt {
+                            TimelineView(.periodic(from: .now, by: 60)) { _ in
+                                Text("Last sent \(sent, format: .relative(presentation: .named)).")
+                                    .font(.footnote).foregroundStyle(.secondary)
+                            }
+                        }
                         if let copies {
                             Text("On your Hermes: \(copies).").font(.footnote).foregroundStyle(.secondary)
                         }
-                        Button("Clear the copies") {
+                        Button("Clear the Copy", role: .destructive) {
                             Task { await service.wipeCopies(); copies = await service.copyStatus() }
                         }
                     }
                 } header: {
-                    Text("When Redde is closed")
+                    Text("When Redde Is Closed")
                 } footer: {
-                    Text("So your agent can answer “what's on my calendar” with Redde closed: this iPhone hands it a read-only copy of what its calendar and reminders tools could already show, kept on your own Hermes, and Redde says how fresh the copy is. It refreshes while Redde is open; adding and changing still happen on this iPhone first, and only what these settings already let your agent see ever leaves it. Turning this off takes the copies with it.")
+                    Text("Why: your agent reaches this \(device)'s calendar and reminders only while Redde is open. A scheduled job — Morning Ideas, a briefing, a routine — runs on your Hermes at its own time, usually with Redde closed, so it can't see your day. With this on, Redde hands your Hermes a read-only copy of what the calendar and reminders tools could already show (the past week and the next two months), and the agent says how old it is. It's sent when you open Redde, at most every ten minutes, and when you tap Send Now. Adding and changing still happen on this \(device), and turning this off takes the copy with it.")
                 }
 
                 Section {

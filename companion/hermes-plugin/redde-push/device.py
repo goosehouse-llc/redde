@@ -43,6 +43,10 @@ from pathlib import Path
 TOOLSET = "redde_phone"
 #: How long a call waits for the phone, in seconds: a person may have to say yes on it.
 WAIT = 120.0
+#: A scheduled job's run: cron_<job id>_<date>_<time>. Phone tools answer at once there.
+SCHEDULED_RUN = re.compile(r"^cron_[A-Za-z0-9]+_\d{8}_\d{6}")
+NO_PHONE_IN_A_JOB = ("The iPhone can't be reached from a scheduled job: Redde answers phone tools only while it's open in a "
+                     "chat. Go on without it, and don't call phone tools again in this run.")
 #: A request nobody collected, or a saved file nobody needs any more, is cleared out after this.
 STALE = 600.0
 AREAS = ("calendar", "reminders", "contacts", "photos", "files", "alarms", "widget", "people")
@@ -278,6 +282,11 @@ class Phone:
         area = TOOLS[tool][0]
         if not self.offers(area):
             return json.dumps({"error": "Phone tools for this are turned off in Redde on the iPhone (Settings, Phone tools)."})
+        if SCHEDULED_RUN.match(session or ""):
+            # No phone follows a scheduled job's run, so nothing would ever collect the request
+            # (2026-11-04: Morning Ideas waited two minutes a call and tried again and again). A
+            # copy kept for when Redde is closed answers at once, however old.
+            return otherwise() if otherwise is not None else json.dumps({"error": NO_PHONE_IN_A_JOB})
         request = uuid.uuid4().hex[:16]
         asked = self._folder("requests") / f"{request}.json"
         answered = self._folder("answers") / f"{request}.json"

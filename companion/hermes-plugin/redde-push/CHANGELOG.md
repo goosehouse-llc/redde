@@ -12,6 +12,9 @@ Settings › Redde Plugin, to a Hermes whose plugin is older than the one the ap
   truth: adding, changing and completing always go through it, and so does a `live` read;
   turning an area or the setting off wipes the copy, and the app can wipe it by hand.
   Issue 50.
+- A scheduled job's run no longer waits for the phone: it can't be reached there, so a phone
+  tool answers at once — from the copy when there is one, however old, and otherwise by saying
+  the phone can't be reached and to go on without it (Morning Ideas waited two minutes a call).
 
 ## 1.14.5 (2026-11-02)
 
