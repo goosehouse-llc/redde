@@ -764,7 +764,7 @@ def register(ctx) -> None:
         known = False
     if known:
         ctx.register_hook("agent_loop_stopped", _on_stopped)
-    # A reminder's run answered here, with no model (remind.py, 1.16.1; Hermes 0.22+ has middleware).
+    # A reminder's run answered here, with no model (remind.py, 1.14.6; Hermes 0.22+ has middleware).
     register_middleware = getattr(ctx, "register_middleware", None)
     if callable(register_middleware):
         register_middleware("llm_execution", remind.Reminders(_main_home, lambda: _store_in(_main_home()), _remind).turn)

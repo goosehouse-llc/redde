@@ -51,6 +51,7 @@ struct ProfileTests {
         typealias C = HermesServeClient
         #expect(C.profilePlacement(method: "GET", path: "api/sessions?limit=50&offset=0&order=recent") == .query)
         #expect(C.profilePlacement(method: "PATCH", path: "api/sessions/abc") == .body)
+        #expect(C.profilePlacement(method: "GET", path: "api/sessions/abc/mutation-snapshot") == .query)
         #expect(C.profilePlacement(method: "GET", path: "api/skills") == .query)
         #expect(C.profilePlacement(method: "GET", path: "api/skills/content?name=x") == .query)
         #expect(C.profilePlacement(method: "POST", path: "api/skills") == .body)

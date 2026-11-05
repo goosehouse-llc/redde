@@ -3,7 +3,7 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
-## 1.17.0 (2026-11-04)
+## 1.18.0 (2026-11-05)
 
 - A card whose list came as JSON text (a review's "fields" written as a string) is drawn: the
   text is read as the list it is. Before, the check took its letters for labels, told the agent
@@ -12,12 +12,6 @@ Settings › Redde Plugin, to a Hermes whose plugin is older than the one the ap
   sent "Based on my research, here's the current status: **No price changes.** …" to the phone
   twice in a morning). A lead-in ending in a colon is skipped; a "but", "however" or "back in
   stock" in that opening paragraph still sends it.
-- A quiet scheduled run stays quiet on the phone (issue 55). Hermes's records of runs that said
-  nothing ("**Status:** silent (wakeAgent=false)", "silent (empty output)", a monitor's
-  "no_change", a script gate's "agent skipped") have no "## Response", so the whole record came
-  back as the answer and a note with the job's header went out; and under Notify All a cron
-  turn's [SILENT] or NOTHING NEW was pushed as a reply. Both are dropped now, as are Hermes's
-  bare SILENT / NO_REPLY; a run that says something, or fails, still comes through.
 - Email: a rule's switch and Add Tagging Rule work. Redde sent the rules wrapped in an object and
   `mail rules set` takes a list, so every save was turned down ("Rules are a list."); both are
   taken now, and Redde sends the list (2026-11-05).
@@ -28,38 +22,8 @@ Settings › Redde Plugin, to a Hermes whose plugin is older than the one the ap
   auto-confirm@, shipment-tracking@, order-update@ and the like.
 - A job the phone hides (Redde's Don't Show on a briefing, a "j:<profile>|<job>" mute) sends
   nothing.
-- A job with nothing new stays quiet. Sol's Strata check said "No change" to the phone every four
-  hours (2026-11-05): its own prompt asked for that, over Hermes's [SILENT]. An answer whose last
-  paragraph only says nothing changed ("No change.", "Nothing new", "No updates since the last
-  check") now sends nothing, and Sol is told, when it makes a job for the phone, to have the prompt
-  answer [SILENT] when nothing is new and to keep nothing in files between runs (scheduled runs
-  can't write them).
-- Scheduled jobs can read the calendar and reminders. Morning Ideas and other jobs run while Redde
-  is closed, when the phone can't be asked (asked on Reddit). With Send Ahead for Scheduled Jobs
-  on in Redde (Settings › Phone Tools, off by default), the phone leaves a copy of the next seven
-  days of events and the open reminders here each time Redde opens, replacing the last one. A job's
-  calendar and reminders calls are answered from it, with a word on when it was copied; so is a
-  chat's call when the phone doesn't answer. Nothing is changed from a job. The copy goes when the
-  setting or the area is turned off, and a copy over eight days old isn't used.
 
-## 1.16.1 (2026-11-04)
-
-- A reminder goes off on time and says what it is. "Remind me to stretch" made the right job, but
-  each run asked the model again, with every tool: the 7:58 one looked up the time and the weather
-  first and finished at 8:00:15; the 8:05 one set out to put a phone alarm at 7:00, waited four
-  minutes for a phone that wasn't listening, and said "I'm unable to set the alarm right now". Now
-  a reminder's run (a [redde-notify] job whose prompt is "Tell the person in one line: <what>")
-  never reaches the model: the plugin answers it ("Reminder: stretch."), with no tools, through
-  Hermes's llm_execution middleware (0.22+), and the notification goes out as the run starts. The
-  schedules' reader doesn't send it a second time. Older Hermes runs reminders on the model, as
-  before.
-- A setter call that failed (Hermes turning the job down, the phone not answering) no longer lets a
-  'reminder' card through.
-- Phone tools answer at once in a scheduled job's run: "The iPhone can't be reached from a scheduled
-  job … go on without it". No phone follows a job's run, so each call used to wait two minutes for
-  nothing, and Morning Ideas tried again and again until Hermes stopped it (2026-11-04).
-
-## 1.16.0 (2026-11-03)
+## 1.17.0 (2026-11-05)
 
 For Redde's email (asked 2026-11-03: "clear and smart email inbox control", for every Redde user,
 not only Gmail).
@@ -126,13 +90,8 @@ not only Gmail).
   never run: nothing is labelled, archived or told about until the person accepts one (as it is or
   changed). A dismissed pattern isn't suggested again. New suggestions can come as one Morning Ideas
   card a week. `mail suggest list|refresh|accept|dismiss <account> [id] [json]`.
-- A reminder card is a reminder set (also in 1.14.6). The reminder note says how (a
-  `cronjob_manage` job named "[redde-notify] <what>" at the person's time, repeat 1; an alarm or a
-  timer is `phone_alarms_set`; changing is `update` of that job, cancelling `remove`; a time already
-  past today is asked about), and `redde_show` refuses a 'reminder' card in a turn where no tool set,
-  changed, cancelled or listed one. The job's id goes onto the card (`job`).
 
-## 1.15.0 (2026-11-02)
+## 1.16.0 (2026-11-05)
 
 For Redde 2.4: goals, Coming Up and watch templates.
 
@@ -155,6 +114,50 @@ For Redde 2.4: goals, Coming Up and watch templates.
   can read the Apple Health data you chose, read only: steps, heart rate, sleep nights, workouts and
   21 more kinds, as totals or averages by day, week or month. New tool `phone_health_read`, offered
   only while Health is on.
+
+## 1.15.1 (2026-11-04)
+
+- A quiet scheduled run stays quiet on the phone (issue 55). Hermes's records of runs that said
+  nothing ("**Status:** silent (wakeAgent=false)", "silent (empty output)", a monitor's
+  "no_change", a script gate's "agent skipped") have no "## Response", so the whole record came
+  back as the answer and a note with the job's header went out; and under Notify All a cron
+  turn's [SILENT] or NOTHING NEW was pushed as a reply. Both are dropped now, as are Hermes's
+  bare SILENT / NO_REPLY; a run that says something, or fails, still comes through.
+- A job with nothing new stays quiet. Sol's Strata check said "No change" to the phone every four
+  hours (2026-11-05): its own prompt asked for that, over Hermes's [SILENT]. An answer whose last
+  paragraph only says nothing changed ("No change.", "Nothing new", "No updates since the last
+  check") now sends nothing, and Sol is told, when it makes a job for the phone, to have the prompt
+  answer [SILENT] when nothing is new and to keep nothing in files between runs (scheduled runs
+  can't write them).
+- A reminder card is a reminder set. Asked "remind me to call the dentist before closing", Sol drew
+  a card and said "Reminder set for 5 PM", then "3:30 instead" another card: nothing was ever set,
+  so nothing went off. Now the reminder note says how (a `cronjob_manage` job named
+  "[redde-notify] <what>" at the person's time, repeat 1; an alarm or a timer is
+  `phone_alarms_set`; changing is `update` of that job, cancelling `remove`; a time already past
+  today is asked about), and `redde_show` refuses a 'reminder' card in a turn where no tool set,
+  changed, cancelled or listed one. The job's id goes onto the card (`job`), for its Change and
+  Cancel. "Change the reminder …" and "cancel the alarm" get the note too.
+- A reminder goes off on time and says what it is. Its run (a [redde-notify] job whose prompt is
+  "Tell the person in one line: <what>") never reaches the model: the plugin answers it
+  ("Reminder: stretch."), with no tools, through Hermes's llm_execution middleware (0.22+), and the
+  notification goes out as the run starts; the schedules' reader doesn't send it again. Before, the
+  8:05 "stretch" run tried to set a phone alarm for 7:00 and said it couldn't, four minutes late.
+  Older Hermes runs reminders on the model, as before.
+- A setter call that failed (Hermes turning the job down, the phone not answering) no longer lets a
+  'reminder' card through.
+
+## 1.15.0 (2026-11-03)
+
+- The calendar and reminders can answer with Redde closed. With Phone tools › Keep a copy
+  turned on, the iPhone hands the agent a read-only copy of what its calendar and reminders
+  tools could already show, while Redde is open, and a read of either answers from that copy
+  on the person's own Hermes — saying when it was last synced. The phone stays the source of
+  truth: adding, changing and completing always go through it, and so does a `live` read;
+  turning an area or the setting off wipes the copy, and the app can wipe it by hand.
+  Issue 50.
+- A scheduled job's run no longer waits for the phone: it can't be reached there, so a phone
+  tool answers at once — from the copy when there is one, however old, and otherwise by saying
+  the phone can't be reached and to go on without it (Morning Ideas waited two minutes a call).
 
 ## 1.14.5 (2026-11-02)
 

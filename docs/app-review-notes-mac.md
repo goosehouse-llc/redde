@@ -26,7 +26,7 @@ Settings > About > Support Redde: three optional one-time tips (consumables) tha
 
 SANDBOX ENTITLEMENTS
 Outgoing network: the user's servers and model endpoints.
-Incoming network: only a listener on the Mac's own loopback address while the user signs in to a Hermes Dashboard with a browser, which returns to it.
+Incoming network (com.apple.security.network.server): one feature, Redde > Settings… > Connection > Sign in with a browser, for a Hermes Dashboard that signs people in with Google or another identity provider (OAuth for native apps with PKCE, RFC 8252). The Dashboard returns the browser to a one-time listener on http://127.0.0.1:<random port>/callback: Hermes accepts only a loopback return address (RFC 8252 7.3), so a custom URL scheme can't be used. The listener is bound to 127.0.0.1 only, exists only while the sign-in sheet is open, answers the one request carrying that sign-in's state, then closes. Redde listens for nothing else.
 Microphone, camera: voice mode and showing the agent something in it, only when the user starts them; speech is transcribed on the device.
 User-selected files: attaching a file, saving one a reply sent, exporting a conversation.
 Calendars, contacts, photos: Settings > Phone tools, each area off until the user turns it on, when macOS asks its permission; data goes only to the user's server. Calendars also: Settings > Agent > Calendars (their names) and Leave-By Alerts (next events, to Apple Maps only).

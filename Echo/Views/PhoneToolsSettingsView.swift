@@ -9,12 +9,12 @@ struct PhoneToolsSettingsView: View {
     @State private var looking = PhotoLooking.shared
     @State private var plugin = PushPluginModel(manager: PhoneToolsSettingsView.server)
     @State private var refused: Set<DeviceArea> = []
+    /// What the Hermes says of the copies, when they are wanted: "calendar 12m reminders off".
+    @State private var copies: String?
     /// Whether iOS will show an alarm Redde sets: it does so as a Live Activity.
     @State private var alarmsShow = true
     @Environment(\.scenePhase) private var scenePhase
     @State private var confirmingInstall = false
-    /// Send Now didn't reach the plugin.
-    @State private var aheadFailed = false
     @Environment(\.openURL) private var openURL
 
     private static var server: any PushPluginManaging {
@@ -79,6 +79,7 @@ struct PhoneToolsSettingsView: View {
                         // Links in rows of their own (11-04): in the picker's row, a tap on one
                         // opened the picker instead, so Health's kinds couldn't be chosen.
                         if area == .health { healthRow }
+                        // In a row of its own (11-04): in the picker's row, a tap on it opened the picker.
                         // Which calendars it reads and adds to (`CalendarChoice`, asked on Reddit 2026-11-02).
                         if area == .calendar, settings.phoneTools.access(.calendar) != .off {
                             NavigationLink { CalendarsSettingsView() } label: {
@@ -95,33 +96,44 @@ struct PhoneToolsSettingsView: View {
                     Text("“Ask each time” puts every request to you first. “Allow reading” lets it look things up without asking; adding, changing and deleting are still put to you, and deleting photos is put to you by iOS with the photos shown. Files are Redde's folder in the Files app, under On My \(device). The widget is Redde's own, “From Your Agent”, which you add to your Home Screen: allowed, your agent writes on it without asking, also while Redde is closed if this \(device) is paired for notifications. A call is put to you by iOS before it goes out, and a message is written for you to send: Redde asks about neither, and can send nothing. In Apple Home, “Allow” lets it change things too, except locks, garage doors, doors, windows and the alarm, which it always asks about.")
                 }
 
-                // For the jobs that run while Redde is closed (asked on Reddit 2026-11-04).
-                if settings.phoneTools.access(.calendar) != .off || settings.phoneTools.access(.reminders) != .off {
-                    Section {
-                        Toggle("Send Ahead for Scheduled Jobs", isOn: Binding(get: { settings.phoneTools.sendAhead },
-                                                                              set: { settings.phoneTools.sendAhead = $0 }))
-                        if settings.phoneTools.sendAhead {
-                            Button {
-                                Task { aheadFailed = await service.sendAhead(force: true) == nil }
-                            } label: {
-                                HStack {
-                                    Text("Send Now")
-                                    Spacer()
-                                    if service.isSendingAhead { ProgressView() }
-                                }
+                Section {
+                    Toggle("Keep a Copy", isOn: Binding(get: { settings.phoneTools.wantsCopy }, set: { on in
+                        settings.phoneTools.copy = on
+                        if on {
+                            Task { await service.refreshCopies(); copies = await service.copyStatus() }
+                        } else {
+                            Task { await service.wipeCopies(); copies = nil }
+                        }
+                    }))
+                    if settings.phoneTools.wantsCopy {
+                        Button {
+                            Task { await service.refreshCopies(); copies = await service.copyStatus() }
+                        } label: {
+                            HStack {
+                                Text("Send Now")
+                                if service.isSendingCopy { Spacer(); ProgressView() }
                             }
-                            .disabled(service.isSendingAhead)
-                            if aheadFailed {
-                                Text("Your Hermes couldn't be reached, or its Redde plugin is older than 1.17.0.")
-                                    .font(.footnote).foregroundStyle(.red)
-                            } else if let sent = service.aheadSentAt {
-                                Text("Last sent \(sent.formatted(.relative(presentation: .named)))")
+                        }
+                        .disabled(service.isSendingCopy)
+                        if let failure = service.copyFailure {
+                            Text("Couldn't send it: \(failure)").font(.footnote).foregroundStyle(.red)
+                        } else if let sent = service.copySentAt {
+                            TimelineView(.periodic(from: .now, by: 60)) { _ in
+                                Text("Last sent \(sent, format: .relative(presentation: .named)).")
                                     .font(.footnote).foregroundStyle(.secondary)
                             }
                         }
-                    } footer: {
-                        Text(Self.sendAheadNote(on: device))
+                        if let copies {
+                            Text("On your Hermes: \(copies).").font(.footnote).foregroundStyle(.secondary)
+                        }
+                        Button("Clear the Copy", role: .destructive) {
+                            Task { await service.wipeCopies(); copies = await service.copyStatus() }
+                        }
                     }
+                } header: {
+                    Text("When Redde Is Closed")
+                } footer: {
+                    Text("Why: your agent reaches this \(device)'s calendar and reminders only while Redde is open. A scheduled job — Morning Ideas, a briefing, a routine — runs on your Hermes at its own time, usually with Redde closed, so it can't see your day. With this on, Redde hands your Hermes a read-only copy of what the calendar and reminders tools could already show (the past week and the next two months), and the agent says how old it is. It's sent when you open Redde, at most every ten minutes, and when you tap Send Now. Adding and changing still happen on this \(device), and turning this off takes the copy with it.")
                 }
 
                 Section {
@@ -174,16 +186,10 @@ struct PhoneToolsSettingsView: View {
         #if os(iOS)
         .onChange(of: scenePhase, initial: true) { alarmsShow = SystemAlarms().canShow }
         #endif
-        .task(id: settings.phoneTools) { await service.publish() }
+        .task(id: settings.phoneTools) { await service.publish(); await service.refreshCopies(); copies = await service.copyStatus() }
         .onChange(of: settings.phoneTools.access(.photos), initial: true) { looking.resume() }
     }
 
-    /// Why Send Ahead is needed, and what it sends where: said under the switch.
-    static func sendAheadNote(on device: String) -> String {
-        String(localized: "Morning Ideas, briefings and other scheduled jobs run on your Hermes while Redde is closed. Redde reads your calendar and reminders only while it is open, so those jobs can't see them.")
-            + " " + String(localized: "With this on, each time you open Redde it sends your Hermes a copy of the next seven days of events and your open reminders, in place of the last copy, at most every ten minutes, and your jobs read that.")
-            + " " + String(localized: "The copy goes to your Hermes and nowhere else, keeps to the calendars you chose, and is deleted when you turn this off. Without it, scheduled jobs go on without your calendar and reminders.")
-    }
 
     /// How far Redde has got with looking at the pictures, which is what a search by what they
     /// show goes by.

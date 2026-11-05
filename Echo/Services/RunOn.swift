@@ -11,7 +11,7 @@ import Foundation
 nonisolated enum RunOn {
     static let tag = "[redde-model:"
     /// The Redde plugin that takes the mark up and answers `job-model`.
-    static let pluginVersion = "1.16.0"
+    static let pluginVersion = "1.17.0"
     /// How long a mark may wait for the plugin before the page says it isn't being taken up.
     static let markUnheardAfter: TimeInterval = 120
 

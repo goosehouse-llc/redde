@@ -26,7 +26,9 @@ import http.cookiejar
 import json
 import sys
 import time
+import urllib.error
 import urllib.request
+import uuid
 
 import check
 from check import API, KEY, SERVE, Dashboard, api, api_session, report
@@ -71,6 +73,22 @@ def rest(opener, method, path, body=None):
                                      headers={"Content-Type": "application/json"})
     with opener.open(request, timeout=30) as response:
         return json.loads(response.read().decode() or "{}")
+
+
+def patch(opener, stored, body):
+    """A Dashboard session write as the app makes it (PR 53): fenced with the session's revision
+    from mutation-snapshot where the host has that route (Hermes from 2026-10-16 refuses a bare
+    one with 409 client_upgrade_required), bare where it doesn't."""
+    try:
+        # A bot's session: its profile goes on the snapshot's query, and in the write's body.
+        where = f"?profile={body['profile']}" if body.get("profile") else ""
+        snapshot = rest(opener, "GET", f"/api/sessions/{stored}/mutation-snapshot{where}")
+        body = dict(body, request_id=uuid.uuid4().hex, expected_revision=snapshot["runtime_revision"],
+                    expected_generation=snapshot.get("runtime_generation"))
+    except urllib.error.HTTPError as error:
+        if error.code != 404:
+            raise
+    return rest(opener, "PATCH", f"/api/sessions/{stored}", body)
 
 
 def row(opener, stored):
@@ -165,7 +183,7 @@ async def dashboard():
         report(came and during == "waiting", "waiting while it asks for an approval", f"asked {came}, status {during!r}")
 
     # Unread: a read mark, then a reply after it.
-    marked = rest(opener, "PATCH", f"/api/sessions/{stored}", {"unread": False})
+    marked = patch(opener, stored, {"unread": False})
     report(row(opener, stored).get("unread") is False, "marked read: not unread", f"PATCH {marked}")
     await asyncio.sleep(1.2)   # the mark is a time: what comes after it has to come later
     while not dash.events.empty():
@@ -175,9 +193,9 @@ async def dashboard():
     changed = await until(dash, runtime, {"sessions.changed"}, 6)
     print(f"  (info) sessions.changed after the reply: {'yes' if changed else 'not within 6 s'}")
     report(row(opener, stored).get("unread") is True, "a reply after the mark: unread", f"row unread {row(opener, stored).get('unread')!r}")
-    rest(opener, "PATCH", f"/api/sessions/{stored}", {"unread": False})
+    patch(opener, stored, {"unread": False})
     report(row(opener, stored).get("unread") is False, "marked read again: not unread")
-    rest(opener, "PATCH", f"/api/sessions/{stored}", {"unread": True})
+    patch(opener, stored, {"unread": True})
     report(row(opener, stored).get("unread") is True, "marked unread: unread")
     await dash.ws.close()
     return opener

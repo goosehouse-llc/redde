@@ -95,6 +95,85 @@ struct HermesServeClientTests {
         #expect(urls.contains { $0.contains("/api/sessions?") && $0.contains("profile=work") })
     }
 
+    /// Sidebar writes are fenced against current backends (issue 52): the PATCH carries a fresh
+    /// request id with the revision read from the snapshot route, or the server refuses it with
+    /// 409 client_upgrade_required — the "out of sync (different versions)" notice.
+    @Test func sessionWritesGoFencedAgainstACurrentBackend() async throws {
+        ServeStub.reset()
+        nonisolated(unsafe) var urls: [String] = []
+        nonisolated(unsafe) var patchBodies: [Data] = []
+        ServeStub.handler = { request, body in
+            urls.append(request.url?.absoluteString ?? "")
+            switch (request.httpMethod, request.url?.path()) {
+            case ("POST", "/auth/password-login"): return (200, Data("{}".utf8))
+            case ("GET", "/api/sessions/s-1/mutation-snapshot"):
+                return (200, Data(#"{"session_id":"s-1","exists":true,"runtime_revision":7,"runtime_generation":2}"#.utf8))
+            case ("PATCH", "/api/sessions/s-1"):
+                patchBodies.append(body ?? Data())
+                return (200, Data(#"{"ok":true,"session_id":"s-1","revision":8}"#.utf8))
+            default: return (404, Data())
+            }
+        }
+        defer { ServeStub.reset() }
+        let client = makeClient(profile: "work")
+        try await client.updateSession(stored: "s-1", pinned: false)
+        #expect(urls.contains { $0.contains("/api/sessions/s-1/mutation-snapshot") && $0.contains("profile=work") },
+                "the snapshot read is profile-scoped like the other session GETs")
+        let sent = try JSONValue.parse(try #require(patchBodies.first))
+        #expect(sent["pinned"]?.bool == false)
+        #expect(sent["request_id"]?.string?.count == 36, "a fresh uuid rides with the write")
+        #expect(sent["expected_revision"]?.int == 7, "the revision just read from the snapshot")
+        #expect(sent["expected_generation"]?.int == 2)
+        #expect(sent["title"] == nil, "untouched fields stay out of the body, fence or no fence")
+    }
+
+    @Test func aFencedConflictSurfacesInsteadOfResendingBlindly() async throws {
+        ServeStub.reset()
+        nonisolated(unsafe) var snapshots = 0, patches = 0
+        ServeStub.handler = { request, _ in
+            switch (request.httpMethod, request.url?.path()) {
+            case ("POST", "/auth/password-login"): return (200, Data("{}".utf8))
+            case ("GET", "/api/sessions/s-1/mutation-snapshot"):
+                snapshots += 1
+                return (200, Data(#"{"session_id":"s-1","exists":true,"runtime_revision":7,"runtime_generation":2}"#.utf8))
+            case ("PATCH", "/api/sessions/s-1"):
+                patches += 1
+                return (409, Data(#"{"detail":"revision_conflict"}"#.utf8))
+            default: return (404, Data())
+            }
+        }
+        defer { ServeStub.reset() }
+        let client = makeClient()
+        let error = await #expect(throws: TransportError.self) { try await client.updateSession(stored: "s-1", pinned: false) }
+        guard case let .http(status, detail)? = error else { Issue.record("not an HTTP error: \(String(describing: error))"); return }
+        #expect(status == 409 && detail == "revision_conflict")
+        #expect(snapshots == 1 && patches == 1, "the named conflict surfaces; the next user action re-reads, nothing loops")
+    }
+
+    /// A Hermes host predating the fence has no snapshot route; its accepted write is the bare
+    /// PATCH, so the 404 on the read falls back to it instead of failing the edit outright.
+    @Test func aHostWithoutTheSnapshotRouteStillTakesTheBareWrite() async throws {
+        ServeStub.reset()
+        nonisolated(unsafe) var patchBodies: [Data] = []
+        ServeStub.handler = { request, body in
+            switch (request.httpMethod, request.url?.path()) {
+            case ("POST", "/auth/password-login"): return (200, Data("{}".utf8))
+            case ("GET", "/api/sessions/s-1/mutation-snapshot"): return (404, Data())
+            case ("PATCH", "/api/sessions/s-1"):
+                patchBodies.append(body ?? Data())
+                return (200, Data(#"{"ok":true}"#.utf8))
+            default: return (404, Data())
+            }
+        }
+        defer { ServeStub.reset() }
+        let client = makeClient()
+        try await client.updateSession(stored: "s-1", pinned: true)
+        let sent = try JSONValue.parse(try #require(patchBodies.first))
+        #expect(sent["pinned"]?.bool == true)
+        #expect(sent["request_id"] == nil && sent["expected_revision"] == nil,
+                "no snapshot route means no fence to answer: the old bare write goes")
+    }
+
     /// Stateful stub: the session probe fails until a login has happened, like a cookie jar.
     private func installGateway(rejectLogin: Bool = false, jobsFirstStatus: Int = 200) {
         ServeStub.reset()

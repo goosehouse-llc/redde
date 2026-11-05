@@ -1158,7 +1158,7 @@ def saw_result(session: str, name: str, arguments, result) -> None:
         data = json.loads(text) if text else {}
     except ValueError:
         data = None
-    # A call that failed sets nothing (1.16.1): the card waits for one that worked.
+    # A call that failed sets nothing: the card waits for one that worked.
     failed = (data.get("success") is False or (bool(data.get("error")) and not data.get("success"))) if isinstance(data, dict) \
         else text.lstrip().lower().startswith("error")
     if failed:

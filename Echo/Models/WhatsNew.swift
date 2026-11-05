@@ -32,7 +32,7 @@ nonisolated enum WhatsNew {
     static let releases: [Release] = [
         Release(version: "2.4", items: [
             Item(symbol: "flag.checkered", title: String(localized: "Goals"),
-                 detail: String(localized: "Tell your agent something you want to get done, in any chat or with New Goal (hold the New Conversation button). It makes a plan of steps on your Kanban board for you to approve, checks in on a schedule, and the goal's card at the top of your chats shows how far along you are. It takes the Redde plugin 1.15 on your Hermes.")),
+                 detail: String(localized: "Tell your agent something you want to get done, in any chat or with New Goal (hold the New Conversation button). It makes a plan of steps on your Kanban board for you to approve, checks in on a schedule, and the goal's card at the top of your chats shows how far along you are. It takes the Redde plugin 1.16 on your Hermes.")),
             Item(symbol: "clock.arrow.circlepath", title: String(localized: "Coming Up"),
                  detail: String(localized: "The first tab of Agent Activity: everything your agents plan to do on their own in the next day, heads-ups, leave times, routines, watches and follow-ups. Skip one once, or pause it.")),
             Item(symbol: "eye", title: String(localized: "Watches in one tap"),

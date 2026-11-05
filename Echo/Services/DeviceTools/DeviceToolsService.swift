@@ -19,10 +19,12 @@ nonisolated struct PhoneToolsSettings: Codable, Equatable, Sendable {
     /// The kinds of Apple Health data the agent may read (`HealthKind` ids), each chosen on its
     /// own in Settings → Phone tools → Health. None until chosen.
     var health: [String] = []
-    /// Send Ahead for Scheduled Jobs (2026-11-04, asked on Reddit): a copy of the coming week's
-    /// events and the open reminders goes to the person's Hermes each time Redde opens, for the
-    /// jobs that run while it is closed. Off until turned on.
-    var sendAhead = false
+    /// Whether Redde may keep a read-only copy of the calendar and reminders on the person's
+    /// Hermes, so those two can answer with Redde closed (issue 50). Off until asked; optional
+    /// so settings saved before it stay readable.
+    var copy: Bool?
+
+    var wantsCopy: Bool { copy == true }
 
     func access(_ area: DeviceArea) -> Access { on ? areas[area.rawValue] ?? .off : .off }
     mutating func set(_ area: DeviceArea, _ access: Access) { areas[area.rawValue] = access }
@@ -41,7 +43,7 @@ nonisolated struct PhoneToolsSettings: Codable, Equatable, Sendable {
 }
 
 nonisolated extension PhoneToolsSettings {
-    private enum CodingKeys: String, CodingKey { case on, areas, health, sendAhead }
+    private enum CodingKeys: String, CodingKey { case on, areas, health, copy }
 
     /// Read as kept, a setting kept before a field was added included: what is missing is its default.
     init(from decoder: any Decoder) throws {
@@ -49,11 +51,8 @@ nonisolated extension PhoneToolsSettings {
         on = try kept.decodeIfPresent(Bool.self, forKey: .on) ?? false
         areas = try kept.decodeIfPresent([String: Access].self, forKey: .areas) ?? [:]
         health = try kept.decodeIfPresent([String].self, forKey: .health) ?? []
-        sendAhead = try kept.decodeIfPresent(Bool.self, forKey: .sendAhead) ?? false
+        copy = try kept.decodeIfPresent(Bool.self, forKey: .copy)
     }
-
-    /// The areas a copy is sent ahead of: calendar and reminders, while on.
-    var sentAhead: [DeviceArea] { sendAhead ? [.calendar, .reminders].filter { access($0) != .off } : [] }
 }
 
 /// The phone's side of phone tools: it learns that the agent has called one, asks the plugin on
@@ -141,8 +140,6 @@ final class DeviceToolsService {
         self.ask = ask ?? { await DeviceToolsService.alert($0) }
         self.onScreen = onScreen
         self.homeSensitive = homeSensitive ?? { await DeviceHome.sensitive($0, $1) }
-        let sentAt = defaults.double(forKey: Self.aheadAtKey)
-        aheadSentAt = sentAt > 0 ? Date(timeIntervalSince1970: sentAt) : nil
         log = defaults.data(forKey: Self.logKey).flatMap { try? JSONDecoder().decode([Entry].self, from: $0) } ?? []
     }
 
@@ -210,6 +207,11 @@ final class DeviceToolsService {
             _ = try await command("device done \(request.id) \(data.base64EncodedString())")
         } catch {
             logger.error("a phone tool's answer didn't reach the server: \(error.localizedDescription)")
+        }
+        // A calendar or reminders call means the person was just using these: if they asked for
+        // a copy of them, that is the moment to hand one over fresh.
+        if let area = DeviceTool(rawValue: request.tool)?.area, area == .calendar || area == .reminders {
+            await refreshCopies()
         }
     }
 
@@ -315,72 +317,97 @@ final class DeviceToolsService {
         let named = reply.dropFirst("redde-push device areas".count).split(whereSeparator: { $0 == " " || $0 == "," })
         let held = named.compactMap { DeviceArea(rawValue: String($0)) }
         unoffered = open.filter { !held.contains($0) }
-        await sendAhead()
         return held
     }
 
-    // MARK: - Sent ahead, for scheduled jobs
+    // MARK: - The copy of the calendar and reminders (issue 50)
 
-    /// What was last sent ahead and when, so that a copy goes at most every ten minutes unless
-    /// something it depends on changed.
-    @ObservationIgnored private var aheadSaid: (what: String, at: Date)?
-    private static let aheadKey = "phoneTools.aheadOnServer"
-    private static let aheadAtKey = "phoneTools.aheadSentAt"
-    /// A copy sent ahead is on the server, still to be taken back if the setting goes off.
-    static var aheadOnServer: Bool { UserDefaults.standard.bool(forKey: aheadKey) }
-
-    /// With Send Ahead on, the coming week's events and the open reminders go to the plugin,
-    /// which answers a scheduled job's calls from them; with it off, a copy sent before is
-    /// taken back. Returns the areas the plugin kept, or nil when nothing was said.
-    /// When a copy last reached the server, for Settings; nil while none is there.
-    private(set) var aheadSentAt: Date?
-    /// A copy is on its way (Send Now).
-    private(set) var isSendingAhead = false
-
-    /// `force` (Send Now): sent whatever was sent a moment ago.
+    /// Hands the plugin a whole read-only copy of what the calendar and reminders tools could
+    /// show now, so those two can answer with Redde closed: the plugin answers from it on the
+    /// person's own Hermes, and says when it was last synced. While Redde is open is the only
+    /// time it can be handed over, so it goes when the setting is turned on, after any
+    /// calendar or reminders call, when the Phone tools settings are opened on, when Redde comes
+    /// to the front (at most every ten minutes, `staleAfter`), and on the person's Send Now.
+    /// True when it reached the server.
     @discardableResult
-    func sendAhead(now: Date = .now, force: Bool = false) async -> [DeviceArea]? {
-        let areas = settings.phoneTools.sentAhead
-        guard !areas.isEmpty else {
-            guard defaults.bool(forKey: Self.aheadKey) else { return nil }
-            guard (try? await command("device ahead off"))?.hasPrefix("redde-push device ahead off") == true else { return nil }
-            defaults.set(false, forKey: Self.aheadKey)
-            aheadSaid = nil
-            aheadSentAt = nil
-            defaults.removeObject(forKey: Self.aheadAtKey)
-            return []
+    func refreshCopies(staleAfter: TimeInterval? = nil, now: Date = .now) async -> Bool {
+        guard settings.phoneTools.on, settings.phoneTools.wantsCopy else { return false }
+        if let staleAfter, let sent = copySentAt, now.timeIntervalSince(sent) < staleAfter { return true }
+        guard !isSendingCopy else { return false }
+        isSendingCopy = true
+        defer { isSendingCopy = false }
+        do {
+            if settings.phoneTools.access(.calendar) != .off {
+                // The past week and the coming two months, soonest first, at the tool's widest
+                // fetch: what scheduled jobs and quick questions ask about. (From a year back, 200
+                // events would be all old ones on a busy calendar.)
+                let wide = JSONValue.object([
+                    "start": .string(DeviceDates.string(now.addingTimeInterval(-7 * 86400))),
+                    "end": .string(DeviceDates.string(now.addingTimeInterval(60 * 86400))),
+                    "limit": .number(200),
+                ])
+                // Not readable (iOS access not given): said, rather than "sent" with nothing in it.
+                guard let events = try await run(.calendarEvents, wide, .object([:]))["events"]?.array else {
+                    throw DeviceToolError("the calendar couldn't be read.")
+                }
+                try await syncCopy("calendar", ["events": .array(events)])
+            }
+            if settings.phoneTools.access(.reminders) != .off {
+                // The ones still to do: done ones would crowd them out of the 200, and the
+                // copy's answers leave them out anyway unless asked.
+                let open = JSONValue.object(["limit": .number(200)])
+                guard let reminders = try await run(.remindersList, open, .object([:]))["reminders"]?.array else {
+                    throw DeviceToolError("the reminders couldn't be read.")
+                }
+                try await syncCopy("reminders", ["reminders": .array(reminders)])
+            }
+            copySentAt = now
+            copyFailure = nil
+            return true
+        } catch {
+            copyFailure = (error as? DeviceToolError)?.message ?? error.localizedDescription
+            logger.error("the copy of the calendar and reminders didn't reach the server: \(error.localizedDescription)")
+            return false
         }
-        let what = areas.map(\.rawValue).joined(separator: ",") + "|" + CalendarChoice.chosen.joined(separator: ",")
-        if !force, let said = aheadSaid, said.what == what, now.timeIntervalSince(said.at) < 600 { return nil }
-        isSendingAhead = true
-        defer { isSendingAhead = false }
-        let start = Calendar.current.startOfDay(for: now)
-        let end = start.addingTimeInterval(8 * 86400)
-        var copy: [String: JSONValue] = [
-            "made": .string(DeviceDates.string(now)), "time_zone": .string(TimeZone.current.identifier),
-            "from": .string(DeviceDates.string(start)), "until": .string(DeviceDates.string(end)),
-        ]
-        if areas.contains(.calendar), let found = try? await read(.calendarEvents, ["start": .string(DeviceDates.string(start)),
-                                                                                      "end": .string(DeviceDates.string(end)), "limit": .number(200)]) {
-            copy["calendar"] = found["events"] ?? .array([])
-        }
-        if areas.contains(.reminders), let found = try? await read(.remindersList, ["limit": .number(200)]) {
-            copy["reminders"] = found["reminders"] ?? .array([])
-        }
-        guard copy["calendar"] != nil || copy["reminders"] != nil, let data = try? JSONEncoder().encode(JSONValue.object(copy)),
-              let reply = try? await command("device ahead " + data.base64EncodedString()),
-              reply.hasPrefix("redde-push device ahead") else { return nil }   // an older plugin says it doesn't know this
-        defaults.set(true, forKey: Self.aheadKey)
-        defaults.set(now.timeIntervalSince1970, forKey: Self.aheadAtKey)
-        aheadSaid = (what, now)
-        aheadSentAt = now
-        let named = reply.dropFirst("redde-push device ahead".count).split(whereSeparator: { $0 == " " || $0 == "," })
-        return named.compactMap { DeviceArea(rawValue: String($0)) }
     }
 
-    /// A read for the copy: the tool's own, with no one asked (turning Send Ahead on was the asking).
-    private func read(_ tool: DeviceTool, _ args: [String: JSONValue]) async throws -> JSONValue {
-        try await run(tool, .object(args), info())
+    /// When the copy last reached the server, from this phone.
+    var copySentAt: Date? {
+        get { access(keyPath: \.copySentAt); return defaults.object(forKey: "phoneTools.copySentAt") as? Date }
+        set { withMutation(keyPath: \.copySentAt) { defaults.set(newValue, forKey: "phoneTools.copySentAt") } }
+    }
+
+    /// Why the last copy didn't reach the server, until one does.
+    private(set) var copyFailure: String?
+    /// A copy on its way, for the Send Now button.
+    private(set) var isSendingCopy = false
+
+    /// One copy over the plugin's command, as base64 JSON — the same envelope `done` uses.
+    private func syncCopy(_ kind: String, _ payload: [String: JSONValue]) async throws {
+        let data = try JSONEncoder().encode(JSONValue.object(payload))
+        let reply = try await command("device sync \(kind) \(data.base64EncodedString())")
+        // A plugin older than 1.15.0 doesn't know the command: say so, not "sent".
+        guard reply.hasPrefix("redde-push device sync") else {
+            throw DeviceToolError(reply.hasPrefix("redde-push device refused")
+                ? String(reply.dropFirst("redde-push device refused: ".count))
+                : String(localized: "the Redde plugin on your Hermes is too old for this. Update it in Settings › Redde Plugin."))
+        }
+    }
+
+    /// Takes the copies off the Hermes: what turning the setting off means, and the person's
+    /// own clear button.
+    func wipeCopies() async {
+        _ = try? await command("device cache wipe")
+        copySentAt = nil
+    }
+
+    /// What the Hermes says of the copies, like "calendar 12m reminders off"; nil when the
+    /// setting is off or the server didn't answer.
+    func copyStatus() async -> String? {
+        guard settings.phoneTools.wantsCopy else { return nil }
+        let reply = try? await command("device cache status")
+        guard let reply, reply.hasPrefix("redde-push device cache ") else { return nil }
+        return String(reply.dropFirst("redde-push device cache ".count))
     }
 
     func clearLog() { log = [] }

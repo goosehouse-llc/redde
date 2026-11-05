@@ -121,7 +121,14 @@ struct EchoApp: App {
                     #endif
                     // Which phone tools the agent is offered is this phone's to say, and the
                     // server may have been restarted, or reached for the first time, since it did.
-                    if Settings.shared.phoneTools.on || DeviceToolsService.aheadOnServer { Task { await DeviceToolsService.shared.publish() } }
+                    if Settings.shared.phoneTools.on {
+                        Task {
+                            await DeviceToolsService.shared.publish()
+                            // The copy for when Redde is closed (Keep a Copy), fresh for the
+                            // scheduled jobs to come: at most every ten minutes.
+                            await DeviceToolsService.shared.refreshCopies(staleAfter: 600)
+                        }
+                    }
                     // Cards on or off, and with them on this phone's time zone (which travels with
                     // it), said again in case this server hasn't heard.
                     Task { await ReplyCardsSwitch.publish() }

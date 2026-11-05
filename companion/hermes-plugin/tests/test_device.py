@@ -110,46 +110,6 @@ class PhoneTools(unittest.TestCase):
         # A chat's turn still waits for the phone.
         self.assertIn("didn't answer", json.loads(self.phone.ask("phone_calendar_events", {}, session="20261104_073012_ab12cd", wait=0.3))["error"])
 
-    def test_a_scheduled_job_reads_the_copy_sent_ahead(self):
-        """2026-11-04 (Reddit): Morning Ideas couldn't read the calendar with Redde closed. With
-        Send Ahead on, the phone leaves a copy that a job's calls are answered from."""
-        job = "cron_925a79849c90_20261104_073012"
-        self.phone.set_areas(["calendar", "reminders"])
-        copy = {"made": "2026-11-04T06:50:00-05:00", "time_zone": "America/New_York",
-                "from": "2026-11-04T00:00:00-05:00", "until": "2026-11-11T00:00:00-05:00",
-                "calendar": [{"title": "Dentist", "start": "2026-11-04T09:00:00-05:00", "end": "2026-11-04T10:00:00-05:00"},
-                             {"title": "Run club", "start": "2026-11-06T18:00:00-05:00", "end": "2026-11-06T19:00:00-05:00", "location": "Park"}],
-                "reminders": [{"title": "Stretch", "list": "Health"}, {"title": "Milk", "list": "Groceries"}]}
-        self.assertEqual(device.slash(self.phone, ["ahead", b64(copy)]), "redde-push device ahead calendar,reminders")
-        day = json.loads(self.phone.ask("phone_calendar_events", {"start": "2026-11-04", "end": "2026-11-04"}, session=job))
-        self.assertEqual([e["title"] for e in day["events"]], ["Dentist"])
-        self.assertIn("sent ahead", day["note"])
-        park = json.loads(self.phone.ask("phone_calendar_events", {"start": "2026-11-04T00:00", "query": "park"}, session=job))
-        self.assertEqual([e["title"] for e in park["events"]], ["Run club"])
-        health = json.loads(self.phone.ask("phone_reminders_list", {"list": "health"}, session=job))
-        self.assertEqual([r["title"] for r in health["reminders"]], ["Stretch"])
-        # A change still can't be made from a job.
-        self.assertIn("scheduled job", json.loads(self.phone.ask("phone_reminders_add", {"title": "x"}, session=job))["error"])
-        # Turning reminders off takes their copy with it; turning it all off, the rest.
-        self.phone.set_areas(["calendar"])
-        self.assertNotIn("reminders", json.loads((self.phone.dir / "ahead.json").read_text()))
-        self.assertIn("events", json.loads(self.phone.ask("phone_calendar_events", {"start": "2026-11-04"}, session=job)))
-        self.assertEqual(device.slash(self.phone, ["ahead", "off"]), "redde-push device ahead off")
-        self.assertFalse((self.phone.dir / "ahead.json").exists())
-
-    def test_a_job_with_no_copy_is_told_how_to_have_one(self):
-        self.phone.set_areas(["calendar"])
-        result = json.loads(self.phone.ask("phone_calendar_events", {}, session="cron_925a79849c90_20261104_073012"))
-        self.assertIn("Send Ahead for Scheduled Jobs", result["error"])
-
-    def test_a_copy_too_old_is_not_used(self):
-        self.phone.set_areas(["reminders"])
-        self.phone.keep_ahead({"reminders": [{"title": "Stretch"}]})
-        self.assertIsNotNone(self.phone.from_ahead("phone_reminders_list", {}))
-        self.assertIsNone(self.phone.from_ahead("phone_reminders_list", {}, now=time.time() + 9 * 86400))
-        self.assertEqual(device.slash(self.phone, ["ahead", b64({"calendar": []})]), "redde-push device ahead none",
-                         "an area that is off keeps nothing")
-
     def test_a_phone_that_does_not_answer_is_said_so(self):
         self.phone.set_areas(["calendar"])
         result = json.loads(self.phone.ask("phone_calendar_events", {}, wait=0.4))
@@ -380,6 +340,275 @@ class PhoneTools(unittest.TestCase):
             self.assertEqual(sorted(known), sorted(device.TOOLS))
             areas = re.search(r"case ([\w, ]+)\n\n    var id: String", app.read_text())
             self.assertEqual(tuple(a.strip() for a in areas.group(1).split(",")), device.AREAS)
+
+
+class CopyOfThePhone(unittest.TestCase):
+    """Tests for the read-only copy of calendar and reminders (issue 50)."""
+
+    def setUp(self):
+        self.home = tempfile.TemporaryDirectory()
+        self.phone = device.Phone(Path(self.home.name))
+
+    def tearDown(self):
+        self.home.cleanup()
+
+    def _sync(self, kind, items):
+        """Helper to sync a copy via slash."""
+        payload = {device._COPY_KEY[kind]: items}
+        return device.slash(self.phone, ["sync", kind, b64(payload)])
+
+    def _fresh_calendar(self):
+        """Return a calendar copy with items at various times."""
+        now = time.time()
+        day = 86400
+        return [
+            {"title": "Meeting", "start": "2026-11-04T10:00", "start_ts": now + day},
+            {"title": "Lunch", "start": "2026-11-06T12:00", "start_ts": now + 3 * day},
+            {"title": "Past event", "start": "2026-11-01T09:00", "start_ts": now - day},
+            {"title": "Robert's birthday", "start": "2026-11-05T18:00", "start_ts": now + 2 * day},
+        ]
+
+    def _fresh_reminders(self):
+        """Return a reminders copy with various items."""
+        now = time.time()
+        day = 86400
+        return [
+            {"title": "Buy milk", "due": "2026-11-04T09:00", "due_ts": now + day, "list": "Shopping", "completed": False},
+            {"title": "Call mom", "due": "2026-11-06T14:00", "due_ts": now + 3 * day, "list": "Personal", "completed": False},
+            {"title": "Done task", "due": "2026-11-03T08:00", "due_ts": now, "list": "Shopping", "completed": True},
+            {"title": "No due date", "list": "Personal", "completed": False},
+        ]
+
+    # 1. A fresh copy answers at once
+
+    def test_fresh_copy_answers_at_once(self):
+        """A fresh copy answers without bothering the phone."""
+        self.phone.set_areas(["calendar", "reminders"])
+        items = self._fresh_calendar()
+        result = self._sync("calendar", items)
+        self.assertEqual(result, "redde-push device sync calendar 4")
+        answer = json.loads(self.phone.read("phone_calendar_events", {}))
+        # The default window is now to a week on: the past event is not in it, soonest first.
+        self.assertEqual([e["title"] for e in answer["events"]],
+                         ["Meeting", "Robert's birthday", "Lunch"])
+        self.assertNotIn("start_ts", answer["events"][0])  # stripped
+        self.assertIn("synced_minutes_ago", answer)
+        self.assertLessEqual(answer["synced_minutes_ago"], 1)
+        self.assertEqual(self.phone.waiting(), [])  # phone was never asked
+
+    # 2. Filters mirror the tool promises
+
+    def test_filters_mirror_tool_promises(self):
+        """Filters: query, limit, explicit start/end, date-only end."""
+        self.phone.set_areas(["calendar"])
+        items = self._fresh_calendar()
+        self._sync("calendar", items)
+        # Query filter
+        answer = json.loads(self.phone.read("phone_calendar_events", {"query": "robert"}))
+        self.assertEqual(len(answer["events"]), 1)
+        self.assertEqual(answer["events"][0]["title"], "Robert's birthday")
+        # Limit filter
+        answer = json.loads(self.phone.read("phone_calendar_events", {"limit": 1}))
+        self.assertEqual(len(answer["events"]), 1)
+        self.assertEqual(answer["more"], 2)  # the window holds three; one is kept
+        # Explicit start/end narrows the window
+        from datetime import datetime
+        birthday = datetime.fromtimestamp(time.time() + 2 * 86400).strftime("%Y-%m-%d")
+        answer = json.loads(self.phone.read("phone_calendar_events", {
+            "start": f"{birthday}T00:00", "end": f"{birthday}T23:59"
+        }))
+        self.assertEqual(len(answer["events"]), 1)
+        self.assertEqual(answer["events"][0]["title"], "Robert's birthday")
+        # Date-only end means the whole of that day
+        answer = json.loads(self.phone.read("phone_calendar_events", {
+            "start": birthday, "end": birthday
+        }))
+        self.assertEqual(len(answer["events"]), 1)
+        self.assertEqual(answer["events"][0]["title"], "Robert's birthday")
+
+    # 3. Reminders copy
+
+    def test_reminders_copy(self):
+        """Reminders: drop completed unless include_completed, list filter, sort."""
+        self.phone.set_areas(["reminders"])
+        items = self._fresh_reminders()
+        self._sync("reminders", items)
+        # Drop completed by default
+        answer = json.loads(self.phone.read("phone_reminders_list", {}))
+        self.assertEqual(len(answer["reminders"]), 3)
+        self.assertNotIn("Done task", [r["title"] for r in answer["reminders"]])
+        # include_completed
+        answer = json.loads(self.phone.read("phone_reminders_list", {"include_completed": True}))
+        self.assertEqual(len(answer["reminders"]), 4)
+        # List filter by name
+        answer = json.loads(self.phone.read("phone_reminders_list", {"list": "Shopping"}))
+        self.assertEqual(len(answer["reminders"]), 1)
+        self.assertEqual(answer["reminders"][0]["title"], "Buy milk")
+        # No-due last, soonest due first
+        titles = [r["title"] for r in answer["reminders"]]
+        self.assertEqual(titles, ["Buy milk"])
+        # more counts
+        answer = json.loads(self.phone.read("phone_reminders_list", {"list": "Personal", "limit": 1}))
+        self.assertEqual(len(answer["reminders"]), 1)
+        self.assertEqual(answer["more"], 1)
+
+    # 4. live asks the phone
+
+    def test_live_asks_the_phone(self):
+        """A fresh copy + live=True asks the phone."""
+        self.phone.set_areas(["calendar"])
+        items = self._fresh_calendar()
+        self._sync("calendar", items)
+        # Start a call on a thread
+        call = Calls(self.phone, "phone_calendar_events", {}, wait=5.0)
+        # Wait for the phone to be asked
+        asked = waiting(self.phone, 1)
+        self.assertEqual(len(asked), 1)
+        self.assertEqual(asked[0]["tool"], "phone_calendar_events")
+        # The live argument should not be in the args
+        self.assertNotIn("live", asked[0]["args"])
+        # Answer the call
+        self.phone.answer(asked[0]["id"], {"ok": True, "result": {"events": [{"title": "Live answer"}]}})
+        result = call.done()
+        self.assertEqual(result["events"][0]["title"], "Live answer")
+
+    # 5. A stale copy answers only when the phone doesn't
+
+    def test_stale_copy_answers_when_phone_doesnt(self):
+        """A stale copy answers only when the phone doesn't."""
+        self.phone.set_areas(["calendar"])
+        items = self._fresh_calendar()
+        self._sync("calendar", items)
+        # Monkeypatch CACHE_FRESH to 0 so the copy is always stale
+        before = device.CACHE_FRESH
+        device.CACHE_FRESH = 0
+        self.addCleanup(setattr, device, "CACHE_FRESH", before)
+        # Read on a thread, with a short wait so the phone won't answer in time: while it
+        # waits the phone was asked, and what comes back is the copy with a note.
+        got = {}
+
+        def read():
+            got["answer"] = json.loads(self.phone.read("phone_calendar_events", {}, wait=0.3))
+
+        thread = threading.Thread(target=read, daemon=True)
+        thread.start()
+        asked = waiting(self.phone, 1)
+        self.assertEqual(asked[0]["tool"], "phone_calendar_events")
+        thread.join(5)
+        answer = got["answer"]
+        self.assertIn("events", answer)
+        self.assertIn("note", answer)
+        self.assertIn("copy", answer["note"].lower())
+
+    def test_a_scheduled_run_answers_from_any_copy_at_once(self):
+        """A scheduled job's run has no phone following it: an old copy answers at once, with
+        its note, and nothing is left for a phone to collect."""
+        self.phone.set_areas(["calendar"])
+        self._sync("calendar", self._fresh_calendar())
+        before = device.CACHE_FRESH
+        device.CACHE_FRESH = 0
+        self.addCleanup(setattr, device, "CACHE_FRESH", before)
+        started = time.monotonic()
+        answer = json.loads(self.phone.read("phone_calendar_events", {}, session="cron_ab12cd34_20261104_070000", wait=30))
+        self.assertLess(time.monotonic() - started, 2)
+        self.assertIn("note", answer)
+        self.assertEqual([e["title"] for e in answer["events"]], ["Meeting", "Robert's birthday", "Lunch"])
+        self.assertEqual(self.phone.waiting(), [])
+
+    def test_a_scheduled_run_with_no_copy_hears_at_once(self):
+        """With no copy, a scheduled run hears at once that the phone can't be reached."""
+        self.phone.set_areas(["calendar"])
+        started = time.monotonic()
+        answer = json.loads(self.phone.read("phone_calendar_events", {}, session="cron_ab12cd34_20261104_070000", wait=30))
+        self.assertLess(time.monotonic() - started, 2)
+        self.assertEqual(answer["error"], device.NO_PHONE_IN_A_JOB)
+
+    def test_the_shape_the_phone_hands_over(self):
+        """The app sends what its tools describe: ISO date strings with the phone's own
+        offset, not numeric timestamps — the copy still windows and sorts right."""
+        from datetime import datetime, timedelta
+        self.phone.set_areas(["calendar", "reminders"])
+        now = datetime.now().astimezone()
+        def when(days):
+            return (now + timedelta(days=days)).isoformat()
+        self._sync("calendar", [
+            {"id": "a", "title": "Dentist", "start": when(1), "end": when(1), "all_day": False, "calendar": "Personal"},
+            {"id": "b", "title": "Gym", "start": when(3), "end": when(3), "all_day": False, "calendar": "Personal"},
+        ])
+        self._sync("reminders", [{"id": "r", "title": "Milk", "list": "Shopping", "completed": False, "due": when(2)}])
+        answer = json.loads(self.phone.read("phone_calendar_events", {}))
+        self.assertEqual([e["title"] for e in answer["events"]], ["Dentist", "Gym"])
+        answer = json.loads(self.phone.read("phone_reminders_list", {}))
+        self.assertEqual(answer["reminders"][0]["title"], "Milk")
+
+    # 6. Turning an area off takes the copy
+
+    def test_turning_area_off_takes_the_copy(self):
+        """Turning an area off takes its copy."""
+        self.phone.set_areas(["calendar", "reminders"])
+        items = self._fresh_calendar()
+        self._sync("calendar", items)
+        # Verify the copy exists
+        self.assertIsNotNone(self.phone.copy("calendar"))
+        # Turn off calendar
+        self.phone.set_areas(["reminders"])
+        # The copy should be gone
+        self.assertIsNone(self.phone.copy("calendar"))
+        # read should give the "turned off" error
+        answer = json.loads(self.phone.read("phone_calendar_events", {}))
+        self.assertIn("turned off", answer["error"])
+
+    # 7. cache status / cache wipe
+
+    def test_cache_status_and_wipe(self):
+        """cache status and cache wipe."""
+        self.phone.set_areas(["calendar", "reminders"])
+        # Both off initially
+        result = device.slash(self.phone, ["cache", "status"])
+        self.assertIn("calendar off", result)
+        self.assertIn("reminders off", result)
+        # Sync a copy
+        self._sync("calendar", self._fresh_calendar())
+        result = device.slash(self.phone, ["cache", "status"])
+        self.assertIn("calendar", result)
+        self.assertIn("reminders off", result)
+        # An empty calendar is a real calendar: an empty copy syncs and shows as 0 items.
+        self.assertEqual(self._sync("calendar", []), "redde-push device sync calendar 0")
+        self.assertEqual(len(json.loads(self.phone.read("phone_calendar_events", {}))["events"]), 0)
+        # Wipe just calendar
+        result = device.slash(self.phone, ["cache", "wipe", "calendar"])
+        self.assertEqual(result, "redde-push device cache wiped")
+        result = device.slash(self.phone, ["cache", "status"])
+        self.assertIn("calendar off", result)
+        # Bad kind is refused
+        result = device.slash(self.phone, ["cache", "wipe", "photos"])
+        self.assertIn("refused", result)
+
+    # 8. Bad syncs refused
+
+    def test_bad_syncs_refused(self):
+        """Bad syncs are refused."""
+        # >CACHE_MAX payload
+        big_items = [{"title": f"item{i}", "start": "2026-11-04T10:00"} for i in range(1000)]
+        result = self._sync("calendar", big_items)
+        self.assertIn("too big", result)
+        # Non-base64 junk
+        result = device.slash(self.phone, ["sync", "calendar", "not base64!"])
+        self.assertIn("refused", result)
+        # Non-list value
+        result = device.slash(self.phone, ["sync", "calendar", b64({"events": "not a list"})])
+        self.assertIn("refused", result)
+        # Kind photos is refused
+        result = device.slash(self.phone, ["sync", "photos", b64({"photos": []})])
+        self.assertIn("refused", result)
+        # A copy item without a string title is dropped, not fatal
+        items = [
+            {"title": "Valid", "start": "2026-11-04T10:00"},
+            {"start": "2026-11-04T11:00"},  # no title
+            {"title": 123, "start": "2026-11-04T12:00"},  # non-string title
+        ]
+        result = self._sync("calendar", items)
+        self.assertEqual(result, "redde-push device sync calendar 1")
 
 
 if __name__ == "__main__":

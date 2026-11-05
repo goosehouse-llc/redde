@@ -39,6 +39,43 @@ struct BotsTests {
         #expect(roster.messagingIsOn, "a profile set up as a bot turns messaging on")
     }
 
+    /// A chat long enough to be opened in pages: the roster says how long each bot's chat is
+    /// (`canonical_session.live_message_count`), and a long one is opened with a resume that
+    /// leaves its transcript on the host, read a page at a time (`Conversation.openLongBotChat`),
+    /// so the phone never drags thousands of messages through the main actor to open the main
+    /// profile's Bot Chat, which is kept forever (issue 47).
+    @Test func aLongChatIsKnownByTheCountTheRosterGives() throws {
+        let roster = try roster("""
+            {"profiles": [
+              {"name": "default", "is_default": true, "ui_meta_revisions": {},
+               "canonical_session": {"id": "d1", "resolved_id": "d1", "live_message_count": 2420}},
+              {"name": "scout", "ui_meta_revisions": {},
+               "canonical_session": {"id": "s1", "resolved_id": "s1", "live_message_count": 24}},
+              {"name": "writer", "ui_meta_revisions": {},
+               "canonical_session": {"id": "w1", "resolved_id": "w1"}},
+              {"name": "quiet", "ui_meta_revisions": {}, "canonical_session": null}]}
+            """)
+        let main = try #require(roster.bots.first { $0.isDefault })
+        #expect(main.chatMessages == 2420 && main.chatIsLong, "the main Bot Chat is the one that gets long")
+        #expect(roster.bots.first { $0.name == "scout" }?.chatMessages == 24)
+        #expect(roster.bots.first { $0.name == "scout" }?.chatIsLong == false)
+        #expect(roster.bots.first { $0.name == "writer" }?.chatMessages == nil,
+                "a host that sends no count: the chat opens the way it always has")
+        #expect(roster.bots.first { $0.name == "writer" }?.chatIsLong == false)
+        #expect(roster.bots.first { $0.name == "quiet" }?.chatIsLong == false)
+    }
+
+    /// The line the two opens meet at: a chat one page can hold opens whole
+    /// (`HermesServeClient.transcript(stored:)` reads 500 of them).
+    @Test func aChatOnePageCanHoldOpensWhole() {
+        var bot = HermesBot(name: "x", isDefault: false)
+        #expect(bot.chatMessages == nil && !bot.chatIsLong, "unknown: opens the way it always has")
+        bot.chatMessages = HermesBot.longChat
+        #expect(!bot.chatIsLong)
+        bot.chatMessages = HermesBot.longChat + 1
+        #expect(bot.chatIsLong)
+    }
+
     @Test func theListShowsBotsOnlyOnceThereIsMoreThanTheMainProfile() throws {
         let roster = try roster(Self.listing)
         #expect(roster.listed.map(\.name) == ["default", "scout", "writer"], "the main one first, then the latest; a hidden bot left out")

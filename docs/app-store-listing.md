@@ -65,6 +65,31 @@ Two pictures App Store Connect has taken since October 2026, on the version page
 
 The words in both sit inside the "art safe area" of Apple's templates. Use Preview in App Store Connect before submitting: it shows each on iPhone and iPad, both ways up.
 
+## What's New in 2.3.3 (4000)
+Fixes for opening things from notifications.
+
+• Tapping a briefing's notification opens the briefing. Before, Redde opened without it and counted it as read, so it didn't show in the unread briefings either. Thanks to the Redditor who reported it.
+• Tapping a watch's notification (“tell me when the price drops”) opens Watches & Follow-ups, with the whole update beside the watch. Before, it opened nothing.
+• Four other things that didn't open now do: a key your agent asks for, a pinned card, Watch This… on a message, and Make This a Routine.
+
+## Before submitting 2.3.3
+- The build is 2.3.3 (283): 2.3.2 (be43bd9) plus these fixes, from branch release-2.3.3. iPhone and iPad only.
+- Nothing new to declare: no new permissions, entitlements or data uses.
+
+## What's New in 2.3.2 (4000)
+Fixes and two things you asked for.
+
+• Listen in Dutch, Swedish, Polish, Danish, Norwegian, Russian, Turkish and Ukrainian. These languages were missing from Settings → Voice → Listening language: Apple's newer speech recognition doesn't have them, so Redde now listens in them with the recognition behind keyboard dictation. It runs on your iPhone, and nothing you say leaves it.
+• Your calendar choice now covers phone tools. With some calendars picked in Settings → Agent → Calendars, your agent reads and adds events only in those, also through Phone tools. Make one calendar for your agent and share only that.
+• Music and video keep playing when you open Redde. Only voice mode pauses them, and they come back when it ends.
+• The model picker names your server's model. "server default" marks the model your server is set to use, the Gateway default row names it, and the footer says which model new conversations start on.
+• New Chats Use the Server's Model, in Settings → Model: on, every new conversation starts on your server's model, and a pick changes only that conversation.
+
+## Before submitting 2.3.2
+- The build is 2.3.2 (281), archived from main. iPhone and iPad only: Mac 2.3 is still with App Review.
+- Seen on a phone: music playing on through opening Redde (#43); the model picker (#44, #45) on Marta. Not yet on a phone: listening in Dutch and the other seven (the simulator always uses dictation); the calendar choice was checked against real calendars in the simulator (DeviceCalendarChoiceTests).
+- Nothing new to declare: no new permissions, entitlements or data uses.
+
 ## What's New in 2.3.1 (4000)
 Your agent, ahead of your day. New cards. Redde for Mac. And 17 languages.
 

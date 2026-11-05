@@ -1,3 +1,9 @@
+> **In plain English:** you may use, copy, change and share Redde for anything except making
+> a competing product or service from it — personal use, work use, learning, research and
+> sending fixes back are all fine. Two years after each version comes out, that version is also
+> yours under the MIT license: anything goes, as long as the copyright notice stays. This note
+> is a summary only; the license below is what counts.
+
 # Functional Source License, Version 1.1, MIT Future License
 
 ## Abbreviation

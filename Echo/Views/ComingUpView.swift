@@ -26,7 +26,7 @@ final class ComingUpModel {
         set { UserDefaults.standard.set(newValue, forKey: Self.marksKey) }
     }
 
-    static let needsPlugin = String(localized: "Skipping one run of a repeating job needs the Redde plugin 1.15 on your Hermes. Update it in Settings → Redde Plugin, or pause the job instead.",
+    static let needsPlugin = String(localized: "Skipping one run of a repeating job needs the Redde plugin 1.16 on your Hermes. Update it in Settings → Redde Plugin, or pause the job instead.",
                                     comment: "Coming Up: Skip on a server whose Redde plugin is older than 1.15")
 
     func load() async {
@@ -97,7 +97,7 @@ final class ComingUpModel {
                 let answer = try await command("skip \(job.profile ?? "default") \(job.id) \(Int(run.timeIntervalSince1970))")
                 if ComingUp.pluginSkipped(answer) { await load(); return }
                 if let state = try? await HermesServeClient.shared.pushPlugin(), let version = state.version,
-                   PushPlugin.isOlder(version, than: "1.15.0") {
+                   PushPlugin.isOlder(version, than: "1.16.0") {
                     notice = Self.needsPlugin
                     return
                 }
@@ -239,7 +239,7 @@ struct ComingUpList: View {
             }
             Section {
             } footer: {
-                Text("Skip passes over one run; Pause stops a job until you resume it. Skipping a run of a repeating job needs the Redde plugin 1.15 on your Hermes. Leave-By Alerts are skipped on this device.",
+                Text("Skip passes over one run; Pause stops a job until you resume it. Skipping a run of a repeating job needs the Redde plugin 1.16 on your Hermes. Leave-By Alerts are skipped on this device.",
                      comment: "Coming Up: the footer")
             }
         }

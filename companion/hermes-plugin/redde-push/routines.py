@@ -450,7 +450,7 @@ class Routines:
                     # First seen, or never run: nothing to say yet.
                     if key not in seen or not last or seen[key] == last:
                         continue
-                    # A reminder told as its run started (remind.py, 1.16.1): said already.
+                    # A reminder told as its run started (remind.py, 1.14.6): said already.
                     if told and remind.what(job) and remind.told_lately(self.store, key, clock):
                         continue
                     failed = job.get("last_status") == "error"

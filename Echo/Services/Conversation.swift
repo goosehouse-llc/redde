@@ -1669,11 +1669,39 @@ final class Conversation {
 
     /// Opens a bot's chat (the Dashboard's Bots): its one conversation, found on the server or
     /// made there the first time. `mainName` is what the main profile goes by when it has no name.
+    /// A long chat opens in pages (`openLongBotChat`); the main profile's Bot Chat, kept forever,
+    /// is the one that gets there.
     func openBot(_ bot: HermesBot, mainName: String) async throws {
         if bot.viaAPI { return try await openAPIBot(bot, mainName: mainName) }
         let (stored, isNew) = try await dashboard.botChat(for: bot)
-        try await loadServeSession(HermesSessionsAPI.SessionSummary(id: stored), bot: BotRef(profile: bot.name, name: bot.label(mainName: mainName)),
-                                   isNew: isNew)
+        let ref = BotRef(profile: bot.name, name: bot.label(mainName: mainName))
+        if !isNew, bot.chatIsLong { return try await openLongBotChat(stored: stored, bot: ref) }
+        try await loadServeSession(HermesSessionsAPI.SessionSummary(id: stored), bot: ref, isNew: isNew)
+    }
+
+    /// A bot's chat too long to resume whole (`HermesBot.chatIsLong`): the runtime is bound with
+    /// a resume that leaves the transcript on the host (`omit_messages`, as the Desktop opens a
+    /// session), and the transcript's newest page is read from the Dashboard's messages route.
+    /// That is the shape a Kanban worker's transcript already opens in (`loadServeSession`'s
+    /// `workerRun` branch). Only the newest page shows: older messages stay on the host, and the
+    /// agent still has the whole chat.
+    private func openLongBotChat(stored: String, bot: BotRef) async throws {
+        _ = try await dashboard.resume(stored: stored, withMessages: false)
+        let summary = HermesSessionsAPI.SessionSummary(id: stored)
+        let page: [HermesSessionsAPI.StoredMessage]
+        do {
+            page = try await dashboard.transcript(stored: stored)
+        } catch {
+            // Nothing to read pages from (a bad moment, a host that shouldn't be here): the
+            // whole transcript, as any chat opens.
+            return try await loadServeSession(summary, bot: bot, isNew: false)
+        }
+        var messages = Self.mapStored(page)
+        TodoList.resolve(&messages)
+        ReplyCards.resolve(&messages)
+        TodoList.reconcile(&messages, with: dashboard.hostTodos[summary.id])
+        adopt(serverSession: summary, messages: messages, bot: bot)
+        await rejoinIfWaiting()
     }
 
     /// An API bot's chat (`APIBot`): its profile's "Bot Chat" at /p/<profile>/, found by its title or
