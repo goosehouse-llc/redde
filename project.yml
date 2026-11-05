@@ -49,8 +49,8 @@ settings:
     SWIFT_STRICT_CONCURRENCY: complete
     SWIFT_TREAT_WARNINGS_AS_ERRORS: true
     CODE_SIGN_STYLE: Automatic
-    MARKETING_VERSION: "2.3.2"
-    CURRENT_PROJECT_VERSION: "281"
+    MARKETING_VERSION: "2.3.3"
+    CURRENT_PROJECT_VERSION: "282"
     ENABLE_USER_SCRIPT_SANDBOXING: true
     # Translations: every target's text is pulled into the String Catalog beside its code
     # (Localizable.xcstrings in each target's folder), which the build fills with the English.

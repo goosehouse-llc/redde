@@ -155,8 +155,9 @@ struct ContentView: View {
         }) { SetupCodeSheet(offer: $0) }
         .sheet(item: $pushOffer) { PushPairingSheet(offer: $0) }
         .sheet(item: $whatsNew) { WhatsNewView(release: $0, wide: sizeClass == .regular) }
-        #if DEBUG
-        .sheet(isPresented: $showProfilePicker) { NavigationStack { ProfilePickerView() } }
+        // In every build (11-04): these five sat inside the DEBUG block below since they were added,
+        // so a Release build never opened a briefing, a key asked for, a pinned card, a watch draft
+        // or Make This a Routine.
         .modifier(WatchDraftSheet())
         .modifier(BriefingSheets())
         .modifier(KeyRequestSheets())
@@ -166,6 +167,8 @@ struct ContentView: View {
             setDrawer(open: false)
         })
         .sheet(isPresented: $makingRoutine) { RoutineSheet(conversation: conversation) }
+        #if DEBUG
+        .sheet(isPresented: $showProfilePicker) { NavigationStack { ProfilePickerView() } }
         .sheet(isPresented: $showTips) { NavigationStack { TipJarView() } }
         .sheet(isPresented: $showServers) { NavigationStack { ServersView() } }
         .sheet(isPresented: $showPush) { NavigationStack { PushSettingsView() } }

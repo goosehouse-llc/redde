@@ -65,6 +65,16 @@ Two pictures App Store Connect has taken since October 2026, on the version page
 
 The words in both sit inside the "art safe area" of Apple's templates. Use Preview in App Store Connect before submitting: it shows each on iPhone and iPad, both ways up.
 
+## What's New in 2.3.3 (4000)
+A fix for opening things from notifications.
+
+• Tapping a briefing's notification opens the briefing. Before, Redde opened without it and counted it as read, so it didn't show in the unread briefings either. Thanks to the Redditor who reported it.
+• Four other things that didn't open now do: a key your agent asks for, a pinned card, a draft from your Apple Watch, and Make This a Routine.
+
+## Before submitting 2.3.3
+- The build is 2.3.3 (282): 2.3.2 (be43bd9) plus this one fix, from branch release-2.3.3. iPhone and iPad only.
+- Nothing new to declare: no new permissions, entitlements or data uses.
+
 ## What's New in 2.3.2 (4000)
 Fixes and two things you asked for.
 
