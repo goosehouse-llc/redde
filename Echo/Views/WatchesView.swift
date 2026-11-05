@@ -121,6 +121,8 @@ enum Watches {
 final class WatchDraft {
     static let shared = WatchDraft()
     var text: String?
+    /// A watch's notification, tapped: the Watches list open over the chat.
+    var showingWatches = false
 
     func start(_ text: String) { self.text = String(text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(300)) }
 }
@@ -132,6 +134,19 @@ struct WatchDraftSheet: ViewModifier {
     func body(content: Content) -> some View {
         content.sheet(isPresented: Binding(get: { draft.text != nil }, set: { if !$0 { draft.text = nil } })) {
             NewWatchView(text: draft.text ?? "")
+        }
+        .sheet(isPresented: $draft.showingWatches) { WatchesSheet() }
+    }
+}
+
+/// Watches & Follow-ups on its own, with Done: what a watch's notification opens.
+struct WatchesSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            WatchesView()
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
     }
 }
@@ -145,16 +160,23 @@ struct WatchesView: View {
     @State private var adding = false
 
     private var watches: [CronJob] { jobs.filter { $0.name.hasPrefix(Watches.watchTag) } }
+    /// Updates whose watch isn't in the list (it couldn't be loaded, or is gone): shown on their
+    /// own, so what a notification said can always be read here.
+    private var unlisted: [WatchReport] {
+        let listed = Set(watches.compactMap { Watches.id(of: $0) })
+        return reports.values.filter { !listed.contains($0.id) }.sorted { $0.at > $1.at }
+    }
     private var followUps: [CronJob] { jobs.filter { $0.name.hasPrefix(Watches.followUpTag) }.sorted { ($0.nextRunAt ?? .distantFuture) < ($1.nextRunAt ?? .distantFuture) } }
 
     var body: some View {
         List {
             Section {
-                if watches.isEmpty, !loading {
+                if watches.isEmpty, unlisted.isEmpty, !loading {
                     Text("Ask your agent to keep an eye on something: a price, a parcel, a page, a pull request, a sensor at home. It looks on a schedule and tells you only when it changes.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
                 ForEach(watches) { watchRow($0) }
+                if !loading { ForEach(unlisted, id: \.id) { reportRow($0) } }
                 Button("New Watch", systemImage: "plus") { adding = true }
             } header: { Text("Watches") }
             Section {
@@ -195,7 +217,7 @@ struct WatchesView: View {
             }
             if let line = who(job) { Text(line).font(.caption).foregroundStyle(.secondary) }
             if let report {
-                Text(report.text).font(.callout).foregroundStyle(report.failed ? .red : .primary).lineLimit(3)
+                Text(report.text).font(.callout).foregroundStyle(report.failed ? .red : .primary).textSelection(.enabled)
                 Text(report.at, style: .relative).font(.caption).foregroundStyle(.secondary)
             } else {
                 Text(job.lastRunAt == nil ? String(localized: "Not looked yet") : String(localized: "Nothing changed so far"))
@@ -208,6 +230,16 @@ struct WatchesView: View {
             Button(job.state == .paused ? "Resume" : "Pause", systemImage: job.state == .paused ? "play" : "pause") { pause(job) }
             Button("Stop Watching", systemImage: "trash", role: .destructive) { remove(job) }
         }
+    }
+
+    private func reportRow(_ report: WatchReport) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(report.title).font(.body.weight(.semibold)).lineLimit(2)
+            if !report.agent.isEmpty { Text(report.agent).font(.caption).foregroundStyle(.secondary) }
+            Text(report.text).font(.callout).foregroundStyle(report.failed ? .red : .primary).textSelection(.enabled)
+            Text(report.at, style: .relative).font(.caption).foregroundStyle(.secondary)
+        }
+        .swipeActions { Button("Delete", systemImage: "trash", role: .destructive) { WatchReport.forget(report.id); reports = WatchReport.all() } }
     }
 
     private func followUpRow(_ job: CronJob) -> some View {
