@@ -42,7 +42,9 @@ _SCHEDULED = re.compile(
 NOTE = ("[Redde: if you make a scheduled job for this, make it yourself with cronjob_manage (don't hand the user a "
         "command), start its name with \"[redde-notify] \" (\"[redde-notify] Daily meeting brief\") and deliver it "
         "\"local\": each run's answer then reaches the user's iPhone as a notification through Redde, so no chat "
-        "platform is needed. Write the job's prompt so its answer is what they want to read.]")
+        "platform is needed. Write the job's prompt so its answer is what they want to read. If a run can find "
+        "nothing new (a check, a watch, a monitor), the prompt says to answer exactly [SILENT] then, never \"No "
+        "change\", and to keep nothing in files between runs: each run looks afresh.]")
 
 
 #: A scheduled run's answer goes to the phone as it is written (asked 2026-10-31, after the morning's
@@ -57,16 +59,34 @@ _NARRATION = re.compile(
     r"^(now\b|ok(ay)?\b|good\b|great\b|alright\b|all right\b|perfect\b|let me\b|let's\b|i'll\b|i will\b|"
     r"i have\b|i've\b|i now have\b|i've got\b|i need to\b|first,|next,|here's\b|here is\b|time to\b)", re.IGNORECASE)
 _RULE = re.compile(r"^\s*([-*_])(\s*\1){2,}\s*$")
+#: An answer whose last word is that nothing changed ("No change.", "**Nothing new.**"): a run that had
+#: nothing to tell, as quiet as [SILENT] (2026-11-05: a Strata watch Sol wrote said "No change" to the
+#: phone every four hours, its own prompt asking for that over Hermes's [SILENT]).
+_NO_NEWS = re.compile(r"(no (new )?changes?|nothing (new|changed|to report)|no (new )?updates?|no news)"
+                      r"( (since|from) (the )?(last|previous) (check|run|look|time))?( (yet|today|so far))?", re.IGNORECASE)
+
+
+#: How Hermes writes a run that said nothing (0.22): its record's status line, or a script gate's note.
+_QUIET_STATUS = re.compile(r"^\*\*Status:\*\*\s*(silent|no_change)\b", re.IGNORECASE | re.MULTILINE)
+_GATE_SKIPPED = re.compile(r"wakeAgent\s*=\s*false|agent skipped", re.IGNORECASE)
+#: Hermes's other words for silence, alone (`gateway.response_filters`: SILENT, NO_REPLY, NO REPLY).
+_BARE_SILENCE = re.compile(r"(silent|no[_ ]reply)[.!]?", re.IGNORECASE)
+
+
+def quiet_record(text: str) -> bool:
+    """A run's record (no "## Response" in it) that says the run was quiet."""
+    return bool(_QUIET_STATUS.search(text or "") or _GATE_SKIPPED.search(text or ""))
 
 
 def settle(words: str) -> tuple[str, bool, bool]:
     """A run's answer as the person should read it: (words, silent, failed). `[SILENT]` anywhere in
     it is silence (Hermes keeps quiet only for exactly that, and models write it after a line of
-    their own); `[CRON_FAILURE]` is a failure, said in what follows it; and the model's account of
+    their own), and so is a last paragraph that only says nothing changed (`_NO_NEWS`);
+    `[CRON_FAILURE]` is a failure, said in what follows it; and the model's account of
     what it was doing ahead of the answer ("Now I have everything. Let me compose the
     notification." and a "---") is left out."""
     text = (words or "").strip()
-    if "[SILENT]" in text.upper():
+    if "[SILENT]" in text.upper() or _BARE_SILENCE.fullmatch(text):
         return "", True, False
     if text.upper().startswith("[CRON_FAILURE]"):
         return text[len("[CRON_FAILURE]"):].strip(), False, True
@@ -81,6 +101,8 @@ def settle(words: str) -> tuple[str, bool, bool]:
     while len(paragraphs) > 1 and len(paragraphs[0]) <= 300 and all(
             _NARRATION.match(s) for s in re.split(r"(?<=[.:!])\s+", paragraphs[0]) if s.strip()):
         paragraphs = paragraphs[1:]
+    if paragraphs and _NO_NEWS.fullmatch(paragraphs[-1].strip("*_`#> \t").rstrip(".!").strip("*_` ")):
+        return "", True, False
     return "\n\n".join(paragraphs), False, False
 
 
@@ -131,14 +153,34 @@ class Stores:
         return [j for j in (data.get("jobs") if isinstance(data, dict) else data) or [] if isinstance(j, dict)]
 
     def output(self, home: Path, job_id: str) -> str:
-        """The latest run's answer: what follows its "## Response", or the whole of it."""
+        """The latest run's answer: what follows its "## Response", or the whole of it; nothing for a
+        run Hermes recorded as quiet (issue 55: a script job's "**Status:** silent (wakeAgent=false)",
+        "silent (empty output)", a monitor's "no_change", a script gate's "agent skipped"), as
+        Hermes's own reader of these records passes them over (cron/scheduler_prompt.py)."""
         folder = home / "cron" / "output" / job_id
         try:
             latest = max(folder.glob("*.md"), key=lambda p: p.stat().st_mtime)
             text = latest.read_text()
         except (OSError, ValueError):
             return ""
-        return text.rpartition("## Response")[2].strip() if "## Response" in text else text.strip()
+        if "## Response" in text:
+            return text.rpartition("## Response")[2].strip()
+        if quiet_record(text):
+            return ""
+        return text.strip()
+
+    def said_nothing(self, home: Path, job_id: str) -> bool:
+        """The latest run's record is there and says nothing: quiet (`quiet_record`) or an empty
+        "## Response". (No record at all isn't this: the run is still told of, as before.)"""
+        folder = home / "cron" / "output" / job_id
+        try:
+            latest = max(folder.glob("*.md"), key=lambda p: p.stat().st_mtime)
+            text = latest.read_text()
+        except (OSError, ValueError):
+            return False
+        if "## Response" in text:
+            return not text.rpartition("## Response")[2].strip()
+        return quiet_record(text)
 
     def name(self, home: Path, profile: str) -> str:
         """What the bot is called (its Bot Mode title), or its profile's name. Hermes's own reader
@@ -209,8 +251,9 @@ class Routines:
         with self.store.rooms_lock("routines") as mine:
             if not mine:
                 return 0
-            from . import ideas   # (here: ideas reaches back to this module for Stores)
+            from . import ideas, remind   # (here: both reach back to this module)
             seen, now = self.store.routine_runs(), {}
+            clock = time.time()
             for profile, home in self.stores.homes():
                 for job in self.stores.jobs(home):
                     watching = watches.is_watch(job)
@@ -223,9 +266,16 @@ class Routines:
                     # First seen, or never run: nothing to say yet.
                     if key not in seen or not last or seen[key] == last:
                         continue
+                    # A reminder told as its run started (remind.py, 1.14.6): said already.
+                    if told and remind.what(job) and remind.told_lately(self.store, key, clock):
+                        continue
                     failed = job.get("last_status") == "error"
                     words = (f"It didn't finish: {job.get('last_error') or 'an error'}" if failed
                              else self.stores.output(home, str(job["id"])))
+                    # A run Hermes recorded as saying nothing (a quiet record, an empty answer) sends
+                    # nothing (issue 55).
+                    if not failed and self.stores.said_nothing(home, str(job["id"])):
+                        continue
                     if not failed and not watching:
                         words, silent, failed = settle(words)
                         if silent:

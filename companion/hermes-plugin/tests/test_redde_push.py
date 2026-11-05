@@ -826,6 +826,17 @@ class HookTests(unittest.TestCase):
         self.later.pass_(core.Turns.REPORT + 1)
         self.assertEqual(len(self.sent()), 3)
 
+    def test_a_scheduled_runs_quiet_answer_isnt_pushed_under_notify_all(self):
+        """Issue 55: under Notify All a cron turn's [SILENT] (or a watch's NOTHING NEW) went out as a reply."""
+        plugin._store.set_notify_all(True)
+        for quiet in ("[SILENT]", "NOTHING NEW", "Checked.\n\nNo change.", "SILENT"):
+            plugin._on_reply(session_id="cron_ab_1", platform="cron", turn_id="t", assistant_response=quiet)
+        self.later.pass_(1000)
+        self.assertEqual(self.sent(), [])
+        plugin._on_reply(session_id="cron_ab_2", platform="cron", turn_id="t", assistant_response="v1.2 is out.")
+        self.later.pass_(1000)
+        self.assertEqual([n["b"] for n in self.sent()], ["v1.2 is out."], "a run that says something still does")
+
     def test_an_empty_reply_and_a_hook_called_oddly_send_nothing_and_raise_nothing(self):
         plugin._on_reply(session_id="api_9", assistant_response="   ", platform="api_server")
         plugin._on_reply(session_id="api_9", assistant_response=None, platform="api_server")

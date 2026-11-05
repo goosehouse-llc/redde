@@ -34,7 +34,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import calls, cards, core, followups, headsup, ideas, keys, leave, qr, rooms, routines, watches
+from . import calls, cards, core, followups, headsup, ideas, keys, leave, qr, remind, rooms, routines, watches
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
 
 log = logging.getLogger("redde_push")
@@ -82,6 +82,25 @@ def _to_widget(title: str, text: str, start: str = "", end: str = "") -> int:
     if not devices:
         return 0
     return pusher.send(devices, core.widget_note(title, text, start, end))
+
+
+def _main_home() -> Path:
+    return calls.caller(_home())[1]
+
+
+def _remind(profile: str, home: Path, job: dict, text: str) -> int:
+    """A reminder's notification, as its run starts (remind.py): the same note the reader of the
+    schedules would send after the run, to the same phones. To how many it went."""
+    root = _main_home()
+    store = _store_in(root)
+    targets = store.unmuted(store.devices, "b:" + profile)
+    if not targets:
+        return 0
+    main, pusher = _state()
+    sender = pusher if store is main else core.Pusher(store, title_of=_title)
+    title = routines.untagged(remind.plain(str(job.get("name") or "")))
+    made = core.routine_note(profile, routines.Stores(root).name(home, profile), title, text, brief=str(job.get("id") or ""))
+    return sender.send(targets, made)
 
 
 _stores: dict[str, core.Store] = {}
@@ -198,6 +217,11 @@ def _on_reply(session_id: str = "", assistant_response: str = "", platform: str 
         turns, waiting = _watchers()
         turns.ended(session_id)
         waiting.forget(session_id)
+        # A scheduled run's quiet answer ([SILENT], a watch's NOTHING NEW, "No change."), which
+        # Hermes doesn't deliver, isn't pushed as a reply either, under Notify All (issue 55).
+        if platform == "cron" and isinstance(assistant_response, str) and (
+                routines.settle(assistant_response)[1] or watches.quiet(assistant_response)):
+            return
         if isinstance(assistant_response, str) and assistant_response.strip():
             # A reply nobody asked for just now, in a conversation whose handed-off task just
             # came back: Hermes started this turn itself, to say what came of the task.
@@ -220,6 +244,10 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_m
             _watchers()[0].began(session_id, turn_id)
     except Exception:
         log.debug("redde-push: turn hook failed", exc_info=True)
+    try:
+        cards.turn_began(session_id)   # a reminder card needs this turn's setter (1.14.6)
+    except Exception:
+        log.debug("redde-push: card turn start failed", exc_info=True)
     notes = []
     try:
         cards.announce()   # its calls told to the Dashboard's clients as they happen (issue 35)
@@ -283,6 +311,11 @@ def _on_answer(session_id: str = "", platform: str = "", assistant_message=None,
     when a plugin's `pre_tool_call` is still busy with another call, and no notification is
     worth a refused tool."""
     try:
+        # A reminder card counts only after its reminder is set (1.14.6): seen here, before the tools run.
+        cards.saw_calls(session_id, core.tool_calls(assistant_message))
+    except Exception:
+        log.debug("redde-push: card setter watch failed", exc_info=True)
+    try:
         turns, waiting = _watchers()
         turns.moved(session_id)
         platform = platform or _platforms.get(session_id, "")
@@ -304,6 +337,15 @@ def _on_answer(session_id: str = "", platform: str = "", assistant_message=None,
             waiting.watch(session_id)
     except Exception:
         log.debug("redde-push: answer hook failed", exc_info=True)
+
+
+def _on_tool_done(tool_name: str = "", args=None, result=None, session_id: str = "", **_) -> None:
+    """`post_tool_call`: a reminder, timer, alarm or job tool finished; its job id goes onto the
+    reminder card that follows (1.14.6). Nothing else, and quickly: it runs after every tool."""
+    try:
+        cards.saw_result(session_id, tool_name, args, result)
+    except Exception:
+        log.debug("redde-push: tool result watch failed", exc_info=True)
 
 
 def _on_request_error(session_id: str = "", platform: str = "", retryable=None, reason: str = "", status_code=None, error=None, **_) -> None:
@@ -581,6 +623,7 @@ def register(ctx) -> None:
     ctx.register_hook("post_llm_call", _on_reply)
     ctx.register_hook("pre_api_request", _on_request)
     ctx.register_hook("post_api_request", _on_answer)
+    ctx.register_hook("post_tool_call", _on_tool_done)
     ctx.register_hook("api_request_error", _on_request_error)
     ctx.register_hook("on_session_end", _on_turn_end)
     ctx.register_hook("subagent_stop", _on_task_done)
@@ -591,6 +634,10 @@ def register(ctx) -> None:
         known = False
     if known:
         ctx.register_hook("agent_loop_stopped", _on_stopped)
+    # A reminder's run answered here, with no model (remind.py, 1.14.6; Hermes 0.22+ has middleware).
+    register_middleware = getattr(ctx, "register_middleware", None)
+    if callable(register_middleware):
+        register_middleware("llm_execution", remind.Reminders(_main_home, lambda: _store_in(_main_home()), _remind).turn)
     ctx.register_command("redde-push", _slash, description="Used by the Redde app to follow a conversation",
                          args_hint="watch <session> <device> | rooms <device> <room,...>")
     # Phone tools (device.py): offered to the agent only for what the phone has turned on.

@@ -116,6 +116,48 @@ async def main():
     left = left if isinstance(left, list) else left.get("jobs") or []
     report(not any(j.get("id") == job_id for j in left), "and deleted")
 
+    # A reminder (remind.py, 1.16.1): its run is answered by the plugin with no model, and the phone
+    # is told once, as the run starts ("Remind me to stretch at 8:05" ran on the model 2026-11-03,
+    # which tried to set a phone alarm and said it couldn't, four minutes late).
+    made = rest(opener, "POST", "/api/cron/jobs?profile=default",
+                {"name": "[redde-notify] Stretch", "schedule": "0 7 * * *", "prompt": "Tell the person in one line: stretch.",
+                 "deliver": "local"})
+    made = made.get("job") or made
+    reminder = made.get("id") or made.get("job_id")
+    await asyncio.sleep(35)   # the plugin's reader sees it once before it runs
+
+    def asked_reminder():
+        return sum(1 for line in open(check.HITS) if line.strip() and json.loads(line).get("reminder"))
+
+    def stretches():
+        return [n for n in phone.notes() if n.get("k") == "routine" and n.get("t") == "Stretch"]
+
+    asked_before, started = asked_reminder(), time.time()
+    rest(opener, "POST", f"/api/cron/jobs/{reminder}/trigger?profile=default")
+    note, deadline = None, time.time() + 120
+    while time.time() < deadline and note is None:
+        note = (stretches() or [None])[0]
+        await asyncio.sleep(0.5)
+    told_after = time.time() - started
+    ran, deadline = {}, time.time() + 120
+    while time.time() < deadline and not ran.get("last_run_at"):
+        ran = rest(opener, "GET", f"/api/cron/jobs/{reminder}?profile=default")
+        ran = ran.get("job") or ran
+        await asyncio.sleep(2)
+    await asyncio.sleep(40)   # the reader has looked again since the run ended
+    asked = asked_reminder() - asked_before
+    print(f"  info  reminder: told after {told_after:.1f} s, model asked {asked}x, run "
+          f"{json.dumps({k: ran.get(k) for k in ('last_run_at', 'last_status', 'last_error')})}, notes {len(stretches())}")
+    if release() < (0, 22, 0):
+        print("  info  (no middleware before 0.22: the reminder runs on the model, as before)")
+    else:
+        report(note is not None and note.get("b") == "Reminder: stretch." and note.get("i") == reminder,
+               "a reminder's run tells the phone 'Reminder: stretch.'", json.dumps(note)[:300])
+        report(asked == 0, "with no model asked", f"{asked} model call(s)")
+        report(ran.get("last_status") == "ok", "the run ends well", json.dumps(ran)[:300])
+        report(len(stretches()) == 1, "and the phone is told once", json.dumps(stretches())[:400])
+    rest(opener, "DELETE", f"/api/cron/jobs/{reminder}?profile=default")
+
     # On its own: the gateway's ticker fires a bot's schedule when it is due (from 0.21.5 it ticks
     # every profile's store; 0.21.0 and 0.21.3 only with gateway.multiplex_profiles on).
     before = await bot_chat_messages(dash, stored)

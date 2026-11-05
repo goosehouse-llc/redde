@@ -307,6 +307,8 @@ class Handler(BaseHTTPRequestHandler):
                                 "redde_note": "[Redde: asked about" in last_user,
                                 # Calls (lab.sh calls): the plugin's word on a turn asking to be called.
                                 "call_note": "[Redde: to ring the user's iPhone" in last_user,
+                                # A reminder's run (lab.sh routines): the plugin answers it, so the model is never asked.
+                                "reminder": "Tell the person in one line" in last_user,
                                 # What the last tool answered, when the model is shown one.
                                 "tool_said": text_of(messages[-1])[:300] if messages and messages[-1].get("role") == "tool" else None}) + "\n")
         text, call = f"[{NAME}:{model}]", None

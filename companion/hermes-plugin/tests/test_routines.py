@@ -76,6 +76,29 @@ class RoutinesTests(unittest.TestCase):
         self.watch.look()
         self.assertEqual(self.sent, [], "a job that doesn't answer in a bot's chat, and a muted bot")
 
+    def test_a_run_hermes_recorded_as_quiet_sends_nothing(self):
+        """Issue 55: script jobs' and gated jobs' quiet records have no "## Response": the whole file
+        came back as the answer, and a note with the job's header went out."""
+        for record in ("# Cron Job: Backups\n\n**Status:** silent (wakeAgent=false)\n",
+                       "# Cron Job: Backups\n\n**Status:** silent (empty output)\n",
+                       "# Cron Job: Backups\n\n**Status:** no_change (agent run suppressed)\n",
+                       "# Cron Job: Backups\n\nScript gate returned `wakeAgent=false`, agent skipped.\n"):
+            self.assertTrue(routines.quiet_record(record), record)
+            self.sent.clear()
+            self.assertEqual(self.notify_run_record(record), [], record)
+        self.assertFalse(routines.quiet_record("# Cron Job: Backups\n\n**Status:** script failed\n\nNo disk."))
+        self.assertEqual(len(self.notify_run_record("# Cron Job: Backups\n\n**Status:** script failed\n\nNo disk.")), 1,
+                         "a record that isn't quiet still goes")
+
+    def notify_run_record(self, record):
+        home = self.job("default", last="2026-10-30T21:00:00", deliver="local", name="[redde-notify] Backups")
+        self.watch.look()
+        self.sent.clear()
+        self.output(home, record)
+        self.job("default", last=f"2026-10-31T21:{len(record) % 60:02d}:00", deliver="local", name="[redde-notify] Backups")
+        self.watch.look()
+        return self.sent
+
     def test_two_processes_reading_send_each_run_once(self):
         self.job("scout", last="2026-10-20T07:00:00")
         other = routines.Routines(core.Store(self.root), self.capture, routines.Stores(self.root))
@@ -167,6 +190,19 @@ class RoutinesTests(unittest.TestCase):
         self.assertEqual(routines.settle(kept)[0], kept, "a paragraph with a finding in it stays")
         whole = "Today was a quiet one.\n\nNothing else."
         self.assertEqual(routines.settle(whole)[0], whole)
+
+    def test_an_answer_that_only_says_nothing_changed_is_quiet(self):
+        for said in ("No change.", "**No changes.**", "Nothing new", "No updates since the last check.",
+                     "Checked all four sources; Qwen3.6 still doesn't run on the Mac engine.\n\nNo change."):
+            self.assertEqual(routines.settle(said), ("", True, False), said)
+        for said in ("No change to the other items, but the camera is $89 now.", "Price dropped to $89.\n\nNo change elsewhere?",
+                     "Today was a quiet one.\n\nNothing else."):
+            self.assertFalse(routines.settle(said)[1], said)
+        self.assertEqual(self.notify_run("Checked the docs.\n\nNo change."), [], "a [redde-notify] run that found nothing sends nothing")
+
+    def test_a_job_made_for_the_phone_is_told_to_stay_quiet_with_no_news(self):
+        self.assertIn("exactly [SILENT]", routines.NOTE)
+        self.assertIn("never \"No change\"", routines.NOTE)
 
     def test_a_scheduled_run_is_told_its_answer_goes_to_the_phone(self):
         store_in = lambda _: self.store

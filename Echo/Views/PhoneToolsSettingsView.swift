@@ -51,19 +51,11 @@ struct PhoneToolsSettingsView: View {
                                         .font(.footnote).foregroundStyle(.secondary)
                                 }
                             }
-                            // Which calendars it reads and adds to (`CalendarChoice`, asked on Reddit 2026-11-02).
-                            if area == .calendar, settings.phoneTools.access(.calendar) != .off {
-                                NavigationLink { CalendarsSettingsView() } label: {
-                                    Text(settings.agendaCalendars.isEmpty
-                                         ? String(localized: "Calendars it can see: all of them")
-                                         : String(localized: "Calendars it can see: \(settings.agendaCalendars.formatted(.list(type: .and)))"))
-                                }
-                                .font(.footnote)
-                            }
                             if area == .alarms, settings.phoneTools.access(.alarms) != .off, !alarmsShow {
                                 Button("Live Activities are off for Redde, and iOS neither shows nor sounds an alarm without them. Open Settings…") {
                                     if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                                 }
+                                .buttonStyle(.borderless)
                                 .font(.footnote)
                                 .foregroundStyle(.red)
                             }
@@ -76,8 +68,19 @@ struct PhoneToolsSettingsView: View {
                                 Button("iOS doesn't allow Redde this. Open Settings…") {
                                     if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                                 }
+                                .buttonStyle(.borderless)
                                 .font(.footnote)
                             }
+                        }
+                        // In a row of its own (11-04): in the picker's row, a tap on it opened the picker.
+                        // Which calendars it reads and adds to (`CalendarChoice`, asked on Reddit 2026-11-02).
+                        if area == .calendar, settings.phoneTools.access(.calendar) != .off {
+                            NavigationLink { CalendarsSettingsView() } label: {
+                                Text(settings.agendaCalendars.isEmpty
+                                     ? String(localized: "Calendars it can see: all of them")
+                                     : String(localized: "Calendars it can see: \(settings.agendaCalendars.formatted(.list(type: .and)))"))
+                            }
+                            .font(.footnote)
                         }
                     }
                 } header: {

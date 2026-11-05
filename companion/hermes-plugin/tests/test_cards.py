@@ -1068,3 +1068,73 @@ class ProductCheckTests(unittest.TestCase):
         json.loads(cards.handle({"cards": [{"type": "purchase", "items": [{"name": "No link", "pick": True}]}]}))
         self.assertEqual(self.web.fetched, [], "no links, nothing read")
         self.assertLess(len(json.dumps(cards.SCHEMA)), 6000)
+
+
+class ReminderSetTests(unittest.TestCase):
+    """1.14.6 (2026-11-03): a 'reminder' card only after a tool set, changed, cancelled or listed one
+    in the same turn; Sol had drawn two cards and said "Reminder set" with nothing set."""
+    CARD = {"type": "reminder", "kind": "reminder", "title": "Call dentist", "at": "2026-11-03T15:30:00-05:00"}
+
+    def setUp(self):
+        cards._TURN_TOOLS.clear()
+        self.session = "s-rem"
+        cards.turn_began(self.session)
+
+    def test_a_card_alone_is_sent_back_with_how_to_set_it(self):
+        answer = json.loads(cards.handle({"cards": [self.CARD]}, session_id=self.session))
+        self.assertIn("Nothing was set", answer["error"])
+        self.assertIn("cronjob_manage", answer["error"])
+        self.assertIn("[redde-notify]", answer["error"])
+        self.assertIn("phone_alarms_set", answer["error"])
+
+    def test_after_a_cron_job_it_shows_with_the_jobs_id(self):
+        cards.saw_calls(self.session, [("cronjob_manage", {"action": "create", "name": "[redde-notify] Call dentist"})])
+        cards.saw_result(self.session, "cronjob_manage", {"action": "create"}, json.dumps({"success": True, "job_id": "a1b2c3d4"}))
+        answer = json.loads(cards.handle({"cards": [dict(self.CARD)]}, session_id=self.session))
+        self.assertNotIn("error", answer)
+        self.assertEqual(answer["cards"][0]["job"], "a1b2c3d4")
+
+    def test_setters_through_each_route_count(self):
+        for name, arguments in (("phone_alarms_set", {}), ("phone_reminders_add", {}), ("mcp_calendar_create_reminder", {}),
+                                ("cronjob_manage", {"action": "update", "job_id": "x"}), ("cronjob_manage", {"action": "remove"}),
+                                ("tool_call", {"name": "cronjob_manage", "arguments": json.dumps({"action": "create"})}),
+                                ("cronjob_manage", {"action": "list"}), ("phone_alarms_list", {})):
+            cards.turn_began(self.session)
+            cards.saw_calls(self.session, [(name, arguments)])
+            self.assertNotIn("error", json.loads(cards.handle({"cards": [dict(self.CARD)]}, session_id=self.session)), name)
+
+    def test_other_tools_and_an_earlier_turn_dont(self):
+        cards.saw_calls(self.session, [("web_search", {"query": "dentist hours"}), ("redde_show", {"cards": []})])
+        self.assertIn("error", json.loads(cards.handle({"cards": [self.CARD]}, session_id=self.session)))
+        cards.saw_calls(self.session, [("cronjob_manage", {"action": "create"})])
+        cards.turn_began(self.session)   # the next turn starts with nothing set
+        self.assertIn("error", json.loads(cards.handle({"cards": [self.CARD]}, session_id=self.session)))
+
+    def test_other_cards_and_unknown_sessions_are_not_held(self):
+        self.assertNotIn("error", json.loads(cards.handle({"cards": [PLACES]}, session_id=self.session)))
+        self.assertNotIn("error", json.loads(cards.handle({"cards": [self.CARD]})))
+
+    def test_a_call_that_failed_sets_nothing(self):
+        """Hermes turning the job down, or the phone not answering, isn't a reminder set."""
+        for result in (json.dumps({"success": False, "error": "Invalid duration 'soon'"}),
+                       json.dumps({"error": "The phone didn't answer."}), "Error: no such job"):
+            cards.turn_began(self.session)
+            cards.saw_calls(self.session, [("cronjob_manage", {"action": "create"})])
+            cards.saw_result(self.session, "cronjob_manage", {"action": "create"}, result)
+            self.assertIn("Nothing was set", json.loads(cards.handle({"cards": [dict(self.CARD)]}, session_id=self.session))["error"], result)
+        # Tried again, and it worked: the card shows.
+        cards.saw_result(self.session, "cronjob_manage", {"action": "create"}, json.dumps({"success": True, "job_id": "b2c3d4e5"}))
+        answer = json.loads(cards.handle({"cards": [dict(self.CARD)]}, session_id=self.session))
+        self.assertNotIn("error", answer)
+        self.assertEqual(answer["cards"][0]["job"], "b2c3d4e5")
+        # One that worked stays set when a later one in the same turn fails.
+        cards.saw_result(self.session, "cronjob_manage", {"action": "create"}, json.dumps({"success": False, "error": "x"}))
+        self.assertNotIn("error", json.loads(cards.handle({"cards": [dict(self.CARD)]}, session_id=self.session)))
+
+    def test_the_note_says_how_and_comes_for_changes_and_cancels(self):
+        for asked in ("Remind me to call the dentist at 5", "Change the reminder “Call dentist”: 3:30 instead",
+                      "Cancel the reminder “Call dentist”", "move my alarm to 7", "set a timer for 12 minutes"):
+            self.assertIs(cards.more_note(asked), cards.REMINDER_NOTE, asked)
+        for words in ("cronjob_manage", "[redde-notify]", "repeat 1", "phone_alarms_set", "'update'", "'remove'",
+                      "already passed", "A card alone sets nothing"):
+            self.assertIn(words, cards.REMINDER_NOTE)

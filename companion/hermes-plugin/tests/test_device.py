@@ -95,6 +95,21 @@ class PhoneTools(unittest.TestCase):
         self.phone.answer(waiting(self.phone)[0]["id"], {"ok": False, "error": "The person said no on the iPhone."})
         self.assertEqual(call.done(), {"error": "The person said no on the iPhone."})
 
+    def test_a_scheduled_jobs_run_is_told_at_once_that_the_phone_cant_be_reached(self):
+        """2026-11-04: Morning Ideas asked the phone from its run, waited two minutes a call, tried again."""
+        self.phone.set_areas(["calendar"])
+        started = time.monotonic()
+        result = json.loads(self.phone.ask("phone_calendar_events", {}, session="cron_925a79849c90_20261104_073012"))
+        self.assertLess(time.monotonic() - started, 1)
+        self.assertIn("scheduled job", result["error"])
+        self.assertIn("don't call phone tools again", result["error"])
+        self.assertEqual(self.phone.waiting(), [], "no request is left for a phone that never comes")
+        # One with a way round it takes that way (the widget, by notification).
+        self.assertEqual(self.phone.ask("phone_calendar_events", {}, session="cron_925a79849c90_20261104_073012",
+                                        otherwise=lambda: "by note"), "by note")
+        # A chat's turn still waits for the phone.
+        self.assertIn("didn't answer", json.loads(self.phone.ask("phone_calendar_events", {}, session="20261104_073012_ab12cd", wait=0.3))["error"])
+
     def test_a_phone_that_does_not_answer_is_said_so(self):
         self.phone.set_areas(["calendar"])
         result = json.loads(self.phone.ask("phone_calendar_events", {}, wait=0.4))

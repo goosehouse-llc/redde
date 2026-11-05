@@ -14,8 +14,9 @@ enum FeedbackFold {
     /// called, the week ahead in a shape drawn as a calendar), so the jobs already on Hermes are said
     /// again once, the next time Redde comes forward. 3 (2026-10-31): Morning Ideas reads the calendar
     /// with one plain call (its 10-31 run guessed at arguments and batched calls, and stopped). 4
-    /// (2026-11-01): Heads-ups and the Week Ahead too (the heads-ups' 11-01 run hit `end_date`).
-    static let wording = 4
+    /// (2026-11-01): Heads-ups and the Week Ahead too (the heads-ups' 11-01 run hit `end_date`). 5
+    /// (2026-11-04): Morning Ideas writes IDEA lines, never suggest_to_user (Kapitsa broke its JSON 8 times).
+    static let wording = 5
     private static let wordingKey = "dailyJobsWording"
     private static var pending: Task<Void, Never>?
 

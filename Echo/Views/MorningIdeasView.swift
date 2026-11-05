@@ -82,12 +82,11 @@ enum MorningIdeas {
         Morning ideas. Look at the user's day: today's calendar and reminders, anything waiting on the kanban \
         board, and what they have asked you about lately. \(DailyJob.calendarCall("today's events", #"{"date": "today", "days": 1}"#)) \
         Think of up to five things you could do for them today \
-        that would save them time or that they would likely want done, and offer them with suggest_to_user, the \
-        most useful first, each with a short reason why now. Don't do any of them yet, and don't offer what they \
-        have already asked you to do. If nothing is worth offering, answer NOTHING NEW and stop. If suggest_to_user \
-        isn't among your tools, find it with tool_search first (Hermes keeps plugin tools there until asked for). \
-        If you can't call it at all, write the ideas as your answer instead, one per line, exactly \
-        "IDEA: <title> | <why now> | <the request, as they would say it>": Redde turns those lines into the cards.
+        that would save them time or that they would likely want done, the most useful first, each with a short \
+        reason why now. Don't do any of them yet, and don't offer what they have already asked you to do. Write \
+        them as your answer, one per line, exactly "IDEA: <title> | <why now> | <the request, as they would say it>", \
+        and nothing else: Redde turns those lines into the cards. Don't call suggest_to_user for these. If nothing is \
+        worth offering, answer NOTHING NEW.
         """
 
     static let job = DailyJob(
@@ -153,13 +152,13 @@ enum RoutineSuggestions {
     static let prompt = """
         Routine suggestions. Look over the user's conversations from the last two weeks (search them with your session \
         search tool) for things they asked you more than once on a rhythm: each morning, before a run, on Mondays, after \
-        work. For up to three that aren't scheduled already (look at your scheduled jobs), offer each with \
-        suggest_to_user: the title saying what and when ("Weather before your run, weekdays 6:30"), why saying how often \
+        work. For up to three that aren't scheduled already (look at your scheduled jobs), offer each as a line of your \
+        answer: the title saying what and when ("Weather before your run, weekdays 6:30"), why saying how often \
         they asked ("You asked on four mornings"), and the request: "Make this a routine: <what to do>, <when>. Set it up \
         as a scheduled job with cronjob_manage, its name starting [redde-notify] and delivered local, so its answer \
-        reaches my iPhone." Don't set anything up now. If nothing repeats, answer NOTHING NEW and stop. If \
-        suggest_to_user isn't among your tools, find it with tool_search first. If you can't call it at all, write \
-        each as a line of your answer instead, exactly "IDEA: <title> | <why> | <the request>".
+        reaches my iPhone." Write each exactly "IDEA: <title> | <why> | <the request>", one per line and nothing else: \
+        Redde turns those lines into the cards. Don't call suggest_to_user for these, and don't set anything up now. If \
+        nothing repeats, answer NOTHING NEW and stop.
         """
 
     static let job = DailyJob(

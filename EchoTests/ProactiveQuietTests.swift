@@ -65,7 +65,7 @@ struct ProactiveQuietTests {
         #expect(WeekAhead.job.days == "0" && RoutineSuggestions.job.days == "0" && EveningWrapUp.job.days == "*")
         #expect(WeekAhead.name.hasPrefix("[redde-notify] "), "the week ahead reaches the phone")
         #expect(!RoutineSuggestions.name.hasPrefix("[redde-notify]"), "suggestions come as idea cards, not as its answer")
-        #expect(RoutineSuggestions.prompt.contains("suggest_to_user"))
+        #expect(RoutineSuggestions.prompt.contains("\"IDEA: <title> | <why> | <the request>\""), "written lines, not a tool call (11-04)")
     }
 
     /// How Near goes up to a mile (asked 2026-10-31), in whole units either way, and a place saved

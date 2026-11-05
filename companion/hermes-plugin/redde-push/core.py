@@ -330,6 +330,24 @@ class Store:
         with self._lock:
             self._write("routine-runs.json", {"runs": runs})
 
+    def reminders_told(self) -> dict[str, float]:
+        """Reminders ("<profile>|<job>") told as their run started (`remind.py`), and when."""
+        with self._lock:
+            return {k: float(t) for k, t in (self._read("reminders-told.json").get("told") or {}).items()}
+
+    def tell_reminder(self, key: str) -> None:
+        with self._lock:
+            now = time.time()
+            told = {k: t for k, t in self.reminders_told().items() if t > now - 86400}
+            told[key] = now
+            self._write("reminders-told.json", {"told": told})
+
+    def untell_reminder(self, key: str) -> None:
+        with self._lock:
+            told = self.reminders_told()
+            if told.pop(key, None) is not None:
+                self._write("reminders-told.json", {"told": told})
+
     def leave_wakes(self) -> dict[str, list[dict]]:
         """Leave-By Alerts' traffic re-checks (`leave.py`): device id -> its wakes, each `i` the
         alert's opaque id, `t` the event's title, `w` when (seconds since 1970)."""

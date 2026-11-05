@@ -717,9 +717,10 @@ def handle(args, home=None, session_id: str = "", **_) -> str:
         return json.dumps({"error": "Cards are turned off in Redde on the phone (Settings, Agent, Cards in replies). Answer in words."})
     args = args if isinstance(args, dict) else {}
     listed = _listed(args)
-    wrong = held_to(session_id, listed)
+    wrong = held_to(session_id, listed) or unset_reminder(session_id, listed)
     if wrong:
         return json.dumps({"error": wrong})
+    back_reminders(session_id, listed)
     said, missed = [], []
     if isinstance(listed, list):
         prefs = preferences(home()) if home is not None else {}
@@ -854,7 +855,8 @@ _HOME_ACTS = re.compile(
     r"|\bhow (?:warm|cold|hot) is (?:it )?(?:in )?the house\b", re.IGNORECASE)
 #: Asked to be reminded, or for a timer, an alarm or a message at a time, in English: a 'reminder' card.
 _ASKS_REMINDER = re.compile(
-    r"\bremind (?:me|us)\b|\bset (?:a |an |me a )?(?:timer|alarm|reminder)\b|\b(?:timer|alarm|reminder) for\b|\bwake me(?: up)? at\b"
+    r"\bremind (?:me|us)\b|\b(?:change|move|cancel|delete|remove|stop|snooze)\b[^.?!]*\b(?:reminder|timer|alarm)\b"
+    r"|\bset (?:a |an |me a )?(?:timer|alarm|reminder)\b|\b(?:timer|alarm|reminder) for\b|\bwake me(?: up)? at\b"
     r"|\bevery (?:day|morning|evening|night|week|weekday|monday|tuesday|wednesday|thursday|friday|saturday|sunday)s?\b[^.?!]*"
     r"\b(?:tell|send|remind|message|text|give|ping)\b|\bschedule (?:a )?message\b|\bin \d+ (?:min(?:ute)?s?|hours?)\b[^.?!]*\b(?:tell|remind|ping)\b",
     re.IGNORECASE)
@@ -869,8 +871,16 @@ PURCHASE_NOTE = (f"[Redde: asked what to buy. Look it up with your tools first (
                  + ". Then answer in a line: don't list them again.]")
 HOME_NOTE = (f"[Redde: asked about the home. Do or read it with your Home Assistant tools first, then show the devices you touched or "
              f"were asked about with {TOOL} as a 'home' card: " + SHAPES["home"] + ". Then answer in a line.]")
-REMINDER_NOTE = (f"[Redde: asked to set a reminder, a timer, an alarm or a message at a time. Set it with your tools first, then show it "
-                 f"with {TOOL} as a 'reminder' card: " + SHAPES["reminder"] + ". Then answer in a line.")
+# 1.14.6 (2026-11-03): "remind me to call the dentist before closing" got a card and "Reminder set for 5
+# PM", then "3:30 instead" another card; nothing was ever set, so nothing went off. The note says how.
+REMINDER_NOTE = (f"[Redde: asked to set, change or cancel a reminder, a timer, an alarm or a message at a time. Do it for real "
+                 f"first: a reminder or a message at a time is a job with your cron tool (cronjob_manage, action 'create'): name "
+                 f"'[redde-notify] <what>', schedule its time as ISO with the person's offset (or 'in 20m'), repeat 1, prompt "
+                 f"'Tell the person in one line: <what>.' An alarm or a timer on their phone is phone_alarms_set, when phone tools "
+                 f"are on. Changing one is 'update' of that same job (action 'list' first for its job_id); cancelling is "
+                 f"'remove'. If that time has already passed today, ask, or set it for tomorrow and say so. Only then show it "
+                 f"with {TOOL} as a 'reminder' card, with 'job' set to its job_id: " + SHAPES["reminder"] + ". A card alone "
+                 f"sets nothing: never say it is set unless your tool set it. Then answer in a line.")
 COMPARE_NOTE = (f"[Redde: asked which is better. Look up what you need first, then show it with {TOOL} as a 'compare' card: "
                 + SHAPES["compare"] + ". Then answer in a line. Things to buy are a 'purchase' card instead.]")
 SCORE_NOTE = (f"[Redde: asked about a game. Look it up with your tools first (never guess a score or a time), then show it with "
@@ -1010,6 +1020,132 @@ def held_to(session: str, cards) -> str | None:
                 "you are about to place for them). Look them up first and never make up a price, a rating or a link. "
                 "The shape: " + SHAPES["purchase"])
     return None
+
+
+# ---- a reminder card is a reminder set (1.14.6)
+
+#: This turn's tools, by session, that set, change or read a reminder, a timer, an alarm or a
+#: scheduled job: {"set": bool, "seen": bool, "job": id or None, "at": when}. Started afresh when a
+#: turn begins (`turn_began`), filled from the model's answers (`saw_calls`, from `post_api_request`,
+#: before the tools run, so a card in the same answer counts) and from the tools' results
+#: (`saw_result`, from `post_tool_call`: the job's id).
+_TURN_TOOLS: dict[str, dict] = {}
+TURN_FOR = 30 * 60
+_SETS = ("create", "update", "remove", "delete", "pause", "resume", "add", "edit")
+_PHONE_SETS = ("phone_alarms_set", "phone_alarms_cancel", "phone_reminders_add", "phone_reminders_complete")
+_PHONE_READS = ("phone_alarms_list", "phone_reminders_list")
+
+
+def _setter(name: str, arguments) -> str | None:
+    """'set' for a call that sets, changes or cancels a reminder, a timer, an alarm or a scheduled
+    job; 'seen' for one that lists them; None otherwise. Through Hermes's `tool_call` bridge too."""
+    arguments = arguments if isinstance(arguments, dict) else {}
+    if name == "tool_call":
+        inner = arguments.get("arguments") or arguments.get("args") or {}
+        if isinstance(inner, str):
+            try:
+                inner = json.loads(inner)
+            except ValueError:
+                inner = {}
+        return _setter(str(arguments.get("name") or arguments.get("tool") or ""), inner)
+    name = (name or "").lower()
+    if name in ("cronjob_manage", "cronjob", "cron", "schedule_cronjob"):
+        action = str(arguments.get("action") or "create").lower()
+        return "seen" if action in ("list", "get", "show") else "set"
+    if name in _PHONE_SETS:
+        return "set"
+    if name in _PHONE_READS:
+        return "seen"
+    if re.search(r"(?:create|add|update|edit|complete|delete|remove)_reminders?$", name):
+        return "set"
+    if re.search(r"list_reminders?$", name):
+        return "seen"
+    return None
+
+
+def turn_began(session: str) -> None:
+    if session:
+        _TURN_TOOLS.pop(session, None)
+
+
+def _record(session: str) -> dict:
+    record = _TURN_TOOLS.setdefault(session, {"set": False, "seen": False, "job": None, "at": time.time()})
+    record["at"] = time.time()
+    if len(_TURN_TOOLS) > 500:
+        for old in sorted(_TURN_TOOLS, key=lambda s: _TURN_TOOLS[s]["at"])[:100]:
+            _TURN_TOOLS.pop(old, None)
+    return record
+
+
+def saw_calls(session: str, calls) -> None:
+    """The model's answer calls these tools (name, arguments)."""
+    if not session:
+        return
+    for name, arguments in calls or []:
+        kind = _setter(name, arguments)
+        if kind:
+            _record(session)[kind] = True
+
+
+def saw_result(session: str, name: str, arguments, result) -> None:
+    """A tool finished: a setter counts, and a cron job's id is kept for the card."""
+    if not session:
+        return
+    kind = _setter(name, arguments)
+    if not kind:
+        return
+    record = _record(session)
+    text = result if isinstance(result, str) else json.dumps(result) if result is not None else ""
+    try:
+        data = json.loads(text) if text else {}
+    except ValueError:
+        data = None
+    # A call that failed sets nothing: the card waits for one that worked.
+    failed = (data.get("success") is False or (bool(data.get("error")) and not data.get("success"))) if isinstance(data, dict) \
+        else text.lstrip().lower().startswith("error")
+    if failed:
+        record[kind] = bool(record.get(kind + "_ok"))
+        return
+    record[kind] = record[kind + "_ok"] = True
+    job = None
+    if isinstance(data, dict):
+        inner = data.get("job") if isinstance(data.get("job"), dict) else {}
+        job = data.get("job_id") or inner.get("id") or inner.get("job_id") or data.get("id")
+    if not job:
+        found = re.search(r'"?job_id"?\s*[:=]\s*"?([A-Za-z0-9_-]{4,})', text)
+        job = found.group(1) if found else None
+    if job:
+        record["job"] = str(job)
+
+
+def _reminder_cards(cards) -> list[dict]:
+    return [c for c in cards if isinstance(c, dict) and str(c.get("type") or "").lower() == "reminder"] if isinstance(cards, list) else []
+
+
+def unset_reminder(session: str, cards) -> str | None:
+    """Why a 'reminder' card can't be shown yet, or None: in this turn nothing set, changed,
+    cancelled or even listed one. Not held to where the session is unknown."""
+    if not session or not _reminder_cards(cards):
+        return None
+    record = _TURN_TOOLS.get(session)
+    if record and time.time() - record["at"] < TURN_FOR and (record["set"] or record["seen"]):
+        return None
+    return ("Nothing was set: a 'reminder' card only shows a reminder your tools set. Set it first: a reminder or a "
+            "message at a time is cronjob_manage, action 'create', name '[redde-notify] <what>', schedule its time (ISO "
+            "with the person's offset, or 'in 20m'), repeat 1, prompt 'Tell the person in one line: <what>.'; an alarm "
+            "or a timer on their phone is phone_alarms_set; changing one is 'update' of that job, cancelling 'remove'. "
+            "Then show the card with 'job' set to its job_id, and say it's set only then.")
+
+
+def back_reminders(session: str, cards) -> None:
+    """The cron job's id onto reminder cards that don't name one, so the app can change or cancel it."""
+    record = _TURN_TOOLS.get(session or "")
+    job = record and record.get("job")
+    if not job:
+        return
+    for card in _reminder_cards(cards):
+        card.setdefault("job", job)
+        card.setdefault("id", job)
 
 
 #: The card alone, asked by name ("Home card", "show me the weather card", 2026-11-01): the card is

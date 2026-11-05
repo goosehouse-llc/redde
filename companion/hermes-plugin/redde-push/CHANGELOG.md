@@ -3,6 +3,37 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.15.1 (2026-11-04)
+
+- A quiet scheduled run stays quiet on the phone (issue 55). Hermes's records of runs that said
+  nothing ("**Status:** silent (wakeAgent=false)", "silent (empty output)", a monitor's
+  "no_change", a script gate's "agent skipped") have no "## Response", so the whole record came
+  back as the answer and a note with the job's header went out; and under Notify All a cron
+  turn's [SILENT] or NOTHING NEW was pushed as a reply. Both are dropped now, as are Hermes's
+  bare SILENT / NO_REPLY; a run that says something, or fails, still comes through.
+- A job with nothing new stays quiet. Sol's Strata check said "No change" to the phone every four
+  hours (2026-11-05): its own prompt asked for that, over Hermes's [SILENT]. An answer whose last
+  paragraph only says nothing changed ("No change.", "Nothing new", "No updates since the last
+  check") now sends nothing, and Sol is told, when it makes a job for the phone, to have the prompt
+  answer [SILENT] when nothing is new and to keep nothing in files between runs (scheduled runs
+  can't write them).
+- A reminder card is a reminder set. Asked "remind me to call the dentist before closing", Sol drew
+  a card and said "Reminder set for 5 PM", then "3:30 instead" another card: nothing was ever set,
+  so nothing went off. Now the reminder note says how (a `cronjob_manage` job named
+  "[redde-notify] <what>" at the person's time, repeat 1; an alarm or a timer is
+  `phone_alarms_set`; changing is `update` of that job, cancelling `remove`; a time already past
+  today is asked about), and `redde_show` refuses a 'reminder' card in a turn where no tool set,
+  changed, cancelled or listed one. The job's id goes onto the card (`job`), for its Change and
+  Cancel. "Change the reminder …" and "cancel the alarm" get the note too.
+- A reminder goes off on time and says what it is. Its run (a [redde-notify] job whose prompt is
+  "Tell the person in one line: <what>") never reaches the model: the plugin answers it
+  ("Reminder: stretch."), with no tools, through Hermes's llm_execution middleware (0.22+), and the
+  notification goes out as the run starts; the schedules' reader doesn't send it again. Before, the
+  8:05 "stretch" run tried to set a phone alarm for 7:00 and said it couldn't, four minutes late.
+  Older Hermes runs reminders on the model, as before.
+- A setter call that failed (Hermes turning the job down, the phone not answering) no longer lets a
+  'reminder' card through.
+
 ## 1.15.0 (2026-11-03)
 
 - The calendar and reminders can answer with Redde closed. With Phone tools › Keep a copy
