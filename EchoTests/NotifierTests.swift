@@ -321,6 +321,30 @@ struct NotifierTests {
         #expect(LaunchRouter.shared.consumeSession() == nil)
     }
 
+    /// 2.3.3: a watch's notification opened Redde on whatever was last on screen, its update only
+    /// in Settings. A tap now opens the Watches list, and only a plain tap does.
+    @Test func tappingAWatchsNotificationOpensTheWatches() throws {
+        let h = Harness()
+        var note = PushNote(k: "watch")
+        note.t = "UniFi U7 Pro under $150"
+        note.b = "Now $139 at the UniFi store."
+        note.i = "w1"
+        let content = UNMutableNotificationContent()
+        #expect(note.fill(content))
+        let kind = try #require(content.userInfo[PushNote.kindKey] as? String)
+        WatchDraft.shared.showingWatches = false
+        h.notifier.route(action: "dismiss", requestID: nil, questionID: nil, approve: nil, deny: nil, userText: nil, kind: kind)
+        #expect(!WatchDraft.shared.showingWatches)
+        h.notifier.route(action: UNNotificationDefaultActionIdentifier, requestID: nil, questionID: nil,
+                         approve: nil, deny: nil, userText: nil, kind: kind)
+        #expect(WatchDraft.shared.showingWatches)
+        WatchDraft.shared.showingWatches = false
+        // Another kind's tap doesn't.
+        h.notifier.route(action: UNNotificationDefaultActionIdentifier, requestID: nil, questionID: nil,
+                         approve: nil, deny: nil, userText: nil, kind: "reply")
+        #expect(!WatchDraft.shared.showingWatches)
+    }
+
     @Test func aPushArrivingInFrontShowsUnlessItsConversationIsOnScreen() {
         let h = Harness(appActive: true)
         let conversation = Conversation(settings: h.settings,
