@@ -87,18 +87,25 @@ struct ToolError: Error, CustomStringConvertible {
 
 /// Optional `settings.json` beside the token. Read on each use, so edits apply without a restart.
 ///
-///   { "hide_calendars": ["Team Schedule"] }
+///   { "hide_calendars": ["Team Schedule"], "never_show": ["Diary"], "read_only": ["Work", "me@work.example"] }
 ///
-/// Names (or ids) listed there join subscription, birthday and holiday calendars as "background"
-/// calendars: left out of get_agenda and find_free_time unless asked for.
+/// `hide_calendars`: names (or ids) that join subscription, birthday and holiday calendars as
+/// "background" calendars: left out of get_agenda and find_free_time unless asked for.
+/// `never_show`: calendars and reminder lists the agent never sees or writes to, by title, id or
+/// account name (an account name covers every calendar and list in it). No tool can reach them.
+/// `read_only`: calendars and lists the agent sees but can't add to, matched the same way.
 enum ServerSettings {
     static var file: URL { TokenStore.directory.appendingPathComponent("settings.json") }
 
-    static var hiddenCalendars: Set<String> {
+    static var hiddenCalendars: Set<String> { names("hide_calendars") }
+    static var neverShow: Set<String> { names("never_show") }
+    static var readOnly: Set<String> { names("read_only") }
+
+    private static func names(_ key: String) -> Set<String> {
         guard let data = try? Data(contentsOf: file),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let names = json["hide_calendars"] as? [String] else { return [] }
-        return Set(names.map { $0.lowercased() })
+              let names = json[key] as? [String] else { return [] }
+        return Set(names.map { $0.trimmingCharacters(in: .whitespaces).lowercased() }.filter { !$0.isEmpty })
     }
 }
 
